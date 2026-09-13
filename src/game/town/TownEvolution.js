@@ -1,5 +1,5 @@
 import { hasElectricity } from '../../data/industrial';
-import { PLOTS, plotStreet, routeBetween } from './TownLayout';
+import { PLOTS, plotStreet, routeGraph, routeOnGraph } from './TownLayout';
 
 export const pavedTown = (town) => ['industrial', 'motor-age'].includes(town.era);
 export const modernTransport = (town, id) =>
@@ -15,6 +15,7 @@ export function powerGrid(town) {
     wires = new Map(),
     connections = [];
   if (!hasElectricity(town)) return { poles: [], wires: [], connections };
+  const graph = routeGraph(town);
   const pole = ([x, z]) => {
     // Keep the mine's work yard and saved encounter paths open.
     if (Math.abs(x) < 4.65 && z >= -18 && z < -8.7) x = (x < 0 ? -1 : 1) * 4.85;
@@ -23,8 +24,8 @@ export function powerGrid(town) {
     return key;
   };
   for (const id of Object.keys(PLOTS).filter((id) => id === 'mine' || town.buildings[id])) {
-    const route = routeBetween(
-      town,
+    const route = routeOnGraph(
+      graph,
       plotStreet('powerHouse'),
       id === 'bridge' ? [24, 7.5] : plotStreet(id),
     );
@@ -70,4 +71,5 @@ export function addPowerGrid(d, town) {
     }
   }
   d.batch(root);
+  return root;
 }

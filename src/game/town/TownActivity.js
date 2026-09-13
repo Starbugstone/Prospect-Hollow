@@ -169,6 +169,7 @@ export function addTownRoads(d, town, plots) {
     }
   roads.userData.static = true;
   d.batch(roads);
+  return roads;
 }
 
 export function addTownVisitors(d, town) {
