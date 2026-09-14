@@ -1,9 +1,136 @@
-# Future release: optional town side quests and landmark cinematics
+# Future release: extensible event framework, cinematic director and optional town quests
 
 Status: design proposal for a future release, explicitly outside the current
 release. Related context: [issue #41](https://github.com/Starbugstone/Prospect-Hollow/issues/41).
 Source audit: `8aa015efc4bfd542dc1118a81713954ad0964d88`. This branch contains
 documentation and concept art only; it must not be merged into the current release.
+
+## Architecture first: one event and cinematic framework
+
+Future events need the same reliable lifecycle, outcome settlement, save handling
+and camera transitions. Implement a shared framework rather than seven separate
+quest systems or bespoke horse-to-dog-to-airport transitions. The seven building
+stories below are its first content definitions, not the boundaries of the system.
+Future festivals, rescues, construction milestones, story moments and new eras
+must join the same registry and director.
+
+| Component                    | Owns                                                                                                                                               | Must not own                                                                  |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| **EventDefinition registry** | Versioned IDs, participants, eligibility and trigger policies, preparation objectives, optional deadline policy, outcome definitions and scene IDs | Mutable player state, camera loops or per-building branches in shared systems |
+| **EventRuntime**             | Instance lifecycle, objective observations, deadline evaluation, atomic/idempotent outcome receipts and permanent effects                          | Watching a movie as a condition of receiving an outcome; camera control       |
+| **PresentationQueue**        | Durable global entries, priority/dependency ordering, pending/playing/consumed state and checkpoints for all event types                           | Recalculating money, special horse/dog logic or transition choreography       |
+| **SceneDefinition registry** | Authored camera/actor/audio/FX timelines, entry/exit anchors, footprint, asset requirements and fallback/reduced-motion variants                   | Campaign eligibility, deadline budgets or reward settlement                   |
+| **CinematicDirector**        | One camera/input/audio owner, scene execution, geometry-aware transitions, interruption recovery and resource lifetime                             | Event-name comparisons, reward calculations or an N×N table of scene pairs    |
+
+The dependency flow is **gameplay observations → EventRuntime → committed outcome
+and queued scene IDs → PresentationQueue → CinematicDirector/SceneDefinition**.
+Event outcomes resolve even when a player never watches their presentation.
+Changes to cinema timing cannot change gameplay progress or earned cosmetics.
+
+### Event definition contract
+
+Use declarative, schema-validated definitions referencing registered condition,
+objective and effect handlers. No arbitrary executable condition strings. A
+genuinely new capability may add a reusable handler; a new building name must not
+require a conditional branch in the runtime, queue or director.
+
+| Example field           | Horse-field first-adopter value / meaning                                                                                           |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `id`, `version`         | `horse-field-show`, `1`; immutable identity and explicit migration version                                                          |
+| `participants`          | `horseField` plot anchor; handler and horse actor roles resolved through the scene registry                                         |
+| `eligibility`           | Existing Industrial unlock, horseField L1; monotonic saved building achievements                                                    |
+| `trigger`               | Explicit player acceptance; never start merely because eligibility becomes true                                                     |
+| `presentationPolicy`    | `oncePerPlaythrough`; each stage and chosen finale consumed once, no repeat/encore                                                  |
+| `preparationObjectives` | Building-stage prerequisites, the selected safe route/decor arrangement and optional naturally created-board-bonus counter          |
+| `deadlinePolicy`        | `firstOf(completedNormalPuzzles, elapsedUtc)`; proposal 8 puzzles / 96 h, snapshotted at acceptance; values still subject to review |
+| `outcomes`              | Named standard, earned-mastery or proposed incomplete-preparation result; effect and scene references; lock exactly one result      |
+| `effects`               | Idempotent cosmetic-entitlement and plot-decoration effects only for these B quests; no new economy effects                         |
+| `presentation`          | Priority `optionalTown`, scene IDs, stage dependencies and claim-at-safe-town policy                                                |
+| `localization`          | Translation keys for title, instructions, preparation status, outcomes and accessibility descriptions                               |
+
+Deadline policy belongs to the individual event definition. The selected package
+B preparation quests use the confirmed dual deadline. A future construction
+milestone may have no preparation or deadline and trigger on an existing building
+completion observation; an existing incident adapter may reference its existing
+resolution policy. Do not force every event to consume puzzle turns or share a
+quest counter. One-off presentation per playthrough is the default and the user
+requirement; do not add repeatable event policies without explicit user reversal.
+
+Pin each accepted instance to its definition version and snapshotted budgets.
+Definition updates must not silently extend/shorten an accepted deadline, reset
+progress or invalidate a consumed scene. Include versioned migration for both
+event state and scene checkpoints. Reject invalid definitions during validation;
+missing optional presentation assets must not block the associated outcome.
+
+### Scene definitions and generic transition contract
+
+Every scene supplies named world-resolvable anchors and its own authored acting.
+The director computes the handoff from the **actual outgoing camera pose** to the
+next scene's entry anchor. It must not assume that the outgoing clip reached its
+nominal last frame: Skip, interruption or fallback may exit elsewhere.
+
+| Scene example                         | Entry / exit anchors                                                                                                                      | Authored content and constraints                                                                                                                                                                                  |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `horse-field-show.finale.standard.v1` | Entry: horseField paddock-side camera socket looking at handler/horse. Exit: decorated sign socket with horse/handler in the composition. | 10-second weighted trot/pole-step/settle/ribbon timeline; actor roles and clear paddock footprint; horse rig, handler and ribbon assets; reduced-motion composed view and safe missing-asset reward-card fallback |
+| `park-dog-day.finale.standard.v1`     | Entry: park bench camera socket looking at owner/dog. Exit: flowerbed/plaque socket with owner and seated dog.                            | 10-second throw/run/low-hop/fetch/return/pet timeline; park route and landing clearances; dog, owner, ball and plaque assets; reduced-motion composed view and safe missing-asset reward-card fallback            |
+
+Both definitions also declare duration, safe interruption/checkpoint markers,
+camera curves, actor clip/attachment cues, audio/FX cues, asset manifests, spatial
+bounds, era compatibility and the one-off alternative presentations. These two
+examples are deliberately independent: neither contains the other's ID or a
+special transition for the pair. The same contract applies to any future scene.
+
+The generic transition planner receives outgoing live pose, incoming anchor,
+world obstruction bounds, scene footprints, camera orientation, distance and the
+current quality/reduced-motion settings. It selects a bounded eased movement when
+clear, a wide establishing/crane route when useful, or a tasteful cross-dissolve
+when distance or obstruction makes travel unsuitable. Use reusable transition
+strategies, not a matrix of named event pairs. New scene authoring may provide
+safe entry/exit sockets and hints; it must not encode its possible neighbours.
+
+Maintain continuous audio mixing across clips: bridge ambience, crossfade music
+and applause, and respect global mute. A single director lock prevents legacy
+camera controllers or another queue consumer from competing. Only preload the
+next eligible scene in addition to the active one, within a measured memory
+budget; cancel speculative loads when order changes and release completed assets
+except deliberately shared caches. Do not preload every possible future event.
+
+### Global ordering and future adapters
+
+The durable PresentationQueue accepts every registered event type, not only town
+side quests. Only entries whose dependencies are satisfied are ready; order those
+by priority class, resolved timestamp, stable event instance ID and stage sequence.
+Dependencies must be explicit and acyclic. An active clip finishes or reaches a safe checkpoint
+before a higher-priority entry takes camera ownership. Existing main-story and
+incident presentations retain their priority over optional town celebrations;
+neither their priority nor a pending asset load may lock normal puzzle input.
+
+Only select scene variants compatible with their event snapshot/current world
+policy. A deliberately historical scene uses a compatible isolated presentation
+context; a present-day heritage version uses current geometry. Missing compatible
+assets choose the declared one-off fallback, with the outcome already committed.
+Skip/leave/context loss preserve deterministic ordering and resume checkpoints.
+
+In a future integration step, wrap existing era and raid/incident presentations
+in adapters that expose their current trigger/outcome and scene contract. Preserve
+existing state, consumed flags, reward settlement and priority. Do not refactor
+those runtime systems as part of current-release package A, and do not re-award an
+existing incident when adapting its presentation into the global queue.
+
+### Extensibility acceptance contract
+
+A new event using existing capabilities requires only its definition, authored
+scene/timeline, assets, translations and content tests. It must not require edits
+to existing events, the director, or a pair-specific transition list. New shared
+capabilities use documented registry handlers and focused tests, not `if horse`,
+`if dog`, or equivalent building-specific checks in infrastructure.
+
+Prove this by registering a dummy future event in tests solely through the public
+definition/scene contract. Chain it before and after existing scenes in both
+directions, including mixed main/optional priorities, offline expiry, skip,
+reduced motion, missing assets and disconnect at a transition boundary. Its name
+must be unknown to the runtime/director. Verify one outcome, one presentation,
+valid camera poses, restored input and no changes to existing event definitions.
 
 ## Goal and boundaries
 
@@ -22,7 +149,7 @@ playthrough**. There are no event replay controls, repeat editions or later
 encores. Starting a new game is the intended way to experience them again.
 Permanent earned 3D changes remain on the town.
 
-Accepted events have two preparation deadlines: a fixed number of completed
+The selected B preparation quests have two deadlines: a fixed number of completed
 normal puzzles **or a persistent real elapsed-time deadline, whichever comes
 first**. Real time continues while the player is away. Acceptance is explicit;
 unlocking a building never starts a countdown. Exact budgets and the outcome of
@@ -33,7 +160,7 @@ event cannot interrupt/fail a puzzle, withhold its ordinary money/bonuses, or bl
 the campaign. No new currencies, paid boosters, purchases, advertisements, passes,
 upkeep or event retries/resets are included.
 
-## Concept art
+## First content adopters: concept art
 
 These are aspirational art-direction boards generated with the built-in image
 tool. They are not implemented assets, rendered gameplay or final approved art.
@@ -305,8 +432,8 @@ of confirmation modals. Once started, chain clips without intermediate menus,
 reward popups or resets to the default town camera. Rewards were already committed
 and remain available even if the player leaves the batch pending.
 
-The director receives each outgoing camera pose and the next event's action
-anchor. Author a 1–2 second eased transition using a clear wide establishing view
+The shared director receives each outgoing camera pose and the next event's action
+anchor. Compute a 1–2 second eased transition using a clear wide establishing view
 or crane path. When distance or obstruction makes continuous travel unattractive,
 use a restrained cross-dissolve between coherent compositions. Preserve horizon,
 spatial readability and motion continuity; never fly through buildings, whip-pan
@@ -314,7 +441,8 @@ across town or instantly teleport the focus. Bridge audio with short crossfades
 and environmental sound; reduce the previous applause before the next action.
 Return to the user's original camera only after the batch exits.
 
-Example: horse-show ribbon hold → crane over a clear town route → park owner
+Illustration of generic anchor-based handoffs, not a hardcoded route: horse-show
+ribbon hold → crane over a clear town route → park owner
 anticipating the throw → dog/paw-plaque hold → wide river establishing shot →
 airport runway composition → takeoff finale. The transition itself is composed
 animation, not an extra reward event or repeat of an already consumed scene.
@@ -342,6 +470,20 @@ and preload overlap, not just isolated clips.
 
 ## Quality and release acceptance
 
+- [ ] Implement the common EventDefinition/EventRuntime/PresentationQueue/
+      SceneDefinition/CinematicDirector contracts before expanding content. The
+      seven stories are data/scene registrations, not seven special-case systems.
+- [ ] Global queue and geometry-aware transitions support unknown future event
+      IDs in every tested ordering direction. No N×N transition table or event-name
+      branches in runtime, queue or director. Existing-capability content additions
+      leave those systems and all existing event definitions untouched.
+- [ ] Deadline policy is per event; test untimed construction/story definitions
+      alongside the selected dual-deadline quests without adding puzzle caps.
+      Definition versions, saved budgets, scene dependencies and asset/era
+      compatibility are validated and migrated without duplicated outcomes.
+- [ ] Future era/incident adapters preserve existing consumed state, outcomes,
+      priority and normal gameplay. Current-release package A is not refactored
+      for this framework. Preloading stays bounded to active/next eligible assets.
 - [ ] Package B remains a future-release issue; current release contains no quest
       runtime, premium features or new cinematic dependencies from this branch.
 - [ ] All seven stories use real building IDs, correct unlock eras and the exact
@@ -398,13 +540,18 @@ and preload overlap, not just isolated clips.
 
 ## Suggested implementation sequence for the future release
 
-1. Prototype the independent journal/receipt/claim system plus Frontier stable
-   story. Validate save migration and non-interference before broader content.
-2. Produce one complete Industrial horse-field finale as the animation-quality
-   benchmark; then park dog day with the same camera/claim lifecycle.
-3. Add Steam railway exhibition and verify historical/later-era one-off presentation handling.
-4. Add Aviation, then Broadcast, then Connected City stories, each with its own
-   animation and mobile performance review. Do not ship placeholder celebrations.
+1. Define schemas/registries, independent event runtime, atomic outcomes, global
+   durable queue and the single scene/transition director. Deliver one vertical
+   slice through the Frontier stable event, including save migration and safe exit.
+2. Add the dummy future-event extensibility test and prototype existing era/incident
+   adapters in this future branch. Prove priorities, generic transitions and
+   non-interference before authoring more content.
+3. Produce one complete Industrial horse-field finale as the art/animation-quality
+   benchmark; add park dog day through the same registry contract without edits
+   to existing events or pair-specific director code.
+4. Register Steam, Aviation, Broadcast and Connected City stories, each with its
+   own assets/timeline, historical compatibility and mobile performance review.
+   Do not ship placeholder celebrations.
 5. Playtest cadence and optional participation before adjusting counts. Preserve
    money gains/bonuses and avoid making story completion a main-campaign metric.
 
