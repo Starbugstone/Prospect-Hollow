@@ -1,4 +1,10 @@
-import { isCityEra, CITY_LEVEL_PRICES, cityVariant } from '../../data/city';
+import {
+  isCityEra,
+  CITY_LEVEL_PRICES,
+  cityVariant,
+  isMajorCityBuilding,
+  cityBuildingPrice,
+} from '../../data/city';
 import { RIVER_RAIL_LEVEL_PRICES } from '../../data/economy';
 import { ERAS, ERA_BY_ID, FRONTIER_ERA } from '../../data/eras';
 import { BUILDINGS, BUILDING_BY_ID, BANDIT_EVENT } from '../../data/town';
@@ -35,8 +41,8 @@ export function modernization(town, id) {
       targetEra: town.era,
       eraLevel: level + 1,
       stage: town.buildings[id] + level,
-      cost: CITY_LEVEL_PRICES[town.era][level],
-      runs: level === 0 ? 2 : 1,
+      cost: cityBuildingPrice(id, CITY_LEVEL_PRICES[town.era][level]),
+      runs: !isMajorCityBuilding(id) && level === 0 ? 2 : 1,
       name: building.name,
       description:
         level === 0

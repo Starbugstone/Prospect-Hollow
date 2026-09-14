@@ -7,6 +7,10 @@ export const CITY_LEVEL_PRICES = {
   broadcast: [6200, 7000, 7800],
   contemporary: [7600, 9000, 10400],
 };
+// Large civic landmarks carry a modest premium; earnings and rewards stay unchanged.
+export const isMajorCityBuilding = (id) => ['airport', 'skyline', 'cityHomes'].includes(id);
+export const cityBuildingPrice = (id, price) =>
+  Math.ceil(price * (isMajorCityBuilding(id) ? 1.25 : 1));
 export const CITY_FAMILIES = {
   airport: 'airport',
   radioTower: 'radio',
@@ -407,10 +411,11 @@ export const CITY_BUILDINGS = [
     ...[1, 2, 3].map((level) => `${labels[building.introducedEra]} · Level ${level}`),
   ],
   upgrades: benefits.map((benefit, index) => ({
-    cost: (building.introducedEra === 'post-war' ? [3000, 4000, 5000] : [8000, 10000, 12000])[
-      index
-    ],
-    runs: 1,
+    cost: cityBuildingPrice(
+      building.id,
+      (building.introducedEra === 'post-war' ? [3000, 4000, 5000] : [8000, 10000, 12000])[index],
+    ),
+    runs: isMajorCityBuilding(building.id) && index === 0 ? 2 : 1,
     title: index ? 'Expand {building}' : 'Build {building}',
     benefit,
     story: benefit,

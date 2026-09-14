@@ -2,7 +2,7 @@ import { RIVER_RAIL_LEVEL_PRICES } from '../../data/economy';
 import { buildingServiceLevel, hasShortProgression } from '../../data/buildingProgression';
 import { t } from '../../i18n';
 import { miningDepthBonus } from '../../data/economy';
-import { isCityEra, cityCapacity } from '../../data/city';
+import { isCityEra, cityCapacity, isMajorCityBuilding } from '../../data/city';
 import { hasElectricity } from '../../data/industrial';
 import { eventKind, eraEventKind, fireProtection, civicIncident } from '../../data/townEvents';
 import { forgeProductionRuns } from '../../data/eras';
@@ -213,6 +213,7 @@ export function normalizeTown(saved) {
       project.stage <= upgrades.length &&
       projectRuns(id, project.stage) > 0 &&
       (project.required === projectRuns(id, project.stage) ||
+        (isMajorCityBuilding(id) && project.stage === 1 && project.required === 1) ||
         (BUILDING_BY_ID[id].introducedEra === 'river-rail' &&
           project.stage > 1 &&
           project.required === 2)) &&
@@ -224,7 +225,8 @@ export function normalizeTown(saved) {
         id,
         stage: project.stage,
         wins: Math.min(project.wins, projectRuns(id, project.stage)),
-        required: projectRuns(id, project.stage),
+        // Honor already-paid one-run landmark projects from earlier saves.
+        required: Math.min(project.required, projectRuns(id, project.stage)),
       };
     }
   }
