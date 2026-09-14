@@ -95,7 +95,7 @@ Phaser loads when a chapter opens. Vue never wraps the renderer's internal objec
 
 See [the analysis and verification report](docs/analysis.md) for the performance findings, changes and testing limits. Capacitor configuration and the existing Azure deployment workflow are retained; native platforms need their usual platform setup before using the `cap:*` commands.
 
-Run `npm run verify` for formatting, the complete regression suite, and a production build. GitHub Quality checks runs the same command for pull requests and pushes to main and Develop; verify it and the Vercel preview before merging a release.
+Run `npm run verify` for formatting, the complete regression suite, and a production build. GitHub Quality checks runs the same command for pull requests and pushes to main and develop; verify it and the Vercel preview before merging a release.
 
 Mine teardown explicitly releases its WebGL context. If the village loses its graphics context, it rebuilds the 3D scene on a fresh canvas while preserving the camera. Repeated recovery failures use the playable SVG town. Interrupted frame-cache renders restore renderer state before another draw.
 
