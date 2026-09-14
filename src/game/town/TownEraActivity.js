@@ -82,7 +82,7 @@ export function addEraActivity(d, town) {
       d.box(paddle, 1.5, 0.15, 0.3, 0, 0.55, 0, '#9b6e51');
     }
     const portEra = town.buildingEras.riverPort;
-    if (isCityEra(portEra)) {
+    if (isCityEra(portEra) && portEra !== 'broadcast') {
       for (const child of [...boat.children]) boat.remove(child);
       cityModel(d, boat, `${portEra}-boat`);
       boat.name = portEra === 'contemporary' ? 'Solar river ferry' : 'Rebuilding river launch';
@@ -125,15 +125,9 @@ export function addEraActivity(d, town) {
       train.name =
         town.buildingEras.railDepot === 'contemporary'
           ? 'Electric city train'
-          : 'Rebuilding steam train';
+          : 'Motor passenger railcar';
       for (const x of [0, -4, -8]) {
-        const carriage = cityModel(
-          d,
-          train,
-          town.buildingEras.railDepot === 'post-war' && x === 0
-            ? 'post-war-locomotive'
-            : `${town.buildingEras.railDepot}-railcar`,
-        );
+        const carriage = cityModel(d, train, `${town.buildingEras.railDepot}-railcar`);
         carriage.rotation.y = Math.PI / 2;
         carriage.position.x = x;
       }

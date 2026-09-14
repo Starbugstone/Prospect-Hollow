@@ -88,7 +88,13 @@
         <rect x="-85" y="4" width="24" height="48" rx="8" fill="#8e7860" />
         <path d="M-73 8V-53M-52 57V-27H52V57" fill="none" stroke="#68887c" stroke-width="10" />
       </g>
-      <g v-else-if="['industrial', 'post-war', 'motor-age', 'contemporary'].includes(era)">
+      <g
+        v-else-if="
+          ['industrial', 'post-war', 'motor-age', 'aviation', 'broadcast', 'contemporary'].includes(
+            era,
+          )
+        "
+      >
         <path
           d="M-51 60V-41H51V60"
           fill="none"

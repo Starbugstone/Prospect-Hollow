@@ -583,7 +583,7 @@
   </main>
 </template>
 <script setup>
-import { motorTraffic } from '../../game/town/TownEvolution';
+import { motorTraffic, modernTransport } from '../../game/town/TownEvolution';
 import { civicIncident } from '../../data/townEvents';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { t, number } from '../../i18n';
@@ -813,10 +813,8 @@ const { playRaidCue } = useTownAudio(() => ({
   buildCue: construction.value?.serial,
   stable: town.value.buildings.stable > 0 && !motorTraffic(town.value),
   river: true,
-  railDepot:
-    town.value.buildings.railDepot > 0 && town.value.buildingEras.railDepot !== 'contemporary',
-  riverPort:
-    town.value.buildings.riverPort > 0 && town.value.buildingEras.riverPort !== 'contemporary',
+  railDepot: town.value.buildings.railDepot > 0 && !modernTransport(town.value, 'railDepot'),
+  riverPort: town.value.buildings.riverPort > 0 && !modernTransport(town.value, 'riverPort'),
   raid:
     activeRaid.value && eventKind(activeRaid.value) === 'bandits'
       ? `${activeRaid.value.id}-${raidPhase.value}`

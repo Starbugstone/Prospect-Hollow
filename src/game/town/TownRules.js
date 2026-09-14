@@ -316,7 +316,7 @@ export const foodCapacity = (town) =>
   Math.min(5, Math.max(0, buildingServiceLevel('fisherman', town.buildings.fisherman ?? 0))) +
   (town.buildings.market ?? 0) * 10 +
   ((town.buildingEras.farm === 'motor-age' && town.buildingEraLevels.farm === 3) ||
-  town.buildingEras.farm === 'contemporary'
+  ['aviation', 'broadcast', 'contemporary'].includes(town.buildingEras.farm)
     ? 20
     : 0) +
   cityCapacity(town, 'food');
@@ -325,7 +325,7 @@ export const waterCapacity = (town) => {
     level = town.buildingEraLevels.well || 1;
   const waterworks = !town.buildings.well
     ? 0
-    : era === 'contemporary'
+    : ['aviation', 'broadcast', 'contemporary'].includes(era)
       ? 80
       : era === 'post-war'
         ? 60

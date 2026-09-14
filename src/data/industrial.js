@@ -133,8 +133,9 @@ export const INDUSTRIAL_VARIANTS = {
 };
 export const INDUSTRIAL_LEVEL_PRICES = [1400, 1850, 2300];
 export const hasElectricity = (town) =>
-  ['industrial', 'motor-age', 'post-war', 'contemporary'].includes(town.era) &&
-  town.buildings.powerHouse > 0;
+  ['industrial', 'motor-age', 'post-war', 'aviation', 'broadcast', 'contemporary'].includes(
+    town.era,
+  ) && town.buildings.powerHouse > 0;
 export const ELECTRIC_LAMPS = [
   [-3, -7.5],
   [3, -7.5],

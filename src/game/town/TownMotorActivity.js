@@ -6,7 +6,7 @@ import { routeBetween, plotStreet } from './TownLayout';
 
 export function addMotorActivity(d, town) {
   if (
-    !['motor-age', 'contemporary'].includes(town.era) ||
+    !['motor-age', 'aviation', 'broadcast', 'contemporary'].includes(town.era) ||
     !town.buildings.garage ||
     !town.buildings.busDepot
   )

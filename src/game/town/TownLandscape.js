@@ -41,7 +41,16 @@ export function groundHeight(x, z) {
     0,
   );
   const eastClearing = Math.hypot(Math.max(37 - x, 0, x - 62), Math.max(-17 - z, 0, z - 33));
-  const prairie = smooth(34, 49, distance) * smooth(0, 7, eastClearing) * (hills + ridges);
+  const westClearing = Math.hypot(Math.max(-59 - x, 0, x + 28), Math.max(-18 - z, 0, z - 26));
+  // Low rolling hills leave room for orbiting and a north/south flight corridor.
+  const flightCorridor = smooth(4, 13, Math.abs(x + 53));
+  const prairie =
+    smooth(34, 49, distance) *
+    smooth(0, 7, eastClearing) *
+    smooth(0, 7, westClearing) *
+    (hills + ridges) *
+    0.24 *
+    flightCorridor;
   const bank = riverDistance(x, z);
   // Lower the surrounding hills gradually so the shallow bank never becomes a cliff.
   const valley = prairie * smooth(RIVER.bankWidth, RIVER.bankWidth + 18, bank);
@@ -56,6 +65,8 @@ export function groundHeight(x, z) {
   return THREE.MathUtils.lerp(surface, Math.min(surface, 0), cutting);
 }
 const reservedGround = (x, z) =>
+  (x > -63 && x < -28 && z > -20 && z < 28) ||
+  Math.abs(x + 53) < 6 ||
   (Math.abs(x) < 4.7 && z > PLOTS.mine[1] + 2 && z < -8) ||
   Object.values(PLOTS).some(([px, pz]) => Math.hypot(x - px, z - pz) < 4.5) ||
   segmentDistance(x, z, RAIL_EDGE.from, RAIL_EDGE.to) < 2;

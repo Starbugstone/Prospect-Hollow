@@ -1,7 +1,53 @@
 <template>
   <g stroke-linejoin="round" stroke-linecap="round">
+    <g v-if="family === 'airport'">
+      <path d="M-245-110-95-165 10 100-140 155Z" fill="#657777" />
+      <path d="M-172-122-65 118" stroke="#e1cfab" stroke-width="5" stroke-dasharray="15 12" />
+      <path d="M-62-106 81-67 81 19-62-20Z" fill="#e1cfab" />
+      <path d="M-52-90 71-57v45L-52-43Z" fill="#85b8c8" />
+      <path
+        d="M32-74v-112h27v120M14-177v-30h64v30Z"
+        fill="#648d89"
+        stroke="#e1cfab"
+        stroke-width="3"
+      />
+      <path
+        d="M-147-60-144-32-102-9-108-2-143-13-137 12-149 14-160-11-185-4-189-11-162-31-166-56Z"
+        fill="#e1cfab"
+      />
+    </g>
+    <g v-else-if="family === 'radio'" stroke="#c97868" stroke-width="5" fill="none">
+      <path d="M-45 12 0-220 45 12M-33-45 26-84-21-113 15-144M-25-88 32-47M0-220v-40m-25 20h50" />
+      <path d="M-59 12v-58h118v58Z" fill="#e1cfab" stroke="#648d89" />
+    </g>
+    <g v-else-if="family === 'concert' || family === 'television'">
+      <path d="M-104-15v-108l125 31V18Z" fill="#c97868" />
+      <path d="M21 18V-92l76-30v110Z" fill="#648d89" />
+      <path d="M-113-125-64-157-28-143 9-162 54-144 109-123 20-86Z" fill="#435764" />
+      <path d="M-87-111 9-88v58l-96-23Z" fill="#435764" />
+      <path d="M-71-84-4-65m-58-1 49 14" stroke="#e5bc77" stroke-width="6" />
+      <g v-if="family === 'television'" stroke="#e1cfab" stroke-width="4">
+        <path d="M41-141v-38m-23-5q28 23 50-10" fill="#85b8c8" />
+      </g>
+    </g>
+    <g
+      v-else-if="
+        family === 'skyline' ||
+        (modern && ['apartments', 'cityHomes', 'hotel', 'crystalLab'].includes(kind))
+      "
+    >
+      <path d="M-70 0v-240l89 22V22Z" fill="#435764" />
+      <path d="M19 22v-240l55-23V0Z" fill="#648d89" />
+      <path
+        v-for="n in 9"
+        :key="n"
+        :d="`M-60 ${-225 + n * 23} 8 ${-207 + n * 23}`"
+        stroke="#85b8c8"
+        stroke-width="13"
+      />
+    </g>
     <TownLeisureBuilding
-      v-if="['horseField', 'park'].includes(kind)"
+      v-else-if="['horseField', 'park'].includes(kind)"
       :kind="kind"
       :level="serviceLevel"
     />
@@ -84,12 +130,17 @@
       </g>
       <path
         v-if="family === 'research'"
-        d="M-42-147-32-180-13-142 0-200 25-139 41-168 56-127 0-119Z"
+        d="M-42-147v-42H38v42Zm13-10v-20H25v20Z"
         fill="#84afa9"
         stroke="#c4ddd0"
         stroke-width="3"
       />
       <path v-if="kind === 'doctor'" d="M-53-115v29m-14-15h28" stroke="#b47766" stroke-width="8" />
+    </g>
+    <g v-if="era === 'contemporary' && !garden && family !== 'airport'">
+      <path d="M-60-75H15v38H-60Z" fill="#435764" />
+      <path d="M-53-68H8v24H-53Z" fill="#85b8c8" />
+      <path d="M-46-60h36m-36 8h24" stroke="#e1cfab" stroke-width="3" />
     </g>
     <g v-if="garden || ['civic', 'retail', 'station', 'river'].includes(family)">
       <path d="M-108-47v-66m78 86v-65" stroke="#ddd1ae" stroke-width="4" />
@@ -128,7 +179,7 @@ const props = defineProps({
   serviceLevel: { type: Number, default: 3 },
 });
 const family = computed(() => CITY_FAMILIES[props.kind]);
-const modern = computed(() => props.era === 'contemporary');
+const modern = computed(() => ['broadcast', 'contemporary'].includes(props.era));
 const garden = computed(() => ['park', 'field', 'square'].includes(family.value));
 const height = computed(() => (family.value === 'residence' ? 135 : 110));
 </script>

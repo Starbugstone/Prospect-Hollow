@@ -36,7 +36,7 @@ export function modernization(town, id) {
       eraLevel: level + 1,
       stage: town.buildings[id] + level,
       cost: CITY_LEVEL_PRICES[town.era][level],
-      runs: 2,
+      runs: level === 0 ? 2 : 1,
       name: building.name,
       description:
         level === 0
@@ -44,10 +44,7 @@ export function modernization(town, id) {
           : level === 1
             ? 'Add a sheltered side wing and a planted forecourt.'
             : 'Complete the landmark with its roof garden and civic lighting.',
-      title:
-        town.era === 'post-war'
-          ? 'Post-war level {level}: {name}'
-          : 'Contemporary level {level}: {name}',
+      title: 'City level {level}: {name}',
       benefit: 'Visual modernization. Existing services stay unchanged.',
     };
   }
@@ -70,7 +67,7 @@ export function modernization(town, id) {
       : town.era === 'industrial'
         ? INDUSTRIAL_LEVEL_PRICES
         : RIVER_RAIL_LEVEL_PRICES)[level],
-    runs: town.era === 'river-rail' && level > 0 ? 1 : 2,
+    runs: level === 0 ? 2 : 1,
     name,
     description:
       level === 0 || id === 'horseField'
@@ -157,7 +154,8 @@ export function normalizeEraState(town, saved) {
     receipt.id === `${receipt.from}:${receipt.to}` &&
     ERA_BY_ID[receipt.from]?.enabled &&
     (eraIndex(receipt.to) === eraIndex(receipt.from) + 1 ||
-      (receipt.from === 'industrial' && receipt.to === 'motor-age')) &&
+      (receipt.from === 'industrial' && receipt.to === 'motor-age') ||
+      (receipt.from === 'motor-age' && receipt.to === 'contemporary')) &&
     receipt.to === town.era &&
     ERA_BY_ID[receipt.to]?.enabled
   ) {

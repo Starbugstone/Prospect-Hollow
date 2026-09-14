@@ -1,5 +1,6 @@
 # Six-era settlement completion — issue #22
 
+This is the historical six-era implementation report. The [issue #41 update](issue41-era-visuals.md) adds two intermediate eras, revises the 2005 identity, and fixes transport, construction timing, terrain, piers and event cameras.
 The town now progresses through Frontier → River & Rail (1884) → Electric (1908) → Post-war Rebuilding (1920) → Motor Age (1932) → Contemporary Crystal City (2005). Rebuilding means the aftermath of World War I, placing it between electricity and cars as requested. Town progression retains the current town-only completion gate; the original issue's proposed mine-milestone gate was superseded by that design.
 
 ## Buildings and services

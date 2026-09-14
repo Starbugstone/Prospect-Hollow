@@ -3,7 +3,7 @@ export const eventKind = (event) => event?.kind ?? 'bandits';
 export const eraEventKind = (era) =>
   era === 'contemporary'
     ? 'storm-cleanup'
-    : ['industrial', 'post-war', 'motor-age'].includes(era)
+    : ['industrial', 'post-war', 'motor-age', 'aviation', 'broadcast'].includes(era)
       ? 'workshop-fire'
       : era === 'river-rail'
         ? 'cargo-theft'

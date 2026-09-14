@@ -59,6 +59,8 @@ it('orders rebuilding after Electric and before cars, with two saved, idempotent
     'industrial',
     'post-war',
     'motor-age',
+    'aviation',
+    'broadcast',
     'contemporary',
   ]);
   for (const from of ['industrial', 'motor-age']) {

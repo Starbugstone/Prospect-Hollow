@@ -5,6 +5,8 @@ import { eraBuildingLevel } from './TownEras';
 import { buildingServiceLevel } from '../../data/buildingProgression';
 import { TownUpgradeGlow } from './TownUpgradeGlow';
 import * as THREE from 'three';
+import { addAviationActivity } from './TownAviation';
+import { updateEventCamera, beginEventCamera, restoreEventCamera } from './TownEventCamera';
 import { createTownGeometries } from './TownGeometries';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -62,7 +64,7 @@ export class TownDiorama {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color('#e9e8da');
     this.scene.fog = new THREE.Fog('#e9e8da', 125, 205);
-    this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 320);
+    this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 400);
     this.camera.position.set(12, 12, 25);
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
     this.renderQuality = new TownRenderQuality(window.devicePixelRatio || 1);
@@ -345,15 +347,21 @@ export class TownDiorama {
       .map(({ position: [x, z] }) => point(x, 0.2, z));
     this.guidedPlot = nextGoal(town)?.id;
     this.staticScenery.update(this, town);
-    this.controls.maxDistance = ['post-war', 'motor-age', 'contemporary'].includes(town.era)
-      ? 180
+    this.controls.maxDistance = [
+      'post-war',
+      'motor-age',
+      'aviation',
+      'broadcast',
+      'contemporary',
+    ].includes(town.era)
+      ? 270
       : town.era !== 'frontier'
         ? 160
         : 110;
     // Expanded towns need a farther overview on phones; keep buildings ahead of the fog.
     if (this.scene.fog) {
-      this.scene.fog.near = town.era !== 'frontier' ? 215 : 125;
-      this.scene.fog.far = town.era !== 'frontier' ? 295 : 205;
+      this.scene.fog.near = town.era !== 'frontier' ? 325 : 125;
+      this.scene.fog.far = town.era !== 'frontier' ? 390 : 205;
     }
     for (const {
       id,
@@ -452,6 +460,7 @@ export class TownDiorama {
     addTownVisitors(this, town);
     addTownLife(this, town);
     addLeisureActivity(this, town);
+    addAviationActivity(this, town);
     this.person({
       color: '#738a83',
       skin: '#d5ad88',
@@ -998,6 +1007,7 @@ export class TownDiorama {
     }
   }
   frameTown() {
+    if (this.eventCamera) return;
     if (!this.anchors?.length) return;
     const bounds = new THREE.Box3();
     const corners = [];
@@ -1024,6 +1034,14 @@ export class TownDiorama {
       : framing;
     for (const { id } of visible) {
       const [x, z] = PLOTS[id];
+      if (id === 'airport') {
+        for (const dx of [-10, 10])
+          for (const dz of [-20, 20]) {
+            const corner = point(x + dx, 8, z + dz);
+            bounds.expandByPoint(corner);
+            corners.push(corner);
+          }
+      }
       bounds.expandByPoint(point(x - 3, 0, z - 3));
       bounds.expandByPoint(point(x + 3, 5, z + 3));
       for (const dx of [-3, 3])
@@ -1199,8 +1217,9 @@ export class TownDiorama {
     if (this.raid?.update(this.elapsed)) {
       this.raid = null;
       this.rebuildActors();
-      if (this.overview) this.frameTown();
+      restoreEventCamera(this);
     }
+    updateEventCamera(this);
     // Advance life during camera motion too; its scheduled render draws the new pose.
     if (this.cameraFrame || (this.cinematic && !this.cinematic.finished)) return;
     this.actorRenderer.update();
@@ -1220,6 +1239,7 @@ export class TownDiorama {
   }
   playRaid(event, onPhase, onComplete, onCue) {
     this.raid?.dispose();
+    beginEventCamera(this);
     const Incident = eventKind(event) === 'bandits' ? TownRaid : TownEraIncident;
     this.raid = new Incident(
       this,
@@ -1227,13 +1247,11 @@ export class TownDiorama {
       PLOTS,
       (phase) => {
         onPhase(phase);
-        if (this.raid) this.frameTown();
       },
       onComplete,
       onCue,
     );
     this.rebuildActors();
-    this.frameTown();
     this.render();
   }
   updateRaid(event) {
@@ -1247,7 +1265,7 @@ export class TownDiorama {
     this.raid.dispose();
     this.raid = null;
     this.rebuildActors();
-    if (this.overview) this.frameTown();
+    restoreEventCamera(this);
     this.render();
   }
   setCinematic(enabled) {
@@ -1307,7 +1325,8 @@ export class TownDiorama {
     if (action === 'reset') this.frameTown();
   }
   setPaused(paused) {
-    this.controls.enabled = !paused && !this.cinematic;
+    this.paused = paused;
+    this.controls.enabled = !paused && !this.cinematic && !this.eventCamera;
   }
   setMotion(enabled) {
     if (this.motionEnabled === enabled) return;

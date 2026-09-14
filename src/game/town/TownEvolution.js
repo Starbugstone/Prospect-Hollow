@@ -1,14 +1,27 @@
 import { hasElectricity } from '../../data/industrial';
-import { PLOTS, plotStreet, routeGraph, routeOnGraph } from './TownLayout';
+import {
+  PLOTS,
+  plotStreet,
+  routeGraph,
+  routeOnGraph,
+  townTracks,
+  segmentDistance,
+} from './TownLayout';
 
 export const pavedTown = (town) =>
-  ['industrial', 'motor-age', 'post-war', 'contemporary'].includes(town.era);
+  ['industrial', 'motor-age', 'post-war', 'aviation', 'broadcast', 'contemporary'].includes(
+    town.era,
+  );
 export const modernTransport = (town, id) =>
   town.buildings[id] > 0 &&
-  ['industrial', 'motor-age', 'post-war', 'contemporary'].includes(town.buildingEras[id]);
+  ['industrial', 'motor-age', 'post-war', 'aviation', 'broadcast', 'contemporary'].includes(
+    town.buildingEras[id],
+  );
 export const motorTraffic = (town) =>
   modernTransport(town, 'stable') &&
-  (['motor-age', 'contemporary'].includes(town.buildingEras.stable) ||
+  (['post-war', 'motor-age', 'aviation', 'broadcast', 'contemporary'].includes(
+    town.buildingEras.stable,
+  ) ||
     town.buildingEraLevels.stable >= 2);
 
 // A shared road-following network for WebGL and the accessible map. Merge
@@ -19,11 +32,34 @@ export function powerGrid(town) {
     connections = [];
   if (!hasElectricity(town)) return { poles: [], wires: [], connections };
   const graph = routeGraph(town);
+  const streets = townTracks(town);
   const pole = ([x, z]) => {
     // Keep the mine's work yard and saved encounter paths open.
     if (Math.abs(x) < 4.65 && z >= -18 && z < -8.7) x = (x < 0 ? -1 : 1) * 4.85;
+    const origin = [x, z];
+    let verge;
+    for (const radius of [0.85, 1.2, 1.65, 2.1]) {
+      for (let n = 0; n < 16; n++) {
+        const angle = (n * Math.PI) / 8;
+        const candidate = [
+          origin[0] + Math.cos(angle) * radius,
+          origin[1] + Math.sin(angle) * radius,
+        ];
+        if (
+          !(Math.abs(candidate[0]) < 4.65 && candidate[1] >= -18 && candidate[1] < -8.7) &&
+          streets.every(
+            ({ from, to, width }) => segmentDistance(...candidate, from, to) > width / 2 + 0.22,
+          )
+        ) {
+          verge = candidate;
+          break;
+        }
+      }
+      if (verge) break;
+    }
+    [x, z] = verge ?? origin;
     const key = `${x},${z}`;
-    if (!poles.has(key)) poles.set(key, [x, 6.4, z + 0.7]);
+    if (!poles.has(key)) poles.set(key, [x, 6.4, z]);
     return key;
   };
   for (const id of Object.keys(PLOTS).filter((id) => id === 'mine' || town.buildings[id])) {
@@ -82,7 +118,9 @@ export const roadSurface = (town) =>
     frontier: '#c3a477',
     'river-rail': '#b3a18a',
     industrial: '#89928a',
-    'post-war': '#a38f7d',
+    'post-war': '#89928a',
+    aviation: '#818e8c',
+    broadcast: '#7d8991',
     'motor-age': '#858b86',
     contemporary: '#a5afa5',
   })[town.era] ?? '#c3a477';

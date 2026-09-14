@@ -374,6 +374,8 @@ describe('Two eras and explicit modernization', () => {
       'industrial',
       'post-war',
       'motor-age',
+      'aviation',
+      'broadcast',
       'contemporary',
     ]);
   });

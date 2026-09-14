@@ -227,7 +227,8 @@ export function addTownVisitors(d, town) {
     }
 }
 
-export const RAID_DURATION = 48;
+export const RAID_DURATION = 24;
+export const RAID_SPEED = 2;
 export const raidPhase = (time, protectedTown) =>
   time < 8
     ? 'Riders on the ridge'
@@ -348,7 +349,7 @@ export class TownRaid {
   }
   update(elapsed) {
     if (this.disposed) return true;
-    const time = elapsed - this.started,
+    const time = (elapsed - this.started) * RAID_SPEED,
       { event } = this;
     const phase = raidPhase(time, event.outcome === 'protected');
     if (phase !== this.phase) {
@@ -461,7 +462,7 @@ export class TownRaid {
         dust.scale.setScalar(0.12 + drift * 0.3);
       }
     });
-    if (time >= RAID_DURATION) {
+    if (time >= RAID_DURATION * RAID_SPEED) {
       this.dispose();
       this.onComplete();
       return true;

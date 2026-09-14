@@ -147,15 +147,15 @@ describe('A visible, articulated frontier encounter', () => {
     expect(raid.bandits).toHaveLength(4);
     expect(raid.patrol).toHaveLength(1);
     expect(raid.bandits[0].root.position.x).toBeGreaterThan(10);
-    raid.update(8.21);
+    raid.update(8.21 / 2);
     expect(phase).toHaveBeenLastCalledWith('Warning shots');
     expect(raid.bandits[0].gun.visible).toBe(true);
     expect(raid.bandits[0].flash.visible).toBe(true);
-    raid.update(12.5);
+    raid.update(12.5 / 2);
     expect(raid.bandits[0].loot.visible).toBe(false); // Chased off by the existing sheriff.
     expect(raid.bandits[3].loot.visible).toBe(true);
     const before = raid.bandits[3].root.position.clone();
-    raid.update(21);
+    raid.update(21 / 2);
     expect(raid.bandits[3].root.position.distanceTo(before)).toBeGreaterThan(1);
     expect(raid.update(RAID_DURATION)).toBe(true);
     expect(complete).toHaveBeenCalledOnce();
@@ -177,14 +177,14 @@ describe('A visible, articulated frontier encounter', () => {
       vi.fn(),
       vi.fn(),
     );
-    raid.update(20);
+    raid.update(20 / 2);
     expect(
       raid.bandits.every((a) => a.captured && a.loop.visible && a.rope.visible && !a.gun.visible),
     ).toBe(true);
     for (let sheriff = 0; sheriff < 5; sheriff++)
       expect(raid.bandits.filter((a) => a.captor === sheriff)).toHaveLength(2);
-    for (let t = 8; t < RAID_DURATION; t += 0.1) {
-      raid.update(t);
+    for (let t = 8; t < RAID_DURATION * 2; t += 0.1) {
+      raid.update(t / 2);
       const actors = [...raid.bandits, ...raid.patrol].filter((a) => a.root.visible);
       for (const actor of actors) {
         const p = actor.root.position;
@@ -243,20 +243,20 @@ describe('A visible, articulated frontier encounter', () => {
       vi.fn(),
       cue,
     );
-    raid.update(8.21);
+    raid.update(8.21 / 2);
     expect(raid.bandits[0].flash.visible).toBe(true);
     expect(cue).toHaveBeenLastCalledWith(
       expect.objectContaining({ kind: 'bandit-shot', raidId: 7 }),
     );
-    raid.update(8.22);
+    raid.update(8.22 / 2);
     expect(cue).toHaveBeenCalledOnce();
-    raid.update(12.21);
+    raid.update(12.21 / 2);
     expect(cue).toHaveBeenLastCalledWith(expect.objectContaining({ kind: 'yeehaw' }));
-    raid.update(14.31);
+    raid.update(14.31 / 2);
     expect(raid.patrol[0].flash.visible).toBe(true);
     expect(cue).toHaveBeenLastCalledWith(expect.objectContaining({ kind: 'sheriff-shot' }));
     raid.dispose();
-    raid.update(15);
+    raid.update(15 / 2);
     expect(cue).toHaveBeenCalledTimes(3);
   });
   it('updates protection and adds a patrol without restarting the running raid', () => {
@@ -277,7 +277,7 @@ describe('A visible, articulated frontier encounter', () => {
       vi.fn(),
       complete,
     );
-    raid.update(12.5);
+    raid.update(12.5 / 2);
     expect(raid.bandits.some((actor) => actor.loot.visible)).toBe(true);
     const started = raid.started;
     raid.updateEvent({
@@ -287,7 +287,7 @@ describe('A visible, articulated frontier encounter', () => {
       outcome: 'protected',
       loss: 0,
     });
-    raid.update(13);
+    raid.update(13 / 2);
     expect(raid.started).toBe(started);
     expect(raid.patrol).toHaveLength(1);
     expect(raid.bandits.every((actor) => !actor.loot.visible)).toBe(true);
@@ -305,7 +305,7 @@ describe('A visible, articulated frontier encounter', () => {
       phase,
       vi.fn(),
     );
-    raid.update(14.5);
+    raid.update(14.5 / 2);
     expect(phase).toHaveBeenLastCalledWith('The law holds the line');
     expect(raid.patrol.filter((actor) => actor.root.visible)).toHaveLength(3);
     expect(raid.bandits.every((actor) => !actor.loot.visible)).toBe(true);

@@ -41,13 +41,33 @@ export const ERAS = [
     finale: 'A sunny garden. A welcoming stop. Another lovely day in town.',
   },
   {
+    id: 'aviation',
+    label: 'Aviation & Radio',
+    yearLabel: '1958',
+    enabled: true,
+    story:
+      'An airport on the western plain opens the skies. Radio connects Prospect Hollow to the wider world.',
+    horizon: 'A new horizon beyond the railway.',
+    finale: 'The runway is ready. The whole world feels closer.',
+  },
+  {
+    id: 'broadcast',
+    label: 'Music & Television',
+    yearLabel: '1986',
+    enabled: true,
+    story:
+      'A concert hall, television studios and a rising skyline bring music and bright screens to the city.',
+    horizon: 'The city finds its own rhythm.',
+    finale: 'Live music, bright screens and a skyline full of life.',
+  },
+  {
     id: 'contemporary',
-    label: 'Contemporary Crystal City',
+    label: 'Connected City',
     yearLabel: '2005',
     enabled: true,
     story:
-      'Electric trains, a library by the river and a crystal institute beside the old mine story. Six eras of care have made this city home.',
-    horizon: 'The crystals still have stories to tell.',
+      'Computers, internet cafés and a technology campus connect a modern skyline to the world. The old town remains at its heart.',
+    horizon: 'Prospect Hollow is going online.',
     finale: 'From the first well to the river promenade. This is our Prospect Hollow.',
   },
 ];
