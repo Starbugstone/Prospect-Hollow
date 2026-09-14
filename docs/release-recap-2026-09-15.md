@@ -1,6 +1,6 @@
 # Review for tomorrow: develop, current release A, and proposed future events
 
-Prepared after the 14 September 2026 work, finishing overnight on 15 September
+Prepared for review on 15 September 2026 after the work on 14 September
 (Europe/Paris). The comparison baseline is remote `main` at
 `6823bdf34b4076917cfe9b4a6b859dbe63818b2c`. The release is on lowercase `develop`;
 this is not a merge or deployment to `main`.
