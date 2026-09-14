@@ -1,7 +1,7 @@
+import { isCityEra } from '../../data/city';
 import { TownRenderQuality } from './TownRenderQuality';
 import { renderCityBuilding } from './buildings/city';
 import { bridgeDeckHeight } from './TownRiver';
-import { eraBuildingLevel } from './TownEras';
 import { buildingServiceLevel } from '../../data/buildingProgression';
 import { TownUpgradeGlow } from './TownUpgradeGlow';
 import * as THREE from 'three';
@@ -797,7 +797,7 @@ export class TownDiorama {
     this.ball(head, 0, 0.045, -0.03, [0.123, 0.12, 0.097], '#73563d');
     this.ball(head, 0, -0.005, 0.111, [0.022, 0.028, 0.025], skin);
     for (const x of [-0.044, 0.044]) this.ball(head, x, 0.025, 0.105, 0.012, '#39392f');
-    if (['post-war', 'contemporary'].includes(era)) {
+    if (isCityEra(era)) {
       this.ball(head, 0, 0.11, -0.005, [0.135, 0.065, 0.12], hat);
       this.box(head, 0.17, 0.025, 0.11, 0, 0.11, 0.105, hat, true);
     } else {
@@ -1022,17 +1022,7 @@ export class TownDiorama {
             id === 'mine' || id === goal || this.town.buildings[id] || this.town.projects[id],
         )
       : this.anchors;
-    const visible = this.raid
-      ? eventKind(this.raid.event) !== 'bandits'
-        ? [...this.raid.event.targets, this.raid.responder].map((id) => ({ id }))
-        : [
-            { id: 'mine' },
-            { id: 'bank' },
-            { id: 'shop' },
-            ...(this.raid.phase === 'Back to the open trail' ? [{ id: 'sheriff' }] : []),
-          ]
-      : framing;
-    for (const { id } of visible) {
+    for (const { id } of framing) {
       const [x, z] = PLOTS[id];
       if (id === 'airport') {
         for (const dx of [-10, 10])

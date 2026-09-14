@@ -306,7 +306,7 @@ export function finishConstruction(town, id, expectedStage) {
   };
 }
 
-export const totalLevels = (town, kind) =>
+const totalLevels = (town, kind) =>
   BUILDINGS.filter((b) => b.kind === kind).reduce(
     (sum, b) => sum + buildingServiceLevel(b.id, town.buildings[b.id] ?? 0),
     0,
@@ -393,8 +393,7 @@ export const happiness = (town) => {
     ),
   );
 };
-export const development = (town) =>
-  Object.values(town.buildings).reduce((sum, level) => sum + level, 0);
+const development = (town) => Object.values(town.buildings).reduce((sum, level) => sum + level, 0);
 export const roadLevel = (town) =>
   development(town) >= 24 ? 3 : development(town) >= 12 ? 2 : development(town) >= 3 ? 1 : 0;
 // Completed buildings and paid projects stay accessible when unlock rules change.
@@ -406,8 +405,8 @@ export function plotUnlocked(town, id) {
   return plotInEra(town, id) && !plotRequirement(town, id);
 }
 export const HOUR_MS = 3_600_000;
-export const INCOME_HOURS_CAP = 8;
-export const COLLECTION_COOLDOWN_MS = 30_000;
+const INCOME_HOURS_CAP = 8;
+const COLLECTION_COOLDOWN_MS = 30_000;
 export function collectionCooldownRemaining(town, id, now = Date.now()) {
   const collectedAt = town.lastCollections?.[id];
   if (!Number.isSafeInteger(collectedAt) || collectedAt < 0) return 0;
@@ -657,7 +656,7 @@ export function raidReady(town) {
     (!previous || previous.seen)
   );
 }
-export const CAPTURE_BOUNTY = 10;
+const CAPTURE_BOUNTY = 10;
 export const raidBounty = (event) =>
   !civicIncident(eventKind(event)) && event?.outcome === 'protected' && event.loss === 0
     ? Math.min(event.gangSize, event.sheriffLevel * 2) * CAPTURE_BOUNTY

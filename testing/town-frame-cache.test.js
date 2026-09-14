@@ -144,3 +144,32 @@ it('stops animation and requests the playable fallback when drawing fails', () =
   expect(view.renderer.setAnimationLoop).toHaveBeenCalledWith(null);
   expect(view.onUnavailable).toHaveBeenCalledWith(error);
 });
+
+it('validates GPU attachments on allocation and resize, without synchronizing every camera frame', () => {
+  let width = 390;
+  const gl = {
+    FRAMEBUFFER: 1,
+    FRAMEBUFFER_COMPLETE: 2,
+    isContextLost: () => false,
+    checkFramebufferStatus: vi.fn(() => 2),
+  };
+  const renderer = {
+    autoClear: true,
+    getContext: () => gl,
+    getDrawingBufferSize: (size) => size.set(width, 480),
+    setRenderTarget: vi.fn(),
+    render: vi.fn(),
+  };
+  const cache = new TownFrameCache(renderer),
+    scene = new Scene(),
+    camera = new PerspectiveCamera();
+  for (let i = 0; i < 120; i++) {
+    cache.valid = false;
+    cache.render(scene, camera);
+  }
+  expect(gl.checkFramebufferStatus).toHaveBeenCalledTimes(1);
+  width = 844;
+  cache.render(scene, camera);
+  expect(gl.checkFramebufferStatus).toHaveBeenCalledTimes(2);
+  cache.dispose();
+});

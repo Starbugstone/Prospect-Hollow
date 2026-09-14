@@ -463,7 +463,7 @@
         <p class="town-service">
           {{
             t(
-              ['post-war', 'contemporary'].includes(town.era)
+              isCityEra(town.era)
                 ? 'Every city building has 3 levels. Existing services stay open during modernization.'
                 : town.era === 'motor-age'
                   ? 'Every Motor Age building has 3 levels. Each construction takes at most 2 mining runs.'
@@ -583,6 +583,8 @@
   </main>
 </template>
 <script setup>
+import { isCityEra } from '../../data/city';
+
 import { motorTraffic, modernTransport } from '../../game/town/TownEvolution';
 import { civicIncident } from '../../data/townEvents';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';

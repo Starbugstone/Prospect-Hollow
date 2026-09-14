@@ -2,7 +2,7 @@ import { beforeEach, afterEach, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { BUILDINGS, createTown, BANDIT_EVENT } from '../src/data/town';
 import { ERAS } from '../src/data/eras';
-import { CITY_BUILDINGS } from '../src/data/city';
+import { CITY_BUILDINGS, CITY_ERAS } from '../src/data/city';
 import { hasElectricity } from '../src/data/industrial';
 import { LEVEL_COUNT } from '../src/data/campaign';
 import { eraIndex, plotInEra, advanceEra, isEraComplete, eraGate } from '../src/game/town/TownEras';
@@ -79,7 +79,7 @@ it('orders rebuilding after Electric and before cars, with two saved, idempotent
     expect(c.town.transition.pending).toBe(false);
   }
 });
-it.each(['post-war', 'contemporary'])(
+it.each(CITY_ERAS)(
   'preserves every established service during all three %s modernization stages',
   (era) => {
     const prev = ERAS[eraIndex(era) - 1].id;

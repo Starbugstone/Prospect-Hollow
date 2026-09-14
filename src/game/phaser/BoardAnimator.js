@@ -11,7 +11,7 @@ import {
   MULTI_MATCH_COIN_STEP,
 } from '../engine/MatchRewards';
 
-export const MOTION = Object.freeze({ swap: 115, reject: 75, clear: 90, fall: 190, intro: 260 });
+const MOTION = Object.freeze({ swap: 115, reject: 75, clear: 90, fall: 190, intro: 260 });
 
 export class BoardAnimator {
   constructor({

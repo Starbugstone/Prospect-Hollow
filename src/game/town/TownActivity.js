@@ -1,4 +1,4 @@
-import { routePose } from './TownRoutes';
+import { prepareRoute, routePose } from './TownRoutes';
 import * as THREE from 'three';
 import { roadLevel, population } from './TownRules';
 import { LANE_X, townTracks, atPlot, plotStreet } from './TownLayout';
@@ -229,7 +229,7 @@ export function addTownVisitors(d, town) {
 
 export const RAID_DURATION = 24;
 export const RAID_SPEED = 2;
-export const raidPhase = (time, protectedTown) =>
+const raidPhase = (time, protectedTown) =>
   time < 8
     ? 'Riders on the ridge'
     : time < 12
@@ -291,6 +291,16 @@ export class TownRaid {
       dust.userData.animated = true;
       return dust;
     });
+    this.banditPaths = this.bandits.map((_, n) => {
+      const stop = this.slot(n);
+      const entry = [[22 + n * 2.5, this.mine[1] + 3.5], [stop[0], this.mine[1] + 3.5], stop];
+      return {
+        entry: prepareRoute(entry),
+        exit: prepareRoute([...entry].reverse()),
+        escort: prepareRoute([stop, ...this.escort(n % this.columns)]),
+        hold: prepareRoute([stop, [stop[0], stop[1] + 1]]),
+      };
+    });
     this.update(d.elapsed);
   }
   updateEvent(event) {
@@ -304,6 +314,19 @@ export class TownRaid {
           hat: '#f0d390',
         }),
       );
+    this.patrolPaths = this.patrol.map((_, n) => {
+      const route = this.escort(n),
+        line = this.line(n);
+      return {
+        escort: prepareRoute(route),
+        entry: prepareRoute([...route].reverse()),
+        hold: prepareRoute([line, [line[0], line[1] - 1]]),
+      };
+    });
+    this.arrivalSpeed = Math.max(
+      5.5,
+      ...this.patrolPaths.map((path, n) => path.entry.total / (16.5 - 8 - n * 0.8)),
+    );
   }
   slot(n) {
     return [
@@ -323,11 +346,6 @@ export class TownRaid {
       [LANE_X, this.sheriff[1] + 2.1],
       [this.sheriff[0] + 0.8, this.sheriff[1] + 2.1],
     ];
-  }
-  pathLength(points) {
-    return points
-      .slice(1)
-      .reduce((sum, p, i) => sum + Math.hypot(p[0] - points[i][0], p[1] - points[i][1]), 0);
   }
   travel(actor, points, distance) {
     const pose = routePose(points, distance);
@@ -362,29 +380,17 @@ export class TownRaid {
         ? Math.min(event.gangSize, this.patrol.length * 2)
         : Math.min(Math.floor(event.gangSize / 2), this.patrol.length);
     this.patrol.forEach((actor, n) => {
-      const line = this.line(n),
-        route = this.escort(n),
+      const path = this.patrolPaths[n],
         depart = 22 + n * 3;
-      const entry = [...route].reverse();
       const arrival = 8 + n * 0.8;
       let moving = false;
       actor.root.visible = time >= arrival;
       if (time < 17)
-        moving = this.travel(
-          actor,
-          entry,
-          Math.max(0, time - arrival) *
-            Math.max(
-              5.5,
-              ...this.patrol.map(
-                (_, index) => this.pathLength(this.escort(index)) / (16.5 - 8 - index * 0.8),
-              ),
-            ),
-        );
+        moving = this.travel(actor, path.entry, Math.max(0, time - arrival) * this.arrivalSpeed);
       else if (time < depart) {
-        this.travel(actor, [line, [line[0], line[1] - 1]], 0);
+        this.travel(actor, path.hold, 0);
       } else {
-        actor.root.visible = this.travel(actor, route, (time - depart) * 4);
+        actor.root.visible = this.travel(actor, path.escort, (time - depart) * 4);
         moving = actor.root.visible;
       }
       const aiming = time >= 14 && time < 17;
@@ -396,29 +402,23 @@ export class TownRaid {
       if (n === 0) this.cue('law-call', 12.2, time, 'yeehaw', actor);
     });
     this.bandits.forEach((actor, n) => {
-      const stop = this.slot(n),
+      const path = this.banditPaths[n],
         col = n % this.columns,
         row = Math.floor(n / this.columns);
-      const entry = [[22 + n * 2.5, this.mine[1] + 3.5], [stop[0], this.mine[1] + 3.5], stop];
       const caught = n < caughtCount && col < this.patrol.length;
       const captureAt = 17 + row * 1.2 + col * 0.15;
       actor.captured = caught && time >= captureAt;
       actor.captor = caught ? col : null;
       actor.root.visible = true;
       let moving = false;
-      if (time < 8) moving = this.travel(actor, entry, time * 6.8);
+      if (time < 8) moving = this.travel(actor, path.entry, time * 6.8);
       else if (caught && time >= 22 + col * 3) {
-        const route = [stop, ...this.escort(col)];
         moving = true;
-        actor.root.visible = this.travel(actor, route, (time - 22 - col * 3) * 4);
+        actor.root.visible = this.travel(actor, path.escort, (time - 22 - col * 3) * 4);
       } else if (!caught && time >= 19 + (1 - row) * 1.1) {
         moving = true;
-        actor.root.visible = this.travel(
-          actor,
-          [...entry].reverse(),
-          (time - 19 - (1 - row) * 1.1) * 6.8,
-        );
-      } else this.travel(actor, [stop, [stop[0], stop[1] + 1]], 0);
+        actor.root.visible = this.travel(actor, path.exit, (time - 19 - (1 - row) * 1.1) * 6.8);
+      } else this.travel(actor, path.hold, 0);
       const aiming = time >= 8 && time < 14;
       actor.animate(time + n, moving, aiming, actor.captured && time < 22 + col * 3);
       actor.flash.visible = false;

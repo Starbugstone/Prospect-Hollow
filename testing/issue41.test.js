@@ -219,6 +219,7 @@ it('restores the camera immediately when reduced motion stops the event clock', 
     elapsed: 0,
     overview: true,
     motionEnabled: true,
+    frameCache: { valid: true },
   };
   d.camera.position.set(12, 12, 25);
   beginEventCamera(d);
@@ -226,6 +227,33 @@ it('restores the camera immediately when reduced motion stops the event clock', 
   d.motionEnabled = false;
   restoreEventCamera(d);
   expect(d.camera.position.toArray()).toEqual([12, 12, 25]);
+  expect(d.frameCache.valid).toBe(false);
   expect(d.eventCamera).toBeNull();
   expect(d.controls.enabled).toBe(true);
+});
+
+it('reuses the scenery cache once an event camera settles and redraws when its target changes', () => {
+  const d = {
+    camera: new PerspectiveCamera(40, 1.6, 0.1, 400),
+    controls: { target: new Vector3(), enabled: true },
+    frameCache: { valid: true },
+    elapsed: 0,
+    raid: { target: 'blacksmith', event: { targets: ['blacksmith'] } },
+  };
+  d.camera.position.set(40, 30, 50);
+  beginEventCamera(d);
+  for (let i = 0; i < 720; i++) {
+    d.elapsed = i / 60;
+    updateEventCamera(d);
+  }
+  for (let i = 720; i < 960; i++) {
+    d.frameCache.valid = true;
+    d.elapsed = i / 60;
+    updateEventCamera(d);
+    expect(d.frameCache.valid).toBe(true);
+  }
+  d.raid.target = 'warehouse';
+  d.elapsed += 1 / 60;
+  updateEventCamera(d);
+  expect(d.frameCache.valid).toBe(false);
 });

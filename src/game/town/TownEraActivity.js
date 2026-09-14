@@ -4,7 +4,7 @@ import { RIVER, riverCenterX } from './TownRiver';
 import { PLOTS, RAIL_EDGE, railEdges, routeBetween, plotStreet } from './TownLayout';
 import { modernTransport } from './TownEvolution';
 
-export const RAIL_HEIGHT = 0.18;
+const RAIL_HEIGHT = 0.18;
 export const railHeight = (x) => {
   const p = Math.max(0, Math.min(1, (16 - Math.abs(x - riverCenterX(RAIL_EDGE.from[1]))) / 11));
   return RAIL_HEIGHT + 2.5 * p * p * (3 - 2 * p);

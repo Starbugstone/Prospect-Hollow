@@ -20,13 +20,14 @@ export function addAviationActivity(d, town) {
   const plane = futureModel(d, d.world, 'airplane');
   plane.name = 'Regional passenger plane';
   plane.userData.animated = true;
+  const propellers = ['propellerLeft', 'propellerRight'].map((name) => plane.getObjectByName(name));
   const update = (time) => {
     const pose = airplanePose(time);
+    plane.visible = pose.visible;
+    if (!pose.visible) return;
     plane.position.set(AIRPORT.runwayX, pose.y, pose.z);
     plane.rotation.x = pose.pitch;
-    plane.visible = pose.visible;
-    for (const name of ['propellerLeft', 'propellerRight'])
-      plane.getObjectByName(name).rotation.z = time * 18;
+    for (const propeller of propellers) propeller.rotation.z = time * 18;
   };
   update(0);
   d.motions.push(update);

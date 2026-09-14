@@ -57,11 +57,7 @@
           <path d="M0-18v13" stroke="currentColor" stroke-width="9" />
           <circle cy="-24" r="5" fill="#d7a577" />
           <path
-            :d="
-              ['post-war', 'contemporary'].includes(town.era)
-                ? 'M-5-28H8M-4-28q0-7 8-2'
-                : 'M-8-28H8M-4-29v-4h8v4'
-            "
+            :d="isCityEra(town.era) ? 'M-5-28H8M-4-28q0-7 8-2' : 'M-8-28H8M-4-29v-4h8v4'"
             stroke="#9c7b4f"
             stroke-width="3"
           />
@@ -543,6 +539,8 @@
   </div>
 </template>
 <script setup>
+import { isCityEra } from '../../data/city';
+
 import { t } from '../../i18n';
 import { hasElectricity, ELECTRIC_LAMPS } from '../../data/industrial';
 import {

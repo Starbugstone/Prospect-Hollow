@@ -66,7 +66,7 @@ export const AIRPORT = {
   startZ: -15,
   endZ: 23,
 };
-export const PLOT_METADATA = Object.fromEntries(
+const PLOT_METADATA = Object.fromEntries(
   Object.entries(PLOTS).map(([id, position]) => [
     id,
     {
@@ -134,7 +134,7 @@ export const TOWN_TRACKS = [
     .filter((id) => id !== 'bridge' && PLOTS[id][0] < 35)
     .map((id) => road(atPlot(id, 0, id === 'mine' ? 2.6 : 2), plotStreet(id), 0.75, id)),
 ];
-export const CROSSING = {
+const CROSSING = {
   ...road([24, 7.5], [38, 7.5], 1.6),
   id: 'bridge-crossing',
   crossing: 'bridge',

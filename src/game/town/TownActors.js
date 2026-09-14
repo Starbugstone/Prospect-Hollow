@@ -36,7 +36,12 @@ export class TownActors {
       mesh.frustumCulled = false;
       mesh.receiveShadow = true;
       this.group.add(mesh);
-      this.buckets.push({ mesh, objects, colored, colors: [] });
+      this.buckets.push({
+        mesh,
+        objects,
+        colored,
+        colors: new Float64Array(objects.length * 3).fill(NaN),
+      });
     }
     this.update();
   }
@@ -57,10 +62,16 @@ export class TownActors {
           mesh.setMatrixAt(count, object.matrixWorld);
           if (colored) {
             const color = object.material.color;
-            const stamp = `${color.r},${color.g},${color.b}`;
-            if (colors[count] !== stamp) {
+            const offset = count * 3;
+            if (
+              colors[offset] !== color.r ||
+              colors[offset + 1] !== color.g ||
+              colors[offset + 2] !== color.b
+            ) {
               mesh.setColorAt(count, color);
-              colors[count] = stamp;
+              colors[offset] = color.r;
+              colors[offset + 1] = color.g;
+              colors[offset + 2] = color.b;
               colorsChanged = true;
             }
           }

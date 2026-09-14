@@ -84,7 +84,7 @@ function trackDistance(x, z) {
 
 // Check the whole sightline, including foreground parcels. Clearing the ground
 // directly beneath the camera alone still lets a ridge hide the village at wide zoom.
-export function terrainBlocksView(position, focus) {
+function terrainBlocksView(position, focus) {
   const steps = Math.max(1, Math.ceil(position.distanceTo(focus) / 2));
   for (let step = 1; step <= steps; step++) {
     const t = step / steps;

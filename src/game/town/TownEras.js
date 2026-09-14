@@ -11,7 +11,7 @@ export const plotInEra = (town, id) => {
   const plot = BUILDING_BY_ID[id];
   return !!plot && eraIndex(plot.introducedEra) <= eraIndex(town.era ?? FRONTIER_ERA);
 };
-export const ERA_BUILDING_LEVELS = 3;
+const ERA_BUILDING_LEVELS = 3;
 export const eraBuildingLevel = (town, id) => {
   if (town.era === 'frontier' || BUILDING_BY_ID[id]?.introducedEra === town.era)
     return town.buildings[id] ?? 0;

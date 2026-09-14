@@ -249,7 +249,7 @@ export const CHEST_TIERS = [
 ];
 export const getChestTier = (score, target) =>
   target > 0 ? [...CHEST_TIERS].reverse().find((tier) => score >= target * tier.multiplier) : null;
-export const SPEED_CHEST_TIERS = CHEST_TIERS.map((tier, index) => ({
+const SPEED_CHEST_TIERS = CHEST_TIERS.map((tier, index) => ({
   ...tier,
   timeMultiplier: [1, 0.75, 0.5][index],
 }));

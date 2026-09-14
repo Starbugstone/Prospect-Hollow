@@ -2,8 +2,8 @@ import { GEM_TYPES } from '../engine/GemFactory';
 import { GEM_FINISHES } from '../../data/gemAppearance';
 
 export const BONUS_TYPES = ['bomb', 'rainbow', 'cross'];
-export const BONUS_FRAME_SIZE = 192;
-export const BONUS_FRAME_COUNT = 8;
+const BONUS_FRAME_SIZE = 192;
+const BONUS_FRAME_COUNT = 8;
 
 // Vector art is rasterized once at load time; animation uses a single GPU atlas.
 export function preloadSpriteAssets(scene) {

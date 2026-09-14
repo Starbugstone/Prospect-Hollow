@@ -1,4 +1,4 @@
-import { routePose } from './TownRoutes';
+import { prepareRoute, routePose } from './TownRoutes';
 import { motorVehicle } from './TownVehicles';
 import { cityModel } from './buildings/city';
 import { eventKind, incidentPhases, civicIncident } from '../../data/townEvents';
@@ -6,7 +6,7 @@ import { bridgeDeckHeight } from './TownRiver';
 import { PLOTS, plotStreet, routeBetween } from './TownLayout';
 
 export const INCIDENT_DURATION = 16;
-export const INCIDENT_SPEED = 26 / INCIDENT_DURATION;
+const INCIDENT_SPEED = 26 / INCIDENT_DURATION;
 const ease = (value) => {
   const t = Math.max(0, Math.min(1, value));
   return t * t * (3 - 2 * t);
@@ -29,6 +29,7 @@ export class TownEraIncident {
     this.responder = civic && d.town.buildings.fireStation ? 'fireStation' : 'sheriff';
     this.route = routeBetween(d.town, plotStreet(this.responder), plotStreet(this.target));
     if (this.route.length < 2) this.route = [plotStreet(this.target), plotStreet(this.target)];
+    this.path = prepareRoute(this.route);
     this.crew = Array.from({ length: 3 }, (_, seed) =>
       d.person({
         parent: this.root,
@@ -98,12 +99,8 @@ export class TownEraIncident {
     this.event = event;
   }
   travel(actor, progress, offset = 0) {
-    const lengths = this.route
-      .slice(1)
-      .map((p, i) => Math.hypot(p[0] - this.route[i][0], p[1] - this.route[i][1]));
-    const distance =
-      Math.max(0, Math.min(1, progress)) * lengths.reduce((sum, length) => sum + length, 0);
-    const pose = routePose(this.route, distance);
+    const distance = Math.max(0, Math.min(1, progress)) * this.path.total;
+    const pose = routePose(this.path, distance);
     actor.root.position.set(pose.x, 0.07, pose.z);
     actor.root.rotation.y = pose.heading;
     actor.root.translateX(offset);

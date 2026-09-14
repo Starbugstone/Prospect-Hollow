@@ -1,3 +1,4 @@
+import { ERAS } from '../src/data/eras';
 import { afterEach, expect, it, vi } from 'vitest';
 import { MeshBasicMaterial, Scene } from 'three';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
@@ -103,7 +104,7 @@ it('rebuilds an interrupted reveal and invalidates models for progress, labels, 
   expect(view.plotCache.get('mine').group).not.toBe(mine);
 });
 
-it.each(['frontier', 'river-rail', 'industrial', 'motor-age', 'post-war', 'contemporary'])(
+it.each(ERAS.map((era) => era.id))(
   'retains real %s plot geometry across updates and releases removed plots',
   (era) => {
     const { view, town, labels } = fixture();
@@ -133,7 +134,7 @@ it.each(['frontier', 'river-rail', 'industrial', 'motor-age', 'post-war', 'conte
   },
 );
 
-it.each(['frontier', 'river-rail', 'industrial', 'motor-age', 'post-war', 'contemporary'])(
+it.each(ERAS.map((era) => era.id))(
   'keeps unrelated %s scenery and GPU buffers through a construction cycle',
   (era) => {
     const { view, town, labels } = fixture();
