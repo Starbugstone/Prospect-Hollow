@@ -523,7 +523,7 @@ export function buildingIndicators(town, forgeCollectible = true, now = Date.now
 export const availablePurchases = (town, builderHammers = 0) =>
   BUILDINGS.map((place) => ({ ...place, offer: upgradeOffer(town, place.id) }))
     .filter(({ offer }) => offer?.available && (town.coins >= offer.cost || builderHammers > 0))
-    .sort((a, b) => Number(town.coins < a.offer.cost) - Number(town.coins < b.offer.cost));
+    .sort((a, b) => a.offer.cost - b.offer.cost);
 
 export const availableParcels = (town, builderHammers = 0) => [
   ...BUILDINGS.filter(({ id }) => plotInEra(town, id) && constructionReady(town.projects[id])).map(

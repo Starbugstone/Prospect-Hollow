@@ -1967,45 +1967,40 @@ html:has(.town-museum[open]) {
 }
 
 .town-progress-button {
-  display: none;
-}
-.town-progress-dialog .town-dialog-content {
-  padding: 0 0 env(safe-area-inset-bottom);
-}
-.town-dialog.town-progress-dialog .village-next {
-  display: block;
-  z-index: auto;
-  border-top: 0;
-}
-.town-progress-dialog .village-next .journey-trail {
+  position: absolute;
+  right: 12px;
+  top: 112px;
+  z-index: 6;
   display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 1px solid #a99b76;
+  border-radius: 12px;
+  color: #405b4c;
+  background: #fff9e9ee;
+  box-shadow: 0 3px 14px #54452d1c;
+  font-size: 13px;
+  font-weight: 700;
 }
-@media (max-width: 900px), (max-height: 500px) {
-  .town-map-frame > .village-next.village-next-inline {
-    display: none;
-  }
-  .town-progress-button {
-    position: absolute;
-    right: 12px;
-    bottom: calc(72px + env(safe-area-inset-bottom));
-    z-index: 6;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    min-height: 44px;
-    padding: 6px 12px;
-    border: 1px solid #a99b76;
-    border-radius: 12px;
-    color: #405b4c;
-    background: #fff9e9ee;
-    box-shadow: 0 3px 14px #54452d1c;
-    font-size: 13px;
-    font-weight: 700;
-  }
-  .town-progress-button img {
-    width: 26px;
-    height: 26px;
-  }
+.town-progress-button img {
+  width: 26px;
+  height: 26px;
+}
+.town-fullscreen .town-progress-button {
+  top: max(112px, calc(env(safe-area-inset-top) + 112px));
+}
+.town-fullscreen > .village-next-inline {
+  max-height: 48%;
+  overflow-y: auto;
+}
+.town-plot-hammer {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 8px;
+  border-left: 1px solid #c6c3a6;
 }
 
 .town-has-raid .town-fullscreen-button {

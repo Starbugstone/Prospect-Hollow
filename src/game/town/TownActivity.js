@@ -124,7 +124,9 @@ export function addTownRoads(d, town, plots) {
   const paved = pavedTown(town);
   roads.name = paved ? 'Paved village roads' : 'Village dirt tracks';
   // Slightly uneven edges keep the tracks narrow and worn, with prairie between lots.
-  for (const [index, { from, to, width }] of townTracks(town).entries()) {
+  for (const [index, { from, to, width, crossing }] of townTracks(town).entries()) {
+    // The bridge model supplies the elevated deck; a flat road would cut across the water.
+    if (crossing) continue;
     const length = Math.hypot(to[0] - from[0], to[1] - from[1]);
     const steps = Math.max(2, Math.ceil(length * 2));
     const shape = new THREE.Shape();
@@ -147,7 +149,7 @@ export function addTownRoads(d, town, plots) {
     roads.add(track);
   }
   for (const [id, [x, z]] of Object.entries(plots)) {
-    if (id === 'mine' || !town.buildings[id]) continue;
+    if (id === 'mine' || id === 'bridge' || !town.buildings[id]) continue;
     if (level >= 2 && id !== 'well' && id !== 'well2') {
       for (let i = 0; i < 16; i++)
         d.box(

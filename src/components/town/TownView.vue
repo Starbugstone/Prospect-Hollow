@@ -204,6 +204,8 @@
         />
         <TownNextStep
           v-if="!activeRaid && !town.transition?.pending"
+          id="village-progress"
+          v-show="progressOpen"
           class="village-next-inline"
           :town="town"
           :hammers="campaign.builderHammers"
@@ -215,11 +217,13 @@
         <button
           v-if="!activeRaid && !town.transition?.pending"
           class="town-progress-button"
-          aria-haspopup="dialog"
-          :aria-expanded="dialogMode === 'progress'"
-          @click="dialogMode = 'progress'"
+          aria-controls="village-progress"
+          :aria-expanded="progressOpen"
+          @click="progressOpen = !progressOpen"
         >
-          <img src="/art/rewards/era-compass.svg" alt="" />{{ t('Progress') }}
+          <img src="/art/rewards/era-compass.svg" alt="" />{{
+            t(progressOpen ? 'Hide progress' : 'Progress')
+          }}
         </button>
         <p v-if="forgeCollected" class="town-construction-tip" role="status">
           {{ t('Collected 1 TNT · added to your armory') }}
@@ -284,27 +288,15 @@
         t(
           dialogMode === 'story'
             ? 'Village story'
-            : dialogMode === 'progress'
-              ? 'Your next village step'
-              : dialogMode === 'directory'
-                ? 'Choose a plot'
-                : 'Your town',
+            : dialogMode === 'directory'
+              ? 'Choose a plot'
+              : 'Your town',
         )
       "
-      :close-label="dialogMode === 'progress' ? 'Close village progress' : 'Close building details'"
-      :class="{ 'town-progress-dialog': dialogMode === 'progress' }"
+      close-label="Close building details"
       @close="closeDialog"
     >
-      <TownNextStep
-        v-if="dialogMode === 'progress'"
-        :town="town"
-        :hammers="campaign.builderHammers"
-        @select="selectBuilding"
-        @inspect="inspectBuilding"
-        @mine="goMining"
-        @advance-era="beginEra"
-      />
-      <template v-else-if="dialogMode === 'story'">
+      <template v-if="dialogMode === 'story'">
         <section class="town-story-stats" :aria-label="t('Village overview')">
           <h2>{{ t('Village overview') }}</h2>
           <dl>
@@ -422,7 +414,7 @@
         <p class="town-directory-hint">
           {{
             t(
-              'Select a parcel to open its building card. Select ready construction to finish it and keep this list open. Collect resources by tapping buildings in the town.',
+              'Select a row to finish construction or buy with the coins or hammer shown. This list stays open. Collect resources by tapping buildings in the town.',
             )
           }}
         </p>
@@ -448,13 +440,6 @@
               ✦ {{ t('Ready to finish') }}
             </span>
             <span
-              v-else-if="town.coins < place.offer.cost"
-              class="town-plot-price"
-              :aria-label="t('1 builder hammer')"
-            >
-              <img src="/art/rewards/builder-hammer.svg" alt="" /> 1
-            </span>
-            <span
               v-else
               class="town-plot-price"
               :aria-label="
@@ -465,6 +450,13 @@
             >
               <TownIcon v-if="place.offer.cost" name="coin" />
               {{ place.offer.cost ? number(place.offer.cost) : t('Free') }}
+              <span
+                v-if="town.coins < place.offer.cost"
+                class="town-plot-hammer"
+                :aria-label="t('1 builder hammer')"
+              >
+                <img src="/art/rewards/builder-hammer.svg" alt="" /> 1
+              </span>
             </span>
           </button>
         </section>
@@ -489,7 +481,11 @@
             <button
               v-for="place in currentEraPlots"
               :key="place.id"
-              @click="selectParcel(place.id)"
+              @click="
+                constructionReady(town.projects[place.id])
+                  ? finishBuilding(place.id, true)
+                  : inspectBuilding(place.id)
+              "
             >
               <span>{{ t(place.shortName) }}</span>
               <small>{{
@@ -650,6 +646,7 @@ const campaign = useCampaignStore(),
   settings = useSettingsStore();
 const game = useGameStore();
 const town = computed(() => campaign.town);
+const progressOpen = ref(!window.matchMedia('(max-width: 900px), (max-height: 500px)').matches);
 const tourOpen = ref(!campaign.town.tourSeen),
   fullscreen = ref(false),
   mapFrame = ref(null),
@@ -963,7 +960,13 @@ function ringBell() {
 }
 function selectParcel(id) {
   if (constructionReady(town.value.projects[id])) finishBuilding(id, true);
-  else inspectBuilding(id);
+  else {
+    const offer = upgradeOffer(town.value, id);
+    if (!offer?.available) return;
+    selected.value = id;
+    if (town.value.coins >= offer.cost) repair(offer.stage, true);
+    else useHammer(offer.stage, true);
+  }
 }
 async function inspectBuilding(id) {
   if (!Object.hasOwn(BUILDING_BY_ID, id)) return;
@@ -1004,9 +1007,9 @@ function plotStatus(place) {
       })
     : t('Empty plot');
 }
-function repair(stage) {
+function repair(stage, keepDirectory = false) {
   if (!campaign.upgradeBuilding(selected.value, stage)) return;
-  showConstruction();
+  showConstruction(keepDirectory);
   const complete = !town.value.projects[selected.value];
   const puzzles = town.value.projects[selected.value]?.required ?? 0;
   announcement.value = t(
@@ -1057,9 +1060,9 @@ function celebrateBuilding() {
     building: t(BUILDING_BY_ID[selected.value].shortName),
   });
 }
-function useHammer(stage) {
+function useHammer(stage, keepDirectory = false) {
   if (!campaign.useBuilderHammer(selected.value, stage)) return;
-  showConstruction();
+  showConstruction(keepDirectory);
   celebrateBuilding();
 }
 

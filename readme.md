@@ -42,6 +42,16 @@ npm run format:check  # Check source formatting
 npm run assets        # Regenerate gem, bonus, power and ice artwork
 ```
 
+## Testing resources from the console
+
+Open the running game's browser developer console and run:
+
+```js
+prospectDebug.grant({ coins: 100000, hammers: 5 });
+```
+
+This adds 100,000 coins, tops up builder hammers to their normal cap of 5, saves immediately, and returns the new balances. Run it again whenever you need more resources. Change `coins` or `hammers` to choose the amounts; `prospectDebug.grant()` uses the same defaults. The command is available in development and built previews.
+
 ## Playing
 
 Swipe a gem, or tap two neighboring gems. Match at least three to break the ice underneath them. Fresh ice has frosted edges; damaged ice cracks, then shatters to reveal a dark cleared tile. Four in a line creates a sparking bomb; five creates a rotating rainbow orb; a T or L match creates a pulsing cross launcher. Swipe a bonus to activate it, or double-tap/double-click it to activate in place. Clear every ice layer and stone block to finish the level; the score target and best cascade determine extra stars.

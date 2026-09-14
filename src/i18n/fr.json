@@ -1927,5 +1927,7 @@
   "City response crew": "Équipe municipale",
   "Storm protection": "Protection contre les tempêtes",
   "Cleanup: {coins} coins": "Nettoyage : {coins} pièces",
-  "The response crew kept every coin safe. All buildings remain open.": "Les secours ont protégé toutes les pièces. Tous les bâtiments restent ouverts."
+  "The response crew kept every coin safe. All buildings remain open.": "Les secours ont protégé toutes les pièces. Tous les bâtiments restent ouverts.",
+  "Hide progress": "Masquer la progression",
+  "Select a row to finish construction or buy with the coins or hammer shown. This list stays open. Collect resources by tapping buildings in the town.": "Sélectionnez une ligne pour terminer les travaux ou acheter avec les pièces ou le marteau affichés. Cette liste reste ouverte. Récupérez les ressources en touchant les bâtiments du village."
 }

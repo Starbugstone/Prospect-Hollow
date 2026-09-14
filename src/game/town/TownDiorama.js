@@ -157,7 +157,14 @@ export class TownDiorama {
       // A building tap also starts an OrbitControls gesture. Only camera movement
       // should stop framing the town when a newly unlocked parcel expands it.
       if (this.cameraGesture && !this.framingTown) this.overview = false;
-      if (keepCameraAboveTerrain(this.camera.position, this.controls.target))
+      if (
+        keepCameraAboveTerrain(
+          this.camera.position,
+          this.controls.target,
+          this.controls.minPolarAngle,
+          this.terrainViewTargets,
+        )
+      )
         this.controls.update();
       // Pointer events can arrive faster than frames. Render only the latest pose.
       if (!this.cameraFrame)
@@ -315,6 +322,11 @@ export class TownDiorama {
     this.targets = [];
     this.anchors = [];
     this.town = town;
+    // Protect actual parcel foundations; rectangle corners can lie on a hill
+    // outside the irregular settlement and force a needless overhead view.
+    this.terrainViewTargets = visiblePlots(town)
+      .filter(({ id }) => id !== 'bridge')
+      .map(({ position: [x, z] }) => point(x, 0.2, z));
     this.guidedPlot = nextGoal(town)?.id;
     addTownRoads(this, town, PLOTS);
     addMineForecourt(this, town);

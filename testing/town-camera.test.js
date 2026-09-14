@@ -35,3 +35,36 @@ describe('An explorable town on rolling terrain', () => {
     expect(position.equals(before)).toBe(true);
   });
 });
+
+it('keeps foreground parcels clear of intervening ridges at maximum zoom in every era', () => {
+  for (const [centerX, radius, minX, maxX, maxZ] of [
+    [0, 110, -15, 15, 20],
+    [13, 160, -15, 50, 20],
+    [17, 180, -23, 58, 28],
+  ]) {
+    const target = new Vector3(centerX, 0.7, 0);
+    const parcels = Object.entries(PLOTS)
+      .filter(([id, [x, z]]) => id !== 'bridge' && x >= minX && x <= maxX && z <= maxZ)
+      .map(([, [x, z]]) => new Vector3(x, 0.2, z));
+    for (let degrees = 0; degrees < 360; degrees += 15) {
+      const angle = (degrees * Math.PI) / 180;
+      const position = new Vector3(
+        Math.cos(angle) * radius,
+        radius * 0.25,
+        Math.sin(angle) * radius,
+      ).add(target);
+      const distance = position.distanceTo(target);
+      keepCameraAboveTerrain(position, target, 0.25, parcels);
+      expect(position.distanceTo(target)).toBeCloseTo(distance, 8);
+      // Independently sample each sightline more finely than the camera guard.
+      for (const parcel of parcels) {
+        let clearance = Infinity;
+        for (let step = 1; step <= 300; step++) {
+          const sample = parcel.clone().lerp(position, step / 300);
+          clearance = Math.min(clearance, sample.y - groundHeight(sample.x, sample.z));
+        }
+        expect(clearance, `heading ${degrees}, parcel ${parcel.x},${parcel.z}`).toBeGreaterThan(0);
+      }
+    }
+  }
+});

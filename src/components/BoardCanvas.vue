@@ -62,6 +62,15 @@ watch(
     gameStore.renderer?.animator?.syncBonusMotion();
   },
 );
+// The opaque results/chest screen covers the board. Stop its animation and WebGL
+// work so the roulette has the frame budget, then resume for the next puzzle.
+watch(
+  () => gameStore.levelCleared,
+  (cleared) => {
+    if (cleared) game?.loop.sleep();
+    else game?.loop.wake();
+  },
+);
 onMounted(() => {
   const scene = new BoardScene();
   scene.onReady = (payload) => {
@@ -80,6 +89,7 @@ onMounted(() => {
       gameStore.processQueuedInput();
     });
     resize();
+    if (gameStore.levelCleared) queueMicrotask(() => game?.loop.sleep());
   };
   game = new Phaser.Game({
     type: Phaser.AUTO,
@@ -106,6 +116,8 @@ onBeforeUnmount(() => {
   gameStore.renderer?.animator?.destroy();
   gameStore.renderer = null;
   game?.destroy(true);
+  // Phaser processes pending destruction on a frame, including from a sleeping victory screen.
+  if (game && !game.loop.running) game.loop.wake();
   game = null;
 });
 </script>

@@ -71,13 +71,27 @@ function trackDistance(x, z) {
   return Math.min(streets, Math.abs(z) > 27 ? trail : Infinity);
 }
 
-// Orbiting low over a distant ridge must not put the camera beneath the prairie.
-// Keep the player's distance and heading; raise only the viewing angle as needed.
-export function keepCameraAboveTerrain(position, target, minPolarAngle = 0.25) {
+// Check the whole sightline, including foreground parcels. Clearing the ground
+// directly beneath the camera alone still lets a ridge hide the village at wide zoom.
+export function terrainBlocksView(position, focus) {
+  const steps = Math.max(1, Math.ceil(position.distanceTo(focus) / 2));
+  for (let step = 1; step <= steps; step++) {
+    const t = step / steps;
+    const x = THREE.MathUtils.lerp(focus.x, position.x, t);
+    const z = THREE.MathUtils.lerp(focus.z, position.z, t);
+    const y = THREE.MathUtils.lerp(focus.y, position.y, t);
+    if (y < groundHeight(x, z) + 1.2 * t) return true;
+  }
+  return false;
+}
+
+// Preserve zoom distance and heading; lift the viewing angle only as far as needed.
+export function keepCameraAboveTerrain(position, target, minPolarAngle = 0.25, parcels = []) {
   const orbit = new THREE.Spherical().setFromVector3(position.clone().sub(target));
+  const focuses = [target, ...parcels];
   let adjusted = false;
-  for (let i = 0; i < 24 && position.y < groundHeight(position.x, position.z) + 1.2; i++) {
-    orbit.phi = Math.max(minPolarAngle, orbit.phi - 0.06);
+  while (orbit.phi > minPolarAngle && focuses.some((focus) => terrainBlocksView(position, focus))) {
+    orbit.phi = Math.max(minPolarAngle, orbit.phi - 0.04);
     position.setFromSpherical(orbit).add(target);
     adjusted = true;
   }
