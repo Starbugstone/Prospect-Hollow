@@ -1,3 +1,4 @@
+import { eraEvolution } from '../../data/eras';
 import { hasElectricity } from '../../data/industrial';
 import {
   PLOTS,
@@ -8,21 +9,17 @@ import {
   segmentDistance,
 } from './TownLayout';
 
-export const pavedTown = (town) =>
-  ['industrial', 'motor-age', 'post-war', 'aviation', 'broadcast', 'contemporary'].includes(
-    town.era,
-  );
+export const pavedTown = (town) => eraEvolution(town.era).paved;
 export const modernTransport = (town, id) =>
-  town.buildings[id] > 0 &&
-  ['industrial', 'motor-age', 'post-war', 'aviation', 'broadcast', 'contemporary'].includes(
-    town.buildingEras[id],
+  town.buildings[id] > 0 && eraEvolution(town.buildingEras[id]).modernTransport;
+export const motorTraffic = (town) => {
+  const minimum = eraEvolution(town.buildingEras.stable).motorTrafficLevel;
+  return (
+    modernTransport(town, 'stable') &&
+    minimum !== null &&
+    (minimum === 1 || town.buildingEraLevels.stable >= minimum)
   );
-export const motorTraffic = (town) =>
-  modernTransport(town, 'stable') &&
-  (['post-war', 'motor-age', 'aviation', 'broadcast', 'contemporary'].includes(
-    town.buildingEras.stable,
-  ) ||
-    town.buildingEraLevels.stable >= 2);
+};
 
 // A shared road-following network for WebGL and the accessible map. Merge
 // common branches so every completed plot gets a service without duplicate wires.
@@ -87,7 +84,7 @@ export function powerGrid(town) {
 
 export function addPowerGrid(d, town) {
   const network = powerGrid(town);
-  if (!network.poles.length || town.era === 'contemporary') return;
+  if (!network.poles.length || !eraEvolution(town.era).overheadPower) return;
   const root = d.group(d.world);
   root.name = 'Connected village power grid';
   root.userData.static = true;
@@ -113,14 +110,4 @@ export function addPowerGrid(d, town) {
   return root;
 }
 
-export const roadSurface = (town) =>
-  ({
-    frontier: '#c3a477',
-    'river-rail': '#b3a18a',
-    industrial: '#89928a',
-    'post-war': '#89928a',
-    aviation: '#818e8c',
-    broadcast: '#7d8991',
-    'motor-age': '#858b86',
-    contemporary: '#a5afa5',
-  })[town.era] ?? '#c3a477';
+export const roadSurface = (town) => eraEvolution(town.era).roadColor;

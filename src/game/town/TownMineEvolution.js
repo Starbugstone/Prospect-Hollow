@@ -1,20 +1,21 @@
-import { isCityEra } from '../../data/city';
+import { eraEvolution } from '../../data/eras';
 import { cityModel } from './buildings/city';
 export function addMineEra(d, parent, era = 'frontier') {
-  if (era === 'frontier') return;
-  if (isCityEra(era)) {
+  const style = eraEvolution(era).style;
+  if (style === 'frontier') return;
+  if (style === 'city') {
     cityModel(d, parent, `${era}-mine`);
     return;
   }
   const root = d.group(parent);
   root.name = `${era} mine entrance`;
-  if (era === 'river-rail') {
+  if (style === 'river-rail') {
     d.mesh(root, 'cylinder', [0.48, 1.5, 0.48], [-2, 0.8, 0.8], '#8e7860');
     d.rod(root, [-2, 1.5, 0.8], [-2, 3.5, 0.8], 0.12, '#65756c');
     for (const x of [-1, 1]) d.box(root, 0.32, 2.5, 0.35, x, 1.25, 0.9, '#9b7954');
     d.box(root, 2.8, 0.3, 0.65, 0, 2.6, 0.85, '#66887f');
   } else {
-    const motor = era === 'motor-age';
+    const motor = style === 'motor-age';
     for (const x of [-1.15, 1.15]) {
       d.box(root, 0.42, 2.85, 0.55, x, 1.42, 0.9, motor ? '#ddcca8' : '#9ba89a');
       d.box(root, 0.22, 0.55, 0.16, x, 2, 1.22, '#ffebad');

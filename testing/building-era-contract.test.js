@@ -1,4 +1,3 @@
-import { renderCityBuilding } from '../src/game/town/buildings/city';
 import { expect, it } from 'vitest';
 import { BoxGeometry, Group, MeshBasicMaterial, Scene } from 'three';
 import { BUILDINGS, createTown } from '../src/data/town';
@@ -10,9 +9,11 @@ import { visiblePlots } from '../src/game/town/TownLayout';
 import { buildTownSquare } from '../src/game/town/TownSquare';
 import { addImprovements } from '../src/game/town/TownImprovements';
 import { TownDiorama } from '../src/game/town/TownDiorama';
-import { renderBuilding, renderModernization } from '../src/game/town/buildings/BuildingRenderer';
-import { renderIndustrialLandmark } from '../src/game/town/buildings/industrial';
-import { renderMotorLandmark } from '../src/game/town/buildings/motorAge';
+import {
+  renderBuilding,
+  renderEraLandmark,
+  renderModernization,
+} from '../src/game/town/buildings/BuildingRenderer';
 
 it('every plot begins in its own era, advances through every later playable era, and visibly changes', () => {
   let town = createTown();
@@ -64,20 +65,11 @@ it('every plot begins in its own era, advances through every later playable era,
       d.town = town;
       const root = new Group(),
         kind = b.kind;
-      const modern =
-        era.id === 'motor-age'
-          ? renderMotorLandmark
-          : era.id === 'industrial'
-            ? renderIndustrialLandmark
-            : null;
       const stage = buildingServiceLevel(b.id, town.buildings[b.id]);
       if (kind === 'bridge') {
         renderBuilding({ town: d, parent: root, kind, level: stage, label: b.name });
         renderModernization(d, root, kind, era.id, 3);
-      } else if (
-        !renderCityBuilding(d, root, kind, b.name, 3, era.id, stage) &&
-        !modern?.(d, root, kind, b.name, 3)
-      ) {
+      } else if (!renderEraLandmark(d, root, kind, b.name, 3, era.id, stage)) {
         if (kind === 'square') buildTownSquare(d, root, stage);
         else if (kind === 'well') d.well(root);
         else renderBuilding({ town: d, parent: root, kind, level: stage, label: b.name });

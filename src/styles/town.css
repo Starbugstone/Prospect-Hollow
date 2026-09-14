@@ -2225,3 +2225,14 @@ html:has(.town-museum[open]) {
 .mine-entry-actions button {
   flex: 1 1 140px;
 }
+
+.town-projects-button {
+  left: 16px;
+  right: auto;
+  top: max(104px, calc(env(safe-area-inset-top) + 104px));
+}
+@media (max-width: 600px) {
+  .town-projects-button {
+    top: max(160px, calc(env(safe-area-inset-top) + 160px));
+  }
+}

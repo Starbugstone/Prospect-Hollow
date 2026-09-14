@@ -529,12 +529,12 @@ export class BoardAnimator {
     const chained = tile?.chainHealth > 0;
     const layers = tile?.health > 1 ? tile.health : 0;
     const frozen = tile?.state === 'FROZEN';
-    const key = `${layers}-${frozen}-${sealColor ?? ''}-${chained}-${!!tile?.exit}-${this.cellSize}`;
+    const key = `${layers}-${frozen}-${sealColor ?? ''}-${chained}-${!!tile?.exit}-${tile?.signal ?? ''}-${tile?.signalHealth}-${tile?.surveyOrder}-${this.cellSize}`;
     let overlay = this.tileOverlays.get(index);
     if (overlay?.__tileKey === key) return;
     overlay?.destroy();
     this.tileOverlays.delete(index);
-    if (!sealColor && !chained && !tile?.exit && !layers && !frozen) return;
+    if (!sealColor && !chained && !tile?.exit && !layers && !frozen && !tile?.signal) return;
     const p = this.position(index);
     const size = this.cellSize - 3;
     overlay = this.scene.add.container(p.x, p.y);
@@ -560,6 +560,25 @@ export class BoardAnimator {
       overlay.add(badge);
     }
     if (chained) addImage('chain');
+    if (tile.signal) {
+      const lit = tile.signalHealth === 0;
+      const marker = this.scene.add
+        .image(-size * 0.3, size * 0.29, `tile-${tile.signal}`)
+        .setDisplaySize(size * 0.43, size * 0.43)
+        .setAlpha(lit ? 0.5 : 1);
+      overlay.add(marker);
+      if (tile.surveyOrder)
+        overlay.add(
+          this.scene.add
+            .text(-size * 0.3, size * 0.29, lit ? '✓' : String(tile.surveyOrder), {
+              fontFamily: 'Arial, sans-serif',
+              fontStyle: 'bold',
+              fontSize: `${Math.max(11, size * 0.21)}px`,
+              color: lit ? '#315932' : '#fff7d5',
+            })
+            .setOrigin(0.5),
+        );
+    }
     this.tileLayer.add(overlay);
     this.tileOverlays.set(index, overlay);
   }

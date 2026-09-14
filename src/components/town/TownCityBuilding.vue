@@ -137,7 +137,7 @@
       />
       <path v-if="kind === 'doctor'" d="M-53-115v29m-14-15h28" stroke="#b47766" stroke-width="8" />
     </g>
-    <g v-if="era === 'contemporary' && !garden && family !== 'airport'">
+    <g v-if="eraEvolution(era).digitalCity && !garden && family !== 'airport'">
       <path d="M-60-75H15v38H-60Z" fill="#435764" />
       <path d="M-53-68H8v24H-53Z" fill="#85b8c8" />
       <path d="M-46-60h36m-36 8h24" stroke="#e1cfab" stroke-width="3" />
@@ -169,6 +169,7 @@
 </template>
 <script setup>
 import { computed } from 'vue';
+import { eraEvolution } from '../../data/eras';
 import { CITY_FAMILIES } from '../../data/city';
 import TownLeisureBuilding from './TownLeisureBuilding.vue';
 import TownSquare from './TownSquare.vue';
@@ -179,7 +180,7 @@ const props = defineProps({
   serviceLevel: { type: Number, default: 3 },
 });
 const family = computed(() => CITY_FAMILIES[props.kind]);
-const modern = computed(() => ['broadcast', 'contemporary'].includes(props.era));
+const modern = computed(() => eraEvolution(props.era).tallCity);
 const garden = computed(() => ['park', 'field', 'square'].includes(family.value));
 const height = computed(() => (family.value === 'residence' ? 135 : 110));
 </script>

@@ -1,3 +1,4 @@
+import { eraEvolution } from '../../data/eras';
 import { isCityEra } from '../../data/city';
 import { cityModel } from './buildings/city';
 import { RIVER, riverCenterX } from './TownRiver';
@@ -82,10 +83,12 @@ export function addEraActivity(d, town) {
       d.box(paddle, 1.5, 0.15, 0.3, 0, 0.55, 0, '#9b6e51');
     }
     const portEra = town.buildingEras.riverPort;
-    if (isCityEra(portEra) && portEra !== 'broadcast') {
+    if (eraEvolution(portEra).cityBoat) {
       for (const child of [...boat.children]) boat.remove(child);
       cityModel(d, boat, `${portEra}-boat`);
-      boat.name = portEra === 'contemporary' ? 'Solar river ferry' : 'Rebuilding river launch';
+      boat.name = eraEvolution(portEra).digitalCity
+        ? 'Solar river ferry'
+        : 'Rebuilding river launch';
     }
     d.motions.push((time) => {
       const phase = (time + 18) % 95;
@@ -122,10 +125,9 @@ export function addEraActivity(d, town) {
     if (isCityEra(town.buildingEras.railDepot)) {
       for (const child of [...train.children]) train.remove(child);
       wheels.length = 0;
-      train.name =
-        town.buildingEras.railDepot === 'contemporary'
-          ? 'Electric city train'
-          : 'Motor passenger railcar';
+      train.name = eraEvolution(town.buildingEras.railDepot).digitalCity
+        ? 'Electric city train'
+        : 'Motor passenger railcar';
       for (const x of [0, -4, -8]) {
         const carriage = cityModel(d, train, `${town.buildingEras.railDepot}-railcar`);
         carriage.rotation.y = Math.PI / 2;

@@ -1,3 +1,4 @@
+import { eraEvolution } from '../../data/eras';
 import { RIVER_RAIL_LEVEL_PRICES } from '../../data/economy';
 import { buildingServiceLevel, hasShortProgression } from '../../data/buildingProgression';
 import { t } from '../../i18n';
@@ -317,27 +318,16 @@ export const foodCapacity = (town) =>
   totalLevels(town, 'farm') * 6 +
   Math.min(5, Math.max(0, buildingServiceLevel('fisherman', town.buildings.fisherman ?? 0))) +
   (town.buildings.market ?? 0) * 10 +
-  ((town.buildingEras.farm === 'motor-age' && town.buildingEraLevels.farm === 3) ||
-  ['aviation', 'broadcast', 'contemporary'].includes(town.buildingEras.farm)
-    ? 20
-    : 0) +
+  eraEvolution(town.buildingEras.farm).farmCapacity[
+    Math.min(2, Math.max(0, (town.buildingEraLevels.farm || 1) - 1))
+  ] +
   cityCapacity(town, 'food');
 export const waterCapacity = (town) => {
   const era = town.buildingEras.well,
     level = town.buildingEraLevels.well || 1;
-  const waterworks = !town.buildings.well
-    ? 0
-    : ['aviation', 'broadcast', 'contemporary'].includes(era)
-      ? 80
-      : era === 'post-war'
-        ? 60
-        : era === 'motor-age'
-          ? 60 + (level === 3 ? 20 : 0)
-          : era === 'industrial'
-            ? 40 + (level === 3 ? 20 : 0)
-            : era === 'river-rail'
-              ? Math.max(0, level - 1) * 20
-              : 0;
+  const waterworks = town.buildings.well
+    ? eraEvolution(era).waterworks[Math.min(2, Math.max(0, level - 1))]
+    : 0;
   return totalLevels(town, 'well') * 6 + waterworks + cityCapacity(town, 'water');
 };
 export const housingCapacity = (town) =>

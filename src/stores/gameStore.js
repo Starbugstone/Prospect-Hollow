@@ -1,3 +1,4 @@
+import { advanceOreOrders, remainingOre } from '../game/engine/ChapterMechanics';
 import { markRaw } from 'vue';
 import { miningPayout } from '../game/town/TownRules';
 import { PlayClock } from '../game/engine/PlayClock';
@@ -79,6 +80,7 @@ export const useGameStore = defineStore('game', {
     maxCascade: 1,
     cascadeMultiplier: 1,
     objectives: [],
+    oreOrders: [],
     boardVersion: 0,
     renderer: null,
     availableLevels: [],
@@ -121,9 +123,13 @@ export const useGameStore = defineStore('game', {
       return state.pendingBoardState ?? state.board;
     },
     remainingRelics: (state) => state.board.filter((gem) => gem?.type === 'relic').length,
-    goalTotal: (state) => state.totalLayers + state.totalRelics,
+    remainingOre: (state) => remainingOre(state.oreOrders),
+    goalTotal: (state) =>
+      state.totalLayers +
+      state.totalRelics +
+      state.oreOrders.reduce((sum, order) => sum + order.target, 0),
     goalProgress() {
-      return this.goalTotal - this.remainingLayers - this.remainingRelics;
+      return this.goalTotal - this.remainingLayers - this.remainingRelics - this.remainingOre;
     },
     layerLabel: (state) =>
       state.currentLevelId > 36
@@ -435,7 +441,9 @@ export const useGameStore = defineStore('game', {
         return;
       }
 
-      const hint = hintEngine.findBestMove(board, this.tiles ?? [], cols, rows);
+      const hint = hintEngine.findBestMove(board, this.tiles ?? [], cols, rows, {
+        oreOrders: this.oreOrders,
+      });
       this.hintMove = hint;
 
       if (!hint) {
@@ -520,6 +528,7 @@ export const useGameStore = defineStore('game', {
       if (this.renderer?.animator) {
         this.renderer.animator.boardLayout = this.currentBoardLayout;
       }
+      this.oreOrders = (config.oreOrders ?? []).map((order) => ({ ...order, progress: 0 }));
       this.objectives = config.objectives.map((objective) => ({ ...objective, progress: 0 }));
       this.moves = 0;
       this.score = 0;
@@ -835,6 +844,7 @@ export const useGameStore = defineStore('game', {
       this.board = [];
       this.tiles = [];
       this.objectives = [];
+      this.oreOrders = [];
       this.score = 0;
       this.maxCascade = 1;
       this.cascadeMultiplier = 1;
@@ -886,7 +896,8 @@ export const useGameStore = defineStore('game', {
         this.levelCleared ||
         !this.sessionActive ||
         this.remainingLayers > 0 ||
-        this.remainingRelics > 0
+        this.remainingRelics > 0 ||
+        this.remainingOre > 0
       )
         return;
       this.syncRunClock(false);
@@ -1034,6 +1045,7 @@ export const useGameStore = defineStore('game', {
         return 0;
       }
 
+      advanceOreOrders(this.oreOrders, steps);
       let total = 0;
       let deepestCascade = 1;
 

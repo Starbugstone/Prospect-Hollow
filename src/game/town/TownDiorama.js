@@ -1,6 +1,6 @@
 import { isCityEra } from '../../data/city';
+import { eraEvolution } from '../../data/eras';
 import { TownRenderQuality } from './TownRenderQuality';
-import { renderCityBuilding } from './buildings/city';
 import { bridgeDeckHeight } from './TownRiver';
 import { buildingServiceLevel } from '../../data/buildingProgression';
 import { TownUpgradeGlow } from './TownUpgradeGlow';
@@ -18,7 +18,11 @@ import { addTownLife } from './TownLife';
 import { addLeisureActivity } from './TownLeisure';
 import { TownConstruction } from './TownConstruction';
 import { buildTownSquare } from './TownSquare';
-import { renderBuilding, renderModernization } from './buildings/BuildingRenderer';
+import {
+  renderBuilding,
+  renderModernization,
+  renderEraLandmark,
+} from './buildings/BuildingRenderer';
 import { addEraActivity } from './TownEraActivity';
 import { addScaffolding, addImprovements } from './TownImprovements';
 import { addTownVisitors, TownRaid } from './TownActivity';
@@ -32,8 +36,6 @@ import {
   nextGoal,
 } from './TownRules';
 import { buildLandscape, keepCameraAboveTerrain } from './TownLandscape';
-import { renderIndustrialLandmark } from './buildings/industrial';
-import { renderMotorLandmark } from './buildings/motorAge';
 import { addMotorActivity } from './TownMotorActivity';
 import { motorTraffic } from './TownEvolution';
 import { TownScenery } from './TownScenery';
@@ -397,26 +399,15 @@ export class TownDiorama {
           if (project) addScaffolding(this, group, kind, stage, constructionVisual(project));
         } else if (!stage) this.plot(group, kind, project ? 2 : -1, labels[id]);
         else {
-          const industrial =
-            renderCityBuilding(
-              this,
-              group,
-              kind,
-              labels[id],
-              town.buildingEraLevels[id] || 1,
-              town.buildingEras[id],
-              stage,
-            ) ||
-            (['industrial', 'motor-age'].includes(town.buildingEras[id]) &&
-              (town.buildingEras[id] === 'motor-age'
-                ? renderMotorLandmark
-                : renderIndustrialLandmark)(
-                this,
-                group,
-                kind,
-                labels[id],
-                town.buildingEraLevels[id] || 1,
-              ));
+          const industrial = renderEraLandmark(
+            this,
+            group,
+            kind,
+            labels[id],
+            town.buildingEraLevels[id] || 1,
+            town.buildingEras[id],
+            stage,
+          );
           if (!industrial) {
             if (kind === 'square') buildTownSquare(this, group, stage);
             else if (kind === 'well') this.well(group);
@@ -804,7 +795,7 @@ export class TownDiorama {
       this.mesh(
         head,
         'cylinder',
-        [era === 'motor-age' ? 0.155 : 0.195, 0.025, 0.18],
+        [eraEvolution(era).style === 'motor-age' ? 0.155 : 0.195, 0.025, 0.18],
         [0, 0.105, 0],
         hat,
       );

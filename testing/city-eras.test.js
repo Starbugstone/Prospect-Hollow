@@ -220,16 +220,16 @@ it('continues existing 144-level saves at 145 without resetting records and comp
   setActivePinia(createPinia());
   const c = useCampaignStore();
   expect(c.nextLevel).toBe(145);
-  expect(LEVEL_COUNT).toBe(240);
+  expect(LEVEL_COUNT).toBe(324);
   for (let id = 145; id <= LEVEL_COUNT; id++) {
     const runId = c.beginRun('normal', id);
     expect(runId).toBeTruthy();
     c.recordVictory({ id, score: 1, target: 10000, combo: 1, runId });
     if (id % 6 === 0) expect(c.lastChapterReward.chapter).toBe(id / 6);
   }
-  expect(c.nextLevel).toBe(240);
-  expect(c.completedCount).toBe(240);
-  expect(c.isUnlocked(241)).toBe(false);
+  expect(c.nextLevel).toBe(LEVEL_COUNT);
+  expect(c.completedCount).toBe(LEVEL_COUNT);
+  expect(c.isUnlocked(LEVEL_COUNT + 1)).toBe(false);
   expect(c.records[144]).toEqual(records[144]);
 });
 it('only finishes the entire city once every contemporary plot and modernization is complete', () => {

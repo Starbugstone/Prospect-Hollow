@@ -1,5 +1,29 @@
 export const OBSTACLES = [
   {
+    id: 'lantern',
+    name: 'Lanterns',
+    art: '/art/obstacles/lantern.svg',
+    instruction:
+      'Light every lantern by matching on or beside it. Bonuses can light them too; gems pass freely.',
+    present: (tile) => tile.signal === 'lantern',
+  },
+  {
+    id: 'survey',
+    name: 'Survey trail',
+    art: '/art/obstacles/survey.svg',
+    instruction:
+      'Light the numbered survey markers in order. Match on or beside the next number; gems keep moving freely.',
+    present: (tile) => tile.signal === 'survey',
+  },
+  {
+    id: 'ore-orders',
+    name: 'Ore orders',
+    art: '/art/obstacles/ore-orders.svg',
+    instruction:
+      'Fill the pictured ore orders by collecting those gem colors. Matching and bonuses both count.',
+    present: (tile) => tile.oreOrderGuide === true,
+  },
+  {
     id: 'ice',
     name: 'Ice',
     art: '/art/ice/frost.svg',

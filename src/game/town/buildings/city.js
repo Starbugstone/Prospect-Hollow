@@ -1,3 +1,5 @@
+import { ERAS, eraEvolution } from '../../../data/eras';
+import { resolveCityAsset } from '../../../data/eraDefinitions';
 import { addFishingDock } from './river';
 import { CITY_FAMILIES, isCityEra } from '../../../data/city';
 import { blenderModel, leisureModel } from '../LeisureAssets';
@@ -7,7 +9,7 @@ import future from '../../../assets/future-meshes.json';
 
 export const futureModel = (d, parent, name) => blenderModel(d, parent, future, name, 'future');
 export const cityModel = (d, parent, name) => {
-  const inherited = name.replace(/^aviation-/, 'post-war-').replace(/^broadcast-/, 'contemporary-');
+  const inherited = resolveCityAsset(name, ERAS);
   return blenderModel(d, parent, assets, inherited, 'city');
 };
 
@@ -19,12 +21,10 @@ export function renderCityBuilding(d, parent, kind, label, level, era, serviceLe
   const root = d.group(parent);
   root.name = `${era} ${kind} level ${level}`;
   const landmark = ['airport', 'radio', 'concert', 'television', 'skyline'].includes(family);
-  const connected = era === 'contemporary';
-  if (
-    ['aviation', 'broadcast', 'contemporary'].includes(era) &&
-    (landmark || ['field', 'park', 'square', 'river'].includes(family))
-  ) {
-    const cue = futureModel(d, root, `${connected ? 'digital' : era}-detail`);
+  const profile = eraEvolution(era);
+  const connected = profile.digitalCity;
+  if (profile.detailAsset && (landmark || ['field', 'park', 'square', 'river'].includes(family))) {
+    const cue = futureModel(d, root, profile.detailAsset);
     cue.scale.setScalar(0.5);
     cue.position.set(family === 'airport' ? 4 : 0, 0, family === 'airport' ? 2 : -3);
   }
@@ -48,8 +48,8 @@ export function renderCityBuilding(d, parent, kind, label, level, era, serviceLe
     cityModel(d, root, `${era}-garden`);
   } else cityModel(d, root, `${era}-${family}`);
   const garden = ['field', 'park', 'square'].includes(family);
-  if (['aviation', 'broadcast', 'contemporary'].includes(era) && !garden && family !== 'river')
-    futureModel(d, root, `${connected ? 'digital' : era}-detail`);
+  if (profile.detailAsset && !garden && family !== 'river')
+    futureModel(d, root, profile.detailAsset);
   if (level >= 2) cityModel(d, root, `${era}-${garden ? 'finish' : 'wing'}`);
   if (level >= 3) {
     const detail = cityModel(d, root, `${era}-finish`);
@@ -67,8 +67,9 @@ export function addCityModernization(d, parent, kind, era, level) {
   if (kind !== 'bridge' || !isCityEra(era)) return;
   const root = cityModel(d, parent, `${era}-bridge`);
   root.name = `${era} bridge approaches ${level}`;
-  if (era !== 'post-war') {
-    const cue = futureModel(d, parent, `${era === 'contemporary' ? 'digital' : era}-detail`);
+  const profile = eraEvolution(era);
+  if (profile.detailAsset) {
+    const cue = futureModel(d, parent, profile.detailAsset);
     cue.scale.setScalar(0.4);
     cue.position.set(-6.5, 0, -2.5);
   }

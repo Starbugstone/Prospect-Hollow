@@ -1,3 +1,4 @@
+import { eraEvolution } from '../../data/eras';
 import { prepareRoute, routePose } from './TownRoutes';
 import { isCityEra } from '../../data/city';
 import { cityModel } from './buildings/city';
@@ -5,11 +6,7 @@ import { motorVehicle } from './buildings/motorAge';
 import { routeBetween, plotStreet } from './TownLayout';
 
 export function addMotorActivity(d, town) {
-  if (
-    !['motor-age', 'aviation', 'broadcast', 'contemporary'].includes(town.era) ||
-    !town.buildings.garage ||
-    !town.buildings.busDepot
-  )
+  if (!eraEvolution(town.era).busService || !town.buildings.garage || !town.buildings.busDepot)
     return;
   const route = routeBetween(town, plotStreet('garage'), plotStreet('busDepot'));
   if (route.length < 2) return;

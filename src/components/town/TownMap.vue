@@ -384,7 +384,7 @@
         </g>
       </g>
       <g v-if="hasElectricity(town)" aria-hidden="true">
-        <g v-if="town.era !== 'contemporary'" class="town-power-grid">
+        <g v-if="eraEvolution(town.era).overheadPower" class="town-power-grid">
           <path
             v-for="(pole, index) in grid.poles"
             :key="`pole-${index}`"
@@ -539,6 +539,7 @@
   </div>
 </template>
 <script setup>
+import { eraEvolution } from '../../data/eras';
 import { isCityEra } from '../../data/city';
 
 import { t } from '../../i18n';

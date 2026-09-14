@@ -10,6 +10,7 @@ import {
   getStars,
 } from '../data/campaign';
 import { grantChapterGift } from '../data/journey';
+import { TOWN_PROJECTS } from '../data/townProjects';
 
 import { localProfile, SAVE_KEY } from '../services/localProfile';
 import { createSaveFile, parseSaveFile } from '../services/saveTransfer';
@@ -48,6 +49,7 @@ import {
 export { SAVE_KEY };
 
 const defaults = () => ({
+  townProjectFocus: '',
   records: {},
   continuousRecords: {},
   continuousRun: null,
@@ -76,6 +78,12 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
     state.saveWarning = loaded.warning ?? '';
     state.readOnly = !!loaded.readOnly;
     state.town = normalizeTown(saved?.town);
+    if (
+      TOWN_PROJECTS.some(
+        (project) => project.id === saved?.townProjectFocus && project.era === state.town.era,
+      )
+    )
+      state.townProjectFocus = saved.townProjectFocus;
     if (Number.isSafeInteger(saved?.shopVisit) && saved.shopVisit >= 0)
       state.shopVisit = saved.shopVisit;
     if (Array.isArray(saved?.shopStock)) {
@@ -181,6 +189,7 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
         ...saved,
         powers: state.powers,
         town: state.town,
+        townProjectFocus: state.townProjectFocus,
         builderHammers: state.builderHammers,
         pendingChests: [],
       })
@@ -205,6 +214,7 @@ const profileData = (state) => ({
   shopVisit: state.shopVisit,
   seenObstacles: state.seenObstacles,
   town: state.town,
+  townProjectFocus: state.townProjectFocus,
   issuedRun: state.issuedRun,
   settledRun: state.settledRun,
 });
@@ -239,6 +249,15 @@ export const useCampaignStore = defineStore('campaign', {
       Object.values(state.records).reduce((sum, record) => sum + record.stars, 0),
   },
   actions: {
+    focusTownProject(id) {
+      if (!TOWN_PROJECTS.some((project) => project.id === id && project.era === this.town.era))
+        return false;
+      const previous = this.townProjectFocus;
+      this.townProjectFocus = id;
+      if (this.save()) return true;
+      this.townProjectFocus = previous;
+      return false;
+    },
     acknowledgeFirstLights() {
       if (
         this.town.era !== 'industrial' ||

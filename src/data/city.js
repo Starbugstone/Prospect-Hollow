@@ -1,12 +1,10 @@
+import { ERAS, ERA_BY_ID, eraEvolution } from './eras';
 // City growth adds bounded capacity. Modernizing an existing service does not multiply it.
-export const CITY_ERAS = ['post-war', 'aviation', 'broadcast', 'contemporary'];
-export const isCityEra = (era) => CITY_ERAS.includes(era);
-export const CITY_LEVEL_PRICES = {
-  'post-war': [2400, 2900, 3400],
-  aviation: [4800, 5600, 6400],
-  broadcast: [6200, 7000, 7800],
-  contemporary: [7600, 9000, 10400],
-};
+export const CITY_ERAS = ERAS.filter((era) => era.evolution.style === 'city').map((era) => era.id);
+export const isCityEra = (era) => eraEvolution(era).style === 'city';
+export const CITY_LEVEL_PRICES = Object.fromEntries(
+  CITY_ERAS.map((era) => [era, eraEvolution(era).prices]),
+);
 // Large civic landmarks carry a modest premium; earnings and rewards stay unchanged.
 export const isMajorCityBuilding = (id) => ['airport', 'skyline', 'cityHomes'].includes(id);
 export const cityBuildingPrice = (id, price) =>
@@ -116,12 +114,6 @@ export const CITY_DESCRIPTIONS = {
     'A shaded garden pavilion and new benches frame the playground.',
     'A planted promenade, solar shade and cycle stands welcome families by the river.',
   ],
-};
-const labels = {
-  'post-war': 'Post-war Rebuilding',
-  aviation: 'Aviation & Radio',
-  broadcast: 'Music & Television',
-  contemporary: 'Connected City',
 };
 const newLandmarks = [
   [
@@ -408,12 +400,12 @@ export const CITY_BUILDINGS = [
   ...building,
   stages: [
     'Empty plot',
-    ...[1, 2, 3].map((level) => `${labels[building.introducedEra]} · Level ${level}`),
+    ...[1, 2, 3].map((level) => `${ERA_BY_ID[building.introducedEra].label} · Level ${level}`),
   ],
   upgrades: benefits.map((benefit, index) => ({
     cost: cityBuildingPrice(
       building.id,
-      (building.introducedEra === 'post-war' ? [3000, 4000, 5000] : [8000, 10000, 12000])[index],
+      eraEvolution(building.introducedEra).newBuildingPrices[index],
     ),
     runs: isMajorCityBuilding(building.id) && index === 0 ? 2 : 1,
     title: index ? 'Expand {building}' : 'Build {building}',
@@ -427,10 +419,4 @@ export const cityCapacity = (town, stat) =>
 export const cityVariant = (kind, era) =>
   ['airport', 'radio', 'concert', 'television', 'skyline'].includes(CITY_FAMILIES[kind])
     ? 'Renew the landmark with improved facilities and city lighting.'
-    : era === 'aviation'
-      ? 'Streamlined façades and radio aerials welcome the aviation age.'
-      : era === 'broadcast'
-        ? 'Bright signs, television aerials and taller façades bring the city to life.'
-        : era === 'contemporary'
-          ? 'Glass façades, connected services and computer displays welcome the internet age.'
-          : CITY_DESCRIPTIONS[CITY_FAMILIES[kind]]?.[0];
+    : (eraEvolution(era).cityDescription ?? CITY_DESCRIPTIONS[CITY_FAMILIES[kind]]?.[0]);

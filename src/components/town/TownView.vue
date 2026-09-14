@@ -30,6 +30,12 @@
       <button v-if="town.buildings.saloon" @click="inspectBuilding('saloon')">
         <TownIcon name="coin" />{{ t('{rate}/hour', { rate: incomeRate }) }}
       </button>
+      <button
+        v-if="!fullscreen && (town.era !== 'frontier' || town.buildings.home > 0)"
+        @click="dialogMode = 'projects'"
+      >
+        {{ t('Town projects') }} →
+      </button>
       <button @click="inspectBuilding('armory')">{{ t('Supplies') }} →</button>
     </div>
     <section class="town-world" :aria-label="t('Your town')">
@@ -94,6 +100,13 @@
         </div>
         <button v-if="!activeRaid" class="town-plots-button" @click="openDirectory">
           {{ t('Available plots') }} <TownIcon name="arrow" />
+        </button>
+        <button
+          v-if="fullscreen && !activeRaid && (town.era !== 'frontier' || town.buildings.home > 0)"
+          class="town-plots-button town-projects-button"
+          @click="dialogMode = 'projects'"
+        >
+          {{ t('Town projects') }} <TownIcon name="arrow" />
         </button>
         <div v-if="activeRaid" class="town-raid-banner" role="status" aria-live="polite">
           <span class="town-kicker"
@@ -286,17 +299,20 @@
       v-if="active && dialogMode"
       :title="
         t(
-          dialogMode === 'story'
-            ? 'Village story'
-            : dialogMode === 'directory'
-              ? 'Choose a plot'
-              : 'Your town',
+          dialogMode === 'projects'
+            ? 'Town projects'
+            : dialogMode === 'story'
+              ? 'Village story'
+              : dialogMode === 'directory'
+                ? 'Choose a plot'
+                : 'Your town',
         )
       "
       close-label="Close building details"
       @close="closeDialog"
     >
-      <template v-if="dialogMode === 'story'">
+      <TownProjects v-if="dialogMode === 'projects'" :town="town" @inspect="inspectBuilding" />
+      <template v-else-if="dialogMode === 'story'">
         <section class="town-story-stats" :aria-label="t('Village overview')">
           <h2>{{ t('Village overview') }}</h2>
           <dl>
@@ -584,6 +600,7 @@
 </template>
 <script setup>
 import { isCityEra } from '../../data/city';
+import TownProjects from './TownProjects.vue';
 
 import { motorTraffic, modernTransport } from '../../game/town/TownEvolution';
 import { civicIncident } from '../../data/townEvents';

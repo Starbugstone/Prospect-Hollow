@@ -1,3 +1,4 @@
+import { eraEvolution } from '../../data/eras';
 import { hasElectricity } from '../../data/industrial';
 import { roadLevel } from './TownRules';
 import { PLOTS, townTracks, railEdges } from './TownLayout';
@@ -31,7 +32,7 @@ export class TownScenery {
       ['lights', hasElectricity(town), () => addElectricLighting(view, town)],
       [
         'power',
-        JSON.stringify([hasElectricity(town), town.era === 'contemporary', topology]),
+        JSON.stringify([hasElectricity(town), !eraEvolution(town.era).overheadPower, topology]),
         () => addPowerGrid(view, town),
       ],
       ['railroad', !!railEdges(town).length, () => addRailroad(view, town)],

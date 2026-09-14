@@ -1,3 +1,4 @@
+import { LATE_LEVEL_NAMES } from './lateLevels.js';
 import { CITY_LEVEL_NAMES } from './cityLevels.js';
 export const LEVEL_NAMES = [
   'First light',
@@ -145,4 +146,5 @@ export const LEVEL_NAMES = [
   'Golden picnic',
   'Hello, tomorrow',
   ...CITY_LEVEL_NAMES,
+  ...LATE_LEVEL_NAMES,
 ];
