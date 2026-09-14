@@ -17,11 +17,21 @@ handling and existing rewards identical. Current-release town project guidance
 (package A) is separate: it organizes existing construction without activating
 these future quest counters, cosmetics or cinematics.
 
-No new currencies, paid boosters, purchases, advertisements, seasonal passes,
-daily deadlines, expiring progress, upkeep, prestige resets or mandatory replay
-requirements are included. No move or turn limits or hard gameplay timers, in any
-quest, mastery objective or replay. Score/speed thresholds may only remain existing
-optional bonuses; missing them cannot prevent normal completion or quest progress.
+Confirmed user rules: each event and each stage cinematic is **one-off per
+playthrough**. There are no event replay controls, repeat editions or later
+encores. Starting a new game is the intended way to experience them again.
+Permanent earned 3D changes remain on the town.
+
+Accepted events have two preparation deadlines: a fixed number of completed
+normal puzzles **or a persistent real elapsed-time deadline, whichever comes
+first**. Real time continues while the player is away. Acceptance is explicit;
+unlocking a building never starts a countdown. Exact budgets and the outcome of
+insufficient preparation below are design proposals, not approved balance values.
+
+No move/turn limits or hard timers **inside any puzzle**. Expiring an optional
+event cannot interrupt/fail a puzzle, withhold its ordinary money/bonuses, or block
+the campaign. No new currencies, paid boosters, purchases, advertisements, passes,
+upkeep or event retries/resets are included.
 
 ## Concept art
 
@@ -38,33 +48,60 @@ not authorization to replace the town layout or building footprints.
 
 See [exact prompts and provenance](concepts/landmark-side-quests/README.md).
 
-## Player flow
+## Player flow and dual preparation deadline
 
-1. After an eligible building finishes, its normal construction completion occurs
-   as usual. A small optional **Town stories** badge appears; it opens no modal.
-2. The player opens a story card: a three-step illustrated track, exact building
-   prerequisites, cumulative puzzle counts, cosmetic previews and **Start**.
-   **Later** dismisses it without penalty. Ineligible future stories remain quiet
-   previews inside this panel, never alerts in the normal puzzle flow.
-3. Starting selects one active story. Every subsequent normally completed puzzle
-   adds one completion to that story, including legitimate replays. Money, chests,
-   construction and ordinary progression apply once through the existing pipeline.
-4. Only the selected story accumulates completions. Switching or pausing is free;
-   counters persist. There is no progress decay. Progress can accumulate to the
-   story's final threshold before later building prerequisites are met.
-5. When both a tier's puzzle count and building prerequisite are satisfied, mark
-   it **Ready to celebrate**. Show a quiet badge. The player explicitly claims it
-   from town when convenient; never interrupt a puzzle, incident or era scene.
-6. Claim grants one permanent cosmetic entitlement and offers the celebration.
-   **Skip** still grants the same reward. **Replay** later plays the scene without
-   further rewards. Multiple ready tiers can be claimed without watching a queue
-   of forced scenes. The final camera returns to the player's saved town view.
+1. After an eligible building finishes, its normal completion occurs as usual.
+   A quiet **Town stories** badge offers the event; no modal or countdown starts.
+2. The event card previews the three permanent 3D stages, building prerequisites,
+   concrete preparation choices, optional mastery, exact puzzle budget and UTC
+   deadline calculated from acceptance. **Later** leaves it unstarted indefinitely.
+3. **Accept event** starts both countdowns for that event. Multiple events may be
+   explicitly accepted concurrently; one can be pinned as the HUD focus.
+   Show **N puzzles remaining · ends [local date/time]**, explaining that the first
+   deadline closes preparation. Do not offer pause/switch tricks that stop a clock.
+4. Normal construction and the event's cosmetic preparation choices advance its
+   stages. There is no requirement to wait for a count of wins merely to claim a
+   milestone. Each newly completed stage adds a permanent 3D state and its one-off
+   2–4 second reveal, claimed from town when safe. The player may skip it once.
+5. Every successfully settled normal-puzzle receipt after acceptance, including
+   legitimate normal campaign replays, consumes exactly one preparation turn in
+   each applicable accepted event. It does not split or multiply normal rewards.
+   Retries of the same receipt, abandoned sessions, menus, offline time and
+   continuous/arcade play consume none. Ordinary money, chests and construction
+   settle exactly once through their existing pipeline; quest code cannot change
+   those rewards. The real-time deadline keeps advancing independently.
+6. If the puzzle budget reaches zero before the UTC deadline, first settle that
+   last puzzle's normal rewards, hammer selection and construction progress. Give
+   the player a visible final town preparation/finish-claim opportunity. Evaluate
+   on **Hold event** or before starting another normal puzzle, whichever occurs
+   first; starting a new puzzle never secretly consumes an extra preparation turn.
+   The UTC deadline still wins if it arrives during this final settlement window.
+7. If real time expires, close preparation at the saved UTC deadline. Never stop
+   an active puzzle. Its completion, money, bonuses and construction still settle
+   normally, but actions settled after that deadline do not count as event
+   preparation. Keep the event outcome pending until a safe, explicit town claim;
+   do not run a cinematic offscreen or mark it consumed while the player is away.
+   Several outcomes can become ready and form the chained presentation queue below.
+8. **Hold event** may launch early when the base finale is ready. Atomically lock
+   one finale variant and its earned entitlement. Skip counts as the scene seen.
+   No later upgrade, second performance or event restart is available in this
+   playthrough. A new game starts a new event history.
 
-All counts below are proposed playtest targets, not verified retention targets.
-They count completions after story opt-in, cumulatively within that story: 4/8/12
-means twelve total, not twenty-four. Abandoned or failed technical sessions count
-zero. Puzzle receipt IDs deduplicate retries, reloads and reward acknowledgements.
-Time played, speed, score, spending and roulette choices are never prerequisites.
+Suggested initial budgets for playtesting: Frontier stable **6 puzzles or 72 h**;
+horse field **8 or 96 h**; park dog **8 or 96 h**; railway **14 or 120 h**;
+airport **16 or 168 h**; Broadcast **18 or 168 h**; Connected City **20 or 192 h**.
+These are unmeasured proposals requiring simulation and user review, not approved
+deadlines. Avoid claiming an event is ready to accept without showing the actual
+remaining building costs, construction work and preparation choices.
+
+**Proposed expiry outcome, still to decide:** preserve every already-earned tier
+and completed building. If base preparation is complete, offer the standard
+one-off finale; optional mastery changes its choreography only when earned before
+the deadline. If base preparation is incomplete, offer a short, authored modest
+gathering based on completed stages, rather than the grand-finale cosmetics.
+Nothing is taken from the wallet, buildings or main campaign. This fallback and
+its exact cosmetic entitlement require user approval before implementation; do
+not invent loss, retry, pay-to-extend or consolation-money rules.
 
 ## Specific building progression
 
@@ -80,17 +117,18 @@ changes never remove eligibility. Migration may infer historical Industrial tier
 only when a later era's existing advancement rules prove they were completed;
 otherwise require trustworthy saved building history. Never require a player to
 downgrade or rebuild. Building work completed with a hammer qualifies normally;
-the hammer does not advance or bypass the separate story puzzle counter.
+the hammer does not create event turns or advance mastery. Money and bonuses
+earned normally remain available; the event introduces no separate purchase bill.
 
-| Story and earliest availability                                                               | Tier 1                                                                                         | Tier 2                                                                                                                                                  | Tier 3                                                                                                                                                                                |
-| --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **A welcome at Dusty Spur** — Frontier; `stable`                                              | 2 puzzles + stable L1: Kit introduces the horse; stable welcome sign                           | 4 puzzles + stable L2: groom-and-lead scene; decorative grooming rail                                                                                   | 6 puzzles + stable L3: carriage-yard welcome; small horseshoe plaque                                                                                                                  |
-| **Willow horse field show** — Industrial; `horseField`                                        | 2 puzzles + horseField L1: handler greets/grooms one horse; decorated grooming rail and ribbon | 4 puzzles + horseField L2: two horses complete a gentle walk/trot presentation; low practice pole and decorative rosette board                          | 6 puzzles + horseField L3: three-horse presentation and low-pole demonstration; champion-field ribbon on the sign and show rail dressing                                              |
-| **Railway exhibition** — Industrial; `railDepot`, `warehouse`, `mill`                         | 4 puzzles + railDepot I1: arrival rehearsal; platform pennants                                 | 8 puzzles + railDepot I2 and warehouse I1: freight demonstration; decorative railway clock                                                              | 12 puzzles + railDepot I3, warehouse I2 and mill L1: exhibition opening; locomotive display plaque                                                                                    |
-| **Park dog day** — Motor Age; `park`                                                          | 2 puzzles + park L1: dog meets owner by bench; flowerbed dressing and dog-day bench sign       | 4 puzzles + park L2: fetch practice along a clear park route; low training cones and decorative ball basket                                             | 6 puzzles + park L3: full fetch/run/low-jump/return celebration; commemorative paw-print plaque and dog-day garden dressing                                                           |
-| **Prospect air festival** — Aviation; `airport`, `radioTower`                                 | 4 puzzles + airport L1: terminal welcome; terminal/apron bunting outside movement routes       | 8 puzzles + airport L2 and radioTower L1: taxi and radio-check presentation; vintage aircraft exhibition on a separate safe display pad and route board | 12 puzzles + airport L3 and radioTower L2: inaugural departure/flypast; selectable period aircraft livery and festival terminal dressing                                              |
-| **Prospect live premiere** — Broadcast; `concertHall`, `television`, `skyline`                | 4 puzzles + concertHall L1: rehearsal; concert poster frame                                    | 8 puzzles + concertHall L2 and television L1: broadcast rehearsal; studio premiere plaque                                                               | 12 puzzles + concertHall L3, television L2 and skyline L1: full concert premiere with skyline reveal; coordinated marquee appearance                                                  |
-| **Riverlight opening** — Connected City; `transitHub`, `riverPark`, `crystalLab`, `cityHomes` | 4 puzzles + transitHub L1 and riverPark L1: first promenade arrival; district banners          | 8 puzzles + transitHub L2, riverPark L2 and crystalLab L1: campus open house; decorative campus sculpture                                               | 12 puzzles + transitHub L3, riverPark L3, crystalLab L2 and cityHomes L1: tram/riverfront/tower evening celebration; selectable warm-window appearance and commemorative river plaque |
+| Story and earliest availability                                                               | Tier 1                                                                             | Tier 2                                                                                                                                      | Tier 3                                                                                                                                                                   |
+| --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **A welcome at Dusty Spur** — Frontier; `stable`                                              | stable L1: Kit introduces the horse; stable welcome sign                           | stable L2: groom-and-lead scene; decorative grooming rail                                                                                   | stable L3: carriage-yard welcome; small horseshoe plaque                                                                                                                 |
+| **Willow horse field show** — Industrial; `horseField`                                        | horseField L1: handler greets/grooms one horse; decorated grooming rail and ribbon | horseField L2: two horses complete a gentle walk/trot presentation; low practice pole and decorative rosette board                          | horseField L3: three-horse presentation and low-pole demonstration; champion-field ribbon on the sign and show rail dressing                                             |
+| **Railway exhibition** — Industrial; `railDepot`, `warehouse`, `mill`                         | railDepot I1: arrival rehearsal; platform pennants                                 | railDepot I2 and warehouse I1: freight demonstration; decorative railway clock                                                              | railDepot I3, warehouse I2 and mill L1: exhibition opening; locomotive display plaque                                                                                    |
+| **Park dog day** — Motor Age; `park`                                                          | park L1: dog meets owner by bench; flowerbed dressing and dog-day bench sign       | park L2: fetch practice along a clear park route; low training cones and decorative ball basket                                             | park L3: full fetch/run/low-jump/return celebration; commemorative paw-print plaque and dog-day garden dressing                                                          |
+| **Prospect air festival** — Aviation; `airport`, `radioTower`                                 | airport L1: terminal welcome; terminal/apron bunting outside movement routes       | airport L2 and radioTower L1: taxi and radio-check presentation; vintage aircraft exhibition on a separate safe display pad and route board | airport L3 and radioTower L2: inaugural departure/flypast; selectable period aircraft livery and festival terminal dressing                                              |
+| **Prospect live premiere** — Broadcast; `concertHall`, `television`, `skyline`                | concertHall L1: rehearsal; concert poster frame                                    | concertHall L2 and television L1: broadcast rehearsal; studio premiere plaque                                                               | concertHall L3, television L2 and skyline L1: full concert premiere with skyline reveal; coordinated marquee appearance                                                  |
+| **Riverlight opening** — Connected City; `transitHub`, `riverPark`, `crystalLab`, `cityHomes` | transitHub L1 and riverPark L1: first promenade arrival; district banners          | transitHub L2, riverPark L2 and crystalLab L1: campus open house; decorative campus sculpture                                               | transitHub L3, riverPark L3, crystalLab L2 and cityHomes L1: tram/riverfront/tower evening celebration; selectable warm-window appearance and commemorative river plaque |
 
 Existing building costs and construction durations remain unchanged. In
 particular, the airport and towers keep their agreed two-puzzle initial
@@ -100,8 +138,9 @@ construction slot or withholds a building's service.
 The short Frontier story teaches **choose → play → claim → keep a memento**.
 The Industrial horse show introduces a richer animal performance. Motor Age dog
 day gives a familiar, short story between larger projects. Later landmark stories
-take longer but deliver intermediate visible rewards at four and eight puzzles.
-No story requires another story, and none expires when its era ends.
+have larger preparation budgets and more substantial building/visual goals.
+No story requires another story. An unaccepted story stays available after era
+advance; an accepted story retains its original dual deadlines across era changes.
 
 Every tier creates a distinct permanent 3D appearance on the actual plot, not
 just a label, counter, menu illustration or journal icon. Tier 2 adds to tier 1;
@@ -109,40 +148,50 @@ tier 3 completes a coordinated event appearance. Decorations remain inside the
 existing footprint and clear animal, pedestrian, vehicle and camera routes. A
 cosmetic toggle restores the undecorated appearance without losing ownership.
 
-### Optional mastery for committed players
+### Concrete preparation choices and optional mastery
 
-After a base finale is claimed, offer a separate opt-in **Encore** track. It
-observes existing naturally created board bonuses across unlimited normal
-puzzles; it never grants extra gameplay bonuses or requires spending inventory.
-Proposed first targets: horse show 12 bonuses, dog day 16, railway/airport 20,
-Broadcast/Connected City 24. These are cumulative design targets for playtesting,
-not per-level quotas. Additional combination-type goals can be evaluated later
-only if every required combination is naturally achievable in eligible boards.
+Each building tier also exposes one free, permanent preparation choice with an
+accurate in-town 3D preview. These are authored safe alternatives, never a new
+production economy: stable welcome-sign style → grooming-rail placement → carriage
+welcome arrangement; horse ribbon palette → one of two safe low-pole routes →
+show formation; park flowerbed palette → safe cone route → fetch presentation;
+railway pennants → locomotive display arrangement → platform presentation;
+airport bunting → display-aircraft placement → flight presentation; Broadcast
+poster → stage lighting palette → performance arrangement; Connected City
+banners → sculpture placement → warm-window pattern. The tier table's building
+prerequisites and this explicit preparation choice define base readiness.
 
-Progress persists between puzzles, pauses, era changes and reloads, with receipt
-deduplication. Any puzzle with no qualifying combination simply adds zero, never
-fails or resets mastery. There are no move/time caps, speed or score thresholds,
-streaks or payment requirements. Mastery never gates the base track, its listed
-rewards, another side quest or the main campaign.
+For committed players, offer **optional mastery preparation before the finale**.
+Observe existing naturally created board bonuses on settled normal-puzzle
+receipts while preparation remains open; never grant extra gameplay bonuses or
+require inventory spending. Proposed targets: horse show 12 bonuses, dog day 16,
+railway/airport 20, Broadcast/Connected City 24. These are cumulative playtest
+targets within the event preparation window, not per-puzzle quotas. The Frontier
+teaching event has no mastery goal.
 
-Mastery unlocks a distinct permanent 3D rosette/plaque and an optional 12–16 second
-encore with additional choreography: a horse presentation with turn, low-pole
-step and settled bow from its handler; a dog agility loop with a safe low jump,
-fetch and return; a three-aircraft formation after a single-plane departure; a
-railway salute with synchronized station/crew reactions; a concert encore with
-coordinated performers; a riverfront procession with tram and boat arrival. These
-are additional authored scenes, not longer confetti or duplicated camera orbits.
-The early Frontier teaching story has no mastery requirement or promotional nag.
-Implement mastery after the basic flow and its animation benchmark are proven.
+A puzzle with no qualifying combination adds zero; it never fails or resets the
+achievements already recorded. Puzzles always retain unlimited moves and normal
+completion after optional score/speed thresholds. Mastery must never gate base
+readiness, another event or main progression. The player can choose the standard
+finale as soon as ready, without waiting for mastery or the deadline.
+
+If mastery is earned before the chosen preparation close, it enables a **single
+enhanced finale instead of the standard version**, with a distinct permanent 3D
+rosette/plaque. Lock the choice atomically on claim; there is no second finale.
+Examples: extended horse turn/pole-step/handler presentation, full dog agility and
+fetch loop, three-aircraft formation, railway salute, coordinated concert finale
+or tram/boat riverfront procession. Author 12–16 seconds of richer choreography,
+not extended confetti or repeated camera orbits. Prototype after the base flow.
 
 ## Cinematic direction and shot lists
 
 Tier 1 and 2 reveals target 2–4 seconds, focused on one readable action and the
 new permanent 3D state appearing on the actual plot. Frontier finale targets 8
 seconds; other standard finales 10–14 seconds (shot lists below use 10 or 12);
-optional mastery encores 12–16 seconds. Durations are direction targets, not
+an earned mastery finale variant 12–16 seconds. Durations are direction targets, not
 timers the player must endure.
-Every scene is skippable immediately, replayable and silent when audio is muted.
+Every scene is one-off, skippable immediately and silent when audio is muted.
+Skip permanently consumes that scene just as watching it does.
 Remember skip/reduced-motion preferences. Build anticipation with a brief audio
 rise and held action, then deliver the main motion, resident reaction and reward
 hold. Do not autoplay the reveal again after every puzzle or reward revisit.
@@ -165,9 +214,9 @@ sound motif create the payoff. Respect current era dress and the real parcel pat
 
 Cinematic actor movement must use continuous positions and authored collision-free
 routes. Never teleport a horse, dog, vehicle or resident into its final pose.
-For historical scenes claimed in a much later era, use a clearly marked journal
-recollection with the appropriate cached building/character variants, or a
-present-day heritage event. Select one approach during the first art prototype;
+For an unstarted historical event first accepted in a much later era, use a
+clearly marked one-off historical presentation with appropriate cached variants,
+or a present-day heritage gathering. Select one approach during the first art prototype;
 never temporarily downgrade the saved town or mix incompatible period geometry.
 
 ## Asset and animation production
@@ -194,54 +243,143 @@ never temporarily downgrade the saved town or mix incompatible period geometry.
 
 ## Persistence, interruptions and accessibility
 
-Keep versioned side-quest state independent from main progression: active story,
-per-story completion count, monotonic building achievements, claimed tier IDs,
-cosmetic entitlements and cinematic history. Reuse the normal completion receipt
-as input, but never mutate its financial outcome. Make quest counting, claims and
-entitlement writes idempotent and robust to reload/import between each step.
+Keep versioned event state separate from main progression: accepted event IDs,
+acceptance timestamp, immutable UTC deadline, puzzle budget/remaining turns,
+deduplicated settled receipts, monotonic building/preparation achievements,
+mastery progress, deadline-close reason/time, locked outcome/variant, claimed
+cosmetics, and per-scene `unseen / presenting / consumed` receipts. The financial
+receipt remains owned by normal gameplay. Claims and scene locks must be atomic.
 
-Existing saves get an empty optional story journal and current building
-eligibility; do not fabricate historical puzzle counts from total level or score.
-No completed construction or already-earned main reward is replayed or revoked.
+Old saves get unaccepted events and current building eligibility, with no invented
+historical preparation turns or mastery. Reload/import cannot reset the clock,
+budget or consumed scene flags within the same playthrough. A new-game/reset
+operation deliberately creates a fresh playthrough identity; it is the intended
+way to experience events again. Ordinary puzzle replay rules are untouched.
 
-A ready claim waits while an era transition, incident, reward modal or another
-cinematic is active. Returning to town is not implicit permission to autoplay.
-Pause timeline/audio on hidden tab or lost focus; resume safely. Reload during a
-scene preserves the claimed reward and offers replay, never a duplicate payout.
-Skip, reduced motion, mute, failed asset load and WebGL context loss all leave the
-reward claim and main gameplay accessible. Restore camera, input, audio state and
-existing event queue reliably on every exit path.
+Persist UTC deadline at acceptance and reconcile it on foreground/load. Do not
+shift the deadline forward when offline, paused or reloaded. Keep an authoritative
+last-observed timestamp to avoid accidental backwards-clock extension; explicit
+save rollback/multi-device trust policy must be resolved with the game's save
+architecture before claiming tamper resistance. Clock errors must never block
+normal play or destroy existing rewards.
 
-Reduced motion uses a composed static or gently eased shot and clear reward card,
-with the same entitlement. Provide captions for meaningful audio, keyboard/touch
-claim and skip controls, visible focus and safe mobile placement. Do not require
-sound, camera motion or precise reaction timing to understand or finish a story.
+A pending presentation waits for a safe town claim while incidents, era scenes
+or modals run. Resolve the outcome and atomically record the earned cosmetic and
+single selected variant when preparation closes or the player holds the event
+early. Later presentation does not grant again or change this choice. A finished
+or skipped scene stays consumed forever in
+this playthrough. On a genuine interruption while still `presenting`, resume from
+a saved timeline checkpoint without granting again or restarting from the first
+shot; if safe resume is impossible, finalize via the reward card and consume the
+scene. Never offer a replay button. An event expiring while away remains pending,
+not silently viewed or consumed.
+
+Pause cinematic timeline/audio on focus loss, but never pause the event's real
+deadline. Restore camera, input, audio state and existing event queues on every
+exit path. Reduced motion provides its one-off composed alternative with the same
+earned entitlement. Mute, load failure or WebGL context loss cannot prevent normal
+play or lose claimed cosmetics. Captions, keyboard/touch controls, visible focus
+and mobile-safe placement make claim/skip usable without sound or precise timing.
+
+## Chained cinematics after returning to the game
+
+Multiple explicitly accepted events can reach deadlines while the player is away.
+On return, reconcile every due outcome and commit earned permanent results before
+presentation. Create a persistent ordered queue of the unconsumed one-off scenes.
+Never auto-accept an event merely because its building is eligible, and never play
+or silently consume a scene while offline. Only the HUD focus is singular; event
+preparations can overlap, with each qualifying receipt counted once per event.
+
+Order due side-event outcomes by their preparation-close timestamp, then stable
+event ID; within an event preserve unseen stage order before its locked finale.
+An already-running main incident or era scene keeps priority and finishes first.
+When the director is free, mandatory main-story/incident scenes have priority over
+the side-event batch. A new incident during a side clip waits until that clip's
+safe boundary, then yields through the same director; never allow competing
+cameras. No cinematic priority may delay ordinary reward settlement or leave an
+active puzzle without input.
+
+At a safe town entry, offer the ready batch with one brief **While you were away**
+introduction and its count. Claiming/watching the batch is optional; no sequence
+of confirmation modals. Once started, chain clips without intermediate menus,
+reward popups or resets to the default town camera. Rewards were already committed
+and remain available even if the player leaves the batch pending.
+
+The director receives each outgoing camera pose and the next event's action
+anchor. Author a 1–2 second eased transition using a clear wide establishing view
+or crane path. When distance or obstruction makes continuous travel unattractive,
+use a restrained cross-dissolve between coherent compositions. Preserve horizon,
+spatial readability and motion continuity; never fly through buildings, whip-pan
+across town or instantly teleport the focus. Bridge audio with short crossfades
+and environmental sound; reduce the previous applause before the next action.
+Return to the user's original camera only after the batch exits.
+
+Example: horse-show ribbon hold → crane over a clear town route → park owner
+anticipating the throw → dog/paw-plaque hold → wide river establishing shot →
+airport runway composition → takeoff finale. The transition itself is composed
+animation, not an extra reward event or repeat of an already consumed scene.
+
+Provide quiet **Event N / total**, **Next scene**, **Skip all** and **Return to town**
+controls. Next consumes only the current scene and advances; Skip all consumes the
+remaining queued scenes while preserving every earned permanent result. Return
+to town ends the batch without forcing its remaining scenes; keep unconsumed
+entries pending. If a clip is already playing, leaving stores its checkpoint and
+later resumes from that point rather than restarting. Do not force an unbounded
+chain merely because many outcomes are ready.
+
+Persist queue entry ID, event/outcome ID, scene ID, `pending / playing / consumed`,
+chosen variant, timeline checkpoint and transition phase. Mark a finished/skipped
+outgoing clip consumed before its transition. Reload/disconnect at the boundary
+must never replay that outgoing clip; start/resume the unconsumed next entry from
+its persisted state. Exactly-once outcome and cosmetic grants are independent
+from queue consumption. Queue state resets only with a deliberate new game.
+
+Reduced motion uses composed still alternatives with restrained crossfades and
+the same once-only consumption; mute persists through every bridge. A single
+director owns camera/input/audio across main and side scenes and restores them on
+skip, leave, asset failure and context loss. Runtime profiling includes transitions
+and preload overlap, not just isolated clips.
 
 ## Quality and release acceptance
 
 - [ ] Package B remains a future-release issue; current release contains no quest
       runtime, premium features or new cinematic dependencies from this branch.
 - [ ] All seven stories use real building IDs, correct unlock eras and the exact
-      cumulative counts/prerequisites agreed after playtesting.
+      building prerequisites and dual-deadline budgets agreed after playtesting.
 - [ ] Skipping all stories leaves campaign, era completion, income, bonuses,
       construction and puzzle progression unchanged against a control save.
 - [ ] Unlimited moves and continued play after optional speed/score targets are
-      tested in normal chapters, story progress and replay flows. No hard timers.
+      tested in normal chapters, event progress and normal puzzle replays. Event
+      expiry is separate and cannot impose a hard timer or move cap on a puzzle.
 - [ ] Early stable introduction teaches the flow without moving horseField or
       park earlier, adding mandatory Frontier costs or forcing a tutorial modal.
-- [ ] Pausing/switching stories, hammers, repeated receipts, late-era claims,
-      old-save import, reload, skip and replay preserve accurate progress and
-      exactly-once cosmetic grants.
+- [ ] Hammers, repeated receipts, late-era acceptance, old-save import, UTC
+      deadline crossing while away/mid-puzzle, final-budget settlement, reload,
+      skip and interrupted-scene resume preserve progress and exactly-once grants.
+- [ ] Each stage scene and single finale plays once per playthrough. No replay,
+      encore, repeat-edition or event reset controls. Skip consumes the scene;
+      only a new game deliberately permits the experience again.
+- [ ] Exact deadline budgets and incomplete-preparation outcome receive explicit
+      design approval. Real elapsed time or completed-puzzle budget closes
+      preparation, whichever occurs first; normal rewards/construction still settle.
+- [ ] Two to five accepted events expiring offline produce a persistent ordered
+      cinematic batch, with permanent outcomes already settled. Verify no duplicate
+      grants, no offline consumption, no intermediate popups/camera resets and no
+      conflicting main-story/incident camera control.
+- [ ] Chained 1–2 second dynamic transitions have valid camera paths/poses, clear
+      buildings and preserve readable action/audio continuity on phone and desktop.
+      Test Next, Skip all, Return to town, mute/reduced motion and reload on every
+      clip/transition boundary; consumed scenes never play again.
 - [ ] Every tier has a distinct permanent 3D cosmetic state on the actual plot,
       an accurate preview and a short authored in-world reveal. Approved rendered
       storyboards/key poses match the art direction before final animation work.
       All final scenes have reviewed Blender source, animation playblasts and
       real-browser recordings; concept sheets, slideshows and placeholder motion
       do not satisfy visual acceptance.
-- [ ] Optional mastery has cumulative non-resetting receipt-backed progress,
-      distinct 3D mementos and richer choreography; no spending, move/time caps
-      or effects on base-quest/campaign completion. All cinematics restore control
-      and preserve rewards on skip, failure and reload.
+- [ ] Optional pre-finale mastery is receipt-backed and selects one richer
+      performance/3D memento before preparation closes. Standard finale remains
+      available when base-ready; no spending or puzzle move/time limits, and no
+      second performance. Skip/interruption/reload preserve the chosen outcome.
 - [ ] Horse and dog clips pass four-limb/contact/path inspection, with no geometry
       intersections, foot sliding, teleporting, broken jaw/ball attachment or
       clipping against furniture and pavilions.
@@ -253,7 +391,8 @@ sound, camera motion or precise reaction timing to understand or finish a story.
       a claimed current measurement. Scope art/effects to actual device results.
 - [ ] Inactive quests add no per-frame scanning or persistent cinematic actors.
       Verify idle-town frame time against baseline; preload without blocking input,
-      dispose cleanly and test repeated scene playback for memory growth.
+      dispose cleanly and test scene lifecycle repeatedly in isolated test saves
+      for memory growth without exposing replay in the product.
 - [ ] Full existing regression suite/build and actual browser workflows pass;
       inspect console/network errors and final-era transitions with unclaimed quests.
 
@@ -263,13 +402,13 @@ sound, camera motion or precise reaction timing to understand or finish a story.
    story. Validate save migration and non-interference before broader content.
 2. Produce one complete Industrial horse-field finale as the animation-quality
    benchmark; then park dog day with the same camera/claim lifecycle.
-3. Add Steam railway exhibition and verify historical/later-era playback handling.
+3. Add Steam railway exhibition and verify historical/later-era one-off presentation handling.
 4. Add Aviation, then Broadcast, then Connected City stories, each with its own
    animation and mobile performance review. Do not ship placeholder celebrations.
 5. Playtest cadence and optional participation before adjusting counts. Preserve
    money gains/bonuses and avoid making story completion a main-campaign metric.
 
 Success observations: players voluntarily opt in, claim and equip the mementos,
-watch/replay scenes and return after town construction; main-campaign completion
+experience their one-off scenes and return to their developed town; main-campaign completion
 and responsiveness do not worsen. No retention or revenue uplift is claimed by
 this specification, and monetization remains outside its scope.
