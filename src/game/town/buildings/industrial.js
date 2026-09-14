@@ -104,6 +104,7 @@ export function addElectricLighting(d, town) {
   }
   // Static globes stay readable in daylight without adding seven shadow-casting lights.
   d.batch(lights);
+  return lights;
 }
 
 // Whole architectural families replace the timber shells. Landmark positions,

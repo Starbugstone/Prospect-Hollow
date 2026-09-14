@@ -60,6 +60,35 @@ describe('GameStore - Bonus Activation', () => {
     expect(firstStep.cleared).toEqual([0, 1, 2]);
   });
 
+  it('rejects a one-time power while input is paused without changing the board or score', async () => {
+    gameStore.inputPaused = true;
+    const before = JSON.stringify({ board: gameStore.board, tiles: gameStore.tiles });
+    expect(await gameStore.activateOneTimeBonus('clear_row')).toBe(false);
+    expect(JSON.stringify({ board: gameStore.board, tiles: gameStore.tiles })).toBe(before);
+    expect(gameStore.renderer.animator.playSteps).not.toHaveBeenCalled();
+    expect(gameStore.score).toBe(0);
+    expect(gameStore.animationInProgress).toBe(false);
+  });
+
+  it('does not commit an old power animation into a new session', async () => {
+    let complete;
+    gameStore.renderer.animator.playSteps.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          complete = resolve;
+        }),
+    );
+    const commit = vi.spyOn(gameStore, 'commitResolution');
+    const activation = gameStore.activateOneTimeBonus('clear_row');
+    gameStore.sessionVersion++;
+    const nextBoard = [createGem('ruby')];
+    gameStore.board = nextBoard;
+    complete();
+    expect(await activation).toBe(false);
+    expect(commit).not.toHaveBeenCalled();
+    expect(gameStore.board).toEqual(nextBoard);
+  });
+
   it('should not activate bonus if session is not active', async () => {
     gameStore.sessionActive = false;
     const initialBoard = [...gameStore.board];
@@ -70,6 +99,7 @@ describe('GameStore - Bonus Activation', () => {
 
   afterEach(() => {
     gameStore.cancelHint(true);
+    vi.restoreAllMocks();
     vi.useRealTimers();
   });
 });
@@ -179,6 +209,7 @@ describe('Interactive Bonuses', () => {
 
   afterEach(() => {
     gameStore.cancelHint(true);
+    vi.restoreAllMocks();
     vi.useRealTimers();
   });
 });

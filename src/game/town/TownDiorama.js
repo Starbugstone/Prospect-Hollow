@@ -5,7 +5,7 @@ import { eraBuildingLevel } from './TownEras';
 import { buildingServiceLevel } from '../../data/buildingProgression';
 import { TownUpgradeGlow } from './TownUpgradeGlow';
 import * as THREE from 'three';
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { createTownGeometries } from './TownGeometries';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { BUILDING_BY_ID } from '../../data/town';
@@ -19,7 +19,7 @@ import { buildTownSquare } from './TownSquare';
 import { renderBuilding, renderModernization } from './buildings/BuildingRenderer';
 import { addEraActivity } from './TownEraActivity';
 import { addScaffolding, addImprovements } from './TownImprovements';
-import { addTownRoads, addTownVisitors, TownRaid } from './TownActivity';
+import { addTownVisitors, TownRaid } from './TownActivity';
 import { TownEraIncident } from './TownEraIncident';
 import { eventKind } from '../../data/townEvents';
 import {
@@ -30,12 +30,12 @@ import {
   nextGoal,
 } from './TownRules';
 import { buildLandscape, keepCameraAboveTerrain } from './TownLandscape';
-import { addElectricLighting, renderIndustrialLandmark } from './buildings/industrial';
+import { renderIndustrialLandmark } from './buildings/industrial';
 import { renderMotorLandmark } from './buildings/motorAge';
 import { addMotorActivity } from './TownMotorActivity';
-import { addPowerGrid, motorTraffic } from './TownEvolution';
+import { motorTraffic } from './TownEvolution';
+import { TownScenery } from './TownScenery';
 import { addMineEra } from './TownMineEvolution';
-import { addMineForecourt } from './TownMineForecourt';
 
 import { PLOTS, LANE_X, atPlot, SHERIFF_PATROL, visiblePlots } from './TownLayout';
 import { riverCenterX } from './TownRiver';
@@ -58,24 +58,7 @@ export class TownDiorama {
     this.onCameraDistance = onCameraDistance;
     this.onUnavailable = onUnavailable;
     this.materials = new Map();
-    this.geometries = {
-      box: new THREE.BoxGeometry(1, 1, 1),
-      rounded: new RoundedBoxGeometry(1, 1, 1, 1, 0.09),
-      sphere: new THREE.SphereGeometry(1, 10, 6),
-      rock: new THREE.IcosahedronGeometry(1, 0),
-      foliage: new THREE.IcosahedronGeometry(1, 1),
-      cylinder: new THREE.CylinderGeometry(1, 1, 1, 12),
-      cone: new THREE.CylinderGeometry(0.6, 1, 1, 10),
-      shadow: new THREE.CircleGeometry(1, 24),
-    };
-    const leaves = this.geometries.foliage.attributes.position;
-    for (let i = 0; i < leaves.count; i++) {
-      const x = leaves.getX(i),
-        y = leaves.getY(i),
-        z = leaves.getZ(i);
-      const variation = 1 + Math.sin(x * 19 + y * 11 + z * 7) * 0.12;
-      leaves.setXYZ(i, x * variation, y * variation, z * variation);
-    }
+    this.geometries = createTownGeometries();
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color('#e9e8da');
     this.scene.fog = new THREE.Fog('#e9e8da', 125, 205);
@@ -309,10 +292,43 @@ export class TownDiorama {
     group.removeFromParent();
   }
   update(town, labels, mineStage = 0, constructionId = null) {
+    const interruptedGroup = this.construction?.group;
     this.construction?.finish();
     this.construction = null;
+    const plots = visiblePlots(town);
+    const reusable = new Map();
+    const labelSignature = JSON.stringify(labels);
+    const signatures = new Map(
+      plots.map(({ id }) => [
+        id,
+        JSON.stringify([
+          labelSignature,
+          town.era,
+          town.buildings[id],
+          constructionVisual(town.projects[id]),
+          town.buildingEras[id],
+          town.buildingEraLevels[id],
+          id === 'mine' ? mineStage : null,
+        ]),
+      ]),
+    );
+    // Keep unchanged plot meshes (and their sign textures) out of world disposal.
+    // A reveal needs fresh articulated pieces, including when interrupted by a tap.
+    for (const [id, cached] of this.plotCache ?? []) {
+      if (
+        id === constructionId ||
+        cached.group === interruptedGroup ||
+        cached.signature !== signatures.get(id)
+      )
+        continue;
+      cached.group.removeFromParent();
+      cached.movingPart?.rotor.removeFromParent();
+      reusable.set(id, cached);
+    }
+    this.plotCache = new Map();
     this.actorRenderer.clear();
-    this.buildingRenderer.clear();
+    this.staticScenery ??= new TownScenery();
+    this.staticScenery.detach();
     this.upgradeGlow.clear();
     this.clearGroup(this.world);
     this.world = new THREE.Group();
@@ -328,8 +344,7 @@ export class TownDiorama {
       .filter(({ id }) => id !== 'bridge')
       .map(({ position: [x, z] }) => point(x, 0.2, z));
     this.guidedPlot = nextGoal(town)?.id;
-    addTownRoads(this, town, PLOTS);
-    addMineForecourt(this, town);
+    this.staticScenery.update(this, town);
     this.controls.maxDistance = ['post-war', 'motor-age', 'contemporary'].includes(town.era)
       ? 180
       : town.era !== 'frontier'
@@ -343,8 +358,10 @@ export class TownDiorama {
     for (const {
       id,
       position: [x, z],
-    } of visiblePlots(town)) {
-      const group = this.group(this.world, x, 0.08, z);
+    } of plots) {
+      const cached = reusable.get(id);
+      const group = cached?.group ?? this.group(this.world, x, 0.08, z);
+      if (cached) this.world.add(group);
       group.userData.plot = id;
       group.userData.static = true;
       this.targets.push(group);
@@ -353,9 +370,9 @@ export class TownDiorama {
         width: id === 'mine' ? 132 : Math.max(76, labels[id].length * 7 + 35),
         position: point(x, 0.2, z + (id === 'mine' ? 1.65 : 1.85)),
       });
-      let movingPart;
-      if (id === 'mine') this.mine(group, labels.mine, mineStage);
-      else {
+      let movingPart = cached?.movingPart;
+      if (!cached && id === 'mine') this.mine(group, labels.mine, mineStage);
+      else if (!cached) {
         const stage = buildingServiceLevel(id, town.buildings[id]),
           project = town.projects[id],
           kind = BUILDING_BY_ID[id].kind;
@@ -423,15 +440,14 @@ export class TownDiorama {
       }
       if (id === constructionId)
         this.construction = new TownConstruction(this, group, movingPart?.rotor);
-      else this.batch(group);
+      else if (!cached) this.batch(group);
       if (movingPart) this.motions.push(movingPart.update);
+      this.plotCache.set(id, { signature: signatures.get(id), group, movingPart });
     }
     // Model preparation can be expensive. Start the reveal clock on its first visible frame.
     if (this.construction) this.lastFrame = 0;
     const household = population(town);
     addEraActivity(this, town);
-    addElectricLighting(this, town);
-    addPowerGrid(this, town);
     addMotorActivity(this, town);
     addTownVisitors(this, town);
     addTownLife(this, town);
@@ -543,7 +559,7 @@ export class TownDiorama {
     this.actors.forEach((actor) => this.animatePerson(actor, this.elapsed));
     this.motions.forEach((motion) => motion(this.elapsed));
     this.rebuildActors();
-    this.buildingRenderer.rebuild(this.world.children.filter((child) => child.userData.static));
+    this.buildingRenderer.sync(this.world.children.filter((child) => child.userData.static));
     this.renderer.shadowMap.needsUpdate = true;
     if (this.overview) this.frameTown();
     this.render();
@@ -1197,7 +1213,8 @@ export class TownDiorama {
     this.construction = null;
     this.batch(group);
     this.rebuildActors();
-    this.buildingRenderer.rebuild(this.world.children.filter((child) => child.userData.static));
+    // The rest of the village is already batched. Only settle the completed plot.
+    this.buildingRenderer.sync(this.world.children.filter((child) => child.userData.static));
     this.renderer.shadowMap.needsUpdate = true;
     this.render();
   }
@@ -1318,8 +1335,10 @@ export class TownDiorama {
       this.selection.geometry.dispose();
       this.selection.material.dispose();
     }
+    this.staticScenery?.dispose(this);
     this.clearGroup(this.world);
     this.clearGroup(this.landscape);
+    this.plotCache?.clear();
     Object.values(this.geometries).forEach((geometry) => geometry.dispose());
     this.materials.forEach((material) => material.dispose());
     this.contactShadowMaterial.dispose();

@@ -97,63 +97,6 @@ export function addEraActivity(d, town) {
     });
   }
   if (railEdges(town).length) {
-    const rails = d.group(d.world);
-    rails.userData.static = true;
-    rails.name = 'Station connecting railroad';
-    for (let x = RAIL_EDGE.from[0]; x < RAIL_EDGE.to[0]; x++) {
-      const z = RAIL_EDGE.from[1];
-      for (const dz of [-0.52, 0.52])
-        d.rod(
-          rails,
-          [x, railHeight(x), z + dz],
-          [x + 1, railHeight(x + 1), z + dz],
-          0.035,
-          '#6e7770',
-        );
-      d.box(rails, 0.17, 0.1, 1.45, x, railHeight(x) - 0.09, z, '#8b7756');
-      const fill = railHeight(x) - 0.14;
-      if (Math.abs(x - riverCenterX(z)) > RIVER.bankWidth + 1.2)
-        d.box(rails, 1.02, fill, 1.7, x + 0.5, fill / 2, z, '#a99d80');
-    }
-    const center = riverCenterX(RAIL_EDGE.from[1]),
-      span = RIVER.bankWidth + 1.2,
-      z = RAIL_EDGE.from[1];
-    const bridge = d.group(rails);
-    bridge.name = 'Railway river bridge';
-    d.box(bridge, span * 2, 0.15, 1.8, center, railHeight(center) - 0.2, z, '#766e5d');
-    for (const side of [-1, 1]) {
-      const edge = z + side * 0.87;
-      const deck = railHeight(center);
-      d.rod(
-        bridge,
-        [center - span, deck + 0.1, edge],
-        [center + span, deck + 0.1, edge],
-        0.075,
-        '#515f5a',
-      );
-      d.rod(
-        bridge,
-        [center - span, deck + 1.5, edge],
-        [center + span, deck + 1.5, edge],
-        0.07,
-        '#65766d',
-      );
-      for (let n = 0; n <= 6; n++) {
-        const x = center - span + (n * span) / 3;
-        d.rod(bridge, [x, deck + 0.1, edge], [x, deck + 1.5, edge], 0.055, '#65766d');
-        if (n < 6)
-          d.rod(
-            bridge,
-            [x, deck + (n % 2 ? 1.5 : 0.1), edge],
-            [x + span / 3, deck + (n % 2 ? 0.1 : 1.5), edge],
-            0.05,
-            '#65766d',
-          );
-      }
-    }
-    for (const x of [center - span + 0.35, center + span - 0.35])
-      d.box(bridge, 0.65, 3.7, 2, x, 0.65, z, '#a39d88');
-    d.batch(rails);
     const train = d.group(d.world, -17, 0.3, -23);
     const modern = modernTransport(town, 'railDepot');
     train.name = modern ? 'Modern station railcar' : 'Station train';
@@ -213,4 +156,66 @@ export function addEraActivity(d, town) {
       });
     });
   }
+}
+
+export function addRailroad(d, town) {
+  if (!railEdges(town).length) return null;
+  const rails = d.group(d.world);
+  rails.userData.static = true;
+  rails.name = 'Station connecting railroad';
+  for (let x = RAIL_EDGE.from[0]; x < RAIL_EDGE.to[0]; x++) {
+    const z = RAIL_EDGE.from[1];
+    for (const dz of [-0.52, 0.52])
+      d.rod(
+        rails,
+        [x, railHeight(x), z + dz],
+        [x + 1, railHeight(x + 1), z + dz],
+        0.035,
+        '#6e7770',
+      );
+    d.box(rails, 0.17, 0.1, 1.45, x, railHeight(x) - 0.09, z, '#8b7756');
+    const fill = railHeight(x) - 0.14;
+    if (Math.abs(x - riverCenterX(z)) > RIVER.bankWidth + 1.2)
+      d.box(rails, 1.02, fill, 1.7, x + 0.5, fill / 2, z, '#a99d80');
+  }
+  const center = riverCenterX(RAIL_EDGE.from[1]),
+    span = RIVER.bankWidth + 1.2,
+    z = RAIL_EDGE.from[1];
+  const bridge = d.group(rails);
+  bridge.name = 'Railway river bridge';
+  d.box(bridge, span * 2, 0.15, 1.8, center, railHeight(center) - 0.2, z, '#766e5d');
+  for (const side of [-1, 1]) {
+    const edge = z + side * 0.87;
+    const deck = railHeight(center);
+    d.rod(
+      bridge,
+      [center - span, deck + 0.1, edge],
+      [center + span, deck + 0.1, edge],
+      0.075,
+      '#515f5a',
+    );
+    d.rod(
+      bridge,
+      [center - span, deck + 1.5, edge],
+      [center + span, deck + 1.5, edge],
+      0.07,
+      '#65766d',
+    );
+    for (let n = 0; n <= 6; n++) {
+      const x = center - span + (n * span) / 3;
+      d.rod(bridge, [x, deck + 0.1, edge], [x, deck + 1.5, edge], 0.055, '#65766d');
+      if (n < 6)
+        d.rod(
+          bridge,
+          [x, deck + (n % 2 ? 1.5 : 0.1), edge],
+          [x + span / 3, deck + (n % 2 ? 0.1 : 1.5), edge],
+          0.05,
+          '#65766d',
+        );
+    }
+  }
+  for (const x of [center - span + 0.35, center + span - 0.35])
+    d.box(bridge, 0.65, 3.7, 2, x, 0.65, z, '#a39d88');
+  d.batch(rails);
+  return rails;
 }

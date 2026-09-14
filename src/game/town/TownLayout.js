@@ -203,8 +203,12 @@ export function routeGraph(town, mode = 'pedestrian') {
   return { nodes, edges };
 }
 export function routeBetween(town, from, to, mode = 'pedestrian') {
-  const { nodes, edges } = routeGraph(town, mode),
-    start = from.join(','),
+  return routeOnGraph(routeGraph(town, mode), from, to);
+}
+
+// Reuse one graph when several routes belong to the same town snapshot.
+export function routeOnGraph({ nodes, edges }, from, to) {
+  const start = from.join(','),
     end = to.join(',');
   if (!nodes.has(start) || !nodes.has(end)) return [];
   const queue = [[start]],
