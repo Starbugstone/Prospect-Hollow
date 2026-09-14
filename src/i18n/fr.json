@@ -2163,5 +2163,6 @@
   "Fill the pictured ore orders by collecting those gem colors. Matching and bonuses both count. Open the reinforced shelf to link both halves of the chamber.": "Remplissez les commandes illustrées en récoltant les couleurs demandées. Les alignements et les bonus comptent. Ouvrez le rebord renforcé pour relier les deux moitiés de la chambre.",
   "Fill the pictured ore orders by collecting those gem colors. Matching and bonuses both count. An open passage. Enjoy the room for combinations and flowing cascades.": "Remplissez les commandes illustrées en récoltant les couleurs demandées. Les alignements et les bonus comptent. Un passage dégagé. Profitez de l’espace pour les combinaisons et les cascades.",
   "Fill the pictured ore orders by collecting those gem colors. Matching and bonuses both count. Bring both relics home, then clear the remaining seals and ice.": "Remplissez les commandes illustrées en récoltant les couleurs demandées. Les alignements et les bonus comptent. Ramenez les deux reliques, puis éliminez les derniers sceaux et la glace.",
-  "Project stage {level}/{total}": "Stade du projet {level}/{total}"
+  "Project stage {level}/{total}": "Stade du projet {level}/{total}",
+  "Complete": "Terminé"
 }

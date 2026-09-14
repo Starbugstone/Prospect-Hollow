@@ -568,7 +568,13 @@ project and progress controls was fixed and visually rechecked before this commi
 
 This recap and selected browser screenshots are a subsequent documentation-only
 handoff. The runtime checks above apply to the runtime commit; the handoff makes
-no gameplay changes. Main remains at the comparison baseline.
+no gameplay changes. A final localization followup translates the completed
+project building-row label from “Complete” to “Terminé” and refreshes the French
+mobile project capture below. All static project-panel translation keys were
+checked, the relevant localization/project tests and production build passed,
+and the three completed rows were verified in the browser. The main implementation
+remains `0ef83ed`; the final `develop` head also includes the documentation and
+this copy correction. Main remains at the comparison baseline.
 
 Selected current-release browser captures:
 
