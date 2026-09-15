@@ -1,3 +1,4 @@
+import { WATERMILL_SITE } from '../../data/watermill';
 import { BUILDING_BY_ID } from '../../data/town';
 import { plotUnlocked } from './TownRules';
 import { riverCenterX, riverPath } from './TownRiver';
@@ -27,6 +28,7 @@ export const PLOTS = {
   farm2: [15, -4],
   farm3: [15, 4],
   fisherman: [22, 12],
+  watermill: WATERMILL_SITE.position,
   blacksmith: [-15, 12],
   school: [-15, -12],
   doctor: [15, 12],
@@ -76,7 +78,11 @@ const PLOT_METADATA = Object.fromEntries(
       requires: BUILDING_BY_ID[id]?.unlock ?? [],
       district: position[0] > 35 ? 'east-bank' : 'old-town',
       access:
-        id === 'bridge' ? 'crossing' : id === 'riverPort' || id === 'fisherman' ? 'shore' : 'road',
+        id === 'bridge'
+          ? 'crossing'
+          : ['riverPort', 'fisherman', 'watermill'].includes(id)
+            ? 'shore'
+            : 'road',
     },
   ]),
 );
@@ -116,6 +122,7 @@ export const TOWN_TRACKS = [
   road([-11, -16.5], [-LANE_X, -16.5], 0.85, 'railDepot'),
   road([11, -8.5], [15, -8.5], 0.85, 'post'),
   road([19, -0.5], [23, -0.5], 0.85, 'riverPort'),
+  road([11, -8.5], [21.5, -8.5], 0.85, 'watermill'),
   road([19, 7.5], [24, 7.5], 0.85, 'bridge'),
   road([15, -16.5], [LANE_X, -16.5], 0.85, 'powerHouse'),
   road([-15, 23.5], [-LANE_X, 23.5], 0.85, 'fireStation'),

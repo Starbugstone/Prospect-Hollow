@@ -1,3 +1,4 @@
+import { renderWatermill } from './watermill';
 import { eraEvolution } from '../../../data/eras';
 import { addCityModernization, renderCityBuilding } from './city';
 import { CITY_BUILDINGS } from '../../../data/city';
@@ -40,6 +41,8 @@ export function renderBuilding({
   construction = false,
   label,
 }) {
+  if (kind === 'watermill' && !construction && level > 0)
+    return renderWatermill(d, parent, era, level, label);
   if (!construction && level > 0 && renderCityBuilding(d, parent, kind, label, level, era, level))
     return;
   const city = CITY_BUILDINGS.find((b) => b.kind === kind);
@@ -90,6 +93,16 @@ export function renderModernization(d, parent, kind, era, level = 1) {
   return ERA_RENDERERS[eraEvolution(era).style]?.modernize(d, parent, kind, era, level);
 }
 export function renderEraLandmark(d, parent, kind, label, level, era, serviceLevel) {
+  if (kind === 'watermill') {
+    renderWatermill(
+      d,
+      parent,
+      era,
+      eraEvolution(era).style === 'frontier' ? serviceLevel : level,
+      label,
+    );
+    return true;
+  }
   return (
     ERA_RENDERERS[eraEvolution(era).style]?.landmark?.(
       d,

@@ -1,6 +1,11 @@
 <template>
+  <TownWatermill
+    v-if="built && kind === 'watermill'"
+    :era="era"
+    :level="eraEvolution(era).style === 'frontier' ? stage : eraLevel"
+  />
   <TownCityBuilding
-    v-if="built && isCityEra(era)"
+    v-else-if="built && isCityEra(era)"
     :kind="kind"
     :era="era"
     :level="eraLevel"
@@ -486,6 +491,7 @@
 </template>
 
 <script setup>
+import TownWatermill from './TownWatermill.vue';
 import { isCityEra } from '../../data/city';
 import { eraEvolution } from '../../data/eras';
 import TownCityBuilding from './TownCityBuilding.vue';

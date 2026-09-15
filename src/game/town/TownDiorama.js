@@ -423,6 +423,14 @@ export class TownDiorama {
               town.buildingEras[id],
               town.buildingEraLevels[id] || stage,
             );
+          const wheel = group.getObjectByName('Watermill wheel');
+          if (wheel)
+            movingPart = {
+              rotor: wheel,
+              update: (time) => {
+                wheel.rotation.x = time * 0.45;
+              },
+            };
           if (project) addScaffolding(this, group, kind, stage, constructionVisual(project));
         }
       }

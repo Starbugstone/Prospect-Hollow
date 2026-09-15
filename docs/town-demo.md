@@ -19,8 +19,9 @@ Crystal Cascade opens on an English/French landing page explaining the jewel puz
 | Bank        | 150 / 345 / 540 / 1080 / 2700 | 1 / 1 / 1 / 1 / 1 | Half protection against 2 / 4 / 6 / 8 / 10 riders                       |
 | Shop        | 150 / 330 / 525               | 1 / 1 / 1         | 1 / 2 / 5 offers per completed mine run                                 |
 | Town square | 120 / 240 / 480 / 960 / 2400  | 0 / 1 / 1 / 1 / 1 | 8 / 16 / 24 / 32 / 40 happiness points; central fountain                |
+| Watermill   | 150 / 270 / 450               | 1 / 1 / 1         | Riverside landmark; unlocks after Farm level 1                          |
 
-Upgrading the original **home to level 2** unlocks House II; each extra house must finish level 2 to reveal the next; the original **well to level 2** unlocks one extra well; the original **farm to level 2** unlocks Farm II, then finishing Farm II’s level 2 upgrade reveals Farm III. There are **21 Frontier plots in total**, with 3 levels for supporting buildings and 5 for the town square, sheriff, bank, saloon and blacksmith. All upgrades are available without a mine-level or completed-puzzle lock. Coins and builder hammers follow the same building prerequisites. Locked plots remain prairie in 3D and are excluded from the purchase list. Extra plots use the same cost, duration, and service progression as their original type. Resident population is the minimum of housing, water, and food capacity. Stables support 2, 4 and 10 visitors at levels 1–3; the museum supports 0, 2 and 8. Visitors use food and water left after residents, without needing houses. The fully upgraded town supports **40 residents and 18 visitors**. There is no food depletion or manual supply chore.
+Upgrading the original **home to level 2** unlocks House II; each extra house must finish level 2 to reveal the next; the original **well to level 2** unlocks one extra well; the original **farm to level 2** unlocks Farm II, then finishing Farm II’s level 2 upgrade reveals Farm III. There are **22 Frontier plots in total**, with 3 levels for supporting buildings and 5 for the town square, sheriff, bank, saloon and blacksmith. All upgrades are available without a mine-level or completed-puzzle lock. Coins and builder hammers follow the same building prerequisites. Locked plots remain prairie in 3D and are excluded from the purchase list. Extra plots use the same cost, duration, and service progression as their original type. Resident population is the minimum of housing, water, and food capacity. Stables support 2, 4 and 10 visitors at levels 1–3; the museum supports 0, 2 and 8. Visitors use food and water left after residents, without needing houses. The fully upgraded town supports **40 residents and 18 visitors**. There is no food depletion or manual supply chore.
 
 The catalog is in `src/data/town.js`. Basic wells, farms, and houses open immediately; all improvements and larger buildings finish after one normal puzzle. A ready project persists until the player opens it. The first chosen building is still free. Services remain active while upgrading.
 
@@ -87,3 +88,22 @@ Additional houses, farms and wells cost progressively more at each level: the se
 The command adds coins, tops up builder hammers up to their normal cap of five, saves
 immediately, and returns the resulting balances. It is available in development and
 built previews. Invalid amounts are rejected; failed saves restore the previous balances.
+
+### Mine cliff and watermill
+
+A layered rock face surrounds the mine portal, with a local mountain shoulder
+behind it. The railway cutting remains clear. The surrounding prairie, river,
+and later districts keep their existing layout.
+
+The Frontier watermill has its own upstream west-bank parcel at `(21.5, -12)`,
+separate from the industrial mill, river port, future lots and boat channel.
+It unlocks after Farm level 1 and uses the normal three-stage construction and
+three-stage modernization lifecycle in every subsequent era. It is a visual
+landmark, with no new income or capacity rule. A curved channel is cut into the
+riverbank at river level, with sloped earth banks and the wheel dipping into it. Its wheel stays animated through
+the existing cached moving-part lifecycle. Existing saves receive an empty plot.
+
+`src/data/watermill.js` shares style and capability-based appearances between
+offers, Three.js and SVG, so future eras inherit supported visuals. Layout
+regressions cover the full mill footprint at every tier and era, the rail
+cutting, access route, saved construction and older saves.

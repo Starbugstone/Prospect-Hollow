@@ -1,3 +1,4 @@
+import { watermillAppearance } from '../../data/watermill';
 import { eraEvolution } from '../../data/eras';
 import { RIVER_RAIL_VARIANTS } from '../../data/riverRail';
 import { INDUSTRIAL_VARIANTS } from '../../data/industrial';
@@ -42,7 +43,10 @@ const benefit = (profile, building, level) => {
  */
 export function createModernizationOffer(town, building, level) {
   const profile = eraEvolution(town.era);
-  const appearance = APPEARANCES[profile.style]?.(building, town.era);
+  const appearance =
+    building.kind === 'watermill'
+      ? watermillAppearance(town.era)
+      : APPEARANCES[profile.style]?.(building, town.era);
   if (!appearance) return null;
   const city = profile.style === 'city';
   return {

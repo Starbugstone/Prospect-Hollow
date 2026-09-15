@@ -31,7 +31,7 @@ import { SAVE_KEY } from '../src/services/localProfile';
 
 const frontierBuildings = BUILDINGS.filter((b) => b.introducedEra === 'frontier');
 const legacyBuildings = frontierBuildings.filter(
-  (b) => !['fisherman', 'blacksmith', 'school', 'doctor'].includes(b.id),
+  (b) => !['fisherman', 'blacksmith', 'school', 'doctor', 'watermill'].includes(b.id),
 );
 const village = (levels = {}) => ({
   ...createTown(),
