@@ -35,6 +35,22 @@
       :aria-label="t('Town camera. Arrow keys rotate, plus and minus zoom, Home resets the view.')"
       @keydown="cameraKey"
     />
+    <div
+      v-if="eventInset && raid && !reducedMotion"
+      class="town-event-inset"
+      role="img"
+      :aria-label="t(eventInset.label)"
+      :style="{
+        left: `${eventInset.x}px`,
+        bottom: `${eventInset.y}px`,
+        width: `${eventInset.width}px`,
+        height: `${eventInset.height}px`,
+      }"
+      @pointerdown.stop
+      @pointerup.stop
+    >
+      <span>{{ t(eventInset.label) }}</span>
+    </div>
     <div class="town-action-icons">
       <button
         v-for="anchor in actionAnchors"
@@ -221,6 +237,7 @@ const emit = defineEmits([
   'presentation-ready',
   'presentation-unavailable',
 ]);
+const eventInset = ref(null);
 const canvas = ref(null),
   canvasVersion = ref(0),
   map = ref(null),
@@ -437,6 +454,9 @@ async function initialize() {
       (distance) => emit('camera-distance', distance),
       recoverGraphics,
     );
+    scene.onEventInset = (view) => {
+      eventInset.value = view;
+    };
     update();
     if (recoveryPose) {
       scene.camera.position.fromArray(recoveryPose.position);

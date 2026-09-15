@@ -8,7 +8,12 @@ import { buildingServiceLevel } from '../../data/buildingProgression';
 import { TownUpgradeGlow } from './TownUpgradeGlow';
 import * as THREE from 'three';
 import { addAviationActivity } from './TownAviation';
-import { updateEventCamera, beginEventCamera, restoreEventCamera } from './TownEventCamera';
+import {
+  updateEventCamera,
+  beginEventCamera,
+  restoreEventCamera,
+  renderEventInset,
+} from './TownEventCamera';
 import { createTownGeometries } from './TownGeometries';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -182,6 +187,7 @@ export class TownDiorama {
   drawFrame(refresh = false) {
     try {
       this.frameCache.render(this.scene, this.camera, refresh);
+      renderEventInset(this);
       return true;
     } catch (error) {
       this.contextUnavailable = true;

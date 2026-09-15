@@ -87,3 +87,23 @@ stays solid and there are no rails or portals. The saved station and its rail li
 remain complete if the presentation is interrupted; its pending scene can resume
 on the next village visit. This completion presentation is separate from the
 optional-event framework deferred in issue #42.
+
+### Incident cameras
+
+`TownEventCamera.INCIDENT_SHOTS` assigns two subjects to each incident kind.
+Bandits and cargo thieves use the main tracking camera with the responding patrol
+in an inset. Fires and storm cleanup follow the response squad while the inset
+holds on the incident props. Era definitions continue to select the incident kind;
+new eras that reuse a kind automatically receive both views.
+
+The shared camera helper fits moving groups to the viewport, follows the leading
+responders in the smaller window, and falls back to the incident site for unknown
+kinds or absent patrols. Both views use the village clock and the same animated
+instances. The inset renders scenery and actors with its own depth, restores the
+renderer viewport/scissor afterward, and disappears on completion, skip, or
+reduced motion. `TownScene` supplies its translated caption and border.
+
+`testing/incident-cameras.test.js` covers subject separation, moving and staggered
+groups, portrait framing, pause/skip cleanup, renderer-state restoration, and
+unsupported receipts. The incident actor tests also check that dismounted crews
+stand outside their vehicle and storm branches sit above the promenade pavement.

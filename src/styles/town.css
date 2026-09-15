@@ -2249,3 +2249,30 @@ html:has(.town-museum[open]) {
     top: max(160px, calc(env(safe-area-inset-top) + 160px));
   }
 }
+
+/* The transparent frame labels the second view rendered in the town canvas. */
+.town-event-inset {
+  position: absolute;
+  z-index: 4;
+  box-sizing: border-box;
+  border: 2px solid #f6e7c7;
+  border-radius: 3px;
+  box-shadow: 0 3px 14px #302b2466;
+  pointer-events: auto;
+}
+.town-event-inset span {
+  position: absolute;
+  left: -2px;
+  bottom: calc(100% + 2px);
+  max-width: calc(100% + 4px);
+  box-sizing: border-box;
+  padding: 5px 9px;
+  border-radius: 4px 4px 0 0;
+  color: #fff0d2;
+  background: #554633f2;
+  font-size: 11px;
+  line-height: 1.25;
+}
+.town-scene.is-raiding .town-camera-bar {
+  visibility: hidden;
+}

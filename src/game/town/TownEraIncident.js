@@ -84,7 +84,11 @@ export class TownEraIncident {
           return person;
         })
       : [];
-    if (this.storm) this.debris = cityModel(d, this.props, 'storm-debris');
+    if (this.storm) {
+      this.debris = cityModel(d, this.props, 'storm-debris');
+      // The promenade pavement is raised; branches must sit above its surface.
+      this.debris.position.y = 0.25;
+    }
     this.water = d.group(this.root);
     this.water.userData.animated = true;
     this.drops = fire
@@ -140,10 +144,28 @@ export class TownEraIncident {
       const progress = time < 14 ? (time - 4) / 9 : 1 - (time - 18) / 7;
       this.travel(this.vehicle, progress);
       this.vehicle.root.rotation.y += Math.PI * ease((time - 15) / 3);
-      this.vehicle.root.visible = time >= 4 && progress > 0;
+      // Establish the squad at its station before following its departure.
+      this.vehicle.root.visible = time < 25;
       // Crew dismounts at the incident; passengers stay inside the vehicle en route.
-      this.crew.forEach((actor) => {
+      this.crew.forEach((actor, n) => {
         actor.root.visible = time >= 13 && time <= 18;
+        if (actor.root.visible) {
+          // Stage the dismounted squad between the vehicle and the incident,
+          // with enough space to see all three responders instead of passengers
+          // remaining overlapped inside the parked vehicle.
+          actor.root.position.set(
+            this.props.position.x + (n - 1) * 0.9,
+            0.07,
+            this.props.position.z + 0.8,
+          );
+          actor.root.rotation.y = Math.atan2(
+            this.props.position.x - actor.root.position.x,
+            this.props.position.z - actor.root.position.z,
+          );
+          actor.legs.forEach((leg) => {
+            leg.upper.rotation.x = 0;
+          });
+        }
       });
     }
     this.flames.forEach((flame, n) => {
