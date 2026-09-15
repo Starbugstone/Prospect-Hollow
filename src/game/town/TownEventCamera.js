@@ -39,7 +39,7 @@ export function restoreEventCamera(d) {
 }
 export function updateEventCamera(d) {
   const shot = d.eventCamera;
-  if (!shot) return;
+  if (!shot) return false;
   const elapsed = d.elapsed - shot.started;
   if (shot.returning) {
     const t = smooth(Math.min(1, elapsed / 1.2));
@@ -85,5 +85,7 @@ export function updateEventCamera(d) {
     d.frameCache.valid = false;
     shot.lastPosition.copy(d.camera.position);
     shot.lastTarget.copy(d.controls.target);
+    return true;
   }
+  return false;
 }

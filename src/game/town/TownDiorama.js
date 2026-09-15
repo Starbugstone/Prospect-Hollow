@@ -1110,13 +1110,15 @@ export class TownDiorama {
       !this.canvas.clientHeight
     )
       return;
+    this.actorRenderer.update();
+    if (this.drawFrame(true)) this.projectLabels();
+  }
+  projectLabels() {
     const cameraDistance = this.camera.position.distanceTo(this.controls.target);
     if (Math.abs(cameraDistance - (this.lastAudioDistance ?? 0)) > 0.05) {
       this.lastAudioDistance = cameraDistance;
       this.onCameraDistance?.(cameraDistance);
     }
-    this.actorRenderer.update();
-    if (!this.drawFrame(true)) return;
     const distant = cameraDistance > 66;
     const width = this.canvas.clientWidth,
       height = this.canvas.clientHeight;
@@ -1210,12 +1212,12 @@ export class TownDiorama {
       this.rebuildActors();
       restoreEventCamera(this);
     }
-    updateEventCamera(this);
+    const eventCameraMoved = updateEventCamera(this);
     // Advance life during camera motion too; its scheduled render draws the new pose.
     if (this.cameraFrame || this.presentation || (this.cinematic && !this.cinematic.finished))
       return;
     this.actorRenderer.update();
-    this.drawFrame();
+    if (this.drawFrame() && eventCameraMoved) this.projectLabels();
   }
   finishConstruction() {
     if (!this.construction) return;

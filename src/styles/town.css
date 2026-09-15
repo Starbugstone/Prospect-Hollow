@@ -1484,10 +1484,12 @@
   background: #6c4c3bf0;
   border-radius: 16px 16px 0 0;
 }
-.town-scene.is-raiding .town-scene-labels {
+.town-scene.is-raiding .town-scene-labels,
+.town-scene.is-raiding .town-action-icons {
   visibility: hidden;
 }
-.town-scene.is-raiding .town-scene-labels .raid-defense-ready {
+.town-scene.is-raiding .raid-defense-ready,
+.town-scene.is-raiding .raid-bell-ready {
   visibility: visible;
 }
 

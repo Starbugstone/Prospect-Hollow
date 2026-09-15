@@ -181,6 +181,7 @@
           :next-level="campaign.nextLevel"
           :mine-stage="campaign.mineStage"
           :raid="activeRaid"
+          :raid-defense-ids="readyRaidDefenses"
           :construction="construction"
           @select="selectBuilding"
           @mine="goMining"

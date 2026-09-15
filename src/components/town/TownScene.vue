@@ -43,6 +43,8 @@
         :class="{
           'town-era-icon': indicators[anchor.id] === 'era',
           'town-completion-icon': indicators[anchor.id] === 'ready',
+          'raid-defense-ready': raidDefenseIds.includes(anchor.id),
+          'raid-bell-ready': indicators[anchor.id] === 'bell',
         }"
         :data-town-plot="anchor.id"
         :style="{ left: `${anchor.collection.x}%`, top: `${anchor.collection.y}%` }"
@@ -86,8 +88,7 @@
           'scene-mine-button': anchor.id === 'mine',
           selected: anchor.id === selected,
           'is-ready': constructionReady(town.projects[anchor.id]),
-          'raid-defense-ready':
-            ['sheriff', 'bank'].includes(anchor.id) && constructionReady(town.projects[anchor.id]),
+          'raid-defense-ready': raidDefenseIds.includes(anchor.id),
           'can-build': availableIds.includes(anchor.id),
           'has-income': indicators[anchor.id] === 'coins',
           'has-action-icon': ['ready', 'coins', 'tnt', 'bell', 'era'].includes(
@@ -202,6 +203,7 @@ const props = defineProps({
   nextLevel: Number,
   mineStage: { type: Number, default: 0 },
   raid: Object,
+  raidDefenseIds: { type: Array, default: () => [] },
   construction: Object,
 });
 const emit = defineEmits([
