@@ -91,8 +91,8 @@ built previews. Invalid amounts are rejected; failed saves restore the previous 
 
 ### Mine cliff and watermill
 
-A layered rock face surrounds the mine portal, with a local mountain shoulder
-behind it. The railway cutting remains clear. The surrounding prairie, river,
+The mine portal opens into a continuous solid rock shoulder joined to the hill.
+Building the rail depot opens a tunnel through that shoulder for the railway. The surrounding prairie, river,
 and later districts keep their existing layout.
 
 The Frontier watermill has its own upstream west-bank parcel at `(21.5, -12)`,
@@ -107,3 +107,9 @@ the existing cached moving-part lifecycle. Existing saves receive an empty plot.
 offers, Three.js and SVG, so future eras inherit supported visuals. Layout
 regressions cover the full mill footprint at every tier and era, the rail
 cutting, access route, saved construction and older saves.
+
+The camera can orbit down to a near-horizontal view. Collision protection samples
+only the ground and rock immediately around the camera, including the mine
+shoulder; an obscured distant parcel never forces the view overhead. Small
+collision corrections preserve the viewing direction and zoom distance where
+possible, without repeatedly lifting an already-clear camera.

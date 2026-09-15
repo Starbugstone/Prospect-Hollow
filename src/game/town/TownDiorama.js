@@ -126,7 +126,7 @@ export class TownDiorama {
     this.controls.minDistance = 13;
     this.controls.maxDistance = 110;
     this.controls.minPolarAngle = 0.25;
-    this.controls.maxPolarAngle = Math.PI / 2 - 0.24;
+    this.controls.maxPolarAngle = Math.PI / 2 - 0.02;
     this.controls.rotateSpeed = 0.7;
     this.controls.zoomSpeed = 0.85;
     this.controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
@@ -149,7 +149,6 @@ export class TownDiorama {
           this.camera.position,
           this.controls.target,
           this.controls.minPolarAngle,
-          this.terrainViewTargets,
         )
       )
         this.controls.update();
@@ -342,11 +341,6 @@ export class TownDiorama {
     this.targets = [];
     this.anchors = [];
     this.town = town;
-    // Protect actual parcel foundations; rectangle corners can lie on a hill
-    // outside the irregular settlement and force a needless overhead view.
-    this.terrainViewTargets = visiblePlots(town)
-      .filter(({ id }) => id !== 'bridge')
-      .map(({ position: [x, z] }) => point(x, 0.2, z));
     this.guidedPlot = nextGoal(town)?.id;
     this.staticScenery.update(this, town);
     this.controls.maxDistance = [

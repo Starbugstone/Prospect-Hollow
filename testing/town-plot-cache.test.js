@@ -168,7 +168,9 @@ it.each(ERAS.map((era) => era.id))(
       expect(mesh.parent === view.scene).toBe(true);
     }
     for (const dispose of disposals) expect(dispose).not.toHaveBeenCalled();
-    expect(view.buildingRenderer.meshes.length).toBeLessThanOrEqual(view.plotCache.size + 5);
+    expect(view.buildingRenderer.meshes.length).toBeLessThanOrEqual(
+      view.plotCache.size + view.staticScenery.entries.size,
+    );
   },
 );
 
@@ -223,4 +225,27 @@ it('removes cached overhead wires when entering Contemporary with the same road 
   expect(view.staticScenery.entries.get('power').group).toBeUndefined();
   expect(wires.parent).toBeNull();
   expect(batch.parent).toBeNull();
+});
+
+it('keeps the mine solid until the rail depot opens its tunnel, then restores it on reset', () => {
+  const { view, town, labels } = fixture();
+  const hillside = () => view.staticScenery.entries.get('mine-hillside');
+  view.update(town, labels);
+  const solid = hillside().group;
+  expect(hillside().signature).toBe(false);
+  town.era = 'river-rail';
+  town.projects.railDepot = { stage: 1, wins: 1, required: 1 };
+  view.update(town, labels);
+  expect(hillside().group).toBe(solid);
+  delete town.projects.railDepot;
+  town.buildings.railDepot = 1;
+  view.update(town, labels);
+  expect(hillside().signature).toBe(true);
+  const tunnel = hillside().group;
+  expect(tunnel).not.toBe(solid);
+  expect(solid.parent).toBeNull();
+  view.update(createTown(), labels);
+  expect(hillside().signature).toBe(false);
+  expect(hillside().group).not.toBe(tunnel);
+  expect(tunnel.parent).toBeNull();
 });

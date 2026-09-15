@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { MINE_FACE_COLUMNS, MINE_HILLSIDE, mineHillsideHeight } from './TownMineHillside';
 import { MILLRACE, millraceDistance, millraceHeight, landscapeGeometry } from './TownMillrace';
 import { TOWN_TRACKS, PLOTS, RAIL_EDGE, segmentDistance } from './TownLayout';
 import { RIVER, riverDistance, wetBank, buildRiver } from './TownRiver';
@@ -75,7 +76,24 @@ export function groundHeight(x, z) {
     millraceHeight(x, z, RIVER.waterHeight),
   );
 }
+// The shoulder replaces this patch of the old heightfield. Recess the hidden
+// base slightly so differently tessellated surfaces cannot flicker through it.
+export function landscapeGroundHeight(x, z) {
+  const base = groundHeight(x, z);
+  const depth = PLOTS.mine[1] + MINE_HILLSIDE.frontOffset - z;
+  if (
+    depth <= 0 ||
+    depth >= 11.4 ||
+    Math.abs(z - RAIL_EDGE.from[1]) <= MINE_HILLSIDE.tunnelHalfWidth
+  )
+    return base;
+  const edge = 8 - Math.abs(x / (1 + depth * 0.13));
+  const inset = smooth(0, 0.6, depth) * smooth(0, 0.6, 11.4 - depth) * smooth(0, 0.6, edge);
+  return base - inset * 0.8;
+}
+
 const reservedGround = (x, z) =>
+  (z < PLOTS.mine[1] && z > PLOTS.mine[1] - 13 && Math.abs(x) < 12) ||
   millraceDistance(x, z) < MILLRACE.bankWidth + 0.4 ||
   (x > -63 && x < -28 && z > -20 && z < 28) ||
   Math.abs(x + 53) < 6 ||
@@ -94,31 +112,50 @@ function trackDistance(x, z) {
   return Math.min(streets, Math.abs(z) > 27 ? trail : Infinity);
 }
 
-// Check the whole sightline, including foreground parcels. Clearing the ground
-// directly beneath the camera alone still lets a ridge hide the village at wide zoom.
-function terrainBlocksView(position, focus) {
-  const steps = Math.max(1, Math.ceil(position.distanceTo(focus) / 2));
-  for (let step = 1; step <= steps; step++) {
-    const t = step / steps;
-    const x = THREE.MathUtils.lerp(focus.x, position.x, t);
-    const z = THREE.MathUtils.lerp(focus.z, position.z, t);
-    const y = THREE.MathUtils.lerp(focus.y, position.y, t);
-    if (y < groundHeight(x, z) + 1.2 * t) return true;
-  }
-  return false;
+// The orbit guard protects the camera and its near plane. Hills hiding distant
+// parcels are normal occlusion, not a reason to force the player overhead.
+export function cameraTerrainHeight(x, z) {
+  return mineHillsideHeight(x, z, PLOTS.mine[1], groundHeight(x, z));
 }
-
-// Preserve zoom distance and heading; lift the viewing angle only as far as needed.
-export function keepCameraAboveTerrain(position, target, minPolarAngle = 0.25, parcels = []) {
+function cameraFloor(position) {
+  return (
+    Math.max(
+      ...[
+        [0, 0],
+        [-0.35, 0],
+        [0.35, 0],
+        [0, -0.35],
+        [0, 0.35],
+      ].map(([dx, dz]) => cameraTerrainHeight(position.x + dx, position.z + dz)),
+    ) + 1.2
+  );
+}
+export function keepCameraAboveTerrain(position, target, minPolarAngle = 0.25) {
+  if (position.y >= cameraFloor(position)) return false;
   const orbit = new THREE.Spherical().setFromVector3(position.clone().sub(target));
-  const focuses = [target, ...parcels];
-  let adjusted = false;
-  while (orbit.phi > minPolarAngle && focuses.some((focus) => terrainBlocksView(position, focus))) {
-    orbit.phi = Math.max(minPolarAngle, orbit.phi - 0.04);
+  let blocked = orbit.phi;
+  while (orbit.phi > minPolarAngle) {
+    blocked = orbit.phi;
+    orbit.phi = Math.max(minPolarAngle, orbit.phi - 0.025);
     position.setFromSpherical(orbit).add(target);
-    adjusted = true;
+    if (position.y >= cameraFloor(position)) break;
   }
-  return adjusted;
+  if (position.y < cameraFloor(position)) {
+    // A panned focus can be beneath a tall ridge at minimum zoom. In that case
+    // lift the camera out instead of leaving it buried at the rotation limit.
+    position.y = cameraFloor(position) + 0.001;
+    return true;
+  }
+  let clear = orbit.phi;
+  for (let i = 0; i < 12; i++) {
+    orbit.phi = (clear + blocked) / 2;
+    position.setFromSpherical(orbit).add(target);
+    if (position.y >= cameraFloor(position) + 0.001) clear = orbit.phi;
+    else blocked = orbit.phi;
+  }
+  orbit.phi = clear;
+  position.setFromSpherical(orbit).add(target);
+  return true;
 }
 
 export function buildLandscape(town) {
@@ -133,7 +170,7 @@ export function buildLandscape(town) {
   for (let i = 0; i < positions.count; i++) {
     const x = positions.getX(i),
       z = positions.getZ(i),
-      height = groundHeight(x, z);
+      height = landscapeGroundHeight(x, z);
     positions.setY(i, height);
     const meadow = smooth(0.32, 0.78, noise(x * 0.095 + 18, z * 0.095));
     color.copy(sand).lerp(sage, meadow * 0.64);
@@ -277,30 +314,20 @@ function tree(town, parent, x, z, scale, seed) {
   }
 }
 
-// A narrow exposed face south of the rail cutting makes the entrance part of
-// the mountain. All rock stays behind the portal and inside the mine's own lot.
+// The exposed face is the front of the connected hillside, not a separate wall.
 export function addMineCliff(town, parent) {
   const cliff = town.group(parent, 0, 0, PLOTS.mine[1]);
   cliff.name = 'Mine cliff';
-  const columns = [
-    [-6.4, 0.3],
-    [-4.8, 1.9],
-    [-3.5, 4.6],
-    [-1.3, 5.4],
-    [0.8, 5.1],
-    [2.8, 4.7],
-    [4.3, 2.3],
-    [6.1, 0.35],
-  ];
+  const columns = MINE_FACE_COLUMNS;
   const vertices = [],
     colors = [];
   const bands = ['#a49579', '#bcaa89', '#a4967d', '#c1b08e'];
-  const vertex = (column, band, back = false) => {
+  const vertex = (column, band) => {
     const [x, height] = columns[column];
     return [
       x,
       band === 4 ? height : Math.min(height, band * 1.25),
-      back ? -1.45 : -0.12 - band * 0.23 - (column % 2) * 0.09,
+      band === 4 ? MINE_HILLSIDE.frontOffset : -0.12 - band * 0.23 - (column % 2) * 0.09,
     ];
   };
   const triangle = (a, b, c, color) => {
@@ -317,16 +344,6 @@ export function addMineCliff(town, parent) {
       triangle(a, b, c, bands[band]);
       triangle(a, c, e, bands[band]);
     }
-    const a = vertex(col, 4),
-      b = vertex(col + 1, 4);
-    const c = vertex(col + 1, 4, true),
-      e = vertex(col, 4, true);
-    triangle(a, b, c, '#b8aa86');
-    triangle(a, c, e, '#b8aa86');
-    const baseA = vertex(col, 0, true),
-      baseB = vertex(col + 1, 0, true);
-    triangle(baseB, baseA, e, '#a89b80');
-    triangle(baseB, e, c, '#a89b80');
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));

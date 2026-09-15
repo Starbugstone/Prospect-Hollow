@@ -1,3 +1,6 @@
+import { buildMineHillside } from './TownMineHillside';
+import { groundHeight } from './TownLandscape';
+import { RAIL_EDGE } from './TownLayout';
 import { eraEvolution } from '../../data/eras';
 import { hasElectricity } from '../../data/industrial';
 import { roadLevel } from './TownRules';
@@ -23,6 +26,19 @@ export class TownScenery {
       Object.keys(PLOTS).filter((id) => town.buildings[id] > 0),
     ]);
     const definitions = [
+      [
+        'mine-hillside',
+        !!railEdges(town).length,
+        () =>
+          buildMineHillside(
+            view,
+            view.world,
+            PLOTS.mine[1],
+            RAIL_EDGE.from[1],
+            groundHeight,
+            !!railEdges(town).length,
+          ),
+      ],
       [
         'roads',
         JSON.stringify([town.era, roadLevel(town), topology]),
