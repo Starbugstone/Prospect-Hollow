@@ -988,6 +988,18 @@
 .town-scene-labels button:hover {
   box-shadow: 0 4px 14px #534a3044;
 }
+.town-scene-labels .scene-mine-button {
+  flex-direction: column;
+  min-width: 160px;
+  min-height: 64px;
+  padding: 10px 16px;
+  gap: 5px;
+  border-radius: 18px;
+  font-size: 16px;
+}
+.town-scene-labels .scene-mine-button small {
+  font-size: 11px;
+}
 @media (max-width: 550px) {
   .town-scene {
     aspect-ratio: 1;
@@ -1001,10 +1013,6 @@
   }
   .town-scene-labels button small {
     font-size: 8px;
-  }
-  .town-scene-labels .scene-mine-button {
-    flex-direction: column;
-    min-height: 44px;
   }
 }
 .town-project-progress {

@@ -375,7 +375,7 @@ export class TownDiorama {
       this.targets.push(group);
       this.anchors.push({
         id,
-        width: id === 'mine' ? 132 : Math.max(76, labels[id].length * 7 + 35),
+        width: id === 'mine' ? 160 : Math.max(76, labels[id].length * 7 + 35),
         position: point(x, 0.2, z + (id === 'mine' ? 1.65 : 1.85)),
       });
       let movingPart = cached?.movingPart;
@@ -1158,11 +1158,11 @@ export class TownDiorama {
     });
     const shown = [];
     const priority = (id) =>
-      id === this.selected
+      id === 'mine'
         ? 0
-        : constructionReady(this.town.projects[id])
+        : id === this.selected
           ? 1
-          : id === 'mine'
+          : constructionReady(this.town.projects[id])
             ? 2
             : id === this.guidedPlot
               ? 3
@@ -1177,7 +1177,8 @@ export class TownDiorama {
         shown.some(
           (other) =>
             (Math.abs(anchor.x - other.x) * width) / 100 < (anchor.width + other.width) / 2 + 4 &&
-            (Math.abs(anchor.y - other.y) * height) / 100 < 42,
+            (Math.abs(anchor.y - other.y) * height) / 100 <
+              (anchor.id === 'mine' || other.id === 'mine' ? 64 : 42),
         )
       )
         anchor.visible = false;
