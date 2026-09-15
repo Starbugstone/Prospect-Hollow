@@ -69,12 +69,12 @@ describe('Open village lots and usable paths', () => {
       width / height < 0.7 ? 62 : width / height < 1.1 ? 48 : 40,
       width / height,
       0.1,
-      220,
+      400,
     );
     d.anchors = Object.keys(PLOTS).map((id) => ({ id }));
     d.controls = {
       minDistance: 13,
-      maxDistance: 160,
+      maxDistance: 270,
       target: new Vector3(),
       update() {
         d.camera.lookAt(this.target);
@@ -89,6 +89,6 @@ describe('Open village lots and usable paths', () => {
         expect(Math.abs(screen.y), `${id} vertically`).toBeLessThan(0.92);
       }
     }
-    expect(d.camera.position.distanceTo(d.controls.target)).toBeLessThanOrEqual(160.000001);
+    expect(d.camera.position.distanceTo(d.controls.target)).toBeLessThanOrEqual(270.000001);
   });
 });

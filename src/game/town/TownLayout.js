@@ -1,8 +1,15 @@
+import { MINE_POSITION } from '../../data/mineSite';
+import { WATERMILL_SITE } from '../../data/watermill';
 import { BUILDING_BY_ID } from '../../data/town';
 import { plotUnlocked } from './TownRules';
 import { riverCenterX, riverPath } from './TownRiver';
 // Stable positions are shared by WebGL, the SVG map and route connections.
 export const PLOTS = {
+  airport: [-48, 4],
+  radioTower: [-32, -12],
+  concertHall: [-32, 12],
+  television: [-32, 20],
+  skyline: [58, 28],
   home: [-7, -4],
   farm: [7, -4],
   well: [0, 2.4],
@@ -12,7 +19,7 @@ export const PLOTS = {
   sheriff: [0, 11],
   museum: [-7, 12],
   armory: [7, 12],
-  mine: [0, -20],
+  mine: MINE_POSITION,
   bank: [-7, -12],
   shop: [7, -12],
   home2: [-15, -4],
@@ -22,6 +29,7 @@ export const PLOTS = {
   farm2: [15, -4],
   farm3: [15, 4],
   fisherman: [22, 12],
+  watermill: WATERMILL_SITE.position,
   blacksmith: [-15, 12],
   school: [-15, -12],
   doctor: [15, 12],
@@ -41,8 +49,27 @@ export const PLOTS = {
   busDepot: [-23, 4],
   gardenCourt: [50, 20],
   diner: [50, 4],
+  horseField: [-23, -4],
+  park: [-23, -12],
+  cityHall: [58, -4],
+  apartments: [58, 4],
+  supermarket: [58, 12],
+  waterPlant: [58, 20],
+  transitHub: [42, -12],
+  library: [50, -12],
+  crystalLab: [58, -12],
+  cityHomes: [50, 28],
+  riverPark: [42, 28],
 };
-export const PLOT_METADATA = Object.fromEntries(
+export const AIRPORT = {
+  center: PLOTS.airport,
+  halfWidth: 10,
+  halfDepth: 20,
+  runwayX: -53,
+  startZ: -15,
+  endZ: 23,
+};
+const PLOT_METADATA = Object.fromEntries(
   Object.entries(PLOTS).map(([id, position]) => [
     id,
     {
@@ -52,7 +79,11 @@ export const PLOT_METADATA = Object.fromEntries(
       requires: BUILDING_BY_ID[id]?.unlock ?? [],
       district: position[0] > 35 ? 'east-bank' : 'old-town',
       access:
-        id === 'bridge' ? 'crossing' : id === 'riverPort' || id === 'fisherman' ? 'shore' : 'road',
+        id === 'bridge'
+          ? 'crossing'
+          : ['riverPort', 'fisherman', 'watermill'].includes(id)
+            ? 'shore'
+            : 'road',
     },
   ]),
 );
@@ -77,7 +108,7 @@ const road = (from, to, width = 0.85, plot = null) => ({
   to,
   width,
   plot,
-  modes: ['pedestrian', 'horse', 'wagon'],
+  modes: ['pedestrian', 'horse', 'wagon', 'car'],
 });
 export const TOWN_TRACKS = [
   road([-LANE_X, -15.5], [LANE_X, -15.5]),
@@ -92,16 +123,26 @@ export const TOWN_TRACKS = [
   road([-11, -16.5], [-LANE_X, -16.5], 0.85, 'railDepot'),
   road([11, -8.5], [15, -8.5], 0.85, 'post'),
   road([19, -0.5], [23, -0.5], 0.85, 'riverPort'),
+  road([11, -8.5], [21.5, -8.5], 0.85, 'watermill'),
   road([19, 7.5], [24, 7.5], 0.85, 'bridge'),
   road([15, -16.5], [LANE_X, -16.5], 0.85, 'powerHouse'),
   road([-15, 23.5], [-LANE_X, 23.5], 0.85, 'fireStation'),
   road([-23, 15.5], [-19, 15.5], 0.85, 'garage'),
   road([-23, 7.5], [-19, 7.5], 0.85, 'busDepot'),
+  road([-23, -0.5], [-19, -0.5], 0.85, 'horseField'),
+  road([-23, -8.5], [-15, -8.5], 0.85, 'park'),
+  road([-48, 7.5], [-23, 7.5], 1.05, 'airport'),
+  road([-32, -8.5], [-23, -8.5], 0.85, 'radioTower'),
+  road([-32, -8.5], [-32, 7.5], 0.85, 'radioTower'),
+  road([-36, 7.5], [-36, 15.5], 0.85, 'concertHall'),
+  road([-36, 15.5], [-32, 15.5], 0.85, 'concertHall'),
+  road([-36, 15.5], [-36, 23.5], 0.85, 'television'),
+  road([-36, 23.5], [-32, 23.5], 0.85, 'television'),
   ...Object.keys(PLOTS)
     .filter((id) => id !== 'bridge' && PLOTS[id][0] < 35)
     .map((id) => road(atPlot(id, 0, id === 'mine' ? 2.6 : 2), plotStreet(id), 0.75, id)),
 ];
-export const CROSSING = {
+const CROSSING = {
   ...road([24, 7.5], [38, 7.5], 1.6),
   id: 'bridge-crossing',
   crossing: 'bridge',
@@ -122,13 +163,32 @@ const EAST_TRACKS = [
     road(atPlot(id, 0, 2), plotStreet(id), 0.75),
   ]),
 ];
-const INDUSTRIAL_TRACKS = ['rowHouses', 'mill', 'gardenCourt', 'diner'].flatMap((id) => [
+const INDUSTRIAL_TRACKS = [
+  'rowHouses',
+  'mill',
+  'gardenCourt',
+  'diner',
+  'cityHall',
+  'apartments',
+  'supermarket',
+  'waterPlant',
+  'transitHub',
+  'library',
+  'crystalLab',
+  'cityHomes',
+  'riverPark',
+  'skyline',
+].flatMap((id) => [
   road([38, plotStreet(id)[1]], plotStreet(id), 0.85, id),
   road(atPlot(id, 0, 2), plotStreet(id), 0.75, id),
 ]);
 export const townTracks = (town) => [
   ...TOWN_TRACKS.filter(({ plot }) => !plot || plot === 'mine' || plotUnlocked(town, plot)),
   ...(town.era !== 'frontier' && town.buildings.bridge ? [CROSSING, ...EAST_TRACKS] : []),
+  ...(plotUnlocked(town, 'transitHub') ? [road([38, -8.5], [38, -0.5], 1.05)] : []),
+  ...(plotUnlocked(town, 'riverPark') || plotUnlocked(town, 'skyline')
+    ? [road([38, 23.5], [38, 31.5], 1.05)]
+    : []),
   ...INDUSTRIAL_TRACKS.filter(({ plot }) => plotUnlocked(town, plot)),
 ];
 export const railEdges = (town) =>
@@ -174,8 +234,12 @@ export function routeGraph(town, mode = 'pedestrian') {
   return { nodes, edges };
 }
 export function routeBetween(town, from, to, mode = 'pedestrian') {
-  const { nodes, edges } = routeGraph(town, mode),
-    start = from.join(','),
+  return routeOnGraph(routeGraph(town, mode), from, to);
+}
+
+// Reuse one graph when several routes belong to the same town snapshot.
+export function routeOnGraph({ nodes, edges }, from, to) {
+  const start = from.join(','),
     end = to.join(',');
   if (!nodes.has(start) || !nodes.has(end)) return [];
   const queue = [[start]],

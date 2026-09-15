@@ -161,7 +161,8 @@ const needs = computed(() => {
     BUILDINGS.filter((b) => {
       const offer = upgradeOffer(town, b.id);
       return (
-        b.kind === kind &&
+        (b.kind === kind ||
+          b.effects?.[{ well: 'water', farm: 'food', home: 'housing' }[kind]] > 0) &&
         offer?.available &&
         (offer.type !== 'modernization' ||
           (b.id === 'well' && ['industrial', 'motor-age'].includes(town.era)) ||

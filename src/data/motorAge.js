@@ -1,3 +1,4 @@
+import { eraEvolution } from './eras';
 // Four civic projects continue the existing three-stage village progression.
 export const MOTOR_AGE_BUILDINGS = [
   [
@@ -63,7 +64,7 @@ export const MOTOR_AGE_BUILDINGS = [
   introducedEra: 'motor-age',
   stages: ['Empty plot', 'Motor Age · Level 1', 'Motor Age · Level 2', 'Motor Age · Level 3'],
   upgrades: benefits.map((benefit, index) => ({
-    cost: [3600, 5000, 6600][index],
+    cost: [4320, 6000, 7920][index],
     runs: index ? 2 : 1,
     title: index ? 'Expand {building}' : 'Build {building}',
     benefit,
@@ -71,8 +72,28 @@ export const MOTOR_AGE_BUILDINGS = [
     speaker: 'Ada · the caretaker',
   })),
 }));
-export const MOTOR_AGE_LEVEL_PRICES = [3000, 3800, 4600];
+export const MOTOR_AGE_LEVEL_PRICES = eraEvolution('motor-age').prices;
 export const MOTOR_AGE_VARIANTS = {
+  cityHall: [
+    'Prospect city hall',
+    'A civic entrance canopy and stepped frontage welcome the motor-age city.',
+  ],
+  apartments: [
+    'Cedar court apartments',
+    'Sunny balconies and a sheltered entrance renew the established courtyard.',
+  ],
+  supermarket: [
+    'Valley food hall',
+    'A wide street canopy welcomes deliveries to the cooperative food hall.',
+  ],
+  waterPlant: [
+    'Prospect water plant',
+    'A sheltered service wing keeps the established water plant working.',
+  ],
+  horseField: [
+    'Willow heritage horse field',
+    'Stone planters and seasonal flowers give the horse field a Motor Age garden frontage.',
+  ],
   home: ['Garden street home', 'A sheltered porch and broad windows welcome the afternoon sun.'],
   farm: [
     'Valley market farm',

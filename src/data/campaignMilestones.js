@@ -1,7 +1,7 @@
 import { CHAPTERS } from './campaign';
 
 // Stable chapter IDs, not the current number of levels, own the transition gates.
-export const CAMPAIGN_MILESTONES = {
+const CAMPAIGN_MILESTONES = {
   'river-discovery': { chapter: 'river-discovery' },
 };
 export function campaignMilestoneReached(records, id) {

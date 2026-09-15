@@ -1,5 +1,7 @@
+import { LATE_CHAPTERS } from './lateLevels.js';
 // A chapter owns its board dimensions and active jewel count. Two-level seams
 // rotate identities only; larger boards introduce the fifth color at level 13.
+import { CITY_CHAPTERS } from './cityLevels.js';
 export const CHAPTERS = [
   {
     name: 'First light',
@@ -217,6 +219,8 @@ export const CHAPTERS = [
     rows: 9,
     gemTypeCount: 5,
   },
+  ...CITY_CHAPTERS,
+  ...LATE_CHAPTERS,
 ];
 export const LEVEL_COUNT = CHAPTERS.length * 6;
 
@@ -247,7 +251,7 @@ export const CHEST_TIERS = [
 ];
 export const getChestTier = (score, target) =>
   target > 0 ? [...CHEST_TIERS].reverse().find((tier) => score >= target * tier.multiplier) : null;
-export const SPEED_CHEST_TIERS = CHEST_TIERS.map((tier, index) => ({
+const SPEED_CHEST_TIERS = CHEST_TIERS.map((tier, index) => ({
   ...tier,
   timeMultiplier: [1, 0.75, 0.5][index],
 }));

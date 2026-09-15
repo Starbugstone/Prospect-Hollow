@@ -1,6 +1,9 @@
+import { cityModel } from './city';
+import { CITY_BUILDINGS, CITY_FAMILIES } from '../../../data/city';
 import { MOTOR_AGE_VARIANTS } from '../../../data/motorAge';
 import { t } from '../../../i18n';
 import { renderIndustrialLandmark } from './industrial';
+import { renderLeisureBuilding } from '../LeisureAssets';
 
 const cream = '#e1cfab',
   teal = '#648d89',
@@ -96,7 +99,23 @@ export function addMotorModernization(d, parent, kind, level = 1) {
   d.sign(root, t(variant[0]), 3.1, 0, 3.04, 1.8);
 }
 export function renderMotorLandmark(d, parent, kind, label, level = 1) {
+  if (
+    renderLeisureBuilding(
+      d,
+      parent,
+      kind,
+      label,
+      level,
+      kind === 'horseField' && (d.town?.buildings.horseField ?? 3) >= 3,
+    )
+  )
+    return true;
   if (renderMotorBuilding(d, parent, kind, label, level)) return true;
+  if (CITY_BUILDINGS.some((b) => b.kind === kind && b.introducedEra === 'post-war')) {
+    cityModel(d, parent, `post-war-${CITY_FAMILIES[kind]}`);
+    addMotorModernization(d, parent, kind, level);
+    return true;
+  }
   const base = Object.create(d);
   base.sign = () => {};
   if (!renderIndustrialLandmark(base, parent, kind, label, level)) return false;

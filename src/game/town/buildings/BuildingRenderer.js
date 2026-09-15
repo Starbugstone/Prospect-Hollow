@@ -1,11 +1,20 @@
+import { renderWatermill } from './watermill';
+import { eraEvolution } from '../../../data/eras';
+import { addCityModernization, renderCityBuilding } from './city';
+import { CITY_BUILDINGS } from '../../../data/city';
 import { renderFrontierBuilding } from './frontier';
 import { addCivicDetails } from './civic';
 import { addFishingDock } from './river';
 import { renderBridge, addStationDetails } from './infrastructure';
 import { RIVER_RAIL_VARIANTS } from '../../../data/riverRail';
 import { t } from '../../../i18n';
-import { renderIndustrialBuilding, addIndustrialModernization } from './industrial';
-import { renderMotorBuilding, addMotorModernization } from './motorAge';
+import {
+  renderIndustrialBuilding,
+  addIndustrialModernization,
+  renderIndustrialLandmark,
+} from './industrial';
+import { renderMotorBuilding, addMotorModernization, renderMotorLandmark } from './motorAge';
+import { renderLeisureBuilding } from '../LeisureAssets';
 
 const kinds = {
   powerHouse: 'armory',
@@ -32,7 +41,20 @@ export function renderBuilding({
   construction = false,
   label,
 }) {
+  if (kind === 'watermill' && !construction && level > 0)
+    return renderWatermill(d, parent, era, level, label);
+  if (!construction && level > 0 && renderCityBuilding(d, parent, kind, label, level, era, level))
+    return;
+  const city = CITY_BUILDINGS.find((b) => b.kind === kind);
+  if (
+    !construction &&
+    level > 0 &&
+    city &&
+    renderCityBuilding(d, parent, kind, label, level, city.introducedEra, level)
+  )
+    return;
   if (kind === 'bridge') return renderBridge(d, parent, level);
+  if (!construction && level > 0 && renderLeisureBuilding(d, parent, kind, label, level)) return;
   if (!construction && level > 0 && renderMotorBuilding(d, parent, kind, label, level)) return;
   if (!construction && level > 0 && renderIndustrialBuilding(d, parent, kind, label, level)) return;
   renderFrontierBuilding(d, parent, kinds[kind] ?? kind, level, label, construction);
@@ -43,10 +65,57 @@ export function renderBuilding({
   if (kind === 'railDepot') addStationDetails(d, parent);
   if (era !== 'frontier') renderModernization(d, parent, kind, era);
 }
+/**
+ * @typedef {(d: Object, parent: Object, kind: string, era: string, level: number) => void} ModernizationRenderer
+ * @typedef {(d: Object, parent: Object, kind: string, label: string, level: number, era: string, serviceLevel: number) => boolean} LandmarkRenderer
+ * @type {Record<string, {modernize: ModernizationRenderer, landmark?: LandmarkRenderer}>}
+ */
+const ERA_RENDERERS = {
+  'river-rail': {
+    modernize: (d, parent, kind, era, level) => renderRiverModernization(d, parent, kind, level),
+  },
+  industrial: {
+    modernize: (d, parent, kind, era, level) => addIndustrialModernization(d, parent, kind, level),
+    landmark: (d, parent, kind, label, level) =>
+      renderIndustrialLandmark(d, parent, kind, label, level),
+  },
+  'motor-age': {
+    modernize: (d, parent, kind, era, level) => addMotorModernization(d, parent, kind, level),
+    landmark: (d, parent, kind, label, level) => renderMotorLandmark(d, parent, kind, label, level),
+  },
+  city: {
+    modernize: addCityModernization,
+    landmark: (d, parent, kind, label, level, era, serviceLevel) =>
+      renderCityBuilding(d, parent, kind, label, level, era, serviceLevel),
+  },
+};
 export function renderModernization(d, parent, kind, era, level = 1) {
-  if (era === 'motor-age') return addMotorModernization(d, parent, kind, level);
-  if (era === 'industrial') return addIndustrialModernization(d, parent, kind, level);
-  if (era !== 'river-rail') return;
+  return ERA_RENDERERS[eraEvolution(era).style]?.modernize(d, parent, kind, era, level);
+}
+export function renderEraLandmark(d, parent, kind, label, level, era, serviceLevel) {
+  if (kind === 'watermill') {
+    renderWatermill(
+      d,
+      parent,
+      era,
+      eraEvolution(era).style === 'frontier' ? serviceLevel : level,
+      label,
+    );
+    return true;
+  }
+  return (
+    ERA_RENDERERS[eraEvolution(era).style]?.landmark?.(
+      d,
+      parent,
+      kind,
+      label,
+      level,
+      era,
+      serviceLevel,
+    ) ?? false
+  );
+}
+function renderRiverModernization(d, parent, kind, level) {
   kind = kinds[kind] ?? kind;
   if (!RIVER_RAIL_VARIANTS[kind]) return;
   const modern = d.group(parent);

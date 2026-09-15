@@ -10,7 +10,9 @@
         ><strong>{{
           t(
             fire
-              ? 'Fire brigade'
+              ? forecast.kind === 'storm-cleanup'
+                ? 'City response crew'
+                : 'Fire brigade'
               : forecast.kind === 'cargo-theft'
                 ? 'Freight watch'
                 : forecast.active
@@ -29,7 +31,9 @@
           })
         }}</small>
         <small v-else>{{
-          fire ? t('Workshop protection') : t('{count} riders', { count: forecast.riders })
+          fire
+            ? t(forecast.kind === 'storm-cleanup' ? 'Storm protection' : 'Workshop protection')
+            : t('{count} riders', { count: forecast.riders })
         }}</small>
       </span>
     </div>
@@ -70,6 +74,7 @@
   </section>
 </template>
 <script setup>
+import { civicIncident } from '../../data/townEvents';
 import { computed } from 'vue';
 import { t } from '../../i18n';
 import { BUILDING_BY_ID } from '../../data/town';
@@ -78,7 +83,7 @@ import TownIcon from './TownIcon.vue';
 const props = defineProps({ town: Object });
 defineEmits(['select']);
 const forecast = computed(() => raidForecast(props.town));
-const fire = computed(() => forecast.value.kind === 'workshop-fire');
+const fire = computed(() => civicIncident(forecast.value.kind));
 </script>
 <style scoped>
 .village-defense {

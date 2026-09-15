@@ -1,32 +1,35 @@
-# Settlement eras: Frontier, River & Rail, Electric and Motor Age
+# Settlement eras
 
-Four eras are playable. Industrial / Electric Town follows River & Rail in 1908, then Motor Age in 1932. Post-war and Contemporary remain disabled. See the [accepted Industrial design](industrial-era-planning.md) for building, event and campaign scope.
+Eight eras are playable: Frontier → River & Rail → Electric → Post-war Rebuilding → Motor Age → Aviation & Radio (1958) → Music & Television (1986) → Connected City (2005). The village has 53 plots and the campaign has 240 puzzles. See [issue #41 fixes and browser verification](issue41-era-visuals.md) for current behavior. The historical reports below describe earlier milestones.
 
 ## Try the eras immediately
 
-Run `npm run dev` and `npm run demo:eras`. The latter creates eight local fixtures under the ignored `output/era-demo/` directory:
+Run `npm run dev` and `npm run demo:eras`. The latter creates local fixtures for all eight eras under the ignored `output/era-demo/` directory:
 
-| Fixture               | Starting point                                                       |
-| --------------------- | -------------------------------------------------------------------- |
-| `frontier-ready`      | All Frontier buildings completed; advance with the town compass      |
-| `river-rail`          | Pending second-era transition                                        |
-| `river-rail-complete` | All 29 plots at River & Rail level three; Industrial available       |
-| `industrial`          | Pending Industrial transition, completed older architecture retained |
-| `industrial-lights`   | Power house finished; First Lights story pending                     |
-| `industrial-complete` | All 33 plots at Industrial level three; Motor Age available          |
-| `motor-age`           | Pending Motor Age transition; levels 1–120 completed                 |
-| `motor-age-open`      | Motor Age ready for its first new project                            |
-| `motor-age-complete`  | All 37 plots at Motor Age level three                                |
-| `cargo-theft`         | Saved River & Rail freight-yard encounter                            |
-| `workshop-fire`       | Saved Industrial fire with an unprotected workshop                   |
+| Fixture                                                      | Starting point                                                       |
+| ------------------------------------------------------------ | -------------------------------------------------------------------- |
+| `frontier-ready`                                             | All Frontier buildings completed; advance with the town compass      |
+| `river-rail`                                                 | Pending second-era transition                                        |
+| `river-rail-complete`                                        | All 29 plots at River & Rail level three; Industrial available       |
+| `industrial`                                                 | Pending Industrial transition, completed older architecture retained |
+| `industrial-lights`                                          | Power house finished; First Lights story pending                     |
+| `industrial-complete`                                        | All 34 plots at Industrial level three; Rebuilding available         |
+| `motor-age`                                                  | Pending Motor Age transition; levels 1–120 completed                 |
+| `motor-age-open`                                             | Motor Age ready for its first new project                            |
+| `motor-age-complete`                                         | All 43 plots at Motor Age level three                                |
+| `post-war`, `post-war-open`, `post-war-complete`             | Rebuilding transition, ready to build, or all 38 plots completed     |
+| `contemporary`, `contemporary-open`, `contemporary-complete` | Crystal City transition, ready to build, or all 48 plots completed   |
+| `storm-cleanup`                                              | Saved Contemporary cleanup encounter                                 |
+| `cargo-theft`                                                | Saved River & Rail freight-yard encounter                            |
+| `workshop-fire`                                              | Saved Industrial fire with an unprotected workshop                   |
 
 Use a **disposable browser profile**: fixtures replace that origin's progress. Execute the matching `.console.js` file from the browser console, then enter the village. Fixtures are developer files, not bundled game content.
 
 Check a transition across reload, dismiss its story, buy a project, complete the required normal puzzles and finish construction. Inspect all three modernization levels, preserved services, the First Lights acknowledgement, and event skip/replay/settlement. Museum replay also advances work; continuous play does not advance construction or Forge Charge.
 
-## Completion, construction and rewards
+## Earlier four-era completion, construction and rewards
 
-Era advancement requires every available building at its functional cap and, after Frontier, all three current-era levels. It has no mine-progress gate. Pending construction or an unresolved encounter blocks advancement. River & Rail levels cost 800, 1,200 and 1,400 coins; Industrial levels cost 1,200, 1,600 and 2,000 coins. Motor Age modernization costs 3,000, 3,800 and 4,600 coins; its four new buildings cost 5,400, 7,500 and 9,900 coins per stage. The first Steam modernization takes two normal puzzles; its second and third stages take one each. Electric and Motor Age modernization takes two puzzles and retains existing services. The new buildings take one, two and two completions. Hammers keep their existing instant-build behavior.
+Era advancement requires every available building at its functional cap and, after Frontier, all three current-era levels. It has no mine-progress gate. Pending construction or an unresolved encounter blocks advancement. River & Rail levels cost 800, 1,200 and 1,400 coins; Industrial levels cost 1,400, 1,850 and 2,300 coins. Motor Age modernization costs 3,500, 4,400 and 5,300 coins; its five new buildings cost 6,480, 9,000 and 11,880 coins per stage. The first Steam modernization takes two normal puzzles; its second and third stages take one each. Electric and Motor Age modernization takes two puzzles and retains existing services. The new buildings take one, two and two completions. Hammers keep their existing instant-build behavior.
 
 The 144-level campaign has twenty-four chapters. Industrial adds 48 levels and Motor Age adds a further 24, with familiar puzzle rules and new mine backdrops. Mine earnings and coin chests retain the chapter-based economy. The power house unlocks electric modernization; row houses add up to sixteen resident places, and the main well's completed Industrial modernization adds twenty water places.
 

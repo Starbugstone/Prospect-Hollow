@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { LEVEL_COUNT } from '../src/data/campaign';
 import { chestCoinReward } from '../src/data/economy';
 import { chestReward } from '../src/data/rewards';
 import { SAVE_KEY, useCampaignStore } from '../src/stores/campaignStore';
@@ -23,12 +24,12 @@ it.each([
   [1, 500],
   [6, 500],
   [7, 1000],
-  [31, 3000],
-  [66, 5500],
-  [67, 6000],
-  [72, 6000],
-  [121, 10500],
-  [144, 12000],
+  [31, 2250],
+  [66, 3500],
+  [67, 3750],
+  [72, 3750],
+  [121, 4000],
+  [144, 4000],
 ])('awards %i-level chests %i coins', (level, coins) => {
   expect(chestCoinReward(level)).toBe(coins);
   expect(chestReward('coins', level).quantity).toBe(coins);
@@ -55,23 +56,23 @@ it.each(['automatic', 'tap', 'skip', 'reload'])(
     const campaign = useCampaignStore();
     const rewards = win(campaign, route !== 'automatic');
     expect(rewards).toHaveLength(2);
-    expect(rewards.every((chest) => chest.levelId === 31 && chest.items[0].quantity === 3000)).toBe(
+    expect(rewards.every((chest) => chest.levelId === 31 && chest.items[0].quantity === 2250)).toBe(
       true,
     );
     if (route === 'tap') {
       // A later campaign state cannot change an already earned chest.
       campaign.records[31] = { score: 100, stars: 1 };
       for (const chest of rewards) {
-        expect(campaign.claimChest(chest.id, 'coins').quantity).toBe(3000);
+        expect(campaign.claimChest(chest.id, 'coins').quantity).toBe(2250);
         expect(campaign.claimChest(chest.id, 'coins')).toBeNull();
       }
     }
     if (route === 'skip') campaign.settlePendingChests();
     setActivePinia(createPinia());
-    expect(useCampaignStore().town.coins).toBe(6000);
+    expect(useCampaignStore().town.coins).toBe(4500);
     expect(useCampaignStore().pendingChests).toEqual([]);
     setActivePinia(createPinia());
-    expect(useCampaignStore().town.coins).toBe(6000);
+    expect(useCampaignStore().town.coins).toBe(4500);
   },
 );
 it('scales a tapped coin even when the saved fallback was a power', () => {
@@ -79,9 +80,9 @@ it('scales a tapped coin even when the saved fallback was a power', () => {
   const campaign = useCampaignStore();
   const rewards = win(campaign, true);
   expect(rewards[0].items[0].kind).toBe('power');
-  expect(campaign.claimChest(rewards[0].id, 'coins').quantity).toBe(3000);
+  expect(campaign.claimChest(rewards[0].id, 'coins').quantity).toBe(2250);
 });
-it.each([undefined, -1, 145, '31'])(
+it.each([undefined, -1, LEVEL_COUNT + 1, '31'])(
   'safely recovers older or invalid chest level metadata (%s)',
   (levelId) => {
     saves.set(
@@ -103,5 +104,45 @@ it.each([undefined, -1, 145, '31'])(
     expect(useCampaignStore().town.coins).toBe(500);
     setActivePinia(createPinia());
     expect(useCampaignStore().town.coins).toBe(500);
+  },
+);
+
+it('keeps early payouts and caps later windfalls below one new Motor Age building', () => {
+  let previous = 0;
+  for (let level = 1; level <= 144; level++) {
+    const coins = chestCoinReward(level);
+    expect(coins).toBeGreaterThanOrEqual(previous);
+    expect(coins).toBeLessThanOrEqual(4000);
+    if (level <= 18) expect(coins).toBe(chestCoinReward(level, 1));
+    previous = coins;
+  }
+});
+it.each(['tap', 'skip', 'reload', 'import'])(
+  'honors an old pending late-game chest once through %s without trusting its stored quantity',
+  (route) => {
+    let campaign = useCampaignStore();
+    campaign.issuedRun = campaign.settledRun = 1;
+    campaign.pendingChests = [
+      {
+        id: '1-score',
+        runId: 1,
+        source: 'score',
+        levelId: 144,
+        items: [{ id: 'coins', quantity: 999999 }],
+      },
+    ];
+    if (route === 'tap') campaign.claimChest('1-score', 'coins');
+    if (route === 'skip') campaign.settlePendingChests();
+    if (route === 'reload') {
+      campaign.save();
+      setActivePinia(createPinia());
+      campaign = useCampaignStore();
+    }
+    if (route === 'import') campaign.importSave(campaign.exportSave());
+    expect(campaign.town.coins).toBe(12000);
+    expect(campaign.pendingChests).toEqual([]);
+    expect(campaign.claimChest('1-score', 'coins')).toBeNull();
+    setActivePinia(createPinia());
+    expect(useCampaignStore().town.coins).toBe(12000);
   },
 );

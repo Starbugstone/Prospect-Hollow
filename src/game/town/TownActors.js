@@ -1,4 +1,4 @@
-import { Group, InstancedMesh, MeshStandardMaterial } from 'three';
+import { Group, InstancedMesh, MeshStandardMaterial, DynamicDrawUsage } from 'three';
 
 // Keep articulated joints in the scene graph, but draw matching parts together.
 // This lets a busy town share one draw call for all matching boots, hats or limbs.
@@ -31,18 +31,25 @@ export class TownActors {
         colored ? this.material : first.material,
         objects.length,
       );
+      mesh.instanceMatrix.setUsage(DynamicDrawUsage);
       mesh.layers.set(2); // Animated foreground, over the cached town color/depth.
       mesh.frustumCulled = false;
       mesh.receiveShadow = true;
       this.group.add(mesh);
-      this.buckets.push({ mesh, objects, colored });
+      this.buckets.push({
+        mesh,
+        objects,
+        colored,
+        colors: new Float64Array(objects.length * 3).fill(NaN),
+      });
     }
     this.update();
   }
   update() {
     for (const root of this.roots) root.updateWorldMatrix(true, true);
-    for (const { mesh, objects, colored } of this.buckets) {
-      let count = 0;
+    for (const { mesh, objects, colored, colors } of this.buckets) {
+      let count = 0,
+        colorsChanged = false;
       for (const object of objects) {
         let visible = true;
         for (let ancestor = object; ancestor; ancestor = ancestor.parent) {
@@ -53,13 +60,27 @@ export class TownActors {
         }
         if (visible) {
           mesh.setMatrixAt(count, object.matrixWorld);
-          if (colored) mesh.setColorAt(count, object.material.color);
+          if (colored) {
+            const color = object.material.color;
+            const offset = count * 3;
+            if (
+              colors[offset] !== color.r ||
+              colors[offset + 1] !== color.g ||
+              colors[offset + 2] !== color.b
+            ) {
+              mesh.setColorAt(count, color);
+              colors[offset] = color.r;
+              colors[offset + 1] = color.g;
+              colors[offset + 2] = color.b;
+              colorsChanged = true;
+            }
+          }
           count++;
         }
       }
       mesh.count = count;
       mesh.instanceMatrix.needsUpdate = true;
-      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+      if (colorsChanged && mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     }
   }
   clear() {

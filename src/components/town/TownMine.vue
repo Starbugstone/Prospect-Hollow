@@ -84,20 +84,20 @@
         stroke-width="7"
       />
       <path v-if="stage >= 5" d="M-67-38H65" stroke="#6c8b7b" stroke-width="12" />
-      <g v-if="era === 'river-rail'">
+      <g v-if="eraEvolution(era).style === 'river-rail'">
         <rect x="-85" y="4" width="24" height="48" rx="8" fill="#8e7860" />
         <path d="M-73 8V-53M-52 57V-27H52V57" fill="none" stroke="#68887c" stroke-width="10" />
       </g>
-      <g v-else-if="['industrial', 'motor-age'].includes(era)">
+      <g v-else-if="eraEvolution(era).modernTransport">
         <path
           d="M-51 60V-41H51V60"
           fill="none"
-          :stroke="era === 'motor-age' ? '#ddcca8' : '#9ba89a'"
+          :stroke="eraEvolution(era).motorMine ? '#ddcca8' : '#9ba89a'"
           stroke-width="15"
         />
         <path d="M-51 3V-14M51 3V-14" stroke="#ffebad" stroke-width="8" />
         <path
-          v-if="era === 'motor-age'"
+          v-if="eraEvolution(era).motorMine"
           d="M-65-27H65M-28-53H28"
           stroke="#648e8b"
           stroke-width="10"
@@ -109,6 +109,10 @@
             fill="none"
             stroke-width="3"
         /></g>
+      </g>
+      <g v-if="eraEvolution(era).digitalCity" stroke="#638b88" stroke-width="4">
+        <path d="M-68-98-39-111 73-84 47-69Z" fill="#8cb1ae" />
+        <path d="M-53-99 57-75m-82-33 84 22" stroke="#526f79" />
       </g>
       <path
         v-if="stage >= 10"
@@ -136,6 +140,7 @@
   </g>
 </template>
 <script setup>
+import { eraEvolution } from '../../data/eras';
 import { t } from '../../i18n';
 defineProps({
   level: { type: Number, default: 1 },

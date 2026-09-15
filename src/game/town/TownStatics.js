@@ -6,10 +6,33 @@ import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometr
 export class TownStatics {
   constructor(scene) {
     this.scene = scene;
+    this.meshes = [];
+    this.batches = new Map();
     this.material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.88 });
   }
   rebuild(roots) {
     this.clear();
+    this.add(roots);
+  }
+  // Roots are immutable prepared models at fixed world transforms. A changed
+  // plot/scenery root gets a new identity; retain every other GPU buffer.
+  sync(roots) {
+    const tracked = new Set(this.batches.values());
+    if (this.meshes.some((mesh) => !tracked.has(mesh))) this.clear();
+    const retained = new Set(roots);
+    for (const [root, mesh] of this.batches) {
+      if (retained.has(root)) continue;
+      if (mesh) {
+        mesh.removeFromParent();
+        mesh.geometry.dispose();
+        this.meshes.splice(this.meshes.indexOf(mesh), 1);
+      }
+      this.batches.delete(root);
+    }
+    for (const root of roots) if (!this.batches.has(root)) this.batches.set(root, this.add([root]));
+    this.mesh = this.meshes.at(-1) ?? null;
+  }
+  add(roots) {
     const geometries = [];
     for (const root of roots) {
       root.updateWorldMatrix(true, true);
@@ -47,11 +70,16 @@ export class TownStatics {
     this.mesh = new THREE.Mesh(merged, this.material);
     this.mesh.castShadow = this.mesh.receiveShadow = true;
     this.scene.add(this.mesh);
+    this.meshes.push(this.mesh);
+    return this.mesh;
   }
   clear() {
-    if (!this.mesh) return;
-    this.mesh.removeFromParent();
-    this.mesh.geometry.dispose();
+    for (const mesh of this.meshes) {
+      mesh.removeFromParent();
+      mesh.geometry.dispose();
+    }
+    this.meshes = [];
+    this.batches.clear();
     this.mesh = null;
   }
   dispose() {

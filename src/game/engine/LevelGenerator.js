@@ -171,8 +171,15 @@ const createExpansionLevel = (id) => {
     }
     return tile;
   });
+  for (const [order, index] of (spec.signals ?? []).entries()) {
+    tiles[index].signalHealth = 1;
+    tiles[index].signal = spec.survey ? 'survey' : 'lantern';
+    if (spec.survey) tiles[index].surveyOrder = order + 1;
+  }
+  if (spec.orders?.length) tiles[0].oreOrderGuide = true;
   const iceCells = tiles.flatMap((tile, index) =>
     tile.type === 'standard' &&
+    (!spec.openExitRows || index < cols * (rows - spec.openExitRows)) &&
     ![0, cols - 1, cols * (rows - 1), cols * rows - 1].includes(index) &&
     !tile.exit &&
     !layout.initialTilePlacements.some((cell) => cell.y * cols + cell.x === index)
@@ -183,11 +190,12 @@ const createExpansionLevel = (id) => {
     const j = Math.floor(rng() * (i + 1));
     [iceCells[i], iceCells[j]] = [iceCells[j], iceCells[i]];
   }
-  const motif = ['pocket', 'steps', 'twins', 'ribbon', 'pool', 'arch'][(id - 1) % 6];
+  const motif = spec.motif ?? ['pocket', 'steps', 'twins', 'ribbon', 'pool', 'arch'][(id - 1) % 6];
   iceCells.sort((a, b) => iceRank(a, cols, rows, motif) - iceRank(b, cols, rows, motif));
   // Add depth to the seam before pushing targets into hard-to-reach corners.
   const iceCellCount = Math.min(iceCells.length, Math.ceil(spec.ice * 0.75));
-  for (let layer = 0; layer < spec.ice; layer++) {
+  const iceLayers = spec.openExitRows ? Math.min(spec.ice, iceCellCount * 2) : spec.ice;
+  for (let layer = 0; layer < iceLayers; layer++) {
     const tile = tiles[iceCells[layer % iceCellCount]];
     tile.health++;
     tile.maxHealth++;
@@ -197,11 +205,13 @@ const createExpansionLevel = (id) => {
   const board = createPlayableBoard(layout, rng, { minMoves: DEFAULT_MIN_STARTING_MOVES, tiles });
   // Reward targets follow each puzzle's workload, including the chapter breathers.
   const chestTarget = Math.ceil((totalLayers * 380 + relicCount * 1500) / 500) * 500;
-  const layerLabel = tiles.some((tile) => tile.sealColor)
-    ? 'Ice, stone & seals'
-    : tiles.some((tile) => tile.chainHealth)
-      ? 'Ice, stone & chains'
-      : 'Ice & stone';
+  const layerLabel = spec.signals?.length
+    ? 'Tiles and light markers'
+    : tiles.some((tile) => tile.sealColor)
+      ? 'Ice, stone & seals'
+      : tiles.some((tile) => tile.chainHealth)
+        ? 'Ice, stone & chains'
+        : 'Ice & stone';
   return {
     id,
     chapter,
@@ -209,6 +219,7 @@ const createExpansionLevel = (id) => {
     theme: CHAPTERS[chapter].theme,
     pace: (id - 1) % 6 === 4 ? 'rest' : (id - 1) % 6 === 5 ? 'finale' : 'explore',
     tip: spec.tip,
+    oreOrders: (spec.orders ?? []).map(([color, target]) => ({ color, target, progress: 0 })),
     chestTarget,
     speedTargetMs: (75 + totalLayers + relicCount * 20) * 1000,
     boardCols: cols,
@@ -283,7 +294,8 @@ export const generateLevelConfigs = (count = LEVEL_COUNT) => {
       (a, b) => iceRank(a, cols, rows, spec.motif) - iceRank(b, cols, rows, spec.motif),
     );
     const iceCellCount = Math.min(iceCells.length, spec.ice - spec.doubleIce);
-    for (let layer = 0; layer < spec.ice; layer++) {
+    const iceLayers = spec.openExitRows ? Math.min(spec.ice, iceCellCount * 2) : spec.ice;
+    for (let layer = 0; layer < iceLayers; layer++) {
       const tile = tiles[iceCells[layer % iceCellCount]];
       tile.health++;
       tile.maxHealth++;

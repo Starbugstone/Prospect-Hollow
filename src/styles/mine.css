@@ -296,3 +296,179 @@
   --mine-dark: #342831;
   --mine-haze: #5f454d;
 }
+
+.is-playing[data-mine-theme='civic'] {
+  --mine-accent: #efd69c;
+  --mine-edge: #aa8e71;
+  --mine-dark: #303035;
+  --mine-haze: #4f5656;
+}
+.is-playing[data-mine-theme='reservoir'] {
+  --mine-accent: #afdac1;
+  --mine-edge: #71a795;
+  --mine-dark: #1b3337;
+  --mine-haze: #356367;
+}
+.is-playing[data-mine-theme='commuter'] {
+  --mine-accent: #c4dce3;
+  --mine-edge: #8cabc1;
+  --mine-dark: #252c3e;
+  --mine-haze: #455978;
+}
+.is-playing[data-mine-theme='science'] {
+  --mine-accent: #d5bee8;
+  --mine-edge: #8ba5bc;
+  --mine-dark: #2c2940;
+  --mine-haze: #534b72;
+}
+
+.is-playing[data-mine-theme='civic-foundations'] {
+  --mine-accent: #efd69c;
+  --mine-edge: #aa8e71;
+  --mine-dark: #303035;
+  --mine-haze: #4f5656;
+}
+
+.is-playing[data-mine-theme='courtyard-seams'] {
+  --mine-accent: #bfd9c0;
+  --mine-edge: #aa8e71;
+  --mine-dark: #203839;
+  --mine-haze: #4f5656;
+}
+
+.is-playing[data-mine-theme='reservoir-depths'] {
+  --mine-accent: #b5dadd;
+  --mine-edge: #aa8e71;
+  --mine-dark: #252c3e;
+  --mine-haze: #356367;
+}
+
+.is-playing[data-mine-theme='market-galleries'] {
+  --mine-accent: #d6c4e6;
+  --mine-edge: #aa8e71;
+  --mine-dark: #2c2940;
+  --mine-haze: #356367;
+}
+
+.is-playing[data-mine-theme='commuter-passages'] {
+  --mine-accent: #efd69c;
+  --mine-edge: #769c83;
+  --mine-dark: #303035;
+  --mine-haze: #455978;
+}
+
+.is-playing[data-mine-theme='school-vaults'] {
+  --mine-accent: #bfd9c0;
+  --mine-edge: #769c83;
+  --mine-dark: #203839;
+  --mine-haze: #455978;
+}
+
+.is-playing[data-mine-theme='river-renewal'] {
+  --mine-accent: #b5dadd;
+  --mine-edge: #769c83;
+  --mine-dark: #252c3e;
+  --mine-haze: #534b72;
+}
+
+.is-playing[data-mine-theme='city-celebration'] {
+  --mine-accent: #d6c4e6;
+  --mine-edge: #769c83;
+  --mine-dark: #2c2940;
+  --mine-haze: #534b72;
+}
+
+.is-playing[data-mine-theme='electric-connections'] {
+  --mine-accent: #efd69c;
+  --mine-edge: #8cabc1;
+  --mine-dark: #303035;
+  --mine-haze: #4f5656;
+}
+
+.is-playing[data-mine-theme='reading-rooms'] {
+  --mine-accent: #bfd9c0;
+  --mine-edge: #8cabc1;
+  --mine-dark: #203839;
+  --mine-haze: #4f5656;
+}
+
+.is-playing[data-mine-theme='crystal-research'] {
+  --mine-accent: #b5dadd;
+  --mine-edge: #8cabc1;
+  --mine-dark: #252c3e;
+  --mine-haze: #356367;
+}
+
+.is-playing[data-mine-theme='green-roof-galleries'] {
+  --mine-accent: #d6c4e6;
+  --mine-edge: #8cabc1;
+  --mine-dark: #2c2940;
+  --mine-haze: #356367;
+}
+
+.is-playing[data-mine-theme='promenade-seams'] {
+  --mine-accent: #efd69c;
+  --mine-edge: #9c95bb;
+  --mine-dark: #303035;
+  --mine-haze: #455978;
+}
+
+.is-playing[data-mine-theme='shared-journeys'] {
+  --mine-accent: #bfd9c0;
+  --mine-edge: #9c95bb;
+  --mine-dark: #203839;
+  --mine-haze: #455978;
+}
+
+.is-playing[data-mine-theme='heritage-discoveries'] {
+  --mine-accent: #b5dadd;
+  --mine-edge: #9c95bb;
+  --mine-dark: #252c3e;
+  --mine-haze: #534b72;
+}
+
+.is-playing[data-mine-theme='crystal-city-finale'] {
+  --mine-accent: #d6c4e6;
+  --mine-edge: #9c95bb;
+  --mine-dark: #2c2940;
+  --mine-haze: #534b72;
+}
+
+.is-playing[data-mine-theme='freight-crossings'],
+.is-playing[data-mine-theme='switchyard-seams'] {
+  --mine-accent: #d4b992;
+  --mine-dark: #273f41;
+  --mine-rock: #536760;
+}
+
+.is-playing[data-mine-theme='foundry-arches'],
+.is-playing[data-mine-theme='airfield-vaults'],
+.is-playing[data-mine-theme='skyline-foundations'] {
+  --mine-accent: #f0bf8b;
+  --mine-dark: #40302d;
+  --mine-rock: #795948;
+}
+
+.is-playing[data-mine-theme='reservoir-links'],
+.is-playing[data-mine-theme='terminal-galleries'],
+.is-playing[data-mine-theme='promenade-routes'] {
+  --mine-accent: #a2dce3;
+  --mine-dark: #233b4a;
+  --mine-rock: #476b7c;
+}
+
+.is-playing[data-mine-theme='courtyard-passages'],
+.is-playing[data-mine-theme='heritage-loop'],
+.is-playing[data-mine-theme='hollow-homecoming'] {
+  --mine-accent: #b9dda4;
+  --mine-dark: #283d34;
+  --mine-rock: #58725d;
+}
+
+.is-playing[data-mine-theme='radio-relays'],
+.is-playing[data-mine-theme='studio-crossroads'],
+.is-playing[data-mine-theme='network-vaults'] {
+  --mine-accent: #d0b7ec;
+  --mine-dark: #322d49;
+  --mine-rock: #665578;
+}

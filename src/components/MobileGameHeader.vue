@@ -31,21 +31,34 @@
       <span
         class="mobile-cleared"
         :aria-label="
-          t('{value0} of {value1} layers cleared{value2}', {
-            value0: game.totalLayers - game.remainingLayers,
-            value1: game.totalLayers,
-            value2: t(
-              game.totalRelics
-                ? t(', {value0} of {value1} relics collected', {
-                    value0: game.totalRelics - game.remainingRelics,
-                    value1: game.totalRelics,
-                  })
-                : '',
-            ),
-          })
+          t(
+            game.oreOrders.length
+              ? '{value0} of {value1} goals completed{value2}'
+              : '{value0} of {value1} layers cleared{value2}',
+            {
+              value0: game.oreOrders.length
+                ? game.goalProgress
+                : game.totalLayers - game.remainingLayers,
+              value1: game.oreOrders.length ? game.goalTotal : game.totalLayers,
+              value2: t(
+                game.totalRelics && !game.oreOrders.length
+                  ? t(', {value0} of {value1} relics collected', {
+                      value0: game.totalRelics - game.remainingRelics,
+                      value1: game.totalRelics,
+                    })
+                  : '',
+              ),
+            },
+          )
         "
         ><small>{{
-          t(game.totalRelics ? 'GOALS' : game.currentLevelId >= 43 ? 'LAYERS' : 'ICE & STONE')
+          t(
+            game.totalRelics || game.oreOrders.length
+              ? 'GOALS'
+              : game.currentLevelId >= 43
+                ? 'LAYERS'
+                : 'ICE & STONE',
+          )
         }}</small
         ><b
           >{{ game.goalProgress }}<em> / {{ game.goalTotal }}</em></b

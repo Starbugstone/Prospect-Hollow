@@ -81,6 +81,7 @@ export function parseSaveFile(text) {
         Number.isInteger(chest.levelId) &&
         chest.levelId >= 1 &&
         chest.levelId <= LEVEL_COUNT &&
+        (chest.economyVersion === undefined || [1, 2].includes(chest.economyVersion)) &&
         Array.isArray(chest.items) &&
         chest.items.length === 1 &&
         isObject(chest.items[0]) &&

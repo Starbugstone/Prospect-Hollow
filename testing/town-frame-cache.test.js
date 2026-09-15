@@ -1,6 +1,7 @@
 import { expect, it, vi } from 'vitest';
-import { Color, PerspectiveCamera, Scene } from 'three';
+import { Color, PerspectiveCamera, Scene, Vector3 } from 'three';
 import { TownDiorama } from '../src/game/town/TownDiorama';
+import { beginEventCamera, restoreEventCamera } from '../src/game/town/TownEventCamera';
 import { TownFrameCache } from '../src/game/town/TownFrameCache';
 
 it('keeps villagers and raid time moving while the camera owns the next draw', () => {
@@ -143,4 +144,82 @@ it('stops animation and requests the playable fallback when drawing fails', () =
   expect(view.contextUnavailable).toBe(true);
   expect(view.renderer.setAnimationLoop).toHaveBeenCalledWith(null);
   expect(view.onUnavailable).toHaveBeenCalledWith(error);
+});
+
+it('validates GPU attachments on allocation and resize, without synchronizing every camera frame', () => {
+  let width = 390;
+  const gl = {
+    FRAMEBUFFER: 1,
+    FRAMEBUFFER_COMPLETE: 2,
+    isContextLost: () => false,
+    checkFramebufferStatus: vi.fn(() => 2),
+  };
+  const renderer = {
+    autoClear: true,
+    getContext: () => gl,
+    getDrawingBufferSize: (size) => size.set(width, 480),
+    setRenderTarget: vi.fn(),
+    render: vi.fn(),
+  };
+  const cache = new TownFrameCache(renderer),
+    scene = new Scene(),
+    camera = new PerspectiveCamera();
+  for (let i = 0; i < 120; i++) {
+    cache.valid = false;
+    cache.render(scene, camera);
+  }
+  expect(gl.checkFramebufferStatus).toHaveBeenCalledTimes(1);
+  width = 844;
+  cache.render(scene, camera);
+  expect(gl.checkFramebufferStatus).toHaveBeenCalledTimes(2);
+  cache.dispose();
+});
+
+it('reprojects action anchors during event zoom and return, then stops updating the settled overlay', () => {
+  const d = Object.create(TownDiorama.prototype);
+  Object.assign(d, {
+    camera: new PerspectiveCamera(40, 1.6, 0.1, 400),
+    controls: { target: new Vector3(0, 1, 0), enabled: true },
+    elapsed: 0,
+    canvas: { clientWidth: 1280, clientHeight: 800 },
+    town: { buildings: { bank: 1 }, projects: {} },
+    anchors: [
+      {
+        id: 'bank',
+        position: new Vector3(-7, 2, -12),
+        collection: new Vector3(-7, 4, -12),
+        width: 90,
+      },
+    ],
+    actorRenderer: { update: vi.fn() },
+    frameCache: { valid: true },
+    onLabels: vi.fn(),
+    drawFrame: () => {
+      d.camera.updateMatrixWorld();
+      return true;
+    },
+    raid: { target: 'bank', event: { targets: ['bank'] }, update: () => false },
+  });
+  d.camera.position.set(40, 30, 50);
+  d.camera.lookAt(d.controls.target);
+  d.camera.updateMatrixWorld();
+  d.projectLabels();
+  const original = d.onLabels.mock.lastCall[0][0].collection;
+  beginEventCamera(d);
+  for (let i = 0; i <= 180; i++) d.tick(1000 + i * 20);
+  const zoomed = d.onLabels.mock.lastCall[0][0].collection;
+  const projected = d.anchors[0].collection.clone().project(d.camera);
+  expect(zoomed.x).toBeCloseTo((projected.x + 1) * 50, 6);
+  expect(zoomed.y).toBeCloseTo((1 - projected.y) * 50, 6);
+  expect(Math.hypot(zoomed.x - original.x, zoomed.y - original.y)).toBeGreaterThan(1);
+  restoreEventCamera(d);
+  d.raid = null;
+  for (let i = 181; i <= 250; i++) d.tick(1000 + i * 20);
+  expect(d.eventCamera).toBeNull();
+  const restored = d.onLabels.mock.lastCall[0][0].collection;
+  expect(restored.x).toBeCloseTo(original.x, 6);
+  expect(restored.y).toBeCloseTo(original.y, 6);
+  const calls = d.onLabels.mock.calls.length;
+  for (let i = 251; i <= 270; i++) d.tick(1000 + i * 20);
+  expect(d.onLabels).toHaveBeenCalledTimes(calls);
 });

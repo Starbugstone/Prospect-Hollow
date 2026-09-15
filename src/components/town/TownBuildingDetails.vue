@@ -6,19 +6,11 @@
         <h2 id="building-title">{{ t(building.name) }}</h2>
       </div>
       <span class="town-level-badge">{{
-        t(
-          town.era === 'motor-age'
-            ? 'Motor Age · Level {level} of {max}'
-            : town.era === 'industrial'
-              ? 'Industrial · Level {level} of {max}'
-              : town.era !== 'frontier'
-                ? 'River & Rail · Level {level} of {max}'
-                : 'Level {level} / {max}',
-          {
-            level: eraBuildingLevel(town, id),
-            max: town.era !== 'frontier' ? 3 : building.upgrades.length,
-          },
-        )
+        t(town.era !== 'frontier' ? '{era} · Level {level} of {max}' : 'Level {level} / {max}', {
+          era: t(ERA_BY_ID[town.era].label),
+          level: eraBuildingLevel(town, id),
+          max: town.era !== 'frontier' ? 3 : building.upgrades.length,
+        })
       }}</span>
     </div>
     <div class="town-building-preview" :style="{ '--building-tint': building.color }">
@@ -325,6 +317,7 @@
   </section>
 </template>
 <script setup>
+import { ERA_BY_ID } from '../../data/eras';
 import { computed } from 'vue';
 import { t } from '../../i18n';
 import { BUILDING_BY_ID } from '../../data/town';

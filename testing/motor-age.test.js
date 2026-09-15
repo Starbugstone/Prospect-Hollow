@@ -7,6 +7,7 @@ import { MOTOR_AGE_LEVEL_PRICES } from '../src/data/motorAge';
 import {
   advanceEra,
   eraBuildingLevel,
+  eraIndex,
   eraGate,
   isEraComplete,
   plotInEra,
@@ -30,10 +31,10 @@ import {
 import { buildingBenefit } from '../src/game/town/TownBenefits';
 import { useCampaignStore, SAVE_KEY } from '../src/stores/campaignStore';
 import { visiblePlots, plotStreet, routeBetween } from '../src/game/town/TownLayout';
-function electricTown() {
+function rebuildingTown() {
   const town = createTown();
   Object.assign(town, {
-    era: 'industrial',
+    era: 'post-war',
     coins: 1000000,
     completedRuns: 120,
     firstLightsSeen: true,
@@ -41,13 +42,13 @@ function electricTown() {
   });
   for (const b of BUILDINGS.filter((b) => plotInEra(town, b.id))) {
     town.buildings[b.id] = b.upgrades.length;
-    town.buildingEras[b.id] = 'industrial';
+    town.buildingEras[b.id] = 'post-war';
     town.buildingEraLevels[b.id] = 3;
   }
   return normalizeTown(town);
 }
 function motorTown() {
-  const town = advanceEra(electricTown(), 'industrial');
+  const town = advanceEra(rebuildingTown(), 'post-war');
   town.transition.pending = false;
   return town;
 }
@@ -75,22 +76,21 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('Motor Age follows the complete Electric era', () => {
-  it.each(BUILDINGS.filter((b) => b.introducedEra !== 'motor-age').map((b) => [b.id]))(
-    'requires the final electric improvement on %s',
-    (id) => {
-      const town = electricTown();
-      expect(eraGate(town)).toMatchObject({ available: true, next: { id: 'motor-age' } });
-      if (BUILDINGS.find((b) => b.id === id).introducedEra === 'industrial') town.buildings[id] = 2;
-      else town.buildingEraLevels[id] = 2;
-      expect(advanceEra(town, 'industrial')).toBeNull();
-    },
-  );
+describe('Motor Age follows the complete Post-war Rebuilding era', () => {
+  it.each(
+    BUILDINGS.filter((b) => eraIndex(b.introducedEra) < eraIndex('motor-age')).map((b) => [b.id]),
+  )('requires the final rebuilding improvement on %s', (id) => {
+    const town = rebuildingTown();
+    expect(eraGate(town)).toMatchObject({ available: true, next: { id: 'motor-age' } });
+    if (BUILDINGS.find((b) => b.id === id).introducedEra === 'post-war') town.buildings[id] = 2;
+    else town.buildingEraLevels[id] = 2;
+    expect(advanceEra(town, 'post-war')).toBeNull();
+  });
   it('saves the fourth era and its transition, preserving electricity and all services across reload', () => {
     let c = useCampaignStore();
-    c.town = electricTown();
+    c.town = rebuildingTown();
     const old = JSON.parse(JSON.stringify(c.town));
-    expect(c.advanceEra('industrial')).toBe(true);
+    expect(c.advanceEra('post-war')).toBe(true);
     expect(c.town.buildings).toEqual(old.buildings);
     expect(c.town.buildingEras).toEqual(old.buildingEras);
     for (const read of [
@@ -105,16 +105,18 @@ describe('Motor Age follows the complete Electric era', () => {
     expect(hasElectricity(c.town)).toBe(true);
     setActivePinia(createPinia());
     c = useCampaignStore();
-    expect(c.town.transition).toMatchObject({ from: 'industrial', to: 'motor-age', pending: true });
+    expect(c.town.transition).toMatchObject({ from: 'post-war', to: 'motor-age', pending: true });
     const save = vi.spyOn(c, 'save').mockReturnValue(false);
     expect(c.acknowledgeEra()).toBe(false);
     expect(c.town.transition.pending).toBe(true);
     save.mockRestore();
     expect(c.acknowledgeEra()).toBe(true);
     expect(JSON.parse(saves.get(SAVE_KEY)).town.eraTransitionSeen['motor-age']).toBe(true);
-    expect(c.advanceEra('industrial')).toBe(false);
+    expect(c.advanceEra('post-war')).toBe(false);
   });
-  it.each(BUILDINGS.map((b) => [b.id]))(
+  it.each(
+    BUILDINGS.filter((b) => eraIndex(b.introducedEra) <= eraIndex('motor-age')).map((b) => [b.id]),
+  )(
     'finishes all three Motor Age tiers of %s without losing functional services or paid work',
     (id) => {
       let town = motorTown();
@@ -127,7 +129,7 @@ describe('Motor Age follows the complete Electric era', () => {
         expect(offer.available).toBe(true);
         expect(offer.runs).toBeLessThanOrEqual(2);
         expect(offer.cost).toBe(
-          base ? MOTOR_AGE_LEVEL_PRICES[level - 1] : [5400, 7500, 9900][level - 1],
+          base ? MOTOR_AGE_LEVEL_PRICES[level - 1] : [6480, 9000, 11880][level - 1],
         );
         const preview = buildingBenefit(
           town,
@@ -158,7 +160,7 @@ describe('Motor Age follows the complete Electric era', () => {
         expect(waterCapacity(town)).toBeGreaterThanOrEqual(beforeWater);
         expect(foodCapacity(town)).toBeGreaterThanOrEqual(beforeFood);
         if (id === 'well' && level === 3)
-          expect(preview).toMatchObject({ before: 120, after: 140 });
+          expect(preview).toMatchObject({ before: 174, after: 194 });
         if (id === 'garage') expect(bonusCapacity(town)).toBe(20 + level * 2);
         if (id === 'busDepot')
           expect(visitorCapacity(town)).toBe(visitorCapacity(motorTown()) + level * 2);
@@ -170,20 +172,25 @@ describe('Motor Age follows the complete Electric era', () => {
       expect(upgradeOffer(town, id)).toBeNull();
     },
   );
-  it('requires all 111 improvements, keeps future eras unavailable, and supplies the expanded town', () => {
+  it('requires all 132 improvements and unlocks Aviation, and supplies the expanded town', () => {
     const complete = finishEra(motorTown());
     expect(isEraComplete(complete)).toBe(true);
-    expect(BUILDINGS.reduce((sum, b) => sum + eraBuildingLevel(complete, b.id), 0)).toBe(111);
+    expect(
+      BUILDINGS.filter((b) => plotInEra(complete, b.id)).reduce(
+        (sum, b) => sum + eraBuildingLevel(complete, b.id),
+        0,
+      ),
+    ).toBe(132);
     expect(eraGate(complete)).toMatchObject({
-      available: false,
-      next: { id: 'post-war', enabled: false },
+      available: true,
+      next: { id: 'aviation', enabled: true },
     });
-    expect(advanceEra(complete, 'motor-age')).toBeNull();
+    expect(advanceEra(complete, 'motor-age').era).toBe('aviation');
     expect(nextGoal(complete)).toBeNull();
     const demand = housingCapacity(complete) + visitorCapacity(complete);
     expect(waterCapacity(complete)).toBeGreaterThanOrEqual(demand);
     expect(foodCapacity(complete)).toBeGreaterThanOrEqual(demand);
-    for (const b of BUILDINGS) {
+    for (const b of BUILDINGS.filter((b) => plotInEra(complete, b.id))) {
       const unfinished = structuredClone(complete);
       if (b.introducedEra === 'motor-age') unfinished.buildings[b.id] = 2;
       else unfinished.buildingEraLevels[b.id] = 2;
@@ -191,7 +198,7 @@ describe('Motor Age follows the complete Electric era', () => {
     }
   });
   it('reveals four connected new plots only in Motor Age', () => {
-    const before = visiblePlots(electricTown()).map((p) => p.id);
+    const before = visiblePlots(rebuildingTown()).map((p) => p.id);
     const town = finishEra(motorTown()),
       after = visiblePlots(town).map((p) => p.id);
     for (const id of ['garage', 'busDepot', 'gardenCourt', 'diner']) {
@@ -215,11 +222,11 @@ describe('Motor Age follows the complete Electric era', () => {
     after.buildings.bank = 0;
     expect(raidForecast(after)).toMatchObject({ kind: 'bandits', protection: 0 });
   });
-  it('continues a 120-level save at 121, pays the four new chapter gifts once, and ends at 144', () => {
+  it('continues a 120-level save at 121, pays the four new chapter gifts once, and continues at 145', () => {
     const records = Object.fromEntries(
       Array.from({ length: 120 }, (_, i) => [i + 1, { score: 100, stars: 1 }]),
     );
-    saves.set(SAVE_KEY, JSON.stringify({ schemaVersion: 2, records, town: electricTown() }));
+    saves.set(SAVE_KEY, JSON.stringify({ schemaVersion: 2, records, town: rebuildingTown() }));
     setActivePinia(createPinia());
     let c = useCampaignStore();
     expect(c.nextLevel).toBe(121);
@@ -235,18 +242,19 @@ describe('Motor Age follows the complete Electric era', () => {
     setActivePinia(createPinia());
     c = useCampaignStore();
     expect(c.completedCount).toBe(144);
-    expect(c.isUnlocked(145)).toBe(false);
-    expect(c.nextLevel).toBe(144);
+    expect(c.isUnlocked(145)).toBe(true);
+    expect(c.nextLevel).toBe(145);
   });
 });
 
 it('guides a growing Motor Age town toward water and new services before cosmetic defenses', () => {
   const town = motorTown();
   expect(nextGoal(town).id).toBe('garage');
+  town.buildings.waterPlant = 0;
   town.buildings.busDepot = 3;
   town.buildings.gardenCourt = 3;
-  expect(nextGoal(town).id).toBe('well');
-  const waterProject = purchase(town, 'well', upgradeOffer(town, 'well').stage);
-  expect(nextGoal(waterProject).id).toBe('garage');
+  expect(nextGoal(town).id).toBe('waterPlant');
+  const waterProject = purchase(town, 'waterPlant', upgradeOffer(town, 'waterPlant').stage);
+  expect(nextGoal(waterProject).id).toBe('well');
   expect(nextGoal(finishEra(town))).toBeNull();
 });

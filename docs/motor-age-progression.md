@@ -1,5 +1,7 @@
 # Motor Age and the casual progression review
 
+> Historical review. The subsequent [horse field, park and economy update](leisure-and-economy.md) adds two plots and revises later prices and chest payouts.
+
 Develop includes the merged Electric era from PR #29. No open PRs remained when the merge request was checked. This extension adds the fourth era while preserving the earlier progression and reward work. The current campaign has **four playable village eras, 37 plots and 144 mine levels**. Post-war and Contemporary remain unavailable.
 
 ## Building a town worth returning to

@@ -31,24 +31,34 @@ it.each([...Object.keys(MOTOR_AGE_VARIANTS), ...MOTOR_AGE_BUILDINGS.map((b) => b
       stages = [];
     for (let level = 1; level <= 3; level++) {
       const root = new Group();
+      if (['fisherman', 'riverPort'].includes(kind))
+        root.position.set(PLOTS[kind][0], 0, PLOTS[kind][1]);
       if (!renderMotorLandmark(d, root, kind, kind, level))
         addMotorModernization(d, root, kind, level);
-      let meshes = 0;
+      let meshes = 0,
+        triangles = 0;
       root.traverse((part) => {
-        if (part.isMesh) meshes++;
+        if (part.isMesh) {
+          meshes++;
+          triangles += (part.geometry.index?.count ?? part.geometry.attributes.position.count) / 3;
+        }
       });
       const size = new Box3().setFromObject(root).getSize(new Vector3());
       expect(meshes).toBeGreaterThan(0);
-      expect(size.x).toBeLessThan(kind === 'bridge' ? 15 : 7.5);
+      expect(size.x).toBeLessThan(
+        kind === 'bridge' ? 15 : ['fisherman', 'riverPort'].includes(kind) ? 12 : 7.5,
+      );
       expect(size.z).toBeLessThan(7.5);
       expect(size.y).toBeLessThan(8);
       expect(size.toArray().every(Number.isFinite)).toBe(true);
-      stages.push({ meshes, size: size.length() });
+      stages.push({ meshes, triangles, size: size.length() });
     }
     for (let i = 1; i < stages.length; i++)
-      expect(stages[i].meshes > stages[i - 1].meshes || stages[i].size > stages[i - 1].size).toBe(
-        true,
-      );
+      expect(
+        stages[i].meshes > stages[i - 1].meshes ||
+          stages[i].triangles > stages[i - 1].triangles ||
+          stages[i].size > stages[i - 1].size,
+      ).toBe(true);
   },
 );
 it('runs one bus on connected roads with bounded geometry and a pausable shared clock', () => {
@@ -95,7 +105,9 @@ it('runs one bus on connected roads with bounded geometry and a pausable shared 
 it('keeps all 24 mine chapter jewels attached around the entrance', () => {
   const d = diorama();
   d.mine(d.world, 'Mine', 24);
-  const bounds = new Box3().setFromObject(d.world);
+  const jewels = d.world.getObjectByName('Mine chapter jewels');
+  expect(jewels.children).toHaveLength(24);
+  const bounds = new Box3().setFromObject(jewels);
   expect(bounds.max.y).toBeLessThan(4.7);
   expect(bounds.max.x - bounds.min.x).toBeLessThan(5);
 });

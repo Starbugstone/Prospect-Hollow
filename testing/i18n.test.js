@@ -1,3 +1,4 @@
+import { CITY_DESCRIPTIONS } from '../src/data/city';
 import { afterEach, describe, expect, it } from 'vitest';
 import { browserLocale, locale, setLocale, t, number } from '../src/i18n';
 import fr from '../src/i18n/fr.json';
@@ -41,6 +42,7 @@ describe('One browser language across the game and town', () => {
   it('keeps a translated catalog for all levels, chapters, rewards, and town content', () => {
     const messages = [
       ...LEVEL_NAMES,
+      ...Object.values(CITY_DESCRIPTIONS).flat(),
       ...generateLevelConfigs().map((level) => level.tip),
       ...OBSTACLES.flatMap((item) => [item.name, item.instruction]),
       ...CHAPTERS.flatMap((c) => [c.name, c.description]),

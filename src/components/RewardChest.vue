@@ -17,6 +17,8 @@
           '--x': `${(i * 37) % 100}%`,
           '--y': `${(i * 61) % 100}%`,
           '--turn': `${i * 137}deg`,
+          '--dx': `${50 - ((i * 37) % 100)}vw`,
+          '--dy': `${50 - ((i * 61) % 100)}dvh`,
         }"
         >✦</i
       >
@@ -208,7 +210,7 @@
               ><GameIcon :name="rewardUse(prize) === 'Village' ? 'home' : 'pickaxe'" />{{
                 t(rewardUse(prize))
               }}</span
-            ><span>
+            ><span class="prize-note">
               {{
                 t(
                   prize.convertedFrom
@@ -284,7 +286,7 @@ const savedPrize = props.reward.items[0];
 const prize = ref(
   eligibleDrops.some((drop) => drop.id === savedPrize.id)
     ? savedPrize
-    : chestReward('coins', props.reward.levelId),
+    : chestReward('coins', props.reward.levelId, props.reward.economyVersion ?? 1),
 );
 // Each chest gets a fresh order, with two chances to catch every reward.
 const reelOrder = shuffleChestDrops(Math.random, eligibleDrops);
@@ -394,8 +396,10 @@ onBeforeUnmount(clearTimers);
 }
 .prize-rays {
   position: absolute;
-  width: 180vmax;
-  height: 180vmax;
+  width: min(140vmax, 1600px);
+  height: min(140vmax, 1600px);
+  will-change: transform;
+  mask-image: radial-gradient(circle closest-side, #000 35%, transparent 100%);
   top: 50%;
   left: 50%;
   background: repeating-conic-gradient(
@@ -475,7 +479,7 @@ onBeforeUnmount(clearTimers);
   overflow-y: auto;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: safe center;
   flex-direction: column;
   gap: clamp(14px, 3vh, 32px);
   text-align: center;
@@ -491,6 +495,11 @@ onBeforeUnmount(clearTimers);
 .opened .chest-announcement h2 {
   font-size: clamp(30px, 5vw, 54px);
   margin: 8px 0;
+}
+.chest-announcement,
+.chest-center {
+  flex-shrink: 0;
+  min-width: 0;
 }
 .chest-counter {
   font-size: 10px;
@@ -776,14 +785,10 @@ onBeforeUnmount(clearTimers);
 }
 @keyframes prize-explode {
   from {
-    left: 50%;
-    top: 50%;
-    transform: scale(3) rotate(0);
+    transform: translate(var(--dx), var(--dy)) scale(3) rotate(0);
     opacity: 1;
   }
   to {
-    left: var(--x);
-    top: var(--y);
     transform: scale(0.7) rotate(var(--turn));
     opacity: 0.35;
   }
@@ -866,6 +871,7 @@ onBeforeUnmount(clearTimers);
   pointer-events: none;
   filter: drop-shadow(0 0 4px var(--prize));
   animation: marquee-chase 650ms ease-in-out infinite alternate;
+  will-change: opacity;
 }
 .slot-marquee {
   position: relative;
@@ -913,25 +919,28 @@ onBeforeUnmount(clearTimers);
   will-change: transform;
 }
 .slot-symbol {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  justify-items: center;
   align-items: center;
   height: var(--slot-row);
-  gap: 4px;
+  padding: 5px 8px;
+  gap: 3px;
   color: #4b2458;
   border-bottom: 1px solid #7d4b6b22;
 }
 .reward-art {
   position: relative;
-  height: 73%;
+  height: 100%;
+  min-height: 0;
   width: 85%;
+  overflow: hidden;
 }
 .reward-art img {
   height: 100%;
   width: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 3px 3px #71335b44);
+  display: block;
 }
 .reward-use {
   position: absolute;
@@ -966,12 +975,15 @@ onBeforeUnmount(clearTimers);
   font-size: 10px;
   font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 1.2px;
+  letter-spacing: 0.6px;
+  max-width: 100%;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 .slot-payline {
   position: absolute;
-  top: 25%;
-  height: 50%;
+  top: var(--slot-row);
+  height: var(--slot-row);
   width: 100%;
   border-block: 2px solid #ce873b88;
   background: linear-gradient(90deg, #ffca5340, transparent 18% 82%, #ffca5340);
@@ -995,7 +1007,7 @@ onBeforeUnmount(clearTimers);
 .slot-result {
   position: relative;
   display: grid;
-  grid-template-columns: auto auto;
+  grid-template-columns: auto minmax(0, 1fr);
   justify-content: center;
   align-content: center;
   align-items: center;
@@ -1011,11 +1023,20 @@ onBeforeUnmount(clearTimers);
     'Arial Black',
     sans-serif;
 }
+.slot-result .prize-use {
+  grid-column: 2;
+}
+.slot-result .prize-note {
+  grid-column: 1 / -1;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
 .slot-result strong {
   font:
     italic 900 20px/1.1 'Arial Black',
     sans-serif;
   text-transform: uppercase;
+  overflow-wrap: anywhere;
 }
 .slot-result span {
   display: block;
@@ -1081,8 +1102,7 @@ onBeforeUnmount(clearTimers);
 }
 @keyframes marquee-chase {
   to {
-    border-color: #fff9e7;
-    filter: drop-shadow(0 0 8px var(--prize));
+    opacity: 0.45;
   }
 }
 @keyframes tap-pulse {
@@ -1103,7 +1123,7 @@ onBeforeUnmount(clearTimers);
 }
 @media (max-height: 700px) {
   .slot-machine {
-    --slot-row: 65px;
+    --slot-row: clamp(36px, calc((100dvh - 440px) / 3), 65px);
     width: min(290px, calc(100% - 16px));
     padding-block: 12px;
   }
@@ -1121,8 +1141,26 @@ onBeforeUnmount(clearTimers);
   .slot-result b {
     font-size: 30px;
   }
+  .slot-symbol {
+    grid-template-columns: 48px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 8px;
+    padding: 4px 8px;
+  }
   .slot-symbol > span {
-    font-size: 8px;
+    font-size: 9px;
+  }
+  .reward-art {
+    width: 100%;
+  }
+  .reward-use {
+    width: 16px;
+    height: 16px;
+    right: 0;
+  }
+  .reward-use svg {
+    width: 12px;
+    height: 12px;
   }
   .chest-trigger {
     padding-bottom: 14px;
@@ -1133,7 +1171,7 @@ onBeforeUnmount(clearTimers);
 }
 @media (max-height: 480px) and (min-width: 641px) {
   .slot-machine {
-    --slot-row: 52px;
+    --slot-row: clamp(28px, calc((100dvh - 290px) / 3), 52px);
     width: 250px;
   }
   .slot-marquee {

@@ -45,23 +45,38 @@ export function buildingBenefit(town, id, stage, modernization = false) {
       after: offer.eraLevel,
       suffix: '/3',
     };
-  if (kind === 'well') {
+  if (kind === 'well' || id === 'waterPlant') {
     icon = 'water';
     label = 'Water capacity';
     read = waterCapacity;
-  } else if (kind === 'farm' || id === 'fisherman' || id === 'market') {
+  } else if (kind === 'farm' || id === 'fisherman' || id === 'market' || id === 'supermarket') {
     icon = 'food';
     label = 'Food capacity';
     read = foodCapacity;
-  } else if (kind === 'home' || ['gardenCourt', 'rowHouses'].includes(id)) {
+  } else if (
+    kind === 'home' ||
+    ['gardenCourt', 'rowHouses', 'apartments', 'cityHomes'].includes(id)
+  ) {
     icon = 'people';
     label = 'Resident capacity';
     read = housingCapacity;
-  } else if (['stable', 'hotel', 'railDepot', 'busDepot'].includes(id)) {
+  } else if (['stable', 'hotel', 'railDepot', 'busDepot', 'transitHub'].includes(id)) {
     icon = 'people';
     label = 'Visitor capacity';
     read = visitorCapacity;
-  } else if (['square', 'museum', 'school'].includes(id)) {
+  } else if (
+    [
+      'square',
+      'museum',
+      'school',
+      'horseField',
+      'park',
+      'cityHall',
+      'library',
+      'crystalLab',
+      'riverPark',
+    ].includes(id)
+  ) {
     icon = 'happiness';
     label = 'Happiness';
     read = happiness;

@@ -1,5 +1,7 @@
+import { addFishingDock } from './river';
 import { INDUSTRIAL_VARIANTS, ELECTRIC_LAMPS, hasElectricity } from '../../../data/industrial';
 import { t } from '../../../i18n';
+import { renderLeisureBuilding } from '../LeisureAssets';
 
 const brick = '#aa795f',
   trim = '#dfcba4',
@@ -103,11 +105,13 @@ export function addElectricLighting(d, town) {
   }
   // Static globes stay readable in daylight without adding seven shadow-casting lights.
   d.batch(lights);
+  return lights;
 }
 
 // Whole architectural families replace the timber shells. Landmark positions,
 // services and identifying details survive; the silhouette changes at completion.
 export function renderIndustrialLandmark(d, parent, kind, label, level = 1) {
+  if (renderLeisureBuilding(d, parent, kind, label, level)) return true;
   if (!INDUSTRIAL_VARIANTS[kind] || ['square', 'bridge'].includes(kind)) return false;
   if (kind === 'well') {
     masonry(d, parent, 2.2, 1.7, 2.1, '#9da99d');
@@ -120,6 +124,7 @@ export function renderIndustrialLandmark(d, parent, kind, label, level = 1) {
     d.mesh(parent, 'cone', [0.85, 0.75, 0.85], [2.4, 4.5, -0.6], iron);
     for (let n = 0; n < 4; n++) d.box(parent, 3, 0.1, 0.18, 0, 0.1, 1.9 + n * 0.3, '#9b9e62');
   } else if (['fisherman', 'riverPort'].includes(kind)) {
+    addFishingDock(d, parent, level, kind === 'riverPort');
     masonry(d, parent, 2.7, 1.9, 2.3, '#a1a998');
     d.box(parent, 2.8, 0.25, 2.5, 2.8, 0.1, 0, '#9caa9d');
     d.box(parent, 3, 0.18, 2.7, 2.8, 2, 0, iron);

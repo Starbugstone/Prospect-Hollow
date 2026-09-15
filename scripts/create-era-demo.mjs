@@ -9,6 +9,7 @@ const server = await createServer({
 });
 try {
   const { BUILDINGS, BANDIT_EVENT, createTown } = await server.ssrLoadModule('/src/data/town.js');
+  const { ERAS } = await server.ssrLoadModule('/src/data/eras.js');
   const { CHAPTERS } = await server.ssrLoadModule('/src/data/campaign.js');
   const { advanceEra } = await server.ssrLoadModule('/src/game/town/TownEras.js');
   const { buildWithHammer, upgradeOffer, banditEncounter } = await server.ssrLoadModule(
@@ -70,13 +71,21 @@ try {
   };
   const lights = buildWithHammer(industrialOpen, 'powerHouse', 0);
   const industrialComplete = { ...finishEra(industrialOpen), firstLightsSeen: true };
-  const motor = advanceEra(industrialComplete, 'industrial');
-  const motorOpen = {
-    ...motor,
-    transition: { ...motor.transition, pending: false },
-    eraTransitionSeen: { ...motor.eraTransitionSeen, 'motor-age': true },
-  };
-  const motorComplete = finishEra(motorOpen);
+  const later = {};
+  let previous = industrialComplete;
+  for (const era of ERAS.slice(3)) {
+    previous.coins = 10000000;
+    const opening = advanceEra(previous, previous.era);
+    const open = {
+      ...opening,
+      transition: { ...opening.transition, pending: false },
+      eraTransitionSeen: { ...opening.eraTransitionSeen, [era.id]: true },
+    };
+    previous = finishEra(open);
+    later[era.id] = opening;
+    later[`${era.id}-open`] = open;
+    later[`${era.id}-complete`] = previous;
+  }
   const cargo = banditEncounter({ ...complete, nextRaidRun: complete.completedRuns }, () => 0);
   const fire = banditEncounter(
     { ...lights, firstLightsSeen: true, nextRaidRun: lights.completedRuns },
@@ -91,28 +100,28 @@ try {
     industrial: industrial,
     'industrial-lights': lights,
     'industrial-complete': industrialComplete,
-    'motor-age': motor,
-    'motor-age-open': motorOpen,
-    'motor-age-complete': motorComplete,
+    ...later,
+    'storm-cleanup': banditEncounter({ ...previous, nextRaidRun: previous.completedRuns }, () => 0),
     'cargo-theft': cargo,
     'workshop-fire': fire,
   })) {
     const profile = JSON.stringify({
       schemaVersion: 2,
       town: state,
-      records:
-        state.era === 'motor-age'
-          ? Object.fromEntries(
-              Array.from({ length: 120 }, (_, i) => [i + 1, { score: 100, stars: 1 }]),
-            )
-          : state.era === 'industrial'
-            ? {
-                ...records,
-                ...Object.fromEntries(
-                  Array.from({ length: 6 }, (_, i) => [67 + i, { score: 100, stars: 1 }]),
-                ),
-              }
-            : records,
+      records: ['post-war', 'motor-age', 'aviation', 'broadcast', 'contemporary'].includes(
+        state.era,
+      )
+        ? Object.fromEntries(
+            Array.from({ length: 120 }, (_, i) => [i + 1, { score: 100, stars: 1 }]),
+          )
+        : state.era === 'industrial'
+          ? {
+              ...records,
+              ...Object.fromEntries(
+                Array.from({ length: 6 }, (_, i) => [67 + i, { score: 100, stars: 1 }]),
+              ),
+            }
+          : records,
       issuedRun: completed,
       settledRun: completed,
     });
@@ -123,7 +132,7 @@ try {
     );
   }
   console.log(
-    `Created eleven disposable profiles in ${directory}/. See docs/settlement-eras.md for testing steps.`,
+    `Created all eight-era disposable profiles in ${directory}/. See docs/settlement-eras.md for testing steps.`,
   );
 } finally {
   await server.close();

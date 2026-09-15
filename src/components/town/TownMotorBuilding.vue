@@ -1,7 +1,13 @@
 <template>
   <g stroke-linejoin="round" stroke-linecap="round">
     <template v-if="!newPlot">
-      <TownIndustrialBuilding :kind="kind" :level="level" />
+      <TownCityBuilding
+        v-if="['cityHall', 'apartments', 'supermarket', 'waterPlant'].includes(kind)"
+        :kind="kind"
+        era="post-war"
+        :level="1"
+      />
+      <TownIndustrialBuilding v-else :kind="kind" :level="level" />
       <g v-if="['square', 'bridge', 'well', 'farm', 'fisherman', 'riverPort'].includes(kind)">
         <g v-for="x in [-100, 100]" :key="x" :transform="`translate(${x} -15)`">
           <path d="M-8 0h16v-22H-8Z" fill="#e1cfab" />
@@ -141,6 +147,7 @@
   </g>
 </template>
 <script setup>
+import TownCityBuilding from './TownCityBuilding.vue';
 import { computed } from 'vue';
 import TownIndustrialBuilding from './TownIndustrialBuilding.vue';
 const props = defineProps({ kind: String, level: { type: Number, default: 1 } });

@@ -115,13 +115,15 @@ it('lists only affordable eligible purchases, or all eligible work when a builde
   expect(choices).toContain('well');
 });
 
-it('puts ready construction first, affordable purchases next, and hammer-only work last', () => {
+it('puts ready construction first, then all purchases in ascending coin cost', () => {
   const town = purchase(createTown(), 'home', 0);
   town.coins = 75;
   town.projects.museum = { id: 'museum', stage: 1, required: 1, wins: 1 };
   town.projects.saloon = { id: 'saloon', stage: 1, required: 1, wins: 0 };
   const parcels = availableParcels(town, 1);
   expect(parcels[0]).toMatchObject({ id: 'museum', ready: true });
+  const prices = parcels.filter((p) => p.offer).map((p) => p.offer.cost);
+  expect(prices).toEqual([...prices].sort((a, b) => a - b));
   const coinChoices = parcels.filter((p) => p.offer && p.offer.cost <= town.coins);
   const hammerChoices = parcels.filter((p) => p.offer && p.offer.cost > town.coins);
   expect(coinChoices.length).toBeGreaterThan(0);

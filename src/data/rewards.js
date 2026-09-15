@@ -24,14 +24,14 @@ export const CHEST_DROPS = [
   },
 ];
 // Resolve from the catalog, never from a saved or client-supplied quantity.
-export function chestReward(id, levelId = 1) {
+export function chestReward(id, levelId = 1, economyVersion) {
   const drop = CHEST_DROPS.find((entry) => entry.id === id);
   return drop
     ? {
         id: drop.id,
         label: drop.label,
         kind: drop.kind,
-        quantity: drop.kind === 'coins' ? chestCoinReward(levelId) : drop.quantity,
+        quantity: drop.kind === 'coins' ? chestCoinReward(levelId, economyVersion) : drop.quantity,
       }
     : null;
 }

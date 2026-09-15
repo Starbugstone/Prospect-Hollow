@@ -1,4 +1,7 @@
+import { addMineExcavation } from './TownMineShaft';
 import * as THREE from 'three';
+import { MINE_FACE_COLUMNS, MINE_HILLSIDE, mineHillsideHeight } from './TownMineHillside';
+import { MILLRACE, millraceDistance, millraceHeight, landscapeGeometry } from './TownMillrace';
 import { TOWN_TRACKS, PLOTS, RAIL_EDGE, segmentDistance } from './TownLayout';
 import { RIVER, riverDistance, wetBank, buildRiver } from './TownRiver';
 
@@ -40,11 +43,27 @@ export function groundHeight(x, z) {
     (height, [hx, hz, rise]) => height + rise * Math.exp(-((x - hx) ** 2 + (z - hz) ** 2) / 440),
     0,
   );
-  const eastClearing = Math.hypot(Math.max(37 - x, 0, x - 54), Math.max(-9 - z, 0, z - 25));
-  const prairie = smooth(34, 49, distance) * smooth(0, 7, eastClearing) * (hills + ridges);
+  const eastClearing = Math.hypot(Math.max(37 - x, 0, x - 62), Math.max(-17 - z, 0, z - 33));
+  const westClearing = Math.hypot(Math.max(-59 - x, 0, x + 28), Math.max(-18 - z, 0, z - 26));
+  // Low rolling hills leave room for orbiting and a north/south flight corridor.
+  const flightCorridor = smooth(4, 13, Math.abs(x + 53));
+  const prairie =
+    smooth(34, 49, distance) *
+    smooth(0, 7, eastClearing) *
+    smooth(0, 7, westClearing) *
+    (hills + ridges) *
+    0.24 *
+    flightCorridor;
+  // A local mountain shoulder rises north of the mine. The existing railway
+  // cutting below keeps the full train corridor open in every era.
+  const mineRidge =
+    (1 - smooth(8, 23, Math.abs(x + 1))) *
+    smooth(25, 30, -z) *
+    (1 - smooth(37, 52, -z)) *
+    (8 + noise(x * 0.19, z * 0.18) * 5);
   const bank = riverDistance(x, z);
   // Lower the surrounding hills gradually so the shallow bank never becomes a cliff.
-  const valley = prairie * smooth(RIVER.bankWidth, RIVER.bankWidth + 18, bank);
+  const valley = Math.max(prairie, mineRidge) * smooth(RIVER.bankWidth, RIVER.bankWidth + 18, bank);
   const surface = THREE.MathUtils.lerp(
     -1.25,
     valley,
@@ -53,9 +72,32 @@ export function groundHeight(x, z) {
   // A graded railway cutting clears the entire train, not just the engine's center.
   // Preserve the river bed below the bridge instead of filling the water with an embankment.
   const cutting = 1 - smooth(1.6, 6, Math.abs(z - RAIL_EDGE.from[1]));
-  return THREE.MathUtils.lerp(surface, Math.min(surface, 0), cutting);
+  return Math.min(
+    THREE.MathUtils.lerp(surface, Math.min(surface, 0), cutting),
+    millraceHeight(x, z, RIVER.waterHeight),
+  );
 }
+// The shoulder replaces this patch of the old heightfield. Recess the hidden
+// base slightly so differently tessellated surfaces cannot flicker through it.
+export function landscapeGroundHeight(x, z) {
+  const base = groundHeight(x, z);
+  const depth = PLOTS.mine[1] + MINE_HILLSIDE.frontOffset - z;
+  if (
+    depth <= -0.25 ||
+    depth >= 11.4 ||
+    Math.abs(z - RAIL_EDGE.from[1]) <= MINE_HILLSIDE.tunnelHalfWidth
+  )
+    return base;
+  const edge = 20 - Math.abs(x);
+  const inset = smooth(-0.25, 0.6, depth) * smooth(0, 0.6, 11.4 - depth) * smooth(0, 0.6, edge);
+  return base - inset * 0.8;
+}
+
 const reservedGround = (x, z) =>
+  (z < PLOTS.mine[1] && z > PLOTS.mine[1] - 13 && Math.abs(x) < 12) ||
+  millraceDistance(x, z) < MILLRACE.bankWidth + 0.4 ||
+  (x > -63 && x < -28 && z > -20 && z < 28) ||
+  Math.abs(x + 53) < 6 ||
   (Math.abs(x) < 4.7 && z > PLOTS.mine[1] + 2 && z < -8) ||
   Object.values(PLOTS).some(([px, pz]) => Math.hypot(x - px, z - pz) < 4.5) ||
   segmentDistance(x, z, RAIL_EDGE.from, RAIL_EDGE.to) < 2;
@@ -71,23 +113,55 @@ function trackDistance(x, z) {
   return Math.min(streets, Math.abs(z) > 27 ? trail : Infinity);
 }
 
-// Orbiting low over a distant ridge must not put the camera beneath the prairie.
-// Keep the player's distance and heading; raise only the viewing angle as needed.
+// The orbit guard protects the camera and its near plane. Hills hiding distant
+// parcels are normal occlusion, not a reason to force the player overhead.
+export function cameraTerrainHeight(x, z) {
+  return mineHillsideHeight(x, z, PLOTS.mine[1], groundHeight(x, z));
+}
+function cameraFloor(position) {
+  return (
+    Math.max(
+      ...[
+        [0, 0],
+        [-0.35, 0],
+        [0.35, 0],
+        [0, -0.35],
+        [0, 0.35],
+      ].map(([dx, dz]) => cameraTerrainHeight(position.x + dx, position.z + dz)),
+    ) + 1.2
+  );
+}
 export function keepCameraAboveTerrain(position, target, minPolarAngle = 0.25) {
+  if (position.y >= cameraFloor(position)) return false;
   const orbit = new THREE.Spherical().setFromVector3(position.clone().sub(target));
-  let adjusted = false;
-  for (let i = 0; i < 24 && position.y < groundHeight(position.x, position.z) + 1.2; i++) {
-    orbit.phi = Math.max(minPolarAngle, orbit.phi - 0.06);
+  let blocked = orbit.phi;
+  while (orbit.phi > minPolarAngle) {
+    blocked = orbit.phi;
+    orbit.phi = Math.max(minPolarAngle, orbit.phi - 0.025);
     position.setFromSpherical(orbit).add(target);
-    adjusted = true;
+    if (position.y >= cameraFloor(position)) break;
   }
-  return adjusted;
+  if (position.y < cameraFloor(position)) {
+    // A panned focus can be beneath a tall ridge at minimum zoom. In that case
+    // lift the camera out instead of leaving it buried at the rotation limit.
+    position.y = cameraFloor(position) + 0.001;
+    return true;
+  }
+  let clear = orbit.phi;
+  for (let i = 0; i < 12; i++) {
+    orbit.phi = (clear + blocked) / 2;
+    position.setFromSpherical(orbit).add(target);
+    if (position.y >= cameraFloor(position) + 0.001) clear = orbit.phi;
+    else blocked = orbit.phi;
+  }
+  orbit.phi = clear;
+  position.setFromSpherical(orbit).add(target);
+  return true;
 }
 
 export function buildLandscape(town) {
   const landscape = new THREE.Group();
-  const geometry = new THREE.PlaneGeometry(260, 260, 208, 208);
-  geometry.rotateX(-Math.PI / 2);
+  const geometry = landscapeGeometry();
   const positions = geometry.attributes.position;
   const colors = [],
     sand = new THREE.Color('#cdbb8b'),
@@ -97,15 +171,26 @@ export function buildLandscape(town) {
   for (let i = 0; i < positions.count; i++) {
     const x = positions.getX(i),
       z = positions.getZ(i),
-      height = groundHeight(x, z);
+      height = landscapeGroundHeight(x, z);
     positions.setY(i, height);
     const meadow = smooth(0.32, 0.78, noise(x * 0.095 + 18, z * 0.095));
     color.copy(sand).lerp(sage, meadow * 0.64);
+    if (Math.abs(x + 1) < 24 && z < -25 && z > -53) {
+      const slope = Math.hypot(
+        groundHeight(x + 0.65, z) - groundHeight(x - 0.65, z),
+        groundHeight(x, z + 0.65) - groundHeight(x, z - 0.65),
+      );
+      color.lerp(new THREE.Color('#a3967c'), smooth(0.6, 2.5, slope) * 0.78);
+    }
     color.multiplyScalar(0.96 + noise(x * 0.35, z * 0.35) * 0.09);
     color.lerp(track, (1 - smooth(0.05, 0.35, trackDistance(x, z))) * 0.5);
     color.lerp(
       new THREE.Color('#a79570'),
       1 - smooth(RIVER.halfWidth, RIVER.bankWidth, riverDistance(x, z)),
+    );
+    color.lerp(
+      new THREE.Color('#968569'),
+      1 - smooth(0.45, MILLRACE.bankWidth + 0.1, millraceDistance(x, z)),
     );
     colors.push(color.r, color.g, color.b);
   }
@@ -118,6 +203,8 @@ export function buildLandscape(town) {
   ground.receiveShadow = true;
   landscape.add(ground);
   buildRiver(town, landscape);
+  addMineCliff(town, landscape);
+  addMineExcavation(town, landscape);
 
   const plants = town.group(landscape);
   // Cottonwoods near the settlement, with smaller junipers scattered into the hills.
@@ -227,4 +314,60 @@ function tree(town, parent, x, z, scale, seed) {
     const angle = i * 2.1;
     town.rod(tree, [Math.cos(angle) * 0.4, 0.03, Math.sin(angle) * 0.4], [0, 0.35, 0], 0.055, bark);
   }
+}
+
+// The exposed face is the front of the connected hillside, not a separate wall.
+export function addMineCliff(town, parent) {
+  const cliff = town.group(parent, 0, 0, PLOTS.mine[1]);
+  cliff.name = 'Mine cliff';
+  const columns = MINE_FACE_COLUMNS;
+  const vertices = [],
+    colors = [];
+  const bands = ['#a49579', '#bcaa89', '#a4967d', '#c1b08e'];
+  const vertex = (column, band) => {
+    const [x, height] = columns[column];
+    return [
+      x,
+      band === 4 ? height : Math.min(height, band * 1.25),
+      band === 4 ? MINE_HILLSIDE.frontOffset : -0.12 - band * 0.23 - (column % 2) * 0.09,
+    ];
+  };
+  const triangle = (a, b, c, color) => {
+    vertices.push(...a, ...b, ...c);
+    const tone = new THREE.Color(color);
+    for (let i = 0; i < 3; i++) colors.push(tone.r, tone.g, tone.b);
+  };
+  for (let col = 0; col < columns.length - 1; col++) {
+    for (let band = 0; band < 4; band++) {
+      const a = vertex(col, band),
+        b = vertex(col + 1, band);
+      const c = vertex(col + 1, band + 1),
+        e = vertex(col, band + 1);
+      triangle(a, b, c, bands[band]);
+      triangle(a, c, e, bands[band]);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.computeVertexNormals();
+  geometry.userData.owned = true;
+  const material = new THREE.MeshStandardMaterial({
+    vertexColors: true,
+    roughness: 1,
+    side: THREE.DoubleSide,
+  });
+  material.userData.transient = true;
+  const face = new THREE.Mesh(geometry, material);
+  face.castShadow = true;
+  face.receiveShadow = true;
+  cliff.add(face);
+  for (const [x, y, sx, sy] of [
+    [-5.7, 0.4, 1.4, 0.6],
+    [-3.5, 0.35, 1.2, 0.5],
+    [3.5, 0.4, 1.3, 0.6],
+    [5.6, 0.35, 1.2, 0.5],
+  ])
+    town.ball(cliff, x, y, -0.2, [sx, sy, 0.4], '#b5a587', 'rock');
+  return cliff;
 }

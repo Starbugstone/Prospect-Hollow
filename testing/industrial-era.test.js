@@ -112,45 +112,49 @@ describe('Industrial follows every River & Rail upgrade', () => {
     setActivePinia(createPinia());
     expect(useCampaignStore().town.firstLightsSeen).toBe(true);
   });
-  it.each(BUILDINGS.filter((b) => b.introducedEra !== 'motor-age').map((b) => [b.id]))(
-    'finishes all three Industrial tiers of %s across reload, rejecting stale purchases',
-    (id) => {
-      let town = industrial();
-      town = buildWithHammer(town, 'powerHouse', 0);
-      const base = town.buildings[id];
-      for (let level = id === 'powerHouse' ? 2 : 1; level <= 3; level++) {
-        const offer = upgradeOffer(town, id);
-        expect(offer.cost).toBe(INDUSTRIAL_LEVEL_PRICES[level - 1]);
-        town = purchase(town, id, offer.stage);
-        expect(purchase(town, id, offer.stage)).toBeNull();
-        town = normalizeTown(advanceConstruction(advanceConstruction(town)));
-        town = finishConstruction(town, id, town.projects[id].stage);
-        expect(eraBuildingLevel(town, id)).toBe(level);
-        expect(buildWithHammer(town, id, offer.stage)).toBeNull();
-        town = normalizeTown(town);
-        expect(eraBuildingLevel(town, id)).toBe(level);
-      }
-      expect(upgradeOffer(town, id)).toBeNull();
-      if (BUILDINGS.find((b) => b.id === id).introducedEra !== 'industrial')
-        expect(town.buildings[id]).toBe(base);
-      if (id === 'well') expect(waterCapacity(town)).toBe(120);
-      if (id === 'rowHouses')
-        expect(housingCapacity(town)).toBe(housingCapacity(industrial()) + 16);
-      if (id === 'bridge') expect(town.infrastructure.bridge).toBe(3);
-      if (id === 'railDepot') expect(town.infrastructure.rail).toBe(3);
-    },
-  );
-  it('unlocks Motor Age and blocks completion for any unfinished Industrial plot', () => {
+  it.each(
+    BUILDINGS.filter((b) => ['frontier', 'river-rail', 'industrial'].includes(b.introducedEra)).map(
+      (b) => [b.id],
+    ),
+  )('finishes all three Industrial tiers of %s across reload, rejecting stale purchases', (id) => {
     let town = industrial();
     town = buildWithHammer(town, 'powerHouse', 0);
-    for (const b of BUILDINGS.filter((b) => b.introducedEra !== 'motor-age')) {
+    const base = town.buildings[id];
+    for (let level = id === 'powerHouse' ? 2 : 1; level <= 3; level++) {
+      const offer = upgradeOffer(town, id);
+      expect(offer.cost).toBe(INDUSTRIAL_LEVEL_PRICES[level - 1]);
+      town = purchase(town, id, offer.stage);
+      expect(purchase(town, id, offer.stage)).toBeNull();
+      town = normalizeTown(advanceConstruction(advanceConstruction(town)));
+      town = finishConstruction(town, id, town.projects[id].stage);
+      expect(eraBuildingLevel(town, id)).toBe(level);
+      expect(buildWithHammer(town, id, offer.stage)).toBeNull();
+      town = normalizeTown(town);
+      expect(eraBuildingLevel(town, id)).toBe(level);
+    }
+    expect(upgradeOffer(town, id)).toBeNull();
+    if (BUILDINGS.find((b) => b.id === id).introducedEra !== 'industrial')
+      expect(town.buildings[id]).toBe(base);
+    if (id === 'well') expect(waterCapacity(town)).toBe(120);
+    if (id === 'rowHouses') expect(housingCapacity(town)).toBe(housingCapacity(industrial()) + 16);
+    if (id === 'bridge') expect(town.infrastructure.bridge).toBe(3);
+    if (id === 'railDepot') expect(town.infrastructure.rail).toBe(3);
+  });
+  it('unlocks Post-war Rebuilding and blocks completion for any unfinished Industrial plot', () => {
+    let town = industrial();
+    town = buildWithHammer(town, 'powerHouse', 0);
+    for (const b of BUILDINGS.filter((b) =>
+      ['frontier', 'river-rail', 'industrial'].includes(b.introducedEra),
+    )) {
       let offer;
       while ((offer = upgradeOffer(town, b.id))) town = buildWithHammer(town, b.id, offer.stage);
     }
     expect(isEraComplete(town)).toBe(true);
     expect(eraGate(town).available).toBe(true);
-    expect(eraGate(town).next.id).toBe('motor-age');
-    for (const b of BUILDINGS.filter((b) => b.introducedEra !== 'motor-age')) {
+    expect(eraGate(town).next.id).toBe('post-war');
+    for (const b of BUILDINGS.filter((b) =>
+      ['frontier', 'river-rail', 'industrial'].includes(b.introducedEra),
+    )) {
       const unfinished = structuredClone(town);
       if (b.introducedEra === 'industrial') unfinished.buildings[b.id] = 2;
       else unfinished.buildingEraLevels[b.id] = 2;

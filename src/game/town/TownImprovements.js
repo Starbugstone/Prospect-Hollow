@@ -1,5 +1,14 @@
 // Improvements are additions to the original buildings, keeping their identity.
 export function addScaffolding(d, parent, kind, stage, progress) {
+  if (kind === 'horseField' || kind === 'airport') {
+    const halfWidth = kind === 'airport' ? 10.5 : 3.3;
+    const halfDepth = kind === 'airport' ? 21 : 2.9;
+    for (const x of [-halfWidth, halfWidth]) {
+      for (const z of [-halfDepth, halfDepth]) d.box(parent, 0.1, 1.3, 0.1, x, 0.65, z, '#b39160');
+      d.rod(parent, [x, 1, -halfDepth], [x, 1, halfDepth], 0.035, '#b39160');
+    }
+    return;
+  }
   if (kind === 'square') {
     for (const x of [-2.6, 2.6])
       for (const z of [-2.5, 2.5]) d.box(parent, 0.12, 0.55, 0.12, x, 0.28, z, '#b39160');

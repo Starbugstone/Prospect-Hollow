@@ -988,6 +988,17 @@
 .town-scene-labels button:hover {
   box-shadow: 0 4px 14px #534a3044;
 }
+/* Keep the mine entrance visible below its label at every camera distance. */
+.town-scene-labels .scene-mine-button {
+  margin-top: -56px;
+}
+/* Enlarge the tap target without changing the visible mine label. */
+.town-scene-labels .scene-mine-button::before {
+  content: '';
+  position: absolute;
+  inset: -14px;
+  border-radius: inherit;
+}
 @media (max-width: 550px) {
   .town-scene {
     aspect-ratio: 1;
@@ -1484,10 +1495,12 @@
   background: #6c4c3bf0;
   border-radius: 16px 16px 0 0;
 }
-.town-scene.is-raiding .town-scene-labels {
+.town-scene.is-raiding .town-scene-labels,
+.town-scene.is-raiding .town-action-icons {
   visibility: hidden;
 }
-.town-scene.is-raiding .town-scene-labels .raid-defense-ready {
+.town-scene.is-raiding .raid-defense-ready,
+.town-scene.is-raiding .raid-bell-ready {
   visibility: visible;
 }
 
@@ -1869,6 +1882,10 @@ html:has(.town-museum[open]) {
   .town-dialog-content {
     padding: 16px 20px max(22px, env(safe-area-inset-bottom));
   }
+  .town-detail-title {
+    flex-direction: column;
+    gap: 6px;
+  }
   .town-detail-title h2 {
     font-size: 25px;
   }
@@ -1963,45 +1980,40 @@ html:has(.town-museum[open]) {
 }
 
 .town-progress-button {
-  display: none;
-}
-.town-progress-dialog .town-dialog-content {
-  padding: 0 0 env(safe-area-inset-bottom);
-}
-.town-dialog.town-progress-dialog .village-next {
-  display: block;
-  z-index: auto;
-  border-top: 0;
-}
-.town-progress-dialog .village-next .journey-trail {
+  position: absolute;
+  right: 12px;
+  top: 112px;
+  z-index: 6;
   display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 1px solid #a99b76;
+  border-radius: 12px;
+  color: #405b4c;
+  background: #fff9e9ee;
+  box-shadow: 0 3px 14px #54452d1c;
+  font-size: 13px;
+  font-weight: 700;
 }
-@media (max-width: 900px), (max-height: 500px) {
-  .town-map-frame > .village-next.village-next-inline {
-    display: none;
-  }
-  .town-progress-button {
-    position: absolute;
-    right: 12px;
-    bottom: calc(72px + env(safe-area-inset-bottom));
-    z-index: 6;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    min-height: 44px;
-    padding: 6px 12px;
-    border: 1px solid #a99b76;
-    border-radius: 12px;
-    color: #405b4c;
-    background: #fff9e9ee;
-    box-shadow: 0 3px 14px #54452d1c;
-    font-size: 13px;
-    font-weight: 700;
-  }
-  .town-progress-button img {
-    width: 26px;
-    height: 26px;
-  }
+.town-progress-button img {
+  width: 26px;
+  height: 26px;
+}
+.town-fullscreen .town-progress-button {
+  top: max(112px, calc(env(safe-area-inset-top) + 112px));
+}
+.town-fullscreen > .village-next-inline {
+  max-height: 48%;
+  overflow-y: auto;
+}
+.town-plot-hammer {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 8px;
+  border-left: 1px solid #c6c3a6;
 }
 
 .town-has-raid .town-fullscreen-button {
@@ -2178,27 +2190,27 @@ html:has(.town-museum[open]) {
   position: absolute;
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  padding: 8px;
+  width: calc(44px * var(--action-scale, 1));
+  height: calc(44px * var(--action-scale, 1));
+  padding: calc(8px * var(--action-scale, 1));
   border: 0;
   background: transparent;
   transform: translate(-50%, -50%);
   pointer-events: auto;
 }
 .town-action-icon img {
-  width: 28px;
-  height: 28px;
+  width: calc(28px * var(--action-scale, 1));
+  height: calc(28px * var(--action-scale, 1));
   filter: drop-shadow(0 1px 2px #543d3860);
 }
 .town-completion-icon {
-  width: 48px;
-  height: 48px;
-  padding: 6px;
+  width: calc(48px * var(--action-scale, 1));
+  height: calc(48px * var(--action-scale, 1));
+  padding: calc(6px * var(--action-scale, 1));
 }
 .town-completion-icon img {
-  width: 36px;
-  height: 36px;
+  width: calc(36px * var(--action-scale, 1));
+  height: calc(36px * var(--action-scale, 1));
 }
 .map-action-icon {
   filter: drop-shadow(0 2px 2px #543d3860);
@@ -2225,4 +2237,42 @@ html:has(.town-museum[open]) {
 }
 .mine-entry-actions button {
   flex: 1 1 140px;
+}
+
+.town-projects-button {
+  left: 16px;
+  right: auto;
+  top: max(104px, calc(env(safe-area-inset-top) + 104px));
+}
+@media (max-width: 600px) {
+  .town-projects-button {
+    top: max(160px, calc(env(safe-area-inset-top) + 160px));
+  }
+}
+
+/* The transparent frame labels the second view rendered in the town canvas. */
+.town-event-inset {
+  position: absolute;
+  z-index: 4;
+  box-sizing: border-box;
+  border: 2px solid #f6e7c7;
+  border-radius: 3px;
+  box-shadow: 0 3px 14px #302b2466;
+  pointer-events: auto;
+}
+.town-event-inset span {
+  position: absolute;
+  left: -2px;
+  bottom: calc(100% + 2px);
+  max-width: calc(100% + 4px);
+  box-sizing: border-box;
+  padding: 5px 9px;
+  border-radius: 4px 4px 0 0;
+  color: #fff0d2;
+  background: #554633f2;
+  font-size: 11px;
+  line-height: 1.25;
+}
+.town-scene.is-raiding .town-camera-bar {
+  visibility: hidden;
 }

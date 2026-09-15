@@ -5,7 +5,7 @@ import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
 import { useGameStore } from '../src/stores/gameStore';
 import { useCampaignStore, SAVE_KEY } from '../src/stores/campaignStore';
 import { useInventoryStore } from '../src/stores/inventoryStore';
-import { getChestTier } from '../src/data/campaign';
+import { LEVEL_COUNT, getChestTier } from '../src/data/campaign';
 
 let saved;
 beforeEach(() => {
@@ -30,7 +30,7 @@ afterEach(() => {
 
 it('stages obstacles while leaving a lighter fifth puzzle in every chapter', () => {
   const levels = generateLevelConfigs();
-  expect(levels).toHaveLength(144);
+  expect(levels).toHaveLength(LEVEL_COUNT);
   for (let start = 0; start < levels.length; start += 6) {
     const chapter = levels.slice(start, start + 6);
     const workload = chapter.map((level) => level.objectives[0].target);

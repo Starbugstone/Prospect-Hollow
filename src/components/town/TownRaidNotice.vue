@@ -29,7 +29,7 @@
       <TownIcon
         v-if="defended"
         class="raid-defense-badge"
-        :name="kind === 'workshop-fire' ? 'fireStation' : 'sheriff'"
+        :name="civicIncident(kind) ? 'fireStation' : 'sheriff'"
       />
       <template v-else><TownIcon name="coin" />−{{ number(coins) }}</template>
     </strong>
@@ -38,8 +38,8 @@
         t(
           defended
             ? 'VILLAGE DEFENDED!'
-            : kind === 'workshop-fire'
-              ? 'Workshop cleanup: {coins} coins'
+            : civicIncident(kind)
+              ? 'Cleanup: {coins} coins'
               : 'A few coins lost',
           { coins: number(coins) },
         )
@@ -54,9 +54,9 @@
     <p>
       {{
         t(
-          kind === 'workshop-fire'
+          civicIncident(kind)
             ? defended
-              ? 'The fire brigade kept every coin safe. All buildings remain open.'
+              ? 'The response crew kept every coin safe. All buildings remain open.'
               : 'Upgrade the fire station to reduce cleanup costs. Every building is intact.'
             : defended
               ? 'Your sheriff and bank kept every coin safe.'
@@ -67,6 +67,7 @@
   </aside>
 </template>
 <script setup>
+import { civicIncident } from '../../data/townEvents';
 import { onMounted, onBeforeUnmount } from 'vue';
 import { t, number } from '../../i18n';
 import TownIcon from './TownIcon.vue';

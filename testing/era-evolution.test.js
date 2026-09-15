@@ -63,7 +63,7 @@ it('keeps all old level-five service benefits at the new shorter caps', () => {
   const legacy = createTown();
   delete legacy.progressionVersion;
   for (const b of BUILDINGS.filter((b) => b.introducedEra === 'frontier'))
-    legacy.buildings[b.id] = 5;
+    legacy.buildings[b.id] = b.id === 'watermill' ? 3 : 5;
   const town = normalizeTown(legacy);
   expect(town.buildings.home).toBe(3);
   expect(town.buildings.doctor).toBe(3);

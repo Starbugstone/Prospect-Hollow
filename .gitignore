@@ -21,3 +21,6 @@ test-results/
 
 # Hosting metadata and generated build cache
 .vercel/
+
+# Python caches from Blender asset tooling
+__pycache__/

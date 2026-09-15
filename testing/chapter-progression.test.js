@@ -38,7 +38,7 @@ it('allows players to keep matching beyond pacing targets and finish without sco
 
 it('changes dimensions and color count only at chapter boundaries and rotates two-level seams', () => {
   const levels = generateLevelConfigs();
-  expect(new Set(CHAPTERS.map((chapter) => chapter.theme)).size).toBe(24);
+  expect(new Set(CHAPTERS.map((chapter) => chapter.theme)).size).toBe(CHAPTERS.length);
   for (const [index, level] of levels.entries()) {
     const chapter = CHAPTERS[level.chapter];
     expect([level.boardCols, level.boardRows, level.boardLayout.gemTypeCount]).toEqual([

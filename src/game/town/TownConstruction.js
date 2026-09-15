@@ -1,4 +1,4 @@
-export const CONSTRUCTION_SECONDS = 1;
+const CONSTRUCTION_SECONDS = 1;
 const clamp = (value) => Math.min(1, Math.max(0, value));
 
 // Temporary articulated pieces share the village's existing instanced actor renderer.

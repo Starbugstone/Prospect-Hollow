@@ -56,7 +56,11 @@
           <path class="walker-leg leg-right" d="m3-6 2 9" stroke="#6e6552" stroke-width="3" />
           <path d="M0-18v13" stroke="currentColor" stroke-width="9" />
           <circle cy="-24" r="5" fill="#d7a577" />
-          <path d="M-8-28H8M-4-29v-4h8v4" stroke="#9c7b4f" stroke-width="3" />
+          <path
+            :d="isCityEra(town.era) ? 'M-5-28H8M-4-28q0-7 8-2' : 'M-8-28H8M-4-29v-4h8v4'"
+            stroke="#9c7b4f"
+            stroke-width="3"
+          />
         </g>
         <g :id="`${uid}-horse`">
           <ellipse cx="2" cy="4" rx="25" ry="6" fill="#685a3d" opacity=".2" />
@@ -179,7 +183,7 @@
           :key="`track-${index}`"
           :d="`M${mapPoint(track.from).join(' ')} L${mapPoint(track.to).join(' ')}`"
           :stroke-width="track.width * (pavedTown(town) ? 20 : 14)"
-          :stroke="pavedTown(town) ? '#89928a' : '#c8ac7f'"
+          :stroke="roadSurface(town)"
           stroke-linecap="round"
           fill="none"
         />
@@ -316,6 +320,7 @@
         <image
           v-if="['ready', 'coins', 'tnt', 'bell', 'era'].includes(indicators[building.id])"
           class="map-action-icon"
+          :transform="`translate(0 -32) scale(${townIndicatorScale(indicators[building.id])}) translate(0 32)`"
           :x="indicators[building.id] === 'ready' ? -36 : -28"
           :y="indicators[building.id] === 'ready' ? -68 : -60"
           :width="indicators[building.id] === 'ready' ? 72 : 56"
@@ -380,7 +385,7 @@
         </g>
       </g>
       <g v-if="hasElectricity(town)" aria-hidden="true">
-        <g class="town-power-grid">
+        <g v-if="eraEvolution(town.era).overheadPower" class="town-power-grid">
           <path
             v-for="(pole, index) in grid.poles"
             :key="`pole-${index}`"
@@ -495,7 +500,7 @@
           </g>
         </g>
         <g
-          v-if="town.buildings.stable"
+          v-if="town.buildings.stable && !motorTraffic(town)"
           :transform="`translate(${mapPoint(PLOTS.stable).join(' ')}) scale(.48) translate(-735 -455)`"
         >
           <g transform="translate(802 461)">
@@ -535,9 +540,18 @@
   </div>
 </template>
 <script setup>
+import { eraEvolution } from '../../data/eras';
+import { isCityEra } from '../../data/city';
+
 import { t } from '../../i18n';
 import { hasElectricity, ELECTRIC_LAMPS } from '../../data/industrial';
-import { pavedTown, modernTransport, motorTraffic, powerGrid } from '../../game/town/TownEvolution';
+import {
+  pavedTown,
+  modernTransport,
+  motorTraffic,
+  powerGrid,
+  roadSurface,
+} from '../../game/town/TownEvolution';
 import { computed, nextTick, ref, useId, watch } from 'vue';
 import {
   constructionVisual,
@@ -559,6 +573,7 @@ import {
 import TownSite from './TownSite.vue';
 import { RIVER, riverOutline, riverCenterX } from '../../game/town/TownRiver';
 import TownMine from './TownMine.vue';
+import { townIndicatorScale } from '../../data/townIndicators';
 const props = defineProps({
   town: { type: Object, required: true },
   builderHammers: { type: Number, default: 0 },
