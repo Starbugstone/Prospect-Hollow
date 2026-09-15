@@ -1178,7 +1178,7 @@ export class TownDiorama {
           (other) =>
             (Math.abs(anchor.x - other.x) * width) / 100 < (anchor.width + other.width) / 2 + 4 &&
             (Math.abs(anchor.y - other.y) * height) / 100 <
-              (anchor.id === 'mine' || other.id === 'mine' ? 64 : 42),
+              (anchor.id === 'mine' || other.id === 'mine' ? 72 : 42),
         )
       )
         anchor.visible = false;
