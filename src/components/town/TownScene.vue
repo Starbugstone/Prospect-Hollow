@@ -189,6 +189,7 @@ import TownMap from './TownMap.vue';
 const props = defineProps({
   fullscreen: Boolean,
   cinematic: Boolean,
+  presentation: Object,
   active: { type: Boolean, default: true },
   town: Object,
   builderHammers: { type: Number, default: 0 },
@@ -210,6 +211,8 @@ const emit = defineEmits([
   'raid-cue',
   'raid-complete',
   'camera-distance',
+  'presentation-ready',
+  'presentation-unavailable',
 ]);
 const canvas = ref(null),
   canvasVersion = ref(0),
@@ -252,7 +255,15 @@ function collectionOrigin(id) {
     y: Math.max(20, Math.min(90, anchor?.y ?? 50)),
   };
 }
-defineExpose({ collectionOrigin, cinematicFrame: (progress) => scene?.eraFrame(progress) });
+let presentationTime = 0;
+defineExpose({
+  collectionOrigin,
+  cinematicFrame: (progress) => scene?.eraFrame(progress),
+  presentationFrame: (time) => {
+    presentationTime = time;
+    scene?.presentationFrame(time, props.reducedMotion);
+  },
+});
 const cameraActions = [
   { id: 'out', label: 'Zoom out', path: 'M6 12h12' },
   { id: 'in', label: 'Zoom in', path: 'M6 12h12M12 6v12' },
@@ -317,6 +328,11 @@ const cameraKey = (event) => {
   scene?.cameraAction(action);
 };
 function update() {
+  if (fallback.value) {
+    emit('presentation-unavailable');
+    emit('presentation-ready');
+    return;
+  }
   if (!scene || !props.active) return;
   const labels = Object.fromEntries(
     BUILDINGS.map((building) => [building.id, t(building.shortName)]),
@@ -344,6 +360,11 @@ function update() {
     );
     lastVisual = visual;
     lastConstruction = props.construction?.serial;
+  }
+  scene.setPresentation(props.presentation);
+  if (props.presentation) {
+    scene.presentationFrame(presentationTime, props.reducedMotion);
+    emit('presentation-ready');
   }
   scene.setCinematic(props.cinematic);
   scene.setAvailable([...availableIds.value, ...(props.town.income.stored > 0 ? ['saloon'] : [])]);
@@ -383,6 +404,8 @@ async function recoverGraphics(error, contextLost = false) {
 function useFallback(error) {
   if (disposed || fallback.value) return;
   fallback.value = true;
+  emit('presentation-unavailable');
+  emit('presentation-ready');
   // Let an in-progress render finish unwinding before releasing its resources.
   nextTick(() => {
     scene?.dispose();
@@ -459,6 +482,13 @@ watch(
         ...availableIds.value,
         ...(props.town.income.stored > 0 ? ['saloon'] : []),
       ]);
+  },
+);
+watch(
+  () => props.presentation?.id,
+  () => {
+    presentationTime = 0;
+    update();
   },
 );
 watch(

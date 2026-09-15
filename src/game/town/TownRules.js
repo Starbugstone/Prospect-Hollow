@@ -1,3 +1,4 @@
+import { normalizePresentations } from '../../data/townPresentations';
 import { eraEvolution } from '../../data/eras';
 import { RIVER_RAIL_LEVEL_PRICES } from '../../data/economy';
 import { buildingServiceLevel, hasShortProgression } from '../../data/buildingProgression';
@@ -238,6 +239,7 @@ export function normalizeTown(saved) {
     rail: town.buildings.railDepot,
     riverPort: town.buildings.riverPort,
   };
+  town.presentations = normalizePresentations(saved?.presentations, town);
   return settleForgeProduction(town);
 }
 

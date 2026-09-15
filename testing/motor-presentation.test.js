@@ -105,7 +105,9 @@ it('runs one bus on connected roads with bounded geometry and a pausable shared 
 it('keeps all 24 mine chapter jewels attached around the entrance', () => {
   const d = diorama();
   d.mine(d.world, 'Mine', 24);
-  const bounds = new Box3().setFromObject(d.world);
+  const jewels = d.world.getObjectByName('Mine chapter jewels');
+  expect(jewels.children).toHaveLength(24);
+  const bounds = new Box3().setFromObject(jewels);
   expect(bounds.max.y).toBeLessThan(4.7);
   expect(bounds.max.x - bounds.min.x).toBeLessThan(5);
 });

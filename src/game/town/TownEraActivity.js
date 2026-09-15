@@ -136,7 +136,7 @@ export function addEraActivity(d, town) {
     }
     const parts = train.children.map((part) => ({ part, y: part.position.y, x: part.position.x }));
     d.motions.push((time) => {
-      const journey = trainJourney(time);
+      const journey = d.railwayOpening?.journey ?? trainJourney(time + (d.trainTimeOffset ?? 0));
       train.visible = journey.visible;
       train.position.set(journey.x, 0.035, RAIL_EDGE.from[1]);
       for (const { part, y, x } of parts) {
@@ -154,7 +154,7 @@ export function addEraActivity(d, town) {
   }
 }
 
-export function addRailroad(d, town) {
+export function addRailroad(d, town, { batch = true } = {}) {
   if (!railEdges(town).length) return null;
   const rails = d.group(d.world);
   rails.userData.static = true;
@@ -212,6 +212,6 @@ export function addRailroad(d, town) {
   }
   for (const x of [center - span + 0.35, center + span - 0.35])
     d.box(bridge, 0.65, 3.7, 2, x, 0.65, z, '#a39d88');
-  d.batch(rails);
+  if (batch) d.batch(rails);
   return rails;
 }

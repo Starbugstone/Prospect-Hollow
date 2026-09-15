@@ -113,3 +113,18 @@ only the ground and rock immediately around the camera, including the mine
 shoulder; an obscured distant parcel never forces the view overhead. Small
 collision corrections preserve the viewing direction and zoom distance where
 possible, without repeatedly lifting an already-clear camera.
+
+The railway tunnel has rounded stone arches at both ends. Completing the first
+station (including with a builder hammer) queues a 16-second cinematic: track is
+laid, the hill is excavated and the arches assembled, then the first train calls
+at the station and passes through the tunnel. Skip or Continue restores the
+village camera. Reduced motion shows the completed scene without a moving camera.
+A pending presentation survives reload; existing completed stations do not replay
+it automatically. Station upgrades leave the tunnel and railway operational.
+
+The stone portals, tunnel lining and rock collars share one polygonal arch profile
+and fixed front/back planes. The mine has a separate excavated decline: its mouth
+is 2.5 units below the yard, and its shaft continues beneath the full railway with
+more than one unit of rock above the mine ceiling. The cart and sleepers follow
+the same eased slope. The encounter yard remains level south of the ramp; mining
+upgrades add equipment beside the opening rather than filling the entrance.

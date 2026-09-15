@@ -1,3 +1,4 @@
+import { queueBuildingPresentations, acknowledgePresentation } from '../data/townPresentations';
 import { miningDepthBonus, CHEST_ECONOMY_VERSION } from '../data/economy';
 import { defineStore } from 'pinia';
 import { SHOP_ITEMS, rollShopStock, shopSlots, shopSpace } from '../data/shop';
@@ -281,6 +282,15 @@ export const useCampaignStore = defineStore('campaign', {
       this.town = previous;
       return false;
     },
+    acknowledgePresentation(id) {
+      const next = acknowledgePresentation(this.town, id);
+      if (!next) return false;
+      const previous = this.town;
+      this.town = next;
+      if (this.save()) return true;
+      this.town = previous;
+      return false;
+    },
     acknowledgeEra() {
       if (!this.town.transition?.pending) return;
       const previous = this.town;
@@ -426,7 +436,7 @@ export const useCampaignStore = defineStore('campaign', {
       this.accrueSaloonIncome(Date.now(), false);
       const next = purchase(this.town, id, expectedStage);
       if (!next) return false;
-      this.town = next;
+      this.town = queueBuildingPresentations(this.town, next);
       this.ensureShopStock();
       this.save();
       return true;
@@ -440,7 +450,7 @@ export const useCampaignStore = defineStore('campaign', {
       const previous = this.town;
       const previousStock = this.shopStock;
       const previousVisit = this.shopVisit;
-      this.town = settleForgeProduction(reinforceRaid(next));
+      this.town = queueBuildingPresentations(previous, settleForgeProduction(reinforceRaid(next)));
       this.ensureShopStock();
       if (!this.save()) {
         this.town = previous;
@@ -462,7 +472,7 @@ export const useCampaignStore = defineStore('campaign', {
       const previous = this.town;
       const previousStock = this.shopStock;
       const previousVisit = this.shopVisit;
-      this.town = settleForgeProduction(reinforceRaid(next));
+      this.town = queueBuildingPresentations(previous, settleForgeProduction(reinforceRaid(next)));
       this.ensureShopStock();
       if (!this.save()) {
         this.town = previous;

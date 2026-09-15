@@ -1,3 +1,12 @@
+import {
+  addTunnelPortals,
+  RAIL_TUNNEL,
+  tunnelCeilingAt,
+  tunnelOuterHeightAt,
+  tunnelInnerProfile,
+  tunnelOuterProfile,
+  tunnelRearX,
+} from './TownRailTunnel';
 import * as THREE from 'three';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 
@@ -14,8 +23,8 @@ export const MINE_FACE_COLUMNS = [
 export const MINE_HILLSIDE = Object.freeze({
   frontOffset: -1.1,
   rearOffset: -12.5,
-  tunnelHalfWidth: 1.5,
-  tunnelCeiling: 4,
+  tunnelHalfWidth: RAIL_TUNNEL.halfWidth,
+  tunnelCeiling: RAIL_TUNNEL.spring + RAIL_TUNNEL.radius,
 });
 const smooth = (a, b, value) => {
   const t = THREE.MathUtils.clamp((value - a) / (b - a), 0, 1);
@@ -34,107 +43,125 @@ export function mineHillsideHeight(x, z, mineZ, baseHeight) {
       face = THREE.MathUtils.lerp(ay, by, (localX - ax) / (bx - ax));
   }
   if (depth < 0) return Math.max(baseHeight, face * smooth(-0.98, 0, depth));
-  const shoulder = face + depth * 0.4 * (1 - smooth(3, 6, Math.abs(localX)));
+  // Rock above the future bore remains a normal solid shoulder until completion.
+  const tunnelCover =
+    (tunnelOuterHeightAt(z, mineZ - 3) + 0.6) *
+    (1 - smooth(6.8, 9, Math.abs(x))) *
+    (1 - smooth(1.5, 2.25, Math.abs(z - (mineZ - 3))));
+  const shoulder = Math.max(tunnelCover, face + depth * 0.4 * (1 - smooth(3, 6, Math.abs(localX))));
   return Math.max(baseHeight, THREE.MathUtils.lerp(shoulder, baseHeight, smooth(6, 11.4, depth)));
 }
 
-// A solid shoulder connects the exposed face to the existing hill. The only
-// cavity is a four-unit-high railway tunnel; its roof and both walls are closed.
+// The exposed surface and portal retaining faces share an exact world-space grid.
+// The rock stops at the BACK of the masonry; its bore meets the inner arch there.
 export function buildMineHillside(town, parent, mineZ, railZ, groundHeight, railway = false) {
   const root = town.group(parent);
   root.name = 'Connected mine hillside';
   root.userData.static = true;
-  const { frontOffset, rearOffset, tunnelHalfWidth, tunnelCeiling } = MINE_HILLSIDE;
+  const { frontOffset, rearOffset } = MINE_HILLSIDE;
+  const { approachHalfWidth, radius } = RAIL_TUNNEL;
   const rows = [
     ...new Set([
       mineZ + frontOffset,
-      railZ + tunnelHalfWidth,
-      railZ,
-      railZ - tunnelHalfWidth,
       mineZ + rearOffset,
-      ...Array.from({ length: 18 }, (_, i) => mineZ + frontOffset - (i + 1) * 0.625),
+      railZ - approachHalfWidth,
+      railZ + approachHalfWidth,
+      ...tunnelInnerProfile.map(([z]) => railZ + z),
+      ...tunnelOuterProfile.map(([z]) => railZ + z),
+      ...Array.from(
+        { length: 24 },
+        (_, i) => mineZ + rearOffset + (i * (frontOffset - rearOffset)) / 23,
+      ),
     ]),
   ].sort((a, b) => b - a);
   const columns = [
     ...new Set([
-      -8,
+      -20,
+      -tunnelRearX,
+      tunnelRearX,
+      20,
       ...MINE_FACE_COLUMNS.map(([x]) => x),
-      8,
-      ...Array.from({ length: 21 }, (_, i) => -7.5 + i * 0.75),
+      ...Array.from({ length: 81 }, (_, i) => -20 + i * 0.5),
     ]),
   ].sort((a, b) => a - b);
   const positions = [],
     colors = [];
   const triangle = (a, b, c, hex) => {
     positions.push(...a, ...b, ...c);
-    const color = new THREE.Color(hex);
-    for (let i = 0; i < 3; i++) colors.push(color.r, color.g, color.b);
+    const tone = new THREE.Color(hex);
+    for (let i = 0; i < 3; i++) colors.push(tone.r, tone.g, tone.b);
   };
-  const point = (x, z) => {
-    const depth = mineZ + frontOffset - z;
-    const worldX = x * (1 + depth * 0.13);
-    return [worldX, mineHillsideHeight(worldX, z, mineZ, groundHeight(worldX, z)), z];
+  const quad = (a, b, c, d, color) => {
+    triangle(a, b, c, color);
+    triangle(a, c, d, color);
   };
-  const clipAboveCeiling = (polygon) => {
-    const clipped = [];
-    for (let i = 0; i < polygon.length; i++) {
-      const a = polygon[i],
-        b = polygon[(i + 1) % polygon.length];
-      const insideA = a[1] >= tunnelCeiling,
-        insideB = b[1] >= tunnelCeiling;
-      if (insideA) clipped.push(a);
-      if (insideA !== insideB) {
-        const t = (tunnelCeiling - a[1]) / (b[1] - a[1]);
-        clipped.push(a.map((v, axis) => THREE.MathUtils.lerp(v, b[axis], t)));
-      }
-    }
-    return clipped;
+  const wall = (a, b, c, d) => {
+    quad(a, b, c, d, '#a29377');
+    quad(c, b, a, d, '#a29378');
   };
+  const height = (x, z) => mineHillsideHeight(x, z, mineZ, groundHeight(x, z));
+  const point = (x, z) => [x, height(x, z), z];
   for (let row = 1; row < rows.length; row++) {
     const front = rows[row - 1],
       back = rows[row];
-    const overTrack =
-      railway && front <= railZ + tunnelHalfWidth && back >= railZ - tunnelHalfWidth;
+    const approach =
+      railway && front <= railZ + approachHalfWidth && back >= railZ - approachHalfWidth;
+    const bore = railway && front <= railZ + radius && back >= railZ - radius;
     for (let col = 1; col < columns.length; col++) {
-      const a = point(columns[col - 1], front),
-        b = point(columns[col], front);
-      const c = point(columns[col], back),
-        d = point(columns[col - 1], back);
-      for (const face of [
-        [a, b, c],
-        [a, c, d],
-      ]) {
-        const polygon = overTrack ? clipAboveCeiling(face) : face;
-        for (let i = 2; i < polygon.length; i++) {
-          triangle(
-            polygon[0],
-            polygon[i - 1],
-            polygon[i],
-            front > mineZ - 6 ? '#b5a485' : '#c2b18a',
-          );
-          if (overTrack)
-            triangle(
-              ...[polygon[0], polygon[i], polygon[i - 1]].map(([x, , z]) => [x, tunnelCeiling, z]),
-              '#8e826e',
-            );
+      const left = columns[col - 1],
+        right = columns[col];
+      if (approach && (left >= tunnelRearX || right <= -tunnelRearX)) continue;
+      const a = point(left, front),
+        b = point(right, front),
+        c = point(right, back),
+        d = point(left, back);
+      quad(a, b, c, d, front > mineZ - 6 ? '#b5a485' : '#c2b18a');
+      if (bore)
+        quad(
+          [left, tunnelCeilingAt(back, railZ), back],
+          [right, tunnelCeilingAt(back, railZ), back],
+          [right, tunnelCeilingAt(front, railZ), front],
+          [left, tunnelCeilingAt(front, railZ), front],
+          '#8e826e',
+        );
+    }
+  }
+  if (railway) {
+    for (const side of [-1, 1]) {
+      const x = side * tunnelRearX;
+      for (let row = 1; row < rows.length; row++) {
+        const front = rows[row - 1],
+          back = rows[row];
+        if (front > railZ + approachHalfWidth || back < railZ - approachHalfWidth) continue;
+        const arch = front <= railZ + radius + 0.5 && back >= railZ - radius - 0.5;
+        const low = (z) => (arch ? tunnelOuterHeightAt(z, railZ) : groundHeight(x, z));
+        // A fitted rock collar slopes onto the OUTER edge of the arch face.
+        // This buries its backing instead of leaving a second opening above it.
+        const faceX = side * RAIL_TUNNEL.portalX;
+        const outer = (z) => (arch ? tunnelOuterHeightAt(z, railZ) : groundHeight(faceX, z));
+        const a = point(x, front),
+          b = [faceX, outer(front), front],
+          c = [faceX, outer(back), back],
+          e = point(x, back);
+        if (side > 0) quad(a, b, c, e, '#b5a485');
+        else quad(e, c, b, a, '#b5a485');
+      }
+      for (const z of [railZ - approachHalfWidth, railZ + approachHalfWidth]) {
+        const approachColumns = columns.filter((v) => side * v >= tunnelRearX);
+        for (let i = 1; i < approachColumns.length; i++) {
+          const a = approachColumns[i - 1],
+            b = approachColumns[i];
+          wall([a, groundHeight(a, z), z], [b, groundHeight(b, z), z], point(b, z), point(a, z));
         }
       }
     }
-  }
-  // Below the surface, close the front and rear walls of the railway tunnel.
-  for (const z of railway ? [railZ + tunnelHalfWidth, railZ - tunnelHalfWidth] : []) {
-    for (let col = 1; col < columns.length; col++) {
-      const a = point(columns[col - 1], z),
-        b = point(columns[col], z);
-      a[1] = Math.min(a[1], tunnelCeiling);
-      b[1] = Math.min(b[1], tunnelCeiling);
-      const c = [b[0], groundHeight(b[0], z), z],
-        d = [a[0], groundHeight(a[0], z), z];
-      triangle(a, b, c, '#a29377');
-      triangle(a, c, d, '#a29377');
-      triangle(c, b, a, '#a29377');
-      triangle(d, c, a, '#a29377');
-    }
+    for (const z of [railZ - radius, railZ + radius])
+      wall(
+        [-tunnelRearX, 0, z],
+        [tunnelRearX, 0, z],
+        [tunnelRearX, RAIL_TUNNEL.spring, z],
+        [-tunnelRearX, RAIL_TUNNEL.spring, z],
+      );
   }
   const source = new THREE.BufferGeometry();
   source.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
@@ -149,5 +176,6 @@ export function buildMineHillside(town, parent, mineZ, railZ, groundHeight, rail
   mesh.name = 'Mine shoulder and tunnel';
   mesh.castShadow = mesh.receiveShadow = true;
   root.add(mesh);
+  if (railway) addTunnelPortals(town, root, railZ);
   return root;
 }

@@ -1,3 +1,4 @@
+import { addMineExcavation } from './TownMineShaft';
 import * as THREE from 'three';
 import { MINE_FACE_COLUMNS, MINE_HILLSIDE, mineHillsideHeight } from './TownMineHillside';
 import { MILLRACE, millraceDistance, millraceHeight, landscapeGeometry } from './TownMillrace';
@@ -82,13 +83,13 @@ export function landscapeGroundHeight(x, z) {
   const base = groundHeight(x, z);
   const depth = PLOTS.mine[1] + MINE_HILLSIDE.frontOffset - z;
   if (
-    depth <= 0 ||
+    depth <= -0.25 ||
     depth >= 11.4 ||
     Math.abs(z - RAIL_EDGE.from[1]) <= MINE_HILLSIDE.tunnelHalfWidth
   )
     return base;
-  const edge = 8 - Math.abs(x / (1 + depth * 0.13));
-  const inset = smooth(0, 0.6, depth) * smooth(0, 0.6, 11.4 - depth) * smooth(0, 0.6, edge);
+  const edge = 20 - Math.abs(x);
+  const inset = smooth(-0.25, 0.6, depth) * smooth(0, 0.6, 11.4 - depth) * smooth(0, 0.6, edge);
   return base - inset * 0.8;
 }
 
@@ -203,6 +204,7 @@ export function buildLandscape(town) {
   landscape.add(ground);
   buildRiver(town, landscape);
   addMineCliff(town, landscape);
+  addMineExcavation(town, landscape);
 
   const plants = town.group(landscape);
   // Cottonwoods near the settlement, with smaller junipers scattered into the hills.

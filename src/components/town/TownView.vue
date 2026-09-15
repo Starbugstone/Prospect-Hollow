@@ -46,7 +46,7 @@
           'town-has-raid': activeRaid,
           'town-fullscreen': fullscreen,
           'town-labels-hidden': !settings.showVillageLabels,
-          'town-in-cinematic': town.transition?.pending,
+          'town-in-cinematic': town.transition?.pending || openingPresentation,
         }"
       >
         <button
@@ -159,6 +159,9 @@
           :fullscreen="fullscreen"
           :town="sceneTown"
           :cinematic="!!town.transition?.pending"
+          :presentation="openingPresentation"
+          @presentation-ready="presentationReady = true"
+          @presentation-unavailable="presentationFallback = true"
           :forge-collectible="campaign.canCollectForge(collectionNow)"
           :now="collectionNow"
           :builder-hammers="campaign.builderHammers"
@@ -216,7 +219,7 @@
           @close="raidNotice = null"
         />
         <TownNextStep
-          v-if="!activeRaid && !town.transition?.pending"
+          v-if="!activeRaid && !town.transition?.pending && !openingPresentation"
           id="village-progress"
           v-show="progressOpen"
           class="village-next-inline"
@@ -228,7 +231,7 @@
           @advance-era="beginEra"
         />
         <button
-          v-if="!activeRaid && !town.transition?.pending"
+          v-if="!activeRaid && !town.transition?.pending && !openingPresentation"
           class="town-progress-button"
           aria-controls="village-progress"
           :aria-expanded="progressOpen"
@@ -586,6 +589,16 @@
         </button>
       </div>
     </TownDialog>
+    <TownPresentationCinematic
+      v-if="active && openingPresentation && presentationReady"
+      :key="openingPresentation.id"
+      :definition="openingPresentation"
+      :ready="presentationReady"
+      :reduced-motion="settings.reducedMotion || presentationFallback"
+      :paused="paused || settings.isSettingsOpen || mineEntryPending"
+      @frame="townScene?.presentationFrame($event)"
+      @complete="completePresentation"
+    />
     <TownEraCinematic
       v-if="active && town.transition?.pending"
       :era-id="town.era"
@@ -601,6 +614,8 @@
 <script setup>
 import { isCityEra } from '../../data/city';
 import TownProjects from './TownProjects.vue';
+import TownPresentationCinematic from './TownPresentationCinematic.vue';
+import { pendingPresentation } from '../../data/townPresentations';
 
 import { motorTraffic, modernTransport } from '../../game/town/TownEvolution';
 import { civicIncident } from '../../data/townEvents';
@@ -823,6 +838,25 @@ const forgeCollected = ref(false);
 let collectionSerial = 0;
 const activeRaid = ref(null),
   raidPhase = ref('Riders on the ridge');
+const presentationReady = ref(false);
+const presentationFallback = ref(false);
+const openingPresentation = computed(() =>
+  !activeRaid.value && !town.value.transition?.pending ? pendingPresentation(town.value) : null,
+);
+watch(
+  openingPresentation,
+  (definition) => {
+    presentationReady.value = false;
+    if (definition) {
+      closeDialog();
+      fullscreen.value = true;
+    }
+  },
+  { immediate: true },
+);
+function completePresentation() {
+  if (openingPresentation.value) campaign.acknowledgePresentation(openingPresentation.value.id);
+}
 const cameraDistance = ref(55);
 const { playRaidCue } = useTownAudio(() => ({
   active: props.active,
@@ -1055,6 +1089,7 @@ function repair(stage, keepDirectory = false) {
   };
 }
 function showConstruction(keepDirectory = false) {
+  if (pendingPresentation(town.value)) keepDirectory = false;
   if (!keepDirectory) closeDialog();
   construction.value = { id: selected.value, serial: (construction.value?.serial ?? 0) + 1 };
   if (!keepDirectory) mapFrame.value?.scrollIntoView({ behavior: 'instant', block: 'nearest' });

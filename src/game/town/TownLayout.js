@@ -1,3 +1,4 @@
+import { MINE_POSITION } from '../../data/mineSite';
 import { WATERMILL_SITE } from '../../data/watermill';
 import { BUILDING_BY_ID } from '../../data/town';
 import { plotUnlocked } from './TownRules';
@@ -18,7 +19,7 @@ export const PLOTS = {
   sheriff: [0, 11],
   museum: [-7, 12],
   armory: [7, 12],
-  mine: [0, -20],
+  mine: MINE_POSITION,
   bank: [-7, -12],
   shop: [7, -12],
   home2: [-15, -4],

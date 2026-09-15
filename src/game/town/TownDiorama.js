@@ -1,3 +1,5 @@
+import { MINE_SHAFT, addMineShaft, mineTrackHeight, mineTrackPitch } from './TownMineShaft';
+import { TownPresentation } from './TownPresentation';
 import { isCityEra } from '../../data/city';
 import { eraEvolution } from '../../data/eras';
 import { TownRenderQuality } from './TownRenderQuality';
@@ -295,6 +297,8 @@ export class TownDiorama {
     group.removeFromParent();
   }
   update(town, labels, mineStage = 0, constructionId = null) {
+    this.presentation?.dispose(false);
+    this.presentation = null;
     const interruptedGroup = this.construction?.group;
     this.construction?.finish();
     this.construction = null;
@@ -539,7 +543,8 @@ export class TownDiorama {
       this.horse(...atPlot('stable', 2.25, 0.9), 0.5);
       this.horse(...atPlot('stable', 2.65, -0.9), -0.9, 0.85);
     }
-    const cart = this.group(this.world, 0.1, 0.08, PLOTS.mine[1] + 1.6);
+    const cart = this.group(this.world);
+    cart.name = 'Incline mine cart';
     cart.userData.animated = true;
     this.box(cart, 0.75, 0.4, 0.55, 0, 0.45, 0, '#617d80', true);
     for (const x of [-0.32, 0.32])
@@ -556,7 +561,13 @@ export class TownDiorama {
         'rock',
       );
     this.motions.push((time) => {
-      cart.position.z = PLOTS.mine[1] + 1.6 + Math.sin(time * 0.45) * 0.32;
+      const z = THREE.MathUtils.lerp(
+        MINE_SHAFT.rampStartZ - 0.3,
+        MINE_SHAFT.portalZ - 1.25,
+        (1 - Math.cos(time * 0.55)) / 2,
+      );
+      cart.position.set(0, mineTrackHeight(z) + 0.07, z);
+      cart.rotation.x = mineTrackPitch(z);
     });
     this.actors.forEach((actor) => this.animatePerson(actor, this.elapsed));
     this.motions.forEach((motion) => motion(this.elapsed));
@@ -691,56 +702,53 @@ export class TownDiorama {
     this.mesh(parent, 'cone', [0.13, 0.22, 0.13], [0, 0.75, 0], '#aa7748');
   }
   mine(parent, label, stage = 0) {
-    for (const [x, y, z, s] of [
-      [-1.5, 1, -0.3, 1.2],
-      [1.4, 1, -0.5, 1.3],
-      [0, 2.1, -0.7, 1.4],
-      [-0.8, 2, -0.7, 0.9],
-      [1, 2, -1, 1],
-    ])
-      this.ball(parent, x, y, z, [s, s * 0.85, s * 0.7], x > 0 ? '#9d987b' : '#b6aa89', 'rock');
-    this.box(parent, 1.75, 2.0, 0.12, 0, 1.05, 0.48, '#333b31', true);
-    for (const x of [-1, 1]) this.box(parent, 0.2, 2.2, 0.25, x, 1.05, 0.67, '#ae8956');
-    this.box(parent, 2.4, 0.25, 0.3, 0, 2.17, 0.68, '#997144');
-    this.sign(
+    addMineShaft(this, parent);
+    const entry = this.group(
       parent,
-      label,
-      1.9,
       0,
-      this.town?.era && this.town.era !== 'frontier' ? 3 : 2.36,
-      1.3,
+      MINE_SHAFT.portalFloor - parent.position.y,
+      MINE_SHAFT.portalZ - PLOTS.mine[1],
     );
+    entry.name = 'Sunken mine entrance';
+    for (const [x, y, z, s] of [
+      [-1.5, 1, -0.15, 0.55],
+      [1.5, 1, -0.15, 0.55],
+      [0, 2.6, -0.3, 0.6],
+      [-0.8, 2.45, -0.3, 0.45],
+      [0.8, 2.45, -0.3, 0.45],
+    ])
+      this.ball(entry, x, y, z, [s, s * 0.75, s * 0.7], x > 0 ? '#9d987b' : '#b6aa89', 'rock');
+    for (const x of [-1, 1]) this.box(entry, 0.18, 2.12, 0.25, x, 1.06, 0, '#ae8956');
+    this.box(entry, 2.35, 0.24, 0.3, 0, 2.13, 0, '#997144');
+    this.box(entry, 0.14, 0.25, 0.17, -0.84, 1.5, 0.2, '#e7bd73', true);
+    const era = this.group(entry, 0, 0, -0.85);
+    era.scale.set(0.78, 0.78, 1);
+    addMineEra(this, era, this.town?.era);
+    this.sign(entry, label, 1.8, 0, 2.38, 0.23);
+    const jewels = this.group(parent);
+    jewels.name = 'Mine chapter jewels';
     const gems = ['#b889ca', '#6dace5', '#6bcbae', '#e8c879', '#e495b3'];
-    for (let n = 0; n < stage; n++) {
-      const side = n % 2 ? 1 : -1;
+    for (let n = 0; n < stage; n++)
       this.ball(
-        parent,
-        side * (1.35 + Math.floor(n / 12) * 0.55),
-        0.35 + Math.floor((n % 12) / 2) * 0.42,
-        0.62,
-        [0.18, 0.3, 0.18],
+        jewels,
+        (n % 2 ? 1 : -1) * 2.35,
+        0.2 + Math.floor(n / 2) * 0.25,
+        1.4,
+        [0.13, 0.2, 0.13],
         gems[n % gems.length],
         'rock',
       );
-    }
-    if (stage >= 1)
-      for (const x of [-1, 1]) this.box(parent, 0.25, 0.18, 0.3, x, 1.45, 0.7, '#b4c2bd');
-    if (stage >= 2) this.box(parent, 2.5, 0.12, 0.38, 0, 2.12, 0.73, '#b2bbb5');
-    if (stage >= 3) this.box(parent, 0.8, 0.55, 0.75, -1.6, 0.4, 1.5, '#a07d57');
-    if (stage >= 4) this.box(parent, 0.75, 0.6, 1, 0.1, 0.46, 1.6, '#748f95');
-    if (stage >= 5) this.box(parent, 3, 0.14, 0.9, 0, 2.62, 0.7, '#658779');
-    if (stage >= 6)
-      for (const x of [-1.7, 1.7]) this.rod(parent, [x, 0, -0.4], [x, 3.65, -0.4], 0.1, '#a38252');
-    if (stage >= 7) this.rod(parent, [-1.7, 3.65, -0.4], [1.7, 3.65, -0.4], 0.14, '#b39260');
-    if (stage >= 8)
-      for (const x of [-1.65, 1.65]) this.box(parent, 0.24, 0.45, 0.25, x, 2.9, 0.2, '#ffe3a0');
-    if (stage >= 9) this.box(parent, 3.8, 0.15, 1.5, 0, 3.9, -0.4, '#78938a');
-    if (stage >= 10) this.ball(parent, 0, 4.3, -0.4, [0.4, 0.6, 0.4], '#edcf76', 'rock');
-    for (const x of [-0.38, 0.38]) this.box(parent, 0.06, 0.04, 3.1, x, 0.06, 1.15, '#737b70');
-    for (let n = 0; n < 9; n++)
-      this.box(parent, 1, 0.065, 0.13, 0, 0.04, -0.1 + n * 0.35, '#9f8157');
-    this.box(parent, 0.16, 0.28, 0.18, -1.22, 1.63, 0.78, '#e7bd73', true);
-    addMineEra(this, parent, this.town?.era);
+    // Extraction equipment grows beside the decline, outside its clear opening.
+    const equipment = this.group(parent, 2.9, 0, 1.5);
+    if (stage >= 1) this.box(equipment, 0.55, 0.5, 0.7, 0, 0.25, 0, '#a07d57');
+    if (stage >= 3) this.box(equipment, 0.65, 0.6, 0.8, 0, 0.4, 0.8, '#748f95');
+    if (stage >= 5)
+      for (const x of [-0.6, 0.6]) this.rod(equipment, [x, 0, 0], [x, 2.6, 0], 0.085, '#a38252');
+    if (stage >= 6) this.rod(equipment, [-0.6, 2.6, 0], [0.6, 2.6, 0], 0.1, '#b39260');
+    if (stage >= 7) this.box(equipment, 1.5, 0.12, 1.3, 0, 2.7, 0, '#78938a');
+    if (stage >= 8) this.box(equipment, 0.22, 0.3, 0.24, 0, 2.2, 0.2, '#ffe3a0');
+    if (stage >= 9) this.rod(equipment, [0, 2.5, 0], [-1.3, 0.2, 0], 0.035, '#566a63');
+    if (stage >= 10) this.ball(equipment, 0, 3, 0, [0.25, 0.35, 0.25], '#edcf76', 'rock');
   }
   person({
     color,
@@ -1204,7 +1212,8 @@ export class TownDiorama {
     }
     updateEventCamera(this);
     // Advance life during camera motion too; its scheduled render draws the new pose.
-    if (this.cameraFrame || (this.cinematic && !this.cinematic.finished)) return;
+    if (this.cameraFrame || this.presentation || (this.cinematic && !this.cinematic.finished))
+      return;
     this.actorRenderer.update();
     this.drawFrame();
   }
@@ -1250,6 +1259,17 @@ export class TownDiorama {
     this.rebuildActors();
     restoreEventCamera(this);
     this.render();
+  }
+  setPresentation(definition) {
+    if (this.presentation?.definition.id === definition?.id) return;
+    this.presentation?.dispose();
+    this.presentation = null;
+    if (definition && TownPresentation.supports(definition.id))
+      this.presentation = new TownPresentation(this, definition);
+    this.render();
+  }
+  presentationFrame(time, still = false) {
+    this.presentation?.frame(time, still);
   }
   setCinematic(enabled) {
     if (!!this.cinematic === enabled) return;
@@ -1319,6 +1339,7 @@ export class TownDiorama {
     this.renderer.setAnimationLoop(enabled && !this.contextUnavailable ? this.tick : null);
   }
   dispose() {
+    this.presentation?.dispose(false);
     this.canvas.removeEventListener('webglcontextlost', this.contextLost);
     cancelAnimationFrame(this.cameraFrame);
     this.frameCache.dispose();

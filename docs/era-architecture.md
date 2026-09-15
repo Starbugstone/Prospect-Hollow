@@ -69,3 +69,21 @@ targeted evidence; simulated extension tests cannot guarantee all future content
 Future optional events and cinematic transitions have a separate framework design
 in [issue #42](https://github.com/Starbugstone/Prospect-Hollow/issues/42). This release
 does not implement that deferred event runtime.
+
+### Building completion presentations
+
+`data/townPresentations.js` defines completion scenes and their saved receipts.
+The campaign store queues a receipt in the same transaction as first construction
+or a builder hammer completion; upgrades and old completed saves do not queue it.
+`normalizePresentations` validates supported receipts without inventing events.
+Acknowledging or skipping a scene changes only its receipt, never its rewards.
+
+`TownPresentationCinematic` owns the shared skippable timeline, pause behavior,
+reduced-motion still, and accessible dialog. `TownPresentation` owns camera capture,
+restoration and temporary renderer cleanup; content adapters supply scene visuals.
+The railway opening lays track, excavates the bore under dust, assembles both stone
+arches and sends the first train through. Until the station is completed, the hill
+stays solid and there are no rails or portals. The saved station and its rail line
+remain complete if the presentation is interrupted; its pending scene can resume
+on the next village visit. This completion presentation is separate from the
+optional-event framework deferred in issue #42.

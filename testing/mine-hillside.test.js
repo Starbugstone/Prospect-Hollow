@@ -42,7 +42,7 @@ it.each([false, true])(
         }
       // Side-on clearance includes the roof, tunnel walls and natural terrain.
       for (const z of [-24.2, -23, -21.8])
-        for (const y of [0.2, 1, 2, 3.5]) {
+        for (const y of [0.2, 1, 2, z === -23 ? 3.5 : 3]) {
           ray.set(new Vector3(-20, y, z), new Vector3(1, 0, 0));
           ray.far = 40;
           const hits = ray.intersectObject(root, true);
