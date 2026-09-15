@@ -2186,27 +2186,27 @@ html:has(.town-museum[open]) {
   position: absolute;
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  padding: 8px;
+  width: calc(44px * var(--action-scale, 1));
+  height: calc(44px * var(--action-scale, 1));
+  padding: calc(8px * var(--action-scale, 1));
   border: 0;
   background: transparent;
   transform: translate(-50%, -50%);
   pointer-events: auto;
 }
 .town-action-icon img {
-  width: 28px;
-  height: 28px;
+  width: calc(28px * var(--action-scale, 1));
+  height: calc(28px * var(--action-scale, 1));
   filter: drop-shadow(0 1px 2px #543d3860);
 }
 .town-completion-icon {
-  width: 48px;
-  height: 48px;
-  padding: 6px;
+  width: calc(48px * var(--action-scale, 1));
+  height: calc(48px * var(--action-scale, 1));
+  padding: calc(6px * var(--action-scale, 1));
 }
 .town-completion-icon img {
-  width: 36px;
-  height: 36px;
+  width: calc(36px * var(--action-scale, 1));
+  height: calc(36px * var(--action-scale, 1));
 }
 .map-action-icon {
   filter: drop-shadow(0 2px 2px #543d3860);

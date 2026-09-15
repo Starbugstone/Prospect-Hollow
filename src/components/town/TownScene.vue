@@ -47,7 +47,11 @@
           'raid-bell-ready': indicators[anchor.id] === 'bell',
         }"
         :data-town-plot="anchor.id"
-        :style="{ left: `${anchor.collection.x}%`, top: `${anchor.collection.y}%` }"
+        :style="{
+          left: `${anchor.collection.x}%`,
+          top: `${anchor.collection.y}%`,
+          '--action-scale': townIndicatorScale(indicators[anchor.id]),
+        }"
         :aria-label="
           indicators[anchor.id] === 'ready'
             ? t('Finish {building}', { building: t(BUILDING_BY_ID[anchor.id].shortName) })
@@ -175,6 +179,7 @@
 </template>
 <script setup>
 import GameIcon from '../GameIcon.vue';
+import { townIndicatorScale } from '../../data/townIndicators';
 import { eraBuildingLevel } from '../../game/town/TownEras';
 import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import { BUILDING_BY_ID, BUILDINGS } from '../../data/town';
@@ -252,9 +257,10 @@ function collectionOrigin(id) {
       };
   }
   const anchor = anchors.value.find((anchor) => anchor.id === id);
+  const origin = anchor?.collection?.visible ? anchor.collection : anchor;
   return {
-    x: Math.max(8, Math.min(92, anchor?.x ?? 50)),
-    y: Math.max(20, Math.min(90, anchor?.y ?? 50)),
+    x: Math.max(8, Math.min(92, origin?.x ?? 50)),
+    y: Math.max(20, Math.min(90, origin?.y ?? 50)),
   };
 }
 let presentationTime = 0;

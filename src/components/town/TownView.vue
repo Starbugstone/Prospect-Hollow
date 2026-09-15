@@ -190,13 +190,14 @@
           @raid-complete="finishRaid"
           @camera-distance="cameraDistance = $event"
         />
-        <TownCoinCollection
+        <TownResourceCollection
           v-if="collection"
           :key="collection.serial"
-          :coins="collection.coins"
+          :amount="collection.amount"
+          :resource="collection.resource"
           :origin="collection.origin"
           :reduced-motion="settings.reducedMotion"
-          @coin="game.audioManager?.playArcadeCue?.('coin', $event)"
+          @cue="game.audioManager?.playArcadeCue?.($event.name, $event.index)"
           @close="collection = null"
         />
         <TownRaidNotice
@@ -242,9 +243,6 @@
             t(progressOpen ? 'Hide progress' : 'Progress')
           }}
         </button>
-        <p v-if="forgeCollected" class="town-construction-tip" role="status">
-          {{ t('Collected 1 TNT · added to your armory') }}
-        </p>
         <span class="town-sr-only" role="status">{{ t(announcement) }}</span>
       </div>
       <div class="town-needs" :aria-label="t('Basic town needs')">
@@ -667,7 +665,7 @@ import TownDialog from './TownDialog.vue';
 import TownBuildingDetails from './TownBuildingDetails.vue';
 import TownIcon from './TownIcon.vue';
 import TownRaidNotice from './TownRaidNotice.vue';
-import TownCoinCollection from './TownCoinCollection.vue';
+import TownResourceCollection from './TownResourceCollection.vue';
 import TownNextStep from './TownNextStep.vue';
 import TownDefenseStatus from './TownDefenseStatus.vue';
 
@@ -835,7 +833,6 @@ const paused = ref(false),
   latestMoment = ref(null);
 const raidNotice = ref(null);
 const collection = ref(null);
-const forgeCollected = ref(false);
 let collectionSerial = 0;
 const activeRaid = ref(null),
   raidPhase = ref('Riders on the ridge');
@@ -969,18 +966,21 @@ function collectIncome() {
   collectionNow.value = Date.now();
   const coins = campaign.collectSaloonIncome(collectionNow.value);
   if (!coins) return false;
+  showCollection('coins', coins, 'saloon');
+  return true;
+}
+function showCollection(resource, amount, buildingId) {
   closeDialog();
   collection.value = {
-    coins,
+    resource,
+    amount,
     serial: ++collectionSerial,
-    origin: townScene.value?.collectionOrigin('saloon'),
+    origin: townScene.value?.collectionOrigin(buildingId),
   };
-  return true;
 }
 async function selectBuilding(id) {
   if (!Object.hasOwn(BUILDING_BY_ID, id)) return;
   selected.value = id;
-  forgeCollected.value = false;
   if (constructionReady(town.value.projects[id])) {
     finishBuilding(id);
     return;
@@ -997,9 +997,7 @@ async function selectBuilding(id) {
   collection.value = null;
   collectionNow.value = Date.now();
   if (id === 'blacksmith' && campaign.collectForgeTNT(collectionNow.value)) {
-    closeDialog();
-    forgeCollected.value = true;
-    game.audioManager?.playArcadeCue?.('jackpot');
+    showCollection('tnt', 1, 'blacksmith');
     return;
   }
   await inspectBuilding(id);
@@ -1023,7 +1021,6 @@ function selectParcel(id) {
 async function inspectBuilding(id) {
   if (!Object.hasOwn(BUILDING_BY_ID, id)) return;
   selected.value = id;
-  forgeCollected.value = false;
   dialogMode.value = 'building';
   await nextTick();
   const dialog = document.querySelector('.town-dialog');
@@ -1043,7 +1040,6 @@ function showConstructionSites() {
 }
 defineExpose({ showConstructionSites });
 function goMining() {
-  forgeCollected.value = false;
   collection.value = null;
   closeDialog();
   if (campaign.completedCount < LEVEL_COUNT) emit('mine');

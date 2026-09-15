@@ -320,6 +320,7 @@
         <image
           v-if="['ready', 'coins', 'tnt', 'bell', 'era'].includes(indicators[building.id])"
           class="map-action-icon"
+          :transform="`translate(0 -32) scale(${townIndicatorScale(indicators[building.id])}) translate(0 32)`"
           :x="indicators[building.id] === 'ready' ? -36 : -28"
           :y="indicators[building.id] === 'ready' ? -68 : -60"
           :width="indicators[building.id] === 'ready' ? 72 : 56"
@@ -572,6 +573,7 @@ import {
 import TownSite from './TownSite.vue';
 import { RIVER, riverOutline, riverCenterX } from '../../game/town/TownRiver';
 import TownMine from './TownMine.vue';
+import { townIndicatorScale } from '../../data/townIndicators';
 const props = defineProps({
   town: { type: Object, required: true },
   builderHammers: { type: Number, default: 0 },
