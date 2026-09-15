@@ -988,6 +988,10 @@
 .town-scene-labels button:hover {
   box-shadow: 0 4px 14px #534a3044;
 }
+/* Keep the mine entrance visible below its label at every camera distance. */
+.town-scene-labels .scene-mine-button {
+  margin-top: -56px;
+}
 /* Enlarge the tap target without changing the visible mine label. */
 .town-scene-labels .scene-mine-button::before {
   content: '';
