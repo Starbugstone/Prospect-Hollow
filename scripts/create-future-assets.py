@@ -52,21 +52,26 @@ def airport(style):
     front, back, center_z, radius = (hangar[k] for k in ['frontX','backX','centerZ','roofRadius'])
     center_x = (front + back) / 2
     depth = back - front
+    runway_x, runway_width = -5, 4.8
+    runway_edge = runway_x + runway_width / 2
+    taxi_end = front + .2
+    taxi_width = taxi_end - runway_edge
+    taxi_center = (runway_edge + taxi_end) / 2
     model(style['asset'])
     box('Airfield grass verge',(20,.14,40),(0,.02,0),'#91a66e',0)
     box('Terminal and hangar apron',(10.2,.05,27),(3.8,.115,1.5),'#9baba2',0)
-    box('North south runway',(4.8,.055,38),(-5,.12,0),'#657777',0)
+    box('North south runway',(runway_width,.055,38),(runway_x,.12,0),'#657777',0)
     for z in range(-16,18,4):box('Runway center stripe',(.12,.012,1.6),(-5,.155,z),cream,0)
     for z in [-17.5,17.5]:
         for x in [-6.5,-5.9,-5.3,-4.7,-4.1,-3.5]:box('Threshold piano key',(.3,.013,1.6),(x,.155,z),cream,0)
     for x in [-7.6,-2.4]:
         for z in range(-18,20,3):
             box('Runway edge light',(.15,.13,.15),(x,.2,z),gold,0)
-    # A runway-facing hangar exits west; the lounge stays north of its wing envelope.
-    box('Hangar taxiway',(front+5.2,.06,radius*2-.3),((front-4.8)/2,.13,center_z), '#788b87',0)
-    box('Hangar taxiway centerline',(front+5.2,.012,.09),((front-4.8)/2,.168,center_z),gold,0)
+    # Join at the runway edge: apron paving and markings must not cover the runway.
+    box('Hangar taxiway',(taxi_width,.06,radius*2-.3),(taxi_center,.13,center_z), '#788b87',0)
+    box('Hangar taxiway centerline',(taxi_width,.012,.09),(taxi_center,.168,center_z),gold,0)
     for z in [center_z-radius+.2,center_z+radius-.2]:
-        box('Taxiway edge stripe',(front+5.2,.012,.06),((front-4.8)/2,.168,z),cream,0)
+        box('Taxiway edge stripe',(taxi_width,.012,.06),(taxi_center,.168,z),cream,0)
     box('Passenger forecourt',(7.1,.12,11),(4.65,.2,-2.4),cream)
     box('Terminal plinth',(6.2,.27,7.8),(4.5,.37,-3),teal)
     box('Terminal concourse',(6,2.2,7.6),(4.5,1.55,-3),glass if style['curtainWall'] else style['wall'])

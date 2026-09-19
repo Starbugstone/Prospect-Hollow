@@ -52,7 +52,7 @@ for era in ERAS:
             lines += [f"<a id=\"building-{b['id'].lower()}\"></a>", '', f"### {b['name']}", '', f"![{b['name']} — {data['label']} upgrade comparison]({prefix}/comparison.png)", '',
                       ' · '.join(f"[{'Era upgrade' if b['id']=='mine' else f'Stage {i+1}'}]({prefix}/stage-{i+1}.png)" for i in range(len(b['stages']))), '']
             if b['id'] == 'airport':
-                lines += ['The hangar doors face the runway. The open bay and marked taxiway stay clear of the lounge at all three stages. A single aircraft occasionally takes off or lands, taxis between the runway and hangar, and waits between flights; arrivals and departures never overlap.', '',
+                lines += ['The hangar doors face the runway, with the apron and its markings ending at the runway edge. The open bay and marked taxiway stay clear of the lounge at all three stages. A single aircraft occasionally takes off or lands, taxis between the runway and hangar, and waits between flights; arrivals and departures never overlap.', '',
                           f'![Hangar exit and taxiway](../images/airport-{era}-2026-09.png)', '',
                           '[Aircraft activity and layout details](../airport-art.md)', '']
     (WIKI / f'Era-{era}.md').write_text('\n'.join(lines))

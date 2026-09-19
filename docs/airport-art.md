@@ -11,7 +11,8 @@ entering an era does not replace an airport that has not yet been modernized.
 The hangar is rotated 90 degrees so its open end faces west toward the runway.
 Separate side and rear walls, folded doors, a flush floor and a wide marked
 taxiway leave room for the actual aircraft at every upgrade stage. The stage 2
-passenger lounge stays north of that route. `src/data/airportLayout.json` shares
+passenger lounge stays north of that route. The apron and its markings stop at
+the runway edge, preserving the full runway surface and centerline. `src/data/airportLayout.json` shares
 the hangar orientation and parking position between Blender and flight activity.
 
 Each style has three stages: the terminal/tower/hangar, passenger lounge, then

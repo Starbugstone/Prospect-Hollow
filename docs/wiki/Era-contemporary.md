@@ -330,7 +330,7 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/contemporary/airport/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/airport/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/airport/stage-3.png)
 
-The hangar doors face the runway. The open bay and marked taxiway stay clear of the lounge at all three stages. A single aircraft occasionally takes off or lands, taxis between the runway and hangar, and waits between flights; arrivals and departures never overlap.
+The hangar doors face the runway, with the apron and its markings ending at the runway edge. The open bay and marked taxiway stay clear of the lounge at all three stages. A single aircraft occasionally takes off or lands, taxis between the runway and hangar, and waits between flights; arrivals and departures never overlap.
 
 ![Hangar exit and taxiway](../images/airport-contemporary-2026-09.png)
 
