@@ -12,11 +12,11 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 **New buildings in this era**
 
-[Prospect live concert hall](#building-concertHall) · [Valley television studios](#building-television) · [Prospect business tower](#building-skyline)
+[Prospect live concert hall](#building-concerthall) · [Valley television studios](#building-television) · [Prospect business tower](#building-skyline)
 
 **Existing buildings upgraded for this era**
 
-[Old town well](#building-well) · [Clover farm](#building-farm) · [Juniper house](#building-home) · [The Golden Hour](#building-saloon) · [Dusty Spur stables](#building-stable) · [Sheriff’s office](#building-sheriff) · [The Frontier Museum](#building-museum) · [Frontier armory](#building-armory) · [Prospect bank](#building-bank) · [Prairie trading post](#building-shop) · [Prospect town square](#building-square) · [Prospect watermill](#building-watermill) · [Fisherman’s Hut](#building-fisherman) · [Prospect blacksmith](#building-blacksmith) · [Prospect schoolhouse](#building-school) · [Doctor’s Office](#building-doctor) · [Prospect bridge](#building-bridge) · [Steamboat landing](#building-riverPort) · [Prospect railway station](#building-railDepot) · [Telegraph & Post Office](#building-post) · [Freight warehouse](#building-warehouse) · [Riverside boarding house](#building-hotel) · [Riverside house](#building-home5) · [East-bank market](#building-market) · [Prospect power house](#building-powerHouse) · [Prospect fire station](#building-fireStation) · [Lantern row](#building-rowHouses) · [Riverside light mill](#building-mill) · [Prospect motor garage](#building-garage) · [Valley bus station](#building-busDepot) · [Maple garden court](#building-gardenCourt) · [The Sunrise diner](#building-diner) · [Prospect regional airport](#building-airport) · [Valley radio station](#building-radioTower) · [Prospect city hall](#building-cityHall) · [Cedar court apartments](#building-apartments) · [Valley food hall](#building-supermarket) · [Prospect water plant](#building-waterPlant) · [Willow horse field](#building-horseField) · [Prospect public park](#building-park) · [Willow house](#building-home2) · [Sagebrush house](#building-home3) · [Cottonwood house](#building-home4) · [Prairie well](#building-well2) · [Sunrise farm](#building-farm2) · [Meadow farm](#building-farm3)
+[Old town well](#building-well) · [Clover farm](#building-farm) · [Juniper house](#building-home) · [The Golden Hour](#building-saloon) · [Dusty Spur stables](#building-stable) · [Sheriff’s office](#building-sheriff) · [The Frontier Museum](#building-museum) · [Frontier armory](#building-armory) · [Prospect bank](#building-bank) · [Prairie trading post](#building-shop) · [Prospect town square](#building-square) · [Prospect watermill](#building-watermill) · [Fisherman’s Hut](#building-fisherman) · [Prospect blacksmith](#building-blacksmith) · [Prospect schoolhouse](#building-school) · [Doctor’s Office](#building-doctor) · [Prospect bridge](#building-bridge) · [Steamboat landing](#building-riverport) · [Prospect railway station](#building-raildepot) · [Telegraph & Post Office](#building-post) · [Freight warehouse](#building-warehouse) · [Riverside boarding house](#building-hotel) · [Riverside house](#building-home5) · [East-bank market](#building-market) · [Prospect power house](#building-powerhouse) · [Prospect fire station](#building-firestation) · [Lantern row](#building-rowhouses) · [Riverside light mill](#building-mill) · [Prospect motor garage](#building-garage) · [Valley bus station](#building-busdepot) · [Maple garden court](#building-gardencourt) · [The Sunrise diner](#building-diner) · [Prospect regional airport](#building-airport) · [Valley radio station](#building-radiotower) · [Prospect city hall](#building-cityhall) · [Cedar court apartments](#building-apartments) · [Valley food hall](#building-supermarket) · [Prospect water plant](#building-waterplant) · [Willow horse field](#building-horsefield) · [Prospect public park](#building-park) · [Willow house](#building-home2) · [Sagebrush house](#building-home3) · [Cottonwood house](#building-home4) · [Prairie well](#building-well2) · [Sunrise farm](#building-farm2) · [Meadow farm](#building-farm3)
 
 **Mine progression**
 
@@ -24,7 +24,7 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 ## New buildings in this era
 
-<a id="building-concertHall"></a>
+<a id="building-concerthall"></a>
 
 ### Prospect live concert hall
 
@@ -186,7 +186,7 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/broadcast/bridge/stage-1.png) · [Stage 2](../images/era-upgrades/broadcast/bridge/stage-2.png) · [Stage 3](../images/era-upgrades/broadcast/bridge/stage-3.png)
 
-<a id="building-riverPort"></a>
+<a id="building-riverport"></a>
 
 ### Steamboat landing
 
@@ -194,7 +194,7 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/broadcast/riverPort/stage-1.png) · [Stage 2](../images/era-upgrades/broadcast/riverPort/stage-2.png) · [Stage 3](../images/era-upgrades/broadcast/riverPort/stage-3.png)
 
-<a id="building-railDepot"></a>
+<a id="building-raildepot"></a>
 
 ### Prospect railway station
 
@@ -242,7 +242,7 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/broadcast/market/stage-1.png) · [Stage 2](../images/era-upgrades/broadcast/market/stage-2.png) · [Stage 3](../images/era-upgrades/broadcast/market/stage-3.png)
 
-<a id="building-powerHouse"></a>
+<a id="building-powerhouse"></a>
 
 ### Prospect power house
 
@@ -250,7 +250,7 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/broadcast/powerHouse/stage-1.png) · [Stage 2](../images/era-upgrades/broadcast/powerHouse/stage-2.png) · [Stage 3](../images/era-upgrades/broadcast/powerHouse/stage-3.png)
 
-<a id="building-fireStation"></a>
+<a id="building-firestation"></a>
 
 ### Prospect fire station
 
@@ -258,7 +258,7 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/broadcast/fireStation/stage-1.png) · [Stage 2](../images/era-upgrades/broadcast/fireStation/stage-2.png) · [Stage 3](../images/era-upgrades/broadcast/fireStation/stage-3.png)
 
-<a id="building-rowHouses"></a>
+<a id="building-rowhouses"></a>
 
 ### Lantern row
 
@@ -282,7 +282,7 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/broadcast/garage/stage-1.png) · [Stage 2](../images/era-upgrades/broadcast/garage/stage-2.png) · [Stage 3](../images/era-upgrades/broadcast/garage/stage-3.png)
 
-<a id="building-busDepot"></a>
+<a id="building-busdepot"></a>
 
 ### Valley bus station
 
@@ -290,7 +290,7 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/broadcast/busDepot/stage-1.png) · [Stage 2](../images/era-upgrades/broadcast/busDepot/stage-2.png) · [Stage 3](../images/era-upgrades/broadcast/busDepot/stage-3.png)
 
-<a id="building-gardenCourt"></a>
+<a id="building-gardencourt"></a>
 
 ### Maple garden court
 
@@ -314,7 +314,7 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/broadcast/airport/stage-1.png) · [Stage 2](../images/era-upgrades/broadcast/airport/stage-2.png) · [Stage 3](../images/era-upgrades/broadcast/airport/stage-3.png)
 
-<a id="building-radioTower"></a>
+<a id="building-radiotower"></a>
 
 ### Valley radio station
 
@@ -322,7 +322,7 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/broadcast/radioTower/stage-1.png) · [Stage 2](../images/era-upgrades/broadcast/radioTower/stage-2.png) · [Stage 3](../images/era-upgrades/broadcast/radioTower/stage-3.png)
 
-<a id="building-cityHall"></a>
+<a id="building-cityhall"></a>
 
 ### Prospect city hall
 
@@ -346,7 +346,7 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/broadcast/supermarket/stage-1.png) · [Stage 2](../images/era-upgrades/broadcast/supermarket/stage-2.png) · [Stage 3](../images/era-upgrades/broadcast/supermarket/stage-3.png)
 
-<a id="building-waterPlant"></a>
+<a id="building-waterplant"></a>
 
 ### Prospect water plant
 
@@ -354,7 +354,7 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/broadcast/waterPlant/stage-1.png) · [Stage 2](../images/era-upgrades/broadcast/waterPlant/stage-2.png) · [Stage 3](../images/era-upgrades/broadcast/waterPlant/stage-3.png)
 
-<a id="building-horseField"></a>
+<a id="building-horsefield"></a>
 
 ### Willow horse field
 

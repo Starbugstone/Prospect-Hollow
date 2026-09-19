@@ -12,7 +12,7 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 **New buildings in this era**
 
-[Prospect bridge](#building-bridge) · [Steamboat landing](#building-riverPort) · [Prospect railway station](#building-railDepot) · [Telegraph & Post Office](#building-post) · [Freight warehouse](#building-warehouse) · [Riverside boarding house](#building-hotel) · [Riverside house](#building-home5) · [East-bank market](#building-market)
+[Prospect bridge](#building-bridge) · [Steamboat landing](#building-riverport) · [Prospect railway station](#building-raildepot) · [Telegraph & Post Office](#building-post) · [Freight warehouse](#building-warehouse) · [Riverside boarding house](#building-hotel) · [Riverside house](#building-home5) · [East-bank market](#building-market)
 
 **Existing buildings upgraded for this era**
 
@@ -32,7 +32,7 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/river-rail/bridge/stage-1.png) · [Stage 2](../images/era-upgrades/river-rail/bridge/stage-2.png) · [Stage 3](../images/era-upgrades/river-rail/bridge/stage-3.png)
 
-<a id="building-riverPort"></a>
+<a id="building-riverport"></a>
 
 ### Steamboat landing
 
@@ -40,7 +40,7 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/river-rail/riverPort/stage-1.png) · [Stage 2](../images/era-upgrades/river-rail/riverPort/stage-2.png) · [Stage 3](../images/era-upgrades/river-rail/riverPort/stage-3.png)
 
-<a id="building-railDepot"></a>
+<a id="building-raildepot"></a>
 
 ### Prospect railway station
 

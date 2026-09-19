@@ -12,11 +12,11 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 **New buildings in this era**
 
-[Prospect power house](#building-powerHouse) · [Prospect fire station](#building-fireStation) · [Lantern row](#building-rowHouses) · [Riverside light mill](#building-mill) · [Willow horse field](#building-horseField)
+[Prospect power house](#building-powerhouse) · [Prospect fire station](#building-firestation) · [Lantern row](#building-rowhouses) · [Riverside light mill](#building-mill) · [Willow horse field](#building-horsefield)
 
 **Existing buildings upgraded for this era**
 
-[Old town well](#building-well) · [Clover farm](#building-farm) · [Juniper house](#building-home) · [The Golden Hour](#building-saloon) · [Dusty Spur stables](#building-stable) · [Sheriff’s office](#building-sheriff) · [The Frontier Museum](#building-museum) · [Frontier armory](#building-armory) · [Prospect bank](#building-bank) · [Prairie trading post](#building-shop) · [Prospect town square](#building-square) · [Prospect watermill](#building-watermill) · [Fisherman’s Hut](#building-fisherman) · [Prospect blacksmith](#building-blacksmith) · [Prospect schoolhouse](#building-school) · [Doctor’s Office](#building-doctor) · [Prospect bridge](#building-bridge) · [Steamboat landing](#building-riverPort) · [Prospect railway station](#building-railDepot) · [Telegraph & Post Office](#building-post) · [Freight warehouse](#building-warehouse) · [Riverside boarding house](#building-hotel) · [Riverside house](#building-home5) · [East-bank market](#building-market) · [Willow house](#building-home2) · [Sagebrush house](#building-home3) · [Cottonwood house](#building-home4) · [Prairie well](#building-well2) · [Sunrise farm](#building-farm2) · [Meadow farm](#building-farm3)
+[Old town well](#building-well) · [Clover farm](#building-farm) · [Juniper house](#building-home) · [The Golden Hour](#building-saloon) · [Dusty Spur stables](#building-stable) · [Sheriff’s office](#building-sheriff) · [The Frontier Museum](#building-museum) · [Frontier armory](#building-armory) · [Prospect bank](#building-bank) · [Prairie trading post](#building-shop) · [Prospect town square](#building-square) · [Prospect watermill](#building-watermill) · [Fisherman’s Hut](#building-fisherman) · [Prospect blacksmith](#building-blacksmith) · [Prospect schoolhouse](#building-school) · [Doctor’s Office](#building-doctor) · [Prospect bridge](#building-bridge) · [Steamboat landing](#building-riverport) · [Prospect railway station](#building-raildepot) · [Telegraph & Post Office](#building-post) · [Freight warehouse](#building-warehouse) · [Riverside boarding house](#building-hotel) · [Riverside house](#building-home5) · [East-bank market](#building-market) · [Willow house](#building-home2) · [Sagebrush house](#building-home3) · [Cottonwood house](#building-home4) · [Prairie well](#building-well2) · [Sunrise farm](#building-farm2) · [Meadow farm](#building-farm3)
 
 **Mine progression**
 
@@ -24,7 +24,7 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 ## New buildings in this era
 
-<a id="building-powerHouse"></a>
+<a id="building-powerhouse"></a>
 
 ### Prospect power house
 
@@ -32,7 +32,7 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/industrial/powerHouse/stage-1.png) · [Stage 2](../images/era-upgrades/industrial/powerHouse/stage-2.png) · [Stage 3](../images/era-upgrades/industrial/powerHouse/stage-3.png)
 
-<a id="building-fireStation"></a>
+<a id="building-firestation"></a>
 
 ### Prospect fire station
 
@@ -40,7 +40,7 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/industrial/fireStation/stage-1.png) · [Stage 2](../images/era-upgrades/industrial/fireStation/stage-2.png) · [Stage 3](../images/era-upgrades/industrial/fireStation/stage-3.png)
 
-<a id="building-rowHouses"></a>
+<a id="building-rowhouses"></a>
 
 ### Lantern row
 
@@ -56,7 +56,7 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/industrial/mill/stage-1.png) · [Stage 2](../images/era-upgrades/industrial/mill/stage-2.png) · [Stage 3](../images/era-upgrades/industrial/mill/stage-3.png)
 
-<a id="building-horseField"></a>
+<a id="building-horsefield"></a>
 
 ### Willow horse field
 
@@ -202,7 +202,7 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/industrial/bridge/stage-1.png) · [Stage 2](../images/era-upgrades/industrial/bridge/stage-2.png) · [Stage 3](../images/era-upgrades/industrial/bridge/stage-3.png)
 
-<a id="building-riverPort"></a>
+<a id="building-riverport"></a>
 
 ### Steamboat landing
 
@@ -210,7 +210,7 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/industrial/riverPort/stage-1.png) · [Stage 2](../images/era-upgrades/industrial/riverPort/stage-2.png) · [Stage 3](../images/era-upgrades/industrial/riverPort/stage-3.png)
 
-<a id="building-railDepot"></a>
+<a id="building-raildepot"></a>
 
 ### Prospect railway station
 

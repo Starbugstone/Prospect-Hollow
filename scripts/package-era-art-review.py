@@ -37,7 +37,7 @@ for era in ERAS:
     ]
     for heading, buildings in groups:
         if not buildings: continue
-        lines += [f'**{heading}**', '', ' · '.join(f"[{b['name']}](#building-{b['id']})" for b in buildings), '']
+        lines += [f'**{heading}**', '', ' · '.join(f"[{b['name']}](#building-{b['id'].lower()})" for b in buildings), '']
     for heading, buildings in groups:
         if not buildings: continue
         lines += [f'## {heading}', '']
@@ -49,7 +49,7 @@ for era in ERAS:
                 assert raw.startswith(b'\x89PNG\r\n\x1a\n'), (era, b['id'], name)
                 (directory / f'{name}.png').write_bytes(raw)
             prefix = f"../images/era-upgrades/{era}/{b['id']}"
-            lines += [f"<a id=\"building-{b['id']}\"></a>", '', f"### {b['name']}", '', f"![{b['name']} — {data['label']} upgrade comparison]({prefix}/comparison.png)", '',
+            lines += [f"<a id=\"building-{b['id'].lower()}\"></a>", '', f"### {b['name']}", '', f"![{b['name']} — {data['label']} upgrade comparison]({prefix}/comparison.png)", '',
                       ' · '.join(f"[{'Era upgrade' if b['id']=='mine' else f'Stage {i+1}'}]({prefix}/stage-{i+1}.png)" for i in range(len(b['stages']))), '']
     (WIKI / f'Era-{era}.md').write_text('\n'.join(lines))
     summary.append({'era': era, 'label': data['label'], 'year': data['year'], 'buildings':len(data['buildings']), 'stages':sum(len(b['stages']) for b in data['buildings'])})
