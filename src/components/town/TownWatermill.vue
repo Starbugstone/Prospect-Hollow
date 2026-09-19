@@ -17,7 +17,22 @@
     <path d="M-48-6v-46h22v52" fill="#685139" />
     <path d="M-57-72h23v19h-23Zm46 10h22v21h-22Z" fill="#8baead" />
     <path v-if="level >= 2" d="m-69-42 108 17 6 12-118-18Zm4 13v33m100-13v33" :fill="style.roof" />
-    <path v-if="level >= 3" d="m-88-28 25 4v30l-25-5Zm-5-5 30 3v9l-30-3Z" :fill="style.wall" />
+    <g v-if="level >= 3">
+      <path d="M-94-2v-67l29 5V5Z" :fill="style.wall" />
+      <path d="m-98-69 35 5 15-11-34-5Z" :fill="style.roof" />
+      <path d="m-98-8 122 21 8-12-122-20Z" fill="#a79b80" />
+      <path d="m-99-62 123 21 8-12-122-20Z" :fill="style.roof" />
+      <path d="M-96-61v52M22-40v54M-72-63l24 3v38" fill="none" />
+      <ellipse
+        v-for="x in [-78, -52, -26]"
+        :key="x"
+        :cx="x"
+        :cy="4 + x * 0.18"
+        rx="9"
+        ry="13"
+        fill="#d8bf88"
+      />
+    </g>
     <g transform="translate(52 -14)">
       <ellipse rx="22" ry="36" :fill="style.roof" stroke-width="6" />
       <ellipse rx="16" ry="28" fill="#4e5e54" />

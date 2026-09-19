@@ -419,7 +419,7 @@ export class TownDiorama {
             else this.building(group, kind, stage, labels[id]);
           }
           if (!industrial && !['fisherman', 'blacksmith', 'school', 'doctor'].includes(kind))
-            movingPart = addImprovements(this, group, kind, stage);
+            movingPart = addImprovements(this, group, kind, stage, town.buildingEras[id]);
           if (!industrial)
             renderModernization(
               this,

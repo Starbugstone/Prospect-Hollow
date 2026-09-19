@@ -8,253 +8,23 @@ Each comparison reads from left to right, from the first completed stage to the 
 
 These are actual game meshes rendered in a neutral review scene. Name labels sit outside the model so the architecture remains clear. World scenery, traffic, construction scaffolds and unfinished plots are excluded from these building comparisons.
 
-## Buildings
+## Building index
 
-### Old town well
+**New buildings in this era**
 
-![Old town well — Connected City upgrade comparison](../images/era-upgrades/contemporary/well/comparison.png)
+[Prospect transit interchange](#building-transitHub) · [Riverlight internet café](#building-library) · [Prospect technology campus](#building-crystalLab) · [Willow city towers](#building-cityHomes) · [Prospect river promenade](#building-riverPark)
 
-[Stage 1](../images/era-upgrades/contemporary/well/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/well/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/well/stage-3.png)
+**Existing buildings upgraded for this era**
 
-### Clover farm
+[Old town well](#building-well) · [Clover farm](#building-farm) · [Juniper house](#building-home) · [The Golden Hour](#building-saloon) · [Dusty Spur stables](#building-stable) · [Sheriff’s office](#building-sheriff) · [The Frontier Museum](#building-museum) · [Frontier armory](#building-armory) · [Prospect bank](#building-bank) · [Prairie trading post](#building-shop) · [Prospect town square](#building-square) · [Prospect watermill](#building-watermill) · [Fisherman’s Hut](#building-fisherman) · [Prospect blacksmith](#building-blacksmith) · [Prospect schoolhouse](#building-school) · [Doctor’s Office](#building-doctor) · [Prospect bridge](#building-bridge) · [Steamboat landing](#building-riverPort) · [Prospect railway station](#building-railDepot) · [Telegraph & Post Office](#building-post) · [Freight warehouse](#building-warehouse) · [Riverside boarding house](#building-hotel) · [Riverside house](#building-home5) · [East-bank market](#building-market) · [Prospect power house](#building-powerHouse) · [Prospect fire station](#building-fireStation) · [Lantern row](#building-rowHouses) · [Riverside light mill](#building-mill) · [Prospect motor garage](#building-garage) · [Valley bus station](#building-busDepot) · [Maple garden court](#building-gardenCourt) · [The Sunrise diner](#building-diner) · [Prospect regional airport](#building-airport) · [Valley radio station](#building-radioTower) · [Prospect live concert hall](#building-concertHall) · [Valley television studios](#building-television) · [Prospect business tower](#building-skyline) · [Prospect city hall](#building-cityHall) · [Cedar court apartments](#building-apartments) · [Valley food hall](#building-supermarket) · [Prospect water plant](#building-waterPlant) · [Willow horse field](#building-horseField) · [Prospect public park](#building-park) · [Willow house](#building-home2) · [Sagebrush house](#building-home3) · [Cottonwood house](#building-home4) · [Prairie well](#building-well2) · [Sunrise farm](#building-farm2) · [Meadow farm](#building-farm3)
 
-![Clover farm — Connected City upgrade comparison](../images/era-upgrades/contemporary/farm/comparison.png)
+**Mine progression**
 
-[Stage 1](../images/era-upgrades/contemporary/farm/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/farm/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/farm/stage-3.png)
+[Mine surface works](#building-mine)
 
-### Juniper house
+## New buildings in this era
 
-![Juniper house — Connected City upgrade comparison](../images/era-upgrades/contemporary/home/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/home/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/home/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/home/stage-3.png)
-
-### The Golden Hour
-
-![The Golden Hour — Connected City upgrade comparison](../images/era-upgrades/contemporary/saloon/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/saloon/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/saloon/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/saloon/stage-3.png)
-
-### Dusty Spur stables
-
-![Dusty Spur stables — Connected City upgrade comparison](../images/era-upgrades/contemporary/stable/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/stable/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/stable/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/stable/stage-3.png)
-
-### Sheriff’s office
-
-![Sheriff’s office — Connected City upgrade comparison](../images/era-upgrades/contemporary/sheriff/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/sheriff/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/sheriff/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/sheriff/stage-3.png)
-
-### The Frontier Museum
-
-![The Frontier Museum — Connected City upgrade comparison](../images/era-upgrades/contemporary/museum/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/museum/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/museum/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/museum/stage-3.png)
-
-### Frontier armory
-
-![Frontier armory — Connected City upgrade comparison](../images/era-upgrades/contemporary/armory/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/armory/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/armory/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/armory/stage-3.png)
-
-### Prospect bank
-
-![Prospect bank — Connected City upgrade comparison](../images/era-upgrades/contemporary/bank/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/bank/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/bank/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/bank/stage-3.png)
-
-### Prairie trading post
-
-![Prairie trading post — Connected City upgrade comparison](../images/era-upgrades/contemporary/shop/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/shop/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/shop/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/shop/stage-3.png)
-
-### Prospect town square
-
-![Prospect town square — Connected City upgrade comparison](../images/era-upgrades/contemporary/square/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/square/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/square/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/square/stage-3.png)
-
-### Prospect watermill
-
-![Prospect watermill — Connected City upgrade comparison](../images/era-upgrades/contemporary/watermill/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/watermill/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/watermill/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/watermill/stage-3.png)
-
-### Fisherman’s Hut
-
-![Fisherman’s Hut — Connected City upgrade comparison](../images/era-upgrades/contemporary/fisherman/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/fisherman/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/fisherman/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/fisherman/stage-3.png)
-
-### Prospect blacksmith
-
-![Prospect blacksmith — Connected City upgrade comparison](../images/era-upgrades/contemporary/blacksmith/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/blacksmith/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/blacksmith/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/blacksmith/stage-3.png)
-
-### Prospect schoolhouse
-
-![Prospect schoolhouse — Connected City upgrade comparison](../images/era-upgrades/contemporary/school/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/school/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/school/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/school/stage-3.png)
-
-### Doctor’s Office
-
-![Doctor’s Office — Connected City upgrade comparison](../images/era-upgrades/contemporary/doctor/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/doctor/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/doctor/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/doctor/stage-3.png)
-
-### Prospect bridge
-
-![Prospect bridge — Connected City upgrade comparison](../images/era-upgrades/contemporary/bridge/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/bridge/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/bridge/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/bridge/stage-3.png)
-
-### Steamboat landing
-
-![Steamboat landing — Connected City upgrade comparison](../images/era-upgrades/contemporary/riverPort/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/riverPort/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/riverPort/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/riverPort/stage-3.png)
-
-### Prospect railway station
-
-![Prospect railway station — Connected City upgrade comparison](../images/era-upgrades/contemporary/railDepot/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/railDepot/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/railDepot/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/railDepot/stage-3.png)
-
-### Telegraph & Post Office
-
-![Telegraph & Post Office — Connected City upgrade comparison](../images/era-upgrades/contemporary/post/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/post/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/post/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/post/stage-3.png)
-
-### Freight warehouse
-
-![Freight warehouse — Connected City upgrade comparison](../images/era-upgrades/contemporary/warehouse/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/warehouse/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/warehouse/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/warehouse/stage-3.png)
-
-### Riverside boarding house
-
-![Riverside boarding house — Connected City upgrade comparison](../images/era-upgrades/contemporary/hotel/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/hotel/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/hotel/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/hotel/stage-3.png)
-
-### Riverside house
-
-![Riverside house — Connected City upgrade comparison](../images/era-upgrades/contemporary/home5/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/home5/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/home5/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/home5/stage-3.png)
-
-### East-bank market
-
-![East-bank market — Connected City upgrade comparison](../images/era-upgrades/contemporary/market/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/market/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/market/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/market/stage-3.png)
-
-### Prospect power house
-
-![Prospect power house — Connected City upgrade comparison](../images/era-upgrades/contemporary/powerHouse/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/powerHouse/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/powerHouse/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/powerHouse/stage-3.png)
-
-### Prospect fire station
-
-![Prospect fire station — Connected City upgrade comparison](../images/era-upgrades/contemporary/fireStation/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/fireStation/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/fireStation/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/fireStation/stage-3.png)
-
-### Lantern row
-
-![Lantern row — Connected City upgrade comparison](../images/era-upgrades/contemporary/rowHouses/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/rowHouses/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/rowHouses/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/rowHouses/stage-3.png)
-
-### Riverside light mill
-
-![Riverside light mill — Connected City upgrade comparison](../images/era-upgrades/contemporary/mill/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/mill/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/mill/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/mill/stage-3.png)
-
-### Prospect motor garage
-
-![Prospect motor garage — Connected City upgrade comparison](../images/era-upgrades/contemporary/garage/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/garage/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/garage/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/garage/stage-3.png)
-
-### Valley bus station
-
-![Valley bus station — Connected City upgrade comparison](../images/era-upgrades/contemporary/busDepot/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/busDepot/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/busDepot/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/busDepot/stage-3.png)
-
-### Maple garden court
-
-![Maple garden court — Connected City upgrade comparison](../images/era-upgrades/contemporary/gardenCourt/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/gardenCourt/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/gardenCourt/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/gardenCourt/stage-3.png)
-
-### The Sunrise diner
-
-![The Sunrise diner — Connected City upgrade comparison](../images/era-upgrades/contemporary/diner/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/diner/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/diner/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/diner/stage-3.png)
-
-### Prospect regional airport
-
-![Prospect regional airport — Connected City upgrade comparison](../images/era-upgrades/contemporary/airport/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/airport/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/airport/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/airport/stage-3.png)
-
-### Valley radio station
-
-![Valley radio station — Connected City upgrade comparison](../images/era-upgrades/contemporary/radioTower/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/radioTower/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/radioTower/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/radioTower/stage-3.png)
-
-### Prospect live concert hall
-
-![Prospect live concert hall — Connected City upgrade comparison](../images/era-upgrades/contemporary/concertHall/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/concertHall/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/concertHall/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/concertHall/stage-3.png)
-
-### Valley television studios
-
-![Valley television studios — Connected City upgrade comparison](../images/era-upgrades/contemporary/television/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/television/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/television/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/television/stage-3.png)
-
-### Prospect business tower
-
-![Prospect business tower — Connected City upgrade comparison](../images/era-upgrades/contemporary/skyline/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/skyline/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/skyline/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/skyline/stage-3.png)
-
-### Prospect city hall
-
-![Prospect city hall — Connected City upgrade comparison](../images/era-upgrades/contemporary/cityHall/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/cityHall/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/cityHall/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/cityHall/stage-3.png)
-
-### Cedar court apartments
-
-![Cedar court apartments — Connected City upgrade comparison](../images/era-upgrades/contemporary/apartments/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/apartments/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/apartments/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/apartments/stage-3.png)
-
-### Valley food hall
-
-![Valley food hall — Connected City upgrade comparison](../images/era-upgrades/contemporary/supermarket/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/supermarket/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/supermarket/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/supermarket/stage-3.png)
-
-### Prospect water plant
-
-![Prospect water plant — Connected City upgrade comparison](../images/era-upgrades/contemporary/waterPlant/comparison.png)
-
-[Stage 1](../images/era-upgrades/contemporary/waterPlant/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/waterPlant/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/waterPlant/stage-3.png)
+<a id="building-transitHub"></a>
 
 ### Prospect transit interchange
 
@@ -262,11 +32,15 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/contemporary/transitHub/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/transitHub/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/transitHub/stage-3.png)
 
+<a id="building-library"></a>
+
 ### Riverlight internet café
 
 ![Riverlight internet café — Connected City upgrade comparison](../images/era-upgrades/contemporary/library/comparison.png)
 
 [Stage 1](../images/era-upgrades/contemporary/library/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/library/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/library/stage-3.png)
+
+<a id="building-crystalLab"></a>
 
 ### Prospect technology campus
 
@@ -274,11 +48,15 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/contemporary/crystalLab/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/crystalLab/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/crystalLab/stage-3.png)
 
+<a id="building-cityHomes"></a>
+
 ### Willow city towers
 
 ![Willow city towers — Connected City upgrade comparison](../images/era-upgrades/contemporary/cityHomes/comparison.png)
 
 [Stage 1](../images/era-upgrades/contemporary/cityHomes/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/cityHomes/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/cityHomes/stage-3.png)
+
+<a id="building-riverPark"></a>
 
 ### Prospect river promenade
 
@@ -286,11 +64,345 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/contemporary/riverPark/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/riverPark/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/riverPark/stage-3.png)
 
+## Existing buildings upgraded for this era
+
+<a id="building-well"></a>
+
+### Old town well
+
+![Old town well — Connected City upgrade comparison](../images/era-upgrades/contemporary/well/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/well/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/well/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/well/stage-3.png)
+
+<a id="building-farm"></a>
+
+### Clover farm
+
+![Clover farm — Connected City upgrade comparison](../images/era-upgrades/contemporary/farm/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/farm/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/farm/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/farm/stage-3.png)
+
+<a id="building-home"></a>
+
+### Juniper house
+
+![Juniper house — Connected City upgrade comparison](../images/era-upgrades/contemporary/home/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/home/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/home/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/home/stage-3.png)
+
+<a id="building-saloon"></a>
+
+### The Golden Hour
+
+![The Golden Hour — Connected City upgrade comparison](../images/era-upgrades/contemporary/saloon/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/saloon/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/saloon/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/saloon/stage-3.png)
+
+<a id="building-stable"></a>
+
+### Dusty Spur stables
+
+![Dusty Spur stables — Connected City upgrade comparison](../images/era-upgrades/contemporary/stable/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/stable/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/stable/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/stable/stage-3.png)
+
+<a id="building-sheriff"></a>
+
+### Sheriff’s office
+
+![Sheriff’s office — Connected City upgrade comparison](../images/era-upgrades/contemporary/sheriff/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/sheriff/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/sheriff/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/sheriff/stage-3.png)
+
+<a id="building-museum"></a>
+
+### The Frontier Museum
+
+![The Frontier Museum — Connected City upgrade comparison](../images/era-upgrades/contemporary/museum/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/museum/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/museum/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/museum/stage-3.png)
+
+<a id="building-armory"></a>
+
+### Frontier armory
+
+![Frontier armory — Connected City upgrade comparison](../images/era-upgrades/contemporary/armory/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/armory/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/armory/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/armory/stage-3.png)
+
+<a id="building-bank"></a>
+
+### Prospect bank
+
+![Prospect bank — Connected City upgrade comparison](../images/era-upgrades/contemporary/bank/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/bank/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/bank/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/bank/stage-3.png)
+
+<a id="building-shop"></a>
+
+### Prairie trading post
+
+![Prairie trading post — Connected City upgrade comparison](../images/era-upgrades/contemporary/shop/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/shop/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/shop/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/shop/stage-3.png)
+
+<a id="building-square"></a>
+
+### Prospect town square
+
+![Prospect town square — Connected City upgrade comparison](../images/era-upgrades/contemporary/square/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/square/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/square/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/square/stage-3.png)
+
+<a id="building-watermill"></a>
+
+### Prospect watermill
+
+![Prospect watermill — Connected City upgrade comparison](../images/era-upgrades/contemporary/watermill/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/watermill/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/watermill/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/watermill/stage-3.png)
+
+<a id="building-fisherman"></a>
+
+### Fisherman’s Hut
+
+![Fisherman’s Hut — Connected City upgrade comparison](../images/era-upgrades/contemporary/fisherman/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/fisherman/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/fisherman/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/fisherman/stage-3.png)
+
+<a id="building-blacksmith"></a>
+
+### Prospect blacksmith
+
+![Prospect blacksmith — Connected City upgrade comparison](../images/era-upgrades/contemporary/blacksmith/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/blacksmith/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/blacksmith/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/blacksmith/stage-3.png)
+
+<a id="building-school"></a>
+
+### Prospect schoolhouse
+
+![Prospect schoolhouse — Connected City upgrade comparison](../images/era-upgrades/contemporary/school/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/school/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/school/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/school/stage-3.png)
+
+<a id="building-doctor"></a>
+
+### Doctor’s Office
+
+![Doctor’s Office — Connected City upgrade comparison](../images/era-upgrades/contemporary/doctor/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/doctor/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/doctor/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/doctor/stage-3.png)
+
+<a id="building-bridge"></a>
+
+### Prospect bridge
+
+![Prospect bridge — Connected City upgrade comparison](../images/era-upgrades/contemporary/bridge/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/bridge/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/bridge/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/bridge/stage-3.png)
+
+<a id="building-riverPort"></a>
+
+### Steamboat landing
+
+![Steamboat landing — Connected City upgrade comparison](../images/era-upgrades/contemporary/riverPort/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/riverPort/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/riverPort/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/riverPort/stage-3.png)
+
+<a id="building-railDepot"></a>
+
+### Prospect railway station
+
+![Prospect railway station — Connected City upgrade comparison](../images/era-upgrades/contemporary/railDepot/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/railDepot/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/railDepot/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/railDepot/stage-3.png)
+
+<a id="building-post"></a>
+
+### Telegraph & Post Office
+
+![Telegraph & Post Office — Connected City upgrade comparison](../images/era-upgrades/contemporary/post/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/post/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/post/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/post/stage-3.png)
+
+<a id="building-warehouse"></a>
+
+### Freight warehouse
+
+![Freight warehouse — Connected City upgrade comparison](../images/era-upgrades/contemporary/warehouse/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/warehouse/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/warehouse/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/warehouse/stage-3.png)
+
+<a id="building-hotel"></a>
+
+### Riverside boarding house
+
+![Riverside boarding house — Connected City upgrade comparison](../images/era-upgrades/contemporary/hotel/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/hotel/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/hotel/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/hotel/stage-3.png)
+
+<a id="building-home5"></a>
+
+### Riverside house
+
+![Riverside house — Connected City upgrade comparison](../images/era-upgrades/contemporary/home5/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/home5/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/home5/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/home5/stage-3.png)
+
+<a id="building-market"></a>
+
+### East-bank market
+
+![East-bank market — Connected City upgrade comparison](../images/era-upgrades/contemporary/market/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/market/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/market/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/market/stage-3.png)
+
+<a id="building-powerHouse"></a>
+
+### Prospect power house
+
+![Prospect power house — Connected City upgrade comparison](../images/era-upgrades/contemporary/powerHouse/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/powerHouse/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/powerHouse/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/powerHouse/stage-3.png)
+
+<a id="building-fireStation"></a>
+
+### Prospect fire station
+
+![Prospect fire station — Connected City upgrade comparison](../images/era-upgrades/contemporary/fireStation/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/fireStation/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/fireStation/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/fireStation/stage-3.png)
+
+<a id="building-rowHouses"></a>
+
+### Lantern row
+
+![Lantern row — Connected City upgrade comparison](../images/era-upgrades/contemporary/rowHouses/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/rowHouses/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/rowHouses/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/rowHouses/stage-3.png)
+
+<a id="building-mill"></a>
+
+### Riverside light mill
+
+![Riverside light mill — Connected City upgrade comparison](../images/era-upgrades/contemporary/mill/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/mill/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/mill/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/mill/stage-3.png)
+
+<a id="building-garage"></a>
+
+### Prospect motor garage
+
+![Prospect motor garage — Connected City upgrade comparison](../images/era-upgrades/contemporary/garage/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/garage/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/garage/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/garage/stage-3.png)
+
+<a id="building-busDepot"></a>
+
+### Valley bus station
+
+![Valley bus station — Connected City upgrade comparison](../images/era-upgrades/contemporary/busDepot/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/busDepot/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/busDepot/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/busDepot/stage-3.png)
+
+<a id="building-gardenCourt"></a>
+
+### Maple garden court
+
+![Maple garden court — Connected City upgrade comparison](../images/era-upgrades/contemporary/gardenCourt/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/gardenCourt/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/gardenCourt/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/gardenCourt/stage-3.png)
+
+<a id="building-diner"></a>
+
+### The Sunrise diner
+
+![The Sunrise diner — Connected City upgrade comparison](../images/era-upgrades/contemporary/diner/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/diner/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/diner/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/diner/stage-3.png)
+
+<a id="building-airport"></a>
+
+### Prospect regional airport
+
+![Prospect regional airport — Connected City upgrade comparison](../images/era-upgrades/contemporary/airport/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/airport/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/airport/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/airport/stage-3.png)
+
+<a id="building-radioTower"></a>
+
+### Valley radio station
+
+![Valley radio station — Connected City upgrade comparison](../images/era-upgrades/contemporary/radioTower/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/radioTower/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/radioTower/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/radioTower/stage-3.png)
+
+<a id="building-concertHall"></a>
+
+### Prospect live concert hall
+
+![Prospect live concert hall — Connected City upgrade comparison](../images/era-upgrades/contemporary/concertHall/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/concertHall/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/concertHall/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/concertHall/stage-3.png)
+
+<a id="building-television"></a>
+
+### Valley television studios
+
+![Valley television studios — Connected City upgrade comparison](../images/era-upgrades/contemporary/television/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/television/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/television/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/television/stage-3.png)
+
+<a id="building-skyline"></a>
+
+### Prospect business tower
+
+![Prospect business tower — Connected City upgrade comparison](../images/era-upgrades/contemporary/skyline/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/skyline/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/skyline/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/skyline/stage-3.png)
+
+<a id="building-cityHall"></a>
+
+### Prospect city hall
+
+![Prospect city hall — Connected City upgrade comparison](../images/era-upgrades/contemporary/cityHall/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/cityHall/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/cityHall/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/cityHall/stage-3.png)
+
+<a id="building-apartments"></a>
+
+### Cedar court apartments
+
+![Cedar court apartments — Connected City upgrade comparison](../images/era-upgrades/contemporary/apartments/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/apartments/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/apartments/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/apartments/stage-3.png)
+
+<a id="building-supermarket"></a>
+
+### Valley food hall
+
+![Valley food hall — Connected City upgrade comparison](../images/era-upgrades/contemporary/supermarket/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/supermarket/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/supermarket/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/supermarket/stage-3.png)
+
+<a id="building-waterPlant"></a>
+
+### Prospect water plant
+
+![Prospect water plant — Connected City upgrade comparison](../images/era-upgrades/contemporary/waterPlant/comparison.png)
+
+[Stage 1](../images/era-upgrades/contemporary/waterPlant/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/waterPlant/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/waterPlant/stage-3.png)
+
+<a id="building-horseField"></a>
+
 ### Willow horse field
 
 ![Willow horse field — Connected City upgrade comparison](../images/era-upgrades/contemporary/horseField/comparison.png)
 
 [Stage 1](../images/era-upgrades/contemporary/horseField/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/horseField/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/horseField/stage-3.png)
+
+<a id="building-park"></a>
 
 ### Prospect public park
 
@@ -298,11 +410,15 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/contemporary/park/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/park/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/park/stage-3.png)
 
+<a id="building-home2"></a>
+
 ### Willow house
 
 ![Willow house — Connected City upgrade comparison](../images/era-upgrades/contemporary/home2/comparison.png)
 
 [Stage 1](../images/era-upgrades/contemporary/home2/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/home2/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/home2/stage-3.png)
+
+<a id="building-home3"></a>
 
 ### Sagebrush house
 
@@ -310,11 +426,15 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/contemporary/home3/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/home3/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/home3/stage-3.png)
 
+<a id="building-home4"></a>
+
 ### Cottonwood house
 
 ![Cottonwood house — Connected City upgrade comparison](../images/era-upgrades/contemporary/home4/comparison.png)
 
 [Stage 1](../images/era-upgrades/contemporary/home4/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/home4/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/home4/stage-3.png)
+
+<a id="building-well2"></a>
 
 ### Prairie well
 
@@ -322,17 +442,25 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/contemporary/well2/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/well2/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/well2/stage-3.png)
 
+<a id="building-farm2"></a>
+
 ### Sunrise farm
 
 ![Sunrise farm — Connected City upgrade comparison](../images/era-upgrades/contemporary/farm2/comparison.png)
 
 [Stage 1](../images/era-upgrades/contemporary/farm2/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/farm2/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/farm2/stage-3.png)
 
+<a id="building-farm3"></a>
+
 ### Meadow farm
 
 ![Meadow farm — Connected City upgrade comparison](../images/era-upgrades/contemporary/farm3/comparison.png)
 
 [Stage 1](../images/era-upgrades/contemporary/farm3/stage-1.png) · [Stage 2](../images/era-upgrades/contemporary/farm3/stage-2.png) · [Stage 3](../images/era-upgrades/contemporary/farm3/stage-3.png)
+
+## Mine progression
+
+<a id="building-mine"></a>
 
 ### Mine surface works
 

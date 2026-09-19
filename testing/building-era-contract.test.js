@@ -77,7 +77,7 @@ it('every plot begins in its own era, advances through every later playable era,
           else if (kind === 'well') d.well(root);
           else renderBuilding({ town: d, parent: root, kind, level: service, label: b.name });
           if (!['fisherman', 'blacksmith', 'school', 'doctor'].includes(kind))
-            addImprovements(d, root, kind, stage);
+            addImprovements(d, root, kind, stage, era.id);
           renderModernization(d, root, kind, era.id, level);
         }
         const parts = [];

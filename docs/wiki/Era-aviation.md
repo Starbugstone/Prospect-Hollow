@@ -8,199 +8,23 @@ Each comparison reads from left to right, from the first completed stage to the 
 
 These are actual game meshes rendered in a neutral review scene. Name labels sit outside the model so the architecture remains clear. World scenery, traffic, construction scaffolds and unfinished plots are excluded from these building comparisons.
 
-## Buildings
+## Building index
 
-### Old town well
+**New buildings in this era**
 
-![Old town well — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/well/comparison.png)
+[Prospect regional airport](#building-airport) · [Valley radio station](#building-radioTower)
 
-[Stage 1](../images/era-upgrades/aviation/well/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/well/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/well/stage-3.png)
+**Existing buildings upgraded for this era**
 
-### Clover farm
+[Old town well](#building-well) · [Clover farm](#building-farm) · [Juniper house](#building-home) · [The Golden Hour](#building-saloon) · [Dusty Spur stables](#building-stable) · [Sheriff’s office](#building-sheriff) · [The Frontier Museum](#building-museum) · [Frontier armory](#building-armory) · [Prospect bank](#building-bank) · [Prairie trading post](#building-shop) · [Prospect town square](#building-square) · [Prospect watermill](#building-watermill) · [Fisherman’s Hut](#building-fisherman) · [Prospect blacksmith](#building-blacksmith) · [Prospect schoolhouse](#building-school) · [Doctor’s Office](#building-doctor) · [Prospect bridge](#building-bridge) · [Steamboat landing](#building-riverPort) · [Prospect railway station](#building-railDepot) · [Telegraph & Post Office](#building-post) · [Freight warehouse](#building-warehouse) · [Riverside boarding house](#building-hotel) · [Riverside house](#building-home5) · [East-bank market](#building-market) · [Prospect power house](#building-powerHouse) · [Prospect fire station](#building-fireStation) · [Lantern row](#building-rowHouses) · [Riverside light mill](#building-mill) · [Prospect motor garage](#building-garage) · [Valley bus station](#building-busDepot) · [Maple garden court](#building-gardenCourt) · [The Sunrise diner](#building-diner) · [Prospect city hall](#building-cityHall) · [Cedar court apartments](#building-apartments) · [Valley food hall](#building-supermarket) · [Prospect water plant](#building-waterPlant) · [Willow horse field](#building-horseField) · [Prospect public park](#building-park) · [Willow house](#building-home2) · [Sagebrush house](#building-home3) · [Cottonwood house](#building-home4) · [Prairie well](#building-well2) · [Sunrise farm](#building-farm2) · [Meadow farm](#building-farm3)
 
-![Clover farm — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/farm/comparison.png)
+**Mine progression**
 
-[Stage 1](../images/era-upgrades/aviation/farm/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/farm/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/farm/stage-3.png)
+[Mine surface works](#building-mine)
 
-### Juniper house
+## New buildings in this era
 
-![Juniper house — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/home/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/home/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/home/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/home/stage-3.png)
-
-### The Golden Hour
-
-![The Golden Hour — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/saloon/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/saloon/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/saloon/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/saloon/stage-3.png)
-
-### Dusty Spur stables
-
-![Dusty Spur stables — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/stable/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/stable/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/stable/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/stable/stage-3.png)
-
-### Sheriff’s office
-
-![Sheriff’s office — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/sheriff/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/sheriff/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/sheriff/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/sheriff/stage-3.png)
-
-### The Frontier Museum
-
-![The Frontier Museum — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/museum/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/museum/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/museum/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/museum/stage-3.png)
-
-### Frontier armory
-
-![Frontier armory — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/armory/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/armory/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/armory/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/armory/stage-3.png)
-
-### Prospect bank
-
-![Prospect bank — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/bank/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/bank/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/bank/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/bank/stage-3.png)
-
-### Prairie trading post
-
-![Prairie trading post — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/shop/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/shop/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/shop/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/shop/stage-3.png)
-
-### Prospect town square
-
-![Prospect town square — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/square/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/square/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/square/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/square/stage-3.png)
-
-### Prospect watermill
-
-![Prospect watermill — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/watermill/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/watermill/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/watermill/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/watermill/stage-3.png)
-
-### Fisherman’s Hut
-
-![Fisherman’s Hut — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/fisherman/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/fisherman/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/fisherman/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/fisherman/stage-3.png)
-
-### Prospect blacksmith
-
-![Prospect blacksmith — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/blacksmith/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/blacksmith/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/blacksmith/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/blacksmith/stage-3.png)
-
-### Prospect schoolhouse
-
-![Prospect schoolhouse — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/school/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/school/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/school/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/school/stage-3.png)
-
-### Doctor’s Office
-
-![Doctor’s Office — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/doctor/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/doctor/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/doctor/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/doctor/stage-3.png)
-
-### Prospect bridge
-
-![Prospect bridge — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/bridge/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/bridge/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/bridge/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/bridge/stage-3.png)
-
-### Steamboat landing
-
-![Steamboat landing — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/riverPort/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/riverPort/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/riverPort/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/riverPort/stage-3.png)
-
-### Prospect railway station
-
-![Prospect railway station — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/railDepot/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/railDepot/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/railDepot/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/railDepot/stage-3.png)
-
-### Telegraph & Post Office
-
-![Telegraph & Post Office — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/post/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/post/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/post/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/post/stage-3.png)
-
-### Freight warehouse
-
-![Freight warehouse — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/warehouse/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/warehouse/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/warehouse/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/warehouse/stage-3.png)
-
-### Riverside boarding house
-
-![Riverside boarding house — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/hotel/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/hotel/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/hotel/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/hotel/stage-3.png)
-
-### Riverside house
-
-![Riverside house — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/home5/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/home5/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/home5/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/home5/stage-3.png)
-
-### East-bank market
-
-![East-bank market — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/market/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/market/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/market/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/market/stage-3.png)
-
-### Prospect power house
-
-![Prospect power house — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/powerHouse/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/powerHouse/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/powerHouse/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/powerHouse/stage-3.png)
-
-### Prospect fire station
-
-![Prospect fire station — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/fireStation/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/fireStation/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/fireStation/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/fireStation/stage-3.png)
-
-### Lantern row
-
-![Lantern row — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/rowHouses/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/rowHouses/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/rowHouses/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/rowHouses/stage-3.png)
-
-### Riverside light mill
-
-![Riverside light mill — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/mill/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/mill/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/mill/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/mill/stage-3.png)
-
-### Prospect motor garage
-
-![Prospect motor garage — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/garage/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/garage/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/garage/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/garage/stage-3.png)
-
-### Valley bus station
-
-![Valley bus station — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/busDepot/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/busDepot/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/busDepot/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/busDepot/stage-3.png)
-
-### Maple garden court
-
-![Maple garden court — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/gardenCourt/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/gardenCourt/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/gardenCourt/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/gardenCourt/stage-3.png)
-
-### The Sunrise diner
-
-![The Sunrise diner — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/diner/comparison.png)
-
-[Stage 1](../images/era-upgrades/aviation/diner/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/diner/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/diner/stage-3.png)
+<a id="building-airport"></a>
 
 ### Prospect regional airport
 
@@ -208,11 +32,273 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/aviation/airport/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/airport/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/airport/stage-3.png)
 
+<a id="building-radioTower"></a>
+
 ### Valley radio station
 
 ![Valley radio station — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/radioTower/comparison.png)
 
 [Stage 1](../images/era-upgrades/aviation/radioTower/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/radioTower/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/radioTower/stage-3.png)
+
+## Existing buildings upgraded for this era
+
+<a id="building-well"></a>
+
+### Old town well
+
+![Old town well — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/well/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/well/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/well/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/well/stage-3.png)
+
+<a id="building-farm"></a>
+
+### Clover farm
+
+![Clover farm — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/farm/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/farm/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/farm/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/farm/stage-3.png)
+
+<a id="building-home"></a>
+
+### Juniper house
+
+![Juniper house — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/home/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/home/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/home/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/home/stage-3.png)
+
+<a id="building-saloon"></a>
+
+### The Golden Hour
+
+![The Golden Hour — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/saloon/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/saloon/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/saloon/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/saloon/stage-3.png)
+
+<a id="building-stable"></a>
+
+### Dusty Spur stables
+
+![Dusty Spur stables — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/stable/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/stable/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/stable/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/stable/stage-3.png)
+
+<a id="building-sheriff"></a>
+
+### Sheriff’s office
+
+![Sheriff’s office — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/sheriff/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/sheriff/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/sheriff/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/sheriff/stage-3.png)
+
+<a id="building-museum"></a>
+
+### The Frontier Museum
+
+![The Frontier Museum — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/museum/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/museum/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/museum/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/museum/stage-3.png)
+
+<a id="building-armory"></a>
+
+### Frontier armory
+
+![Frontier armory — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/armory/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/armory/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/armory/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/armory/stage-3.png)
+
+<a id="building-bank"></a>
+
+### Prospect bank
+
+![Prospect bank — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/bank/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/bank/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/bank/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/bank/stage-3.png)
+
+<a id="building-shop"></a>
+
+### Prairie trading post
+
+![Prairie trading post — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/shop/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/shop/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/shop/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/shop/stage-3.png)
+
+<a id="building-square"></a>
+
+### Prospect town square
+
+![Prospect town square — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/square/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/square/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/square/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/square/stage-3.png)
+
+<a id="building-watermill"></a>
+
+### Prospect watermill
+
+![Prospect watermill — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/watermill/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/watermill/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/watermill/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/watermill/stage-3.png)
+
+<a id="building-fisherman"></a>
+
+### Fisherman’s Hut
+
+![Fisherman’s Hut — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/fisherman/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/fisherman/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/fisherman/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/fisherman/stage-3.png)
+
+<a id="building-blacksmith"></a>
+
+### Prospect blacksmith
+
+![Prospect blacksmith — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/blacksmith/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/blacksmith/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/blacksmith/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/blacksmith/stage-3.png)
+
+<a id="building-school"></a>
+
+### Prospect schoolhouse
+
+![Prospect schoolhouse — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/school/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/school/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/school/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/school/stage-3.png)
+
+<a id="building-doctor"></a>
+
+### Doctor’s Office
+
+![Doctor’s Office — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/doctor/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/doctor/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/doctor/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/doctor/stage-3.png)
+
+<a id="building-bridge"></a>
+
+### Prospect bridge
+
+![Prospect bridge — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/bridge/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/bridge/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/bridge/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/bridge/stage-3.png)
+
+<a id="building-riverPort"></a>
+
+### Steamboat landing
+
+![Steamboat landing — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/riverPort/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/riverPort/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/riverPort/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/riverPort/stage-3.png)
+
+<a id="building-railDepot"></a>
+
+### Prospect railway station
+
+![Prospect railway station — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/railDepot/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/railDepot/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/railDepot/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/railDepot/stage-3.png)
+
+<a id="building-post"></a>
+
+### Telegraph & Post Office
+
+![Telegraph & Post Office — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/post/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/post/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/post/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/post/stage-3.png)
+
+<a id="building-warehouse"></a>
+
+### Freight warehouse
+
+![Freight warehouse — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/warehouse/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/warehouse/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/warehouse/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/warehouse/stage-3.png)
+
+<a id="building-hotel"></a>
+
+### Riverside boarding house
+
+![Riverside boarding house — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/hotel/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/hotel/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/hotel/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/hotel/stage-3.png)
+
+<a id="building-home5"></a>
+
+### Riverside house
+
+![Riverside house — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/home5/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/home5/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/home5/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/home5/stage-3.png)
+
+<a id="building-market"></a>
+
+### East-bank market
+
+![East-bank market — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/market/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/market/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/market/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/market/stage-3.png)
+
+<a id="building-powerHouse"></a>
+
+### Prospect power house
+
+![Prospect power house — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/powerHouse/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/powerHouse/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/powerHouse/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/powerHouse/stage-3.png)
+
+<a id="building-fireStation"></a>
+
+### Prospect fire station
+
+![Prospect fire station — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/fireStation/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/fireStation/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/fireStation/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/fireStation/stage-3.png)
+
+<a id="building-rowHouses"></a>
+
+### Lantern row
+
+![Lantern row — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/rowHouses/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/rowHouses/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/rowHouses/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/rowHouses/stage-3.png)
+
+<a id="building-mill"></a>
+
+### Riverside light mill
+
+![Riverside light mill — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/mill/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/mill/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/mill/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/mill/stage-3.png)
+
+<a id="building-garage"></a>
+
+### Prospect motor garage
+
+![Prospect motor garage — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/garage/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/garage/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/garage/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/garage/stage-3.png)
+
+<a id="building-busDepot"></a>
+
+### Valley bus station
+
+![Valley bus station — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/busDepot/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/busDepot/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/busDepot/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/busDepot/stage-3.png)
+
+<a id="building-gardenCourt"></a>
+
+### Maple garden court
+
+![Maple garden court — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/gardenCourt/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/gardenCourt/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/gardenCourt/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/gardenCourt/stage-3.png)
+
+<a id="building-diner"></a>
+
+### The Sunrise diner
+
+![The Sunrise diner — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/diner/comparison.png)
+
+[Stage 1](../images/era-upgrades/aviation/diner/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/diner/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/diner/stage-3.png)
+
+<a id="building-cityHall"></a>
 
 ### Prospect city hall
 
@@ -220,11 +306,15 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/aviation/cityHall/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/cityHall/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/cityHall/stage-3.png)
 
+<a id="building-apartments"></a>
+
 ### Cedar court apartments
 
 ![Cedar court apartments — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/apartments/comparison.png)
 
 [Stage 1](../images/era-upgrades/aviation/apartments/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/apartments/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/apartments/stage-3.png)
+
+<a id="building-supermarket"></a>
 
 ### Valley food hall
 
@@ -232,11 +322,15 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/aviation/supermarket/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/supermarket/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/supermarket/stage-3.png)
 
+<a id="building-waterPlant"></a>
+
 ### Prospect water plant
 
 ![Prospect water plant — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/waterPlant/comparison.png)
 
 [Stage 1](../images/era-upgrades/aviation/waterPlant/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/waterPlant/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/waterPlant/stage-3.png)
+
+<a id="building-horseField"></a>
 
 ### Willow horse field
 
@@ -244,11 +338,15 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/aviation/horseField/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/horseField/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/horseField/stage-3.png)
 
+<a id="building-park"></a>
+
 ### Prospect public park
 
 ![Prospect public park — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/park/comparison.png)
 
 [Stage 1](../images/era-upgrades/aviation/park/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/park/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/park/stage-3.png)
+
+<a id="building-home2"></a>
 
 ### Willow house
 
@@ -256,11 +354,15 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/aviation/home2/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/home2/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/home2/stage-3.png)
 
+<a id="building-home3"></a>
+
 ### Sagebrush house
 
 ![Sagebrush house — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/home3/comparison.png)
 
 [Stage 1](../images/era-upgrades/aviation/home3/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/home3/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/home3/stage-3.png)
+
+<a id="building-home4"></a>
 
 ### Cottonwood house
 
@@ -268,11 +370,15 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/aviation/home4/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/home4/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/home4/stage-3.png)
 
+<a id="building-well2"></a>
+
 ### Prairie well
 
 ![Prairie well — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/well2/comparison.png)
 
 [Stage 1](../images/era-upgrades/aviation/well2/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/well2/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/well2/stage-3.png)
+
+<a id="building-farm2"></a>
 
 ### Sunrise farm
 
@@ -280,11 +386,17 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/aviation/farm2/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/farm2/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/farm2/stage-3.png)
 
+<a id="building-farm3"></a>
+
 ### Meadow farm
 
 ![Meadow farm — Aviation & Radio upgrade comparison](../images/era-upgrades/aviation/farm3/comparison.png)
 
 [Stage 1](../images/era-upgrades/aviation/farm3/stage-1.png) · [Stage 2](../images/era-upgrades/aviation/farm3/stage-2.png) · [Stage 3](../images/era-upgrades/aviation/farm3/stage-3.png)
+
+## Mine progression
+
+<a id="building-mine"></a>
 
 ### Mine surface works
 

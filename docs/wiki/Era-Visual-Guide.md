@@ -17,7 +17,7 @@ The mine is the visible centerpiece of the era transition. Its permanent equipme
 | Era                                                    | Visual character                                                               | Building comparisons, including the mine | Stage images |
 | ------------------------------------------------------ | ------------------------------------------------------------------------------ | ---------------------------------------: | -----------: |
 | [Frontier Settlement · c. 1865–1880](Era-frontier.md)  | Timber, pitched roofs, porches and simple machinery                            |                                       23 |           77 |
-| [River & Rail Boom · 1884](Era-river-rail.md)          | Masonry fronts, cornices, clock towers, rail and steam                         |                                       31 |           91 |
+| [River & Rail Boom · 1884](Era-river-rail.md)          | Masonry fronts, verandas, workshops, loading shelters, rail and steam          |                                       31 |           91 |
 | [Industrial / Electric Town · 1908](Era-industrial.md) | Brick workshops, steelwork and electrical services                             |                                       36 |          106 |
 | [Post-war Rebuilding · 1920](Era-post-war.md)          | First World War rebuilding, civic masonry and courtyard housing                |                                       40 |          118 |
 | [Motor Age · 1932](Era-motor-age.md)                   | Cream walls, roadside canopies, garages, buses and gardens                     |                                       45 |          133 |

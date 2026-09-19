@@ -25,9 +25,22 @@ export function renderWatermill(d, parent, era, level, label) {
     for (const x of [-1.65, 0.95]) d.rod(root, [x, 0.2, 1.9], [x, 1.95, 1.9], 0.055, timber);
   }
   if (level >= 3) {
-    d.box(root, 0.85, 1.5, 1.55, -2.1, 0.95, -0.35, style.wall);
-    d.box(root, 1.15, 0.15, 1.9, -2.1, 1.78, -0.35, style.roof);
-    for (const z of [0.15, 0.75]) d.ball(root, -2.1, 0.45, z, [0.28, 0.4, 0.28], '#d8bf88');
+    const loading = d.group(root);
+    loading.name = 'Watermill grain loading expansion';
+    d.box(loading, 1.2, 2.25, 2.3, -2.05, 1.3, 0.5, style.wall);
+    d.box(loading, 1.5, 0.15, 2.6, -2.05, 2.48, 0.5, style.roof);
+    d.box(loading, 1.1, 1.5, 0.08, -2.05, 1.3, 1.69, timber);
+    d.box(loading, 3.2, 0.25, 1.15, -1, 0.3, 2.35, '#a79b80');
+    d.box(loading, 3.35, 0.15, 1.2, -1, 2.5, 2.35, style.roof);
+    for (const x of [-2.5, 0.5]) d.rod(loading, [x, 0.4, 2.8], [x, 2.5, 2.8], 0.065, timber);
+    for (const [x, z] of [
+      [-2.1, 2.3],
+      [-1.4, 2.5],
+      [-0.75, 2.45],
+    ])
+      d.ball(loading, x, 0.75, z, [0.28, 0.4, 0.28], '#d8bf88');
+    d.rod(loading, [-1.9, 2.6, 1.5], [-1.9, 2.6, 2.9], 0.07, timber);
+    d.rod(loading, [-1.9, 2.6, 2.85], [-1.9, 1.25, 2.85], 0.025, timber);
   }
   // The millrace is excavated in the shared landscape at river level. Only
   // the axle footing and scattered bank stones belong to the building.

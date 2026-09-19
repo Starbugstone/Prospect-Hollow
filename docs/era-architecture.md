@@ -36,6 +36,20 @@ identity can come from its configured asset family, detail asset and capabilitie
 An era still needs its actual content: campaign placement, buildings, projects,
 translated copy and any new art. A definition does not manufacture those assets.
 
+River & Rail and Industrial final upgrades use `src/data/heritageUpgrades.js`
+to map each building's original kind to a useful expansion. `HeritageDetails.js`
+and `TownHeritageUpgrade.vue` render that shared choice: for example, a post office
+gets dispatch rooms and telegraph fittings while a shop gets a trading awning,
+even though their original building shells are aliases. Preserve the original kind
+before resolving a shell alias. Unknown kinds get no speculative decoration.
+Do not use a universal clock tower as a completion marker. Motor Age buildings
+that inherit industrial geometry inherit these working expansions too.
+
+The gallery exporter records each building's introduction era. Its wiki packager
+places new buildings first, then existing buildings and the mine, with links to
+every entry. Regenerate captures after geometry changes; a changed mesh signature
+alone does not establish that an upgrade is visible from the camera.
+
 Airport architecture uses the optional `airportStyle` capability. The shared
 `src/data/airportStyles.json` catalog drives Blender authoring, runtime asset
 selection and the SVG fallback through `airportAppearance()`. Regional (1958),

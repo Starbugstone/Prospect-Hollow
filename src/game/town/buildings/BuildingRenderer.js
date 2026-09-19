@@ -1,3 +1,4 @@
+import { addHeritageUpgrade } from './HeritageDetails';
 import { renderWatermill } from './watermill';
 import { eraEvolution } from '../../../data/eras';
 import { addCityModernization, renderCityBuilding } from './city';
@@ -116,6 +117,7 @@ export function renderEraLandmark(d, parent, kind, label, level, era, serviceLev
   );
 }
 function renderRiverModernization(d, parent, kind, level) {
+  const originalKind = kind;
   kind = kinds[kind] ?? kind;
   if (!RIVER_RAIL_VARIANTS[kind]) return;
   const modern = d.group(parent);
@@ -127,13 +129,7 @@ function renderRiverModernization(d, parent, kind, level) {
     d.box(parent, 1.45, 0.18, 2.35, -1.95, 2.4, -0.2, '#526e79');
     d.window(parent, -1.95, 1.4, 0.9);
   }
-  if (level >= 3 && !['well', 'square', 'fisherman'].includes(kind)) {
-    d.box(parent, 0.9, 1.55, 0.85, 0.45, 3.55, -0.4, '#b9aa8b');
-    d.mesh(parent, 'cone', [0.7, 0.85, 0.7], [0.45, 4.72, -0.4], '#526e79');
-    d.ball(parent, 0.45, 3.95, 0.04, [0.28, 0.28, 0.035], '#f0e0b9');
-    d.rod(parent, [0.45, 3.95, 0.085], [0.45, 4.15, 0.085], 0.018, '#52605c');
-    d.rod(parent, [0.45, 3.95, 0.085], [0.59, 3.89, 0.085], 0.018, '#52605c');
-  }
+  if (level >= 3) addHeritageUpgrade(d, parent, originalKind);
   if (level >= 2 && ['well', 'square', 'fisherman'].includes(kind)) {
     for (const side of [-1, 1]) {
       d.box(parent, 0.6, 0.55, 1.2, side * 1.75, 0.3, 0.3, '#aaa58f');

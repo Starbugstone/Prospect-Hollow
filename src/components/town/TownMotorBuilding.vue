@@ -16,6 +16,12 @@
         </g>
         <g v-if="kind === 'well' && level >= 2" transform="translate(0 -144)">
           <path
+            d="M-46 0v137M46 0v137M-46 12 46 102M46 12-46 102M-53 2H53"
+            fill="none"
+            stroke="#648d89"
+            stroke-width="6"
+          />
+          <path
             d="M-46 0v-33Q0-53 46-33V0Q0 20-46 0"
             fill="#8caaa3"
             stroke="#e1cfab"

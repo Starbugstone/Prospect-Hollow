@@ -51,7 +51,7 @@ function buildingRoot(b, era, level) {
     else if (kind === 'well') d.well(root);
     else renderBuilding({ town: d, parent: root, kind, level: stage, label: b.name });
     if (!['fisherman', 'blacksmith', 'school', 'doctor'].includes(kind))
-      addImprovements(d, root, kind, stage);
+      addImprovements(d, root, kind, stage, era.id);
     renderModernization(d, root, kind, era.id, level);
   }
   return root;
@@ -120,6 +120,7 @@ window.renderEraReview = async (id) => {
     result.buildings.push({
       id: b.id,
       name: b.name,
+      introducedEra: b.introducedEra,
       ...capture(
         roots,
         b.name,
