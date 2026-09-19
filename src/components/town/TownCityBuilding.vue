@@ -25,9 +25,19 @@
         stroke-width="3"
       />
       <path d="M17-182h58M35-202v24m21-24v24" stroke="#e1cfab" stroke-width="3" />
-      <path d="M-24 42V12q41-43 88 15v34Z" :fill="airport.roof" stroke="#e1cfab" stroke-width="3" />
-      <path d="M-17 39V14l74 21v23Z" fill="#648d89" stroke="#e1cfab" stroke-width="3" />
-      <path d="M3 20v23m24-17v24" stroke="#e1cfab" stroke-width="3" />
+      <!-- The broad open end faces left toward the runway, clear of the lounge. -->
+      <path d="M-109 74-47 50 16 68-48 95Z" fill="#788b87" />
+      <path d="M-91 77-25 57" stroke="#e5bc77" stroke-width="3" />
+      <path d="M-24 79V31Q0-6 27 11L96 32V90L27 111Z" :fill="airport.wall" />
+      <path
+        d="M-29 32Q-4-17 30 9L100 29Q64 5 29 63Z"
+        :fill="airport.roof"
+        stroke="#e1cfab"
+        stroke-width="3"
+      />
+      <path d="M-24 78V33L29 63V109Z" fill="#435764" stroke="#e1cfab" stroke-width="4" />
+      <path d="M-24 33v45m5-42v45M24 62v43m5-42v46" stroke="#648d89" stroke-width="4" />
+      <path d="M-24 78 29 109 39 104-14 74Z" fill="#9baba2" />
       <g v-if="level >= 2">
         <path d="M-62-20-62 5 16 27 16 1Z" fill="#85b8c8" stroke="#e1cfab" stroke-width="3" />
         <path d="M-67-24-45-37 29-15 17 4Z" :fill="airport.roof" />

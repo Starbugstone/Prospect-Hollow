@@ -51,6 +51,10 @@ for era in ERAS:
             prefix = f"../images/era-upgrades/{era}/{b['id']}"
             lines += [f"<a id=\"building-{b['id'].lower()}\"></a>", '', f"### {b['name']}", '', f"![{b['name']} — {data['label']} upgrade comparison]({prefix}/comparison.png)", '',
                       ' · '.join(f"[{'Era upgrade' if b['id']=='mine' else f'Stage {i+1}'}]({prefix}/stage-{i+1}.png)" for i in range(len(b['stages']))), '']
+            if b['id'] == 'airport':
+                lines += ['The hangar doors face the runway. The open bay and marked taxiway stay clear of the lounge at all three stages. A single aircraft occasionally takes off or lands, taxis between the runway and hangar, and waits between flights; arrivals and departures never overlap.', '',
+                          f'![Hangar exit and taxiway](../images/airport-{era}-2026-09.png)', '',
+                          '[Aircraft activity and layout details](../airport-art.md)', '']
     (WIKI / f'Era-{era}.md').write_text('\n'.join(lines))
     summary.append({'era': era, 'label': data['label'], 'year': data['year'], 'buildings':len(data['buildings']), 'stages':sum(len(b['stages']) for b in data['buildings'])})
 
@@ -62,8 +66,9 @@ with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as z:
         if file.is_file(): z.write(file, file.relative_to(IMAGES))
     for file in sorted(WIKI.glob('Era-*.md')):
         # The repository/wiki is the browsable index; this zip carries the originals.
-        z.writestr(f'guide/{file.name}', file.read_text().replace('../images/era-upgrades/', '../').replace('(../era-architecture.md)', '(https://github.com/Starbugstone/Prospect-Hollow/blob/develop/docs/era-architecture.md)'))
-    for file in sorted((ROOT / 'docs/images').glob('mine-era-*.png')):
+        z.writestr(f'guide/{file.name}', file.read_text().replace('../images/era-upgrades/', '../').replace('(../era-architecture.md)', '(https://github.com/Starbugstone/Prospect-Hollow/blob/develop/docs/era-architecture.md)').replace('(../airport-art.md)', '(airport-art.md)'))
+    z.writestr('guide/airport-art.md', (ROOT / 'docs/airport-art.md').read_text().replace('(images/', '(../images/').replace('(era-architecture.md)', '(https://github.com/Starbugstone/Prospect-Hollow/blob/develop/docs/era-architecture.md)'))
+    for file in sorted([*(ROOT / 'docs/images').glob('mine-era-*.png'), *(ROOT / 'docs/images').glob('airport-*.png')]):
         z.write(file, f'images/{file.name}')
     z.writestr('README.txt', 'Prospect Hollow era upgrades\n975 individual stage images and 327 comparison sheets.\nBrowse guide/Era-Visual-Guide.md or the published GitHub wiki.\nEach era/building folder contains comparison.png and every stage PNG.\n')
 print(json.dumps(manifest, indent=2))

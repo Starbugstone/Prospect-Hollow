@@ -314,6 +314,12 @@ These are actual game meshes rendered in a neutral review scene. Name labels sit
 
 [Stage 1](../images/era-upgrades/broadcast/airport/stage-1.png) · [Stage 2](../images/era-upgrades/broadcast/airport/stage-2.png) · [Stage 3](../images/era-upgrades/broadcast/airport/stage-3.png)
 
+The hangar doors face the runway. The open bay and marked taxiway stay clear of the lounge at all three stages. A single aircraft occasionally takes off or lands, taxis between the runway and hangar, and waits between flights; arrivals and departures never overlap.
+
+![Hangar exit and taxiway](../images/airport-broadcast-2026-09.png)
+
+[Aircraft activity and layout details](../airport-art.md)
+
 <a id="building-radiotower"></a>
 
 ### Valley radio station

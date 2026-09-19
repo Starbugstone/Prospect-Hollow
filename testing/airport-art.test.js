@@ -1,5 +1,5 @@
 import { afterEach, expect, it } from 'vitest';
-import { Box3, Group } from 'three';
+import { Box3, Group, Vector3 } from 'three';
 import { airportAppearance } from '../src/data/airport';
 import { defineEra } from '../src/data/eraDefinitions';
 import { ERAS, ERA_BY_ID, eraEvolution } from '../src/data/eras';
@@ -55,6 +55,44 @@ it('changes the airport architecture across eras, not only a generic rooftop cue
   );
   expect(new Set(positions).size).toBe(3);
 });
+
+it.each(['aviation', 'broadcast', 'contemporary'])(
+  '%s keeps the runway-facing hangar exit clear of all three construction stages',
+  (era) => {
+    const plane = new Box3();
+    for (const part of future.models.airplane)
+      for (let i = 0; i < part.positions.length; i += 3)
+        plane.expandByPoint(
+          new Vector3(
+            part.positions[i] + part.pivot[0],
+            part.positions[i + 1] + part.pivot[1],
+            part.positions[i + 2] + part.pivot[2],
+          ),
+        );
+    // Aircraft points west: its wings span Z. This entire route must remain
+    // clear, including inside the hangar, not just along the runway centerline.
+    // Low paving and runway edge lights sit below the wings and are excluded.
+    const exit = new Box3(
+      new Vector3(-5 - plane.max.z, 0.5, 10 + plane.min.x - 0.15),
+      new Vector3(4.625 - plane.min.z, plane.max.y + 0.3, 10 + plane.max.x + 0.15),
+    );
+    const { asset } = airportAppearance(era);
+    const triangle = new Box3();
+    const point = new Vector3();
+    for (const stage of [asset, `${asset}-wing`, `${asset}-finish`])
+      for (const part of future.models[stage])
+        for (let i = 0; i < part.indices.length; i += 3) {
+          triangle.makeEmpty();
+          for (const index of part.indices.slice(i, i + 3)) {
+            point.fromArray(part.positions, index * 3);
+            triangle.expandByPoint(point);
+          }
+          expect(triangle.intersectsBox(exit), `${stage}: ${part.name}, triangle ${i / 3}`).toBe(
+            false,
+          );
+        }
+  },
+);
 
 it('inherits airport art from a future era definition and falls back for incomplete styles', () => {
   const define = (airportStyle) => {

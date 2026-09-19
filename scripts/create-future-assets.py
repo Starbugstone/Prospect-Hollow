@@ -18,6 +18,7 @@ art = AssetPack(Path(sys.argv[sys.argv.index('--') + 1]), 'future')
 SOURCE, OUTPUT = art.source, art.output
 model, box, ball, rod, loft, finish = art.model, art.box, art.ball, art.rod, art.loft, art.finish
 models = art.models
+airport_layout = json.loads((art.output.parent / 'data' / 'airportLayout.json').read_text())
 
 
 cream, teal, glass, charcoal = '#e1cfab', '#648d89', '#85b8c8', '#435764'
@@ -47,6 +48,10 @@ def tower(height=10):
     for y in [height+.5,height+1,height+1.5]:rod('Aerial element',(-.55,y,0),(.55,y,0),.035,charcoal)
 
 def airport(style):
+    hangar = airport_layout['hangar']
+    front, back, center_z, radius = (hangar[k] for k in ['frontX','backX','centerZ','roofRadius'])
+    center_x = (front + back) / 2
+    depth = back - front
     model(style['asset'])
     box('Airfield grass verge',(20,.14,40),(0,.02,0),'#91a66e',0)
     box('Terminal and hangar apron',(10.2,.05,27),(3.8,.115,1.5),'#9baba2',0)
@@ -57,8 +62,11 @@ def airport(style):
     for x in [-7.6,-2.4]:
         for z in range(-18,20,3):
             box('Runway edge light',(.15,.13,.15),(x,.2,z),gold,0)
-    box('Taxiway',(4.1,.06,3),(-.6,.13,6), '#788b87',0)
-    box('Taxiway guide',(3.8,.012,.09),(-.6,.168,6),gold,0)
+    # A runway-facing hangar exits west; the lounge stays north of its wing envelope.
+    box('Hangar taxiway',(front+5.2,.06,radius*2-.3),((front-4.8)/2,.13,center_z), '#788b87',0)
+    box('Hangar taxiway centerline',(front+5.2,.012,.09),((front-4.8)/2,.168,center_z),gold,0)
+    for z in [center_z-radius+.2,center_z+radius-.2]:
+        box('Taxiway edge stripe',(front+5.2,.012,.06),((front-4.8)/2,.168,z),cream,0)
     box('Passenger forecourt',(7.1,.12,11),(4.65,.2,-2.4),cream)
     box('Terminal plinth',(6.2,.27,7.8),(4.5,.37,-3),teal)
     box('Terminal concourse',(6,2.2,7.6),(4.5,1.55,-3),glass if style['curtainWall'] else style['wall'])
@@ -94,35 +102,39 @@ def airport(style):
     rod('Control aerial',(5.8,6.43,-6.2),(5.8,7.3,-6.2),.035,charcoal)
     ball('Tower beacon',(.09,.09,.09),(5.8,7.32,-6.2),coral)
 
-    # A true barrel vault above straight walls: flat end caps and radial roof normals.
-    # The former full elliptical loft dipped below the apron and rounded the end faces.
-    def hangar_vault(name, front, back, radius, color):
-        profile = [(4.5+math.cos(i*math.pi/12)*radius,
-                    1.9+math.sin(i*math.pi/12)*1.25) for i in range(13)]
-        vertices = [tuple(vec((x,y,z))) for z in [front,back] for x,y in profile]
-        faces = [(i,i+1,i+14,i+13) for i in range(12)]
-        faces += [tuple(reversed(range(13))),tuple(range(13,26)), (0,13,25,12)]
-        mesh = bpy.data.meshes.new(name)
-        mesh.from_pydata(vertices,[],faces)
-        mesh.update()
-        obj = bpy.data.objects.new(name,mesh)
-        bpy.context.collection.objects.link(obj)
-        finish(obj,name,color)
+    # Rotate the barrel hangar by 90 degrees: its open west end faces the
+    # runway, not the passenger lounge. The 9.1-wide opening fits the actual
+    # 8.2-wide aircraft, and separate walls leave a usable interior.
+    profile = [(3.05+math.sin(i*math.pi/12)*1.25,
+                center_z+math.cos(i*math.pi/12)*radius) for i in range(13)]
+    vertices = [tuple(vec((x,y,z))) for x in [front,back] for y,z in profile]
+    # Reversed winding compared with the former north/south vault.
+    faces = [(i+13,i+14,i+1,i) for i in range(12)]
+    faces += [tuple(range(13)),tuple(reversed(range(13,26))), (12,25,13,0)]
+    mesh = bpy.data.meshes.new('Runway-facing barrel roof')
+    mesh.from_pydata(vertices,[],faces)
+    mesh.update()
+    obj = bpy.data.objects.new('Runway-facing barrel roof',mesh)
+    bpy.context.collection.objects.link(obj)
+    finish(obj,'Runway-facing barrel roof',style['roof'])
 
-    box('Hangar foundation',(6.2,.2,6.6),(4.5,.24,10),cream)
-    box('Hangar walls',(5.8,1.6,6.2),(4.5,1.08,10),cream)
-    hangar_vault('Faceted barrel hangar roof',6.75,13.25,3.05,style['roof'])
-    for z in [6.73,13.27]:
-        # Raised narrow arch trim follows the roof profile without a swollen end cap.
+    box('Flush hangar floor',(depth+.1,.04,radius*2),(center_x,.14,center_z),'#9baba2',0)
+    for z in [center_z-radius+.12,center_z+radius-.12]:
+        box('Hangar side wall',(depth,2.89,.24),(center_x,1.605,z),style['wall'])
+    box('Hangar rear wall',(.2,2.89,radius*2),(back-.1,1.605,center_z),style['wall'])
+    box('Shaded hangar interior',(.02,2.7,radius*2-.5),(back-.21,1.59,center_z),'#526865',0)
+    for x in [front-.025,back+.025]:
         for i in range(12):
-            a,b = i*math.pi/12,(i+1)*math.pi/12
-            rod('Hangar arch trim',(4.5+3.05*math.cos(a),1.9+1.25*math.sin(a),z),
-                (4.5+3.05*math.cos(b),1.9+1.25*math.sin(b),z),.045,cream)
-        box('Hangar sliding door',(5.3,1.6,.08),(4.5,1.06,z),charcoal,0)
-        for x in [2,3,4,5,6,7]:
-            box('Hangar door panel',(.92,1.43,.1),(x,1.07,z),teal,0)
-            box('Hangar door window',(.65,.3,.115),(x,1.52,z),glass,0)
-    box('Hangar apron guide',(.09,.012,2),(4.5,.15,5.8),gold,0)
+            y,z=profile[i]; next_y,next_z=profile[i+1]
+            rod('Hangar arch trim',(x,y,z),(x,next_y,next_z),.045,cream)
+    box('Hangar door lintel',(.22,.2,radius*2),(front-.02,2.95,center_z),cream)
+    # Concertina leaves are folded against the jambs, not painted onto a solid wall.
+    for side in [-1,1]:
+        for n in range(4):
+            leaf=box('Folded hangar door',(.7,2.6,.1),(front-.27,1.55,center_z+side*(radius-.33+n*.085)),teal,0)
+            leaf.rotation_euler.z=side*(.12 if n%2 else -.12)
+        box('Hangar door jamb',(.22,2.7,.18),(front-.02,1.56,center_z+side*(radius-.13)),cream,0)
+    box('Hangar interior centerline',(depth-.25,.012,.09),(center_x-.125,.168,center_z),gold,0)
 
     # Era architecture is baked into the base, not floated above a historic roof.
     if style['clerestory']:
