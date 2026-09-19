@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Prospect Hollow · Era art review</title>
+    <style>
+      body {
+        margin: 24px;
+        color: #294b49;
+        background: #ede7d7;
+        font: 16px/1.5 sans-serif;
+      }
+      h1 {
+        font-family: Georgia, serif;
+      }
+      button,
+      select {
+        padding: 10px;
+        margin-right: 12px;
+      }
+      article {
+        margin: 24px 0;
+      }
+      article img {
+        max-width: 100%;
+        height: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Building upgrades through the eras</h1>
+    <p>Actual game models. Each row uses the same camera for every upgrade stage.</p>
+    <label
+      >Era
+      <select id="era"></select
+    ></label>
+    <button id="render">Show upgrade images</button>
+    <button id="export">Export PNG data for this era</button>
+    <p id="status" role="status">Loading models…</p>
+    <main id="gallery"></main>
+    <script type="module" src="./era-art-review.js"></script>
+  </body>
+</html>

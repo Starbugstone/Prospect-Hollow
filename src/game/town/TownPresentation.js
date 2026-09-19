@@ -1,22 +1,23 @@
 import { beginEventCamera, restoreEventCamera } from './TownEventCamera';
 import { keepCameraAboveTerrain } from './TownLandscape';
 import { TownRailwayOpening } from './TownRailwayOpening';
+import { TownMineEraConstruction } from './TownMineEraConstruction';
 
-const renderers = { 'railway-opening': TownRailwayOpening };
+const renderers = { 'railway-opening': TownRailwayOpening, 'era-mine': TownMineEraConstruction };
 // Shared camera ownership and cleanup. Content adapters own only temporary visuals.
 export class TownPresentation {
   constructor(d, definition) {
     this.d = d;
     this.definition = definition;
     if (!d.eventCamera) beginEventCamera(d);
-    this.effect = new renderers[definition.id](d);
+    this.effect = new renderers[definition.id](d, definition);
   }
   static supports(id) {
-    return !!renderers[id];
+    return Object.hasOwn(renderers, id);
   }
   frame(time, still = false) {
     const d = this.d;
-    const { eye, focus } = this.effect.frame(time);
+    const { eye, focus, shadowPhase } = this.effect.frame(time, still);
     if (!still) {
       const t = Math.min(1, time / 1.4);
       d.camera.position.lerpVectors(d.eventCamera.position, eye, t * t * (3 - 2 * t));
@@ -26,7 +27,7 @@ export class TownPresentation {
     }
     for (const motion of d.motions) motion(d.elapsed);
     d.actorRenderer.update();
-    const phase = time < 7 ? 0 : 1;
+    const phase = shadowPhase ?? (time < 7 ? 0 : 1);
     if (this.phase !== phase) d.renderer.shadowMap.needsUpdate = true;
     this.phase = phase;
     d.frameCache.valid = false;

@@ -7,6 +7,7 @@ import { roadLevel } from './TownRules';
 import { PLOTS, townTracks, railEdges } from './TownLayout';
 import { addTownRoads } from './TownActivity';
 import { addMineForecourt } from './TownMineForecourt';
+import { addMineWorks } from './TownMineWorks';
 import { addElectricLighting } from './buildings/industrial';
 import { addPowerGrid, pavedTown } from './TownEvolution';
 import { addRailroad } from './TownEraActivity';
@@ -45,6 +46,7 @@ export class TownScenery {
         () => addTownRoads(view, town, PLOTS),
       ],
       ['forecourt', pavedTown(town), () => addMineForecourt(view, town)],
+      ['mine-works', town.era, () => addMineWorks(view, view.world, town.era)],
       ['lights', hasElectricity(town), () => addElectricLighting(view, town)],
       [
         'power',

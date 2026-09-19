@@ -19,6 +19,20 @@
       fill="transparent"
     />
     <g aria-hidden="true">
+      <g :stroke="appearance.frame" stroke-width="5" fill="none" transform="translate(-114 5)">
+        <path
+          :d="`M-21 42V${-appearance.height * 13}H21V42M-21 38 21 ${-appearance.height * 13 + 8}M21 38-21 ${-appearance.height * 13 + 8}`"
+        />
+        <circle :cy="-appearance.height * 13" r="10" :fill="appearance.roof" />
+        <path
+          v-if="appearance.height >= 4.8"
+          :d="`M-27 ${-appearance.height * 13 - 13}H27`"
+          :stroke="appearance.roof"
+          stroke-width="8"
+        />
+        <path v-if="appearance.machine !== 'hand'" d="M-40 43V8H-10v35Z" :fill="appearance.wall" />
+        <path v-if="appearance.machine === 'digital'" d="M-44 4-35-5-6-1-12 8Z" fill="#526f79" />
+      </g>
       <g v-if="stage >= 6" stroke="#91714f" stroke-width="6" fill="none"
         ><path d="M-80 40V-90M80 40V-90" /><path v-if="stage >= 7" d="M-85-90H85" /><path
           v-if="stage >= 9"
@@ -141,12 +155,15 @@
 </template>
 <script setup>
 import { eraEvolution } from '../../data/eras';
+import { computed } from 'vue';
+import { mineAppearance } from '../../data/mineEvolution';
 import { t } from '../../i18n';
-defineProps({
+const props = defineProps({
   level: { type: Number, default: 1 },
   decorative: Boolean,
   stage: { type: Number, default: 0 },
   era: { type: String, default: 'frontier' },
 });
+const appearance = computed(() => mineAppearance(props.era));
 defineEmits(['enter']);
 </script>

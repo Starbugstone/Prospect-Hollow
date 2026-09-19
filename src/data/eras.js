@@ -78,7 +78,7 @@ export const ERAS = [
     evolution: {
       style: 'city',
       prices: [4800, 5600, 6400],
-      cityAssets: 'post-war',
+      cityAssets: 'aviation',
       newBuildingPrices: [8000, 10000, 12000],
       detailAsset: 'aviation-detail',
       airportStyle: 'regional',
@@ -100,7 +100,7 @@ export const ERAS = [
     evolution: {
       style: 'city',
       prices: [6200, 7000, 7800],
-      cityAssets: 'contemporary',
+      cityAssets: 'broadcast',
       newBuildingPrices: [8000, 10000, 12000],
       detailAsset: 'broadcast-detail',
       airportStyle: 'metropolitan',

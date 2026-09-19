@@ -2,7 +2,7 @@
   <dialog
     ref="dialog"
     class="era-cinematic"
-    :class="{ 'era-still': reducedMotion, 'era-revealed': revealed }"
+    :class="{ 'era-still': reducedMotion, 'era-revealed': revealed, 'era-working': chapter === 1 }"
     :aria-label="t('A new era for Prospect Hollow')"
     @cancel.prevent="skip"
   >
@@ -17,7 +17,7 @@
             chapter === 0
               ? 'THE TOWN YOU BUILT'
               : chapter === 1
-                ? 'A NEW HORIZON'
+                ? 'BUILDING THE NEXT CHAPTER'
                 : 'THE NEXT CHAPTER',
           )
         }}
@@ -33,7 +33,7 @@
           {{
             t(
               chapter === 1
-                ? (era.horizon ?? 'The river calls. The railway is coming.')
+                ? 'Our workers are upgrading the mine for a new era.'
                 : (era.finale ?? 'New shores. New neighbors. A future built together.'),
             )
           }}
@@ -52,7 +52,13 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { t } from '../../i18n';
 import { ERA_BY_ID } from '../../data/eras';
-const props = defineProps({ eraId: String, reducedMotion: Boolean });
+import { ERA_CONSTRUCTION } from '../../data/mineEvolution';
+const props = defineProps({
+  eraId: String,
+  reducedMotion: Boolean,
+  ready: Boolean,
+  paused: Boolean,
+});
 const emit = defineEmits(['reveal', 'frame', 'complete', 'sound', 'silence']);
 const dialog = ref(null),
   skipButton = ref(null),
@@ -60,10 +66,11 @@ const dialog = ref(null),
 const elapsed = ref(0),
   revealed = ref(false);
 const era = computed(() => ERA_BY_ID[props.eraId]);
-const finished = computed(() => elapsed.value >= 14000);
-const chapter = computed(() => (elapsed.value < 4200 ? 0 : elapsed.value < 10000 ? 1 : 2));
+const duration = ERA_CONSTRUCTION.duration * 1000;
+const finished = computed(() => elapsed.value >= duration);
+const chapter = computed(() => (elapsed.value < 3000 ? 0 : elapsed.value < 18000 ? 1 : 2));
 const dawn = computed(() =>
-  props.reducedMotion ? 0 : Math.max(0, 1 - Math.abs(elapsed.value - 6000) / 1100),
+  props.reducedMotion ? 0 : Math.max(0, 1 - Math.abs(elapsed.value - duration + 4000) / 550) * 0.25,
 );
 let frame, previous, previousFocus;
 const visibilityChanged = () => {
@@ -81,19 +88,27 @@ function skip() {
   emit('complete');
 }
 async function still() {
-  elapsed.value = 14000;
+  elapsed.value = duration;
   reveal();
   await nextTick();
+  emit('frame', 1);
   explore.value?.focus();
 }
 function tick(now) {
-  if (previous && !document.hidden) elapsed.value = Math.min(14000, elapsed.value + now - previous);
+  if (previous && props.ready && !props.paused && !document.hidden)
+    elapsed.value = Math.min(duration, elapsed.value + now - previous);
   previous = now;
-  if (elapsed.value >= 6000) reveal();
-  emit('frame', elapsed.value / 14000);
+  if (elapsed.value >= ERA_CONSTRUCTION.reveal * 1000) reveal();
+  if (props.ready && !props.paused) emit('frame', elapsed.value / duration);
   if (!finished.value) frame = requestAnimationFrame(tick);
   else nextTick(() => explore.value?.focus());
 }
+watch(
+  () => props.ready,
+  (value) => {
+    if (value && props.reducedMotion) still();
+  },
+);
 watch(
   () => props.reducedMotion,
   (value) => {
@@ -175,6 +190,13 @@ onBeforeUnmount(() => {
   inset: auto 24px 13vh;
   animation: era-title 1.5s ease-out both;
   text-shadow: 0 2px 14px #15242c;
+}
+.era-working .era-caption {
+  bottom: 10vh;
+}
+.era-working .era-caption h1 {
+  font-size: clamp(28px, 3vw, 44px);
+  margin: 4px 0 8px;
 }
 .era-eyebrow {
   font: 600 11px/1.6 sans-serif;

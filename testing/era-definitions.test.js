@@ -78,7 +78,7 @@ it('resolves an overlapping future era prefix to its own declared Blender asset 
   expect(resolveCityAsset('aviation-next-residence', [...ERAS, future])).toBe(
     'contemporary-residence',
   );
-  expect(resolveCityAsset('aviation-residence', [...ERAS, future])).toBe('post-war-residence');
+  expect(resolveCityAsset('aviation-residence', [...ERAS, future])).toBe('aviation-residence');
   expect(resolveCityAsset('marker-doctor', [...ERAS, future])).toBe('marker-doctor');
 });
 

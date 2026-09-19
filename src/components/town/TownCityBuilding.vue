@@ -58,7 +58,8 @@
     <g
       v-else-if="
         family === 'skyline' ||
-        (modern && ['apartments', 'cityHomes', 'hotel', 'crystalLab'].includes(kind))
+        (eraEvolution(era).digitalCity &&
+          ['apartments', 'cityHomes', 'hotel', 'crystalLab'].includes(kind))
       "
     >
       <path d="M-70 0v-240l89 22V22Z" fill="#435764" />
@@ -92,12 +93,12 @@
       <path d="M-103-16 18 18 105-16 105-28-103-44Z" fill="#ddd1ae" />
       <path
         :d="`M-88-20v${-height}l116 29V9Z`"
-        :fill="family === 'residence' ? '#b79078' : '#ddd1ae'"
+        :fill="family === 'residence' ? city.brick : city.wall"
       />
       <path :d="`M28 9V${-height + 9}l69-27v${height}Z`" fill="#a69278" />
       <path
         :d="`M-98 ${-height - 28} 29 ${-height + 2} 108 ${-height - 29} -18 ${-height - 58}Z`"
-        fill="#638b88"
+        :fill="city.roof"
       />
       <g v-for="row in family === 'residence' ? 2 : 1" :key="row">
         <path
@@ -111,19 +112,40 @@
       </g>
       <path d="M-19-3v-47l24 6V3Z" fill="#638b88" />
       <path
-        v-if="modern"
+        v-if="city.timberFins"
         :d="`M-80-20V${-height - 15}m6 1V-18M15 4V${-height + 7}`"
         stroke="#a3825f"
         stroke-width="4"
       />
       <path
-        v-if="modern"
+        v-if="city.roofGarden"
         :d="`M-67 ${-height - 29} 9 ${-height - 9} 66 ${-height - 29} -9 ${-height - 47}Z`"
         fill="#8fa773"
       />
       <g v-if="family === 'residence'" stroke="#ddd1ae" stroke-width="4">
         <path d="M-76-59 17-35v-17L-76-76Z" :fill="modern ? '#9cbbb5' : '#638b88'" />
       </g>
+      <g v-if="city.streamlined">
+        <path
+          :d="`M-99 ${-height - 23} 28 ${-height + 8} 106 ${-height - 21}`"
+          :stroke="city.roof"
+          stroke-width="9"
+          fill="none"
+        />
+        <path
+          :d="`M-77 ${-height + 16} 13 ${-height + 38}v22l-90-22Z`"
+          fill="#9cbbb5"
+          :stroke="city.wall"
+          stroke-width="3"
+        />
+      </g>
+      <path
+        v-if="modern && !city.roofGarden"
+        :d="`M-83 ${-height - 29} 20 ${-height - 3} 84 ${-height - 28} 0 ${-height - 51}Z`"
+        :fill="city.roof"
+        :stroke="city.wall"
+        stroke-width="5"
+      />
       <g v-if="family === 'water'">
         <path
           d="M40-13v-89q29-18 58 0v89q-29 19-58 0Z"
@@ -197,6 +219,7 @@ import { computed } from 'vue';
 import { eraEvolution } from '../../data/eras';
 import { CITY_FAMILIES } from '../../data/city';
 import { airportAppearance } from '../../data/airport';
+import { cityAppearance } from '../../data/cityAppearance';
 import TownLeisureBuilding from './TownLeisureBuilding.vue';
 import TownSquare from './TownSquare.vue';
 const props = defineProps({
@@ -207,7 +230,8 @@ const props = defineProps({
 });
 const family = computed(() => CITY_FAMILIES[props.kind]);
 const airport = computed(() => airportAppearance(props.era));
-const modern = computed(() => eraEvolution(props.era).tallCity);
+const city = computed(() => cityAppearance(props.era));
+const modern = computed(() => city.value.modern);
 const garden = computed(() => ['park', 'field', 'square'].includes(family.value));
 const height = computed(() => (family.value === 'residence' ? 135 : 110));
 </script>

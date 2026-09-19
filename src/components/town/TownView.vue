@@ -159,6 +159,8 @@
           :fullscreen="fullscreen"
           :town="sceneTown"
           :cinematic="!!town.transition?.pending"
+          @cinematic-ready="eraReady = true"
+          @cinematic-unavailable="eraFallback = true"
           :presentation="openingPresentation"
           @presentation-ready="presentationReady = true"
           @presentation-unavailable="presentationFallback = true"
@@ -601,7 +603,9 @@
     <TownEraCinematic
       v-if="active && town.transition?.pending"
       :era-id="town.era"
-      :reduced-motion="settings.reducedMotion"
+      :ready="eraReady"
+      :paused="paused || settings.isSettingsOpen || mineEntryPending"
+      :reduced-motion="settings.reducedMotion || eraFallback"
       @reveal="eraRevealed = true"
       @frame="townScene?.cinematicFrame($event)"
       @complete="completeEraCinematic"
@@ -719,6 +723,8 @@ const gate = computed(() => eraGate(town.value));
 const directoryPlots = computed(() => availableParcels(town.value, campaign.builderHammers));
 const townScene = ref(null);
 const eraRevealed = ref(false);
+const eraReady = ref(false);
+const eraFallback = ref(false);
 const sceneTown = computed(() =>
   town.value.transition?.pending && !eraRevealed.value
     ? { ...town.value, era: town.value.transition.from }
@@ -728,6 +734,7 @@ watch(
   () => town.value.transition?.id,
   () => {
     eraRevealed.value = false;
+    eraReady.value = false;
   },
 );
 function beginEra() {
