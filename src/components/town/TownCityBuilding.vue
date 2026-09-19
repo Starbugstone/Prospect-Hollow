@@ -1,16 +1,41 @@
 <template>
   <g stroke-linejoin="round" stroke-linecap="round">
     <g v-if="family === 'airport'">
+      <path d="M-255-115-90-175 125-100 125 95-140 165Z" fill="#91a66e" />
       <path d="M-245-110-95-165 10 100-140 155Z" fill="#657777" />
       <path d="M-172-122-65 118" stroke="#e1cfab" stroke-width="5" stroke-dasharray="15 12" />
-      <path d="M-62-106 81-67 81 19-62-20Z" fill="#e1cfab" />
+      <path d="M-62-106 81-67 81 19-62-20Z" :fill="airport.wall" />
       <path d="M-52-90 71-57v45L-52-43Z" fill="#85b8c8" />
+      <path d="M-70-110-29-135 90-99 81-62Z" :fill="airport.roof" />
+      <path d="M-31-82v45M9-71v45M49-61v45" :stroke="airport.frame" stroke-width="4" />
+      <g v-if="airport.clerestory">
+        <path d="M-44-122v-32l107 30v34Z" :fill="airport.wall" />
+        <path d="M-37-142 55-116v15l-92-26Z" fill="#85b8c8" />
+        <path d="M-50-157-19-174 72-147 64-120Z" :fill="airport.roof" />
+        <path d="M-46-130 63-99" :stroke="airport.frame" stroke-width="5" />
+      </g>
+      <g v-if="airport.curtainWall" stroke="#e1cfab" stroke-width="3">
+        <path d="M-51-45V-91m20 51v-46m20 52v-46m20 52v-46m20 52v-46m20 52v-46" />
+        <path d="M-44-115-24-126 55-102 39-89Z" fill="#85b8c8" />
+      </g>
       <path
         d="M32-74v-112h27v120M14-177v-30h64v30Z"
-        fill="#648d89"
+        :fill="airport.roof"
         stroke="#e1cfab"
         stroke-width="3"
       />
+      <path d="M17-182h58M35-202v24m21-24v24" stroke="#e1cfab" stroke-width="3" />
+      <path d="M-24 42V12q41-43 88 15v34Z" :fill="airport.roof" stroke="#e1cfab" stroke-width="3" />
+      <path d="M-17 39V14l74 21v23Z" fill="#648d89" stroke="#e1cfab" stroke-width="3" />
+      <path d="M3 20v23m24-17v24" stroke="#e1cfab" stroke-width="3" />
+      <g v-if="level >= 2">
+        <path d="M-62-20-62 5 16 27 16 1Z" fill="#85b8c8" stroke="#e1cfab" stroke-width="3" />
+        <path d="M-67-24-45-37 29-15 17 4Z" :fill="airport.roof" />
+      </g>
+      <g v-if="level >= 3" stroke="#e1cfab" stroke-width="3">
+        <path d="M92 68V9" />
+        <path d="m92 9 32 10-5 7-27-5Z" fill="#c97868" />
+      </g>
       <path
         d="M-147-60-144-32-102-9-108-2-143-13-137 12-149 14-160-11-185-4-189-11-162-31-166-56Z"
         fill="#e1cfab"
@@ -147,7 +172,7 @@
       <path d="M-116-115-48-144 7-121-57-93Z" fill="#638b88" />
       <path v-if="modern" d="m-96-116 59 19m-47-25 59 20" stroke="#9cbbb5" stroke-width="4" />
     </g>
-    <g v-if="level >= 2">
+    <g v-if="level >= 2 && family !== 'airport'">
       <path
         v-if="!garden && kind !== 'bridge'"
         d="M-122-2v-89l33 9v90Z"
@@ -158,7 +183,7 @@
       <path d="M-107 8v-11h24v17Z" fill="#ddd1ae" />
       <circle cx="-95" cy="-8" r="11" fill="#8fa773" />
     </g>
-    <g v-if="level >= 3" stroke="#638b88" stroke-width="4">
+    <g v-if="level >= 3 && family !== 'airport'" stroke="#638b88" stroke-width="4">
       <path d="M-108 9v-52m216 49v-52" />
       <path v-if="modern" d="M-118-43h20m196-3h20" stroke="#d5c194" stroke-width="7" />
       <g v-else fill="#eddda9"
@@ -171,6 +196,7 @@
 import { computed } from 'vue';
 import { eraEvolution } from '../../data/eras';
 import { CITY_FAMILIES } from '../../data/city';
+import { airportAppearance } from '../../data/airport';
 import TownLeisureBuilding from './TownLeisureBuilding.vue';
 import TownSquare from './TownSquare.vue';
 const props = defineProps({
@@ -180,6 +206,7 @@ const props = defineProps({
   serviceLevel: { type: Number, default: 3 },
 });
 const family = computed(() => CITY_FAMILIES[props.kind]);
+const airport = computed(() => airportAppearance(props.era));
 const modern = computed(() => eraEvolution(props.era).tallCity);
 const garden = computed(() => ['park', 'field', 'square'].includes(family.value));
 const height = computed(() => (family.value === 'residence' ? 135 : 110));

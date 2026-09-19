@@ -5,6 +5,7 @@ Coordinates in authoring helpers use the game's X/Y-up/Z convention.
 """
 import bpy
 import math
+import json
 import sys
 from pathlib import Path
 from mathutils import Vector
@@ -45,37 +46,136 @@ def tower(height=10):
     rod('Broadcast antenna',(0,height,0),(0,height+2,0),.055,charcoal)
     for y in [height+.5,height+1,height+1.5]:rod('Aerial element',(-.55,y,0),(.55,y,0),.035,charcoal)
 
-model('airport')
-box('Regional airfield apron',(20,.14,40),(0,.02,0),'#9baba2',0)
-box('North south runway',(4.8,.055,38),(-5,.12,0),'#657777',0)
-for z in range(-16,18,4):box('Runway center stripe',(.12,.012,1.6),(-5,.155,z),cream,0)
-for z in [-17.5,17.5]:
-    for x in [-6.5,-5.9,-5.3,-4.7,-4.1,-3.5]:box('Threshold piano key',(.3,.013,1.6),(x,.155,z),cream,0)
-for x in [-7.6,-2.4]:
-    for z in range(-18,20,3):
-        box('Runway edge light',(.15,.13,.15),(x,.2,z),gold,0)
-box('Taxiway',(4,.06,2.2),(-.6,.13,7), '#788b87',0)
-box('Terminal concourse',(6.4,2.3,9),(4.3,1.3,-2),cream)
-box('Cantilever terminal roof',(7.2,.22,10),(4.1,2.6,-2),teal)
-for z in [-5,-3,-1,1]:
-    box('Airside terminal glazing',(.08,1.5,1.7),(1.06,1.5,z),glass,0)
-    box('Terminal bay pier',(.2,2.25,.15),(.95,1.28,z+1),cream)
-box('Control tower shaft',(1.6,5.8,1.8),(5.6,3.1,-8),cream)
-box('Panoramic control room',(2.8,1.25,2.6),(5.6,6.3,-8),glass,.16)
-box('Control tower roof',(3.1,.2,2.9),(5.6,7.05,-8),teal)
-rod('Control aerial',(5.6,7.1,-8),(5.6,8.3,-8),.045,charcoal)
-# Connected arched hangar surface.
-loft('Barrel hangar shell',[(4.5,1.4,8,3,1.8),(4.5,1.4,13,3,1.8)],teal)
-box('Hangar door',(5.7,2.7,.12),(4.5,1.5,7.9),charcoal)
-for x in [2,3,4,5,6,7]:box('Hangar door rib',(.04,2.65,.04),(x,1.5,7.8),cream,0)
+def airport(style):
+    model(style['asset'])
+    box('Airfield grass verge',(20,.14,40),(0,.02,0),'#91a66e',0)
+    box('Terminal and hangar apron',(10.2,.05,27),(3.8,.115,1.5),'#9baba2',0)
+    box('North south runway',(4.8,.055,38),(-5,.12,0),'#657777',0)
+    for z in range(-16,18,4):box('Runway center stripe',(.12,.012,1.6),(-5,.155,z),cream,0)
+    for z in [-17.5,17.5]:
+        for x in [-6.5,-5.9,-5.3,-4.7,-4.1,-3.5]:box('Threshold piano key',(.3,.013,1.6),(x,.155,z),cream,0)
+    for x in [-7.6,-2.4]:
+        for z in range(-18,20,3):
+            box('Runway edge light',(.15,.13,.15),(x,.2,z),gold,0)
+    box('Taxiway',(4.1,.06,3),(-.6,.13,6), '#788b87',0)
+    box('Taxiway guide',(3.8,.012,.09),(-.6,.168,6),gold,0)
+    box('Passenger forecourt',(7.1,.12,11),(4.65,.2,-2.4),cream)
+    box('Terminal plinth',(6.2,.27,7.8),(4.5,.37,-3),teal)
+    box('Terminal concourse',(6,2.2,7.6),(4.5,1.55,-3),glass if style['curtainWall'] else style['wall'])
+    box('Terminal roof fascia',(6.5,.18,8.1),(4.5,2.72,-3),style['frame'])
+    box('Cantilever terminal roof',(6.7,.19,8.3),(4.5,2.89,-3),style['roof'],.06)
+    # Repeated framed bays on both long elevations read from either orbit direction.
+    for x in [1.46,7.54]:
+        for z in [-5.65,-3.3,-.95]:
+            box('Recessed terminal bay',(.055,1.5,1.92),(x,1.65,z),charcoal,0)
+            box('Terminal glass',(.07,1.3,1.74),(x,1.66,z),glass,0)
+            box('Terminal window mullion',(.09,1.42,.065),(x,1.66,z),cream,0)
+            box('Terminal window sill',(.18,.1,2),(x,1,z),cream,0)
+    glazing(4.5,1.65,.835,4.6,1.45)
+    box('Entrance door frame',(1.3,1.9,.08),(4.5,1.42,.9),teal,0)
+    glazing(4.5,1.44,.95,1.08,1.7)
+    box('Entrance canopy',(5.2,.17,1.25),(4.5,2.36,1.3),teal)
+    for x in [2.15,6.85]:
+        box('Canopy column',(.13,2.1,.13),(x,1.31,1.78),cream)
+    box('Entrance step',(5.2,.12,1.2),(4.5,.23,1.45),cream)
+    # The tower grows from the terminal's north corner, with a framed lookout cabin.
+    box('Control tower base',(2.05,.26,2.25),(5.8,.34,-6.2),teal)
+    box('Control tower shaft',(1.85,4.65,2.05),(5.8,2.7,-6.2),style['wall'],.06)
+    for y in [3.4,4.25]:
+        glazing(5.8,y,-5.155,.65,.42)
+    box('Control cabin sill',(2.8,.2,2.8),(5.8,5.08,-6.2),teal)
+    box('Panoramic control room',(2.5,1.05,2.5),(5.8,5.7,-6.2),glass,.06)
+    for x in [4.54,5.8,7.06]:
+        for z in [-7.46,-4.94]:
+            box('Control room frame',(.09,1.13,.09),(x,5.7,z),cream,0)
+    for x in [4.54,7.06]:
+        box('Side cabin mullion',(.09,1.13,.09),(x,5.7,-6.2),cream,0)
+    box('Control tower roof',(2.95,.2,2.95),(5.8,6.33,-6.2),style['roof'],.06)
+    rod('Control aerial',(5.8,6.43,-6.2),(5.8,7.3,-6.2),.035,charcoal)
+    ball('Tower beacon',(.09,.09,.09),(5.8,7.32,-6.2),coral)
 
-model('airport-wing')
-box('Expanded passenger lounge',(6,1.9,3),(4.2,1.12,4.3),glass)
-box('Lounge roof',(6.6,.18,3.4),(4.2,2.15,4.3),cream)
-model('airport-finish')
-for z in [-11,-6,0,5]:
-    rod('Apron lamp',(8.5,.15,z),(8.5,3.8,z),.065,teal)
-    box('Apron floodlight',(.6,.15,.3),(8.5,3.85,z),gold)
+    # A true barrel vault above straight walls: flat end caps and radial roof normals.
+    # The former full elliptical loft dipped below the apron and rounded the end faces.
+    def hangar_vault(name, front, back, radius, color):
+        profile = [(4.5+math.cos(i*math.pi/12)*radius,
+                    1.9+math.sin(i*math.pi/12)*1.25) for i in range(13)]
+        vertices = [tuple(vec((x,y,z))) for z in [front,back] for x,y in profile]
+        faces = [(i,i+1,i+14,i+13) for i in range(12)]
+        faces += [tuple(reversed(range(13))),tuple(range(13,26)), (0,13,25,12)]
+        mesh = bpy.data.meshes.new(name)
+        mesh.from_pydata(vertices,[],faces)
+        mesh.update()
+        obj = bpy.data.objects.new(name,mesh)
+        bpy.context.collection.objects.link(obj)
+        finish(obj,name,color)
+
+    box('Hangar foundation',(6.2,.2,6.6),(4.5,.24,10),cream)
+    box('Hangar walls',(5.8,1.6,6.2),(4.5,1.08,10),cream)
+    hangar_vault('Faceted barrel hangar roof',6.75,13.25,3.05,style['roof'])
+    for z in [6.73,13.27]:
+        # Raised narrow arch trim follows the roof profile without a swollen end cap.
+        for i in range(12):
+            a,b = i*math.pi/12,(i+1)*math.pi/12
+            rod('Hangar arch trim',(4.5+3.05*math.cos(a),1.9+1.25*math.sin(a),z),
+                (4.5+3.05*math.cos(b),1.9+1.25*math.sin(b),z),.045,cream)
+        box('Hangar sliding door',(5.3,1.6,.08),(4.5,1.06,z),charcoal,0)
+        for x in [2,3,4,5,6,7]:
+            box('Hangar door panel',(.92,1.43,.1),(x,1.07,z),teal,0)
+            box('Hangar door window',(.65,.3,.115),(x,1.52,z),glass,0)
+    box('Hangar apron guide',(.09,.012,2),(4.5,.15,5.8),gold,0)
+
+    # Era architecture is baked into the base, not floated above a historic roof.
+    if style['clerestory']:
+        box('Stepped departure hall',(5.2,1.15,4.5),(4.5,3.5,-2.8),style['wall'])
+        glazing(4.5,3.55,-.52,4.7,.7)
+        for x in [1.88,7.12]:
+            box('Clerestory ribbon',(.07,.65,3.9),(x,3.55,-2.8),glass,0)
+            for z in [-4.4,-3.3,-2.2,-1.1]:
+                box('Clerestory frame',(.1,.75,.075),(x,3.55,z),charcoal,0)
+        box('Departure hall parapet',(5.65,.22,4.9),(4.5,4.13,-2.8),style['roof'])
+        box('Period coral fascia',(5.7,.12,5),(4.5,3.97,-2.8),style['frame'])
+    if style['curtainWall']:
+        for x in [1.43,7.57]:
+            for z in [-6.5,-5.3,-4.1,-2.9,-1.7,-.5,.65]:
+                box('Curtain wall fin',(.22,2.15,.085),(x,1.58,z),cream,0)
+        box('Floating roof cap',(6.95,.13,8.5),(4.5,3.1,-3),cream)
+    if style['skylights']:
+        for z in [-3.8,-1.8]:
+            box('Rooflight upstand',(3.5,.18,1.25),(4.5,3.22,z),charcoal)
+            box('Blue glass rooflight',(3.3,.12,1.08),(4.5,3.36,z),glass)
+            for x in [3.4,4.5,5.6]:
+                box('Rooflight glazing bar',(.065,.14,1.12),(x,3.37,z),cream,0)
+
+    model(style['asset']+'-wing')
+    box('Lounge plinth',(6.2,.22,2.6),(4.5,.29,3.6),teal)
+    box('Expanded passenger lounge',(6,1.65,2.5),(4.5,1.21,3.6),glass if style['curtainWall'] else style['wall'])
+    glazing(4.5,1.28,4.88,5.4,1.18)
+    for x in [1.46,7.54]:
+        box('Lounge side glazing',(.06,1.18,2),(x,1.28,3.6),glass,0)
+        box('Lounge side mullion',(.09,1.3,.065),(x,1.28,3.6),cream,0)
+    box('Lounge roof fascia',(6.45,.13,2.85),(4.5,2.09,3.6),style['frame'])
+    box('Lounge roof',(6.6,.18,3),(4.5,2.24,3.6),style['roof'])
+    model(style['asset']+'-finish')
+    for z in [-9.5,5.8]:
+        rod('Apron lamp',(8.3,.15,z),(8.3,3.3,z),.065,teal)
+        box('Apron floodlight',(.65,.15,.35),(8.3,3.35,z),gold)
+    for z in [-3.8,-.8]:
+        box('Forecourt planter',(.6,.38,1.5),(8.15,.37,z),cream)
+        box('Clipped forecourt shrub',(.5,.45,1.35),(8.15,.75,z),'#91a66e',.13)
+    # A small period windsock provides an aviation cue without cluttering the roofline.
+    rod('Windsock mast',(7.9,.15,16),(7.9,3,16),.045,cream)
+    loft('Windsock',[(7.9,2.95,16,.22,.22),(7.9,2.92,16.4,.18,.18)],coral)
+    loft('Windsock band',[(7.9,2.92,16.4,.18,.18),(7.9,2.86,16.8,.13,.13)],cream)
+    loft('Windsock tip',[(7.9,2.86,16.8,.13,.13),(7.9,2.78,17.2,.07,.07)],coral)
+
+    if style['clerestory'] or style['curtainWall']:
+        rod('Departures board post',(8.1,.2,3.6),(8.1,1.65,3.6),.06,charcoal)
+        signboard(8.1,1.85,3.6,1.1,.7,style['curtainWall'])
+
+
+airport_styles = json.loads((art.output.parent / 'data' / 'airportStyles.json').read_text())
+for style in airport_styles.values():
+    airport(style)
 
 model('airplane')
 loft('Tapered passenger fuselage',[(0,.8,-3.2,.1,.13),(0,.9,-2,.48,.48),(0,.9,1.9,.5,.5),(0,.82,2.8,.24,.28),(0,.8,3.15,.02,.04)],cream)
@@ -174,8 +274,15 @@ if '--meshes-only' in sys.argv:
 
 # Retain a standard interchange export as well as the compact runtime export.
 bpy.ops.export_scene.gltf(filepath=str(SOURCE / 'future.glb'), export_format='GLB')
-for i, (name, root) in enumerate(models.items()):
-    root.location = vec(((-26 if i == 0 else (i-1)%4*12-10), 0, (0 if i == 0 else (i-1)//4*13-20)))
+airport_names = {style['asset']: i for i, style in enumerate(airport_styles.values())}
+other_index = 0
+for name, root in models.items():
+    airport_name = next((base for base in airport_names if name in [base,base+'-wing',base+'-finish']), None)
+    if airport_name:
+        root.location = vec((airport_names[airport_name]*25-25,0,-20))
+    else:
+        root.location = vec((other_index%5*12-25,0,15+other_index//5*13))
+        other_index += 1
 
 bpy.ops.object.light_add(type='AREA', location=(0,-8,35))
 bpy.context.object.data.energy = 15000
@@ -190,7 +297,7 @@ bpy.ops.object.camera_add(location=(40,-60,65))
 camera = bpy.context.object
 camera.rotation_euler = (Vector((0,0,.5))-camera.location).to_track_quat('-Z','Y').to_euler()
 camera.data.type = 'ORTHO'
-camera.data.ortho_scale = 100
+camera.data.ortho_scale = 125
 scene = bpy.context.scene
 scene.camera = camera
 scene.render.engine = 'CYCLES'

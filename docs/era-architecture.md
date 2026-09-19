@@ -36,6 +36,16 @@ identity can come from its configured asset family, detail asset and capabilitie
 An era still needs its actual content: campaign placement, buildings, projects,
 translated copy and any new art. A definition does not manufacture those assets.
 
+Airport architecture uses the optional `airportStyle` capability. The shared
+`src/data/airportStyles.json` catalog drives Blender authoring, runtime asset
+selection and the SVG fallback through `airportAppearance()`. Regional (1958),
+metropolitan (1986) and connected (2005) definitions each export a base, lounge
+and finishing stage. New eras can inherit a style without renderer changes;
+missing or unsupported styles safely use the regional airport. The renderer
+receives the building's completed era, so entering a new town era alone never
+modernizes the airport. `testing/airport-art.test.js` checks extension/fallback,
+stage selection, site bounds and wing clearance.
+
 ## Introduce a genuinely new style
 
 Extend the documented `BuildingStyle` / `EraEvolution` contract and defaults in
