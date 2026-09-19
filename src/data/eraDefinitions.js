@@ -13,6 +13,7 @@
  * @property {readonly number[]|null} prices Three modernization prices; never mining rewards.
  * @property {string|null} cityAssets Blender asset family shared by city eras.
  * @property {string|null} detailAsset
+ * @property {string|null} airportStyle Airport architecture from airportStyles.json.
  * @property {boolean} digitalCity
  * @property {boolean} tallCity
  * @property {string|null} cityDescription
@@ -108,6 +109,7 @@ export function defineEra(definition) {
     prices: null,
     cityAssets: null,
     detailAsset: null,
+    airportStyle: null,
     digitalCity: false,
     tallCity: false,
     cityDescription: null,

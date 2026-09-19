@@ -1,5 +1,6 @@
 import { MINE_SHAFT, addMineShaft, mineTrackHeight, mineTrackPitch } from './TownMineShaft';
 import { TownPresentation } from './TownPresentation';
+import { ERA_CONSTRUCTION } from '../../data/mineEvolution';
 import { isCityEra } from '../../data/city';
 import { eraEvolution } from '../../data/eras';
 import { TownRenderQuality } from './TownRenderQuality';
@@ -418,7 +419,7 @@ export class TownDiorama {
             else this.building(group, kind, stage, labels[id]);
           }
           if (!industrial && !['fisherman', 'blacksmith', 'school', 'doctor'].includes(kind))
-            movingPart = addImprovements(this, group, kind, stage);
+            movingPart = addImprovements(this, group, kind, stage, town.buildingEras[id]);
           if (!industrial)
             renderModernization(
               this,
@@ -1280,50 +1281,31 @@ export class TownDiorama {
   presentationFrame(time, still = false) {
     this.presentation?.frame(time, still);
   }
-  setCinematic(enabled) {
+  setCinematic(enabled, transition = this.town.transition) {
     if (!!this.cinematic === enabled) return;
     if (enabled) {
+      if (!transition) return;
       this.cinematic = {
-        startPosition: this.camera.position.clone(),
-        startTarget: this.controls.target.clone(),
-        era: this.town.era,
+        presentation: new TownPresentation(this, {
+          id: 'era-mine',
+          from: transition.from,
+          to: transition.to,
+        }),
+        finished: false,
       };
       this.overview = false;
     } else {
+      const presentation = this.cinematic?.presentation;
       this.cinematic = null;
-      this.overview = true;
-      this.frameTown();
+      presentation?.dispose();
       this.render();
     }
-    this.controls.enabled = !enabled;
+    this.controls.enabled = !enabled && !this.paused && !this.eventCamera;
   }
-  eraFrame(progress) {
-    const shot = this.cinematic;
-    if (!shot) return;
-    shot.finished = progress >= 1;
-    const [x, z] = PLOTS.square;
-    const square = point(x, 1, z);
-    const distance = this.camera.aspect < 0.8 ? 38 : 26;
-    const close = square
-      .clone()
-      .add(point(Math.sin(0.65) * distance, distance * 0.65, Math.cos(0.65) * distance));
-    const smooth = (value) => value * value * (3 - 2 * value);
-    if (this.town.era !== shot.era && !shot.endPosition) {
-      this.frameTown();
-      shot.endPosition = this.camera.position.clone();
-      shot.endTarget = this.controls.target.clone();
-    }
-    if (progress < 6 / 14 || !shot.endPosition) {
-      const amount = smooth(Math.min(1, (progress * 14) / 6));
-      this.camera.position.lerpVectors(shot.startPosition, close, amount);
-      this.controls.target.lerpVectors(shot.startTarget, square, amount);
-    } else {
-      const amount = smooth((progress * 14 - 6) / 8);
-      this.camera.position.lerpVectors(close, shot.endPosition, amount);
-      this.controls.target.lerpVectors(square, shot.endTarget, amount);
-    }
-    this.camera.lookAt(this.controls.target);
-    this.render();
+  eraFrame(progress, still = false) {
+    if (!this.cinematic) return;
+    this.cinematic.finished = progress >= 1;
+    this.cinematic.presentation.frame(progress * ERA_CONSTRUCTION.duration, still);
   }
   cameraAction(action) {
     if (!this.controls.enabled) return;
@@ -1348,6 +1330,7 @@ export class TownDiorama {
     this.renderer.setAnimationLoop(enabled && !this.contextUnavailable ? this.tick : null);
   }
   dispose() {
+    this.cinematic?.presentation.dispose(false);
     this.presentation?.dispose(false);
     this.canvas.removeEventListener('webglcontextlost', this.contextLost);
     cancelAnimationFrame(this.cameraFrame);

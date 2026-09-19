@@ -236,6 +236,8 @@ const emit = defineEmits([
   'camera-distance',
   'presentation-ready',
   'presentation-unavailable',
+  'cinematic-ready',
+  'cinematic-unavailable',
 ]);
 const eventInset = ref(null);
 const canvas = ref(null),
@@ -281,9 +283,13 @@ function collectionOrigin(id) {
   };
 }
 let presentationTime = 0;
+let cinematicProgress = 0;
 defineExpose({
   collectionOrigin,
-  cinematicFrame: (progress) => scene?.eraFrame(progress),
+  cinematicFrame: (progress) => {
+    cinematicProgress = progress;
+    scene?.eraFrame(progress, props.reducedMotion);
+  },
   presentationFrame: (time) => {
     presentationTime = time;
     scene?.presentationFrame(time, props.reducedMotion);
@@ -354,6 +360,8 @@ const cameraKey = (event) => {
 };
 function update() {
   if (fallback.value) {
+    emit('cinematic-unavailable');
+    emit('cinematic-ready');
     emit('presentation-unavailable');
     emit('presentation-ready');
     return;
@@ -391,7 +399,11 @@ function update() {
     scene.presentationFrame(presentationTime, props.reducedMotion);
     emit('presentation-ready');
   }
-  scene.setCinematic(props.cinematic);
+  scene.setCinematic(props.cinematic, props.town.transition);
+  if (props.cinematic) {
+    scene.eraFrame(cinematicProgress, props.reducedMotion);
+    emit('cinematic-ready');
+  }
   scene.setAvailable([...availableIds.value, ...(props.town.income.stored > 0 ? ['saloon'] : [])]);
   scene.setUpgradeable(props.cinematic ? [] : upgradeIds.value);
   scene.select(props.selected);
@@ -429,6 +441,8 @@ async function recoverGraphics(error, contextLost = false) {
 function useFallback(error) {
   if (disposed || fallback.value) return;
   fallback.value = true;
+  emit('cinematic-unavailable');
+  emit('cinematic-ready');
   emit('presentation-unavailable');
   emit('presentation-ready');
   // Let an in-progress render finish unwinding before releasing its resources.
@@ -522,7 +536,13 @@ watch(
 watch(
   () => props.cinematic,
   (value) => {
-    scene?.setCinematic(value);
+    cinematicProgress = 0;
+    scene?.setCinematic(value, props.town.transition);
+    if (value && scene) emit('cinematic-ready');
+    if (value && fallback.value) {
+      emit('cinematic-unavailable');
+      emit('cinematic-ready');
+    }
     scene?.setUpgradeable(value ? [] : upgradeIds.value);
   },
 );

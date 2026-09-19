@@ -21,7 +21,7 @@ import {
 } from '../src/game/town/TownLayout';
 import { powerGrid, motorTraffic } from '../src/game/town/TownEvolution';
 import { groundHeight } from '../src/game/town/TownLandscape';
-import { airplanePose } from '../src/game/town/TownAviation';
+import { airplanePose, AIRPORT_FLIGHT_CYCLE } from '../src/game/town/TownAviation';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { addScaffolding } from '../src/game/town/TownImprovements';
@@ -122,13 +122,15 @@ it('reserves a multi-parcel western airfield and a clear flight path perpendicul
   expect(RAIL_EDGE.from[1]).toBe(RAIL_EDGE.to[1]);
   for (let x = -58; x <= -38; x += 2)
     for (let z = -16; z <= 24; z += 2) expect(groundHeight(x, z)).toBe(0);
-  for (let t = 0; t < 36; t += 0.1) {
+  for (let t = 0; t < AIRPORT_FLIGHT_CYCLE; t += 0.1) {
     const p = airplanePose(t);
-    expect(p.y - groundHeight(AIRPORT.runwayX, p.z)).toBeGreaterThan(0.1);
-    expect(p.z).toBeGreaterThan(RAIL_EDGE.from[1] + 4);
+    if (!p.visible) continue;
+    expect(p.y - groundHeight(p.x, p.z)).toBeGreaterThan(0.1);
+    if (p.y < 4) expect(p.z).toBeGreaterThan(RAIL_EDGE.from[1] + 4);
+    if (Math.abs(p.z - RAIL_EDGE.from[1]) < 4) expect(p.y).toBeGreaterThan(4);
   }
   expect(airplanePose(0).y).toBe(0.2);
-  expect(airplanePose(30).y).toBeGreaterThan(10);
+  expect(airplanePose(65).y).toBeGreaterThan(10);
 });
 it.each(['motor-age', 'post-war', 'aviation', 'broadcast', 'contemporary'])(
   'keeps %s horse-field scaffolding outside the live pasture',

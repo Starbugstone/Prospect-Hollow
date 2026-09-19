@@ -5,6 +5,7 @@ Coordinates in authoring helpers use the game's X/Y-up/Z convention.
 """
 import bpy
 import math
+import json
 import sys
 from pathlib import Path
 from mathutils import Vector
@@ -31,7 +32,7 @@ def planter(x,z):
 def canopy(x,y,z,w,modern):
     box('Floating canopy',(w,.13,1.25),(x,y,z),teal)
     for dx in [-w/2+.12,w/2-.12]:rod('Slender canopy support',(x+dx,.1,z+.38),(x+dx,y,z+.38),.045,cream)
-    if modern:
+    if style['solar']:
         for i in range(3):box('Solar canopy strip',(w-.15,.035,.24),(x,y+.09,z-.42+i*.4),'#526f79',0)
 def hall(family,modern):
     height=3.4 if family=='residence' else 2.65
@@ -41,9 +42,10 @@ def hall(family,modern):
         for x in [-1.22,-.4,.42,1.24]:window(x,y,1.46,.55,.8)
     box('Sheltered entrance',(.68,1.25,.12),(0,.81,1.52),teal)
     box('Flat roof cornice',(3.95,.18,3.1),(0,height+.25,0),teal)
-    if modern:
+    if style['timberFins']:
         for x in [-1.72,1.72]:
             for dx in [-.14,0,.14]:box('Timber facade fin',(.065,height,.14),(x+dx,height/2+.22,1.55),timber,0)
+    if style['roofGarden']:
         box('Roof garden bed',(2.65,.2,1.4),(0,height+.43,-.4),green)
     else:
         box('Horizontal masonry band',(3.85,.15,.14),(0,2.22,1.55),brick)
@@ -71,8 +73,10 @@ def hall(family,modern):
         rod('Clock hand',(0,2.95,1.62),(0,3.15,1.62),.018,teal)
         rod('Clock hand',(0,2.95,1.62),(.17,2.88,1.62),.018,teal)
 
-for era in ['post-war','contemporary']:
-    modern=era=='contemporary'
+styles = json.loads((art.output.parent / 'data' / 'cityStyles.json').read_text())
+for era,style in styles.items():
+    modern=style['modern']
+    cream,teal,brick = style['wall'],style['roof'],style['brick']
     for family in ['residence','civic','culture','research','retail','depot','farm','water','station','river']:
         model(f'{era}-{family}')
         if family in ['residence','civic','culture','research','retail']:hall(family,modern)
@@ -83,7 +87,7 @@ for era in ['post-war','contemporary']:
             for z in [-.85,0,.85]:
                 roof=box('Sawtooth workshop roof',(4.05,.15,.93),(0,2.4,z),teal)
                 roof.rotation_euler.x=.23
-                if modern:box('Workshop roof panel',(2.7,.06,.5),(0,2.61,z),'#526f79',0)
+                if style['solar']:box('Workshop roof panel',(2.7,.06,.5),(0,2.61,z),'#526f79',0)
         elif family=='farm':
             box('Packing barn',(2.7,1.8,2.6),(-.55,1,0),brick)
             roof=box('Packing roof',(3,.18,2.85),(-.55,1.98,0),teal);roof.rotation_euler.x=.12
@@ -120,6 +124,24 @@ for era in ['post-war','contemporary']:
             box('Landing pavilion',(2.1,1.65,1.9),(-.8,.98,-.4),glass if modern else cream)
             canopy(-.6,2.05,0,3.3,modern)
             for x in [-2.25,2.25]:rod('Quay bollard',(x,.1,1.45),(x,.65,1.45),.1,teal)
+        if style['streamlined']:
+            if family in ['residence','civic','culture','research','retail','depot']:
+                h = 3.4 if family == 'residence' else 2.65
+                box('Mid-century floating cornice',(4.25,.16,3.4),(0,h+.4,0),teal)
+                box('Mid-century ribbon surround',(3.5,.95,.1),(0,1.6,1.52),cream)
+                box('Mid-century window ribbon',(3.3,.72,.12),(0,1.6,1.56),glass,0)
+                for x in [-1.1,0,1.1]:box('Ribbon mullion',(.07,.78,.15),(x,1.6,1.58),cream,0)
+            else:
+                canopy(-.6,2.5,1.3,3.2,False)
+        if modern and not style['roofGarden']:
+            if family in ['residence','civic','culture','research','retail']:
+                h = 3.4 if family == 'residence' else 2.65
+                box('Late-century stepped parapet',(3.5,.42,2.65),(0,h+.52,-.12),cream)
+                box('Dark parapet coping',(3.65,.12,2.8),(0,h+.78,-.12),teal)
+                for x in [-1.65,1.65]:box('Concrete facade blade',(.18,h+.2,.38),(x,h/2+.25,1.6),cream)
+            else:
+                box('Utility service cabinet',(.65,1.25,.7),(-2.2,.73,-1.1),teal)
+                window(-2.2,1,-.73,.48,.38)
         # Level additions have separate models so shared meshes are exported just once.
     model(f'{era}-wing')
     box('Side service wing',(1.1,1.85,2),(-2.35,1,.1),cream if modern else brick)
@@ -130,7 +152,7 @@ for era in ['post-war','contemporary']:
     for x in [-1.4,1.4]:
         planter(x,-1.9)
         rod('Civic lamp',(x,.1,2),(x,1.9,2),.04,teal)
-        if modern:box('Flat lamp head',(.5,.08,.22),(x,1.95,2),'#ecdbaa')
+        if not style['globeLights']:box('Flat lamp head',(.5,.08,.22),(x,1.95,2),'#ecdbaa')
         else:ball('Globe lamp',(.16,.19,.16),(x,2.03,2),'#ecdbaa')
     model(f'{era}-garden')
     canopy(-1.4,2.65,-1.75,2.3,modern)
@@ -165,10 +187,10 @@ for era in ['post-war','contemporary']:
             rod('Axle',(-width*.54,.25,z),(width*.54,.25,z),.17,'#4e5d57')
         for z in [-length*.2,0,length*.2]:
             box('Window divider',(width,.46,.035),(0,.89,z),teal,0)
-        if vehicle=='railcar' and modern:
+        if vehicle=='railcar' and style['electricVehicles']:
             rod('Electric pickup',(-.25,1.22,0),(0,1.65,.25),.035,teal)
             rod('Electric pickup',(0,1.65,.25),(.25,1.22,0),.035,teal)
-        if vehicle=='bus' and modern:box('Electric bus roof pack',(.55,.15,.75),(0,1.32,-.3),teal)
+        if vehicle=='bus' and style['electricVehicles']:box('Electric bus roof pack',(.55,.15,.75),(0,1.32,-.3),teal)
 
     model(f'{era}-boat')
     loft('Shaped river hull',[(0,0,-2.6,.18,.15),(0,0,-1.7,1,.33),(0,0,1.65,1,.33),(0,.05,2.6,.12,.18)],teal if modern else '#765c42')
@@ -178,7 +200,7 @@ for era in ['post-war','contemporary']:
     for side in [-1,1]:
         for z in [-.8,0,.8]:box('Cabin window',(.06,.42,.48),(side*.71,.87,z),glass,0)
         rod('Deck handrail',(side*.88,.75,-1.85),(side*.88,.75,1.85),.035,cream)
-    if modern:
+    if style['electricVehicles']:
         for z in [-.9,-.3,.3]:box('Solar ferry roof panel',(1.5,.035,.43),(0,1.38,z),'#526f79',0)
         box('Quiet electric pilot cabin',(1.1,.4,.65),(0,1.46,.8),glass)
     else:
@@ -215,18 +237,25 @@ if '--meshes-only' in sys.argv:
 # Retain a standard interchange export as well as the compact runtime export.
 bpy.ops.export_scene.gltf(filepath=str(SOURCE / 'city.glb'), export_format='GLB')
 for i, (name, root) in enumerate(models.items()):
-    root.location = vec(((i%7-3)*8, 0, (i//7-2)*7))
+    root.location = vec(((i%10-4.5)*8, 0, (i//10-4)*7))
 
 bpy.ops.object.light_add(type='AREA', location=(0,-8,35))
 bpy.context.object.data.energy = 15000
 bpy.context.object.data.shape = 'DISK'
 bpy.context.object.data.size = 35
-bpy.context.scene.world.color = (.65,.65,.65)
+world = bpy.context.scene.world
+world.use_nodes = True
+world.node_tree.nodes['Background'].inputs['Color'].default_value = (.65,.65,.65,1)
+world.node_tree.nodes['Background'].inputs['Strength'].default_value = .8
+bpy.ops.object.light_add(type='SUN', location=(8,-10,20))
+bpy.context.object.rotation_euler = (.4,-.5,-.4)
+bpy.context.object.data.energy = 1.5
+bpy.context.object.data.angle = .35
 bpy.ops.object.camera_add(location=(33,-43,45))
 camera = bpy.context.object
 camera.rotation_euler = (Vector((0,0,.5))-camera.location).to_track_quat('-Z','Y').to_euler()
 camera.data.type = 'ORTHO'
-camera.data.ortho_scale = 70
+camera.data.ortho_scale = 105
 scene = bpy.context.scene
 scene.camera = camera
 scene.render.engine = 'CYCLES'

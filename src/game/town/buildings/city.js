@@ -1,5 +1,7 @@
 import { ERAS, eraEvolution } from '../../../data/eras';
 import { resolveCityAsset } from '../../../data/eraDefinitions';
+import { airportAppearance } from '../../../data/airport';
+import { addCityLandmarkDetails } from './CityLandmarkDetails';
 import { addFishingDock } from './river';
 import { CITY_FAMILIES, isCityEra } from '../../../data/city';
 import { blenderModel, leisureModel } from '../LeisureAssets';
@@ -23,17 +25,20 @@ export function renderCityBuilding(d, parent, kind, label, level, era, serviceLe
   const landmark = ['airport', 'radio', 'concert', 'television', 'skyline'].includes(family);
   const profile = eraEvolution(era);
   const connected = profile.digitalCity;
-  if (profile.detailAsset && (landmark || ['field', 'park', 'square', 'river'].includes(family))) {
+  if (!landmark && profile.detailAsset && ['field', 'park', 'square', 'river'].includes(family)) {
     const cue = futureModel(d, root, profile.detailAsset);
     cue.scale.setScalar(0.5);
-    cue.position.set(family === 'airport' ? 4 : 0, 0, family === 'airport' ? 2 : -3);
+    cue.position.set(0, 0, -3);
   }
   if (landmark) {
-    futureModel(d, root, family);
-    if (level >= 2) futureModel(d, root, family === 'airport' ? 'airport-wing' : 'landmark-wing');
-    if (level >= 3)
-      futureModel(d, root, family === 'airport' ? 'airport-finish' : 'landmark-finish');
-    d.sign(root, label, family === 'airport' ? 5 : 3, family === 'airport' ? 4 : 0, 3.2, 2);
+    const asset = family === 'airport' ? airportAppearance(era).asset : family;
+    futureModel(d, root, asset);
+    if (family === 'airport') {
+      if (level >= 2) futureModel(d, root, `${asset}-wing`);
+      if (level >= 3) futureModel(d, root, `${asset}-finish`);
+    } else addCityLandmarkDetails(d, root, family, era, level);
+    if (family === 'airport') d.sign(root, label, 4.2, 4.5, 2.7, 1.22);
+    else d.sign(root, label, 3, 0, 3.2, 2);
     return true;
   }
   if (connected && ['research', 'culture'].includes(family)) {

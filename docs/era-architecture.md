@@ -36,6 +36,30 @@ identity can come from its configured asset family, detail asset and capabilitie
 An era still needs its actual content: campaign placement, buildings, projects,
 translated copy and any new art. A definition does not manufacture those assets.
 
+River & Rail and Industrial final upgrades use `src/data/heritageUpgrades.js`
+to map each building's original kind to a useful expansion. `HeritageDetails.js`
+and `TownHeritageUpgrade.vue` render that shared choice: for example, a post office
+gets dispatch rooms and telegraph fittings while a shop gets a trading awning,
+even though their original building shells are aliases. Preserve the original kind
+before resolving a shell alias. Unknown kinds get no speculative decoration.
+Do not use a universal clock tower as a completion marker. Motor Age buildings
+that inherit industrial geometry inherit these working expansions too.
+
+The gallery exporter records each building's introduction era. Its wiki packager
+places new buildings first, then existing buildings and the mine, with links to
+every entry. Regenerate captures after geometry changes; a changed mesh signature
+alone does not establish that an upgrade is visible from the camera.
+
+Airport architecture uses the optional `airportStyle` capability. The shared
+`src/data/airportStyles.json` catalog drives Blender authoring, runtime asset
+selection and the SVG fallback through `airportAppearance()`. Regional (1958),
+metropolitan (1986) and connected (2005) definitions each export a base, lounge
+and finishing stage. New eras can inherit a style without renderer changes;
+missing or unsupported styles safely use the regional airport. The renderer
+receives the building's completed era, so entering a new town era alone never
+modernizes the airport. `testing/airport-art.test.js` checks extension/fallback,
+stage selection, site bounds and wing clearance.
+
 ## Introduce a genuinely new style
 
 Extend the documented `BuildingStyle` / `EraEvolution` contract and defaults in
@@ -107,3 +131,38 @@ reduced motion. `TownScene` supplies its translated caption and border.
 groups, portrait framing, pause/skip cleanup, renderer-state restoration, and
 unsupported receipts. The incident actor tests also check that dismounted crews
 stand outside their vehicle and storm branches sit above the promenade pavement.
+
+### Period architecture and mine construction
+
+`cityStyles.json` drives the city Blender exporter, runtime landmark additions and
+SVG fallback through `cityAppearance()`. Each city era names its own `cityAssets`
+family. The 1958 family uses ribbon windows and broad cornices; the 1986 family
+uses concrete blades and stepped parapets. Roof gardens, solar geometry and
+connected transport details belong to the contemporary profile. Future eras can
+reuse an existing family; incomplete appearance lookups safely fall back.
+
+`mineAppearance()` derives permanent surface equipment from the same era art
+family. `addMineWorks()` builds the permanent site and the cinematic model, so
+finishing or skipping cannot leave different versions behind. Its cached scenery
+batch is separate from the underground shaft and the chapter equipment.
+
+The `era-mine` content adapter uses the common `TownPresentation` camera lifecycle.
+`TownBuildSequence` stages named sections, arriving workers, carried supplies and
+hammering; callers provide their assembly, timing and work positions. The era
+receipt remains the persistence authority. The timeline waits for graphics,
+pauses with the view, and resumes a pending receipt on the next village visit.
+Reduced motion shows the complete result without camera animation. Graphics
+fallback uses the SVG era drawing and a still completion dialog.
+
+`testing/building-era-contract.test.js` checks every available building and all
+three later-era stages. `city-era-art.test.js` checks period families, exported
+technology details and future/fallback definitions. `mine-era-construction.test.js`
+covers all seven transitions, worker motion, completion, batch replacement,
+skipping, camera restoration and reduced motion.
+
+For reproducible snapshots, run `npm run dev`, open
+`/scripts/era-art-review.html`, and export each era's PNG data to
+`output/era-art-data/<era>.json`. Run `python3 scripts/package-era-art-review.py` to
+write the individual PNGs, comparisons, wiki galleries and downloadable archive.
+The review uses production renderers and real plot positions, including dock
+lengths. See [the visual guide](wiki/Era-Visual-Guide.md).
