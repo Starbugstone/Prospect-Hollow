@@ -172,7 +172,7 @@ describe('Motor Age follows the complete Post-war Rebuilding era', () => {
       expect(upgradeOffer(town, id)).toBeNull();
     },
   );
-  it('requires all 129 improvements and unlocks Contemporary, and supplies the expanded town', () => {
+  it('requires all 132 improvements and unlocks Aviation, and supplies the expanded town', () => {
     const complete = finishEra(motorTown());
     expect(isEraComplete(complete)).toBe(true);
     expect(
@@ -180,12 +180,12 @@ describe('Motor Age follows the complete Post-war Rebuilding era', () => {
         (sum, b) => sum + eraBuildingLevel(complete, b.id),
         0,
       ),
-    ).toBe(129);
+    ).toBe(132);
     expect(eraGate(complete)).toMatchObject({
       available: true,
-      next: { id: 'contemporary', enabled: true },
+      next: { id: 'aviation', enabled: true },
     });
-    expect(advanceEra(complete, 'motor-age').era).toBe('contemporary');
+    expect(advanceEra(complete, 'motor-age').era).toBe('aviation');
     expect(nextGoal(complete)).toBeNull();
     const demand = housingCapacity(complete) + visitorCapacity(complete);
     expect(waterCapacity(complete)).toBeGreaterThanOrEqual(demand);

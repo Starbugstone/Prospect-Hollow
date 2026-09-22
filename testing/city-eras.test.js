@@ -2,7 +2,7 @@ import { beforeEach, afterEach, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { BUILDINGS, createTown, BANDIT_EVENT } from '../src/data/town';
 import { ERAS } from '../src/data/eras';
-import { CITY_BUILDINGS } from '../src/data/city';
+import { CITY_BUILDINGS, CITY_ERAS } from '../src/data/city';
 import { hasElectricity } from '../src/data/industrial';
 import { LEVEL_COUNT } from '../src/data/campaign';
 import { eraIndex, plotInEra, advanceEra, isEraComplete, eraGate } from '../src/game/town/TownEras';
@@ -59,6 +59,8 @@ it('orders rebuilding after Electric and before cars, with two saved, idempotent
     'industrial',
     'post-war',
     'motor-age',
+    'aviation',
+    'broadcast',
     'contemporary',
   ]);
   for (const from of ['industrial', 'motor-age']) {
@@ -77,7 +79,7 @@ it('orders rebuilding after Electric and before cars, with two saved, idempotent
     expect(c.town.transition.pending).toBe(false);
   }
 });
-it.each(['post-war', 'contemporary'])(
+it.each(CITY_ERAS)(
   'preserves every established service during all three %s modernization stages',
   (era) => {
     const prev = ERAS[eraIndex(era) - 1].id;
@@ -218,16 +220,16 @@ it('continues existing 144-level saves at 145 without resetting records and comp
   setActivePinia(createPinia());
   const c = useCampaignStore();
   expect(c.nextLevel).toBe(145);
-  expect(LEVEL_COUNT).toBe(240);
+  expect(LEVEL_COUNT).toBe(324);
   for (let id = 145; id <= LEVEL_COUNT; id++) {
     const runId = c.beginRun('normal', id);
     expect(runId).toBeTruthy();
     c.recordVictory({ id, score: 1, target: 10000, combo: 1, runId });
     if (id % 6 === 0) expect(c.lastChapterReward.chapter).toBe(id / 6);
   }
-  expect(c.nextLevel).toBe(240);
-  expect(c.completedCount).toBe(240);
-  expect(c.isUnlocked(241)).toBe(false);
+  expect(c.nextLevel).toBe(LEVEL_COUNT);
+  expect(c.completedCount).toBe(LEVEL_COUNT);
+  expect(c.isUnlocked(LEVEL_COUNT + 1)).toBe(false);
   expect(c.records[144]).toEqual(records[144]);
 });
 it('only finishes the entire city once every contemporary plot and modernization is complete', () => {

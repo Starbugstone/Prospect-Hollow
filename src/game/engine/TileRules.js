@@ -5,7 +5,8 @@ export const isAnchored = (tile) =>
 
 export const canSwapGem = (gem, tile) => !!gem && gem.type !== 'relic' && !isAnchored(tile);
 
-export const layerCount = (tile) => (tile?.health ?? 0) + (tile?.chainHealth ?? 0);
+export const layerCount = (tile) =>
+  (tile?.health ?? 0) + (tile?.chainHealth ?? 0) + (tile?.signalHealth ?? 0);
 
 export const neighborsOf = (index, cols, rows) =>
   [

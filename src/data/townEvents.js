@@ -1,13 +1,7 @@
+import { eraEvolution } from './eras';
 // Old receipts without a kind remain Frontier raids, even after an era update.
 export const eventKind = (event) => event?.kind ?? 'bandits';
-export const eraEventKind = (era) =>
-  era === 'contemporary'
-    ? 'storm-cleanup'
-    : ['industrial', 'post-war', 'motor-age'].includes(era)
-      ? 'workshop-fire'
-      : era === 'river-rail'
-        ? 'cargo-theft'
-        : 'bandits';
+export const eraEventKind = (era) => eraEvolution(era).incident;
 export const civicIncident = (kind) => ['workshop-fire', 'storm-cleanup'].includes(kind);
 export const fireProtection = (level = 0) => [0, 2 / 3, 5 / 6, 1][Math.min(3, Math.max(0, level))];
 export const eventHeading = (event) =>

@@ -45,6 +45,7 @@ export class TownFrameCache {
     this.scene.add(this.quad);
     this.camera = new OrthographicCamera();
     this.valid = false;
+    this.targetValidated = false;
   }
   render(scene, camera, refresh = false) {
     const renderer = this.renderer;
@@ -55,6 +56,7 @@ export class TownFrameCache {
     }
     if (this.target.width !== this.size.x || this.target.height !== this.size.y) {
       this.target.setSize(this.size.x, this.size.y);
+      this.targetValidated = false;
       this.valid = false;
     }
     const layers = camera.layers.mask,
@@ -63,17 +65,17 @@ export class TownFrameCache {
     const previousTarget = renderer.getRenderTarget?.() ?? null;
     try {
       if (refresh || !this.valid) {
-        const validateTarget = !this.valid;
         this.valid = false;
         camera.layers.set(0);
         renderer.setRenderTarget(this.target);
         const gl = renderer.getContext?.();
         if (
-          validateTarget &&
+          !this.targetValidated &&
           gl &&
           gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE
         )
           throw new Error('Town framebuffer unavailable');
+        this.targetValidated = true;
         renderer.render(scene, camera);
         this.valid = true;
       }

@@ -433,3 +433,42 @@
   --mine-dark: #2c2940;
   --mine-haze: #534b72;
 }
+
+.is-playing[data-mine-theme='freight-crossings'],
+.is-playing[data-mine-theme='switchyard-seams'] {
+  --mine-accent: #d4b992;
+  --mine-dark: #273f41;
+  --mine-rock: #536760;
+}
+
+.is-playing[data-mine-theme='foundry-arches'],
+.is-playing[data-mine-theme='airfield-vaults'],
+.is-playing[data-mine-theme='skyline-foundations'] {
+  --mine-accent: #f0bf8b;
+  --mine-dark: #40302d;
+  --mine-rock: #795948;
+}
+
+.is-playing[data-mine-theme='reservoir-links'],
+.is-playing[data-mine-theme='terminal-galleries'],
+.is-playing[data-mine-theme='promenade-routes'] {
+  --mine-accent: #a2dce3;
+  --mine-dark: #233b4a;
+  --mine-rock: #476b7c;
+}
+
+.is-playing[data-mine-theme='courtyard-passages'],
+.is-playing[data-mine-theme='heritage-loop'],
+.is-playing[data-mine-theme='hollow-homecoming'] {
+  --mine-accent: #b9dda4;
+  --mine-dark: #283d34;
+  --mine-rock: #58725d;
+}
+
+.is-playing[data-mine-theme='radio-relays'],
+.is-playing[data-mine-theme='studio-crossroads'],
+.is-playing[data-mine-theme='network-vaults'] {
+  --mine-accent: #d0b7ec;
+  --mine-dark: #322d49;
+  --mine-rock: #665578;
+}

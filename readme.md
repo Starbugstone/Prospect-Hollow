@@ -42,6 +42,16 @@ npm run format:check  # Check source formatting
 npm run assets        # Regenerate gem, bonus, power and ice artwork
 ```
 
+## Testing resources from the console
+
+Open the running game's browser developer console and run:
+
+```js
+prospectDebug.grant({ coins: 100000, hammers: 5 });
+```
+
+This adds 100,000 coins, tops up builder hammers to their normal cap of 5, saves immediately, and returns the new balances. Run it again whenever you need more resources. Change `coins` or `hammers` to choose the amounts; `prospectDebug.grant()` uses the same defaults. The command is available in development and built previews.
+
 ## Playing
 
 Swipe a gem, or tap two neighboring gems. Match at least three to break the ice underneath them. Fresh ice has frosted edges; damaged ice cracks, then shatters to reveal a dark cleared tile. Four in a line creates a sparking bomb; five creates a rotating rainbow orb; a T or L match creates a pulsing cross launcher. Swipe a bonus to activate it, or double-tap/double-click it to activate in place. Clear every ice layer and stone block to finish the level; the score target and best cascade determine extra stars.
@@ -85,7 +95,7 @@ Phaser loads when a chapter opens. Vue never wraps the renderer's internal objec
 
 See [the analysis and verification report](docs/analysis.md) for the performance findings, changes and testing limits. Capacitor configuration and the existing Azure deployment workflow are retained; native platforms need their usual platform setup before using the `cap:*` commands.
 
-Run `npm run verify` for formatting, the complete regression suite, and a production build. GitHub Quality checks runs the same command for pull requests and pushes to main and Develop; verify it and the Vercel preview before merging a release.
+Run `npm run verify` for formatting, the complete regression suite, and a production build. GitHub Quality checks runs the same command for pull requests and pushes to main and develop; verify it and the Vercel preview before merging a release.
 
 Mine teardown explicitly releases its WebGL context. If the village loses its graphics context, it rebuilds the 3D scene on a fresh canvas while preserving the camera. Repeated recovery failures use the playable SVG town. Interrupted frame-cache renders restore renderer state before another draw.
 

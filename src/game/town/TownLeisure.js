@@ -6,9 +6,9 @@ import { PLOTS } from './TownLayout';
 export function addLeisureActivity(d, town) {
   const horses = Math.min(3, town.buildings.horseField ?? 0);
   const spots = [
-    [-1.65, 0.35],
-    [0, -0.5],
-    [1.45, 0.35],
+    [-1.3, 0.25],
+    [0, 0.35],
+    [1.3, 0.3],
   ];
   for (let i = 0; i < horses; i++) {
     const horse = leisureModel(d, d.world, 'horse');

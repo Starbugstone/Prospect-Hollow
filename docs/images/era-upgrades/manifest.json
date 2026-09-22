@@ -1,0 +1,62 @@
+{
+  "eras": [
+    {
+      "era": "frontier",
+      "label": "Frontier Settlement",
+      "year": "c. 1865\u20131880",
+      "buildings": 23,
+      "stages": 77
+    },
+    {
+      "era": "river-rail",
+      "label": "River & Rail Boom",
+      "year": "1884",
+      "buildings": 31,
+      "stages": 91
+    },
+    {
+      "era": "industrial",
+      "label": "Industrial / Electric Town",
+      "year": "1908",
+      "buildings": 36,
+      "stages": 106
+    },
+    {
+      "era": "post-war",
+      "label": "Post-war Rebuilding",
+      "year": "1920",
+      "buildings": 40,
+      "stages": 118
+    },
+    {
+      "era": "motor-age",
+      "label": "Motor Age",
+      "year": "1932",
+      "buildings": 45,
+      "stages": 133
+    },
+    {
+      "era": "aviation",
+      "label": "Aviation & Radio",
+      "year": "1958",
+      "buildings": 47,
+      "stages": 139
+    },
+    {
+      "era": "broadcast",
+      "label": "Music & Television",
+      "year": "1986",
+      "buildings": 50,
+      "stages": 148
+    },
+    {
+      "era": "contemporary",
+      "label": "Connected City",
+      "year": "2005",
+      "buildings": 55,
+      "stages": 163
+    }
+  ],
+  "comparisons": 327,
+  "stageImages": 975
+}

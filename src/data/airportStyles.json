@@ -1,0 +1,29 @@
+{
+  "regional": {
+    "asset": "airport",
+    "wall": "#e1cfab",
+    "roof": "#648d89",
+    "frame": "#e1cfab",
+    "clerestory": false,
+    "curtainWall": false,
+    "skylights": false
+  },
+  "metropolitan": {
+    "asset": "airport-metropolitan",
+    "wall": "#c6bca5",
+    "roof": "#435764",
+    "frame": "#c97868",
+    "clerestory": true,
+    "curtainWall": false,
+    "skylights": false
+  },
+  "connected": {
+    "asset": "airport-connected",
+    "wall": "#e1cfab",
+    "roof": "#648d89",
+    "frame": "#e1cfab",
+    "clerestory": false,
+    "curtainWall": true,
+    "skylights": true
+  }
+}

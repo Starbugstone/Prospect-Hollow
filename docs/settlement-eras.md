@@ -1,10 +1,10 @@
 # Settlement eras
 
-All six eras are playable: Frontier → River & Rail → Electric → Post-war Rebuilding → Motor Age → Contemporary. The village has 48 plots and the campaign has 240 puzzles. See the [six-era implementation, Blender assets and balance evidence](complete-settlement-eras.md) for current behavior. The historical reports below describe earlier milestones.
+Eight eras are playable: Frontier → River & Rail → Electric → Post-war Rebuilding → Motor Age → Aviation & Radio (1958) → Music & Television (1986) → Connected City (2005). The village has 53 plots and the campaign has 240 puzzles. See [issue #41 fixes and browser verification](issue41-era-visuals.md) for current behavior. The historical reports below describe earlier milestones.
 
 ## Try the eras immediately
 
-Run `npm run dev` and `npm run demo:eras`. The latter creates local fixtures for all six eras under the ignored `output/era-demo/` directory:
+Run `npm run dev` and `npm run demo:eras`. The latter creates local fixtures for all eight eras under the ignored `output/era-demo/` directory:
 
 | Fixture                                                      | Starting point                                                       |
 | ------------------------------------------------------------ | -------------------------------------------------------------------- |

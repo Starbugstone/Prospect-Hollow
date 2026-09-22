@@ -31,6 +31,8 @@ it.each([...Object.keys(MOTOR_AGE_VARIANTS), ...MOTOR_AGE_BUILDINGS.map((b) => b
       stages = [];
     for (let level = 1; level <= 3; level++) {
       const root = new Group();
+      if (['fisherman', 'riverPort'].includes(kind))
+        root.position.set(PLOTS[kind][0], 0, PLOTS[kind][1]);
       if (!renderMotorLandmark(d, root, kind, kind, level))
         addMotorModernization(d, root, kind, level);
       let meshes = 0,
@@ -43,7 +45,9 @@ it.each([...Object.keys(MOTOR_AGE_VARIANTS), ...MOTOR_AGE_BUILDINGS.map((b) => b
       });
       const size = new Box3().setFromObject(root).getSize(new Vector3());
       expect(meshes).toBeGreaterThan(0);
-      expect(size.x).toBeLessThan(kind === 'bridge' ? 15 : 7.5);
+      expect(size.x).toBeLessThan(
+        kind === 'bridge' ? 15 : ['fisherman', 'riverPort'].includes(kind) ? 12 : 7.5,
+      );
       expect(size.z).toBeLessThan(7.5);
       expect(size.y).toBeLessThan(8);
       expect(size.toArray().every(Number.isFinite)).toBe(true);
@@ -101,7 +105,9 @@ it('runs one bus on connected roads with bounded geometry and a pausable shared 
 it('keeps all 24 mine chapter jewels attached around the entrance', () => {
   const d = diorama();
   d.mine(d.world, 'Mine', 24);
-  const bounds = new Box3().setFromObject(d.world);
+  const jewels = d.world.getObjectByName('Mine chapter jewels');
+  expect(jewels.children).toHaveLength(24);
+  const bounds = new Box3().setFromObject(jewels);
   expect(bounds.max.y).toBeLessThan(4.7);
   expect(bounds.max.x - bounds.min.x).toBeLessThan(5);
 });

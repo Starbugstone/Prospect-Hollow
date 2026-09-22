@@ -16,11 +16,11 @@ final class PuzzleEngine {
         return array_values(array_filter([$i%$cols>0?$i-1:-1,$i%$cols<$cols-1?$i+1:-1,$i-$cols,$i+$cols],fn($n)=>$n>=0&&$n<$cols*$rows));
     }
     public function initial(array $level,string $mode): array {
-        $layers=array_sum(array_map(fn($t)=>($t['health']??0)+($t['chainHealth']??0),$level['tiles']));
+        $layers=array_sum(array_map(fn($t)=>($t['health']??0)+($t['chainHealth']??0)+($t['signalHealth']??0),$level['tiles']));
         $relics=count(array_filter($level['board'],fn($g)=>($g['type']??'')==='relic'));
         return ['level'=>$level['id'],'mode'=>$mode,'board'=>$level['board'],'tiles'=>$level['tiles'],'cols'=>$level['boardCols'],'rows'=>$level['boardRows'],
             'gemTypes'=>$level['boardLayout']['gemTypes'],'score'=>0,'moves'=>0,'jewels'=>0,'remainingLayers'=>$layers,'totalLayers'=>$layers,'remainingRelics'=>$relics,'totalRelics'=>$relics,
-            'maxCascade'=>1,'comboCounts'=>[],'multiMatchCounts'=>[],'cleared'=>false,'status'=>'active','startedAt'=>time(),'steps'=>[],'receipt'=>null,'continuousCoins'=>0];
+            'oreOrders'=>array_map(fn($order)=>array_merge($order,['progress'=>0]),$level['oreOrders']??[]),'maxCascade'=>1,'comboCounts'=>[],'multiMatchCounts'=>[],'cleared'=>false,'status'=>'active','startedAt'=>time(),'steps'=>[],'receipt'=>null,'continuousCoins'=>0];
     }
     public function matches(array $board,int $cols,int $rows): array {
         $out=[]; $type=fn(int $i)=>in_array($board[$i]['type']??null,self::GEMS,true)?$board[$i]['type']:null;
@@ -194,8 +194,8 @@ final class PuzzleEngine {
         $s['board']=$original;throw new ApiError(409,'A playable shuffle could not be generated. Try again.');
     }
     private function finish(array &$s): void {
-        $s['remainingLayers']=array_sum(array_map(fn($t)=>($t['health']??0)+($t['chainHealth']??0),$s['tiles']));
-        $s['cleared']=$s['mode']==='normal'&&$s['remainingLayers']===0&&$s['remainingRelics']===0;
+        $s['remainingLayers']=array_sum(array_map(fn($t)=>($t['health']??0)+($t['chainHealth']??0)+($t['signalHealth']??0),$s['tiles']));
+        $s['cleared']=$s['mode']==='normal'&&$s['remainingLayers']===0&&$s['remainingRelics']===0&&!array_filter($s['oreOrders']??[],fn($order)=>$order['progress']<$order['target']);
         if(!$s['cleared']&&!$this->hasMove($s))$this->shuffle($s);
     }
     private function gravity(array &$s,int $iteration,array &$step): void {
@@ -252,6 +252,13 @@ final class PuzzleEngine {
             $step=$this->step($iteration,$pending);
             foreach($bonuses as $bonus)$step['bonuses'][]=$bonus+['gem'=>$board[$bonus['index']]];
             if($fusion){$step['bonusFusion']=$fusion;$step['bonusSwap']=$fusion['pair'];}
+            // Survey markers advance one order per cascade step; lanterns accept any adjacent hit.
+            $survey=PHP_INT_MAX;$touched=$impacted+$protected;
+            foreach($tiles as $tile)if(($tile['signalHealth']??0)>0&&($tile['surveyOrder']??0)>0)$survey=min($survey,$tile['surveyOrder']);
+            foreach(array_keys($touched) as $i)foreach($this->neighbors($i,$cols,$rows) as $j)$touched[$j]=true;
+            foreach(array_keys($touched) as $i)if(($tiles[$i]['signalHealth']??0)>0&&(!($tiles[$i]['surveyOrder']??0)||$tiles[$i]['surveyOrder']===$survey)) {
+                $tiles[$i]['signalHealth']=0;$step['tileUpdates'][]=['index'=>$i,'signalHealth'=>0];
+            }
             foreach(array_keys($damage) as $i) {
                 $tile=&$tiles[$i];$hits=isset($fusionTargets[$i])?2:1;$isFusion=$hits===2;
                 if($isFusion&&($tile['state']??'')==='FROZEN'){$tile['state']='PLAYABLE';$step['tileUpdates'][]=['index'=>$i,'state'=>'PLAYABLE'];}
@@ -270,7 +277,7 @@ final class PuzzleEngine {
                 if($isFusion&&$board[$i]&&$board[$i]['type']!=='relic'&&!self::anchored($tile)&&!isset($protected[$i]))$cleared[$i]=true;
                 if(isset($cleared[$i])&&!isset($protected[$i])) {
                     // Preserve the existing fusion economy: fusion hits score but do not count mining jewels.
-                    if(!$isFusion&&in_array($board[$i]['type']??null,self::GEMS,true))$step['collectedJewels'][]=['id'=>$board[$i]['id'],'type'=>$board[$i]['type']];
+                    if(in_array($board[$i]['type']??null,self::GEMS,true))$step[$isFusion?'fusionOreJewels':'collectedJewels'][]=['id'=>$board[$i]['id'],'type'=>$board[$i]['type']];
                     $board[$i]=null;
                 }
                 unset($tile);
@@ -291,6 +298,10 @@ final class PuzzleEngine {
         }
         $s['steps']=$steps;
         foreach($steps as $step) {
+            foreach(array_merge($step['collectedJewels'],$step['fusionOreJewels']??[]) as $jewel) {
+                foreach($s['oreOrders'] as &$order)if($order['color']===$jewel['type']){$order['progress']=min($order['target'],$order['progress']+1);break;}
+                unset($order);
+            }
             $s['jewels']+=count($step['collectedJewels']);$count=count($step['cleared']);if(!$count)continue;
             $tier=$step['index']+1;$s['score']+=$count*100*$tier;$s['maxCascade']=max($s['maxCascade'],$tier);
             if($s['mode']==='normal') {

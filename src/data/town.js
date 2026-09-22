@@ -635,6 +635,7 @@ export const createTown = () => ({
   constructionTipSeen: false,
   buildings: Object.fromEntries(BUILDINGS.map(({ id }) => [id, 0])),
   events: {},
+  presentations: {},
   projects: {},
   completedRuns: 0,
   nextRaidRun: null,

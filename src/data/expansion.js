@@ -1,3 +1,4 @@
+import { LATE_LEVELS } from './lateLevels.js';
 // Seven columns, nine rows. Side columns stay open so barriers can always
 // be approached. # = stone, X = reinforced stone, c = chain,
 // r/b/g = ruby/sapphire/emerald seal, R = relic, E = bottom exit.
@@ -429,4 +430,5 @@ export const EXPANSION_LEVELS = [
   },
   ...MOTOR_LEVELS,
   ...CITY_LEVELS,
+  ...LATE_LEVELS,
 ];

@@ -16,6 +16,11 @@ const { TileManager } = await moduleAt('game/engine/TileManager.js');
 const { canSwapGem, layerCount } = await moduleAt('game/engine/TileRules.js');
 const { GEM_TYPES } = await moduleAt('game/engine/GemFactory.js');
 const { detectBonusFromMatches } = await moduleAt('game/engine/MatchPatterns.js');
+// Older comparison checkouts predate ore orders. Keep those runs comparable.
+const mechanics = await moduleAt('game/engine/ChapterMechanics.js').catch((error) => {
+  if (error.code !== 'ERR_MODULE_NOT_FOUND') throw error;
+  return { advanceOreOrders() {}, remainingOre: () => 0 };
+});
 // Vite resolves the shared economy modules exactly as it does in the app.
 const loader = await createServer({
   root: resolve(source, '..'),
@@ -46,6 +51,7 @@ try {
       };
       let board = level.board.map((gem) => (gem ? { ...gem } : null));
       const tiles = level.tiles.map((tile) => ({ ...tile }));
+      const oreOrders = (level.oreOrders ?? []).map((order) => ({ ...order }));
       const cols = level.boardCols,
         rows = level.boardRows;
       const gemTypes =
@@ -56,9 +62,11 @@ try {
       const comboCounts = {},
         multiMatchCounts = {};
       const remaining = () =>
-        tiles.some((tile) => layerCount(tile) > 0) || board.some((gem) => gem?.type === 'relic');
+        tiles.some((tile) => layerCount(tile) > 0) ||
+        board.some((gem) => gem?.type === 'relic') ||
+        mechanics.remainingOre(oreOrders) > 0;
       while (remaining() && turns < 400 && shuffles < 30) {
-        const move = hints.findBestMove(board, tiles, cols, rows);
+        const move = hints.findBestMove(board, tiles, cols, rows, { oreOrders });
         let evaluation;
         if (move) {
           evaluation = engine.evaluateSwap(
@@ -92,6 +100,7 @@ try {
         }
         const resolution = manager.getResolution({ ...evaluation, tiles, cols, rows, gemTypes });
         board = resolution.board;
+        mechanics.advanceOreOrders(oreOrders, resolution.steps);
         resolution.steps.forEach((step, index) => {
           jewels += step.collectedJewels?.length ?? 0;
           if (!step.cleared?.length) return;
@@ -108,6 +117,7 @@ try {
         turns,
         shuffles,
         complete: !remaining(),
+        remainingOre: mechanics.remainingOre(oreOrders),
         coins: rules.miningPayout(jewels, bonuses, comboCounts, multiMatchCounts, level.id),
       });
     }

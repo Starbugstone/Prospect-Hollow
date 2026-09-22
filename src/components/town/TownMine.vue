@@ -19,6 +19,20 @@
       fill="transparent"
     />
     <g aria-hidden="true">
+      <g :stroke="appearance.frame" stroke-width="5" fill="none" transform="translate(-114 5)">
+        <path
+          :d="`M-21 42V${-appearance.height * 13}H21V42M-21 38 21 ${-appearance.height * 13 + 8}M21 38-21 ${-appearance.height * 13 + 8}`"
+        />
+        <circle :cy="-appearance.height * 13" r="10" :fill="appearance.roof" />
+        <path
+          v-if="appearance.height >= 4.8"
+          :d="`M-27 ${-appearance.height * 13 - 13}H27`"
+          :stroke="appearance.roof"
+          stroke-width="8"
+        />
+        <path v-if="appearance.machine !== 'hand'" d="M-40 43V8H-10v35Z" :fill="appearance.wall" />
+        <path v-if="appearance.machine === 'digital'" d="M-44 4-35-5-6-1-12 8Z" fill="#526f79" />
+      </g>
       <g v-if="stage >= 6" stroke="#91714f" stroke-width="6" fill="none"
         ><path d="M-80 40V-90M80 40V-90" /><path v-if="stage >= 7" d="M-85-90H85" /><path
           v-if="stage >= 9"
@@ -84,20 +98,20 @@
         stroke-width="7"
       />
       <path v-if="stage >= 5" d="M-67-38H65" stroke="#6c8b7b" stroke-width="12" />
-      <g v-if="era === 'river-rail'">
+      <g v-if="eraEvolution(era).style === 'river-rail'">
         <rect x="-85" y="4" width="24" height="48" rx="8" fill="#8e7860" />
         <path d="M-73 8V-53M-52 57V-27H52V57" fill="none" stroke="#68887c" stroke-width="10" />
       </g>
-      <g v-else-if="['industrial', 'post-war', 'motor-age', 'contemporary'].includes(era)">
+      <g v-else-if="eraEvolution(era).modernTransport">
         <path
           d="M-51 60V-41H51V60"
           fill="none"
-          :stroke="['motor-age', 'contemporary'].includes(era) ? '#ddcca8' : '#9ba89a'"
+          :stroke="eraEvolution(era).motorMine ? '#ddcca8' : '#9ba89a'"
           stroke-width="15"
         />
         <path d="M-51 3V-14M51 3V-14" stroke="#ffebad" stroke-width="8" />
         <path
-          v-if="['motor-age', 'contemporary'].includes(era)"
+          v-if="eraEvolution(era).motorMine"
           d="M-65-27H65M-28-53H28"
           stroke="#648e8b"
           stroke-width="10"
@@ -110,7 +124,7 @@
             stroke-width="3"
         /></g>
       </g>
-      <g v-if="era === 'contemporary'" stroke="#638b88" stroke-width="4">
+      <g v-if="eraEvolution(era).digitalCity" stroke="#638b88" stroke-width="4">
         <path d="M-68-98-39-111 73-84 47-69Z" fill="#8cb1ae" />
         <path d="M-53-99 57-75m-82-33 84 22" stroke="#526f79" />
       </g>
@@ -140,12 +154,16 @@
   </g>
 </template>
 <script setup>
+import { eraEvolution } from '../../data/eras';
+import { computed } from 'vue';
+import { mineAppearance } from '../../data/mineEvolution';
 import { t } from '../../i18n';
-defineProps({
+const props = defineProps({
   level: { type: Number, default: 1 },
   decorative: Boolean,
   stage: { type: Number, default: 0 },
   era: { type: String, default: 'frontier' },
 });
+const appearance = computed(() => mineAppearance(props.era));
 defineEmits(['enter']);
 </script>

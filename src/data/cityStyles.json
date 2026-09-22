@@ -1,0 +1,50 @@
+{
+  "post-war": {
+    "wall": "#ddd1ae",
+    "roof": "#638b88",
+    "brick": "#b79078",
+    "modern": false,
+    "streamlined": false,
+    "solar": false,
+    "roofGarden": false,
+    "timberFins": false,
+    "electricVehicles": false,
+    "globeLights": true
+  },
+  "aviation": {
+    "wall": "#e1cfab",
+    "roof": "#648d89",
+    "brick": "#c8b497",
+    "modern": false,
+    "streamlined": true,
+    "solar": false,
+    "roofGarden": false,
+    "timberFins": false,
+    "electricVehicles": false,
+    "globeLights": true
+  },
+  "broadcast": {
+    "wall": "#c9c1ad",
+    "roof": "#526775",
+    "brick": "#ba8e79",
+    "modern": true,
+    "streamlined": false,
+    "solar": false,
+    "roofGarden": false,
+    "timberFins": false,
+    "electricVehicles": false,
+    "globeLights": false
+  },
+  "contemporary": {
+    "wall": "#ddd1ae",
+    "roof": "#638b88",
+    "brick": "#b79078",
+    "modern": true,
+    "streamlined": false,
+    "solar": true,
+    "roofGarden": true,
+    "timberFins": true,
+    "electricVehicles": true,
+    "globeLights": false
+  }
+}

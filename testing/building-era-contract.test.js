@@ -1,4 +1,3 @@
-import { renderCityBuilding } from '../src/game/town/buildings/city';
 import { expect, it } from 'vitest';
 import { BoxGeometry, Group, MeshBasicMaterial, Scene } from 'three';
 import { BUILDINGS, createTown } from '../src/data/town';
@@ -10,9 +9,11 @@ import { visiblePlots } from '../src/game/town/TownLayout';
 import { buildTownSquare } from '../src/game/town/TownSquare';
 import { addImprovements } from '../src/game/town/TownImprovements';
 import { TownDiorama } from '../src/game/town/TownDiorama';
-import { renderBuilding, renderModernization } from '../src/game/town/buildings/BuildingRenderer';
-import { renderIndustrialLandmark } from '../src/game/town/buildings/industrial';
-import { renderMotorLandmark } from '../src/game/town/buildings/motorAge';
+import {
+  renderBuilding,
+  renderEraLandmark,
+  renderModernization,
+} from '../src/game/town/buildings/BuildingRenderer';
 
 it('every plot begins in its own era, advances through every later playable era, and visibly changes', () => {
   let town = createTown();
@@ -62,45 +63,44 @@ it('every plot begins in its own era, advances through every later playable era,
         era.id === 'frontier' ? b.upgrades.length : 3,
       );
       d.town = town;
-      const root = new Group(),
-        kind = b.kind;
-      const modern =
-        era.id === 'motor-age'
-          ? renderMotorLandmark
-          : era.id === 'industrial'
-            ? renderIndustrialLandmark
-            : null;
-      const stage = buildingServiceLevel(b.id, town.buildings[b.id]);
-      if (kind === 'bridge') {
-        renderBuilding({ town: d, parent: root, kind, level: stage, label: b.name });
-        renderModernization(d, root, kind, era.id, 3);
-      } else if (
-        !renderCityBuilding(d, root, kind, b.name, 3, era.id, stage) &&
-        !modern?.(d, root, kind, b.name, 3)
-      ) {
-        if (kind === 'square') buildTownSquare(d, root, stage);
-        else if (kind === 'well') d.well(root);
-        else renderBuilding({ town: d, parent: root, kind, level: stage, label: b.name });
-        if (!['fisherman', 'blacksmith', 'school', 'doctor'].includes(kind))
-          addImprovements(d, root, kind, stage);
-        renderModernization(d, root, kind, era.id, 3);
+      const tiers = new Set();
+      for (const level of era.id === 'frontier' ? [3] : [1, 2, 3]) {
+        const root = new Group(),
+          kind = b.kind;
+        const stage = buildingServiceLevel(b.id, town.buildings[b.id]);
+        const service = b.introducedEra === era.id && era.id !== 'frontier' ? level : stage;
+        if (kind === 'bridge') {
+          renderBuilding({ town: d, parent: root, kind, level: service, label: b.name });
+          renderModernization(d, root, kind, era.id, level);
+        } else if (!renderEraLandmark(d, root, kind, b.name, level, era.id, service)) {
+          if (kind === 'square') buildTownSquare(d, root, stage);
+          else if (kind === 'well') d.well(root);
+          else renderBuilding({ town: d, parent: root, kind, level: service, label: b.name });
+          if (!['fisherman', 'blacksmith', 'school', 'doctor'].includes(kind))
+            addImprovements(d, root, kind, stage, era.id);
+          renderModernization(d, root, kind, era.id, level);
+        }
+        const parts = [];
+        root.updateMatrixWorld(true);
+        root.traverse((o) => {
+          if (o.isMesh)
+            parts.push([
+              o.geometry.attributes.position.count,
+              o.geometry.index?.count,
+              o.material.color.getHex(),
+              o.matrixWorld.toArray(),
+            ]);
+        });
+        expect(parts.length, b.id).toBeGreaterThan(0);
+        const signature = JSON.stringify(parts);
+        expect(tiers.has(signature), `${b.id}: ${era.id} level ${level}`).toBe(false);
+        tiers.add(signature);
+        if (level === 3) {
+          if (signatures.has(b.id))
+            expect(signature, `${b.id}: ${era.id}`).not.toBe(signatures.get(b.id));
+          signatures.set(b.id, signature);
+        }
       }
-      const parts = [];
-      root.updateMatrixWorld(true);
-      root.traverse((o) => {
-        if (o.isMesh)
-          parts.push([
-            o.geometry.attributes.position.count,
-            o.geometry.index?.count,
-            o.material.color.getHex(),
-            o.matrixWorld.toArray(),
-          ]);
-      });
-      expect(parts.length, b.id).toBeGreaterThan(0);
-      const signature = JSON.stringify(parts);
-      if (signatures.has(b.id))
-        expect(signature, `${b.id}: ${era.id}`).not.toBe(signatures.get(b.id));
-      signatures.set(b.id, signature);
     }
     const next = ERAS[eraIndex(era.id) + 1];
     if (next?.enabled) {

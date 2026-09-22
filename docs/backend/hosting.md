@@ -1,6 +1,6 @@
 # Account backend: local testing and FTP hosting
 
-This branch follows PR #37 (`feat/22-complete-settlement-eras`, baseline `81966e3`), which includes PR #36. It keeps the six eras, 48 buildings, 240 levels and current economy. Backend changes live in a separate worktree; the game agent's original checkout, uncommitted rendering changes, server, and browser are untouched.
+The backend is synchronized with `main` at `bbb2e34` (PR #45). The shared catalog now contains eight eras, 54 buildings and 324 levels. Docker exports the current browser rules into the server catalog at build time; PHP parity tests cover the same content.
 
 ## Run locally
 
@@ -32,7 +32,7 @@ This creates `release/app/` containing the compiled frontend, Symfony applicatio
 
 The host needs **PHP 8.3 or newer**, `pdo_mysql` (or `pdo_pgsql` for PostgreSQL), PDO, XML, ctype, iconv, OpenSSL and the extensions required by the locked Composer dependencies, **MySQL 8 / MariaDB with InnoDB** or PostgreSQL, HTTPS, an SMTP account, and Apache `mod_rewrite` and `mod_headers`. The bundle checks PHP and declared extension requirements on startup; `/api/v1/health` additionally verifies the configured PDO driver and database connection. The local image uses PHP 8.4 and PostgreSQL 17. Prefer a maintained PHP patch version available in the hosting panel.
 
-1. Create a dedicated database and database user in the hosting panel. Use only that database's privileges. Import **backend/schema.sql** through phpMyAdmin for a new MySQL/MariaDB database. For PostgreSQL use `backend/schema-postgresql.sql`. These initial schemas include version 2; do not replay them on existing data. Use the upgrade instructions below for existing databases.
+1. Create a dedicated database and database user in the hosting panel. Use only that database's privileges. Import **backend/schema.sql** through phpMyAdmin for a new MySQL/MariaDB database. For PostgreSQL use `backend/schema-postgresql.sql`. These initial schemas include version 3; do not replay them on existing data. Use the upgrade instructions below for existing databases.
 2. Upload `release/app/` outside the public web directory. Set the site's document root to **app/public** through the hosting panel. Only that directory may be served. Do not upload the whole backend into `public_html` and hope dotfiles stay hidden.
 3. Copy `.env.example` to **app/.env.local**, outside `public/`. Set a new random `APP_SECRET`, the exact HTTPS `APP_ORIGIN` (no trailing slash), the database URL, authenticated SMTP DSN, and verified `MAIL_FROM`. Require transport encryption: use `smtp://USER:PASSWORD@smtp.example.com:587?require_tls=true` for mandatory STARTTLS, or `smtps://USER:PASSWORD@smtp.example.com:465` for implicit TLS. Keep certificate verification enabled. The local Mailpit service is only for development. Percent-encode reserved characters in URL credentials. Keep this file out of Git and restrict file permissions.
 4. Give PHP write access only to `app/var/`. Application code and `vendor/` should not be writable by web requests. Ensure `public/.htaccess` was uploaded; FTP clients often hide dotfiles. Use SFTP or FTPS if the provider offers it.
@@ -45,9 +45,9 @@ If the hosting account cannot set a document root or keep PHP code/secrets outsi
 
 ## Upgrading an existing database
 
-Schema version 2 adds the opt-in leaderboard without rewriting private saves or publishing existing villages. Back up the database, then run `php bin/migrate.php` from the application directory before enabling the new application version. The CLI skips installed versions and can be run again safely.
+Schema version 3 updates stored public leaderboard ranks for the inserted Aviation and Broadcast eras, preserving existing Contemporary villages. It changes no private saves or visibility settings. Schema version 2 adds the opt-in leaderboard without rewriting private saves or publishing existing villages. Back up the database, then run `php bin/migrate.php` from the application directory before enabling the new application version. The CLI skips installed versions and can be run again safely.
 
-For hosting with SQL import only, check `SELECT version FROM schema_versions ORDER BY version`. If version 1 exists and version 2 is absent, import **backend/migrations/002-community.sql** for MySQL/MariaDB or **backend/migrations/002-community-postgresql.sql** for PostgreSQL exactly once. Verify version 2 exists afterward. Do not import the initial schema over an existing database. New accounts and upgraded accounts remain private until their owners opt in.
+For hosting with SQL import only, check `SELECT version FROM schema_versions ORDER BY version`. If version 1 exists and version 2 is absent, import **backend/migrations/002-community.sql** for MySQL/MariaDB or **backend/migrations/002-community-postgresql.sql** for PostgreSQL exactly once. Then, if version 3 is absent, import **backend/migrations/003-era-ranks.sql** or **backend/migrations/003-era-ranks-postgresql.sql** for the selected database. Verify versions 2 and 3 exist afterward. Do not import the initial schema over an existing database. New accounts and upgraded accounts remain private until their owners opt in.
 
 Both supported databases use an indexed public ranking projection. The [local API benchmark](database-benchmark.md) found higher MySQL throughput in most read and town-action tests, but much lower PostgreSQL database memory use and steadier mining results at low and high concurrency. Keep PostgreSQL as the current default pending a representative benchmark on the intended hosting tier; this shared-host test does not establish a universal performance winner.
 

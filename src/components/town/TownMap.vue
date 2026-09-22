@@ -65,11 +65,7 @@
           <path d="M0-18v13" stroke="currentColor" stroke-width="9" />
           <circle cy="-24" r="5" fill="#d7a577" />
           <path
-            :d="
-              ['post-war', 'contemporary'].includes(town.era)
-                ? 'M-5-28H8M-4-28q0-7 8-2'
-                : 'M-8-28H8M-4-29v-4h8v4'
-            "
+            :d="isCityEra(town.era) ? 'M-5-28H8M-4-28q0-7 8-2' : 'M-8-28H8M-4-29v-4h8v4'"
             stroke="#9c7b4f"
             stroke-width="3"
           />
@@ -338,6 +334,7 @@
         <image
           v-if="['ready', 'coins', 'tnt', 'bell', 'era'].includes(indicators[building.id])"
           class="map-action-icon"
+          :transform="`translate(0 -32) scale(${townIndicatorScale(indicators[building.id])}) translate(0 32)`"
           :x="indicators[building.id] === 'ready' ? -36 : -28"
           :y="indicators[building.id] === 'ready' ? -68 : -60"
           :width="indicators[building.id] === 'ready' ? 72 : 56"
@@ -402,7 +399,7 @@
         </g>
       </g>
       <g v-if="hasElectricity(town)" aria-hidden="true">
-        <g v-if="town.era !== 'contemporary'" class="town-power-grid">
+        <g v-if="eraEvolution(town.era).overheadPower" class="town-power-grid">
           <path
             v-for="(pole, index) in grid.poles"
             :key="`pole-${index}`"
@@ -557,6 +554,9 @@
   </div>
 </template>
 <script setup>
+import { eraEvolution } from '../../data/eras';
+import { isCityEra } from '../../data/city';
+
 import { t } from '../../i18n';
 import { hasElectricity, ELECTRIC_LAMPS } from '../../data/industrial';
 import {
@@ -587,6 +587,7 @@ import {
 import TownSite from './TownSite.vue';
 import { RIVER, riverOutline, riverCenterX } from '../../game/town/TownRiver';
 import TownMine from './TownMine.vue';
+import { townIndicatorScale } from '../../data/townIndicators';
 const props = defineProps({
   readOnly: Boolean,
   town: { type: Object, required: true },

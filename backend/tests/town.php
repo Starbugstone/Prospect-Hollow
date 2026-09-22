@@ -76,7 +76,7 @@ denied(function()use($town,&$p,$event){$town->action($p,'town.raid-seen',['id'=>
 denied(function()use($town,&$p){$town->action($p,'town.bell',[]);},'bell cannot rewrite saved loss');
 check($p['town']['nextRaidRun']===10,'fixed five victory cadence');
 // A modified client must not suppress future economic events by withholding UI acknowledgments.
-foreach(['frontier','river-rail','industrial','post-war','motor-age','contemporary'] as $era) {
+foreach(['frontier','river-rail','industrial','post-war','motor-age','aviation','broadcast','contemporary'] as $era) {
  $unseen=$content->fresh();$unseen['town']['era']=$era;$unseen['town']['coins']=10000;
  foreach(['well','farm','home','railDepot','powerHouse'] as $id)$unseen['town']['buildings'][$id]=1;
  $unseen['town']['nextRaidRun']=5;
@@ -96,7 +96,7 @@ foreach(['frontier','river-rail','industrial','post-war','motor-age','contempora
 
 $p['town']['coins']=999999999;$town->grant($p,['id'=>'coins','kind'=>'coins','label'=>'Coins','quantity'=>1000]);check($p['town']['coins']===1000000000,'coin cap saturates');
 // Every enabled era uses the same authored modernization price/stage/work sequence.
-foreach(['river-rail','industrial','post-war','motor-age','contemporary'] as $era) {
+foreach(['river-rail','industrial','post-war','motor-age','aviation','broadcast','contemporary'] as $era) {
  $p=$content->fresh();$p['firstStartUsed']=true;$p['town']['era']=$era;$p['town']['coins']=100000;
  $p['town']['buildings']['well']=3;$p['town']['buildings']['powerHouse']=$era==='industrial'?1:0;
  for($level=1;$level<=3;$level++) {
@@ -118,7 +118,7 @@ unset($p['town']['projects']['horseField']);$town->action($p,'town.era',['era'=>
 // Arrival starts the five-win clock at the time population first exists.
 $p=$content->fresh();$p['town']['buildings']['well']=1;$p['town']['buildings']['farm']=1;$p['town']['completedRuns']=12;$p['builderHammers']=1;$p['firstStartUsed']=true;
 $town->action($p,'town.hammer',['id'=>'home','stage'=>0]);check($p['town']['nextRaidRun']===17,'arrival schedules five later victories');
-foreach(['frontier','river-rail','industrial','post-war','motor-age','contemporary'] as $era) {
+foreach(['frontier','river-rail','industrial','post-war','motor-age','aviation','broadcast','contemporary'] as $era) {
  $p=$content->fresh();$p['town']['era']=$era;$p['town']['coins']=10000;
  foreach(['well','farm','home'] as $id)$p['town']['buildings'][$id]=1;
  $p['town']['buildings']['sheriff']=5;$p['town']['buildings']['bank']=5;$p['town']['buildings']['fireStation']=3;
@@ -127,8 +127,8 @@ foreach(['frontier','river-rail','industrial','post-war','motor-age','contempora
  check($event['loss']===0 && $event['outcome']==='protected','complete defenses protect '.$era);
  check($event['kind']===$content->data['eraEventKinds'][$era],'era event type '.$era);
 }
-check(count($content->data['levels'])===240 && count($content->data['buildings'])===48 && count(array_filter($content->data['eras'],fn($era)=>$era['enabled']))===6,'published PR37 catalog scope');
-check($content->data['chestCoins'][240]===4000 && $content->data['miningMultipliers'][240]===40,'last chapter capped chests and depth multiplier');
+check(count($content->data['levels'])===324 && count($content->data['buildings'])===54 && count(array_filter($content->data['eras'],fn($era)=>$era['enabled']))===8,'current main catalog scope');
+check($content->data['chestCoins'][324]===4000 && $content->data['miningMultipliers'][324]===54,'last chapter capped chests and depth multiplier');
 $full=array_values(array_filter($fixtures['towns'],fn($fixture)=>$fixture['name']==='contemporary-modern-3'))[0];
 check($full['capacities']['food']===199 && $full['capacities']['water']===194 && $full['population']===188 && $full['happiness']===100,'full contemporary city authored totals');
 // Each new city plot grants functional effects on completion, with no multiplication from visual tiers.
@@ -154,7 +154,7 @@ foreach($content->data['buildings'] as $building)if(isset($building['effects']))
 $old=$p;$p=$content->hydrate($p);
 check($p['town']['era']==='motor-age' && $p['town']['transition']===$old['town']['transition'],'old Industrial to Motor transition retained');
 check($p['town']['projects']===$old['town']['projects'] && $p['town']['events']===$old['town']['events'] && $p['records']===$old['records'] && $p['town']['coins']===$old['town']['coins'],'hydrate preserves paid progress and immutable receipts');
-check(count($p['town']['buildings'])===48 && $p['town']['buildings']['waterPlant']===0 && $p['town']['buildingEras']['waterPlant']==='frontier','hydrate adds empty plots only');
+check(count($p['town']['buildings'])===54 && $p['town']['buildings']['waterPlant']===0 && $p['town']['buildingEras']['waterPlant']==='frontier','hydrate adds empty plots only');
 check($content->hydrate($p)===$p,'hydrate idempotent');
 // Contemporary storm settlement uses fire crews, never sheriff bounty or later client refunds.
 foreach([0,1,2,3] as $fireLevel) {
@@ -167,4 +167,14 @@ foreach([0,1,2,3] as $fireLevel) {
  $p['town']['buildings']['fireStation']=3;$town->action($p,'town.raid-seen',['id'=>$event['id']]);
  check($p['town']['coins']===$balance && $p['town']['events']['dusty-trail-visitors']['loss']===$event['loss'],'storm remains immutable after upgraded fire station and ack');
 }
+// Construction queues a durable scene once; acknowledging it cannot change the economy.
+$p=$content->fresh();$p['town']['era']='river-rail';$p['town']['buildings']['bridge']=1;$p['builderHammers']=2;
+$town->action($p,'town.hammer',['id'=>'railDepot','stage'=>0]);
+check($p['town']['presentations']['railway-opening']==='pending','railway completion queues presentation');
+$balance=$p['town']['coins'];$town->action($p,'town.presentation-seen',['id'=>'railway-opening']);
+check($p['town']['presentations']['railway-opening']==='seen'&&$p['town']['coins']===$balance,'presentation acknowledgment preserves economy');
+denied(function()use($town,&$p){$town->action($p,'town.presentation-seen',['id'=>'railway-opening']);},'duplicate presentation acknowledgment');
+denied(function()use($town,&$p){$town->action($p,'town.presentation-seen',['id'=>[]]);},'malformed presentation ID');
+$town->action($p,'town.hammer',['id'=>'railDepot','stage'=>1]);
+check($p['town']['presentations']['railway-opening']==='seen','later upgrade cannot replay opening');
 echo "Town rules: $checks checks passed.\n";

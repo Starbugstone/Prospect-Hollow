@@ -71,7 +71,9 @@ final class TownService {
     }
     private function finish(array &$p,string $id,array $project): void {
         $t=&$p['town']; $modern=($project['type']??'')==='modernization';
+        $previous=$t['buildings'][$id];
         if (!$modern) $t['buildings'][$id]=$project['stage'];
+        if (!$previous && $t['buildings'][$id]>0)foreach($this->content->data['presentations'] as $presentation)if($presentation['building']===$id)$t['presentations'][$presentation['id']]='pending';
         $t['buildingEras'][$id]=$project['targetEra']??$t['era'];
         $t['buildingEraLevels'][$id]=$modern ? $project['eraLevel'] : ($t['era']==='frontier'?0:$project['stage']);
         if (in_array($id,['bridge','riverPort','railDepot'],true)) $t['infrastructure'][$id==='railDepot'?'rail':$id]=$t['buildings'][$id];
@@ -125,6 +127,10 @@ final class TownService {
                 if (!$event || $event['id']!==($a['id']??null) || $event['seen']) throw new ApiError(409,'This encounter was already acknowledged.');
                 $t['events'][self::EVENT]['seen']=true; return; // Presentation never changes balances or immutable outcome.
             case 'town.bell': throw new ApiError(422,'A saved encounter cannot be changed.');
+            case 'town.presentation-seen':
+                ProfileService::keys($a,['id']); $id=$a['id']??null;
+                if(!is_string($id)||!isset($this->content->data['presentations'][$id])||($t['presentations'][$id]??null)!=='pending')throw new ApiError(409,'This presentation is not pending.');
+                $t['presentations'][$id]='seen'; return;
             case 'town.tour': ProfileService::keys($a,[]); $t['tourSeen']=true; return;
             case 'town.lights': ProfileService::keys($a,[]); if ($t['buildings']['powerHouse']) $t['firstLightsSeen']=true; return;
             case 'town.era-seen':

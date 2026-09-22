@@ -36,6 +36,22 @@
       :aria-label="t('Town camera. Arrow keys rotate, plus and minus zoom, Home resets the view.')"
       @keydown="cameraKey"
     />
+    <div
+      v-if="eventInset && raid && !reducedMotion"
+      class="town-event-inset"
+      role="img"
+      :aria-label="t(eventInset.label)"
+      :style="{
+        left: `${eventInset.x}px`,
+        bottom: `${eventInset.y}px`,
+        width: `${eventInset.width}px`,
+        height: `${eventInset.height}px`,
+      }"
+      @pointerdown.stop
+      @pointerup.stop
+    >
+      <span>{{ t(eventInset.label) }}</span>
+    </div>
     <div class="town-action-icons">
       <button
         v-for="anchor in actionAnchors"
@@ -44,9 +60,15 @@
         :class="{
           'town-era-icon': indicators[anchor.id] === 'era',
           'town-completion-icon': indicators[anchor.id] === 'ready',
+          'raid-defense-ready': raidDefenseIds.includes(anchor.id),
+          'raid-bell-ready': indicators[anchor.id] === 'bell',
         }"
         :data-town-plot="anchor.id"
-        :style="{ left: `${anchor.collection.x}%`, top: `${anchor.collection.y}%` }"
+        :style="{
+          left: `${anchor.collection.x}%`,
+          top: `${anchor.collection.y}%`,
+          '--action-scale': townIndicatorScale(indicators[anchor.id]),
+        }"
         :aria-label="
           indicators[anchor.id] === 'ready'
             ? t('Finish {building}', { building: t(BUILDING_BY_ID[anchor.id].shortName) })
@@ -92,8 +114,7 @@
           'scene-mine-button': anchor.id === 'mine',
           selected: anchor.id === selected,
           'is-ready': constructionReady(town.projects[anchor.id]),
-          'raid-defense-ready':
-            ['sheriff', 'bank'].includes(anchor.id) && constructionReady(town.projects[anchor.id]),
+          'raid-defense-ready': raidDefenseIds.includes(anchor.id),
           'can-build': availableIds.includes(anchor.id),
           'has-income': indicators[anchor.id] === 'coins',
           'has-action-icon': ['ready', 'coins', 'tnt', 'bell', 'era'].includes(
@@ -189,6 +210,7 @@
 </template>
 <script setup>
 import GameIcon from '../GameIcon.vue';
+import { townIndicatorScale } from '../../data/townIndicators';
 import { eraBuildingLevel } from '../../game/town/TownEras';
 import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import { BUILDING_BY_ID, BUILDINGS } from '../../data/town';
@@ -205,6 +227,7 @@ const props = defineProps({
   readOnly: Boolean,
   fullscreen: Boolean,
   cinematic: Boolean,
+  presentation: Object,
   active: { type: Boolean, default: true },
   town: Object,
   builderHammers: { type: Number, default: 0 },
@@ -217,6 +240,7 @@ const props = defineProps({
   nextLevel: Number,
   mineStage: { type: Number, default: 0 },
   raid: Object,
+  raidDefenseIds: { type: Array, default: () => [] },
   construction: Object,
 });
 const emit = defineEmits([
@@ -226,7 +250,12 @@ const emit = defineEmits([
   'raid-cue',
   'raid-complete',
   'camera-distance',
+  'presentation-ready',
+  'presentation-unavailable',
+  'cinematic-ready',
+  'cinematic-unavailable',
 ]);
+const eventInset = ref(null);
 const canvas = ref(null),
   canvasVersion = ref(0),
   map = ref(null),
@@ -263,12 +292,25 @@ function collectionOrigin(id) {
       };
   }
   const anchor = anchors.value.find((anchor) => anchor.id === id);
+  const origin = anchor?.collection?.visible ? anchor.collection : anchor;
   return {
-    x: Math.max(8, Math.min(92, anchor?.x ?? 50)),
-    y: Math.max(20, Math.min(90, anchor?.y ?? 50)),
+    x: Math.max(8, Math.min(92, origin?.x ?? 50)),
+    y: Math.max(20, Math.min(90, origin?.y ?? 50)),
   };
 }
-defineExpose({ collectionOrigin, cinematicFrame: (progress) => scene?.eraFrame(progress) });
+let presentationTime = 0;
+let cinematicProgress = 0;
+defineExpose({
+  collectionOrigin,
+  cinematicFrame: (progress) => {
+    cinematicProgress = progress;
+    scene?.eraFrame(progress, props.reducedMotion);
+  },
+  presentationFrame: (time) => {
+    presentationTime = time;
+    scene?.presentationFrame(time, props.reducedMotion);
+  },
+});
 const cameraActions = [
   { id: 'out', label: 'Zoom out', path: 'M6 12h12' },
   { id: 'in', label: 'Zoom in', path: 'M6 12h12M12 6v12' },
@@ -335,6 +377,13 @@ const cameraKey = (event) => {
   scene?.cameraAction(action);
 };
 function update() {
+  if (fallback.value) {
+    emit('cinematic-unavailable');
+    emit('cinematic-ready');
+    emit('presentation-unavailable');
+    emit('presentation-ready');
+    return;
+  }
   if (!scene || !props.active) return;
   const labels = Object.fromEntries(
     BUILDINGS.map((building) => [building.id, t(building.shortName)]),
@@ -363,7 +412,16 @@ function update() {
     lastVisual = visual;
     lastConstruction = props.construction?.serial;
   }
-  scene.setCinematic(props.cinematic);
+  scene.setPresentation(props.presentation);
+  if (props.presentation) {
+    scene.presentationFrame(presentationTime, props.reducedMotion);
+    emit('presentation-ready');
+  }
+  scene.setCinematic(props.cinematic, props.town.transition);
+  if (props.cinematic) {
+    scene.eraFrame(cinematicProgress, props.reducedMotion);
+    emit('cinematic-ready');
+  }
   scene.setAvailable([...availableIds.value, ...(props.town.income.stored > 0 ? ['saloon'] : [])]);
   scene.setUpgradeable(props.cinematic ? [] : upgradeIds.value);
   scene.select(props.selected);
@@ -401,6 +459,10 @@ async function recoverGraphics(error, contextLost = false) {
 function useFallback(error) {
   if (disposed || fallback.value) return;
   fallback.value = true;
+  emit('cinematic-unavailable');
+  emit('cinematic-ready');
+  emit('presentation-unavailable');
+  emit('presentation-ready');
   // Let an in-progress render finish unwinding before releasing its resources.
   nextTick(() => {
     scene?.dispose();
@@ -424,6 +486,9 @@ async function initialize() {
       (distance) => emit('camera-distance', distance),
       recoverGraphics,
     );
+    scene.onEventInset = (view) => {
+      eventInset.value = view;
+    };
     update();
     if (recoveryPose) {
       scene.camera.position.fromArray(recoveryPose.position);
@@ -480,9 +545,22 @@ watch(
   },
 );
 watch(
+  () => props.presentation?.id,
+  () => {
+    presentationTime = 0;
+    update();
+  },
+);
+watch(
   () => props.cinematic,
   (value) => {
-    scene?.setCinematic(value);
+    cinematicProgress = 0;
+    scene?.setCinematic(value, props.town.transition);
+    if (value && scene) emit('cinematic-ready');
+    if (value && fallback.value) {
+      emit('cinematic-unavailable');
+      emit('cinematic-ready');
+    }
     scene?.setUpgradeable(value ? [] : upgradeIds.value);
   },
 );

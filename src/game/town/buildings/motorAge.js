@@ -76,8 +76,23 @@ export function addMotorModernization(d, parent, kind, level = 1) {
       d.ball(root, side * reach, 2.05 + level * 0.25, 1.9, 0.18, '#f6db98');
     }
     if (kind === 'well' && level >= 2) {
-      d.mesh(root, 'cylinder', [1.3, 0.5 + level * 0.3, 1.3], [0, 3.6, 0], '#8caaa3');
-      d.mesh(root, 'cone', [1.38, 0.35, 1.38], [0, 4.4, 0], teal);
+      const tank = d.group(root);
+      tank.name = 'Motor Age supported water tank';
+      const tankHeight = 0.5 + level * 0.3;
+      const bottom = 3.6 - tankHeight / 2;
+      for (const x of [-1.12, 1.12]) {
+        for (const z of [-0.95, 0.95]) {
+          d.box(tank, 0.35, 0.2, 0.35, x, 0.1, z, cream);
+          d.rod(tank, [x, 0.2, z], [x, bottom, z], 0.08, teal).name = 'Tank support';
+        }
+        d.rod(tank, [x, 1.8, -0.95], [x, bottom, 0.95], 0.04, teal);
+        d.rod(tank, [x, 1.8, 0.95], [x, bottom, -0.95], 0.04, teal);
+      }
+      d.box(tank, 2.6, 0.12, 2.3, 0, bottom, 0, teal);
+      d.mesh(tank, 'cylinder', [1.3, tankHeight, 1.3], [0, 3.6, 0], '#8caaa3').name = 'Tank vessel';
+      d.mesh(tank, 'cone', [1.38, 0.35, 1.38], [0, 3.6 + tankHeight / 2 + 0.175, 0], teal).name =
+        'Tank lid';
+      d.rod(tank, [-1.2, bottom, 0.5], [-1.2, 0.4, 0.5], 0.065, teal);
     }
     if (kind === 'farm' && level >= 2) {
       d.box(root, 2, 1.2, 1.7, -2, 0.7, 0, glass);

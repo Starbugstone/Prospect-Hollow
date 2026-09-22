@@ -1,3 +1,4 @@
+import { queueBuildingPresentations, acknowledgePresentation } from '../data/townPresentations';
 import { miningDepthBonus, CHEST_ECONOMY_VERSION } from '../data/economy';
 import { defineStore } from 'pinia';
 import { SHOP_ITEMS, rollShopStock, shopSlots, shopSpace } from '../data/shop';
@@ -10,6 +11,7 @@ import {
   getStars,
 } from '../data/campaign';
 import { grantChapterGift } from '../data/journey';
+import { TOWN_PROJECTS } from '../data/townProjects';
 
 import { localProfile, SAVE_KEY } from '../services/localProfile';
 import { createSaveFile, parseSaveFile } from '../services/saveTransfer';
@@ -48,6 +50,7 @@ import {
 export { SAVE_KEY };
 
 const defaults = () => ({
+  townProjectFocus: '',
   records: {},
   continuousRecords: {},
   continuousRun: null,
@@ -76,6 +79,12 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
     state.saveWarning = loaded.warning ?? '';
     state.readOnly = !!loaded.readOnly;
     state.town = normalizeTown(saved?.town);
+    if (
+      TOWN_PROJECTS.some(
+        (project) => project.id === saved?.townProjectFocus && project.era === state.town.era,
+      )
+    )
+      state.townProjectFocus = saved.townProjectFocus;
     if (Number.isSafeInteger(saved?.shopVisit) && saved.shopVisit >= 0)
       state.shopVisit = saved.shopVisit;
     if (Array.isArray(saved?.shopStock)) {
@@ -181,6 +190,7 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
         ...saved,
         powers: state.powers,
         town: state.town,
+        townProjectFocus: state.townProjectFocus,
         builderHammers: state.builderHammers,
         pendingChests: [],
       })
@@ -205,6 +215,7 @@ const profileData = (state) => ({
   shopVisit: state.shopVisit,
   seenObstacles: state.seenObstacles,
   town: state.town,
+  townProjectFocus: state.townProjectFocus,
   issuedRun: state.issuedRun,
   settledRun: state.settledRun,
 });
@@ -239,6 +250,15 @@ export const useCampaignStore = defineStore('campaign', {
       Object.values(state.records).reduce((sum, record) => sum + record.stars, 0),
   },
   actions: {
+    focusTownProject(id) {
+      if (!TOWN_PROJECTS.some((project) => project.id === id && project.era === this.town.era))
+        return false;
+      const previous = this.townProjectFocus;
+      this.townProjectFocus = id;
+      if (this.save()) return true;
+      this.townProjectFocus = previous;
+      return false;
+    },
     acknowledgeFirstLights() {
       if (
         this.town.era !== 'industrial' ||
@@ -255,6 +275,15 @@ export const useCampaignStore = defineStore('campaign', {
     advanceEra(expectedEra) {
       if (this.activeRun) return false;
       const next = advanceEra(this.town, expectedEra);
+      if (!next) return false;
+      const previous = this.town;
+      this.town = next;
+      if (this.save()) return true;
+      this.town = previous;
+      return false;
+    },
+    acknowledgePresentation(id) {
+      const next = acknowledgePresentation(this.town, id);
       if (!next) return false;
       const previous = this.town;
       this.town = next;
@@ -407,7 +436,7 @@ export const useCampaignStore = defineStore('campaign', {
       this.accrueSaloonIncome(Date.now(), false);
       const next = purchase(this.town, id, expectedStage);
       if (!next) return false;
-      this.town = next;
+      this.town = queueBuildingPresentations(this.town, next);
       this.ensureShopStock();
       this.save();
       return true;
@@ -421,7 +450,7 @@ export const useCampaignStore = defineStore('campaign', {
       const previous = this.town;
       const previousStock = this.shopStock;
       const previousVisit = this.shopVisit;
-      this.town = settleForgeProduction(reinforceRaid(next));
+      this.town = queueBuildingPresentations(previous, settleForgeProduction(reinforceRaid(next)));
       this.ensureShopStock();
       if (!this.save()) {
         this.town = previous;
@@ -443,7 +472,7 @@ export const useCampaignStore = defineStore('campaign', {
       const previous = this.town;
       const previousStock = this.shopStock;
       const previousVisit = this.shopVisit;
-      this.town = settleForgeProduction(reinforceRaid(next));
+      this.town = queueBuildingPresentations(previous, settleForgeProduction(reinforceRaid(next)));
       this.ensureShopStock();
       if (!this.save()) {
         this.town = previous;

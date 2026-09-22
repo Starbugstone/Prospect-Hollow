@@ -186,7 +186,7 @@ paths:
         Commands and their exact args:
         - preferences: {locale: en|fr}
         - community.preferences: {listed: boolean, villageName: string 2..40 letters/numbers/spaces/apostrophes/hyphens}; listing requires a linked account.
-        - run.start: {level: integer 1..240, mode: normal|continuous}
+        - run.start: {level: integer 1..324, mode: normal|continuous}
         - run.move: {runId, a: tile index, b: tile index, activate?: boolean}; b may be omitted for activation.
         - run.power: {runId, power: tnt|color-wand|tile-breaker|clear-row|shuffle, index?: tile index}
         - run.resume / run.abandon: {runId}
@@ -196,6 +196,7 @@ paths:
         - shop.buy: {id: stock ID, visit: stock version}
         - town.era: {era: current era ID}
         - town.raid-seen: {id: saved encounter sequence}
+        - town.presentation-seen: {id} (acknowledge a pending building cinematic)
         - town.sync / town.raid / town.tour / town.lights / town.era-seen: {}
 
         All other fields and commands are rejected. Never send score, jewels, coins, price,
@@ -244,6 +245,7 @@ paths:
                       town.sync,
                       town.raid,
                       town.tour,
+                      town.presentation-seen,
                       town.lights,
                       town.era-seen,
                       shop.buy,

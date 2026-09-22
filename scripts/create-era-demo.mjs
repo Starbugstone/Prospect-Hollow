@@ -108,7 +108,9 @@ try {
     const profile = JSON.stringify({
       schemaVersion: 2,
       town: state,
-      records: ['post-war', 'motor-age', 'contemporary'].includes(state.era)
+      records: ['post-war', 'motor-age', 'aviation', 'broadcast', 'contemporary'].includes(
+        state.era,
+      )
         ? Object.fromEntries(
             Array.from({ length: 120 }, (_, i) => [i + 1, { score: 100, stars: 1 }]),
           )
@@ -130,7 +132,7 @@ try {
     );
   }
   console.log(
-    `Created all six-era disposable profiles in ${directory}/. See docs/settlement-eras.md for testing steps.`,
+    `Created all eight-era disposable profiles in ${directory}/. See docs/settlement-eras.md for testing steps.`,
   );
 } finally {
   await server.close();

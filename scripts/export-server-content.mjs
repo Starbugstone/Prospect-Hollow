@@ -7,6 +7,7 @@ import { execFileSync } from 'node:child_process';
 const bundled = await build({
   stdin: {
     contents: `
+import { TOWN_PRESENTATIONS } from './src/data/townPresentations.js';
 import { BUILDINGS, createTown } from './src/data/town.js';
 import { ERAS, FORGE_PRODUCTION_RUNS } from './src/data/eras.js';
 import { POWERS, CHEST_TIERS, SPEED_CHEST_TIERS, CHAPTERS, getStars } from './src/data/campaign.js';
@@ -42,7 +43,7 @@ for(const b of BUILDINGS) for(let stage=0;stage<=b.upgrades.length;stage++) {
  town.buildings[b.id]=stage; fixture(b.id+'-'+stage,town);
 }
 const serviceCarry=Object.fromEntries(ERAS.filter(e=>e.enabled).map(era=>[era.id,Array.from({length:4},(_,level)=>{const town=createTown();town.buildings.well=1;town.buildings.farm=1;town.buildingEras.well=era.id;town.buildingEras.farm=era.id;town.buildingEraLevels.well=level;town.buildingEraLevels.farm=level;return {water:waterCapacity(town)-6,food:foodCapacity(town)-6};})]));
-export default { serviceCarry,eraEventKinds:Object.fromEntries(ERAS.map(era=>[era.id,eraEventKind(era.id)])),fireProtection:Array.from({length:4},(_,i)=>fireProtection(i)),buildings: BUILDINGS, town: createTown(), eras: ERAS, powers: POWERS,
+export default { presentations:TOWN_PRESENTATIONS, serviceCarry,eraEventKinds:Object.fromEntries(ERAS.map(era=>[era.id,eraEventKind(era.id)])),fireProtection:Array.from({length:4},(_,i)=>fireProtection(i)),buildings: BUILDINGS, town: createTown(), eras: ERAS, powers: POWERS,
 chestTiers: CHEST_TIERS, speedChestTiers:SPEED_CHEST_TIERS, chestDrops:CHEST_DROPS, shop: SHOP_ITEMS, capacities: BONUS_CAPACITIES,
 shopSlots:Array.from({length:6},(_,i)=>shopSlots(i)),forgeRuns:FORGE_PRODUCTION_RUNS,hammerCapacity:HAMMER_CAPACITY,overflowCoins:OVERFLOW_COINS,
 chestEconomyVersion:CHEST_ECONOMY_VERSION,riverRailPrices:RIVER_RAIL_LEVEL_PRICES,comboCoinStep:COMBO_COIN_STEP,multiMatchCoinStep:MULTI_MATCH_COIN_STEP,

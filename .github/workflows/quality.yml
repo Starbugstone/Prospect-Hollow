@@ -2,8 +2,9 @@ name: Quality checks
 
 on:
   pull_request:
+    branches: [main, develop]
   push:
-    branches: [main, develop, Develop]
+    branches: [main, develop]
 
 permissions:
   contents: read

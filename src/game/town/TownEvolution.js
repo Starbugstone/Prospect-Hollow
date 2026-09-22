@@ -1,15 +1,25 @@
+import { eraEvolution } from '../../data/eras';
 import { hasElectricity } from '../../data/industrial';
-import { PLOTS, plotStreet, routeBetween } from './TownLayout';
+import {
+  PLOTS,
+  plotStreet,
+  routeGraph,
+  routeOnGraph,
+  townTracks,
+  segmentDistance,
+} from './TownLayout';
 
-export const pavedTown = (town) =>
-  ['industrial', 'motor-age', 'post-war', 'contemporary'].includes(town.era);
+export const pavedTown = (town) => eraEvolution(town.era).paved;
 export const modernTransport = (town, id) =>
-  town.buildings[id] > 0 &&
-  ['industrial', 'motor-age', 'post-war', 'contemporary'].includes(town.buildingEras[id]);
-export const motorTraffic = (town) =>
-  modernTransport(town, 'stable') &&
-  (['motor-age', 'contemporary'].includes(town.buildingEras.stable) ||
-    town.buildingEraLevels.stable >= 2);
+  town.buildings[id] > 0 && eraEvolution(town.buildingEras[id]).modernTransport;
+export const motorTraffic = (town) => {
+  const minimum = eraEvolution(town.buildingEras.stable).motorTrafficLevel;
+  return (
+    modernTransport(town, 'stable') &&
+    minimum !== null &&
+    (minimum === 1 || town.buildingEraLevels.stable >= minimum)
+  );
+};
 
 // A shared road-following network for WebGL and the accessible map. Merge
 // common branches so every completed plot gets a service without duplicate wires.
@@ -18,16 +28,40 @@ export function powerGrid(town) {
     wires = new Map(),
     connections = [];
   if (!hasElectricity(town)) return { poles: [], wires: [], connections };
+  const graph = routeGraph(town);
+  const streets = townTracks(town);
   const pole = ([x, z]) => {
     // Keep the mine's work yard and saved encounter paths open.
     if (Math.abs(x) < 4.65 && z >= -18 && z < -8.7) x = (x < 0 ? -1 : 1) * 4.85;
+    const origin = [x, z];
+    let verge;
+    for (const radius of [0.85, 1.2, 1.65, 2.1]) {
+      for (let n = 0; n < 16; n++) {
+        const angle = (n * Math.PI) / 8;
+        const candidate = [
+          origin[0] + Math.cos(angle) * radius,
+          origin[1] + Math.sin(angle) * radius,
+        ];
+        if (
+          !(Math.abs(candidate[0]) < 4.65 && candidate[1] >= -18 && candidate[1] < -8.7) &&
+          streets.every(
+            ({ from, to, width }) => segmentDistance(...candidate, from, to) > width / 2 + 0.22,
+          )
+        ) {
+          verge = candidate;
+          break;
+        }
+      }
+      if (verge) break;
+    }
+    [x, z] = verge ?? origin;
     const key = `${x},${z}`;
-    if (!poles.has(key)) poles.set(key, [x, 6.4, z + 0.7]);
+    if (!poles.has(key)) poles.set(key, [x, 6.4, z]);
     return key;
   };
   for (const id of Object.keys(PLOTS).filter((id) => id === 'mine' || town.buildings[id])) {
-    const route = routeBetween(
-      town,
+    const route = routeOnGraph(
+      graph,
       plotStreet('powerHouse'),
       id === 'bridge' ? [24, 7.5] : plotStreet(id),
     );
@@ -50,7 +84,7 @@ export function powerGrid(town) {
 
 export function addPowerGrid(d, town) {
   const network = powerGrid(town);
-  if (!network.poles.length || town.era === 'contemporary') return;
+  if (!network.poles.length || !eraEvolution(town.era).overheadPower) return;
   const root = d.group(d.world);
   root.name = 'Connected village power grid';
   root.userData.static = true;
@@ -73,14 +107,7 @@ export function addPowerGrid(d, town) {
     }
   }
   d.batch(root);
+  return root;
 }
 
-export const roadSurface = (town) =>
-  ({
-    frontier: '#c3a477',
-    'river-rail': '#b3a18a',
-    industrial: '#89928a',
-    'post-war': '#a38f7d',
-    'motor-age': '#858b86',
-    contemporary: '#a5afa5',
-  })[town.era] ?? '#c3a477';
+export const roadSurface = (town) => eraEvolution(town.era).roadColor;

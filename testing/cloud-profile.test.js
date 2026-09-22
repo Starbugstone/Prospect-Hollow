@@ -349,6 +349,27 @@ function playing() {
 }
 
 describe('responsive authoritative mining', () => {
+  it('restores server ore progress and clears it when the next run has no ore orders', async () => {
+    const run = playing();
+    run.oreOrders = [{ color: 'ruby', target: 12, progress: 5 }];
+    fetchMock.mockResolvedValueOnce(reply(profile('account-a', 1, run)));
+    await stores.game.startLevel(1);
+    expect(stores.game.oreOrders).toEqual(run.oreOrders);
+    fetchMock.mockResolvedValueOnce(reply(profile('account-a', 2, mine())));
+    await stores.game.startLevel(1);
+    expect(stores.game.oreOrders).toEqual([]);
+  });
+
+  it('persists building cinematic acknowledgments through the authoritative command queue', async () => {
+    fetchMock.mockResolvedValueOnce(reply(profile('account-a', 1)));
+    await stores.campaign.acknowledgePresentation('railway-opening');
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toMatchObject({
+      type: 'town.presentation-seen',
+      args: { id: 'railway-opening' },
+      revision: 0,
+    });
+  });
+
   it('starts the swap before the response and waits for both before playing server cascades', async () => {
     const run = playing();
     const response = deferred();

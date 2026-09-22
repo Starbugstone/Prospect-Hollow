@@ -1,3 +1,4 @@
+import { eraEvolution } from './eras';
 // Four civic projects continue the existing three-stage village progression.
 export const MOTOR_AGE_BUILDINGS = [
   [
@@ -71,7 +72,7 @@ export const MOTOR_AGE_BUILDINGS = [
     speaker: 'Ada · the caretaker',
   })),
 }));
-export const MOTOR_AGE_LEVEL_PRICES = [3500, 4400, 5300];
+export const MOTOR_AGE_LEVEL_PRICES = eraEvolution('motor-age').prices;
 export const MOTOR_AGE_VARIANTS = {
   cityHall: [
     'Prospect city hall',

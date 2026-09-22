@@ -102,7 +102,13 @@
       </g>
       <g v-if="['fireStation', 'school'].includes(kind)">
         <path :d="`M-8 ${-height}v-35l27 6v35`" fill="#c5af8b" stroke="#947b5f" stroke-width="3" />
-        <circle :cy="-height - 16" cx="5" r="7" fill="#eaca76" />
+        <path
+          v-if="kind === 'fireStation'"
+          :d="`M-3 ${-height - 25}l16 3m-16 5 16 3m-16 5 16 3`"
+          stroke="#53726d"
+          stroke-width="3"
+        />
+        <path v-else :d="`M-4 ${-height - 10}l3-14 10 2 4 16Z`" fill="#c6a562" />
       </g>
       <g v-if="kind === 'fireStation'">
         <path d="M-64-78 9-61V-5L-64-22Z" fill="#6f4f3f" stroke="#d0b68d" stroke-width="4" />
@@ -151,16 +157,7 @@
       <path d="M-42-76 4-66 31-80-17-92Z" fill="#527b70" />
       <path d="M-27-54v22l18 4v-22Z" fill="#bfd5b9" stroke="#e2d0a7" stroke-width="3" />
     </g>
-    <g
-      v-if="
-        level >= 3 && !['bridge', 'square', 'well', 'farm', 'fisherman', 'riverPort'].includes(kind)
-      "
-    >
-      <path d="M22-160v-42l28 6v43" fill="#c6b393" stroke="#967e63" stroke-width="3" />
-      <path d="m15-204 20-23 24 31Z" fill="#54796c" />
-      <circle cx="36" cy="-182" r="9" fill="#f4d795" stroke="#8c8566" stroke-width="2" />
-      <path d="M36-188v7l5 3" fill="none" stroke="#637b6c" stroke-width="2" />
-    </g>
+    <TownHeritageUpgrade v-if="level >= 3" :kind="kind" />
     <g v-if="kind === 'stable'"
       ><path d="M-69-77-3-60V0L-69-17Z" fill="#607c75" /><path
         v-for="n in 5"
@@ -191,6 +188,7 @@
   </g>
 </template>
 <script setup>
+import TownHeritageUpgrade from './TownHeritageUpgrade.vue';
 import { computed } from 'vue';
 import TownSquare from './TownSquare.vue';
 const props = defineProps({ kind: String, level: { type: Number, default: 1 } });

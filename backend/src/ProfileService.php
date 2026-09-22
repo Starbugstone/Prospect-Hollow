@@ -10,7 +10,7 @@ final class ProfileService {
         $this->town->accrue($p);
         // JavaScript distinguishes dictionaries from arrays, including empty dictionaries.
         foreach (['records','continuousRecords'] as $key) $p[$key]=(object)$p[$key];
-        foreach (['projects','events','eraTransitionSeen'] as $key) $p['town'][$key]=(object)($p['town'][$key] ?? []);
+        foreach (['projects','events','eraTransitionSeen','presentations'] as $key) $p['town'][$key]=(object)($p['town'][$key] ?? []);
         $p['town']['incomeRate']=$this->town->incomeRate($p['town']);
         return ['contentVersion'=>$this->content->data['version'],'playerId'=>$row['id'],'linked'=>(bool)$row['email'],'locale'=>$row['locale'],'revision'=>(int)$row['revision'],'savedAt'=>(int)$row['saved_at'],'profile'=>$p];
     }

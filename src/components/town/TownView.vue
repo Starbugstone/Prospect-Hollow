@@ -30,6 +30,12 @@
       <button v-if="town.buildings.saloon" @click="inspectBuilding('saloon')">
         <TownIcon name="coin" />{{ t('{rate}/hour', { rate: incomeRate }) }}
       </button>
+      <button
+        v-if="!fullscreen && (town.era !== 'frontier' || town.buildings.home > 0)"
+        @click="dialogMode = 'projects'"
+      >
+        {{ t('Town projects') }} →
+      </button>
       <button @click="inspectBuilding('armory')">{{ t('Supplies') }} →</button>
     </div>
     <section class="town-world" :aria-label="t('Your town')">
@@ -40,7 +46,7 @@
           'town-has-raid': activeRaid,
           'town-fullscreen': fullscreen,
           'town-labels-hidden': !settings.showVillageLabels,
-          'town-in-cinematic': town.transition?.pending,
+          'town-in-cinematic': town.transition?.pending || openingPresentation,
         }"
       >
         <button
@@ -95,6 +101,13 @@
         <button v-if="!activeRaid" class="town-plots-button" @click="openDirectory">
           {{ t('Available plots') }} <TownIcon name="arrow" />
         </button>
+        <button
+          v-if="fullscreen && !activeRaid && (town.era !== 'frontier' || town.buildings.home > 0)"
+          class="town-plots-button town-projects-button"
+          @click="dialogMode = 'projects'"
+        >
+          {{ t('Town projects') }} <TownIcon name="arrow" />
+        </button>
         <div v-if="activeRaid" class="town-raid-banner" role="status" aria-live="polite">
           <span class="town-kicker"
             >{{ t(eventHeading(activeRaid))
@@ -146,6 +159,11 @@
           :fullscreen="fullscreen"
           :town="sceneTown"
           :cinematic="!!town.transition?.pending"
+          @cinematic-ready="eraReady = true"
+          @cinematic-unavailable="eraFallback = true"
+          :presentation="openingPresentation"
+          @presentation-ready="presentationReady = true"
+          @presentation-unavailable="presentationFallback = true"
           :forge-collectible="campaign.canCollectForge(collectionNow)"
           :now="collectionNow"
           :builder-hammers="campaign.builderHammers"
@@ -165,6 +183,7 @@
           :next-level="campaign.nextLevel"
           :mine-stage="campaign.mineStage"
           :raid="activeRaid"
+          :raid-defense-ids="readyRaidDefenses"
           :construction="construction"
           @select="selectBuilding"
           @mine="goMining"
@@ -173,13 +192,14 @@
           @raid-complete="finishRaid"
           @camera-distance="cameraDistance = $event"
         />
-        <TownCoinCollection
+        <TownResourceCollection
           v-if="collection"
           :key="collection.serial"
-          :coins="collection.coins"
+          :amount="collection.amount"
+          :resource="collection.resource"
           :origin="collection.origin"
           :reduced-motion="settings.reducedMotion"
-          @coin="game.audioManager?.playArcadeCue?.('coin', $event)"
+          @cue="game.audioManager?.playArcadeCue?.($event.name, $event.index)"
           @close="collection = null"
         />
         <TownRaidNotice
@@ -203,7 +223,9 @@
           @close="raidNotice = null"
         />
         <TownNextStep
-          v-if="!activeRaid && !town.transition?.pending"
+          v-if="!activeRaid && !town.transition?.pending && !openingPresentation"
+          id="village-progress"
+          v-show="progressOpen"
           class="village-next-inline"
           :town="town"
           :hammers="campaign.builderHammers"
@@ -213,17 +235,16 @@
           @advance-era="beginEra"
         />
         <button
-          v-if="!activeRaid && !town.transition?.pending"
+          v-if="!activeRaid && !town.transition?.pending && !openingPresentation"
           class="town-progress-button"
-          aria-haspopup="dialog"
-          :aria-expanded="dialogMode === 'progress'"
-          @click="dialogMode = 'progress'"
+          aria-controls="village-progress"
+          :aria-expanded="progressOpen"
+          @click="progressOpen = !progressOpen"
         >
-          <img src="/art/rewards/era-compass.svg" alt="" />{{ t('Progress') }}
+          <img src="/art/rewards/era-compass.svg" alt="" />{{
+            t(progressOpen ? 'Hide progress' : 'Progress')
+          }}
         </button>
-        <p v-if="forgeCollected" class="town-construction-tip" role="status">
-          {{ t('Collected 1 TNT · added to your armory') }}
-        </p>
         <span class="town-sr-only" role="status">{{ t(announcement) }}</span>
       </div>
       <div class="town-needs" :aria-label="t('Basic town needs')">
@@ -290,28 +311,19 @@
       v-if="active && dialogMode"
       :title="
         t(
-          dialogMode === 'story'
-            ? 'Village story'
-            : dialogMode === 'progress'
-              ? 'Your next village step'
+          dialogMode === 'projects'
+            ? 'Town projects'
+            : dialogMode === 'story'
+              ? 'Village story'
               : dialogMode === 'directory'
                 ? 'Choose a plot'
                 : 'Your town',
         )
       "
-      :close-label="dialogMode === 'progress' ? 'Close village progress' : 'Close building details'"
-      :class="{ 'town-progress-dialog': dialogMode === 'progress' }"
+      close-label="Close building details"
       @close="closeDialog"
     >
-      <TownNextStep
-        v-if="dialogMode === 'progress'"
-        :town="town"
-        :hammers="campaign.builderHammers"
-        @select="selectBuilding"
-        @inspect="inspectBuilding"
-        @mine="goMining"
-        @advance-era="beginEra"
-      />
+      <TownProjects v-if="dialogMode === 'projects'" :town="town" @inspect="inspectBuilding" />
       <template v-else-if="dialogMode === 'story'">
         <section class="town-story-stats" :aria-label="t('Village overview')">
           <h2>{{ t('Village overview') }}</h2>
@@ -430,7 +442,7 @@
         <p class="town-directory-hint">
           {{
             t(
-              'Select a parcel to open its building card. Select ready construction to finish it and keep this list open. Collect resources by tapping buildings in the town.',
+              'Select a row to finish construction or buy with the coins or hammer shown. This list stays open. Collect resources by tapping buildings in the town.',
             )
           }}
         </p>
@@ -456,13 +468,6 @@
               ✦ {{ t('Ready to finish') }}
             </span>
             <span
-              v-else-if="town.coins < place.offer.cost"
-              class="town-plot-price"
-              :aria-label="t('1 builder hammer')"
-            >
-              <img src="/art/rewards/builder-hammer.svg" alt="" /> 1
-            </span>
-            <span
               v-else
               class="town-plot-price"
               :aria-label="
@@ -473,13 +478,20 @@
             >
               <TownIcon v-if="place.offer.cost" name="coin" />
               {{ place.offer.cost ? number(place.offer.cost) : t('Free') }}
+              <span
+                v-if="town.coins < place.offer.cost"
+                class="town-plot-hammer"
+                :aria-label="t('1 builder hammer')"
+              >
+                <img src="/art/rewards/builder-hammer.svg" alt="" /> 1
+              </span>
             </span>
           </button>
         </section>
         <p class="town-service">
           {{
             t(
-              ['post-war', 'contemporary'].includes(town.era)
+              isCityEra(town.era)
                 ? 'Every city building has 3 levels. Existing services stay open during modernization.'
                 : town.era === 'motor-age'
                   ? 'Every Motor Age building has 3 levels. Each construction takes at most 2 mining runs.'
@@ -497,7 +509,11 @@
             <button
               v-for="place in currentEraPlots"
               :key="place.id"
-              @click="selectParcel(place.id)"
+              @click="
+                constructionReady(town.projects[place.id])
+                  ? finishBuilding(place.id, true)
+                  : inspectBuilding(place.id)
+              "
             >
               <span>{{ t(place.shortName) }}</span>
               <small>{{
@@ -582,10 +598,22 @@
         </button>
       </div>
     </TownDialog>
+    <TownPresentationCinematic
+      v-if="active && openingPresentation && presentationReady"
+      :key="openingPresentation.id"
+      :definition="openingPresentation"
+      :ready="presentationReady"
+      :reduced-motion="settings.reducedMotion || presentationFallback"
+      :paused="paused || settings.isSettingsOpen || mineEntryPending"
+      @frame="townScene?.presentationFrame($event)"
+      @complete="completePresentation"
+    />
     <TownEraCinematic
       v-if="active && town.transition?.pending"
       :era-id="town.era"
-      :reduced-motion="settings.reducedMotion"
+      :ready="eraReady"
+      :paused="paused || settings.isSettingsOpen || mineEntryPending"
+      :reduced-motion="settings.reducedMotion || eraFallback"
       @reveal="eraRevealed = true"
       @frame="townScene?.cinematicFrame($event)"
       @complete="completeEraCinematic"
@@ -596,7 +624,12 @@
 </template>
 <script setup>
 import { cloudEnabled } from '../../services/cloudMode';
-import { motorTraffic } from '../../game/town/TownEvolution';
+import { isCityEra } from '../../data/city';
+import TownProjects from './TownProjects.vue';
+import TownPresentationCinematic from './TownPresentationCinematic.vue';
+import { pendingPresentation } from '../../data/townPresentations';
+
+import { motorTraffic, modernTransport } from '../../game/town/TownEvolution';
 import { civicIncident } from '../../data/townEvents';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { t, number } from '../../i18n';
@@ -645,7 +678,7 @@ import TownDialog from './TownDialog.vue';
 import TownBuildingDetails from './TownBuildingDetails.vue';
 import TownIcon from './TownIcon.vue';
 import TownRaidNotice from './TownRaidNotice.vue';
-import TownCoinCollection from './TownCoinCollection.vue';
+import TownResourceCollection from './TownResourceCollection.vue';
 import TownNextStep from './TownNextStep.vue';
 import TownDefenseStatus from './TownDefenseStatus.vue';
 
@@ -659,6 +692,7 @@ const campaign = useCampaignStore(),
   settings = useSettingsStore();
 const game = useGameStore();
 const town = computed(() => campaign.town);
+const progressOpen = ref(!window.matchMedia('(max-width: 900px), (max-height: 500px)').matches);
 const tourOpen = ref(!campaign.town.tourSeen),
   fullscreen = ref(false),
   mapFrame = ref(null),
@@ -698,6 +732,8 @@ const gate = computed(() => eraGate(town.value));
 const directoryPlots = computed(() => availableParcels(town.value, campaign.builderHammers));
 const townScene = ref(null);
 const eraRevealed = ref(false);
+const eraReady = ref(false);
+const eraFallback = ref(false);
 const sceneTown = computed(() =>
   town.value.transition?.pending && !eraRevealed.value
     ? { ...town.value, era: town.value.transition.from }
@@ -707,6 +743,7 @@ watch(
   () => town.value.transition?.id,
   () => {
     eraRevealed.value = false;
+    eraReady.value = false;
   },
 );
 async function beginEra() {
@@ -812,10 +849,28 @@ const paused = ref(false),
   latestMoment = ref(null);
 const raidNotice = ref(null);
 const collection = ref(null);
-const forgeCollected = ref(false);
 let collectionSerial = 0;
 const activeRaid = ref(null),
   raidPhase = ref('Riders on the ridge');
+const presentationReady = ref(false);
+const presentationFallback = ref(false);
+const openingPresentation = computed(() =>
+  !activeRaid.value && !town.value.transition?.pending ? pendingPresentation(town.value) : null,
+);
+watch(
+  openingPresentation,
+  (definition) => {
+    presentationReady.value = false;
+    if (definition) {
+      closeDialog();
+      fullscreen.value = true;
+    }
+  },
+  { immediate: true },
+);
+function completePresentation() {
+  if (openingPresentation.value) campaign.acknowledgePresentation(openingPresentation.value.id);
+}
 const cameraDistance = ref(55);
 const { playRaidCue } = useTownAudio(() => ({
   active: props.active,
@@ -825,10 +880,8 @@ const { playRaidCue } = useTownAudio(() => ({
   buildCue: construction.value?.serial,
   stable: town.value.buildings.stable > 0 && !motorTraffic(town.value),
   river: true,
-  railDepot:
-    town.value.buildings.railDepot > 0 && town.value.buildingEras.railDepot !== 'contemporary',
-  riverPort:
-    town.value.buildings.riverPort > 0 && town.value.buildingEras.riverPort !== 'contemporary',
+  railDepot: town.value.buildings.railDepot > 0 && !modernTransport(town.value, 'railDepot'),
+  riverPort: town.value.buildings.riverPort > 0 && !modernTransport(town.value, 'riverPort'),
   raid:
     activeRaid.value && eventKind(activeRaid.value) === 'bandits'
       ? `${activeRaid.value.id}-${raidPhase.value}`
@@ -929,18 +982,21 @@ async function collectIncome() {
   collectionNow.value = Date.now();
   const coins = await campaign.collectSaloonIncome(collectionNow.value);
   if (!coins) return false;
+  showCollection('coins', coins, 'saloon');
+  return true;
+}
+function showCollection(resource, amount, buildingId) {
   closeDialog();
   collection.value = {
-    coins,
+    resource,
+    amount,
     serial: ++collectionSerial,
-    origin: townScene.value?.collectionOrigin('saloon'),
+    origin: townScene.value?.collectionOrigin(buildingId),
   };
-  return true;
 }
 async function selectBuilding(id) {
   if (!Object.hasOwn(BUILDING_BY_ID, id)) return;
   selected.value = id;
-  forgeCollected.value = false;
   if (constructionReady(town.value.projects[id])) {
     finishBuilding(id);
     return;
@@ -957,9 +1013,7 @@ async function selectBuilding(id) {
   collection.value = null;
   collectionNow.value = Date.now();
   if (id === 'blacksmith' && (await campaign.collectForgeTNT(collectionNow.value))) {
-    closeDialog();
-    forgeCollected.value = true;
-    game.audioManager?.playArcadeCue?.('jackpot');
+    showCollection('tnt', 1, 'blacksmith');
     return;
   }
   await inspectBuilding(id);
@@ -972,12 +1026,17 @@ async function ringBell() {
 }
 function selectParcel(id) {
   if (constructionReady(town.value.projects[id])) finishBuilding(id, true);
-  else inspectBuilding(id);
+  else {
+    const offer = upgradeOffer(town.value, id);
+    if (!offer?.available) return;
+    selected.value = id;
+    if (town.value.coins >= offer.cost) repair(offer.stage, true);
+    else useHammer(offer.stage, true);
+  }
 }
 async function inspectBuilding(id) {
   if (!Object.hasOwn(BUILDING_BY_ID, id)) return;
   selected.value = id;
-  forgeCollected.value = false;
   dialogMode.value = 'building';
   await nextTick();
   const dialog = document.querySelector('.town-dialog');
@@ -997,7 +1056,6 @@ function showConstructionSites() {
 }
 defineExpose({ showConstructionSites });
 function goMining() {
-  forgeCollected.value = false;
   collection.value = null;
   closeDialog();
   if (campaign.completedCount < LEVEL_COUNT) emit('mine');
@@ -1013,9 +1071,9 @@ function plotStatus(place) {
       })
     : t('Empty plot');
 }
-async function repair(stage) {
+async function repair(stage, keepDirectory = false) {
   if (!(await campaign.upgradeBuilding(selected.value, stage))) return;
-  showConstruction();
+  showConstruction(keepDirectory);
   const complete = !town.value.projects[selected.value];
   const puzzles = town.value.projects[selected.value]?.required ?? 0;
   announcement.value = t(
@@ -1044,6 +1102,7 @@ async function repair(stage) {
   };
 }
 function showConstruction(keepDirectory = false) {
+  if (pendingPresentation(town.value)) keepDirectory = false;
   if (!keepDirectory) closeDialog();
   construction.value = { id: selected.value, serial: (construction.value?.serial ?? 0) + 1 };
   if (!keepDirectory) mapFrame.value?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
@@ -1066,9 +1125,9 @@ function celebrateBuilding() {
     building: t(BUILDING_BY_ID[selected.value].shortName),
   });
 }
-async function useHammer(stage) {
+async function useHammer(stage, keepDirectory = false) {
   if (!(await campaign.useBuilderHammer(selected.value, stage))) return;
-  showConstruction();
+  showConstruction(keepDirectory);
   celebrateBuilding();
 }
 

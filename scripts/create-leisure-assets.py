@@ -4,118 +4,22 @@ Run Blender --background --python this-file.py -- /absolute/repository/path
 Coordinates in authoring helpers use the game's X/Y-up/Z convention.
 """
 import bpy
-import json
 import math
 import sys
 from pathlib import Path
 from mathutils import Vector
 
-ROOT = Path(sys.argv[sys.argv.index('--') + 1])
-SOURCE = ROOT / 'art' / 'leisure'
-OUTPUT = ROOT / 'src' / 'assets'
-SOURCE.mkdir(parents=True, exist_ok=True)
-OUTPUT.mkdir(parents=True, exist_ok=True)
-bpy.ops.object.select_all(action='SELECT')
-bpy.ops.object.delete(use_global=False)
-materials = {}
-models = {}
-active = None
-joint = 'body'
-pivot = (0, 0, 0)
+# Blender --python does not consistently include this script's directory on sys.path.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from blender_assets import AssetPack, vec
 
-def vec(p):
-    return Vector((p[0], -p[2], p[1]))
-
-def material(color):
-    if color not in materials:
-        m = bpy.data.materials.new(color)
-        rgb = [int(color[i:i+2], 16) / 255 for i in (1, 3, 5)]
-        rgb = [v / 12.92 if v <= .04045 else ((v + .055) / 1.055) ** 2.4 for v in rgb]
-        m.diffuse_color = (*rgb, 1)
-        m.use_nodes = True
-        m.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (*rgb, 1)
-        m.node_tree.nodes['Principled BSDF'].inputs['Roughness'].default_value = .88
-        m['gameColor'] = color
-        materials[color] = m
-    return materials[color]
-
-def model(name):
-    global active, joint, pivot
-    active = bpy.data.objects.new(name, None)
-    bpy.context.collection.objects.link(active)
-    models[name] = active
-    joint, pivot = 'body', (0, 0, 0)
-
-def finish(obj, name, color):
-    obj.name = name
-    obj.parent = active
-    obj.data.materials.append(material(color))
-    obj['joint'] = joint
-    obj['pivot'] = pivot
-    return obj
-
-def box(name, size, pos, color, bevel=.035):
-    bpy.ops.mesh.primitive_cube_add(size=1, location=vec(pos))
-    obj = bpy.context.object
-    obj.scale = (size[0], size[2], size[1])
-    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-    if bevel:
-        mod = obj.modifiers.new('Soft timber edges', 'BEVEL')
-        mod.width, mod.segments = bevel, 1
-        bpy.ops.object.modifier_apply(modifier=mod.name)
-    return finish(obj, name, color)
-
-def ball(name, size, pos, color):
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=12, ring_count=6, radius=1, location=vec(pos))
-    obj = bpy.context.object
-    obj.scale = (size[0], size[2], size[1])
-    for face in obj.data.polygons:
-        face.use_smooth = True
-    return finish(obj, name, color)
-
-def rod(name, start, end, radius, color):
-    a, b = vec(start), vec(end)
-    bpy.ops.mesh.primitive_cylinder_add(vertices=8, radius=radius, depth=(b-a).length, location=(a+b)/2)
-    obj = bpy.context.object
-    obj.rotation_euler = (b-a).to_track_quat('Z', 'Y').to_euler()
-    return finish(obj, name, color)
-
-def loft(name, rings, color):
-    # A shaped, connected surface; each ring is center X/Y/Z and horizontal/vertical radii.
-    vertices, faces = [], []
-    for x, y, z, rx, ry in rings:
-        for i in range(12):
-            a = i * math.tau / 12
-            vertices.append(tuple(vec((x + math.cos(a)*rx, y + math.sin(a)*ry, z))))
-    for ring in range(len(rings)-1):
-        for i in range(12):
-            a, b = ring*12+i, ring*12+(i+1)%12
-            faces.append((a, b, b+12, a+12))
-    faces.extend([tuple(reversed(range(12))), tuple(range((len(rings)-1)*12, len(rings)*12))])
-    mesh = bpy.data.meshes.new(name)
-    mesh.from_pydata(vertices, [], faces)
-    mesh.update()
-    obj = bpy.data.objects.new(name, mesh)
-    bpy.context.collection.objects.link(obj)
-    for face in mesh.polygons:
-        face.use_smooth = True
-    return finish(obj, name, color)
-
+art = AssetPack(Path(sys.argv[sys.argv.index('--') + 1]), 'leisure')
+SOURCE, OUTPUT = art.source, art.output
+model, box, ball, rod, loft, finish = art.model, art.box, art.ball, art.rod, art.loft, art.finish
+tree, bench = art.tree, art.bench
+models = art.models
 wood, cream, teal, green = '#a37d55', '#e1cfab', '#648d89', '#91a66e'
 
-def tree(x, z):
-    rod('Branched tree trunk', (x, .08, z), (x, 2.1, z), .12, wood)
-    for dx, dz in [(-.4, 0), (.4, .25), (0, -.35)]:
-        rod('Tree branch', (x, 1.2, z), (x+dx, 2.35, z+dz), .07, wood)
-        ball('Soft leaf crown', (.68, .75, .63), (x+dx, 2.55, z+dz), green)
-
-def bench(x, z):
-    for dx in [-.6, .6]:
-        rod('Bench legs', (x+dx, .07, z), (x+dx, .72, z), .055, teal)
-    for dz in [-.16, 0, .16]:
-        box('Bench seat slat', (1.55, .075, .13), (x, .51, z+dz), wood)
-    for y in [.77, .94]:
-        box('Bench back slat', (1.55, .12, .08), (x, y, z-.22), wood)
 
 for level in range(1, 4):
     model(f'field{level}')
@@ -221,39 +125,39 @@ model('horse')
 loft('Shaped horse body', [(0,1.05,-.7,.16,.18),(0,1.1,-.48,.32,.35),(0,1.12,.12,.28,.33),(0,1.13,.5,.2,.25)], '#a77952')
 loft('Rising neck', [(0,1.12,.25,.22,.25),(0,1.44,.46,.18,.29),(0,1.67,.66,.14,.19)], '#a77952')
 for i, (x,z) in enumerate([(-.2,-.43),(.2,-.43),(-.19,.34),(.19,.34)]):
-    joint, pivot = f'leg{i}', (x,.98,z)
+    art.joint, art.pivot = f'leg{i}', (x,.98,z)
     rod('Tapered upper leg', (x,.99,z), (x,.55,z+.04), .083, '#a77952')
     rod('Slender lower leg', (x,.55,z+.04), (x,.15,z), .05, '#be936d')
     box('Dark hoof', (.15,.14,.2), (x,.08,z+.025), '#5c5242', .02)
-joint, pivot = 'head', (0,1.55,.57)
+art.joint, art.pivot = 'head', (0,1.55,.57)
 loft('Horse face and muzzle', [(0,1.71,.53,.14,.17),(0,1.72,.76,.15,.18),(0,1.56,1.02,.12,.11)], '#ad8059')
 ball('Soft muzzle', (.13,.105,.12), (0,1.55,1.02), '#d0b18a')
 for side in [-1,1]:
     ball('Alert ear', (.045,.19,.08), (side*.1,1.94,.6), '#a77952')
     ball('Horse eye', (.025,.028,.029), (side*.137,1.77,.77), '#363c33')
     ball('Nostril', (.018,.017,.025), (side*.098,1.58,1.1), '#62513d')
-joint, pivot = 'body', (0,0,0)
+art.joint, art.pivot = 'body', (0,0,0)
 for i in range(6):
     ball('Short mane', (.055,.12,.09), (0,1.37+i*.07,.29+i*.06), '#584e3c')
-joint, pivot = 'tail', (0,1.14,-.68)
+art.joint, art.pivot = 'tail', (0,1.14,-.68)
 loft('Flowing tail', [(0,1.15,-.64,.075,.09),(0,.85,-.8,.11,.19),(0,.43,-.88,.065,.18)], '#584e3c')
 
 model('dog')
 loft('Dog torso', [(0,.38,-.33,.1,.13),(0,.39,-.2,.16,.19),(0,.42,.2,.15,.19),(0,.48,.3,.11,.14)], '#bd9569')
 for i, (x,z) in enumerate([(-.1,-.22),(.1,-.22),(-.1,.2),(.1,.2)]):
-    joint, pivot = f'leg{i}', (x,.36,z)
+    art.joint, art.pivot = f'leg{i}', (x,.36,z)
     rod('Dog leg', (x,.36,z), (x,.07,z+.025), .045, '#bd9569')
     ball('Paw', (.06,.05,.08), (x,.05,z+.055), '#dfc59c')
-joint, pivot = 'head', (0,.49,.25)
+art.joint, art.pivot = 'head', (0,.49,.25)
 ball('Dog head', (.15,.17,.17), (0,.6,.31), '#bd9569')
 ball('Dog muzzle', (.105,.08,.12), (0,.55,.47), '#dfc59c')
 ball('Dog nose', (.042,.035,.036), (0,.58,.565), '#394135')
 for side in [-1,1]:
     ball('Floppy ear', (.05,.15,.09), (side*.14,.58,.26), '#8f7254')
     ball('Dog eye', (.025,.025,.022), (side*.095,.67,.43), '#394135')
-joint, pivot = 'tail', (0,.47,-.3)
+art.joint, art.pivot = 'tail', (0,.47,-.3)
 rod('Wagging tail', (0,.47,-.3), (0,.68,-.53), .045, '#bd9569')
-joint, pivot = 'body', (0,0,0)
+art.joint, art.pivot = 'body', (0,0,0)
 box('Teal collar', (.27,.045,.075), (0,.49,.255), teal, .01)
 
 model('walker')
@@ -262,61 +166,18 @@ ball('Walker head', (.15,.21,.15), (0,1.59,0), '#cba17a')
 ball('Hat crown', (.19,.09,.18), (0,1.79,0), cream)
 ball('Hat brim', (.27,.025,.25), (0,1.73,0), cream)
 for i, x in enumerate([-.105,.105]):
-    joint, pivot = f'leg{i}', (x,.8,0)
+    art.joint, art.pivot = f'leg{i}', (x,.8,0)
     rod('Trouser leg', (x,.8,0), (x,.16,0), .085, '#697968')
     box('Walking shoe', (.18,.12,.3), (x,.09,.075), '#655540')
-joint, pivot = 'body', (0,0,0)
+art.joint, art.pivot = 'body', (0,0,0)
 for side in [-1,1]:
     rod('Coat sleeve', (side*.2,1.35,0), (side*.31,1.03,.07), .08, teal)
     rod('Lower sleeve', (side*.31,1.03,.07), (side*.38,.92,.18), .065, teal)
     ball('Hand', (.06,.08,.06), (side*.38,.87,.2), '#cba17a')
 
-# Explicit export: bake evaluated Blender meshes, retaining small animation pivots.
-# The game supplies its own shared materials, batching, shadows and lifetime.
-bpy.context.view_layer.update()
-payload = {'format': 1, 'generator': 'Blender', 'models': {}}
-depsgraph = bpy.context.evaluated_depsgraph_get()
-for name, root in models.items():
-    parts = []
-    for obj in root.children:
-        evaluated = obj.evaluated_get(depsgraph)
-        mesh = evaluated.to_mesh()
-        mesh.calc_loop_triangles()
-        origin = list(obj['pivot'])
-        positions, normals = [], []
-        transform = obj.matrix_world
-        normal_matrix = transform.to_3x3().inverted().transposed()
-        for triangle in mesh.loop_triangles:
-            for index in triangle.vertices:
-                p = transform @ mesh.vertices[index].co
-                normal = mesh.vertices[index].normal if mesh.polygons[triangle.polygon_index].use_smooth else triangle.normal
-                n = (normal_matrix @ normal).normalized()
-                positions.extend(round(v, 5) for v in (p.x-origin[0], p.z-origin[1], -p.y-origin[2]))
-                normals.extend(round(v, 5) for v in (n.x,n.z,-n.y))
-        parts.append({'name': obj.name, 'joint': obj['joint'], 'pivot': origin,
-                      'color': obj.data.materials[0]['gameColor'], 'positions': positions, 'normals': normals})
-        evaluated.to_mesh_clear()
-    # Join by joint/material, then index shared vertices. This retains animation
-    # pivots and eliminates duplicated triangle data and tiny runtime draw calls.
-    buckets = {}
-    for part in parts:
-        key = (part['joint'], part['color'])
-        if key not in buckets:
-            buckets[key] = {**part, 'positions': [], 'normals': []}
-        buckets[key]['positions'].extend(part['positions'])
-        buckets[key]['normals'].extend(part['normals'])
-    for part in buckets.values():
-        positions, normals, indices, seen = [], [], [], {}
-        for i in range(0, len(part['positions']), 3):
-            key = tuple(part['positions'][i:i+3] + part['normals'][i:i+3])
-            if key not in seen:
-                seen[key] = len(positions)//3
-                positions.extend(key[:3])
-                normals.extend(key[3:])
-            indices.append(seen[key])
-        part.update(positions=positions, normals=normals, indices=indices)
-    payload['models'][name] = list(buckets.values())
-(OUTPUT / 'leisure-meshes.json').write_text(json.dumps(payload, separators=(',', ':')), encoding='utf-8')
+payload = art.export(OUTPUT / 'leisure-meshes.json')
+if '--meshes-only' in sys.argv:
+    raise SystemExit(0)
 
 # Retain a standard interchange export as well as the compact runtime export.
 bpy.ops.export_scene.gltf(filepath=str(SOURCE / 'leisure.glb'), export_format='GLB')

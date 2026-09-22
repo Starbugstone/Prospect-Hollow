@@ -18,6 +18,18 @@ const game = useGameStore();
 const props = defineProps({ initialTiles: Array });
 const groups = [
   {
+    id: 'lantern',
+    label: 'Lanterns',
+    art: '/art/obstacles/lantern.svg',
+    value: (tile) => (tile.signal === 'lantern' ? tile.signalHealth : 0),
+  },
+  {
+    id: 'survey',
+    label: 'Survey trail',
+    art: '/art/obstacles/survey.svg',
+    value: (tile) => (tile.signal === 'survey' ? tile.signalHealth : 0),
+  },
+  {
     id: 'ice',
     label: 'Ice',
     art: '/art/ice/frost.svg',
@@ -43,6 +55,12 @@ const groups = [
   },
 ];
 const goals = computed(() => [
+  ...game.oreOrders.map((order) => ({
+    id: `ore-${order.color}`,
+    label: t('Collect {color} ore', { color: t(order.color) }),
+    art: `/art/${order.color}.svg`,
+    count: order.target - order.progress,
+  })),
   ...groups
     .filter((g) => props.initialTiles?.some((tile) => g.value(tile) > 0))
     .map((g) => ({ ...g, count: game.tiles.reduce((sum, tile) => sum + g.value(tile), 0) })),
@@ -62,6 +80,7 @@ const goals = computed(() => [
 .mine-visual-goals {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
 }
 .mine-visual-goals > span {

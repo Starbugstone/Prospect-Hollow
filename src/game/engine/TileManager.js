@@ -3,6 +3,7 @@ import { createGem, randomGemType, GEM_TYPES } from './GemFactory.js';
 import { detectBonusFromMatches } from './MatchPatterns.js';
 import { isAnchored, neighborsOf } from './TileRules.js';
 import { BonusActivator } from './BonusActivator.js';
+import { signalTargets } from './ChapterMechanics.js';
 
 const matchEngine = new MatchEngine();
 const bonusActivator = new BonusActivator();
@@ -32,6 +33,7 @@ export class TileManager {
     }
 
     const workingBoard = [...board];
+    const hasSignals = tiles.some((tile) => tile.signalHealth > 0);
     const steps = [];
 
     let iteration = 0;
@@ -139,6 +141,13 @@ export class TileManager {
         ...(fusion ? { bonusFusion: { ...fusion, targets: [...impacted] } } : {}),
       };
 
+      for (const index of hasSignals
+        ? signalTargets(tiles, [...impacted, ...protectedIndices], totalCols, totalRows)
+        : []) {
+        tiles[index].signalHealth = 0;
+        totalLayersCleared++;
+        step.tileUpdates.push({ index, signalHealth: 0 });
+      }
       damageTargets.forEach((index) => {
         if (fusionTargets.has(index)) {
           totalLayersCleared += this.applyFusionHit(
@@ -324,6 +333,12 @@ export class TileManager {
       !protectedIndices.has(index)
     ) {
       cleared.add(index);
+      // Keep the established payout ledger unchanged; ore objectives also count
+      // ordinary gems removed by a fusion, including those released from chains.
+      if (GEM_TYPES.includes(board[index].type)) {
+        step.fusionOreJewels ??= [];
+        step.fusionOreJewels.push({ id: board[index].id, type: board[index].type });
+      }
       board[index] = null;
     }
     return removed;

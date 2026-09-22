@@ -1,3 +1,4 @@
+import { eraEvolution } from './eras';
 import { CHAPTERS, LEVEL_COUNT } from './campaign';
 
 // Coin prices share one multiplier so buildings and supplies stay in step.
@@ -26,4 +27,4 @@ export const chestCoinReward = (levelId = 1, version = CHEST_ECONOMY_VERSION) =>
 };
 
 // Agreed per-era level prices. Mining windfalls never increase a quoted price.
-export const RIVER_RAIL_LEVEL_PRICES = [800, 1200, 1400];
+export const RIVER_RAIL_LEVEL_PRICES = eraEvolution('river-rail').prices;

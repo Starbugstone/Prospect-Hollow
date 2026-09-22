@@ -34,11 +34,11 @@ afterEach(() => {
 });
 
 describe('Expansion campaign', () => {
-  it('provides 204 authored 7 × 9 puzzles, matching chapter metadata and reachable relic exits', () => {
+  it('provides 288 authored 7 × 9 puzzles, matching chapter metadata and reachable relic exits', () => {
     const levels = generateLevelConfigs();
-    expect(levels).toHaveLength(240);
+    expect(levels).toHaveLength(324);
     expect(LEVEL_COUNT).toBe(LEVEL_NAMES.length);
-    expect(CHAPTERS).toHaveLength(40);
+    expect(CHAPTERS).toHaveLength(54);
     const repeat = generateLevelConfigs();
     for (const [offset, spec] of EXPANSION_LEVELS.entries()) {
       expect(spec.map.split('/')).toHaveLength(9);

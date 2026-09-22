@@ -17,5 +17,11 @@ try {
  $saved=$db->fetchAssociative('SELECT profile,revision FROM players WHERE id=?',[$id]);
  if($saved['profile']!==$json||(int)$saved['revision']!==7)throw new RuntimeException('Upgrade rewrote a private save');
  if((int)$db->fetchOne('SELECT COUNT(*) FROM public_villages')!==0)throw new RuntimeException('Upgrade published a village without consent');
+ // A previously listed Contemporary village used rank 5 before two eras were inserted.
+ $db->insert('public_villages',['id'=>str_repeat('a',32),'player_id'=>$id,'name'=>'Upgrade test','era_rank'=>5,'building_score'=>10,'mines_cleared'=>20,'population'=>5,'appearance'=>json_encode(['era'=>'contemporary'])]);
+ $db->delete('schema_versions',['version'=>3]);$database->migrate();$database->migrate();
+ if((int)$db->fetchOne('SELECT era_rank FROM public_villages WHERE player_id=?',[$id])!==7)throw new RuntimeException('Existing Contemporary village rank was not upgraded');
+ if($db->fetchOne('SELECT profile FROM players WHERE id=?',[$id])!==$json)throw new RuntimeException('Rank migration changed private progress');
+ echo "Era rank upgrade preserves existing Contemporary villages and private progress.\n";
  echo "Version 1 upgrade preserves private saves, defaults to unlisted and is repeatable.\n";
 } finally {$db->delete('players',['id'=>$id]);}

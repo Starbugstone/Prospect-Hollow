@@ -7,7 +7,7 @@ final class PuzzleService {
     private PuzzleEngine $engine;
     public function __construct(private Database $database,private Content $content,private TownService $town) { $this->engine=new PuzzleEngine(); }
     public function publicState(array $state,string $id): array {
-        $public=array_intersect_key($state,array_flip(['status','level','mode','board','tiles','cols','rows','score','moves','jewels','remainingLayers','totalLayers','remainingRelics','totalRelics','maxCascade','comboCounts','multiMatchCounts','cleared','startedAt','expiresAt','steps','receipt','shuffled']));
+        $public=array_intersect_key($state,array_flip(['status','level','mode','board','tiles','cols','rows','score','moves','jewels','remainingLayers','totalLayers','remainingRelics','totalRelics','oreOrders','maxCascade','comboCounts','multiMatchCounts','cleared','startedAt','expiresAt','steps','receipt','shuffled']));
         $public['runId']=$id;
         foreach(['comboCounts','multiMatchCounts'] as $key)$public[$key]=(object)$public[$key];
         return $public;

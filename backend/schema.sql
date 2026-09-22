@@ -15,3 +15,5 @@ CREATE INDEX limits_expiry ON limits(until_at);
 INSERT INTO schema_versions(version) VALUES (1);
 CREATE TABLE IF NOT EXISTS public_villages (id VARCHAR(32) PRIMARY KEY, player_id VARCHAR(64) NOT NULL UNIQUE, name VARCHAR(160) NOT NULL, era_rank INTEGER NOT NULL, building_score INTEGER NOT NULL, mines_cleared INTEGER NOT NULL, population INTEGER NOT NULL, appearance TEXT NOT NULL, FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE, INDEX public_villages_rank (era_rank DESC,building_score DESC,mines_cleared DESC,id ASC)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 INSERT INTO schema_versions(version) VALUES (2);
+
+INSERT INTO schema_versions(version) VALUES (3);

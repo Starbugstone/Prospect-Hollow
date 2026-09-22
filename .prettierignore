@@ -17,3 +17,5 @@ backend/content/
 backend/composer.lock
 release/
 src/assets/city-meshes.json
+
+src/assets/future-meshes.json

@@ -1,6 +1,11 @@
 <template>
+  <TownWatermill
+    v-if="built && kind === 'watermill'"
+    :era="era"
+    :level="eraEvolution(era).style === 'frontier' ? stage : eraLevel"
+  />
   <TownCityBuilding
-    v-if="built && isCityEra(era)"
+    v-else-if="built && isCityEra(era)"
     :kind="kind"
     :era="era"
     :level="eraLevel"
@@ -10,13 +15,14 @@
     v-else-if="built && ['horseField', 'park'].includes(kind)"
     :kind="kind"
     :level="stage"
-    :heritage="kind === 'horseField' && era === 'motor-age' && stage >= 3"
+    :heritage="kind === 'horseField' && eraEvolution(era).style === 'motor-age' && stage >= 3"
     :heritage-level="eraLevel"
   />
   <TownMotorBuilding
     v-else-if="
       built &&
-      (era === 'motor-age' || ['garage', 'busDepot', 'gardenCourt', 'diner'].includes(kind))
+      (eraEvolution(era).style === 'motor-age' ||
+        ['garage', 'busDepot', 'gardenCourt', 'diner'].includes(kind))
     "
     :kind="kind"
     :level="eraLevel"
@@ -24,7 +30,8 @@
   <TownIndustrialBuilding
     v-else-if="
       built &&
-      (era === 'industrial' || ['powerHouse', 'fireStation', 'rowHouses', 'mill'].includes(kind))
+      (eraEvolution(era).style === 'industrial' ||
+        ['powerHouse', 'fireStation', 'rowHouses', 'mill'].includes(kind))
     "
     :kind="kind"
     :level="eraLevel"
@@ -58,7 +65,7 @@
   <g v-else-if="kind === 'square'">
     <TownSquare :stage="stage" />
     <g
-      v-if="built && era === 'river-rail'"
+      v-if="built && eraEvolution(era).style === 'river-rail'"
       v-for="x in [-90, 90]"
       :key="x"
       :transform="`translate(${x} -25)`"
@@ -429,7 +436,7 @@
       <circle cx="-15" cy="-115" r="10" fill="#efdfb4" stroke="#7d785a" stroke-width="2" />
       <path d="M-15-123v9h6" fill="none" stroke="#7d785a" stroke-width="2" />
     </g>
-    <g v-if="built && era === 'river-rail'">
+    <g v-if="built && eraEvolution(era).style === 'river-rail'">
       <g v-if="eraLevel >= 2 && kind !== 'well'">
         <path d="M-120-6v-82l39 8v85Z" fill="#ad725c" stroke="#e0cfac" stroke-width="3" /><path
           d="m-127-88 48 9 12-14-48-9Z"
@@ -437,18 +444,7 @@
         />
         <path d="M-109-60v24l17 3v-24Z" fill="#a8d5d4" stroke="#e0cfac" stroke-width="3" />
       </g>
-      <g v-if="eraLevel >= 3 && kind !== 'well'">
-        <path d="M-8-136v-48l28 5v48Z" fill="#c9ba99" stroke="#8c8471" stroke-width="2" /><path
-          d="m-16-184 23-29 22 38Z"
-          fill="#526e79"
-        />
-        <circle cx="7" cy="-168" r="9" fill="#f0e0b9" /><path
-          d="M7-175v8l5 3"
-          fill="none"
-          stroke="#52605c"
-          stroke-width="2"
-        />
-      </g>
+      <TownHeritageUpgrade v-if="eraLevel >= 3" :kind="kind" />
       <g v-if="kind !== 'well'">
         <path d="m-84-93 122 24v-43l-122-24Z" fill="#a5624f" stroke="#e0cfac" stroke-width="5" />
         <path d="m-92-137 136 26v9l-136-26Z" fill="#e0cfac" />
@@ -484,7 +480,10 @@
 </template>
 
 <script setup>
+import TownHeritageUpgrade from './TownHeritageUpgrade.vue';
+import TownWatermill from './TownWatermill.vue';
 import { isCityEra } from '../../data/city';
+import { eraEvolution } from '../../data/eras';
 import TownCityBuilding from './TownCityBuilding.vue';
 import { BUILDING_BY_ID } from '../../data/town';
 import { RIVER_RAIL_VARIANTS } from '../../data/riverRail';
@@ -505,7 +504,7 @@ const stage = computed(() => buildingServiceLevel(props.id, props.stage));
 const kind = computed(() => BUILDING_BY_ID[props.id]?.kind ?? props.id);
 const built = computed(() => props.stage > 0);
 const frontColor = computed(() =>
-  props.era === 'river-rail'
+  eraEvolution(props.era).style === 'river-rail'
     ? '#ad725c'
     : {
         home: '#d6a08a',

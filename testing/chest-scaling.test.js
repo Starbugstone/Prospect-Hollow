@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { LEVEL_COUNT } from '../src/data/campaign';
 import { chestCoinReward } from '../src/data/economy';
 import { chestReward } from '../src/data/rewards';
 import { SAVE_KEY, useCampaignStore } from '../src/stores/campaignStore';
@@ -81,7 +82,7 @@ it('scales a tapped coin even when the saved fallback was a power', () => {
   expect(rewards[0].items[0].kind).toBe('power');
   expect(campaign.claimChest(rewards[0].id, 'coins').quantity).toBe(2250);
 });
-it.each([undefined, -1, 241, '31'])(
+it.each([undefined, -1, LEVEL_COUNT + 1, '31'])(
   'safely recovers older or invalid chest level metadata (%s)',
   (levelId) => {
     saves.set(

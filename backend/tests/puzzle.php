@@ -35,6 +35,8 @@ foreach($fixtures as $fixture) {
         $resolutions++;$state=$engine->initial($l,'normal');$engine->resolve($state,$actual);$expected=$fixture['resolution'];
         check(boardTypes($state['board'])===$expected['board'],"$name: resolved board mismatch");
         check($state['tiles']===$expected['tiles'],"$name: tile damage mismatch");
+        check($state['oreOrders']===$expected['oreOrders'],"$name: ore objective mismatch");
+        check(array_sum(array_map(fn($t)=>($t['health']??0)+($t['chainHealth']??0)+($t['signalHealth']??0),$state['tiles']))===$expected['remainingLayers'],"$name: layer count mismatch");
         check($state['score']===$expected['score'],"$name: scoring mismatch");
         check($state['jewels']===$expected['jewels'],"$name: jewel collection mismatch");
         check($state['remainingRelics']===$expected['remainingRelics'],"$name: relic collection mismatch");
@@ -55,4 +57,13 @@ check(!$engine->evaluate($anchored['board'],$anchored['tiles'],$anchored['cols']
 $s=$before;$oldTypes=boardTypes($s['board']);sort($oldTypes);$engine->shuffle($s);$newTypes=boardTypes($s['board']);sort($newTypes);
 check($oldTypes===$newTypes&&$s['tiles']===$before['tiles']&&$s['score']===0&&$s['jewels']===0,'Shuffle altered rewards or tiles');
 check(!$engine->matches($s['board'],$s['cols'],$s['rows'])&&$engine->hasMove($s),'Shuffle is not settled and playable');
+// Optional speed targets and move statistics never end a mine with outstanding ore.
+$s=$engine->initial($content->level(241),'normal');
+foreach($s['tiles'] as &$tile){$tile['health']=0;$tile['chainHealth']=0;$tile['signalHealth']=0;}unset($tile);
+$s['remainingRelics']=0;$s['oreOrders']=[['color'=>'ruby','target'=>100000,'progress'=>0]];
+$s['moves']=1000;$s['startedAt']=time()-3600;
+$engine->power($s,'shuffle',null);
+check(!$s['cleared']&&$s['status']==='active','Ore objectives cannot be skipped by clearing tile layers or passing a speed target');
+$s['oreOrders'][0]['progress']=100000;$engine->power($s,'shuffle',null);
+check($s['cleared'],'All objectives permit completion beyond 1000 moves');
 echo 'Puzzle checks passed: '.count($content->data['levels']).' playable levels, '.count($fixtures).' JS parity evaluations, '.$resolutions." full cascade parity resolutions and mutation guards.\n";

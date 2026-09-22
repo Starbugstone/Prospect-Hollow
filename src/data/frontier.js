@@ -3,6 +3,19 @@ import { FORGE_PRODUCTION_RUNS } from './eras';
 // These services stay bounded across all five visual development levels.
 export const FRONTIER_BUILDINGS = [
   {
+    id: 'watermill',
+    name: 'Prospect watermill',
+    shortName: 'Watermill',
+    purpose: 'A wheel turning beside the mountains',
+    color: '#a88459',
+    unlock: [{ id: 'farm', level: 1 }],
+    speaker: 'Ada · the caretaker',
+    stages: ['A timber mill by the river', 'A sheltered grain store', 'The frontier watermill'],
+    titles: ['Build the watermill', 'Add the grain store', 'Complete the watermill'],
+    benefit: 'A riverside landmark. Its waterwheel and mill evolve with the town.',
+    costs: [100, 180, 300],
+  },
+  {
     id: 'fisherman',
     name: 'Fisherman’s Hut',
     shortName: 'Fisherman',

@@ -1,3 +1,5 @@
+import { addHeritageUpgrade } from './HeritageDetails';
+import { addFishingDock } from './river';
 import { INDUSTRIAL_VARIANTS, ELECTRIC_LAMPS, hasElectricity } from '../../../data/industrial';
 import { t } from '../../../i18n';
 import { renderLeisureBuilding } from '../LeisureAssets';
@@ -29,7 +31,7 @@ export function renderIndustrialBuilding(d, parent, kind, label, level = 1) {
     if (kind === 'fireStation') {
       const tower = d.group(parent, -1.9, 0, -0.35);
       masonry(d, tower, 0.9, 4.1, 1.1);
-      d.ball(tower, 0, 3.6, 0.58, [0.24, 0.25, 0.1], '#e7c573');
+      for (const y of [3.3, 3.5, 3.7]) d.box(tower, 0.6, 0.1, 0.08, 0, y, 0.58, iron);
       d.box(parent, 1.3, 0.45, 0.65, 1.1, 0.45, 2, '#a64e3e');
       for (const x of [0.65, 1.55])
         for (const z of [1.62, 2.38]) d.ball(parent, x, 0.23, z, [0.22, 0.22, 0.08], iron);
@@ -104,6 +106,7 @@ export function addElectricLighting(d, town) {
   }
   // Static globes stay readable in daylight without adding seven shadow-casting lights.
   d.batch(lights);
+  return lights;
 }
 
 // Whole architectural families replace the timber shells. Landmark positions,
@@ -122,6 +125,7 @@ export function renderIndustrialLandmark(d, parent, kind, label, level = 1) {
     d.mesh(parent, 'cone', [0.85, 0.75, 0.85], [2.4, 4.5, -0.6], iron);
     for (let n = 0; n < 4; n++) d.box(parent, 3, 0.1, 0.18, 0, 0.1, 1.9 + n * 0.3, '#9b9e62');
   } else if (['fisherman', 'riverPort'].includes(kind)) {
+    addFishingDock(d, parent, level, kind === 'riverPort');
     masonry(d, parent, 2.7, 1.9, 2.3, '#a1a998');
     d.box(parent, 2.8, 0.25, 2.5, 2.8, 0.1, 0, '#9caa9d');
     d.box(parent, 3, 0.18, 2.7, 2.8, 2, 0, iron);
@@ -165,8 +169,11 @@ export function renderIndustrialLandmark(d, parent, kind, label, level = 1) {
       d.ball(parent, 0, 3.5, 1.52, [0.28, 0.28, 0.08], '#e5c47a');
     }
     if (kind === 'school') {
-      masonry(d, d.group(parent, 0, 4.2, 0), 0.8, 0.9, 0.8, color);
-      d.ball(parent, 0, 4.75, 0.45, [0.2, 0.2, 0.1], '#e5c47a');
+      for (const x of [-0.35, 0.35])
+        for (const z of [-0.35, 0.35]) d.rod(parent, [x, 4.2, z], [x, 5.1, z], 0.045, iron);
+      d.box(parent, 1.05, 0.12, 1.05, 0, 5.1, 0, iron);
+      d.mesh(parent, 'cone', [0.22, 0.35, 0.22], [0, 4.68, 0], '#c6a562');
+      d.rod(parent, [0, 4.8, 0], [0, 5.1, 0], 0.025, iron);
     }
     if (kind === 'doctor') {
       d.box(parent, 0.22, 0.8, 0.1, 0, 3.35, 1.52, '#538e78');
@@ -228,11 +235,5 @@ function addIndustrialTier(d, parent, kind, level) {
   const wing = d.group(tier, -2.45, 0, 0.15);
   masonry(d, wing, 1.25, 2.5, 2.5, '#bd9678');
   d.window(wing, 0, 1.65, 1.3);
-  if (level >= 3) {
-    const roof = d.group(tier, 0.25, 0, -0.35);
-    masonry(d, roof, 1.1, 5.3, 1.1, '#b6a58a');
-    d.mesh(roof, 'cone', [0.85, 0.75, 0.85], [0, 5.8, 0], iron);
-    d.ball(roof, 0, 4.9, 0.58, [0.28, 0.28, 0.05], '#f4d795');
-    d.rod(roof, [0, 4.9, 0.64], [0, 5.08, 0.64], 0.02, iron);
-  }
+  if (level >= 3) addHeritageUpgrade(d, tier, kind, true);
 }

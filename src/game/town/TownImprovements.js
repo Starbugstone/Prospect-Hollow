@@ -1,5 +1,16 @@
+import { eraEvolution } from '../../data/eras';
+
 // Improvements are additions to the original buildings, keeping their identity.
 export function addScaffolding(d, parent, kind, stage, progress) {
+  if (kind === 'horseField' || kind === 'airport') {
+    const halfWidth = kind === 'airport' ? 10.5 : 3.3;
+    const halfDepth = kind === 'airport' ? 21 : 2.9;
+    for (const x of [-halfWidth, halfWidth]) {
+      for (const z of [-halfDepth, halfDepth]) d.box(parent, 0.1, 1.3, 0.1, x, 0.65, z, '#b39160');
+      d.rod(parent, [x, 1, -halfDepth], [x, 1, halfDepth], 0.035, '#b39160');
+    }
+    return;
+  }
   if (kind === 'square') {
     for (const x of [-2.6, 2.6])
       for (const z of [-2.5, 2.5]) d.box(parent, 0.12, 0.55, 0.12, x, 0.28, z, '#b39160');
@@ -89,7 +100,7 @@ function tower(d, parent, x, color, windmill = false) {
   d.mesh(g, 'cone', [0.73, 0.32, 0.73], [0, 4.48, 0], '#68867d');
   return null;
 }
-export function addImprovements(d, parent, kind, stage) {
+export function addImprovements(d, parent, kind, stage, era = 'frontier') {
   if (stage < 2 || kind === 'square') return null;
   if (stage >= 4) {
     for (const x of [-1.15, 1.15]) {
@@ -169,7 +180,7 @@ export function addImprovements(d, parent, kind, stage) {
       d.box(parent, 0.18, 2.8, 0.18, x, 1.5, 1.8, '#e3d4ad');
       d.ball(parent, x, 3.12, 1.8, [0.18, 0.28, 0.18], '#a994b9', 'rock');
     }
-    if (stage >= 3) {
+    if (stage >= 3 && eraEvolution(era).style === 'frontier') {
       d.box(parent, 1, 1.3, 1, 0, 3.4, -0.1, '#c4b18b');
       d.mesh(parent, 'cone', [0.84, 0.6, 0.84], [0, 4.32, -0.1], '#718e82');
       d.ball(parent, 0, 3.52, 0.43, [0.3, 0.3, 0.035], '#ebdec0');

@@ -1,11 +1,20 @@
+import { ERAS, ERA_BY_ID, eraEvolution } from './eras';
 // City growth adds bounded capacity. Modernizing an existing service does not multiply it.
-export const CITY_ERAS = ['post-war', 'contemporary'];
-export const isCityEra = (era) => CITY_ERAS.includes(era);
-export const CITY_LEVEL_PRICES = {
-  'post-war': [2400, 2900, 3400],
-  contemporary: [7600, 9000, 10400],
-};
+export const CITY_ERAS = ERAS.filter((era) => era.evolution.style === 'city').map((era) => era.id);
+export const isCityEra = (era) => eraEvolution(era).style === 'city';
+export const CITY_LEVEL_PRICES = Object.fromEntries(
+  CITY_ERAS.map((era) => [era, eraEvolution(era).prices]),
+);
+// Large civic landmarks carry a modest premium; earnings and rewards stay unchanged.
+export const isMajorCityBuilding = (id) => ['airport', 'skyline', 'cityHomes'].includes(id);
+export const cityBuildingPrice = (id, price) =>
+  Math.ceil(price * (isMajorCityBuilding(id) ? 1.25 : 1));
 export const CITY_FAMILIES = {
+  airport: 'airport',
+  radioTower: 'radio',
+  concertHall: 'concert',
+  television: 'television',
+  skyline: 'skyline',
   home: 'residence',
   farm: 'farm',
   well: 'water',
@@ -78,7 +87,7 @@ export const CITY_DESCRIPTIONS = {
     'Timber decking and a glazed pavilion open the historic landing to the promenade.',
   ],
   station: [
-    'A rebuilt brick concourse and long platform canopy welcome the steam train.',
+    'A rebuilt brick concourse and long platform canopy welcome the motor railcar.',
     'A glazed transit entrance, roof panels and cycle stands serve the electric railway.',
   ],
   culture: [
@@ -106,8 +115,66 @@ export const CITY_DESCRIPTIONS = {
     'A planted promenade, solar shade and cycle stands welcome families by the river.',
   ],
 };
-const labels = { 'post-war': 'Post-war Rebuilding', contemporary: 'Contemporary Crystal City' };
+const newLandmarks = [
+  [
+    'airport',
+    'Prospect regional airport',
+    'Airport',
+    'aviation',
+    'airport',
+    'A western gateway with a runway across several parcels',
+  ],
+  [
+    'radioTower',
+    'Valley radio station',
+    'Radio tower',
+    'aviation',
+    'radio',
+    'Radio brings news and music to the valley',
+  ],
+  [
+    'concertHall',
+    'Prospect live concert hall',
+    'Concert hall',
+    'broadcast',
+    'concert',
+    'A stage for the music of a growing city',
+  ],
+  [
+    'television',
+    'Valley television studios',
+    'TV studios',
+    'broadcast',
+    'television',
+    'Local television puts Prospect Hollow on screen',
+  ],
+  [
+    'skyline',
+    'Prospect business tower',
+    'Business tower',
+    'broadcast',
+    'skyline',
+    'A new skyline above the old streets',
+  ],
+].map(([id, name, shortName, introducedEra, family, purpose]) => ({
+  id,
+  kind: id,
+  name,
+  shortName,
+  introducedEra,
+  family,
+  purpose,
+  effects: { happiness: 1 },
+  color: '#71938a',
+  unlock: [],
+  benefits: [
+    'Adds 1 happiness in total.',
+    'Adds 2 happiness in total.',
+    'Adds 3 happiness in total.',
+  ],
+}));
 export const CITY_BUILDINGS = [
+  ...newLandmarks,
   {
     id: 'cityHall',
     kind: 'cityHall',
@@ -235,9 +302,9 @@ export const CITY_BUILDINGS = [
   {
     id: 'library',
     kind: 'library',
-    name: 'Riverlight public library',
-    shortName: 'Library',
-    purpose: 'Stories from the frontier to tomorrow',
+    name: 'Riverlight internet café',
+    shortName: 'Internet café',
+    purpose: 'Computers and internet access for everyone',
     introducedEra: 'contemporary',
     family: 'culture',
     effects: {
@@ -259,9 +326,9 @@ export const CITY_BUILDINGS = [
   {
     id: 'crystalLab',
     kind: 'crystalLab',
-    name: 'Crystal discovery institute',
-    shortName: 'Crystal institute',
-    purpose: 'The mine inspires a new generation',
+    name: 'Prospect technology campus',
+    shortName: 'Technology campus',
+    purpose: 'Servers and software connect the city to the world',
     introducedEra: 'contemporary',
     family: 'research',
     effects: {
@@ -283,8 +350,8 @@ export const CITY_BUILDINGS = [
   {
     id: 'cityHomes',
     kind: 'cityHomes',
-    name: 'Willow mixed-use courtyard',
-    shortName: 'City courtyard',
+    name: 'Willow city towers',
+    shortName: 'City towers',
     purpose: 'Homes above familiar neighborhood shops',
     introducedEra: 'contemporary',
     family: 'residence',
@@ -333,13 +400,14 @@ export const CITY_BUILDINGS = [
   ...building,
   stages: [
     'Empty plot',
-    ...[1, 2, 3].map((level) => `${labels[building.introducedEra]} · Level ${level}`),
+    ...[1, 2, 3].map((level) => `${ERA_BY_ID[building.introducedEra].label} · Level ${level}`),
   ],
   upgrades: benefits.map((benefit, index) => ({
-    cost: (building.introducedEra === 'post-war' ? [3000, 4000, 5000] : [8000, 10000, 12000])[
-      index
-    ],
-    runs: index ? 2 : 1,
+    cost: cityBuildingPrice(
+      building.id,
+      eraEvolution(building.introducedEra).newBuildingPrices[index],
+    ),
+    runs: isMajorCityBuilding(building.id) && index === 0 ? 2 : 1,
     title: index ? 'Expand {building}' : 'Build {building}',
     benefit,
     story: benefit,
@@ -349,4 +417,6 @@ export const CITY_BUILDINGS = [
 export const cityCapacity = (town, stat) =>
   CITY_BUILDINGS.reduce((sum, b) => sum + (b.effects[stat] ?? 0) * (town.buildings[b.id] ?? 0), 0);
 export const cityVariant = (kind, era) =>
-  CITY_DESCRIPTIONS[CITY_FAMILIES[kind]]?.[CITY_ERAS.indexOf(era)];
+  ['airport', 'radio', 'concert', 'television', 'skyline'].includes(CITY_FAMILIES[kind])
+    ? 'Renew the landmark with improved facilities and city lighting.'
+    : (eraEvolution(era).cityDescription ?? CITY_DESCRIPTIONS[CITY_FAMILIES[kind]]?.[0]);

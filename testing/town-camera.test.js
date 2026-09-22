@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { Vector3 } from 'three';
-import { groundHeight, keepCameraAboveTerrain } from '../src/game/town/TownLandscape';
+import {
+  groundHeight,
+  cameraTerrainHeight,
+  keepCameraAboveTerrain,
+} from '../src/game/town/TownLandscape';
 import { PLOTS } from '../src/game/town/TownDiorama';
 
 describe('An explorable town on rolling terrain', () => {
@@ -10,7 +14,8 @@ describe('An explorable town on rolling terrain', () => {
       .map(([, position]) => position))
       for (const dx of [-1.5, 0, 1.5])
         for (const dz of [-1.5, 0, 1.5]) expect(groundHeight(x + dx, z + dz)).toBe(0);
-    expect(groundHeight(-38, -42)).toBeGreaterThan(10);
+    expect(groundHeight(-38, -42)).toBeGreaterThan(1);
+    expect(groundHeight(-38, -42)).toBeLessThan(5);
   });
   it('keeps all permitted orbit headings above the hills without changing distance', () => {
     const target = new Vector3(0, 0.7, 0);
@@ -34,4 +39,28 @@ describe('An explorable town on rolling terrain', () => {
     expect(keepCameraAboveTerrain(position, new Vector3(0, 0.7, 0))).toBe(false);
     expect(position.equals(before)).toBe(true);
   });
+});
+
+it('allows shallow views from clear ground even when a hill hides distant town parcels', () => {
+  for (const [position, target] of [
+    [new Vector3(0, 3, -60), new Vector3(0, 0.7, 0)],
+    [new Vector3(28, 3, 35), new Vector3(-15, 0.7, -30)],
+    [new Vector3(40, 3, 18), new Vector3(-25, 0.7, -35)],
+  ]) {
+    const before = position.clone();
+    expect(position.y).toBeGreaterThan(cameraTerrainHeight(position.x, position.z) + 1.2);
+    expect(keepCameraAboveTerrain(position, target)).toBe(false);
+    expect(position.equals(before)).toBe(true);
+  }
+});
+it('only lifts a camera that intersects the actual hillside, with no repeated upward drift', () => {
+  const target = new Vector3(0, 0.7, 0);
+  const position = new Vector3(0, 2, -25);
+  const distance = position.distanceTo(target);
+  expect(keepCameraAboveTerrain(position, target)).toBe(true);
+  expect(position.y).toBeGreaterThanOrEqual(cameraTerrainHeight(position.x, position.z) + 1.2);
+  expect(position.distanceTo(target)).toBeCloseTo(distance, 8);
+  const corrected = position.clone();
+  for (let i = 0; i < 20; i++) expect(keepCameraAboveTerrain(position, target)).toBe(false);
+  expect(position.equals(corrected)).toBe(true);
 });

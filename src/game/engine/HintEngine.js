@@ -2,6 +2,7 @@ import { MatchEngine } from './MatchEngine.js';
 import { BonusActivator } from './BonusActivator.js';
 import { canSwapGem, neighborsOf } from './TileRules.js';
 import { detectBonusFromMatches } from './MatchPatterns.js';
+import { signalTargets } from './ChapterMechanics.js';
 const bonusActivator = new BonusActivator();
 
 const SPECIAL = new Set(['bomb', 'cross', 'rainbow']);
@@ -11,9 +12,13 @@ export class HintEngine {
     this.matchEngine = new MatchEngine();
   }
 
-  findBestMove(board, tiles, cols, rows, { first = false } = {}) {
+  findBestMove(board, tiles, cols, rows, { first = false, oreOrders = [] } = {}) {
     if (!board?.length || !cols || !rows) return null;
     let best = null;
+    const hasSignals = tiles.some((tile) => tile.signalHealth > 0);
+    const requested = new Set(
+      oreOrders.filter((order) => order.progress < order.target).map((order) => order.color),
+    );
     for (let a = 0; a < board.length; a++) {
       for (const b of [a % cols < cols - 1 ? a + 1 : -1, a + cols]) {
         if (
@@ -94,7 +99,15 @@ export class HintEngine {
           indices.filter((index) => tiles[index]?.chainHealth > 0).length * 180 +
           nearbyBlocks.size * 180 +
           relicPaths * 90 +
-          indices.length;
+          indices.length +
+          (hasSignals ? signalTargets(tiles, indices, cols, rows).length * 190 : 0) +
+          (requested.size
+            ? indices.filter((index) =>
+                requested.has(
+                  (index === a ? board[b] : index === b ? board[a] : board[index])?.type,
+                ),
+              ).length * 90
+            : 0);
         const candidate = {
           swap: { aIndex: a, bIndex: b },
           indices: [a, b],

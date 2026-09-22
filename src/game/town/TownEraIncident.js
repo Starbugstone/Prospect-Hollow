@@ -1,10 +1,12 @@
-import { routePose } from './TownRoutes';
+import { prepareRoute, routePose } from './TownRoutes';
+import { motorVehicle } from './TownVehicles';
 import { cityModel } from './buildings/city';
 import { eventKind, incidentPhases, civicIncident } from '../../data/townEvents';
 import { bridgeDeckHeight } from './TownRiver';
 import { PLOTS, plotStreet, routeBetween } from './TownLayout';
 
-export const INCIDENT_DURATION = 26;
+export const INCIDENT_DURATION = 16;
+const INCIDENT_SPEED = 26 / INCIDENT_DURATION;
 const ease = (value) => {
   const t = Math.max(0, Math.min(1, value));
   return t * t * (3 - 2 * t);
@@ -27,6 +29,7 @@ export class TownEraIncident {
     this.responder = civic && d.town.buildings.fireStation ? 'fireStation' : 'sheriff';
     this.route = routeBetween(d.town, plotStreet(this.responder), plotStreet(this.target));
     if (this.route.length < 2) this.route = [plotStreet(this.target), plotStreet(this.target)];
+    this.path = prepareRoute(this.route);
     this.crew = Array.from({ length: 3 }, (_, seed) =>
       d.person({
         parent: this.root,
@@ -38,6 +41,14 @@ export class TownEraIncident {
         route: this.route,
       }),
     );
+    if (fire || this.storm) {
+      this.vehicle = { root: motorVehicle(d, this.root, true) };
+      this.vehicle.root.name = this.storm ? 'City service vehicle' : 'Motor fire brigade';
+      this.vehicle.root.userData.animated = true;
+      d.box(this.vehicle.root, 0.5, 0.12, 0.7, 0, 1.45, 0, '#b76857');
+      for (const x of [-0.18, 0.18])
+        d.rod(this.vehicle.root, [x, 1.55, -0.6], [x, 1.55, 0.6], 0.035, '#dfd1ab');
+    }
     this.props = d.group(this.root, PLOTS[this.target][0], 0, PLOTS[this.target][1] + 1.7);
     this.props.userData.animated = true;
     this.flames = fire
@@ -73,7 +84,11 @@ export class TownEraIncident {
           return person;
         })
       : [];
-    if (this.storm) this.debris = cityModel(d, this.props, 'storm-debris');
+    if (this.storm) {
+      this.debris = cityModel(d, this.props, 'storm-debris');
+      // The promenade pavement is raised; branches must sit above its surface.
+      this.debris.position.y = 0.25;
+    }
     this.water = d.group(this.root);
     this.water.userData.animated = true;
     this.drops = fire
@@ -88,12 +103,8 @@ export class TownEraIncident {
     this.event = event;
   }
   travel(actor, progress, offset = 0) {
-    const lengths = this.route
-      .slice(1)
-      .map((p, i) => Math.hypot(p[0] - this.route[i][0], p[1] - this.route[i][1]));
-    const distance =
-      Math.max(0, Math.min(1, progress)) * lengths.reduce((sum, length) => sum + length, 0);
-    const pose = routePose(this.route, distance);
+    const distance = Math.max(0, Math.min(1, progress)) * this.path.total;
+    const pose = routePose(this.path, distance);
     actor.root.position.set(pose.x, 0.07, pose.z);
     actor.root.rotation.y = pose.heading;
     actor.root.translateX(offset);
@@ -106,7 +117,7 @@ export class TownEraIncident {
   }
   update(elapsed) {
     if (this.disposed) return true;
-    const time = elapsed - this.started,
+    const time = (elapsed - this.started) * INCIDENT_SPEED,
       phase = incidentPhases(eventKind(this.event), time);
     if (phase !== this.phase) {
       this.phase = phase;
@@ -129,6 +140,34 @@ export class TownEraIncident {
         arm.upper.rotation.x = !moving ? -ease(time - 13) * (1 - ease(time - 17)) : 0;
       });
     });
+    if (this.vehicle) {
+      const progress = time < 14 ? (time - 4) / 9 : 1 - (time - 18) / 7;
+      this.travel(this.vehicle, progress);
+      this.vehicle.root.rotation.y += Math.PI * ease((time - 15) / 3);
+      // Establish the squad at its station before following its departure.
+      this.vehicle.root.visible = time < 25;
+      // Crew dismounts at the incident; passengers stay inside the vehicle en route.
+      this.crew.forEach((actor, n) => {
+        actor.root.visible = time >= 13 && time <= 18;
+        if (actor.root.visible) {
+          // Stage the dismounted squad between the vehicle and the incident,
+          // with enough space to see all three responders instead of passengers
+          // remaining overlapped inside the parked vehicle.
+          actor.root.position.set(
+            this.props.position.x + (n - 1) * 0.9,
+            0.07,
+            this.props.position.z + 0.8,
+          );
+          actor.root.rotation.y = Math.atan2(
+            this.props.position.x - actor.root.position.x,
+            this.props.position.z - actor.root.position.z,
+          );
+          actor.legs.forEach((leg) => {
+            leg.upper.rotation.x = 0;
+          });
+        }
+      });
+    }
     this.flames.forEach((flame, n) => {
       const amount = time < 14 ? 1 : Math.max(0, 1 - (time - 14) / 4);
       flame.visible = amount > 0;
@@ -158,7 +197,7 @@ export class TownEraIncident {
         leg.upper.rotation.x = time >= 10 ? Math.sin(time * 8 + i * Math.PI) * 0.4 : 0;
       });
     });
-    if (time >= INCIDENT_DURATION) {
+    if (time >= INCIDENT_DURATION * INCIDENT_SPEED) {
       this.dispose();
       this.onComplete();
       return true;

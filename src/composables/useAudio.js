@@ -8,7 +8,7 @@ const AMBIENT_SOURCES = ['/sound/mining/lanterns-below.ogg', '/sound/mining/lant
 // Match the village's restrained music mix, leaving room for crystal effects.
 const AMBIENT_VOLUME = 0.45;
 
-export const SFX_VOLUME = Object.freeze({
+const SFX_VOLUME = Object.freeze({
   MATCH: 0.55,
   COMBO: 0.75,
   BONUS_APPEAR: 0.7,
@@ -17,7 +17,7 @@ export const SFX_VOLUME = Object.freeze({
   RAINBOW_LASER: 0.65,
 });
 
-export const SFX_KEYS = Object.freeze({
+const SFX_KEYS = Object.freeze({
   MATCH: 'match-basic',
   COMBO: 'match-combo',
   BONUS_APPEAR: 'bonus-appears',

@@ -2,8 +2,8 @@ import { GEM_TYPES } from '../engine/GemFactory';
 import { GEM_FINISHES } from '../../data/gemAppearance';
 
 export const BONUS_TYPES = ['bomb', 'rainbow', 'cross'];
-export const BONUS_FRAME_SIZE = 192;
-export const BONUS_FRAME_COUNT = 8;
+const BONUS_FRAME_SIZE = 192;
+const BONUS_FRAME_COUNT = 8;
 
 // Vector art is rasterized once at load time; animation uses a single GPU atlas.
 export function preloadSpriteAssets(scene) {
@@ -17,7 +17,16 @@ export function preloadSpriteAssets(scene) {
         height: 160,
       });
   scene.load.svg('gem-relic', '/art/relic.svg', { width: 160, height: 160 });
-  for (const type of ['chain', 'seal', 'exit', 'seal-ruby', 'seal-sapphire', 'seal-emerald'])
+  for (const type of [
+    'chain',
+    'seal',
+    'exit',
+    'seal-ruby',
+    'seal-sapphire',
+    'seal-emerald',
+    'lantern',
+    'survey',
+  ])
     scene.load.svg(`tile-${type}`, `/art/obstacles/${type}.svg`, { width: 160, height: 160 });
   scene.load.svg('bonus-atlas', '/art/bonuses/atlas.svg', {
     width: BONUS_FRAME_SIZE * BONUS_FRAME_COUNT,

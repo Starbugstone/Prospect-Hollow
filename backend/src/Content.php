@@ -21,6 +21,7 @@ final class Content {
         }
         // Existing era, projects and receipts retain their original meaning and content versions.
         // In particular, inserting Post-war never downgrades an existing Motor Age account.
+        $profile['town']['presentations']??=[];
         $profile['community']??=['listed'=>false,'villageName'=>''];
         $profile['contentVersion']=$this->data['version'];
         return $profile;

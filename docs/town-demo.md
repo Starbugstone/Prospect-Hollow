@@ -2,7 +2,7 @@
 
 Crystal Cascade opens on an English/French landing page explaining the jewel puzzles and the village. Enter the village, choose a construction, then click the mine entrance or its label to play the next unfinished level. Results put two buttons on one row above the coin recap: Continue mining with a pickaxe for the next unfinished level, and Back to village with a house. Welcome, Village, and Mine remain available in the header on desktop and phones; the Museum tab appears once it is built. Mine starts the next unfinished puzzle and stays selected while playing; clicking it during a run keeps that run. After the campaign is complete it opens the museum, where completed levels live. There is no separate level-selection page.
 
-**The village opens full screen.** Compact coin and builder-hammer counters, a book button for neighbor stories and raid news, and the close control stay over the scene. An eye button beside the book toggles all floating labels, including the mine label. Labels start on; the preference is saved separately from progress and survives mine visits and browser sessions. Hidden labels do not disable building or parcel interaction and toggling them does not rebuild the 3D scene. The book opens a native popup without leaving full screen, with live population/resident/visitor counts, coin savings, water and food capacity versus demand, happiness, saloon rate and stored earnings, construction counts, and builder-hammer inventory above the village story. Persistent camera/help text is removed. “Available plots” shows only unlocked, unfinished tiers affordable with the current wallet. Owning a builder hammer includes every otherwise eligible purchase; work already in progress and locked or maximum tiers stay out of the list. Parcel-list entries open building cards without collecting resources. Selecting ready construction finishes it and keeps the list open so several buildings can be finished in succession. In the town, tapping a building or its action icon collects its ready resource or finishes construction. White labels identify constructed buildings; blue labels identify available builds/upgrades; green labels identify collection and completion actions. Selection adds an outline without changing these colors. A light-green glow surrounds the base and lower walls of buildings with immediately eligible coin purchases, fading by roughly 45% of building height. Two simple surfaces per plot are cached with the 3D town and use normal depth testing, so neighboring buildings hide the glow. The SVG fallback draws a green ground halo behind each building. Hammer-only work is excluded. Ready actions use small icons in front of the buildings: coins for saloon earnings, TNT for the blacksmith, a hammer for construction waiting to be finished, and a warning bell during raids for a completed level-4 town square. Unaffordable empty plots retain their barriers and can be inspected directly, with their name tags hidden. Hammer inventory changes purchase eligibility, never parcel geometry. Native dialogs pause village activity and audio, contain keyboard focus, support Escape, and restore focus on closing.
+**The village opens full screen.** Compact coin and builder-hammer counters, a book button for neighbor stories and raid news, and the close control stay over the scene. An eye button beside the book toggles all floating labels, including the mine label. Labels start on; the preference is saved separately from progress and survives mine visits and browser sessions. Hidden labels do not disable building or parcel interaction and toggling them does not rebuild the 3D scene. The book opens a native popup without leaving full screen, with live population/resident/visitor counts, coin savings, water and food capacity versus demand, happiness, saloon rate and stored earnings, construction counts, and builder-hammer inventory above the village story. Persistent camera/help text is removed. “Available plots” shows only unlocked, unfinished tiers affordable with the current wallet. Owning a builder hammer includes every otherwise eligible purchase; work already in progress and locked or maximum tiers stay out of the list. Parcel-list entries directly spend the displayed coins, or one builder hammer when coins are insufficient, without opening a building card or collecting resources. Coin prices remain visible beside hammer actions. Ready construction comes first, followed by purchases from cheapest to most expensive. Finishing or buying keeps the list open so several actions can be performed in succession. The bottom progress panel is a persistent toggle: open initially on desktop and closed initially on small screens, retaining its state through building interactions. In the town, tapping a building or its action icon collects its ready resource or finishes construction. White labels identify constructed buildings; blue labels identify available builds/upgrades; green labels identify collection and completion actions. Selection adds an outline without changing these colors. A light-green glow surrounds the base and lower walls of buildings with immediately eligible coin purchases, fading by roughly 45% of building height. Two simple surfaces per plot are cached with the 3D town and use normal depth testing, so neighboring buildings hide the glow. The SVG fallback draws a green ground halo behind each building. Hammer-only work is excluded. Ready actions use small icons in front of the buildings: coins for saloon earnings, TNT for the blacksmith, a hammer for construction waiting to be finished, and a warning bell during raids for a completed level-4 town square. Unaffordable empty plots retain their barriers and can be inspected directly, with their name tags hidden. Hammer inventory changes purchase eligibility, never parcel geometry. Native dialogs pause village activity and audio, contain keyboard focus, support Escape, and restore focus on closing.
 
 **A small village, with automatic basic needs.** Eleven initial plots, including the town square, start bare. Choose any original plot for free first materials, and fund multiple constructions when you can afford them. Every normal puzzle completion advances all active projects once. After the required puzzle, scaffolding remains and the project becomes ready. Tap each building to finish it; only then do its new services, income, population, replay access, and storage benefits activate. Readiness survives reloads and later mine runs. A one-time helper explains the first ready building. One builder hammer pays for an unlocked building or improvement in full and completes it instantly; it cannot finish a project already funded with coins. Starting or opening work plays a one-second assembly animation with hammer taps and a chime. Supporting buildings finish at **level 3**; the town square, sheriff, bank, saloon and blacksmith finish at **level 5**, including the initial build; their existing services remain active during improvements. Wooden scaffolding, platforms, diagonal braces, a ladder, and material stacks surround the existing 3D building during upgrades. New benefits activate only when work finishes.
 
@@ -19,8 +19,9 @@ Crystal Cascade opens on an English/French landing page explaining the jewel puz
 | Bank        | 150 / 345 / 540 / 1080 / 2700 | 1 / 1 / 1 / 1 / 1 | Half protection against 2 / 4 / 6 / 8 / 10 riders                       |
 | Shop        | 150 / 330 / 525               | 1 / 1 / 1         | 1 / 2 / 5 offers per completed mine run                                 |
 | Town square | 120 / 240 / 480 / 960 / 2400  | 0 / 1 / 1 / 1 / 1 | 8 / 16 / 24 / 32 / 40 happiness points; central fountain                |
+| Watermill   | 150 / 270 / 450               | 1 / 1 / 1         | Riverside landmark; unlocks after Farm level 1                          |
 
-Upgrading the original **home to level 2** unlocks House II; each extra house must finish level 2 to reveal the next; the original **well to level 2** unlocks one extra well; the original **farm to level 2** unlocks Farm II, then finishing Farm II’s level 2 upgrade reveals Farm III. There are **21 Frontier plots in total**, with 3 levels for supporting buildings and 5 for the town square, sheriff, bank, saloon and blacksmith. All upgrades are available without a mine-level or completed-puzzle lock. Coins and builder hammers follow the same building prerequisites. Locked plots remain prairie in 3D and are excluded from the purchase list. Extra plots use the same cost, duration, and service progression as their original type. Resident population is the minimum of housing, water, and food capacity. Stables support 2, 4 and 10 visitors at levels 1–3; the museum supports 0, 2 and 8. Visitors use food and water left after residents, without needing houses. The fully upgraded town supports **40 residents and 18 visitors**. There is no food depletion or manual supply chore.
+Upgrading the original **home to level 2** unlocks House II; each extra house must finish level 2 to reveal the next; the original **well to level 2** unlocks one extra well; the original **farm to level 2** unlocks Farm II, then finishing Farm II’s level 2 upgrade reveals Farm III. There are **22 Frontier plots in total**, with 3 levels for supporting buildings and 5 for the town square, sheriff, bank, saloon and blacksmith. All upgrades are available without a mine-level or completed-puzzle lock. Coins and builder hammers follow the same building prerequisites. Locked plots remain prairie in 3D and are excluded from the purchase list. Extra plots use the same cost, duration, and service progression as their original type. Resident population is the minimum of housing, water, and food capacity. Stables support 2, 4 and 10 visitors at levels 1–3; the museum supports 0, 2 and 8. Visitors use food and water left after residents, without needing houses. The fully upgraded town supports **40 residents and 18 visitors**. There is no food depletion or manual supply chore.
 
 The catalog is in `src/data/town.js`. Basic wells, farms, and houses open immediately; all improvements and larger buildings finish after one normal puzzle. A ready project persists until the player opens it. The first chosen building is still free. Services remain active while upgrading.
 
@@ -81,3 +82,49 @@ Entering the mine from the town, navigation or museum prompts for confirmation w
 The mine recap adds settled chest coin prizes and overflow conversions to the displayed town-coin total, with a separate “Bonus chest coins” row. Mining depth multipliers apply only to mining earnings. Showing the recap never awards coins a second time.
 
 Additional houses, farms and wells cost progressively more at each level: the second plot costs 1.5× the original, the third 2×, and the fourth house 2.5× (rounded up to whole coins). Previously paid construction and legacy upgrade refunds keep their original prices.
+
+**Console testing resources.** In the browser developer console, run
+`prospectDebug.grant({ coins: 100000, hammers: 5 })` (or simply `prospectDebug.grant()`).
+The command adds coins, tops up builder hammers up to their normal cap of five, saves
+immediately, and returns the resulting balances. It is available in development and
+built previews. Invalid amounts are rejected; failed saves restore the previous balances.
+
+### Mine cliff and watermill
+
+The mine portal opens into a continuous solid rock shoulder joined to the hill.
+Building the rail depot opens a tunnel through that shoulder for the railway. The surrounding prairie, river,
+and later districts keep their existing layout.
+
+The Frontier watermill has its own upstream west-bank parcel at `(21.5, -12)`,
+separate from the industrial mill, river port, future lots and boat channel.
+It unlocks after Farm level 1 and uses the normal three-stage construction and
+three-stage modernization lifecycle in every subsequent era. It is a visual
+landmark, with no new income or capacity rule. A curved channel is cut into the
+riverbank at river level, with sloped earth banks and the wheel dipping into it. Its wheel stays animated through
+the existing cached moving-part lifecycle. Existing saves receive an empty plot.
+
+`src/data/watermill.js` shares style and capability-based appearances between
+offers, Three.js and SVG, so future eras inherit supported visuals. Layout
+regressions cover the full mill footprint at every tier and era, the rail
+cutting, access route, saved construction and older saves.
+
+The camera can orbit down to a near-horizontal view. Collision protection samples
+only the ground and rock immediately around the camera, including the mine
+shoulder; an obscured distant parcel never forces the view overhead. Small
+collision corrections preserve the viewing direction and zoom distance where
+possible, without repeatedly lifting an already-clear camera.
+
+The railway tunnel has rounded stone arches at both ends. Completing the first
+station (including with a builder hammer) queues a 16-second cinematic: track is
+laid, the hill is excavated and the arches assembled, then the first train calls
+at the station and passes through the tunnel. Skip or Continue restores the
+village camera. Reduced motion shows the completed scene without a moving camera.
+A pending presentation survives reload; existing completed stations do not replay
+it automatically. Station upgrades leave the tunnel and railway operational.
+
+The stone portals, tunnel lining and rock collars share one polygonal arch profile
+and fixed front/back planes. The mine has a separate excavated decline: its mouth
+is 2.5 units below the yard, and its shaft continues beneath the full railway with
+more than one unit of rock above the mine ceiling. The cart and sleepers follow
+the same eased slope. The encounter yard remains level south of the ramp; mining
+upgrades add equipment beside the opening rather than filling the entrance.

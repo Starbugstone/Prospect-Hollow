@@ -1,10 +1,11 @@
+import { eraEvolution } from '../../data/eras';
 import { isCityEra } from '../../data/city';
 import { cityModel } from './buildings/city';
 import { RIVER, riverCenterX } from './TownRiver';
 import { PLOTS, RAIL_EDGE, railEdges, routeBetween, plotStreet } from './TownLayout';
 import { modernTransport } from './TownEvolution';
 
-export const RAIL_HEIGHT = 0.18;
+const RAIL_HEIGHT = 0.18;
 export const railHeight = (x) => {
   const p = Math.max(0, Math.min(1, (16 - Math.abs(x - riverCenterX(RAIL_EDGE.from[1]))) / 11));
   return RAIL_HEIGHT + 2.5 * p * p * (3 - 2 * p);
@@ -82,10 +83,12 @@ export function addEraActivity(d, town) {
       d.box(paddle, 1.5, 0.15, 0.3, 0, 0.55, 0, '#9b6e51');
     }
     const portEra = town.buildingEras.riverPort;
-    if (isCityEra(portEra)) {
+    if (eraEvolution(portEra).cityBoat) {
       for (const child of [...boat.children]) boat.remove(child);
       cityModel(d, boat, `${portEra}-boat`);
-      boat.name = portEra === 'contemporary' ? 'Solar river ferry' : 'Rebuilding river launch';
+      boat.name = eraEvolution(portEra).digitalCity
+        ? 'Solar river ferry'
+        : 'Rebuilding river launch';
     }
     d.motions.push((time) => {
       const phase = (time + 18) % 95;
@@ -97,63 +100,6 @@ export function addEraActivity(d, town) {
     });
   }
   if (railEdges(town).length) {
-    const rails = d.group(d.world);
-    rails.userData.static = true;
-    rails.name = 'Station connecting railroad';
-    for (let x = RAIL_EDGE.from[0]; x < RAIL_EDGE.to[0]; x++) {
-      const z = RAIL_EDGE.from[1];
-      for (const dz of [-0.52, 0.52])
-        d.rod(
-          rails,
-          [x, railHeight(x), z + dz],
-          [x + 1, railHeight(x + 1), z + dz],
-          0.035,
-          '#6e7770',
-        );
-      d.box(rails, 0.17, 0.1, 1.45, x, railHeight(x) - 0.09, z, '#8b7756');
-      const fill = railHeight(x) - 0.14;
-      if (Math.abs(x - riverCenterX(z)) > RIVER.bankWidth + 1.2)
-        d.box(rails, 1.02, fill, 1.7, x + 0.5, fill / 2, z, '#a99d80');
-    }
-    const center = riverCenterX(RAIL_EDGE.from[1]),
-      span = RIVER.bankWidth + 1.2,
-      z = RAIL_EDGE.from[1];
-    const bridge = d.group(rails);
-    bridge.name = 'Railway river bridge';
-    d.box(bridge, span * 2, 0.15, 1.8, center, railHeight(center) - 0.2, z, '#766e5d');
-    for (const side of [-1, 1]) {
-      const edge = z + side * 0.87;
-      const deck = railHeight(center);
-      d.rod(
-        bridge,
-        [center - span, deck + 0.1, edge],
-        [center + span, deck + 0.1, edge],
-        0.075,
-        '#515f5a',
-      );
-      d.rod(
-        bridge,
-        [center - span, deck + 1.5, edge],
-        [center + span, deck + 1.5, edge],
-        0.07,
-        '#65766d',
-      );
-      for (let n = 0; n <= 6; n++) {
-        const x = center - span + (n * span) / 3;
-        d.rod(bridge, [x, deck + 0.1, edge], [x, deck + 1.5, edge], 0.055, '#65766d');
-        if (n < 6)
-          d.rod(
-            bridge,
-            [x, deck + (n % 2 ? 1.5 : 0.1), edge],
-            [x + span / 3, deck + (n % 2 ? 0.1 : 1.5), edge],
-            0.05,
-            '#65766d',
-          );
-      }
-    }
-    for (const x of [center - span + 0.35, center + span - 0.35])
-      d.box(bridge, 0.65, 3.7, 2, x, 0.65, z, '#a39d88');
-    d.batch(rails);
     const train = d.group(d.world, -17, 0.3, -23);
     const modern = modernTransport(town, 'railDepot');
     train.name = modern ? 'Modern station railcar' : 'Station train';
@@ -179,25 +125,18 @@ export function addEraActivity(d, town) {
     if (isCityEra(town.buildingEras.railDepot)) {
       for (const child of [...train.children]) train.remove(child);
       wheels.length = 0;
-      train.name =
-        town.buildingEras.railDepot === 'contemporary'
-          ? 'Electric city train'
-          : 'Rebuilding steam train';
+      train.name = eraEvolution(town.buildingEras.railDepot).digitalCity
+        ? 'Electric city train'
+        : 'Motor passenger railcar';
       for (const x of [0, -4, -8]) {
-        const carriage = cityModel(
-          d,
-          train,
-          town.buildingEras.railDepot === 'post-war' && x === 0
-            ? 'post-war-locomotive'
-            : `${town.buildingEras.railDepot}-railcar`,
-        );
+        const carriage = cityModel(d, train, `${town.buildingEras.railDepot}-railcar`);
         carriage.rotation.y = Math.PI / 2;
         carriage.position.x = x;
       }
     }
     const parts = train.children.map((part) => ({ part, y: part.position.y, x: part.position.x }));
     d.motions.push((time) => {
-      const journey = trainJourney(time);
+      const journey = d.railwayOpening?.journey ?? trainJourney(time + (d.trainTimeOffset ?? 0));
       train.visible = journey.visible;
       train.position.set(journey.x, 0.035, RAIL_EDGE.from[1]);
       for (const { part, y, x } of parts) {
@@ -213,4 +152,66 @@ export function addEraActivity(d, town) {
       });
     });
   }
+}
+
+export function addRailroad(d, town, { batch = true } = {}) {
+  if (!railEdges(town).length) return null;
+  const rails = d.group(d.world);
+  rails.userData.static = true;
+  rails.name = 'Station connecting railroad';
+  for (let x = RAIL_EDGE.from[0]; x < RAIL_EDGE.to[0]; x++) {
+    const z = RAIL_EDGE.from[1];
+    for (const dz of [-0.52, 0.52])
+      d.rod(
+        rails,
+        [x, railHeight(x), z + dz],
+        [x + 1, railHeight(x + 1), z + dz],
+        0.035,
+        '#6e7770',
+      );
+    d.box(rails, 0.17, 0.1, 1.45, x, railHeight(x) - 0.09, z, '#8b7756');
+    const fill = railHeight(x) - 0.14;
+    if (Math.abs(x - riverCenterX(z)) > RIVER.bankWidth + 1.2)
+      d.box(rails, 1.02, fill, 1.7, x + 0.5, fill / 2, z, '#a99d80');
+  }
+  const center = riverCenterX(RAIL_EDGE.from[1]),
+    span = RIVER.bankWidth + 1.2,
+    z = RAIL_EDGE.from[1];
+  const bridge = d.group(rails);
+  bridge.name = 'Railway river bridge';
+  d.box(bridge, span * 2, 0.15, 1.8, center, railHeight(center) - 0.2, z, '#766e5d');
+  for (const side of [-1, 1]) {
+    const edge = z + side * 0.87;
+    const deck = railHeight(center);
+    d.rod(
+      bridge,
+      [center - span, deck + 0.1, edge],
+      [center + span, deck + 0.1, edge],
+      0.075,
+      '#515f5a',
+    );
+    d.rod(
+      bridge,
+      [center - span, deck + 1.5, edge],
+      [center + span, deck + 1.5, edge],
+      0.07,
+      '#65766d',
+    );
+    for (let n = 0; n <= 6; n++) {
+      const x = center - span + (n * span) / 3;
+      d.rod(bridge, [x, deck + 0.1, edge], [x, deck + 1.5, edge], 0.055, '#65766d');
+      if (n < 6)
+        d.rod(
+          bridge,
+          [x, deck + (n % 2 ? 1.5 : 0.1), edge],
+          [x + span / 3, deck + (n % 2 ? 0.1 : 1.5), edge],
+          0.05,
+          '#65766d',
+        );
+    }
+  }
+  for (const x of [center - span + 0.35, center + span - 0.35])
+    d.box(bridge, 0.65, 3.7, 2, x, 0.65, z, '#a39d88');
+  if (batch) d.batch(rails);
+  return rails;
 }

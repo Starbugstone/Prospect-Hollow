@@ -59,7 +59,7 @@ describe('Substantial Industrial structures and village incidents', () => {
       expect(extents[2]).toBeGreaterThan(extents[0]);
     },
   );
-  it.each(['cargo-theft', 'workshop-fire'])(
+  it.each(['cargo-theft', 'workshop-fire', 'storm-cleanup'])(
     'animates %s along valid roads, pauses with its clock and completes once',
     (kind) => {
       const d = diorama();
@@ -98,6 +98,18 @@ describe('Substantial Industrial structures and village incidents', () => {
         if (tick === 100) {
           d.actorRenderer.update();
           for (const actor of incident.crew) expect(actor.root.visible).toBe(true);
+          if (incident.vehicle) {
+            for (const actor of incident.crew)
+              expect(
+                actor.root.position.distanceTo(incident.vehicle.root.position),
+              ).toBeGreaterThan(0.8);
+            for (let i = 1; i < incident.crew.length; i++)
+              expect(
+                incident.crew[i].root.position.distanceTo(incident.crew[i - 1].root.position),
+              ).toBeGreaterThan(0.8);
+          }
+          if (incident.debris)
+            expect(new Box3().setFromObject(incident.debris).min.y).toBeGreaterThan(0.25);
           expect(
             d.actorRenderer.buckets.reduce((sum, bucket) => sum + bucket.mesh.count, 0),
           ).toBeGreaterThan(60);

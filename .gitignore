@@ -30,3 +30,5 @@ test-results/
 /backups/
 !/.env.example
 !/backend/.env.example
+# Python caches from Blender asset tooling
+__pycache__/

@@ -69,12 +69,27 @@
           }}<small> / {{ game.totalRelics }}</small></strong
         >
       </div>
+      <div
+        v-for="order in game.oreOrders"
+        :key="order.color"
+        class="objective-title relic-objective"
+      >
+        <span
+          ><img :src="`/art/${order.color}.svg`" alt="" />
+          {{ t('Collect {color} ore', { color: t(order.color) }) }}</span
+        >
+        <strong
+          >{{ order.progress }}<small> / {{ order.target }}</small></strong
+        >
+      </div>
       <p>
         {{
           t(
             game.playMode === 'continuous'
               ? 'The objectives are just a starting point. Keep matching for as long as you like.'
-              : 'Clear the obstacles to finish. A reward awaits at your own pace.',
+              : game.oreOrders.length
+                ? 'Clear the obstacles and fill the ore orders to finish. Take your time; there is no move limit.'
+                : 'Clear the obstacles to finish. A reward awaits at your own pace.',
           )
         }}
       </p>

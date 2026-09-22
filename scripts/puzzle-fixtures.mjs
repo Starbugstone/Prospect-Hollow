@@ -1,6 +1,8 @@
 // Generate independently computed JavaScript engine oracles for the PHP port.
 import fs from 'node:fs';
 import { MatchEngine } from '../src/game/engine/MatchEngine.js';
+import { advanceOreOrders } from '../src/game/engine/ChapterMechanics.js';
+import { layerCount } from '../src/game/engine/TileRules.js';
 import { TileManager } from '../src/game/engine/TileManager.js';
 const engine = new MatchEngine();
 const content = JSON.parse(
@@ -40,7 +42,11 @@ const fixture = (name, level, a, b, activate = false, resolve = false) => {
       tiles,
       gemTypes: level.boardLayout.gemTypes,
     });
+    const oreOrders = (level.oreOrders ?? []).map((order) => ({ ...order, progress: 0 }));
+    advanceOreOrders(oreOrders, result.steps);
     resolution = {
+      oreOrders,
+      remainingLayers: tiles.reduce((sum, tile) => sum + layerCount(tile), 0),
       board: typeBoard(result.board),
       tiles,
       score: result.steps.reduce((sum, s) => sum + s.cleared.length * 100 * (s.index + 1), 0),
@@ -86,9 +92,21 @@ for (const t of ['bomb', 'cross', 'rainbow']) {
   level.board[14].type = t;
   fixture(`activate-${t}`, level, 14, 14, true, true);
 }
-for (const obstacle of ['chain', 'double-chain', 'frozen', 'blocker', 'seal', 'relic']) {
+for (const obstacle of ['chain', 'double-chain', 'frozen', 'blocker', 'seal', 'relic', 'signals']) {
   const level = structuredClone(base);
   level.board[14].type = 'bomb';
+  level.oreOrders = [
+    { color: 'ruby', target: 100 },
+    { color: 'sapphire', target: 100 },
+  ];
+  if (obstacle === 'signals') {
+    for (const [index, order] of [
+      [13, 1],
+      [20, 2],
+      [21, 0],
+    ])
+      Object.assign(level.tiles[index], { signalHealth: 1, surveyOrder: order });
+  }
   if (obstacle === 'chain') level.tiles[20].chainHealth = 1;
   if (obstacle === 'double-chain') level.tiles[20].chainHealth = 2;
   if (obstacle === 'frozen') level.tiles[20].state = 'FROZEN';

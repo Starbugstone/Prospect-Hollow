@@ -8,7 +8,7 @@ export class TownRenderQuality {
     this.fastWindows = 0;
   }
   sample(milliseconds) {
-    if (!(milliseconds > 0 && milliseconds < 200)) return null;
+    if (!(milliseconds > 0 && milliseconds < 1000)) return null;
     this.samples.push(milliseconds);
     if (this.samples.length < 40) return null;
     const ordered = this.samples.sort((a, b) => a - b);
@@ -16,7 +16,7 @@ export class TownRenderQuality {
     this.samples = [];
     let next = this.ratio;
     if (slow > 34) {
-      next = Math.max(0.6, this.ratio * 0.8);
+      next = Math.max(Math.min(0.6, this.maxRatio), this.ratio * 0.8);
       this.fastWindows = 0;
     } else if (slow < 19) {
       if (++this.fastWindows >= 8) {

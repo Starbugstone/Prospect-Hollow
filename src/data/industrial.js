@@ -1,3 +1,4 @@
+import { eraEvolution } from './eras';
 // First Lights adds civic milestones, not a second resource economy.
 export const INDUSTRIAL_BUILDINGS = [
   [
@@ -131,10 +132,9 @@ export const INDUSTRIAL_VARIANTS = {
   hotel: ['Riverside brick hotel', 'Brickwork and a sheltered entrance welcome the same visitors.'],
   bridge: ['Prospect civic bridge', 'Stone approach posts mark the familiar river crossing.'],
 };
-export const INDUSTRIAL_LEVEL_PRICES = [1400, 1850, 2300];
+export const INDUSTRIAL_LEVEL_PRICES = eraEvolution('industrial').prices;
 export const hasElectricity = (town) =>
-  ['industrial', 'motor-age', 'post-war', 'contemporary'].includes(town.era) &&
-  town.buildings.powerHouse > 0;
+  eraEvolution(town.era).electricity && town.buildings.powerHouse > 0;
 export const ELECTRIC_LAMPS = [
   [-3, -7.5],
   [3, -7.5],
