@@ -389,6 +389,7 @@ import { useAudio } from './composables/useAudio';
 import { LEVEL_NAMES } from './data/levelNames';
 import { obstaclesInLevel } from './data/obstacles';
 import ObstacleGuide from './components/ObstacleGuide.vue';
+import { TESTING_TOWN_CHANGED } from './services/testingTools';
 
 const game = useGameStore();
 const campaign = useCampaignStore();
@@ -551,6 +552,7 @@ onMounted(() => {
   clockInterval = setInterval(() => game.syncRunClock(), 100);
   game.setAudioManager(audio);
   document.addEventListener('visibilitychange', visibilityChanged);
+  window.addEventListener(TESTING_TOWN_CHANGED, resumeImportedVillage);
 });
 watch(
   () => game.sessionActive,
@@ -569,6 +571,7 @@ onBeforeUnmount(() => {
   clearInterval(incomeInterval);
   campaign.accrueSaloonIncome();
   document.removeEventListener('visibilitychange', visibilityChanged);
+  window.removeEventListener(TESTING_TOWN_CHANGED, resumeImportedVillage);
   game.exitLevel();
   game.setAudioManager(null);
 });

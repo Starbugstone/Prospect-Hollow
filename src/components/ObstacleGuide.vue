@@ -71,7 +71,7 @@
     <p class="guide-bonus-note">
       {{
         t(
-          'Swipe a bonus gem, or double-tap it to activate in place. A rainbow clears a color; swapping two bonuses creates a fusion.',
+          'Swipe a bonus gem, or double-tap it to activate in place. A rainbow clears the swapped color, or the most common color when double-tapped. Toolbar powers trigger bonuses they hit; swapping two bonuses creates a fusion.',
         )
       }}
     </p>

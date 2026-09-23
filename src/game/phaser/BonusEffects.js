@@ -15,25 +15,29 @@ const POWER_COLOR = {
 
 // Descriptors preserve the actual origin and affected cells, including toolbar powers.
 export function describeBonusEffects(step, typeAt) {
-  if (step.bonusEffect)
-    return [
-      {
-        type: step.bonusEffect.type,
-        index: step.bonusEffect.originIndex,
-        targets: step.cleared,
-      },
-    ];
+  const primary = step.bonusEffect
+    ? [
+        {
+          type: step.bonusEffect.type,
+          index: step.bonusEffect.originIndex,
+          targets: step.cleared,
+        },
+      ]
+    : [];
   const activated = new Set(
     (step.matches ?? [])
-      .filter((match) => match.type === 'bonus-activation')
+      .filter((match) => step.bonusEffect || match.type === 'bonus-activation')
       .flatMap((match) => match.indices),
   );
-  return step.cleared.flatMap((index) => {
-    const type = typeAt(index);
-    return activated.has(index) && BONUS_TYPES.includes(type)
-      ? [{ type, index, targets: step.cleared }]
-      : [];
-  });
+  return [
+    ...primary,
+    ...step.cleared.flatMap((index) => {
+      const type = typeAt(index);
+      return activated.has(index) && BONUS_TYPES.includes(type)
+        ? [{ type, index, targets: step.cleared }]
+        : [];
+    }),
+  ];
 }
 
 export class BonusEffects {

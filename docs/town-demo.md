@@ -89,6 +89,13 @@ The command adds coins, tops up builder hammers up to their normal cap of five, 
 immediately, and returns the resulting balances. It is available in development and
 built previews. Invalid amounts are rejected; failed saves restore the previous balances.
 
+Use `prospectDebug.prepareEra()` to fully upgrade the current era and leave its
+transition waiting for the player's click, or pass an era ID to prepare that era.
+`prospectDebug.mineStage(12)` unlocks and opens playable chapter 12 (level 67),
+without payouts for skipped levels. See the
+[README console cheats](../readme.md#testing-resources-from-the-console) for IDs,
+stage bounds and save behavior.
+
 ### Mine cliff and watermill
 
 The mine portal opens into a continuous solid rock shoulder joined to the hill.

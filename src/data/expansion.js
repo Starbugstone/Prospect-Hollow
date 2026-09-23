@@ -86,6 +86,7 @@ export const EXPANSION_LEVELS = [
   {
     map: '......./......./.X.r.X./......./.b.g.b./......./.#.r.#./......./.......',
     ice: 76,
+    openExitRows: 1,
     tip: 'Open the stone chambers, then guide the right colors onto their seals.',
   },
   {

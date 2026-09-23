@@ -654,4 +654,12 @@ export class BoardAnimator {
   clearBonusPreview() {
     this.clearMarkers('preview');
   }
+  fadeBonusPreview() {
+    const preview = this.markers.get('preview');
+    this.markers.delete('preview');
+    for (const marker of preview?.objects ?? []) {
+      if (this.reducedMotion) marker.destroy();
+      else this.effect(marker, { alpha: 0, duration: 180, ease: 'Quad.easeOut' });
+    }
+  }
 }

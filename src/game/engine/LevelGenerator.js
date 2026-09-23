@@ -284,7 +284,11 @@ export const generateLevelConfigs = (count = LEVEL_COUNT) => {
       const health = i < spec.reinforcedCount ? 2 : 1;
       tiles[y * cols + x] = { type: 'blocker', health, maxHealth: health };
     });
-    const iceCells = tiles.flatMap((tile, i) => (tile.type === 'standard' ? [i] : []));
+    const iceCells = tiles.flatMap((tile, i) =>
+      tile.type === 'standard' && (!spec.openExitRows || i < cols * (rows - spec.openExitRows))
+        ? [i]
+        : [],
+    );
     // Seed breaks ties within each authored shape, preserving deterministic replays.
     for (let i = iceCells.length - 1; i > 0; i--) {
       const j = Math.floor(rng() * (i + 1));

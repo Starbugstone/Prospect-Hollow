@@ -52,6 +52,18 @@ prospectDebug.grant({ coins: 100000, hammers: 5 });
 
 This adds 100,000 coins, tops up builder hammers to their normal cap of 5, saves immediately, and returns the new balances. Run it again whenever you need more resources. Change `coins` or `hammers` to choose the amounts; `prospectDebug.grant()` uses the same defaults. The command is available in development and built previews.
 
+Two more console cheats save immediately:
+
+```js
+prospectDebug.prepareEra(); // Fully upgrade the current era; wait for your transition click.
+prospectDebug.prepareEra('industrial'); // Prepare the end of a chosen era.
+prospectDebug.mineStage(12); // Unlock and open chapter 12 (starting at level 67).
+```
+
+Run `prepareEra` after exiting the mine. It returns to the village with every building available in that era fully built and upgraded, construction completed, and old incidents and presentations dismissed. Click the town square's era-change action when ready; the cheat does not start the next era or its cinematic. Era IDs, in order: `frontier`, `river-rail`, `industrial`, `post-war`, `motor-age`, `aviation`, `broadcast`, `contemporary`. The final era has no next-era button. Choosing an earlier era removes later-era buildings from this test town. Puzzle records and inventory are preserved.
+
+`mineStage` accepts a **chapter number from 1–54**, not a level number. It opens that chapter's first puzzle immediately, ending any current run. Missing earlier levels are marked completed with zero score and one star to unlock the chapter; existing scores are preserved. Skipped levels grant no coins, chests, chapter gifts or construction progress. You can also revisit earlier chapters without building the museum. Unlocks persist across reloads; re-run the command to revisit a chosen chapter. Both cheats save immediately; export your save in Settings first if you want to keep an untouched copy. Invalid values are rejected and failed saves restore the previous state.
+
 ## Playing
 
 Swipe a gem, or tap two neighboring gems. Match at least three to break the ice underneath them. Fresh ice has frosted edges; damaged ice cracks, then shatters to reveal a dark cleared tile. Four in a line creates a sparking bomb; five creates a rotating rainbow orb; a T or L match creates a pulsing cross launcher. Swipe a bonus to activate it, or double-tap/double-click it to activate in place. Clear every ice layer and stone block to finish the level; the score target and best cascade determine extra stars.

@@ -722,7 +722,7 @@
   "New in this mine": "Nouveauté dans cette mine",
   "Close guide": "Fermer le guide",
   "Clear every ice layer and obstacle, and collect all relics. The score and clock earn extra chests.": "Éliminez toutes les couches de glace et tous les obstacles, puis récupérez les reliques. Le score et le temps permettent de gagner des coffres supplémentaires.",
-  "Swipe a bonus gem, or double-tap it to activate in place. A rainbow clears a color; swapping two bonuses creates a fusion.": "Faites glisser un bonus ou touchez-le deux fois pour l’activer sur place. Un arc-en-ciel élimine une couleur ; échanger deux bonus crée une fusion.",
+  "Swipe a bonus gem, or double-tap it to activate in place. A rainbow clears the swapped color, or the most common color when double-tapped. Toolbar powers trigger bonuses they hit; swapping two bonuses creates a fusion.": "Faites glisser un bonus ou touchez-le deux fois pour l’activer sur place. Un arc-en-ciel élimine la couleur échangée, ou la plus présente avec un double toucher. Les pouvoirs de la barre déclenchent les bonus touchés ; échanger deux bonus crée une fusion.",
   "Ice": "Glace",
   "Match gems on the frosted tile to remove the ice beneath them.": "Alignez des gemmes sur une case gelée pour enlever la glace en dessous.",
   "Stone": "Pierre",
