@@ -5,7 +5,8 @@ import { createTestingTools } from '../src/services/testingTools';
 import { useGameStore } from '../src/stores/gameStore';
 import { SAVE_KEY } from '../src/services/localProfile';
 import { ERAS } from '../src/data/eras';
-import { CHAPTERS } from '../src/data/campaign';
+import { CHAPTERS, LEVEL_COUNT } from '../src/data/campaign';
+import { pendingPresentation } from '../src/data/townPresentations';
 import { BUILDINGS, BANDIT_EVENT } from '../src/data/town';
 import { eraGate, eraBuildingLevel, plotInEra } from '../src/game/town/TownEras';
 import { upgradeOffer } from '../src/game/town/TownRules';
@@ -62,6 +63,7 @@ it('preserves an incompatible save', () => {
   expect(() => createTestingTools(pinia).grant()).toThrow();
   expect(() => createTestingTools(pinia).prepareEra()).toThrow();
   expect(() => createTestingTools(pinia).mineStage(2)).toThrow();
+  expect(() => createTestingTools(pinia).completeMine()).toThrow();
   expect(saves.get(SAVE_KEY)).toBe(saved);
 });
 
@@ -219,4 +221,93 @@ it('restores the town or unlock records after failed saves and leaves the active
   expect(JSON.stringify(campaign.records)).toBe(recordsBefore);
   expect(JSON.stringify(useGameStore(pinia).board)).toBe(boardBefore);
   expect(useGameStore(pinia).currentLevelId).toBe(7);
+});
+
+it('completes the mine collection, saves the celebration and preserves the active puzzle and rewards', () => {
+  const cheat = createTestingTools(pinia);
+  cheat.mineStage(2);
+  const campaign = useCampaignStore(pinia),
+    game = useGameStore(pinia);
+  campaign.records[1] = { score: 25000, stars: 2, bestTimeMs: 1200 };
+  campaign.continuousRecords[1] = { score: 50000, coins: 25 };
+  const board = JSON.stringify(game.board);
+  const activeRun = JSON.stringify(campaign.activeRun);
+  const session = game.sessionVersion;
+  const { presentations, ...townBefore } = JSON.parse(JSON.stringify(campaign.town));
+  const rewards = JSON.stringify([
+    campaign.powers,
+    campaign.builderHammers,
+    campaign.continuousRecords,
+    campaign.lastChapterReward,
+  ]);
+  expect(cheat.completeMine()).toEqual({
+    levels: LEVEL_COUNT,
+    stars: LEVEL_COUNT * 3,
+    celebration: 'pending',
+  });
+  expect(campaign.records[1]).toEqual({ score: 25000, stars: 3, bestTimeMs: 1200 });
+  expect(campaign.records[LEVEL_COUNT]).toEqual({ score: 0, stars: 3 });
+  expect(campaign.completion.complete).toBe(true);
+  expect(campaign.completedCount).toBe(LEVEL_COUNT);
+  for (let id = 1; id <= LEVEL_COUNT; id++) {
+    expect(campaign.isUnlocked(id)).toBe(true);
+    expect(campaign.records[id].stars).toBe(3);
+  }
+  expect(JSON.stringify(game.board)).toBe(board);
+  expect(JSON.stringify(campaign.activeRun)).toBe(activeRun);
+  expect(game.sessionVersion).toBe(session);
+  expect(game.sessionActive).toBe(true);
+  expect(game.levelCleared).toBe(false);
+  const { presentations: queued, ...townAfter } = JSON.parse(JSON.stringify(campaign.town));
+  expect(townAfter).toEqual(townBefore);
+  expect(queued).toEqual({ ...presentations, 'three-star-celebration': 'pending' });
+  expect(
+    JSON.stringify([
+      campaign.powers,
+      campaign.builderHammers,
+      campaign.continuousRecords,
+      campaign.lastChapterReward,
+    ]),
+  ).toBe(rewards);
+  game.exitLevel();
+  const loaded = useCampaignStore(createPinia());
+  expect(loaded.completion.complete).toBe(true);
+  expect(pendingPresentation(loaded.town)?.id).toBe('three-star-celebration');
+  expect(loaded.acknowledgePresentation('three-star-celebration')).toBe(true);
+  expect(pendingPresentation(useCampaignStore(createPinia()).town)).toBeUndefined();
+});
+
+it('re-arms a watched celebration without disturbing other presentation receipts', () => {
+  const cheat = createTestingTools(pinia);
+  cheat.mineStage(1);
+  const campaign = useCampaignStore(pinia);
+  campaign.town.presentations = { 'three-star-celebration': 'seen', 'railway-opening': 'pending' };
+  cheat.completeMine();
+  expect(campaign.town.presentations).toEqual({
+    'three-star-celebration': 'pending',
+    'railway-opening': 'pending',
+  });
+  expect(pendingPresentation(campaign.town)?.id).toBe('three-star-celebration');
+  cheat.completeMine();
+  expect(pendingPresentation(campaign.town)?.id).toBe('three-star-celebration');
+});
+
+it('requires entering the mine and rolls back the collection and celebration if saving fails', () => {
+  const cheat = createTestingTools(pinia);
+  expect(() => cheat.completeMine()).toThrow('Enter the mine');
+  expect(saves.has(SAVE_KEY)).toBe(false);
+  cheat.mineStage(1);
+  const campaign = useCampaignStore(pinia),
+    game = useGameStore(pinia);
+  const before = JSON.stringify([campaign.records, campaign.town, game.board, campaign.activeRun]);
+  const saved = saves.get(SAVE_KEY);
+  localStorage.setItem = () => {
+    throw new Error('Storage full');
+  };
+  expect(() => cheat.completeMine()).toThrow('Previous progress was restored');
+  expect(JSON.stringify([campaign.records, campaign.town, game.board, campaign.activeRun])).toBe(
+    before,
+  );
+  expect(saves.get(SAVE_KEY)).toBe(saved);
+  expect(game.sessionActive).toBe(true);
 });

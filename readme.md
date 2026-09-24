@@ -64,6 +64,14 @@ Run `prepareEra` after exiting the mine. It returns to the village with every bu
 
 `mineStage` accepts a **chapter number from 1–54**, not a level number. It opens that chapter's first puzzle immediately, ending any current run. Missing earlier levels are marked completed with zero score and one star to unlock the chapter; existing scores are preserved. Skipped levels grant no coins, chests, chapter gifts or construction progress. You can also revisit earlier chapters without building the museum. Unlocks persist across reloads; re-run the command to revisit a chosen chapter. Both cheats save immediately; export your save in Settings first if you want to keep an untouched copy. Invalid values are rejected and failed saves restore the previous state.
 
+To preview the **three-star completion celebration**, enter the mine and run:
+
+```js
+prospectDebug.completeMine(); // Unlock every mine level, give each 3 stars, and queue the celebration.
+```
+
+Then use **Back to village**. The celebration starts on returning to the village, after any pending raid or era transition. The command leaves the current puzzle running and saves all 324 levels as completed with three stars. Existing scores and best times are preserved; previously unplayed levels get a zero score. It grants no coins, chests, chapter gifts, inventory or construction progress. Run it again inside the mine to re-arm the celebration even if you already watched it. The command requires an active mine session; if needed, `prospectDebug.mineStage(1)` opens one, including on an already completed save without a museum. Export your save in Settings first if you want to preserve your real progress. Failed saves restore both records and the celebration receipt.
+
 ## Playing
 
 Swipe a gem, or tap two neighboring gems. Match at least three to break the ice underneath them. Fresh ice has frosted edges; damaged ice cracks, then shatters to reveal a dark cleared tile. Four in a line creates a sparking bomb; five creates a rotating rainbow orb; a T or L match creates a pulsing cross launcher. Swipe a bonus to activate it, or double-tap/double-click it to activate in place. Clear every ice layer and stone block to finish the level; the score target and best cascade determine extra stars.

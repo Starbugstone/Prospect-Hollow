@@ -1,7 +1,8 @@
 import { useCampaignStore } from '../stores/campaignStore';
 import { useGameStore } from '../stores/gameStore';
 import { HAMMER_CAPACITY } from '../data/rewards';
-import { CHAPTERS } from '../data/campaign';
+import { CHAPTERS, LEVEL_COUNT } from '../data/campaign';
+import { queueCampaignPresentations } from '../data/townPresentations';
 import { ERAS, FRONTIER_ERA } from '../data/eras';
 import { BUILDINGS, BANDIT_EVENT } from '../data/town';
 import { ERA_BUILDING_LEVELS, eraGate, plotInEra } from '../game/town/TownEras';
@@ -74,6 +75,23 @@ export function createTestingTools(pinia) {
       game.bootstrap();
       game.startLevel(firstLevel, 'normal', { debugReplay: true });
       return { chapter, name: CHAPTERS[chapter - 1].name, level: firstLevel };
+    },
+    completeMine() {
+      const campaign = useCampaignStore(pinia);
+      if (campaign.readOnly) throw new Error(campaign.saveWarning);
+      if (!useGameStore(pinia).sessionActive)
+        throw new Error(
+          'Enter the mine before completing its collection. Leave afterward to see the celebration.',
+        );
+      const records = { ...campaign.records };
+      for (let id = 1; id <= LEVEL_COUNT; id++)
+        records[id] = { score: 0, ...records[id], stars: 3 };
+      const town = { ...campaign.town, presentations: { ...campaign.town.presentations } };
+      // Explicitly re-arm this debug preview even if it was already watched.
+      // The normal presentation lifecycle starts it on the next village visit.
+      delete town.presentations['three-star-celebration'];
+      saveChanges(campaign, { records, town: queueCampaignPresentations(town, records) });
+      return { levels: LEVEL_COUNT, stars: LEVEL_COUNT * 3, celebration: 'pending' };
     },
     grant({ coins = 100000, hammers = HAMMER_CAPACITY } = {}) {
       if (![coins, hammers].every((value) => Number.isSafeInteger(value) && value >= 0))
