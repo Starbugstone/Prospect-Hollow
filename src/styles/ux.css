@@ -109,18 +109,11 @@
   width: 100%;
   max-width: none;
   margin: 0;
-  --tip-space: 0px;
+  --feedback-space: 64px;
   --power-space: 0px;
-  --caption-space: 0px;
-}
-.app-shell.is-playing .play-area:has(.guidance-tip) {
-  --tip-space: 64px;
 }
 .app-shell.is-playing .play-area:has(.powerup-section) {
   --power-space: 76px;
-}
-.app-shell.is-playing .play-area:has(.board-caption) {
-  --caption-space: 36px;
 }
 .app-shell.is-playing .board-frame {
   width: min(
@@ -128,8 +121,8 @@
     calc(
       max(
           160px,
-          100dvh - 130px - var(--tip-space) - var(--power-space) - var(--caption-space) -
-            var(--mode-space, 0px) - env(safe-area-inset-top) - env(safe-area-inset-bottom)
+          100dvh - 130px - var(--feedback-space) - var(--power-space) - var(--mode-space, 0px) -
+            env(safe-area-inset-top) - env(safe-area-inset-bottom)
         ) *
         var(--board-ratio) + 16px
     )
@@ -150,14 +143,57 @@
   width: 44px;
   height: 44px;
 }
-.app-shell.is-playing .board-frame .arcade-announcer {
+/* Transient messages share a reserved slot; neither the board nor its controls reflow. */
+.mine-feedback {
+  position: relative;
+  flex: 0 0 var(--feedback-space);
+  width: min(100%, 640px);
+  height: var(--feedback-space);
+  overflow: hidden;
+}
+.mine-tip-slot {
   position: absolute;
-  top: 6px;
-  left: 0;
+  inset: 0;
+  overflow: auto;
+}
+.app-shell.is-playing .mine-feedback .arcade-announcer {
+  display: grid;
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: 56px;
-  z-index: 5;
+  height: 100%;
+  margin: 0;
   pointer-events: none;
+}
+.app-shell.is-playing .mine-feedback .board-caption {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 0;
+  margin: 0;
+  padding: 4px;
+  overflow: auto;
+}
+.mine-feedback .board-caption button {
+  min-height: 44px;
+  padding-inline: 10px;
+}
+.mine-feedback > .fusion-reward {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  max-height: 28px;
+  overflow: auto;
+  font-size: 11px;
+  line-height: 14px;
+  text-align: center;
+}
+.app-shell.is-playing .mine-feedback:has(> .fusion-reward) .arcade-announcer {
+  height: calc(100% - 28px);
 }
 .app-shell.is-playing .powerup-section {
   width: min(100%, 640px);
@@ -211,7 +247,7 @@
   color: inherit;
   border: 0;
 }
-.play-area > .guidance-tip {
+.mine-tip-slot > .guidance-tip {
   max-width: 640px;
   width: 100%;
 }
@@ -341,6 +377,12 @@
   background: #15121b;
   border: 2px solid #fff;
 }
+/* Continuous play also keeps its mode summary outside the board's height budget. */
+@media (min-width: 641px) and (min-height: 501px) {
+  .app-shell.is-playing .play-area:has(.continuous-banner) {
+    --mode-space: 110px;
+  }
+}
 @media (max-width: 640px) {
   .mine-header {
     padding-inline: 8px;
@@ -363,8 +405,8 @@
   .app-shell.is-playing .game-layout {
     padding-inline: 8px;
   }
-  .app-shell.is-playing .play-area:has(.guidance-tip) {
-    --tip-space: 86px;
+  .app-shell.is-playing .play-area {
+    --feedback-space: 86px;
   }
   .app-shell.is-playing .powerup-button {
     flex-basis: 56px;
@@ -445,7 +487,7 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     grid-template-rows: auto 1fr auto;
-    grid-template-areas: 'tip board tools' 'tip board powers' 'mode board caption';
+    grid-template-areas: 'feedback board tools' 'feedback board powers' 'mode board .';
     column-gap: 12px;
     align-items: start;
   }
@@ -457,13 +499,19 @@
     );
     margin: 0;
   }
-  .app-shell.is-playing .play-area > .guidance-tip {
-    grid-area: tip;
+  .app-shell.is-playing .mine-feedback {
+    grid-area: feedback;
+    --feedback-space: 144px;
+  }
+  .mine-tip-slot > .guidance-tip {
     align-items: flex-start;
     flex-wrap: wrap;
   }
-  .app-shell.is-playing .play-area > .guidance-tip button {
+  .mine-tip-slot > .guidance-tip button {
     margin-left: auto;
+  }
+  .app-shell.is-playing .mine-feedback .arcade-announcer {
+    height: 72px;
   }
   .app-shell.is-playing .board-topline {
     grid-area: tools;
@@ -473,8 +521,7 @@
   .app-shell.is-playing .powerup-section {
     grid-area: powers;
   }
-  .app-shell.is-playing .board-caption {
-    grid-area: caption;
+  .app-shell.is-playing .mine-feedback .board-caption {
     font-size: 11px;
   }
   .app-shell.is-playing .continuous-banner {

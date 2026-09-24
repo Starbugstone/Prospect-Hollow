@@ -155,3 +155,25 @@ Browser results and screenshots are in
 - [French landscape mine](images/ux-upgrade/fr-mine-844.png)
 - [2D fallback](images/ux-upgrade/fallback.png)
 - [Browser verification results](images/ux-upgrade/results.json)
+
+## Feedback layout correction — 2026-09-24
+
+Contextual hints previously changed the board's available height as they appeared
+and disappeared. Combo celebrations were positioned inside the board and obscured
+the top row. A permanent feedback area now holds hints, celebrations, fusion
+explanations and power targeting prompts above the board (beside it in landscape).
+Hints return after celebrations, and targeting retains its Cancel control.
+Continuous play also reserves enough room for its mode summary to avoid page
+scrolling when a power is selected.
+
+The Playwright callback in `scripts/verify-mine-feedback.js` checks exact board and
+tool geometry, document height and scroll position through each feedback state.
+All 20 combinations of five viewport sizes, English/French and normal/continuous
+play pass, with no browser errors. The full verification suite passes all 1,419
+tests; the production build passes with its existing large-chunk warning.
+
+- [French mobile hint](images/ux-upgrade/feedback-fr-mobile-hint.png)
+- [French mobile combo alert](images/ux-upgrade/feedback-fr-mobile-alert.png)
+- [Desktop combo alert](images/ux-upgrade/feedback-en-desktop.png)
+- [Landscape combo alert](images/ux-upgrade/feedback-en-landscape.png)
+- [Feedback geometry results](images/ux-upgrade/feedback-results.json)

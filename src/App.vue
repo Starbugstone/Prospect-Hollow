@@ -144,9 +144,28 @@
             <GameIcon name="home" /> {{ t('Exit mine') }}
           </button>
         </div>
-        <MineTip />
+        <div class="mine-feedback">
+          <div v-show="!game.activeBonusMode && !game.arcadeBanner" class="mine-tip-slot">
+            <MineTip />
+          </div>
+          <div v-if="game.activeBonusMode" class="board-caption" aria-live="polite">
+            {{ t('Tap a tile to use') }} {{ t(powerName) }}
+            <button class="text-button" @click="game.setBonusMode(null)">
+              {{ t('Cancel') }}
+            </button>
+          </div>
+          <template v-else-if="game.arcadeBanner">
+            <ArcadeBanner :banner="game.arcadeBanner" />
+            <strong
+              v-if="game.arcadeBanner.kind === 'fusion'"
+              class="fusion-reward"
+              aria-live="polite"
+            >
+              {{ t(game.arcadeBanner.detail) }}
+            </strong>
+          </template>
+        </div>
         <div class="board-topline">
-          <span v-if="game.activeBonusMode">{{ t('Choose a tile') }}</span>
           <div class="board-tools">
             <button
               class="icon-button"
@@ -185,26 +204,11 @@
           <div class="frame-corner corner-bl"></div>
           <div class="frame-corner corner-br"></div>
           <BoardCanvas />
-          <ArcadeBanner v-if="game.arcadeBanner" :banner="game.arcadeBanner" />
           <transition name="notice"
             ><div v-if="game.reshuffleNotice" class="board-notice" role="status">
               {{ t(game.reshuffleNotice.message) }}
             </div></transition
           >
-        </div>
-        <div
-          v-if="game.activeBonusMode || game.arcadeBanner?.kind === 'fusion'"
-          class="board-caption"
-          aria-live="polite"
-        >
-          <template v-if="game.activeBonusMode">
-            {{ t('Tap a tile to use') }} {{ t(powerName) }}
-            <button class="text-button" @click="game.setBonusMode(null)">
-              {{ t('Cancel') }}
-            </button></template
-          ><template v-else-if="game.arcadeBanner?.kind === 'fusion'">
-            <strong class="fusion-reward">{{ t(game.arcadeBanner.detail) }}</strong>
-          </template>
         </div>
         <PowerUpBar />
       </section>
