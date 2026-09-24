@@ -456,6 +456,10 @@ export class TownDiorama {
         }
       }
       const bounds = new THREE.Box3().setFromObject(group);
+      // Reserve the finished footprint throughout a construction reveal, even
+      // while its meshes are hidden or temporarily lifted by the animation.
+      group.userData.animalSolid = bounds.clone();
+      group.userData.animalSolid.max.y += 1.4;
       if (id !== 'mine') this.upgradeGlow.add(id, bounds);
       // Keep action icons at the front porch, below the roofline.
       this.anchors.at(-1).collection = point(x, 1, z + 2.2);
@@ -465,6 +469,16 @@ export class TownDiorama {
         movingPart.rotor.updateWorldMatrix(true, false);
         this.world.attach(movingPart.rotor);
         movingPart.rotor.userData.animated = true;
+        const center = movingPart.rotor.getWorldPosition(new THREE.Vector3());
+        const rotorBounds = new THREE.Box3().setFromObject(movingPart.rotor);
+        const radius = Math.max(
+          center.distanceTo(rotorBounds.min),
+          center.distanceTo(rotorBounds.max),
+        );
+        movingPart.rotor.userData.animalSolid = new THREE.Box3().setFromCenterAndSize(
+          center,
+          new THREE.Vector3().setScalar(radius * 2),
+        );
       }
       const parts = cached?.parts ?? constructionParts(group);
       if (id === constructionId)

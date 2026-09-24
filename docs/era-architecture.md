@@ -266,3 +266,50 @@ sidewalk offset afterward. Facing eases at corners while positions stay on the
 clear segments. Runtime crowd separation also respects nearby static footprints.
 `testing/town-navigation.test.js` covers continuous clearance, all era profiles,
 manual actor routes, cache reuse and scenery removal.
+
+### Village animals
+
+`data/townAnimals.js` owns the bounded animal cast and completed-building outdoor
+habitats. `TownAnimals` shares roaming, resting, feeding, flight and disturbance
+handling; `TownAnimalModels` supplies articulated, instanced animal meshes. Dogs
+and cats follow prepared street routes, hens forage around the farm entrance,
+and occasional foxes and raccoons stay along the southern village outskirts.
+Ground animals share pedestrian obstacle and traffic clearance. Wildlife turns
+away from nearby people; pigeons take flight when people, pets or traffic approach.
+
+Behavior reads era capabilities, not a separate chronology. Paved towns give
+traffic more space and have less frequent wildlife visits. Feeders use the era's
+villager wardrobe. Open-building landing spots come from completed habitats;
+power-pole perches come from markers on the actual rendered grid. Underground
+wiring therefore removes those perches automatically. Flights rise above the
+built scenery before descending through a verified open landing column.
+
+`TownAnimalSpace` adds geometry clearance to the authored navigation markers.
+A cached, balanced triangle index includes each immutable scenery root and the
+landscape, so fences, trees, planter boxes and merged Blender props are covered
+without requiring additional hand-maintained footprints. It checks the animal's
+full body envelope, repairs blocked route sections on a bounded local grid, and
+rejects covered landing spots. Traffic corrections use the same geometry check.
+Construction reveals reserve their finished bounds; moving machinery reserves
+its swept volume. A crowded park can move the leashed dog walk to its open side.
+
+Landing sites and grain targets sample their actual supporting floor from that
+same index. Feeding reuses fourteen instanced grain meshes: each thrown grain
+settles, disappears when a pigeon's beak reaches it, or expires after 2.4 seconds.
+Consumed grains remain hidden until the next throw; the hidden effect does not
+update its particle pool. Pigeon wing bars are faces of the wing mesh, and beaks
+move rigidly with a head that pauses between pecks. Species-specific silhouettes
+use cached geometry in `TownAnimalGeometries`, disposed with the diorama.
+
+The cast, grain particles, route plans and habitat index are bounded and rebuilt
+with the diorama. All routines use its clock, including pause and reduced motion;
+they never change saves, earnings, objectives or puzzle moves. Add outdoor
+habitats to the definition and mark new perch geometry with local
+`userData.animalPerches` coordinates. `testing/town-animals.test.js` covers every
+era, a synthetic successor, missing scenery, continuous routes, feeding and grain
+consumption/expiry with bounded instance counts,
+disturbances, frozen clocks and a long simulation without scene growth.
+`testing/town-animal-clearance.test.js` builds the production scenery at initial
+and final building tiers in every era and checks both prepared segments and
+animated animal positions, plus thin unmarked fences, covered landings, solid
+interiors, moving scenery reservations and traffic displacement.

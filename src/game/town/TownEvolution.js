@@ -98,6 +98,7 @@ export function addPowerGrid(d, town) {
   root.name = 'Connected village power grid';
   root.userData.static = true;
   root.userData.connections = network.connections.map(({ id }) => id);
+  root.userData.animalPerches = network.poles.map(([x, y, z]) => [x, y + 0.23, z]);
   for (const [x, y, z] of network.poles) {
     walkObstacle(root, x, z, 0.055, y + 0.2);
     d.rod(root, [x, 0, z], [x, y + 0.2, z], 0.055, '#897255');

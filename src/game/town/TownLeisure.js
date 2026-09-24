@@ -43,12 +43,34 @@ export function addLeisureActivity(d, town) {
   );
   const [x, z] = PLOTS.park;
   // The footprint includes the leashed dog, not just the person at the origin.
-  const path = planOrbit(d, x, z + 2.7, 1.55, 1.1, 1.2, 0.13);
+  let path = d.animalNavigation
+    ? d.animalNavigation.plan(
+        Array.from({ length: 65 }, (_, i) => {
+          const angle = (i / 64) * Math.PI * 2;
+          return [x + Math.sin(angle) * 1.55, 0.13, z + 2.7 + Math.cos(angle) * 1.1];
+        }),
+        1.2,
+        1.65,
+      )
+    : planOrbit(d, x, z + 2.7, 1.55, 1.1, 1.2, 0.13);
+  // A fully expanded park and horse field can leave too little room for the
+  // person plus leash at the front. Use the open side promenade in that case.
+  if (d.animalNavigation && path.total < 2)
+    path = d.animalNavigation.plan(
+      [
+        [x - 4.6, 0.13, z + 3.8],
+        [x - 4.6, 0.13, z - 2.5],
+        [x - 4.6, 0.13, z + 3.8],
+      ],
+      1.2,
+      1.65,
+    );
+  visit.userData.walkPath = path;
   const update = (time) => {
     const phase = time % 60;
     // A continuous oval joins the promenade to the street entrance. The
     // walker remains present and turns over several steps at each end.
-    visit.visible = true;
+    visit.visible = !path || path.points.length > 0;
     const angle = (phase / 60) * Math.PI * 2;
     visit.position.set(x + Math.sin(angle) * 1.55, 0.13, z + 2.7 + Math.cos(angle) * 1.1);
     visit.rotation.y = Math.atan2(Math.cos(angle) * 1.55, -Math.sin(angle) * 1.1);
