@@ -229,6 +229,7 @@
       :moves="game.moves"
       :max-combo="game.maxCascade"
       :score-target="scoreTarget"
+      :star-score-target="game.starScoreTarget"
       :can-replay="campaign.canReplay"
       :can-continue="campaign.completedCount < LEVEL_NAMES.length"
       @next="startLevel(campaign.nextLevel)"

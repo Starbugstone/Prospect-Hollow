@@ -610,6 +610,7 @@ export const useCampaignStore = defineStore('campaign', {
       id,
       score,
       target,
+      starTarget = target,
       combo,
       elapsedMs,
       speedTargetMs,
@@ -632,7 +633,7 @@ export const useCampaignStore = defineStore('campaign', {
       const previousChapter = this.mineStage;
       this.records[id] = {
         score: Math.max(previous?.score ?? 0, score),
-        stars: Math.max(previous?.stars ?? 0, getStars(score, target, combo)),
+        stars: Math.max(previous?.stars ?? 0, getStars(score, starTarget, combo)),
       };
       const validTime = Number.isFinite(elapsedMs) && elapsedMs > 0;
       const bestTimeMs = Math.min(

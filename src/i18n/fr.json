@@ -2265,5 +2265,10 @@
   "Three stars on every level!": "Trois étoiles à chaque niveau !",
   "A perfect collection. A town full of thanks.": "Une collection parfaite. Tout un village vous remercie.",
   "1 level left to perfect": "1 niveau à perfectionner",
-  "1 level still awaits its first completion at the mine.": "1 niveau attend encore sa première réussite à la mine."
+  "1 level still awaits its first completion at the mine.": "1 niveau attend encore sa première réussite à la mine.",
+  "How to earn stars": "Comment gagner des étoiles",
+  "1 star: Finish the puzzle.": "1 étoile : terminez le puzzle.",
+  "2 stars: Reach {score} points, or a ×{cascade} chain reaction.": "2 étoiles : atteignez {score} points ou une réaction en chaîne ×{cascade}.",
+  "3 stars: Reach {bonusScore} points (150%), or {score} points with a ×{cascade} chain reaction.": "3 étoiles : atteignez {bonusScore} points (150 %) ou {score} points avec une réaction en chaîne ×{cascade}.",
+  "A chain reaction is consecutive matches from falling gems after one move. Time and move count do not affect stars.": "Une réaction en chaîne est une suite d’alignements créés par la chute des gemmes après un seul coup. Le temps et le nombre de coups n’influencent pas les étoiles."
 }

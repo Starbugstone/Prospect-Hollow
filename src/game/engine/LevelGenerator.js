@@ -4,6 +4,7 @@ import { LEVEL_COUNT, CHAPTERS, getLevelGemTypes } from '../../data/campaign.js'
 import { EXPANSION_LEVELS } from '../../data/expansion.js';
 import { getEarlyLevelSpec, stonePositions, iceRank } from '../../data/earlyLevels.js';
 import { layerCount } from './TileRules.js';
+import { getLevelStarTarget } from '../../data/starRating.js';
 
 const createSeededRng = (seed) => {
   let current = seed % 2147483647;
@@ -221,6 +222,7 @@ const createExpansionLevel = (id) => {
     tip: spec.tip,
     oreOrders: (spec.orders ?? []).map(([color, target]) => ({ color, target, progress: 0 })),
     chestTarget,
+    starScoreTarget: getLevelStarTarget(id, chestTarget),
     speedTargetMs: (75 + totalLayers + relicCount * 20) * 1000,
     boardCols: cols,
     boardRows: rows,
@@ -317,6 +319,7 @@ export const generateLevelConfigs = (count = LEVEL_COUNT) => {
       pace: (id - 1) % 6 === 4 ? 'rest' : (id - 1) % 6 === 5 ? 'finale' : 'explore',
       tip,
       chestTarget,
+      starScoreTarget: getLevelStarTarget(id, chestTarget),
       speedTargetMs: (90 + totalLayers * 2) * 1000,
       boardCols: cols,
       boardRows: rows,

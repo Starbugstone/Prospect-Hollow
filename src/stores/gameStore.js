@@ -9,7 +9,7 @@ import { generateLevelConfigs } from '../game/engine/LevelGenerator';
 import { GEM_TYPES } from '../game/engine/GemFactory';
 import { recoverBoard } from '../game/engine/BoardRecovery';
 import { MatchEngine } from '../game/engine/MatchEngine';
-import { cascadeTier, simultaneousMatchCount } from '../game/engine/MatchRewards';
+import { cascadeTier, clearScore, simultaneousMatchCount } from '../game/engine/MatchRewards';
 import { TileManager } from '../game/engine/TileManager';
 import { useInventoryStore } from './inventoryStore';
 import { BonusActivator } from '../game/engine/BonusActivator';
@@ -121,6 +121,11 @@ export const useGameStore = defineStore('game', {
     reshuffleNotice: null,
   }),
   getters: {
+    starScoreTarget: (state) =>
+      state.availableLevels.find((level) => level.id === state.currentLevelId)?.config
+        .starScoreTarget ??
+      state.objectives.find((objective) => objective.type === 'score')?.target ??
+      0,
     activeBoard(state) {
       return state.pendingBoardState ?? state.board;
     },
@@ -959,6 +964,7 @@ export const useGameStore = defineStore('game', {
         id: this.currentLevelId,
         score: this.score,
         combo: this.maxCascade,
+        starTarget: this.starScoreTarget,
         target: this.objectives.find((objective) => objective.type === 'score')?.target ?? 0,
       });
       this.constructionReward = useCampaignStore().lastConstruction;
@@ -1096,7 +1102,7 @@ export const useGameStore = defineStore('game', {
           return;
         }
         const cascadeBonus = cascadeTier(step, index);
-        total += clearedCount * 100 * cascadeBonus;
+        total += clearScore(step, index);
         deepestCascade = Math.max(deepestCascade, cascadeBonus);
         if (this.playMode === 'normal') {
           if (cascadeBonus >= 2)

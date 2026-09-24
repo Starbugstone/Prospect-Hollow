@@ -318,10 +318,11 @@ describe('append-only campaign and replay', () => {
   it('preserves all untouched original level layouts, objectives, seeds, tips and reward targets', () => {
     // Baseline for the unchanged 238 levels, captured before the mine audit's
     // explicit retuning of 33/52. Those two retain their workload and rewards below.
-    // Ignore ephemeral gem IDs and the empty oreOrders property.
+    // Ignore ephemeral gem IDs, empty oreOrders, and the independently tuned
+    // starScoreTarget (covered by star-ratings.test.js). Chest targets stay fixed.
     const levels = generateLevelConfigs(240)
       .filter(({ id }) => ![33, 52].includes(id))
-      .map(({ board, oreOrders, ...level }) => {
+      .map(({ board, oreOrders, starScoreTarget, ...level }) => {
         expect(oreOrders ?? []).toEqual([]);
         return {
           ...level,

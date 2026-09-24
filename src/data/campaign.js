@@ -265,7 +265,4 @@ export const formatTime = (ms) => {
   const seconds = Math.floor(Math.max(0, ms ?? 0) / 1000);
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 };
-export const getStars = (score, target, combo) =>
-  1 +
-  Number(target > 0 && score >= target) +
-  Number(combo >= 4 || (target > 0 && score >= target * 1.35));
+export { getStars } from './starRating.js';
