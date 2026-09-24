@@ -1465,6 +1465,7 @@ export class TownDiorama {
     if (
       this.lastFrame &&
       !this.cameraGesture &&
+      !this.presentation &&
       (!this.cinematic || this.cinematic.finished) &&
       !this.construction
     ) {

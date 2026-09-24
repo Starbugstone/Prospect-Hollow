@@ -1218,6 +1218,41 @@
   justify-content: space-between;
   gap: 16px;
 }
+.museum-completion {
+  padding: 16px;
+  margin-bottom: 20px;
+  border: 1px solid #ded9c8;
+  border-radius: 10px;
+  background: #f0efdf;
+  font-size: 13px;
+}
+.museum-completion p {
+  margin: 0 0 12px;
+}
+.museum-completion strong,
+.museum-completion span {
+  display: block;
+}
+.museum-completion span {
+  margin-top: 5px;
+  color: #6a765e;
+}
+.museum-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.museum-filter input {
+  width: 20px;
+  height: 20px;
+  accent-color: #49674e;
+}
+.museum-completion .museum-unplayed {
+  margin: 8px 0 0;
+  line-height: 1.6;
+}
 .museum-heading h2 {
   font:
     400 36px/1.1 Georgia,

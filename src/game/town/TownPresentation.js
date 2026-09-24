@@ -2,8 +2,13 @@ import { beginEventCamera, restoreEventCamera } from './TownEventCamera';
 import { keepCameraAboveTerrain } from './TownLandscape';
 import { TownRailwayOpening } from './TownRailwayOpening';
 import { TownMineEraConstruction } from './TownMineEraConstruction';
+import { TownCompletionFireworks } from './TownCompletionFireworks';
 
-const renderers = { 'railway-opening': TownRailwayOpening, 'era-mine': TownMineEraConstruction };
+const renderers = {
+  'railway-opening': TownRailwayOpening,
+  'era-mine': TownMineEraConstruction,
+  'three-star-celebration': TownCompletionFireworks,
+};
 // Shared camera ownership and cleanup. Content adapters own only temporary visuals.
 export class TownPresentation {
   constructor(d, definition) {

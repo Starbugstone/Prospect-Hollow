@@ -114,6 +114,24 @@ remain complete if the presentation is interrupted; its pending scene can resume
 on the next village visit. This completion presentation is separate from the
 optional-event framework deferred in issue #42.
 
+Campaign milestones use the same presentation receipts and renderer lifecycle.
+`campaignCompletion()` counts the authored normal levels only; the museum uses
+that count and filters completed replays below three stars. Unplayed levels remain
+part of the remaining total. `queueCampaignPresentations()` evaluates definition
+predicates after victories and when loading older saves. The three-star milestone
+queues once for a perfect collection, resumes while pending, and keeps its seen
+receipt after acknowledgement. Continuous play never earns campaign stars.
+
+`TownCompletionFireworks` provides the temporary square fireworks and three-star
+finale. It restores the original sky, fog and light intensities on exit. Reduced
+motion uses a still with no rockets or camera motion. Drawing-buffer quality changes
+wait until the presentation closes, preserving the final image behind Continue.
+`campaign-completion.test.js` and `completion-fireworks.test.js` cover qualification,
+saved receipts, future milestone definitions, visual disposal and this final hold.
+To reproduce a silent video, generate era demos and run
+`scripts/capture-completion-fireworks.js` through Playwright CLI in a disposable
+browser. Encode `output/playwright/completion-fireworks-frames/%05d.jpg` at 24 fps.
+
 ### Incident cameras
 
 `TownEventCamera.INCIDENT_SHOTS` assigns two subjects to each incident kind.

@@ -37,7 +37,49 @@
         )
       }}
     </p>
-    <p v-if="!campaign.completedCount && mode === 'normal'" class="museum-empty">
+    <div v-if="mode === 'normal'" class="museum-completion">
+      <p role="status">
+        <strong>✦ {{ t('{perfect}/{total} levels at three stars', campaign.completion) }}</strong>
+        <span>{{
+          t(
+            campaign.completion.remaining === 1
+              ? '1 level left to perfect'
+              : '{count} levels left to perfect',
+            { count: campaign.completion.remaining },
+          )
+        }}</span>
+      </p>
+      <label class="museum-filter">
+        <input v-model="needsStars" type="checkbox" />
+        {{ t('Below three stars only') }}
+      </label>
+      <p v-if="needsStars && campaign.completion.unplayed" class="museum-unplayed">
+        {{
+          t(
+            campaign.completion.unplayed === 1
+              ? '1 level still awaits its first completion at the mine.'
+              : '{count} levels still await their first completion at the mine.',
+            {
+              count: campaign.completion.unplayed,
+            },
+          )
+        }}
+      </p>
+    </div>
+    <p
+      v-if="mode === 'normal' && needsStars && !campaign.completion.replayIds.length"
+      class="museum-empty"
+      role="status"
+    >
+      {{
+        t(
+          campaign.completion.complete
+            ? 'Every level has three stars. Your collection is 100% complete!'
+            : 'Every completed level has three stars. Continue at the mine to discover the rest.',
+        )
+      }}
+    </p>
+    <p v-else-if="!campaign.completedCount && mode === 'normal'" class="museum-empty">
       {{
         t('Your first display is waiting. Complete a puzzle at the mine, then return to replay it.')
       }}
@@ -117,11 +159,14 @@ const emit = defineEmits(['close', 'replay', 'continuous']);
 const campaign = useCampaignStore();
 const { dialog, closeButton, dismissBackdrop } = useNativeDialog(() => emit('close'));
 const mode = ref('normal');
+const needsStars = ref(false);
 const chapterLevels = (index) =>
   Array.from({ length: 6 }, (_, i) => index * 6 + i + 1).filter(
     (id) =>
       id <= LEVEL_COUNT &&
-      (mode.value === 'continuous' ? campaign.isUnlocked(id) : campaign.records[id]),
+      (mode.value === 'continuous'
+        ? campaign.isUnlocked(id)
+        : campaign.records[id] && (!needsStars.value || campaign.records[id].stars < 3)),
   );
 const gems = ['emerald', 'sapphire', 'topaz', 'amethyst', 'ruby', 'moonstone'];
 </script>

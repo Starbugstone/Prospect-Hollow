@@ -865,8 +865,10 @@ watch(
   openingPresentation,
   (definition) => {
     presentationReady.value = false;
+    presentationFallback.value = false;
     if (definition) {
       closeDialog();
+      museumOpen.value = false;
       fullscreen.value = true;
     }
   },

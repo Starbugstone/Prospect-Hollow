@@ -1,4 +1,9 @@
-import { queueBuildingPresentations, acknowledgePresentation } from '../data/townPresentations';
+import {
+  queueBuildingPresentations,
+  queueCampaignPresentations,
+  acknowledgePresentation,
+} from '../data/townPresentations';
+import { campaignCompletion } from '../data/campaignCompletion';
 import { miningDepthBonus, CHEST_ECONOMY_VERSION } from '../data/economy';
 import { defineStore } from 'pinia';
 import { SHOP_ITEMS, rollShopStock, shopSlots, shopSpace } from '../data/shop';
@@ -147,6 +152,7 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
         }
       }
     }
+    state.town = queueCampaignPresentations(state.town, state.records);
     if (Number.isSafeInteger(saved?.builderHammers) && saved.builderHammers >= 0)
       state.builderHammers = Math.min(HAMMER_CAPACITY, saved.builderHammers);
     let overflow = Math.max(
@@ -255,6 +261,7 @@ export const useCampaignStore = defineStore('campaign', {
       return LEVEL_COUNT;
     },
     completedCount: (state) => Object.keys(state.records).length,
+    completion: (state) => campaignCompletion(state.records),
     totalStars: (state) =>
       Object.values(state.records).reduce((sum, record) => sum + record.stars, 0),
   },
@@ -695,6 +702,7 @@ export const useCampaignStore = defineStore('campaign', {
         this.town.coins + miningPayout(jewels, bonusGems, comboCounts, multiMatchCounts, id),
       );
       this.settledRun = runId;
+      this.town = queueCampaignPresentations(this.town, this.records);
       // Campaign, chest rewards, and town income move together before any reveal.
       this.save();
       return rewards;

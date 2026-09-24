@@ -2252,5 +2252,18 @@
   "People": "Habitants",
   "View": "Vue",
   "Available plots · {built}/{total} built": "Terrains disponibles · {built}/{total} construits",
-  "Prospect Hollow home": "Accueil de Prospect Hollow"
+  "Prospect Hollow home": "Accueil de Prospect Hollow",
+  "{perfect}/{total} levels at three stars": "{perfect}/{total} niveaux à trois étoiles",
+  "{count} levels left to perfect": "{count} niveaux à perfectionner",
+  "Below three stars only": "Moins de trois étoiles uniquement",
+  "{count} levels still await their first completion at the mine.": "{count} niveaux attendent encore leur première réussite à la mine.",
+  "Every level has three stars. Your collection is 100% complete!": "Chaque niveau a trois étoiles. Votre collection est complète à 100 % !",
+  "Every completed level has three stars. Continue at the mine to discover the rest.": "Chaque niveau terminé a trois étoiles. Continuez à la mine pour découvrir la suite.",
+  "Prospect Hollow · 100% complete": "Prospect Hollow · 100 % terminé",
+  "Every discovery. Every star.": "Chaque découverte. Chaque étoile.",
+  "Tonight, the town square shines for you.": "Ce soir, la place du village brille pour vous.",
+  "Three stars on every level!": "Trois étoiles à chaque niveau !",
+  "A perfect collection. A town full of thanks.": "Une collection parfaite. Tout un village vous remercie.",
+  "1 level left to perfect": "1 niveau à perfectionner",
+  "1 level still awaits its first completion at the mine.": "1 niveau attend encore sa première réussite à la mine."
 }
