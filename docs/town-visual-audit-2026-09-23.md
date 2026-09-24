@@ -616,6 +616,9 @@ tracked here; regenerated galleries show the revised production geometry.
 | Additional: VIP visitors  | Male/female silhouettes, an editable honor roll, name-first draws, special outfits/badges, tap/hover names, synchronized passive arrival insets and transient visits are implemented.                                                                                   |
 | Additional: NPC obstacles | All walking actor systems now use cached detours around authored pole, lamp and street-furniture footprints, including riders, responders, construction crews and the park dog-walker. Crowd separation respects those footprints too; no raycasts or physics are used. |
 
+[Evi arriving in the Industrial era](images/vip/evi-industrial-arrival.jpg) shows
+the actual in-game VIP, boat arrival, and named secondary-camera inset.
+
 Validation includes mesh identity/stage checks, sampled actor separation, incident
 speed limits, construction grip/reveal tests, uniform VIP selection and gender,
 real train/boat/airplane arrival synchronization, and independent inset lifecycle
