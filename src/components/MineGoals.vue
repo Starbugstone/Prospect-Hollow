@@ -5,10 +5,11 @@
       :key="goal.id"
       :class="{ complete: goal.count === 0 }"
       :aria-label="`${t(goal.label)}: ${goal.total - goal.count} / ${goal.total}`"
-      :title="t(goal.label)"
+      :title="`${t(goal.label)}: ${goal.total - goal.count} / ${goal.total}`"
     >
       <img :src="goal.art" alt="" /><span class="mine-goal-label">{{ t(goal.label) }}</span
-      ><b>{{ goal.total - goal.count }} / {{ goal.total }}</b>
+      ><b class="mine-goal-progress">{{ goal.total - goal.count }} / {{ goal.total }}</b
+      ><b class="mine-goal-remaining" aria-hidden="true">{{ goal.count || '✓' }}</b>
     </span>
   </span>
 </template>

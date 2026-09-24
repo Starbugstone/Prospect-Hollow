@@ -25,6 +25,10 @@
   font-size: 19px;
   font-weight: 600;
 }
+.mine-level-short,
+.mine-goal-remaining {
+  display: none;
+}
 .mine-header .mine-back,
 .mine-menu > summary {
   min-width: 44px;
@@ -63,6 +67,12 @@
 }
 .mine-menu-panel h2 {
   margin: 0 0 16px;
+}
+.mine-menu-panel > .mine-visual-goals {
+  margin-bottom: 16px;
+}
+.mine-menu-panel .hud-panel {
+  display: block;
 }
 .mine-menu-panel p {
   font-size: 14px;
@@ -113,7 +123,7 @@
   --power-space: 0px;
 }
 .app-shell.is-playing .play-area:has(.powerup-section) {
-  --power-space: 76px;
+  --power-space: 84px;
 }
 .app-shell.is-playing .board-frame {
   width: min(
@@ -121,8 +131,8 @@
     calc(
       max(
           160px,
-          100dvh - 130px - var(--feedback-space) - var(--power-space) - var(--mode-space, 0px) -
-            env(safe-area-inset-top) - env(safe-area-inset-bottom)
+          100dvh - var(--mine-header-height, 64px) - 66px - var(--feedback-space) -
+            var(--power-space) - var(--mode-space, 0px) - env(safe-area-inset-bottom)
         ) *
         var(--board-ratio) + 16px
     )
@@ -219,6 +229,45 @@
 .app-shell.is-playing .powerup-art > img {
   width: 28px;
   height: 28px;
+}
+/* After the two introductory chapters, give the taller boards priority.
+   Counts keep their accessible names; new mechanics still have their guide. */
+.experienced-miner .mine-header {
+  display: grid;
+  grid-template-columns: 44px auto minmax(0, 1fr) 44px;
+  gap: 4px;
+  min-height: 52px;
+  padding-block: max(4px, env(safe-area-inset-top)) 4px;
+}
+.experienced-miner .mine-header h1 {
+  font-size: 14px;
+}
+.experienced-miner .mine-level-name,
+.experienced-miner .mine-header > .mine-visual-goals .mine-goal-label {
+  display: none;
+}
+.experienced-miner .mine-header > .mine-visual-goals {
+  justify-content: flex-end;
+  gap: 4px;
+}
+.experienced-miner .mine-header > .mine-visual-goals > span {
+  font-size: 11px;
+}
+.experienced-miner .mine-header > .mine-visual-goals img {
+  width: 20px;
+  height: 20px;
+}
+.app-shell.is-playing.experienced-miner .play-area {
+  --feedback-space: 44px;
+}
+.experienced-miner .mine-feedback > .fusion-reward {
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.app-shell.is-playing.experienced-miner .mine-feedback .arcade-announcer {
+  height: 44px;
 }
 .guidance-tip {
   display: flex;
@@ -384,6 +433,22 @@
   }
 }
 @media (max-width: 640px) {
+  /* Keep up to eight goals visible in two rows, including the final chapters.
+     The group label explains that these are the items still left to clear. */
+  .experienced-miner .mine-level-number {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .experienced-miner .mine-header > .mine-visual-goals .mine-goal-progress {
+    display: none;
+  }
+  .experienced-miner .mine-level-short,
+  .experienced-miner .mine-header > .mine-visual-goals .mine-goal-remaining {
+    display: inline;
+  }
   .mine-header {
     padding-inline: 8px;
     gap: 8px;
@@ -395,10 +460,10 @@
   .mine-header .mine-level-name {
     display: none;
   }
-  .mine-header .mine-goal-label {
+  .mine-header > .mine-visual-goals .mine-goal-label {
     display: none;
   }
-  .mine-header .mine-visual-goals {
+  .mine-header > .mine-visual-goals {
     flex: 1;
     justify-content: center;
   }
@@ -441,7 +506,7 @@
   .mine-header h1 {
     font-size: 14px;
   }
-  .mine-header .mine-goal-label {
+  .mine-header > .mine-visual-goals .mine-goal-label {
     display: none;
   }
   .app-shell.is-playing .board-topline {
@@ -494,7 +559,7 @@
   .app-shell.is-playing .board-frame {
     grid-area: board;
     width: calc(
-      max(160px, 100dvh - 84px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) *
+      max(160px, 100dvh - var(--mine-header-height, 48px) - 36px - env(safe-area-inset-bottom)) *
         var(--board-ratio) + 16px
     );
     margin: 0;

@@ -1,9 +1,11 @@
 <template>
   <div
     class="app-shell"
+    :style="{ '--mine-header-height': `${mineHeaderHeight}px` }"
     :data-mine-theme="game.sessionActive ? currentConfig?.theme : undefined"
     :class="{
       'is-playing': game.sessionActive,
+      'experienced-miner': game.currentLevelId > 12,
       'is-town': !game.sessionActive,
       'reduced-motion': settings.reducedMotion,
       'high-contrast': settings.highContrastMode,
@@ -79,6 +81,7 @@
       v-model:open="mobileDetailsOpen"
       :muted="muted"
       :level-name="levelName"
+      @height="mineHeaderHeight = $event"
       @toggle-mute="toggleMute"
       @town="showTown"
       @guide="openGuide"
@@ -337,6 +340,7 @@ const resumeImportedVillage = () => {
 };
 const audio = useAudio();
 const mobileDetailsOpen = ref(false);
+const mineHeaderHeight = ref(64);
 const guideOpen = ref(false),
   guideIntro = ref(false),
   levelObstacles = ref([]),
