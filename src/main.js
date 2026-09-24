@@ -7,6 +7,7 @@ import './styles/base.css';
 import './styles/theme.css';
 import './styles/arcade.css';
 import './styles/mine.css';
+import './styles/ux.css';
 
 const app = createApp(App);
 const pinia = createPinia();

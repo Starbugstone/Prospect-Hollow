@@ -1,8 +1,8 @@
-import { cityModel } from './city';
-import { CITY_BUILDINGS, CITY_FAMILIES } from '../../../data/city';
+import { eraEvolution } from '../../../data/eras';
+import { cityAppearance } from '../../../data/cityAppearance';
+import { renderCityBuilding } from './city';
 import { MOTOR_AGE_VARIANTS } from '../../../data/motorAge';
 import { t } from '../../../i18n';
-import { renderIndustrialLandmark } from './industrial';
 import { renderLeisureBuilding } from '../LeisureAssets';
 
 const cream = '#e1cfab',
@@ -113,27 +113,49 @@ export function addMotorModernization(d, parent, kind, level = 1) {
       d.box(root, 1.45 - n * 0.3, 0.35, 0.5, 0.8, 3.46 + n * 0.35, 1.48, cream);
   d.sign(root, t(variant[0]), 3.1, 0, 3.04, 1.8);
 }
-export function renderMotorLandmark(d, parent, kind, label, level = 1) {
-  if (
-    renderLeisureBuilding(
-      d,
-      parent,
-      kind,
-      label,
-      level,
-      kind === 'horseField' && (d.town?.buildings.horseField ?? 3) >= 3,
-    )
-  )
-    return true;
+export function renderMotorLandmark(d, parent, kind, label, level = 1, era = 'motor-age') {
+  const baseEra = eraEvolution(era).baseCityEra ?? 'post-war';
   if (renderMotorBuilding(d, parent, kind, label, level)) return true;
-  if (CITY_BUILDINGS.some((b) => b.kind === kind && b.introducedEra === 'post-war')) {
-    cityModel(d, parent, `post-war-${CITY_FAMILIES[kind]}`);
-    addMotorModernization(d, parent, kind, level);
+  if (kind === 'horseField' || kind === 'park') {
+    renderLeisureBuilding(d, parent, kind, label, 3, false);
+    const frontage = d.group(parent);
+    frontage.name = `Motor Age ${kind} planters ${level}`;
+    for (let n = 0; n < level + 1; n++) {
+      const x = -2.4 + n * 1.3;
+      d.box(frontage, 0.85, 0.45, 0.65, x, 0.25, 3.2, cream);
+      d.ball(frontage, x, 0.7, 3.2, [0.42, 0.35, 0.3], '#92aa78');
+      for (const dx of [-0.2, 0.2]) d.ball(frontage, x + dx, 0.95, 3.2, 0.13, '#e8b881');
+    }
     return true;
   }
+  if (kind === 'bridge') return false;
   const base = Object.create(d);
   base.sign = () => {};
-  if (!renderIndustrialLandmark(base, parent, kind, label, level)) return false;
-  addMotorModernization(d, parent, kind, level);
+  if (!renderCityBuilding(base, parent, kind, label, level, baseEra, 3)) return false;
+  parent.userData.baseStyle = baseEra;
+  // The complete city shell already owns its wings and reservoirs. A roof-line
+  // cornice replaces the old stacked industrial facade without a second building.
+  const appearance = cityAppearance(baseEra, kind);
+  if (!['square', 'fisherman', 'riverPort', 'farm', 'well'].includes(kind)) {
+    d.box(
+      parent,
+      (appearance.width ?? 3.6) + 0.35,
+      0.28,
+      0.3,
+      0,
+      (appearance.height ?? 2.65) + 0.55,
+      1.35,
+      cream,
+    );
+  }
+  if (['square', 'fisherman', 'riverPort', 'farm', 'well'].includes(kind)) {
+    const reach = kind === 'square' ? 3.1 : (appearance.width ?? 3.2) / 2 + 0.35;
+    for (const x of [-reach, reach]) {
+      d.box(parent, 0.55, 0.45, 0.6, x, 0.28, 3, cream);
+      d.rod(parent, [x, 0.5, 3], [x, 1.5 + level * 0.25, 3], 0.05, teal);
+      d.ball(parent, x, 1.6 + level * 0.25, 3, 0.2, '#f6db98');
+    }
+  }
+  d.sign(parent, label, 2.8, 0, 2.25, 1.6);
   return true;
 }

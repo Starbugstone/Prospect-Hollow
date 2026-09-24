@@ -6,7 +6,8 @@
     "frame": "#e1cfab",
     "clerestory": false,
     "curtainWall": false,
-    "skylights": false
+    "skylights": false,
+    "aircraft": "airplane"
   },
   "metropolitan": {
     "asset": "airport-metropolitan",
@@ -15,7 +16,8 @@
     "frame": "#c97868",
     "clerestory": true,
     "curtainWall": false,
-    "skylights": false
+    "skylights": false,
+    "aircraft": "airplane-jet"
   },
   "connected": {
     "asset": "airport-connected",
@@ -24,6 +26,7 @@
     "frame": "#e1cfab",
     "clerestory": false,
     "curtainWall": true,
-    "skylights": true
+    "skylights": true,
+    "aircraft": "airplane-regional-jet"
   }
 }

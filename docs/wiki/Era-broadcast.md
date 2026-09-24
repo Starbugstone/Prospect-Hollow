@@ -2,7 +2,7 @@
 
 [Back to the era visual guide](Era-Visual-Guide.md)
 
-The 1986 buildings use concrete facade blades, stepped parapets, darker roofs and television aerials. Concert and television buildings have fitted glazed foyers and service annexes. Contemporary solar panels, roof gardens and timber fins are reserved for the next era. The mine adds an instrumented control house.
+The 1986 buildings use concrete facade blades, stepped parapets, darker roofs and television aerials. Concert and television buildings have fitted glazed foyers and service annexes. Solar panels and electric vehicles are reserved for the next era; roof terraces and planted finishes mark completed buildings. The mine adds an instrumented control house.
 
 Each comparison reads from left to right, from the first completed stage to the final upgrade. The camera and scale stay fixed within each building row. Click the comparison for full resolution, or open an individual stage below it. The mine has one permanent surface upgrade per era.
 

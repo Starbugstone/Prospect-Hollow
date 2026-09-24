@@ -2,6 +2,8 @@
  * @typedef {'frontier'|'river-rail'|'industrial'|'motor-age'|'city'} BuildingStyle
  * @typedef {Object} EraEvolution
  * @property {BuildingStyle} style Shared building/modernization renderer family.
+ * @property {string} wardrobe Wardrobe catalog key for this era.
+ * @property {string|null} baseCityEra Retained city shell for an intermediate style.
  * @property {boolean} paved
  * @property {boolean} electricity
  * @property {boolean} modernTransport
@@ -31,15 +33,17 @@
 const STYLES = {
   frontier: {},
   'river-rail': {
+    wardrobe: 'rail',
     roadColor: '#b3a18a',
     incident: 'cargo-theft',
     upgradeTitle: 'River & Rail level {level}: {name}',
     upgradeDescriptions: [
       'Add a substantial extension and a covered veranda.',
-      'Complete the landmark with a clock tower and ornamental roof.',
+      'Complete the landmark with its working extensions.',
     ],
   },
   industrial: {
+    wardrobe: 'workwear',
     upgradeTitle: 'Industrial level {level}: {name}',
     upgradeDescriptions: [
       'Add a substantial service wing and sheltered entrance.',
@@ -54,6 +58,8 @@ const STYLES = {
     requiresPower: true,
   },
   'motor-age': {
+    wardrobe: 'motor',
+    baseCityEra: 'post-war',
     upgradeTitle: 'Motor Age level {level}: {name}',
     upgradeDescriptions: [
       'Add a sunny service wing and a broad street canopy.',
@@ -69,6 +75,7 @@ const STYLES = {
     incident: 'workshop-fire',
   },
   city: {
+    wardrobe: 'casual',
     paved: true,
     electricity: true,
     modernTransport: true,
@@ -96,6 +103,8 @@ export function defineEra(definition) {
   if (!definition.id || !Object.hasOwn(STYLES, style))
     throw new Error('An era needs an id and a registered building style');
   const evolution = {
+    wardrobe: 'frontier',
+    baseCityEra: null,
     paved: false,
     electricity: false,
     modernTransport: false,

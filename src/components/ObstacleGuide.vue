@@ -8,7 +8,6 @@
   >
     <header>
       <div>
-        <span class="eyebrow">{{ t('MINING GUIDE') }}</span>
         <h2>{{ t(introduction ? 'New in this mine' : 'Know your obstacles') }}</h2>
       </div>
       <button
@@ -20,7 +19,7 @@
         <GameIcon name="close" />
       </button>
     </header>
-    <p>
+    <p v-if="!introduction">
       {{
         t(
           'Clear every ice layer and obstacle, and collect all relics. The score and clock earn extra chests.',
@@ -68,13 +67,21 @@
         </div>
       </li>
     </ul>
-    <p class="guide-bonus-note">
+    <p v-if="!introduction">
+      {{ t('Match 4 · Blast a 3 × 3 area') }}<br />{{ t('Match 5 · Clear a color') }}<br />{{
+        t('T or L · Clear row + column')
+      }}
+    </p>
+    <p v-if="!introduction" class="guide-bonus-note">
       {{
         t(
           'Swipe a bonus gem, or double-tap it to activate in place. A rainbow clears the swapped color, or the most common color when double-tapped. Toolbar powers trigger bonuses they hit; swapping two bonuses creates a fusion.',
         )
       }}
     </p>
+    <button v-if="introduction" class="mine-play-button" @click="$emit('close')">
+      {{ t('Play') }}
+    </button>
   </dialog>
 </template>
 <script setup>

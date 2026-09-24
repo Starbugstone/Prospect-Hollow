@@ -1,3 +1,5 @@
+import { walkPose, planOrbit } from './TownNavigation';
+import { Vector3 } from 'three';
 import { atPlot, plotStreet, routeBetween } from './TownLayout';
 import { population } from './TownRules';
 
@@ -6,7 +8,7 @@ import { population } from './TownRules';
 export function addTownLife(d, town) {
   if (town.buildings.farm) {
     for (let n = 0; n < 3; n++) {
-      const [x, z] = atPlot('farm', -1.1 + n * 0.7, 2.1);
+      const [x, z] = atPlot('farm', -1.1 + n * 0.7, 3.35);
       const bird = d.group(d.world, x, 0.07, z);
       bird.name = 'Farmyard hen';
       bird.userData.animated = true;
@@ -15,10 +17,14 @@ export function addTownLife(d, town) {
       d.ball(head, 0, 0, 0, 0.1, '#efe2c3');
       d.ball(head, 0, 0.1, 0, [0.04, 0.065, 0.07], '#b86c50');
       d.ball(head, 0, -0.02, 0.11, [0.045, 0.03, 0.08], '#d5a15b');
+      const feet = [];
       for (const side of [-1, 1]) {
         d.ball(head, side * 0.079, 0.02, 0.04, 0.018, '#403f32');
-        d.rod(bird, [side * 0.065, 0.16, 0], [side * 0.065, 0, 0.025], 0.018, '#bd9256');
+        const leg = d.group(bird, side * 0.065, 0.16, 0);
+        d.rod(leg, [0, 0, 0], [0, -0.16, 0.025], 0.018, '#bd9256');
+        feet.push(leg);
       }
+      const path = planOrbit(d, x, z, 0.35, 0.25, 0.25);
       d.motions.push((time) => {
         const clock = time + n * 3;
         const phase = clock % 12;
@@ -30,13 +36,22 @@ export function addTownLife(d, town) {
           z + Math.cos(angle) * 0.25,
         );
         bird.rotation.y = angle + Math.PI / 2;
+        if (path) {
+          const pose = walkPose(path, (angle / (Math.PI * 2)) % 1);
+          bird.position.x = pose.x;
+          bird.position.z = pose.z;
+          bird.rotation.y = pose.heading;
+        }
+        feet.forEach(
+          (leg, i) => (leg.rotation.x = walking ? Math.sin(time * 8 + n + i * Math.PI) * 0.45 : 0),
+        );
         head.rotation.x = walking ? 0 : Math.max(0, Math.sin(time * 4 + n)) * 0.9;
       });
     }
   }
 
   if (population(town)) {
-    const [x, z] = atPlot('home', 1.6, 2.5);
+    const [x, z] = atPlot('home', 0, 3.5);
     const dog = d.group(d.world, x, 0.07, z);
     dog.name = 'Village dog';
     dog.userData.animated = true;
@@ -58,12 +73,18 @@ export function addTownLife(d, town) {
       }
     const tail = d.group(dog, 0, 0.36, -0.3);
     d.rod(tail, [0, 0, 0], [0, 0.2, -0.22], 0.045, '#c69b6b');
+    const path = planOrbit(d, x, z, 1.25, 0.4, 0.4);
     d.motions.push((time) => {
       const phase = time % 24;
       const walking = phase < 15;
       const angle = (Math.min(phase, 15) / 15) * Math.PI * 2;
       dog.position.set(x + Math.sin(angle) * 1.25, 0.07, z + Math.cos(angle) * 0.4);
       dog.rotation.y = Math.atan2(Math.cos(angle) * 1.25, -Math.sin(angle) * 0.4);
+      if (path) {
+        const pose = walkPose(path, angle / (Math.PI * 2));
+        dog.position.set(pose.x, pose.y, pose.z);
+        dog.rotation.y = pose.heading;
+      }
       legs.forEach((leg, n) => {
         leg.rotation.x = walking
           ? Math.sin(time * 9 + (n === 0 || n === 3 ? 0 : Math.PI)) * 0.4
@@ -113,23 +134,28 @@ export function addTownLife(d, town) {
     }
   }
 
-  for (const [id, dx, dz, height] of [
-    ['home', -0.65, -0.6, 3.38],
-    ['saloon', 0.65, -0.6, 3.33],
-    ['blacksmith', -1, -0.8, 3.63],
-  ]) {
-    if (!town.buildings[id]) continue;
-    const [x, z] = atPlot(id, dx, dz);
-    if (id === 'saloon') d.box(d.world, 0.28, 0.65, 0.3, x, 3.005, z, '#a76c53');
-    const smoke = d.group(d.world, x, height, z);
+  for (const id of ['home', 'saloon', 'blacksmith']) {
+    const plot = d.plotCache?.get(id)?.group;
+    const anchor = plot?.getObjectByName('chimney');
+    if (!anchor) continue;
+    const origin = anchor.getWorldPosition(new Vector3());
+    const smoke = d.group(d.world, origin.x, origin.y, origin.z);
     smoke.name = 'Warm chimney smoke';
     smoke.userData.animated = true;
-    const puffs = Array.from({ length: 3 }, () => d.ball(smoke, 0, 0, 0, 1, '#d8d4ba', 'rock'));
+    const puffs = Array.from({ length: 3 }, () => {
+      const puff = d.ball(smoke, 0, 0, 0, 1, '#d8d4ba');
+      puff.material = puff.material.clone();
+      puff.material.transparent = true;
+      puff.material.depthWrite = false;
+      puff.material.userData.transient = true;
+      return puff;
+    });
     d.motions.push((time) =>
       puffs.forEach((puff, n) => {
         const phase = (time / 5 + n / 3) % 1;
         puff.position.set(phase * 0.55, phase * 1.7, Math.sin(phase * 3 + n) * 0.08);
-        puff.scale.setScalar(Math.sin(phase * Math.PI) * (0.12 + phase * 0.2));
+        puff.scale.setScalar(0.12 + phase * 0.3);
+        puff.material.opacity = Math.sin(phase * Math.PI) * 0.35;
       }),
     );
   }

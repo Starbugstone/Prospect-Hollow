@@ -1,3 +1,4 @@
+import { localWalk, walkPose } from './TownNavigation';
 import { TownActors } from './TownActors';
 
 const clamp = (value) => Math.max(0, Math.min(1, value));
@@ -30,11 +31,15 @@ export class TownBuildSequence {
         route: [arrival, [x, z]],
         linear: true,
       });
-      const hammer = d.group(worker.arms[1].lower, 0, -0.19, 0.04);
-      d.box(hammer, 0.055, 0.34, 0.055, 0, -0.1, 0, '#9b7954');
-      d.box(hammer, 0.22, 0.1, 0.1, 0, -0.26, 0, '#607b74');
+      // The grip origin is the palm centre. The handle crosses the closed
+      // hand, perpendicular to the forearm, so the head swings ahead of it.
+      const hammer = d.group(worker.arms[1].lower, 0, -0.19, 0);
+      hammer.name = 'Construction hammer grip';
+      d.box(hammer, 0.045, 0.045, 0.36, 0, 0, 0.1, '#9b7954').name = 'Hammer handle';
+      d.box(hammer, 0.24, 0.105, 0.1, 0, 0, 0.27, '#607b74').name = 'Hammer head';
       const load = d.box(worker.root, 0.65, 0.25, 0.35, 0, 0.85, 0.38, '#b9986b');
-      return { worker, arrival, station: [x, z], hammer, load, delay: i * 0.35 };
+      const path = localWalk(d, root, [arrival, [x, z]]);
+      return { worker, arrival, station: [x, z], path, hammer, load, delay: i * 0.35 };
     });
     this.actors = new TownActors(d.scene);
     this.actors.rebuild([building, ...this.crew.map(({ worker }) => worker.root)]);
@@ -47,7 +52,7 @@ export class TownBuildSequence {
       part.position.y = y + (1 - t) * 0.7;
       part.scale.y = Math.max(0.001, t);
     }
-    for (const { worker, arrival, station, hammer, load, delay } of this.crew) {
+    for (const { worker, arrival, station, path, hammer, load, delay } of this.crew) {
       const leaving = time >= this.leave + delay;
       const progress = leaving
         ? ease((time - this.leave - delay) / 3)
@@ -67,6 +72,11 @@ export class TownBuildSequence {
           : leaving
             ? 0
             : Math.PI;
+      if (path) {
+        const pose = walkPose(path, leaving ? 1 - progress : progress);
+        worker.root.position.set(pose.x, pose.y, pose.z);
+        if (progress < 1) worker.root.rotation.y = pose.heading + (leaving ? Math.PI : 0);
+      }
       worker.root.visible = !still && time > 1 + delay && (!leaving || progress < 1);
       const working = time >= this.start + delay && time < this.end;
       const walking = !working && progress < 1;
@@ -77,11 +87,11 @@ export class TownBuildSequence {
         worker.legs[n].lower.rotation.x = walking ? Math.max(0, -swing) * 0.5 : 0;
         worker.arms[n].upper.rotation.x =
           working && n === 1
-            ? -1.3 + Math.sin(time * 9 + delay) * 0.65
+            ? -0.9 + Math.sin(time * 6 + delay) * 0.75
             : walking
               ? -swing * 0.25
               : 0;
-        worker.arms[n].lower.rotation.x = working ? -0.55 : -0.16;
+        worker.arms[n].lower.rotation.x = working ? -0.45 : -0.16;
       }
       worker.torso.rotation.x = working ? 0.13 : 0;
       hammer.visible = working;

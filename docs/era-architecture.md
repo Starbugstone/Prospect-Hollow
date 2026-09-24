@@ -42,8 +42,10 @@ and `TownHeritageUpgrade.vue` render that shared choice: for example, a post off
 gets dispatch rooms and telegraph fittings while a shop gets a trading awning,
 even though their original building shells are aliases. Preserve the original kind
 before resolving a shell alias. Unknown kinds get no speculative decoration.
-Do not use a universal clock tower as a completion marker. Motor Age buildings
-that inherit industrial geometry inherit these working expansions too.
+Do not use a universal clock tower as a completion marker. Motor Age landmarks
+inherit the complete city shell selected by `baseCityEra` (Post-war by default),
+including its paid stage, then add period frontage. They never restore an older
+industrial shell.
 
 The gallery exporter records each building's introduction era. Its wiki packager
 places new buildings first, then existing buildings and the mine, with links to
@@ -137,8 +139,12 @@ stand outside their vehicle and storm branches sit above the promenade pavement.
 `cityStyles.json` drives the city Blender exporter, runtime landmark additions and
 SVG fallback through `cityAppearance()`. Each city era names its own `cityAssets`
 family. The 1958 family uses ribbon windows and broad cornices; the 1986 family
-uses concrete blades and stepped parapets. Roof gardens, solar geometry and
-connected transport details belong to the contemporary profile. Future eras can
+uses concrete blades and stepped parapets. `cityBuildingStyles.json` defines each
+building kind’s family, footprint and identity. `cityAppearance(era, kind)` chooses
+its own exported model and finishing stage; family models are fallbacks.
+`scripts/city_identity.py` authors those models using the shared catalog.
+Gardens, antennas, billboards and solar details are selected per building kind
+and period. Housing never borrows the business-tower landmark. Future eras can
 reuse an existing family; incomplete appearance lookups safely fall back.
 
 `mineAppearance()` derives permanent surface equipment from the same era art
@@ -166,3 +172,79 @@ For reproducible snapshots, run `npm run dev`, open
 write the individual PNGs, comparisons, wiki galleries and downloadable archive.
 The review uses production renderers and real plot positions, including dock
 lengths. See [the visual guide](wiki/Era-Visual-Guide.md).
+
+### Villagers and passive VIP visits
+
+`src/data/villagerNames.js` is the editable, commented beta-tester honor roll.
+Add quoted names to `female` or `male`, keeping names unique. Rebuild/redeploy to
+publish edits. `vipVisitor()` draws uniformly from the combined name pool first,
+then reads the selected entry’s gender; an independent draw leaves most visits
+ordinary. Residents and construction crews stay unnamed. Era wardrobe capability
+and gender silhouettes are shared by ordinary villagers and visitors. VIPs retain a gold badge while `townWardrobes.js` selects one of three
+coordinated period outfits per visit, including coat length, hat, skirt and accessory.
+The outfit draw is independent of the name/gender draw and stable during the visit. Their names appear on tap/hover in the main view.
+
+`TownVipArrivals` owns transient visits, never campaign events or rewards.
+Train, boat and airplane motion publish their actual arrival cycle and stopped
+vehicle through `visitorTransports`; there is no independent arrival timer.
+A successful VIP draw at that stop starts a six-second secondary-camera inset,
+with a name tag above the guest. `TownInset` shares viewport/scissor rendering
+with fixed incidents and always restores renderer state. Passive arrivals do not
+move the main camera, disable controls, pause play, or intercept input. Fixed
+presentations take precedence, and missed arrivals are discarded.
+Main-view labels and collection badges that overlap an inset are temporarily
+hidden, so they cannot paint over its secondary view; they return when it closes.
+
+The visitor follows the street graph and returns to the same transport entrance.
+Before passenger transport, foot visitors leave the stable, wander the village and
+return through the same door; there is no vehicle-arrival inset for that foot visit.
+Leaving the village (including mining) clears VIP state. Returning may start a
+fresh visitor already partway through a walk, without replaying an arrival inset.
+No VIP state is saved. With only a stable/visitor capacity, ordinary foot visits
+can occasionally be VIPs; once passenger transport is built, named arrivals use
+its vehicle cycle instead.
+
+`testing/vip-visitors.test.js` checks the editable lists, uniform name selection,
+gender, ordinary visits and reproducibility. `testing/vip-arrivals.test.js` checks
+all three real transport cycles, return paths, the inset timeout, independent
+camera state and fresh mine-return visits. `testing/town-visual-audit.test.js`
+covers the building, traffic and cinematic regressions. The local
+`/scripts/town-actor-review.html` uses production meshes to inspect gender variants,
+VIP outfits and construction hammer grips.
+
+The VIP review gallery in `output/vip-review/index.html` compares all eight eras,
+three coordinated outfits per gender, normal-villager comparisons, arrivals,
+wandering and departures with and without tags for every combination. The gallery is portable with its sibling PNG files. The
+production arrival inset always includes the name; unnamed inset captures are
+review comparisons only. Airport guests use the expanded lounge’s side exit
+after stage two, keeping both outward and return paths clear of its footprint.
+
+To reproduce the complete VIP image set, run Vite and use a fresh Playwright CLI
+browser session with `scripts/capture-vip-review.js` as its `run-code` callback.
+Then run `python3 scripts/package-vip-review.py`. Packaging checks all 468 required
+images (96 character comparisons, 288 village scenes and 84 inset close-ups),
+writes an offline gallery and image manifest, and creates `output/vip-review.zip`.
+Additional overview captures already in the folder are preserved in the archive.
+
+### NPC obstacle avoidance
+
+`TownNavigation` supplies cached pedestrian detours for residents, VIPs, mounted
+visitors, incident crews, construction workers and village animals. The existing
+street graph still chooses cross-town routes; navigation adds local detours using
+small authored circular footprints, with a body clearance margin. It does not
+raycast meshes or create physics bodies.
+
+When adding a solid street prop, call `walkObstacle(group, x, z, radius, height)`
+where that prop is rendered. Coordinates are local to the group. Use the physical
+base radius (or the half-diagonal for rectangular furniture), not the overhead
+canopy. These markers survive geometry batching. Only mark props actually built
+in that era; rebuilding the village replaces the index and cached routes, so
+removed or underground infrastructure leaves no invisible obstacles.
+
+Prepare walking paths when actors or routes are created. Use `prepareActorWalk`
+for ordinary people, `navigation.route` for prepared manual routes, or `localWalk`
+for translated construction scenes. Sample with `walkPose`; don't apply another
+sidewalk offset afterward. Facing eases at corners while positions stay on the
+clear segments. Runtime crowd separation also respects nearby static footprints.
+`testing/town-navigation.test.js` covers continuous clearance, all era profiles,
+manual actor routes, cache reuse and scenery removal.

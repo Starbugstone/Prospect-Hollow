@@ -1,12 +1,14 @@
+import { walkPose, placeSafely } from './TownNavigation';
+import { Box3 } from 'three';
 import { prepareRoute, routePose } from './TownRoutes';
-import { motorVehicle } from './TownVehicles';
+import { responseVehicle, animateVehicle } from './TownVehicles';
 import { cityModel } from './buildings/city';
 import { eventKind, incidentPhases, civicIncident } from '../../data/townEvents';
 import { bridgeDeckHeight } from './TownRiver';
 import { PLOTS, plotStreet, routeBetween } from './TownLayout';
 
 export const INCIDENT_DURATION = 16;
-const INCIDENT_SPEED = 26 / INCIDENT_DURATION;
+export const INCIDENT_SPEED = 26 / INCIDENT_DURATION;
 const ease = (value) => {
   const t = Math.max(0, Math.min(1, value));
   return t * t * (3 - 2 * t);
@@ -29,7 +31,12 @@ export class TownEraIncident {
     this.responder = civic && d.town.buildings.fireStation ? 'fireStation' : 'sheriff';
     this.route = routeBetween(d.town, plotStreet(this.responder), plotStreet(this.target));
     if (this.route.length < 2) this.route = [plotStreet(this.target), plotStreet(this.target)];
-    this.path = prepareRoute(this.route);
+    const fullPath = prepareRoute(this.route);
+    // Keep the existing event timeline and saved outcome. Long cross-town trips
+    // begin in the approach shot, with enough road for the fastest return leg.
+    const maximum = ((civic ? 5.5 : 1.8) * 7) / INCIDENT_SPEED;
+    this.path = tailRoute(fullPath, maximum);
+    this.route = this.path.points;
     this.crew = Array.from({ length: 3 }, (_, seed) =>
       d.person({
         parent: this.root,
@@ -42,15 +49,18 @@ export class TownEraIncident {
       }),
     );
     if (fire || this.storm) {
-      this.vehicle = { root: motorVehicle(d, this.root, true) };
+      this.vehicle = { root: responseVehicle(d, this.root, this.storm) };
       this.vehicle.root.name = this.storm ? 'City service vehicle' : 'Motor fire brigade';
       this.vehicle.root.userData.animated = true;
-      d.box(this.vehicle.root, 0.5, 0.12, 0.7, 0, 1.45, 0, '#b76857');
-      for (const x of [-0.18, 0.18])
-        d.rod(this.vehicle.root, [x, 1.55, -0.6], [x, 1.55, 0.6], 0.035, '#dfd1ab');
     }
     this.props = d.group(this.root, PLOTS[this.target][0], 0, PLOTS[this.target][1] + 1.7);
     this.props.userData.animated = true;
+    if (fire) {
+      const plot = d.plotCache?.get(this.target)?.group;
+      const bounds = plot ? new Box3().setFromObject(plot) : null;
+      this.props.position.y = bounds ? Math.max(1, bounds.max.y * 0.55) : 1.8;
+      this.props.position.z = bounds ? bounds.max.z - 0.1 : PLOTS[this.target][1] + 1.3;
+    }
     this.flames = fire
       ? Array.from({ length: 5 }, (_, n) =>
           d.ball(
@@ -60,9 +70,19 @@ export class TownEraIncident {
             0,
             [0.22, 0.55, 0.22],
             n % 2 ? '#e5a05c' : '#f1ce7a',
-            'rock',
+            'sphere',
           ),
         )
+      : [];
+    this.smoke = fire
+      ? Array.from({ length: 4 }, (_, n) => {
+          const puff = d.ball(this.props, 0, 1, 0, 0.4, '#69716e');
+          puff.material = puff.material.clone();
+          puff.material.transparent = true;
+          puff.material.depthWrite = false;
+          puff.material.userData.transient = true;
+          return puff;
+        })
       : [];
     this.crates = !civic
       ? Array.from({ length: 3 }, (_, n) =>
@@ -104,10 +124,20 @@ export class TownEraIncident {
   }
   travel(actor, progress, offset = 0) {
     const distance = Math.max(0, Math.min(1, progress)) * this.path.total;
-    const pose = routePose(this.path, distance);
+    const path = actor !== this.vehicle && this.d.navigation?.route(this.path, offset);
+    // Detours must not make the fixed event timeline accelerate the crew.
+    // Start the approach further along a longer path and keep the same destination.
+    const travel = path && Math.min(path.total, this.path.total);
+    const pose = path
+      ? walkPose(
+          path,
+          (path.total - travel + Math.max(0, Math.min(1, progress)) * travel) / (path.total || 1),
+        )
+      : routePose(this.path, distance);
     actor.root.position.set(pose.x, 0.07, pose.z);
     actor.root.rotation.y = pose.heading;
-    actor.root.translateX(offset);
+    actor.distance = distance;
+    if (!path) actor.root.translateX(offset);
     if (
       actor.root.position.x >= 24 &&
       actor.root.position.x <= 38 &&
@@ -131,7 +161,7 @@ export class TownEraIncident {
       const moving = progress > 0 && progress < 1;
       actor.legs.forEach((leg, i) => {
         leg.upper.rotation.x = moving
-          ? Math.sin(time * 7 + i * Math.PI) *
+          ? Math.sin((actor.distance / 0.65) * Math.PI * 2 + i * Math.PI) *
             0.35 *
             Math.min(1, progress / 0.05, (1 - progress) / 0.05)
           : 0;
@@ -143,6 +173,7 @@ export class TownEraIncident {
     if (this.vehicle) {
       const progress = time < 14 ? (time - 4) / 9 : 1 - (time - 18) / 7;
       this.travel(this.vehicle, progress);
+      animateVehicle(this.vehicle.root, this.vehicle.distance);
       this.vehicle.root.rotation.y += Math.PI * ease((time - 15) / 3);
       // Establish the squad at its station before following its departure.
       this.vehicle.root.visible = time < 25;
@@ -158,6 +189,7 @@ export class TownEraIncident {
             0.07,
             this.props.position.z + 0.8,
           );
+          placeSafely(this.d, actor.root);
           actor.root.rotation.y = Math.atan2(
             this.props.position.x - actor.root.position.x,
             this.props.position.z - actor.root.position.z,
@@ -173,6 +205,14 @@ export class TownEraIncident {
       flame.visible = amount > 0;
       flame.scale.y = (0.55 + Math.sin(time * 3 + n) * 0.08) * amount;
     });
+    this.smoke.forEach((puff, n) => {
+      const drift = (time * 0.25 + n / 4) % 1;
+      const remaining = time < 14 ? 1 : Math.max(0, 1 - (time - 14) / 4);
+      puff.position.set(drift * 0.4, 0.9 + drift * 2, 0);
+      puff.scale.setScalar(0.25 + drift * 0.45);
+      puff.material.opacity = Math.sin(drift * Math.PI) * 0.4 * remaining;
+      puff.visible = remaining > 0;
+    });
     if (this.debris) this.debris.visible = time < 18;
     this.water.visible = time >= 13 && time < 18;
     this.drops.forEach((drop, n) => {
@@ -181,7 +221,7 @@ export class TownEraIncident {
         amount = (time * 1.3 + n / 12) % 1;
       drop.position.set(
         from.x + (to.x - from.x) * amount,
-        1 + Math.sin(amount * Math.PI) * 1.2,
+        1 + (to.y - 1) * amount + Math.sin(amount * Math.PI) * 1.2,
         from.z + (to.z - from.z) * amount,
       );
     });
@@ -194,7 +234,8 @@ export class TownEraIncident {
       actor.root.rotation.y += Math.PI * ease(time - 9);
       actor.root.visible = time < 19;
       actor.legs.forEach((leg, i) => {
-        leg.upper.rotation.x = time >= 10 ? Math.sin(time * 8 + i * Math.PI) * 0.4 : 0;
+        leg.upper.rotation.x =
+          time >= 10 ? Math.sin((actor.distance / 0.65) * Math.PI * 2 + i * Math.PI) * 0.4 : 0;
       });
     });
     if (time >= INCIDENT_DURATION * INCIDENT_SPEED) {
@@ -209,4 +250,16 @@ export class TownEraIncident {
     this.disposed = true;
     this.d.clearGroup(this.root);
   }
+}
+
+export function tailRoute(path, maximum) {
+  if (path.total <= maximum) return path;
+  const start = routePose(path, path.total - maximum);
+  let covered = 0;
+  const points = [[start.x, start.z]];
+  for (let i = 0; i < path.lengths.length; i++) {
+    covered += path.lengths[i];
+    if (covered > path.total - maximum) points.push(path.points[i + 1]);
+  }
+  return prepareRoute(points);
 }

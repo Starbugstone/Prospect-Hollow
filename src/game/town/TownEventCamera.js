@@ -1,3 +1,5 @@
+import { eventInsetRect, hideEventInset, drawCameraInset } from './TownInset';
+export { eventInsetRect } from './TownInset';
 import { PerspectiveCamera, Vector3, Vector4 } from 'three';
 import { eventKind } from '../../data/townEvents';
 import { PLOTS } from './TownLayout';
@@ -12,10 +14,6 @@ export const INCIDENT_SHOTS = {
   'workshop-fire': { main: 'responders', inset: 'site', label: 'Workshop fire' },
   'storm-cleanup': { main: 'responders', inset: 'site', label: 'Storm cleanup' },
 };
-export function eventInsetRect(width, height) {
-  const w = Math.floor(Math.min(320, Math.max(156, width * 0.4), width * 0.46, height * 0.45));
-  return { x: width - w - 12, y: 16, width: w, height: Math.floor(w / 1.5) };
-}
 function subjectFrame(raid, subject, frame, aspect, minimum, followLeader = false) {
   const targetId = raid.target ?? raid.event.targets?.[0] ?? 'mine';
   const [x, z] = PLOTS[targetId] ?? PLOTS.mine;
@@ -36,7 +34,11 @@ function subjectFrame(raid, subject, frame, aspect, minimum, followLeader = fals
     count++;
   };
   actors?.forEach((actor) => include(actor.root));
-  if (subject === 'responders') include(raid.vehicle?.root);
+  if (subject === 'responders') {
+    include(raid.vehicle?.root);
+    if (raid.props && raid.vehicle?.root?.position.distanceTo(raid.props.position) < 12)
+      include(raid.props);
+  }
   if (count) frame.focus.addVectors(frame.min, frame.max).multiplyScalar(0.5).y += 1.2;
   else if (subject === 'patrol' && raid.patrol?.length) {
     const station = PLOTS.sheriff;
@@ -53,11 +55,6 @@ const framing = () => ({
   max: new Vector3(),
   leader: new Vector3(),
 });
-function hideEventInset(d) {
-  if (!d.eventInsetVisible) return;
-  d.eventInsetVisible = false;
-  d.onEventInset?.(null);
-}
 // Draw both layers with an independent camera into a small scissored window.
 // The main view's scenery cache and depth attachments are never reused here.
 export function renderEventInset(d) {
@@ -70,7 +67,7 @@ export function renderEventInset(d) {
     !definition ||
     (d.motionEnabled === false && !d.paused)
   ) {
-    hideEventInset(d);
+    if (!d.vipArrivals?.render()) hideEventInset(d);
     return;
   }
   const rect = eventInsetRect(d.canvas.clientWidth, d.canvas.clientHeight);
@@ -82,31 +79,14 @@ export function renderEventInset(d) {
   camera.position.copy(shot.insetFrame.focus).addScaledVector(direction, shot.insetFrame.distance);
   keepCameraAboveTerrain(camera.position, shot.insetFrame.focus);
   camera.lookAt(shot.insetFrame.focus);
+  if (shot.mainFrame.focus.distanceTo(shot.insetFrame.focus) < 7) {
+    hideEventInset(d);
+    return;
+  }
+
   const label =
     definition.inset === 'patrol' && !d.raid.patrol?.length ? 'Incident site' : definition.label;
-  const signature = `${rect.width}:${rect.height}:${rect.x}:${label}`;
-  if (!d.eventInsetVisible || signature !== shot.insetSignature) {
-    d.onEventInset?.({ ...rect, label });
-    shot.insetSignature = signature;
-    d.eventInsetVisible = true;
-  }
-  const renderer = d.renderer;
-  renderer.getViewport(shot.viewport);
-  renderer.getScissor(shot.scissor);
-  const scissorTest = renderer.getScissorTest();
-  const autoClear = renderer.autoClear;
-  try {
-    renderer.setViewport(rect.x, rect.y, rect.width, rect.height);
-    renderer.setScissor(rect.x, rect.y, rect.width, rect.height);
-    renderer.setScissorTest(true);
-    renderer.autoClear = true;
-    renderer.render(d.scene, camera);
-  } finally {
-    renderer.setViewport(shot.viewport);
-    renderer.setScissor(shot.scissor);
-    renderer.setScissorTest(scissorTest);
-    renderer.autoClear = autoClear;
-  }
+  drawCameraInset(d, shot, rect, label);
 }
 export function beginEventCamera(d) {
   const insetCamera = new PerspectiveCamera(40, 1.5, 0.1, 400);
@@ -128,9 +108,11 @@ export function beginEventCamera(d) {
     lastTarget: d.controls.target.clone(),
   };
   d.controls.enabled = false;
+  if (d.upgradeGlow?.root) d.upgradeGlow.root.visible = false;
 }
 export function restoreEventCamera(d) {
   hideEventInset(d);
+  if (d.upgradeGlow?.root) d.upgradeGlow.root.visible = true;
   if (!d.eventCamera || d.eventCamera.returning) return;
   if (d.motionEnabled === false) {
     d.camera.position.copy(d.eventCamera.position);

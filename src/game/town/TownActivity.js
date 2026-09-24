@@ -1,9 +1,10 @@
+import { walkObstacle, walkPose, planCurve } from './TownNavigation';
 import { prepareRoute, routePose } from './TownRoutes';
 import * as THREE from 'three';
-import { roadLevel, population } from './TownRules';
+import { roadLevel, population, visitorPopulation } from './TownRules';
 import { LANE_X, townTracks, atPlot, plotStreet } from './TownLayout';
 import { pavedTown, motorTraffic, roadSurface } from './TownEvolution';
-import { motorVehicle } from './TownVehicles';
+import { motorVehicle, animateVehicle } from './TownVehicles';
 
 // Actors share the town's geometry cache; only their joints move each frame.
 export function mountedRider(
@@ -46,7 +47,7 @@ export function mountedRider(
   const rider = d.person({
     parent: horse,
     manual: true,
-    era: 'frontier',
+    era: d.town?.era ?? 'frontier',
     sheriff,
     color,
     skin: seed % 2 ? '#b88863' : '#d7af8a',
@@ -171,6 +172,7 @@ export function addTownRoads(d, town, plots) {
       [-4.35, 15.5],
       [4.35, -8.5],
     ]) {
+      walkObstacle(roads, x, z, 0.045);
       d.rod(roads, [x, 0, z], [x, 2.3, z], 0.045, '#63726a');
       d.box(roads, 0.18, 0.26, 0.18, x, 2.35, z, '#e8c583', true);
       d.box(roads, 0.25, 0.06, 0.25, x, 2.52, z, '#61746d');
@@ -191,6 +193,7 @@ export function addTownVisitors(d, town) {
           });
       mounted.root.name = motorTraffic(town) ? 'Touring car' : 'Visiting horse rider';
       mounted.root.userData.animated = true;
+      (d.trafficActors ??= []).push(mounted.root);
       const curve = new THREE.CatmullRomCurve3(
         [
           new THREE.Vector3(LANE_X, 0.07, 7.5),
@@ -205,24 +208,40 @@ export function addTownVisitors(d, town) {
         'catmullrom',
         0.08,
       );
+      const path = !motorTraffic(town) && planCurve(d, curve, 0.8);
       d.motions.push((time) => {
         const progress = (time / 65 + n / town.buildings.stable) % 1,
           tangent = curve.getTangentAt(progress);
         mounted.root.position.copy(curve.getPointAt(progress));
         mounted.root.rotation.y = Math.atan2(tangent.x, tangent.z);
+        if (path) {
+          const pose = walkPose(path, progress);
+          mounted.root.position.set(pose.x, pose.y, pose.z);
+          mounted.root.rotation.y = pose.heading;
+        }
         mounted.animate(time + n);
+        animateVehicle(mounted.root, progress * curve.getLength());
       });
     }
-  if (town.buildings.saloon)
-    for (let n = 0; n < Math.min(4, 1 + Math.floor(population(town) / 6)); n++) {
+  if (visitorPopulation(town) > 0)
+    for (let n = 0; n < Math.min(4, visitorPopulation(town)); n++) {
+      const destination =
+        ['stable', 'hotel', 'transitHub', 'museum', 'saloon'].find((id) => town.buildings[id]) ??
+        'square';
       const actor = d.person({
         color: ['#aa795f', '#879c88', '#967f95', '#c1a274'][n],
         skin: n % 2 ? '#976f50' : '#d8ae83',
         hat: '#baa06d',
-        route: [[-LANE_X, -0.5], [-LANE_X, 7.5], plotStreet('saloon'), atPlot('saloon', 0, 1.25)],
+        route: [
+          atPlot(destination, 0, 1.65),
+          plotStreet(destination),
+          [-LANE_X, 7.5],
+          [-LANE_X, -0.5],
+        ],
         seed: n * 7,
         visitor: true,
       });
+      actor.root.name = 'Town visitor';
       actor.duration += 3;
     }
 }
@@ -348,10 +367,11 @@ export class TownRaid {
     ];
   }
   travel(actor, points, distance) {
-    const pose = routePose(points, distance);
+    const path = this.d.navigation?.route(points, 0, 0.8);
+    const pose = path ? walkPose(path, distance / (path.total || 1)) : routePose(points, distance);
     actor.root.position.set(pose.x, 0.07, pose.z);
     actor.root.rotation.y = pose.heading;
-    return pose.moving;
+    return path ? distance < path.total : pose.moving;
   }
   cue(id, at, time, kind, actor) {
     if (time < at || this.cues.has(id)) return;

@@ -33,7 +33,7 @@
         />
       </svg>
       <small>{{
-        t(project ? 'Under construction' : offer ? 'WHEN THE WORK IS DONE' : building.stages[stage])
+        t(project ? 'Under construction' : offer ? 'After building' : building.stages[stage])
       }}</small>
     </div>
     <div v-if="offer || project" class="town-benefit-preview">

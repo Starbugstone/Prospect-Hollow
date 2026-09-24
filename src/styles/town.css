@@ -2276,3 +2276,31 @@ html:has(.town-museum[open]) {
 .town-scene.is-raiding .town-camera-bar {
   visibility: hidden;
 }
+
+/* Passive arrivals leave the camera gestures and town taps available. */
+.town-event-inset.passive-arrival-inset {
+  pointer-events: none;
+}
+.town-event-inset .vip-inset-name {
+  bottom: auto;
+  transform: translate(-50%, -100%);
+  max-width: 90%;
+  padding: 3px 6px;
+  border: 1px solid #e5c47b;
+  border-radius: 4px;
+  font-size: 11px;
+  text-align: center;
+}
+.villager-name {
+  position: absolute;
+  z-index: 7;
+  transform: translate(-50%, -100%);
+  padding: 5px 8px;
+  border: 1px solid #e5c47b;
+  border-radius: 5px;
+  color: #fff0d2;
+  background: #554633ed;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+}

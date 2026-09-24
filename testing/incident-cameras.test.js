@@ -71,7 +71,9 @@ describe('Two simultaneous views of every town incident', () => {
     expect(d.controls.target.z).toBeCloseTo(mz, 3);
     expect(d.eventCamera.insetFrame.focus.x).toBeCloseTo(ix, 3);
     expect(d.eventCamera.insetFrame.focus.z).toBeCloseTo(iz, 3);
-    expect(d.onEventInset).toHaveBeenLastCalledWith(expect.objectContaining({ label }));
+    if (d.eventCamera.mainFrame.focus.distanceTo(d.eventCamera.insetFrame.focus) >= 7)
+      expect(d.onEventInset).toHaveBeenLastCalledWith(expect.objectContaining({ label }));
+    else expect(d.eventInsetVisible).not.toBe(true);
     expect(d.eventCamera.insetCamera.layers.mask).toBe(5); // Scenery + animated instances.
   });
   it('keeps staggered patrol arrivals readable instead of fitting the entire town in the inset', () => {

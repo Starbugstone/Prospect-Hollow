@@ -7,54 +7,12 @@
   >
     <header>
       <div>
-        <span class="eyebrow"> {{ t('MAKE IT YOURS') }} </span>
-        <h2>{{ t('A moment of calm') }}</h2>
+        <h2>{{ t('Settings') }}</h2>
       </div>
       <button class="icon-button" :aria-label="t('Close settings')" @click="$emit('close')">
         <GameIcon name="close" />
       </button>
     </header>
-    <p class="settings-intro">{{ t('Set the mood for your next cascade.') }}</p>
-    <section v-if="allowSaveTransfer" class="save-transfer" :aria-label="t('Save your village')">
-      <h3>{{ t('Save your village') }}</h3>
-      <p>
-        {{
-          t(
-            'Export your progress to a JSON file, then import it here to continue on another device.',
-          )
-        }}
-      </p>
-      <div class="save-actions">
-        <button type="button" @click="exportProgress">{{ t('Export save') }}</button>
-        <button type="button" :disabled="readingFile" @click="saveInput.click()">
-          {{ t('Import save') }}
-        </button>
-      </div>
-      <input
-        ref="saveInput"
-        type="file"
-        accept=".json,application/json"
-        hidden
-        :aria-label="t('Import save')"
-        @change="selectSave"
-      />
-      <div v-if="pendingSave" class="import-confirmation">
-        <p class="save-filename">{{ pendingSave.name }}</p>
-        <p>
-          {{
-            t(
-              'Replace your current progress with this save? Export your current village first if you want to keep it.',
-            )
-          }}
-        </p>
-        <div class="save-actions">
-          <button type="button" @click="importProgress">{{ t('Replace and continue') }}</button>
-          <button type="button" @click="pendingSave = null">{{ t('Cancel') }}</button>
-        </div>
-      </div>
-      <p v-if="saveError" role="alert" class="save-error">{{ t(saveError) }}</p>
-      <p v-if="saveStatus" role="status">{{ t(saveStatus) }}</p>
-    </section>
     <label
       ><span>
         {{ t('Music') }} <small>{{ t(Math.round(settings.musicVolume * 100)) }}%</small></span
@@ -95,11 +53,54 @@
         :checked="settings.highContrastMode"
         @change="settings.setHighContrast($event.target.checked)"
     /></label>
+    <label class="toggle-row"
+      ><span>{{ t('Building labels') }}</span
+      ><input
+        type="checkbox"
+        :checked="settings.showVillageLabels"
+        @change="settings.setVillageLabels($event.target.checked)"
+    /></label>
+    <section v-if="allowSaveTransfer" class="save-transfer" :aria-label="t('Save your village')">
+      <h3>{{ t('Save your village') }}</h3>
+      <p>
+        {{ t('Keep a backup of your village, or load it on another device.') }}
+      </p>
+      <div class="save-actions">
+        <button type="button" @click="exportProgress">{{ t('Save a backup file') }}</button>
+        <button type="button" :disabled="readingFile" @click="saveInput.click()">
+          {{ t('Load a backup file') }}
+        </button>
+      </div>
+      <input
+        ref="saveInput"
+        type="file"
+        accept=".json,application/json"
+        hidden
+        :aria-label="t('Load a backup file')"
+        @change="selectSave"
+      />
+      <div v-if="pendingSave" class="import-confirmation">
+        <p class="save-filename">{{ pendingSave.name }}</p>
+        <p>
+          {{
+            t(
+              'Replace your current village with this backup? Save a backup first if you want to keep it.',
+            )
+          }}
+        </p>
+        <div class="save-actions">
+          <button type="button" @click="importProgress">{{ t('Replace and continue') }}</button>
+          <button type="button" @click="pendingSave = null">{{ t('Cancel') }}</button>
+        </div>
+      </div>
+      <p v-if="saveError" role="alert" class="save-error">{{ t(saveError) }}</p>
+      <p v-if="saveStatus" role="status">{{ t(saveStatus) }}</p>
+    </section>
     <p class="audio-credits">
       <a :href="audioCreditsUrl" target="_blank" rel="noopener">{{ t('Audio credits') }}</a>
     </p>
     <div class="keyboard-guide">
-      <span class="eyebrow"> {{ t('PLAY YOUR WAY') }} </span>
+      <h3>{{ t('Keyboard controls') }}</h3>
       <p>
         {{ t('Swipe or tap neighboring gems.') }} <br />
         {{ t('Keyboard: arrows to explore, Enter to select.') }} <br />
@@ -108,7 +109,7 @@
     </div>
     <div class="testing-reset">
       <button v-if="!confirmReset" class="text-button" @click="confirmReset = true">
-        {{ t('Reset progress for testing') }}
+        {{ t('Start a new village') }}
       </button>
       <template v-else>
         <p>
@@ -170,8 +171,7 @@ async function selectSave(event) {
   saveStatus.value = '';
   readingFile.value = true;
   try {
-    if (file.size > MAX_SAVE_FILE_BYTES)
-      throw new Error('Choose a save JSON file smaller than 5 MB.');
+    if (file.size > MAX_SAVE_FILE_BYTES) throw new Error('Choose a backup file smaller than 5 MB.');
     const text = await file.text();
     if (version !== selectionVersion) return;
     parseSaveFile(text);
@@ -179,9 +179,10 @@ async function selectSave(event) {
   } catch (error) {
     if (version === selectionVersion)
       saveError.value =
-        error.message?.startsWith('Choose ') || error.message?.startsWith('This save format')
+        error.message?.startsWith('Choose a backup') ||
+        error.message?.startsWith('This save format')
           ? error.message
-          : 'The save file could not be read. Please try again.';
+          : 'That file is not a Prospect Hollow backup.';
   } finally {
     if (version === selectionVersion) readingFile.value = false;
   }
@@ -197,7 +198,7 @@ function importProgress() {
     saveError.value =
       error.message === 'The save could not be stored. Your current progress has not changed.'
         ? error.message
-        : 'Choose a valid Prospect Hollow save JSON file.';
+        : 'That file is not a Prospect Hollow backup.';
   }
 }
 const confirmReset = ref(false);

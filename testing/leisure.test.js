@@ -114,7 +114,7 @@ it('caps happiness at 100 even with both completed leisure plots', () => {
   });
   expect(happiness(town)).toBe(100);
 });
-it('keeps horses in their field and the occasional leashed walk on the shared animation clock', () => {
+it('keeps horses in their field and the continuous leashed walk on the shared animation clock', () => {
   const d = Object.create(TownDiorama.prototype);
   d.scene = new Scene();
   d.world = new Group();
@@ -134,13 +134,12 @@ it('keeps horses in their field and the occasional leashed walk on the shared an
   expect(walk.getObjectByName('Blender walker')).toBeTruthy();
   const renderer = new TownActors(d.scene);
   renderer.rebuild(d.world.children);
-  let sawWalk = false,
-    sawEmpty = false;
+  let sawWalk = false;
   for (const time of [0, 8, 20, 31, 40, 59, 60]) {
     d.motions.forEach((fn) => fn(time));
     renderer.update();
     sawWalk ||= walk.visible;
-    sawEmpty ||= !walk.visible;
+    expect(walk.visible).toBe(true);
     for (const horse of horses) {
       const bounds = new Box3().setFromObject(horse),
         [x, z] = PLOTS.horseField;
@@ -158,7 +157,7 @@ it('keeps horses in their field and the occasional leashed walk on the shared an
     d.motions.forEach((fn) => fn(time));
     expect(d.world.toJSON()).toEqual(snapshot); // Same paused clock cannot advance actors.
   }
-  expect(sawWalk && sawEmpty).toBe(true);
+  expect(sawWalk).toBe(true);
   expect(renderer.buckets.reduce((n, b) => n + b.mesh.count, 0)).toBeGreaterThan(0);
   renderer.dispose();
   Object.values(d.geometries).forEach((g) => g.dispose());

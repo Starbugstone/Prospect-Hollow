@@ -133,11 +133,17 @@ export const useGameStore = defineStore('game', {
     goalProgress() {
       return this.goalTotal - this.remainingLayers - this.remainingRelics - this.remainingOre;
     },
-    layerLabel: (state) =>
-      state.currentLevelId > 36
-        ? (state.objectives.find((objective) => objective.type === 'clear-layers')?.label ??
-          'Layers')
-        : 'Ice & stone',
+    layerLabel: (state) => {
+      const tiles =
+        state.availableLevels.find((level) => level.id === state.currentLevelId)?.config.tiles ??
+        [];
+      const fallback =
+        state.objectives.find((objective) => objective.type === 'clear-layers')?.label ?? 'Layers';
+      if (tiles.some((tile) => tile.sealColor || tile.chainHealth || tile.signal)) return fallback;
+      const stone = tiles.some((tile) => tile.type === 'blocker' && tile.health > 0);
+      const ice = tiles.some((tile) => tile.type !== 'blocker' && tile.health > 0);
+      return ice ? (stone ? 'Ice & stone' : 'Ice') : stone ? 'Stone' : 'Layers';
+    },
   },
   actions: {
     showArcadeBanner(banner) {

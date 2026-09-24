@@ -1,5 +1,21 @@
+import { addHeritageUpgrade } from './HeritageDetails';
 export function addCivicDetails(d, parent, kind, level) {
+  if (level >= 2) {
+    const extension = d.group(parent);
+    extension.name = `${kind} stage 2 extension`;
+    if (kind === 'school') {
+      for (const x of [-0.42, 0.42]) d.box(extension, 0.12, 1.2, 0.12, x, 3.45, 0, '#c6b98e');
+      d.box(extension, 1.2, 0.18, 1, 0, 4.1, 0, '#6d8982');
+      d.mesh(extension, 'cone', [0.28, 0.4, 0.28], [0, 3.5, 0], '#b89c60');
+    } else {
+      for (const z of [-0.8, 0.8]) d.box(extension, 0.12, 2.1, 0.12, 2.5, 1.1, z, '#c6b98e');
+      d.box(extension, 1.5, 0.16, 2, 2, 2.2, 0, '#71978c');
+    }
+  }
+  if (level >= 3) addHeritageUpgrade(d, parent, kind);
+
   if (kind === 'blacksmith') {
+    d.group(parent, -1, 3.6, -0.8).name = 'chimney';
     d.box(parent, 0.8, 3.5, 0.7, -1, 1.8, -0.8, '#8c6956');
     d.box(parent, 0.9, 0.85, 0.65, 1.7, 0.5, 0.6, '#5b625d');
     d.box(parent, 1.15, 0.2, 0.5, 1.7, 1, 0.6, '#737c76');
@@ -13,16 +29,17 @@ export function addCivicDetails(d, parent, kind, level) {
           0.025,
           '#6d7771',
         );
-    if (level >= 3) d.box(parent, 2, 0.12, 1.7, 1.65, 2.1, 0.5, '#927655');
+
     if (level >= 4)
       d.mesh(parent, 'cylinder', [0.55, 0.08, 0.55], [-2, 0.6, 0], '#9e845c').rotation.x =
         Math.PI / 2;
   }
   if (kind === 'school') {
-    d.box(parent, 0.65, 0.55, 0.65, 0, 3.15, 0, '#c6b98e');
-    d.mesh(parent, 'cone', [0.24, 0.26, 0.24], [0, 3.2, 0.4], '#b89c60');
+    if (level === 1) {
+      d.box(parent, 0.65, 0.55, 0.65, 0, 3.15, 0, '#c6b98e');
+      d.mesh(parent, 'cone', [0.24, 0.26, 0.24], [0, 3.2, 0.4], '#b89c60');
+    }
     if (level >= 2) d.box(parent, 0.9, 0.7, 0.1, 1.8, 0.8, 1.6, '#50655a');
-    if (level >= 3) d.box(parent, 0.85, 0.12, 0.85, 0, 3.5, 0, '#6d8982');
   }
   if (kind === 'doctor') {
     d.box(parent, 0.55, 0.55, 0.12, 0, 2.45, 1.42, '#e3dbc0');

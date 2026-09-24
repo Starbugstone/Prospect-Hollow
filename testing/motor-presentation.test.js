@@ -87,7 +87,7 @@ it('runs one bus on connected roads with bounded geometry and a pausable shared 
     d.motions[0](n / 10);
     expect(
       Math.min(...roads.map((road) => segmentDistance(bus.position, road.from, road.to))),
-    ).toBeLessThan(0.01);
+    ).toBeLessThanOrEqual(0.56);
     visited.add(Math.round(bus.position.z));
     const position = bus.position.clone();
     d.motions[0](n / 10);

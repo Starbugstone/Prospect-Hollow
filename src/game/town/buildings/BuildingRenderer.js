@@ -1,3 +1,4 @@
+import { addSquareModernization } from '../TownSquare';
 import { addHeritageUpgrade } from './HeritageDetails';
 import { renderWatermill } from './watermill';
 import { eraEvolution } from '../../../data/eras';
@@ -8,6 +9,7 @@ import { addCivicDetails } from './civic';
 import { addFishingDock } from './river';
 import { renderBridge, addStationDetails } from './infrastructure';
 import { RIVER_RAIL_VARIANTS } from '../../../data/riverRail';
+import { BUILDINGS } from '../../../data/town';
 import { t } from '../../../i18n';
 import {
   renderIndustrialBuilding,
@@ -58,7 +60,7 @@ export function renderBuilding({
   if (!construction && level > 0 && renderLeisureBuilding(d, parent, kind, label, level)) return;
   if (!construction && level > 0 && renderMotorBuilding(d, parent, kind, label, level)) return;
   if (!construction && level > 0 && renderIndustrialBuilding(d, parent, kind, label, level)) return;
-  renderFrontierBuilding(d, parent, kinds[kind] ?? kind, level, label, construction);
+  renderFrontierBuilding(d, parent, kinds[kind] ?? kind, level, label, construction, !kinds[kind]);
   if (construction) return;
   if (['blacksmith', 'school', 'doctor'].includes(kind)) addCivicDetails(d, parent, kind, level);
   if (kind === 'fisherman' || kind === 'riverPort')
@@ -82,7 +84,8 @@ const ERA_RENDERERS = {
   },
   'motor-age': {
     modernize: (d, parent, kind, era, level) => addMotorModernization(d, parent, kind, level),
-    landmark: (d, parent, kind, label, level) => renderMotorLandmark(d, parent, kind, label, level),
+    landmark: (d, parent, kind, label, level, era) =>
+      renderMotorLandmark(d, parent, kind, label, level, era),
   },
   city: {
     modernize: addCityModernization,
@@ -117,6 +120,7 @@ export function renderEraLandmark(d, parent, kind, label, level, era, serviceLev
   );
 }
 function renderRiverModernization(d, parent, kind, level) {
+  if (kind === 'square') return addSquareModernization(d, parent, level);
   const originalKind = kind;
   kind = kinds[kind] ?? kind;
   if (!RIVER_RAIL_VARIANTS[kind]) return;
@@ -207,6 +211,17 @@ function renderRiverModernization(d, parent, kind, level) {
   }
   d.box(parent, 3.25, 0.17, 0.95, 0, 2.05, 1.65, '#738f87');
   d.box(parent, 3.2, 0.22, 2.7, 0, 0.13, 0, colors[kind]);
-  d.sign(parent, t(RIVER_RAIL_VARIANTS[kind][0]), 2.65, 0, 2.73, 1.61);
+  d.sign(
+    parent,
+    t(
+      RIVER_RAIL_VARIANTS[originalKind]?.[0] ??
+        BUILDINGS.find((b) => b.kind === originalKind)?.name ??
+        originalKind,
+    ),
+    2.65,
+    0,
+    2.73,
+    1.61,
+  );
   if (kind === 'fisherman') d.box(parent, 2.8, 0.15, 1.5, 3, 0.15, 0, '#889c90');
 }

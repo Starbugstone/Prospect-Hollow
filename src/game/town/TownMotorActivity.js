@@ -1,35 +1,55 @@
 import { eraEvolution } from '../../data/eras';
 import { prepareRoute, routePose } from './TownRoutes';
-import { isCityEra } from '../../data/city';
-import { cityModel } from './buildings/city';
-import { motorVehicle } from './buildings/motorAge';
+import { motorVehicle, animateVehicle } from './TownVehicles';
 import { routeBetween, plotStreet } from './TownLayout';
+import { bridgeDeckHeight } from './TownRiver';
 
+export function busPose(path, time) {
+  const speed = 1.6,
+    radius = 0.55,
+    turnSeconds = (Math.PI * radius) / speed;
+  const travel = path.total / speed;
+  const cycle = travel * 2 + turnSeconds * 2;
+  const phase = ((time % cycle) + cycle) % cycle;
+  const returning = phase >= travel + turnSeconds;
+  const turn =
+    (phase >= travel && phase < travel + turnSeconds) || phase >= travel * 2 + turnSeconds;
+  let pose;
+  if (turn) {
+    const atStart = phase >= travel * 2 + turnSeconds;
+    const angle = ((phase - (atStart ? travel * 2 + turnSeconds : travel)) / turnSeconds) * Math.PI;
+    pose = routePose(path, atStart ? 0 : path.total);
+    const heading = pose.heading + (atStart ? Math.PI : 0);
+    pose.x += radius * (Math.cos(heading) * Math.cos(angle) + Math.sin(heading) * Math.sin(angle));
+    pose.z += radius * (-Math.sin(heading) * Math.cos(angle) + Math.cos(heading) * Math.sin(angle));
+    pose.heading = heading - angle;
+  } else {
+    pose = routePose(
+      path,
+      returning ? path.total - (phase - travel - turnSeconds) * speed : phase * speed,
+    );
+    if (returning) pose.heading += Math.PI;
+    pose.x += Math.cos(pose.heading) * radius;
+    pose.z -= Math.sin(pose.heading) * radius;
+  }
+  return { ...pose, distance: time * speed };
+}
 export function addMotorActivity(d, town) {
   if (!eraEvolution(town.era).busService || !town.buildings.garage || !town.buildings.busDepot)
     return;
   const route = routeBetween(town, plotStreet('garage'), plotStreet('busDepot'));
   if (route.length < 2) return;
   const path = prepareRoute(route);
-  const bus = isCityEra(town.buildingEras.busDepot)
-    ? cityModel(d, d.world, `${town.buildingEras.busDepot}-bus`)
-    : motorVehicle(d, d.world, true);
+  const bus = motorVehicle(d, d.world, true);
   bus.name = 'Valley bus on its village route';
   bus.userData.animated = true;
+  bus.userData.trafficRadius = 1.4;
+  (d.trafficActors ??= []).push(bus);
   d.motions.push((time) => {
-    const phase = (time % 44) / 44;
-    const returning = phase >= 0.5;
-    const distance =
-      (returning ? 1 - Math.min(1, (phase - 0.5) / 0.4) : Math.min(1, phase / 0.4)) * path.total;
-    const pose = routePose(path, distance);
-    bus.position.set(pose.x, 0.07, pose.z);
-    const ease = (t) => t * t * (3 - 2 * t);
-    const turn =
-      phase >= 0.9
-        ? 1 - ease((phase - 0.9) / 0.1)
-        : phase >= 0.4 && phase < 0.5
-          ? ease((phase - 0.4) / 0.1)
-          : Number(returning);
-    bus.rotation.y = pose.heading + turn * Math.PI;
+    const pose = busPose(path, time);
+    const bridge = pose.x >= 24 && pose.x <= 38 && Math.abs(pose.z - 7.5) < 1;
+    bus.position.set(pose.x, bridge ? bridgeDeckHeight(pose.x) + 0.17 : 0.07, pose.z);
+    bus.rotation.y = pose.heading;
+    animateVehicle(bus, pose.distance);
   });
 }

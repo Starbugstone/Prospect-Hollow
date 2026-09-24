@@ -12,7 +12,6 @@ import {
 } from '../src/game/town/buildings/BuildingRenderer';
 import { addImprovements } from '../src/game/town/TownImprovements';
 import { buildTownSquare } from '../src/game/town/TownSquare';
-import { buildingServiceLevel } from '../src/data/buildingProgression';
 import { addMineWorks } from '../src/game/town/TownMineWorks';
 
 const width = 440,
@@ -38,7 +37,7 @@ function buildingRoot(b, era, level) {
   // Docks and bridge approaches depend on their real world plot coordinates.
   root.position.set(PLOTS[b.id][0], 0.08, PLOTS[b.id][1]);
   const native = b.introducedEra === era.id;
-  const stage = buildingServiceLevel(b.id, native ? level : b.upgrades.length);
+  const stage = native ? level : b.upgrades.length;
   d.town.buildings[b.id] = native ? level : b.upgrades.length;
   d.town.buildingEras[b.id] = era.id;
   d.town.buildingEraLevels[b.id] = era.id === 'frontier' ? 0 : level;
@@ -47,7 +46,7 @@ function buildingRoot(b, era, level) {
     renderBuilding({ town: d, parent: root, kind, level: stage, label: b.name });
     renderModernization(d, root, kind, era.id, level);
   } else if (!renderEraLandmark(d, root, kind, b.name, level, era.id, stage)) {
-    if (kind === 'square') buildTownSquare(d, root, stage);
+    if (kind === 'square') buildTownSquare(d, root, stage, era.id === 'frontier');
     else if (kind === 'well') d.well(root);
     else renderBuilding({ town: d, parent: root, kind, level: stage, label: b.name });
     if (!['fisherman', 'blacksmith', 'school', 'doctor'].includes(kind))

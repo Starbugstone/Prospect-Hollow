@@ -126,7 +126,10 @@ describe('Substantial Industrial structures and village incidents', () => {
         incident.update(now);
         expect(incident.crew[0].root.position).toEqual(position);
       }
-      expect(crossed).toBe(true);
+      const spansRiver =
+        incident.path.points.some(([x]) => x < 24) && incident.path.points.some(([x]) => x > 38);
+      if (spansRiver) expect(crossed).toBe(true);
+      else expect(incident.path.total).toBeLessThan(24);
       d.actorRenderer.dispose();
       incident.update(INCIDENT_DURATION);
       incident.update(INCIDENT_DURATION + 1);

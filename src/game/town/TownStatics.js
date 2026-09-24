@@ -30,6 +30,7 @@ export class TownStatics {
       this.batches.delete(root);
     }
     for (const root of roots) if (!this.batches.has(root)) this.batches.set(root, this.add([root]));
+    for (const [root, mesh] of this.batches) if (mesh) mesh.visible = root.visible;
     this.mesh = this.meshes.at(-1) ?? null;
   }
   add(roots) {

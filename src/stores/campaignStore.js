@@ -10,6 +10,7 @@ import {
   getSpeedChestTier,
   getStars,
 } from '../data/campaign';
+import { TIP_IDS } from '../data/guidance';
 import { grantChapterGift } from '../data/journey';
 import { TOWN_PROJECTS } from '../data/townProjects';
 
@@ -50,6 +51,8 @@ import {
 export { SAVE_KEY };
 
 const defaults = () => ({
+  hasVisitedVillage: false,
+  seenTips: [],
   townProjectFocus: '',
   records: {},
   continuousRecords: {},
@@ -76,6 +79,11 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
   const state = defaults();
   try {
     const saved = loaded.data;
+    state.hasVisitedVillage =
+      !!saved?.town && typeof saved.town === 'object' && !Array.isArray(saved.town);
+    state.seenTips = Array.isArray(saved?.seenTips)
+      ? [...new Set(saved.seenTips.filter((id) => TIP_IDS.includes(id)))]
+      : [];
     state.saveWarning = loaded.warning ?? '';
     state.readOnly = !!loaded.readOnly;
     state.town = normalizeTown(saved?.town);
@@ -214,6 +222,7 @@ const profileData = (state) => ({
   shopStock: state.shopStock,
   shopVisit: state.shopVisit,
   seenObstacles: state.seenObstacles,
+  seenTips: state.seenTips,
   town: state.town,
   townProjectFocus: state.townProjectFocus,
   issuedRun: state.issuedRun,
@@ -250,6 +259,16 @@ export const useCampaignStore = defineStore('campaign', {
       Object.values(state.records).reduce((sum, record) => sum + record.stars, 0),
   },
   actions: {
+    visitVillage() {
+      if (this.hasVisitedVillage) return;
+      this.hasVisitedVillage = true;
+      this.save();
+    },
+    markTipSeen(id) {
+      if (!TIP_IDS.includes(id) || this.seenTips.includes(id)) return;
+      this.seenTips.push(id);
+      this.save();
+    },
     focusTownProject(id) {
       if (!TOWN_PROJECTS.some((project) => project.id === id && project.era === this.town.era))
         return false;

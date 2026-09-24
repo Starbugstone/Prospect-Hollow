@@ -1,11 +1,15 @@
+import { townNavigation, prepareActorWalk, walkPose, placeSafely } from './TownNavigation';
+import { TownVipArrivals } from './TownVipArrivals';
+import { hasVisitorTransport } from '../../data/visitorArrivals';
+import { villagerIdentity, vipVisitor } from '../../data/villagers';
+import { SIDEWALK_OFFSET, resolveTownTraffic } from './TownTraffic';
+import { townWardrobe, vipOutfit } from '../../data/townWardrobes';
 import { MINE_SHAFT, addMineShaft, mineTrackHeight, mineTrackPitch } from './TownMineShaft';
 import { TownPresentation } from './TownPresentation';
 import { ERA_CONSTRUCTION } from '../../data/mineEvolution';
-import { isCityEra } from '../../data/city';
 import { eraEvolution } from '../../data/eras';
 import { TownRenderQuality } from './TownRenderQuality';
 import { bridgeDeckHeight } from './TownRiver';
-import { buildingServiceLevel } from '../../data/buildingProgression';
 import { TownUpgradeGlow } from './TownUpgradeGlow';
 import * as THREE from 'three';
 import { addAviationActivity } from './TownAviation';
@@ -24,7 +28,7 @@ import { TownStatics } from './TownStatics';
 import { TownActors } from './TownActors';
 import { addTownLife } from './TownLife';
 import { addLeisureActivity } from './TownLeisure';
-import { TownConstruction } from './TownConstruction';
+import { TownConstruction, constructionParts } from './TownConstruction';
 import { buildTownSquare } from './TownSquare';
 import {
   renderBuilding,
@@ -48,6 +52,7 @@ import { addMotorActivity } from './TownMotorActivity';
 import { motorTraffic } from './TownEvolution';
 import { TownScenery } from './TownScenery';
 import { addMineEra } from './TownMineEvolution';
+import { overlapsEventInset } from './TownInset';
 
 import { PLOTS, LANE_X, atPlot, SHERIFF_PATROL, visiblePlots } from './TownLayout';
 import { riverCenterX } from './TownRiver';
@@ -261,6 +266,8 @@ export class TownDiorama {
     const material = new THREE.MeshStandardMaterial({ map: texture, roughness: 1 });
     material.userData.transient = true;
     const sign = this.box(parent, width, 0.35, 0.012, x, y, z + 0.058, '#ffffff');
+    sign.geometry = this.geometries.sign ??= new THREE.PlaneGeometry(1, 1);
+    sign.scale.set(width, 0.35, 1);
     sign.material = material;
   }
   batch(group) {
@@ -309,7 +316,9 @@ export class TownDiorama {
     const interruptedGroup = this.construction?.group;
     this.construction?.finish();
     this.construction = null;
+    const previousParts = this.plotCache?.get(constructionId)?.parts;
     const plots = visiblePlots(town);
+    const previousPlotIds = this.cinematic?.plotIds;
     const reusable = new Map();
     const labelSignature = JSON.stringify(labels);
     const signatures = new Map(
@@ -348,7 +357,9 @@ export class TownDiorama {
     this.world = new THREE.Group();
     this.scene.add(this.world);
     this.actors = [];
+    this.trafficActors = [];
     this.motions = [];
+    this.visitorTransports = new Map();
     this.targets = [];
     this.anchors = [];
     this.town = town;
@@ -378,6 +389,10 @@ export class TownDiorama {
       const group = cached?.group ?? this.group(this.world, x, 0.08, z);
       if (cached) this.world.add(group);
       group.userData.plot = id;
+      if (previousPlotIds && !previousPlotIds.has(id)) {
+        group.visible = false;
+        group.userData.revealAfterCinematic = true;
+      }
       group.userData.static = true;
       this.targets.push(group);
       this.anchors.push({
@@ -388,7 +403,7 @@ export class TownDiorama {
       let movingPart = cached?.movingPart;
       if (!cached && id === 'mine') this.mine(group, labels.mine, mineStage);
       else if (!cached) {
-        const stage = buildingServiceLevel(id, town.buildings[id]),
+        const stage = town.buildings[id],
           project = town.projects[id],
           kind = BUILDING_BY_ID[id].kind;
         if (kind === 'bridge') {
@@ -414,7 +429,8 @@ export class TownDiorama {
             stage,
           );
           if (!industrial) {
-            if (kind === 'square') buildTownSquare(this, group, stage);
+            if (kind === 'square')
+              buildTownSquare(this, group, stage, town.buildingEras[id] === 'frontier');
             else if (kind === 'well') this.well(group);
             else this.building(group, kind, stage, labels[id]);
           }
@@ -450,15 +466,17 @@ export class TownDiorama {
         this.world.attach(movingPart.rotor);
         movingPart.rotor.userData.animated = true;
       }
+      const parts = cached?.parts ?? constructionParts(group);
       if (id === constructionId)
-        this.construction = new TownConstruction(this, group, movingPart?.rotor);
+        this.construction = new TownConstruction(this, group, movingPart?.rotor, previousParts);
       else if (!cached) this.batch(group);
       if (movingPart) this.motions.push(movingPart.update);
-      this.plotCache.set(id, { signature: signatures.get(id), group, movingPart });
+      this.plotCache.set(id, { signature: signatures.get(id), group, movingPart, parts });
     }
     // Model preparation can be expensive. Start the reveal clock on its first visible frame.
     if (this.construction) this.lastFrame = 0;
     const household = population(town);
+    this.navigation = townNavigation(this.world);
     addEraActivity(this, town);
     addMotorActivity(this, town);
     addTownVisitors(this, town);
@@ -576,8 +594,11 @@ export class TownDiorama {
       cart.position.set(0, mineTrackHeight(z) + 0.07, z);
       cart.rotation.x = mineTrackPitch(z);
     });
+    this.vipArrivals ??= new TownVipArrivals(this);
+    this.vipArrivals.attach(town);
     this.actors.forEach((actor) => this.animatePerson(actor, this.elapsed));
     this.motions.forEach((motion) => motion(this.elapsed));
+    this.vipArrivals.update();
     this.rebuildActors();
     this.buildingRenderer.sync(this.world.children.filter((child) => child.userData.static));
     this.renderer.shadowMap.needsUpdate = true;
@@ -765,6 +786,7 @@ export class TownDiorama {
     seed,
     work,
     dress,
+    gender,
     parent = this.world,
     manual = false,
     visitor = false,
@@ -773,17 +795,35 @@ export class TownDiorama {
     linear = false,
     era = this.town?.era,
   }) {
+    const firstVIP = visitor && !manual ? vipVisitor(seed, 0) : null;
+    const identity = firstVIP ?? villagerIdentity(seed, gender ?? (dress ? 'female' : undefined));
+    const female = identity.gender === 'female';
+    const wardrobe = townWardrobe(eraEvolution(era));
+    if (sheriff && wardrobe.patrol) color = '#315d83';
     const root = this.group(parent);
+    root.userData.villager = { ...identity, name: firstVIP?.name ?? null };
     // Manual incident actors still need the animated foreground renderer.
     root.userData.animated = true;
     if (sheriff) {
-      root.name = 'Village sheriff';
-      root.scale.setScalar(1.3);
+      root.name = wardrobe.patrol ? 'Town patrol officer' : 'Village sheriff';
+      root.scale.setScalar(1.05);
     }
     const body = this.group(root, 0, 0.54, 0);
     this.box(body, 0.25, 0.19, 0.16, 0, 0, 0, '#69654d', true);
     const torso = this.group(body, 0, 0.1, 0);
-    this.box(torso, 0.3, 0.34, 0.18, 0, 0.13, 0, color, true);
+    const shirt = this.box(
+      torso,
+      female ? 0.26 : 0.32,
+      wardrobe.coat,
+      0.18,
+      0,
+      0.13,
+      0,
+      color,
+      true,
+    );
+    const hips = this.mesh(body, 'cone', [0.17, 0.19, 0.13], [0, -0.015, 0], color);
+    hips.visible = female;
     if (sheriff) {
       if (!this.geometries.badge) {
         const star = new THREE.Shape();
@@ -803,39 +843,75 @@ export class TownDiorama {
     const head = this.group(torso, 0, 0.46, 0);
     this.ball(head, 0, 0, 0, [0.12, 0.145, 0.115], skin);
     this.ball(head, 0, 0.045, -0.03, [0.123, 0.12, 0.097], '#73563d');
+    const hair = this.group(head);
+    hair.name = 'Villager swept hair and bun';
+    for (const x of [-0.1, 0.1])
+      this.ball(hair, x, -0.015, -0.045, [0.045, 0.14, 0.085], '#73563d');
+    this.ball(hair, 0, 0.015, -0.135, [0.085, 0.085, 0.07], '#73563d');
+    const jaw = this.ball(head, 0, -0.06, 0.015, [0.105, 0.075, 0.095], skin);
+    jaw.name = 'Villager broad jaw';
+    hair.visible = female;
+    jaw.visible = !female;
     this.ball(head, 0, -0.005, 0.111, [0.022, 0.028, 0.025], skin);
     for (const x of [-0.044, 0.044]) this.ball(head, x, 0.025, 0.105, 0.012, '#39392f');
-    if (isCityEra(era)) {
-      this.ball(head, 0, 0.11, -0.005, [0.135, 0.065, 0.12], hat);
-      this.box(head, 0.17, 0.025, 0.11, 0, 0.11, 0.105, hat, true);
-    } else {
-      this.mesh(
-        head,
-        'cylinder',
-        [eraEvolution(era).style === 'motor-age' ? 0.155 : 0.195, 0.025, 0.18],
-        [0, 0.105, 0],
-        hat,
-      );
-      this.mesh(head, 'cone', [0.12, 0.115, 0.11], [0, 0.164, 0], hat);
-      this.mesh(head, 'cylinder', [0.122, 0.028, 0.112], [0, 0.129, 0], '#6a6050');
+    const headwear = this.group(head);
+    if (wardrobe.hat === 'cap' || (sheriff && wardrobe.patrol)) {
+      this.ball(headwear, 0, 0.11, -0.005, [0.135, 0.065, 0.12], hat);
+      this.box(headwear, 0.17, 0.025, 0.11, 0, 0.11, 0.105, hat, true);
+    } else if (wardrobe.hat !== 'none') {
+      this.mesh(headwear, 'cylinder', [wardrobe.brim ?? 0.195, 0.025, 0.18], [0, 0.105, 0], hat);
+      if (wardrobe.crown === 'round') this.ball(headwear, 0, 0.16, 0, [0.12, 0.11, 0.11], hat);
+      else
+        this.mesh(
+          headwear,
+          wardrobe.crown === 'flat' ? 'cylinder' : 'cone',
+          [0.12, 0.115, 0.11],
+          [0, 0.164, 0],
+          hat,
+        );
+      this.mesh(headwear, 'cylinder', [0.122, 0.028, 0.112], [0, 0.129, 0], '#6a6050');
+    }
+    const vip = this.group(torso);
+    vip.name = 'Honorary VIP visitor outfit';
+    vip.visible = !!root.userData.villager.name;
+    const accents = [];
+    const scarf = this.group(vip),
+      satchel = this.group(vip);
+    scarf.visible = satchel.visible = false;
+    if (visitor) {
+      for (const x of [-0.065, 0.065])
+        accents.push(this.box(vip, 0.035, wardrobe.coat * 0.62, 0.025, x, 0.15, 0.105, '#e9c878'));
+      const badge = this.box(vip, 0.09, 0.09, 0.035, -0.1, 0.22, 0.125, '#ffd15b');
+      badge.rotation.z = Math.PI / 4;
+      badge.name = 'VIP gold badge';
+      this.box(scarf, 0.25, 0.055, 0.025, 0, 0.305, 0.115, '#e9c878');
+      this.box(scarf, 0.055, 0.19, 0.025, 0.06, 0.19, 0.115, '#e9c878');
+      this.rod(satchel, [-0.1, 0.29, 0.11], [0.23, -0.14, 0.11], 0.015, '#8b674a');
+      this.box(satchel, 0.15, 0.22, 0.15, 0.24, -0.15, 0.025, '#8b674a', true);
+      this.box(satchel, 0.13, 0.06, 0.16, 0.24, -0.06, 0.03, '#ad8961', true);
     }
     const arms = [],
-      legs = [];
+      legs = [],
+      sleeves = [],
+      trousers = [],
+      boots = [];
     for (const side of [-1, 1]) {
       const arm = this.group(torso, side * 0.18, 0.24, 0);
-      this.rod(arm, [0, 0, 0], [side * 0.015, -0.2, 0], 0.05, color);
+      sleeves.push(this.rod(arm, [0, 0, 0], [side * 0.015, -0.2, 0], 0.05, color));
       const fore = this.group(arm, side * 0.015, -0.2, 0);
       this.rod(fore, [0, 0, 0], [0, -0.18, 0], 0.039, skin);
       this.ball(fore, 0, -0.19, 0, [0.045, 0.057, 0.04], skin);
       arms.push({ upper: arm, lower: fore });
       const thigh = this.group(body, side * 0.078, -0.065, 0);
-      this.rod(thigh, [0, 0, 0], [0, -0.22, 0], 0.065, '#68674f');
+      trousers.push(this.rod(thigh, [0, 0, 0], [0, -0.22, 0], 0.065, wardrobe.trousers));
       const shin = this.group(thigh, 0, -0.22, 0);
-      this.rod(shin, [0, 0, 0], [0, -0.21, 0], 0.047, '#77745b');
-      this.box(shin, 0.105, 0.08, 0.19, 0, -0.215, 0.035, '#5c4c39', true);
+      trousers.push(this.rod(shin, [0, 0, 0], [0, -0.21, 0], 0.047, wardrobe.trousers));
+      boots.push(this.box(shin, 0.105, 0.08, 0.19, 0, -0.215, 0.035, wardrobe.boots, true));
       legs.push({ upper: thigh, lower: shin });
     }
-    if (dress) this.mesh(body, 'cone', [0.2, 0.29, 0.17], [0, -0.085, 0], color);
+    const skirt = this.mesh(body, 'cone', [0.2, 0.29, 0.17], [0, -0.085, 0], color);
+    skirt.visible = !!dress || (female && !sheriff && eraEvolution(era).wardrobe === 'frontier');
+    const appearance = { hair, jaw, hips, skirt, dress, sheriff, era, gender: identity.gender };
     const sampledRoute = [];
     route.forEach((p, i) => {
       const previous = route[i - 1];
@@ -857,34 +933,140 @@ export class TownDiorama {
       for (let i = 0; i < journey.length; i++)
         curve.add(new THREE.LineCurve3(journey[i], journey[(i + 1) % journey.length]));
     const duration = curve.getLength() / (sheriff ? 0.8 : 0.55);
-    const actor = { root, body, torso, head, arms, legs, curve, duration, seed, work, visitor };
+    const actor = {
+      root,
+      body,
+      torso,
+      head,
+      arms,
+      legs,
+      curve,
+      duration,
+      seed,
+      work,
+      visitor,
+      manual,
+      vip,
+      shirt,
+      appearance,
+      clothing: {
+        shirt: [shirt, hips, skirt, ...sleeves],
+        trousers,
+        boots,
+        hat: headwear.children,
+        accent: accents,
+        headwear,
+        accessories: { scarf, satchel },
+      },
+      shirtColor: color,
+      distance: 0,
+    };
+    actor.originalClothing = [
+      shirt,
+      hips,
+      skirt,
+      ...sleeves,
+      ...trousers,
+      ...boots,
+      ...headwear.children,
+      ...accents,
+    ].map((mesh) => [mesh, mesh.material]);
     if (!manual) this.actors.push(actor);
 
     root.traverse((object) => {
       if (object.isMesh) object.castShadow = false;
     });
     if (!manual) this.contactShadow(root, 0.27, 0.18);
+    prepareActorWalk(this, actor);
     return actor;
+  }
+  setVillagerIdentity(actor, identity, outfitSeed = actor.seed ?? 0) {
+    actor.root.userData.villager = identity;
+    const female = identity.gender === 'female';
+    const a = actor.appearance;
+    a.hair.visible = a.hips.visible = female;
+    a.jaw.visible = !female;
+    a.skirt.visible = female && (a.dress || eraEvolution(a.era).wardrobe === 'frontier');
+    actor.shirt.scale.x = female ? 0.26 : 0.32;
+    actor.vip.visible = !!identity.name;
+    if (identity.name) {
+      const outfit = vipOutfit(eraEvolution(a.era), outfitSeed);
+      actor.root.userData.outfit = outfit;
+      for (const part of ['shirt', 'trousers', 'boots', 'hat', 'accent'])
+        for (const mesh of actor.clothing[part]) mesh.material = this.material(outfit[part]);
+      actor.shirt.scale.y = outfit.coat;
+      actor.clothing.headwear.visible = outfit.hatVisible;
+      a.skirt.visible = female && outfit.skirt;
+      a.skirt.scale.y = outfit.skirtLength;
+      a.skirt.position.y = 0.025 - outfit.skirtLength / 2;
+      for (const [type, group] of Object.entries(actor.clothing.accessories))
+        group.visible = outfit.accessory === type;
+      actor.clothing.accent.forEach((mesh) => {
+        mesh.visible = outfit.accessory === 'lapels';
+      });
+      actor.clothing.accessories.scarf.children.forEach((mesh) => {
+        mesh.material = this.material(outfit.accent);
+      });
+    } else {
+      delete actor.root.userData.outfit;
+      actor.originalClothing.forEach(([mesh, material]) => {
+        mesh.material = material;
+      });
+      actor.shirt.scale.y = townWardrobe(eraEvolution(a.era)).coat;
+      actor.clothing.headwear.visible = true;
+      a.skirt.scale.y = 0.29;
+      a.skirt.position.y = -0.085;
+    }
   }
   animatePerson(actor, time) {
     const { root, body, torso, head, arms, legs, curve, duration, seed, work } = actor;
     const cycle = (time + seed) % (duration + 4);
     let walking = !work && cycle < duration;
     const progress = work?.length ? 0.1 : Math.min(cycle / duration, 0.9999);
-    root.position.copy(curve.getPointAt(progress));
-    if (actor.visitor) {
-      // Visit the saloon, stay inside briefly, then return along the same route.
-      const phase = (time + seed) % 32;
-      const routeProgress = phase < 12 ? phase / 24 : phase < 19 ? 0.5 : 0.5 + (phase - 19) / 26;
-      root.position.copy(curve.getPointAt(Math.min(0.9999, routeProgress)));
-      root.visible = phase < 12 || phase >= 19;
-      walking = root.visible;
-      const facing = curve.getTangentAt(Math.min(0.9999, routeProgress));
-      root.rotation.y = Math.atan2(facing.x, facing.z);
+    if (!actor.walkPath) root.position.copy(curve.getPointAt(progress));
+    let routeProgress = progress;
+    if (actor.visitor && !actor.transportVisitor) {
+      const phase = (time + seed) % (duration + 7);
+      const visit = Math.floor((time + seed) / (duration + 7));
+      if (actor.visit !== visit) {
+        actor.visit = visit;
+        const chosen = hasVisitorTransport(this.town) ? null : vipVisitor(seed, visit);
+        this.setVillagerIdentity(actor, chosen ?? villagerIdentity(seed), seed + visit * 997);
+      }
+      const isVIP = !!root.userData.villager.name;
+      actor.vip.visible = isVIP;
+      routeProgress = Math.min(0.9999, phase / duration);
+      if (!actor.walkPath) root.position.copy(curve.getPointAt(routeProgress));
+      // Visitors leave their host building, walk the town and return through
+      // the same entrance. The quiet interval is indoors between visits.
+      root.scale.setScalar(Math.max(0, Math.min(1, phase / 0.8, (duration - phase) / 0.8)));
+      root.visible = root.scale.x > 0;
+      walking = phase < duration;
     }
-    const tangent = curve.getTangentAt(progress);
-    if (!actor.visitor) root.rotation.y = Math.atan2(tangent.x, tangent.z);
-    const step = (time + seed) * 6;
+
+    if (actor.walkPath) {
+      const pose = walkPose(actor.walkPath, routeProgress, actor.walkPose);
+      root.position.set(pose.x, pose.y, pose.z);
+      root.rotation.y = pose.heading;
+    } else {
+      const tangent = curve.getTangentAt(Math.min(0.9999, routeProgress));
+      root.rotation.y = Math.atan2(tangent.x, tangent.z);
+      if (!work && (!actor.manual || actor.transportVisitor)) {
+        const doorway = actor.transportVisitor
+          ? Math.min(1, root.position.distanceTo(actor.door) / 2)
+          : 1;
+        const offset = SIDEWALK_OFFSET * (actor.visitor ? root.scale.x : 1) * doorway;
+        root.position.x += tangent.z * offset;
+        root.position.z -= tangent.x * offset;
+      }
+    }
+    if (work) placeSafely(this, root);
+    if (actor.lastPosition && time >= actor.lastPoseTime)
+      actor.distance += root.position.distanceTo(actor.lastPosition);
+    actor.lastPosition ??= new THREE.Vector3();
+    actor.lastPosition.copy(root.position);
+    actor.lastPoseTime = time;
+    const step = (actor.distance / 0.58) * Math.PI * 2;
     body.position.y =
       0.54 + (walking ? Math.cos(step * 2) * 0.013 : Math.sin(time * 1.8 + seed) * 0.005);
     torso.rotation.z = walking ? Math.sin(step) * 0.025 : 0;
@@ -902,10 +1084,15 @@ export class TownDiorama {
       if (work === 'farm') {
         torso.rotation.x = 0.22 + Math.sin(time * 1.9) * 0.12;
         arms[0].upper.rotation.x = -0.7 + Math.sin(time * 1.9) * 0.3;
+      } else if (work === 'fishing') {
+        torso.rotation.x = 0.04;
+        arms[1].upper.rotation.x = -0.65 + Math.sin(time * 0.7) * 0.05;
+        arms[1].lower.rotation.x = -0.5;
       } else {
         torso.rotation.x = 0;
-        arms[1].upper.rotation.z = -0.65;
-        arms[1].lower.rotation.x = -1.2 + Math.sin(time * 3) * 0.2;
+        arms[1].upper.rotation.z = work === 'greet' ? -0.12 : 0;
+        arms[1].lower.rotation.x =
+          work === 'greet' ? -0.45 + Math.sin(time * 1.2 + seed) * 0.16 : -0.16;
       }
     } else {
       torso.rotation.x = 0;
@@ -932,9 +1119,12 @@ export class TownDiorama {
       this.ball(head, dx * 1.7, 0.49, 0.22, 0.018, '#393d30');
     }
     this.box(root, 0.35, 0.09, 0.28, 0, 1.04, -0.02, '#637e79', true);
-    this.rod(root, [0, 0.86, -0.47], [0, 0.4, -0.66], 0.055, '#594b34');
+    const tail = this.group(root, 0, 0.86, -0.47);
+    this.rod(tail, [0, 0, 0], [0, -0.46, -0.19], 0.055, '#594b34');
     this.motions.push((time) => {
       head.rotation.x = 0.18 + Math.sin(time * 0.9 + rotation) * 0.14;
+      tail.rotation.z = Math.sin(time * 1.5 + rotation) * 0.3;
+      root.rotation.z = Math.sin(time * 0.65 + rotation) * 0.025;
     });
 
     root.traverse((object) => {
@@ -982,7 +1172,65 @@ export class TownDiorama {
     this.world.add(this.selection);
     this.render();
   }
+  showVillager(clientX, clientY) {
+    const rect = this.canvas.getBoundingClientRect();
+    let nearest = null,
+      distance = 24;
+    for (const actor of [...(this.actors ?? []), ...(this.vipArrivals?.actors ?? [])]) {
+      if (!actor.root.userData.villager?.name || !actor.root.visible || actor.root.scale.x < 0.5)
+        continue;
+      const p = actor.root.position
+        .clone()
+        .add(point(0, 1, 0))
+        .project(this.camera);
+      if (p.z < -1 || p.z > 1) continue;
+      const delta = Math.hypot(
+        rect.left + ((p.x + 1) * rect.width) / 2 - clientX,
+        rect.top + ((1 - p.y) * rect.height) / 2 - clientY,
+      );
+      if (delta < distance) {
+        nearest = actor;
+        distance = delta;
+      }
+    }
+    this.namedVillager = nearest;
+    this.projectVillager();
+    return !!nearest;
+  }
+  projectVillager() {
+    const actor = this.namedVillager;
+    if (
+      !actor?.root.visible ||
+      !actor.root.userData.villager?.name ||
+      actor.root.scale.x < 0.5 ||
+      !this.world?.children.includes(actor.root) ||
+      this.raid ||
+      this.cinematic
+    ) {
+      this.onVillagerLabel?.(null);
+      return;
+    }
+    const p = actor.root.position
+      .clone()
+      .add(point(0, 1.5, 0))
+      .project(this.camera);
+    this.onVillagerLabel?.(
+      Math.abs(p.x) <= 1 &&
+        Math.abs(p.y) <= 1 &&
+        p.z >= -1 &&
+        p.z <= 1 &&
+        !overlapsEventInset(
+          this,
+          ((p.x + 1) * this.canvas.clientWidth) / 2,
+          ((1 - p.y) * this.canvas.clientHeight) / 2,
+          180,
+        )
+        ? { name: actor.root.userData.villager.name, x: (p.x + 1) * 50, y: (1 - p.y) * 50 }
+        : null,
+    );
+  }
   pick(clientX, clientY) {
+    if (this.showVillager(clientX, clientY)) return;
     const rect = this.canvas.getBoundingClientRect();
     this.raycaster.setFromCamera(
       new THREE.Vector2(
@@ -1140,12 +1388,28 @@ export class TownDiorama {
           x: (reward.x + 1) * 50,
           y: (1 - reward.y) * 50,
           visible:
-            reward.z > -1 && reward.z < 1 && Math.abs(reward.x) < 0.95 && Math.abs(reward.y) < 0.9,
+            reward.z > -1 &&
+            reward.z < 1 &&
+            Math.abs(reward.x) < 0.95 &&
+            Math.abs(reward.y) < 0.9 &&
+            !overlapsEventInset(
+              this,
+              ((reward.x + 1) * width) / 2,
+              ((1 - reward.y) * height) / 2,
+              48,
+            ),
         },
         depth: p.z,
         inView: p.z > -1 && p.z < 1 && Math.abs(p.x) < 0.95 && Math.abs(p.y) < 0.9,
         width: labelWidth,
         visible:
+          !overlapsEventInset(
+            this,
+            ((p.x + 1) * width) / 2,
+            ((1 - p.y) * height) / 2,
+            labelWidth,
+          ) &&
+          this.plotCache?.get(id)?.group.visible !== false &&
           (id === 'mine' ||
             this.town.buildings[id] > 0 ||
             !!this.town.projects[id] ||
@@ -1192,6 +1456,7 @@ export class TownDiorama {
       else shown.push(anchor);
     }
     this.onLabels(projected);
+    this.projectVillager?.();
   }
 
   tick(now) {
@@ -1214,6 +1479,8 @@ export class TownDiorama {
     if (this.waterMaterial) this.waterMaterial.uniforms.time.value = this.elapsed;
     this.actors?.forEach((actor) => this.animatePerson(actor, this.elapsed));
     this.motions?.forEach((motion) => motion(this.elapsed));
+    this.vipArrivals?.update();
+    resolveTownTraffic(this);
     if (this.construction?.update(this.elapsed)) this.finishConstruction();
     if (this.raid?.update(this.elapsed)) {
       this.raid = null;
@@ -1225,7 +1492,10 @@ export class TownDiorama {
     if (this.cameraFrame || this.presentation || (this.cinematic && !this.cinematic.finished))
       return;
     this.actorRenderer.update();
-    if (this.drawFrame() && eventCameraMoved) this.projectLabels();
+    if (this.drawFrame()) {
+      if (eventCameraMoved) this.projectLabels();
+      else this.projectVillager?.();
+    }
   }
   finishConstruction() {
     if (!this.construction) return;
@@ -1286,6 +1556,7 @@ export class TownDiorama {
     if (enabled) {
       if (!transition) return;
       this.cinematic = {
+        plotIds: new Set(this.plotCache?.keys()),
         presentation: new TownPresentation(this, {
           id: 'era-mine',
           from: transition.from,
@@ -1297,6 +1568,16 @@ export class TownDiorama {
     } else {
       const presentation = this.cinematic?.presentation;
       this.cinematic = null;
+      for (const { group } of this.plotCache?.values() ?? []) {
+        if (group.userData.revealAfterCinematic) {
+          group.visible = true;
+          delete group.userData.revealAfterCinematic;
+        }
+      }
+      for (const [group, batch] of this.buildingRenderer?.batches ?? []) {
+        if (batch) batch.visible = group.visible;
+      }
+      if (this.frameCache) this.frameCache.valid = false;
       presentation?.dispose();
       this.render();
     }

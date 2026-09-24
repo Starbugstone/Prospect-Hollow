@@ -5,15 +5,14 @@
     :aria-label="t('Chapter gift in {count} puzzles', { count: journey.remaining })"
   >
     <div class="journey-promise">
-      <TownIcon name="mine" /><TownIcon name="arrow" /><TownIcon name="chest" />
-      <span
-        >{{ t('A chest each puzzle') }}<small>{{ t('Next chapter gift') }}</small></span
-      >
+      <span>{{
+        journey.remaining === 1
+          ? t('Chapter reward in 1 puzzle')
+          : t('Chapter reward in {count} puzzles', { count: journey.remaining })
+      }}</span>
     </div>
     <div class="journey-stamps" aria-hidden="true">
-      <i v-for="level in journey.levels" :key="level.id" :class="{ complete: level.complete }">{{
-        level.complete ? '✓' : '·'
-      }}</i>
+      <i v-for="level in journey.levels" :key="level.id" :class="{ complete: level.complete }"></i>
     </div>
     <img :src="rewardArt(journey.gift)" :alt="t(journey.gift.label)" />
   </div>
@@ -24,7 +23,6 @@ import { t } from '../i18n';
 import { useCampaignStore } from '../stores/campaignStore';
 import { journeyProgress } from '../data/journey';
 import { rewardArt } from '../data/rewards';
-import TownIcon from './town/TownIcon.vue';
 const campaign = useCampaignStore();
 const journey = computed(() => journeyProgress(campaign.records));
 </script>
@@ -69,8 +67,8 @@ const journey = computed(() => journeyProgress(campaign.records));
   display: grid;
   place-items: center;
   width: 16px;
-  height: 20px;
-  border: 1px dashed currentColor;
+  height: 8px;
+  border: 1px solid currentColor;
   border-radius: 5px;
   font: 800 12px sans-serif;
   opacity: 0.45;
@@ -102,7 +100,7 @@ const journey = computed(() => journeyProgress(campaign.records));
   }
   .journey-stamps i {
     width: 13px;
-    height: 18px;
+    height: 8px;
   }
   .journey-trail > img {
     width: 27px;

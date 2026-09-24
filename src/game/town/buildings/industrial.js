@@ -1,3 +1,6 @@
+import { walkObstacle } from '../TownNavigation';
+import { addSquareModernization } from '../TownSquare';
+import { bridgeDeckHeight } from '../TownRiver';
 import { addHeritageUpgrade } from './HeritageDetails';
 import { addFishingDock } from './river';
 import { INDUSTRIAL_VARIANTS, ELECTRIC_LAMPS, hasElectricity } from '../../../data/industrial';
@@ -58,7 +61,8 @@ export function renderIndustrialBuilding(d, parent, kind, label, level = 1) {
 export function addIndustrialModernization(d, parent, kind, level = 1) {
   const variant = INDUSTRIAL_VARIANTS[kind];
   if (!variant) return;
-  if (['square', 'bridge'].includes(kind)) addIndustrialTier(d, parent, kind, level);
+  if (kind === 'square') return addSquareModernization(d, parent, level, iron);
+  if (['bridge'].includes(kind)) addIndustrialTier(d, parent, kind, level);
   if (kind === 'square') {
     for (const x of [-2.5, 2.5]) d.box(parent, 0.22, 0.14, 5.2, x, 0.13, 0, trim);
     return;
@@ -99,6 +103,7 @@ export function addElectricLighting(d, town) {
   lights.name = 'First Lights electric street lamps';
   lights.userData.static = true;
   for (const [x, z] of ELECTRIC_LAMPS) {
+    walkObstacle(lights, x, z, 0.15);
     d.mesh(lights, 'cylinder', [0.15, 0.2, 0.15], [x, 0.13, z], iron);
     d.rod(lights, [x, 0.2, z], [x, 2.5, z], 0.055, iron);
     d.ball(lights, x, 2.62, z, [0.22, 0.27, 0.22], '#fff0b6');
@@ -168,6 +173,14 @@ export function renderIndustrialLandmark(d, parent, kind, label, level = 1) {
       d.box(parent, 1.8, 0.3, 0.6, 0, 2.6, 1.8, trim);
       d.ball(parent, 0, 3.5, 1.52, [0.28, 0.28, 0.08], '#e5c47a');
     }
+    if (kind === 'museum') {
+      for (const x of [-1.3, 1.3]) {
+        d.box(parent, 0.8, 0.65, 0.75, x, 0.45, 2.2, trim);
+        d.ball(parent, x, 1.15, 2.2, [0.25, 0.4, 0.25], '#a28abd', 'rock');
+      }
+      d.box(parent, 1, 1.1, 1, 0, 4.8, -0.2, trim);
+      d.ball(parent, 0, 4.9, 0.35, [0.32, 0.32, 0.05], '#e5c47a');
+    }
     if (kind === 'school') {
       for (const x of [-0.35, 0.35])
         for (const z of [-0.35, 0.35]) d.rod(parent, [x, 4.2, z], [x, 5.1, z], 0.045, iron);
@@ -185,6 +198,7 @@ export function renderIndustrialLandmark(d, parent, kind, label, level = 1) {
       d.box(wing, 0.8, 1.2, 0.1, 0, 0.65, 1.3, iron);
     }
     if (kind === 'blacksmith') {
+      d.group(parent, -1.8, 4.5, -0.7).name = 'chimney';
       masonry(d, d.group(parent, -1.8, 0, -0.7), 0.55, 4.4, 0.6);
       d.box(parent, 1, 0.6, 0.7, 1, 0.4, 2.2, iron);
     }
@@ -216,9 +230,11 @@ function addIndustrialTier(d, parent, kind, level) {
   if (level < 2) return;
   if (kind === 'bridge') {
     for (const z of [-1.15, 1.15]) {
-      d.rod(tier, [-6, 1.2, z], [0, level === 3 ? 4 : 2.4, z], 0.1, iron);
-      d.rod(tier, [0, level === 3 ? 4 : 2.4, z], [6, 1.2, z], 0.1, iron);
-      if (level === 3) for (const x of [-3, 0, 3]) d.rod(tier, [x, 1, z], [x, 3, z], 0.07, iron);
+      const height = (x) => bridgeDeckHeight(x + 31) + 0.3;
+      for (let x = -6; x < 6; x += 0.5) {
+        d.rod(tier, [x, height(x) + 0.9, z], [x + 0.5, height(x + 0.5) + 0.9, z], 0.1, iron);
+        if (level >= 3) d.rod(tier, [x, height(x), z], [x, height(x) + 1.7, z], 0.06, iron);
+      }
     }
     return;
   }
@@ -228,7 +244,6 @@ function addIndustrialTier(d, parent, kind, level) {
     if (level === 3) {
       d.rod(annex, [0, 1.4, 0], [0, 3.6, 0], 0.09, iron);
       d.ball(annex, 0, 3.7, 0, [0.3, 0.35, 0.3], '#ffe6a2');
-      d.box(tier, 4.8, 0.12, 0.7, 0, 0.16, 2.3, trim);
     }
     return;
   }

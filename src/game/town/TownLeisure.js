@@ -1,3 +1,4 @@
+import { planOrbit, walkPose } from './TownNavigation';
 import { leisureModel } from './LeisureAssets';
 import { PLOTS } from './TownLayout';
 
@@ -24,7 +25,9 @@ export function addLeisureActivity(d, town) {
       const phase = time * 0.65 + i * 2;
       head.rotation.x = 0.15 + Math.max(0, Math.sin(phase)) * 0.85;
       tail.rotation.z = Math.sin(time * 1.8 + i) * 0.16;
-      horse.getObjectByName(`leg${i % 4}`).rotation.x = Math.max(0, Math.sin(phase * 0.6)) * 0.12;
+      for (let n = 0; n < 4; n++)
+        horse.getObjectByName(`leg${n}`).rotation.x = Math.sin(phase * 0.6 + n * Math.PI) * 0.08;
+      horse.rotation.z = Math.sin(phase) * 0.025;
     });
   }
   if (!town.buildings.park) return;
@@ -39,13 +42,21 @@ export function addLeisureActivity(d, town) {
     [0, 1, 2, 3].map((i) => root.getObjectByName(`leg${i}`)).filter(Boolean),
   );
   const [x, z] = PLOTS.park;
+  // The footprint includes the leashed dog, not just the person at the origin.
+  const path = planOrbit(d, x, z + 2.7, 1.55, 1.1, 1.2, 0.13);
   const update = (time) => {
     const phase = time % 60;
-    visit.visible = phase < 32;
-    const returning = phase >= 16;
-    const progress = returning ? 1 - (phase - 16) / 16 : phase / 16;
-    visit.position.set(x - 1.55 + Math.max(0, Math.min(1, progress)) * 3.1, 0.13, z + 1.6);
-    visit.rotation.y = returning ? -Math.PI / 2 : Math.PI / 2;
+    // A continuous oval joins the promenade to the street entrance. The
+    // walker remains present and turns over several steps at each end.
+    visit.visible = true;
+    const angle = (phase / 60) * Math.PI * 2;
+    visit.position.set(x + Math.sin(angle) * 1.55, 0.13, z + 2.7 + Math.cos(angle) * 1.1);
+    visit.rotation.y = Math.atan2(Math.cos(angle) * 1.55, -Math.sin(angle) * 1.1);
+    if (path) {
+      const pose = walkPose(path, phase / 60);
+      visit.position.set(pose.x, pose.y, pose.z);
+      visit.rotation.y = pose.heading;
+    }
     legs.forEach((group) =>
       group.forEach((leg, i) => {
         leg.rotation.x = Math.sin(time * 5 + (i === 0 || i === 3 ? 0 : Math.PI)) * 0.28;

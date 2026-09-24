@@ -42,7 +42,7 @@ describe('Purpose-specific heritage upgrades', () => {
       expect(heritageUpgrade('railDepot')).not.toBe(heritageUpgrade('museum'));
       expect(heritageUpgrade('unknown-future-building')).toBeNull();
     }));
-  it('carries the same purpose through industrial and inherited Motor Age models', () =>
+  it('carries the same purpose through industrial models', () =>
     drawing((d) => {
       for (const kind of [
         'home',
@@ -53,7 +53,7 @@ describe('Purpose-specific heritage upgrades', () => {
         'railDepot',
         'blacksmith',
       ]) {
-        for (const era of ['industrial', 'motor-age']) {
+        for (const era of ['industrial']) {
           const root = new Group();
           expect(renderEraLandmark(d, root, kind, kind, 3, era, 3)).toBe(true);
           expect(
@@ -63,22 +63,23 @@ describe('Purpose-specific heritage upgrades', () => {
         }
       }
     }));
-  it('supports both Motor Age tank sizes from ground to vessel and seats their lids', () =>
+  it('uses a single ground-supported city reservoir in Motor Age', () =>
     drawing((d) => {
-      for (const level of [2, 3]) {
+      for (const level of [1, 2, 3]) {
         const root = new Group();
         renderMotorLandmark(d, root, 'well', 'Well', level);
-        const tank = root.getObjectByName('Motor Age supported water tank');
-        const vessel = new Box3().setFromObject(tank.getObjectByName('Tank vessel'));
-        const lid = new Box3().setFromObject(tank.getObjectByName('Tank lid'));
-        expect(lid.min.y).toBeCloseTo(vessel.max.y, 5);
-        const supports = tank.children.filter((part) => part.name === 'Tank support');
-        expect(supports).toHaveLength(4);
-        for (const support of supports) {
-          const bounds = new Box3().setFromObject(support);
-          expect(bounds.min.y).toBeLessThanOrEqual(0.201);
-          expect(bounds.max.y).toBeGreaterThanOrEqual(vessel.min.y - 0.001);
-        }
+        expect(root.userData.baseStyle).toBe('post-war');
+        const model = root.getObjectByName('Blender post-war-kind-well');
+        expect(model).toBeDefined();
+        expect(root.getObjectByName('Motor Age supported water tank')).toBeUndefined();
+        const heights = [];
+        model.traverse((o) => {
+          if (!o.isMesh || o.material.color.getHexString() !== '9cbbb5') return;
+          const p = o.geometry.attributes.position;
+          for (let i = 0; i < p.count; i++) if (p.getX(i) > 1.2) heights.push(p.getY(i));
+        });
+        expect(Math.min(...heights)).toBeCloseTo(0.15, 2);
+        expect(Math.max(...heights)).toBeCloseTo(3, 2);
       }
     }));
   it('puts the final mill loading expansion in front of the main shell in every era', () =>

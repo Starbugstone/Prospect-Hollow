@@ -4,9 +4,11 @@
       v-for="goal in goals"
       :key="goal.id"
       :class="{ complete: goal.count === 0 }"
-      :aria-label="`${t(goal.label)}: ${goal.count}`"
+      :aria-label="`${t(goal.label)}: ${goal.total - goal.count} / ${goal.total}`"
+      :title="t(goal.label)"
     >
-      <img :src="goal.art" alt="" /><b>{{ goal.count || '✓' }}</b>
+      <img :src="goal.art" alt="" /><span class="mine-goal-label">{{ t(goal.label) }}</span
+      ><b>{{ goal.total - goal.count }} / {{ goal.total }}</b>
     </span>
   </span>
 </template>
@@ -60,10 +62,15 @@ const goals = computed(() => [
     label: t('Collect {color} ore', { color: t(order.color) }),
     art: `/art/${order.color}.svg`,
     count: order.target - order.progress,
+    total: order.target,
   })),
   ...groups
     .filter((g) => props.initialTiles?.some((tile) => g.value(tile) > 0))
-    .map((g) => ({ ...g, count: game.tiles.reduce((sum, tile) => sum + g.value(tile), 0) })),
+    .map((g) => ({
+      ...g,
+      total: props.initialTiles.reduce((sum, tile) => sum + g.value(tile), 0),
+      count: game.tiles.reduce((sum, tile) => sum + g.value(tile), 0),
+    })),
   ...(game.totalRelics
     ? [
         {
@@ -71,6 +78,7 @@ const goals = computed(() => [
           label: 'Relics to deliver',
           art: '/art/relic.svg',
           count: game.remainingRelics,
+          total: game.totalRelics,
         },
       ]
     : []),
