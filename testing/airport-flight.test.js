@@ -1,5 +1,6 @@
 import { expect, it } from 'vitest';
-import { Group } from 'three';
+import { Box3, Group } from 'three';
+import airportLayout from '../src/data/airportLayout.json';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 import {
@@ -8,6 +9,30 @@ import {
   AIRPORT_FLIGHT_CYCLE,
 } from '../src/game/town/TownAviation';
 import { AIRPORT } from '../src/game/town/TownLayout';
+
+it.each(['aviation', 'broadcast', 'contemporary'])(
+  '%s parks the entire passenger aircraft beyond the hangar roof',
+  (era) => {
+    const d = Object.create(TownDiorama.prototype);
+    Object.assign(d, {
+      geometries: createTownGeometries(),
+      materials: new Map(),
+      world: new Group(),
+      motions: [],
+    });
+    try {
+      addAviationActivity(d, { buildings: { airport: 3 }, buildingEras: { airport: era } });
+      const bounds = new Box3().setFromObject(d.world.children[0]);
+      const hangarEnd =
+        AIRPORT.center[1] + airportLayout.hangar.centerZ + airportLayout.hangar.roofRadius;
+      expect(bounds.min.z).toBeGreaterThan(hangarEnd);
+    } finally {
+      d.clearGroup(d.world);
+      Object.values(d.geometries).forEach((g) => g.dispose());
+      d.materials.forEach((m) => m.dispose());
+    }
+  },
+);
 
 it('flies arrivals and departures in separate intervals with quiet time between them', () => {
   const phases = [];

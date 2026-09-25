@@ -23,13 +23,15 @@ describe('bonus visual accuracy', () => {
     ]);
   });
 
-  it('preserves the row power footprint when it removes an unactivated bonus', () => {
+  it('animates the row power and every board bonus it chains', () => {
     const step = {
       cleared: [3, 4, 5],
       bonusEffect: { type: 'clear_row', originIndex: 3 },
+      matches: [{ type: 'clear_row', indices: [3, 4, 5] }],
     };
-    expect(describeBonusEffects(step, () => 'bomb')).toEqual([
+    expect(describeBonusEffects(step, (index) => (index === 4 ? 'bomb' : 'ruby'))).toEqual([
       { type: 'clear_row', index: 3, targets: [3, 4, 5] },
+      { type: 'bomb', index: 4, targets: [3, 4, 5] },
     ]);
     const cross = vi.fn();
     const effects = new BonusEffects({ position: () => ({ x: 30, y: 90 }) });
@@ -62,3 +64,36 @@ it('keeps the bonus sound but skips decorative work and wind-up in reduced motio
   expect(tween).not.toHaveBeenCalled();
   expect(animator.effects.size).toBe(0);
 });
+
+it.each([false, true])(
+  'retires placement markers during activation (reduced motion: %s)',
+  async (reducedMotion) => {
+    let complete;
+    const marker = { destroy: vi.fn() };
+    const animator = new BoardAnimator({
+      settings: { reducedMotion },
+      scene: {
+        tweens: {
+          add: (config) => {
+            complete = config.onComplete;
+            return { remove: vi.fn() };
+          },
+        },
+      },
+      fxLayer: { add: vi.fn() },
+    });
+    animator.markers.set('preview', { objects: [marker] });
+    animator.fadeBonusPreview();
+    expect(animator.markers.has('preview')).toBe(false);
+    if (!reducedMotion) {
+      expect(marker.destroy).not.toHaveBeenCalled();
+      expect(animator.effects.has(marker)).toBe(true);
+      // Clearing a later preview must not interrupt the accepted target's fade.
+      animator.clearBonusPreview();
+      complete();
+      await Promise.resolve();
+    }
+    expect(marker.destroy).toHaveBeenCalledOnce();
+    expect(animator.effects.size).toBe(0);
+  },
+);

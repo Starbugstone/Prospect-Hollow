@@ -1,0 +1,254 @@
+{
+  "home": {
+    "family": "residence",
+    "identity": "porch",
+    "width": 2.8,
+    "height": 2.8,
+    "detail": null
+  },
+  "rowHouses": {
+    "family": "residence",
+    "identity": "row",
+    "width": 4.6,
+    "height": 3.4,
+    "detail": null
+  },
+  "apartments": {
+    "family": "residence",
+    "identity": "balconies",
+    "width": 4.1,
+    "height": 5.3,
+    "detail": "solar"
+  },
+  "cityHomes": {
+    "family": "residence",
+    "identity": "twin",
+    "width": 4.5,
+    "height": 7,
+    "detail": "solar"
+  },
+  "hotel": {
+    "family": "residence",
+    "identity": "hotel",
+    "width": 3.8,
+    "height": 4.7,
+    "detail": null
+  },
+  "gardenCourt": {
+    "family": "residence",
+    "identity": "court",
+    "width": 4.8,
+    "height": 2,
+    "detail": null
+  },
+  "bank": {
+    "family": "civic",
+    "identity": "columns",
+    "width": 3.8,
+    "height": 3,
+    "detail": null
+  },
+  "cityHall": {
+    "family": "civic",
+    "identity": "clock",
+    "width": 4.2,
+    "height": 3.6,
+    "detail": "aerial"
+  },
+  "doctor": {
+    "family": "civic",
+    "identity": "clinic",
+    "width": 3.2,
+    "height": 2.4,
+    "detail": null
+  },
+  "school": {
+    "family": "civic",
+    "identity": "bell",
+    "width": 3.8,
+    "height": 2.6,
+    "detail": null
+  },
+  "sheriff": {
+    "family": "civic",
+    "identity": "patrol",
+    "width": 3,
+    "height": 2.8,
+    "detail": "aerial"
+  },
+  "post": {
+    "family": "civic",
+    "identity": "post",
+    "width": 3.2,
+    "height": 2.7,
+    "detail": "aerial"
+  },
+  "saloon": {
+    "family": "retail",
+    "identity": "terrace",
+    "width": 3.5,
+    "height": 3.4,
+    "detail": null
+  },
+  "diner": {
+    "family": "retail",
+    "identity": "diner",
+    "width": 4,
+    "height": 2,
+    "detail": null
+  },
+  "shop": {
+    "family": "retail",
+    "identity": "shop",
+    "width": 2.8,
+    "height": 2.5,
+    "detail": "billboard"
+  },
+  "market": {
+    "family": "retail",
+    "identity": "market",
+    "width": 4.3,
+    "height": 2.1,
+    "detail": null
+  },
+  "supermarket": {
+    "family": "retail",
+    "identity": "supermarket",
+    "width": 4.5,
+    "height": 2.6,
+    "detail": "billboard"
+  },
+  "armory": {
+    "family": "depot",
+    "identity": "freight",
+    "width": 3.8,
+    "height": 2.8,
+    "detail": null
+  },
+  "warehouse": {
+    "family": "depot",
+    "identity": "warehouse",
+    "width": 4.4,
+    "height": 3.1,
+    "detail": null
+  },
+  "blacksmith": {
+    "family": "depot",
+    "identity": "forge",
+    "width": 3,
+    "height": 2.5,
+    "detail": null
+  },
+  "fireStation": {
+    "family": "depot",
+    "identity": "fire",
+    "width": 4.1,
+    "height": 2.7,
+    "detail": null
+  },
+  "mill": {
+    "family": "depot",
+    "identity": "mill",
+    "width": 3.6,
+    "height": 3.4,
+    "detail": null
+  },
+  "stable": {
+    "family": "depot",
+    "identity": "stable",
+    "width": 3.4,
+    "height": 2.4,
+    "detail": null
+  },
+  "garage": {
+    "family": "depot",
+    "identity": "garage",
+    "width": 4,
+    "height": 2.3,
+    "detail": null
+  },
+  "well": {
+    "family": "water",
+    "identity": "well",
+    "width": 2.1,
+    "height": 1.8,
+    "detail": null
+  },
+  "powerHouse": {
+    "family": "water",
+    "identity": "power",
+    "width": 3.1,
+    "height": 2.6,
+    "detail": "aerial"
+  },
+  "waterPlant": {
+    "family": "water",
+    "identity": "tanks",
+    "width": 3.7,
+    "height": 2.3,
+    "detail": null
+  },
+  "railDepot": {
+    "family": "station",
+    "identity": "rail",
+    "width": 3.6,
+    "height": 2.8,
+    "detail": null
+  },
+  "busDepot": {
+    "family": "station",
+    "identity": "bus",
+    "width": 4,
+    "height": 2.3,
+    "detail": null
+  },
+  "transitHub": {
+    "family": "station",
+    "identity": "transit",
+    "width": 4.4,
+    "height": 3.2,
+    "detail": null
+  },
+  "museum": {
+    "family": "culture",
+    "identity": "museum",
+    "width": 3.8,
+    "height": 3.1,
+    "detail": null
+  },
+  "library": {
+    "family": "culture",
+    "identity": "reading",
+    "width": 3.2,
+    "height": 2.8,
+    "detail": null
+  },
+  "crystalLab": {
+    "family": "research",
+    "identity": "crystal",
+    "width": 3.9,
+    "height": 3.4,
+    "detail": "solar"
+  },
+  "farm": {
+    "family": "farm",
+    "identity": "farm",
+    "width": 3,
+    "height": 2,
+    "detail": null
+  },
+  "fisherman": {
+    "family": "river",
+    "identity": "fish",
+    "width": 2.4,
+    "height": 2,
+    "detail": null
+  },
+  "riverPort": {
+    "family": "river",
+    "identity": "port",
+    "width": 3.6,
+    "height": 2.5,
+    "detail": null
+  }
+}

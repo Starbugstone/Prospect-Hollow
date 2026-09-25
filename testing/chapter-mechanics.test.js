@@ -185,7 +185,7 @@ describe('ore order collection', () => {
     expect(remainingOre()).toBe(0);
   });
 
-  it('counts actual fusion removals for ore while preserving the existing mining receipt', () => {
+  it('counts fusion removals once for both ore and mining earnings', () => {
     const state = makeBoard();
     state.board[11] = createGem('bomb');
     state.board[12] = createGem('bomb');
@@ -197,7 +197,14 @@ describe('ore order collection', () => {
     const orders = [{ color: 'ruby', target: 100, progress: 0 }];
     advanceOreOrders(orders, result.steps);
     expect(orders[0].progress).toBe(expected);
-    expect(result.steps.flatMap((step) => step.collectedJewels)).toEqual([]);
+    const jewels = result.steps.flatMap((step) => step.collectedJewels);
+    expect(jewels).toHaveLength(targets.length - 2);
+    expect(new Set(jewels.map((gem) => gem.id)).size).toBe(jewels.length);
+    const game = useGameStore();
+    game.oreOrders = [{ color: 'ruby', target: 100, progress: 0 }];
+    game._applyScoring(result.steps);
+    expect(game.collectedJewels).toBe(jewels.length);
+    expect(game.oreOrders[0].progress).toBe(expected);
   });
 
   it.each(['tnt', 'clear_row', 'tile_breaker', 'color_wand'])(
@@ -219,6 +226,7 @@ describe('ore order collection', () => {
         oreOrders: [{ color: 'ruby', target: 1, progress: 0 }],
         activeBonusMode: mode,
       });
+      useCampaignStore().powers.find((slot) => slot.id === mode.replaceAll('_', '-')).quantity = 1;
       expect(await game.resolveBonusClick(12)).toBe(true);
       expect(game.remainingLayers).toBe(0);
       expect(game.remainingOre).toBe(0);
@@ -307,20 +315,39 @@ describe('ore order collection', () => {
 });
 
 describe('append-only campaign and replay', () => {
-  it('preserves all original 240 level layouts, objectives, seeds, tips and reward targets', () => {
-    // Baseline digest from 8aa015e. Ignore ephemeral gem IDs and the new empty
-    // oreOrders property, which has no effect on any original level.
-    const levels = generateLevelConfigs(240).map(({ board, oreOrders, ...level }) => {
-      expect(oreOrders ?? []).toEqual([]);
-      return {
-        ...level,
-        board: board.map((gem) => (gem ? { type: gem.type, highlight: gem.highlight } : null)),
-      };
-    });
+  it('preserves all untouched original level layouts, objectives, seeds, tips and reward targets', () => {
+    // Baseline for the unchanged 238 levels, captured before the mine audit's
+    // explicit retuning of 33/52. Those two retain their workload and rewards below.
+    // Ignore ephemeral gem IDs, empty oreOrders, and the independently tuned
+    // starScoreTarget (covered by star-ratings.test.js). Chest targets stay fixed.
+    const levels = generateLevelConfigs(240)
+      .filter(({ id }) => ![33, 52].includes(id))
+      .map(({ board, oreOrders, starScoreTarget, ...level }) => {
+        expect(oreOrders ?? []).toEqual([]);
+        return {
+          ...level,
+          board: board.map((gem) => (gem ? { type: gem.type, highlight: gem.highlight } : null)),
+        };
+      });
     expect(createHash('sha256').update(JSON.stringify(levels)).digest('hex')).toBe(
-      'cfc3e3c569d690d39e43c394aec83dce9423d0569c54255dfc6978cd8be4521f',
+      '70e6476f5b34859889892bb0916a57d76834bf4aa2a02fd3e860340204f1fcbb',
     );
   });
+
+  it.each([
+    [33, 55, 12500, 200000],
+    [52, 87, 33500, 162000],
+  ])(
+    'keeps level %i workload and rewards while opening its bottom edge',
+    (id, layers, chestTarget, speedTargetMs) => {
+      const level = generateLevelConfigs(id)[id - 1];
+      expect(level.tiles.reduce((sum, tile) => sum + layerCount(tile), 0)).toBe(layers);
+      expect(level.chestTarget).toBe(chestTarget);
+      expect(level.speedTargetMs).toBe(speedTargetMs);
+      expect(level.tiles.slice(-level.boardCols).every((tile) => tile.health === 0)).toBe(true);
+      expect(level.maxMoves).toBeUndefined();
+    },
+  );
 
   it('gives every appended puzzle a reachable chapter mechanic and available ore colors', () => {
     const levels = generateLevelConfigs().slice(240);

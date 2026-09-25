@@ -15,6 +15,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from blender_assets import AssetPack, vec
 
 art = AssetPack(Path(sys.argv[sys.argv.index('--') + 1]), 'city', teal='#638b88', green='#8fa773')
+from city_primitives import install_city_primitives
+install_city_primitives(art)
 SOURCE, OUTPUT = art.source, art.output
 model, box, ball, rod, loft, finish = art.model, art.box, art.ball, art.rod, art.loft, art.finish
 tree, bench = art.tree, art.bench
@@ -77,6 +79,7 @@ styles = json.loads((art.output.parent / 'data' / 'cityStyles.json').read_text()
 for era,style in styles.items():
     modern=style['modern']
     cream,teal,brick = style['wall'],style['roof'],style['brick']
+    print('CITY_ERA', era, flush=True)
     for family in ['residence','civic','culture','research','retail','depot','farm','water','station','river']:
         model(f'{era}-{family}')
         if family in ['residence','civic','culture','research','retail']:hall(family,modern)
@@ -183,8 +186,11 @@ for era,style in styles.items():
         box('Vehicle shaped lower shell',(width,.4,length),(0,.46,0),teal if modern else '#c6ad79',.09)
         box('Glazed passenger cabin',(width-.08,.5,length*.77),(0,.87,-.05),glass,.08)
         box('Passenger roof',(width,.13,length*.82),(0,1.17,-.05),cream,.05)
-        for z in [-length*.32,length*.32]:
+        for i,z in enumerate([-length*.32,length*.32]):
+            art.joint,art.pivot=f'wheel{i}',(0,.25,z)
             rod('Axle',(-width*.54,.25,z),(width*.54,.25,z),.17,'#4e5d57')
+            for x in [-width*.55,width*.55]:rod('Wheel spoke',(x,.12,z),(x,.38,z),.025,cream)
+        art.joint,art.pivot='body',(0,0,0)
         for z in [-length*.2,0,length*.2]:
             box('Window divider',(width,.46,.035),(0,.89,z),teal,0)
         if vehicle=='railcar' and style['electricVehicles']:
@@ -229,6 +235,11 @@ for x in [-1.25,-.65,.65,1.25]:box('Bank frontage column',(.12,1.65,.22),(x,1.08
 model('marker-blacksmith')
 box('Forge anvil base',(.55,.22,.3),(-1.25,.23,1.9),teal)
 box('Forge anvil horn',(.85,.18,.32),(-1.2,.44,1.9),'#53635c')
+
+print('CITY_IDENTITIES', flush=True)
+from city_identity import author_city_identity, author_city_aircraft
+author_city_identity(art, styles)
+author_city_aircraft(art)
 
 payload = art.export(OUTPUT / 'city-meshes.json')
 if '--meshes-only' in sys.argv:

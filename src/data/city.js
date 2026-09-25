@@ -1,3 +1,4 @@
+import buildingStyles from './cityBuildingStyles.json';
 import { ERAS, ERA_BY_ID, eraEvolution } from './eras';
 // City growth adds bounded capacity. Modernizing an existing service does not multiply it.
 export const CITY_ERAS = ERAS.filter((era) => era.evolution.style === 'city').map((era) => era.id);
@@ -10,51 +11,18 @@ export const isMajorCityBuilding = (id) => ['airport', 'skyline', 'cityHomes'].i
 export const cityBuildingPrice = (id, price) =>
   Math.ceil(price * (isMajorCityBuilding(id) ? 1.25 : 1));
 export const CITY_FAMILIES = {
+  ...Object.fromEntries(
+    Object.entries(buildingStyles).map(([kind, appearance]) => [kind, appearance.family]),
+  ),
   airport: 'airport',
   radioTower: 'radio',
   concertHall: 'concert',
   television: 'television',
   skyline: 'skyline',
-  home: 'residence',
-  farm: 'farm',
-  well: 'water',
   square: 'square',
-  saloon: 'retail',
-  stable: 'depot',
-  sheriff: 'civic',
-  bank: 'civic',
-  shop: 'retail',
-  museum: 'culture',
-  armory: 'depot',
-  fisherman: 'river',
-  blacksmith: 'depot',
-  school: 'civic',
-  doctor: 'civic',
   bridge: 'bridge',
-  riverPort: 'river',
-  railDepot: 'station',
-  post: 'civic',
-  warehouse: 'culture',
-  hotel: 'residence',
-  market: 'retail',
-  powerHouse: 'water',
-  fireStation: 'depot',
-  rowHouses: 'residence',
-  mill: 'depot',
-  garage: 'depot',
-  busDepot: 'station',
-  gardenCourt: 'residence',
-  diner: 'retail',
   horseField: 'field',
   park: 'park',
-  cityHall: 'civic',
-  apartments: 'residence',
-  supermarket: 'retail',
-  waterPlant: 'water',
-  transitHub: 'station',
-  library: 'culture',
-  crystalLab: 'research',
-  cityHomes: 'residence',
   riverPark: 'park',
 };
 export const CITY_DESCRIPTIONS = {

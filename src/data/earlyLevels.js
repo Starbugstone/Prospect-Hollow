@@ -33,6 +33,9 @@ export const getEarlyLevelSpec = (id) => {
       chapter === 0 ? 0 : chapter === 5 ? [1, 2, 3, 3, 1, 5][slot] : [1, 2, 3, 4, 1, 5][slot],
     reinforcedCount: chapter < 3 ? 0 : [1, 1, 2, 2, 0, 3][slot],
     frozenCount: chapter === 5 ? [1, 2, 2, 2, 1, 4][slot] : 0,
+    // Keep this dense twin seam off the bottom edge, where a lone ice tile
+    // otherwise dominates the final stretch after direct-only blast damage.
+    ...(id === 33 ? { openExitRows: 1 } : {}),
     tip:
       chapter === 5
         ? 'Match beside a frozen gem to thaw it, then clear the ice underneath.'

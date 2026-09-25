@@ -17,7 +17,15 @@ export function addFishingDock(d, parent, level, wharf = false) {
       d.rod(parent, [-1.4 + n * 0.28, 0.2, -1.6], [-1.4 + n * 0.28, 1, -1.6], 0.015, '#b6aa86');
     d.rod(parent, [-1.4, 1, -1.6], [0.3, 1, -1.6], 0.03, '#b6aa86');
   }
-  if (level >= 3) d.box(parent, 2, 0.1, 1, -0.5, 1.2, -1.6, '#947b54');
+  if (level >= 2) {
+    d.box(parent, 2.6, 0.15, 1.2, 2.2, 0.18, 0, '#a58a62');
+    for (const x of [1.1, 3.3]) d.rod(parent, [x, -0.7, -0.5], [x, 0.7, -0.5], 0.065, '#806c50');
+  }
+  if (level >= 3) {
+    d.box(parent, 1.4, 1.8, 1.3, -1.8, 1, -1.4, '#849b91');
+    d.box(parent, 1.6, 0.15, 1.5, -1.8, 1.98, -1.4, '#947b54');
+    d.box(parent, 0.25, 0.7, 0.25, -2.1, 2.25, -1.5, '#806c50');
+  }
   if (level >= 4) d.box(parent, 0.7, 0.7, 0.65, 1.8, 0.4, -1.4, '#b89d70');
   const boat = d.group(parent, reach + 0.2, RIVER.waterHeight - world.y + 0.12, width / 2 + 0.8);
   boat.name = 'Fishing skiff';

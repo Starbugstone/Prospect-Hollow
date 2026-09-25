@@ -1,5 +1,5 @@
 // Supporting buildings finish in three substantial stages. Stage three retains
-// the old level-five service and appearance, so existing towns lose no benefits.
+// the old level-five service capacity, so existing towns lose no benefits.
 const SUPPORTING = new Set([
   'well',
   'well2',

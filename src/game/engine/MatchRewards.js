@@ -23,6 +23,10 @@ export const matchRewardBreakdown = (counts, coinStep) =>
 // Relic collection adds animation steps but does not advance the cascade.
 export const cascadeTier = (step, position) => (step.index ?? position) + 1;
 
+// Shared by live play and campaign score simulations.
+export const clearScore = (step, position) =>
+  (Array.isArray(step?.cleared) ? step.cleared.length : 0) * 100 * cascadeTier(step, position);
+
 // Count actual lines in one clear, not blast footprints or later cascades.
 // Crossing lines (T/L shapes) are two alignments, even with a shared gem.
 export const simultaneousMatchCount = (step) =>

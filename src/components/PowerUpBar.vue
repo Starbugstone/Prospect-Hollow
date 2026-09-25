@@ -1,12 +1,8 @@
 <template>
-  <section class="powerup-section" :aria-label="t('Power-ups')">
-    <div class="powerup-heading">
-      <span class="eyebrow"> {{ t('A LITTLE EXTRA MAGIC') }} </span
-      ><span>{{ t('Limit: {count} each', { count: campaign.bonusLimit }) }}</span>
-    </div>
+  <section v-if="visiblePowers.length" class="powerup-section" :aria-label="t('Power-ups')">
     <div class="powerup-bar">
       <button
-        v-for="item in inventory.quickAccessSlots"
+        v-for="item in visiblePowers"
         :key="item.id"
         :data-power-id="item.id"
         class="powerup-button"
@@ -44,12 +40,13 @@
 import { t } from '../i18n';
 import { computed } from 'vue';
 import { useGameStore } from '../stores/gameStore';
-import { useCampaignStore } from '../stores/campaignStore';
 import { useInventoryStore } from '../stores/inventoryStore';
-const campaign = useCampaignStore();
 const inventory = useInventoryStore();
 const game = useGameStore();
 const activeId = computed(() => game.activeBonusMode?.replaceAll('_', '-'));
+const visiblePowers = computed(() =>
+  inventory.quickAccessSlots.filter((item) => item.quantity > 0 || activeId.value === item.id),
+);
 const descriptions = {
   'clear-row': 'Clear a random row.',
   tnt: 'Shatter a 3 by 3 area around the chosen gem.',

@@ -4,6 +4,7 @@ import { LEVEL_COUNT, CHAPTERS, getLevelGemTypes } from '../../data/campaign.js'
 import { EXPANSION_LEVELS } from '../../data/expansion.js';
 import { getEarlyLevelSpec, stonePositions, iceRank } from '../../data/earlyLevels.js';
 import { layerCount } from './TileRules.js';
+import { getLevelStarTarget } from '../../data/starRating.js';
 
 const createSeededRng = (seed) => {
   let current = seed % 2147483647;
@@ -221,6 +222,7 @@ const createExpansionLevel = (id) => {
     tip: spec.tip,
     oreOrders: (spec.orders ?? []).map(([color, target]) => ({ color, target, progress: 0 })),
     chestTarget,
+    starScoreTarget: getLevelStarTarget(id, chestTarget),
     speedTargetMs: (75 + totalLayers + relicCount * 20) * 1000,
     boardCols: cols,
     boardRows: rows,
@@ -284,7 +286,11 @@ export const generateLevelConfigs = (count = LEVEL_COUNT) => {
       const health = i < spec.reinforcedCount ? 2 : 1;
       tiles[y * cols + x] = { type: 'blocker', health, maxHealth: health };
     });
-    const iceCells = tiles.flatMap((tile, i) => (tile.type === 'standard' ? [i] : []));
+    const iceCells = tiles.flatMap((tile, i) =>
+      tile.type === 'standard' && (!spec.openExitRows || i < cols * (rows - spec.openExitRows))
+        ? [i]
+        : [],
+    );
     // Seed breaks ties within each authored shape, preserving deterministic replays.
     for (let i = iceCells.length - 1; i > 0; i--) {
       const j = Math.floor(rng() * (i + 1));
@@ -313,6 +319,7 @@ export const generateLevelConfigs = (count = LEVEL_COUNT) => {
       pace: (id - 1) % 6 === 4 ? 'rest' : (id - 1) % 6 === 5 ? 'finale' : 'explore',
       tip,
       chestTarget,
+      starScoreTarget: getLevelStarTarget(id, chestTarget),
       speedTargetMs: (90 + totalLayers * 2) * 1000,
       boardCols: cols,
       boardRows: rows,

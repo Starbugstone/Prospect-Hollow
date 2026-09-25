@@ -1,4 +1,9 @@
-import { queueBuildingPresentations, acknowledgePresentation } from '../data/townPresentations';
+import {
+  queueBuildingPresentations,
+  queueCampaignPresentations,
+  acknowledgePresentation,
+} from '../data/townPresentations';
+import { campaignCompletion } from '../data/campaignCompletion';
 import { miningDepthBonus, CHEST_ECONOMY_VERSION } from '../data/economy';
 import { defineStore } from 'pinia';
 import { SHOP_ITEMS, rollShopStock, shopSlots, shopSpace } from '../data/shop';
@@ -10,6 +15,7 @@ import {
   getSpeedChestTier,
   getStars,
 } from '../data/campaign';
+import { TIP_IDS } from '../data/guidance';
 import { grantChapterGift } from '../data/journey';
 import { TOWN_PROJECTS } from '../data/townProjects';
 
@@ -50,6 +56,8 @@ import {
 export { SAVE_KEY };
 
 const defaults = () => ({
+  hasVisitedVillage: false,
+  seenTips: [],
   townProjectFocus: '',
   records: {},
   continuousRecords: {},
@@ -76,6 +84,11 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
   const state = defaults();
   try {
     const saved = loaded.data;
+    state.hasVisitedVillage =
+      !!saved?.town && typeof saved.town === 'object' && !Array.isArray(saved.town);
+    state.seenTips = Array.isArray(saved?.seenTips)
+      ? [...new Set(saved.seenTips.filter((id) => TIP_IDS.includes(id)))]
+      : [];
     state.saveWarning = loaded.warning ?? '';
     state.readOnly = !!loaded.readOnly;
     state.town = normalizeTown(saved?.town);
@@ -139,6 +152,7 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
         }
       }
     }
+    state.town = queueCampaignPresentations(state.town, state.records);
     if (Number.isSafeInteger(saved?.builderHammers) && saved.builderHammers >= 0)
       state.builderHammers = Math.min(HAMMER_CAPACITY, saved.builderHammers);
     let overflow = Math.max(
@@ -214,6 +228,7 @@ const profileData = (state) => ({
   shopStock: state.shopStock,
   shopVisit: state.shopVisit,
   seenObstacles: state.seenObstacles,
+  seenTips: state.seenTips,
   town: state.town,
   townProjectFocus: state.townProjectFocus,
   issuedRun: state.issuedRun,
@@ -246,10 +261,21 @@ export const useCampaignStore = defineStore('campaign', {
       return LEVEL_COUNT;
     },
     completedCount: (state) => Object.keys(state.records).length,
+    completion: (state) => campaignCompletion(state.records),
     totalStars: (state) =>
       Object.values(state.records).reduce((sum, record) => sum + record.stars, 0),
   },
   actions: {
+    visitVillage() {
+      if (this.hasVisitedVillage) return;
+      this.hasVisitedVillage = true;
+      this.save();
+    },
+    markTipSeen(id) {
+      if (!TIP_IDS.includes(id) || this.seenTips.includes(id)) return;
+      this.seenTips.push(id);
+      this.save();
+    },
     focusTownProject(id) {
       if (!TOWN_PROJECTS.some((project) => project.id === id && project.era === this.town.era))
         return false;
@@ -584,6 +610,7 @@ export const useCampaignStore = defineStore('campaign', {
       id,
       score,
       target,
+      starTarget = target,
       combo,
       elapsedMs,
       speedTargetMs,
@@ -606,7 +633,7 @@ export const useCampaignStore = defineStore('campaign', {
       const previousChapter = this.mineStage;
       this.records[id] = {
         score: Math.max(previous?.score ?? 0, score),
-        stars: Math.max(previous?.stars ?? 0, getStars(score, target, combo)),
+        stars: Math.max(previous?.stars ?? 0, getStars(score, starTarget, combo)),
       };
       const validTime = Number.isFinite(elapsedMs) && elapsedMs > 0;
       const bestTimeMs = Math.min(
@@ -676,6 +703,7 @@ export const useCampaignStore = defineStore('campaign', {
         this.town.coins + miningPayout(jewels, bonusGems, comboCounts, multiMatchCounts, id),
       );
       this.settledRun = runId;
+      this.town = queueCampaignPresentations(this.town, this.records);
       // Campaign, chest rewards, and town income move together before any reveal.
       this.save();
       return rewards;

@@ -1,0 +1,627 @@
+/* Shared presentation rules for the village and mine. Gameplay budgets are unchanged. */
+.eyebrow,
+.town-kicker {
+  text-transform: none;
+  letter-spacing: normal;
+}
+.app-shell.is-playing .app-header {
+  display: none;
+}
+.mine-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: min(100%, 1000px);
+  margin: auto;
+  padding: max(8px, env(safe-area-inset-top)) 16px 8px;
+  min-height: 64px;
+  position: relative;
+  z-index: 45;
+  color: #fff1d5;
+}
+.mine-header h1 {
+  margin: 0 auto 0 0;
+  font-size: 19px;
+  font-weight: 600;
+}
+.mine-level-short,
+.mine-goal-remaining {
+  display: none;
+}
+.mine-header .mine-back,
+.mine-menu > summary {
+  min-width: 44px;
+  min-height: 44px;
+}
+.mine-menu > summary {
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  border: 1px solid #807485;
+  border-radius: 9px;
+  background: #25212d;
+}
+.mine-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.mine-menu-scrim {
+  position: fixed;
+  inset: 64px 0 0;
+  border: 0;
+  background: #090712aa;
+  cursor: default;
+}
+.mine-menu-panel {
+  position: absolute;
+  right: 12px;
+  top: 100%;
+  width: min(380px, calc(100vw - 24px));
+  max-height: calc(100dvh - 90px);
+  overflow: auto;
+  padding: 20px;
+  background: #25212d;
+  border: 1px solid #a595ac;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px #0009;
+}
+.mine-menu-panel h2 {
+  margin: 0 0 16px;
+}
+.mine-menu-panel > .mine-visual-goals {
+  margin-bottom: 16px;
+}
+.mine-menu-panel .hud-panel {
+  display: block;
+}
+.mine-menu-panel p {
+  font-size: 14px;
+  line-height: 1.5;
+}
+.mine-stats {
+  display: flex;
+  gap: 40px;
+  margin: 0;
+}
+.mine-stats dd {
+  margin: 4px 0 12px;
+  font-size: 22px;
+}
+.mine-menu-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+.mine-menu-actions button,
+.mine-play-button {
+  min-height: 44px;
+  border: 1px solid #96819e;
+  border-radius: 8px;
+  padding: 8px 14px;
+  color: #fff1d5;
+  background: #403449;
+}
+.mine-menu-actions .mine-play-button {
+  background: #456c50;
+  width: 100%;
+}
+.app-shell.is-playing .game-layout {
+  display: block;
+  max-width: 1100px;
+  padding: 0 12px max(12px, env(safe-area-inset-bottom));
+  margin: 0 auto;
+}
+.app-shell.is-playing .play-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  --feedback-space: 64px;
+  --power-space: 0px;
+}
+.app-shell.is-playing .play-area:has(.powerup-section) {
+  --power-space: 84px;
+}
+.app-shell.is-playing .board-frame {
+  width: min(
+    100%,
+    calc(
+      max(
+          160px,
+          100dvh - var(--mine-header-height, 64px) - 66px - var(--feedback-space) -
+            var(--power-space) - var(--mode-space, 0px) - env(safe-area-inset-bottom)
+        ) *
+        var(--board-ratio) + 16px
+    )
+  );
+  margin: 0 auto;
+  padding: 8px;
+  flex: 0 0 auto;
+}
+.app-shell.is-playing .board-topline {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  height: 44px;
+  width: min(100%, 640px);
+  margin: 0;
+}
+.app-shell.is-playing .board-topline .icon-button {
+  width: 44px;
+  height: 44px;
+}
+/* Transient messages share a reserved slot; neither the board nor its controls reflow. */
+.mine-feedback {
+  position: relative;
+  flex: 0 0 var(--feedback-space);
+  width: min(100%, 640px);
+  height: var(--feedback-space);
+  overflow: hidden;
+}
+.mine-tip-slot {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+}
+.app-shell.is-playing .mine-feedback .arcade-announcer {
+  display: grid;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  pointer-events: none;
+}
+.app-shell.is-playing .mine-feedback .board-caption {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 0;
+  margin: 0;
+  padding: 4px;
+  overflow: auto;
+}
+.mine-feedback .board-caption button {
+  min-height: 44px;
+  padding-inline: 10px;
+}
+.mine-feedback > .fusion-reward {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  max-height: 28px;
+  overflow: auto;
+  font-size: 11px;
+  line-height: 14px;
+  text-align: center;
+}
+.app-shell.is-playing .mine-feedback:has(> .fusion-reward) .arcade-announcer {
+  height: calc(100% - 28px);
+}
+.app-shell.is-playing .powerup-section {
+  width: min(100%, 640px);
+  padding-top: 8px;
+}
+.app-shell.is-playing .powerup-bar {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.app-shell.is-playing .powerup-button {
+  flex: 0 1 110px;
+  min-width: 44px;
+  min-height: 58px;
+  padding: 5px;
+}
+.app-shell.is-playing .powerup-name {
+  display: block;
+  font-size: 10px;
+  white-space: normal;
+}
+.app-shell.is-playing .powerup-art > img {
+  width: 28px;
+  height: 28px;
+}
+/* After the two introductory chapters, give the taller boards priority.
+   Counts keep their accessible names; new mechanics still have their guide. */
+.experienced-miner .mine-header {
+  display: grid;
+  grid-template-columns: 44px auto minmax(0, 1fr) 44px;
+  gap: 4px;
+  min-height: 52px;
+  padding-block: max(4px, env(safe-area-inset-top)) 4px;
+}
+.experienced-miner .mine-header h1 {
+  font-size: 14px;
+}
+.experienced-miner .mine-level-name,
+.experienced-miner .mine-header > .mine-visual-goals .mine-goal-label {
+  display: none;
+}
+.experienced-miner .mine-header > .mine-visual-goals {
+  justify-content: flex-end;
+  gap: 4px;
+}
+.experienced-miner .mine-header > .mine-visual-goals > span {
+  font-size: 11px;
+}
+.experienced-miner .mine-header > .mine-visual-goals img {
+  width: 20px;
+  height: 20px;
+}
+.app-shell.is-playing.experienced-miner .play-area {
+  --feedback-space: 44px;
+}
+.experienced-miner .mine-feedback > .fusion-reward {
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.app-shell.is-playing.experienced-miner .mine-feedback .arcade-announcer {
+  height: 44px;
+}
+.guidance-tip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border: 1px solid #968969;
+  border-radius: 8px;
+  color: #405448;
+  background: #f9efd4;
+}
+.guidance-tip p {
+  flex: 1;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.guidance-tip button {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  border: 0;
+}
+.mine-tip-slot > .guidance-tip {
+  max-width: 640px;
+  width: 100%;
+}
+.town-progress-panel {
+  position: relative;
+  z-index: 5;
+  width: 100%;
+  flex: 0 0 auto;
+  background: #f4efdf;
+  color: #405448;
+}
+.town-fullscreen > .town-progress-panel {
+  max-height: 52%;
+  overflow-y: auto;
+}
+.town-progress-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  border: 0;
+  border-top: 1px solid #b8b79b;
+  background: transparent;
+  color: inherit;
+  font-size: 11px;
+}
+.town-progress-handle[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+.town-progress-panel .village-next {
+  border-top: 0;
+}
+.town-progress-panel .village-needs-strip {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 4px 12px;
+  margin-top: 4px;
+}
+.town-progress-panel .village-era-progress {
+  margin-left: auto;
+}
+.town-progress-panel .guidance-tip {
+  margin-bottom: 5px;
+}
+.town-map-frame .town-fullscreen-button {
+  top: 12px;
+  width: 44px;
+  height: 44px;
+}
+.town-map-frame .town-help-button {
+  left: 64px;
+}
+.town-map-frame .town-settings-button {
+  left: 112px;
+}
+.town-map-frame .town-story-button {
+  left: 160px;
+}
+.town-map-frame .town-map-caption {
+  top: 64px;
+  left: 16px;
+  bottom: auto;
+}
+.town-map-frame details.town-camera-bar {
+  display: block;
+  width: fit-content;
+  right: auto;
+  pointer-events: auto;
+}
+.town-camera-bar > summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  width: fit-content;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid #a99b76;
+  border-radius: 10px;
+  background: #fff8e9;
+  color: #405448;
+  font-size: 12px;
+}
+.town-camera-bar .town-camera-controls {
+  margin-top: 6px;
+}
+.town-scene-labels button.quiet-plot {
+  min-width: 44px;
+  min-height: 44px;
+  width: 44px;
+  padding: 4px;
+  background: #f7f1dcdd;
+  border: 1px solid #a9a88c;
+  box-shadow: none;
+  color: #465b4a;
+}
+.town-scene-labels .quiet-plot .plot-name,
+.town-scene-labels .quiet-plot small,
+.town-scene-labels .quiet-plot > span:last-child:not(.plot-name) {
+  display: none;
+}
+.town-scene-labels button.quiet-plot:hover,
+.town-scene-labels button.quiet-plot:focus-visible {
+  width: auto;
+}
+.town-scene-labels .quiet-plot:hover .plot-name,
+.town-scene-labels .quiet-plot:focus-visible .plot-name {
+  display: inline;
+}
+.town-scene-labels button.suggested-plot {
+  background: #f7dfa1;
+  border: 2px solid #896629;
+  color: #3e4e35;
+}
+.high-contrast .guidance-tip,
+.high-contrast .town-camera-bar > summary,
+.high-contrast .town-progress-panel {
+  color: #16251a;
+  background: #fff9e9;
+  border-color: #243e2b;
+}
+.high-contrast .mine-menu-panel,
+.high-contrast .mine-menu > summary {
+  color: #fff;
+  background: #15121b;
+  border: 2px solid #fff;
+}
+/* Continuous play also keeps its mode summary outside the board's height budget. */
+@media (min-width: 641px) and (min-height: 501px) {
+  .app-shell.is-playing .play-area:has(.continuous-banner) {
+    --mode-space: 110px;
+  }
+}
+@media (max-width: 640px) {
+  /* Keep up to eight goals visible in two rows, including the final chapters.
+     The group label explains that these are the items still left to clear. */
+  .experienced-miner .mine-level-number {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .experienced-miner .mine-header > .mine-visual-goals .mine-goal-progress {
+    display: none;
+  }
+  .experienced-miner .mine-level-short,
+  .experienced-miner .mine-header > .mine-visual-goals .mine-goal-remaining {
+    display: inline;
+  }
+  .mine-header {
+    padding-inline: 8px;
+    gap: 8px;
+    min-height: 60px;
+  }
+  .mine-header h1 {
+    font-size: 14px;
+  }
+  .mine-header .mine-level-name {
+    display: none;
+  }
+  .mine-header > .mine-visual-goals .mine-goal-label {
+    display: none;
+  }
+  .mine-header > .mine-visual-goals {
+    flex: 1;
+    justify-content: center;
+  }
+  .app-shell.is-playing .game-layout {
+    padding-inline: 8px;
+  }
+  .app-shell.is-playing .play-area {
+    --feedback-space: 86px;
+  }
+  .app-shell.is-playing .powerup-button {
+    flex-basis: 56px;
+  }
+  .app-shell.is-playing .powerup-bar {
+    gap: 4px;
+  }
+  .app-shell.is-playing .board-frame {
+    padding: 6px;
+  }
+  .guidance-tip p {
+    font-size: 12px;
+  }
+  .town-progress-panel .village-needs-strip {
+    gap: 0 6px;
+  }
+  .town-progress-panel .village-needs-strip button {
+    font-size: 11px;
+  }
+  .town-progress-panel .journey-promise span {
+    font-size: 11px;
+  }
+  .town-progress-panel .journey-stamps {
+    display: none;
+  }
+}
+@media (max-height: 500px) and (min-width: 480px) {
+  .mine-header {
+    min-height: 48px;
+    padding-block: 2px;
+  }
+  .mine-header h1 {
+    font-size: 14px;
+  }
+  .mine-header > .mine-visual-goals .mine-goal-label {
+    display: none;
+  }
+  .app-shell.is-playing .board-topline {
+    height: 40px;
+  }
+  .app-shell.is-playing .play-area:has(.powerup-section) {
+    --power-space: 60px;
+  }
+  .app-shell.is-playing .powerup-section {
+    padding-top: 4px;
+  }
+  .app-shell.is-playing .powerup-button {
+    min-height: 44px;
+  }
+  .app-shell.is-playing .powerup-name {
+    font-size: 9px;
+  }
+  .town-progress-panel .village-next {
+    display: block;
+  }
+  .town-progress-panel .guidance-tip {
+    display: flex;
+  }
+  .town-progress-panel .village-next-action {
+    min-height: 72px;
+  }
+  .town-progress-panel .village-needs-strip {
+    display: none;
+  }
+}
+/* Keep the village tools clear of the plot list on narrow screens. */
+.town-map-frame > .town-map-wallet {
+  top: 12px;
+}
+.town-map-frame > .town-plots-button {
+  top: 64px;
+}
+.town-map-frame > .town-projects-button {
+  top: 116px;
+}
+@media (max-height: 500px) and (min-width: 480px) and (max-width: 1000px) {
+  .app-shell.is-playing .play-area {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas: 'feedback board tools' 'feedback board powers' 'mode board .';
+    column-gap: 12px;
+    align-items: start;
+  }
+  .app-shell.is-playing .board-frame {
+    grid-area: board;
+    width: calc(
+      max(160px, 100dvh - var(--mine-header-height, 48px) - 36px - env(safe-area-inset-bottom)) *
+        var(--board-ratio) + 16px
+    );
+    margin: 0;
+  }
+  .app-shell.is-playing .mine-feedback {
+    grid-area: feedback;
+    --feedback-space: 144px;
+  }
+  .mine-tip-slot > .guidance-tip {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .mine-tip-slot > .guidance-tip button {
+    margin-left: auto;
+  }
+  .app-shell.is-playing .mine-feedback .arcade-announcer {
+    height: 72px;
+  }
+  .app-shell.is-playing .board-topline {
+    grid-area: tools;
+    justify-content: center;
+    width: 100%;
+  }
+  .app-shell.is-playing .powerup-section {
+    grid-area: powers;
+  }
+  .app-shell.is-playing .mine-feedback .board-caption {
+    font-size: 11px;
+  }
+  .app-shell.is-playing .continuous-banner {
+    grid-area: mode;
+    width: 100%;
+    min-height: 0;
+  }
+  .app-shell.is-playing .continuous-exit {
+    display: none;
+  }
+}
+.town-progress-toolbar {
+  display: flex;
+  align-items: stretch;
+  border-top: 1px solid #b8b79b;
+}
+.town-progress-toolbar .town-progress-handle {
+  flex: 1;
+  width: auto;
+  border: 0;
+  min-height: 44px;
+}
+.town-progress-toolbar .town-plots-button {
+  position: static;
+  margin: 0;
+  border: 0;
+  border-left: 1px solid #c6c3a6;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  font-size: 11px;
+  min-height: 44px;
+}
+@media (max-width: 600px) {
+  .next-step-buttons svg {
+    display: none;
+  }
+}

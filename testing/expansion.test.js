@@ -278,6 +278,7 @@ describe('Relics', () => {
       activeBonusMode: 'tnt',
       objectives: [{ type: 'collect-relics', target: 1, progress: 0 }],
     });
+    useCampaignStore().powers.find((slot) => slot.id === 'tnt').quantity = 1;
     expect(await game.resolveBonusClick(22)).toBe(true);
     expect(game.remainingRelics).toBe(0);
     expect(game.objectives[0].progress).toBe(1);

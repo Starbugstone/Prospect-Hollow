@@ -84,6 +84,7 @@ it.each(['swap', 'targeted power', 'row power', 'shuffle'])(
       );
       await game.resolveSwap(hint.swap.aIndex, hint.swap.bIndex);
     } else if (action === 'targeted power') {
+      useCampaignStore().powers.find((slot) => slot.id === 'tnt').quantity = 1;
       game.setBonusMode('tnt');
       await game.resolveBonusClick(14);
     } else if (action === 'row power') {

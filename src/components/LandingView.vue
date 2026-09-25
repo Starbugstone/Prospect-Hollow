@@ -2,28 +2,14 @@
   <main class="frontier-landing">
     <section class="landing-hero" aria-labelledby="landing-title">
       <div class="landing-copy">
-        <p class="town-kicker"><span>✦</span> {{ t('A MATCH-3 FRONTIER ADVENTURE') }}</p>
-        <h1 id="landing-title">
-          {{ t('A little sparkle.') }}<br /><em>{{ t('A place to call home.') }}</em>
-        </h1>
+        <h1 id="landing-title">Prospect Hollow</h1>
         <p class="landing-intro">
-          {{
-            t(
-              'There are jewels in the hills and a new beginning on the horizon. Play colorful puzzles and bring a quiet frontier village to life, one building at a time.',
-            )
-          }}
+          {{ t('Match gems in the mine and build your village with the coins you earn.') }}
         </p>
         <button class="town-primary landing-enter" @click="$emit('enter')">
-          {{
-            t(
-              campaign.completedCount || Object.keys(campaign.town.projects).length
-                ? 'Return to your village'
-                : 'Enter the village',
-            )
-          }}
+          {{ t('Play') }}
           <TownIcon name="arrow" />
         </button>
-        <p class="landing-promise">{{ t('Play at your pace. Your village can wait.') }}</p>
       </div>
       <div class="landing-vista" aria-hidden="true" inert>
         <svg viewBox="0 0 700 590" fill="none">
@@ -82,33 +68,6 @@
         <img class="landing-crystal" src="/art/amethyst.svg" alt="" />
       </div>
     </section>
-    <section class="landing-steps" :aria-label="t('How your adventure unfolds')">
-      <article v-for="step in steps" :key="step.title">
-        <span class="step-number">{{ step.number }}</span
-        ><TownIcon :name="step.icon" />
-        <h2>{{ t(step.title) }}</h2>
-        <p>{{ t(step.text) }}</p>
-      </article>
-    </section>
-    <section class="landing-invitation">
-      <div>
-        <p class="town-kicker">{{ t('A VILLAGE THAT GROWS WITH YOU') }}</p>
-        <h2>{{ t('Small adventures. Something to come home to.') }}</h2>
-        <p>
-          {{
-            t(
-              'A well, a farm, a few friendly faces. Choose what to build, collect useful rewards, and revisit your favorite discoveries at the museum. No daily chores, just one more puzzle when you feel like it.',
-            )
-          }}
-        </p>
-      </div>
-      <div class="landing-treasures" aria-hidden="true">
-        <img src="/art/rewards/coins.svg" alt="" /><img
-          src="/art/rewards/builder-hammer.svg"
-          alt=""
-        /><img src="/art/powers/color-wand.svg" alt="" />
-      </div>
-    </section>
     <footer class="landing-footer">
       <span>PROSPECT HOLLOW</span
       ><span>{{ t(campaign.saveWarning || 'Your adventure is saved on this device.') }}</span>
@@ -130,25 +89,5 @@ const trees = [
   [604, 479, 1.05],
   [107, 527, 0.65],
   [442, 283, 0.45],
-];
-const steps = [
-  {
-    number: '01',
-    icon: 'mine',
-    title: 'Follow the sparkle',
-    text: 'Enter the village, then click the mine to play your next puzzle. Match three gems, set off combos, and clear the obstacles.',
-  },
-  {
-    number: '02',
-    icon: 'coin',
-    title: 'Bring something home',
-    text: 'Sell your jewels for coins. Score and speed chests can hold puzzle bonuses, coins, or a builder hammer.',
-  },
-  {
-    number: '03',
-    icon: 'home',
-    title: 'Make it your village',
-    text: 'Choose your next building. Spend coins or use a builder hammer to build instantly for free.',
-  },
 ];
 </script>
