@@ -4,7 +4,9 @@ import { cityModel } from './buildings/city';
 import { RIVER, riverCenterX } from './TownRiver';
 import { PLOTS, RAIL_EDGE, railEdges, routeBetween, plotStreet } from './TownLayout';
 import { modernTransport } from './TownEvolution';
-import { addWorkBreak } from './TownWorkRoutine';
+import { setWorkRoutine } from './TownWorkRoutine';
+import { fishingDockLayout } from './buildings/river';
+import { walkPath } from './TownNavigation';
 
 const RAIL_HEIGHT = 0.18;
 export const railHeight = (x) => {
@@ -60,19 +62,28 @@ export function boatJourney(time) {
 export function addEraActivity(d, town) {
   if (town.buildings.fisherman) {
     const [x, z] = PLOTS.fisherman;
+    const origin = d.plotCache?.get('fisherman')?.group.position ?? { x, y: 0.08, z };
+    const dock = fishingDockLayout(origin);
+    const y = origin.y + dock.deckY + 0.01;
+    const station = [origin.x + dock.end - 0.35, y, origin.z];
+    const shore = [origin.x + 4.7, y, origin.z];
     const fisher = d.person({
       color: '#839a82',
       skin: '#cba17a',
       hat: '#bba174',
       seed: 21,
       route: [
-        [x + 2, z + 0.2],
-        [x + 2, z + 0.4],
+        [shore[0], shore[2]],
+        [station[0], station[2]],
       ],
       work: 'fishing',
     });
     fisher.root.name = 'Neighbor fishing';
-    addWorkBreak(d, fisher, 'fisherman', { work: 26, rest: 5, axis: [0, 1] });
+    fisher.activityBuilding = 'fisherman';
+    // Keep the work end on the actual pier, beyond the mooring posts. Generic
+    // frontage walks can relocate a station beside the hut or onto a road.
+    setWorkRoutine(fisher, walkPath([shore, station]), { work: 26, rest: 5, atWork: true });
+    fisher.root.rotation.y = Math.PI / 2;
     d.rod(fisher.arms[1].lower, [0, -0.19, 0], [0, -0.19, 1.5], 0.015, '#987c54').name =
       'Hand-held fishing rod';
   }

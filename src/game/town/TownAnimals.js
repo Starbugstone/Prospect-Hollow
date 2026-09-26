@@ -11,6 +11,7 @@ import { animalModel, animateAnimal } from './TownAnimalModels';
 import { animalNavigation, animalSpace } from './TownAnimalSpace';
 import { setWorkRoutine } from './TownWorkRoutine';
 import { buildingWalk } from './TownPedestrians';
+import { prepareBirdApproaches, createBirdFlight, birdFlightPose } from './TownBirdFlight';
 
 const clamp = (n) => Math.max(0, Math.min(1, n));
 const smooth = (n) => {
@@ -350,22 +351,15 @@ function updateGround(d, animal, time, dt, profile) {
 function startFlight(animal, target, startled = false) {
   animal.grainTarget = null;
   const from = animal.root.position.toArray();
-  const to = target.point;
-  animal.flight = {
+  animal.flight = createBirdFlight(
     from,
-    to,
+    animal.habitat,
     target,
-    elapsed: 0,
-    cruise: Math.max(animal.space.ceiling, from[1] + 3, to[1] + 3),
-    travel: Math.max(
-      2,
-      Math.hypot(to[0] - from[0], to[2] - from[2]) /
-        (animal.speed * (0.8 + random(animal.seed + animal.visit * 17) * 0.4)),
-    ),
-    bend: (random(animal.seed + animal.visit * 31) - 0.5) * 8,
-  };
+    animal.space.ceiling,
+    animal.speed * (0.8 + random(animal.seed + animal.visit * 17) * 0.4),
+    (random(animal.seed + animal.visit * 31) - 0.5) * 8,
+  );
   animal.state = startled ? 'startled' : 'flying';
-  animal.root.rotation.y = Math.atan2(to[0] - from[0], to[2] - from[2]);
 }
 
 function updateBird(d, animal, time, dt, habitats, profile) {
@@ -373,27 +367,13 @@ function updateBird(d, animal, time, dt, habitats, profile) {
   if (animal.flight) {
     const f = animal.flight;
     f.elapsed += dt;
-    // Rise above roofs before crossing a plot, then descend vertically into the
-    // authored open landing spot. This also keeps approaches off power wires.
-    const lift = smooth(f.elapsed / 2);
-    const across = smooth((f.elapsed - 2) / f.travel);
-    const land = smooth((f.elapsed - 2 - f.travel) / 2);
-    const arc = Math.sin(across * Math.PI) * f.bend;
-    const dx = f.to[0] - f.from[0],
-      dz = f.to[2] - f.from[2];
-    const length = Math.hypot(dx, dz) || 1;
-    if (across > 0 && across < 1)
-      root.rotation.y = Math.atan2(
-        dx + (dz / length) * Math.cos(across * Math.PI) * Math.PI * f.bend,
-        dz - (dx / length) * Math.cos(across * Math.PI) * Math.PI * f.bend,
-      );
-    root.position.set(
-      f.from[0] + dx * across + (dz / length) * arc,
-      f.from[1] + (f.cruise - f.from[1]) * lift + (f.to[1] - f.cruise) * land,
-      f.from[2] + dz * across - (dx / length) * arc,
-    );
-    if (f.elapsed >= f.travel + 4) {
+    const pose = birdFlightPose(f, f.elapsed);
+    root.position.set(pose.x, pose.y, pose.z);
+    root.rotation.y = pose.heading;
+    animal.body.rotation.x = pose.pitch;
+    if (f.elapsed >= f.total) {
       root.position.fromArray(f.to);
+      animal.body.rotation.x = 0;
       animal.recent = [animal.habitat, ...(animal.recent ?? [])].slice(0, 2);
       animal.habitat = f.target;
       animal.flight = null;
@@ -605,6 +585,15 @@ function* populateAnimals(d, town, preparedSpace) {
         return point ? [{ ...h, point }] : [];
       });
     });
+    for (const site of sites) {
+      if (!site.approaches)
+        site.approaches = prepareBirdApproaches(
+          d.animalSpace,
+          site.point,
+          TOWN_ANIMALS.pigeon.radius,
+        );
+      yield;
+    }
     const groundSites = sites.filter((h) => h.kind === 'ground');
     const habitat = groundSites[n % groundSites.length];
     if (!habitat) continue;
