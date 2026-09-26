@@ -6,6 +6,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { MeshBasicMaterial, Scene } from 'three';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { TownDiorama } from '../src/game/town/TownDiorama';
+import { updateTownLocomotion } from '../src/game/town/TownLocomotion';
 import { TownActors } from '../src/game/town/TownActors';
 import { TownStatics } from '../src/game/town/TownStatics';
 import { TownUpgradeGlow } from '../src/game/town/TownUpgradeGlow';
@@ -71,6 +72,63 @@ it('swaps a ready plot without resetting other actors and cancels superseded pre
   const rebuild = vi.spyOn(view, 'update').mockImplementation(() => {});
   view.changeTown({ ...updated, buildings: { ...updated.buildings, well: 2 } }, labels, 0, null);
   expect(rebuild).toHaveBeenCalledOnce();
+});
+
+it.each([
+  ['frontier', 'river-rail'],
+  ['frontier', 'motor-age'],
+  ['river-rail', 'motor-age'],
+  ['motor-age', 'frontier'],
+])('recreates ambient life on an era change from %s to %s', (from, to) => {
+  const { view, town, labels } = fixture();
+  town.era = from;
+  Object.assign(town.buildings, { stable: 1, square: 1, saloon: 1 });
+  if (from !== 'frontier') town.buildings.railDepot = 1;
+  view.update(town, labels);
+  updateTownLocomotion(view);
+  const actors = [...view.actors],
+    animals = [...view.animals],
+    arrivals = view.vipArrivals;
+  const traffic = [...view.trafficActors];
+  const roots = [...actors, ...animals, ...arrivals.actors].map((a) => a.root);
+  const grid = view.locomotionGrid;
+  expect(actors.length).toBeGreaterThan(0);
+  expect(animals.length).toBeGreaterThan(0);
+  // Simulate stale motion/route state at an old work site. It must not enter
+  // the replacement population, even when the town object is mutated in place.
+  for (const actor of actors) if (actor.motion) actor.motion.exitTarget = [99, 0.07, 99];
+  arrivals.seen.set('railDepot', 999);
+  if (arrivals.actors.length) arrivals.active = { actor: arrivals.actors[0] };
+  const reset = vi.spyOn(arrivals, 'reset');
+  town.era = to;
+  view.changeTown(town, labels, 0, null);
+  expect(view.lifeEra).toBe(to);
+  expect(reset).toHaveBeenCalledOnce();
+  expect(view.vipArrivals).not.toBe(arrivals);
+  expect(view.vipArrivals.active).toBeNull();
+  expect(view.vipArrivals.seen.get('railDepot')).not.toBe(999);
+  for (const actor of view.actors) {
+    expect(actors).not.toContain(actor);
+    expect(actor.motion).toBeUndefined();
+    expect(actor.routeValidation).toBeUndefined();
+  }
+  for (const animal of view.animals) expect(animals).not.toContain(animal);
+  for (const root of view.trafficActors) expect(traffic).not.toContain(root);
+  const activeRoots = new Set();
+  view.world.traverse((root) => activeRoots.add(root));
+  for (const root of roots) expect(activeRoots.has(root)).toBe(false);
+  updateTownLocomotion(view);
+  expect(view.locomotionGrid).not.toBe(grid);
+  for (const actor of view.actors) expect(actor.motion?.exitTarget).toBeUndefined();
+
+  // Ordinary rebuilds within the new era continue to preserve identity/position.
+  const worker = view.actors.find((a) => a.work === 'farm');
+  const motion = worker.motion,
+    position = worker.root.position.clone();
+  view.update(town, labels);
+  expect(view.actors).toContain(worker);
+  expect(worker.motion).toBe(motion);
+  expect(worker.root.position).toEqual(position);
 });
 
 it('reuses unchanged plots and windmills while rebuilding a changed construction site', () => {

@@ -701,6 +701,25 @@ export class TownDiorama {
   update(town, labels, mineStage = 0, constructionId = null) {
     this.mineStage = mineStage;
     this.invalidatePresentationWork();
+    // Store the rendered era separately: the campaign may mutate the same town
+    // object before this update. Routes and work positions only survive rebuilds
+    // within that era; a new layout gets a fresh ambient population.
+    if (this.lifeEra !== undefined && this.lifeEra !== town.era) {
+      this.vipArrivals?.reset();
+      this.vipArrivals = null;
+      this.actors = [];
+      this.animals = [];
+      this.animalFeeder = null;
+      this.animalMotion = null;
+      this.animalSpace = null;
+      this.animalNavigation = null;
+      this.animalHabitats = [];
+      this.locomotionGrid = null;
+      this.locomotionAgents = [];
+      this.locomotionVehicles = [];
+      this.manualBlockers = [];
+    }
+    this.lifeEra = town.era;
     this.lifeReady = false;
     if (this.pendingPlot) this.clearGroup(this.pendingPlot.group);
     this.pendingPlot = null;

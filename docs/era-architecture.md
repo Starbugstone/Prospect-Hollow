@@ -273,6 +273,11 @@ indoor rests advance normally. Visitors fade at the source after completing the
 trip, and new transport arrivals reset their movement clock. Unreachable paths
 hold their last position. Horse/car speeds are distance-based, independent of
 any route shortening during preparation.
+An era change recreates villagers, animals and visitor-arrival state against the
+new layout, clearing old routes, work positions and crowd reservations. The
+rendered era is recorded separately from the mutable campaign town. Ordinary
+building upgrades and rebuilds within an era retain actor identity and position.
+
 People, ground animals and road traffic yield to other actors for at most three
 blocked attempts, then pass through the crowd until clear. A clear step resets
 that budget. This exception never bypasses scenery clearance or an unreachable
