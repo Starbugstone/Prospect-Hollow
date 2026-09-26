@@ -7,5 +7,5 @@ $db=(new App\Database())->get();
 $db->executeStatement('DELETE FROM limits WHERE until_at<?',[time()]);
 $db->executeStatement('DELETE FROM login_intents WHERE expires_at<?',[time()]);
 $db->executeStatement('DELETE FROM sessions WHERE expires_at<?',[time()]);
-// Retain action receipts so retries can retrieve the original result after reconnecting.
+$db->executeStatement('DELETE FROM towns WHERE deleted_at IS NOT NULL AND deleted_at<?',[time()-30*86400]);
 echo "Expired credentials and rate buckets removed.\n";

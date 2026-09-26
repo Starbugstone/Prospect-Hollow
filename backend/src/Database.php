@@ -21,7 +21,8 @@ final class Database {
         $db->executeStatement('CREATE TABLE IF NOT EXISTS schema_versions (version INTEGER PRIMARY KEY)');
         $mysql=$db->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
         $suffix=$mysql?'':'-postgresql';
-        foreach([1=>'/schema'.$suffix.'.sql',2=>'/migrations/002-community'.$suffix.'.sql',3=>'/migrations/003-era-ranks'.$suffix.'.sql'] as $version=>$file) {
+        if($db->fetchOne('SELECT version FROM schema_versions WHERE version<10')) throw new \RuntimeException('This undeployed prototype schema must be replaced with a fresh database.');
+        foreach([10=>'/schema'.$suffix.'.sql'] as $version=>$file) {
             if($db->fetchOne('SELECT version FROM schema_versions WHERE version=?',[$version]))continue;
             $schema=file_get_contents(dirname(__DIR__).$file);
             $apply=function() use($db,$schema): void {

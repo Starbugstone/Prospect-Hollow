@@ -19,6 +19,7 @@ import { TIP_IDS } from '../data/guidance';
 import { grantChapterGift } from '../data/journey';
 import { TOWN_PROJECTS } from '../data/townProjects';
 
+import { townStorage } from '../services/townStorage';
 import { localProfile, SAVE_KEY } from '../services/localProfile';
 import { createSaveFile, parseSaveFile } from '../services/saveTransfer';
 import {
@@ -54,6 +55,7 @@ import {
   buildWithHammer,
 } from '../game/town/TownRules';
 export { SAVE_KEY };
+export const freshProfile = () => profileData(defaults());
 
 const defaults = () => ({
   hasVisitedVillage: false,
@@ -351,11 +353,21 @@ export const useCampaignStore = defineStore('campaign', {
         throw new Error('This save cannot be exported by this version of the game.');
       return createSaveFile(profileData(this));
     },
+    reloadLocal() {
+      this.$patch((state) => Object.assign(state, load()));
+    },
     importSave(text) {
-      const next = load({ data: parseSaveFile(text) }, false);
+      const parsed = parseSaveFile(text);
+      const next = load({ data: parsed }, false);
       // Commit the normalized profile before replacing any live progress.
-      if (!localProfile.save(profileData(next)))
-        throw new Error('The save could not be stored. Your current progress has not changed.');
+      try {
+        townStorage.import(profileData(next), parsed._backupTown);
+      } catch (error) {
+        throw new Error(
+          `${error.message || 'The save could not be stored.'} Your current progress has not changed.`,
+        );
+      }
+      localProfile.load();
       this.$patch((state) => Object.assign(state, next));
     },
     collectForgeTNT(now = Date.now()) {
@@ -417,8 +429,14 @@ export const useCampaignStore = defineStore('campaign', {
       return true;
     },
     resetProgress() {
+      try {
+        townStorage.reset(profileData(defaults()));
+      } catch {
+        return false;
+      }
+      localProfile.load();
       this.$patch((state) => Object.assign(state, defaults()));
-      return this.save();
+      return true;
     },
     accrueSaloonIncome(now = Date.now(), persist = true) {
       const result = settleSaloonIncome(this.town, now);

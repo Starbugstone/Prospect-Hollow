@@ -70,19 +70,11 @@
     </section>
     <footer class="landing-footer">
       <span>PROSPECT HOLLOW</span
-      ><span>{{
-        t(
-          campaign.saveWarning ||
-            (cloudEnabled
-              ? 'Your village is saved online. Link an email to recover it.'
-              : 'Your adventure is saved on this device.'),
-        )
-      }}</span>
+      ><span>{{ t(campaign.saveWarning || 'Your adventure is saved on this device.') }}</span>
     </footer>
   </main>
 </template>
 <script setup>
-import { cloudEnabled } from '../services/cloudMode';
 import { t } from '../i18n';
 import { useCampaignStore } from '../stores/campaignStore';
 import TownBuilding from './town/TownBuilding.vue';

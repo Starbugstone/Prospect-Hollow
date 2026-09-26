@@ -60,11 +60,7 @@
         :checked="settings.showVillageLabels"
         @change="settings.setVillageLabels($event.target.checked)"
     /></label>
-    <section
-      v-if="allowSaveTransfer && !cloudEnabled"
-      class="save-transfer"
-      :aria-label="t('Save your village')"
-    >
+    <section v-if="allowSaveTransfer" class="save-transfer" :aria-label="t('Save your village')">
       <h3>{{ t('Save your village') }}</h3>
       <p>
         {{ t('Keep a backup of your village, or load it on another device.') }}
@@ -111,7 +107,7 @@
         {{ t('Shift + arrow to swap. Esc to cancel.') }}
       </p>
     </div>
-    <div v-if="!cloudEnabled" class="testing-reset">
+    <div v-if="!townStorage.state()?.active.owner" class="testing-reset">
       <button v-if="!confirmReset" class="text-button" @click="confirmReset = true">
         {{ t('Start a new village') }}
       </button>
@@ -133,7 +129,7 @@
 </template>
 <script setup>
 import { t } from '../i18n';
-import { cloudEnabled } from '../services/cloudMode';
+import { townStorage } from '../services/townStorage';
 import { ref, watch } from 'vue';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useCampaignStore } from '../stores/campaignStore';

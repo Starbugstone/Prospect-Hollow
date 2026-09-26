@@ -307,15 +307,7 @@
       {{ t(campaign.saveWarning || campaign.inventoryNotice) }}
     </p>
     <p class="town-bottom-note">
-      {{
-        t(
-          campaign.saveWarning
-            ? 'Progress kept for this session'
-            : cloudEnabled
-              ? 'Saved online'
-              : 'Saved on this device',
-        )
-      }}
+      {{ t(campaign.saveWarning ? 'Progress kept for this session' : 'Saved on this device') }}
     </p>
     <TownDialog
       v-if="active && dialogMode"
@@ -636,7 +628,6 @@
   </main>
 </template>
 <script setup>
-import { cloudEnabled } from '../../services/cloudMode';
 import { isCityEra } from '../../data/city';
 import TownProjects from './TownProjects.vue';
 import TownPresentationCinematic from './TownPresentationCinematic.vue';
@@ -1021,7 +1012,7 @@ async function selectBuilding(id) {
     beginEra();
     return;
   }
-  if (!cloudEnabled && id === 'square' && canRingTownBell(town.value)) {
+  if (id === 'square' && canRingTownBell(town.value)) {
     ringBell();
     return;
   }

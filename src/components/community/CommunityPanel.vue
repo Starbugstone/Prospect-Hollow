@@ -2,128 +2,58 @@
   <dialog
     ref="dialog"
     class="community-dialog"
-    :aria-label="t('Leaderboard and village visits')"
+    :aria-label="t('Shared towns')"
     @cancel.prevent="$emit('close')"
     @click="dismissBackdrop"
   >
     <header class="community-heading">
-      <div>
-        <p>{{ t('PROSPECT HOLLOW COMMUNITY') }}</p>
-        <h1>{{ t(village ? 'Village visit' : 'Leaderboard') }}</h1>
-      </div>
-      <button ref="closeButton" :aria-label="t('Close leaderboard')" @click="$emit('close')">
+      <h1>{{ t(village ? 'Village visit' : 'Shared towns') }}</h1>
+      <button ref="closeButton" :aria-label="t('Close town visits')" @click="$emit('close')">
         ×
       </button>
     </header>
     <div class="community-content">
+      <p v-if="error" role="alert">{{ error }}</p>
+      <p v-if="loading" role="status">{{ t('Loading villages…') }}</p>
       <template v-if="village">
-        <button class="community-back" @click="village = null">
-          ← {{ t('Back to leaderboard') }}
+        <button
+          @click="
+            village = null;
+            load(page);
+          "
+        >
+          {{ t('Back to shared towns') }}
         </button>
-        <div class="community-visit-heading">
-          <div>
-            <h2>{{ village.name }}</h2>
-            <p>{{ t(ERA_BY_ID[village.era]?.label ?? village.era) }}</p>
-          </div>
-          <span class="community-readonly">{{ t('View only') }}</span>
-        </div>
-        <p>
-          {{
-            t(
-              'Look around and move the camera. Building, collecting and mining are only available in your own village.',
-            )
-          }}
-        </p>
+        <h2>{{ village.name }}</h2>
+        <p>{{ t('View only') }} · {{ t(ERA_BY_ID[village.era]?.label ?? village.era) }}</p>
         <div class="community-world town-map-frame">
           <TownScene
             :key="village.villageId"
             :town="town"
             :read-only="true"
-            :population="village.population"
-            :next-level="village.minesCleared + 1"
-            :mine-stage="Math.floor(village.minesCleared / 6)"
             :reduced-motion="settings.reducedMotion"
           />
         </div>
-        <dl class="community-stats">
-          <div>
-            <dt>{{ t('Building progress') }}</dt>
-            <dd>{{ number(village.buildingProgress) }}</dd>
-          </div>
-          <div>
-            <dt>{{ t('Mines completed') }}</dt>
-            <dd>{{ number(village.minesCleared) }}</dd>
-          </div>
-          <div>
-            <dt>{{ t('Population') }}</dt>
-            <dd>{{ number(village.population) }}</dd>
-          </div>
-        </dl>
       </template>
       <template v-else>
-        <p class="community-intro">
-          {{ t('Explore the villages our players have chosen to share.') }}
-        </p>
-        <p class="community-ranking">
-          {{
-            t('Ranked by era, completed building and modernization stages, then mines completed.')
-          }}
-        </p>
-        <div class="community-own">
-          <span>{{
-            t(cloud.community.listed ? 'Your village is listed.' : 'Your village is private.')
-          }}</span
-          ><button @click="$emit('settings')">{{ t('Manage my public village') }}</button>
-        </div>
-        <p v-if="loading" role="status">{{ t('Loading villages…') }}</p>
-        <p v-else-if="error" role="alert">
-          {{ error }} <button @click="load(page)">{{ t('Try again') }}</button>
-        </p>
-        <p v-else-if="!entries.length" class="community-empty">
-          {{ t('No villages here yet. Be the first to share yours!') }}
-        </p>
-        <ol
-          v-else
-          class="community-list"
-          :start="(page - 1) * 20 + 1"
-          :aria-label="t('Village leaderboard')"
-        >
-          <li
-            v-for="entry in entries"
-            :key="entry.villageId"
-            :class="{ 'is-own': entry.villageId === ownVillageId }"
-          >
-            <span class="community-rank">{{ entry.rank }}</span>
-            <div class="community-entry">
-              <strong
-                >{{ entry.name }}
-                <small v-if="entry.villageId === ownVillageId">{{ t('You') }}</small></strong
-              ><span>{{ t(ERA_BY_ID[entry.era]?.label ?? entry.era) }}</span
-              ><small>{{
-                t('{buildings} building progress · {mines} mines', {
-                  buildings: number(entry.buildingProgress),
-                  mines: number(entry.minesCleared),
-                })
-              }}</small>
-            </div>
-            <button
-              :disabled="visiting"
-              :aria-label="t('Visit {village}', { village: entry.name })"
-              @click="visit(entry.villageId)"
-            >
-              {{ t('Visit village') }} →
+        <p>{{ t('Explore the villages our players have chosen to share.') }}</p>
+        <ul class="community-list">
+          <li v-for="entry in entries" :key="entry.villageId">
+            <strong>{{ entry.name }}</strong
+            ><span>{{ t(ERA_BY_ID[entry.era]?.label ?? entry.era) }}</span
+            ><button :disabled="loading" @click="visit(entry.villageId)">
+              {{ t('Visit village') }}
             </button>
           </li>
-        </ol>
-        <p v-if="visitError" role="alert">{{ visitError }}</p>
-        <p v-if="visiting" role="status">{{ t('Opening village…') }}</p>
-        <nav class="community-pages" :aria-label="t('Leaderboard pages')">
-          <button :disabled="page === 1 || loading || visiting" @click="load(page - 1)">
+        </ul>
+        <p v-if="!entries.length && !loading">
+          {{ t('No villages here yet. Be the first to share yours!') }}
+        </p>
+        <nav class="community-pages">
+          <button :disabled="page === 1 || loading" @click="load(page - 1)">
             {{ t('Previous') }}</button
           ><span>{{ t('Page {page}', { page }) }}</span
-          ><button :disabled="!hasNext || loading || visiting" @click="load(page + 1)">
-            {{ t('Next') }}
-          </button>
+          ><button :disabled="!hasNext || loading" @click="load(page + 1)">{{ t('Next') }}</button>
         </nav>
       </template>
     </div>
@@ -131,26 +61,24 @@
 </template>
 <script setup>
 import { computed, ref, onBeforeUnmount } from 'vue';
-import { cloud, request } from '../../services/cloudProfile';
+import { request } from '../../services/cloudProfile';
 import { villageAppearance } from '../../services/publicVillage';
 import { useNativeDialog } from '../../composables/useNativeDialog';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { ERA_BY_ID } from '../../data/eras';
-import { t, number } from '../../i18n';
+import { t } from '../../i18n';
 import TownScene from '../town/TownScene.vue';
 import '../../styles/town.css';
-const emit = defineEmits(['close', 'settings']);
+const props = defineProps({ visitId: String });
+const emit = defineEmits(['close']);
 const { dialog, closeButton, dismissBackdrop } = useNativeDialog(() => emit('close'));
 const settings = useSettingsStore();
 const entries = ref([]),
   page = ref(1),
   hasNext = ref(false),
-  ownVillageId = ref(null),
   loading = ref(false),
   error = ref(''),
-  village = ref(null),
-  visiting = ref(false),
-  visitError = ref('');
+  village = ref(null);
 const town = computed(() => (village.value ? villageAppearance(village.value) : null));
 let generation = 0;
 onBeforeUnmount(() => {
@@ -160,14 +88,13 @@ async function load(next) {
   const current = ++generation;
   loading.value = true;
   error.value = '';
-  visitError.value = '';
   try {
-    const result = await request(`leaderboard?page=${next}`);
-    if (current !== generation) return;
-    entries.value = result.entries;
-    page.value = result.page;
-    hasNext.value = result.hasNext;
-    ownVillageId.value = result.ownVillageId;
+    const result = await request(`villages?page=${next}`);
+    if (current === generation) {
+      entries.value = result.entries;
+      page.value = result.page;
+      hasNext.value = result.hasNext;
+    }
   } catch (e) {
     if (current === generation) error.value = e.message;
   } finally {
@@ -176,18 +103,19 @@ async function load(next) {
 }
 async function visit(id) {
   const current = ++generation;
-  visiting.value = true;
-  visitError.value = '';
+  loading.value = true;
+  error.value = '';
   try {
     const result = await request(`villages/${id}`);
     if (current === generation) village.value = result;
   } catch (e) {
-    if (current === generation) visitError.value = e.message;
+    if (current === generation) error.value = e.message;
   } finally {
-    if (current === generation) visiting.value = false;
+    if (current === generation) loading.value = false;
   }
 }
-load(1);
+if (props.visitId) visit(props.visitId);
+else load(1);
 </script>
 <style>
 .community-dialog {

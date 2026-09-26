@@ -11,7 +11,8 @@
     "symfony/mailer": "7.4.*",
     "symfony/dotenv": "7.4.*",
     "symfony/yaml": "7.4.*",
-    "doctrine/dbal": "^4.3"
+    "doctrine/dbal": "^4.3",
+    "ext-intl": "*"
   },
   "autoload": {
     "psr-4": {

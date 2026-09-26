@@ -9,6 +9,7 @@ services:
       APP_ORIGIN: ${APP_ORIGIN:-http://localhost:8094}
       DATABASE_URL: postgresql://cascade:${DB_PASSWORD}@db:5432/cascade
       MAILER_DSN: smtp://mail:1025
+      NATIVE_ORIGINS: ${NATIVE_ORIGINS:-}
       MAIL_FROM: village@localhost.test
     depends_on:
       db: { condition: service_healthy }
@@ -20,7 +21,7 @@ services:
       POSTGRES_USER: cascade
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - village-data:/var/lib/postgresql/data
+      - account-save-data:/var/lib/postgresql/data
     healthcheck:
       test: [CMD-SHELL, 'pg_isready -U cascade -d cascade']
       interval: 5s
@@ -32,4 +33,4 @@ services:
     ports:
       - '127.0.0.1:8095:8025'
 volumes:
-  village-data:
+  account-save-data:

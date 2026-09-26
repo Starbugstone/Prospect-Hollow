@@ -1,4 +1,5 @@
 import { SAVE_KEY } from './localProfile';
+import { townStorage } from './townStorage';
 import { LEVEL_COUNT } from '../data/campaign';
 import { chestReward } from '../data/rewards';
 
@@ -14,7 +15,15 @@ const nonnegativeInteger = (value) => Number.isSafeInteger(value) && value >= 0;
  */
 export function createSaveFile(profile) {
   return JSON.stringify(
-    { format: SAVE_KEY, version: 1, exportedAt: new Date().toISOString(), profile },
+    {
+      format: SAVE_KEY,
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      town: townStorage.state()?.active
+        ? { id: townStorage.state().active.id, name: townStorage.state().active.name }
+        : undefined,
+      profile,
+    },
     null,
     2,
   );
@@ -91,5 +100,15 @@ export function parseSaveFile(text) {
     !Array.isArray(profile.seenObstacles)
   )
     throw invalidSave();
+  if (file.town !== undefined) {
+    if (
+      !isObject(file.town) ||
+      !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(file.town.id) ||
+      typeof file.town.name !== 'string' ||
+      file.town.name.length > 100
+    )
+      throw invalidSave();
+    Object.defineProperty(profile, '_backupTown', { value: file.town });
+  }
   return profile;
 }
