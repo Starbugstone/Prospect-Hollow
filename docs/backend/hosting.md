@@ -41,8 +41,8 @@ Run `php bin/cleanup.php` daily to remove expired sessions, links, rate buckets 
 
 Use `./scripts/backup-database.sh` for local PostgreSQL dumps. Protect backups as account data; restore into a separate database and verify account recovery and revisions before switching traffic. Hosting backup schedules, SMTP delivery and disaster recovery remain operator responsibilities. The previous benchmark measured the removed authoritative prototype and is historical evidence only.
 
-Quality CI tests both databases and the packaged application. It does not deploy. Azure deployment was removed and Vercel Git deployments are disabled.
+Quality CI tests both databases, the packaged application and the hosting hooks. The o2switch poller deploys the exact `preprod` commit only after successful push CI; GitHub uploads no deployment artifact. Azure deployment was removed and Vercel Git deployments are disabled.
 
 ## Preproduction branch
 
-Backend changes are reviewed in PR #38 targeting `preprod`, which starts from `main`. Quality checks run for pull requests into `preprod` and for pushes after merge. `preprod` is the designated automatic deployment branch. Connecting it to the PHP/database hosting service still requires the chosen deployment integration; the repository currently has no active deployment workflow.
+PR #38 targets `preprod`. The repository is prepared for the verified o2switch polling deployment at `https://preprod.prospecthollow.starbugstone.com`. Host resources and polling have not been configured or activated. Follow the [preprod setup guide](preprod.md). The future production domain is `https://prospecthollow.starbugstone.com`.

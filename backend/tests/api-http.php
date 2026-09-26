@@ -11,4 +11,6 @@ function testHttp(string $method,string $path,int $expected,string $body='',arra
  if((int)$m[1]!==$expected)throw new RuntimeException($path.' returned '.$m[1]);
 }
 testHttp('GET','health',200);testHttp('GET','account',401);testHttp('POST','guests',404,'{}');testHttp('POST','actions',404,'{}');testHttp('POST','auth/login-link',422,'{}');testHttp('GET','towns/00000000-0000-4000-8000-000000000000',401);testHttp('POST','auth/confirm',401,'{"token":"'.str_repeat('a',64).'"}');testHttp('POST','towns',413,str_repeat(' ',1100001));
+$probe=file_get_contents($origin.'/api/health?check=packaged');
+if(json_decode($probe,true)!==['status'=>'ok'])throw new RuntimeException('Release readiness routing failed.');
 echo "Packaged HTTP routing, authentication and body limits passed.\n";

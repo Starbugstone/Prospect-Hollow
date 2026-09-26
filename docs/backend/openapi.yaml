@@ -10,6 +10,48 @@
   'security': [{ 'sessionCookie': [] }, { 'nativeBearer': [] }],
   'paths':
     {
+      '/api/health':
+        {
+          'servers': [{ 'url': '/' }],
+          'get':
+            {
+              'summary': 'o2switch deployment readiness and executing release identity',
+              'security': [],
+              'parameters': [{ 'name': 'check', 'in': 'query', 'schema': { 'type': 'string' } }],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'Schema/database ready; the installed release supplies X-Release-Id.',
+                      'headers':
+                        {
+                          'X-Release-Id':
+                            {
+                              'schema':
+                                {
+                                  'type': 'string',
+                                  'pattern': '^[a-f0-9]{40}-[0-9]{14}-[a-f0-9]{8}$',
+                                },
+                            },
+                        },
+                      'content':
+                        {
+                          'application/json':
+                            {
+                              'schema':
+                                {
+                                  'type': 'object',
+                                  'properties': { 'status': { 'const': 'ok' } },
+                                  'required': ['status'],
+                                },
+                            },
+                        },
+                    },
+                  '503':
+                    { 'description': 'Database or required schema unavailable; generic response.' },
+                },
+            },
+        },
       '/health':
         {
           'get':

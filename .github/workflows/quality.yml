@@ -75,6 +75,17 @@ jobs:
           php backend/bin/migrate.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/saves.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/concurrency.php
+          TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/release-health.php
+      - name: Build and prepare the hosting release
+        if: matrix.database == 'postgres'
+        env:
+          TEST_DATABASE_URL: postgresql://cascade:local-ci-only@127.0.0.1:5432/cascade_test
+        run: bash tests/o2switch/build-prospect-test.sh
+      - name: Verified deployment controller
+        run: |
+          php tests/o2switch/deploy-test.php
+          php tests/o2switch/health-test.php
+          bash tests/o2switch/install-preprod-test.sh
       - run: composer audit --working-dir=backend
   container:
     runs-on: ubuntu-latest

@@ -19,3 +19,6 @@ release/
 src/assets/city-meshes.json
 
 src/assets/future-meshes.json
+
+# Verified upstream controller snapshots; preserve byte-for-byte provenance.
+scripts/o2switch/config.example.json

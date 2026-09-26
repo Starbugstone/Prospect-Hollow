@@ -32,3 +32,5 @@ test-results/
 !/backend/.env.example
 # Python caches from Blender asset tooling
 __pycache__/
+
+!/scripts/o2switch/*.env.example

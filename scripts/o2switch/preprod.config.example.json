@@ -1,0 +1,23 @@
+{
+  "root": "/home/CPANEL_USER/apps/prospect-hollow-preprod",
+  "repository_path": "/home/CPANEL_USER/repositories/prospect-hollow",
+  "ssh_key": "",
+  "github_repository": "Starbugstone/Prospect-Hollow",
+  "branch": "preprod",
+  "workflow": "quality.yml",
+  "token_file": "/home/CPANEL_USER/apps/prospect-hollow-preprod/shared/github-token",
+  "php_bin": "/ABSOLUTE/PATH/TO/php",
+  "composer_bin": "/ABSOLUTE/PATH/TO/composer",
+  "node_bin_dir": "/ABSOLUTE/PATH/TO/NODE/bin",
+  "url": "https://preprod.prospecthollow.starbugstone.com",
+  "keep_releases": 3,
+  "report_github": false,
+  "profile": "custom",
+  "backend_dir": "backend",
+  "frontend_dir": ".",
+  "frontend_output": "dist",
+  "health_mode": "symfony",
+  "health_stale_timeout_seconds": 150,
+  "custom_build_script": "/home/CPANEL_USER/apps/prospect-hollow-preprod/control/build-prospect.sh",
+  "custom_prepare_script": "/home/CPANEL_USER/apps/prospect-hollow-preprod/control/prepare-prospect.sh"
+}
