@@ -59,6 +59,84 @@ it('loads just the active finish and recovers atlas errors with SVG assets', () 
   listeners.get('loaderror')({ key: 'board-bonus' });
   expect(svg).toHaveBeenCalledTimes(count);
 });
+function tileRenderer(mode) {
+  const core = frames['board-core'].frames;
+  const textures = {
+    exists: (key) => (mode === 'atlas' ? key === 'board-core' : !!core[key]),
+    get: (key) => ({ has: (frame) => key === 'board-core' && !!core[frame] }),
+  };
+  const object = () => ({
+    scaleX: 1,
+    scaleY: 1,
+    add: vi.fn(),
+    setDisplaySize() {
+      return this;
+    },
+    setAlpha() {
+      return this;
+    },
+    setOrigin() {
+      return this;
+    },
+  });
+  const image = vi.fn((x, y, key, frame) => {
+    // Model Phaser's real lookup: old standalone keys are absent in atlas mode.
+    if (!textures.exists(key) || (frame && !textures.get(key).has(frame)))
+      throw new Error(`Missing texture: ${key}/${frame}`);
+    return object();
+  });
+  const animator = new BoardAnimator({
+    scene: { textures, add: { image, container: object, text: object } },
+    tileLayer: { add: vi.fn() },
+  });
+  animator.boardSize = animator.boardRows = 6;
+  animator.cellSize = 48;
+  return { animator, image };
+}
+it.each([
+  ['atlas', 'ice'],
+  ['atlas', 'blocker'],
+  ['svg', 'ice'],
+  ['svg', 'blocker'],
+])(
+  'renders the %s %s breaking effect without a missing-texture placeholder',
+  async (mode, type) => {
+    const { animator, image } = tileRenderer(mode);
+    animator.tiles = [{ type, health: 1 }];
+    animator.clearGems = vi.fn().mockResolvedValue();
+    animator.drawCells = vi.fn();
+    animator.effect = vi.fn();
+    await animator.playSteps([
+      {
+        cleared: [],
+        drops: [],
+        spawns: [],
+        tileUpdates: [{ index: 0, health: 0 }],
+      },
+    ]);
+    const id = type === 'blocker' ? 'block-cracked' : 'ice-cracked';
+    expect(image).toHaveBeenCalledWith(
+      24,
+      24,
+      mode === 'atlas' ? 'board-core' : id,
+      mode === 'atlas' ? id : undefined,
+    );
+    expect(animator.effect).toHaveBeenCalledOnce();
+  },
+);
+it.each(['atlas', 'svg'])('renders lantern and survey markers from %s textures', (mode) => {
+  const { animator, image } = tileRenderer(mode);
+  animator.tiles = [
+    { signal: 'lantern', signalHealth: 1 },
+    { signal: 'survey', signalHealth: 0, surveyOrder: 2 },
+  ];
+  animator.tiles.forEach((_, index) => animator.drawTileOverlay(index));
+  expect(image.mock.calls.map((args) => args.slice(2))).toEqual(
+    ['tile-lantern', 'tile-survey'].map((id) =>
+      mode === 'atlas' ? ['board-core', id] : [id, undefined],
+    ),
+  );
+});
 function attach() {
   game.attachRenderer({ scene: {}, boardContainer: {} });
 }

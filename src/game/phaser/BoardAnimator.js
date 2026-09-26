@@ -309,8 +309,12 @@ export class BoardAnimator {
             const p = this.position(update.index);
             this.particles?.emitIce?.(p, update.health === 0 ? 8 : 4);
             if (update.health === 0 && !this.reducedMotion) {
+              const ref = spriteRef(
+                tile.type === 'blocker' ? 'block-cracked' : 'ice-cracked',
+                this.scene.textures,
+              );
               const chip = this.scene.add
-                .image(p.x, p.y, tile.type === 'blocker' ? 'block-cracked' : 'ice-cracked')
+                .image(p.x, p.y, ref.key, ref.frame)
                 .setDisplaySize(this.cellSize - 3, this.cellSize - 3);
               this.effect(chip, {
                 scaleX: chip.scaleX * 1.18,
@@ -568,8 +572,9 @@ export class BoardAnimator {
     if (chained) addImage('chain');
     if (tile.signal) {
       const lit = tile.signalHealth === 0;
+      const ref = spriteRef(`tile-${tile.signal}`, this.scene.textures);
       const marker = this.scene.add
-        .image(-size * 0.3, size * 0.29, `tile-${tile.signal}`)
+        .image(-size * 0.3, size * 0.29, ref.key, ref.frame)
         .setDisplaySize(size * 0.43, size * 0.43)
         .setAlpha(lit ? 0.5 : 1);
       overlay.add(marker);
