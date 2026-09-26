@@ -1,10 +1,17 @@
 import { RIVER, riverCenterX } from '../TownRiver';
 
-export function addFishingDock(d, parent, level, wharf = false) {
-  const world = parent.position;
+export function fishingDockLayout(world, wharf = false) {
   const reach = riverCenterX(world.z) - RIVER.halfWidth + 0.3 - world.x;
   const width = wharf ? 2.3 : 1;
-  for (let n = 0; n < Math.ceil(reach * 4); n++)
+  const planks = Math.ceil(reach * 4);
+  const deckY = 0.1 + 0.13 / 2;
+  return { reach, width, planks, deckY, end: 1 + (planks - 1) * 0.25 + 0.11 };
+}
+
+export function addFishingDock(d, parent, level, wharf = false) {
+  const world = parent.position;
+  const { reach, width, planks } = fishingDockLayout(world, wharf);
+  for (let n = 0; n < planks; n++)
     d.box(parent, 0.22, 0.13, width, 1 + n * 0.25, 0.1, 0, '#a58a62');
   for (const x of [1.5, reach])
     for (const z of [-width / 2, width / 2])

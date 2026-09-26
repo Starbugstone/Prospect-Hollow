@@ -56,7 +56,7 @@ export function renderBuilding({
     renderCityBuilding(d, parent, kind, label, level, city.introducedEra, level)
   )
     return;
-  if (kind === 'bridge') return renderBridge(d, parent, level);
+  if (kind === 'bridge') return renderBridge(d, parent, level, d.town?.buildingEras?.bridge ?? era);
   if (!construction && level > 0 && renderLeisureBuilding(d, parent, kind, label, level)) return;
   if (!construction && level > 0 && renderMotorBuilding(d, parent, kind, label, level)) return;
   if (!construction && level > 0 && renderIndustrialBuilding(d, parent, kind, label, level)) return;

@@ -18,7 +18,7 @@ it('keeps villagers and raid time moving while the camera owns the next draw', (
       drawFrame: TownDiorama.prototype.drawFrame,
     };
   TownDiorama.prototype.tick.call(scene, 1017);
-  expect(scene.elapsed).toBeCloseTo(0.017);
+  expect(scene.elapsed).toBeCloseTo(1 / 60);
   expect(scene.animatePerson).toHaveBeenCalledWith(actor, scene.elapsed);
   expect(scene.motions[0]).toHaveBeenCalledWith(scene.elapsed);
   expect(scene.frameCache.render).not.toHaveBeenCalled();

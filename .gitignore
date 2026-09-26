@@ -24,3 +24,6 @@ test-results/
 
 # Python caches from Blender asset tooling
 __pycache__/
+
+# Reproducible bounded mesh chunks; authoring exports live in src/assets.
+src/assets/meshes/

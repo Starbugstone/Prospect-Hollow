@@ -1,3 +1,4 @@
+import { beginItinerary } from './TownItineraries';
 import { prepareActorWalk } from './TownNavigation';
 import { PerspectiveCamera, Vector3, Vector4 } from 'three';
 import { vipVisitor } from '../../data/villagers';
@@ -14,6 +15,7 @@ export class TownVipArrivals {
     this.seed = seed;
     this.seen = new Map();
     this.actors = [];
+    this.active = null;
     this.insetCamera = new PerspectiveCamera(40, 1.5, 0.1, 400);
     this.insetCamera.layers.enable(2);
     this.viewport = new Vector4();
@@ -21,11 +23,18 @@ export class TownVipArrivals {
     this.focus = new Vector3();
   }
   attach(town) {
-    this.active = null;
     this.actors = [];
     if (visitorPopulation(town) <= 0) return;
     for (const id of VISITOR_TRANSPORTS) {
       if (!town.buildings[id]) continue;
+      const retained = this.d.retainedVipActors?.get(id);
+      if (retained) {
+        this.d.retainedVipActors.delete(id);
+        this.d.world.add(retained.root);
+        prepareActorWalk(this.d, retained);
+        this.actors.push(retained);
+        continue;
+      }
       const [x, z] = PLOTS[id];
       const site = VISITOR_ARRIVAL_SITES[id];
       const { destination, height } = site;
@@ -48,16 +57,21 @@ export class TownVipArrivals {
       actor.transportVisitor = true;
       prepareActorWalk(this.d, actor);
       actor.source = id;
+      actor.itinerarySeed = this.seed + VISITOR_TRANSPORTS.indexOf(id) * 101;
       actor.root.name = 'Arriving VIP visitor';
       actor.root.visible = false;
       this.actors.push(actor);
     }
+    for (const actor of this.d.retainedVipActors?.values() ?? []) this.d.clearGroup(actor.root);
+    this.d.retainedVipActors?.clear();
+    if (this.active && !this.actors.includes(this.active.actor)) this.active = null;
   }
   reset(allowExisting = false) {
     this.active = null;
     this.seed = (this.seed + 104729) >>> 0;
     for (const actor of this.actors) {
       actor.started = undefined;
+      actor.motion = undefined;
       actor.root.visible = false;
       actor.root.userData.villager.name = null;
     }
@@ -80,6 +94,10 @@ export class TownVipArrivals {
     const actor = this.actors[this.seed % this.actors.length];
     this.d.setVillagerIdentity(actor, guest, this.seed);
     actor.started = this.d.elapsed - actor.duration * 0.3;
+    if (actor.itinerary) {
+      beginItinerary(this.d, actor);
+      actor.started = this.d.elapsed;
+    }
     actor.distance = 0;
     actor.lastPosition = null;
     actor.root.scale.setScalar(1);
@@ -119,20 +137,23 @@ export class TownVipArrivals {
         ) {
           d.setVillagerIdentity(actor, guest, this.seed + transport.visit * 997);
           actor.started = d.elapsed;
+          actor.motion = undefined;
           actor.distance = 0;
           actor.lastPosition = null;
+          beginItinerary(d, actor);
           this.active = { actor, vehicle: transport.root, started: d.elapsed };
         }
       }
       if (actor.started === undefined || d.paused) continue;
-      const age = d.elapsed - actor.started;
-      if (age >= actor.duration || this.blocked()) {
+      const age = actor.motion?.animationTime ?? d.elapsed - actor.started;
+      if ((!actor.itinerary && age >= actor.duration) || this.blocked()) {
         actor.root.visible = false;
         actor.started = undefined;
         if (this.active?.actor === actor) this.active = null;
         continue;
       }
-      d.animatePerson(actor, age);
+      d.animatePerson(actor, actor.itinerary ? d.elapsed : age);
+      if (actor.itinerary) continue;
       actor.root.scale.setScalar(
         Math.max(0, Math.min(1, age / 0.65, (actor.duration - age) / 0.65)),
       );

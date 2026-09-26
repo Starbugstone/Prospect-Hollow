@@ -1,8 +1,9 @@
+import { MAIN_LANE_X, POWER_HOUSE_POSITION, PLOT_STREET_OFFSET } from '../../data/townClearances';
 import { MINE_POSITION } from '../../data/mineSite';
 import { WATERMILL_SITE } from '../../data/watermill';
 import { BUILDING_BY_ID } from '../../data/town';
 import { plotUnlocked } from './TownRules';
-import { riverCenterX, riverPath } from './TownRiver';
+import { BRIDGE, riverPath } from './TownRiver';
 // Stable positions are shared by WebGL, the SVG map and route connections.
 export const PLOTS = {
   airport: [-48, 4],
@@ -33,7 +34,7 @@ export const PLOTS = {
   blacksmith: [-15, 12],
   school: [-15, -12],
   doctor: [15, 12],
-  bridge: [riverCenterX(7.5), 7.5],
+  bridge: [BRIDGE.centerX, BRIDGE.z],
   riverPort: [21, -4],
   railDepot: [-15, -20],
   post: [15, -12],
@@ -41,7 +42,7 @@ export const PLOTS = {
   hotel: [42, 4],
   home5: [42, 12],
   market: [42, 20],
-  powerHouse: [15, -20],
+  powerHouse: POWER_HOUSE_POSITION,
   fireStation: [-15, 20],
   rowHouses: [50, 12],
   mill: [50, -4],
@@ -89,11 +90,13 @@ const PLOT_METADATA = Object.fromEntries(
 );
 export const visiblePlots = (town) =>
   Object.values(PLOT_METADATA).filter(({ id }) => id === 'mine' || plotUnlocked(town, id));
-export const LANE_X = 3.5;
+export const LANE_X = MAIN_LANE_X;
 export const atPlot = (id, dx = 0, dz = 0) => [PLOTS[id][0] + dx, PLOTS[id][1] + dz];
 export const plotStreet = (id) => {
   const [x, z] = PLOTS[id];
-  return x === 0 && id !== 'mine' ? [LANE_X, z + 2] : [x, z + (id === 'mine' ? 4.5 : 3.5)];
+  return x === 0 && id !== 'mine'
+    ? [LANE_X, z + 2]
+    : [x, z + (id === 'mine' ? 4.5 : PLOT_STREET_OFFSET)];
 };
 // The sheriff patrols both main streets, passing the bank, mine and department.
 export const SHERIFF_PATROL = [
@@ -124,8 +127,13 @@ export const TOWN_TRACKS = [
   road([11, -8.5], [15, -8.5], 0.85, 'post'),
   road([19, -0.5], [23, -0.5], 0.85, 'riverPort'),
   road([11, -8.5], [21.5, -8.5], 0.85, 'watermill'),
-  road([19, 7.5], [24, 7.5], 0.85, 'bridge'),
-  road([15, -16.5], [LANE_X, -16.5], 0.85, 'powerHouse'),
+  road([19, BRIDGE.z], [BRIDGE.westJunction, BRIDGE.z], 0.85, 'bridge'),
+  road(
+    [POWER_HOUSE_POSITION[0], POWER_HOUSE_POSITION[1] + PLOT_STREET_OFFSET],
+    [LANE_X, POWER_HOUSE_POSITION[1] + PLOT_STREET_OFFSET],
+    0.85,
+    'powerHouse',
+  ),
   road([-15, 23.5], [-LANE_X, 23.5], 0.85, 'fireStation'),
   road([-23, 15.5], [-19, 15.5], 0.85, 'garage'),
   road([-23, 7.5], [-19, 7.5], 0.85, 'busDepot'),
@@ -143,7 +151,7 @@ export const TOWN_TRACKS = [
     .map((id) => road(atPlot(id, 0, id === 'mine' ? 2.6 : 2), plotStreet(id), 0.75, id)),
 ];
 const CROSSING = {
-  ...road([24, 7.5], [38, 7.5], 1.6),
+  ...road([BRIDGE.westJunction, BRIDGE.z], [BRIDGE.eastJunction, BRIDGE.z], 1.6),
   id: 'bridge-crossing',
   crossing: 'bridge',
   plot: 'bridge',
@@ -184,7 +192,20 @@ const INDUSTRIAL_TRACKS = [
 ]);
 export const townTracks = (town) => [
   ...TOWN_TRACKS.filter(({ plot }) => !plot || plot === 'mine' || plotUnlocked(town, plot)),
-  ...(town.era !== 'frontier' && town.buildings.bridge ? [CROSSING, ...EAST_TRACKS] : []),
+  ...(town.era !== 'frontier' && town.buildings.bridge
+    ? [
+        CROSSING,
+        {
+          ...road(
+            [BRIDGE.centerX + BRIDGE.halfLength, BRIDGE.z],
+            [BRIDGE.eastJunction, BRIDGE.z],
+            0.85,
+          ),
+          approach: 'bridge',
+        },
+        ...EAST_TRACKS,
+      ]
+    : []),
   ...(plotUnlocked(town, 'transitHub') ? [road([38, -8.5], [38, -0.5], 1.05)] : []),
   ...(plotUnlocked(town, 'riverPark') || plotUnlocked(town, 'skyline')
     ? [road([38, 23.5], [38, 31.5], 1.05)]

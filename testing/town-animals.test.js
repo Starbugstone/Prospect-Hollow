@@ -1,13 +1,14 @@
 import { afterEach, expect, it } from 'vitest';
 import { Group, MeshBasicMaterial, Scene, Vector3 } from 'three';
 import { TownActors } from '../src/game/town/TownActors';
+import { updateTownLocomotion } from '../src/game/town/TownLocomotion';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { addTownAnimals, animalHabitats } from '../src/game/town/TownAnimals';
 import { addPowerGrid, addEraStreetscape } from '../src/game/town/TownEvolution';
 import { townNavigation, walkPose } from '../src/game/town/TownNavigation';
 import { buildTownSquare } from '../src/game/town/TownSquare';
-import { resolveTownTraffic } from '../src/game/town/TownTraffic';
+import { placeTownSpawns } from '../src/game/town/TownTraffic';
 import { createTown } from '../src/data/town';
 import { ERAS, ERA_BY_ID, eraEvolution } from '../src/data/eras';
 import { defineEra } from '../src/data/eraDefinitions';
@@ -50,6 +51,7 @@ function advance(d, end, step = 0.1) {
     d.elapsed = time;
     d.actors.forEach((actor) => d.animatePerson(actor, time));
     d.motions.forEach((motion) => motion(time));
+    updateTownLocomotion(d, step);
   }
 }
 afterEach(() => {
@@ -192,7 +194,8 @@ it('roams beyond the old tiny orbits, idles, flies and lands without growing or 
 it('coordinates visible feeding and pauses every animal on the village clock', () => {
   const d = fixture();
   addTownAnimals(d, d.town);
-  advance(d, 6);
+  for (let n = 0; n < 200 && !d.animalFeeder.active; n++) advance(d, d.elapsed + 0.1);
+  advance(d, d.elapsed + 1);
   expect(d.animalFeeder.active).toBe(true);
   expect(d.animalFeeder.grain.visible).toBe(true);
   expect(d.animals.some((a) => a.state === 'feeding')).toBe(true);
@@ -206,10 +209,94 @@ it('coordinates visible feeding and pauses every animal on the village clock', (
   const frozen = poses();
   for (let n = 0; n < 20; n++) d.motions.forEach((motion) => motion(d.elapsed));
   expect(poses()).toEqual(frozen);
-  advance(d, 32);
+  for (let n = 0; n < 350 && d.animalFeeder.active; n++) advance(d, d.elapsed + 0.1);
   expect(d.animalFeeder.active).toBe(false);
   expect(d.animalFeeder.grain.visible).toBe(false);
 });
+
+it.each(['frontier', 'industrial', 'motor-age', 'unknown-animal-era'])(
+  'walks the feeder to the birds and back through the actual movement loop in %s',
+  (era) => {
+    const d = fixture(era);
+    addTownAnimals(d, d.town);
+    const food = d.animalFeeder;
+    expect(d.actors).toContain(food);
+    let active = false,
+      returned = false,
+      travel = 0;
+    for (let frame = 1; frame <= 900; frame++) {
+      const before = food.root.position.clone();
+      advance(d, frame / 10);
+      const step = food.root.position.distanceTo(before);
+      expect(step).toBeLessThanOrEqual(0.055 + 1e-6);
+      travel += step;
+      if (food.active) {
+        active = true;
+        expect(food.root.position.distanceTo(new Vector3(...food.path.points.at(-1)))).toBeLessThan(
+          1e-5,
+        );
+      }
+      if (active && food.workRoutine.phase === 'rest') {
+        returned = true;
+        expect(food.root.position.distanceTo(new Vector3(...food.walkPath.points[0]))).toBeLessThan(
+          1e-5,
+        );
+      }
+    }
+    expect(active).toBe(true);
+    expect(returned).toBe(true);
+    expect(travel).toBeGreaterThan(4);
+  },
+);
+
+it.each([...ERAS.map((era) => era.id), 'unknown-animal-era'])(
+  'turns toward the feeding patch before throwing from his hand in %s',
+  (era) => {
+    const d = fixture(era);
+    addTownAnimals(d, d.town);
+    const food = d.animalFeeder;
+    const plans = d.navigation.plans;
+    const seeds = food.seeds.slice();
+    let throws = 0,
+      behind = 0;
+    const emitted = new Set();
+    const forward = new Vector3(),
+      toward = new Vector3();
+    for (let frame = 1; frame <= 900; frame++) {
+      advance(d, frame / 20, 0.05);
+      if (!food.active) continue;
+      if (Math.abs(food.toss.turn) > Math.PI / 2) behind++;
+      forward.set(Math.sin(food.root.rotation.y), 0, Math.cos(food.root.rotation.y));
+      for (const [index, seed] of seeds.entries()) {
+        const state = seed.userData.grain;
+        if (!seed.visible || state.grounded) continue;
+        // Every airborne grain goes forward toward the bird, not behind the
+        // feeder or toward another patch on the opposite side of the square.
+        toward.fromArray(food.seedTargets[index]).sub(food.root.position).setY(0).normalize();
+        expect(forward.dot(toward)).toBeGreaterThan(0.9);
+        const key = `${index}:${state.generation}`;
+        if (!emitted.has(key)) {
+          emitted.add(key);
+          throws++;
+          const hand = food.arms[1].lower.localToWorld(new Vector3(0, -0.19, 0.03));
+          expect(hand.distanceTo(new Vector3(...state.from))).toBeLessThan(1e-6);
+          expect(
+            new Vector3(...food.seedTargets[index])
+              .setY(0)
+              .distanceTo(new Vector3(...food.toss.site.point).setY(0)),
+          ).toBeLessThan(0.35);
+        }
+      }
+    }
+    expect(throws).toBeGreaterThan(14);
+    expect(
+      behind,
+      'exercise turning toward patches behind his arrival/previous heading',
+    ).toBeGreaterThan(0);
+    expect(food.seeds).toEqual(seeds);
+    expect(d.navigation.plans).toBe(plans);
+  },
+);
 
 it('startles grounded pigeons and makes street animals give traffic space', () => {
   const d = fixture('industrial');
@@ -227,7 +314,7 @@ it('startles grounded pigeons and makes street animals give traffic space', () =
   car.position.copy(dog.root.position);
   advance(d, 1.1);
   expect(dog.state).toBe('alert');
-  resolveTownTraffic(d);
+  placeTownSpawns(d);
   expect(dog.root.position.distanceTo(car.position)).toBeGreaterThanOrEqual(1.15 - 1e-6);
 });
 
@@ -283,7 +370,7 @@ it('lands a bounded pool of grain, consumes it on actual pecks and expires uneat
   expect(expired.size).toBeGreaterThan(3);
   expect(food.seeds).toEqual(seeds);
   expect(d.world.children).toHaveLength(count);
-  advance(d, 172, 0.05);
+  for (let n = 0; n < 500 && food.active; n++) advance(d, d.elapsed + 0.05, 0.05);
   renderer.update();
   expect(renderer.buckets.every((bucket) => bucket.mesh.count === 0)).toBe(true);
   renderer.dispose();
@@ -309,8 +396,11 @@ it('clears tall future roofs and makes wildlife retreat away from an approaching
   observer.position.z += Math.cos(wildlife.pose.heading);
   d.actors.push({ root: observer });
   const before = wildlife.root.position.distanceTo(observer.position);
-  d.elapsed += 0.1;
-  d.motions.forEach((motion) => motion(d.elapsed));
+  for (let n = 0; n < 10; n++) {
+    d.elapsed += 0.1;
+    d.motions.forEach((motion) => motion(d.elapsed));
+    updateTownLocomotion(d, 0.1);
+  }
   expect(wildlife.state).toBe('retreating');
   expect(wildlife.root.position.distanceTo(observer.position)).toBeGreaterThan(before);
 });

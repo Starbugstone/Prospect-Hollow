@@ -113,12 +113,8 @@ Mining is accompanied by **“Lanterns Below”**, an original two-minute, 64 BP
 
 Phaser loads when a chapter opens. Vue never wraps the renderer's internal object graph in reactive proxies. Bonuses use an eight-frame animation atlas and a 230 ms activation wind-up and 160 ms impact beat. Shockwaves, directional blasts, rainbow lightning and ice shards run alongside the clear and fall phases. Bonus and combo banners occupy a fixed strip above the board. Screen-edge glows, expanding firebursts, cross beams and lightning accompany activated bonuses. Cosmetic effects may continue after the board becomes playable; every board animation is cancellable on a level change.
 
-See [the analysis and verification report](docs/analysis.md) for the performance findings, changes and testing limits. Capacitor configuration and the existing Azure deployment workflow are retained; native platforms need their usual platform setup before using the `cap:*` commands.
+See [the era architecture guide](docs/era-architecture.md) for loading, presentation and navigation contracts. Capacitor configuration and the existing Azure deployment workflow are retained; native platforms need their usual platform setup before using the `cap:*` commands.
 
-Run `npm run verify` for formatting, the complete regression suite, and a production build. GitHub Quality checks runs the same command for pull requests and pushes to main and develop; verify it and the Vercel preview before merging a release.
+Run `npm run verify` for formatting, generated-footprint drift, the complete regression suite, and production chunk budgets. GitHub Quality checks runs the same command for pull requests and pushes to main and develop; verify it and the Vercel preview before merging a release.
 
 Mine teardown explicitly releases its WebGL context. If the village loses its graphics context, it rebuilds the 3D scene on a fresh canvas while preserving the camera. Repeated recovery failures use the playable SVG town. Interrupted frame-cache renders restore renderer state before another draw.
-
-The [24 September deployment review](docs/deployment-audit-2026-09-24.md) maps the changes against main to their intended behavior and records the verification evidence and remaining limits.
-
-The [Motor Age progression review](docs/motor-age-progression.md) records the earlier four-era, 144-level campaign and its verification. The [earlier progression and visual UX review](docs/progression-ux-review.md) documents the original 72-level tuning pass.

@@ -179,13 +179,11 @@
           </g>
         </g>
         <path
-          v-for="(track, index) in townTracks(town)"
-          :key="`track-${index}`"
-          :d="`M${mapPoint(track.from).join(' ')} L${mapPoint(track.to).join(' ')}`"
-          :stroke-width="track.width * (pavedTown(town) ? 20 : 14)"
-          :stroke="roadSurface(town)"
-          stroke-linecap="round"
-          fill="none"
+          v-for="(drawing, index) in roadDrawing"
+          :key="`road-${index}`"
+          :d="drawing.path"
+          :fill="drawing.color"
+          stroke="none"
         />
         <g class="mine-forecourt">
           <path
@@ -253,7 +251,7 @@
         </g>
       </g>
       <g :transform="`translate(${mapPoint(PLOTS.mine).join(' ')}) scale(.68)`">
-        <TownMine :level="nextLevel" :stage="mineStage" :era="town.era" @enter="$emit('mine')" />
+        <TownMine :level="nextLevel" :era="town.era" @enter="$emit('mine')" />
       </g>
       <g
         v-for="building in orderedBuildings"
@@ -555,6 +553,12 @@ import {
   powerGrid,
   roadSurface,
 } from '../../game/town/TownEvolution';
+import {
+  roadDetails,
+  roadDetailCorners,
+  roadHalfWidth,
+  bridgeApproachSurfaces,
+} from '../../game/town/RoadDetails';
 import { computed, nextTick, ref, useId, watch } from 'vue';
 import {
   nextGoal,
@@ -585,7 +589,6 @@ const props = defineProps({
   now: { type: Number, default: Date.now },
   selected: String,
   population: Number,
-  mineStage: { type: Number, default: 0 },
   fullscreen: Boolean,
   reducedMotion: Boolean,
   paused: Boolean,
@@ -667,6 +670,23 @@ const indicators = computed(() =>
 const availableIds = computed(() =>
   availablePurchases(props.town, props.builderHammers).map(({ id }) => id),
 );
+const roadDrawing = computed(() => {
+  const tracks = townTracks(props.town),
+    paved = pavedTown(props.town);
+  const layers = new Map();
+  const add = (part) => {
+    const points = (part.points ?? roadDetailCorners(part)).map(mapPoint);
+    if (!points.length) return;
+    const path = `M${points.map((p) => p.join(' ')).join('L')}Z`;
+    layers.set(part.color, (layers.get(part.color) ?? '') + path);
+  };
+  for (const track of tracks)
+    if (!track.crossing && !track.approach)
+      add({ ...track, width: roadHalfWidth(track, paved) * 2, color: roadSurface(props.town) });
+  for (const part of bridgeApproachSurfaces(props.town, tracks)) add(part);
+  for (const part of roadDetails(props.town, tracks)) add(part);
+  return [...layers].map(([color, path]) => ({ color, path }));
+});
 const uid = `town-${useId().replaceAll(':', '')}`;
 const orderedBuildings = computed(() =>
   BUILDINGS.filter((b) => plotUnlocked(props.town, b.id))

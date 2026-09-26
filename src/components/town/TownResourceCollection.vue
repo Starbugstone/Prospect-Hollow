@@ -49,6 +49,13 @@ const resources = {
     message: 'Collected {coins} coins from the saloon!',
     suffix: '',
   },
+  'vip-coins': {
+    icon: 'coin',
+    particles: 5,
+    cue: 'coin',
+    message: 'A VIP spent {coins} coins in your village!',
+    suffix: '',
+  },
   tnt: {
     image: '/art/powers/tnt.svg',
     particles: 5,

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RAIL_APPROACH_HALF_WIDTH } from '../../data/townClearances';
 
 export const RAIL_TUNNEL = Object.freeze({
   halfWidth: 1.5,
@@ -7,7 +8,7 @@ export const RAIL_TUNNEL = Object.freeze({
   thickness: 0.5,
   portalX: 6.3,
   portalDepth: 1,
-  approachHalfWidth: 2.15,
+  approachHalfWidth: RAIL_APPROACH_HALF_WIDTH,
   segments: 13,
 });
 export const tunnelRearX = RAIL_TUNNEL.portalX - RAIL_TUNNEL.portalDepth;

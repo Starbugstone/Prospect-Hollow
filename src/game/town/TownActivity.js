@@ -1,9 +1,11 @@
-import { walkObstacle, walkPose, planCurve } from './TownNavigation';
+import { trafficRoutes, trafficTour } from './TownTrafficRoutes';
+import { walkObstacle, walkPose, plotDoor } from './TownNavigation';
 import { prepareRoute, routePose } from './TownRoutes';
 import * as THREE from 'three';
 import { roadLevel, population, visitorPopulation } from './TownRules';
-import { LANE_X, townTracks, atPlot, plotStreet } from './TownLayout';
-import { pavedTown, motorTraffic, roadSurface } from './TownEvolution';
+import { LANE_X, atPlot, plotStreet } from './TownLayout';
+import { pavedTown, motorTraffic } from './TownEvolution';
+import { addRoadSurfaces } from './TownRoads';
 import { motorVehicle, animateVehicle } from './TownVehicles';
 
 // Actors share the town's geometry cache; only their joints move each frame.
@@ -124,31 +126,7 @@ export function addTownRoads(d, town, plots) {
   const roads = d.group(d.world);
   const paved = pavedTown(town);
   roads.name = paved ? 'Paved village roads' : 'Village dirt tracks';
-  // Slightly uneven edges keep the tracks narrow and worn, with prairie between lots.
-  for (const [index, { from, to, width, crossing }] of townTracks(town).entries()) {
-    // The bridge model supplies the elevated deck; a flat road would cut across the water.
-    if (crossing) continue;
-    const length = Math.hypot(to[0] - from[0], to[1] - from[1]);
-    const steps = Math.max(2, Math.ceil(length * 2));
-    const shape = new THREE.Shape();
-    for (const side of [-1, 1])
-      for (let n = 0; n <= steps; n++) {
-        const i = side < 0 ? n : steps - n;
-        const edge = side * width * (paved ? 0.7 : 0.5 + Math.sin(i * 1.7 + index) * 0.055);
-        const along = (i / steps - 0.5) * length;
-        if (side < 0 && n === 0) shape.moveTo(edge, along);
-        else shape.lineTo(edge, along);
-      }
-    shape.closePath();
-    const geometry = new THREE.ShapeGeometry(shape);
-    geometry.rotateX(-Math.PI / 2);
-    geometry.userData.owned = true;
-    const track = new THREE.Mesh(geometry, d.material(roadSurface(town)));
-    track.rotation.y = Math.atan2(to[0] - from[0], to[1] - from[1]);
-    track.position.set((from[0] + to[0]) / 2, 0.028 + index * 0.0002, (from[1] + to[1]) / 2);
-    track.receiveShadow = true;
-    roads.add(track);
-  }
+  const surfaces = addRoadSurfaces(d, roads, town);
   for (const [id, [x, z]] of Object.entries(plots)) {
     if (id === 'mine' || id === 'bridge' || !town.buildings[id]) continue;
     if (level >= 2 && id !== 'well' && id !== 'well2') {
@@ -166,11 +144,13 @@ export function addTownRoads(d, town, plots) {
     }
   }
   if (level >= 3)
+    // Reserve both streets at a junction: the old Z positions put these lamps
+    // directly on the cross-road centerline, even though X cleared the main road.
     for (const [x, z] of [
-      [-4.35, -0.5],
-      [4.35, 7.5],
-      [-4.35, 15.5],
-      [4.35, -8.5],
+      [-LANE_X - 1.25, 0.75],
+      [LANE_X + 1.25, 6.25],
+      [-LANE_X - 1.25, 16.75],
+      [LANE_X + 1.25, -9.75],
     ]) {
       walkObstacle(roads, x, z, 0.045);
       d.rod(roads, [x, 0, z], [x, 2.3, z], 0.045, '#63726a');
@@ -179,6 +159,8 @@ export function addTownRoads(d, town, plots) {
     }
   roads.userData.static = true;
   d.batch(roads);
+  // Batching owns the merged copies; release the temporary road buffers.
+  for (const mesh of surfaces) if (!mesh.parent) mesh.geometry.dispose();
   return roads;
 }
 
@@ -194,33 +176,16 @@ export function addTownVisitors(d, town) {
       mounted.root.name = motorTraffic(town) ? 'Touring car' : 'Visiting horse rider';
       mounted.root.userData.animated = true;
       (d.trafficActors ??= []).push(mounted.root);
-      const curve = new THREE.CatmullRomCurve3(
-        [
-          new THREE.Vector3(LANE_X, 0.07, 7.5),
-          new THREE.Vector3(LANE_X, 0.07, -0.5),
-          new THREE.Vector3(LANE_X, 0.07, -8.5),
-          new THREE.Vector3(-LANE_X, 0.07, -8.5),
-          new THREE.Vector3(-LANE_X, 0.07, -0.5),
-          new THREE.Vector3(-LANE_X, 0.07, 23.5),
-          new THREE.Vector3(LANE_X, 0.07, 23.5),
-        ],
-        true,
-        'catmullrom',
-        0.08,
-      );
-      const path = !motorTraffic(town) && planCurve(d, curve, 0.8);
+      const routes = trafficRoutes(d);
+      const travel = trafficTour(mounted.root, routes, {
+        seed: n * 13 + 1,
+        speed: (motorTraffic(town) ? 1.6 : 1.2) * (1 + n * 0.07),
+        offset: n / town.buildings.stable,
+      });
       d.motions.push((time) => {
-        const progress = (time / 65 + n / town.buildings.stable) % 1,
-          tangent = curve.getTangentAt(progress);
-        mounted.root.position.copy(curve.getPointAt(progress));
-        mounted.root.rotation.y = Math.atan2(tangent.x, tangent.z);
-        if (path) {
-          const pose = walkPose(path, progress);
-          mounted.root.position.set(pose.x, pose.y, pose.z);
-          mounted.root.rotation.y = pose.heading;
-        }
-        mounted.animate(time + n);
-        animateVehicle(mounted.root, progress * curve.getLength());
+        const distance = travel?.(time) ?? 0;
+        mounted.animate(time + n, !mounted.root.userData.trafficWaiting);
+        animateVehicle(mounted.root, distance);
       });
     }
   if (visitorPopulation(town) > 0)
@@ -233,7 +198,7 @@ export function addTownVisitors(d, town) {
         skin: n % 2 ? '#976f50' : '#d8ae83',
         hat: '#baa06d',
         route: [
-          atPlot(destination, 0, 1.65),
+          plotDoor(d, destination, atPlot(destination, 0, 2.6)),
           plotStreet(destination),
           [-LANE_X, 7.5],
           [-LANE_X, -0.5],
@@ -368,7 +333,17 @@ export class TownRaid {
   }
   travel(actor, points, distance) {
     const path = this.d.navigation?.route(points, 0, 0.8);
-    const pose = path ? walkPose(path, distance / (path.total || 1)) : routePose(points, distance);
+    const pose = path
+      ? walkPose(
+          path,
+          distance / (path.total || 1),
+          (actor.travelPose ??= {
+            x: actor.root.position.x,
+            y: actor.root.position.y,
+            z: actor.root.position.z,
+          }),
+        )
+      : routePose(points, distance);
     actor.root.position.set(pose.x, 0.07, pose.z);
     actor.root.rotation.y = pose.heading;
     return path ? distance < path.total : pose.moving;

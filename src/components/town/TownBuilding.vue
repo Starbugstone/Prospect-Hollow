@@ -25,6 +25,7 @@
         ['garage', 'busDepot', 'gardenCourt', 'diner'].includes(kind))
     "
     :kind="kind"
+    :era="era"
     :level="eraLevel"
   />
   <TownIndustrialBuilding
@@ -34,6 +35,7 @@
         ['powerHouse', 'fireStation', 'rowHouses', 'mill'].includes(kind))
     "
     :kind="kind"
+    :era="era"
     :level="eraLevel"
   />
   <g v-else-if="kind === 'bridge'" fill="none" stroke-linejoin="round">
@@ -63,7 +65,7 @@
     </g>
   </g>
   <g v-else-if="kind === 'square'">
-    <TownSquare :stage="stage" />
+    <TownSquare :stage="stage" :era="era" />
     <g
       v-if="built && eraEvolution(era).style === 'river-rail'"
       v-for="x in [-90, 90]"

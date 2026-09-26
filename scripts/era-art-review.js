@@ -1,3 +1,5 @@
+import { ALL_MESH_FAMILIES, loadFamilies } from '../src/game/town/assets/MeshCatalog';
+await loadFamilies(ALL_MESH_FAMILIES);
 // Developer-only review surface, served by Vite; never imported by the game.
 import * as THREE from 'three';
 import { TownDiorama } from '../src/game/town/TownDiorama';
@@ -46,7 +48,7 @@ function buildingRoot(b, era, level) {
     renderBuilding({ town: d, parent: root, kind, level: stage, label: b.name });
     renderModernization(d, root, kind, era.id, level);
   } else if (!renderEraLandmark(d, root, kind, b.name, level, era.id, stage)) {
-    if (kind === 'square') buildTownSquare(d, root, stage, era.id === 'frontier');
+    if (kind === 'square') buildTownSquare(d, root, stage, era.id === 'frontier', era.id);
     else if (kind === 'well') d.well(root);
     else renderBuilding({ town: d, parent: root, kind, level: stage, label: b.name });
     if (!['fisherman', 'blacksmith', 'school', 'doctor'].includes(kind))
