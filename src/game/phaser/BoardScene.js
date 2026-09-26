@@ -7,7 +7,7 @@ export class BoardScene extends Phaser.Scene {
     super({ key: 'BoardScene' });
   }
   preload() {
-    preloadSpriteAssets(this);
+    preloadSpriteAssets(this, { levelId: this.levelId });
   }
   create() {
     const boardContainer = this.add.container(0, 0);

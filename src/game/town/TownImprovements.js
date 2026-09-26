@@ -67,7 +67,7 @@ function upperRoom(d, parent, color) {
     roof.rotation.z = -side * 0.38;
   }
 }
-function tower(d, parent, x, color, windmill = false) {
+function tower(d, parent, x, color) {
   const g = d.group(parent, x, 0, -0.65);
   for (const dx of [-0.38, 0.38])
     for (const z of [-0.38, 0.38]) d.rod(g, [dx * 1.3, 0, z * 1.3], [dx, 3.5, z], 0.055, '#927449');
@@ -75,30 +75,59 @@ function tower(d, parent, x, color, windmill = false) {
     d.box(g, 0.95, 0.1, 0.95, 0, y, 0, '#b09a71');
     for (const z of [-0.4, 0.4]) d.rod(g, [-0.4, y - 1.1, z], [0.4, y, z], 0.03, '#997949');
   }
-  if (windmill) {
-    const rotor = d.group(g, 0, 4, 0.2);
-    for (let n = 0; n < 8; n++) {
-      const arm = d.group(rotor);
-      arm.rotation.z = (n * Math.PI) / 4;
-      d.rod(arm, [0, 0, 0], [0, 1, 0], 0.025, '#8a8e7b');
-      const blade = d.box(arm, 0.3, 0.55, 0.04, 0.07, 0.83, 0, '#aeb7a5');
-      blade.rotation.z = -0.15;
-    }
-    d.ball(rotor, 0, 0, 0.08, 0.13, '#c6b47f');
-    d.batch(rotor);
-    // Add the moving rotor after static building meshes have been merged.
-    return {
-      rotor,
-      update: (time) => {
-        rotor.rotation.z = time * 0.55;
-      },
-    };
-  }
   d.mesh(g, 'cylinder', [0.65, 1.05, 0.65], [0, 3.8, 0], color);
   for (const y of [3.35, 3.75, 4.22])
     d.mesh(g, 'cylinder', [0.665, 0.055, 0.665], [0, y, 0], '#777b69');
   d.mesh(g, 'cone', [0.73, 0.32, 0.73], [0, 4.48, 0], '#68867d');
   return null;
+}
+// A tapered farm windpump in the back yard, inside the lot's road setbacks. Its wheel
+// faces the street behind every wing and hayloft, and a tail vane points it into the wind.
+const PUMP_TOP = 4.7,
+  HUB = 4.8;
+function windpump(d, parent) {
+  const g = d.group(parent, -1.3, 0, -2.3),
+    frame = '#927449',
+    brace = '#997949';
+  const half = (y) => 0.49 - (0.29 * y) / PUMP_TOP;
+  for (const sx of [-1, 1])
+    for (const sz of [-1, 1])
+      d.rod(g, [sx * 0.49, 0, sz * 0.49], [sx * 0.2, PUMP_TOP, sz * 0.2], 0.05, frame);
+  for (const [low, high] of [
+    [0.1, 1.6],
+    [1.6, 3.1],
+    [3.1, PUMP_TOP],
+  ]) {
+    const a = half(low),
+      b = half(high);
+    d.box(g, b * 2 + 0.08, 0.07, b * 2 + 0.08, 0, high, 0, '#b09a71');
+    for (const sz of [-1, 1]) {
+      d.rod(g, [-a, low, sz * a], [b, high, sz * b], 0.025, brace);
+      d.rod(g, [a, low, sz * a], [-b, high, sz * b], 0.025, brace);
+    }
+  }
+  d.rod(g, [0, 0.1, 0], [0, PUMP_TOP, 0], 0.02, '#6f7466');
+  d.box(g, 0.24, 0.24, 0.55, 0, HUB, 0, '#6f7466');
+  d.rod(g, [0, HUB, 0.2], [0, HUB, 0.5], 0.035, '#6f7466');
+  d.rod(g, [0, HUB, -0.2], [0, HUB, -1.15], 0.03, '#6f7466');
+  d.box(g, 0.03, 0.5, 0.65, 0, HUB + 0.08, -1.05, '#aeb7a5');
+  const rotor = d.group(g, 0, HUB, 0.58);
+  for (let n = 0; n < 8; n++) {
+    const arm = d.group(rotor);
+    arm.rotation.z = (n * Math.PI) / 4;
+    d.rod(arm, [0, 0, 0], [0, 1, 0], 0.025, '#8a8e7b');
+    const blade = d.box(arm, 0.3, 0.55, 0.04, 0.07, 0.83, 0, '#aeb7a5');
+    blade.rotation.z = -0.15;
+  }
+  d.ball(rotor, 0, 0, 0.08, 0.13, '#c6b47f');
+  d.batch(rotor);
+  // Add the moving rotor after static building meshes have been merged.
+  return {
+    rotor,
+    update: (time) => {
+      rotor.rotation.z = time * 0.55;
+    },
+  };
 }
 export function addImprovements(d, parent, kind, stage, era = 'frontier') {
   if (stage < 2 || kind === 'square') return null;
@@ -149,7 +178,7 @@ export function addImprovements(d, parent, kind, stage, era = 'frontier') {
     d.box(parent, 1.45, 0.18, 2.3, -1.9, 1.8, -0.1, '#768d81');
     d.mesh(parent, 'cylinder', [0.43, 1.5, 0.43], [1.85, 0.8, -0.7], '#b3b7a0');
     d.mesh(parent, 'cone', [0.49, 0.42, 0.49], [1.85, 1.7, -0.7], '#768d81');
-    if (stage >= 3) return tower(d, parent, -2.7, '#b6a279', true);
+    if (stage >= 3) return windpump(d, parent);
   } else if (kind === 'sheriff') {
     const annex = d.group(parent, 1.65, 0, -0.15);
     d.box(annex, 0.85, 1.8, 1.9, 0, 1, 0, '#869f9a');

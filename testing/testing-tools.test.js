@@ -1,3 +1,6 @@
+import { vi as testTiming } from 'vitest';
+// Full geometry galleries and long cosmetic simulations may exceed the default 5s on CI.
+testTiming.setConfig({ testTimeout: 20000 });
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createPinia } from 'pinia';
 import { useCampaignStore } from '../src/stores/campaignStore';

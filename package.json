@@ -16,8 +16,17 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "assets": "node scripts/generate-gems.mjs && node scripts/generate-bonus-art.mjs",
-    "verify": "npm run format:check && npm test && npm run build",
-    "demo:eras": "node scripts/create-era-demo.mjs"
+    "verify": "npm run format:check && npm run check:footprints && npm test && npm run build",
+    "demo:eras": "node scripts/create-era-demo.mjs",
+    "predev": "node scripts/split-mesh-catalogs.mjs",
+    "pretest": "node scripts/split-mesh-catalogs.mjs",
+    "prebuild": "node scripts/split-mesh-catalogs.mjs",
+    "postbuild": "node scripts/check-bundle-budget.mjs",
+    "assets:footprints": "node scripts/generate-footprints.mjs",
+    "check:footprints": "node scripts/generate-footprints.mjs --check",
+    "assets:board": "node scripts/generate-board-atlas.mjs",
+    "precheck:footprints": "node scripts/split-mesh-catalogs.mjs",
+    "preassets:footprints": "node scripts/split-mesh-catalogs.mjs"
   },
   "repository": {
     "type": "git",
@@ -46,6 +55,7 @@
     "@capacitor/cli": "^7.4.4",
     "@vitejs/plugin-vue": "^6.0.1",
     "prettier": "^3.9.6",
+    "sharp": "^0.35.4",
     "vite": "^7.1.12",
     "vitest": "^4.0.10"
   }

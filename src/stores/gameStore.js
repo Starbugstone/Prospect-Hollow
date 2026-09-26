@@ -1,5 +1,13 @@
+import { BoardReadiness } from '../game/phaser/BoardReadiness';
+import { afterPaint, performanceMark } from '../game/PresentationWork';
+const readiness = new WeakMap();
+const boardReadiness = (store) => {
+  store = toRaw(store.$state);
+  if (!readiness.has(store)) readiness.set(store, new BoardReadiness());
+  return readiness.get(store);
+};
 import { advanceOreOrders, remainingOre } from '../game/engine/ChapterMechanics';
-import { markRaw } from 'vue';
+import { markRaw, toRaw } from 'vue';
 import { miningPayout } from '../game/town/TownRules';
 import { PlayClock } from '../game/engine/PlayClock';
 import { useCampaignStore } from './campaignStore';
@@ -101,6 +109,10 @@ export const useGameStore = defineStore('game', {
   state: () => ({
     sessionActive: false,
     sessionVersion: 0,
+    introTaskSession: null,
+    introFinalized: null,
+    introClaimed: null,
+    rendererRecovering: false,
     inputPaused: false,
     board: [],
     tiles: [],
@@ -214,13 +226,21 @@ export const useGameStore = defineStore('game', {
           'This puzzle transfer could not be restored. Its saved copy has been kept.',
         );
       this.bootstrap();
+      boardReadiness(this).cancel();
+      const session = this.sessionVersion + 1;
       this.$patch((target) =>
         Object.assign(target, {
           ...JSON.parse(
             JSON.stringify(Object.fromEntries(HANDOFF_FIELDS.map((key) => [key, state[key]]))),
           ),
           sessionActive: true,
-          sessionVersion: this.sessionVersion + 1,
+          sessionVersion: session,
+          // The transferred puzzle has already played its intro. Recreating its
+          // renderer (including context recovery) must resume that same session.
+          introTaskSession: session,
+          introFinalized: session,
+          introClaimed: session,
+          rendererRecovering: false,
           boardVersion: this.boardVersion + 1,
           animationInProgress: false,
           pendingBoardState: null,
@@ -613,6 +633,7 @@ export const useGameStore = defineStore('game', {
       this.reshuffleNotice = null;
     },
     startLevel(levelId, mode = 'normal', { debugReplay = false } = {}) {
+      performanceMark('mine-intent');
       const campaign = useCampaignStore();
       if (
         !['normal', 'continuous'].includes(mode) ||
@@ -630,6 +651,7 @@ export const useGameStore = defineStore('game', {
 
       this.playMode = mode;
       this.runId = useCampaignStore().beginRun(mode, levelId);
+      boardReadiness(this).cancel();
       this.sessionVersion += 1;
       const session = this.sessionVersion;
       this.renderer?.animator?.clear();
@@ -678,32 +700,69 @@ export const useGameStore = defineStore('game', {
       this.refreshBoardVisuals(true);
       this.cancelHint(true);
 
-      const introPromise = this.renderer?.animator?.playIntroCascade?.();
-      const finalizeIntro = () => {
-        if (session !== this.sessionVersion) return;
+      this.requestIntro();
+    },
+    requestIntro() {
+      const session = this.sessionVersion;
+      if (this.introTaskSession === session) return;
+      this.introTaskSession = session;
+      const ready = boardReadiness(this);
+      const finalize = () => {
+        if (
+          session !== this.sessionVersion ||
+          !this.sessionActive ||
+          this.introFinalized === session
+        )
+          return;
+        this.introFinalized = session;
+        this.rendererRecovering = false;
         this.animationInProgress = false;
-        if (this.sessionActive) {
-          this.scheduleHint();
-        }
+        this.renderer?.animator?.updateTiles?.(this.tiles);
+        performanceMark('board-input-ready');
+        this.scheduleHint();
         this.processQueuedInput();
         this.ensurePlayableBoard();
       };
-
-      if (introPromise?.then) {
-        introPromise
-          .then(() => {
-            if (session !== this.sessionVersion) return;
-            this.renderer?.animator?.updateTiles?.(this.tiles);
-          })
-          .catch((error) => {
-            console.warn('Intro cascade animation failed:', error);
-          })
-          .finally(finalizeIntro);
-      } else {
-        finalizeIntro();
+      // The finite headless diagnostic runner has no canvas or renderer lifecycle.
+      if (typeof window === 'undefined' && !this.renderer) {
+        finalize();
+        return;
       }
+      if (typeof window === 'undefined' && this.renderer)
+        ready.publish(session, this.renderer.animator);
+      this.introTask = (async () => {
+        let binding;
+        while (session === this.sessionVersion && this.sessionActive) {
+          binding = await ready.wait(session);
+          if (!binding || session !== this.sessionVersion) return;
+          if (ready.current(binding, session)) break;
+        }
+        if (!ready.current(binding, session) || session !== this.sessionVersion) return;
+        this.introClaimed = session;
+        try {
+          await binding.animator.playIntroCascade?.();
+        } catch (error) {
+          if (session === this.sessionVersion)
+            console.warn('Intro cascade animation failed:', error);
+        }
+        while (session === this.sessionVersion && this.sessionActive) {
+          binding = await ready.wait(session);
+          if (!binding) return;
+          if (ready.current(binding, session)) {
+            finalize();
+            return;
+          }
+        }
+      })();
+    },
+    detachRenderer() {
+      boardReadiness(this).invalidate();
+      this.renderer?.input?.destroy();
+      this.renderer?.animator?.destroy();
+      this.renderer = null;
     },
     attachRenderer(renderer) {
+      boardReadiness(this).invalidate();
       if (this.renderer?.animator) {
         this.renderer.animator.destroy();
       }
@@ -739,6 +798,27 @@ export const useGameStore = defineStore('game', {
       if (this.board.length > 0) {
         this.refreshBoardVisuals(true);
       }
+      const session = this.sessionVersion;
+      const generation = boardReadiness(this).generation;
+      const present = () => {
+        if (
+          !this.sessionActive ||
+          session !== this.sessionVersion ||
+          generation !== boardReadiness(this).generation
+        )
+          return;
+        performanceMark('first-visible-jewels');
+        boardReadiness(this).publish(session, animator);
+        if (this.introFinalized === session && this.rendererRecovering) {
+          this.rendererRecovering = false;
+          this.animationInProgress = false;
+          this.scheduleHint();
+          this.processQueuedInput();
+        }
+        this.audioManager?.playAmbientLoop?.();
+      };
+      if (typeof requestAnimationFrame === 'function') afterPaint(present);
+      else present();
     },
     refreshBoardVisuals(forceRedraw = false) {
       if (!this.renderer || !this.currentBoardLayout) {
@@ -958,6 +1038,7 @@ export const useGameStore = defineStore('game', {
       return true;
     },
     exitLevel() {
+      boardReadiness(this).cancel();
       useCampaignStore().endRun(this.runId);
       useCampaignStore().settlePendingChests();
       this.syncContinuous();

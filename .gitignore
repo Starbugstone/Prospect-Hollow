@@ -34,3 +34,6 @@ test-results/
 __pycache__/
 
 !/scripts/o2switch/*.env.example
+
+# Reproducible bounded mesh chunks; authoring exports live in src/assets.
+src/assets/meshes/

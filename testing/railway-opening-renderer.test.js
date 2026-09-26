@@ -44,6 +44,9 @@ it('stages the saved railway visually, then cleans up and restores the camera on
   try {
     expect(d.controls.enabled).toBe(false);
     expect(batch.visible).toBe(false);
+    expect(hill.userData.activation).toBe('removed');
+    expect(effect.solid.userData.activation).toBe('temporary-reveal');
+    expect(effect.tunnel.userData.activation).toBe('pending');
     expect(effect.solid.visible).toBe(true);
     expect(effect.tunnel.visible).toBe(false);
     expect(effect.railParts.every(({ part }) => !part.visible)).toBe(true);
@@ -58,6 +61,8 @@ it('stages the saved railway visually, then cleans up and restores the camera on
     d.presentationFrame(8);
     expect(effect.solid.visible).toBe(false);
     expect(effect.tunnel.visible).toBe(true);
+    expect(effect.solid.userData.activation).toBe('removed');
+    expect(effect.tunnel.userData.activation).toBe('temporary-reveal');
     expect(effect.stones.some(({ part }) => !part.visible)).toBe(true);
     expect(effect.journey.visible).toBe(false);
     d.presentationFrame(10);
@@ -67,6 +72,7 @@ it('stages the saved railway visually, then cleans up and restores the camera on
     expect(effect.journey.x).toBeGreaterThan(0);
     d.setPresentation(null);
     expect(batch.visible).toBe(true);
+    expect(hill.userData.activation).toBe('completed');
     expect(effect.root.parent).toBeNull();
     expect(disposed).toHaveBeenCalledOnce();
     expect(d.controls.enabled).toBe(true);

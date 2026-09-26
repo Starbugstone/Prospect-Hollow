@@ -4,6 +4,7 @@ import { createPinia } from 'pinia';
 import { createTestingTools } from './services/testingTools';
 import { townStorage } from './services/townStorage';
 import CloudRoot from './components/CloudRoot.vue';
+import { useCampaignStore } from './stores/campaignStore';
 import './styles/base.css';
 import './styles/theme.css';
 import './styles/arcade.css';
@@ -14,6 +15,7 @@ const app = createApp(CloudRoot);
 const pinia = createPinia();
 
 app.use(pinia);
+
 window.prospectDebug = createTestingTools(pinia);
 const languageChanged = () => {
   locale.value = browserLocale();
@@ -42,6 +44,10 @@ async function start() {
       throw new Error('Safe saving requires a browser with Web Locks support.');
     }
     app.mount('#app');
+    if (useCampaignStore(pinia).hasVisitedVillage) {
+      import('./components/town/TownView.vue');
+      import('./game/town/TownDiorama');
+    }
   } catch (error) {
     const notice = document.createElement('p');
     notice.textContent = `${error.message} Your existing save has been kept. Close other game tabs and try again.`;

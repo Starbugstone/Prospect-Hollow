@@ -1,3 +1,5 @@
+import { resolveRoadStyle } from './roadStyles';
+
 /**
  * @typedef {'frontier'|'river-rail'|'industrial'|'motor-age'|'city'} BuildingStyle
  * @typedef {Object} EraEvolution
@@ -11,11 +13,14 @@
  * @property {boolean} busService
  * @property {boolean} overheadPower
  * @property {string} roadColor
+ * @property {string} roadStyle Surface treatment registered in roadStyles.js.
+ * @property {boolean} roadBridge Continuous surfaced bridge deck instead of timber steps.
  * @property {string} incident
  * @property {readonly number[]|null} prices Three modernization prices; never mining rewards.
  * @property {string|null} cityAssets Blender asset family shared by city eras.
  * @property {string|null} detailAsset
  * @property {string|null} airportStyle Airport architecture from airportStyles.json.
+ * @property {string} fountain Town square centerpiece design registered in TownFountains.js.
  * @property {boolean} digitalCity
  * @property {boolean} tallCity
  * @property {string|null} cityDescription
@@ -34,7 +39,8 @@ const STYLES = {
   frontier: {},
   'river-rail': {
     wardrobe: 'rail',
-    roadColor: '#b3a18a',
+    fountain: 'victorian-iron',
+    roadStyle: 'gravel',
     incident: 'cargo-theft',
     upgradeTitle: 'River & Rail level {level}: {name}',
     upgradeDescriptions: [
@@ -44,6 +50,7 @@ const STYLES = {
   },
   industrial: {
     wardrobe: 'workwear',
+    fountain: 'civic-monument',
     upgradeTitle: 'Industrial level {level}: {name}',
     upgradeDescriptions: [
       'Add a substantial service wing and sheltered entrance.',
@@ -53,12 +60,14 @@ const STYLES = {
     electricity: true,
     modernTransport: true,
     motorTrafficLevel: 2,
-    roadColor: '#89928a',
+    roadStyle: 'brick',
     incident: 'workshop-fire',
     requiresPower: true,
   },
   'motor-age': {
+    roadBridge: true,
     wardrobe: 'motor',
+    fountain: 'art-deco',
     baseCityEra: 'post-war',
     upgradeTitle: 'Motor Age level {level}: {name}',
     upgradeDescriptions: [
@@ -71,17 +80,19 @@ const STYLES = {
     motorTrafficLevel: 1,
     busService: true,
     motorMine: true,
-    roadColor: '#858b86',
+    roadStyle: 'early-asphalt',
     incident: 'workshop-fire',
   },
   city: {
+    roadBridge: true,
     wardrobe: 'casual',
+    fountain: 'memorial-obelisk',
     paved: true,
     electricity: true,
     modernTransport: true,
     motorTrafficLevel: 1,
     busService: true,
-    roadColor: '#89928a',
+    roadStyle: 'concrete',
     incident: 'workshop-fire',
     cityBoat: true,
     upgradeTitle: 'City level {level}: {name}',
@@ -111,7 +122,8 @@ export function defineEra(definition) {
     motorTrafficLevel: null,
     busService: false,
     overheadPower: true,
-    roadColor: '#c3a477',
+    roadStyle: 'dirt',
+    roadBridge: false,
     incident: 'bandits',
     waterUpgradeBenefit:
       'Adds water for twenty people when finished. All existing water stays available during work.',
@@ -119,6 +131,7 @@ export function defineEra(definition) {
     cityAssets: null,
     detailAsset: null,
     airportStyle: null,
+    fountain: 'frontier-spring',
     digitalCity: false,
     tallCity: false,
     cityDescription: null,
@@ -133,6 +146,7 @@ export function defineEra(definition) {
     ...STYLES[style],
     ...definition.evolution,
   };
+  evolution.roadColor ??= resolveRoadStyle(evolution.roadStyle).color;
   for (const field of ['prices', 'newBuildingPrices', 'waterworks', 'farmCapacity']) {
     const values = evolution[field];
     if (

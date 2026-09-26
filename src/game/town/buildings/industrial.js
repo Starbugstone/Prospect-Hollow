@@ -1,6 +1,6 @@
 import { walkObstacle } from '../TownNavigation';
 import { addSquareModernization } from '../TownSquare';
-import { bridgeDeckHeight } from '../TownRiver';
+import { BRIDGE, bridgeDeckHeight } from '../TownRiver';
 import { addHeritageUpgrade } from './HeritageDetails';
 import { addFishingDock } from './river';
 import { INDUSTRIAL_VARIANTS, ELECTRIC_LAMPS, hasElectricity } from '../../../data/industrial';
@@ -230,7 +230,7 @@ function addIndustrialTier(d, parent, kind, level) {
   if (level < 2) return;
   if (kind === 'bridge') {
     for (const z of [-1.15, 1.15]) {
-      const height = (x) => bridgeDeckHeight(x + 31) + 0.3;
+      const height = (x) => bridgeDeckHeight(x + BRIDGE.centerX) + 0.3;
       for (let x = -6; x < 6; x += 0.5) {
         d.rod(tier, [x, height(x) + 0.9, z], [x + 0.5, height(x + 0.5) + 0.9, z], 0.1, iron);
         if (level >= 3) d.rod(tier, [x, height(x), z], [x, height(x) + 1.7, z], 0.06, iron);

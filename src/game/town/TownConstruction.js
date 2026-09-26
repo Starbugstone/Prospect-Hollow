@@ -24,8 +24,10 @@ export class TownConstruction {
   constructor(view, group, rotor, previousParts) {
     this.group = group;
     this.rotor = rotor;
-    this.start = view.elapsed;
-    this.lastTime = view.elapsed;
+    this.start = view.activeElapsed ?? view.elapsed;
+    this.lastTime = this.start;
+    this.firstStrikePresented = false;
+    this.startAt = null;
     this.elapsed = 0;
     this.pieces = [];
     group.updateMatrixWorld(true);
@@ -58,10 +60,29 @@ export class TownConstruction {
     );
     this.update(this.start);
   }
+  presentFirstStrike() {
+    this.firstStrikePresented = true;
+  }
+  pause() {
+    this.paused = true;
+  }
+  resume() {
+    this.paused = false;
+    this.lastTime = null;
+  }
   update(time) {
-    // A slow frame must not jump over the hammer strike and the entire roof reveal.
-    this.elapsed += Math.min(0.05, Math.max(0, time - this.lastTime));
-    this.lastTime = time;
+    if (this.paused) return false;
+    if (!this.firstStrikePresented) {
+      this.elapsed = 0.08;
+      this.lastTime = time;
+    } else if (this.startAt === null) {
+      this.startAt = time;
+      this.elapsed = 0;
+      this.lastTime = time;
+    } else {
+      this.elapsed += this.lastTime === null ? 0 : Math.max(0, time - this.lastTime);
+      this.lastTime = time;
+    }
     const elapsed = this.elapsed;
     for (const { object, y, visible, delay } of this.pieces) {
       const progress = clamp((elapsed - delay) / 0.65);

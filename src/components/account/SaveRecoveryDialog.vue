@@ -23,7 +23,7 @@
       <table>
         <thead>
           <tr>
-            <th scope="col">{{ t('Progress') }}</th>
+            <th scope="col">{{ t('Village') }}</th>
             <th scope="col">{{ t('Cloud') }}</th>
             <th scope="col">{{ t('Local copy') }}</th>
           </tr>

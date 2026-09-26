@@ -1,3 +1,4 @@
+import { horizonMaterial } from './TownAtmosphere';
 import {
   AdditiveBlending,
   BufferGeometry,
@@ -84,7 +85,9 @@ export class TownCompletionFireworks {
     }
     star.closePath();
     this.starGeometry = new ShapeGeometry(star);
-    this.starMaterial = new MeshBasicMaterial({ color: '#ffda7a', toneMapped: false });
+    this.starMaterial = horizonMaterial(
+      new MeshBasicMaterial({ color: '#ffda7a', toneMapped: false }),
+    );
     this.stars = [-1, 0, 1].map((index) => {
       const mesh = new Mesh(this.starGeometry, this.starMaterial);
       mesh.position.set(x + index * 2.5, 6 + (index === 0 ? 0.6 : 0), z + 1);

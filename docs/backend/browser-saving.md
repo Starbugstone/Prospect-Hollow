@@ -8,7 +8,7 @@ Each tab keeps its selection in `sessionStorage`, and account town URLs include 
 
 A new signed-in tab without a URL or existing selection opens the last selected cached account town (or the first available cached town). Existing tab selections stay independent. A local town is pinned before sign-in so authenticating cannot silently replace unregistered progress. The retained local copy and the account town can share a UUID; identity checks must compare both owner and UUID. An explicit account URL always selects the account record. The town picker must never label its retained guest copy as the current account town.
 
-The save bar and browser title identify the selected town. The bar distinguishes account towns from device-only play, and Sync is offered only for an account town. The account panel offers an explicit way to open the account version of a retained local copy, preserving both records.
+The settings drawer and browser title identify the selected town. Settings distinguishes account towns from device-only play, and Sync is offered only for an account town. The account panel offers an explicit way to open the account version of a retained local copy, preserving both records.
 
 The backend derives the user ID from its authenticated session. All private routes look up `towns` with both `id = UUID` and `player_id = authenticated user`, excluding deleted towns. Mutations retain both fields in the SQL update predicate. A UUID, tab selection, public link or client-supplied user ID grants no permission. Another account gets HTTP 404 without a private snapshot, including for conflict resolution and history. Requests without a session get HTTP 401. Client transport also rejects a response carrying a different town UUID.
 

@@ -65,9 +65,15 @@ export class TownRailwayOpening {
       const group = d.staticScenery.entries.get(id)?.group;
       const batch = d.buildingRenderer.batches.get(group);
       if (batch) batch.visible = false;
+      if (group) {
+        group.visible = false;
+        group.userData.activation = 'removed';
+      }
     }
     this.solid.visible = time < 7;
     this.tunnel.visible = time >= 7;
+    this.solid.userData.activation = time < 7 ? 'temporary-reveal' : 'removed';
+    this.tunnel.userData.activation = time >= 7 ? 'temporary-reveal' : 'pending';
     for (const { part, y, delay } of this.railParts) {
       const t = clamp((time - 2 - delay) / 0.65);
       part.visible = t > 0;
@@ -123,6 +129,10 @@ export class TownRailwayOpening {
       const group = d.staticScenery.entries.get(id)?.group;
       const batch = d.buildingRenderer.batches.get(group);
       if (batch) batch.visible = true;
+      if (group) {
+        group.visible = true;
+        group.userData.activation = 'completed';
+      }
     }
     const start = RAIL_EDGE.from[0] - 7;
     d.trainTimeOffset =

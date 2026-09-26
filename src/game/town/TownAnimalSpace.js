@@ -1,99 +1,65 @@
-import { Box3, Ray, Triangle, Vector3 } from 'three';
+import { Box3, Ray, Vector3 } from 'three';
 import { TownNavigation, walkPath } from './TownNavigation';
 
 const STEP = 0.4;
 const snapshots = new WeakMap();
 const point = (p) => new Vector3(...p);
 
-// A balanced tree keeps each triangle exactly once. Splitting large terrain or
-// roof triangles into spatial octants would duplicate them and waste memory.
-function tree(triangles) {
-  // Centroid sums are computed once. Each level partitions around its median
-  // instead of re-sorting, which dominated building a large era town.
-  const centers = { x: [], y: [], z: [] };
-  for (const { a, b, c } of triangles)
-    for (const axis of ['x', 'y', 'z']) centers[axis].push(a[axis] + b[axis] + c[axis]);
-  const order = Int32Array.from(triangles.keys());
-  const build = (start, end) => {
-    const bounds = new Box3();
-    for (let n = start; n < end; n++) {
-      const t = triangles[order[n]];
-      bounds.expandByPoint(t.a).expandByPoint(t.b).expandByPoint(t.c);
-    }
-    if (end - start <= 24)
-      return { bounds, triangles: Array.from(order.subarray(start, end), (n) => triangles[n]) };
-    const size = bounds.getSize(new Vector3());
-    const axis = size.x > size.y && size.x > size.z ? 'x' : size.y > size.z ? 'y' : 'z';
-    const middle = (start + end) >> 1;
-    selectMedian(order, start, end - 1, middle, centers[axis]);
-    return { bounds, left: build(start, middle), right: build(middle, end) };
-  };
-  return build(0, triangles.length);
-}
-// Hoare quickselect: afterwards no key before `target` exceeds any key after it.
-function selectMedian(order, left, right, target, key) {
-  while (right > left) {
-    const pivot = key[order[(left + right) >> 1]];
-    let i = left,
-      j = right;
-    while (i <= j) {
-      while (key[order[i]] < pivot) i++;
-      while (key[order[j]] > pivot) j--;
-      if (i <= j) {
-        [order[i], order[j]] = [order[j], order[i]];
-        i++;
-        j--;
-      }
-    }
-    if (target <= j) right = j;
-    else if (target >= i) left = i;
-    else return;
-  }
-}
-function query(node, overlaps, match) {
-  if (!overlaps(node.bounds)) return false;
-  if (node.triangles) return node.triangles.some(match);
-  return query(node.left, overlaps, match) || query(node.right, overlaps, match);
-}
+import { triangleIndex, queryTriangles as query } from './TriangleIndex';
 
-function snapshot(root) {
-  if (snapshots.has(root)) return snapshots.get(root);
-  root.updateWorldMatrix(true, true);
-  const triangles = [];
-  const visit = (object) => {
-    if (object.userData.animated) return;
-    if (object.isMesh && !object.material.transparent) {
-      const { geometry } = object,
-        vertices = geometry.attributes.position;
-      const positions = Array.from({ length: vertices.count }, (_, n) =>
-        new Vector3().fromBufferAttribute(vertices, n).applyMatrix4(object.matrixWorld),
-      );
-      const index = geometry.index;
-      for (let n = 0; n < (index?.count ?? vertices.count); n += 3) {
-        const at = (i) => positions[index ? index.getX(i) : i];
-        triangles.push(new Triangle(at(n), at(n + 1), at(n + 2)));
-      }
-    }
-    object.children.forEach(visit);
-  };
-  visit(root);
-  const entry = triangles.length ? tree(triangles) : null;
-  snapshots.set(root, entry);
+function* snapshot(root) {
+  const revision = root.userData.geometryRevision ?? 0;
+  const cached = snapshots.get(root);
+  if (cached?.revision === revision) return cached.entry;
+  const entry = yield* triangleIndex(root);
+  snapshots.set(root, { revision, entry });
   return entry;
 }
-
+export function* AnimalSpaceBuilder(d) {
+  const entries = [];
+  for (const root of [d.landscape, ...d.world.children]) {
+    if (!root || ['removed', 'pending'].includes(root.userData.activation)) continue;
+    if (root.userData.animated) {
+      if (root.userData.animalSolid)
+        entries.push({ bounds: root.userData.animalSolid.clone(), solid: true });
+    } else {
+      const entry = yield* snapshot(root);
+      if (entry) {
+        const footprints = (root.userData.footprints ?? []).map((o) => {
+          const xs = o.polygon.map((p) => p[0]),
+            zs = o.polygon.map((p) => p[1]);
+          return new Box3(
+            new Vector3(Math.min(...xs), o.y, Math.min(...zs)),
+            new Vector3(Math.max(...xs), o.y + o.height, Math.max(...zs)),
+          );
+        });
+        const envelope = new Box3();
+        footprints.forEach((box) => envelope.union(box));
+        // Generated components narrow building queries. If an unmapped visual
+        // extends outside their envelope, keep the complete triangle fallback.
+        const broadphase =
+          footprints.length && envelope.expandByScalar(1e-5).containsBox(entry.bounds)
+            ? footprints
+            : null;
+        entries.push({ ...entry, broadphase });
+      }
+    }
+    yield;
+  }
+  return createSpace(entries);
+}
 // Static geometry is indexed once per immutable scenery root, including merged
 // Blender meshes and the landscape outside d.world. Only the animal planner uses
 // this extra index; the existing pedestrian navigation contract stays unchanged.
 export function animalSpace(d) {
-  const entries = [d.landscape, ...d.world.children]
-    .filter((root) => root && (!root.userData.animated || root.userData.animalSolid))
-    .map((root) =>
-      root.userData.animated
-        ? { bounds: root.userData.animalSolid.clone(), solid: true }
-        : snapshot(root),
-    )
-    .filter(Boolean);
+  const builder = AnimalSpaceBuilder(d);
+  let step;
+  do {
+    step = builder.next();
+  } while (!step.done);
+  return step.value;
+}
+function createSpace(entries) {
   const box = new Box3(),
     ray = new Ray(),
     hit = new Vector3();
@@ -101,6 +67,8 @@ export function animalSpace(d) {
   const intersects = (bounds) => {
     for (const entry of entries) {
       if (!entry.bounds.intersectsBox(bounds)) continue;
+      if (entry.broadphase && !entry.broadphase.some((part) => part.intersectsBox(bounds)))
+        continue;
       if (entry.solid) return true;
       if (
         query(

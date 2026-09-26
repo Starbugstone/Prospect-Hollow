@@ -2,7 +2,7 @@
 
 A walkthrough of the current `develop` build as a first-time player: the landing page, the village tour, the first free building, level 1 of the mine, and the mine at phone size. The goal is an interface that feels hand-made, calm and obvious to navigate, instead of dense, over-explained and generic.
 
-This is the original proposal. See [the implementation review](ux-upgrade-review.md) for source-backed corrections, implemented changes, rejected assumptions and verification results.
+This is the original proposal. Current implementation contracts and extension checks are maintained in [the era architecture guide](era-architecture.md).
 
 ## How this review was done
 

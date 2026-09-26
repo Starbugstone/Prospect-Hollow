@@ -130,3 +130,25 @@ it('rejects a stale puzzle snapshot from a different run', () => {
   useCampaignStore().issuedRun++;
   expect(() => game.restoreHandoff(snapshot)).toThrow('saved copy has been kept');
 });
+
+it('recovers a transferred mine renderer without replaying the intro or leaving input blocked', () => {
+  const game = gameStore();
+  game.bootstrap();
+  game.startLevel(1);
+  const next = transfer(game);
+  const board = JSON.parse(JSON.stringify(next.board));
+  const runId = next.runId;
+  vi.spyOn(next, 'refreshBoardVisuals').mockImplementation(() => {});
+  vi.spyOn(next, 'scheduleHint').mockImplementation(() => {});
+  vi.spyOn(next, 'clearBonusPreview').mockImplementation(() => {});
+  const queued = vi.spyOn(next, 'processQueuedInput').mockImplementation(() => {});
+  next.rendererRecovering = true;
+  next.animationInProgress = true;
+  next.attachRenderer({ scene: {}, boardContainer: {} });
+  expect(next.animationInProgress).toBe(false);
+  expect(next.rendererRecovering).toBe(false);
+  expect(next.introFinalized).toBe(next.sessionVersion);
+  expect(queued).toHaveBeenCalledOnce();
+  expect(next.board).toEqual(board);
+  expect(next.runId).toBe(runId);
+});

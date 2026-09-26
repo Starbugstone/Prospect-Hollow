@@ -29,8 +29,9 @@ export const VISITOR_ARRIVAL_SITES = {
     ],
     // The lounge extends across the old forecourt; guests use its east exit.
     upgradedApproach: [
-      [7.7, 3.6],
-      [9, 3.6],
+      [9, 4.5],
+      [10.5, 4.5],
+      [10.5, 3.5],
       [9, 3.5],
     ],
     cameraDirection: [0.85, 1.1, 0.85],
