@@ -1,12 +1,12 @@
-// A single atomic localStorage record holds the active save and its sync metadata.
-// Game fields stay at the top level to preserve existing device saves and backups.
+// Each town is an atomic save + outbox record. Selection belongs to this tab;
+// account identity is shared, but gameplay never rewrites another town's record.
 export const SAVE_KEY = 'crystal-cascade-profile-v3';
 export const TOWN_CHANGED = 'prospect-town-save-changed';
 const copy = (value) => JSON.parse(JSON.stringify(value));
 const profileOf = ({ _cloud, ...profile }) => profile;
 // Advancing an idle income checkpoint alone is not new player progress. A changed
 // stored balance or fractional earning still makes the snapshot dirty.
-const progressKey = (profile) =>
+export const progressKey = (profile) =>
   JSON.stringify(
     {
       ...profile,
@@ -28,16 +28,6 @@ const progressKey = (profile) =>
           )
         : value,
   );
-// Account metadata and idle-clock checkpoints do not replace the displayed town.
-// Remounting for those writes makes tabs echo new mount-time checkpoints forever.
-export function townViewChanged(previousValue, nextValue) {
-  const previous = previousValue ? JSON.parse(previousValue) : {};
-  const next = nextValue ? JSON.parse(nextValue) : {};
-  return (
-    previous._cloud?.active.id !== next._cloud?.active.id ||
-    progressKey(profileOf(previous)) !== progressKey(profileOf(next))
-  );
-}
 const freshMeta = (name = 'My town') => ({
   id: crypto.randomUUID(),
   name,
@@ -49,216 +39,269 @@ const freshMeta = (name = 'My town') => ({
   pending: null,
   conflict: null,
 });
-function read() {
-  const raw = globalThis.localStorage?.getItem(SAVE_KEY);
-  const root = raw ? JSON.parse(raw) : {};
-  if (root.schemaVersion > 2) throw new Error('This save needs a newer version of the game.');
-  return root;
-}
-function metadata(root) {
-  return (root._cloud ??= {
-    version: 1,
-    active: freshMeta(),
-    account: null,
-    slots: {},
-    local: null,
-  });
-}
-function persist(root) {
-  if (!globalThis.localStorage) throw new Error('Local storage is unavailable.');
-  globalThis.localStorage.setItem(SAVE_KEY, JSON.stringify(root));
-  globalThis.window?.dispatchEvent(new Event(TOWN_CHANGED));
-}
-const key = (meta) => `${meta.owner}:${meta.id}`;
-function record(root) {
-  return { profile: profileOf(root), meta: copy(metadata(root).active) };
-}
-function stash(root) {
-  const state = metadata(root),
-    current = record(root);
-  if (current.meta.owner) state.slots[key(current.meta)] = current;
-  else state.local = current;
-}
-function replace(root, next) {
-  return { ...copy(next.profile), _cloud: { ...metadata(root), active: copy(next.meta) } };
-}
-function find(root, id, owner) {
-  const state = metadata(root);
-  return state.active.id === id && state.active.owner === owner
-    ? record(root)
-    : state.slots[`${owner}:${id}`];
-}
-function update(root, next) {
-  const state = metadata(root);
-  if (state.active.id === next.meta.id && state.active.owner === next.meta.owner)
-    return replace(root, next);
-  state.slots[key(next.meta)] = next;
-  return root;
-}
-export const townStorage = {
-  ensure(profile) {
-    const root = read();
-    if (!root._cloud) persist({ ...profile, _cloud: metadata(root) });
-    return this.state();
-  },
-  state() {
-    const root = read();
-    return root._cloud ? copy(root._cloud) : null;
-  },
-  active() {
-    const root = read();
-    return root._cloud ? record(root) : null;
-  },
-  records(owner) {
-    const root = read(),
-      state = metadata(root),
-      result = { ...state.slots };
-    if (state.active.owner) result[key(state.active)] = record(root);
-    return Object.values(result)
-      .filter((entry) => entry.meta.owner === owner)
-      .map(copy);
-  },
-  save(profile) {
-    const root = read(),
-      state = metadata(root);
-    if (progressKey(profileOf(root)) !== progressKey(profile)) {
-      state.active = {
-        ...state.active,
+export const ACCOUNT_KEY = 'prospect-account-v2';
+export const TOWN_PREFIX = 'prospect-town-v2:';
+const SELECTION_KEY = 'prospect-selected-town-v2';
+const CREATION_PREFIX = 'prospect-creation-v2:';
+export const townKey = (id, owner) => (owner ? `${TOWN_PREFIX}${owner}:${id}` : SAVE_KEY);
+const rootOf = (entry) => ({
+  ...copy(entry.profile),
+  _cloud: { version: 2, active: copy(entry.meta) },
+});
+const entryOf = (root) =>
+  root?._cloud ? { profile: profileOf(root), meta: copy(root._cloud.active) } : null;
+
+// Injectable stores let tests model separate tabs sharing the same durable storage.
+export function createTownStorage({
+  storage = () => globalThis.localStorage,
+  session = () => globalThis.sessionStorage,
+  changed = () => globalThis.window?.dispatchEvent(new Event(TOWN_CHANGED)),
+} = {}) {
+  let fallbackSelection = SAVE_KEY,
+    previousStorage,
+    guard = () => true;
+  function read(key) {
+    const raw = storage()?.getItem(key);
+    const root = raw ? JSON.parse(raw) : null;
+    return root;
+  }
+  function write(key, value) {
+    if (!storage()) throw new Error('Local storage is unavailable.');
+    const serialized = JSON.stringify(value);
+    if (storage().getItem(key) === serialized) return;
+    storage().setItem(key, serialized);
+    changed();
+  }
+  function selected() {
+    if (previousStorage !== storage()) {
+      previousStorage = storage();
+      fallbackSelection = SAVE_KEY;
+    }
+    const selectedKey = session()?.getItem(SELECTION_KEY) ?? fallbackSelection;
+    const account = read(ACCOUNT_KEY)?.account;
+    return account && selectedKey.startsWith(`${TOWN_PREFIX}${account.id}:`)
+      ? selectedKey
+      : SAVE_KEY;
+  }
+  function selectKey(key) {
+    // Commit selection before notifying the view; a failed session write must not
+    // leave the game saving into a town different from the displayed one.
+    session()?.setItem(SELECTION_KEY, key);
+    fallbackSelection = key;
+    previousStorage = storage();
+    changed();
+  }
+  function assertWrite(key = selected()) {
+    if (!guard(key)) throw new Error('This town is open in another tab.');
+  }
+  function activeRoot() {
+    return read(selected());
+  }
+  function persist(entry, key = selected()) {
+    assertWrite(key);
+    write(key, rootOf(entry));
+  }
+  const api = {
+    // Run once under the browser migration lock before mounting the application.
+    // The original combined save is replaced LAST, so a quota error or closed tab
+    // leaves it recoverable. Retrying never overwrites an already migrated town.
+    initialize() {
+      const root = read(SAVE_KEY);
+      if (root?.schemaVersion > 2) throw new Error('This save needs a newer version of the game.');
+      if (!root || root._cloud?.version === 2) return;
+      const legacy = root._cloud;
+      if (!legacy) return;
+      const current = entryOf(root);
+      const slots = { ...legacy.slots };
+      if (current.meta.owner) slots[`${current.meta.owner}:${current.meta.id}`] = current;
+      for (const entry of Object.values(slots)) {
+        const key = townKey(entry.meta.id, entry.meta.owner);
+        if (!read(key)) write(key, rootOf(entry));
+      }
+      if (!read(ACCOUNT_KEY))
+        write(ACCOUNT_KEY, { account: legacy.account, generation: crypto.randomUUID() });
+      if (legacy.creation) write(`${CREATION_PREFIX}${legacy.creation.owner}`, legacy.creation);
+      if (current.meta.owner) selectKey(townKey(current.meta.id, current.meta.owner));
+      const local = current.meta.owner ? legacy.local : current;
+      write(SAVE_KEY, rootOf(local ?? { profile: {}, meta: freshMeta() }));
+    },
+    setWriteGuard(next) {
+      guard = next;
+    },
+    canWrite() {
+      return guard(selected());
+    },
+    selectedKey: selected,
+    auth() {
+      return read(ACCOUNT_KEY) ?? { account: null, generation: null };
+    },
+    load() {
+      return activeRoot();
+    },
+    ensure(profile) {
+      const root = activeRoot();
+      if (!root?._cloud) persist({ profile: root ?? profile, meta: freshMeta() });
+      return this.state();
+    },
+    state() {
+      const active = this.active();
+      return active
+        ? {
+            version: 2,
+            active: active.meta,
+            account: this.auth().account,
+            creation: read(`${CREATION_PREFIX}${this.auth().account?.id}`),
+          }
+        : null;
+    },
+    active() {
+      return entryOf(activeRoot());
+    },
+    get(id, owner) {
+      return entryOf(read(townKey(id, owner)));
+    },
+    records(owner) {
+      const result = [];
+      const store = storage();
+      for (let i = 0; i < (store?.length ?? 0); i++) {
+        const key = store.key(i);
+        if (key?.startsWith(`${TOWN_PREFIX}${owner}:`)) {
+          const entry = entryOf(read(key));
+          if (entry) result.push(entry);
+        }
+      }
+      return result;
+    },
+    save(profile) {
+      const root = activeRoot();
+      const entry = entryOf(root) ?? { profile: {}, meta: freshMeta() };
+      if (progressKey(entry.profile) !== progressKey(profile)) {
+        entry.meta = {
+          ...entry.meta,
+          dirty: true,
+          sequence: entry.meta.sequence + 1,
+          updatedAt: Date.now(),
+        };
+      }
+      entry.profile = copy(profile);
+      persist(entry);
+    },
+    account(account, newSession = false) {
+      const previous = this.auth();
+      write(ACCOUNT_KEY, {
+        account,
+        generation:
+          newSession || account?.id !== previous.account?.id
+            ? crypto.randomUUID()
+            : previous.generation,
+      });
+    },
+    logout() {
+      this.account(null, true);
+      selectKey(SAVE_KEY);
+    },
+    select(id, owner) {
+      if (!owner || this.auth().account?.id !== owner)
+        throw new Error('Sign in to use account town slots.');
+      if (!this.get(id, owner)) throw new Error('Download this town before opening it.');
+      selectKey(townKey(id, owner));
+    },
+    remember(cloud, owner) {
+      if (this.get(cloud.townId, owner)) return;
+      persist(
+        {
+          profile: cloud.profile,
+          meta: {
+            ...freshMeta(cloud.name),
+            id: cloud.townId,
+            owner,
+            baseRevision: cloud.revision,
+            dirty: false,
+            cloudAt: cloud.updatedAt,
+            isPublic: cloud.isPublic,
+            publicId: cloud.publicId,
+          },
+        },
+        townKey(cloud.townId, owner),
+      );
+    },
+    attach(cloud, owner, sequence) {
+      if (this.get(cloud.townId, owner))
+        throw new Error(
+          'This town is already on your account. Open it from your town list; your local town is kept.',
+        );
+      const current = this.active();
+      if (current?.meta.id !== cloud.townId || this.auth().account?.id !== owner)
+        throw new Error('The selected town changed. Sign in again to recover the attached copy.');
+      assertWrite();
+      persist(
+        {
+          profile: current.profile,
+          meta: {
+            ...current.meta,
+            owner,
+            name: cloud.name,
+            baseRevision: cloud.revision,
+            dirty: current.meta.sequence !== sequence,
+            cloudAt: cloud.updatedAt,
+            pending: null,
+            attachment: null,
+            isPublic: cloud.isPublic,
+            publicId: cloud.publicId,
+          },
+        },
+        townKey(cloud.townId, owner),
+      );
+      selectKey(townKey(cloud.townId, owner));
+    },
+    mutate(id, owner, operation) {
+      if (this.auth().account?.id !== owner) return false;
+      const next = this.get(id, owner);
+      if (!next) return false;
+      assertWrite(townKey(id, owner));
+      if (operation(next) === false) return false;
+      persist(next, townKey(id, owner));
+      return true;
+    },
+    creation(body) {
+      write(`${CREATION_PREFIX}${this.auth().account?.id}`, body);
+    },
+    attachment(body, sequence) {
+      const current = this.active();
+      current.meta.attachment = { body, sequence };
+      persist(current);
+    },
+    renameLocal(name) {
+      const current = this.active();
+      if (current.meta.owner) throw new Error('Rename account towns from account settings.');
+      current.meta.name = name;
+      persist(current);
+    },
+    reset(profile) {
+      if (this.active()?.meta.owner)
+        throw new Error('Use account town management to create or delete a town.');
+      persist({ profile, meta: freshMeta() });
+    },
+    import(profile, identity) {
+      const current = this.active() ?? { profile: {}, meta: freshMeta() };
+      if (current.meta.owner && identity && identity.id !== current.meta.id)
+        throw new Error(
+          'This backup belongs to another town. Sign out to load it into the local slot, then attach it to an available account slot.',
+        );
+      if (!current.meta.owner && identity)
+        current.meta = { ...freshMeta(identity.name), id: identity.id };
+      current.meta = {
+        ...current.meta,
         dirty: true,
-        sequence: state.active.sequence + 1,
+        sequence: current.meta.sequence + 1,
+        pending: null,
+        conflict: null,
         updatedAt: Date.now(),
       };
-    }
-    persist({ ...copy(profile), _cloud: state });
-  },
-  account(account) {
-    let root = read();
-    const state = metadata(root);
-    if (!state.account) stash(root);
-    state.account = account;
-    persist(root);
-  },
-  logout() {
-    let root = read();
-    const state = metadata(root);
-    if (state.local?.meta.id === state.active.id)
-      state.local = {
-        profile: profileOf(root),
-        meta: { ...state.local.meta, dirty: true, sequence: state.local.meta.sequence + 1 },
-      };
-    stash(root);
-    state.account = null;
-    if (state.local) root = replace(root, state.local);
-    persist(root);
-  },
-  select(id, owner) {
-    const root = read(),
-      state = metadata(root);
-    if (!state.account || state.account.id !== owner)
-      throw new Error('Sign in to use account town slots.');
-    const next = find(root, id, owner);
-    if (!next) throw new Error('Download this town before opening it.');
-    stash(root);
-    persist(replace(root, next));
-  },
-  remember(cloud, owner) {
-    const root = read(),
-      state = metadata(root);
-    const existing = find(root, cloud.townId, owner);
-    if (existing) return;
-    state.slots[`${owner}:${cloud.townId}`] = {
-      profile: cloud.profile,
-      meta: {
-        ...freshMeta(cloud.name),
-        id: cloud.townId,
-        owner,
-        baseRevision: cloud.revision,
-        dirty: false,
-        cloudAt: cloud.updatedAt,
-        isPublic: cloud.isPublic,
-        publicId: cloud.publicId,
-      },
-    };
-    persist(root);
-  },
-  attach(cloud, owner, sequence) {
-    const root = read(),
-      state = metadata(root);
-    if (
-      state.active.id !== cloud.townId ||
-      state.active.sequence !== sequence ||
-      state.account?.id !== owner
-    ) {
-      // Preserve any gameplay that occurred while attachment was uploading.
-      if (state.active.id !== cloud.townId || state.account?.id !== owner)
-        throw new Error('The selected town changed. Sign in again to recover the attached copy.');
-    }
-    state.active = {
-      ...state.active,
-      owner,
-      name: cloud.name,
-      baseRevision: cloud.revision,
-      dirty: state.active.sequence !== sequence,
-      cloudAt: cloud.updatedAt,
-      pending: null,
-      isPublic: cloud.isPublic,
-      publicId: cloud.publicId,
-    };
-    persist(root);
-  },
-  mutate(id, owner, operation) {
-    const root = read();
-    if (metadata(root).account?.id !== owner) return false;
-    const next = find(root, id, owner);
-    if (!next) return false;
-    const result = operation(next);
-    if (result === false) return false;
-    persist(update(root, next));
-    return true;
-  },
-  creation(body) {
-    const root = read();
-    metadata(root).creation = body;
-    persist(root);
-  },
-  attachment(body, sequence) {
-    const root = read();
-    metadata(root).active.attachment = { body, sequence };
-    persist(root);
-  },
-  renameLocal(name) {
-    const root = read(),
-      state = metadata(root);
-    if (state.active.owner) throw new Error('Rename account towns from account settings.');
-    state.active.name = name;
-    persist(root);
-  },
-  reset(profile) {
-    const root = read(),
-      state = metadata(root);
-    if (state.active.owner)
-      throw new Error('Use account town management to create or delete a town.');
-    state.active = freshMeta();
-    state.local = null;
-    persist({ ...profile, _cloud: state });
-  },
-  import(profile, identity) {
-    const root = read(),
-      state = metadata(root);
-    if (state.active.owner && identity && identity.id !== state.active.id)
-      throw new Error(
-        'This backup belongs to another town. Sign out to load it into the local slot, then attach it to an available account slot.',
-      );
-    if (!state.active.owner && identity)
-      state.active = { ...freshMeta(identity.name), id: identity.id };
-    state.active = {
-      ...state.active,
-      dirty: true,
-      sequence: state.active.sequence + 1,
-      pending: null,
-      conflict: null,
-      updatedAt: Date.now(),
-    };
-    persist({ ...profile, _cloud: state });
-  },
-};
+      current.profile = profile;
+      persist(current);
+    },
+  };
+  return api;
+}
+export const townStorage = createTownStorage();

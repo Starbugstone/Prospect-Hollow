@@ -38,7 +38,7 @@ final class SaveService {
     }
     public function account(Request $r): array {
         return $this->transaction($r,false,function($db,$account,$session) {
-            $towns=$db->fetchAllAssociative('SELECT * FROM towns WHERE player_id=? AND deleted_at IS NULL ORDER BY name,id',[$account['id']]);
+            $towns=$db->fetchAllAssociative('SELECT id,name,revision,saved_at,listed,public_id FROM towns WHERE player_id=? AND deleted_at IS NULL ORDER BY name,id',[$account['id']]);
             return ['account'=>['id'=>$account['id'],'email'=>$account['email']],'csrf'=>$session['csrf'],'towns'=>array_map(fn($row)=>$this->view($row,false),$towns),'limit'=>3];
         });
     }
@@ -96,7 +96,7 @@ final class SaveService {
             $this->archive($db,$row);
             $changes=['profile'=>$json,'revision'=>(int)$row['revision']+1,'saved_at'=>time(),'upload_id'=>$body['uploadId'],'upload_hash'=>$hash];
             if($row['listed'])$changes['appearance']=$this->public->projection(json_decode($json),$row['name'],$row['public_id']);
-            $db->update('towns',$changes,['id'=>$id]);return $this->view(array_merge($row,$changes));
+            $db->update('towns',$changes,['id'=>$id,'player_id'=>$a['id']]);return $this->view(array_merge($row,$changes));
         });
     }
     public function metadata(Request $r,string $id,array $body): array {
@@ -109,7 +109,7 @@ final class SaveService {
             if($body['isPublic'])$this->public->moderate($name);
             $this->archive($db,$row);
             $changes=['name'=>$name,'normalized_name'=>$normalized,'listed'=>(int)$body['isPublic'],'revision'=>(int)$row['revision']+1,'saved_at'=>time(),'upload_id'=>null,'upload_hash'=>null,'appearance'=>$body['isPublic']?$this->public->projection(json_decode($row['profile']),$name,$row['public_id']):null];
-            $db->update('towns',$changes,['id'=>$id]);return $this->view(array_merge($row,$changes));
+            $db->update('towns',$changes,['id'=>$id,'player_id'=>$a['id']]);return $this->view(array_merge($row,$changes));
         });
     }
     public function history(Request $r,string $id): array {
@@ -125,7 +125,7 @@ final class SaveService {
             $row=$this->owned($db,$a['id'],$id);
             if(($body['confirmation']??null)!==$row['name'])throw new ApiError(422,'Type the town name to confirm deletion.');
             if(($body['baseRevision']??null)!==(int)$row['revision'])throw new ApiError(409,'This town changed. Review it again before deleting.');
-            $db->update('towns',['deleted_at'=>time(),'listed'=>0,'appearance'=>null,'normalized_name'=>null],['id'=>$id]);
+            $db->update('towns',['deleted_at'=>time(),'listed'=>0,'appearance'=>null,'normalized_name'=>null],['id'=>$id,'player_id'=>$a['id']]);
             return ['ok'=>true];
         });
     }

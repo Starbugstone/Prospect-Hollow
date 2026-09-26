@@ -1,17 +1,33 @@
 <template>
   <aside ref="bar" class="cloud-bar" :aria-label="t('Account and cloud save')">
     <span role="status">{{ t(cloud.status) }}</span>
-    <button v-if="cloud.account" :disabled="cloud.busy" @click="syncNow">
+    <button v-if="cloud.account" :disabled="cloud.busy || !ready" @click="syncNow()">
       {{ t('Sync now') }}
     </button>
     <button :disabled="campaign.readOnly" @click="accountOpen = true">
       {{ t(cloud.account ? 'My towns' : 'Protect my progress') }}
     </button>
   </aside>
-  <App :key="viewVersion" :suspended="accountOpen || communityOpen" />
+  <main v-if="!ready" class="town-tab-notice" role="status">
+    <h1>{{ t('Prospect Hollow') }}</h1>
+    <p>{{ t(opening ? 'Opening town…' : notice) }}</p>
+    <p v-if="!opening">
+      {{
+        t(
+          'Different towns can be played in separate tabs. Close the other tab to open this town here.',
+        )
+      }}
+    </p>
+    <button v-if="!opening" @click="activate">{{ t('Try opening this town again') }}</button>
+    <button @click="accountOpen = true">
+      {{ t(cloud.account ? 'Choose another town' : 'Protect my progress') }}
+    </button>
+  </main>
+  <App v-if="ready" :key="viewVersion" :suspended="accountOpen || communityOpen" />
   <AccountPanel
     v-if="accountOpen"
     :login-link="loginLink"
+    :writable="ready"
     @close="accountOpen = false"
     @changed="reload"
     @community="
@@ -30,22 +46,92 @@ import { ref, nextTick, onMounted, onBeforeUnmount, defineAsyncComponent, watch 
 import App from '../App.vue';
 import { useCampaignStore } from '../stores/campaignStore';
 import { useGameStore } from '../stores/gameStore';
-import { cloud, configureSync, refreshAccount, syncNow } from '../services/cloudProfile';
-import { townStorage, townViewChanged, TOWN_CHANGED, SAVE_KEY } from '../services/townStorage';
+import {
+  cloud,
+  configureSync,
+  refreshAccount,
+  syncNow,
+  cacheTown,
+  updateSaveStatus,
+} from '../services/cloudProfile';
+import { townStorage, townKey, TOWN_CHANGED, ACCOUNT_KEY } from '../services/townStorage';
 import { t } from '../i18n';
 import { localProfile } from '../services/localProfile';
+import { townCoordinator } from '../services/townCoordinator';
+import { createSyncScheduler } from '../services/syncScheduler';
 const AccountPanel = defineAsyncComponent(() => import('./account/AccountPanel.vue'));
 const CommunityPanel = defineAsyncComponent(() => import('./community/CommunityPanel.vue'));
+townStorage.setWriteGuard(townCoordinator.owns);
 const campaign = useCampaignStore(),
   game = useGameStore();
 const accountOpen = ref(false),
   communityOpen = ref(false),
   viewVersion = ref(0),
   loginLink = ref(''),
-  bar = ref(null);
+  bar = ref(null),
+  ready = ref(false),
+  opening = ref(true),
+  notice = ref('This town is open in another tab.');
 const visitId = ref(new URLSearchParams(location.hash.slice(1)).get('town') ?? '');
-let timer, observer;
+let observer,
+  loadedKey,
+  activation = Promise.resolve(),
+  lastResume = 0;
+const scheduler = createSyncScheduler({
+  pending: () => {
+    if (!ready.value || !cloud.account || !townStorage.canWrite()) return false;
+    const meta = townStorage.active()?.meta;
+    return (
+      meta?.owner === cloud.account.id &&
+      !meta.missing &&
+      (meta.pending || (meta.dirty && !meta.conflict))
+    );
+  },
+  sync: syncNow,
+});
+function activate() {
+  activation = activation
+    .catch(() => {})
+    .then(async () => {
+      if (ready.value && loadedKey === townStorage.selectedKey()) return;
+      opening.value = true;
+      ready.value = false;
+      const release = localProfile.suspendWrites();
+      try {
+        // Dispose renderers before releasing ownership. Cleanup cannot write a stale save.
+        await nextTick();
+        await townCoordinator.release();
+        loadedKey = townStorage.selectedKey();
+        if (!(await townCoordinator.acquire(loadedKey))) return;
+        if (loadedKey !== townStorage.selectedKey()) {
+          activate();
+          return;
+        }
+        release();
+        campaign.reloadLocal();
+        if (!campaign.readOnly) townStorage.ensure(JSON.parse(campaign.exportSave()).profile);
+        ready.value = true;
+        const url = new URL(location.href),
+          meta = townStorage.active()?.meta;
+        if (meta?.owner) url.searchParams.set('play', meta.id);
+        else url.searchParams.delete('play');
+        history.replaceState(null, '', url);
+        if (cloud.account) await syncNow();
+      } catch (error) {
+        notice.value = error.message;
+      } finally {
+        release();
+        opening.value = false;
+        schedule();
+      }
+    });
+  return activation;
+}
 function reload() {
+  if (loadedKey !== townStorage.selectedKey() || !ready.value) {
+    activate();
+    return;
+  }
   const release = localProfile.suspendWrites();
   try {
     game.exitLevel();
@@ -59,6 +145,12 @@ function reload() {
 }
 function configureTownSync() {
   configureSync({
+    targets: (owner) => {
+      const active = townStorage.active();
+      return active?.meta.owner === owner ? [active] : [];
+    },
+    eligible: (id, owner) => ready.value && townStorage.selectedKey() === townKey(id, owner),
+    run: (id, owner, operation) => townCoordinator.run(townKey(id, owner), operation),
     canApply: (id) => townStorage.active()?.meta.id !== id || !game.sessionActive,
     applied: (id) => {
       if (townStorage.active()?.meta.id === id) reload();
@@ -66,33 +158,45 @@ function configureTownSync() {
   });
 }
 try {
-  if (!campaign.readOnly) townStorage.ensure(JSON.parse(campaign.exportSave()).profile);
   configureTownSync();
 } catch (error) {
   cloud.error = error.message;
 }
 function schedule() {
   cloud.storageVersion++;
-  clearTimeout(timer);
-  if (cloud.account) timer = setTimeout(syncNow, 1200);
+  if (!cloud.busy) updateSaveStatus();
+  if (loadedKey && loadedKey !== townStorage.selectedKey()) activate();
+  scheduler.schedule();
 }
 function resume() {
-  if (!document.hidden && cloud.account) syncNow();
+  if (document.hidden || !cloud.account || !ready.value) return;
+  scheduler.resume();
+  // A clean town may have changed on another device. Check only on return,
+  // at most once per minute, never on every local checkpoint or storage event.
+  const meta = townStorage.active()?.meta;
+  if (!meta?.dirty && !meta?.pending && Date.now() - lastResume > 60000) {
+    lastResume = Date.now();
+    syncNow();
+  }
 }
 function fromOtherTab(event) {
-  if (event.key !== SAVE_KEY) return;
-  try {
-    if (townViewChanged(event.oldValue, event.newValue)) reload();
-    else {
-      // Keep elapsed income time shared without rebuilding the renderer or saving.
-      const checkpoint = townStorage.active()?.profile.town?.income?.at;
-      if (Number.isSafeInteger(checkpoint) && campaign.town.income)
-        campaign.town.income.at = Math.max(campaign.town.income.at ?? 0, checkpoint);
-    }
-    if (townStorage.state()?.account?.id !== cloud.account?.id) configureTownSync();
-    schedule();
-  } catch (error) {
-    cloud.error = error.message;
+  if (event.key === ACCOUNT_KEY || event.key === null) {
+    configureTownSync();
+    if (loadedKey !== townStorage.selectedKey()) activate();
+    scheduler.schedule();
+    if (cloud.account)
+      refreshAccount().catch((error) => {
+        cloud.error = error.message;
+      });
+  }
+  // Another town's writes never reload this renderer or schedule its uploads.
+  cloud.storageVersion++;
+}
+async function openRequestedTown() {
+  const id = new URL(location.href).searchParams.get('play');
+  if (id && cloud.account && townStorage.active()?.meta.id !== id) {
+    await cacheTown({ townId: id });
+    townStorage.select(id, cloud.account.id);
   }
 }
 function readLink() {
@@ -109,10 +213,12 @@ watch(
       communityOpen.value = true;
       accountOpen.value = false;
     }
-    if (previous && !next) {
-      communityOpen.value = false;
-      reload();
-    }
+    if (previous && !next) communityOpen.value = false;
+    openRequestedTown()
+      .then(activate)
+      .catch((error) => {
+        cloud.error = error.message;
+      });
   },
 );
 watch(
@@ -140,15 +246,19 @@ onMounted(() => {
   }
   if (cloud.account)
     refreshAccount()
-      .then(syncNow)
+      .then(openRequestedTown)
+      .then(activate)
       .catch((error) => {
         cloud.error = error.message;
         cloud.status = 'Offline — cloud backup pending';
+        activate();
       });
+  else activate();
 });
 onBeforeUnmount(() => {
-  clearTimeout(timer);
+  scheduler.dispose();
   observer?.disconnect();
+  townCoordinator.release();
   window.removeEventListener(TOWN_CHANGED, schedule);
   window.removeEventListener('storage', fromOtherTab);
   window.removeEventListener('online', resume);
@@ -159,6 +269,24 @@ onBeforeUnmount(() => {
 });
 </script>
 <style>
+.town-tab-notice {
+  max-width: 42rem;
+  margin: 3rem auto;
+  padding: 1.5rem;
+  font: 1rem/1.6 system-ui;
+  background: #fbf8ef;
+  color: #294139;
+  border-radius: 16px;
+}
+.town-tab-notice button {
+  padding: 0.7rem;
+  margin: 0.3rem;
+  cursor: pointer;
+  background: #ffdc99;
+  color: #193d30;
+  border: 1px solid #c4bea9;
+  border-radius: 8px;
+}
 .cloud-mode .town-map-frame.town-fullscreen {
   top: var(--cloud-bar-height, 54px);
   height: calc(100dvh - var(--cloud-bar-height, 54px));

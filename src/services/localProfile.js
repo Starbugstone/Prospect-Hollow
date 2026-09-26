@@ -5,7 +5,7 @@ let paused = 0,
   loadedStorage;
 export const localProfile = {
   get writesSuspended() {
-    return paused > 0;
+    return paused > 0 || !townStorage.canWrite();
   },
   load() {
     loadedId = null;
@@ -14,9 +14,9 @@ export const localProfile = {
       const storage = globalThis.localStorage;
       if (!storage)
         return { data: null, warning: 'Progress can only be kept until this page closes.' };
-      const current = storage.getItem(SAVE_KEY);
+      const current = townStorage.load();
       if (current != null) {
-        const data = JSON.parse(current);
+        const data = current;
         loadedId = data?._cloud?.active.id ?? null;
         if (data?.schemaVersion > 2)
           return {
@@ -37,8 +37,10 @@ export const localProfile = {
   },
   suspendWrites() {
     paused++;
+    let released = false;
     return () => {
-      paused--;
+      if (!released) paused--;
+      released = true;
     };
   },
   save(data) {
