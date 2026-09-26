@@ -278,6 +278,14 @@ new layout, clearing old routes, work positions and crowd reservations. The
 rendered era is recorded separately from the mutable campaign town. Ordinary
 building upgrades and rebuilds within an era retain actor identity and position.
 
+Outdoor task actors share `TownWorkRoutine`: approach a prepared work site,
+perform the task, walk back and take a short break. Farmers, hosts, fishers,
+chatting neighbors and bird feeders keep their task animations, but no longer
+stand in one place indefinitely. Only accepted locomotion advances travel;
+arrival starts the task timer. Task animation never overwrites the accepted
+position. Routes are prepared on layout changes, not searched each frame.
+The leashed park walk also uses distance-based speed and turns back on open paths.
+
 People, ground animals and road traffic yield to other actors for at most three
 blocked attempts, then pass through the crowd until clear. A clear step resets
 that budget. This exception never bypasses scenery clearance or an unreachable

@@ -131,6 +131,46 @@ it.each([
   expect(worker.root.position).toEqual(position);
 });
 
+it.each(ERAS.filter((era) => era.enabled).map((era) => era.id))(
+  'keeps populated village routines moving and returning to their tasks in %s',
+  (era) => {
+    const { view, town, labels } = fixture();
+    town.era = era;
+    for (const building of BUILDINGS) {
+      if (eraIndex(building.introducedEra) > eraIndex(era)) continue;
+      town.buildings[building.id] = building.upgrades.length;
+      town.buildingEras[building.id] = era;
+      town.buildingEraLevels[building.id] = 3;
+    }
+    view.update(town, labels);
+    const tracks = view.actors.map((actor) => ({
+      actor,
+      previous: actor.root.position.clone(),
+      travel: 0,
+      phases: new Set(),
+    }));
+    for (let frame = 1; frame <= 1200; frame++) {
+      view.elapsed = frame / 10;
+      view.actors.forEach((actor) => view.animatePerson(actor, view.elapsed));
+      view.motions.forEach((motion) => motion(view.elapsed));
+      updateTownLocomotion(view, 0.1);
+      for (const track of tracks) {
+        track.travel += track.actor.root.position.distanceTo(track.previous);
+        track.previous.copy(track.actor.root.position);
+        if (track.actor.workRoutine) track.phases.add(track.actor.workRoutine.phase);
+      }
+    }
+    for (const { actor, travel, phases } of tracks) {
+      const label = `${actor.root.name || actor.work || 'walker'} ${actor.seed}`;
+      expect.soft(travel, label).toBeGreaterThan(1);
+      if (actor.work) {
+        expect(phases, label).toContain('work');
+        expect(phases, label).toContain('return');
+      }
+    }
+  },
+);
+
 it('reuses unchanged plots and windmills while rebuilding a changed construction site', () => {
   const { view, town, labels } = fixture();
   view.update(town, labels);

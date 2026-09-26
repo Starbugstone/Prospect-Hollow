@@ -10,6 +10,7 @@ import { geometryFootprints, registerFootprints, footprintDistance } from './Bui
 import { townTracks, railEdges } from './TownLayout';
 import { demote } from '../phaser/boardRetention';
 import { townNavigation, prepareActorWalk, walkPose, placeSafely } from './TownNavigation';
+import { addWorkBreak, updateWorkRoutine } from './TownWorkRoutine';
 import { TownVipArrivals } from './TownVipArrivals';
 import { hasVisitorTransport } from '../../data/visitorArrivals';
 import { villagerIdentity, vipVisitor } from '../../data/villagers';
@@ -67,7 +68,7 @@ import { TownScenery } from './TownScenery';
 import { addMineEra } from './TownMineEvolution';
 import { overlapsEventInset } from './TownInset';
 
-import { PLOTS, LANE_X, atPlot, SHERIFF_PATROL, visiblePlots } from './TownLayout';
+import { PLOTS, LANE_X, atPlot, plotStreet, SHERIFF_PATROL, visiblePlots } from './TownLayout';
 import { riverCenterX } from './TownRiver';
 export { PLOTS } from './TownLayout';
 const colors = {
@@ -658,12 +659,12 @@ export class TownDiorama {
         if (!intersects) continue;
         const position = actor.root.position.toArray();
         const next = view.navigation.plan(
-          [position, ...path.points.slice(1), position],
+          actor.workRoutine ? path.points : [position, ...path.points.slice(1), position],
           actor.radius ?? 0.45,
         );
         if (actor.walkPath) actor.walkPath = next;
         else actor.path = next;
-        if (actor.motion) actor.motion.routeDistance = 0;
+        if (actor.motion) actor.motion.path = null;
         yield;
       }
     }
@@ -953,8 +954,8 @@ export class TownDiorama {
         ],
         seed: 13,
       });
-    if (town.buildings.farm)
-      this.person({
+    if (town.buildings.farm) {
+      const farmer = this.person({
         color: '#809267',
         skin: '#af7b56',
         hat: '#d7b671',
@@ -962,8 +963,11 @@ export class TownDiorama {
         seed: 2,
         work: 'farm',
       });
-    if (town.buildings.saloon)
-      this.person({
+      farmer.root.name = 'Farmer tending crops';
+      addWorkBreak(this, farmer, plotStreet('farm'), { work: 18, rest: 4 });
+    }
+    if (town.buildings.saloon) {
+      const host = this.person({
         color: '#a47d91',
         skin: '#edc7a4',
         hat: '#b89869',
@@ -972,6 +976,9 @@ export class TownDiorama {
         work: 'greet',
         dress: true,
       });
+      host.root.name = 'Saloon host';
+      addWorkBreak(this, host, plotStreet('saloon'), { work: 14, rest: 4 });
+    }
     if (town.buildings.sheriff)
       this.person({
         color: '#315d83',
@@ -1398,13 +1405,14 @@ export class TownDiorama {
     }
   }
   animatePerson(actor, time) {
+    updateWorkRoutine(actor, time);
     time = actor.motion?.animationTime ?? time;
     const { root, body, torso, head, arms, legs, curve, duration, seed, work } = actor;
     const cycle = (time + seed) % (duration + 4);
-    actor.routeResting = !work && cycle >= duration;
+    if (!actor.workRoutine) actor.routeResting = !work && cycle >= duration;
     let walking = !work && cycle < duration;
     const progress = work?.length ? 0.1 : Math.min(cycle / duration, 0.9999);
-    const placedWorker = work && actor.motion;
+    const placedWorker = work && (actor.motion || actor.workRoutine);
     if (!actor.walkPath && !placedWorker) root.position.copy(curve.getPointAt(progress));
     let routeProgress = progress;
     if (actor.visitor && !actor.transportVisitor) {
@@ -1429,7 +1437,7 @@ export class TownDiorama {
 
     if (actor.motion && actor.walkPath?.total && (!actor.manual || actor.transportVisitor))
       routeProgress = (actor.motion.routeDistance % actor.walkPath.total) / actor.walkPath.total;
-    actor.routeProgress = routeProgress;
+    if (!actor.workRoutine) actor.routeProgress = routeProgress;
     if (actor.walkPath && !placedWorker) {
       const pose = walkPose(actor.walkPath, routeProgress, actor.walkPose);
       root.position.set(pose.x, pose.y, pose.z);
@@ -1448,7 +1456,7 @@ export class TownDiorama {
     }
     // Locomotion owns an established worker's position, including any accepted
     // construction exit. Do not repeat the placement search every frame.
-    if (work && !actor.motion) placeSafely(this, root);
+    if (work && !actor.motion && !actor.workRoutine) placeSafely(this, root);
     if (!actor.motion && actor.lastPosition && time >= actor.lastPoseTime)
       actor.distance += root.position.distanceTo(actor.lastPosition);
     actor.lastPosition ??= new THREE.Vector3();
@@ -1470,18 +1478,19 @@ export class TownDiorama {
       arms[n].lower.rotation.x = -0.16;
     }
     if (!walking) {
-      if (work === 'farm') {
+      const activity = actor.workRoutine && !actor.workActive ? null : work;
+      if (activity === 'farm') {
         torso.rotation.x = 0.22 + Math.sin(time * 1.9) * 0.12;
         arms[0].upper.rotation.x = -0.7 + Math.sin(time * 1.9) * 0.3;
-      } else if (work === 'fishing') {
+      } else if (activity === 'fishing') {
         torso.rotation.x = 0.04;
         arms[1].upper.rotation.x = -0.65 + Math.sin(time * 0.7) * 0.05;
         arms[1].lower.rotation.x = -0.5;
       } else {
         torso.rotation.x = 0;
-        arms[1].upper.rotation.z = work === 'greet' ? -0.12 : 0;
+        arms[1].upper.rotation.z = activity === 'greet' ? -0.12 : 0;
         arms[1].lower.rotation.x =
-          work === 'greet' ? -0.45 + Math.sin(time * 1.2 + seed) * 0.16 : -0.16;
+          activity === 'greet' ? -0.45 + Math.sin(time * 1.2 + seed) * 0.16 : -0.16;
       }
     } else {
       torso.rotation.x = 0;

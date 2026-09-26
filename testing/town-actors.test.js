@@ -261,6 +261,44 @@ describe('A visible, articulated frontier encounter', () => {
     expect(d.world.children).toHaveLength(count);
     expect(JSON.stringify(town)).toBe(saved);
   });
+  it.each(['frontier', 'industrial', 'motor-age', 'future-routine-era'])(
+    'lets chatting neighbors leave, walk and return without repeated pathfinding in %s',
+    (era) => {
+      const d = diorama();
+      d.town = createTown();
+      d.town.era = era;
+      Object.assign(d.town.buildings, { home: 3, well: 3, farm: 3, square: 3 });
+      d.navigation = new TownNavigation();
+      addTownLife(d, d.town);
+      const actors = d.actors.filter((a) => a.root.name === 'Neighbors chatting');
+      const starts = actors.map((a) => a.root.position.clone());
+      expect(starts[0].distanceTo(starts[1])).toBeGreaterThan(0.6);
+      const moved = new Set(),
+        returned = new Set();
+      const plan = vi.spyOn(d.navigation, 'plan');
+      for (let frame = 1; frame <= 900; frame++) {
+        const time = frame / 10;
+        const before = actors.map((a) => a.root.position.clone());
+        actors.forEach((a) => d.animatePerson(a, time));
+        d.motions.forEach((motion) => motion(time));
+        updateTownLocomotion(d, 0.1);
+        actors.forEach((a, i) => {
+          expect(a.root.position.distanceTo(before[i])).toBeLessThanOrEqual(0.055 + 1e-6);
+          if (a.root.position.distanceTo(starts[i]) > 2) moved.add(a);
+          if (moved.has(a) && a.workActive && a.root.position.distanceTo(starts[i]) < 1e-5)
+            returned.add(a);
+        });
+      }
+      expect(moved.size).toBe(2);
+      expect(returned.size).toBe(2);
+      expect(plan).not.toHaveBeenCalled();
+      plan.mockRestore();
+      d.clearGroup(d.world);
+      Object.values(d.geometries).forEach((g) => g.dispose());
+      d.materials.forEach((m) => m.dispose());
+      d.contactShadowMaterial.dispose();
+    },
+  );
   it('keeps cross-river residents on the bridge deck without smoothing corners into water', () => {
     const d = diorama(),
       town = createTown();

@@ -5,6 +5,7 @@ import {
   TownNavigation,
   NPC_MARGIN,
   walkPose,
+  walkPath,
   walkObstacle,
   townNavigation,
 } from '../src/game/town/TownNavigation';
@@ -354,6 +355,32 @@ it('includes the park dog-walker and its leashed dog in cached avoidance', () =>
     expect(d.navigation.clear(visit.position.toArray(), 1.2)).toBe(true);
   }
   expect(d.navigation.plans).toBe(1);
+});
+
+it('keeps the dog walker at walking speed and turns back on a shortened open route', () => {
+  const d = fixture();
+  d.navigation = {
+    obstacles: [{}],
+    plan: () =>
+      walkPath([
+        [0, 0.13, 0],
+        [0, 0.13, 2],
+      ]),
+  };
+  addLeisureActivity(d, d.town);
+  const walker = d.world.getObjectByName('Park dog walk');
+  let travel = 0,
+    turnedBack = false;
+  for (let frame = 1; frame <= 120; frame++) {
+    const before = walker.position.clone();
+    d.motions.forEach((motion) => motion(frame / 10));
+    const step = walker.position.distanceTo(before);
+    expect(step).toBeLessThanOrEqual(0.055 + 1e-6);
+    travel += step;
+    if (walker.position.z < before.z) turnedBack = true;
+  }
+  expect(travel).toBeGreaterThan(6);
+  expect(turnedBack).toBe(true);
 });
 
 it('filters nearby mesh components by their bounds before exact segment checks', () => {

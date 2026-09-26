@@ -147,6 +147,8 @@ function prepareRouteStep(a, navigation, h) {
     return false;
   }
   p.routeTravel = m.maxSpeed * h;
+  if (Number.isFinite(a.routeLimit))
+    p.routeTravel = Math.min(p.routeTravel, Math.abs(a.routeLimit - m.routeDistance));
   routeStepPose(path, m.routeDistance + a.routeDirection * p.routeTravel, pose);
   p.dx = pose.x - m.x;
   p.dz = pose.z - m.z;
@@ -281,7 +283,7 @@ export function updateTownLocomotion(d, h = LOCOMOTION_STEP) {
       routeDistance: a.progress ?? 0,
       radius: a.radius ?? 0.29,
       maxSpeed: a.speed ?? a.walkSpeed ?? 0.55,
-      animationTime: path?.total ? a.lastPoseTime : undefined,
+      animationTime: path?.total && !a.workRoutine ? a.lastPoseTime : undefined,
     });
     if (path && m.path !== path) {
       m.routeDistance =
@@ -293,7 +295,7 @@ export function updateTownLocomotion(d, h = LOCOMOTION_STEP) {
     a.routeDirection = a.direction ?? 1;
     a.y = root.position.y;
     a.hold =
-      !!a.work ||
+      (!!a.work && !a.workRoutine) ||
       a.routeResting ||
       (a.species && !['walking', 'fleeing', 'retreating'].includes(a.state));
     a.noPath = !!path && path.points.length < 2;

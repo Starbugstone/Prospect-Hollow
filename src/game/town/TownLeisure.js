@@ -1,4 +1,4 @@
-import { planOrbit, walkPose } from './TownNavigation';
+import { planOrbit, routeStepPose } from './TownNavigation';
 import { leisureModel } from './LeisureAssets';
 import { available } from './assets/MeshCatalog';
 import { PLOTS } from './TownLayout';
@@ -77,7 +77,11 @@ export function addLeisureActivity(d, town) {
     visit.position.set(x + Math.sin(angle) * 1.55, 0.13, z + 2.7 + Math.cos(angle) * 1.1);
     visit.rotation.y = Math.atan2(Math.cos(angle) * 1.55, -Math.sin(angle) * 1.1);
     if (path) {
-      const pose = walkPose(path, phase / 60, (visit.userData.pose ??= { x, y: 0.13, z: z + 3.8 }));
+      const pose = routeStepPose(
+        path,
+        time * 0.55,
+        (visit.userData.pose ??= { x, y: 0.13, z: z + 3.8 }),
+      );
       visit.position.set(pose.x, pose.y, pose.z);
       visit.rotation.y = pose.heading;
     }

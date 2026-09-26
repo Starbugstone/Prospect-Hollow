@@ -4,6 +4,7 @@ import { cityModel } from './buildings/city';
 import { RIVER, riverCenterX } from './TownRiver';
 import { PLOTS, RAIL_EDGE, railEdges, routeBetween, plotStreet } from './TownLayout';
 import { modernTransport } from './TownEvolution';
+import { addWorkBreak } from './TownWorkRoutine';
 
 const RAIL_HEIGHT = 0.18;
 export const railHeight = (x) => {
@@ -64,6 +65,8 @@ export function addEraActivity(d, town) {
       ],
       work: 'fishing',
     });
+    fisher.root.name = 'Neighbor fishing';
+    addWorkBreak(d, fisher, plotStreet('fisherman'), { work: 26, rest: 5 });
     d.rod(fisher.arms[1].lower, [0, -0.19, 0], [0, -0.19, 1.5], 0.015, '#987c54').name =
       'Hand-held fishing rod';
   }

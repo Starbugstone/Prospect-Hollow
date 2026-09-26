@@ -9,6 +9,7 @@ import { groundHeight } from './TownLandscape';
 import { population } from './TownRules';
 import { animalModel, animateAnimal } from './TownAnimalModels';
 import { animalNavigation, animalSpace } from './TownAnimalSpace';
+import { setWorkRoutine } from './TownWorkRoutine';
 
 const clamp = (n) => Math.max(0, Math.min(1, n));
 const smooth = (n) => {
@@ -166,6 +167,9 @@ function addFeeder(d, habitat, nav, era) {
     work: 'feed',
   });
   actor.root.name = 'Neighbor feeding animals';
+  actor.radius = 0.45;
+  actor.clearance = (from, to, radius) => d.animalSpace.segment(from, to, radius, 1.5);
+  setWorkRoutine(actor, path, { work: 20, rest: 8 });
   const bag = d.group(actor.arms[0].lower, 0, -0.2, 0.07);
   d.ball(bag, 0, 0, 0, [0.12, 0.17, 0.1], '#c5aa76');
   const grain = d.group(d.world);
@@ -190,8 +194,7 @@ function addFeeder(d, habitat, nav, era) {
     seed.visible = false;
     return seed;
   });
-  return {
-    ...actor,
+  return Object.assign(actor, {
     path,
     habitat,
     station,
@@ -200,35 +203,28 @@ function addFeeder(d, habitat, nav, era) {
     seedTargets,
     active: false,
     pose: { x: actor.root.position.x, y: actor.root.position.y, z: actor.root.position.z },
-  };
+  });
 }
 
 function updateFeeder(feeder, time) {
   if (!feeder) return;
-  const phase = time % 70;
-  feeder.active = phase >= 5 && phase < 25;
-  const progress = phase < 5 ? smooth(phase / 5) : phase < 25 ? 1 : 1 - smooth((phase - 25) / 5);
-  const pose = walkPose(feeder.path, progress, feeder.pose);
-  feeder.root.position.set(pose.x, pose.y, pose.z);
+  const routine = feeder.workRoutine;
+  feeder.active = feeder.workActive === true;
+  const phase = time - (routine.since ?? time);
   const [x, , z] = feeder.habitat.point;
-  feeder.root.rotation.y = feeder.active
-    ? Math.atan2(x - pose.x, z - pose.z)
-    : pose.heading + (phase >= 25 ? Math.PI : 0);
-  const walking = phase < 5 || (phase >= 25 && phase < 30);
-  feeder.legs.forEach((leg, n) => {
-    leg.upper.rotation.x = walking ? Math.sin(time * 6 + n * Math.PI) * 0.35 : 0;
-  });
+  if (feeder.active)
+    feeder.root.rotation.y = Math.atan2(x - feeder.root.position.x, z - feeder.root.position.z);
   feeder.torso.rotation.x = feeder.active ? 0.16 : 0;
   feeder.arms[0].upper.rotation.x = -0.7;
   feeder.arms[1].upper.rotation.x = feeder.active ? -0.75 + Math.sin(time * 3) * 0.35 : -0.12;
   feeder.head.rotation.x = feeder.active ? 0.22 : 0;
-  feeder.grain.visible = phase >= 5 && phase < 30;
+  feeder.grain.visible = feeder.active;
   if (!feeder.grain.visible) return;
   feeder.seeds.forEach((seed, n) => {
     const offset = Math.floor(n / 7) * 1.6 + (n % 7) * 0.045;
-    const emission = Math.floor((Math.min(phase, 25) - 5 - offset) / 3.2);
-    const generation = Math.floor(time / 70) * 16 + emission;
-    const age = phase - 5 - offset - emission * 3.2;
+    const emission = Math.floor((phase - offset) / 3.2);
+    const generation = routine.visit * 16 + emission;
+    const age = phase - offset - emission * 3.2;
     const state = seed.userData.grain;
     if (state.generation !== generation) {
       state.generation = generation;
