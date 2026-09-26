@@ -1,4 +1,11 @@
 import {
+  VIP_SPEND,
+  VIP_RECEIPT_LIMIT,
+  vipVisitBuildings,
+  normalizeVipReceipts,
+  vipReceipt,
+} from '../data/vipVisits';
+import {
   queueBuildingPresentations,
   queueCampaignPresentations,
   acknowledgePresentation,
@@ -78,6 +85,7 @@ const defaults = () => ({
   seenObstacles: [],
   inventoryNotice: '',
   lastSaloonIncome: 0,
+  vipReceipts: [],
   powers: POWERS.map((power) => ({ ...power, quantity: 0 })),
 });
 const load = (loaded = localProfile.load(), persistRecovered = true) => {
@@ -92,6 +100,7 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
     state.saveWarning = loaded.warning ?? '';
     state.readOnly = !!loaded.readOnly;
     state.town = normalizeTown(saved?.town);
+    state.vipReceipts = normalizeVipReceipts(saved?.vipReceipts);
     if (
       TOWN_PROJECTS.some(
         (project) => project.id === saved?.townProjectFocus && project.era === state.town.era,
@@ -227,6 +236,7 @@ const profileData = (state) => ({
   pendingChests: state.pendingChests,
   shopStock: state.shopStock,
   shopVisit: state.shopVisit,
+  vipReceipts: state.vipReceipts,
   seenObstacles: state.seenObstacles,
   seenTips: state.seenTips,
   town: state.town,
@@ -426,6 +436,26 @@ export const useCampaignStore = defineStore('campaign', {
       this.town = result.town;
       if (persist) this.save();
       return result.earned;
+    },
+    collectVipSpending(receipt) {
+      const key = vipReceipt(receipt);
+      if (
+        !key ||
+        this.vipReceipts.includes(key) ||
+        !vipVisitBuildings(this.town).includes(receipt.building) ||
+        this.town.coins > Number.MAX_SAFE_INTEGER - VIP_SPEND
+      )
+        return 0;
+      const previousTown = this.town,
+        previousReceipts = this.vipReceipts;
+      this.town = { ...previousTown, coins: previousTown.coins + VIP_SPEND };
+      this.vipReceipts = [...previousReceipts, key].slice(-VIP_RECEIPT_LIMIT);
+      if (!this.save()) {
+        this.town = previousTown;
+        this.vipReceipts = previousReceipts;
+        return 0;
+      }
+      return VIP_SPEND;
     },
     collectSaloonIncome(now = Date.now()) {
       if (!Number.isSafeInteger(now) || now < 0 || !this.town.buildings.saloon) return 0;

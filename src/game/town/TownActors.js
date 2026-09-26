@@ -1,3 +1,4 @@
+import { horizonMaterial } from './TownAtmosphere';
 import { Group, InstancedMesh, MeshStandardMaterial, DynamicDrawUsage } from 'three';
 
 // Keep articulated joints in the scene graph, but draw matching parts together.
@@ -9,7 +10,7 @@ export class TownActors {
     scene.add(this.group);
     this.buckets = [];
     this.roots = [];
-    this.material = new MeshStandardMaterial({ roughness: 0.88 });
+    this.material = horizonMaterial(new MeshStandardMaterial({ roughness: 0.88 }));
   }
   rebuild(roots) {
     this.clear();
@@ -17,7 +18,7 @@ export class TownActors {
     const buckets = new Map();
     for (const root of roots)
       root.traverse((object) => {
-        if (!object.isMesh) return;
+        if (!object.isMesh || object.isInstancedMesh) return;
         object.layers.set(1); // The camera draws their instances on layer two.
         const key = `${object.geometry.uuid}:${object.material.isMeshStandardMaterial && !object.material.transparent ? 'colored' : object.material.uuid}`;
         if (!buckets.has(key)) buckets.set(key, []);
@@ -28,7 +29,7 @@ export class TownActors {
       const colored = first.material.isMeshStandardMaterial && !first.material.transparent;
       const mesh = new InstancedMesh(
         first.geometry,
-        colored ? this.material : first.material,
+        colored ? this.material : horizonMaterial(first.material),
         objects.length,
       );
       mesh.instanceMatrix.setUsage(DynamicDrawUsage);

@@ -10,7 +10,7 @@
       </p>
       <div class="town-tour-art">
         <svg viewBox="-165 -210 330 270" aria-hidden="true">
-          <TownMine v-if="step.id === 'mine'" decorative :stage="mineStage" />
+          <TownMine v-if="step.id === 'mine'" decorative :level="level" :era="era" />
           <TownBuilding v-else :id="step.id" :stage="step.stage || 1" />
         </svg>
       </div>
@@ -34,7 +34,7 @@ import { t } from '../../i18n';
 import TownDialog from './TownDialog.vue';
 import TownBuilding from './TownBuilding.vue';
 import TownMine from './TownMine.vue';
-defineProps({ mineStage: Number });
+defineProps({ level: { type: Number, default: 1 }, era: { type: String, default: 'frontier' } });
 defineEmits(['close', 'build']);
 const index = ref(0);
 const steps = [

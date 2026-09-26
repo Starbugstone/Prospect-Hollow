@@ -87,7 +87,7 @@
       :kind="kind"
       :level="serviceLevel"
     />
-    <TownSquare v-else-if="kind === 'square'" :stage="serviceLevel" />
+    <TownSquare v-else-if="kind === 'square'" :stage="serviceLevel" :era="era" />
     <g v-else-if="kind === 'bridge'" fill="none" stroke="#638b88" stroke-width="5">
       <path d="M-155 8H155" stroke="#d9cbae" stroke-width="30" />
       <path d="M-155-12H155M-155 27H155" />

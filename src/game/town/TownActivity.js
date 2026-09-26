@@ -1,4 +1,5 @@
-import { walkObstacle, walkPose, planCurve } from './TownNavigation';
+import { trafficRoutes, trafficTour } from './TownTrafficRoutes';
+import { walkObstacle, walkPose, plotDoor } from './TownNavigation';
 import { prepareRoute, routePose } from './TownRoutes';
 import * as THREE from 'three';
 import { roadLevel, population, visitorPopulation } from './TownRules';
@@ -166,11 +167,13 @@ export function addTownRoads(d, town, plots) {
     }
   }
   if (level >= 3)
+    // Reserve both streets at a junction: the old Z positions put these lamps
+    // directly on the cross-road centerline, even though X cleared the main road.
     for (const [x, z] of [
-      [-4.35, -0.5],
-      [4.35, 7.5],
-      [-4.35, 15.5],
-      [4.35, -8.5],
+      [-LANE_X - 1.25, 0.75],
+      [LANE_X + 1.25, 6.25],
+      [-LANE_X - 1.25, 16.75],
+      [LANE_X + 1.25, -9.75],
     ]) {
       walkObstacle(roads, x, z, 0.045);
       d.rod(roads, [x, 0, z], [x, 2.3, z], 0.045, '#63726a');
@@ -194,33 +197,16 @@ export function addTownVisitors(d, town) {
       mounted.root.name = motorTraffic(town) ? 'Touring car' : 'Visiting horse rider';
       mounted.root.userData.animated = true;
       (d.trafficActors ??= []).push(mounted.root);
-      const curve = new THREE.CatmullRomCurve3(
-        [
-          new THREE.Vector3(LANE_X, 0.07, 7.5),
-          new THREE.Vector3(LANE_X, 0.07, -0.5),
-          new THREE.Vector3(LANE_X, 0.07, -8.5),
-          new THREE.Vector3(-LANE_X, 0.07, -8.5),
-          new THREE.Vector3(-LANE_X, 0.07, -0.5),
-          new THREE.Vector3(-LANE_X, 0.07, 23.5),
-          new THREE.Vector3(LANE_X, 0.07, 23.5),
-        ],
-        true,
-        'catmullrom',
-        0.08,
-      );
-      const path = !motorTraffic(town) && planCurve(d, curve, 0.8);
+      const routes = trafficRoutes(d);
+      const travel = trafficTour(mounted.root, routes, {
+        seed: n * 13 + 1,
+        speed: (motorTraffic(town) ? 1.6 : 1.2) * (1 + n * 0.07),
+        offset: n / town.buildings.stable,
+      });
       d.motions.push((time) => {
-        const progress = (time / 65 + n / town.buildings.stable) % 1,
-          tangent = curve.getTangentAt(progress);
-        mounted.root.position.copy(curve.getPointAt(progress));
-        mounted.root.rotation.y = Math.atan2(tangent.x, tangent.z);
-        if (path) {
-          const pose = walkPose(path, progress);
-          mounted.root.position.set(pose.x, pose.y, pose.z);
-          mounted.root.rotation.y = pose.heading;
-        }
-        mounted.animate(time + n);
-        animateVehicle(mounted.root, progress * curve.getLength());
+        const distance = travel?.(time) ?? 0;
+        mounted.animate(time + n, !mounted.root.userData.trafficWaiting);
+        animateVehicle(mounted.root, distance);
       });
     }
   if (visitorPopulation(town) > 0)
@@ -233,7 +219,7 @@ export function addTownVisitors(d, town) {
         skin: n % 2 ? '#976f50' : '#d8ae83',
         hat: '#baa06d',
         route: [
-          atPlot(destination, 0, 1.65),
+          plotDoor(d, destination, atPlot(destination, 0, 2.6)),
           plotStreet(destination),
           [-LANE_X, 7.5],
           [-LANE_X, -0.5],
@@ -368,7 +354,17 @@ export class TownRaid {
   }
   travel(actor, points, distance) {
     const path = this.d.navigation?.route(points, 0, 0.8);
-    const pose = path ? walkPose(path, distance / (path.total || 1)) : routePose(points, distance);
+    const pose = path
+      ? walkPose(
+          path,
+          distance / (path.total || 1),
+          (actor.travelPose ??= {
+            x: actor.root.position.x,
+            y: actor.root.position.y,
+            z: actor.root.position.z,
+          }),
+        )
+      : routePose(points, distance);
     actor.root.position.set(pose.x, 0.07, pose.z);
     actor.root.rotation.y = pose.heading;
     return path ? distance < path.total : pose.moving;

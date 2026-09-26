@@ -1,13 +1,18 @@
+import { vi as testTiming } from 'vitest';
+// Full geometry galleries and long cosmetic simulations may exceed the default 5s on CI.
+testTiming.setConfig({ testTimeout: 20000 });
 import { ERAS } from '../src/data/eras';
 import { afterEach, expect, it, vi } from 'vitest';
 import { MeshBasicMaterial, Scene } from 'three';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { TownDiorama } from '../src/game/town/TownDiorama';
+import { updateTownLocomotion } from '../src/game/town/TownLocomotion';
 import { TownActors } from '../src/game/town/TownActors';
 import { TownStatics } from '../src/game/town/TownStatics';
 import { TownUpgradeGlow } from '../src/game/town/TownUpgradeGlow';
 import { eraIndex } from '../src/game/town/TownEras';
 import { BUILDINGS, createTown } from '../src/data/town';
+import { PLOTS, segmentDistance, townTracks } from '../src/game/town/TownLayout';
 
 const views = [];
 function fixture() {
@@ -20,6 +25,7 @@ function fixture() {
   view.elapsed = 0;
   view.controls = {};
   view.renderer = { shadowMap: {} };
+  view.frameCache = { valid: false };
   view.render = () => {};
   view.actorRenderer = new TownActors(view.scene);
   view.buildingRenderer = new TownStatics(view.scene);
@@ -43,6 +49,143 @@ afterEach(() => {
     view.contactShadowMaterial.dispose();
   }
 });
+
+it('swaps a ready plot without resetting other actors and cancels superseded preparation', () => {
+  const { view, town, labels } = fixture();
+  view.update(town, labels);
+  const world = view.world,
+    generation = view.generation;
+  const people = view.actors
+    .filter((a) => a.persistentKey)
+    .map((a) => ({ actor: a, position: a.root.position.clone() }));
+  const cancel = (view.cancelRouteWork = vi.fn());
+  const updated = { ...town, buildings: { ...town.buildings, home: 3 } };
+  view.changeTown(updated, labels, 0, null);
+  expect(view.world).toBe(world);
+  expect(view.generation).toBeGreaterThan(generation);
+  expect(cancel).toHaveBeenCalledOnce();
+  for (const { actor, position } of people) {
+    expect(view.actors).toContain(actor);
+    expect(actor.root.position.equals(position)).toBe(true);
+  }
+  // A purchase during the first staged population restarts that generation safely.
+  view.lifeReady = false;
+  const rebuild = vi.spyOn(view, 'update').mockImplementation(() => {});
+  view.changeTown({ ...updated, buildings: { ...updated.buildings, well: 2 } }, labels, 0, null);
+  expect(rebuild).toHaveBeenCalledOnce();
+});
+
+it.each([
+  ['frontier', 'river-rail'],
+  ['frontier', 'motor-age'],
+  ['river-rail', 'motor-age'],
+  ['motor-age', 'frontier'],
+])('recreates ambient life on an era change from %s to %s', (from, to) => {
+  const { view, town, labels } = fixture();
+  town.era = from;
+  Object.assign(town.buildings, { stable: 1, square: 1, saloon: 1 });
+  if (from !== 'frontier') town.buildings.railDepot = 1;
+  view.update(town, labels);
+  updateTownLocomotion(view);
+  const actors = [...view.actors],
+    animals = [...view.animals],
+    arrivals = view.vipArrivals;
+  const traffic = [...view.trafficActors];
+  const roots = [...actors, ...animals, ...arrivals.actors].map((a) => a.root);
+  const grid = view.locomotionGrid;
+  expect(actors.length).toBeGreaterThan(0);
+  expect(animals.length).toBeGreaterThan(0);
+  // Simulate stale motion/route state at an old work site. It must not enter
+  // the replacement population, even when the town object is mutated in place.
+  for (const actor of actors) if (actor.motion) actor.motion.exitTarget = [99, 0.07, 99];
+  arrivals.seen.set('railDepot', 999);
+  if (arrivals.actors.length) arrivals.active = { actor: arrivals.actors[0] };
+  const reset = vi.spyOn(arrivals, 'reset');
+  town.era = to;
+  view.changeTown(town, labels, 0, null);
+  expect(view.lifeEra).toBe(to);
+  expect(reset).toHaveBeenCalledOnce();
+  expect(view.vipArrivals).not.toBe(arrivals);
+  expect(view.vipArrivals.active).toBeNull();
+  expect(view.vipArrivals.seen.get('railDepot')).not.toBe(999);
+  for (const actor of view.actors) {
+    expect(actors).not.toContain(actor);
+    expect(actor.motion).toBeUndefined();
+    expect(actor.routeValidation).toBeUndefined();
+  }
+  for (const animal of view.animals) expect(animals).not.toContain(animal);
+  for (const root of view.trafficActors) expect(traffic).not.toContain(root);
+  const activeRoots = new Set();
+  view.world.traverse((root) => activeRoots.add(root));
+  for (const root of roots) expect(activeRoots.has(root)).toBe(false);
+  updateTownLocomotion(view);
+  expect(view.locomotionGrid).not.toBe(grid);
+  for (const actor of view.actors) expect(actor.motion?.exitTarget).toBeUndefined();
+
+  // Ordinary rebuilds within the new era continue to preserve identity/position.
+  const worker = view.actors.find((a) => a.work === 'farm');
+  const motion = worker.motion,
+    position = worker.root.position.clone();
+  view.update(town, labels);
+  expect(view.actors).toContain(worker);
+  expect(worker.motion).toBe(motion);
+  expect(worker.root.position).toEqual(position);
+});
+
+it.each(ERAS.filter((era) => era.enabled).map((era) => era.id))(
+  'keeps populated village routines moving and returning to their tasks in %s',
+  (era) => {
+    const { view, town, labels } = fixture();
+    town.era = era;
+    for (const building of BUILDINGS) {
+      if (eraIndex(building.introducedEra) > eraIndex(era)) continue;
+      town.buildings[building.id] = building.upgrades.length;
+      town.buildingEras[building.id] = era;
+      town.buildingEraLevels[building.id] = 3;
+    }
+    view.update(town, labels);
+    const roads = townTracks(town).filter((road) => road.width >= 0.85);
+    for (const actor of view.actors.filter((a) => a.work)) {
+      expect(actor.workRoutine, actor.root.name).toBeDefined();
+      expect(PLOTS[actor.activityBuilding], actor.root.name).toBeDefined();
+      expect(actor.walkPath.total, actor.root.name).toBeGreaterThanOrEqual(1.5);
+    }
+    const tracks = view.actors.map((actor) => ({
+      actor,
+      previous: actor.root.position.clone(),
+      travel: 0,
+      roadGap: Infinity,
+      phases: new Set(),
+    }));
+    for (let frame = 1; frame <= 1200; frame++) {
+      view.elapsed = frame / 10;
+      view.actors.forEach((actor) => view.animatePerson(actor, view.elapsed));
+      view.motions.forEach((motion) => motion(view.elapsed));
+      updateTownLocomotion(view, 0.1);
+      for (const track of tracks) {
+        if (track.actor.workRoutine) {
+          const p = track.actor.root.position;
+          for (const road of roads)
+            track.roadGap = Math.min(track.roadGap, segmentDistance(p.x, p.z, road.from, road.to));
+        }
+        track.travel += track.actor.root.position.distanceTo(track.previous);
+        track.previous.copy(track.actor.root.position);
+        if (track.actor.workRoutine) track.phases.add(track.actor.workRoutine.phase);
+      }
+    }
+    for (const { actor, travel, phases, roadGap } of tracks) {
+      const label = `${actor.root.name || actor.work || 'walker'} ${actor.seed}`;
+      expect.soft(travel, label).toBeGreaterThan(1);
+      if (actor.work) {
+        expect(roadGap, `${label} in carriageway`).toBeGreaterThanOrEqual(
+          0.65 + (actor.radius ?? 0.29) + 0.049,
+        );
+        expect(phases, label).toContain('work');
+        expect(phases, label).toContain('return');
+      }
+    }
+  },
+);
 
 it('reuses unchanged plots and windmills while rebuilding a changed construction site', () => {
   const { view, town, labels } = fixture();
@@ -70,7 +213,7 @@ it('reuses unchanged plots and windmills while rebuilding a changed construction
   expect(view.buildingRenderer.batches.get(settled)).toBe(settledBatch);
 });
 
-it('rebuilds an interrupted reveal and invalidates models for progress, labels, mine stage and era', () => {
+it('rebuilds an interrupted reveal and invalidates models for progress, labels and era', () => {
   const { view, town, labels } = fixture();
   view.update(town, labels, 0, 'home');
   const interrupted = view.construction;
@@ -101,7 +244,10 @@ it('rebuilds an interrupted reveal and invalidates models for progress, labels, 
   }
   const mine = view.plotCache.get('mine').group;
   view.update(town, labels, 1);
-  expect(view.plotCache.get('mine').group).not.toBe(mine);
+  expect(view.plotCache.get('mine').group).toBe(mine);
+  expect(
+    view.staticScenery.entries.get('mine-works').group.getObjectByName('Mine cart gems').count,
+  ).toBe(2);
 });
 
 it.each(ERAS.map((era) => era.id))(
@@ -133,6 +279,30 @@ it.each(ERAS.map((era) => era.id))(
     expect(view.plotCache.has('garage')).toBe(false);
   },
 );
+
+it('fills cart cargo without changing mine scenery, navigation or village life', () => {
+  const { view, town, labels } = fixture();
+  town.era = 'motor-age';
+  view.update(town, labels, 0);
+  const site = view.staticScenery.entries.get('mine-works').group;
+  const cargo = site.getObjectByName('Mine cart gems');
+  const geometry = view.buildingRenderer.batches.get(site);
+  const navigation = view.navigation;
+  const actors = [...view.actors];
+  const rebuild = vi.spyOn(view, 'update');
+  const before = JSON.stringify(town);
+  for (const completed of [1, 6, 24, 54, 160, 323]) {
+    view.changeTown(town, labels, completed, null);
+    expect(view.staticScenery.entries.get('mine-works').group).toBe(site);
+    expect(view.buildingRenderer.batches.get(site)).toBe(geometry);
+    expect(view.navigation).toBe(navigation);
+    expect(view.actors).toEqual(actors);
+    expect(site.getObjectByName('Mine cart gems')).toBe(cargo);
+  }
+  expect(cargo.count).toBe(12);
+  expect(rebuild).not.toHaveBeenCalled();
+  expect(JSON.stringify(town)).toBe(before);
+});
 
 it.each(ERAS.map((era) => era.id))(
   'keeps unrelated %s scenery and GPU buffers through a construction cycle',

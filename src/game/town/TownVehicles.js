@@ -6,6 +6,7 @@ export function motorVehicle(d, parent, bus = false, appearanceEra) {
   const era = appearanceEra ?? d.town?.era ?? d.town?.buildingEras?.[bus ? 'busDepot' : 'stable'];
   if (isCityEra(era)) {
     const root = cityModel(d, parent, `${era}-${bus ? 'bus' : 'car'}`);
+    root.userData.vehicleBox = { halfWidth: 0.36, halfLength: bus ? 1.2 : 0.85 };
     root.userData.wheels = [];
     root.traverse((o) => {
       if (/^wheel[0-9]+$/.test(o.name)) root.userData.wheels.push(o);
@@ -13,6 +14,7 @@ export function motorVehicle(d, parent, bus = false, appearanceEra) {
     return root;
   }
   const root = d.group(parent);
+  root.userData.vehicleBox = { halfWidth: 0.36, halfLength: bus ? 0.9 : 0.6 };
   root.userData.wheels = [];
   d.box(root, 0.65, 0.38, bus ? 1.75 : 1.15, 0, 0.48, 0, bus ? '#d8b976' : '#819faa');
   d.box(root, 0.57, bus ? 0.43 : 0.3, bus ? 1.55 : 0.65, 0, 0.8, bus ? 0 : -0.1, cream);
@@ -39,6 +41,7 @@ export function animateVehicle(root, distance) {
 // Purpose-built response bodies share wheels and period palettes, never bus shells.
 export function responseVehicle(d, parent, service = false) {
   const root = d.group(parent);
+  root.userData.vehicleBox = { halfWidth: 0.62, halfLength: 1.3 };
   root.userData.wheels = [];
   const color = service ? '#c8ad67' : '#b65346';
   d.box(root, 1, 0.4, 2.5, 0, 0.5, 0, color);

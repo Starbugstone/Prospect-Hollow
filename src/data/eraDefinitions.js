@@ -16,6 +16,7 @@
  * @property {string|null} cityAssets Blender asset family shared by city eras.
  * @property {string|null} detailAsset
  * @property {string|null} airportStyle Airport architecture from airportStyles.json.
+ * @property {string} fountain Town square centerpiece design registered in TownFountains.js.
  * @property {boolean} digitalCity
  * @property {boolean} tallCity
  * @property {string|null} cityDescription
@@ -34,6 +35,7 @@ const STYLES = {
   frontier: {},
   'river-rail': {
     wardrobe: 'rail',
+    fountain: 'victorian-iron',
     roadColor: '#b3a18a',
     incident: 'cargo-theft',
     upgradeTitle: 'River & Rail level {level}: {name}',
@@ -44,6 +46,7 @@ const STYLES = {
   },
   industrial: {
     wardrobe: 'workwear',
+    fountain: 'civic-monument',
     upgradeTitle: 'Industrial level {level}: {name}',
     upgradeDescriptions: [
       'Add a substantial service wing and sheltered entrance.',
@@ -59,6 +62,7 @@ const STYLES = {
   },
   'motor-age': {
     wardrobe: 'motor',
+    fountain: 'art-deco',
     baseCityEra: 'post-war',
     upgradeTitle: 'Motor Age level {level}: {name}',
     upgradeDescriptions: [
@@ -76,6 +80,7 @@ const STYLES = {
   },
   city: {
     wardrobe: 'casual',
+    fountain: 'memorial-obelisk',
     paved: true,
     electricity: true,
     modernTransport: true,
@@ -119,6 +124,7 @@ export function defineEra(definition) {
     cityAssets: null,
     detailAsset: null,
     airportStyle: null,
+    fountain: 'frontier-spring',
     digitalCity: false,
     tallCity: false,
     cityDescription: null,

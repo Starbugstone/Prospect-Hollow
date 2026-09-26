@@ -138,7 +138,7 @@ export const RIVER_RAIL_VARIANTS = {
   armory: ['Supply depot', 'New loading doors and freight crates organize the same supplies.'],
   square: [
     'Gas-lit town square',
-    'Gas-style lamps and stone borders surround the familiar fountain.',
+    'A cast-iron tiered fountain, gas-style lamps and stone borders renew the square.',
   ],
   blacksmith: ['Machine shop', 'A brick chimney and covered machine bench extend the forge.'],
   fisherman: [

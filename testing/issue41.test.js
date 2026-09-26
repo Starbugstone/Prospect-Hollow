@@ -23,6 +23,9 @@ import { powerGrid, motorTraffic } from '../src/game/town/TownEvolution';
 import { groundHeight } from '../src/game/town/TownLandscape';
 import { airplanePose, AIRPORT_FLIGHT_CYCLE } from '../src/game/town/TownAviation';
 import { TownDiorama } from '../src/game/town/TownDiorama';
+import { addTownRoads } from '../src/game/town/TownActivity';
+import { townNavigation } from '../src/game/town/TownNavigation';
+import { geometryFootprints, registerFootprints } from '../src/game/town/BuildingFootprints';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { addScaffolding } from '../src/game/town/TownImprovements';
 import { addLeisureActivity } from '../src/game/town/TownLeisure';
@@ -75,6 +78,39 @@ it.each(ERAS.slice(2).map((e) => e.id))(
           segmentDistance(x, z, edge.from, edge.to) - edge.width / 2,
           `${x},${z}`,
         ).toBeGreaterThan(0.2);
+  },
+);
+it.each([...ERAS.map((e) => e.id), 'future-street-era'])(
+  'keeps all four street lamps clear of roads, entrances and buildings in %s',
+  (era) => {
+    const town = complete(ERAS.some((e) => e.id === era) ? era : 'frontier');
+    town.era = era;
+    const d = diorama(town);
+    const roads = addTownRoads(d, town, PLOTS);
+    const lamps = roads.userData.walkObstacles;
+    expect(lamps).toHaveLength(4);
+    const buildings = d.group(d.world);
+    for (const id of ['home', 'saloon', 'stable', 'museum', 'shop', 'well', 'home4']) {
+      const group = d.group(buildings, PLOTS[id][0], 0.08, PLOTS[id][1]);
+      d.buildPlot(id, group, town, { [id]: id });
+      registerFootprints(group, geometryFootprints(group), { owner: `plot:${id}` });
+    }
+    const navigation = townNavigation(buildings);
+    for (const lamp of lamps) {
+      for (const y of [0.1, 1.2, 2.35])
+        expect(navigation.clear([lamp.x, y, lamp.z], 0.125), `lamp ${lamp.x},${lamp.z}`).toBe(true);
+      for (const edge of townTracks(town)) {
+        // Include the widest paved surface and the complete lantern overhang.
+        expect(
+          segmentDistance(lamp.x, lamp.z, edge.from, edge.to) - edge.width * 0.7,
+          `lamp ${lamp.x},${lamp.z} on ${edge.from}–${edge.to}`,
+        ).toBeGreaterThan(0.125);
+      }
+    }
+    d.clearGroup(d.world);
+    Object.values(d.geometries).forEach((g) => g.dispose());
+    d.materials.forEach((m) => m.dispose());
+    d.contactShadowMaterial.dispose();
   },
 );
 it.each(['post-war', 'motor-age', 'aviation', 'broadcast', 'contemporary'])(

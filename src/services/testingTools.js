@@ -1,3 +1,4 @@
+import { resetRetentionPolicy } from '../game/phaser/boardRetention';
 import { useCampaignStore } from '../stores/campaignStore';
 import { useGameStore } from '../stores/gameStore';
 import { HAMMER_CAPACITY } from '../data/rewards';
@@ -22,6 +23,10 @@ function saveChanges(campaign, changes) {
 // Console-only tools for this device-local game, also available in preview builds.
 export function createTestingTools(pinia) {
   return Object.freeze({
+    async showNavigation(value = true) {
+      return (await import('../game/town/NavigationDebug')).showNavigation(value);
+    },
+    resetRetentionPolicy,
     prepareEra(era) {
       const campaign = useCampaignStore(pinia);
       era ??= campaign.town.era;

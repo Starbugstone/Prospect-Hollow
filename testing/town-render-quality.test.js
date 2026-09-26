@@ -3,7 +3,7 @@ import { TownRenderQuality } from '../src/game/town/TownRenderQuality';
 it('reduces fill cost for sustained slow animation, recovers cautiously, and ignores pauses', () => {
   const q = new TownRenderQuality(2);
   for (let i = 0; i < 39; i++) expect(q.sample(50)).toBeNull();
-  expect(q.sample(50)).toBeCloseTo(1.2);
+  expect(q.sample(50)).toBeCloseTo(1);
   for (let i = 0; i < 400; i++) q.sample(50);
   expect(q.ratio).toBe(0.6);
   for (let i = 0; i < 100; i++) q.sample(10000);

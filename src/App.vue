@@ -206,7 +206,7 @@
           <div class="frame-corner corner-tr"></div>
           <div class="frame-corner corner-bl"></div>
           <div class="frame-corner corner-br"></div>
-          <BoardCanvas />
+          <div id="board-canvas-target" style="display: contents"></div>
           <transition name="notice"
             ><div v-if="game.reshuffleNotice" class="board-notice" role="status">
               {{ t(game.reshuffleNotice.message) }}
@@ -216,6 +216,7 @@
         <PowerUpBar />
       </section>
     </main>
+    <BoardHost />
     <VictoryModal
       v-if="game.levelCleared"
       :level-id="game.currentLevelId"
@@ -270,7 +271,8 @@ import {
   watch,
 } from 'vue';
 const TownView = defineAsyncComponent(() => import('./components/town/TownView.vue'));
-const BoardCanvas = defineAsyncComponent(() => import('./components/BoardCanvas.vue'));
+import BoardHost from './components/BoardHost.vue';
+import { performanceMark } from './game/PresentationWork';
 import TownDialog from './components/town/TownDialog.vue';
 import { constructionReady } from './game/town/TownRules';
 import MineBackdrop from './components/MineBackdrop.vue';
@@ -302,6 +304,7 @@ const townVisited = ref(campaign.hasVisitedVillage);
 const townActive = computed(() => !game.sessionActive && view.value === 'town');
 const returnToMuseum = ref(false);
 const showTown = () => {
+  performanceMark('village-intent');
   returnToMuseum.value = game.playMode === 'continuous';
   game.exitLevel();
   view.value = 'town';
@@ -417,7 +420,6 @@ const enterMine = (id, mode) => {
   game.startLevel(id, mode);
   campaign.markTipSeen('mine');
   window.scrollTo({ top: 0, behavior: 'instant' });
-  audio.playAmbientLoop();
 };
 watch(
   () => [

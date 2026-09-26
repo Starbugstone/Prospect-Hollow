@@ -62,6 +62,14 @@ receives the building's completed era, so entering a new town era alone never
 modernizes the airport. `testing/airport-art.test.js` checks extension/fallback,
 stage selection, site bounds and wing clearance.
 
+The town square centerpiece uses the `fountain` capability. Each building style has a
+default design and eras may override it; `src/data/fountains.js` lists the registered
+ids and resolves unknown ones to the frontier spring. `TownFountains.js` renders each id
+from shared primitives inside the same 1.08-unit walk radius, and `TownFountain.vue`
+draws its SVG counterpart. A new era can reuse a design by id; a new design needs both
+drawings. `testing/town-fountains.test.js` checks registration, fallback, size and the
+single translucent water material for every era and square stage.
+
 ## Introduce a genuinely new style
 
 Extend the documented `BuildingStyle` / `EraEvolution` contract and defaults in
@@ -230,7 +238,7 @@ covers the building, traffic and cinematic regressions. The local
 `/scripts/town-actor-review.html` uses production meshes to inspect gender variants,
 VIP outfits and construction hammer grips.
 
-The VIP review gallery in `output/vip-review/index.html` compares all eight eras,
+The reproducible VIP gallery (`output/vip-review/index.html`) compares all eight eras,
 three coordinated outfits per gender, normal-villager comparisons, arrivals,
 wandering and departures with and without tags for every combination. The gallery is portable with its sibling PNG files. The
 production arrival inset always includes the name; unnamed inset captures are
@@ -249,21 +257,58 @@ Additional overview captures already in the folder are preserved in the archive.
 `TownNavigation` supplies cached pedestrian detours for residents, VIPs, mounted
 visitors, incident crews, construction workers and village animals. The existing
 street graph still chooses cross-town routes; navigation adds local detours using
-small authored circular footprints, with a body clearance margin. It does not
+generated component rectangles and authored prop circles, with a body clearance margin. It does not
 raycast meshes or create physics bodies.
 
 When adding a solid street prop, call `walkObstacle(group, x, z, radius, height)`
 where that prop is rendered. Coordinates are local to the group. Use the physical
 base radius (or the half-diagonal for rectangular furniture), not the overhead
-canopy. These markers survive geometry batching. Only mark props actually built
-in that era; rebuilding the village replaces the index and cached routes, so
-removed or underground infrastructure leaves no invisible obstacles.
+canopy. These markers survive geometry batching. Only mark props actually built in that era. Building owners use explicit activation
+states; `replaceOwner` invalidates only intersecting prepared paths. Removed or
+underground infrastructure leaves no invisible obstacles.
 
 Prepare walking paths when actors or routes are created. Use `prepareActorWalk`
 for ordinary people, `navigation.route` for prepared manual routes, or `localWalk`
 for translated construction scenes. Sample with `walkPose`; don't apply another
 sidewalk offset afterward. Facing eases at corners while positions stay on the
-clear segments. Runtime crowd separation also respects nearby static footprints.
+clear segments. Ambient movement samples prepared route distances once per rendered
+frame, using elapsed time capped at 0.25 seconds after a long stall. Scenery
+clearance is cached per route, obstacle set and animal-clearance provider; route
+or scenery changes invalidate that result. Open routes turn back at endpoints.
+Spatial buckets and narrow vehicle envelopes provide bounded crowd yielding.
+Route distance and visitor lifecycle clocks advance only by accepted movement;
+indoor rests advance normally. Visitors fade at the source after completing the
+trip, and new transport arrivals reset their movement clock. Unreachable paths
+hold their last position. Horse/car speeds are distance-based, independent of
+any route shortening during preparation.
+An era change recreates villagers, animals and visitor-arrival state against the
+new layout, clearing old routes, work positions and crowd reservations. The
+rendered era is recorded separately from the mutable campaign town. Ordinary
+building upgrades and rebuilds within an era retain actor identity and position.
+
+Outdoor task actors share `TownWorkRoutine`: approach a prepared work site,
+perform the task, walk back and take a short break. Farmers, hosts, fishers,
+chatting neighbors and bird feeders keep their task animations, but no longer
+stand in one place indefinitely. Only accepted locomotion advances travel;
+arrival starts the task timer. Task animation never overwrites the accepted
+position. Routes are prepared on layout changes, not searched each frame.
+The leashed park walk also uses distance-based speed and turns back on open paths.
+
+`TownPedestrians.buildingWalk` prepares these activity routes beside their owning
+building. It keeps both task and rest positions outside the carriageway, tests
+the complete walk against scenery, and prefers a leg parallel to the road.
+Authored entrances/services and a bounded search of the frontage or grounds
+handle larger era models without projecting workers into traffic. Fishers stay
+along the bank; the leashed park pair reserves room for both bodies and stays near
+the park. Building replacement repeats this preparation only when its route is
+obstructed. Crowd yielding remains a moving-crowd fallback, not task-site placement.
+
+People, ground animals and road traffic yield to other actors for at most three
+blocked attempts, then pass through the crowd until clear. A clear step resets
+that budget. This exception never bypasses scenery clearance or an unreachable
+route. Stationary workers retain their accepted placement instead of repeating
+placement searches each frame; segment queries reject unrelated mesh bounds
+before testing exact geometry.
 `testing/town-navigation.test.js` covers continuous clearance, all era profiles,
 manual actor routes, cache reuse and scenery removal.
 
@@ -289,9 +334,9 @@ A cached, balanced triangle index includes each immutable scenery root and the
 landscape, so fences, trees, planter boxes and merged Blender props are covered
 without requiring additional hand-maintained footprints. It checks the animal's
 full body envelope, repairs blocked route sections on a bounded local grid, and
-rejects covered landing spots. Traffic corrections use the same geometry check.
-Construction reveals reserve their finished bounds; moving machinery reserves
-its swept volume. A crowded park can move the leashed dog walk to its open side.
+rejects covered landing spots. Accepted animal steps use the same geometry check. Construction activates the
+actual final component footprints only after occupants walk clear; moving
+machinery reserves its swept volume. A crowded park can move the leashed dog walk to its open side.
 
 Landing sites and grain targets sample their actual supporting floor from that
 same index. Feeding reuses fourteen instanced grain meshes: each thrown grain
@@ -301,8 +346,8 @@ update its particle pool. Pigeon wing bars are faces of the wing mesh, and beaks
 move rigidly with a head that pauses between pecks. Species-specific silhouettes
 use cached geometry in `TownAnimalGeometries`, disposed with the diorama.
 
-The cast, grain particles, route plans and habitat index are bounded and rebuilt
-with the diorama. All routines use its clock, including pause and reduced motion;
+The cast, grain particles, route plans and habitat index are bounded. Unrelated
+actors retain their accepted pose across plot replacement and full visual rebuilds. All routines use its clock, including pause and reduced motion;
 they never change saves, earnings, objectives or puzzle moves. Add outdoor
 habitats to the definition and mark new perch geometry with local
 `userData.animalPerches` coordinates. `testing/town-animals.test.js` covers every
@@ -313,3 +358,92 @@ disturbances, frozen clocks and a long simulation without scene growth.
 and final building tiers in every era and checks both prepared segments and
 animated animal positions, plus thin unmarked fences, covered landings, solid
 interiors, moving scenery reservations and traffic displacement.
+
+### Loading and renderer ownership
+
+`MeshCatalog.requiredFamilies(town)` combines the current era, completed building
+eras, inherited architecture and heritage. Family promises are shared and retry
+on failure; a presentation token cancels only its consumer. `predev`, `pretest`
+and `prebuild` regenerate bounded lazy chunks from the authoring JSON exports.
+A missing model resolves to a family or procedural substitute. Footprints are
+used only with their matching visual; unsupported visuals get a provisional
+reservation derived from their actual geometry.
+
+The town paints terrain and plots before scheduling life. `AnimalSpaceBuilder`
+uses packed triangles, a permutation and median partitioning, yielding between
+bounded pieces. Immutable geometry snapshots are cached per root/revision.
+Render tiers start at medium unless a measured tier was stored: DPR caps
+1/1.25/1.5, shadow maps 1024/2048/2048, cache samples 0/2/4. Runtime adaptation
+changes DPR and shadows outside presentations; target sample counts are fixed
+at allocation.
+
+`loadBoard` owns the shared Phaser import. Generated PNG atlases use
+`{key, frame}` references per texture manager, with SVG recovery on load failure.
+Only the active gem finish and shared board art load initially. `requestIntro`
+is the single session owner: renderer readiness, an intro rejection, detachment
+or recovery cannot run queued input twice or finalize another puzzle.
+`BoardHost` owns teardown/parking; reset and import always replace its renderer.
+
+Board retention starts with an **empty eligibility table**. It remains off until
+production builds pass a named desktop, mid-range Android and supported
+low-memory iPhone gate: 50 town/mine cycles, at least 20 timing samples, stable
+resource plateaus, background/foreground and context recovery without state loss.
+A policy reset clears demotion only; it cannot grant eligibility. Unexpected
+context loss demotes; intentional context release is ignored. Physical mobile
+and deployed cache-header checks require their actual environments.
+
+Hashed `/assets/*` get immutable hosting headers; the shell revalidates. CI fails
+for JavaScript chunks above 2 MB or static mesh-catalog imports.
+
+### Footprints and construction
+
+Run `npm run assets:footprints` after changing building geometry or renderer
+keys. `npm run check:footprints` rebuilds every key and detects geometric, missing
+or orphaned data. Keys include plot/kind, completed render era, service and
+modernization tiers, native/modernized path and construction state. Components
+remain separate across merged exports; heights, road setbacks and authored door
+anchors are shared with navigation. Generated power-house bounds reserve the
+mine yard's future space without activating future roads or buildings.
+Setbacks also reserve the railway's ballast and train clearance before it opens.
+The station uses its full height, including canopies, when fitting between the
+track and front street; `testing/station-clearance.test.js` covers its tiers and
+construction states across eras.
+
+`changeTown` uses `swapPlot` for one changed plot with unchanged infrastructure.
+An accepted purchase is already persisted before presentation starts. A pooled
+hammer draws before preparation. Occupied new solids wait for a swept-clear
+walk out, with a visible work-site gate if no exit is available. The same gate
+protects full-rebuild fallback. The 1.8-second reveal starts after its first
+paint; active time is independent from bounded locomotion time and stops while
+hidden or paused. Static batching and shadow refresh settle afterward.
+
+Use `prospectDebug.showNavigation(true)` for active/provisional footprints,
+owner metadata, authored anchors, prepared routes and accepted/preferred poses.
+`prospectDebug.resetRetentionPolicy()` clears a measured configuration's demotion.
+
+### Mine site and growth
+
+`mineProfiles` owns the portal, works, machine, cart, site, motion and heritage
+slots, with supported ancestor fallback and cycle validation. Site and motion
+features accumulate through inheritance and are deduplicated; a new era never
+drops an earlier mine facility. Permanent feature locations leave space for
+future additions, while shared era colors, glazing and facade details modernize
+existing workshops. `MineFeatures`
+and `addMineSite` compose the same assembly in permanent and cinematic views;
+`TownMine.vue` consumes the same profile and growth definitions for SVG fallback.
+Add new feature behavior once in the registry and compose it in definitions.
+
+Each era has a full-scale portal, distinct works/machinery, rolling stock and
+moving systems. Yard equipment respects the reserved sidewalk and generated
+power-house union; hill foundations sample the rendered terrain. Railway
+features require a real railway and a clear envelope. The shaft, tunnel bore,
+forecourt and puzzle entry remain open. Construction switches logical owners
+with its visible assembly and releases temporary owners on cleanup.
+
+`mineGrowth` maps completed puzzle levels to a bounded cart load of 1–12 gems.
+Cargo uses a fixed instanced mesh and updates its visible count without rebuilding
+scenery, navigation or villagers. All buildings, hillside facilities, stockpiles
+and equipment depend on the era, never on puzzle level. The SVG fallback and tour
+use the same era profile and level-based cart cargo. The shared haul clock controls
+load/travel/unload/return and freezes with the town. Display capacity never limits
+puzzle moves, rewards or campaign progress.

@@ -184,7 +184,6 @@
             tourOpen
           "
           :next-level="campaign.nextLevel"
-          :mine-stage="campaign.mineStage"
           :raid="activeRaid"
           :raid-defense-ids="readyRaidDefenses"
           :construction="construction"
@@ -194,6 +193,7 @@
           @raid-cue="playRaidCue"
           @raid-complete="finishRaid"
           @camera-distance="cameraDistance = $event"
+          @vip-spend="collectVipSpending"
         />
         <TownResourceCollection
           v-if="collection"
@@ -204,6 +204,16 @@
           :reduced-motion="settings.reducedMotion"
           @cue="game.audioManager?.playArcadeCue?.($event.name, $event.index)"
           @close="collection = null"
+        />
+        <TownResourceCollection
+          v-for="reward in vipCollections"
+          :key="`vip-${reward.serial}`"
+          :amount="reward.amount"
+          resource="vip-coins"
+          :origin="reward.origin"
+          :reduced-motion="settings.reducedMotion"
+          @cue="game.audioManager?.playArcadeCue?.($event.name, $event.index)"
+          @close="vipCollections = vipCollections.filter((item) => item.serial !== reward.serial)"
         />
         <TownRaidNotice
           v-if="raidNotice"
@@ -558,7 +568,8 @@
     </TownDialog>
     <TownTour
       v-if="active && tourOpen"
-      :mine-stage="campaign.mineStage"
+      :level="campaign.nextLevel"
+      :era="campaign.town.era"
       @close="finishTour"
       @build="
         finishTour();
@@ -628,6 +639,7 @@
   </main>
 </template>
 <script setup>
+import { performanceMark } from '../../game/PresentationWork';
 import { isCityEra } from '../../data/city';
 import TownProjects from './TownProjects.vue';
 import TownPresentationCinematic from './TownPresentationCinematic.vue';
@@ -780,6 +792,14 @@ const villageStats = computed(() => {
   const demand = housingCapacity(town.value) + visitorCapacity(town.value);
   return [
     {
+      id: 'era',
+      icon: 'sun',
+      label: t('Current era'),
+      value: t(ERA_BY_ID[town.value.era].label),
+      detail: t(ERA_BY_ID[town.value.era].yearLabel),
+    },
+    { id: 'mine', icon: 'mine', label: t('Mine level'), value: number(campaign.nextLevel) },
+    {
       id: 'people',
       icon: 'people',
       label: t('Population'),
@@ -853,6 +873,7 @@ const paused = ref(false),
   latestMoment = ref(null);
 const raidNotice = ref(null);
 const collection = ref(null);
+const vipCollections = ref([]);
 let collectionSerial = 0;
 const activeRaid = ref(null),
   raidPhase = ref('Riders on the ridge');
@@ -983,6 +1004,15 @@ function closeDialog() {
 }
 function openDirectory() {
   dialogMode.value = 'directory';
+}
+function collectVipSpending(receipt) {
+  const amount = campaign.collectVipSpending(receipt);
+  if (!amount) return;
+  vipCollections.value.push({
+    amount,
+    serial: ++collectionSerial,
+    origin: townScene.value?.collectionOrigin(receipt.building),
+  });
 }
 function collectIncome() {
   collectionNow.value = Date.now();
@@ -1120,8 +1150,10 @@ function showConstruction(keepDirectory = false) {
   if (!keepDirectory) mapFrame.value?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
 }
 function finishBuilding(id, keepDirectory = false) {
+  performanceMark('build-tap');
   const stage = town.value.projects[id]?.stage;
   if (!campaign.finishConstruction(id, stage)) return;
+  performanceMark('build-accepted');
   selected.value = id;
   showConstruction(keepDirectory);
   celebrateBuilding();

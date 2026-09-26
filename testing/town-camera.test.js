@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { Vector3 } from 'three';
+import { Scene, Vector3 } from 'three';
+import { setTownAtmosphere } from '../src/game/town/TownAtmosphere';
+import { landscapeGeometry } from '../src/game/town/TownMillrace';
 import {
   groundHeight,
   cameraTerrainHeight,
@@ -63,4 +65,26 @@ it('only lifts a camera that intersects the actual hillside, with no repeated up
   const corrected = position.clone();
   for (let i = 0; i < 20; i++) expect(keepCameraAboveTerrain(position, target)).toBe(false);
   expect(position.equals(corrected)).toBe(true);
+});
+
+it('keeps every village plot clear and reaches full fog before any terrain edge', () => {
+  const scene = new Scene();
+  setTownAtmosphere(scene);
+  const geometry = landscapeGeometry();
+  try {
+    geometry.computeBoundingBox();
+    const { min, max } = geometry.boundingBox;
+    expect(scene.fog.color.equals(scene.background)).toBe(true);
+    expect(scene.fog.near).toBeLessThan(scene.fog.far);
+    for (const [id, [x, z]] of Object.entries(PLOTS)) {
+      const halfWidth = id === 'airport' ? 10 : 6;
+      const halfDepth = id === 'airport' ? 20 : 6;
+      expect(Math.abs(x) + halfWidth, `${id} remains outside the fog`).toBeLessThan(scene.fog.near);
+      expect(Math.abs(z) + halfDepth, `${id} remains outside the fog`).toBeLessThan(scene.fog.near);
+    }
+    for (const edge of [min.x, max.x, min.z, max.z])
+      expect(scene.fog.far).toBeLessThan(Math.abs(edge));
+  } finally {
+    geometry.dispose();
+  }
 });

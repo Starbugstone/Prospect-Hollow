@@ -1,3 +1,4 @@
+import { horizonMaterial } from './TownAtmosphere';
 import { addMineExcavation } from './TownMineShaft';
 import * as THREE from 'three';
 import { MINE_FACE_COLUMNS, MINE_HILLSIDE, mineHillsideHeight } from './TownMineHillside';
@@ -198,6 +199,7 @@ export function buildLandscape(town) {
   geometry.computeVertexNormals();
   geometry.userData.owned = true;
   const material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 });
+  horizonMaterial(material);
   material.userData.transient = true;
   const ground = new THREE.Mesh(geometry, material);
   ground.receiveShadow = true;
@@ -357,6 +359,7 @@ export function addMineCliff(town, parent) {
     roughness: 1,
     side: THREE.DoubleSide,
   });
+  horizonMaterial(material);
   material.userData.transient = true;
   const face = new THREE.Mesh(geometry, material);
   face.castShadow = true;

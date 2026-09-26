@@ -10,25 +10,47 @@ import { addFishingDock } from './river';
 import { CITY_FAMILIES, isCityEra } from '../../../data/city';
 import { blenderModel, leisureModel } from '../LeisureAssets';
 import { buildTownSquare } from '../TownSquare';
-import assets from '../../../assets/city-meshes.json';
-import future from '../../../assets/future-meshes.json';
+import { cityFamily, resolveModel } from '../assets/MeshCatalog';
 
-export const futureModel = (d, parent, name) => blenderModel(d, parent, future, name, 'future');
+export const futureModel = (d, parent, name) => blenderModel(d, parent, null, name, 'future');
 export const cityModel = (d, parent, name) => {
   const inherited = resolveCityAsset(name, ERAS);
-  return blenderModel(d, parent, assets, inherited, 'city');
+  return blenderModel(d, parent, null, inherited, cityFamily(inherited));
 };
 
 // Meshes are shared architectural pieces exported from Blender, not per-plot copies.
-export function renderCityBuilding(d, parent, kind, label, level, era, serviceLevel = 3) {
+// `fountainEra` lets a later style reuse a city square shell with its own centerpiece.
+export function renderCityBuilding(
+  d,
+  parent,
+  kind,
+  label,
+  level,
+  era,
+  serviceLevel = 3,
+  fountainEra = era,
+) {
   if (!isCityEra(era) || !CITY_FAMILIES[kind] || kind === 'bridge') return false;
   const family = CITY_FAMILIES[kind];
+  const appearance = cityAppearance(era, kind);
+  let asset = appearance.asset;
+  if (asset && resolveModel(cityFamily(asset), asset).status !== 'ready') {
+    const substitute = `${eraEvolution(era).cityAssets}-${family}`;
+    if (resolveModel(cityFamily(substitute), substitute).status === 'ready') asset = substitute;
+    else if (
+      !['airport', 'radio', 'concert', 'television', 'skyline', 'square', 'leisure'].includes(
+        family,
+      )
+    ) {
+      parent.userData.substitute = true;
+      return false;
+    }
+  }
   if (family === 'river') addFishingDock(d, parent, serviceLevel, kind === 'riverPort');
   const root = d.group(parent);
   root.name = `${era} ${kind} level ${level}`;
   const landmark = ['airport', 'radio', 'concert', 'television', 'skyline'].includes(family);
   const profile = eraEvolution(era);
-  const appearance = cityAppearance(era, kind);
   if (landmark) {
     const asset = family === 'airport' ? airportAppearance(era).asset : family;
     futureModel(d, root, asset);
@@ -64,10 +86,12 @@ export function renderCityBuilding(d, parent, kind, label, level, era, serviceLe
     if (level >= 2) cityModel(d, root, `${era}-finish`).position.x = -2;
     if (level >= 3) cityModel(d, root, `${era}-finish`).position.x = 2;
   } else if (family === 'square') {
-    buildTownSquare(d, root, serviceLevel, false);
+    buildTownSquare(d, root, serviceLevel, false, fountainEra);
     addSquareModernization(d, root, level, appearance.roof);
+    return true;
   } else {
-    cityModel(d, root, appearance.asset ?? `${era}-${family}`);
+    cityModel(d, root, asset ?? `${era}-${family}`);
+    if (asset !== appearance.asset) root.userData.substitute = true;
     if (level >= 2) {
       const wing = cityModel(d, root, `${era}-wing`);
       wing.position.x = -(appearance.width ?? 3.65) / 2 + 1.75;
@@ -86,6 +110,44 @@ export function addCityModernization(d, parent, kind, era, level) {
   if (kind !== 'bridge' || !isCityEra(era)) return;
   const root = cityModel(d, parent, `${era}-bridge`);
   root.name = `${era} bridge approaches ${level}`;
+  // Canopies must clear the rising deck. Stretch their upper supports while
+  // keeping planters and post feet at ground level; reuse the adapted geometry.
+  const joints = [];
+  root.traverse((part) => {
+    if (part.userData.exportFootprints) joints.push(part);
+  });
+  let covered = joints.some((joint) =>
+    joint.userData.exportFootprints.some(
+      ({ min, max }) => min[1] > 1.7 && min[2] < 0.6 && max[2] > -0.6 && max[0] - min[0] > 0.8,
+    ),
+  );
+  if (!covered)
+    root.traverse((part) => {
+      const p = part.geometry?.attributes.position;
+      for (let i = 0; p && i < p.count && !covered; i++)
+        if (p.getY(i) > 1.7 && Math.abs(p.getZ(i)) < 0.65 && Math.abs(p.getX(i)) > 4)
+          covered = true;
+    });
+  if (covered) {
+    const raise = (y) => (y > 1.7 ? y + 1.6 : y);
+    root.traverse((part) => {
+      if (!part.isMesh) return;
+      const key = `bridge-headroom:${part.geometry.uuid}`;
+      if (!d.geometries[key]) {
+        const geometry = part.geometry.clone(),
+          positions = geometry.attributes.position;
+        for (let i = 0; i < positions.count; i++) positions.setY(i, raise(positions.getY(i)));
+        geometry.computeVertexNormals();
+        d.geometries[key] = geometry;
+      }
+      part.geometry = d.geometries[key];
+    });
+    for (const joint of joints)
+      for (const bounds of joint.userData.exportFootprints) {
+        bounds.min[1] = raise(bounds.min[1]);
+        bounds.max[1] = raise(bounds.max[1]);
+      }
+  }
   const profile = eraEvolution(era);
   if (profile.detailAsset) {
     const cue = futureModel(d, parent, profile.detailAsset);

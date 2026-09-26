@@ -253,7 +253,7 @@
         </g>
       </g>
       <g :transform="`translate(${mapPoint(PLOTS.mine).join(' ')}) scale(.68)`">
-        <TownMine :level="nextLevel" :stage="mineStage" :era="town.era" @enter="$emit('mine')" />
+        <TownMine :level="nextLevel" :era="town.era" @enter="$emit('mine')" />
       </g>
       <g
         v-for="building in orderedBuildings"
@@ -585,7 +585,6 @@ const props = defineProps({
   now: { type: Number, default: Date.now },
   selected: String,
   population: Number,
-  mineStage: { type: Number, default: 0 },
   fullscreen: Boolean,
   reducedMotion: Boolean,
   paused: Boolean,

@@ -14,13 +14,13 @@ import {
 // The town only changes when the camera or a building changes. Cache its color
 // AND depth so moving people remain correctly hidden by porches, hills and walls.
 export class TownFrameCache {
-  constructor(renderer) {
+  constructor(renderer, samples = 2) {
     this.renderer = renderer;
     this.size = new Vector2();
     this.target = new WebGLRenderTarget(1, 1, {
       type: HalfFloatType,
       depthTexture: new DepthTexture(1, 1),
-      samples: 4,
+      samples,
     });
     this.material = new ShaderMaterial({
       uniforms: {

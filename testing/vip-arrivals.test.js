@@ -1,3 +1,9 @@
+import { TownItineraries } from '../src/game/town/TownItineraries';
+import { PLOTS } from '../src/game/town/TownLayout';
+import { geometryFootprints, registerFootprints } from '../src/game/town/BuildingFootprints';
+import { townNavigation } from '../src/game/town/TownNavigation';
+import { TownNavigation, prepareActorWalk } from '../src/game/town/TownNavigation';
+import { updateTownLocomotion } from '../src/game/town/TownLocomotion';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Group, Scene, MeshBasicMaterial, PerspectiveCamera, Vector3, Vector4 } from 'three';
 import { TownDiorama } from '../src/game/town/TownDiorama';
@@ -195,3 +201,82 @@ it('routes airport guests around the completed lounge instead of through its add
     expect(inside, JSON.stringify(point)).toBe(false);
   }
 });
+
+it('finishes a delayed VIP trip at its source and starts the next arrival there', () => {
+  const { d, frame, arrival } = fixture('railDepot');
+  d.navigation = new TownNavigation([{ x: 1000, z: 1000, y: 0, height: 2, radius: 0.2 }]);
+  for (const actor of d.vipArrivals.actors) prepareActorWalk(d, actor);
+  frame(arrival);
+  const actor = d.vipArrivals.active.actor;
+  const origin = new Vector3(...actor.walkPath.points[0]);
+  for (let i = 1; i <= 30; i++) {
+    frame(arrival + i * 0.1);
+    updateTownLocomotion(d, 0.1);
+  }
+  const before = actor.root.position.clone();
+  d.reducedMotion = true;
+  frame(arrival + actor.duration + 5);
+  updateTownLocomotion(d, 0.1);
+  expect(actor.root.visible).toBe(true);
+  expect(actor.root.position.distanceTo(before)).toBeLessThan(1e-8);
+  d.reducedMotion = false;
+  let time = d.elapsed;
+  for (let i = 0; i < 3000 && actor.started !== undefined; i++) {
+    time += 0.1;
+    // Advance this trip without admitting another scheduled passenger.
+    d.elapsed = time;
+    d.vipArrivals.update();
+    updateTownLocomotion(d, 0.1);
+  }
+  expect(actor.started).toBeUndefined();
+  expect(actor.root.position.distanceTo(origin)).toBeLessThan(0.1);
+  // A fresh named arrival must not inherit the preceding visitor's movement clock.
+  const transport = d.visitorTransports.get(actor.source);
+  transport.visit = Array.from({ length: 100 }, (_, i) => i + transport.visit + 1).find((visit) =>
+    vipVisitor(d.vipArrivals.seed, visit),
+  );
+  transport.arrived = true;
+  transport.sinceArrival = 0;
+  transport.root.visible = true;
+  d.vipArrivals.update();
+  expect(actor.started).toBe(d.elapsed);
+  expect(actor.root.position.distanceTo(origin)).toBeLessThan(0.1);
+  expect(actor.motion).toBeUndefined();
+});
+
+it.each(['aviation', 'broadcast', 'contemporary'])(
+  'leaves an upgraded %s terminal on a prepared VIP building tour',
+  (era) => {
+    const { d, frame, arrival } = fixture('airport');
+    d.town.era = era;
+    d.town.buildings.airport = 3;
+    d.town.buildings.shop = 3;
+    d.town.buildings.saloon = 3;
+    d.town.buildingEras.airport = era;
+    d.town.buildingEraLevels.airport = 3;
+    d.sign = () => {};
+    const airport = d.group(d.world, PLOTS.airport[0], 0.08, PLOTS.airport[1]);
+    airport.userData.plot = 'airport';
+    d.buildPlot('airport', airport, d.town, { airport: 'Airport' });
+    registerFootprints(airport, geometryFootprints(airport), { owner: 'plot:airport' });
+    d.plotCache = new Map([['airport', { group: airport }]]);
+    d.navigation = townNavigation(d.world);
+    d.vipArrivals.attach(d.town);
+    d.itineraries = new TownItineraries(d);
+    const actor = d.vipArrivals.actors.find((a) => a.source === 'airport');
+    for (const _ of d.itineraries.prepare(actor)) void _;
+    expect(actor.itinerary?.plans.length).toBeGreaterThan(1);
+    expect(actor.itinerary.plans.some((p) => p.stops.length)).toBe(true);
+    frame(arrival);
+    expect(actor.started).toBe(arrival);
+    const origin = actor.root.position.clone(),
+      plans = d.navigation.plans;
+    for (let i = 1; i <= 250; i++) {
+      frame(arrival + i * 0.1);
+      updateTownLocomotion(d, 0.1);
+      expect(d.navigation.clear(actor.root.position.toArray(), 0.29)).toBe(true);
+    }
+    expect(actor.root.position.distanceTo(origin)).toBeGreaterThan(3);
+    expect(d.navigation.plans).toBe(plans);
+  },
+);

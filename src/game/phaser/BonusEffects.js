@@ -1,3 +1,4 @@
+import { spriteRef } from './spriteRefs';
 import { t } from '../../i18n';
 import { BONUS_TYPES } from './SpriteLoader';
 import { BonusComboEffects, describeBonusCombo } from './BonusComboEffects';
@@ -93,7 +94,8 @@ export class BonusEffects {
 
   icon(type, position, size) {
     const a = this.a;
-    const texture = a.textures[type] ?? { key: `power-${type.replaceAll('_', '-')}` };
+    const texture =
+      a.textures[type] ?? spriteRef(`power-${type.replaceAll('_', '-')}`, a.scene?.textures);
     return a.scene.add
       .image(position.x, position.y, texture.key, texture.frame)
       .setDisplaySize(size, size);

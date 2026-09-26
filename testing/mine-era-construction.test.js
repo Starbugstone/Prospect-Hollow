@@ -6,6 +6,9 @@ import { mineAppearance, ERA_CONSTRUCTION } from '../src/data/mineEvolution';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { TownPresentation } from '../src/game/town/TownPresentation';
 import { addMineWorks } from '../src/game/town/TownMineWorks';
+import { PLOTS } from '../src/game/town/TownLayout';
+import { geometryFootprints, registerFootprints } from '../src/game/town/BuildingFootprints';
+import { townNavigation } from '../src/game/town/TownNavigation';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 
 const views = [];
@@ -47,8 +50,17 @@ afterEach(() => {
 it.each(ERAS.slice(1).map((era, i) => [ERAS[i].id, era.id]))(
   'constructs a visibly different %s → %s mine, with arriving and working crews',
   (from, to) => {
-    const d = fixture(from, to),
-      saved = JSON.stringify(d.town);
+    const d = fixture(from, to);
+    // A completed neighbouring bank used to truncate the third worker's approach.
+    d.town.buildings.bank = 3;
+    d.town.buildingEras.bank = to;
+    d.town.buildingEraLevels.bank = 3;
+    d.sign = () => {};
+    const bank = d.group(d.world, PLOTS.bank[0], 0.08, PLOTS.bank[1]);
+    d.buildPlot('bank', bank, d.town, { bank: 'Bank' });
+    registerFootprints(bank, geometryFootprints(bank), { owner: 'plot:bank' });
+    d.navigation = townNavigation(d.world);
+    const savedTown = JSON.stringify(d.town);
     d.setCinematic(true);
     const effect = d.cinematic.presentation.effect;
     const old = new Box3().setFromObject(effect.previous);
@@ -61,6 +73,18 @@ it.each(ERAS.slice(1).map((era, i) => [ERAS[i].id, era.id]))(
       expect(worker.root.visible).toBe(true);
       expect(hammer.visible).toBe(true);
       expect(worker.root.position.distanceTo(arrivals[i])).toBeGreaterThan(1);
+      expect(worker.root.position.z).toBeLessThan(-16);
+      const deck = effect.scaffold.children.filter(
+        (part) => part.name === 'Builder working platform',
+      )[i];
+      const bounds = new Box3().setFromObject(deck);
+      expect(bounds.max.y).toBeCloseTo(worker.root.position.y, 4);
+      expect(worker.root.position.x).toBeGreaterThan(bounds.min.x);
+      expect(worker.root.position.x).toBeLessThan(bounds.max.x);
+      expect(worker.root.position.z).toBeGreaterThan(bounds.min.z);
+      expect(worker.root.position.z).toBeLessThan(bounds.max.z);
+      expect(worker.root.position.x).toBeGreaterThan(-7);
+      expect(d.navigation.clear(worker.root.position.toArray())).toBe(true);
     });
     const arm = effect.sequence.crew[0].worker.arms[1].upper.rotation.x;
     effect.frame(8.2);
@@ -71,9 +95,9 @@ it.each(ERAS.slice(1).map((era, i) => [ERAS[i].id, era.id]))(
     );
     expect(effect.sequence.crew.every(({ worker }) => !worker.root.visible)).toBe(true);
     const complete = new Box3().setFromObject(effect.next);
-    expect(complete.max.y).toBeGreaterThan(old.max.y);
-    expect(complete.max.x).toBeLessThan(-2.3); // Clear of the decline and mine cart.
-    expect(JSON.stringify(d.town)).toBe(saved);
+    expect(complete.isEmpty()).toBe(false);
+    expect(effect.next.userData.profile.portal).not.toBe(effect.previous.userData.profile.portal);
+    expect(JSON.stringify(d.town)).toBe(savedTown);
   },
 );
 
@@ -119,6 +143,28 @@ it('inherits mine architecture for a future era and safely handles unknown ident
     evolution: { ...eraEvolution('contemporary'), cityAssets: 'missing' },
   };
   expect(mineAppearance('future-mine')).toBe(mineAppearance('frontier'));
+});
+
+it('retains hillside workshops through Motor Age and refits them to its architecture', () => {
+  const d = fixture('post-war', 'motor-age');
+  const previous = d.staticScenery.entries.get('mine-works').group;
+  const next = addMineWorks(d, d.world, 'motor-age');
+  for (const key of ['crusher', 'fan-house', 'upper-terrace']) {
+    const oldFeature = previous.getObjectByName(`Mine feature ${key}`);
+    const feature = next.getObjectByName(`Mine feature ${key}`);
+    expect(oldFeature).toBeDefined();
+    expect(feature).toBeDefined();
+    expect(feature.children[0].position).toEqual(oldFeature.children[0].position);
+    const glazing = feature.getObjectByName('Era workshop glazing');
+    expect(glazing).toBeDefined();
+    const colors = new Set();
+    feature.traverse((o) => {
+      if (o.material?.color) colors.add(`#${o.material.color.getHexString()}`);
+    });
+    expect(colors).toContain(mineAppearance('motor-age').wall);
+    expect(colors).not.toContain(mineAppearance('post-war').wall);
+  }
+  expect(next.getObjectByName('Mine feature truck-bay')).toBeDefined();
 });
 
 it('uses the new receipt when entering an era before the static town needs rebuilding', () => {

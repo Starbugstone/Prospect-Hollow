@@ -14,12 +14,15 @@ export const villagerRandom = (seed) => {
 };
 // A visit gets a stable draw, so rebuilding the town or hovering does not reroll
 // the guest. Pick from one combined pool first, then use that entry's gender.
-export function vipVisitor(seed, visit = 0, pools = names) {
-  const entries = ['male', 'female'].flatMap((gender) =>
+const nameEntries = (pools) =>
+  ['male', 'female'].flatMap((gender) =>
     (Array.isArray(pools?.[gender]) ? pools[gender] : [])
       .filter((name) => typeof name === 'string' && name.trim())
       .map((name) => ({ name: name.trim(), gender })),
   );
+const defaultEntries = nameEntries(names);
+export function vipVisitor(seed, visit = 0, pools = names) {
+  const entries = pools === names ? defaultEntries : nameEntries(pools);
   if (!entries.length) return null;
   const key = Math.trunc(seed) * 65537 + Math.trunc(visit) * 31337;
   const chosen = entries[Math.floor(villagerRandom(key) * entries.length)];

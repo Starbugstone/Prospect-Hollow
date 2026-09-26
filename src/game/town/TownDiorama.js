@@ -1,8 +1,24 @@
+import { TownItineraries, updateItinerary } from './TownItineraries';
+import { setTownAtmosphere, horizonMaterial } from './TownAtmosphere';
+import { applyRoadSetbacks } from './BuildingSetbacks';
+import { addTownAnimals } from './TownAnimals';
+import { footprintsFor, plotFootprintKey } from './FootprintCatalog';
+import { navigationScene, drawNavigation, releaseNavigation } from './NavigationDebug';
+import { hasElectricity } from '../../data/industrial';
+import { mineGrowth } from '../../data/mineGrowth';
+import { updateMineGrowth } from './mine/addMineSite';
+import { afterPaint, performanceMark, scheduleWork } from '../PresentationWork';
+import { geometryFootprints, registerFootprints, footprintDistance } from './BuildingFootprints';
+import { townTracks, railEdges } from './TownLayout';
+import { demote } from '../phaser/boardRetention';
 import { townNavigation, prepareActorWalk, walkPose, placeSafely } from './TownNavigation';
+import { addWorkBreak, updateWorkRoutine } from './TownWorkRoutine';
+import { buildingWalk } from './TownPedestrians';
 import { TownVipArrivals } from './TownVipArrivals';
 import { hasVisitorTransport } from '../../data/visitorArrivals';
 import { villagerIdentity, vipVisitor } from '../../data/villagers';
-import { SIDEWALK_OFFSET, resolveTownTraffic } from './TownTraffic';
+import { SIDEWALK_OFFSET } from './TownTraffic';
+import { updateTownLocomotion } from './TownLocomotion';
 import { townWardrobe, vipOutfit } from '../../data/townWardrobes';
 import { MINE_SHAFT, addMineShaft, mineTrackHeight, mineTrackPitch } from './TownMineShaft';
 import { TownPresentation } from './TownPresentation';
@@ -46,6 +62,7 @@ import {
   plotUnlocked,
   population,
   nextGoal,
+  roadLevel,
 } from './TownRules';
 import { buildLandscape, keepCameraAboveTerrain } from './TownLandscape';
 import { addMotorActivity } from './TownMotorActivity';
@@ -54,7 +71,7 @@ import { TownScenery } from './TownScenery';
 import { addMineEra } from './TownMineEvolution';
 import { overlapsEventInset } from './TownInset';
 
-import { PLOTS, LANE_X, atPlot, SHERIFF_PATROL, visiblePlots } from './TownLayout';
+import { PLOTS, LANE_X, atPlot, plotStreet, SHERIFF_PATROL, visiblePlots } from './TownLayout';
 import { riverCenterX } from './TownRiver';
 export { PLOTS } from './TownLayout';
 const colors = {
@@ -69,6 +86,9 @@ const point = (x, y, z) => new THREE.Vector3(x, y, z);
 // Original geometry shares static scenery batches and animated actor instances.
 export class TownDiorama {
   constructor(canvas, onSelect, onLabels, onCameraDistance, onUnavailable) {
+    this.deferLife = true;
+    this.generation = 0;
+    navigationScene(this);
     this.canvas = canvas;
     this.onSelect = onSelect;
     this.onLabels = onLabels;
@@ -77,8 +97,7 @@ export class TownDiorama {
     this.materials = new Map();
     this.geometries = createTownGeometries();
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color('#e9e8da');
-    this.scene.fog = new THREE.Fog('#e9e8da', 125, 205);
+    setTownAtmosphere(this.scene);
     this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 400);
     this.camera.position.set(12, 12, 25);
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
@@ -93,6 +112,7 @@ export class TownDiorama {
       opacity: 0.16,
       depthWrite: false,
     });
+    horizonMaterial(this.contactShadowMaterial);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.25;
@@ -100,7 +120,7 @@ export class TownDiorama {
     const sun = new THREE.DirectionalLight('#ffe3ad', 3.5);
     sun.position.set(-24, 38, 18);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.mapSize.set(this.renderQuality.shadowSize, this.renderQuality.shadowSize);
     Object.assign(sun.shadow.camera, {
       left: -31,
       right: 31,
@@ -117,7 +137,7 @@ export class TownDiorama {
     this.scene.children.forEach((object) => {
       if (object.isLight) object.layers.enable(2);
     });
-    this.frameCache = new TownFrameCache(this.renderer);
+    this.frameCache = new TownFrameCache(this.renderer, this.renderQuality.cacheSamples);
     this.upgradeGlow = new TownUpgradeGlow(this.scene);
     this.raycaster = new THREE.Raycaster();
     this.raycaster.layers.enable(1);
@@ -178,11 +198,13 @@ export class TownDiorama {
     this.observer = new ResizeObserver(this.resize);
     this.observer.observe(canvas);
     this.resize();
+    this.prepareConstructionCue();
     this.contextLost = this.handleContextLoss.bind(this);
     canvas.addEventListener('webglcontextlost', this.contextLost);
   }
   handleContextLoss(event) {
     event.preventDefault();
+    demote('town-context-lost', { teardownInProgress: this.disposed });
     this.contextUnavailable = true;
     this.frameCache.valid = false;
     this.renderer.setAnimationLoop(null);
@@ -204,7 +226,10 @@ export class TownDiorama {
   }
   material(color) {
     if (!this.materials.has(color))
-      this.materials.set(color, new THREE.MeshStandardMaterial({ color, roughness: 0.88 }));
+      this.materials.set(
+        color,
+        horizonMaterial(new THREE.MeshStandardMaterial({ color, roughness: 0.88 })),
+      );
     return this.materials.get(color);
   }
   mesh(parent, shape, size, position, color) {
@@ -250,21 +275,26 @@ export class TownDiorama {
   }
   sign(parent, text, width, x, y, z) {
     this.box(parent, width + 0.1, 0.43, 0.1, x, y, z, '#8c6947', true);
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 128;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#ecddbb';
-    ctx.fillRect(0, 0, 512, 128);
-    ctx.fillStyle = '#56472e';
-    ctx.font = 'bold 48px Georgia';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, 256, 68, 480);
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    const material = new THREE.MeshStandardMaterial({ map: texture, roughness: 1 });
-    material.userData.transient = true;
+    if (typeof document === 'undefined') return;
+    this.signMaterials ??= new Map();
+    let material = this.signMaterials.get(text);
+    if (!material) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ecddbb';
+      ctx.fillRect(0, 0, 512, 128);
+      ctx.fillStyle = '#56472e';
+      ctx.font = 'bold 48px Georgia';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, 256, 68, 480);
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      material = horizonMaterial(new THREE.MeshStandardMaterial({ map: texture, roughness: 1 }));
+      this.signMaterials.set(text, material);
+    }
     const sign = this.box(parent, width, 0.35, 0.012, x, y, z + 0.058, '#ffffff');
     sign.geometry = this.geometries.sign ??= new THREE.PlaneGeometry(1, 1);
     sign.scale.set(width, 0.35, 1);
@@ -276,7 +306,9 @@ export class TownDiorama {
       buckets = new Map(),
       meshes = [];
     group.traverse((object) => {
-      if (!object.isMesh) return;
+      if (!object.isMesh || object.isInstancedMesh) return;
+      for (let node = object; node && node !== group; node = node.parent)
+        if (node.userData.animated) return;
       meshes.push(object);
       const geometry = object.geometry
         .clone()
@@ -310,7 +342,413 @@ export class TownDiorama {
     });
     group.removeFromParent();
   }
-  update(town, labels, mineStage = 0, constructionId = null) {
+  buildPlot(id, group, town, labels) {
+    let movingPart;
+    if (id === 'mine') this.mine(group, labels.mine);
+    else {
+      const stage = town.buildings[id],
+        project = town.projects[id],
+        kind = BUILDING_BY_ID[id].kind;
+      if (kind === 'bridge') {
+        renderBuilding({ town: this, parent: group, kind, level: stage, label: labels[id] });
+        if (stage)
+          renderModernization(
+            this,
+            group,
+            kind,
+            town.buildingEras[id],
+            town.buildingEraLevels[id] || stage,
+          );
+        if (project) addScaffolding(this, group, kind, stage, constructionVisual(project));
+      } else if (!stage) this.plot(group, kind, project ? 2 : -1, labels[id]);
+      else {
+        const industrial = renderEraLandmark(
+          this,
+          group,
+          kind,
+          labels[id],
+          town.buildingEraLevels[id] || 1,
+          town.buildingEras[id],
+          stage,
+        );
+        if (!industrial) {
+          if (kind === 'square')
+            buildTownSquare(
+              this,
+              group,
+              stage,
+              town.buildingEras[id] === 'frontier',
+              town.buildingEras[id],
+            );
+          else if (kind === 'well') this.well(group);
+          else this.building(group, kind, stage, labels[id]);
+        }
+        if (!industrial && !['fisherman', 'blacksmith', 'school', 'doctor'].includes(kind))
+          movingPart = addImprovements(this, group, kind, stage, town.buildingEras[id]);
+        if (!industrial)
+          renderModernization(
+            this,
+            group,
+            kind,
+            town.buildingEras[id],
+            town.buildingEraLevels[id] || stage,
+          );
+        const wheel = group.getObjectByName('Watermill wheel');
+        if (wheel)
+          movingPart = {
+            rotor: wheel,
+            update: (time) => {
+              wheel.rotation.x = time * 0.45;
+            },
+          };
+        if (project) addScaffolding(this, group, kind, stage, constructionVisual(project));
+      }
+    }
+    applyRoadSetbacks(group, id, town);
+    return movingPart;
+  }
+  plotSignatures(town, labels) {
+    return new Map(
+      visiblePlots(town).map(({ id }) => [
+        id,
+        JSON.stringify([
+          labels[id],
+          town.era,
+          town.buildings[id],
+          constructionVisual(town.projects[id]),
+          town.buildingEras[id],
+          town.buildingEraLevels[id],
+        ]),
+      ]),
+    );
+  }
+  topologySignature(town, labels) {
+    return JSON.stringify([
+      town.era,
+      visiblePlots(town).map(({ id }) => id),
+      townTracks(town),
+      railEdges(town),
+      roadLevel(town),
+      hasElectricity(town),
+      labels,
+    ]);
+  }
+  prepareConstructionCue() {
+    if (!this.cue) {
+      this.cue = this.group(this.scene);
+      this.cue.userData.animated = true;
+      this.box(this.cue, 0.15, 1.2, 0.15, 0, 0.6, 0, '#b88952');
+      this.box(this.cue, 0.7, 0.3, 0.35, 0, 1.15, 0, '#667a7b', true);
+      this.cue.traverse((o) => o.layers.set(2));
+    }
+    this.cue.visible = false;
+  }
+  beginConstructionCue(id) {
+    this.prepareConstructionCue();
+    const [x, z] = PLOTS[id] ?? [0, 0];
+    this.cue.position.set(x + 1.4, 0.4, z + 1.8);
+    this.cue.rotation.z = -0.65;
+    this.cue.visible = true;
+    this.drawFrame();
+  }
+  changeTown(town, labels, mineProgress, constructionId, reducedMotion = false) {
+    this.mineProgress = mineProgress;
+    const works = this.staticScenery?.entries.get('mine-works')?.group;
+    if (works) updateMineGrowth(works, mineGrowth(mineProgress));
+    const signatures = this.plotSignatures(town, labels);
+    const changed = [...signatures].filter(
+      ([id, signature]) => this.plotCache?.get(id)?.signature !== signature,
+    );
+    if (!changed.length && this.topology === this.topologySignature(town, labels)) {
+      this.town = town;
+      this.render();
+      return;
+    }
+    if (
+      changed.length === 1 &&
+      this.lifeReady !== false &&
+      changed[0][0] === 'mine' &&
+      this.topology === this.topologySignature(town, labels)
+    ) {
+      this.invalidatePresentationWork();
+      this.town = town;
+      this.staticScenery.update(this, town);
+      const works = this.staticScenery.entries.get('mine-works').group;
+      this.navigation.replaceOwner('mine-site', works.userData.footprints);
+      this.plotCache.get('mine').signature = signatures.get('mine');
+      this.buildingRenderer.sync(this.world.children.filter((child) => child.userData.static));
+      this.repairAnimalLife();
+      this.render();
+      return;
+    }
+    if (
+      changed.length === 1 &&
+      this.lifeReady !== false &&
+      changed[0][0] !== 'mine' &&
+      this.topology === this.topologySignature(town, labels)
+    ) {
+      try {
+        this.swapPlot(changed[0][0], town, labels, {
+          construction: constructionId && !reducedMotion,
+        });
+        return;
+      } catch (error) {
+        console.warn('Incremental plot preparation failed; rebuilding town.', error);
+      }
+    }
+    if (constructionId && this.navigation && this.plotCache?.has(constructionId)) {
+      const [x, z] = PLOTS[constructionId],
+        probe = this.group(new THREE.Group(), x, 0.08, z);
+      probe.userData.plot = constructionId;
+      const oldTown = this.town;
+      this.town = town;
+      try {
+        this.buildPlot(constructionId, probe, town, labels);
+      } finally {
+        this.town = oldTown;
+      }
+      const entries = registerFootprints(probe, geometryFootprints(probe));
+      this.clearGroup(probe);
+      this.pendingUpdate = {
+        id: constructionId,
+        entries,
+        town,
+        labels,
+        mineProgress,
+        constructionId: reducedMotion ? null : constructionId,
+      };
+      if (!this.tryActivatePlot()) return;
+    } else this.update(town, labels, mineProgress, reducedMotion ? null : constructionId);
+    if (this.cue) this.cue.visible = false;
+  }
+  swapPlot(id, town, labels, { construction = false } = {}) {
+    this.finishConstruction();
+    this.invalidatePresentationWork();
+    if (this.pendingPlot) this.clearGroup(this.pendingPlot.group);
+    this.pendingPlot = null;
+    this.pendingUpdate = null;
+    const previous = this.plotCache.get(id);
+    const [x, z] = PLOTS[id];
+    const group = this.group(this.world, x, 0.08, z);
+    group.userData.plot = id;
+    group.userData.static = true;
+    this.town = town;
+    const movingPart = this.buildPlot(id, group, town, labels);
+    const footprint =
+      id === 'mine'
+        ? { solids: geometryFootprints(group), provisional: true }
+        : footprintsFor(plotFootprintKey(id, town), group);
+    const entries = registerFootprints(group, footprint.solids, {
+      provisional: footprint.provisional,
+    });
+    const signature = this.plotSignatures(town, labels).get(id);
+    const pending = {
+      id,
+      group,
+      previous,
+      movingPart,
+      entries,
+      signature,
+      construction,
+      parts: constructionParts(group),
+    };
+    group.visible = false;
+    group.userData.activation = 'pending';
+    this.pendingPlot = pending;
+    this.tryActivatePlot();
+  }
+  showConstructionGate(id) {
+    if (!this.constructionGate) {
+      const gate = (this.constructionGate = this.group(this.scene));
+      gate.name = 'Building waiting for a clear work site';
+      for (const x of [-1.5, 1.5]) this.box(gate, 0.08, 0.9, 0.08, x, 0.45, 0, '#b99464');
+      this.box(gate, 3, 0.14, 0.05, 0, 0.75, 0, '#dba744');
+      gate.traverse((o) => o.layers.set(2));
+    }
+    const [x, z] = PLOTS[id];
+    this.constructionGate.position.set(x, 0.08, z + 2.5);
+    this.constructionGate.visible = true;
+  }
+  plotVacant(pending) {
+    const { entries } = pending;
+    const occupants = [
+      ...(this.actors ?? []),
+      ...(this.animals ?? []),
+      ...(this.vipArrivals?.actors ?? []),
+    ].filter(
+      (a) =>
+        a.root.visible &&
+        a.species !== 'pigeon' &&
+        entries.some(
+          (o) =>
+            a.root.position.y + 1.65 > o.y &&
+            a.root.position.y + 0.08 < o.y + o.height &&
+            footprintDistance(o, a.root.position.x, a.root.position.z) < (a.radius ?? 0.45),
+        ),
+    );
+    if (occupants.length) {
+      this.showConstructionGate(pending.id);
+      for (const actor of occupants) {
+        if (actor.motion?.exitTarget) continue;
+        if (pending.retryAt && (this.elapsed ?? 0) < pending.retryAt) continue;
+        const p = actor.root.position,
+          candidates = [];
+        for (let ring = 1; ring <= 12; ring++)
+          for (let i = 0; i < 16; i++) {
+            const angle = (i * Math.PI) / 8,
+              q = [p.x + Math.cos(angle) * ring * 0.5, p.y, p.z + Math.sin(angle) * ring * 0.5];
+            if (
+              entries.every((o) => footprintDistance(o, q[0], q[2]) >= (actor.radius ?? 0.45)) &&
+              this.navigation.segment(p.toArray(), q, actor.radius ?? 0.45)
+            )
+              candidates.push(q);
+          }
+        if (candidates.length) {
+          actor.motion ??= {
+            x: p.x,
+            z: p.z,
+            vx: 0,
+            vz: 0,
+            routeDistance: 0,
+            radius: actor.radius ?? 0.45,
+            maxSpeed: actor.walkSpeed ?? 0.55,
+          };
+          actor.motion.exitTarget = candidates[0];
+        } else pending.deferredReason = 'No swept-clear exit from pending structure';
+      }
+      pending.retryAt = (this.elapsed ?? 0) + 0.5;
+      return false;
+    }
+    if (this.constructionGate) this.constructionGate.visible = false;
+    return true;
+  }
+  tryActivatePlot() {
+    if (this.pendingUpdate) {
+      const pending = this.pendingUpdate;
+      if (!this.plotVacant(pending)) return false;
+      this.pendingUpdate = null;
+      this.update(pending.town, pending.labels, pending.mineProgress, pending.constructionId);
+      if (this.cue) this.cue.visible = false;
+      return true;
+    }
+    const pending = this.pendingPlot;
+    if (!pending) return true;
+    const { id, group, previous, movingPart, entries, signature, construction, parts } = pending;
+    if (!this.plotVacant(pending)) return false;
+    this.pendingPlot = null;
+    previous.group.userData.activation = 'removed';
+    previous.group.removeFromParent();
+    if (previous.movingPart) {
+      previous.movingPart.rotor.removeFromParent();
+      this.motions = this.motions.filter((m) => m !== previous.movingPart.update);
+    }
+    group.visible = true;
+    group.userData.activation = construction ? 'temporary-reveal' : 'completed';
+    if (this.cue) this.cue.visible = false;
+    this.targets = this.targets.map((target) => (target === previous.group ? group : target));
+    this.plotCache.set(id, { signature, group, movingPart, parts });
+    this.navigation.replaceOwner(
+      `plot:${id}`,
+      entries,
+      construction ? 'temporary-reveal' : 'completed',
+    );
+    const actors = [
+      ...(this.actors ?? []),
+      ...(this.animals ?? []),
+      ...(this.vipArrivals?.actors ?? []),
+    ];
+    const view = this,
+      generation = this.generation;
+    function* repairRoutes() {
+      view.itineraries = new TownItineraries(view);
+      for (const actor of actors) {
+        const path = actor.walkPath ?? actor.path;
+        if (!path?.points.length) continue;
+        const intersects = path.points.some(
+          (p, i) => i && !view.navigation.segment(path.points[i - 1], p, actor.radius ?? 0.45),
+        );
+        if (!intersects) {
+          if (actor.itinerary) yield* view.itineraries.prepare(actor);
+          continue;
+        }
+        const position = actor.root.position.toArray();
+        const next = path.building
+          ? buildingWalk(view, path.building, path.frontage)
+          : view.navigation.plan(
+              [position, ...path.points.slice(1), position],
+              actor.radius ?? 0.45,
+            );
+        if (actor.walkPath) actor.walkPath = next;
+        else actor.path = next;
+        if (actor.motion) actor.motion.path = null;
+        if (actor.itinerary) {
+          actor.itinerary.path = next;
+          actor.itinerary.anchor = next.points[0];
+          actor.itinerary.stops = [];
+          actor.itinerary.phase = 'finishing';
+          actor.routeLimit = next.total;
+          yield* view.itineraries.prepare(actor);
+        }
+        yield;
+      }
+    }
+    this.cancelRouteWork?.();
+    this.cancelRouteWork = scheduleWork(repairRoutes(), {
+      isCurrent: () => generation === this.generation,
+    });
+    if (movingPart) {
+      this.world.attach(movingPart.rotor);
+      movingPart.rotor.userData.animated = true;
+      this.motions.push(movingPart.update);
+    }
+    if (construction)
+      this.construction = new TownConstruction(this, group, movingPart?.rotor, previous.parts);
+    this.buildingRenderer.sync(this.world.children.filter((child) => child.userData.static));
+    this.clearGroup(previous.group);
+    this.frameCache.valid = false;
+    this.rebuildActors();
+    this.render();
+    const reveal = this.construction;
+    if (reveal)
+      afterPaint(() => {
+        if (this.construction === reveal) reveal.presentFirstStrike();
+      });
+    else this.repairAnimalLife();
+    return true;
+  }
+  invalidatePresentationWork() {
+    this.generation = (this.generation ?? 0) + 1;
+    this.cancelAnimalWork?.();
+    this.cancelLifeWork?.();
+    this.cancelFinishWork?.();
+    this.cancelRouteWork?.();
+  }
+  update(town, labels, mineProgress = 0, constructionId = null) {
+    this.mineProgress = mineProgress;
+    this.invalidatePresentationWork();
+    // Store the rendered era separately: the campaign may mutate the same town
+    // object before this update. Routes and work positions only survive rebuilds
+    // within that era; a new layout gets a fresh ambient population.
+    if (this.lifeEra !== undefined && this.lifeEra !== town.era) {
+      this.vipArrivals?.reset();
+      this.vipArrivals = null;
+      this.actors = [];
+      this.animals = [];
+      this.animalFeeder = null;
+      this.animalMotion = null;
+      this.animalSpace = null;
+      this.animalNavigation = null;
+      this.animalHabitats = [];
+      this.locomotionGrid = null;
+      this.locomotionAgents = [];
+      this.locomotionVehicles = [];
+      this.manualBlockers = [];
+    }
+    this.lifeEra = town.era;
+    this.lifeReady = false;
+    if (this.pendingPlot) this.clearGroup(this.pendingPlot.group);
+    this.pendingPlot = null;
+    this.pendingUpdate = null;
     this.presentation?.dispose(false);
     this.presentation = null;
     const interruptedGroup = this.construction?.group;
@@ -320,21 +758,9 @@ export class TownDiorama {
     const plots = visiblePlots(town);
     const previousPlotIds = this.cinematic?.plotIds;
     const reusable = new Map();
-    const labelSignature = JSON.stringify(labels);
-    const signatures = new Map(
-      plots.map(({ id }) => [
-        id,
-        JSON.stringify([
-          labelSignature,
-          town.era,
-          town.buildings[id],
-          constructionVisual(town.projects[id]),
-          town.buildingEras[id],
-          town.buildingEraLevels[id],
-          id === 'mine' ? mineStage : null,
-        ]),
-      ]),
-    );
+    const signatures = this.plotSignatures(town, labels);
+    this.topology = this.topologySignature(town, labels);
+    this.labels = labels;
     // Keep unchanged plot meshes (and their sign textures) out of world disposal.
     // A reveal needs fresh articulated pieces, including when interrupted by a tap.
     for (const [id, cached] of this.plotCache ?? []) {
@@ -349,6 +775,14 @@ export class TownDiorama {
       reusable.set(id, cached);
     }
     this.plotCache = new Map();
+    this.retainedVipActors = new Map((this.vipArrivals?.actors ?? []).map((a) => [a.source, a]));
+    for (const a of this.retainedVipActors.values()) a.root.removeFromParent();
+    this.retainedAnimals = new Map((this.animals ?? []).map((a) => [`${a.species}:${a.seed}`, a]));
+    for (const a of this.retainedAnimals.values()) a.root.removeFromParent();
+    this.retainedActors = new Map(
+      (this.actors ?? []).filter((a) => a.persistentKey).map((a) => [a.persistentKey, a]),
+    );
+    for (const actor of this.retainedActors.values()) actor.root.removeFromParent();
     this.actorRenderer.clear();
     this.staticScenery ??= new TownScenery();
     this.staticScenery.detach();
@@ -357,6 +791,8 @@ export class TownDiorama {
     this.world = new THREE.Group();
     this.scene.add(this.world);
     this.actors = [];
+    for (const a of this.retainedActors.values()) this.world.add(a.root);
+    for (const a of this.retainedAnimals.values()) this.world.add(a.root);
     this.trafficActors = [];
     this.motions = [];
     this.visitorTransports = new Map();
@@ -365,6 +801,8 @@ export class TownDiorama {
     this.town = town;
     this.guidedPlot = nextGoal(town)?.id;
     this.staticScenery.update(this, town);
+    const mineWorks = this.staticScenery.entries.get('mine-works')?.group;
+    if (mineWorks) updateMineGrowth(mineWorks, mineGrowth(mineProgress));
     this.controls.maxDistance = [
       'post-war',
       'motor-age',
@@ -376,11 +814,6 @@ export class TownDiorama {
       : town.era !== 'frontier'
         ? 160
         : 110;
-    // Expanded towns need a farther overview on phones; keep buildings ahead of the fog.
-    if (this.scene.fog) {
-      this.scene.fog.near = town.era !== 'frontier' ? 325 : 125;
-      this.scene.fog.far = town.era !== 'frontier' ? 390 : 205;
-    }
     for (const {
       id,
       position: [x, z],
@@ -401,65 +834,22 @@ export class TownDiorama {
         position: point(x, 0.2, z + (id === 'mine' ? 1.65 : 1.85)),
       });
       let movingPart = cached?.movingPart;
-      if (!cached && id === 'mine') this.mine(group, labels.mine, mineStage);
-      else if (!cached) {
-        const stage = town.buildings[id],
-          project = town.projects[id],
-          kind = BUILDING_BY_ID[id].kind;
-        if (kind === 'bridge') {
-          renderBuilding({ town: this, parent: group, kind, level: stage, label: labels[id] });
-          if (stage)
-            renderModernization(
-              this,
-              group,
-              kind,
-              town.buildingEras[id],
-              town.buildingEraLevels[id] || stage,
-            );
-          if (project) addScaffolding(this, group, kind, stage, constructionVisual(project));
-        } else if (!stage) this.plot(group, kind, project ? 2 : -1, labels[id]);
-        else {
-          const industrial = renderEraLandmark(
-            this,
-            group,
-            kind,
-            labels[id],
-            town.buildingEraLevels[id] || 1,
-            town.buildingEras[id],
-            stage,
-          );
-          if (!industrial) {
-            if (kind === 'square')
-              buildTownSquare(this, group, stage, town.buildingEras[id] === 'frontier');
-            else if (kind === 'well') this.well(group);
-            else this.building(group, kind, stage, labels[id]);
-          }
-          if (!industrial && !['fisherman', 'blacksmith', 'school', 'doctor'].includes(kind))
-            movingPart = addImprovements(this, group, kind, stage, town.buildingEras[id]);
-          if (!industrial)
-            renderModernization(
-              this,
-              group,
-              kind,
-              town.buildingEras[id],
-              town.buildingEraLevels[id] || stage,
-            );
-          const wheel = group.getObjectByName('Watermill wheel');
-          if (wheel)
-            movingPart = {
-              rotor: wheel,
-              update: (time) => {
-                wheel.rotation.x = time * 0.45;
-              },
-            };
-          if (project) addScaffolding(this, group, kind, stage, constructionVisual(project));
-        }
-      }
+      if (!cached) movingPart = this.buildPlot(id, group, town, labels);
       const bounds = new THREE.Box3().setFromObject(group);
-      // Reserve the finished footprint throughout a construction reveal, even
-      // while its meshes are hidden or temporarily lifted by the animation.
-      group.userData.animalSolid = bounds.clone();
-      group.userData.animalSolid.max.y += 1.4;
+      if (!cached) {
+        const footprint =
+          id === 'mine'
+            ? { solids: geometryFootprints(group), provisional: false }
+            : footprintsFor(plotFootprintKey(id, town), group);
+        registerFootprints(group, footprint.solids, {
+          provisional: footprint.provisional,
+          activation: town.projects[id]
+            ? 'construction'
+            : town.buildings[id] || id === 'mine'
+              ? 'completed'
+              : 'unbuilt',
+        });
+      }
       if (id !== 'mine') this.upgradeGlow.add(id, bounds);
       // Keep action icons at the front porch, below the roofline.
       this.anchors.at(-1).collection = point(x, 1, z + 2.2);
@@ -489,14 +879,49 @@ export class TownDiorama {
     }
     // Model preparation can be expensive. Start the reveal clock on its first visible frame.
     if (this.construction) this.lastFrame = 0;
-    const household = population(town);
     this.navigation = townNavigation(this.world);
+    this.buildingRenderer.sync(this.world.children.filter((child) => child.userData.static));
+    this.renderer.shadowMap.needsUpdate = true;
+    if (this.overview) this.frameTown();
+    drawNavigation(this);
+    performanceMark('geometry-ready');
+    performanceMark('navigation-ready');
+    this.render();
+    const generation = this.generation;
+    const populate = () => {
+      if (this.disposed || generation !== this.generation) return;
+      const work = this.populateLife(town);
+      if (this.deferLife)
+        this.cancelLifeWork = scheduleWork(work, {
+          budget: 8,
+          isCurrent: () => generation === this.generation && !this.disposed,
+        });
+      else while (!work.next().done) {}
+    };
+    if (!this.deferLife) populate();
+    afterPaint(() => {
+      if (this.disposed || generation !== this.generation) return;
+      performanceMark('first-town-frame');
+      if (this.deferLife) populate();
+      this.construction?.presentFirstStrike();
+      this.onFirstFrame?.();
+    });
+  }
+  *populateLife(town) {
+    this.itineraries = new TownItineraries(this);
+    const household = population(town);
     addEraActivity(this, town);
+    yield;
     addMotorActivity(this, town);
+    yield;
     addTownVisitors(this, town);
+    yield;
     addTownLife(this, town);
+    yield;
     addLeisureActivity(this, town);
+    yield;
     addAviationActivity(this, town);
+    yield;
     this.person({
       color: '#738a83',
       skin: '#d5ad88',
@@ -549,8 +974,8 @@ export class TownDiorama {
         ],
         seed: 13,
       });
-    if (town.buildings.farm)
-      this.person({
+    if (town.buildings.farm) {
+      const farmer = this.person({
         color: '#809267',
         skin: '#af7b56',
         hat: '#d7b671',
@@ -558,8 +983,11 @@ export class TownDiorama {
         seed: 2,
         work: 'farm',
       });
-    if (town.buildings.saloon)
-      this.person({
+      farmer.root.name = 'Farmer tending crops';
+      addWorkBreak(this, farmer, 'farm', { work: 18, rest: 4 });
+    }
+    if (town.buildings.saloon) {
+      const host = this.person({
         color: '#a47d91',
         skin: '#edc7a4',
         hat: '#b89869',
@@ -568,6 +996,9 @@ export class TownDiorama {
         work: 'greet',
         dress: true,
       });
+      host.root.name = 'Saloon host';
+      addWorkBreak(this, host, 'saloon', { work: 14, rest: 4 });
+    }
     if (town.buildings.sheriff)
       this.person({
         color: '#315d83',
@@ -582,41 +1013,21 @@ export class TownDiorama {
       this.horse(...atPlot('stable', 2.25, 0.9), 0.5);
       this.horse(...atPlot('stable', 2.65, -0.9), -0.9, 0.85);
     }
-    const cart = this.group(this.world);
-    cart.name = 'Incline mine cart';
-    cart.userData.animated = true;
-    this.box(cart, 0.75, 0.4, 0.55, 0, 0.45, 0, '#617d80', true);
-    for (const x of [-0.32, 0.32])
-      for (const z of [-0.2, 0.2])
-        this.rod(cart, [x - 0.04, 0.18, z], [x + 0.04, 0.18, z], 0.15, '#554b38');
-    for (let n = 0; n < 4; n++)
-      this.ball(
-        cart,
-        (n % 2) * 0.23 - 0.12,
-        0.7,
-        Math.floor(n / 2) * 0.16 - 0.09,
-        0.13,
-        n % 2 ? '#b58ed4' : '#83b6b7',
-        'rock',
-      );
-    this.motions.push((time) => {
-      const z = THREE.MathUtils.lerp(
-        MINE_SHAFT.rampStartZ - 0.3,
-        MINE_SHAFT.portalZ - 1.25,
-        (1 - Math.cos(time * 0.55)) / 2,
-      );
-      cart.position.set(0, mineTrackHeight(z) + 0.07, z);
-      cart.rotation.x = mineTrackPitch(z);
-    });
     this.vipArrivals ??= new TownVipArrivals(this);
     this.vipArrivals.attach(town);
-    this.actors.forEach((actor) => this.animatePerson(actor, this.elapsed));
+    for (const actor of [...this.actors, ...this.vipArrivals.actors])
+      yield* this.itineraries.prepare(actor);
+
+    this.actors.forEach((actor) => {
+      if (!actor.motion) this.animatePerson(actor, this.elapsed);
+    });
     this.motions.forEach((motion) => motion(this.elapsed));
     this.vipArrivals.update();
+    for (const actor of this.retainedActors?.values() ?? []) this.clearGroup(actor.root);
+    this.retainedActors?.clear();
+    this.lifeReady = true;
     this.rebuildActors();
-    this.buildingRenderer.sync(this.world.children.filter((child) => child.userData.static));
     this.renderer.shadowMap.needsUpdate = true;
-    if (this.overview) this.frameTown();
     this.render();
   }
   cactus(parent, x, z) {
@@ -743,7 +1154,7 @@ export class TownDiorama {
     this.rod(parent, [0, 1.75, 0], [0, 0.73, 0], 0.012, '#d6c298');
     this.mesh(parent, 'cone', [0.13, 0.22, 0.13], [0, 0.75, 0], '#aa7748');
   }
-  mine(parent, label, stage = 0) {
+  mine(parent, label) {
     addMineShaft(this, parent);
     const entry = this.group(
       parent,
@@ -752,45 +1163,7 @@ export class TownDiorama {
       MINE_SHAFT.portalZ - PLOTS.mine[1],
     );
     entry.name = 'Sunken mine entrance';
-    for (const [x, y, z, s] of [
-      [-1.5, 1, -0.15, 0.55],
-      [1.5, 1, -0.15, 0.55],
-      [0, 2.6, -0.3, 0.6],
-      [-0.8, 2.45, -0.3, 0.45],
-      [0.8, 2.45, -0.3, 0.45],
-    ])
-      this.ball(entry, x, y, z, [s, s * 0.75, s * 0.7], x > 0 ? '#9d987b' : '#b6aa89', 'rock');
-    for (const x of [-1, 1]) this.box(entry, 0.18, 2.12, 0.25, x, 1.06, 0, '#ae8956');
-    this.box(entry, 2.35, 0.24, 0.3, 0, 2.13, 0, '#997144');
-    this.box(entry, 0.14, 0.25, 0.17, -0.84, 1.5, 0.2, '#e7bd73', true);
-    const era = this.group(entry, 0, 0, -0.85);
-    era.scale.set(0.78, 0.78, 1);
-    addMineEra(this, era, this.town?.era);
-    this.sign(entry, label, 1.8, 0, 2.38, 0.23);
-    const jewels = this.group(parent);
-    jewels.name = 'Mine chapter jewels';
-    const gems = ['#b889ca', '#6dace5', '#6bcbae', '#e8c879', '#e495b3'];
-    for (let n = 0; n < stage; n++)
-      this.ball(
-        jewels,
-        (n % 2 ? 1 : -1) * 2.35,
-        0.2 + Math.floor(n / 2) * 0.25,
-        1.4,
-        [0.13, 0.2, 0.13],
-        gems[n % gems.length],
-        'rock',
-      );
-    // Extraction equipment grows beside the decline, outside its clear opening.
-    const equipment = this.group(parent, 2.9, 0, 1.5);
-    if (stage >= 1) this.box(equipment, 0.55, 0.5, 0.7, 0, 0.25, 0, '#a07d57');
-    if (stage >= 3) this.box(equipment, 0.65, 0.6, 0.8, 0, 0.4, 0.8, '#748f95');
-    if (stage >= 5)
-      for (const x of [-0.6, 0.6]) this.rod(equipment, [x, 0, 0], [x, 2.6, 0], 0.085, '#a38252');
-    if (stage >= 6) this.rod(equipment, [-0.6, 2.6, 0], [0.6, 2.6, 0], 0.1, '#b39260');
-    if (stage >= 7) this.box(equipment, 1.5, 0.12, 1.3, 0, 2.7, 0, '#78938a');
-    if (stage >= 8) this.box(equipment, 0.22, 0.3, 0.24, 0, 2.2, 0.2, '#ffe3a0');
-    if (stage >= 9) this.rod(equipment, [0, 2.5, 0], [-1.3, 0.2, 0], 0.035, '#566a63');
-    if (stage >= 10) this.ball(equipment, 0, 3, 0, [0.25, 0.35, 0.25], '#edcf76', 'rock');
+    this.sign(entry, label, 1.8, 0, 2.38, 0.4);
   }
   person({
     color,
@@ -809,6 +1182,15 @@ export class TownDiorama {
     linear = false,
     era = this.town?.era,
   }) {
+    const persistentKey = !manual && JSON.stringify([seed, work, visitor, sheriff, route]);
+    const retained = this.retainedActors?.get(persistentKey);
+    if (retained && retained.appearance.era === era) {
+      this.retainedActors.delete(persistentKey);
+      parent.add(retained.root);
+      this.actors.push(retained);
+      prepareActorWalk(this, retained);
+      return retained;
+    }
     const firstVIP = visitor && !manual ? vipVisitor(seed, 0) : null;
     const identity = firstVIP ?? villagerIdentity(seed, gender ?? (dress ? 'female' : undefined));
     const female = identity.gender === 'female';
@@ -991,6 +1373,18 @@ export class TownDiorama {
       if (object.isMesh) object.castShadow = false;
     });
     if (!manual) this.contactShadow(root, 0.27, 0.18);
+    actor.persistentKey = persistentKey;
+    if (retained) {
+      this.retainedActors.delete(persistentKey);
+      for (const key of ['id', 'motion', 'distance', 'acceptedDistance', 'visit', 'lastPoseTime'])
+        if (retained[key] !== undefined) actor[key] = retained[key];
+      root.position.copy(retained.root.position);
+      root.rotation.copy(retained.root.rotation);
+      root.scale.copy(retained.root.scale);
+      this.setVillagerIdentity(actor, retained.root.userData.villager);
+      this.clearGroup(retained.root);
+    }
+    root.userData.locomotionActor = actor;
     prepareActorWalk(this, actor);
     return actor;
   }
@@ -1033,14 +1427,20 @@ export class TownDiorama {
     }
   }
   animatePerson(actor, time) {
+    updateWorkRoutine(actor, time);
+    updateItinerary(this, actor, time);
+    time = actor.motion?.animationTime ?? time;
     const { root, body, torso, head, arms, legs, curve, duration, seed, work } = actor;
     const cycle = (time + seed) % (duration + 4);
+    if (!actor.workRoutine && !actor.itinerary) actor.routeResting = !work && cycle >= duration;
     let walking = !work && cycle < duration;
     const progress = work?.length ? 0.1 : Math.min(cycle / duration, 0.9999);
-    if (!actor.walkPath) root.position.copy(curve.getPointAt(progress));
-    let routeProgress = progress;
-    if (actor.visitor && !actor.transportVisitor) {
+    const placedWorker = work && (actor.motion || actor.workRoutine);
+    if (!actor.walkPath && !placedWorker) root.position.copy(curve.getPointAt(progress));
+    let routeProgress = actor.itinerary ? (actor.routeProgress ?? 0) : progress;
+    if (actor.visitor && !actor.transportVisitor && !actor.itinerary) {
       const phase = (time + seed) % (duration + 7);
+      actor.routeResting = phase >= duration;
       const visit = Math.floor((time + seed) / (duration + 7));
       if (actor.visit !== visit) {
         actor.visit = visit;
@@ -1058,11 +1458,17 @@ export class TownDiorama {
       walking = phase < duration;
     }
 
-    if (actor.walkPath) {
+    if (actor.motion && actor.walkPath?.total && (!actor.manual || actor.transportVisitor))
+      routeProgress =
+        actor.itinerary && actor.itinerary.phase !== 'finishing'
+          ? Math.min(1, actor.motion.routeDistance / actor.walkPath.total)
+          : (actor.motion.routeDistance % actor.walkPath.total) / actor.walkPath.total;
+    if (!actor.workRoutine) actor.routeProgress = routeProgress;
+    if (actor.walkPath && !placedWorker) {
       const pose = walkPose(actor.walkPath, routeProgress, actor.walkPose);
       root.position.set(pose.x, pose.y, pose.z);
       root.rotation.y = pose.heading;
-    } else {
+    } else if (!placedWorker) {
       const tangent = curve.getTangentAt(Math.min(0.9999, routeProgress));
       root.rotation.y = Math.atan2(tangent.x, tangent.z);
       if (!work && (!actor.manual || actor.transportVisitor)) {
@@ -1074,12 +1480,15 @@ export class TownDiorama {
         root.position.z -= tangent.x * offset;
       }
     }
-    if (work) placeSafely(this, root);
-    if (actor.lastPosition && time >= actor.lastPoseTime)
+    // Locomotion owns an established worker's position, including any accepted
+    // construction exit. Do not repeat the placement search every frame.
+    if (work && !actor.motion && !actor.workRoutine) placeSafely(this, root);
+    if (!actor.motion && actor.lastPosition && time >= actor.lastPoseTime)
       actor.distance += root.position.distanceTo(actor.lastPosition);
     actor.lastPosition ??= new THREE.Vector3();
     actor.lastPosition.copy(root.position);
     actor.lastPoseTime = time;
+    if (actor.motion) walking = actor.motion.state === 'moving';
     const step = (actor.distance / 0.58) * Math.PI * 2;
     body.position.y =
       0.54 + (walking ? Math.cos(step * 2) * 0.013 : Math.sin(time * 1.8 + seed) * 0.005);
@@ -1095,18 +1504,19 @@ export class TownDiorama {
       arms[n].lower.rotation.x = -0.16;
     }
     if (!walking) {
-      if (work === 'farm') {
+      const activity = actor.workRoutine && !actor.workActive ? null : work;
+      if (activity === 'farm') {
         torso.rotation.x = 0.22 + Math.sin(time * 1.9) * 0.12;
         arms[0].upper.rotation.x = -0.7 + Math.sin(time * 1.9) * 0.3;
-      } else if (work === 'fishing') {
+      } else if (activity === 'fishing') {
         torso.rotation.x = 0.04;
         arms[1].upper.rotation.x = -0.65 + Math.sin(time * 0.7) * 0.05;
         arms[1].lower.rotation.x = -0.5;
       } else {
         torso.rotation.x = 0;
-        arms[1].upper.rotation.z = work === 'greet' ? -0.12 : 0;
+        arms[1].upper.rotation.z = activity === 'greet' ? -0.12 : 0;
         arms[1].lower.rotation.x =
-          work === 'greet' ? -0.45 + Math.sin(time * 1.2 + seed) * 0.16 : -0.16;
+          activity === 'greet' ? -0.45 + Math.sin(time * 1.2 + seed) * 0.16 : -0.16;
       }
     } else {
       torso.rotation.x = 0;
@@ -1181,6 +1591,7 @@ export class TownDiorama {
         opacity: 0.85,
       }),
     );
+    horizonMaterial(this.selection.material);
     this.selection.rotation.x = -Math.PI / 2;
     this.selection.position.set(x, 0.095, z);
     this.world.add(this.selection);
@@ -1365,6 +1776,17 @@ export class TownDiorama {
     return true;
   }
   rebuildActors() {
+    this.manualBlockers = [];
+    const traffic = new Set(this.trafficActors ?? []);
+    this.scene.traverse((root) => {
+      const actor = root.userData.locomotionActor;
+      if (!actor?.manual || actor.transportVisitor) return;
+      // A mounted rider shares the carrier's traffic footprint. Registering a
+      // second pedestrian footprint makes the horse yield to its own rider.
+      for (let parent = root.parent; parent; parent = parent.parent)
+        if (traffic.has(parent)) return;
+      this.manualBlockers.push(actor);
+    });
     this.actorRenderer.rebuild(
       [...(this.world?.children ?? []), ...(this.raid?.root.children ?? [])].filter(
         (child) => child.userData.animated,
@@ -1486,17 +1908,36 @@ export class TownDiorama {
       const ratio = this.renderQuality?.sample(now - this.lastFrame);
       if (ratio !== null && ratio !== undefined) {
         this.renderer.setPixelRatio(ratio);
+        const size = this.renderQuality.shadowSize;
+        if (this.sun.shadow.mapSize.x !== size) {
+          this.sun.shadow.map?.dispose();
+          this.sun.shadow.map = null;
+          this.sun.shadow.mapSize.set(size, size);
+          this.renderer.shadowMap.needsUpdate = true;
+        }
         this.frameCache.valid = false;
       }
     }
-    this.elapsed += this.lastFrame ? Math.min((now - this.lastFrame) / 1000, 0.5) : 0;
+    const activeDelta = this.lastFrame ? Math.max(0, (now - this.lastFrame) / 1000) : 0;
+    this.activeElapsed = (this.activeElapsed ?? 0) + activeDelta;
     this.lastFrame = now;
+    // Prepared routes need one sample per displayed frame, not repeated physics
+    // catch-up steps. Preserve real-time speed down to 4 FPS; bound long stalls.
+    const movementDelta = Math.min(activeDelta, 0.25);
+    if (movementDelta > 0) {
+      this.elapsed += movementDelta;
+      if (!this.reducedMotion) {
+        this.actors?.forEach((actor) => this.animatePerson(actor, this.elapsed));
+        this.motions?.forEach((motion) => motion(this.elapsed));
+        this.vipArrivals?.update();
+      }
+      updateTownLocomotion(this, movementDelta);
+    }
     if (this.waterMaterial) this.waterMaterial.uniforms.time.value = this.elapsed;
-    this.actors?.forEach((actor) => this.animatePerson(actor, this.elapsed));
-    this.motions?.forEach((motion) => motion(this.elapsed));
-    this.vipArrivals?.update();
-    resolveTownTraffic(this);
-    if (this.construction?.update(this.elapsed)) this.finishConstruction();
+    this.tryActivatePlot?.();
+    if (this.reducedMotion && !this.pendingPlot && !this.pendingUpdate)
+      this.renderer.setAnimationLoop(null);
+    if (this.construction?.update(this.activeElapsed)) this.finishConstruction();
     if (this.raid?.update(this.elapsed)) {
       this.raid = null;
       this.rebuildActors();
@@ -1512,17 +1953,50 @@ export class TownDiorama {
       else this.projectVillager?.();
     }
   }
+  repairAnimalLife() {
+    this.retainedAnimals = new Map((this.animals ?? []).map((a) => [`${a.species}:${a.seed}`, a]));
+    if (this.animalMotion) this.motions = this.motions.filter((m) => m !== this.animalMotion);
+    addTownAnimals(this, this.town);
+  }
   finishConstruction() {
     if (!this.construction) return;
     const { group } = this.construction;
     this.construction.finish();
     this.construction = null;
-    this.batch(group);
-    this.rebuildActors();
-    // The rest of the village is already batched. Only settle the completed plot.
-    this.buildingRenderer.sync(this.world.children.filter((child) => child.userData.static));
-    this.renderer.shadowMap.needsUpdate = true;
+    delete group.userData.animalSolid;
+    this.navigation?.replaceOwner(
+      `plot:${group.userData.plot}`,
+      group.userData.footprints ?? [],
+      'completed',
+    );
+    group.userData.activation = 'completed';
+    this.frameCache.valid = false;
     this.render();
+    const generation = this.generation;
+    const view = this;
+    function* settle() {
+      if (group.parent !== view.world) return;
+      view.batch(group);
+      yield;
+      view.buildingRenderer.sync(view.world.children.filter((child) => child.userData.static));
+      view.repairAnimalLife();
+      view.rebuildActors();
+      view.frameCache.valid = false;
+      afterPaint(() => {
+        if (generation !== view.generation) return;
+        view.renderer.shadowMap.needsUpdate = true;
+        view.render();
+      });
+    }
+    this.cancelFinishWork?.();
+    if (typeof requestAnimationFrame === 'undefined') {
+      const work = settle();
+      while (!work.next().done) {}
+      return;
+    }
+    this.cancelFinishWork = scheduleWork(settle(), {
+      isCurrent: () => generation === this.generation,
+    });
   }
   playRaid(event, onPhase, onComplete, onCue) {
     this.raid?.dispose();
@@ -1615,17 +2089,34 @@ export class TownDiorama {
     if (action === 'reset') this.frameTown();
   }
   setPaused(paused) {
+    if (this.paused !== paused) {
+      this.lastFrame = 0;
+      if (paused) this.construction?.pause();
+      else this.construction?.resume();
+    }
     this.paused = paused;
     this.controls.enabled = !paused && !this.cinematic && !this.eventCamera;
   }
-  setMotion(enabled) {
-    if (this.motionEnabled === enabled) return;
+  setMotion(enabled, reducedMotion = false) {
+    const wasReduced = this.reducedMotion;
+    this.reducedMotion = reducedMotion;
+    enabled = enabled && (!reducedMotion || !!this.pendingPlot || !!this.pendingUpdate);
+    if (this.motionEnabled === enabled && wasReduced === reducedMotion) return;
     this.motionEnabled = enabled;
+    if (enabled) this.construction?.resume();
+    else this.construction?.pause();
     this.lastFrame = 0;
     this.renderQuality?.resetWindow();
     this.renderer.setAnimationLoop(enabled && !this.contextUnavailable ? this.tick : null);
   }
   dispose() {
+    this.generation++;
+    this.cancelAnimalWork?.();
+    this.cancelLifeWork?.();
+    this.cancelFinishWork?.();
+    this.cancelRouteWork?.();
+    this.disposed = true;
+    releaseNavigation(this);
     this.cinematic?.presentation.dispose(false);
     this.presentation?.dispose(false);
     this.canvas.removeEventListener('webglcontextlost', this.contextLost);
@@ -1651,6 +2142,10 @@ export class TownDiorama {
     this.clearGroup(this.landscape);
     this.plotCache?.clear();
     Object.values(this.geometries).forEach((geometry) => geometry.dispose());
+    this.signMaterials?.forEach((material) => {
+      material.map.dispose();
+      material.dispose();
+    });
     this.materials.forEach((material) => material.dispose());
     this.contactShadowMaterial.dispose();
     this.sun.shadow.map?.dispose();

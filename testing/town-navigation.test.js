@@ -5,6 +5,7 @@ import {
   TownNavigation,
   NPC_MARGIN,
   walkPose,
+  walkPath,
   walkObstacle,
   townNavigation,
 } from '../src/game/town/TownNavigation';
@@ -16,10 +17,10 @@ import { addPowerGrid, addEraStreetscape } from '../src/game/town/TownEvolution'
 import { addElectricLighting } from '../src/game/town/buildings/industrial';
 import { TownVipArrivals } from '../src/game/town/TownVipArrivals';
 import { TownBuildSequence } from '../src/game/town/TownBuildSequence';
-import { TownRaid, addTownVisitors } from '../src/game/town/TownActivity';
+import { TownRaid, addTownVisitors, addTownRoads } from '../src/game/town/TownActivity';
 import { TownEraIncident } from '../src/game/town/TownEraIncident';
 import { prepareRoute } from '../src/game/town/TownRoutes';
-import { resolveTownTraffic } from '../src/game/town/TownTraffic';
+import { placeTownSpawns } from '../src/game/town/TownTraffic';
 import { PLOTS } from '../src/game/town/TownLayout';
 const pole = (x, z, radius = 0.055) => ({ x, z, y: 0, height: 5, radius });
 function clearance(path, obstacles, margin = NPC_MARGIN) {
@@ -161,6 +162,7 @@ it.each([...ERAS.map((e) => e.id), 'unknown-navigation-era'])(
   'keeps residents and every VIP transport route clear in %s',
   (era) => {
     const d = fixture(era);
+    addTownRoads(d, d.town, PLOTS);
     addPowerGrid(d, d.town);
     addElectricLighting(d, d.town);
     addEraStreetscape(d, d.town);
@@ -209,7 +211,7 @@ it('keeps crowd and vehicle separation from pushing walkers into a pole', () => 
   const vehicle = new Group();
   vehicle.position.set(1.3, 0.07, 0);
   d.trafficActors = [vehicle];
-  resolveTownTraffic(d);
+  placeTownSpawns(d);
   for (const a of d.actors) expect(d.navigation.clear(a.root.position.toArray())).toBe(true);
   expect(d.actors[0].root.position.distanceTo(d.actors[1].root.position)).toBeGreaterThanOrEqual(
     0.549,
@@ -349,9 +351,66 @@ it('includes the park dog-walker and its leashed dog in cached avoidance', () =>
   d.navigation = new TownNavigation([pole(x, z + 3.8)]);
   addLeisureActivity(d, d.town);
   const visit = d.world.getObjectByName('Park dog walk');
+  const plans = d.navigation.plans;
   for (let t = 0; t <= 60; t += 0.1) {
     d.motions.forEach((m) => m(t));
     expect(d.navigation.clear(visit.position.toArray(), 1.2)).toBe(true);
   }
-  expect(d.navigation.plans).toBe(1);
+  expect(d.navigation.plans).toBe(plans);
+});
+
+it('keeps the dog walker at walking speed and turns back on a shortened open route', () => {
+  const d = fixture();
+  d.navigation = new TownNavigation();
+  addLeisureActivity(d, d.town);
+  const walker = d.world.getObjectByName('Park dog walk');
+  let travel = 0,
+    turnedBack = false;
+  for (let frame = 1; frame <= 120; frame++) {
+    const before = walker.position.clone();
+    d.motions.forEach((motion) => motion(frame / 10));
+    const step = walker.position.distanceTo(before);
+    expect(step).toBeLessThanOrEqual(0.055 + 1e-6);
+    travel += step;
+    if (walker.position.x < before.x || walker.position.z < before.z) turnedBack = true;
+  }
+  expect(travel).toBeGreaterThan(6);
+  expect(turnedBack).toBe(true);
+});
+
+it('filters nearby mesh components by their bounds before exact segment checks', () => {
+  const remote = {
+    x: 1.5,
+    z: 2,
+    y: 0,
+    height: 2,
+    radius: 2,
+    polygon: [
+      [-0.5, 1.9],
+      [3.5, 1.9],
+      [3.5, 2.1],
+      [-0.5, 2.1],
+    ],
+  };
+  const obstacle = pole(0, 0);
+  const nav = new TownNavigation([remote, obstacle]);
+  const from = [-0.5, 0.07, 0],
+    to = [0.5, 0.07, 0];
+  expect(nav.near(0, 0)).toContain(remote);
+  expect(nav.nearbySegment(from, to, 0.1)).toEqual([obstacle]);
+  expect(nav.segment(from, to, 0.1)).toBe(false);
+  nav.replaceOwner('moving-wall', [remote]);
+  expect(nav.segment(from, to, 0.1)).toBe(false);
+  nav.replaceOwner('moving-wall', [
+    {
+      ...remote,
+      polygon: [
+        [-0.5, -0.1],
+        [3.5, -0.1],
+        [3.5, 0.1],
+        [-0.5, 0.1],
+      ],
+    },
+  ]);
+  expect(nav.nearbySegment(from, to, 0.1)).toHaveLength(2);
 });

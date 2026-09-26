@@ -131,7 +131,7 @@ export function renderMotorLandmark(d, parent, kind, label, level = 1, era = 'mo
   if (kind === 'bridge') return false;
   const base = Object.create(d);
   base.sign = () => {};
-  if (!renderCityBuilding(base, parent, kind, label, level, baseEra, 3)) return false;
+  if (!renderCityBuilding(base, parent, kind, label, level, baseEra, 3, era)) return false;
   parent.userData.baseStyle = baseEra;
   // The complete city shell already owns its wings and reservoirs. A roof-line
   // cornice replaces the old stacked industrial facade without a second building.
@@ -156,6 +156,6 @@ export function renderMotorLandmark(d, parent, kind, label, level = 1, era = 'mo
       d.ball(parent, x, 1.6 + level * 0.25, 3, 0.2, '#f6db98');
     }
   }
-  d.sign(parent, label, 2.8, 0, 2.25, 1.6);
+  if (kind !== 'square') d.sign(parent, label, 2.8, 0, 2.25, 1.6);
   return true;
 }
