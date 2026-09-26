@@ -22,30 +22,46 @@
       <h1>
         {{
           opening
-            ? t('Opening {town}…', { town: townName })
+            ? t(takingOver ? 'Moving {town} here…' : 'Opening {town}…', { town: townName })
             : blocked
-              ? t('This town is already open')
+              ? t(moved ? 'Play moved to another window' : 'This town is already open')
               : t('Unable to open this town')
         }}
       </h1>
       <template v-if="opening">
-        <p>{{ t('Preparing your saved town on this device.') }}</p>
+        <p>
+          {{
+            t(
+              takingOver
+                ? 'Waiting for the other window to finish its move and save your progress.'
+                : 'Preparing your saved town on this device.',
+            )
+          }}
+        </p>
       </template>
       <template v-else-if="blocked">
         <p>
           {{
-            t('{town} is safe in your other tab. You can keep playing there.', { town: townName })
+            t(
+              moved
+                ? 'This window is paused. Your town is now being played in another tab or window.'
+                : '{town} is open in another tab or window.',
+              { town: townName },
+            )
           }}
         </p>
         <p class="town-tab-hint">
           {{
             t(
-              'To play here, close the other tab, then open your town below. Different towns can stay open in separate tabs.',
+              'Open it here to move your game to this window and pause the other one. Different towns can stay open at the same time.',
             )
           }}
         </p>
+        <p v-if="transferError" role="alert">{{ t(transferError) }}</p>
         <div class="town-tab-actions">
-          <button class="town-tab-primary" @click="activate">{{ t('Open my town here') }}</button>
+          <button class="town-tab-primary" @click="activate({ takeOver: true })">
+            {{ t('Open my town here') }}
+          </button>
           <button @click="accountOpen = true">
             {{ t(cloud.account ? 'My towns' : 'Protect my progress') }}
           </button>
@@ -63,7 +79,10 @@
       </template>
     </section>
   </main>
-  <App v-if="ready" :key="viewVersion" :suspended="accountOpen || communityOpen" />
+  <div v-if="handingOver" class="town-handoff-overlay" role="status">
+    {{ t('Saving your game for the other window…') }}
+  </div>
+  <App v-if="ready" :key="viewVersion" :suspended="handingOver || accountOpen || communityOpen" />
   <AccountPanel
     v-if="accountOpen"
     :login-link="loginLink"
@@ -106,6 +125,7 @@ import { townStorage, townKey, TOWN_CHANGED, ACCOUNT_KEY } from '../services/tow
 import { t } from '../i18n';
 import { localProfile } from '../services/localProfile';
 import { townCoordinator } from '../services/townCoordinator';
+import { createTownHandoff } from '../services/townHandoff';
 import { createSyncScheduler } from '../services/syncScheduler';
 const AccountPanel = defineAsyncComponent(() => import('./account/AccountPanel.vue'));
 const CommunityPanel = defineAsyncComponent(() => import('./community/CommunityPanel.vue'));
@@ -120,6 +140,10 @@ const accountOpen = ref(false),
   ready = ref(false),
   opening = ref(true),
   blocked = ref(false),
+  moved = ref(false),
+  takingOver = ref(false),
+  handingOver = ref(false),
+  transferError = ref(''),
   notice = ref('This town is open in another tab.');
 const activeTown = computed(() => {
   void cloud.storageVersion;
@@ -138,12 +162,14 @@ watch(
 );
 const visitId = ref(new URLSearchParams(location.hash.slice(1)).get('town') ?? '');
 let observer,
+  handoff,
   loadedKey,
   activation = Promise.resolve(),
   lastResume = 0;
 const scheduler = createSyncScheduler({
   pending: () => {
-    if (!ready.value || !cloud.account || !townStorage.canWrite()) return false;
+    if (!ready.value || handingOver.value || !cloud.account || !townStorage.canWrite())
+      return false;
     const meta = townStorage.active()?.meta;
     return (
       meta?.owner === cloud.account.id &&
@@ -153,12 +179,14 @@ const scheduler = createSyncScheduler({
   },
   sync: syncNow,
 });
-function activate() {
+function activate({ takeOver = false } = {}) {
   activation = activation
     .catch(() => {})
     .then(async () => {
       if (ready.value && loadedKey === townStorage.selectedKey()) return;
       opening.value = true;
+      takingOver.value = takeOver;
+      transferError.value = '';
       blocked.value = false;
       ready.value = false;
       const release = localProfile.suspendWrites();
@@ -167,8 +195,15 @@ function activate() {
         await nextTick();
         await townCoordinator.release();
         loadedKey = townStorage.selectedKey();
-        if (!(await townCoordinator.acquire(loadedKey))) {
+        const acquired =
+          takeOver && handoff
+            ? await handoff.openHere(loadedKey)
+            : await townCoordinator.acquire(loadedKey);
+        if (!acquired) {
           blocked.value = true;
+          if (takeOver && !handoff)
+            transferError.value =
+              'This browser cannot transfer between windows. Close the other window, then try again.';
           return;
         }
         if (loadedKey !== townStorage.selectedKey()) {
@@ -178,6 +213,12 @@ function activate() {
         release();
         campaign.reloadLocal();
         if (!campaign.readOnly) townStorage.ensure(JSON.parse(campaign.exportSave()).profile);
+        const puzzle = townStorage.handoff();
+        if (puzzle) {
+          game.restoreHandoff(puzzle);
+          townStorage.handoff(null);
+        }
+        moved.value = false;
         ready.value = true;
         const url = new URL(location.href),
           meta = townStorage.active()?.meta;
@@ -188,13 +229,73 @@ function activate() {
         if (cloud.account) void syncNow();
       } catch (error) {
         notice.value = error.message;
+        if (takeOver) {
+          blocked.value = true;
+          transferError.value = error.message;
+        }
       } finally {
         release();
         opening.value = false;
+        takingOver.value = false;
         schedule();
       }
     });
   return activation;
+}
+async function prepareHandoff(key, checkDeadline) {
+  const check = () => {
+    checkDeadline();
+    if (!ready.value || key !== townStorage.selectedKey() || !townCoordinator.owns(key))
+      throw new Error('The selected town changed. Try opening it again.');
+  };
+  check();
+  handingOver.value = true;
+  accountOpen.value = false;
+  communityOpen.value = false;
+  scheduler.schedule();
+  try {
+    await nextTick(); // Pause inputs; a move already accepted may finish normally.
+    if (game.animationInProgress || game.pendingBoardState) {
+      await new Promise((resolve, reject) => {
+        const stop = watch(
+          () => game.animationInProgress || !!game.pendingBoardState,
+          (busy) => {
+            if (!busy) {
+              clearTimeout(timer);
+              stop();
+              resolve();
+            }
+          },
+          { flush: 'post' },
+        );
+        const timer = setTimeout(() => {
+          stop();
+          reject(new Error('The current move is still finishing. Try again shortly.'));
+        }, 5000);
+      });
+    }
+    await townCoordinator.drain(key);
+    check();
+    game.syncContinuous();
+    campaign.accrueSaloonIncome(Date.now(), false);
+    const puzzle = game.captureHandoff();
+    if (!campaign.save())
+      throw new Error('Your progress could not be saved. Keep playing in the original window.');
+    townStorage.handoff(puzzle);
+    const resumeWrites = localProfile.suspendWrites();
+    try {
+      ready.value = false;
+      blocked.value = true;
+      moved.value = true;
+      transferError.value = '';
+      await nextTick(); // Dispose renderers and invalidate old asynchronous moves before unlock.
+    } finally {
+      resumeWrites();
+    }
+  } finally {
+    handingOver.value = false;
+    schedule();
+  }
 }
 function reload() {
   if (loadedKey !== townStorage.selectedKey() || !ready.value) {
@@ -218,7 +319,8 @@ function configureTownSync() {
       const active = townStorage.active();
       return active?.meta.owner === owner ? [active] : [];
     },
-    eligible: (id, owner) => ready.value && townStorage.selectedKey() === townKey(id, owner),
+    eligible: (id, owner) =>
+      ready.value && !handingOver.value && townStorage.selectedKey() === townKey(id, owner),
     run: (id, owner, operation) => townCoordinator.run(townKey(id, owner), operation),
     canApply: (id) => townStorage.active()?.meta.id !== id || !game.sessionActive,
     applied: (id) => {
@@ -234,11 +336,14 @@ try {
 function schedule() {
   cloud.storageVersion++;
   if (!cloud.busy) updateSaveStatus();
-  if (loadedKey && loadedKey !== townStorage.selectedKey()) activate();
+  if (loadedKey && loadedKey !== townStorage.selectedKey()) {
+    handoff?.cancel();
+    activate();
+  }
   scheduler.schedule();
 }
 function resume() {
-  if (document.hidden || !cloud.account || !ready.value) return;
+  if (document.hidden || !cloud.account || !ready.value || handingOver.value) return;
   scheduler.resume();
   // A clean town may have changed on another device. Check only on return,
   // at most once per minute, never on every local checkpoint or storage event.
@@ -260,6 +365,7 @@ function fromOtherTab(event) {
   }
   // Another town's writes never reload this renderer or schedule its uploads.
   cloud.storageVersion++;
+  if (!cloud.busy) updateSaveStatus();
 }
 async function openRequestedTown(initial = false) {
   let id = new URL(location.href).searchParams.get('play');
@@ -316,6 +422,8 @@ watch(
   },
 );
 onMounted(() => {
+  if (typeof BroadcastChannel === 'function')
+    handoff = createTownHandoff({ coordinator: townCoordinator, prepare: prepareHandoff });
   document.documentElement.classList.add('cloud-mode');
   observer = new ResizeObserver(() =>
     document.documentElement.style.setProperty('--cloud-bar-height', `${bar.value.offsetHeight}px`),
@@ -335,6 +443,7 @@ onMounted(() => {
   start();
 });
 onBeforeUnmount(() => {
+  handoff?.dispose();
   scheduler.dispose();
   observer?.disconnect();
   townCoordinator.release();
@@ -348,6 +457,18 @@ onBeforeUnmount(() => {
 });
 </script>
 <style>
+.town-handoff-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  background: #fffdf6e8;
+  color: #294139;
+  text-align: center;
+  font: 1.2rem/1.5 system-ui;
+}
 .town-launch-screen {
   min-height: calc(100dvh - var(--cloud-bar-height, 54px));
   display: grid;

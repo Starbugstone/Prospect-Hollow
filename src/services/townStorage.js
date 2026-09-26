@@ -144,6 +144,13 @@ export function createTownStorage({
     canWrite() {
       return guard(selected());
     },
+    handoff(snapshot) {
+      const entry = this.active();
+      if (snapshot === undefined) return entry?.meta.handoff ?? null;
+      if (snapshot === null) delete entry.meta.handoff;
+      else entry.meta.handoff = copy(snapshot);
+      persist(entry);
+    },
     selectedKey: selected,
     hasSelection() {
       return session()?.getItem(SELECTION_KEY) != null || fallbackSelection !== SAVE_KEY;

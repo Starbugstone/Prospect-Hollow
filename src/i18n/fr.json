@@ -2425,5 +2425,21 @@
   "Account town": "Ville du compte",
   "Local town · this device only": "Ville locale · sur cet appareil uniquement",
   "This is a separate local copy. Open your account town to continue its saved progress; this local copy will be kept.": "Ceci est une copie locale distincte. Ouvrez la ville de votre compte pour retrouver sa progression ; cette copie locale sera conservée.",
-  "Open my account town": "Ouvrir la ville de mon compte"
+  "Open my account town": "Ouvrir la ville de mon compte",
+  "Moving {town} here…": "Transfert de {town} vers cette fenêtre…",
+  "Waiting for the other window to finish its move and save your progress.": "En attente de la fin du coup et de la sauvegarde dans l’autre fenêtre.",
+  "Play moved to another window": "La partie a été transférée",
+  "This window is paused. Your town is now being played in another tab or window.": "Cette fenêtre est en pause. Votre ville est maintenant ouverte dans un autre onglet ou une autre fenêtre.",
+  "{town} is open in another tab or window.": "{town} est ouverte dans un autre onglet ou une autre fenêtre.",
+  "Open it here to move your game to this window and pause the other one. Different towns can stay open at the same time.": "Ouvrez-la ici pour transférer votre partie dans cette fenêtre et mettre l’autre en pause. Des villes différentes peuvent rester ouvertes en même temps.",
+  "Saving your game for the other window…": "Sauvegarde de votre partie pour l’autre fenêtre…",
+  "This browser cannot transfer between windows. Close the other window, then try again.": "Ce navigateur ne permet pas le transfert entre fenêtres. Fermez l’autre fenêtre, puis réessayez.",
+  "The other window did not respond. Bring it to the front or close it, then try again.": "L’autre fenêtre ne répond pas. Affichez-la au premier plan ou fermez-la, puis réessayez.",
+  "The current move is still finishing. Try again shortly.": "Le coup en cours se termine. Réessayez dans un instant.",
+  "Your progress could not be saved. Keep playing in the original window.": "Votre progression n’a pas pu être sauvegardée. Continuez dans la fenêtre d’origine.",
+  "The selected town changed. Try opening it again.": "La ville sélectionnée a changé. Réessayez de l’ouvrir.",
+  "This puzzle transfer could not be restored. Its saved copy has been kept.": "Cette partie n’a pas pu être restaurée. Sa copie sauvegardée a été conservée.",
+  "A town transfer is already in progress.": "Un transfert de ville est déjà en cours.",
+  "Another window is already transferring this town. Try again shortly.": "Une autre fenêtre transfère déjà cette ville. Réessayez dans un instant.",
+  "Town transfer cancelled.": "Transfert de ville annulé."
 }
