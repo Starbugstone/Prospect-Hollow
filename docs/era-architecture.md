@@ -361,6 +361,10 @@ modernization tiers, native/modernized path and construction state. Components
 remain separate across merged exports; heights, road setbacks and authored door
 anchors are shared with navigation. Generated power-house bounds reserve the
 mine yard's future space without activating future roads or buildings.
+Setbacks also reserve the railway's ballast and train clearance before it opens.
+The station uses its full height, including canopies, when fitting between the
+track and front street; `testing/station-clearance.test.js` covers its tiers and
+construction states across eras.
 
 `changeTown` uses `swapPlot` for one changed plot with unchanged infrastructure.
 An accepted purchase is already persisted before presentation starts. A pooled
