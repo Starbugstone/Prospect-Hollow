@@ -338,8 +338,9 @@ it.each(ERAS.map((era) => era.id))(
       expect(mesh.parent === view.scene).toBe(true);
     }
     for (const dispose of disposals) expect(dispose).not.toHaveBeenCalled();
+    // Building service drops are one extra static batch, rebuilt with their plots.
     expect(view.buildingRenderer.meshes.length).toBeLessThanOrEqual(
-      view.plotCache.size + view.staticScenery.entries.size,
+      view.plotCache.size + view.staticScenery.entries.size + (view.serviceDrops ? 1 : 0),
     );
   },
 );

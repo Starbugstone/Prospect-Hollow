@@ -1,9 +1,11 @@
+import { DoubleSide, Raycaster, Vector3 } from 'three';
 import { walkObstacle } from './TownNavigation';
 import { cityAppearance } from '../../data/cityAppearance';
 import { eraEvolution } from '../../data/eras';
 import { resolveRoadStyle } from '../../data/roadStyles';
 import { hasElectricity } from '../../data/industrial';
 import {
+  LANE_X,
   PLOTS,
   plotStreet,
   routeGraph,
@@ -33,8 +35,13 @@ export function powerGrid(town) {
   if (!hasElectricity(town)) return { poles: [], wires: [], connections };
   const graph = routeGraph(town);
   const streets = townTracks(town);
+  // Keep the mine's work yard and saved encounter paths open, and poles off the
+  // square's curb.
+  const [sx, sz] = PLOTS.square;
+  const reserved = (x, z) =>
+    (Math.abs(x) < 4.65 && z >= -18 && z < -8.7) ||
+    (Math.abs(x - sx) < 2.85 && Math.abs(z - sz) < 2.75);
   const pole = ([x, z]) => {
-    // Keep the mine's work yard and saved encounter paths open.
     if (Math.abs(x) < 4.65 && z >= -18 && z < -8.7) x = (x < 0 ? -1 : 1) * 4.85;
     const origin = [x, z];
     let verge;
@@ -46,7 +53,7 @@ export function powerGrid(town) {
           origin[1] + Math.sin(angle) * radius,
         ];
         if (
-          !(Math.abs(candidate[0]) < 4.65 && candidate[1] >= -18 && candidate[1] < -8.7) &&
+          !reserved(...candidate) &&
           streets.every(
             ({ from, to, width }) => segmentDistance(...candidate, from, to) > width / 2 + 0.22,
           )
@@ -98,7 +105,7 @@ export function addPowerGrid(d, town) {
   const root = d.group(d.world);
   root.name = 'Connected village power grid';
   root.userData.static = true;
-  root.userData.connections = network.connections.map(({ id }) => id);
+  root.userData.connections = network.connections;
   root.userData.animalPerches = network.poles.map(([x, y, z]) => [x, y + 0.23, z]);
   for (const [x, y, z] of network.poles) {
     walkObstacle(root, x, z, 0.055, y + 0.2);
@@ -107,16 +114,113 @@ export function addPowerGrid(d, town) {
     for (const dx of [-0.25, 0.25])
       d.mesh(root, 'cylinder', [0.065, 0.15, 0.065], [x + dx, y + 0.08, z], '#c6d7c4');
   }
-  for (const { from, to } of [...network.wires, ...network.connections]) {
+  for (const { from, to } of network.wires) {
     let previous = from;
     for (let i = 1; i <= 6; i++) {
-      const t = i / 6;
-      const next = from.map(
-        (v, axis) => v + (to[axis] - v) * t - (axis === 1 ? Math.sin(t * Math.PI) * 0.3 : 0),
-      );
-      d.rod(root, previous, next, 0.017, '#58645d');
+      const next = sag(from, to, i / 6);
+      d.rod(root, previous, next, 0.017, WIRE);
       previous = next;
     }
+  }
+  d.batch(root);
+  return root;
+}
+const WIRE = '#58645d';
+const sag = (from, to, t) =>
+  from.map((v, axis) => v + (to[axis] - v) * t - (axis === 1 ? Math.sin(t * Math.PI) * 0.3 : 0));
+const ray = new Raycaster();
+ray.layers.enableAll();
+const along = new Vector3(),
+  start = new Vector3(),
+  side = new Vector3(),
+  normal = new Vector3(),
+  origin = new Vector3();
+// Distance to the first building surface met by a rod of `radius` from a to b: the
+// centerline and four rays along its edges, so a wire cannot graze a roof edge.
+function surface(target, a, b, radius = 0.035) {
+  start.set(...a);
+  along.set(...b).sub(start);
+  const length = along.length();
+  along.normalize();
+  side.set(0, 1, 0).cross(along);
+  if (side.lengthSq() < 1e-6) side.set(1, 0, 0);
+  side.normalize();
+  normal.copy(along).cross(side);
+  // Imported models include open, one-sided panels: test both faces, then restore.
+  const sides = new Map();
+  target.traverse(({ isMesh, material }) => {
+    if (isMesh && !sides.has(material)) sides.set(material, material.side);
+  });
+  for (const material of sides.keys()) material.side = DoubleSide;
+  let nearest = Infinity;
+  try {
+    for (const [u, v] of [
+      [0, 0],
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ]) {
+      origin
+        .copy(start)
+        .addScaledVector(side, u * radius)
+        .addScaledVector(normal, v * radius);
+      ray.set(origin, along);
+      ray.far = length;
+      const hit = ray
+        .intersectObject(target, true)
+        .find(({ object }) => object.isMesh && !object.material.transparent);
+      if (hit) nearest = Math.min(nearest, hit.distance);
+    }
+  } finally {
+    for (const [material, value] of sides) material.side = value;
+  }
+  // Stop just short of the surface so the insulator rests against it.
+  return nearest < Infinity
+    ? start.addScaledVector(along, Math.max(0, nearest - 0.05)).toArray()
+    : undefined;
+}
+/** Service drops run from their street pole to the first surface of the finished
+ * building, so a wire never continues through a wall or roof. Built after the plots
+ * (and again when one plot is swapped); `plots` maps plot ids to their groups. */
+export function addServiceDrops(d, grid, plots) {
+  const connections = grid?.userData.connections;
+  if (!connections?.length) return null;
+  const root = d.group(d.world);
+  root.name = 'Building service drops';
+  root.userData.static = true;
+  for (const { id, from, to } of connections) {
+    const target = plots.get(id);
+    if (!target) continue;
+    target.updateMatrixWorld(true);
+    const points = [from];
+    let end;
+    for (let i = 1; i <= 6 && !end; i++) {
+      const next = sag(from, to, i / 6);
+      end = surface(target, points.at(-1), next);
+      points.push(end ?? next);
+    }
+    // Low buildings: continue level toward the plot center to reach a wall.
+    if (!end) {
+      end = surface(target, to, [target.position.x, to[1], target.position.z]);
+      if (end) points.push(end);
+    }
+    // Open lots (fields, docks, squares) take the drop on a meter post, or on
+    // whatever low structure already stands beneath the wire.
+    if (!end) {
+      end = to;
+      const below = surface(target, to, [to[0], 0, to[2]], 0.08);
+      if (below) points.push(below);
+      else {
+        walkObstacle(root, to[0], to[2], 0.06, to[1]);
+        d.rod(root, [to[0], 0, to[2]], [to[0], to[1] + 0.15, to[2]], 0.06, '#897255').name =
+          `Meter post ${id}`;
+      }
+    }
+    const drop = d.group(root);
+    drop.name = `Service drop ${id}`;
+    for (let i = 1; i < points.length; i++) d.rod(drop, points[i - 1], points[i], 0.017, WIRE);
+    d.ball(drop, ...points.at(-1), 0.045, '#c6d7c4');
   }
   d.batch(root);
   return root;
@@ -135,6 +239,11 @@ export const roadAppearance = (town) => {
   };
 };
 
+// Bus stops sit on the open verge north of the sheriff, one facing each main road.
+export const STREET_FURNITURE = Object.freeze([
+  [-(LANE_X - 1.45), 18.2],
+  [LANE_X - 1.45, 20.1],
+]);
 export function addEraStreetscape(d, town) {
   const profile = eraEvolution(town.era);
   if (profile.style === 'frontier') return null;
@@ -142,27 +251,26 @@ export function addEraStreetscape(d, town) {
   const root = d.group(d.world);
   root.name = 'Era street furniture';
   root.userData.static = true;
-  for (const [x, z] of [
-    [-4.8, -4.5],
-    [4.8, 3.5],
-    [-4.8, 11.5],
-    [4.8, 19.5],
-  ]) {
+  for (const [x, z] of STREET_FURNITURE) {
+    // Stops face their main road from the open verge between the two roads;
+    // bench and kiosk run parallel to the curb, clear of sidewalks and lots.
+    const inward = -Math.sign(x);
     const metal = profile.electricity ? a.roof : '#8a7454';
     const height = profile.busService ? 2.8 : 2.4;
     walkObstacle(root, x, z, 0.07, height);
     d.rod(root, [x, 0, z], [x, height, z], 0.07, metal);
-    if (a.modern && profile.style === 'city') d.box(root, 0.8, 0.12, 0.4, x, height, z, '#e8d6aa');
+    if (a.modern && profile.style === 'city') d.box(root, 0.4, 0.12, 0.8, x, height, z, '#e8d6aa');
     else d.ball(root, x, height, z, [0.22, 0.28, 0.22], '#e8d6aa');
+    const bx = x + inward * 0.5;
     if (profile.busService) {
-      walkObstacle(root, x, z + 1.3, Math.hypot(0.8, 0.275), 0.7);
-      d.box(root, 1.6, 0.12, 0.55, x, 0.6, z + 1.3, a.wall);
-      for (const dx of [-0.6, 0.6]) d.box(root, 0.12, 0.55, 0.45, x + dx, 0.3, z + 1.3, metal);
+      walkObstacle(root, bx, z + 1.15, Math.hypot(0.275, 0.8), 0.7);
+      d.box(root, 0.55, 0.12, 1.6, bx, 0.6, z + 1.15, a.wall);
+      for (const dz of [-0.6, 0.6]) d.box(root, 0.45, 0.55, 0.12, bx, 0.3, z + 1.15 + dz, metal);
     }
     if (profile.digitalCity) {
-      walkObstacle(root, x, z - 1.2, Math.hypot(0.275, 0.15), 1.4);
-      d.box(root, 0.55, 1.3, 0.3, x, 0.75, z - 1.2, metal);
-      d.box(root, 0.4, 0.7, 0.04, x, 0.9, z - 1.02, '#85b8c8');
+      walkObstacle(root, bx, z - 1, Math.hypot(0.15, 0.275), 1.4);
+      d.box(root, 0.3, 1.3, 0.55, bx, 0.75, z - 1, metal);
+      d.box(root, 0.04, 0.7, 0.4, bx - inward * 0.17, 0.9, z - 1, '#85b8c8');
     }
   }
   d.batch(root);

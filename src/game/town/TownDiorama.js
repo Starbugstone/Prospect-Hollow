@@ -66,7 +66,7 @@ import {
 } from './TownRules';
 import { buildLandscape, keepCameraAboveTerrain } from './TownLandscape';
 import { addMotorActivity } from './TownMotorActivity';
-import { motorTraffic } from './TownEvolution';
+import { addServiceDrops, motorTraffic } from './TownEvolution';
 import { TownScenery } from './TownScenery';
 import { addMineEra } from './TownMineEvolution';
 import { overlapsEventInset } from './TownInset';
@@ -703,6 +703,7 @@ export class TownDiorama {
     }
     if (construction)
       this.construction = new TownConstruction(this, group, movingPart?.rotor, previous.parts);
+    this.refreshServiceDrops();
     this.buildingRenderer.sync(this.world.children.filter((child) => child.userData.static));
     this.clearGroup(previous.group);
     this.frameCache.valid = false;
@@ -715,6 +716,14 @@ export class TownDiorama {
       });
     else this.repairAnimalLife();
     return true;
+  }
+  refreshServiceDrops() {
+    if (this.serviceDrops?.parent) this.clearGroup(this.serviceDrops);
+    this.serviceDrops = addServiceDrops(
+      this,
+      this.staticScenery?.entries.get('power')?.group,
+      new Map([...this.plotCache].map(([id, { group }]) => [id, group])),
+    );
   }
   invalidatePresentationWork() {
     this.generation = (this.generation ?? 0) + 1;
@@ -879,6 +888,7 @@ export class TownDiorama {
     }
     // Model preparation can be expensive. Start the reveal clock on its first visible frame.
     if (this.construction) this.lastFrame = 0;
+    this.refreshServiceDrops();
     this.navigation = townNavigation(this.world);
     this.buildingRenderer.sync(this.world.children.filter((child) => child.userData.static));
     this.renderer.shadowMap.needsUpdate = true;

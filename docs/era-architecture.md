@@ -80,6 +80,11 @@ draws its SVG counterpart. A new era can reuse a design by id; a new design need
 drawings. `testing/town-fountains.test.js` checks registration, fallback, size and the
 single translucent water material for every era and square stage.
 
+`testing/town-clipping.test.js` guards shared scenery against clipping: the farm
+windpump's swept wheel stays clear of every wing and hayloft, era street furniture keeps
+off lots and sidewalks, and each overhead service drop is cut where it first meets its
+finished building (`addServiceDrops`), so wires never pass through a wall or roof.
+
 ## Introduce a genuinely new style
 
 Extend the documented `BuildingStyle` / `EraEvolution` contract and defaults in
