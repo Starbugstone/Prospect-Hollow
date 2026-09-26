@@ -187,32 +187,12 @@
         <button v-if="active.meta.recovery" @click="downloadRecovery">
           {{ t('Download previous device save') }}
         </button>
-      </section>
-      <section v-for="entry in conflicts" :key="entry.meta.id" class="save-conflict">
-        <h2>{{ t('{town} changed on two devices', { town: entry.meta.name }) }}</h2>
-        <div class="save-comparison">
-          <div>
-            <h3>{{ t('This device') }}</h3>
-            <p>{{ summary(entry.profile) }}</p>
-            <p>{{ date(entry.meta.updatedAt) }}</p>
-          </div>
-          <div>
-            <h3>{{ t('Cloud save') }}</h3>
-            <p>{{ summary(entry.meta.conflict.profile) }}</p>
-            <p>{{ date(entry.meta.conflict.updatedAt * 1000) }}</p>
-          </div>
-        </div>
         <button
+          v-if="active.meta.recovery?.id"
           :disabled="busy || game.sessionActive"
-          @click="act(() => resolveConflict(entry.meta.id, 'local'))"
+          @click="$emit('recovery')"
         >
-          {{ t('Keep this device') }}
-        </button>
-        <button
-          :disabled="busy || game.sessionActive"
-          @click="act(() => resolveConflict(entry.meta.id, 'cloud'))"
-        >
-          {{ t('Keep cloud save') }}
+          {{ t('Review preserved local save') }}
         </button>
       </section>
       <button @click="$emit('community')">{{ t('Visit shared towns') }}</button>
@@ -247,7 +227,6 @@ import {
   attachLocal,
   logout,
   disconnect,
-  resolveConflict,
   restoreSave,
   townAction,
   cacheTown,
@@ -260,7 +239,7 @@ import { useGameStore } from '../../stores/gameStore';
 import { t } from '../../i18n';
 import { ERA_BY_ID } from '../../data/eras';
 const props = defineProps({ loginLink: String, writable: Boolean });
-const emit = defineEmits(['close', 'changed', 'community']);
+const emit = defineEmits(['close', 'changed', 'community', 'recovery']);
 const { dialog, closeButton, dismissBackdrop } = useNativeDialog(() => emit('close'));
 const game = useGameStore(),
   busy = ref(false),
@@ -284,10 +263,6 @@ const registeredLocal = computed(() =>
     ? cloud.towns.find((town) => town.townId === active.value.meta.id)
     : null,
 );
-const conflicts = computed(() => {
-  void cloud.storageVersion;
-  return props.writable && active.value?.meta.conflict ? [active.value] : [];
-});
 const shareUrl = computed(
   () =>
     `${import.meta.env.VITE_PUBLIC_ORIGIN || (import.meta.env.VITE_API_BASE?.startsWith('https://') ? new URL(import.meta.env.VITE_API_BASE).origin : location.origin + location.pathname)}#town=${active.value?.meta.publicId}`,

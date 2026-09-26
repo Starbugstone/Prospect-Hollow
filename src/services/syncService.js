@@ -1,4 +1,12 @@
 const queues = new WeakMap();
+const copy = (value) => JSON.parse(JSON.stringify(value));
+const recoveryCopy = (record, reason) => ({
+  id: crypto.randomUUID(),
+  profile: record.profile,
+  updatedAt: record.meta.updatedAt,
+  baseRevision: record.meta.baseRevision,
+  reason,
+});
 function serialize(storage, key, operation) {
   let pending = queues.get(storage);
   if (!pending) queues.set(storage, (pending = new Map()));
@@ -39,7 +47,8 @@ export function createSyncService({
           r.meta.pending = null;
           return;
         }
-        r.meta.recovery = { profile: r.profile, updatedAt: r.meta.updatedAt };
+        r.meta.recovery = recoveryCopy(r, 'replacement');
+        r.meta.desyncNotice = false;
         r.profile = result.profile;
         replaced = true;
       }
@@ -66,21 +75,47 @@ export function createSyncService({
   }
   function conflict(id, owner, cloud, pending = null) {
     if (cloud.townId !== id) throw new Error('The server returned a different town.');
+    let replaced = false;
     if (current(owner))
       storage.mutate(id, owner, (r) => {
-        if (cloud.revision < r.meta.baseRevision) return false;
+        if (cloud.revision < Math.max(r.meta.baseRevision, r.meta.conflict?.revision ?? 0))
+          return false;
         if (pending && r.meta.pending?.body.uploadId !== pending.body.uploadId) return false;
         r.meta.conflict = cloud;
         r.meta.pending = null;
+        // A running mine stays entirely local. Its final village changes join the
+        // recovery copy when we can safely apply the server save on return.
+        if (!eligible(id, owner) || !canApply(id)) return;
+        if (r.meta.dirty) r.meta.recovery = recoveryCopy(r, 'desync');
+        r.profile = cloud.profile;
+        r.meta = {
+          ...r.meta,
+          baseRevision: cloud.revision,
+          cloudAt: cloud.updatedAt,
+          name: cloud.name,
+          publicId: cloud.publicId,
+          isPublic: cloud.isPublic,
+          dirty: false,
+          conflict: null,
+          sequence: r.meta.sequence + 1,
+          desyncNotice: r.meta.recovery?.reason === 'desync',
+        };
+        replaced = true;
       });
+    if (replaced) applied(id);
   }
   async function upload(id, owner, pending, resolve = false) {
     try {
       const result = await request(`towns/${id}${resolve ? '/resolve' : ''}`, pending.body, 'PUT');
       accept(id, owner, result, pending.sequence, false, pending);
     } catch (error) {
-      if (error.status === 409 && error.data?.cloud) conflict(id, owner, error.data.cloud, pending);
-      else if (error.status === 404 && current(owner))
+      if (error.status === 409 && error.data?.cloud) {
+        conflict(id, owner, error.data.cloud, pending);
+        if (pending.recoveryOverride)
+          throw new Error(
+            'The cloud save changed again. Review it before confirming another overwrite.',
+          );
+      } else if (error.status === 404 && current(owner))
         storage.mutate(id, owner, (r) => {
           if (r.meta.pending?.body.uploadId !== pending.body.uploadId) return false;
           r.meta.missing = true;
@@ -93,7 +128,8 @@ export function createSyncService({
     if (!local || local.meta.missing || !current(owner) || !eligible(id, owner)) return;
     if (local.meta.pending)
       return upload(id, owner, local.meta.pending, local.meta.pending.resolve);
-    if (local.meta.conflict || (!pull && !local.meta.dirty)) return;
+    if (local.meta.conflict && !canApply(id)) return;
+    if (!local.meta.conflict && !pull && !local.meta.dirty) return;
     let remote;
     try {
       remote = await request(`towns/${id}`);
@@ -113,9 +149,11 @@ export function createSyncService({
     // A separate worker may have staged a durable retry while the GET waited.
     if (local.meta.pending)
       return upload(id, owner, local.meta.pending, local.meta.pending.resolve);
-    if (local.meta.conflict) return;
-    if (remote.revision !== local.meta.baseRevision) {
-      if (local.meta.dirty) conflict(id, owner, remote);
+    if (remote.townId !== id) throw new Error('The server returned a different town.');
+    if (remote.revision < Math.max(local.meta.baseRevision, local.meta.conflict?.revision ?? 0))
+      throw new Error('The cloud reply is older than this device. Your local save has been kept.');
+    if (local.meta.conflict || remote.revision !== local.meta.baseRevision) {
+      if (local.meta.dirty || local.meta.conflict) conflict(id, owner, remote);
       else accept(id, owner, remote, local.meta.sequence, true);
     } else if (local.meta.dirty) {
       const pending = {
@@ -148,57 +186,68 @@ export function createSyncService({
       });
       return running;
     },
-    resolve(id, choice) {
+    reviewRecovery(id) {
+      const owner = account()?.id;
+      return run(id, owner, async () => {
+        if (!current(owner) || !eligible(id, owner)) throw new Error('Review this town again.');
+        if (!canApply(id)) throw new Error('Return to the village to review your preserved save.');
+        await syncTown(id, owner, true);
+        const local = entry(id, owner);
+        if (!current(owner) || !eligible(id, owner) || !canApply(id))
+          throw new Error('Return to the village to review your preserved save.');
+        if (
+          !local?.meta.recovery?.id ||
+          local.meta.pending ||
+          local.meta.conflict ||
+          local.meta.dirty
+        )
+          throw new Error('Sync this town before reviewing the preserved save.');
+        return copy({
+          townId: id,
+          owner,
+          revision: local.meta.baseRevision,
+          sequence: local.meta.sequence,
+          recovery: local.meta.recovery,
+          cloud: { profile: local.profile, updatedAt: local.meta.cloudAt },
+        });
+      });
+    },
+    overwriteRecovery(id, review) {
       const owner = account()?.id;
       return run(id, owner, async () => {
         const local = entry(id, owner);
-        if (!eligible(id, owner) || !local?.meta.conflict || !current(owner))
+        if (
+          !current(owner) ||
+          !eligible(id, owner) ||
+          review?.owner !== owner ||
+          review?.townId !== id
+        )
           throw new Error('Review this town again.');
-        if (!canApply(id)) throw new Error('Leave the mine before resolving a save conflict.');
-        if (local.meta.pending) throw new Error('Sync the pending save before resolving again.');
-        if (choice === 'local') {
-          const pending = {
-            resolve: true,
-            sequence: local.meta.sequence,
-            body: {
-              baseRevision: local.meta.conflict.revision,
-              profile: local.profile,
-              uploadId: crypto.randomUUID(),
-            },
-          };
-          storage.mutate(id, owner, (r) => {
-            r.meta.pending = pending;
-          });
-          await upload(id, owner, pending, true);
-        } else {
-          const remote = await request(`towns/${id}`);
-          if (!current(owner)) return;
-          if (remote.revision !== local.meta.conflict.revision) {
-            conflict(id, owner, remote);
-            throw new Error('The cloud save changed again. Review the updated comparison.');
-          }
-          let replaced = false;
-          storage.mutate(id, owner, (r) => {
-            if (!canApply(id)) throw new Error('Leave the mine before resolving a save conflict.');
-            if (r.meta.sequence !== local.meta.sequence)
-              throw new Error('Local progress changed. Review it again.');
-            // Preserve the losing local branch as a downloadable recovery copy.
-            r.meta.recovery = { profile: r.profile, updatedAt: r.meta.updatedAt };
-            r.profile = remote.profile;
-            r.meta = {
-              ...r.meta,
-              name: remote.name,
-              baseRevision: remote.revision,
-              cloudAt: remote.updatedAt,
-              dirty: false,
-              pending: null,
-              conflict: null,
-              sequence: r.meta.sequence + 1,
-            };
-            replaced = true;
-          });
-          if (replaced) applied(id);
-        }
+        if (!canApply(id)) throw new Error('Return to the village to review your preserved save.');
+        if (
+          !local?.meta.recovery ||
+          local.meta.recovery.id !== review.recovery.id ||
+          local.meta.sequence !== review.sequence ||
+          local.meta.baseRevision !== review.revision ||
+          local.meta.pending ||
+          local.meta.conflict
+        )
+          throw new Error('Your save changed. Review it before confirming another overwrite.');
+        const pending = {
+          resolve: true,
+          replace: true,
+          recoveryOverride: local.meta.recovery.id,
+          sequence: local.meta.sequence,
+          body: {
+            baseRevision: review.revision,
+            profile: copy(local.meta.recovery.profile),
+            uploadId: crypto.randomUUID(),
+          },
+        };
+        storage.mutate(id, owner, (r) => {
+          r.meta.pending = pending;
+        });
+        await upload(id, owner, pending, true);
       });
     },
     restore(id, profile) {

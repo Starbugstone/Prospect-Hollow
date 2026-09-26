@@ -103,13 +103,19 @@ it('does nothing when both copies are unchanged', async () => {
   expect(api).toHaveBeenCalledTimes(1);
   expect(applied).not.toHaveBeenCalled();
 });
-it('preserves both branches when the same town diverges', async () => {
+it('defaults to the server and preserves the complete local save when the town diverges', async () => {
   setupAccount();
   townStorage.save(profile(9));
   api.mockResolvedValue(remote(2, 10));
   await sync.sync();
-  expect(townStorage.active().profile.town.coins).toBe(9);
-  expect(townStorage.active().meta.conflict.profile.town.coins).toBe(10);
+  expect(townStorage.active().profile.town.coins).toBe(10);
+  expect(townStorage.active().meta.recovery.profile.town.coins).toBe(9);
+  expect(townStorage.active().meta).toMatchObject({
+    baseRevision: 2,
+    dirty: false,
+    conflict: null,
+    desyncNotice: true,
+  });
   expect(api).toHaveBeenCalledTimes(1);
 });
 it('never clears changes made while an upload is in flight', async () => {
@@ -125,7 +131,7 @@ it('never clears changes made while an upload is in flight', async () => {
   expect(townStorage.active().profile.town.coins).toBe(5);
   expect(townStorage.active().meta).toMatchObject({ baseRevision: 2, dirty: true });
 });
-it('turns local progress made during a download into a conflict instead of overwriting it', async () => {
+it('preserves progress made during a download before defaulting to the server', async () => {
   setupAccount();
   const pending = deferred();
   api.mockReturnValue(pending.promise);
@@ -133,8 +139,8 @@ it('turns local progress made during a download into a conflict instead of overw
   townStorage.save(profile(8));
   pending.resolve(remote(2, 9));
   await done;
-  expect(townStorage.active().profile.town.coins).toBe(8);
-  expect(townStorage.active().meta.conflict.revision).toBe(2);
+  expect(townStorage.active().profile.town.coins).toBe(9);
+  expect(townStorage.active().meta.recovery.profile.town.coins).toBe(8);
 });
 it('keeps a lost upload response pending and retries the same snapshot and upload ID', async () => {
   setupAccount();
@@ -178,11 +184,12 @@ it('resolves only against the cloud revision shown to the player', async () => {
   townStorage.save(profile(5));
   api.mockResolvedValue(remote(2, 9));
   await sync.sync();
+  const review = await sync.reviewRecovery(townStorage.active().meta.id);
   api.mockImplementation(async (_, body) => {
     expect(body.baseRevision).toBe(2);
     return remote(3, body.profile.town.coins);
   });
-  await sync.resolve(townStorage.active().meta.id, 'local');
+  await sync.overwriteRecovery(townStorage.active().meta.id, review);
   expect(api.mock.calls.at(-1)[0]).toContain('/resolve');
   expect(townStorage.active().meta).toMatchObject({
     dirty: false,
@@ -190,26 +197,37 @@ it('resolves only against the cloud revision shown to the player', async () => {
     conflict: null,
   });
 });
-it('keeps the losing local copy when the player chooses cloud', async () => {
+it('keeps the original recovery copy through later clean cloud updates', async () => {
   setupAccount();
   townStorage.save(profile(5));
   api.mockResolvedValue(remote(2, 9));
   await sync.sync();
-  await sync.resolve(townStorage.active().meta.id, 'cloud');
-  expect(townStorage.active().profile.town.coins).toBe(9);
+  const recoveryId = townStorage.active().meta.recovery.id;
+  api.mockResolvedValue(remote(3, 12));
+  await sync.sync();
+  expect(townStorage.active().profile.town.coins).toBe(12);
   expect(townStorage.active().meta.recovery.profile.town.coins).toBe(5);
+  expect(townStorage.active().meta.recovery.id).toBe(recoveryId);
 });
 it('asks again if the cloud changes while the comparison is open', async () => {
   setupAccount();
   townStorage.save(profile(5));
   api.mockResolvedValue(remote(2, 9));
   await sync.sync();
-  api.mockResolvedValue(remote(3, 11));
-  await expect(sync.resolve(townStorage.active().meta.id, 'cloud')).rejects.toThrow(
+  const review = await sync.reviewRecovery(townStorage.active().meta.id);
+  api.mockRejectedValue(
+    Object.assign(new Error('conflict'), { status: 409, data: { cloud: remote(3, 11) } }),
+  );
+  await expect(sync.overwriteRecovery(townStorage.active().meta.id, review)).rejects.toThrow(
     'changed again',
   );
-  expect(townStorage.active().profile.town.coins).toBe(5);
-  expect(townStorage.active().meta.conflict.revision).toBe(3);
+  expect(townStorage.active().profile.town.coins).toBe(11);
+  expect(townStorage.active().meta.baseRevision).toBe(3);
+  expect(townStorage.active().meta.recovery.profile.town.coins).toBe(5);
+  expect(townStorage.active().meta.pending).toBeNull();
+  api.mockResolvedValue(remote(3, 11));
+  await sync.sync();
+  expect(api.mock.calls.filter(([, body]) => body)).toHaveLength(1);
 });
 it('syncs other towns independently of a conflict', async () => {
   setupAccount();
@@ -221,7 +239,7 @@ it('syncs other towns independently of a conflict', async () => {
     path.endsWith(first) ? remote(2, 5, first) : remote(2, 10, second),
   );
   await sync.sync();
-  expect(townStorage.active().meta.conflict).toBeTruthy();
+  expect(townStorage.active().meta.recovery.profile.town.coins).toBe(4);
   expect(townStorage.records(owner.id).find((r) => r.meta.id === second).profile.town.coins).toBe(
     10,
   );
@@ -266,13 +284,14 @@ it('restores clean cloud data after local storage loss once signed in', () => {
   expect(townStorage.active().meta).toMatchObject({ baseRevision: 7, dirty: false });
 });
 
-it('retries an interrupted explicit resolution before stopping for its saved conflict', async () => {
+it('retries the exact confirmed overwrite after a lost response and recovers newer local progress', async () => {
   setupAccount();
   townStorage.save(profile(5));
   api.mockResolvedValue(remote(2, 9));
   await sync.sync();
+  const review = await sync.reviewRecovery(townStorage.active().meta.id);
   api.mockRejectedValue(new Error('lost resolution response'));
-  await expect(sync.resolve(townStorage.active().meta.id, 'local')).rejects.toThrow(
+  await expect(sync.overwriteRecovery(townStorage.active().meta.id, review)).rejects.toThrow(
     'lost resolution response',
   );
   const pending = townStorage.active().meta.pending;
@@ -282,7 +301,15 @@ it('retries an interrupted explicit resolution before stopping for its saved con
   expect(api.mock.calls.at(-1)[0]).toContain('/resolve');
   expect(api.mock.calls.at(-1)[1]).toEqual(pending.body);
   expect(townStorage.active().profile.town.coins).toBe(6);
-  expect(townStorage.active().meta).toMatchObject({ baseRevision: 3, dirty: true, conflict: null });
+  expect(townStorage.active().meta.conflict.revision).toBe(3);
+  await sync.sync();
+  expect(townStorage.active().profile.town.coins).toBe(5);
+  expect(townStorage.active().meta.recovery.profile.town.coins).toBe(6);
+  expect(townStorage.active().meta).toMatchObject({
+    baseRevision: 3,
+    dirty: false,
+    conflict: null,
+  });
 });
 
 it('retains a durable account creation attempt across reload and newer local progress', () => {
@@ -343,19 +370,19 @@ it('serializes two sync workers instead of replacing an unacknowledged upload', 
   expect(api.mock.calls[1][1].uploadId).toBe(uploadId);
   expect(townStorage.active().meta.pending).toBeNull();
 });
-it('does not replace an active mine if it starts while conflict resolution waits', async () => {
+it('does not permit a recovery overwrite review if a mine starts while it waits', async () => {
   setupAccount();
   townStorage.save(profile(5));
   api.mockResolvedValue(remote(2, 9));
   await sync.sync();
   const pending = deferred();
   api.mockReturnValue(pending.promise);
-  const task = sync.resolve(townStorage.active().meta.id, 'cloud');
+  const task = sync.reviewRecovery(townStorage.active().meta.id);
   await vi.waitFor(() => expect(api).toHaveBeenCalledTimes(2));
   canApply.mockReturnValue(false);
   pending.resolve(remote(2, 9));
-  await expect(task).rejects.toThrow('Leave the mine');
-  expect(townStorage.active().profile.town.coins).toBe(5);
+  await expect(task).rejects.toThrow('Return to the village');
+  expect(townStorage.active().profile.town.coins).toBe(9);
 });
 it('persists history restoration for retry after a lost response', async () => {
   setupAccount();
@@ -400,4 +427,137 @@ it('does not acknowledge a replaced pending upload or erase its newer progress',
   await task;
   expect(townStorage.active().profile.town.coins).toBe(50);
   expect(townStorage.active().meta).toMatchObject({ baseRevision: 1, dirty: true });
+});
+
+it('replaces the whole village without combining spending, buildings or bonuses', async () => {
+  setupAccount();
+  const local = profile(25);
+  local.town.buildings = { farm: 1 };
+  local.powers = [{ id: 'tnt', quantity: 2 }];
+  local.builderHammers = 3;
+  townStorage.save(local);
+  const cloud = remote(2, 25);
+  cloud.profile.town.buildings = { home: 1 };
+  cloud.profile.powers = [{ id: 'tnt', quantity: 1 }];
+  cloud.profile.builderHammers = 0;
+  api.mockResolvedValue(cloud);
+  await sync.sync();
+  expect(townStorage.active().profile).toEqual(cloud.profile);
+  expect(townStorage.active().meta.recovery.profile).toEqual(local);
+  const id = townStorage.active().meta.id;
+  const review = await sync.reviewRecovery(id);
+  api.mockImplementation(async (_, body) => ({ ...remote(3), profile: body.profile }));
+  await sync.overwriteRecovery(id, review);
+  expect(townStorage.active().profile).toEqual(local);
+  expect(townStorage.active().meta.recovery.profile).toEqual(cloud.profile);
+  expect(townStorage.active().meta.desyncNotice).toBe(false);
+});
+
+it('keeps offline progress playable and uploads it when the base revision is still current', async () => {
+  setupAccount();
+  townStorage.save(profile(30));
+  api.mockRejectedValue(new Error('offline'));
+  await expect(sync.sync()).rejects.toThrow('offline');
+  townStorage.save(profile(40));
+  expect(townStorage.active().profile.town.coins).toBe(40);
+  expect(townStorage.active().meta.recovery).toBeUndefined();
+  api.mockImplementation(async (_, body) =>
+    body ? remote(2, body.profile.town.coins) : remote(1),
+  );
+  await sync.sync();
+  expect(townStorage.active().profile.town.coins).toBe(40);
+  expect(townStorage.active().meta).toMatchObject({ baseRevision: 2, dirty: false });
+  expect(townStorage.active().meta.recovery).toBeUndefined();
+});
+
+it('defers a desync through a mine and preserves all local results before loading the latest server save', async () => {
+  setupAccount();
+  canApply.mockReturnValue(false);
+  townStorage.save(profile(20));
+  api.mockResolvedValue(remote(2, 50));
+  await sync.sync();
+  expect(townStorage.active().meta.conflict.revision).toBe(2);
+  expect(townStorage.active().profile.town.coins).toBe(20);
+  townStorage.save(profile(35));
+  await sync.sync({ pull: false });
+  expect(api).toHaveBeenCalledTimes(1);
+  canApply.mockReturnValue(true);
+  api.mockResolvedValue(remote(3, 60));
+  await sync.sync({ pull: false });
+  expect(townStorage.active().profile.town.coins).toBe(60);
+  expect(townStorage.active().meta.recovery.profile.town.coins).toBe(35);
+  expect(townStorage.active().meta).toMatchObject({
+    baseRevision: 3,
+    conflict: null,
+    dirty: false,
+  });
+  expect(applied).toHaveBeenCalledOnce();
+});
+
+it('preserves newer local changes when an in-flight upload receives a revision conflict', async () => {
+  setupAccount();
+  townStorage.save(profile(20));
+  const response = deferred();
+  api.mockImplementation(async (_, body) => (body ? response.promise : remote(1)));
+  const task = sync.sync();
+  await vi.waitFor(() => expect(api).toHaveBeenCalledTimes(2));
+  townStorage.save(profile(35));
+  response.reject(
+    Object.assign(new Error('conflict'), { status: 409, data: { cloud: remote(2, 50) } }),
+  );
+  await task;
+  expect(townStorage.active().profile.town.coins).toBe(50);
+  expect(townStorage.active().meta.recovery.profile.town.coins).toBe(35);
+  expect(townStorage.active().meta.pending).toBeNull();
+});
+
+it('keeps both versions after reload and requires a new review after local progress changes', async () => {
+  setupAccount();
+  townStorage.save(profile(20));
+  api.mockResolvedValue(remote(2, 50));
+  await sync.sync();
+  const reopened = createSyncService({ storage: townStorage, request: api, account: () => owner });
+  const id = townStorage.active().meta.id;
+  const review = await reopened.reviewRecovery(id);
+  expect(review.recovery.profile.town.coins).toBe(20);
+  townStorage.save(profile(60));
+  await expect(reopened.overwriteRecovery(id, review)).rejects.toThrow('Your save changed');
+  expect(api.mock.calls.filter(([, body]) => body)).toHaveLength(0);
+  expect(townStorage.active().profile.town.coins).toBe(60);
+});
+
+it('keeps the original save intact if a recovery copy cannot be persisted', async () => {
+  setupAccount();
+  townStorage.save(profile(20));
+  const saved = values.get(townStorage.selectedKey());
+  api.mockResolvedValue(remote(2, 50));
+  localStorage.setItem = () => {
+    throw new Error('quota');
+  };
+  await expect(sync.sync()).rejects.toThrow('quota');
+  expect(values.get(townStorage.selectedKey())).toBe(saved);
+  expect(applied).not.toHaveBeenCalled();
+});
+
+it('rejects an older server response without discarding or re-uploading local progress', async () => {
+  setupAccount();
+  townStorage.save(profile(20));
+  api.mockResolvedValue(remote(0, 50));
+  await expect(sync.sync()).rejects.toThrow('older than this device');
+  expect(townStorage.active().profile.town.coins).toBe(20);
+  expect(townStorage.active().meta.baseRevision).toBe(1);
+  expect(api.mock.calls.filter(([, body]) => body)).toHaveLength(0);
+});
+
+it('does not confirm a preserved save after the account changed', async () => {
+  setupAccount();
+  townStorage.save(profile(20));
+  api.mockResolvedValue(remote(2, 50));
+  await sync.sync();
+  const id = townStorage.active().meta.id;
+  const review = await sync.reviewRecovery(id);
+  owner = { id: 'another-owner' };
+  townStorage.account(owner);
+  await expect(sync.overwriteRecovery(id, review)).rejects.toThrow('Review this town again');
+  expect(api.mock.calls.filter(([, body]) => body)).toHaveLength(0);
 });

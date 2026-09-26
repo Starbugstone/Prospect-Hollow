@@ -184,10 +184,21 @@ export async function attachLocal(name) {
   await refreshAccount();
   await syncNow();
 }
-export async function resolveConflict(id, choice) {
-  await service.resolve(id, choice);
-  cloud.storageVersion++;
-  await syncNow();
+export async function reviewRecovery(id) {
+  try {
+    return await service.reviewRecovery(id);
+  } finally {
+    cloud.storageVersion++;
+    updateSaveStatus();
+  }
+}
+export async function overwriteRecovery(id, review) {
+  try {
+    await service.overwriteRecovery(id, review);
+  } finally {
+    cloud.storageVersion++;
+    updateSaveStatus();
+  }
 }
 
 export async function restoreSave(id, profile) {
@@ -218,7 +229,7 @@ export function updateSaveStatus() {
     !cloud.account || meta?.owner !== cloud.account.id
       ? 'Saved locally'
       : meta.conflict
-        ? 'Conflict needs attention'
+        ? 'Cloud update pending — local save kept'
         : meta.missing
           ? 'Cloud town unavailable — local copy kept'
           : meta.dirty || meta.pending

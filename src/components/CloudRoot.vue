@@ -1,20 +1,44 @@
 <template>
-  <aside ref="bar" class="cloud-bar" :aria-label="t('Account and cloud save')">
-    <div class="cloud-town-name">
-      <img src="/art/amethyst.svg" alt="" />
-      <div>
-        <strong>{{ townName }}</strong
-        ><small>{{ t(accountTown ? 'Account town' : 'Local town · this device only') }}</small>
+  <div ref="bar" class="cloud-header">
+    <aside class="cloud-bar" :aria-label="t('Account and cloud save')">
+      <div class="cloud-town-name">
+        <img src="/art/amethyst.svg" alt="" />
+        <div>
+          <strong>{{ townName }}</strong
+          ><small>{{ t(accountTown ? 'Account town' : 'Local town · this device only') }}</small>
+        </div>
       </div>
-    </div>
-    <span role="status">{{ t(cloud.status) }}</span>
-    <button v-if="accountTown" :disabled="cloud.busy || !ready" @click="syncNow()">
-      {{ t('Sync now') }}
-    </button>
-    <button :disabled="campaign.readOnly" @click="accountOpen = true">
-      {{ t(cloud.account ? 'My towns' : 'Protect my progress') }}
-    </button>
-  </aside>
+      <span role="status">{{ t(cloud.status) }}</span>
+      <button v-if="accountTown" :disabled="cloud.busy || !ready" @click="syncNow()">
+        {{ t('Sync now') }}
+      </button>
+      <button :disabled="campaign.readOnly" @click="accountOpen = true">
+        {{ t(cloud.account ? 'My towns' : 'Protect my progress') }}
+      </button>
+    </aside>
+    <aside
+      v-if="ready && (activeTown?.meta.conflict || activeTown?.meta.desyncNotice)"
+      class="save-recovery-notice"
+      role="status"
+    >
+      <p>
+        {{
+          t(
+            activeTown?.meta.conflict
+              ? 'This town changed on another device. The latest cloud save will load when you return to the village. Your local progress will be kept.'
+              : 'This town changed on another device. The latest cloud save has been loaded. Your local save has been kept.',
+          )
+        }}
+      </p>
+      <button
+        :disabled="game.sessionActive || !!activeTown?.meta.conflict"
+        @click="recoveryOpen = true"
+      >
+        {{ t('Review preserved local save') }}
+      </button>
+      <button v-if="!activeTown?.meta.conflict" @click="dismissRecovery">{{ t('Dismiss') }}</button>
+    </aside>
+  </div>
   <main v-if="!ready" class="town-launch-screen">
     <section class="town-tab-notice" aria-live="polite" :aria-busy="opening">
       <img class="town-tab-gem" src="/art/amethyst.svg" alt="" />
@@ -82,13 +106,22 @@
   <div v-if="handingOver" class="town-handoff-overlay" role="status">
     {{ t('Saving your game for the other window…') }}
   </div>
-  <App v-if="ready" :key="viewVersion" :suspended="handingOver || accountOpen || communityOpen" />
+  <App
+    v-if="ready"
+    :key="viewVersion"
+    :suspended="handingOver || accountOpen || communityOpen || recoveryOpen"
+  />
+  <SaveRecoveryDialog v-if="recoveryOpen && ready" @close="recoveryOpen = false" />
   <AccountPanel
     v-if="accountOpen"
     :login-link="loginLink"
     :writable="ready"
     @close="accountOpen = false"
     @changed="reload"
+    @recovery="
+      accountOpen = false;
+      recoveryOpen = true;
+    "
     @community="
       communityOpen = true;
       accountOpen = false;
@@ -129,10 +162,12 @@ import { createTownHandoff } from '../services/townHandoff';
 import { createSyncScheduler } from '../services/syncScheduler';
 const AccountPanel = defineAsyncComponent(() => import('./account/AccountPanel.vue'));
 const CommunityPanel = defineAsyncComponent(() => import('./community/CommunityPanel.vue'));
+const SaveRecoveryDialog = defineAsyncComponent(() => import('./account/SaveRecoveryDialog.vue'));
 townStorage.setWriteGuard(townCoordinator.owns);
 const campaign = useCampaignStore(),
   game = useGameStore();
 const accountOpen = ref(false),
+  recoveryOpen = ref(false),
   communityOpen = ref(false),
   viewVersion = ref(0),
   loginLink = ref(''),
@@ -174,7 +209,7 @@ const scheduler = createSyncScheduler({
     return (
       meta?.owner === cloud.account.id &&
       !meta.missing &&
-      (meta.pending || (meta.dirty && !meta.conflict))
+      (meta.pending || (meta.conflict ? !game.sessionActive : meta.dirty))
     );
   },
   sync: syncNow,
@@ -251,6 +286,7 @@ async function prepareHandoff(key, checkDeadline) {
   check();
   handingOver.value = true;
   accountOpen.value = false;
+  recoveryOpen.value = false;
   communityOpen.value = false;
   scheduler.schedule();
   try {
@@ -312,6 +348,13 @@ function reload() {
     // Their income/cleanup hooks must not echo a stale snapshot into another tab.
     nextTick(release);
   }
+}
+function dismissRecovery() {
+  const meta = activeTown.value?.meta;
+  if (meta?.owner && ready.value)
+    townStorage.mutate(meta.id, meta.owner, (entry) => {
+      entry.meta.desyncNotice = false;
+    });
 }
 function configureTownSync() {
   configureSync({
@@ -457,6 +500,39 @@ onBeforeUnmount(() => {
 });
 </script>
 <style>
+.save-recovery-notice {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: #294139;
+  background: #fff0ca;
+  border-bottom: 1px solid #c9b781;
+  font: 0.95rem/1.5 system-ui;
+}
+.save-recovery-notice p {
+  flex: 1 1 24rem;
+  margin: 0;
+}
+.save-recovery-notice button {
+  font: inherit;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid #bdc5af;
+  border-radius: 0.6rem;
+  background: #fffdf6;
+  color: #294139;
+  cursor: pointer;
+}
+.save-recovery-notice button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.cloud-header {
+  position: sticky;
+  top: 0;
+  z-index: 95;
+}
 .town-handoff-overlay {
   position: fixed;
   inset: 0;
@@ -563,9 +639,6 @@ onBeforeUnmount(() => {
   background: #183832;
   color: #fff7df;
   font: 0.85rem system-ui;
-  position: sticky;
-  top: 0;
-  z-index: 95;
 }
 .cloud-bar button {
   background: #ffdc99;
