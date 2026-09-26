@@ -6,6 +6,7 @@ import { useGameStore } from '../src/stores/gameStore';
 import { useCampaignStore, SAVE_KEY } from '../src/stores/campaignStore';
 import { useInventoryStore } from '../src/stores/inventoryStore';
 import { LEVEL_COUNT, getChestTier } from '../src/data/campaign';
+import { localProfile } from '../src/services/localProfile';
 
 let saved;
 beforeEach(() => {
@@ -26,6 +27,24 @@ afterEach(() => {
   useGameStore().cancelHint();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+});
+
+it('keeps view replacement income hooks from writing or reporting a storage failure', () => {
+  const campaign = useCampaignStore();
+  campaign.save();
+  const before = saved.get(SAVE_KEY);
+  const release = localProfile.suspendWrites();
+  try {
+    campaign.reloadLocal();
+    campaign.accrueSaloonIncome(Date.now() + 1000);
+    expect(saved.get(SAVE_KEY)).toBe(before);
+    expect(campaign.saveWarning).toBe('');
+    expect(campaign.save()).toBe(false);
+  } finally {
+    release();
+  }
+  expect(campaign.save()).toBe(true);
+  expect(saved.get(SAVE_KEY)).not.toBe(before);
 });
 
 it('stages obstacles while leaving a lighter fifth puzzle in every chapter', () => {

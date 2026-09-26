@@ -2396,5 +2396,14 @@
   "If delivery is possible, a sign-in link is on its way.": "Si l’envoi est possible, vous recevrez un lien de connexion.",
   "Shared towns": "Villes partagées",
   "Close town visits": "Fermer les visites",
-  "Back to shared towns": "Retour aux villes partagées"
+  "Back to shared towns": "Retour aux villes partagées",
+  "Opening town…": "Ouverture de la ville…",
+  "This town is open in another tab.": "Cette ville est ouverte dans un autre onglet.",
+  "Different towns can be played in separate tabs. Close the other tab to open this town here.": "Vous pouvez jouer dans des villes différentes dans plusieurs onglets. Fermez l’autre onglet pour ouvrir cette ville ici.",
+  "Try opening this town again": "Réessayer d’ouvrir cette ville",
+  "Choose another town": "Choisir une autre ville",
+  "Open in a new tab": "Ouvrir dans un nouvel onglet",
+  "Safe saving requires a browser with Web Locks support.": "La sauvegarde sécurisée nécessite un navigateur compatible avec Web Locks.",
+  "The server returned a different town. Your local save has been kept.": "Le serveur a renvoyé une autre ville. Votre sauvegarde locale a été conservée.",
+  "This town is already on your account. Open it from your town list; your local town is kept.": "Cette ville est déjà sur votre compte. Ouvrez-la depuis la liste de vos villes ; votre ville locale est conservée."
 }

@@ -55,7 +55,7 @@
       <p v-if="game.sessionActive">
         {{ t('Leave the mine before switching towns or resolving saves.') }}
       </p>
-      <section v-if="active && !active.meta.owner">
+      <section v-if="writable && active && !active.meta.owner">
         <h2>{{ t('Town on this device') }}</h2>
         <p>{{ summary(active.profile) }}</p>
         <label
@@ -82,10 +82,13 @@
         <li v-for="town in cloud.towns" :key="town.townId">
           <strong>{{ town.name }}</strong
           ><small>{{ t('Cloud saved') }}: {{ date(town.updatedAt * 1000) }}</small>
-          <span v-if="active?.meta.id === town.townId">{{ t('Current town') }}</span>
+          <span v-if="writable && active?.meta.id === town.townId">{{ t('Current town') }}</span>
           <button v-else :disabled="busy || game.sessionActive" @click="act(() => openTown(town))">
             {{ t('Open town') }}
           </button>
+          <a :href="townUrl(town.townId)" target="_blank" rel="noopener">{{
+            t('Open in a new tab')
+          }}</a>
         </li>
       </ul>
       <form v-if="cloud.towns.length < 3" @submit.prevent="act(createTown)">
@@ -95,9 +98,9 @@
         /></label>
         <button :disabled="busy || game.sessionActive">{{ t('Create account town') }}</button>
       </form>
-      <section v-if="active?.meta.owner === cloud.account.id">
+      <section v-if="writable && active?.meta.owner === cloud.account.id">
         <h2>{{ active.meta.name }}</h2>
-        <form @submit.prevent="act(updateSettings)">
+        <form @submit.prevent="act(() => townAction(active.meta.id, updateSettings))">
           <label
             >{{ t('Town name') }}<input v-model="editName" minlength="3" maxlength="24" required
           /></label>
@@ -109,7 +112,9 @@
               )
             }}
           </p>
-          <button :disabled="busy || active.meta.dirty || !!active.meta.conflict">
+          <button
+            :disabled="busy || active.meta.dirty || !!active.meta.conflict || !!active.meta.pending"
+          >
             {{ t('Save town details') }}
           </button>
         </form>
@@ -147,7 +152,7 @@
           <label>{{ t('Type the town name to confirm') }}<input v-model="deleteName" /></label
           ><button
             :disabled="busy || game.sessionActive || deleteName !== active.meta.name"
-            @click="act(deleteTown)"
+            @click="act(() => townAction(active.meta.id, deleteTown))"
           >
             {{ t('Delete cloud town') }}
           </button>
@@ -223,14 +228,18 @@ import {
   logout,
   disconnect,
   resolveConflict,
+  restoreSave,
+  townAction,
+  cacheTown,
 } from '../../services/cloudProfile';
+import { townCoordinator } from '../../services/townCoordinator';
 import { townStorage } from '../../services/townStorage';
 import { createSaveFile } from '../../services/saveTransfer';
 import { freshProfile } from '../../stores/campaignStore';
 import { useGameStore } from '../../stores/gameStore';
 import { t } from '../../i18n';
 import { ERA_BY_ID } from '../../data/eras';
-const props = defineProps({ loginLink: String });
+const props = defineProps({ loginLink: String, writable: Boolean });
 const emit = defineEmits(['close', 'changed', 'community']);
 const { dialog, closeButton, dismissBackdrop } = useNativeDialog(() => emit('close'));
 const game = useGameStore(),
@@ -252,7 +261,7 @@ const active = computed(() => {
 });
 const conflicts = computed(() => {
   void cloud.storageVersion;
-  return cloud.account ? townStorage.records(cloud.account.id).filter((r) => r.meta.conflict) : [];
+  return props.writable && active.value?.meta.conflict ? [active.value] : [];
 });
 const shareUrl = computed(
   () =>
@@ -274,6 +283,7 @@ watch(
     deleteName.value = '';
   },
 );
+const townUrl = (id) => `${location.origin}${location.pathname}?play=${encodeURIComponent(id)}`;
 const date = (value) => (value ? new Date(value).toLocaleString() : t('Not synced yet'));
 const summary = (profile) =>
   `${t(ERA_BY_ID[profile.town?.era]?.label ?? profile.town?.era ?? '')} · ${Object.keys(profile.records ?? {}).length} ${t('Mines completed')} · ${Object.values(profile.records ?? {}).reduce((sum, r) => sum + (r.stars ?? 0), 0)} ★ · ${profile.town?.coins ?? 0} ${t('Coins')}`;
@@ -298,13 +308,15 @@ async function signIn() {
 }
 async function openTown(town) {
   if (game.sessionActive) return;
-  if (!townStorage.records(cloud.account.id).some((r) => r.meta.id === town.townId))
-    townStorage.remember(await request(`towns/${town.townId}`), cloud.account.id);
+  await cacheTown(town);
+  if (props.writable) await syncNow({ pull: false });
   townStorage.select(town.townId, cloud.account.id);
   emit('changed');
-  await syncNow();
 }
 async function createTown() {
+  return townCoordinator.run(`account-creation:${cloud.account.id}`, createTownLocked);
+}
+async function createTownLocked() {
   const previous = townStorage.state()?.creation;
   const body =
     previous?.owner === cloud.account.id && previous.body.name === newName.value
@@ -319,14 +331,14 @@ async function createTown() {
   townStorage.creation({ owner: cloud.account.id, body });
   const town = await request('towns', body);
   townStorage.creation(null);
-  townStorage.remember(town, cloud.account.id);
+  await cacheTown(town);
   await refreshAccount();
   await openTown(town);
   newName.value = '';
 }
 async function updateSettings() {
   const local = active.value;
-  if (local.meta.dirty || local.meta.conflict)
+  if (local.meta.dirty || local.meta.conflict || local.meta.pending)
     throw new Error('Sync or resolve this town before changing its details.');
   const town = await request(
     `towns/${local.meta.id}/settings`,
@@ -347,33 +359,8 @@ async function loadHistory() {
   history.value = (await request(`towns/${active.value.meta.id}/history`)).revisions;
 }
 async function restoreHistory() {
-  const local = active.value;
-  // Use the same explicit comparison workflow, preserving unsynced local progress.
-  const latest = await request(`towns/${local.meta.id}`);
-  if (local.meta.dirty || latest.revision !== local.meta.baseRevision)
-    throw new Error('Sync or resolve your current progress before restoring a previous save.');
-  const town = await request(
-    `towns/${local.meta.id}/resolve`,
-    {
-      baseRevision: latest.revision,
-      uploadId: crypto.randomUUID(),
-      profile: historyChoice.value.profile,
-    },
-    'PUT',
-  );
-  townStorage.mutate(local.meta.id, cloud.account.id, (r) => {
-    if (r.meta.sequence !== local.meta.sequence) {
-      r.meta.conflict = town;
-      return;
-    }
-    r.profile = town.profile;
-    r.meta.baseRevision = town.revision;
-    r.meta.cloudAt = town.updatedAt;
-    r.meta.dirty = false;
-    r.meta.sequence++;
-  });
+  await restoreSave(active.value.meta.id, historyChoice.value.profile);
   historyChoice.value = null;
-  emit('changed');
   await loadHistory();
 }
 async function deleteTown() {

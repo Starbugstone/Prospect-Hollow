@@ -13,6 +13,26 @@ try {
  check(status(200,callApi('POST','towns',$body,$a),'lost attach response')===$town,'attachment retry stable');
  status(404,callApi('GET','towns/'.$id,null,$b),'ownership read');
  status(409,callApi('POST','towns',$body,$b),'uuid is not ownership');
+ // Every private route must scope the supplied UUID to the authenticated account.
+ $foreignUpload=['baseRevision'=>1,'uploadId'=>uuid(),'profile'=>profile(999)];
+ foreach([
+  ['GET','towns/'.$id,null],
+  ['PUT','towns/'.$id,$foreignUpload],
+  ['PUT','towns/'.$id.'/resolve',$foreignUpload],
+  ['GET','towns/'.$id.'/history',null],
+  ['PATCH','towns/'.$id.'/settings',['baseRevision'=>1,'name'=>'Stolen Town','isPublic'=>true]],
+  ['DELETE','towns/'.$id,['baseRevision'=>1,'confirmation'=>$body['name']]],
+ ] as [$method,$path,$payload]) {
+  $denied=callApi($method,$path,$payload,$b);
+  status(404,$denied,'foreign town '.$method.' '.$path);
+  check(!isset($denied['data']['cloud'],$denied['data']['profile']),'no foreign snapshot in denial');
+  status(401,callApi($method,$path,$payload),'anonymous town operation');
+ }
+ check(status(200,callApi('GET','towns/'.$id,null,$a),'owner after denied operations')===$town,'foreign requests leave town unchanged');
+ $forged=$foreignUpload+['playerId'=>$a['id']];
+ status(422,callApi('PUT','towns/'.$id,$forged,$b),'client cannot choose authenticated user');
+ check(status(200,callApi('GET','account',null,$b),'foreign account list')['towns']===[],'account list hides other users towns');
+
  status(409,callApi('POST','towns',townBody('DUSTWATER'),$a),'account case-insensitive name');
  status(200,callApi('POST','towns',townBody('DUSTWATER'),$b),'names not globally unique');
  $body2=townBody('Red Mesa');$town2=status(200,callApi('POST','towns',$body2,$a),'second town');
