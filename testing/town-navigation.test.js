@@ -22,6 +22,9 @@ import { TownEraIncident } from '../src/game/town/TownEraIncident';
 import { prepareRoute } from '../src/game/town/TownRoutes';
 import { placeTownSpawns } from '../src/game/town/TownTraffic';
 import { PLOTS } from '../src/game/town/TownLayout';
+import { BRIDGE, streetHeight } from '../src/game/town/TownRiver';
+import { geometryFootprints, registerFootprints } from '../src/game/town/BuildingFootprints';
+import { updateTownLocomotion } from '../src/game/town/TownLocomotion';
 const pole = (x, z, radius = 0.055) => ({ x, z, y: 0, height: 5, radius });
 function clearance(path, obstacles, margin = NPC_MARGIN) {
   for (let i = 1; i < path.points.length; i++) {
@@ -158,6 +161,56 @@ afterEach(() => {
     d.contactShadowMaterial.dispose();
   }
 });
+it.each(ERAS.map(({ id }) => id))(
+  'keeps a finishing legacy walker on the %s bridge deck in both directions',
+  (era) => {
+    const d = fixture(era);
+    d.town.buildingEras.bridge = era;
+    d.town.buildingEraLevels.bridge = 3;
+    const bridge = d.group(d.world, PLOTS.bridge[0], 0.08, PLOTS.bridge[1]);
+    d.buildPlot('bridge', bridge, d.town, {});
+    registerFootprints(bridge, geometryFootprints(bridge), { owner: 'plot:bridge' });
+    d.navigation = townNavigation(d.world);
+    const actor = d.person({
+      color: '#84946d',
+      skin: '#cc9f79',
+      hat: '#c4aa79',
+      route: [
+        [19, BRIDGE.z],
+        [40, BRIDGE.z],
+      ],
+      linear: true,
+      seed: 0,
+    });
+    actor.radius = 0.45;
+    // Population handoff lets legacy routes finish before adopting an itinerary.
+    actor.itinerary = { phase: 'finishing', stops: [], stop: 0, visit: 0, since: 0 };
+    actor.routeProgress = 0;
+    actor.routeLimit = actor.walkPath.total;
+    const plans = d.navigation.plans;
+    const crests = new Set();
+    let checked = 0;
+    for (let frame = 0; frame < Math.ceil(actor.duration * 30); frame++) {
+      d.elapsed = frame / 30;
+      d.animatePerson(actor, d.elapsed);
+      updateTownLocomotion(d, 1 / 30);
+      const { x, y, z } = actor.root.position;
+      if (Math.abs(x - BRIDGE.centerX) < BRIDGE.halfLength) {
+        // The deck is 8 cm below the normal foot anchor. Retain that small
+        // clearance without cutting the crest or floating over the approaches.
+        const aboveDeck = y - (streetHeight(x, z) - 0.08);
+        expect(aboveDeck, `${era} feet below deck at ${x},${z}`).toBeGreaterThan(-0.01);
+        expect(aboveDeck, `${era} feet above deck at ${x},${z}`).toBeLessThan(0.12);
+        expect(d.navigation.clear([x, y, z], actor.radius)).toBe(true);
+        checked++;
+        if (Math.abs(x - BRIDGE.centerX) < 1) crests.add(Math.sign(actor.motion.vx));
+      }
+    }
+    expect(checked).toBeGreaterThan(100);
+    expect([...crests].sort()).toEqual([-1, 1]);
+    expect(d.navigation.plans).toBe(plans);
+  },
+);
 it.each([...ERAS.map((e) => e.id), 'unknown-navigation-era'])(
   'keeps residents and every VIP transport route clear in %s',
   (era) => {

@@ -1,4 +1,4 @@
-import { TownItineraries, updateItinerary } from './TownItineraries';
+import { TownItineraries, updateItinerary, streetHeight } from './TownItineraries';
 import { setTownAtmosphere, horizonMaterial } from './TownAtmosphere';
 import { applyRoadSetbacks } from './BuildingSetbacks';
 import { addTownAnimals } from './TownAnimals';
@@ -25,7 +25,6 @@ import { TownPresentation } from './TownPresentation';
 import { ERA_CONSTRUCTION } from '../../data/mineEvolution';
 import { eraEvolution } from '../../data/eras';
 import { TownRenderQuality } from './TownRenderQuality';
-import { bridgeDeckHeight } from './TownRiver';
 import { TownUpgradeGlow } from './TownUpgradeGlow';
 import * as THREE from 'three';
 import { addAviationActivity } from './TownAviation';
@@ -1328,9 +1327,7 @@ export class TownDiorama {
       }
       sampledRoute.push(p);
     });
-    const points = sampledRoute.map(([x, z]) =>
-      point(x, linear && x >= 24 && x <= 38 && z === 7.5 ? bridgeDeckHeight(x) + 0.17 : 0.07, z),
-    );
+    const points = sampledRoute.map(([x, z]) => point(x, linear ? streetHeight(x, z) : 0.07, z));
     const journey = loop ? points : [...points, ...points.slice(1, -1).reverse()];
     const curve = linear
       ? new THREE.CurvePath()

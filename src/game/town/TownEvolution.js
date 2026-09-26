@@ -4,6 +4,7 @@ import { cityAppearance } from '../../data/cityAppearance';
 import { eraEvolution } from '../../data/eras';
 import { resolveRoadStyle } from '../../data/roadStyles';
 import { hasElectricity } from '../../data/industrial';
+import { BRIDGE } from './TownRiver';
 import {
   LANE_X,
   PLOTS,
@@ -76,7 +77,7 @@ export function powerGrid(town) {
     const route = routeOnGraph(
       graph,
       plotStreet('powerHouse'),
-      id === 'bridge' ? [24, 7.5] : plotStreet(id),
+      id === 'bridge' ? [BRIDGE.westJunction, BRIDGE.z] : plotStreet(id),
     );
     if (!route.length) continue;
     for (let i = 1; i < route.length; i++) {

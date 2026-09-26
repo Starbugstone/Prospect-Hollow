@@ -1,4 +1,4 @@
-import { bridgeDeckHeight } from './TownRiver';
+import { BRIDGE, bridgeDeckHeight, streetHeight } from './TownRiver';
 import { footprintDistance, sweptClear } from './BuildingFootprints';
 import { Vector3 } from 'three';
 import { prepareRoute, routePose } from './TownRoutes';
@@ -414,8 +414,19 @@ export function prepareActorWalk(d, actor, offset = 0.9) {
     const t = Math.min(0.999999, i / count),
       p = actor.curve.getPointAt(t),
       tangent = actor.curve.getTangentAt(t);
-    const lane = offset * (actor.visitor ? Math.min(1, p.distanceTo(door) / 2) : 1);
-    return [p.x + tangent.z * lane, p.y, p.z - tangent.x * lane];
+    let lane = offset * (actor.visitor ? Math.min(1, p.distanceTo(door) / 2) : 1);
+    const crossing =
+      Math.abs(p.x - BRIDGE.centerX) < BRIDGE.halfLength + 1.2 && Math.abs(p.z - BRIDGE.z) < 0.1;
+    if (crossing) {
+      // A full sidewalk offset intersects the bridge railings. The planner
+      // would then drop every crest anchor and cut straight between ramps.
+      // Join the narrower lane before climbing, keeping the full body margin.
+      const blend = Math.min(1, (BRIDGE.halfLength + 1.2 - Math.abs(p.x - BRIDGE.centerX)) / 1.2);
+      lane += (Math.min(lane, 0.4) - lane) * blend;
+    }
+    const x = p.x + tangent.z * lane,
+      z = p.z - tangent.x * lane;
+    return [x, crossing ? streetHeight(x, z) : p.y, z];
   });
   points[points.length - 1] = points[0].slice();
   actor.walkPath = d.navigation.plan(points);

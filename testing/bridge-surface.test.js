@@ -2,8 +2,11 @@ import { afterEach, expect, it } from 'vitest';
 import { Box3, Group, MeshBasicMaterial, Raycaster, Scene, Vector3 } from 'three';
 import { createTown } from '../src/data/town';
 import { addTownRoads } from '../src/game/town/TownActivity';
-import { PLOTS } from '../src/game/town/TownLayout';
-import { riverCenterX, bridgeDeckHeight } from '../src/game/town/TownRiver';
+import { PLOTS, townTracks, routeGraph, routeOnGraph } from '../src/game/town/TownLayout';
+import { BRIDGE, riverCenterX, bridgeDeckHeight } from '../src/game/town/TownRiver';
+import { streetHeight } from '../src/game/town/TownItineraries';
+import { placeTraffic } from '../src/game/town/TownTrafficRoutes';
+import { roadHalfWidth } from '../src/game/town/RoadDetails';
 import { ERAS, ERA_BY_ID, eraEvolution } from '../src/data/eras';
 import { defineEra } from '../src/data/eraDefinitions';
 import { geometryFootprints, registerFootprints } from '../src/game/town/BuildingFootprints';
@@ -34,7 +37,7 @@ function bridgeView(era, tier = 3) {
   d.town.buildingEras.bridge = era;
   d.town.buildingEraLevels.bridge = tier;
   const bridge = new Group();
-  bridge.position.set(riverCenterX(7.5), 0.08, 7.5);
+  bridge.position.set(PLOTS.bridge[0], 0.08, PLOTS.bridge[1]);
   d.buildPlot('bridge', bridge, d.town, {});
   bridge.updateMatrixWorld(true);
   return { d, bridge };
@@ -68,7 +71,7 @@ it.each(ERAS.map(({ id }) => id))(
     const nav = townNavigation(bridge);
     const ray = new Raycaster(new Vector3(), new Vector3(0, -1, 0));
     for (let x = -6.8; x <= 6.8; x += 0.1) {
-      const wx = riverCenterX(7.5) + x,
+      const wx = BRIDGE.centerX + x,
         y = bridgeDeckHeight(wx) + 0.08;
       for (const z of [-0.6, 0, 0.6]) {
         expect(nav.clear([wx, y, 7.5 + z], 0.29), `${era} ${x},${z}`).toBe(true);
@@ -100,11 +103,67 @@ it('lets future eras inherit a road bridge and unknown eras retain the timber fa
   ).toBeUndefined();
 });
 
+it.each(ERAS.map(({ id }) => id))(
+  'connects the %s bridge before the east-bank road and leaves through traffic at street level',
+  (era) => {
+    const { d, bridge } = bridgeView(era);
+    // Frontier does not yet open the far bank, but uses the same bridge model.
+    const town = { ...d.town, era: era === 'frontier' ? 'river-rail' : era };
+    const tracks = townTracks(town);
+    const bankRoad = tracks.find(
+      ({ from, to }) =>
+        from[0] === BRIDGE.eastJunction &&
+        to[0] === BRIDGE.eastJunction &&
+        from[1] < BRIDGE.z &&
+        to[1] > BRIDGE.z,
+    );
+    const edge = BRIDGE.eastJunction - roadHalfWidth(bankRoad, true);
+    const tip = BRIDGE.centerX + BRIDGE.halfLength;
+    expect(tip).toBeLessThan(edge - 0.3);
+    registerFootprints(bridge, geometryFootprints(bridge), { owner: 'plot:bridge' });
+    const nav = townNavigation(bridge);
+    // Both sidewalk directions must remain passable, including the bank-side
+    // walkway where a railing or canopy could cut off the whole neighbourhood.
+    for (const x of [BRIDGE.eastJunction - 1.05, BRIDGE.eastJunction + 1.05]) {
+      expect(nav.segment([x, 0.07, 4], [x, 0.07, 11], 0.29), `${era} sidewalk ${x}`).toBe(true);
+      for (let z = 4; z <= 11; z += 0.1) expect(streetHeight(x, z)).toBe(0.07);
+    }
+    const car = new Group();
+    car.userData.vehicleBox = { halfLength: 1.2, halfWidth: 0.36 };
+    for (const heading of [0, Math.PI])
+      for (let z = 5; z <= 10; z += 0.1) {
+        placeTraffic(car, { x: BRIDGE.eastJunction, z, heading });
+        expect(car.position.y).toBe(0.07);
+        expect(car.rotation.x).toBeCloseTo(0, 10);
+      }
+    for (const mode of ['pedestrian', 'horse', 'car']) {
+      const route = routeOnGraph(routeGraph(town, mode), [19, BRIDGE.z], [38, 15.5]);
+      expect(route.length).toBeGreaterThan(2);
+      expect(route.some(([x]) => x === tip)).toBe(true);
+    }
+    // The short, flat connecting road is rendered, not merely a graph edge.
+    d.world = new Group();
+    addTownRoads(d, town, PLOTS);
+    d.world.updateMatrixWorld(true);
+    const ray = new Raycaster(new Vector3(), new Vector3(0, -1, 0));
+    for (let x = tip + 0.01; x <= BRIDGE.eastJunction; x += 0.1) {
+      ray.ray.origin.set(x, 0.5, BRIDGE.z);
+      const hit = ray.intersectObject(d.world, true)[0];
+      expect(hit).toBeDefined();
+      expect(hit.point.y).toBeLessThan(0.07);
+      expect(streetHeight(x, BRIDGE.z)).toBeCloseTo(0.07, 10);
+    }
+    d.world.traverse((object) => {
+      if (object.geometry?.userData.owned) object.geometry.dispose();
+    });
+  },
+);
+
 it.each([1, 2, 3])('keeps level %s bridge pillars and caps below the ramp surface', (level) => {
   const d = Object.create(TownDiorama.prototype);
   Object.assign(d, { geometries: createTownGeometries(), materials: new Map() });
   const bridge = new Group();
-  bridge.position.set(riverCenterX(7.5), 0.08, 7.5);
+  bridge.position.set(PLOTS.bridge[0], 0.08, PLOTS.bridge[1]);
   renderBridge(d, bridge, level);
   bridge.updateMatrixWorld(true);
   const deck = [],

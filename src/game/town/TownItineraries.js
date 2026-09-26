@@ -1,17 +1,13 @@
 import { ERA_BY_ID, FRONTIER_ERA } from '../../data/eras';
 import { PLOTS, plotStreet, routeGraph, routeOnGraph } from './TownLayout';
 import { walkPath } from './TownNavigation';
-import { bridgeDeckHeight } from './TownRiver';
+import { BRIDGE, streetHeight } from './TownRiver';
 import { villagerRandom, vipVisitor, villagerIdentity } from '../../data/villagers';
 import { hasVisitorTransport } from '../../data/visitorArrivals';
 import { vipVisitBuildings, vipVisitCount } from '../../data/vipVisits';
 
+export { streetHeight } from './TownRiver';
 const gap = (a, b) => Math.hypot(a[0] - b[0], a[2] - b[2]);
-export const streetHeight = (x, z) => {
-  if (x < 23 || x > 39 || Math.abs(z - 7.5) >= 1.5) return 0.07;
-  const blend = Math.min(1, x - 23, 39 - x, (1.5 - Math.abs(z - 7.5)) * 2);
-  return 0.07 + (bridgeDeckHeight(x) + 0.1) * blend * blend * (3 - 2 * blend);
-};
 
 // One graph and memoized legs per town snapshot. Compilation is driven by the
 // staged population generator, never by the animation loop or a coin update.
@@ -34,8 +30,8 @@ export class TownItineraries {
         for (const side of [1, -1]) {
           let previous;
           for (let i = 0; i <= 70; i++) {
-            const x = 24 + i * 0.2,
-              z = 7.5 + side * lane;
+            const x = BRIDGE.centerX - BRIDGE.halfLength + i * 0.2,
+              z = BRIDGE.z + side * lane;
             const point = [x, streetHeight(x, z), z];
             if (previous && d.navigation && !d.navigation.segment(previous, point, 0.29))
               return false;
@@ -114,15 +110,18 @@ export class TownItineraries {
           after = road[i + 1] ?? before;
         const vertical = before?.[0] === p[0] || after?.[0] === p[0];
         const horizontal = before?.[1] === p[1] || after?.[1] === p[1];
-        const bridge = p[0] >= 24 && p[0] <= 38 && p[1] === 7.5;
+        const bridge =
+          p[0] >= BRIDGE.centerX - BRIDGE.halfLength &&
+          p[0] <= BRIDGE.eastJunction &&
+          p[1] === BRIDGE.z;
         const x = p[0] + (vertical && !bridge ? side * 1.05 : 0),
           z = p[1] + (horizontal ? side * (bridge ? this.bridgeLane : 1.05) : 0);
         const previous = points.at(-1);
         // Sample the bridge grade; straight endpoints would walk through its deck.
         const onBridge =
-          Math.max(x, previous[0]) >= 23 &&
-          Math.min(x, previous[0]) <= 39 &&
-          Math.min(Math.abs(z - 7.5), Math.abs(previous[2] - 7.5)) < 1.5;
+          Math.max(x, previous[0]) >= BRIDGE.centerX - BRIDGE.halfLength &&
+          Math.min(x, previous[0]) <= BRIDGE.centerX + BRIDGE.halfLength &&
+          Math.min(Math.abs(z - BRIDGE.z), Math.abs(previous[2] - BRIDGE.z)) < 1.5;
         const count = onBridge
           ? Math.max(1, Math.ceil(Math.hypot(x - previous[0], z - previous[2]) / 0.6))
           : 1;

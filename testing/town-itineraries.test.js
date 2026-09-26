@@ -12,6 +12,7 @@ import { updateTownLocomotion } from '../src/game/town/TownLocomotion';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { PLOTS } from '../src/game/town/TownLayout';
+import { BRIDGE } from '../src/game/town/TownRiver';
 import { geometryFootprints, registerFootprints } from '../src/game/town/BuildingFootprints';
 import { useCampaignStore } from '../src/stores/campaignStore';
 
@@ -81,14 +82,15 @@ it.each([0.6, 0.9, 0.85, 1.2])(
             ],
       );
       const move = trafficTour(car, [path], { speed: 1 });
-      for (const x of direction === 1 ? [20, 25.5, 31, 36.5, 42] : [42, 36.5, 31, 25.5, 20]) {
+      const samples = [20, BRIDGE.centerX - 5.4, BRIDGE.centerX, BRIDGE.centerX + 5.4, 42];
+      for (const x of direction === 1 ? samples : samples.toReversed()) {
         move(Math.abs(x - path.points[0][0]));
         const front = new Vector3(0, 0, 1).applyQuaternion(car.quaternion);
         const axle = new Vector3(1, 0, 0).applyQuaternion(car.quaternion);
         expect(Math.sign(front.x)).toBe(direction);
         expect(axle.y).toBeCloseTo(0, 8); // Pitch must never become sideways roll.
-        if (x === 25.5 || x === 36.5) {
-          expect(Math.sign(front.y)).toBe((x < 31 ? 1 : -1) * direction);
+        if (x === samples[1] || x === samples[3]) {
+          expect(Math.sign(front.y)).toBe((x < BRIDGE.centerX ? 1 : -1) * direction);
           expect(Math.abs(front.y)).toBeGreaterThan(0.4);
         } else expect(front.y).toBeCloseTo(0, 8);
       }

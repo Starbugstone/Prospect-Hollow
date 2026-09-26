@@ -4,9 +4,27 @@ import { MILLRACE, millraceWaterEdge } from './TownMillrace';
 
 export const RIVER = Object.freeze({ halfWidth: 3.2, bankWidth: 4.6, waterHeight: -0.45 });
 export const riverCenterX = (z) => 30.5 + Math.sin(z * 0.055) + Math.sin(z * 0.14) * 0.45;
-export const bridgeDeckHeight = (x, z = 7.5) => {
-  const p = Math.max(0, Math.min(1, (7 - Math.abs(x - riverCenterX(z))) / 3.2));
-  return 0.18 + 2.5 * p * p * (3 - 2 * p);
+const bridgeCenter = riverCenterX(7.5) - 2.2;
+// Set the crossing back from the east-bank street. Geometry, road links and
+// actor elevation share these limits so the junction stays level and open.
+export const BRIDGE = Object.freeze({
+  centerX: bridgeCenter,
+  z: 7.5,
+  halfLength: 7,
+  westJunction: bridgeCenter - 7,
+  eastJunction: 38,
+});
+export const bridgeDeckHeight = (x) => {
+  const p = Math.max(0, Math.min(1, (BRIDGE.halfLength - Math.abs(x - BRIDGE.centerX)) / 3.2));
+  // The plot is 8 cm above ground; bury the ramp tips into the road surface.
+  // Keep the original crest elevation and navigation clearance over the river.
+  return -0.1 + 2.78 * p * p * (3 - 2 * p);
+};
+export const streetHeight = (x, z) => {
+  if (Math.abs(x - BRIDGE.centerX) >= BRIDGE.halfLength || Math.abs(z - BRIDGE.z) >= 1.5)
+    return 0.07;
+  const blend = Math.min(1, (1.5 - Math.abs(z - BRIDGE.z)) * 2);
+  return 0.07 + (bridgeDeckHeight(x) + 0.1) * blend * blend * (3 - 2 * blend);
 };
 export const riverDistance = (x, z) => Math.abs(x - riverCenterX(z));
 export const wetBank = (x, z, margin = 0) => riverDistance(x, z) < RIVER.bankWidth + margin;

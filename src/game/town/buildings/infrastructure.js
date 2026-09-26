@@ -1,4 +1,4 @@
-import { bridgeDeckHeight, riverCenterX } from '../TownRiver';
+import { BRIDGE, bridgeDeckHeight } from '../TownRiver';
 import { BufferGeometry, Float32BufferAttribute } from 'three';
 import { eraEvolution } from '../../../data/eras';
 import { resolveRoadStyle } from '../../../data/roadStyles';
@@ -15,7 +15,7 @@ function roadDeck(d, parent, profile) {
         const base = positions.length / 3;
         for (let n = 0; n <= steps; n++) {
           const x = from + ((to - from) * n) / steps;
-          const y = bridgeDeckHeight(riverCenterX(7.5) + x) + (solid ? 0.01 : 0.018);
+          const y = bridgeDeckHeight(BRIDGE.centerX + x) + (solid ? 0.01 : 0.018);
           positions.push(x, y, left, x, y, right);
           if (solid) positions.push(x, y - 0.18, left, x, y - 0.18, right);
           if (!n) continue;
@@ -107,7 +107,7 @@ export function renderBridge(d, parent, level, era = d.town?.buildingEras?.bridg
   }
   const profile = eraEvolution(era);
   if (profile.roadBridge) roadDeck(d, parent, profile);
-  const center = riverCenterX(7.5);
+  const center = BRIDGE.centerX;
   for (let i = 0; i < 56; i++) {
     const x = -7 + i * 0.25,
       height = bridgeDeckHeight(center + x);
@@ -139,7 +139,7 @@ export function renderBridge(d, parent, level, era = d.town?.buildingEras?.bridg
         d.box(parent, 0.25, 0.4, 0.25, x, 4.35, z, '#f5dc9c');
         d.mesh(parent, 'cone', [0.22, 0.25, 0.22], [x, 4.65, z], '#526e70');
       }
-  // Abutments stand outside the navigation channel; no central pier blocks the boat.
+  // Side piers leave the central navigation channel open for boats.
   for (const x of [-4.4, 4.4])
     for (const z of [-1.12, 1.12]) d.box(parent, 0.5, 2.5, 0.5, x, 0.65, z, '#8c9183');
 }

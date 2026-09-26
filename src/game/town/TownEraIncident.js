@@ -4,7 +4,8 @@ import { prepareRoute, routePose } from './TownRoutes';
 import { responseVehicle, animateVehicle } from './TownVehicles';
 import { cityModel } from './buildings/city';
 import { eventKind, incidentPhases, civicIncident } from '../../data/townEvents';
-import { bridgeDeckHeight } from './TownRiver';
+import { streetHeight } from './TownItineraries';
+import { BRIDGE } from './TownRiver';
 import { PLOTS, plotStreet, routeBetween } from './TownLayout';
 
 export const INCIDENT_DURATION = 16;
@@ -144,11 +145,10 @@ export class TownEraIncident {
     actor.distance = distance;
     if (!path) actor.root.translateX(offset);
     if (
-      actor.root.position.x >= 24 &&
-      actor.root.position.x <= 38 &&
-      Math.abs(actor.root.position.z - 7.5) < 0.7
+      Math.abs(actor.root.position.x - BRIDGE.centerX) < BRIDGE.halfLength &&
+      Math.abs(actor.root.position.z - BRIDGE.z) < 0.7
     )
-      actor.root.position.y = bridgeDeckHeight(actor.root.position.x) + 0.17;
+      actor.root.position.y = streetHeight(actor.root.position.x, actor.root.position.z);
   }
   update(elapsed) {
     if (this.disposed) return true;
