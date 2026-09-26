@@ -1,4 +1,4 @@
-import { walkObstacle, walkPose, planCurve } from './TownNavigation';
+import { walkObstacle, walkPose, planCurve, plotDoor } from './TownNavigation';
 import { prepareRoute, routePose } from './TownRoutes';
 import * as THREE from 'three';
 import { roadLevel, population, visitorPopulation } from './TownRules';
@@ -210,12 +210,22 @@ export function addTownVisitors(d, town) {
       );
       const path = !motorTraffic(town) && planCurve(d, curve, 0.8);
       d.motions.push((time) => {
-        const progress = (time / 65 + n / town.buildings.stable) % 1,
+        const progress =
+            ((time - (mounted.root.userData.trafficDelay ?? 0)) / 65 + n / town.buildings.stable) %
+            1,
           tangent = curve.getTangentAt(progress);
         mounted.root.position.copy(curve.getPointAt(progress));
         mounted.root.rotation.y = Math.atan2(tangent.x, tangent.z);
         if (path) {
-          const pose = walkPose(path, progress);
+          const pose = walkPose(
+            path,
+            progress,
+            (mounted.pose ??= {
+              x: mounted.root.position.x,
+              y: mounted.root.position.y,
+              z: mounted.root.position.z,
+            }),
+          );
           mounted.root.position.set(pose.x, pose.y, pose.z);
           mounted.root.rotation.y = pose.heading;
         }
@@ -233,7 +243,7 @@ export function addTownVisitors(d, town) {
         skin: n % 2 ? '#976f50' : '#d8ae83',
         hat: '#baa06d',
         route: [
-          atPlot(destination, 0, 1.65),
+          plotDoor(d, destination, atPlot(destination, 0, 2.6)),
           plotStreet(destination),
           [-LANE_X, 7.5],
           [-LANE_X, -0.5],
@@ -368,7 +378,17 @@ export class TownRaid {
   }
   travel(actor, points, distance) {
     const path = this.d.navigation?.route(points, 0, 0.8);
-    const pose = path ? walkPose(path, distance / (path.total || 1)) : routePose(points, distance);
+    const pose = path
+      ? walkPose(
+          path,
+          distance / (path.total || 1),
+          (actor.travelPose ??= {
+            x: actor.root.position.x,
+            y: actor.root.position.y,
+            z: actor.root.position.z,
+          }),
+        )
+      : routePose(points, distance);
     actor.root.position.set(pose.x, 0.07, pose.z);
     actor.root.rotation.y = pose.heading;
     return path ? distance < path.total : pose.moving;

@@ -57,4 +57,4 @@ The final automated suite passed 847 tests across 51 files. Coverage includes al
 
 Chromium at `http://127.0.0.1:5173/` has verified the saved Electric-to-Motor transition across reload, the garage purchase and real puzzle-driven completion, the completed 37-plot town, the moving bus and its reduced-motion stop, and French layouts at 390×844 and 320×740. The desktop view is 1440×900. Levels 121 and 144 are checked with real pointer swipes; the complete campaign coverage above comes from the engine sample. Disposable fixtures supply the completed earlier eras and late mine records.
 
-See [issue #30 fixes and visual evidence](issue-30-review.md) for the board sizing, direct-match chains, shorter Steam construction, full-era water supply, evolving transport, power network, mine entrances and forecourt. Final browser and automated checks are recorded there.
+The board sizing, direct-match chains, construction, water supply, transport, power network and mine presentation are covered by the regression suite in `testing/`. Current extension contracts are maintained in [the era architecture guide](era-architecture.md).

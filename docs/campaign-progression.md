@@ -1,6 +1,6 @@
 # A gentler descent into the mine
 
-For the current four-era, 144-level campaign, see the [Motor Age progression review](motor-age-progression.md). The [earlier 72-level review](progression-ux-review.md) records the intermediate tuning pass. The measurements below document the earlier 60-level tuning pass.
+For the current four-era, 144-level campaign, see the [Motor Age progression review](motor-age-progression.md). The measurements below document the earlier 60-level tuning pass.
 
 The campaign keeps all 60 level IDs and existing saves. The opening board still measures 6 × 7, but now uses four jewel types. Its 32 single-layer ice targets are tuned for a complete introductory puzzle: the easiest levels should typically take 8–10 moves, then grow gradually. Players have no move limit; score and active time award optional chests. New obstacle introductions pause the clock.
 

@@ -1,3 +1,4 @@
+import { mineGrowth } from '../../data/mineGrowth';
 import { buildMineHillside } from './TownMineHillside';
 import { groundHeight } from './TownLandscape';
 import { RAIL_EDGE } from './TownLayout';
@@ -47,7 +48,11 @@ export class TownScenery {
       ],
       ['streetscape', town.era, () => addEraStreetscape(view, town)],
       ['forecourt', pavedTown(town), () => addMineForecourt(view, town)],
-      ['mine-works', town.era, () => addMineWorks(view, view.world, town.era)],
+      [
+        'mine-works',
+        JSON.stringify([town.era, !!railEdges(town).length, mineGrowth(view.mineStage ?? 0).band]),
+        () => addMineWorks(view, view.world, town.era),
+      ],
       ['lights', hasElectricity(town), () => addElectricLighting(view, town)],
       [
         'power',
@@ -59,11 +64,20 @@ export class TownScenery {
     for (const [id, signature, build] of definitions) {
       let cached = this.entries.get(id);
       if (!cached || cached.signature !== signature) {
+        if (cached?.group?.userData.mineUpdate)
+          view.motions = view.motions.filter((m) => m !== cached.group.userData.mineUpdate);
         view.clearGroup(cached?.group);
         cached = { signature, group: build() };
         this.entries.set(id, cached);
       }
-      if (cached.group) view.world.add(cached.group);
+      if (cached.group) {
+        view.world.add(cached.group);
+        if (
+          cached.group.userData.mineUpdate &&
+          !view.motions.includes(cached.group.userData.mineUpdate)
+        )
+          view.motions.push(cached.group.userData.mineUpdate);
+      }
     }
   }
   dispose(view) {

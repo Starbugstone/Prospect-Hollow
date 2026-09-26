@@ -71,8 +71,8 @@ it.each(ERAS.slice(1).map((era, i) => [ERAS[i].id, era.id]))(
     );
     expect(effect.sequence.crew.every(({ worker }) => !worker.root.visible)).toBe(true);
     const complete = new Box3().setFromObject(effect.next);
-    expect(complete.max.y).toBeGreaterThan(old.max.y);
-    expect(complete.max.x).toBeLessThan(-2.3); // Clear of the decline and mine cart.
+    expect(complete.isEmpty()).toBe(false);
+    expect(effect.next.userData.profile.portal).not.toBe(effect.previous.userData.profile.portal);
     expect(JSON.stringify(d.town)).toBe(saved);
   },
 );

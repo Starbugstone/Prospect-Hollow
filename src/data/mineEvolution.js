@@ -1,4 +1,4 @@
-import { eraEvolution } from './eras';
+import { mineProfile, MINE_PROFILES } from './mineProfiles';
 
 // Surface equipment is independent of puzzle progress and has no gameplay cost.
 // The era's existing art family also lets future eras inherit a supported mine.
@@ -49,8 +49,8 @@ const STYLES = {
   },
 };
 export function mineAppearance(era) {
-  const profile = eraEvolution(era);
-  const key = profile.cityAssets ?? profile.style;
+  const profile = mineProfile(era);
+  const key = Object.keys(STYLES).find((key) => MINE_PROFILES[key].works === profile.works);
   return Object.hasOwn(STYLES, key) ? STYLES[key] : STYLES.frontier;
 }
 
@@ -61,3 +61,5 @@ export const ERA_CONSTRUCTION = Object.freeze({
   buildEnd: 16,
   leave: 18,
 });
+
+export { MINE_PROFILES, mineProfile, validateMineProfiles } from './mineProfiles';

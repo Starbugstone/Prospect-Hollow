@@ -1,3 +1,4 @@
+import { spriteRef } from './spriteRefs';
 import { t } from '../../i18n';
 import { GEM_COLORS } from './SpriteLoader';
 import { GEM_TYPES } from '../engine/GemFactory';
@@ -11,7 +12,7 @@ import {
   MULTI_MATCH_COIN_STEP,
 } from '../engine/MatchRewards';
 
-const MOTION = Object.freeze({ swap: 115, reject: 75, clear: 90, fall: 190, intro: 260 });
+const MOTION = Object.freeze({ swap: 115, reject: 75, clear: 90, fall: 190, intro: 160 });
 
 export class BoardAnimator {
   constructor({
@@ -154,7 +155,7 @@ export class BoardAnimator {
 
   configureGem(sprite, type) {
     const texture = GEM_TYPES.includes(type)
-      ? { key: gemTexture(type, this.levelId) }
+      ? spriteRef(gemTexture(type, this.levelId), this.scene?.textures)
       : (this.textures[type] ?? this.textures.ruby);
     sprite.anims?.stop();
     sprite.setTexture(texture.key, texture.frame);
@@ -203,12 +204,15 @@ export class BoardAnimator {
         const sprite = this.gemSprites.get(id);
         if (!sprite) return;
         const p = this.position(index);
-        sprite.y -= this.cellSize * 2;
-        sprite.alpha = 0;
+        sprite.y -= this.cellSize * 0.5;
+        sprite.alpha = 0.6;
         return this.tween(sprite, {
           y: p.y,
           alpha: 1,
-          delay: (index % this.boardSize) * 16 + Math.floor(index / this.boardSize) * 8,
+          delay: Math.min(
+            90,
+            (index % this.boardSize) * 7 + Math.floor(index / this.boardSize) * 4,
+          ),
           duration: MOTION.intro,
           ease: 'Back.easeOut',
         });
@@ -490,13 +494,14 @@ export class BoardAnimator {
           : damaged && !frozen
             ? 'ice-cracked'
             : 'ice-frost';
+        const ref = spriteRef(texture, this.scene.textures);
         if (!ice) {
-          ice = this.scene.add.image(p.x, p.y, texture);
+          ice = this.scene.add.image(p.x, p.y, ref.key, ref.frame);
           this.backgroundLayer.add(ice);
           this.iceSprites.set(index, ice);
         }
         ice
-          .setTexture(texture)
+          .setTexture(ref.key, ref.frame)
           .setPosition(p.x, p.y)
           .setDisplaySize(this.cellSize - 3, this.cellSize - 3);
       } else if (ice) {
@@ -540,7 +545,8 @@ export class BoardAnimator {
     overlay = this.scene.add.container(p.x, p.y);
     overlay.__tileKey = key;
     const addImage = (type) => {
-      const sprite = this.scene.add.image(0, 0, `tile-${type}`).setDisplaySize(size, size);
+      const ref = spriteRef(`tile-${type}`, this.scene.textures);
+      const sprite = this.scene.add.image(0, 0, ref.key, ref.frame).setDisplaySize(size, size);
       overlay.add(sprite);
       return sprite;
     };

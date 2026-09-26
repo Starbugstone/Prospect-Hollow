@@ -38,6 +38,9 @@ export class TownStatics {
     for (const root of roots) {
       root.updateWorldMatrix(true, true);
       root.traverse((object) => {
+        if (object.isInstancedMesh) return;
+        for (let node = object; node && node !== root; node = node.parent)
+          if (node.userData.animated) return;
         if (
           !object.isMesh ||
           !object.material.isMeshStandardMaterial ||

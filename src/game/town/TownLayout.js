@@ -1,3 +1,4 @@
+import { MAIN_LANE_X, POWER_HOUSE_POSITION, PLOT_STREET_OFFSET } from '../../data/townClearances';
 import { MINE_POSITION } from '../../data/mineSite';
 import { WATERMILL_SITE } from '../../data/watermill';
 import { BUILDING_BY_ID } from '../../data/town';
@@ -41,7 +42,7 @@ export const PLOTS = {
   hotel: [42, 4],
   home5: [42, 12],
   market: [42, 20],
-  powerHouse: [15, -20],
+  powerHouse: POWER_HOUSE_POSITION,
   fireStation: [-15, 20],
   rowHouses: [50, 12],
   mill: [50, -4],
@@ -89,11 +90,13 @@ const PLOT_METADATA = Object.fromEntries(
 );
 export const visiblePlots = (town) =>
   Object.values(PLOT_METADATA).filter(({ id }) => id === 'mine' || plotUnlocked(town, id));
-export const LANE_X = 3.5;
+export const LANE_X = MAIN_LANE_X;
 export const atPlot = (id, dx = 0, dz = 0) => [PLOTS[id][0] + dx, PLOTS[id][1] + dz];
 export const plotStreet = (id) => {
   const [x, z] = PLOTS[id];
-  return x === 0 && id !== 'mine' ? [LANE_X, z + 2] : [x, z + (id === 'mine' ? 4.5 : 3.5)];
+  return x === 0 && id !== 'mine'
+    ? [LANE_X, z + 2]
+    : [x, z + (id === 'mine' ? 4.5 : PLOT_STREET_OFFSET)];
 };
 // The sheriff patrols both main streets, passing the bank, mine and department.
 export const SHERIFF_PATROL = [
@@ -125,7 +128,12 @@ export const TOWN_TRACKS = [
   road([19, -0.5], [23, -0.5], 0.85, 'riverPort'),
   road([11, -8.5], [21.5, -8.5], 0.85, 'watermill'),
   road([19, 7.5], [24, 7.5], 0.85, 'bridge'),
-  road([15, -16.5], [LANE_X, -16.5], 0.85, 'powerHouse'),
+  road(
+    [POWER_HOUSE_POSITION[0], POWER_HOUSE_POSITION[1] + PLOT_STREET_OFFSET],
+    [LANE_X, POWER_HOUSE_POSITION[1] + PLOT_STREET_OFFSET],
+    0.85,
+    'powerHouse',
+  ),
   road([-15, 23.5], [-LANE_X, 23.5], 0.85, 'fireStation'),
   road([-23, 15.5], [-19, 15.5], 0.85, 'garage'),
   road([-23, 7.5], [-19, 7.5], 0.85, 'busDepot'),

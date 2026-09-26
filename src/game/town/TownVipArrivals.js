@@ -14,6 +14,7 @@ export class TownVipArrivals {
     this.seed = seed;
     this.seen = new Map();
     this.actors = [];
+    this.active = null;
     this.insetCamera = new PerspectiveCamera(40, 1.5, 0.1, 400);
     this.insetCamera.layers.enable(2);
     this.viewport = new Vector4();
@@ -21,11 +22,18 @@ export class TownVipArrivals {
     this.focus = new Vector3();
   }
   attach(town) {
-    this.active = null;
     this.actors = [];
     if (visitorPopulation(town) <= 0) return;
     for (const id of VISITOR_TRANSPORTS) {
       if (!town.buildings[id]) continue;
+      const retained = this.d.retainedVipActors?.get(id);
+      if (retained) {
+        this.d.retainedVipActors.delete(id);
+        this.d.world.add(retained.root);
+        prepareActorWalk(this.d, retained);
+        this.actors.push(retained);
+        continue;
+      }
       const [x, z] = PLOTS[id];
       const site = VISITOR_ARRIVAL_SITES[id];
       const { destination, height } = site;
@@ -52,6 +60,9 @@ export class TownVipArrivals {
       actor.root.visible = false;
       this.actors.push(actor);
     }
+    for (const actor of this.d.retainedVipActors?.values() ?? []) this.d.clearGroup(actor.root);
+    this.d.retainedVipActors?.clear();
+    if (this.active && !this.actors.includes(this.active.actor)) this.active = null;
   }
   reset(allowExisting = false) {
     this.active = null;

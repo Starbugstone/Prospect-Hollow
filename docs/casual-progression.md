@@ -2,7 +2,7 @@
 
 > Historical review of the earlier 72-level checkout. The merged Electric era and fourth-era extension are covered in the [current Motor Age progression review](motor-age-progression.md). Measurements below describe that earlier build.
 
-The intended loop is a relaxed puzzle, a visible reward, and a useful next step in the village. This pass builds on the [full progression and UX review](progression-ux-review.md), with more emphasis on feeling successful for players who take their time or ignore score targets.
+The intended loop is a relaxed puzzle, a visible reward, and a useful next step in the village. Players should feel successful when they take their time or ignore score targets; the shared implementation contracts are documented in [the era architecture guide](era-architecture.md).
 
 ## Reward cadence
 

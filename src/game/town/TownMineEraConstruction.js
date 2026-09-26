@@ -36,10 +36,25 @@ export class TownMineEraConstruction {
     const permanent = this.d.staticScenery.entries.get('mine-works')?.group;
     const batch = this.d.buildingRenderer.batches.get(permanent);
     if (batch) batch.visible = false;
+    if (permanent) {
+      permanent.visible = false;
+      permanent.userData.activation = 'removed';
+    }
+    this.previous.userData.activation = 'removed';
+    this.next.userData.activation = 'temporary-reveal';
+    if (!this.ownerInstalled) {
+      this.d.navigation?.replaceOwner(
+        'mine-site',
+        this.next.userData.footprints ?? [],
+        'temporary-reveal',
+      );
+      this.ownerInstalled = true;
+    }
     // The temporary and final models come from the exact same assembly function.
     this.previous.visible = !still && time < ERA_CONSTRUCTION.buildStart;
     this.scaffold.visible = !still && time > 3 && time < ERA_CONSTRUCTION.leave;
     this.sequence.frame(time, still);
+    this.next.userData.mineUpdate?.(still ? 0 : time);
     const reveal = Math.max(
       0,
       Math.min(
@@ -64,6 +79,15 @@ export class TownMineEraConstruction {
     const permanent = this.d.staticScenery.entries.get('mine-works')?.group;
     const batch = this.d.buildingRenderer.batches.get(permanent);
     if (batch) batch.visible = true;
+    if (permanent) {
+      permanent.visible = true;
+      permanent.userData.activation = 'completed';
+      this.d.navigation?.replaceOwner(
+        'mine-site',
+        permanent.userData.footprints ?? [],
+        'completed',
+      );
+    }
     this.sequence.dispose();
     this.d.clearGroup(this.root);
   }

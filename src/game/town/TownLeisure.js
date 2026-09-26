@@ -1,10 +1,12 @@
 import { planOrbit, walkPose } from './TownNavigation';
 import { leisureModel } from './LeisureAssets';
+import { available } from './assets/MeshCatalog';
 import { PLOTS } from './TownLayout';
 
 // A bounded cast on the existing scene clock. No timers, reward callbacks or
 // independent animation loops: pause, hidden views and reduced motion all apply.
 export function addLeisureActivity(d, town) {
+  if (!available('leisure')) return;
   const horses = Math.min(3, town.buildings.horseField ?? 0);
   const spots = [
     [-1.3, 0.25],
@@ -75,7 +77,7 @@ export function addLeisureActivity(d, town) {
     visit.position.set(x + Math.sin(angle) * 1.55, 0.13, z + 2.7 + Math.cos(angle) * 1.1);
     visit.rotation.y = Math.atan2(Math.cos(angle) * 1.55, -Math.sin(angle) * 1.1);
     if (path) {
-      const pose = walkPose(path, phase / 60);
+      const pose = walkPose(path, phase / 60, (visit.userData.pose ??= { x, y: 0.13, z: z + 3.8 }));
       visit.position.set(pose.x, pose.y, pose.z);
       visit.rotation.y = pose.heading;
     }

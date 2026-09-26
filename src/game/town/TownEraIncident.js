@@ -132,6 +132,11 @@ export class TownEraIncident {
       ? walkPose(
           path,
           (path.total - travel + Math.max(0, Math.min(1, progress)) * travel) / (path.total || 1),
+          (actor.travelPose ??= {
+            x: actor.root.position.x,
+            y: actor.root.position.y,
+            z: actor.root.position.z,
+          }),
         )
       : routePose(this.path, distance);
     actor.root.position.set(pose.x, 0.07, pose.z);

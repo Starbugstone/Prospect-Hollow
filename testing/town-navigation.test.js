@@ -19,7 +19,7 @@ import { TownBuildSequence } from '../src/game/town/TownBuildSequence';
 import { TownRaid, addTownVisitors } from '../src/game/town/TownActivity';
 import { TownEraIncident } from '../src/game/town/TownEraIncident';
 import { prepareRoute } from '../src/game/town/TownRoutes';
-import { resolveTownTraffic } from '../src/game/town/TownTraffic';
+import { placeTownSpawns } from '../src/game/town/TownTraffic';
 import { PLOTS } from '../src/game/town/TownLayout';
 const pole = (x, z, radius = 0.055) => ({ x, z, y: 0, height: 5, radius });
 function clearance(path, obstacles, margin = NPC_MARGIN) {
@@ -209,7 +209,7 @@ it('keeps crowd and vehicle separation from pushing walkers into a pole', () => 
   const vehicle = new Group();
   vehicle.position.set(1.3, 0.07, 0);
   d.trafficActors = [vehicle];
-  resolveTownTraffic(d);
+  placeTownSpawns(d);
   for (const a of d.actors) expect(d.navigation.clear(a.root.position.toArray())).toBe(true);
   expect(d.actors[0].root.position.distanceTo(d.actors[1].root.position)).toBeGreaterThanOrEqual(
     0.549,

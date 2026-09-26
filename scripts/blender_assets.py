@@ -113,6 +113,7 @@ class AssetPack:
     def export(self, path):
         bpy.context.view_layer.update()
         payload = {'format': 1, 'generator': 'Blender', 'models': {}}
+        footprints = {}
         depsgraph = bpy.context.evaluated_depsgraph_get()
         for name, root in self.models.items():
             parts = []
@@ -134,6 +135,19 @@ class AssetPack:
                 parts.append({'name': obj.name, 'joint': obj['joint'], 'pivot': origin,
                               'color': obj.data.materials[0]['gameColor'], 'positions': positions, 'normals': normals})
                 evaluated.to_mesh_clear()
+            # Preserve physical components before the render-material merge. Coordinates
+            # include each joint pivot and use the same game-space axes as the mesh.
+            footprints[name] = []
+            for part in parts:
+                points = list(zip(*[iter(part['positions'])] * 3))
+                if not points:
+                    continue
+                xs = [p[0] + part['pivot'][0] for p in points]
+                ys = [p[1] + part['pivot'][1] for p in points]
+                zs = [p[2] + part['pivot'][2] for p in points]
+                footprints[name].append({'part': part['name'], 'joint': part['joint'],
+                    'yMin': min(ys), 'yMax': max(ys),
+                    'rect': [min(xs), min(zs), max(xs), max(zs)]})
             # Join by joint/material, then index shared vertices. This retains animation
             # pivots and eliminates duplicated triangle data and tiny runtime draw calls.
             buckets = {}
@@ -156,4 +170,6 @@ class AssetPack:
             payload['models'][name] = list(buckets.values())
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(payload, separators=(',', ':')), encoding='utf-8')
+        path.with_name(path.stem + '-footprints.json').write_text(
+            json.dumps(footprints, separators=(',', ':')), encoding='utf-8')
         return payload

@@ -21,6 +21,7 @@ import Phaser from 'phaser';
 import { useGameStore } from '../stores/gameStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { BoardScene } from '../game/phaser/BoardScene';
+import { demote } from '../game/phaser/boardRetention';
 import { releaseContextOnDestroy } from '../game/phaser/RendererLifecycle';
 
 const canvasRoot = ref(null);
@@ -31,6 +32,40 @@ let game;
 let disposed = false;
 let observer;
 let resizeFrame;
+let teardownInProgress = false;
+const contextLost = (event) => {
+  if (teardownInProgress) return;
+  event.preventDefault();
+  demote('board-context-lost');
+  gameStore.rendererRecovering = true;
+  gameStore.animationInProgress = true;
+  gameStore.detachRenderer();
+};
+const contextRestored = () => {
+  if (!disposed && gameStore.sessionActive) {
+    game.scene.stop('BoardScene');
+    game.scene.start('BoardScene');
+  }
+};
+watch(
+  () => [gameStore.sessionActive, gameStore.sessionVersion],
+  ([active]) => {
+    if (!game) return;
+    gameStore.detachRenderer();
+    game.scene.stop('BoardScene');
+    if (active) {
+      game.loop.wake();
+      const scene = game.scene.getScene('BoardScene');
+      scene.levelId = gameStore.currentLevelId;
+      game.scene.start('BoardScene');
+      resize();
+    } else {
+      game.loop.sleep();
+      gameStore.audioManager?.stopAmbientLoop?.();
+    }
+  },
+  { flush: 'post' },
+);
 const resize = () => {
   cancelAnimationFrame(resizeFrame);
   resizeFrame = requestAnimationFrame(() => {
@@ -73,6 +108,7 @@ watch(
 );
 onMounted(() => {
   const scene = new BoardScene();
+  scene.levelId = gameStore.currentLevelId;
   scene.onReady = (payload) => {
     if (disposed || !gameStore.sessionActive) {
       payload.particles.destroy();
@@ -80,14 +116,7 @@ onMounted(() => {
     }
     gameStore.attachRenderer({ ...payload, game });
     payload.particles.setReducedMotion(settings.reducedMotion);
-    gameStore.animationInProgress = true;
-    const session = gameStore.sessionVersion;
     payload.scene.events.once('shutdown', () => payload.particles.destroy());
-    gameStore.renderer.animator.playIntroCascade().finally(() => {
-      if (session !== gameStore.sessionVersion) return;
-      gameStore.animationInProgress = false;
-      gameStore.processQueuedInput();
-    });
     resize();
     if (gameStore.levelCleared) queueMicrotask(() => game?.loop.sleep());
   };
@@ -105,6 +134,8 @@ onMounted(() => {
     input: { activePointers: 1, touch: true },
   });
   releaseContextOnDestroy(game);
+  game.canvas.addEventListener('webglcontextlost', contextLost);
+  game.canvas.addEventListener('webglcontextrestored', contextRestored);
   observer = new ResizeObserver(resize);
   observer.observe(canvasRoot.value);
 });
@@ -112,9 +143,10 @@ onBeforeUnmount(() => {
   disposed = true;
   observer?.disconnect();
   cancelAnimationFrame(resizeFrame);
-  gameStore.renderer?.input?.destroy();
-  gameStore.renderer?.animator?.destroy();
-  gameStore.renderer = null;
+  teardownInProgress = true;
+  game?.canvas.removeEventListener('webglcontextlost', contextLost);
+  game?.canvas.removeEventListener('webglcontextrestored', contextRestored);
+  gameStore.detachRenderer();
   game?.destroy(true);
   // Phaser processes pending destruction on a frame, including from a sleeping victory screen.
   if (game && !game.loop.running) game.loop.wake();

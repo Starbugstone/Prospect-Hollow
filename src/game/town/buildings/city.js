@@ -10,25 +10,37 @@ import { addFishingDock } from './river';
 import { CITY_FAMILIES, isCityEra } from '../../../data/city';
 import { blenderModel, leisureModel } from '../LeisureAssets';
 import { buildTownSquare } from '../TownSquare';
-import assets from '../../../assets/city-meshes.json';
-import future from '../../../assets/future-meshes.json';
+import { cityFamily, resolveModel } from '../assets/MeshCatalog';
 
-export const futureModel = (d, parent, name) => blenderModel(d, parent, future, name, 'future');
+export const futureModel = (d, parent, name) => blenderModel(d, parent, null, name, 'future');
 export const cityModel = (d, parent, name) => {
   const inherited = resolveCityAsset(name, ERAS);
-  return blenderModel(d, parent, assets, inherited, 'city');
+  return blenderModel(d, parent, null, inherited, cityFamily(inherited));
 };
 
 // Meshes are shared architectural pieces exported from Blender, not per-plot copies.
 export function renderCityBuilding(d, parent, kind, label, level, era, serviceLevel = 3) {
   if (!isCityEra(era) || !CITY_FAMILIES[kind] || kind === 'bridge') return false;
   const family = CITY_FAMILIES[kind];
+  const appearance = cityAppearance(era, kind);
+  let asset = appearance.asset;
+  if (asset && resolveModel(cityFamily(asset), asset).status !== 'ready') {
+    const substitute = `${eraEvolution(era).cityAssets}-${family}`;
+    if (resolveModel(cityFamily(substitute), substitute).status === 'ready') asset = substitute;
+    else if (
+      !['airport', 'radio', 'concert', 'television', 'skyline', 'square', 'leisure'].includes(
+        family,
+      )
+    ) {
+      parent.userData.substitute = true;
+      return false;
+    }
+  }
   if (family === 'river') addFishingDock(d, parent, serviceLevel, kind === 'riverPort');
   const root = d.group(parent);
   root.name = `${era} ${kind} level ${level}`;
   const landmark = ['airport', 'radio', 'concert', 'television', 'skyline'].includes(family);
   const profile = eraEvolution(era);
-  const appearance = cityAppearance(era, kind);
   if (landmark) {
     const asset = family === 'airport' ? airportAppearance(era).asset : family;
     futureModel(d, root, asset);
@@ -67,7 +79,8 @@ export function renderCityBuilding(d, parent, kind, label, level, era, serviceLe
     buildTownSquare(d, root, serviceLevel, false);
     addSquareModernization(d, root, level, appearance.roof);
   } else {
-    cityModel(d, root, appearance.asset ?? `${era}-${family}`);
+    cityModel(d, root, asset ?? `${era}-${family}`);
+    if (asset !== appearance.asset) root.userData.substitute = true;
     if (level >= 2) {
       const wing = cityModel(d, root, `${era}-wing`);
       wing.position.x = -(appearance.width ?? 3.65) / 2 + 1.75;

@@ -1,3 +1,5 @@
+import { ALL_MESH_FAMILIES, loadFamilies } from '../src/game/town/assets/MeshCatalog';
+await loadFamilies(ALL_MESH_FAMILIES);
 // Developer-only review surface, served by Vite; never imported by the game.
 import * as THREE from 'three';
 import { TownDiorama } from '../src/game/town/TownDiorama';

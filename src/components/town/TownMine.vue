@@ -2,6 +2,7 @@
   <g
     class="town-mine-entrance"
     :data-era="era"
+    :data-profile="profile.key"
     :role="decorative ? undefined : 'button'"
     :tabindex="decorative ? undefined : 0"
     :aria-label="t('Enter the mine: play level {value0}', { value0: level })"
@@ -19,124 +20,117 @@
       fill="transparent"
     />
     <g aria-hidden="true">
-      <g :stroke="appearance.frame" stroke-width="5" fill="none" transform="translate(-114 5)">
-        <path
-          :d="`M-21 42V${-appearance.height * 13}H21V42M-21 38 21 ${-appearance.height * 13 + 8}M21 38-21 ${-appearance.height * 13 + 8}`"
-        />
-        <circle :cy="-appearance.height * 13" r="10" :fill="appearance.roof" />
-        <path
-          v-if="appearance.height >= 4.8"
-          :d="`M-27 ${-appearance.height * 13 - 13}H27`"
-          :stroke="appearance.roof"
-          stroke-width="8"
-        />
-        <path v-if="appearance.machine !== 'hand'" d="M-40 43V8H-10v35Z" :fill="appearance.wall" />
-        <path v-if="appearance.machine === 'digital'" d="M-44 4-35-5-6-1-12 8Z" fill="#526f79" />
-      </g>
-      <g v-if="stage >= 6" stroke="#91714f" stroke-width="6" fill="none"
-        ><path d="M-80 40V-90M80 40V-90" /><path v-if="stage >= 7" d="M-85-90H85" /><path
-          v-if="stage >= 9"
-          d="M-92-96H92"
-          stroke="#6c8b7b"
-          stroke-width="13"
-      /></g>
       <ellipse cy="68" rx="101" ry="20" fill="#625037" opacity=".22" />
-      <path d="M-105 57-87 1-56-38-7-53 49-32 78 8 106 58 27 78Z" fill="#aa9c77" />
-      <path d="m-105 57 49-95 16 44-15 51Zm98-110 33 55 52 6-29-40Z" fill="#c7b58c" />
-      <path d="m27 78 21-77 30 7 28 50Z" fill="#807d5e" />
-      <path d="M-43 61V-6l42-20 48 24v68Z" fill="#4b4939" />
-      <path d="M-30 60V1L1-13 34 4v59Z" fill="#262e2a" />
+      <path d="M-108 57-88-38-52-81-7-96 49-62 84-11 110 58 27 78Z" fill="#a59c7c" />
+      <path d="m-108 57 56-138 16 74-15 64Zm101-153 33 80 58 5-35-51Z" fill="#c7b58c" />
+      <g
+        v-if="features.has('upper-terrace')"
+        :fill="appearance.wall"
+        :stroke="appearance.frame"
+        stroke-width="3"
+      >
+        <path d="M-60-40V-66H20V-40Z" /><path d="M-67-40H28" stroke-width="7" />
+        <path d="M-51-54H11" stroke="#7aa5ac" stroke-width="9" />
+      </g>
+      <g v-if="features.has('benches')" stroke="#bdb69e" stroke-width="8"
+        ><path d="M-87-18H-33M-81-34H-28M-72-50H-23"
+      /></g>
+      <g v-if="features.has('ropeway')" :stroke="appearance.frame" stroke-width="3">
+        <path d="M-3-85V-48M90-18V50M-3-80 90-15" />
+        <path d="M21-63v12h12v-12M52-42v12h12v-12" :fill="appearance.roof" />
+      </g>
+      <g v-if="profile.summit === 'radio-mast'" stroke="#5e7779" stroke-width="3"
+        ><path d="M0-94V-140M-12-117H12M-9-128H9" /><circle cy="-142" r="4" fill="#ecbb78"
+      /></g>
+      <g v-if="profile.summit === 'wind-turbine'" stroke="#dedecb" stroke-width="5"
+        ><path d="M0-92V-132M0-132-19-145M0-132 21-143M0-132 0-108"
+      /></g>
+      <g v-for="vein in growth.veins" :key="vein.segmentIndex" :fill="vein.colour">
+        <path
+          :transform="`translate(${-55 + (vein.segmentIndex % 9) * 9 + vein.seamIndex * 2} ${-24 - vein.seamIndex * 8})`"
+          d="M-3 0 0-3 4 0 1 3Z"
+        />
+      </g>
+      <g :stroke="appearance.frame" stroke-width="5" fill="none" transform="translate(-113 10)">
+        <path
+          :d="`M-20 40V${-appearance.height * 11}H20V40M-20 32 20 ${-appearance.height * 11 + 8}`"
+        />
+        <circle :cy="-appearance.height * 11" r="10" :fill="appearance.roof" />
+        <path v-if="profile.works !== 'windlass'" d="M-30 42V9H5v33Z" :fill="appearance.wall" />
+      </g>
+      <path d="M-38 60V-5H38V60Z" fill="#283330" />
       <path
-        d="M-47 61V-9M46 64V-5M-50-9 1-31 50-6"
+        d="M-47 61V-13H47V61"
         fill="none"
-        stroke="#735137"
-        stroke-width="12"
+        :stroke="profile.portal === 'timber' ? '#9f784d' : appearance.wall"
+        stroke-width="13"
       />
       <path
-        d="M-50 58V-10M43 60V-5M-49-13 1-34 48-10"
-        fill="none"
-        stroke="#b8945f"
-        stroke-width="4"
+        v-if="profile.portal !== 'timber'"
+        d="M-55-16H55M-7-16H7"
+        :stroke="appearance.roof"
+        stroke-width="10"
       />
-      <path d="m-42 8 18-21M39 11 24-14" stroke="#97774b" stroke-width="6" />
+      <path
+        v-if="
+          ['stepped-cream', 'ribbon-control', 'glazed-tower', 'solar-industrial'].includes(
+            profile.portal,
+          )
+        "
+        d="M-65-25H65M-29-36H29"
+        :stroke="appearance.roof"
+        stroke-width="10"
+      />
+      <path
+        v-if="features.has('solar-canopy')"
+        d="M-69-35-38-51 53-34 31-20Z"
+        fill="#456d7b"
+        stroke="#a5bbb1"
+        stroke-width="2"
+      />
       <path d="M-13 29-28 86M13 31 33 90" stroke="#6b6655" stroke-width="4" />
       <path d="m-19 48 40 3m-43 11 47 3m-51 11 56 4" stroke="#9b7d50" stroke-width="5" />
-      <g class="mine-cart">
-        <path d="m-16 36 30 3 8-5-29-4Z" fill="#b0a686" />
-        <path d="m-16 36 30 3-2 21-26-3Z" fill="#65777a" />
-        <path d="m14 39 8-5-2 20-8 6Z" fill="#42585a" />
-        <path d="m-9 34 4-9 8 4 6-7 9 9-5 6Z" fill="#ae83b4" />
-        <path d="m-5 25 3 10 5-6m6-7 1 13 7-4" fill="#dabbe2" />
-        <circle cx="-8" cy="59" r="5" fill="#3d4339" /><circle
-          cx="9"
-          cy="62"
+      <g class="mine-cart" :data-cart="profile.cart"
+        ><path
+          d="m-16 36 33 2-4 23-26-3Z"
+          :fill="profile.cart === 'hand-tub' ? '#a78158' : appearance.frame" /><path
+          d="m-9 35 4-10 8 4 6-7 9 10Z"
+          fill="#ad87ba" /><circle cx="-8" cy="61" r="5" fill="#394543" /><circle
+          cx="10"
+          cy="63"
           r="5"
-          fill="#3d4339"
-        />
-      </g>
-      <g transform="translate(-58 12)">
-        <ellipse class="mine-lantern-glow" cy="5" rx="22" ry="25" fill="#ffcf70" opacity=".22" />
-        <path d="M-6-4H6V12H-6Z" fill="#efc575" stroke="#69593b" stroke-width="3" />
-        <path d="M-4-5v-6h8v6" fill="none" stroke="#69593b" stroke-width="2" />
-      </g>
+          fill="#394543"
+      /></g>
       <g
-        v-for="n in stage"
-        :key="n"
-        :transform="`translate(${(n % 2 ? -1 : 1) * (68 + Math.floor((n - 1) / 12) * 20)} ${48 - Math.floor(((n - 1) % 12) / 2) * 19})`"
-      >
-        <path
-          d="M0-12 8-3 5 9-5 9-8-3Z"
-          :fill="['#d4a3de', '#7abcea', '#8ad9b7', '#eacf80', '#e8a7c3'][(n - 1) % 5]"
-          stroke="#f6e9c6"
-          stroke-width="1.5"
-        />
-      </g>
-      <path
-        v-if="stage >= 2"
-        d="M-48 20h13m69 0h14M-48 49h13m69 0h14"
-        stroke="#b9c8c0"
-        stroke-width="7"
-      />
-      <path v-if="stage >= 5" d="M-67-38H65" stroke="#6c8b7b" stroke-width="12" />
-      <g v-if="eraEvolution(era).style === 'river-rail'">
-        <rect x="-85" y="4" width="24" height="48" rx="8" fill="#8e7860" />
-        <path d="M-73 8V-53M-52 57V-27H52V57" fill="none" stroke="#68887c" stroke-width="10" />
-      </g>
-      <g v-else-if="eraEvolution(era).modernTransport">
-        <path
-          d="M-51 60V-41H51V60"
-          fill="none"
-          :stroke="eraEvolution(era).motorMine ? '#ddcca8' : '#9ba89a'"
-          stroke-width="15"
-        />
-        <path d="M-51 3V-14M51 3V-14" stroke="#ffebad" stroke-width="8" />
-        <path
-          v-if="eraEvolution(era).motorMine"
-          d="M-65-27H65M-28-53H28"
-          stroke="#648e8b"
-          stroke-width="10"
-        />
-        <g v-else
-          ><rect x="-84" y="4" width="23" height="39" fill="#859990" /><path
-            d="m-73 12-5 11h9l-6 12"
-            stroke="#edcf79"
-            fill="none"
-            stroke-width="3"
-        /></g>
-      </g>
-      <g v-if="eraEvolution(era).digitalCity" stroke="#638b88" stroke-width="4">
-        <path d="M-68-98-39-111 73-84 47-69Z" fill="#8cb1ae" />
-        <path d="M-53-99 57-75m-82-33 84 22" stroke="#526f79" />
-      </g>
-      <path
-        v-if="stage >= 10"
-        d="M0-128 15-112 0-96-15-112Z"
-        fill="#f1d178"
-        stroke="#fff3bb"
+        v-if="features.has('tipple') || features.has('truck-bay')"
+        :stroke="appearance.frame"
+        stroke-width="4"
+        :fill="appearance.wall"
+        ><path d="M87 65V16h40v49M83 16h49v17H83Z" /><path
+          v-if="features.has('truck-bay')"
+          d="M77 55h46v13H77Z" /><circle
+          v-if="features.has('truck-bay')"
+          cx="84"
+          cy="69"
+          r="5"
+          fill="#394543"
+      /></g>
+      <g
+        v-if="features.has('fan-house') || features.has('crusher') || features.has('sorting-plant')"
+        :fill="appearance.wall"
+        :stroke="appearance.roof"
         stroke-width="3"
-      />
-      <g v-if="!decorative" class="mine-label" transform="translate(0 103)">
-        <rect
+        ><path d="M66 22V-7h41v29Z" /><circle cx="86" cy="8" r="10" fill="#5f7980"
+      /></g>
+      <g v-for="n in growth.stockpile + 1" :key="`stock-${n}`"
+        ><path
+          :transform="`translate(${105 - n * 8} 65)`"
+          d="M-8 0-6-12H6L8 0Z"
+          :fill="appearance.frame"
+      /></g>
+      <path v-if="growth.plaque" d="M-67 57h16v10h-16Z" fill="#d8bd76" />
+      <g v-if="!decorative" class="mine-label" transform="translate(0 103)"
+        ><rect
           x="-93"
           y="-17"
           width="186"
@@ -145,18 +139,22 @@
           fill="#e1f0c0"
           stroke="#e7d1a0"
           stroke-width="2"
-        />
-        <text y="6" text-anchor="middle" fill="#405b35" font-family="Georgia, serif" font-size="18">
-          {{ t('Mine · Level') }} {{ level }} →</text
-        >
-      </g>
+        /><text
+          y="6"
+          text-anchor="middle"
+          fill="#405b35"
+          font-family="Georgia, serif"
+          font-size="18"
+          >{{ t('Mine · Level') }} {{ level }} →</text
+        ></g
+      >
     </g>
   </g>
 </template>
 <script setup>
-import { eraEvolution } from '../../data/eras';
 import { computed } from 'vue';
-import { mineAppearance } from '../../data/mineEvolution';
+import { mineAppearance, mineProfile } from '../../data/mineEvolution';
+import { mineGrowth } from '../../data/mineGrowth';
 import { t } from '../../i18n';
 const props = defineProps({
   level: { type: Number, default: 1 },
@@ -165,5 +163,10 @@ const props = defineProps({
   era: { type: String, default: 'frontier' },
 });
 const appearance = computed(() => mineAppearance(props.era));
+const profile = computed(() => mineProfile(props.era));
+const growth = computed(() => mineGrowth(props.stage));
+const features = computed(
+  () => new Set(profile.value.site.map((f) => (typeof f === 'string' ? f : f.feature))),
+);
 defineEmits(['enter']);
 </script>

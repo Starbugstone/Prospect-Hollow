@@ -75,7 +75,7 @@ Mining coin payouts scale with the chapter number: chapter 1 pays 1×, chapter 2
 
 [Desktop town square](images/village-town-square-desktop.png) · [Mobile happiness](images/village-happiness-mobile.png) · [Mobile parcel prices](images/village-prices-mobile.png)
 
-See [the current review](analysis.md) for validation and remaining limits.
+See [the era architecture guide](era-architecture.md) for runtime contracts, regression checks and remaining device-validation gates.
 
 Entering the mine from the town, navigation or museum prompts for confirmation when any construction or modernization is ready for its final tap. “Back to town” returns to the buildings; “Continue anyway” starts the chosen level and mode without completing projects. Work still needing puzzles does not trigger the reminder, and continuing an existing mine session does not interrupt it.
 

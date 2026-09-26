@@ -6,7 +6,7 @@ import { bridgeDeckHeight } from './TownRiver';
 
 export function busPose(path, time) {
   const speed = 1.6,
-    radius = 0.55,
+    radius = 0.25,
     turnSeconds = (Math.PI * radius) / speed;
   const travel = path.total / speed;
   const cycle = travel * 2 + turnSeconds * 2;
@@ -29,8 +29,8 @@ export function busPose(path, time) {
       returning ? path.total - (phase - travel - turnSeconds) * speed : phase * speed,
     );
     if (returning) pose.heading += Math.PI;
-    pose.x += Math.cos(pose.heading) * radius;
-    pose.z -= Math.sin(pose.heading) * radius;
+    pose.x += Math.cos(pose.heading) * 0.25;
+    pose.z -= Math.sin(pose.heading) * 0.25;
   }
   return { ...pose, distance: time * speed };
 }
@@ -46,7 +46,7 @@ export function addMotorActivity(d, town) {
   bus.userData.trafficRadius = 1.4;
   (d.trafficActors ??= []).push(bus);
   d.motions.push((time) => {
-    const pose = busPose(path, time);
+    const pose = busPose(path, time - (bus.userData.trafficDelay ?? 0));
     const bridge = pose.x >= 24 && pose.x <= 38 && Math.abs(pose.z - 7.5) < 1;
     bus.position.set(pose.x, bridge ? bridgeDeckHeight(pose.x) + 0.17 : 0.07, pose.z);
     bus.rotation.y = pose.heading;

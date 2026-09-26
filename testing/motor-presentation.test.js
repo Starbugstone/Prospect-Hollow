@@ -1,3 +1,5 @@
+import { addMineSite } from '../src/game/town/mine/addMineSite';
+import { Matrix4 } from 'three';
 import { expect, it } from 'vitest';
 import { Box3, BoxGeometry, Group, MeshBasicMaterial, Scene, Vector3 } from 'three';
 import { TownDiorama } from '../src/game/town/TownDiorama';
@@ -102,12 +104,21 @@ it('runs one bus on connected roads with bounded geometry and a pausable shared 
   expect(visited.size).toBeGreaterThan(5);
 });
 
-it('keeps all 24 mine chapter jewels attached around the entrance', () => {
+it('keeps chapter growth bounded to instanced hillside seams', () => {
   const d = diorama();
-  d.mine(d.world, 'Mine', 24);
-  const jewels = d.world.getObjectByName('Mine chapter jewels');
-  expect(jewels.children).toHaveLength(24);
-  const bounds = new Box3().setFromObject(jewels);
-  expect(bounds.max.y).toBeLessThan(4.7);
-  expect(bounds.max.x - bounds.min.x).toBeLessThan(5);
+  d.town = createTown();
+  d.mineStage = 54;
+  const site = addMineSite(d, d.world, 'frontier'),
+    veins = site.userData.veins;
+  expect(veins.isInstancedMesh).toBe(true);
+  expect(veins.count).toBe(54);
+  expect(site.getObjectByName('Mine chapter jewels')).toBeUndefined();
+  const matrix = new Matrix4();
+  for (let i = 0; i < 54; i++) {
+    veins.getMatrixAt(i, matrix);
+    const p = new Vector3().setFromMatrixPosition(matrix);
+    expect(p.z).toBeLessThan(-1);
+    expect(p.x).toBeGreaterThan(-6);
+    expect(p.x).toBeLessThan(1);
+  }
 });

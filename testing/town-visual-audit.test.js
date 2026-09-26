@@ -1,3 +1,7 @@
+import { vi as testTiming } from 'vitest';
+// Full geometry galleries and long cosmetic simulations may exceed the default 5s on CI.
+testTiming.setConfig({ testTimeout: 20000 });
+import { updateTownLocomotion, vehicleDistance } from '../src/game/town/TownLocomotion';
 import { afterEach, expect, it } from 'vitest';
 import { createHash } from 'node:crypto';
 import { Group, Scene, MeshBasicMaterial, Vector3, Box3 } from 'three';
@@ -13,7 +17,7 @@ import { renderMotorLandmark } from '../src/game/town/buildings/motorAge';
 import { renderBuilding, renderModernization } from '../src/game/town/buildings/BuildingRenderer';
 import { addTownVisitors } from '../src/game/town/TownActivity';
 import { addMotorActivity } from '../src/game/town/TownMotorActivity';
-import { resolveTownTraffic } from '../src/game/town/TownTraffic';
+import { placeTownSpawns } from '../src/game/town/TownTraffic';
 import { TownEraIncident, INCIDENT_DURATION } from '../src/game/town/TownEraIncident';
 import { PLOTS, LANE_X } from '../src/game/town/TownLayout';
 import { TownBuildSequence } from '../src/game/town/TownBuildSequence';
@@ -160,16 +164,30 @@ it('keeps pedestrians clear of riders, cars, buses and each other through a comp
           [x, 15.5],
         ],
       });
-    for (let time = 0; time < 140; time += 0.1) {
+    for (let time = 0; time < 60; time += 1 / 60) {
       d.actors.forEach((a) => d.animatePerson(a, time));
       d.motions.forEach((f) => f(time));
-      resolveTownTraffic(d);
+      updateTownLocomotion(d);
       const actors = d.actors.filter((a) => a.root.visible && a.root.scale.x > 0.5);
       actors.forEach((actor, i) => {
         for (const other of actors.slice(0, i))
           expect(actor.root.position.distanceTo(other.root.position)).toBeGreaterThanOrEqual(0.549);
         for (const vehicle of d.trafficActors ?? [])
-          expect(actor.root.position.distanceTo(vehicle.position)).toBeGreaterThanOrEqual(1.049);
+          expect(
+            vehicleDistance(
+              {
+                ...vehicle.userData.vehicleBox,
+                halfWidth: vehicle.userData.vehicleBox?.halfWidth ?? 0.4,
+                halfLength: vehicle.userData.vehicleBox?.halfLength ?? 0.8,
+                cx: vehicle.position.x,
+                cz: vehicle.position.z,
+                heading: vehicle.rotation.y,
+              },
+              actor.root.position.x,
+              actor.root.position.z,
+            ),
+            `${era} t=${time} person=${actor.root.position.toArray()} vehicle=${vehicle.name}:${vehicle.position.toArray()}`,
+          ).toBeGreaterThanOrEqual(0.29);
       });
     }
   }

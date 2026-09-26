@@ -1,3 +1,6 @@
+import { vi as testTiming } from 'vitest';
+// Full geometry galleries and long cosmetic simulations may exceed the default 5s on CI.
+testTiming.setConfig({ testTimeout: 20000 });
 import { ERAS } from '../src/data/eras';
 import { afterEach, expect, it, vi } from 'vitest';
 import { MeshBasicMaterial, Scene } from 'three';
@@ -20,6 +23,7 @@ function fixture() {
   view.elapsed = 0;
   view.controls = {};
   view.renderer = { shadowMap: {} };
+  view.frameCache = { valid: false };
   view.render = () => {};
   view.actorRenderer = new TownActors(view.scene);
   view.buildingRenderer = new TownStatics(view.scene);
@@ -42,6 +46,31 @@ afterEach(() => {
     view.materials.forEach((material) => material.dispose());
     view.contactShadowMaterial.dispose();
   }
+});
+
+it('swaps a ready plot without resetting other actors and cancels superseded preparation', () => {
+  const { view, town, labels } = fixture();
+  view.update(town, labels);
+  const world = view.world,
+    generation = view.generation;
+  const people = view.actors
+    .filter((a) => a.persistentKey)
+    .map((a) => ({ actor: a, position: a.root.position.clone() }));
+  const cancel = (view.cancelRouteWork = vi.fn());
+  const updated = { ...town, buildings: { ...town.buildings, home: 3 } };
+  view.changeTown(updated, labels, 0, null);
+  expect(view.world).toBe(world);
+  expect(view.generation).toBeGreaterThan(generation);
+  expect(cancel).toHaveBeenCalledOnce();
+  for (const { actor, position } of people) {
+    expect(view.actors).toContain(actor);
+    expect(actor.root.position.equals(position)).toBe(true);
+  }
+  // A purchase during the first staged population restarts that generation safely.
+  view.lifeReady = false;
+  const rebuild = vi.spyOn(view, 'update').mockImplementation(() => {});
+  view.changeTown({ ...updated, buildings: { ...updated.buildings, well: 2 } }, labels, 0, null);
+  expect(rebuild).toHaveBeenCalledOnce();
 });
 
 it('reuses unchanged plots and windmills while rebuilding a changed construction site', () => {
@@ -101,7 +130,8 @@ it('rebuilds an interrupted reveal and invalidates models for progress, labels, 
   }
   const mine = view.plotCache.get('mine').group;
   view.update(town, labels, 1);
-  expect(view.plotCache.get('mine').group).not.toBe(mine);
+  expect(view.plotCache.get('mine').group).toBe(mine);
+  expect(view.staticScenery.entries.get('mine-works').group.userData.veins.count).toBe(1);
 });
 
 it.each(ERAS.map((era) => era.id))(

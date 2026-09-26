@@ -21,10 +21,13 @@ export function addTownLife(d, town) {
       });
       neighbor.root.name = 'Neighbor fetching water';
       neighbor.duration *= 0.8;
-      const bucket = d.group(neighbor.arms[0].lower, 0, -0.3, 0);
-      d.mesh(bucket, 'cylinder', [0.12, 0.17, 0.12], [0, -0.02, 0], '#8a9c98');
-      d.rod(bucket, [-0.1, 0.05, 0], [0, 0.15, 0], 0.012, '#6c7467');
-      d.rod(bucket, [0, 0.15, 0], [0.1, 0.05, 0], 0.012, '#6c7467');
+      if (!neighbor.root.getObjectByName('Water bucket')) {
+        const bucket = d.group(neighbor.arms[0].lower, 0, -0.3, 0);
+        bucket.name = 'Water bucket';
+        d.mesh(bucket, 'cylinder', [0.12, 0.17, 0.12], [0, -0.02, 0], '#8a9c98');
+        d.rod(bucket, [-0.1, 0.05, 0], [0, 0.15, 0], 0.012, '#6c7467');
+        d.rod(bucket, [0, 0.15, 0], [0.1, 0.05, 0], 0.012, '#6c7467');
+      }
     }
   }
 

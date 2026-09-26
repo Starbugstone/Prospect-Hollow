@@ -1,4 +1,6 @@
-import { Vector3 } from 'three';
+import { scheduleWork } from '../PresentationWork';
+import { AnimalSpaceBuilder } from './TownAnimalSpace';
+import { Group, Vector3 } from 'three';
 import { ANIMAL_HABITATS, TOWN_ANIMALS } from '../../data/townAnimals';
 import { eraEvolution } from '../../data/eras';
 import { atPlot, PLOTS, plotStreet, routeGraph, routeOnGraph } from './TownLayout';
@@ -31,25 +33,38 @@ function landingPoint(d, nav, point) {
 }
 
 export function animalHabitats(d, town) {
-  const nav = d.animalNavigation ?? d.navigation ?? new TownNavigation();
-  const habitats = ANIMAL_HABITATS.filter(({ building }) => town.buildings[building] > 0).flatMap(
-    (definition) => {
-      const { building, point } = definition;
-      const [x, z] = atPlot(building, point[0], point[2]);
-      const safe = landingPoint(d, nav, [x, point[1], z]);
-      return safe ? [{ ...definition, kind: 'ground', point: safe }] : [];
-    },
-  );
-  // Markers live on actual scenery, survive static batching, and disappear with
-  // the poles when an era buries its wires. No duplicate power-grid calculation.
-  d.world.updateMatrixWorld(true);
-  d.world.traverse((root) => {
-    for (const point of root.userData.animalPerches ?? []) {
+  const work = prepareHabitats(d, town);
+  let step;
+  do {
+    step = work.next();
+  } while (!step.done);
+  return step.value;
+}
+function* prepareHabitats(d, town) {
+  const nav = d.animalNavigation ?? d.navigation ?? new TownNavigation(),
+    habitats = [];
+  for (const definition of ANIMAL_HABITATS) {
+    if (!town.buildings[definition.building]) continue;
+    const { building, point } = definition,
+      [x, z] = atPlot(building, point[0], point[2]);
+    const safe = landingPoint(d, nav, [x, point[1], z]);
+    if (safe) habitats.push({ ...definition, kind: 'ground', point: safe });
+    yield;
+  }
+  const habitatWorld = d.habitatWorld ?? d.world;
+  habitatWorld.updateMatrixWorld(true);
+  const roots = [];
+  habitatWorld.traverse((root) => {
+    if (root.userData.animalPerches) roots.push(root);
+  });
+  for (const root of roots) {
+    for (const point of root.userData.animalPerches) {
       const position = root.localToWorld(new Vector3(...point)).toArray();
       if (!d.animalSpace || d.animalSpace.openSky(position))
         habitats.push({ kind: 'perch', point: position });
     }
-  });
+    yield;
+  }
   return habitats;
 }
 
@@ -126,6 +141,7 @@ function addGroundAnimal(d, species, path, seed, options = {}) {
     state: 'walking',
     pose: {},
   };
+  model.root.visible = false;
   d.animals.push(animal);
   return animal;
 }
@@ -174,7 +190,17 @@ function addFeeder(d, habitat, nav, era) {
     seed.visible = false;
     return seed;
   });
-  return { ...actor, path, habitat, station, grain, seeds, seedTargets, active: false, pose: {} };
+  return {
+    ...actor,
+    path,
+    habitat,
+    station,
+    grain,
+    seeds,
+    seedTargets,
+    active: false,
+    pose: { x: actor.root.position.x, y: actor.root.position.y, z: actor.root.position.z },
+  };
 }
 
 function updateFeeder(feeder, time) {
@@ -282,7 +308,7 @@ function updateGround(d, animal, time, dt, profile) {
         Math.sin(animal.pose.heading) * (threat.position.x - root.position.x) +
         Math.cos(animal.pose.heading) * (threat.position.z - root.position.z);
       animal.direction = toward > 0 ? -1 : 1;
-      animal.progress += dt * animal.speed * 2 * animal.direction;
+      if (!animal.motion) animal.progress += dt * animal.speed * 2 * animal.direction;
     }
     root.rotation.y = Math.atan2(
       threat.position.x - root.position.x,
@@ -294,7 +320,7 @@ function updateGround(d, animal, time, dt, profile) {
     animal.state = animal.idle;
   } else {
     animal.state = 'walking';
-    animal.progress += dt * animal.speed * animal.direction;
+    if (!animal.motion) animal.progress += dt * animal.speed * animal.direction;
     animal.untilStop -= dt;
     if (animal.untilStop <= 0) {
       animal.rest = TOWN_ANIMALS[animal.species].rest;
@@ -306,7 +332,8 @@ function updateGround(d, animal, time, dt, profile) {
     (((animal.progress % path.total) + path.total) % path.total) / path.total,
     animal.pose,
   );
-  root.position.set(pose.x, wild ? groundHeight(pose.x, pose.z) + 0.07 : pose.y, pose.z);
+  if (!animal.motion)
+    root.position.set(pose.x, wild ? groundHeight(pose.x, pose.z) + 0.07 : pose.y, pose.z);
   if (!threat || wild) root.rotation.y = pose.heading + (animal.direction < 0 ? Math.PI : 0);
   if (feeding)
     root.rotation.y = Math.atan2(food.habitat.point[0] - pose.x, food.habitat.point[2] - pose.z);
@@ -315,7 +342,9 @@ function updateGround(d, animal, time, dt, profile) {
     animal,
     time + animal.seed,
     animal.state,
-    animal.state === 'walking' || animal.state === 'retreating',
+    animal.motion
+      ? animal.acceptedWalking
+      : animal.state === 'walking' || animal.state === 'retreating',
   );
 }
 
@@ -410,16 +439,107 @@ function updateBird(d, animal, time, dt, habitats, profile) {
 
 // A bounded, disposable runtime on the diorama clock. Rebuilding the village
 // replaces the cast and prepared routes; no timers, persistence or rewards.
-export function addTownAnimals(d, town) {
+export function addTownAnimals(d, town, preparedSpace) {
+  if (!population(town) && !town.buildings.farm) {
+    d.animals = [];
+    return;
+  }
+  if (d.deferLife && !preparedSpace) {
+    d.cancelAnimalWork?.();
+    const generation = d.generation;
+    const builder = AnimalSpaceBuilder(d);
+    function* prepare() {
+      let next;
+      do {
+        next = builder.next();
+        if (!next.done) yield;
+      } while (!next.done);
+      if (generation !== d.generation) return;
+      const stage = Object.create(d);
+      Object.assign(stage, {
+        world: new Group(),
+        habitatWorld: d.world,
+        animals: [],
+        actors: [],
+        motions: [],
+        animalFeeder: null,
+        retainedActors: null,
+        retainedAnimals: null,
+      });
+      let committed = false;
+      try {
+        yield* populateAnimals(stage, town, next.value);
+        if (generation !== d.generation) return;
+        const retained =
+          d.retainedAnimals ?? new Map((d.animals ?? []).map((a) => [`${a.species}:${a.seed}`, a]));
+        stage.animals = stage.animals.map((fresh) => {
+          const key = `${fresh.species}:${fresh.seed}`,
+            old = retained.get(key);
+          if (!old) return fresh;
+          retained.delete(key);
+          d.clearGroup(fresh.root);
+          Object.assign(old, {
+            path: fresh.path,
+            habitats: fresh.habitats,
+            space: stage.animalSpace,
+          });
+          old.clearance = fresh.clearance;
+          return old;
+        });
+        for (const old of retained.values()) d.clearGroup(old.root);
+        if (d.animalFeeder) {
+          d.clearGroup(d.animalFeeder.root);
+          d.clearGroup(d.animalFeeder.grain);
+          d.actors = d.actors.filter((a) => a.root !== d.animalFeeder.root);
+        }
+        d.world.add(...stage.world.children);
+        stage.world = d.world;
+        for (const animal of stage.animals) d.world.add(animal.root);
+        d.actors.push(...stage.actors);
+        stage.actors = d.actors;
+        for (const key of [
+          'animals',
+          'animalFeeder',
+          'animalHabitats',
+          'animalSpace',
+          'animalNavigation',
+          'animalMotion',
+        ])
+          d[key] = stage[key];
+        d.retainedAnimals = null;
+        d.motions.push(stage.animalMotion);
+        committed = true;
+      } finally {
+        if (!committed) d.clearGroup(stage.world);
+      }
+      d.rebuildActors();
+      d.render();
+    }
+    d.cancelAnimalWork = scheduleWork(prepare(), {
+      budget: 8,
+      isCurrent: () => generation === d.generation,
+    });
+    return;
+  }
+  const work = populateAnimals(d, town, preparedSpace);
+  while (!work.next().done) {}
+}
+function* populateAnimals(d, town, preparedSpace) {
+  const oldFeeder = d.animalFeeder;
+  if (oldFeeder) {
+    d.actors = d.actors.filter((actor) => actor.root !== oldFeeder.root);
+    d.clearGroup(oldFeeder.root);
+    d.clearGroup(oldFeeder.grain);
+  }
   d.animals = [];
   d.animalFeeder = null;
   d.animalHabitats = [];
-  d.animalSpace = animalSpace(d);
+  d.animalSpace = preparedSpace ?? animalSpace(d);
   const nav = (d.animalNavigation = animalNavigation(d.navigation, d.animalSpace));
   if (!population(town) && !town.buildings.farm) return;
   const profile = eraEvolution(town.era);
   const graph = routeGraph(town);
-  const habitats = animalHabitats(d, town);
+  const habitats = yield* prepareHabitats(d, town);
   d.animalHabitats = habitats;
   for (const species of ['dog', 'cat']) {
     if (!population(town)) continue;
@@ -440,6 +560,7 @@ export function addTownAnimals(d, town) {
       );
     }
     addGroundAnimal(d, species, path, species === 'dog' ? 4 : 17);
+    yield;
   }
   if (town.buildings.farm)
     for (let n = 0; n < 3; n++) {
@@ -452,6 +573,7 @@ export function addTownAnimals(d, town) {
         [-2, 2.8],
       ].map(([x, z]) => atPlot('farm', x, z + n * 0.13));
       addGroundAnimal(d, 'hen', groundRoute(nav, points, TOWN_ANIMALS.hen.radius), 30 + n * 11);
+      yield;
     }
   const ground = habitats.filter((h) => h.kind === 'ground');
   for (let n = 0; n < Math.min(3, ground.length + 1); n++) {
@@ -481,11 +603,13 @@ export function addTownAnimals(d, town) {
       visit: 0,
       state: 'pecking',
     };
+    model.root.visible = false;
     d.animals.push(animal);
     if (n === 2) {
       animal.root.position.add(new Vector3(-12, d.animalSpace.ceiling, 3));
       startFlight(animal, habitat);
     }
+    yield;
   }
   d.animalFeeder = population(town)
     ? addFeeder(
@@ -495,6 +619,7 @@ export function addTownAnimals(d, town) {
         town.era,
       )
     : null;
+  yield;
   const edge =
     Math.max(
       23,
@@ -519,7 +644,30 @@ export function addTownAnimals(d, town) {
       91 + n * 43,
       { wild: true },
     );
+    yield;
   }
+  for (const animal of d.animals) animal.root.visible = true;
+  if (d.retainedAnimals) {
+    d.animals = d.animals.map((fresh) => {
+      const old = d.retainedAnimals.get(`${fresh.species}:${fresh.seed}`);
+      if (!old) return fresh;
+      d.retainedAnimals.delete(`${fresh.species}:${fresh.seed}`);
+      d.clearGroup(fresh.root);
+      Object.assign(old, {
+        path: fresh.path,
+        habitats: fresh.habitats,
+        space: fresh.space ?? d.animalSpace,
+      });
+      d.world.add(old.root);
+      return old;
+    });
+    for (const old of d.retainedAnimals.values()) d.clearGroup(old.root);
+    d.retainedAnimals = null;
+  }
+  for (const animal of d.animals)
+    if (animal.species !== 'pigeon')
+      animal.clearance = (from, to, radius) =>
+        d.animalSpace.segment(from, to, radius, animal.height ?? 0.6);
   let previous = d.elapsed ?? 0;
   let initialized = false;
   const update = (time) => {
@@ -534,5 +682,6 @@ export function addTownAnimals(d, town) {
     }
   };
   update(previous);
+  d.animalMotion = update;
   d.motions.push(update);
 }

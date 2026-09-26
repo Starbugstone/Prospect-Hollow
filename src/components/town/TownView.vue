@@ -628,6 +628,7 @@
   </main>
 </template>
 <script setup>
+import { performanceMark } from '../../game/PresentationWork';
 import { isCityEra } from '../../data/city';
 import TownProjects from './TownProjects.vue';
 import TownPresentationCinematic from './TownPresentationCinematic.vue';
@@ -1120,8 +1121,10 @@ function showConstruction(keepDirectory = false) {
   if (!keepDirectory) mapFrame.value?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
 }
 function finishBuilding(id, keepDirectory = false) {
+  performanceMark('build-tap');
   const stage = town.value.projects[id]?.stage;
   if (!campaign.finishConstruction(id, stage)) return;
+  performanceMark('build-accepted');
   selected.value = id;
   showConstruction(keepDirectory);
   celebrateBuilding();

@@ -7,7 +7,7 @@ import { addTownAnimals, animalHabitats } from '../src/game/town/TownAnimals';
 import { addPowerGrid, addEraStreetscape } from '../src/game/town/TownEvolution';
 import { townNavigation, walkPose } from '../src/game/town/TownNavigation';
 import { buildTownSquare } from '../src/game/town/TownSquare';
-import { resolveTownTraffic } from '../src/game/town/TownTraffic';
+import { placeTownSpawns } from '../src/game/town/TownTraffic';
 import { createTown } from '../src/data/town';
 import { ERAS, ERA_BY_ID, eraEvolution } from '../src/data/eras';
 import { defineEra } from '../src/data/eraDefinitions';
@@ -227,7 +227,7 @@ it('startles grounded pigeons and makes street animals give traffic space', () =
   car.position.copy(dog.root.position);
   advance(d, 1.1);
   expect(dog.state).toBe('alert');
-  resolveTownTraffic(d);
+  placeTownSpawns(d);
   expect(dog.root.position.distanceTo(car.position)).toBeGreaterThanOrEqual(1.15 - 1e-6);
 });
 

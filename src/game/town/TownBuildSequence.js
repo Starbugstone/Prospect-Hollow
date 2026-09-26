@@ -73,7 +73,11 @@ export class TownBuildSequence {
             ? 0
             : Math.PI;
       if (path) {
-        const pose = walkPose(path, leaving ? 1 - progress : progress);
+        const pose = walkPose(
+          path,
+          leaving ? 1 - progress : progress,
+          (worker.travelPose ??= { x: arrival[0], y: 0.08, z: arrival[1] }),
+        );
         worker.root.position.set(pose.x, pose.y, pose.z);
         if (progress < 1) worker.root.rotation.y = pose.heading + (leaving ? Math.PI : 0);
       }

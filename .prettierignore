@@ -13,3 +13,7 @@ src/assets/leisure-meshes.json
 src/assets/city-meshes.json
 
 src/assets/future-meshes.json
+
+src/assets/meshes/
+src/assets/board/frames.json
+src/data/generated/
