@@ -1715,9 +1715,15 @@ export class TownDiorama {
   }
   rebuildActors() {
     this.manualBlockers = [];
+    const traffic = new Set(this.trafficActors ?? []);
     this.scene.traverse((root) => {
       const actor = root.userData.locomotionActor;
-      if (actor?.manual && !actor.transportVisitor) this.manualBlockers.push(actor);
+      if (!actor?.manual || actor.transportVisitor) return;
+      // A mounted rider shares the carrier's traffic footprint. Registering a
+      // second pedestrian footprint makes the horse yield to its own rider.
+      for (let parent = root.parent; parent; parent = parent.parent)
+        if (traffic.has(parent)) return;
+      this.manualBlockers.push(actor);
     });
     this.actorRenderer.rebuild(
       [...(this.world?.children ?? []), ...(this.raid?.root.children ?? [])].filter(

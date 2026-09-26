@@ -244,6 +244,56 @@ it('uses narrow oriented vehicle boxes and holds a blocked route without snappin
   expect(a.motion.state).toBe('waiting');
 });
 
+it.each([false, true])('clears traffic beside a blocked sidewalk (idle villager: %s)', (idle) => {
+  const root = new Group(),
+    vehicle = new Group();
+  root.position.set(-0.2, 0.07, 0);
+  vehicle.position.set(0, 0.07, -2);
+  vehicle.userData.vehicleBox = { halfWidth: 0.4, halfLength: 0.8 };
+  const actor = {
+    root,
+    work: idle ? 'greet' : undefined,
+    walkPath: walkPath([
+      [-0.2, 0.07, 0],
+      [2, 0.07, 0],
+    ]),
+  };
+  const d = {
+    actors: [actor],
+    trafficActors: [vehicle],
+    navigation: new TownNavigation([{ x: -0.8, z: 0, y: 0, height: 2, radius: 0.3 }]),
+  };
+  updateTownLocomotion(d);
+  let waited = false;
+  for (let frame = 0; frame < 420; frame++) {
+    const previous = root.position.clone(),
+      proposedZ = vehicle.position.z + 1 / 60;
+    vehicle.position.z = proposedZ;
+    updateTownLocomotion(d);
+    waited ||= vehicle.position.z < proposedZ;
+    expect(root.position.distanceTo(previous)).toBeLessThanOrEqual(0.55 / 60 + 1e-6);
+    expect(d.navigation.clear(root.position.toArray(), 0.29)).toBe(true);
+    expect(
+      vehicleDistance(vehicle.userData.locomotionBox, root.position.x, root.position.z),
+    ).toBeGreaterThanOrEqual(0.33 - 1e-6);
+  }
+  expect(waited).toBe(true);
+  expect(root.position.x).toBeGreaterThan(0.7);
+  expect(vehicle.position.z).toBeGreaterThan(2);
+});
+
+it('does not cross through a vehicle when the nearer sidewalk is blocked', () => {
+  const a = walker('animal', -0.64, 0, 1, 0, 0.18),
+    grid = new LocomotionGrid();
+  const wall = new TownNavigation([{ x: -1.02, z: 0, y: 0, height: 2, radius: 0.2 }]);
+  const vehicle = { cx: 0, cz: 0, heading: 0, halfWidth: 0.4, halfLength: 0.8 };
+  for (let frame = 0; frame < 120; frame++) {
+    stepLocomotion([a], wall, [vehicle], grid);
+    expect(vehicleDistance(vehicle, a.motion.x, a.motion.z)).toBeGreaterThanOrEqual(0.22 - 1e-6);
+  }
+  expect(a.motion.x).toBeLessThan(0);
+});
+
 it('waits for an accepted walk out before activating an occupied footprint', () => {
   const actor = { root: new Group(), seed: 1 };
   actor.root.position.set(0, 0.07, 0);

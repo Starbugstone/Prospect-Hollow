@@ -162,8 +162,8 @@ export function stepLocomotion(agents, statics, vehicles, grid, h = LOCOMOTION_S
       const future = local(
         to[0],
         to[2],
-        vehicle.cx + (vehicle.cx - (vehicle.previousX ?? vehicle.cx)) * 60,
-        vehicle.cz + (vehicle.cz - (vehicle.previousZ ?? vehicle.cz)) * 60,
+        vehicle.cx + (vehicle.velocityX ?? (vehicle.cx - (vehicle.previousX ?? vehicle.cx)) / h),
+        vehicle.cz + (vehicle.velocityZ ?? (vehicle.cz - (vehicle.previousZ ?? vehicle.cz)) / h),
       );
       // Reserve an approaching crossing before entering its swept lane.
       const currentClear = sweptClear(box, start, end, m.radius + GAP),
@@ -172,20 +172,45 @@ export function stepLocomotion(agents, statics, vehicles, grid, h = LOCOMOTION_S
         // Someone already crossing must finish stepping out of the swept lane;
         // freezing inside an approaching vehicle's envelope would create contact.
         const current = local(from[0], from[2], vehicle.cx, vehicle.cz);
-        const side = current[0] < 0 ? -1 : 1,
-          shift = side * (w + m.radius + GAP + 0.04) - current[0];
-        const amount = Math.max(-travel, Math.min(travel, shift));
-        const escape = [from[0] + amount * c, from[1], from[2] - amount * s];
-        const escaping =
-          Math.abs(shift) > 1e-5 &&
-          Math.abs(shift) < 1.5 &&
-          (!statics || statics.segment(from, escape, m.radius)) &&
-          (!a.clearance || a.clearance(from, escape, m.radius));
-        if (escaping) {
-          p.dx = escape[0] - from[0];
-          p.dz = escape[2] - from[2];
-        } else p.dx = p.dz = 0;
+        const side = current[0] < 0 ? -1 : 1;
+        p.dx = p.dz = 0;
+        for (const direction of [side, -side]) {
+          const shift = direction * (w + m.radius + GAP + 0.04) - current[0];
+          const exit = [from[0] + shift * c, from[1], from[2] - shift * s];
+          if (
+            Math.abs(shift) < 1e-5 ||
+            Math.abs(shift) >= 1.5 ||
+            (statics && !statics.segment(from, exit, m.radius)) ||
+            (a.clearance && !a.clearance(from, exit, m.radius)) ||
+            (direction !== side &&
+              !sweptClear(
+                box,
+                current,
+                local(exit[0], exit[2], vehicle.cx, vehicle.cz),
+                m.radius + GAP,
+              ))
+          )
+            continue;
+          // Idle villagers can step aside too; fixed worker proxies have zero
+          // speed. Check the whole exit so the nearer wall cannot trap a walker.
+          const amount = Math.max(-m.maxSpeed * h, Math.min(m.maxSpeed * h, shift));
+          p.dx = amount * c;
+          p.dz = -amount * s;
+          break;
+        }
       }
+    }
+    // A later vehicle can change the escape chosen for an earlier one. Validate
+    // the final step against all accepted traffic positions before committing it.
+    for (const vehicle of vehicles) {
+      if (!p.dx && !p.dz) break;
+      const c = Math.cos(vehicle.heading),
+        s = Math.sin(vehicle.heading),
+        x = from[0] - vehicle.cx,
+        z = from[2] - vehicle.cz;
+      const start = [x * c - z * s, from[1], x * s + z * c];
+      const end = [start[0] + p.dx * c - p.dz * s, from[1], start[2] + p.dx * s + p.dz * c];
+      if (!sweptClear(vehicle.footprint, start, end, m.radius + GAP)) p.dx = p.dz = 0;
     }
   }
   // Symmetric swept pair checks; stable ID ordering and common snapshots make
@@ -323,6 +348,10 @@ export function updateTownLocomotion(d, h = LOCOMOTION_STEP) {
         halfLength: root.userData.trafficRadius ?? 0.8,
       };
       const v = (root.userData.locomotionBox ??= {});
+      // Keep the intended approach even when a pedestrian makes traffic wait.
+      // Otherwise both sides lose the crossing reservation and wait forever.
+      v.velocityX = (root.position.x - (v.cx ?? root.position.x)) / h;
+      v.velocityZ = (root.position.z - (v.cz ?? root.position.z)) / h;
       if (v.cx !== undefined) {
         const candidate = aVehicle(root, box);
         if (

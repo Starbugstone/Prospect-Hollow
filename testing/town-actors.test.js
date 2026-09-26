@@ -13,7 +13,14 @@ import {
 import { TownActors } from '../src/game/town/TownActors';
 import { TownDiorama, PLOTS } from '../src/game/town/TownDiorama';
 import { SHERIFF_PATROL } from '../src/game/town/TownLayout';
-import { TownRaid, RAID_DURATION, RAID_SPEED, mountedRider } from '../src/game/town/TownActivity';
+import {
+  TownRaid,
+  RAID_DURATION,
+  RAID_SPEED,
+  mountedRider,
+  addTownVisitors,
+} from '../src/game/town/TownActivity';
+import { updateTownLocomotion, vehicleDistance } from '../src/game/town/TownLocomotion';
 import { addTownLife } from '../src/game/town/TownLife';
 import { createTown } from '../src/data/town';
 import { routeBetween, plotStreet } from '../src/game/town/TownLayout';
@@ -40,6 +47,81 @@ function diorama() {
   return d;
 }
 describe('A visible, articulated frontier encounter', () => {
+  it.each(['frontier', 'river-rail', 'industrial'])(
+    'advances road traffic through the collision loop in %s without yielding to its passengers',
+    (era) => {
+      const d = diorama();
+      d.town = createTown();
+      d.town.era = era;
+      d.town.buildings.stable = 3;
+      d.town.buildingEras.stable = era;
+      d.town.buildingEraLevels.stable = 3;
+      d.actorRenderer = { rebuild: vi.fn() };
+      addTownVisitors(d, d.town);
+      d.rebuildActors();
+      d.motions.forEach((motion) => motion(0));
+      updateTownLocomotion(d);
+      const starts = d.trafficActors.map((root) => root.position.clone());
+      for (let frame = 1; frame <= 120; frame++) {
+        if (frame === 60) d.rebuildActors();
+        d.motions.forEach((motion) => motion(frame / 60));
+        updateTownLocomotion(d);
+      }
+      for (const [i, root] of d.trafficActors.entries())
+        expect(root.position.distanceTo(starts[i])).toBeGreaterThan(1);
+      d.clearGroup(d.world);
+      Object.values(d.geometries).forEach((g) => g.dispose());
+      d.materials.forEach((m) => m.dispose());
+      d.contactShadowMaterial.dispose();
+    },
+  );
+  it('stops a horse for a road worker and resumes when the worker leaves', () => {
+    const d = diorama();
+    d.town = createTown();
+    d.town.buildings.stable = 1;
+    d.actorRenderer = { rebuild: vi.fn() };
+    addTownVisitors(d, d.town);
+    const worker = d.person({
+      manual: true,
+      color: '#809267',
+      skin: '#af7b56',
+      hat: '#d7b671',
+      route: [
+        [0, 0],
+        [0, 1],
+      ],
+    });
+    const horse = d.trafficActors[0];
+    d.motions.forEach((motion) => motion(0));
+    worker.root.position.copy(horse.position);
+    worker.root.position.x += Math.sin(horse.rotation.y) * 1.15;
+    worker.root.position.z += Math.cos(horse.rotation.y) * 1.15;
+    d.rebuildActors();
+    updateTownLocomotion(d);
+    const start = horse.position.clone();
+    for (let frame = 1; frame <= 120; frame++) {
+      d.motions.forEach((motion) => motion(frame / 60));
+      updateTownLocomotion(d);
+      expect(
+        vehicleDistance(
+          horse.userData.locomotionBox,
+          worker.root.position.x,
+          worker.root.position.z,
+        ),
+      ).toBeGreaterThanOrEqual(0.33 - 1e-6);
+    }
+    expect(horse.position.distanceTo(start)).toBeLessThan(0.1);
+    worker.root.visible = false;
+    for (let frame = 121; frame <= 240; frame++) {
+      d.motions.forEach((motion) => motion(frame / 60));
+      updateTownLocomotion(d);
+    }
+    expect(horse.position.distanceTo(start)).toBeGreaterThan(1);
+    d.clearGroup(d.world);
+    Object.values(d.geometries).forEach((g) => g.dispose());
+    d.materials.forEach((m) => m.dispose());
+    d.contactShadowMaterial.dispose();
+  });
   it('adds bounded daily life as buildings open and advances it without changing the town', () => {
     const d = diorama(),
       town = createTown();
