@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, expect, it, vi } from 'vitest';
-import { townStorage, SAVE_KEY } from '../src/services/townStorage';
+import { townStorage } from '../src/services/townStorage';
 import { createSyncService } from '../src/services/syncService';
 let values, owner, api, sync, applied, canApply;
 const profile = (coins = 1) => ({
@@ -36,6 +36,10 @@ function setupAccount() {
 beforeEach(() => {
   values = new Map();
   vi.stubGlobal('localStorage', {
+    get length() {
+      return values.size;
+    },
+    key: (index) => [...values.keys()][index] ?? null,
     getItem: (key) => values.get(key) ?? null,
     setItem: (key, value) => values.set(key, value),
   });
@@ -62,10 +66,18 @@ it('does not call the backend when signed out, including after local progress', 
 it('migrates a local save to an immutable identity and persists dirty metadata with gameplay', () => {
   const id = townStorage.active().meta.id;
   townStorage.save(profile(7));
-  const raw = JSON.parse(values.get(SAVE_KEY));
+  const raw = JSON.parse(values.get(townStorage.selectedKey()));
   expect(raw.town.coins).toBe(7);
   expect(raw._cloud.active.id).toBe(id);
   expect(raw._cloud.active.dirty).toBe(true);
+});
+it('does not echo normalized object ordering back as new gameplay or a dirty cloud save', () => {
+  setupAccount();
+  const original = townStorage.active().profile;
+  const reordered = Object.fromEntries(Object.entries(original).reverse());
+  reordered.town = Object.fromEntries(Object.entries(original.town).reverse());
+  townStorage.save(reordered);
+  expect(townStorage.active().meta.dirty).toBe(false);
 });
 it('uploads changed local progress when the server has not changed', async () => {
   setupAccount();
@@ -235,12 +247,12 @@ it('offers one local slot and hides cached account towns on sign-out', () => {
   expect(townStorage.records(owner.id)).toHaveLength(2);
 });
 it('preserves saves atomically if storage is full', () => {
-  const before = values.get(SAVE_KEY);
+  const before = values.get(townStorage.selectedKey());
   localStorage.setItem = () => {
     throw new Error('quota');
   };
   expect(() => townStorage.save(profile(9))).toThrow('quota');
-  expect(values.get(SAVE_KEY)).toBe(before);
+  expect(values.get(townStorage.selectedKey())).toBe(before);
 });
 it('restores clean cloud data after local storage loss once signed in', () => {
   setupAccount();
@@ -284,7 +296,7 @@ it('retains a durable account creation attempt across reload and newer local pro
   };
   townStorage.creation({ owner: owner.id, body });
   townStorage.save(profile(10));
-  expect(JSON.parse(values.get(SAVE_KEY))._cloud.creation).toEqual({ owner: owner.id, body });
+  expect(townStorage.state().creation).toEqual({ owner: owner.id, body });
 });
 
 it('prevents stale game instances from saving into another selected town', async () => {
@@ -313,4 +325,79 @@ it('keeps an unchanged town clean when only its idle income checkpoint advances'
   saved.town.income.stored = 1;
   townStorage.save(saved);
   expect(townStorage.active().meta.dirty).toBe(true);
+});
+
+it('serializes two sync workers instead of replacing an unacknowledged upload', async () => {
+  setupAccount();
+  townStorage.save(profile(4));
+  const pending = deferred();
+  api.mockImplementation(async (_, body) => (body ? pending.promise : remote(1)));
+  const other = createSyncService({ storage: townStorage, request: api, account: () => owner });
+  const first = sync.sync(),
+    second = other.sync({ pull: false });
+  await vi.waitFor(() => expect(api).toHaveBeenCalledTimes(2));
+  const uploadId = townStorage.active().meta.pending.body.uploadId;
+  pending.resolve(remote(2, 4));
+  await Promise.all([first, second]);
+  expect(api.mock.calls.filter(([, body]) => body)).toHaveLength(1);
+  expect(api.mock.calls[1][1].uploadId).toBe(uploadId);
+  expect(townStorage.active().meta.pending).toBeNull();
+});
+it('does not replace an active mine if it starts while conflict resolution waits', async () => {
+  setupAccount();
+  townStorage.save(profile(5));
+  api.mockResolvedValue(remote(2, 9));
+  await sync.sync();
+  const pending = deferred();
+  api.mockReturnValue(pending.promise);
+  const task = sync.resolve(townStorage.active().meta.id, 'cloud');
+  await vi.waitFor(() => expect(api).toHaveBeenCalledTimes(2));
+  canApply.mockReturnValue(false);
+  pending.resolve(remote(2, 9));
+  await expect(task).rejects.toThrow('Leave the mine');
+  expect(townStorage.active().profile.town.coins).toBe(5);
+});
+it('persists history restoration for retry after a lost response', async () => {
+  setupAccount();
+  api.mockRejectedValue(new Error('lost response'));
+  await expect(sync.restore(townStorage.active().meta.id, profile(40))).rejects.toThrow(
+    'lost response',
+  );
+  const pending = townStorage.active().meta.pending;
+  api.mockResolvedValue(remote(2, 40));
+  await sync.sync();
+  expect(api.mock.calls.at(-1)[1]).toEqual(pending.body);
+  expect(townStorage.active().profile.town.coins).toBe(40);
+  expect(townStorage.active().meta.recovery.profile.town.coins).toBe(1);
+});
+it('does not download unchanged towns during automatic saves', async () => {
+  setupAccount();
+  await sync.sync({ pull: false });
+  expect(api).not.toHaveBeenCalled();
+});
+it('keeps both local and cached progress when an old local town is attached again', () => {
+  setupAccount();
+  const id = townStorage.active().meta.id;
+  townStorage.save(profile(90));
+  townStorage.logout();
+  townStorage.save(profile(12));
+  townStorage.account(owner);
+  expect(() => townStorage.attach(remote(1, 1, id), owner.id, 0)).toThrow(
+    'already on your account',
+  );
+  expect(townStorage.active().profile.town.coins).toBe(12);
+  expect(townStorage.get(id, owner.id).profile.town.coins).toBe(90);
+});
+it('does not acknowledge a replaced pending upload or erase its newer progress', async () => {
+  setupAccount();
+  townStorage.save(profile(4));
+  const response = deferred();
+  api.mockImplementation(async (_, body) => (body ? response.promise : remote(1)));
+  const task = sync.sync();
+  await vi.waitFor(() => expect(api).toHaveBeenCalledTimes(2));
+  townStorage.import(profile(50));
+  response.resolve(remote(2, 4));
+  await task;
+  expect(townStorage.active().profile.town.coins).toBe(50);
+  expect(townStorage.active().meta).toMatchObject({ baseRevision: 1, dirty: true });
 });

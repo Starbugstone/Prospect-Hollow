@@ -341,7 +341,7 @@ export const useCampaignStore = defineStore('campaign', {
       return Number.isInteger(id) && id >= 1 && id <= this.nextLevel;
     },
     save() {
-      if (this.readOnly) return false;
+      if (this.readOnly || localProfile.writesSuspended) return false;
       const saved = localProfile.save(profileData(this));
       this.saveWarning = saved
         ? ''
