@@ -17,7 +17,7 @@ import { addPowerGrid, addEraStreetscape } from '../src/game/town/TownEvolution'
 import { addElectricLighting } from '../src/game/town/buildings/industrial';
 import { TownVipArrivals } from '../src/game/town/TownVipArrivals';
 import { TownBuildSequence } from '../src/game/town/TownBuildSequence';
-import { TownRaid, addTownVisitors } from '../src/game/town/TownActivity';
+import { TownRaid, addTownVisitors, addTownRoads } from '../src/game/town/TownActivity';
 import { TownEraIncident } from '../src/game/town/TownEraIncident';
 import { prepareRoute } from '../src/game/town/TownRoutes';
 import { placeTownSpawns } from '../src/game/town/TownTraffic';
@@ -162,6 +162,7 @@ it.each([...ERAS.map((e) => e.id), 'unknown-navigation-era'])(
   'keeps residents and every VIP transport route clear in %s',
   (era) => {
     const d = fixture(era);
+    addTownRoads(d, d.town, PLOTS);
     addPowerGrid(d, d.town);
     addElectricLighting(d, d.town);
     addEraStreetscape(d, d.town);

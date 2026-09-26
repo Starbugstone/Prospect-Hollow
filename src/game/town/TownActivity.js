@@ -167,11 +167,13 @@ export function addTownRoads(d, town, plots) {
     }
   }
   if (level >= 3)
+    // Reserve both streets at a junction: the old Z positions put these lamps
+    // directly on the cross-road centerline, even though X cleared the main road.
     for (const [x, z] of [
-      [-4.35, -0.5],
-      [4.35, 7.5],
-      [-4.35, 15.5],
-      [4.35, -8.5],
+      [-LANE_X - 1.25, 0.75],
+      [LANE_X + 1.25, 6.25],
+      [-LANE_X - 1.25, 16.75],
+      [LANE_X + 1.25, -9.75],
     ]) {
       walkObstacle(roads, x, z, 0.045);
       d.rod(roads, [x, 0, z], [x, 2.3, z], 0.045, '#63726a');
