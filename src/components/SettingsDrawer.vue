@@ -13,6 +13,40 @@
         <GameIcon name="close" />
       </button>
     </header>
+    <section v-if="account" class="account-settings" :aria-label="t('Account and cloud save')">
+      <div class="account-town">
+        <img src="/art/amethyst.svg" alt="" />
+        <span>
+          <strong>{{ account.townName.value }}</strong>
+          <small>{{
+            t(account.accountTown.value ? 'Account town' : 'Local town · this device only')
+          }}</small>
+        </span>
+      </div>
+      <p class="account-status" :data-tone="account.statusTone.value" role="status">
+        {{ t(account.status.value) }}
+      </p>
+      <div class="save-actions">
+        <button
+          type="button"
+          class="account-open"
+          :disabled="!account.canOpen.value"
+          @click="openAccount"
+        >
+          <GameIcon :name="account.signedIn.value ? 'home' : 'cloud'" />
+          {{ t(account.signedIn.value ? 'My towns' : 'Protect my progress') }}
+        </button>
+        <button
+          v-if="account.accountTown.value"
+          type="button"
+          :disabled="!account.canSync.value"
+          @click="account.sync()"
+        >
+          <GameIcon name="sync" />
+          {{ t('Sync now') }}
+        </button>
+      </div>
+    </section>
     <label
       ><span>
         {{ t('Music') }} <small>{{ t(Math.round(settings.musicVolume * 100)) }}%</small></span
@@ -130,7 +164,7 @@
 <script setup>
 import { t } from '../i18n';
 import { townStorage } from '../services/townStorage';
-import { ref, watch } from 'vue';
+import { inject, ref, watch } from 'vue';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useCampaignStore } from '../stores/campaignStore';
 import { MAX_SAVE_FILE_BYTES, parseSaveFile } from '../services/saveTransfer';
@@ -138,6 +172,12 @@ import GameIcon from './GameIcon.vue';
 const props = defineProps({ open: Boolean, allowSaveTransfer: Boolean });
 const emit = defineEmits(['close', 'reset-progress', 'import-progress']);
 const campaign = useCampaignStore();
+// Provided by CloudRoot; absent when the game runs without account support.
+const account = inject('cloudAccount', null);
+function openAccount() {
+  emit('close');
+  account.open();
+}
 const saveInput = ref(null);
 const pendingSave = ref(null);
 const readingFile = ref(false);
@@ -239,6 +279,78 @@ const closeBackdrop = (event) => {
 };
 </script>
 <style scoped>
+.account-settings {
+  margin: 22px 0 30px;
+  padding: 18px;
+  border: 1px solid #84619e88;
+  border-radius: 10px;
+  background: #c29ae80a;
+}
+.account-town {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.account-town img {
+  width: 30px;
+  height: 30px;
+}
+.account-town span {
+  display: grid;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.account-town strong {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 400;
+}
+.account-town small {
+  margin-top: 2px;
+}
+.account-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0;
+  color: #d6c4db;
+  font-size: 12px;
+}
+.account-status::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #a99db5;
+}
+.account-status[data-tone='saved']::before {
+  background: #7fd18f;
+  box-shadow: 0 0 0 3px #7fd18f2e;
+}
+.account-status[data-tone='busy']::before,
+.account-status[data-tone='pending']::before {
+  background: #f0b35e;
+}
+.account-status[data-tone='alert']::before {
+  background: #ff8a70;
+  box-shadow: 0 0 0 3px #ff8a7040;
+}
+.account-settings .save-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.account-settings .save-actions svg {
+  width: 16px;
+  height: 16px;
+}
+.account-settings .account-open {
+  background: #6d527e;
+  border-color: #b48cdd;
+  color: #fff5e1;
+}
 .save-transfer {
   margin-bottom: 30px;
   padding: 18px;

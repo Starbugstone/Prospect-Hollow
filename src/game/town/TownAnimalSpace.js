@@ -8,14 +8,47 @@ const point = (p) => new Vector3(...p);
 // A balanced tree keeps each triangle exactly once. Splitting large terrain or
 // roof triangles into spatial octants would duplicate them and waste memory.
 function tree(triangles) {
-  const bounds = new Box3();
-  for (const t of triangles) bounds.expandByPoint(t.a).expandByPoint(t.b).expandByPoint(t.c);
-  if (triangles.length <= 24) return { bounds, triangles };
-  const size = bounds.getSize(new Vector3());
-  const axis = size.x > size.y && size.x > size.z ? 'x' : size.y > size.z ? 'y' : 'z';
-  triangles.sort((a, b) => a.a[axis] + a.b[axis] + a.c[axis] - b.a[axis] - b.b[axis] - b.c[axis]);
-  const middle = triangles.length >> 1;
-  return { bounds, left: tree(triangles.slice(0, middle)), right: tree(triangles.slice(middle)) };
+  // Centroid sums are computed once. Each level partitions around its median
+  // instead of re-sorting, which dominated building a large era town.
+  const centers = { x: [], y: [], z: [] };
+  for (const { a, b, c } of triangles)
+    for (const axis of ['x', 'y', 'z']) centers[axis].push(a[axis] + b[axis] + c[axis]);
+  const order = Int32Array.from(triangles.keys());
+  const build = (start, end) => {
+    const bounds = new Box3();
+    for (let n = start; n < end; n++) {
+      const t = triangles[order[n]];
+      bounds.expandByPoint(t.a).expandByPoint(t.b).expandByPoint(t.c);
+    }
+    if (end - start <= 24)
+      return { bounds, triangles: Array.from(order.subarray(start, end), (n) => triangles[n]) };
+    const size = bounds.getSize(new Vector3());
+    const axis = size.x > size.y && size.x > size.z ? 'x' : size.y > size.z ? 'y' : 'z';
+    const middle = (start + end) >> 1;
+    selectMedian(order, start, end - 1, middle, centers[axis]);
+    return { bounds, left: build(start, middle), right: build(middle, end) };
+  };
+  return build(0, triangles.length);
+}
+// Hoare quickselect: afterwards no key before `target` exceeds any key after it.
+function selectMedian(order, left, right, target, key) {
+  while (right > left) {
+    const pivot = key[order[(left + right) >> 1]];
+    let i = left,
+      j = right;
+    while (i <= j) {
+      while (key[order[i]] < pivot) i++;
+      while (key[order[j]] > pivot) j--;
+      if (i <= j) {
+        [order[i], order[j]] = [order[j], order[i]];
+        i++;
+        j--;
+      }
+    }
+    if (target <= j) right = j;
+    else if (target >= i) left = i;
+    else return;
+  }
 }
 function query(node, overlaps, match) {
   if (!overlaps(node.bounds)) return false;

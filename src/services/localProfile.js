@@ -46,11 +46,10 @@ export const localProfile = {
   save(data) {
     try {
       if (paused) return false;
-      const active = townStorage.state()?.active;
+      const active = townStorage.active()?.meta;
       if (loadedStorage === globalThis.localStorage && loadedId && active?.id !== loadedId)
         return false;
-      townStorage.save(data);
-      loadedId = townStorage.state()?.active.id;
+      loadedId = townStorage.save(data).id;
       loadedStorage = globalThis.localStorage;
       return true;
     } catch {

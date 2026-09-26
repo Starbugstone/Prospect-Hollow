@@ -962,7 +962,7 @@
   "Population": "Population",
   "Stored: {coins} coins": "En réserve : {coins} pièces",
   "Buildings": "Bâtiments",
-  "Builder hammers": "Marteaux de construction",
+  "Builder hammers": "Marteaux de bâtisseur",
   "Capacity in people · Demand: {count}": "Capacité en personnes · Besoins : {count}",
   "Building labels": "Étiquettes des bâtiments",
   "Hide building labels": "Masquer les étiquettes des bâtiments",
@@ -1928,7 +1928,7 @@
   "Storm protection": "Protection contre les tempêtes",
   "Cleanup: {coins} coins": "Nettoyage : {coins} pièces",
   "The response crew kept every coin safe. All buildings remain open.": "Les secours ont protégé toutes les pièces. Tous les bâtiments restent ouverts.",
-  "Saved": "Enregistrée",
+  "Saved": "Enregistré",
   "Saving": "Enregistrement",
   "Not saved": "Non enregistré",
   "Connecting": "Connexion",
@@ -2464,5 +2464,7 @@
   "Cloud": "En ligne",
   "Local copy": "Copie locale",
   "Hammers": "Marteaux",
-  "This replaces the entire village, money, buildings and bonuses on this device and in the cloud. Progress is not combined.": "Ce remplacement change tout le village, les pièces, les bâtiments et les bonus sur cet appareil et en ligne. Les progressions ne sont pas cumulées."
+  "This replaces the entire village, money, buildings and bonuses on this device and in the cloud. Progress is not combined.": "Ce remplacement change tout le village, les pièces, les bâtiments et les bonus sur cet appareil et en ligne. Les progressions ne sont pas cumulées.",
+  "Town settings": "Réglages de la ville",
+  "Cloud account": "Compte en ligne"
 }

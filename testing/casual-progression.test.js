@@ -53,25 +53,32 @@ it('uses an existing qualifying chest instead of adding another opening', () => 
   ]);
 });
 
-it('awards every chapter gift once through the full campaign, directly with no extra chest', () => {
-  let c = useCampaignStore();
-  for (let id = 1; id <= LEVEL_COUNT; id++) {
-    const chests = finish(c, id);
-    expect(chests).toHaveLength(1);
-    if (id % 6 === 0) {
-      expect(c.lastChapterReward.chapter).toBe(id / 6);
-      expect(c.lastChapterReward.gift.quantity).toBeGreaterThan(0);
-      expect(c.mineStage).toBe(id / 6);
-    } else expect(c.lastChapterReward).toBeNull();
-    c.save();
-    setActivePinia(createPinia());
-    c = useCampaignStore();
-  }
-  expect(journeyProgress(c.records)).toBeNull();
-  c.town.buildings.museum = 1;
-  finish(c, LEVEL_COUNT);
-  expect(c.lastChapterReward).toBeNull();
-});
+// Replays and reloads every campaign level, so its cost grows with each new chapter.
+it(
+  'awards every chapter gift once through the full campaign, directly with no extra chest',
+  {
+    timeout: 15000,
+  },
+  () => {
+    let c = useCampaignStore();
+    for (let id = 1; id <= LEVEL_COUNT; id++) {
+      const chests = finish(c, id);
+      expect(chests).toHaveLength(1);
+      if (id % 6 === 0) {
+        expect(c.lastChapterReward.chapter).toBe(id / 6);
+        expect(c.lastChapterReward.gift.quantity).toBeGreaterThan(0);
+        expect(c.mineStage).toBe(id / 6);
+      } else expect(c.lastChapterReward).toBeNull();
+      c.save();
+      setActivePinia(createPinia());
+      c = useCampaignStore();
+    }
+    expect(journeyProgress(c.records)).toBeNull();
+    c.town.buildings.museum = 1;
+    finish(c, LEVEL_COUNT);
+    expect(c.lastChapterReward).toBeNull();
+  },
+);
 
 it('shows an honest six-puzzle trail and gives useful chapter coins when its bonus is full', () => {
   const c = useCampaignStore();

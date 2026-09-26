@@ -1,21 +1,5 @@
 <template>
-  <div ref="bar" class="cloud-header">
-    <aside class="cloud-bar" :aria-label="t('Account and cloud save')">
-      <div class="cloud-town-name">
-        <img src="/art/amethyst.svg" alt="" />
-        <div>
-          <strong>{{ townName }}</strong
-          ><small>{{ t(accountTown ? 'Account town' : 'Local town · this device only') }}</small>
-        </div>
-      </div>
-      <span role="status">{{ t(cloud.status) }}</span>
-      <button v-if="accountTown" :disabled="cloud.busy || !ready" @click="syncNow()">
-        {{ t('Sync now') }}
-      </button>
-      <button :disabled="campaign.readOnly" @click="accountOpen = true">
-        {{ t(cloud.account ? 'My towns' : 'Protect my progress') }}
-      </button>
-    </aside>
+  <div ref="recoveryBar" class="cloud-header">
     <aside
       v-if="ready && (activeTown?.meta.conflict || activeTown?.meta.desyncNotice)"
       class="save-recovery-notice"
@@ -141,6 +125,7 @@ import {
   onMounted,
   onBeforeUnmount,
   defineAsyncComponent,
+  provide,
   watch,
 } from 'vue';
 import App from '../App.vue';
@@ -166,12 +151,13 @@ const SaveRecoveryDialog = defineAsyncComponent(() => import('./account/SaveReco
 townStorage.setWriteGuard(townCoordinator.owns);
 const campaign = useCampaignStore(),
   game = useGameStore();
+const recoveryBar = ref(null);
+let recoveryObserver;
 const accountOpen = ref(false),
   recoveryOpen = ref(false),
   communityOpen = ref(false),
   viewVersion = ref(0),
   loginLink = ref(''),
-  bar = ref(null),
   ready = ref(false),
   opening = ref(true),
   blocked = ref(false),
@@ -187,7 +173,30 @@ const activeTown = computed(() => {
 const accountTown = computed(
   () => !!cloud.account && activeTown.value?.meta.owner === cloud.account.id,
 );
+const STATUS_TONES = {
+  'Cloud saved': 'saved',
+  'Syncing…': 'busy',
+  'Saved locally — cloud backup pending': 'pending',
+  'Offline — cloud backup pending': 'pending',
+  'Cloud update pending — local save kept': 'alert',
+  'Cloud town unavailable — local copy kept': 'alert',
+};
+const statusTone = computed(() => STATUS_TONES[cloud.status] ?? 'local');
 const townName = computed(() => activeTown.value?.meta.name || t('Your town'));
+// Account controls live in the settings drawer instead of a permanent top bar.
+provide('cloudAccount', {
+  townName,
+  accountTown,
+  statusTone,
+  status: computed(() => cloud.status),
+  signedIn: computed(() => !!cloud.account),
+  canSync: computed(() => accountTown.value && ready.value && !handingOver.value && !cloud.busy),
+  canOpen: computed(() => !campaign.readOnly),
+  sync: () => syncNow(),
+  open: () => {
+    accountOpen.value = true;
+  },
+});
 watch(
   townName,
   (name) => {
@@ -196,8 +205,7 @@ watch(
   { immediate: true },
 );
 const visitId = ref(new URLSearchParams(location.hash.slice(1)).get('town') ?? '');
-let observer,
-  handoff,
+let handoff,
   loadedKey,
   activation = Promise.resolve(),
   lastResume = 0;
@@ -465,13 +473,16 @@ watch(
   },
 );
 onMounted(() => {
+  document.documentElement.classList.add('cloud-mode');
+  recoveryObserver = new ResizeObserver(() =>
+    document.documentElement.style.setProperty(
+      '--cloud-bar-height',
+      `${recoveryBar.value.offsetHeight}px`,
+    ),
+  );
+  recoveryObserver.observe(recoveryBar.value);
   if (typeof BroadcastChannel === 'function')
     handoff = createTownHandoff({ coordinator: townCoordinator, prepare: prepareHandoff });
-  document.documentElement.classList.add('cloud-mode');
-  observer = new ResizeObserver(() =>
-    document.documentElement.style.setProperty('--cloud-bar-height', `${bar.value.offsetHeight}px`),
-  );
-  observer.observe(bar.value);
   window.addEventListener(TOWN_CHANGED, schedule);
   window.addEventListener('storage', fromOtherTab);
   window.addEventListener('online', resume);
@@ -486,9 +497,11 @@ onMounted(() => {
   start();
 });
 onBeforeUnmount(() => {
+  recoveryObserver?.disconnect();
+  document.documentElement.classList.remove('cloud-mode');
+  document.documentElement.style.removeProperty('--cloud-bar-height');
   handoff?.dispose();
   scheduler.dispose();
-  observer?.disconnect();
   townCoordinator.release();
   window.removeEventListener(TOWN_CHANGED, schedule);
   window.removeEventListener('storage', fromOtherTab);
@@ -496,7 +509,6 @@ onBeforeUnmount(() => {
   window.removeEventListener('pageshow', resume);
   window.removeEventListener('hashchange', readLink);
   document.removeEventListener('visibilitychange', resume);
-  document.documentElement.classList.remove('cloud-mode');
 });
 </script>
 <style>
@@ -546,7 +558,8 @@ onBeforeUnmount(() => {
   font: 1.2rem/1.5 system-ui;
 }
 .town-launch-screen {
-  min-height: calc(100dvh - var(--cloud-bar-height, 54px));
+  min-height: 100dvh;
+  box-sizing: border-box;
   display: grid;
   place-items: center;
   padding: clamp(1rem, 4vw, 3rem);
@@ -608,48 +621,8 @@ onBeforeUnmount(() => {
   outline: 3px solid #ab813e;
   outline-offset: 3px;
 }
-.cloud-town-name {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-right: auto;
-  overflow-wrap: anywhere;
-}
-.cloud-town-name small {
-  display: block;
-  color: #e1d9bd;
-  font-size: 0.68rem;
-  line-height: 1.25;
-}
-.cloud-town-name img {
-  width: 1.5rem;
-  height: 1.5rem;
-}
 .cloud-mode .town-map-frame.town-fullscreen {
-  top: var(--cloud-bar-height, 54px);
-  height: calc(100dvh - var(--cloud-bar-height, 54px));
-}
-.cloud-bar {
-  display: flex;
-  gap: 0.7rem;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  padding: 0.55rem 1rem;
-  background: #183832;
-  color: #fff7df;
-  font: 0.85rem system-ui;
-}
-.cloud-bar button {
-  background: #ffdc99;
-  color: #192c2b;
-  border: 0;
-  border-radius: 0.5rem;
-  padding: 0.55rem 0.8rem;
-  cursor: pointer;
-  font: inherit;
-}
-.cloud-bar button:disabled {
-  opacity: 0.5;
+  top: var(--cloud-bar-height, 0px);
+  height: calc(100dvh - var(--cloud-bar-height, 0px));
 }
 </style>
