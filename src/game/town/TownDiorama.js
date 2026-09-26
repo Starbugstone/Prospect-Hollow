@@ -1383,7 +1383,8 @@ export class TownDiorama {
     const cycle = (time + seed) % (duration + 4);
     let walking = !work && cycle < duration;
     const progress = work?.length ? 0.1 : Math.min(cycle / duration, 0.9999);
-    if (!actor.walkPath) root.position.copy(curve.getPointAt(progress));
+    const placedWorker = work && actor.motion;
+    if (!actor.walkPath && !placedWorker) root.position.copy(curve.getPointAt(progress));
     let routeProgress = progress;
     if (actor.visitor && !actor.transportVisitor) {
       const phase = (time + seed) % (duration + 7);
@@ -1406,11 +1407,11 @@ export class TownDiorama {
 
     if (actor.motion && actor.walkPath?.total && (!actor.manual || actor.transportVisitor))
       routeProgress = (actor.motion.routeDistance % actor.walkPath.total) / actor.walkPath.total;
-    if (actor.walkPath) {
+    if (actor.walkPath && !placedWorker) {
       const pose = walkPose(actor.walkPath, routeProgress, actor.walkPose);
       root.position.set(pose.x, pose.y, pose.z);
       root.rotation.y = pose.heading;
-    } else {
+    } else if (!placedWorker) {
       const tangent = curve.getTangentAt(Math.min(0.9999, routeProgress));
       root.rotation.y = Math.atan2(tangent.x, tangent.z);
       if (!work && (!actor.manual || actor.transportVisitor)) {
@@ -1422,7 +1423,9 @@ export class TownDiorama {
         root.position.z -= tangent.x * offset;
       }
     }
-    if (work) placeSafely(this, root);
+    // Locomotion owns an established worker's position, including any accepted
+    // construction exit. Do not repeat the placement search every frame.
+    if (work && !actor.motion) placeSafely(this, root);
     if (!actor.motion && actor.lastPosition && time >= actor.lastPoseTime)
       actor.distance += root.position.distanceTo(actor.lastPosition);
     actor.lastPosition ??= new THREE.Vector3();

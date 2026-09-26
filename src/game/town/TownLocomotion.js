@@ -6,16 +6,26 @@ import { walkPose, routeDistanceAt } from './TownNavigation';
 export const LOCOMOTION_STEP = 1 / 60;
 export const MAX_SUBSTEPS = 4;
 const GAP = 0.04;
-const pairKey = (a, b) => (a.id < b.id ? `${a.id}|${b.id}` : `${b.id}|${a.id}`);
-const hash = (value) => {
-  let n = 0;
-  for (let i = 0; i < value.length; i++) n = (Math.imul(n, 31) + value.charCodeAt(i)) | 0;
-  return n >>> 0;
-};
+export const DYNAMIC_AVOIDANCE_ATTEMPTS = 3;
+
+// Yield briefly to other actors, then keep the authored route through a crowd.
+// A clear step starts a fresh budget. Static scenery never uses this exception.
+function yieldToCrowd(state, blocked) {
+  if (!blocked) {
+    state.dynamicAttempts = 0;
+    state.passingThrough = false;
+    return false;
+  }
+  if ((state.dynamicAttempts ?? 0) < DYNAMIC_AVOIDANCE_ATTEMPTS) {
+    state.dynamicAttempts = (state.dynamicAttempts ?? 0) + 1;
+    return true;
+  }
+  state.passingThrough = true;
+  return false;
+}
 export class LocomotionGrid {
   constructor() {
     this.cells = new Map();
-    this.encounters = new Map();
     this.agents = [];
   }
   rebuild(agents) {
@@ -63,189 +73,87 @@ function closestApproach(a, b) {
   const t = Math.max(0, Math.min(1, -(x * dx + z * dz) / (dx * dx + dz * dz || 1)));
   return Math.hypot(x + dx * t, z + dz * t);
 }
+function vehicleBlocksStep(vehicle, from, to, radius) {
+  const c = Math.cos(vehicle.heading),
+    s = Math.sin(vehicle.heading);
+  const local = (point, x, z) => [
+    (point[0] - x) * c - (point[2] - z) * s,
+    point[1],
+    (point[0] - x) * s + (point[2] - z) * c,
+  ];
+  const start = local(from, vehicle.previousX ?? vehicle.cx, vehicle.previousZ ?? vehicle.cz);
+  const end = local(to, vehicle.cx, vehicle.cz);
+  const w = vehicle.halfWidth,
+    l = vehicle.halfLength;
+  const box = (vehicle.footprint ??= {
+    x: 0,
+    z: 0,
+    polygon: [
+      [-w, -l],
+      [w, -l],
+      [w, l],
+      [-w, l],
+    ],
+  });
+  return !sweptClear(box, start, end, radius + GAP);
+}
+
 export function stepLocomotion(agents, statics, vehicles, grid, h = LOCOMOTION_STEP) {
   grid.rebuild(agents);
+  // Compute every preferred step from the same snapshot before checking crowds.
   for (const a of grid.agents) {
     const m = a.motion,
       p = (a.proposal ??= { dx: 0, dz: 0 });
-    let dx = (a.targetX ?? m.x) - m.x,
+    const dx = (a.targetX ?? m.x) - m.x,
       dz = (a.targetZ ?? m.z) - m.z;
-    const distance = Math.hypot(dx, dz),
-      speed = a.hold ? 0 : m.maxSpeed;
-    if (distance) {
-      dx /= distance;
-      dz /= distance;
-    }
-    let encounter = null;
-    grid.neighbours(a, (b) => {
-      const other = b.motion,
-        rx = other.sx - m.sx,
-        rz = other.sz - m.sz,
-        separation = Math.hypot(rx, rz);
-      if (separation > m.radius + other.radius + 0.65 || rx * dx + rz * dz < 0) return;
-      if (encounter && separation >= encounter.distance) return;
-      encounter = a.nearestEncounter ??= {};
-      encounter.agent = b;
-      encounter.distance = separation;
-    });
-    if (encounter) {
-      const key = pairKey(a, encounter.agent);
-      let pair = grid.encounters.get(key);
-      if (!pair) {
-        pair = { turn: hash(key) & 1, active: false };
-        grid.encounters.set(key, pair);
-      }
-      if (!pair.active) {
-        pair.turn ^= 1;
-        pair.active = true;
-      }
-      pair.touched = true;
-      if (m.encounter !== key) {
-        m.encounter = key;
-        m.passingSide = pair.turn ? 1 : -1;
-      }
-      const forward = Math.max(
-        0,
-        (encounter.distance - m.radius - encounter.agent.motion.radius - GAP) / 0.6,
-      );
-      // Same route-relative side sends head-on walkers to opposite world sides.
-      const side = m.passingSide * 0.85,
-        nx = dx * forward + dz * side,
-        nz = dz * forward - dx * side,
-        norm = Math.hypot(nx, nz) || 1;
-      dx = nx / norm;
-      dz = nz / norm;
-    } else {
-      m.encounter = null;
-      m.passingSide = 0;
-    }
-    const travel = Math.min(speed * h, distance);
-    p.dx = dx * travel;
-    p.dz = dz * travel;
-    const from = (a.from ??= []);
+    const distance = Math.hypot(dx, dz);
+    const scale = distance && !a.hold ? Math.min(m.maxSpeed * h, distance) / distance : 0;
+    p.dx = dx * scale;
+    p.dz = dz * scale;
+    p.blocked = false;
+    const from = (a.from ??= []),
+      to = (a.to ??= []);
     from[0] = m.sx;
     from[1] = a.y ?? 0.07;
     from[2] = m.sz;
-    const to = (a.to ??= []);
     to[0] = m.sx + p.dx;
     to[1] = from[1];
     to[2] = m.sz + p.dz;
     if (
-      (statics && !statics.segment(from, to, m.radius)) ||
-      (a.clearance && !a.clearance(from, to, m.radius))
-    )
+      (p.dx || p.dz) &&
+      ((statics && !statics.segment(from, to, m.radius)) ||
+        (a.clearance && !a.clearance(from, to, m.radius)))
+    ) {
       p.dx = p.dz = 0;
-    for (const vehicle of vehicles) {
-      const c = Math.cos(vehicle.heading),
-        s = Math.sin(vehicle.heading);
-      const local = (x, z, cx, cz) => [
-        (x - cx) * c - (z - cz) * s,
-        from[1],
-        (x - cx) * s + (z - cz) * c,
-      ];
-      const start = local(
-        from[0],
-        from[2],
-        vehicle.previousX ?? vehicle.cx,
-        vehicle.previousZ ?? vehicle.cz,
-      );
-      const end = local(to[0], to[2], vehicle.cx, vehicle.cz);
-      const box = (vehicle.footprint ??= { x: 0, z: 0, polygon: [] });
-      const w = vehicle.halfWidth,
-        l = vehicle.halfLength;
-      box.polygon = [
-        [-w, -l],
-        [w, -l],
-        [w, l],
-        [-w, l],
-      ];
-      const future = local(
-        to[0],
-        to[2],
-        vehicle.cx + (vehicle.velocityX ?? (vehicle.cx - (vehicle.previousX ?? vehicle.cx)) / h),
-        vehicle.cz + (vehicle.velocityZ ?? (vehicle.cz - (vehicle.previousZ ?? vehicle.cz)) / h),
-      );
-      // Reserve an approaching crossing before entering its swept lane.
-      const currentClear = sweptClear(box, start, end, m.radius + GAP),
-        crossing = sweptClear(box, end, future, m.radius + GAP);
-      if (!currentClear || !crossing) {
-        // Someone already crossing must finish stepping out of the swept lane;
-        // freezing inside an approaching vehicle's envelope would create contact.
-        const current = local(from[0], from[2], vehicle.cx, vehicle.cz);
-        const side = current[0] < 0 ? -1 : 1;
-        p.dx = p.dz = 0;
-        for (const direction of [side, -side]) {
-          const shift = direction * (w + m.radius + GAP + 0.04) - current[0];
-          const exit = [from[0] + shift * c, from[1], from[2] - shift * s];
-          if (
-            Math.abs(shift) < 1e-5 ||
-            Math.abs(shift) >= 1.5 ||
-            (statics && !statics.segment(from, exit, m.radius)) ||
-            (a.clearance && !a.clearance(from, exit, m.radius)) ||
-            (direction !== side &&
-              !sweptClear(
-                box,
-                current,
-                local(exit[0], exit[2], vehicle.cx, vehicle.cz),
-                m.radius + GAP,
-              ))
-          )
-            continue;
-          // Idle villagers can step aside too; fixed worker proxies have zero
-          // speed. Check the whole exit so the nearer wall cannot trap a walker.
-          const amount = Math.max(-m.maxSpeed * h, Math.min(m.maxSpeed * h, shift));
-          p.dx = amount * c;
-          p.dz = -amount * s;
-          break;
-        }
-      }
-    }
-    // A later vehicle can change the escape chosen for an earlier one. Validate
-    // the final step against all accepted traffic positions before committing it.
-    for (const vehicle of vehicles) {
-      if (!p.dx && !p.dz) break;
-      const c = Math.cos(vehicle.heading),
-        s = Math.sin(vehicle.heading),
-        x = from[0] - vehicle.cx,
-        z = from[2] - vehicle.cz;
-      const start = [x * c - z * s, from[1], x * s + z * c];
-      const end = [start[0] + p.dx * c - p.dz * s, from[1], start[2] + p.dx * s + p.dz * c];
-      if (!sweptClear(vehicle.footprint, start, end, m.radius + GAP)) p.dx = p.dz = 0;
+      to[0] = from[0];
+      to[2] = from[2];
     }
   }
-  // Symmetric swept pair checks; stable ID ordering and common snapshots make
-  // outcomes independent of caller array order. Recheck after every contraction.
-  for (let pass = 0; pass < 4; pass++) {
-    let changed = false;
-    for (const a of grid.agents)
-      grid.neighbours(a, (b) => {
-        if (a.id >= b.id) return;
-        const min = a.motion.radius + b.motion.radius + GAP;
-        const initial = Math.hypot(a.motion.sx - b.motion.sx, a.motion.sz - b.motion.sz);
-        if (closestApproach(a, b) >= Math.min(min, initial) - 1e-7) return;
-        if (a.proposal.dx || a.proposal.dz || b.proposal.dx || b.proposal.dz) changed = true;
-        const pair = grid.encounters.get(pairKey(a, b)),
-          first = pair?.turn ? a : b,
-          second = first === a ? b : a;
-        const dx = second.proposal.dx,
-          dz = second.proposal.dz;
-        second.proposal.dx = second.proposal.dz = 0;
-        if (closestApproach(a, b) >= Math.min(min, initial) - 1e-7) return;
-        second.proposal.dx = dx;
-        second.proposal.dz = dz;
-        first.proposal.dx = first.proposal.dz = 0;
-        if (closestApproach(a, b) >= Math.min(min, initial) - 1e-7) return;
-        second.proposal.dx = second.proposal.dz = 0;
-      });
-    if (!changed) break;
+  for (const a of grid.agents) {
+    grid.neighbours(a, (b) => {
+      if (a.id >= b.id) return;
+      if (closestApproach(a, b) < a.motion.radius + b.motion.radius + GAP) {
+        a.proposal.blocked = b.proposal.blocked = true;
+      }
+    });
+    if (
+      vehicles.some(
+        (v) =>
+          Math.abs((v.y ?? a.y) - a.y) < 1 && vehicleBlocksStep(v, a.from, a.to, a.motion.radius),
+      )
+    )
+      a.proposal.blocked = true;
   }
   for (const a of grid.agents) {
     const m = a.motion,
-      p = a.proposal,
-      travel = Math.hypot(p.dx, p.dz);
+      p = a.proposal;
+    if (p.dx || p.dz) {
+      if (yieldToCrowd(m, p.blocked)) p.dx = p.dz = 0;
+    } else if (!p.blocked) yieldToCrowd(m, false);
+    const travel = Math.hypot(p.dx, p.dz);
     const tx = (a.targetX ?? m.x) - m.x,
-      tz = (a.targetZ ?? m.z) - m.z,
-      len = Math.hypot(tx, tz) || 1;
+      tz = (a.targetZ ?? m.z) - m.z;
+    const len = Math.hypot(tx, tz) || 1;
     m.routeDistance += (a.routeDirection ?? 1) * Math.max(0, (p.dx * tx + p.dz * tz) / len);
     m.x += p.dx;
     m.z += p.dz;
@@ -254,18 +162,31 @@ export function stepLocomotion(agents, statics, vehicles, grid, h = LOCOMOTION_S
     m.state = travel > 1e-7 ? 'moving' : a.noPath ? 'no-path' : 'waiting';
     if (travel) m.heading = Math.atan2(p.dx, p.dz);
   }
-  for (const pair of grid.encounters.values()) {
-    if (!pair.touched) pair.active = false;
-    pair.touched = false;
-  }
 }
 
-const aVehicle = (root, box) => ({
-  ...box,
-  cx: root.position.x,
-  cz: root.position.z,
-  heading: root.rotation.y,
-});
+function vehiclesOverlap(a, b) {
+  // Separating axes for the narrow oriented horse/car boxes.
+  const ac = Math.cos(a.heading),
+    as = Math.sin(a.heading);
+  const bc = Math.cos(b.heading),
+    bs = Math.sin(b.heading);
+  for (const [x, z] of [
+    [ac, -as],
+    [as, ac],
+    [bc, -bs],
+    [bs, bc],
+  ]) {
+    const extent = (v, c, s) =>
+      v.halfWidth * Math.abs(x * c - z * s) + v.halfLength * Math.abs(x * s + z * c);
+    if (
+      Math.abs((a.cx - b.cx) * x + (a.cz - b.cz) * z) >=
+      extent(a, ac, as) + extent(b, bc, bs) + GAP
+    )
+      return false;
+  }
+  return true;
+}
+
 export function updateTownLocomotion(d, h = LOCOMOTION_STEP) {
   const grid = (d.locomotionGrid ??= new LocomotionGrid()),
     agents = (d.locomotionAgents ??= []);
@@ -348,31 +269,43 @@ export function updateTownLocomotion(d, h = LOCOMOTION_STEP) {
         halfLength: root.userData.trafficRadius ?? 0.8,
       };
       const v = (root.userData.locomotionBox ??= {});
-      // Keep the intended approach even when a pedestrian makes traffic wait.
-      // Otherwise both sides lose the crossing reservation and wait forever.
-      v.velocityX = (root.position.x - (v.cx ?? root.position.x)) / h;
-      v.velocityZ = (root.position.z - (v.cz ?? root.position.z)) / h;
-      if (v.cx !== undefined) {
-        const candidate = aVehicle(root, box);
-        if (
-          agents.some(
-            (agent) =>
-              Math.abs(agent.y - root.position.y) < 1 &&
-              vehicleDistance(candidate, agent.motion.x, agent.motion.z) <
-                agent.motion.radius + GAP,
-          )
-        ) {
-          root.position.x = v.cx;
-          root.position.z = v.cz;
-          root.rotation.y = v.heading;
-          root.userData.trafficDelay = (root.userData.trafficDelay ?? 0) + h;
-        }
-      }
       v.previousX = v.cx ?? root.position.x;
       v.previousZ = v.cz ?? root.position.z;
-      Object.assign(v, box, { cx: root.position.x, cz: root.position.z, heading: root.rotation.y });
+      v.previousHeading = v.heading ?? root.rotation.y;
+      Object.assign(v, box, {
+        root,
+        cx: root.position.x,
+        cz: root.position.z,
+        y: root.position.y,
+        heading: root.rotation.y,
+      });
       vehicles.push(v);
     }
+  // Decide from all proposals first, so changing the traffic array order cannot
+  // give one horse an unlimited right of way over another.
+  for (const v of vehicles) {
+    v.blocked =
+      agents.some(
+        (a) =>
+          Math.abs(a.y - v.y) < 1 &&
+          vehicleDistance(v, a.motion.x, a.motion.z) < a.motion.radius + GAP,
+      ) ||
+      vehicles.some(
+        (other) => other !== v && Math.abs(other.y - v.y) < 1 && vehiclesOverlap(v, other),
+      );
+  }
+  for (const v of vehicles) {
+    const moving = Math.hypot(v.cx - v.previousX, v.cz - v.previousZ) > 1e-7;
+    const waiting = moving && yieldToCrowd(v, v.blocked);
+    if (!v.blocked) yieldToCrowd(v, false);
+    v.root.userData.trafficWaiting = waiting;
+    if (waiting) {
+      v.cx = v.root.position.x = v.previousX;
+      v.cz = v.root.position.z = v.previousZ;
+      v.heading = v.root.rotation.y = v.previousHeading;
+      v.root.userData.trafficDelay = (v.root.userData.trafficDelay ?? 0) + h;
+    }
+  }
   stepLocomotion(agents, d.navigation, vehicles, grid, h);
   for (const a of agents) {
     if (a.staticProxy) continue;

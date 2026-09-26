@@ -266,6 +266,12 @@ sidewalk offset afterward. Facing eases at corners while positions stay on the
 clear segments. Accepted locomotion uses a fixed 1/60 second step (at most four steps per draw),
 spatial buckets, swept pair checks and oriented vehicle envelopes. Route distance
 advances only by accepted movement. Unreachable paths hold their last position.
+People, ground animals and road traffic yield to other actors for at most three
+blocked attempts, then pass through the crowd until clear. A clear step resets
+that budget. This exception never bypasses scenery clearance or an unreachable
+route. Stationary workers retain their accepted placement instead of repeating
+placement searches each frame; segment queries reject unrelated mesh bounds
+before testing exact geometry.
 `testing/town-navigation.test.js` covers continuous clearance, all era profiles,
 manual actor routes, cache reuse and scenery removal.
 

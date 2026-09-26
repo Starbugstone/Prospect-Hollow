@@ -24,6 +24,7 @@ import { updateTownLocomotion, vehicleDistance } from '../src/game/town/TownLoco
 import { addTownLife } from '../src/game/town/TownLife';
 import { createTown } from '../src/data/town';
 import { routeBetween, plotStreet } from '../src/game/town/TownLayout';
+import { TownNavigation } from '../src/game/town/TownNavigation';
 import { riverDistance, RIVER } from '../src/game/town/TownRiver';
 
 // Exercise articulated geometry and its timeline without requiring a GPU.
@@ -75,7 +76,7 @@ describe('A visible, articulated frontier encounter', () => {
       d.contactShadowMaterial.dispose();
     },
   );
-  it('stops a horse for a road worker and resumes when the worker leaves', () => {
+  it('lets a horse pass a road worker after three failed yielding attempts', () => {
     const d = diorama();
     d.town = createTown();
     d.town.buildings.stable = 1;
@@ -99,24 +100,64 @@ describe('A visible, articulated frontier encounter', () => {
     d.rebuildActors();
     updateTownLocomotion(d);
     const start = horse.position.clone();
+    let waits = 0,
+      passed = false;
     for (let frame = 1; frame <= 120; frame++) {
       d.motions.forEach((motion) => motion(frame / 60));
       updateTownLocomotion(d);
-      expect(
+      if (horse.userData.trafficWaiting) waits++;
+      if (
         vehicleDistance(
           horse.userData.locomotionBox,
           worker.root.position.x,
           worker.root.position.z,
-        ),
-      ).toBeGreaterThanOrEqual(0.33 - 1e-6);
+        ) < 0.29
+      ) {
+        passed = true;
+        expect(horse.userData.locomotionBox.passingThrough).toBe(true);
+      }
     }
-    expect(horse.position.distanceTo(start)).toBeLessThan(0.1);
+    expect(waits).toBe(3);
+    expect(passed).toBe(true);
+    expect(horse.position.distanceTo(start)).toBeGreaterThan(1);
     worker.root.visible = false;
     for (let frame = 121; frame <= 240; frame++) {
       d.motions.forEach((motion) => motion(frame / 60));
       updateTownLocomotion(d);
     }
     expect(horse.position.distanceTo(start)).toBeGreaterThan(1);
+    d.clearGroup(d.world);
+    Object.values(d.geometries).forEach((g) => g.dispose());
+    d.materials.forEach((m) => m.dispose());
+    d.contactShadowMaterial.dispose();
+  });
+  it('places a worker once and preserves accepted positions during subsequent animation', () => {
+    const d = diorama();
+    d.navigation = new TownNavigation([{ x: 10, z: 10, y: 0, height: 2, radius: 0.2 }]);
+    const actor = d.person({
+      color: '#809267',
+      skin: '#af7b56',
+      hat: '#d7b671',
+      work: 'greet',
+      route: [
+        [0, 0],
+        [0, 1],
+      ],
+    });
+    const place = vi.spyOn(d.navigation, 'safePoint');
+    d.animatePerson(actor, 0);
+    updateTownLocomotion(d);
+    expect(place).toHaveBeenCalledTimes(1);
+    actor.motion.x = actor.root.position.x = 1;
+    actor.motion.z = actor.root.position.z = 2;
+    for (let frame = 1; frame <= 120; frame++) {
+      d.animatePerson(actor, frame / 60);
+      expect(actor.root.position.x).toBe(1);
+      expect(actor.root.position.z).toBe(2);
+      updateTownLocomotion(d);
+    }
+    expect(place).toHaveBeenCalledTimes(1);
+    place.mockRestore();
     d.clearGroup(d.world);
     Object.values(d.geometries).forEach((g) => g.dispose());
     d.materials.forEach((m) => m.dispose());

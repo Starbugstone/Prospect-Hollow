@@ -82,21 +82,37 @@ export class TownNavigation {
   }
   reindex() {
     this.cells.clear();
-    for (const o of this.obstacles)
+    this.bounds = new WeakMap();
+    for (const o of this.obstacles) {
+      const bounds = o.polygon
+        ? {
+            minX: Math.min(...o.polygon.map((p) => p[0])),
+            maxX: Math.max(...o.polygon.map((p) => p[0])),
+            minZ: Math.min(...o.polygon.map((p) => p[1])),
+            maxZ: Math.max(...o.polygon.map((p) => p[1])),
+          }
+        : {
+            minX: o.x - o.radius,
+            maxX: o.x + o.radius,
+            minZ: o.z - o.radius,
+            maxZ: o.z + o.radius,
+          };
+      this.bounds.set(o, bounds);
       for (
-        let x = Math.floor((o.x - o.radius - 2) / CELL);
-        x <= Math.floor((o.x + o.radius + 2) / CELL);
+        let x = Math.floor((bounds.minX - 2) / CELL);
+        x <= Math.floor((bounds.maxX + 2) / CELL);
         x++
       )
         for (
-          let z = Math.floor((o.z - o.radius - 2) / CELL);
-          z <= Math.floor((o.z + o.radius + 2) / CELL);
+          let z = Math.floor((bounds.minZ - 2) / CELL);
+          z <= Math.floor((bounds.maxZ + 2) / CELL);
           z++
         ) {
           const key = `${x},${z}`;
           if (!this.cells.has(key)) this.cells.set(key, []);
           this.cells.get(key).push(o);
         }
+    }
   }
   segment(a, b, margin = NPC_MARGIN) {
     return this.nearbySegment(a, b, margin).every((o) => sweptClear(o, a, b, margin));
@@ -143,6 +159,10 @@ export class TownNavigation {
   }
   nearbySegment(a, b, margin = NPC_MARGIN) {
     const found = new Set();
+    const minX = Math.min(a[0], b[0]) - margin - EPS,
+      maxX = Math.max(a[0], b[0]) + margin + EPS,
+      minZ = Math.min(a[2], b[2]) - margin - EPS,
+      maxZ = Math.max(a[2], b[2]) + margin + EPS;
     for (
       let x = Math.floor((Math.min(a[0], b[0]) - margin) / CELL);
       x <= Math.floor((Math.max(a[0], b[0]) + margin) / CELL);
@@ -153,8 +173,12 @@ export class TownNavigation {
         z <= Math.floor((Math.max(a[2], b[2]) + margin) / CELL);
         z++
       )
-        for (const o of this.cells.get(`${x},${z}`) ?? [])
+        for (const o of this.cells.get(`${x},${z}`) ?? []) {
+          const bounds = this.bounds.get(o);
+          if (bounds.maxX < minX || bounds.minX > maxX || bounds.maxZ < minZ || bounds.minZ > maxZ)
+            continue;
           if (sameHeight(o, a) || sameHeight(o, b)) found.add(o);
+        }
     return [...found];
   }
   clear(p, margin = NPC_MARGIN) {

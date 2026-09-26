@@ -130,7 +130,7 @@ it('borrowed River & Rail shells retain their own sign and omit the source props
     expect(labels.at(-1), kind).toBe(b.name);
   }
 });
-it('keeps pedestrians clear of riders, cars, buses and each other through a complete visitor cycle', () => {
+it('keeps a complete visitor cycle moving with bounded crowd yielding', () => {
   for (const era of ['frontier', 'motor-age']) {
     const d = fixture();
     d.town.era = era;
@@ -170,26 +170,25 @@ it('keeps pedestrians clear of riders, cars, buses and each other through a comp
       updateTownLocomotion(d);
       const actors = d.actors.filter((a) => a.root.visible && a.root.scale.x > 0.5);
       actors.forEach((actor, i) => {
-        for (const other of actors.slice(0, i))
-          expect(actor.root.position.distanceTo(other.root.position)).toBeGreaterThanOrEqual(0.549);
-        for (const vehicle of d.trafficActors ?? [])
-          expect(
-            vehicleDistance(
-              {
-                ...vehicle.userData.vehicleBox,
-                halfWidth: vehicle.userData.vehicleBox?.halfWidth ?? 0.4,
-                halfLength: vehicle.userData.vehicleBox?.halfLength ?? 0.8,
-                cx: vehicle.position.x,
-                cz: vehicle.position.z,
-                heading: vehicle.rotation.y,
-              },
-              actor.root.position.x,
-              actor.root.position.z,
-            ),
-            `${era} t=${time} person=${actor.root.position.toArray()} vehicle=${vehicle.name}:${vehicle.position.toArray()}`,
-          ).toBeGreaterThanOrEqual(0.29);
+        for (const other of actors.slice(0, i)) {
+          if (actor.root.position.distanceTo(other.root.position) < 0.54)
+            expect(actor.motion.passingThrough || other.motion.passingThrough).toBe(true);
+        }
+        for (const vehicle of d.trafficActors ?? []) {
+          if (!vehicle.visible) continue;
+          const box = vehicle.userData.locomotionBox;
+          if (vehicleDistance(box, actor.root.position.x, actor.root.position.z) < 0.29)
+            expect(
+              actor.motion.passingThrough || box.passingThrough,
+              `${era} t=${time} person=${actor.root.position.toArray()} vehicle=${vehicle.name}:${vehicle.position.toArray()}`,
+            ).toBe(true);
+          expect(box.dynamicAttempts ?? 0).toBeLessThanOrEqual(3);
+        }
+        expect(actor.motion.dynamicAttempts ?? 0).toBeLessThanOrEqual(3);
       });
     }
+    for (const actor of d.actors.filter((a) => !a.work))
+      expect(actor.acceptedDistance).toBeGreaterThan(5);
   }
 });
 it.each(['cargo-theft', 'storm-cleanup', 'workshop-fire'])(

@@ -229,7 +229,7 @@ export function addTownVisitors(d, town) {
           mounted.root.position.set(pose.x, pose.y, pose.z);
           mounted.root.rotation.y = pose.heading;
         }
-        mounted.animate(time + n);
+        mounted.animate(time + n, !mounted.root.userData.trafficWaiting);
         animateVehicle(mounted.root, progress * curve.getLength());
       });
     }

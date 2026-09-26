@@ -355,3 +355,40 @@ it('includes the park dog-walker and its leashed dog in cached avoidance', () =>
   }
   expect(d.navigation.plans).toBe(1);
 });
+
+it('filters nearby mesh components by their bounds before exact segment checks', () => {
+  const remote = {
+    x: 1.5,
+    z: 2,
+    y: 0,
+    height: 2,
+    radius: 2,
+    polygon: [
+      [-0.5, 1.9],
+      [3.5, 1.9],
+      [3.5, 2.1],
+      [-0.5, 2.1],
+    ],
+  };
+  const obstacle = pole(0, 0);
+  const nav = new TownNavigation([remote, obstacle]);
+  const from = [-0.5, 0.07, 0],
+    to = [0.5, 0.07, 0];
+  expect(nav.near(0, 0)).toContain(remote);
+  expect(nav.nearbySegment(from, to, 0.1)).toEqual([obstacle]);
+  expect(nav.segment(from, to, 0.1)).toBe(false);
+  nav.replaceOwner('moving-wall', [remote]);
+  expect(nav.segment(from, to, 0.1)).toBe(false);
+  nav.replaceOwner('moving-wall', [
+    {
+      ...remote,
+      polygon: [
+        [-0.5, -0.1],
+        [3.5, -0.1],
+        [3.5, 0.1],
+        [-0.5, 0.1],
+      ],
+    },
+  ]);
+  expect(nav.nearbySegment(from, to, 0.1)).toHaveLength(2);
+});

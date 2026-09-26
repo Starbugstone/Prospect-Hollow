@@ -202,7 +202,7 @@ function walker(id, x, z, targetX, targetZ, radius = 0.25) {
     motion: { x, z, vx: 0, vz: 0, routeDistance: 0, maxSpeed: 0.55, radius },
   };
 }
-it('bounds accepted movement and separation at crossings independently of array order for 60 seconds', () => {
+it('bounds movement and permits crowded crossings after three attempts independently of array order', () => {
   const run = (reverse) => {
     const agents = [
       walker('a', -2, 0, 2, 0),
@@ -219,12 +219,15 @@ it('bounds accepted movement and separation at crossings independently of array 
         ).toBeLessThanOrEqual(a.motion.maxSpeed / 60 + 1e-8);
       for (let a = 0; a < agents.length; a++)
         for (let b = a + 1; b < agents.length; b++)
-          expect(
+          if (
             Math.hypot(
               agents[a].motion.x - agents[b].motion.x,
               agents[a].motion.z - agents[b].motion.z,
-            ),
-          ).toBeGreaterThanOrEqual(agents[a].motion.radius + agents[b].motion.radius + 0.04 - 1e-6);
+            ) <
+            agents[a].motion.radius + agents[b].motion.radius
+          ) {
+            expect(agents[a].motion.passingThrough || agents[b].motion.passingThrough).toBe(true);
+          }
     }
     for (const a of agents)
       expect(Math.hypot(a.motion.x - a.targetX, a.motion.z - a.targetZ)).toBeLessThan(0.1);
@@ -264,34 +267,95 @@ it.each([false, true])('clears traffic beside a blocked sidewalk (idle villager:
     navigation: new TownNavigation([{ x: -0.8, z: 0, y: 0, height: 2, radius: 0.3 }]),
   };
   updateTownLocomotion(d);
-  let waited = false;
+  let waits = 0;
   for (let frame = 0; frame < 420; frame++) {
     const previous = root.position.clone(),
       proposedZ = vehicle.position.z + 1 / 60;
     vehicle.position.z = proposedZ;
     updateTownLocomotion(d);
-    waited ||= vehicle.position.z < proposedZ;
+    if (vehicle.position.z < proposedZ) waits++;
     expect(root.position.distanceTo(previous)).toBeLessThanOrEqual(0.55 / 60 + 1e-6);
     expect(d.navigation.clear(root.position.toArray(), 0.29)).toBe(true);
-    expect(
-      vehicleDistance(vehicle.userData.locomotionBox, root.position.x, root.position.z),
-    ).toBeGreaterThanOrEqual(0.33 - 1e-6);
+    if (vehicleDistance(vehicle.userData.locomotionBox, root.position.x, root.position.z) < 0.29)
+      expect(actor.motion.passingThrough || vehicle.userData.locomotionBox.passingThrough).toBe(
+        true,
+      );
   }
-  expect(waited).toBe(true);
-  expect(root.position.x).toBeGreaterThan(0.7);
+  expect(waits).toBeLessThanOrEqual(3);
+  if (idle) {
+    expect(waits).toBe(3);
+    expect(root.position.x).toBe(-0.2);
+  }
   expect(vehicle.position.z).toBeGreaterThan(2);
 });
 
-it('does not cross through a vehicle when the nearer sidewalk is blocked', () => {
-  const a = walker('animal', -0.64, 0, 1, 0, 0.18),
-    grid = new LocomotionGrid();
-  const wall = new TownNavigation([{ x: -1.02, z: 0, y: 0, height: 2, radius: 0.2 }]);
-  const vehicle = { cx: 0, cz: 0, heading: 0, halfWidth: 0.4, halfLength: 0.8 };
-  for (let frame = 0; frame < 120; frame++) {
-    stepLocomotion([a], wall, [vehicle], grid);
-    expect(vehicleDistance(vehicle, a.motion.x, a.motion.z)).toBeGreaterThanOrEqual(0.22 - 1e-6);
+it('tries a dynamic obstruction three times, passes through it, then resets for the next crowd', () => {
+  const a = walker('walker', 0, 0, 5, 0),
+    blocker = walker('idle', 0.54, 0, 0.54, 0);
+  const grid = new LocomotionGrid();
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    stepLocomotion([a, blocker], null, [], grid);
+    expect(a.motion.x).toBe(0);
+    expect(a.motion.dynamicAttempts).toBe(attempt);
+    expect(a.motion.passingThrough).toBeFalsy();
   }
-  expect(a.motion.x).toBeLessThan(0);
+  stepLocomotion([a, blocker], null, [], grid);
+  expect(a.motion.x).toBeGreaterThan(0);
+  expect(a.motion.passingThrough).toBe(true);
+  for (let frame = 0; frame < 150; frame++) stepLocomotion([a, blocker], null, [], grid);
+  expect(a.motion.x).toBeGreaterThan(blocker.motion.x + 0.54);
+  expect(a.motion.dynamicAttempts).toBe(0);
+  expect(a.motion.passingThrough).toBe(false);
+  blocker.motion.x = a.motion.x + 0.54;
+  blocker.targetX = blocker.motion.x;
+  const before = a.motion.x;
+  stepLocomotion([a, blocker], null, [], grid);
+  expect(a.motion.x).toBe(before);
+  expect(a.motion.dynamicAttempts).toBe(1);
+});
+
+it('passes through a vehicle after three attempts but still stops at scenery', () => {
+  const a = walker('animal', -0.62, 0, 3, 0, 0.18),
+    grid = new LocomotionGrid();
+  const wall = new TownNavigation([{ x: 1.5, z: 0, y: 0, height: 2, radius: 0.2 }]);
+  const vehicle = { cx: 0, cz: 0, heading: 0, halfWidth: 0.4, halfLength: 0.8 };
+  for (let frame = 0; frame < 3; frame++) {
+    stepLocomotion([a], wall, [vehicle], grid);
+    expect(a.motion.x).toBe(-0.62);
+  }
+  let passed = false;
+  for (let frame = 0; frame < 360; frame++) {
+    stepLocomotion([a], wall, [vehicle], grid);
+    if (vehicleDistance(vehicle, a.motion.x, a.motion.z) < a.motion.radius) {
+      expect(a.motion.passingThrough).toBe(true);
+      passed = true;
+    }
+    expect(wall.clear([a.motion.x, a.y, a.motion.z], a.motion.radius)).toBe(true);
+  }
+  expect(passed).toBe(true);
+  expect(a.motion.x).toBeGreaterThan(0.62);
+  expect(a.motion.x).toBeLessThanOrEqual(1.12);
+  expect(a.motion.state).toBe('waiting');
+});
+
+it('gives opposing road traffic the same bounded yielding budget', () => {
+  const run = (reverse) => {
+    const roots = [new Group(), new Group()];
+    roots[0].position.set(0, 0.07, -0.83);
+    roots[1].position.set(0, 0.07, 0.83);
+    const d = { trafficActors: reverse ? [...roots].reverse() : roots };
+    updateTownLocomotion(d);
+    for (let frame = 0; frame < 240; frame++) {
+      roots[0].position.z += 1 / 60;
+      roots[1].position.z -= 1 / 60;
+      updateTownLocomotion(d);
+    }
+    for (const root of roots) expect(root.userData.trafficDelay).toBeCloseTo(3 / 60);
+    expect(roots[0].position.z).toBeGreaterThan(2);
+    expect(roots[1].position.z).toBeLessThan(-2);
+    return roots.map((root) => root.position.z);
+  };
+  expect(run(false)).toEqual(run(true));
 });
 
 it('waits for an accepted walk out before activating an occupied footprint', () => {
