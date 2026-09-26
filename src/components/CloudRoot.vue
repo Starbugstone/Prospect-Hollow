@@ -4,7 +4,7 @@
     <button v-if="cloud.account" :disabled="cloud.busy" @click="syncNow">
       {{ t('Sync now') }}
     </button>
-    <button @click="accountOpen = true">
+    <button :disabled="campaign.readOnly" @click="accountOpen = true">
       {{ t(cloud.account ? 'My towns' : 'Protect my progress') }}
     </button>
   </aside>

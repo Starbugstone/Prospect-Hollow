@@ -107,7 +107,7 @@
         {{ t('Shift + arrow to swap. Esc to cancel.') }}
       </p>
     </div>
-    <div v-if="!townStorage.state()?.active.owner" class="testing-reset">
+    <div v-if="!campaign.readOnly && !townStorage.state()?.active.owner" class="testing-reset">
       <button v-if="!confirmReset" class="text-button" @click="confirmReset = true">
         {{ t('Start a new village') }}
       </button>

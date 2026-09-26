@@ -1,3 +1,5 @@
+> Historical benchmark of the retired authoritative prototype. Its load harness and gameplay endpoints have been removed; these results do not measure the account-save replacement. See [current validation](validation.md).
+
 # PostgreSQL versus MySQL: game API benchmark
 
 Measured on 12 September 2026 against application commit `2647659`, using PostgreSQL
