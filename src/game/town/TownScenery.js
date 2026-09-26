@@ -1,4 +1,3 @@
-import { mineGrowth } from '../../data/mineGrowth';
 import { buildMineHillside } from './TownMineHillside';
 import { groundHeight } from './TownLandscape';
 import { RAIL_EDGE } from './TownLayout';
@@ -50,7 +49,7 @@ export class TownScenery {
       ['forecourt', pavedTown(town), () => addMineForecourt(view, town)],
       [
         'mine-works',
-        JSON.stringify([town.era, !!railEdges(town).length, mineGrowth(view.mineStage ?? 0).band]),
+        JSON.stringify([town.era, !!railEdges(town).length]),
         () => addMineWorks(view, view.world, town.era),
       ],
       ['lights', hasElectricity(town), () => addElectricLighting(view, town)],

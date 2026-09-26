@@ -184,7 +184,6 @@
             tourOpen
           "
           :next-level="campaign.nextLevel"
-          :mine-stage="campaign.mineStage"
           :raid="activeRaid"
           :raid-defense-ids="readyRaidDefenses"
           :construction="construction"
@@ -558,7 +557,8 @@
     </TownDialog>
     <TownTour
       v-if="active && tourOpen"
-      :mine-stage="campaign.mineStage"
+      :level="campaign.nextLevel"
+      :era="campaign.town.era"
       @close="finishTour"
       @build="
         finishTour();

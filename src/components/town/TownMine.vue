@@ -24,13 +24,20 @@
       <path d="M-108 57-88-38-52-81-7-96 49-62 84-11 110 58 27 78Z" fill="#a59c7c" />
       <path d="m-108 57 56-138 16 74-15 64Zm101-153 33 80 58 5-35-51Z" fill="#c7b58c" />
       <g
-        v-if="features.has('upper-terrace')"
+        v-for="building in hillsideBuildings"
+        :key="building.feature"
+        :data-feature="building.feature"
+        :transform="`translate(${building.x} ${building.y})`"
         :fill="appearance.wall"
         :stroke="appearance.frame"
-        stroke-width="3"
+        stroke-width="2"
       >
-        <path d="M-60-40V-66H20V-40Z" /><path d="M-67-40H28" stroke-width="7" />
-        <path d="M-51-54H11" stroke="#7aa5ac" stroke-width="9" />
+        <path d="M-19 9V-13H19V9Z" /><path
+          d="M-23-13H23"
+          :stroke="appearance.roof"
+          stroke-width="5"
+        />
+        <path d="M-12-4H12" stroke="#7aa5ac" stroke-width="5" />
       </g>
       <g v-if="features.has('benches')" stroke="#bdb69e" stroke-width="8"
         ><path d="M-87-18H-33M-81-34H-28M-72-50H-23"
@@ -39,18 +46,12 @@
         <path d="M-3-85V-48M90-18V50M-3-80 90-15" />
         <path d="M21-63v12h12v-12M52-42v12h12v-12" :fill="appearance.roof" />
       </g>
-      <g v-if="profile.summit === 'radio-mast'" stroke="#5e7779" stroke-width="3"
+      <g v-if="features.has('radio-mast')" stroke="#5e7779" stroke-width="3"
         ><path d="M0-94V-140M-12-117H12M-9-128H9" /><circle cy="-142" r="4" fill="#ecbb78"
       /></g>
-      <g v-if="profile.summit === 'wind-turbine'" stroke="#dedecb" stroke-width="5"
-        ><path d="M0-92V-132M0-132-19-145M0-132 21-143M0-132 0-108"
+      <g v-if="features.has('wind-turbine')" stroke="#dedecb" stroke-width="5"
+        ><path transform="translate(45 -5)" d="M0-92V-132M0-132-19-145M0-132 21-143M0-132 0-108"
       /></g>
-      <g v-for="vein in growth.veins" :key="vein.segmentIndex" :fill="vein.colour">
-        <path
-          :transform="`translate(${-55 + (vein.segmentIndex % 9) * 9 + vein.seamIndex * 2} ${-24 - vein.seamIndex * 8})`"
-          d="M-3 0 0-3 4 0 1 3Z"
-        />
-      </g>
       <g :stroke="appearance.frame" stroke-width="5" fill="none" transform="translate(-113 10)">
         <path
           :d="`M-20 40V${-appearance.height * 11}H20V40M-20 32 20 ${-appearance.height * 11 + 8}`"
@@ -94,8 +95,11 @@
         ><path
           d="m-16 36 33 2-4 23-26-3Z"
           :fill="profile.cart === 'hand-tub' ? '#a78158' : appearance.frame" /><path
-          d="m-9 35 4-10 8 4 6-7 9 10Z"
-          fill="#ad87ba" /><circle cx="-8" cy="61" r="5" fill="#394543" /><circle
+          v-for="(gem, index) in growth.gems"
+          :key="index"
+          :transform="`translate(${gem.x * 60} ${35 - (gem.y - 0.6) * 65 + gem.z * 14})`"
+          d="M-6 0-2-6 5-4 7 1 0 4Z"
+          :fill="gem.colour" /><circle cx="-8" cy="61" r="5" fill="#394543" /><circle
           cx="10"
           cy="63"
           r="5"
@@ -115,20 +119,6 @@
           r="5"
           fill="#394543"
       /></g>
-      <g
-        v-if="features.has('fan-house') || features.has('crusher') || features.has('sorting-plant')"
-        :fill="appearance.wall"
-        :stroke="appearance.roof"
-        stroke-width="3"
-        ><path d="M66 22V-7h41v29Z" /><circle cx="86" cy="8" r="10" fill="#5f7980"
-      /></g>
-      <g v-for="n in growth.stockpile + 1" :key="`stock-${n}`"
-        ><path
-          :transform="`translate(${105 - n * 8} 65)`"
-          d="M-8 0-6-12H6L8 0Z"
-          :fill="appearance.frame"
-      /></g>
-      <path v-if="growth.plaque" d="M-67 57h16v10h-16Z" fill="#d8bd76" />
       <g v-if="!decorative" class="mine-label" transform="translate(0 103)"
         ><rect
           x="-93"
@@ -159,14 +149,21 @@ import { t } from '../../i18n';
 const props = defineProps({
   level: { type: Number, default: 1 },
   decorative: Boolean,
-  stage: { type: Number, default: 0 },
   era: { type: String, default: 'frontier' },
 });
 const appearance = computed(() => mineAppearance(props.era));
 const profile = computed(() => mineProfile(props.era));
-const growth = computed(() => mineGrowth(props.stage));
+const growth = computed(() => mineGrowth(Math.max(0, props.level - 1)));
 const features = computed(
   () => new Set(profile.value.site.map((f) => (typeof f === 'string' ? f : f.feature))),
+);
+const hillsideBuildings = computed(() =>
+  [
+    { feature: 'crusher', x: -58, y: -25 },
+    { feature: 'fan-house', x: 45, y: -29 },
+    { feature: 'upper-terrace', x: -27, y: -63 },
+    { feature: 'sorting-plant', x: 32, y: -80 },
+  ].filter(({ feature }) => features.value.has(feature)),
 );
 defineEmits(['enter']);
 </script>

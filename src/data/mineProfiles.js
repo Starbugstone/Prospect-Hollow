@@ -27,7 +27,7 @@ export const MINE_PROFILES = {
     site: ['cribbing', 'sluice'],
     motion: ['windlass'],
     heritage: [],
-    summit: null,
+    stockpile: 1,
   },
   'river-rail': {
     inherits: 'frontier',
@@ -41,6 +41,7 @@ export const MINE_PROFILES = {
     ],
     motion: ['winding-wheel', 'tipple'],
     heritage: ['keystone-1884'],
+    stockpile: 2,
   },
   industrial: {
     inherits: 'river-rail',
@@ -50,7 +51,7 @@ export const MINE_PROFILES = {
     cart: 'side-tip',
     site: ['crusher', 'conveyor'],
     motion: ['conveyor'],
-    summit: null,
+    stockpile: 3,
   },
   'post-war': {
     inherits: 'industrial',
@@ -69,6 +70,7 @@ export const MINE_PROFILES = {
     cart: 'compact-haul',
     site: ['truck-bay', 'tipple'],
     motion: ['truck', 'tipple'],
+    stockpile: 4,
   },
   aviation: {
     inherits: 'motor-age',
@@ -78,7 +80,6 @@ export const MINE_PROFILES = {
     cart: 'standard-tub',
     site: ['upper-terrace', 'conveyor', 'ropeway', 'radio-mast'],
     motion: ['buckets', 'beacon'],
-    summit: 'radio-mast',
   },
   broadcast: {
     inherits: 'aviation',
@@ -88,7 +89,6 @@ export const MINE_PROFILES = {
     cart: 'tipping-tubs',
     site: ['upper-terrace', 'benches', 'fan-house', 'heritage-wheel'],
     motion: ['fan', 'tipple'],
-    summit: null,
     heritage: ['keystone-1884', 'winding-wheel'],
   },
   contemporary: {
@@ -99,7 +99,6 @@ export const MINE_PROFILES = {
     cart: 'electric-haul',
     site: ['upper-terrace', 'sorting-plant', 'solar-canopy', 'wind-turbine', 'heritage-wheel'],
     motion: ['turbine', 'ore-flow'],
-    summit: 'wind-turbine',
   },
 };
 const portals = new Set(Object.values(MINE_PROFILES).map((p) => p.portal));
@@ -128,7 +127,7 @@ export function mineProfile(era, definitions = MINE_PROFILES) {
     const site = Array.isArray(result.site)
       ? result.site.filter((entry) => !entry.optional || validFeature(entry))
       : [];
-    result.site =
+    const additions =
       site.length &&
       site.every(
         (entry) =>
@@ -136,9 +135,21 @@ export function mineProfile(era, definitions = MINE_PROFILES) {
           (!entry.requires || entry.optional || MINE_FEATURE_KEYS.includes(entry.substitute)),
       )
         ? site
-        : parent.site;
+        : [];
+    // Site features are permanent additions. Repeating one in a descendant is
+    // a reference to the same structure, not a second copy or a replacement.
+    result.site = [
+      ...new Map(
+        [...parent.site, ...additions].map((entry) => [
+          typeof entry === 'string' ? entry : entry.feature,
+          entry,
+        ]),
+      ).values(),
+    ];
+    result.heritage = [...new Set([...parent.heritage, ...(own.heritage ?? [])])];
     if (!result.motion?.length || result.motion.some((m) => !motions.has(m)))
       result.motion = parent.motion;
+    result.motion = [...new Set([...parent.motion, ...result.motion])];
     return result;
   }
   return resolve(key);

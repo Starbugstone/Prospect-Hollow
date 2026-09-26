@@ -407,7 +407,11 @@ owner metadata, authored anchors, prepared routes and accepted/preferred poses.
 ### Mine site and growth
 
 `mineProfiles` owns the portal, works, machine, cart, site, motion and heritage
-slots, with supported ancestor fallback and cycle validation. `MineFeatures`
+slots, with supported ancestor fallback and cycle validation. Site and motion
+features accumulate through inheritance and are deduplicated; a new era never
+drops an earlier mine facility. Permanent feature locations leave space for
+future additions, while shared era colors, glazing and facade details modernize
+existing workshops. `MineFeatures`
 and `addMineSite` compose the same assembly in permanent and cinematic views;
 `TownMine.vue` consumes the same profile and growth definitions for SVG fallback.
 Add new feature behavior once in the registry and compose it in definitions.
@@ -419,9 +423,10 @@ features require a real railway and a clear envelope. The shaft, tunnel bore,
 forecourt and puzzle entry remain open. Construction switches logical owners
 with its visible assembly and releases temporary owners on cleanup.
 
-`mineGrowth` uses global completed chapters: six seams of nine instanced veins,
-stockpile bands 0/6/12/24, upper-adit detail at 24, lamps/bins at 36 and the
-completion plaque. Larger campaigns group progress into the same 54 display
-slots. Detail bands rebuild the mine works; individual chapters update instances.
-The shared haul clock controls load/travel/unload/return and freezes with the town.
-None of these display limits affect puzzle moves, rewards or campaign progress.
+`mineGrowth` maps completed puzzle levels to a bounded cart load of 1–12 gems.
+Cargo uses a fixed instanced mesh and updates its visible count without rebuilding
+scenery, navigation or villagers. All buildings, hillside facilities, stockpiles
+and equipment depend on the era, never on puzzle level. The SVG fallback and tour
+use the same era profile and level-based cart cargo. The shared haul clock controls
+load/travel/unload/return and freezes with the town. Display capacity never limits
+puzzle moves, rewards or campaign progress.

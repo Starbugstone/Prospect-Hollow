@@ -1,5 +1,7 @@
 import { mineTrackHeight, mineTrackPitch } from '../TownMineShaft';
 import { MINE_SHAFT } from '../../../data/mineSite';
+import { CART_GEMS } from '../../../data/mineGrowth';
+import { Color, InstancedMesh, Matrix4 } from 'three';
 
 export function mineCart(d, parent, model) {
   const root = d.group(parent),
@@ -41,17 +43,19 @@ export function mineCart(d, parent, model) {
   }
   if (model === 'iron-car')
     for (const z of [-0.23, 0.23]) d.box(body, 0.77, 0.06, 0.06, 0, 0.38, z, '#b5ad8a');
-  for (let i = 0; i < 4; i++)
-    d.ball(
-      load,
-      (i % 2) * 0.26 - 0.13,
-      0.68,
-      Math.floor(i / 2) * 0.21 - 0.1,
-      0.14,
-      i % 2 ? '#ac85bf' : '#87b8b2',
-      'rock',
-    );
-  root.userData.envelope = { halfWidth: 0.43, halfLength: 0.36, height: 0.9 };
+  const cargo = new InstancedMesh(d.geometries.rock, d.material('#ffffff'), CART_GEMS.length);
+  cargo.name = 'Mine cart gems';
+  cargo.userData.mineCargo = true;
+  cargo.frustumCulled = false;
+  const matrix = new Matrix4(),
+    colorValue = new Color();
+  CART_GEMS.forEach((gem, i) => {
+    matrix.makeScale(0.12, 0.12, 0.12).setPosition(gem.x, gem.y, gem.z);
+    cargo.setMatrixAt(i, matrix);
+    cargo.setColorAt(i, colorValue.set(gem.colour));
+  });
+  load.add(cargo);
+  root.userData.envelope = { halfWidth: 0.43, halfLength: 0.36, height: 1 };
   return { root, body, load, wheels };
 }
 export function haulCycle(time) {

@@ -336,9 +336,9 @@ export class TownDiorama {
     });
     group.removeFromParent();
   }
-  buildPlot(id, group, town, labels, mineStage) {
+  buildPlot(id, group, town, labels) {
     let movingPart;
-    if (id === 'mine') this.mine(group, labels.mine, mineStage);
+    if (id === 'mine') this.mine(group, labels.mine);
     else {
       const stage = town.buildings[id],
         project = town.projects[id],
@@ -395,7 +395,7 @@ export class TownDiorama {
     applyRoadSetbacks(group, id, town);
     return movingPart;
   }
-  plotSignatures(town, labels, mineStage) {
+  plotSignatures(town, labels) {
     return new Map(
       visiblePlots(town).map(({ id }) => [
         id,
@@ -406,7 +406,6 @@ export class TownDiorama {
           constructionVisual(town.projects[id]),
           town.buildingEras[id],
           town.buildingEraLevels[id],
-          id === 'mine' ? mineGrowth(mineStage).band : null,
         ]),
       ]),
     );
@@ -440,11 +439,11 @@ export class TownDiorama {
     this.cue.visible = true;
     this.drawFrame();
   }
-  changeTown(town, labels, mineStage, constructionId, reducedMotion = false) {
-    this.mineStage = mineStage;
+  changeTown(town, labels, mineProgress, constructionId, reducedMotion = false) {
+    this.mineProgress = mineProgress;
     const works = this.staticScenery?.entries.get('mine-works')?.group;
-    if (works) updateMineGrowth(this, works, mineGrowth(mineStage));
-    const signatures = this.plotSignatures(town, labels, mineStage);
+    if (works) updateMineGrowth(works, mineGrowth(mineProgress));
+    const signatures = this.plotSignatures(town, labels);
     const changed = [...signatures].filter(
       ([id, signature]) => this.plotCache?.get(id)?.signature !== signature,
     );
@@ -478,7 +477,6 @@ export class TownDiorama {
     ) {
       try {
         this.swapPlot(changed[0][0], town, labels, {
-          mineStage,
           construction: constructionId && !reducedMotion,
         });
         return;
@@ -493,7 +491,7 @@ export class TownDiorama {
       const oldTown = this.town;
       this.town = town;
       try {
-        this.buildPlot(constructionId, probe, town, labels, mineStage);
+        this.buildPlot(constructionId, probe, town, labels);
       } finally {
         this.town = oldTown;
       }
@@ -504,14 +502,14 @@ export class TownDiorama {
         entries,
         town,
         labels,
-        mineStage,
+        mineProgress,
         constructionId: reducedMotion ? null : constructionId,
       };
       if (!this.tryActivatePlot()) return;
-    } else this.update(town, labels, mineStage, reducedMotion ? null : constructionId);
+    } else this.update(town, labels, mineProgress, reducedMotion ? null : constructionId);
     if (this.cue) this.cue.visible = false;
   }
-  swapPlot(id, town, labels, { mineStage = 0, construction = false } = {}) {
+  swapPlot(id, town, labels, { construction = false } = {}) {
     this.finishConstruction();
     this.invalidatePresentationWork();
     if (this.pendingPlot) this.clearGroup(this.pendingPlot.group);
@@ -523,7 +521,7 @@ export class TownDiorama {
     group.userData.plot = id;
     group.userData.static = true;
     this.town = town;
-    const movingPart = this.buildPlot(id, group, town, labels, mineStage);
+    const movingPart = this.buildPlot(id, group, town, labels);
     const footprint =
       id === 'mine'
         ? { solids: geometryFootprints(group), provisional: true }
@@ -531,7 +529,7 @@ export class TownDiorama {
     const entries = registerFootprints(group, footprint.solids, {
       provisional: footprint.provisional,
     });
-    const signature = this.plotSignatures(town, labels, mineStage).get(id);
+    const signature = this.plotSignatures(town, labels).get(id);
     const pending = {
       id,
       group,
@@ -617,7 +615,7 @@ export class TownDiorama {
       const pending = this.pendingUpdate;
       if (!this.plotVacant(pending)) return false;
       this.pendingUpdate = null;
-      this.update(pending.town, pending.labels, pending.mineStage, pending.constructionId);
+      this.update(pending.town, pending.labels, pending.mineProgress, pending.constructionId);
       if (this.cue) this.cue.visible = false;
       return true;
     }
@@ -699,8 +697,8 @@ export class TownDiorama {
     this.cancelFinishWork?.();
     this.cancelRouteWork?.();
   }
-  update(town, labels, mineStage = 0, constructionId = null) {
-    this.mineStage = mineStage;
+  update(town, labels, mineProgress = 0, constructionId = null) {
+    this.mineProgress = mineProgress;
     this.invalidatePresentationWork();
     // Store the rendered era separately: the campaign may mutate the same town
     // object before this update. Routes and work positions only survive rebuilds
@@ -734,7 +732,7 @@ export class TownDiorama {
     const plots = visiblePlots(town);
     const previousPlotIds = this.cinematic?.plotIds;
     const reusable = new Map();
-    const signatures = this.plotSignatures(town, labels, mineStage);
+    const signatures = this.plotSignatures(town, labels);
     this.topology = this.topologySignature(town, labels);
     this.labels = labels;
     // Keep unchanged plot meshes (and their sign textures) out of world disposal.
@@ -778,7 +776,7 @@ export class TownDiorama {
     this.guidedPlot = nextGoal(town)?.id;
     this.staticScenery.update(this, town);
     const mineWorks = this.staticScenery.entries.get('mine-works')?.group;
-    if (mineWorks) updateMineGrowth(this, mineWorks, mineGrowth(mineStage));
+    if (mineWorks) updateMineGrowth(mineWorks, mineGrowth(mineProgress));
     this.controls.maxDistance = [
       'post-war',
       'motor-age',
@@ -815,7 +813,7 @@ export class TownDiorama {
         position: point(x, 0.2, z + (id === 'mine' ? 1.65 : 1.85)),
       });
       let movingPart = cached?.movingPart;
-      if (!cached) movingPart = this.buildPlot(id, group, town, labels, mineStage);
+      if (!cached) movingPart = this.buildPlot(id, group, town, labels);
       const bounds = new THREE.Box3().setFromObject(group);
       if (!cached) {
         const footprint =
@@ -1132,7 +1130,7 @@ export class TownDiorama {
     this.rod(parent, [0, 1.75, 0], [0, 0.73, 0], 0.012, '#d6c298');
     this.mesh(parent, 'cone', [0.13, 0.22, 0.13], [0, 0.75, 0], '#aa7748');
   }
-  mine(parent, label, stage = 0) {
+  mine(parent, label) {
     addMineShaft(this, parent);
     const entry = this.group(
       parent,

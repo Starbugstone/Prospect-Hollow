@@ -33,15 +33,20 @@ export function mineYardEnvelope({
 }
 export const MINE_SITE = Object.freeze({
   terrace: [-2.8, -24.8],
+  fanHouse: [2, -25.6],
   upperTerrace: [-1.8, -27],
-  summit: [0, -28.5],
+  sortingPlant: [3, -28.5],
+  summit: [-1.5, -30],
+  turbine: [3, -31],
+  tipple: [6.45, -19.4],
+  truckBay: [9.7, -19.4],
   ropeway: [
-    [2, -25.4],
+    [5.2, -26.4],
     [7.8, -19.4],
   ],
   stub: [
-    [7, -20.1],
-    [11, -20.1],
+    [5.5, -19.4],
+    [7.4, -19.4],
   ],
 });
 

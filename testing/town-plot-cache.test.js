@@ -197,7 +197,7 @@ it('reuses unchanged plots and windmills while rebuilding a changed construction
   expect(view.buildingRenderer.batches.get(settled)).toBe(settledBatch);
 });
 
-it('rebuilds an interrupted reveal and invalidates models for progress, labels, mine stage and era', () => {
+it('rebuilds an interrupted reveal and invalidates models for progress, labels and era', () => {
   const { view, town, labels } = fixture();
   view.update(town, labels, 0, 'home');
   const interrupted = view.construction;
@@ -229,7 +229,9 @@ it('rebuilds an interrupted reveal and invalidates models for progress, labels, 
   const mine = view.plotCache.get('mine').group;
   view.update(town, labels, 1);
   expect(view.plotCache.get('mine').group).toBe(mine);
-  expect(view.staticScenery.entries.get('mine-works').group.userData.veins.count).toBe(1);
+  expect(
+    view.staticScenery.entries.get('mine-works').group.getObjectByName('Mine cart gems').count,
+  ).toBe(2);
 });
 
 it.each(ERAS.map((era) => era.id))(
@@ -261,6 +263,30 @@ it.each(ERAS.map((era) => era.id))(
     expect(view.plotCache.has('garage')).toBe(false);
   },
 );
+
+it('fills cart cargo without changing mine scenery, navigation or village life', () => {
+  const { view, town, labels } = fixture();
+  town.era = 'motor-age';
+  view.update(town, labels, 0);
+  const site = view.staticScenery.entries.get('mine-works').group;
+  const cargo = site.getObjectByName('Mine cart gems');
+  const geometry = view.buildingRenderer.batches.get(site);
+  const navigation = view.navigation;
+  const actors = [...view.actors];
+  const rebuild = vi.spyOn(view, 'update');
+  const before = JSON.stringify(town);
+  for (const completed of [1, 6, 24, 54, 160, 323]) {
+    view.changeTown(town, labels, completed, null);
+    expect(view.staticScenery.entries.get('mine-works').group).toBe(site);
+    expect(view.buildingRenderer.batches.get(site)).toBe(geometry);
+    expect(view.navigation).toBe(navigation);
+    expect(view.actors).toEqual(actors);
+    expect(site.getObjectByName('Mine cart gems')).toBe(cargo);
+  }
+  expect(cargo.count).toBe(12);
+  expect(rebuild).not.toHaveBeenCalled();
+  expect(JSON.stringify(town)).toBe(before);
+});
 
 it.each(ERAS.map((era) => era.id))(
   'keeps unrelated %s scenery and GPU buffers through a construction cycle',

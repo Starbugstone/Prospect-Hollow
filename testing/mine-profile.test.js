@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
 import { ERAS } from '../src/data/eras';
 import { MINE_PROFILES, mineProfile, validateMineProfiles } from '../src/data/mineEvolution';
-import { mineGrowth, GEM_COLOURS } from '../src/data/mineGrowth';
+import { mineGrowth, CART_GEMS } from '../src/data/mineGrowth';
 import { MINE_FEATURES } from '../src/game/town/mine/MineFeatures';
 import { haulCycle } from '../src/game/town/mine/MineRollingStock';
 it('resolves every era through supported feature definitions and safe inherited substitutes', () => {
@@ -36,28 +36,37 @@ it('resolves every era through supported feature definitions and safe inherited 
     expect.arrayContaining(['broken: unknown missing', 'cycleA: inheritance cycle']),
   );
 });
-it.each([0, 1, 5, 6, 11, 12, 23, 24, 35, 36, 53, 54])(
-  'maps chapter %s to bounded global growth',
-  (n) => {
-    const growth = mineGrowth(n);
-    expect(growth.veins).toHaveLength(n);
-    expect(growth.stockpile).toBe(n < 6 ? 0 : n < 12 ? 1 : n < 24 ? 2 : 3);
-    for (let i = 0; i < n; i++)
-      expect(growth.veins[i]).toEqual({
-        segmentIndex: i,
-        seamIndex: Math.floor(i / 9),
-        colour: GEM_COLOURS[i % 5],
-      });
-    expect(growth.plaque).toBe(n === 54);
-    expect(growth.aditLights).toBe(n >= 24);
-  },
-);
-it.each([55, 60, 108])('groups a %s chapter campaign into the same 54 display slots', (count) => {
-  expect(mineGrowth(count, count).veins).toHaveLength(54);
-  expect(mineGrowth(0, count).veins).toHaveLength(0);
-  expect(mineGrowth(1, count).veins).toHaveLength(1);
-  for (const vein of mineGrowth(count, count).veins)
-    expect(vein.colour).toBe(GEM_COLOURS[Math.floor((vein.segmentIndex * count) / 54) % 5]);
+it('retains every earlier site feature while later eras update their appearance', () => {
+  let previous = [];
+  for (const { id } of ERAS) {
+    const profile = mineProfile(id);
+    const features = profile.site.map((item) => (typeof item === 'string' ? item : item.feature));
+    expect(features).toEqual(expect.arrayContaining(previous));
+    expect(new Set(features).size).toBe(features.length);
+    previous = features;
+  }
+  const motor = mineProfile('motor-age');
+  expect(motor.site).toEqual(
+    expect.arrayContaining(['crusher', 'fan-house', 'upper-terrace', 'truck-bay']),
+  );
+  expect(
+    mineProfile('future', { ...MINE_PROFILES, future: { inherits: 'motor-age' } }).site,
+  ).toEqual(motor.site);
+});
+it.each([54, 324, 600])('fills bounded cart cargo across a %s level campaign', (total) => {
+  let count = 0;
+  for (let level = 0; level <= total; level++) {
+    const growth = mineGrowth(level, total);
+    expect(Object.keys(growth)).toEqual(['gems']);
+    expect(growth.gems.length).toBeGreaterThanOrEqual(count);
+    expect(growth.gems.length).toBeLessThanOrEqual(CART_GEMS.length);
+    expect(growth.gems).toEqual(CART_GEMS.slice(0, growth.gems.length));
+    count = growth.gems.length;
+  }
+  expect(mineGrowth(0, total).gems).toHaveLength(1);
+  expect(mineGrowth(total, total).gems).toHaveLength(CART_GEMS.length);
+  expect(mineGrowth(total * 2, total)).toEqual(mineGrowth(total, total));
+  expect(mineGrowth(-10, total)).toEqual(mineGrowth(0, total));
 });
 it('shares an explicit load, travel, unload and return clock', () => {
   expect([0, 3, 8, 12].map((t) => haulCycle(t).state)).toEqual([

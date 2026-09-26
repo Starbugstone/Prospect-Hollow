@@ -104,21 +104,21 @@ it('runs one bus on connected roads with bounded geometry and a pausable shared 
   expect(visited.size).toBeGreaterThan(5);
 });
 
-it('keeps chapter growth bounded to instanced hillside seams', () => {
+it('keeps progress gems inside instanced cart cargo instead of on the hillside', () => {
   const d = diorama();
   d.town = createTown();
-  d.mineStage = 54;
-  const site = addMineSite(d, d.world, 'frontier'),
-    veins = site.userData.veins;
-  expect(veins.isInstancedMesh).toBe(true);
-  expect(veins.count).toBe(54);
-  expect(site.getObjectByName('Mine chapter jewels')).toBeUndefined();
+  d.mineProgress = 324;
+  const site = addMineSite(d, d.world, 'frontier');
+  const cargo = site.getObjectByName('Mine cart gems');
+  expect(cargo.isInstancedMesh).toBe(true);
+  expect(cargo.count).toBe(12);
+  expect(site.getObjectByName('Mine hillside chapter veins')).toBeUndefined();
   const matrix = new Matrix4();
-  for (let i = 0; i < 54; i++) {
-    veins.getMatrixAt(i, matrix);
+  for (let i = 0; i < cargo.count; i++) {
+    cargo.getMatrixAt(i, matrix);
     const p = new Vector3().setFromMatrixPosition(matrix);
-    expect(p.z).toBeLessThan(-1);
-    expect(p.x).toBeGreaterThan(-6);
-    expect(p.x).toBeLessThan(1);
+    expect(Math.abs(p.x)).toBeLessThan(0.3);
+    expect(Math.abs(p.z)).toBeLessThan(0.3);
+    expect(p.y).toBeLessThan(0.9);
   }
 });

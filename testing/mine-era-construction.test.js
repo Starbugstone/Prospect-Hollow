@@ -121,6 +121,28 @@ it('inherits mine architecture for a future era and safely handles unknown ident
   expect(mineAppearance('future-mine')).toBe(mineAppearance('frontier'));
 });
 
+it('retains hillside workshops through Motor Age and refits them to its architecture', () => {
+  const d = fixture('post-war', 'motor-age');
+  const previous = d.staticScenery.entries.get('mine-works').group;
+  const next = addMineWorks(d, d.world, 'motor-age');
+  for (const key of ['crusher', 'fan-house', 'upper-terrace']) {
+    const oldFeature = previous.getObjectByName(`Mine feature ${key}`);
+    const feature = next.getObjectByName(`Mine feature ${key}`);
+    expect(oldFeature).toBeDefined();
+    expect(feature).toBeDefined();
+    expect(feature.children[0].position).toEqual(oldFeature.children[0].position);
+    const glazing = feature.getObjectByName('Era workshop glazing');
+    expect(glazing).toBeDefined();
+    const colors = new Set();
+    feature.traverse((o) => {
+      if (o.material?.color) colors.add(`#${o.material.color.getHexString()}`);
+    });
+    expect(colors).toContain(mineAppearance('motor-age').wall);
+    expect(colors).not.toContain(mineAppearance('post-war').wall);
+  }
+  expect(next.getObjectByName('Mine feature truck-bay')).toBeDefined();
+});
+
 it('uses the new receipt when entering an era before the static town needs rebuilding', () => {
   const d = fixture('post-war', 'motor-age');
   d.town.transition.pending = false;

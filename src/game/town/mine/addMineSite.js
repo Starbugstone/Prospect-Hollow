@@ -1,18 +1,12 @@
 import { geometryFootprints, registerFootprints } from '../BuildingFootprints';
-import { Box3, Color, InstancedMesh, Matrix4 } from 'three';
+import { Box3 } from 'three';
 import { mineAppearance, mineProfile } from '../../../data/mineEvolution';
 import { mineGrowth } from '../../../data/mineGrowth';
-import {
-  MINE_POSITION,
-  MINE_SHAFT,
-  mineYardEnvelope,
-  MINE_SITE,
-  MINE_ACCESS,
-} from '../../../data/mineSite';
+import { MINE_POSITION, MINE_SHAFT, MINE_SITE, MINE_ACCESS } from '../../../data/mineSite';
 import { railEdges } from '../TownLayout';
 import { hasElectricity } from '../../../data/industrial';
 import { addMineWorksBase } from './MineWorksBase';
-import { MINE_FEATURES, mineSurfaceHeight } from './MineFeatures';
+import { MINE_FEATURES } from './MineFeatures';
 import { addMineHaul } from './MineRollingStock';
 
 export function addMinePortal(d, root, profile, appearance) {
@@ -55,27 +49,14 @@ export function addMinePortal(d, root, profile, appearance) {
   }
   return entry;
 }
-export function updateMineGrowth(d, root, growth) {
-  const veins = root.userData.veins;
-  if (!veins) return;
-  const matrix = new Matrix4(),
-    color = new Color();
-  for (const vein of growth.veins) {
-    const column = vein.segmentIndex % 9,
-      x = -4.5 + column * 0.52 + vein.seamIndex * 0.12,
-      z = -21.3 - vein.seamIndex * 0.52;
-    matrix.makeScale(0.12, 0.075, 0.26);
-    matrix.setPosition(x, mineSurfaceHeight(x, z) + 0.1, z - MINE_POSITION[1]);
-    veins.setMatrixAt(vein.segmentIndex, matrix);
-    veins.setColorAt(vein.segmentIndex, color.set(vein.colour));
-  }
-  if (veins.count !== growth.veins.length && d.frameCache) d.frameCache.valid = false;
-  veins.count = growth.veins.length;
-  veins.instanceMatrix.needsUpdate = true;
-  if (veins.instanceColor) veins.instanceColor.needsUpdate = true;
+export function updateMineGrowth(root, growth) {
+  root.traverse((object) => {
+    if (object.userData.mineCargo) object.count = growth.gems.length;
+  });
   root.userData.growth = growth;
 }
-export function addMineSite(d, parent, era, growth = mineGrowth(d.mineStage ?? 0)) {
+
+export function addMineSite(d, parent, era, growth = mineGrowth(d.mineProgress ?? 0)) {
   const profile = mineProfile(era),
     a = mineAppearance(era),
     root = addMineWorksBase(d, parent, era),
@@ -100,59 +81,17 @@ export function addMineSite(d, parent, era, growth = mineGrowth(d.mineStage ?? 0
     feature.userData.buildPhase = key === 'upper-terrace' ? 0 : 3;
     build(d, feature, a, motions, profile);
   }
-  const veins = new InstancedMesh(d.geometries.rock, d.material('#ffffff'), 54);
-  veins.name = 'Mine hillside chapter veins';
-  veins.userData.navigationExclude = true;
-  veins.frustumCulled = false;
-  root.add(veins);
-  root.userData.veins = veins;
-  updateMineGrowth(d, root, growth);
-  const e = mineYardEnvelope(),
-    stock = d.group(root, e.maxX - 0.8, 0, e.maxZ - 0.65 - MINE_POSITION[1]);
-  stock.name = `Mine stockpile ${growth.stockpile}`;
+  const stock = d.group(root, -7.8, 0, 3.2);
+  stock.name = 'Mine yard stock';
   stock.userData.buildPhase = 4;
-  const count = growth.stockpile + 1;
-  for (let i = 0; i < count; i++) {
-    const x = -i * 0.45,
-      height = 0.3 + i * 0.14;
-    if (['frontier', 'river-rail'].includes(profile.key))
-      d.ball(
-        stock,
-        x,
-        height / 2,
-        0,
-        [0.32, height / 2, 0.34],
-        profile.key === 'frontier' ? '#a3957a' : '#8e9990',
-        'rock',
-      );
+  for (let i = 0; i < profile.stockpile; i++) {
+    const x = i * 0.45;
+    if (profile.works === 'windlass' || profile.works === 'timber-a-frame')
+      d.ball(stock, x, 0.22, 0, [0.28, 0.22, 0.3], '#a3957a', 'rock');
     else {
-      d.box(stock, 0.42, height, 0.65, x, height / 2, 0, a.frame);
-      d.box(
-        stock,
-        0.34,
-        0.06,
-        0.52,
-        x,
-        height + 0.02,
-        0,
-        growth.extraStock ? '#9ab3ad' : '#aa987c',
-      );
-      if (profile.key === 'contemporary')
-        d.box(stock, 0.46, 0.07, 0.7, x, height + 0.09, 0, a.roof);
+      d.box(stock, 0.4, 0.5, 0.6, x, 0.25, 0, a.frame);
+      d.box(stock, 0.32, 0.06, 0.5, x, 0.53, 0, a.roof);
     }
-  }
-  if (growth.aditLights)
-    for (const x of [-2.8, -0.8])
-      d.box(root, 0.1, 0.2, 0.1, x, mineSurfaceHeight(x, -26.5) + 1.5, -6.5, '#f0d998');
-  if (growth.lampsAndBins)
-    for (const x of [-6.9, -5.9]) {
-      d.box(root, 0.5, 0.5, 0.5, x, 0.3, 3.4, a.frame);
-      d.rod(root, [x, 0, 2.6], [x, 2.6, 2.6], 0.04, a.frame);
-      d.ball(root, x, 2.7, 2.6, 0.13, '#efce86');
-    }
-  if (growth.plaque) {
-    const plaque = d.box(root, 0.65, 0.35, 0.1, -2.1, 0.5, 1.8, '#d8bd76');
-    plaque.name = 'Completed campaign plaque';
   }
   const haulRoot = d.group(root, -MINE_POSITION[0], -0.08, -MINE_POSITION[1]);
   haulRoot.userData.animated = true;
@@ -202,5 +141,6 @@ export function addMineSite(d, parent, era, growth = mineGrowth(d.mineStage ?? 0
   }
   root.userData.mineUpdate(0);
   registerFootprints(root, solids, { owner: 'mine-site', activation: 'completed' });
+  updateMineGrowth(root, growth);
   return root;
 }

@@ -11,7 +11,6 @@
     :reduced-motion="reducedMotion"
     :paused="paused"
     :next-level="nextLevel"
-    :mine-stage="mineStage"
     :fullscreen="fullscreen"
     :construction="construction"
     @select="$emit('select', $event)"
@@ -259,7 +258,6 @@ const props = defineProps({
   reducedMotion: Boolean,
   paused: Boolean,
   nextLevel: Number,
-  mineStage: { type: Number, default: 0 },
   raid: Object,
   raidDefenseIds: { type: Array, default: () => [] },
   construction: Object,
@@ -423,7 +421,7 @@ async function update() {
     BUILDINGS.map((building) => [building.id, t(building.shortName)]),
   );
   const visual =
-    props.mineStage +
+    props.nextLevel +
     JSON.stringify(
       BUILDINGS.map(({ id }) => [
         id,
@@ -455,7 +453,7 @@ async function update() {
     scene.changeTown(
       props.town,
       { ...labels, mine: t('Mine') },
-      props.mineStage,
+      Math.max(0, (props.nextLevel ?? 1) - 1),
       constructionId,
       props.reducedMotion,
     );
@@ -674,7 +672,7 @@ watch(
     JSON.stringify(props.town.buildingEras),
     JSON.stringify(props.town.buildingEraLevels),
     props.town.era,
-    props.mineStage,
+    props.nextLevel,
     props.construction?.serial,
     locale.value,
   ],

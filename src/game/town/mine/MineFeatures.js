@@ -1,13 +1,9 @@
-import { mineYardEnvelope, MINE_SITE, MINE_POSITION } from '../../../data/mineSite';
+import { MINE_SITE, MINE_POSITION } from '../../../data/mineSite';
 import { mineHillsideHeight } from '../TownMineHillside';
 import { landscapeGroundHeight } from '../TownLandscape';
 import { mineCart, haulCycle } from './MineRollingStock';
 
 const ground = (x, z) => mineHillsideHeight(x, z, MINE_POSITION[1], landscapeGroundHeight(x, z));
-const yard = () => {
-  const e = mineYardEnvelope();
-  return { x: (e.minX + e.maxX) / 2, z: (e.minZ + e.maxZ) / 2, ...e };
-};
 function terrace(d, root, point, width = 3, depth = 1.4) {
   const [x, z] = point;
   const corners = [
@@ -46,6 +42,28 @@ function rotor(d, parent, x, y, z, radius, color, blades = 4) {
   }
   return g;
 }
+// Existing workshops keep their foundations while their facade and services
+// modernize with the same era appearance as the portal and winding house.
+function refitWorkshop(d, root, a, width, height, depth) {
+  if (a.machine === 'hand' || a.machine === 'steam') return;
+  const glazed = ['radio', 'control', 'digital'].includes(a.machine);
+  const glass = d.box(
+    root,
+    0.06,
+    glazed ? 0.65 : 0.4,
+    depth * (glazed ? 0.85 : 0.45),
+    width / 2 + 0.03,
+    height * 0.6,
+    0,
+    '#7da7ad',
+  );
+  glass.name = 'Era workshop glazing';
+  if (['motor', 'radio', 'control', 'digital'].includes(a.machine)) {
+    d.box(root, width + 0.2, 0.1, depth + 0.12, 0, height, 0, a.roof);
+    for (const z of [-depth * 0.42, depth * 0.42])
+      d.box(root, 0.1, height, 0.1, width / 2 + 0.03, height / 2, z, a.frame);
+  }
+}
 export const MINE_FEATURES = {
   cribbing(d, g, a) {
     for (let i = 0; i < 4; i++) d.box(g, 2.2, 0.12, 0.3, -3.1, 0.18 + i * 0.15, -0.5, a.frame);
@@ -62,8 +80,8 @@ export const MINE_FEATURES = {
     });
   },
   tipple(d, g, a, motions) {
-    const e = yard(),
-      r = d.group(g, e.x, 0, e.z - MINE_POSITION[1]);
+    const [x, z] = MINE_SITE.tipple,
+      r = d.group(g, x, 0, z - MINE_POSITION[1]);
     for (const x of [-1, 1])
       for (const z of [-0.65, 0.65]) d.rod(r, [x, 0, z], [x, 2.1, z], 0.08, a.frame);
     d.box(r, 2.1, 0.75, 1.35, 0, 2.05, 0, a.wall);
@@ -74,9 +92,9 @@ export const MINE_FEATURES = {
     });
   },
   'surface-cart-load'(d, g, a, motions) {
-    const e = yard(),
+    const [x, z] = MINE_SITE.tipple,
       cart = mineCart(d, g, 'iron-car');
-    cart.root.position.set(e.x, 0.04, e.z - MINE_POSITION[1]);
+    cart.root.position.set(x, 0.04, z - MINE_POSITION[1]);
     motions.push((t) => {
       cart.load.visible = haulCycle(t).loaded;
     });
@@ -102,6 +120,7 @@ export const MINE_FEATURES = {
   crusher(d, g, a, motions) {
     const r = terrace(d, g, MINE_SITE.terrace, 3.1);
     d.box(r, 2.3, 1.45, 1.25, 0, 0.95, 0, a.wall);
+    refitWorkshop(d, r, a, 2.3, 1.7, 1.25);
     for (let i = 0; i < 3; i++) {
       const roof = d.box(r, 0.9, 0.13, 1.6, -0.8 + i * 0.8, 1.77, 0, a.roof);
       roof.rotation.z = 0.28;
@@ -124,17 +143,18 @@ export const MINE_FEATURES = {
     });
   },
   'fan-house'(d, g, a, motions) {
-    const r = terrace(d, g, MINE_SITE.terrace, 2.8);
+    const r = terrace(d, g, MINE_SITE.fanHouse, 2.8);
     d.box(r, 2.2, 1.4, 1.1, 0, 0.9, 0, a.wall);
+    refitWorkshop(d, r, a, 2.2, 1.6, 1.1);
     const fan = rotor(d, r, 0, 1, 0.6, 0.55, a.frame, 6);
     motions.push((t) => {
       fan.rotation.z = t * 1.8;
     });
   },
   'truck-bay'(d, g, a, motions) {
-    const e = yard(),
-      r = d.group(g, e.x, 0, e.z - MINE_POSITION[1]);
-    d.box(r, e.maxX - e.minX - 0.2, 0.08, 1.7, 0, 0.04, 0, '#a5a28e');
+    const [x, z] = MINE_SITE.truckBay,
+      r = d.group(g, x, 0, z - MINE_POSITION[1]);
+    d.box(r, 3.4, 0.08, 1.7, 0, 0.04, 0, '#a5a28e');
     const truck = d.group(r);
     truck.userData.animated = true;
     d.box(truck, 1.3, 0.45, 0.8, 0, 0.55, 0, a.frame);
@@ -146,13 +166,14 @@ export const MINE_FEATURES = {
       for (const z of [-0.4, 0.4]) d.ball(truck, x, 0.27, z, [0.2, 0.2, 0.09], '#475354');
     motions.push((t) => {
       const p = (t % 16) / 16;
-      truck.position.x = Math.cos(p * Math.PI * 2) * 0.9;
+      truck.position.x = Math.cos(p * Math.PI * 2) * 0.55;
       bed.rotation.z = p > 0.4 && p < 0.65 ? -Math.sin(((p - 0.4) / 0.25) * Math.PI) * 0.4 : 0;
     });
   },
   'upper-terrace'(d, g, a) {
     const r = terrace(d, g, MINE_SITE.upperTerrace, 4.2);
     d.box(r, 2.9, 1.3, 1.2, 0, 0.9, 0, a.wall);
+    refitWorkshop(d, r, a, 2.9, 1.55, 1.2);
     d.box(r, 2.6, 0.55, 0.08, 0, 1.15, 0.65, '#7da7ad');
     d.box(r, 3.4, 0.18, 1.6, 0, 1.65, 0, a.roof);
   },
@@ -200,11 +221,12 @@ export const MINE_FEATURES = {
     });
   },
   benches(d, g, a) {
-    for (let i = 0; i < 3; i++) terrace(d, g, [-4 + i * 0.7, -23.9 - i * 1.25], 3.2, 0.8);
+    for (let i = 0; i < 3; i++) terrace(d, g, [-6.1 - i * 0.6, -24.3 - i * 1.75], 2.3, 0.8);
   },
   'sorting-plant'(d, g, a, motions) {
-    const r = terrace(d, g, MINE_SITE.terrace, 3.5);
+    const r = terrace(d, g, MINE_SITE.sortingPlant, 3.5);
     d.box(r, 3.2, 2, 1.3, 0, 1.2, 0, a.wall);
+    refitWorkshop(d, r, a, 3.2, 2.2, 1.3);
     d.box(r, 3.3, 0.18, 1.6, 0, 2.3, 0, a.roof);
     d.box(r, 2.7, 0.7, 0.08, 0, 1.7, 0.7, '#456673');
     const sensor = d.box(r, 0.4, 0.12, 0.09, 0, 0.9, 0.76, '#8dcbb5');
@@ -214,13 +236,19 @@ export const MINE_FEATURES = {
     });
   },
   'solar-canopy'(d, g) {
+    const [x, z] = MINE_SITE.sortingPlant;
+    const y =
+      Math.max(
+        ...[-1.75, 1.75].flatMap((dx) => [-0.7, 0.7].map((dz) => ground(x + dx, z + dz))),
+        ground(x, z),
+      ) + 2.8;
     for (let i = 0; i < 4; i++) {
-      const panel = d.box(g, 0.7, 0.08, 1.1, -5.6 + i * 0.8, 3.1, 2.3, '#456d7b');
+      const panel = d.box(g, 0.7, 0.08, 1.1, x - 1.2 + i * 0.8, y, z - MINE_POSITION[1], '#456d7b');
       panel.rotation.x = -0.24;
     }
   },
   'wind-turbine'(d, g, a, motions) {
-    const [x, z] = MINE_SITE.summit,
+    const [x, z] = MINE_SITE.turbine,
       r = d.group(g, x, ground(x, z), z - MINE_POSITION[1]);
     d.rod(r, [0, 0, 0], [0, 3.4, 0], 0.11, '#d7d6c0');
     const blades = rotor(d, r, 0, 3.5, 0.2, 1.25, '#d7d6c0', 3);
@@ -234,4 +262,3 @@ export const MINE_FEATURES = {
     d.box(g, 1.4, 0.18, 0.65, -6.5, 0.1, 3.5, '#aaa28b');
   },
 };
-export { ground as mineSurfaceHeight };

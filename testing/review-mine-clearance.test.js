@@ -21,7 +21,7 @@ it.each(ERAS.map((e) => e.id))(
     });
     d.town.era = era;
     d.town.buildings.railDepot = 3;
-    const root = addMineSite(d, new Group(), era, mineGrowth(54));
+    const root = addMineSite(d, new Group(), era, mineGrowth(324));
     let triangles = 0,
       animated = 0;
     root.traverse((o) => {
@@ -42,7 +42,8 @@ it.each(ERAS.map((e) => e.id))(
       triangles += (o.geometry.index?.count ?? o.geometry.attributes.position.count) / 3;
     });
     expect(triangles).toBeLessThanOrEqual(6000);
-    expect(animated).toBeLessThanOrEqual(12);
+    // Later eras retain the earlier moving equipment as well as their additions.
+    expect(animated).toBeLessThanOrEqual(16);
     const ray = new Raycaster();
     ray.layers.enableAll();
     for (const time of [0, 4, 8, 12]) {
@@ -67,7 +68,12 @@ it.each(ERAS.map((e) => e.id))(
     expect(root.userData.profile.portal).toBeTruthy();
     expect(root.userData.footprints.every((o) => o.owner === 'mine-site')).toBe(true);
     expect(root.getObjectByName('Sunken mine entrance')).toBeUndefined();
-    expect(root.userData.veins.count).toBe(54);
+    const cargo = [];
+    root.traverse((o) => {
+      if (o.userData.mineCargo) cargo.push(o);
+    });
+    expect(cargo.length).toBeGreaterThan(0);
+    expect(cargo.every((o) => o.count === 12)).toBe(true);
     d.clearGroup(root);
     Object.values(d.geometries).forEach((g) => g.dispose());
     d.materials.forEach((m) => m.dispose());
