@@ -45,6 +45,7 @@ export const ERAS = [
       style: 'city',
       prices: [2400, 2900, 3400],
       cityAssets: 'post-war',
+      roadBridge: false,
       wardrobe: 'tailored',
       newBuildingPrices: [3000, 4000, 5000],
       waterworks: [60, 60, 60],

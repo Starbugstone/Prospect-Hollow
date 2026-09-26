@@ -14,6 +14,7 @@ import { resolveRoadStyle } from './roadStyles';
  * @property {boolean} overheadPower
  * @property {string} roadColor
  * @property {string} roadStyle Surface treatment registered in roadStyles.js.
+ * @property {boolean} roadBridge Continuous surfaced bridge deck instead of timber steps.
  * @property {string} incident
  * @property {readonly number[]|null} prices Three modernization prices; never mining rewards.
  * @property {string|null} cityAssets Blender asset family shared by city eras.
@@ -64,6 +65,7 @@ const STYLES = {
     requiresPower: true,
   },
   'motor-age': {
+    roadBridge: true,
     wardrobe: 'motor',
     fountain: 'art-deco',
     baseCityEra: 'post-war',
@@ -82,6 +84,7 @@ const STYLES = {
     incident: 'workshop-fire',
   },
   city: {
+    roadBridge: true,
     wardrobe: 'casual',
     fountain: 'memorial-obelisk',
     paved: true,
@@ -120,6 +123,7 @@ export function defineEra(definition) {
     busService: false,
     overheadPower: true,
     roadStyle: 'dirt',
+    roadBridge: false,
     incident: 'bandits',
     waterUpgradeBenefit:
       'Adds water for twenty people when finished. All existing water stays available during work.',

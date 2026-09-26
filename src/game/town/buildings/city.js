@@ -128,26 +128,50 @@ export function addCityModernization(d, parent, kind, era, level) {
         if (p.getY(i) > 1.7 && Math.abs(p.getZ(i)) < 0.65 && Math.abs(p.getX(i)) > 4)
           covered = true;
     });
-  if (covered) {
-    const raise = (y) => (y > 1.7 ? y + 1.6 : y);
-    root.traverse((part) => {
-      if (!part.isMesh) return;
-      const key = `bridge-headroom:${part.geometry.uuid}`;
-      if (!d.geometries[key]) {
-        const geometry = part.geometry.clone(),
-          positions = geometry.attributes.position;
-        for (let i = 0; i < positions.count; i++) positions.setY(i, raise(positions.getY(i)));
-        geometry.computeVertexNormals();
-        d.geometries[key] = geometry;
-      }
-      part.geometry = d.geometries[key];
-    });
-    for (const joint of joints)
-      for (const bounds of joint.userData.exportFootprints) {
-        bounds.min[1] = raise(bounds.min[1]);
-        bounds.max[1] = raise(bounds.max[1]);
-      }
-  }
+  const place = (x, y, z, support = false) => {
+    // The older exported planter crosses the road at x=±6.2. Turn it lengthwise
+    // onto the bank beside the rail, and put its bottom on the ground.
+    if (y < 0.65 && Math.abs(x) > 5.8 && Math.abs(x) < 6.6 && Math.abs(z) < 1.3)
+      return [Math.sign(x) * 6.2 + z, y - 0.2, -2.25 + Math.abs(x) - 6.2];
+    // Lamp feet originally started 15 cm above their plot; keep heads connected.
+    const base = Math.abs(z) > 1.4 ? 0.15 : 0.1;
+    // Later canopies span the whole deck with their posts on the verge.
+    const across = covered && Math.abs(z) < 1.4 ? (support ? z + 1.1 : z * 2.6) : z;
+    return [x, y - base + (covered && y > 1.7 ? 1.6 : 0), across];
+  };
+  root.traverse((part) => {
+    if (!part.isMesh) return;
+    const key = `bridge-approaches:${covered}:${part.geometry.uuid}`;
+    if (!d.geometries[key]) {
+      const geometry = part.geometry.clone(),
+        positions = geometry.attributes.position;
+      for (let i = 0; i < positions.count; i++)
+        positions.setXYZ(
+          i,
+          ...place(
+            positions.getX(i),
+            positions.getY(i),
+            positions.getZ(i),
+            part.name.startsWith('Slender canopy support'),
+          ),
+        );
+      geometry.computeVertexNormals();
+      geometry.computeBoundingBox();
+      geometry.computeBoundingSphere();
+      d.geometries[key] = geometry;
+    }
+    part.geometry = d.geometries[key];
+  });
+  for (const joint of joints)
+    for (const bounds of joint.userData.exportFootprints) {
+      const corners = [];
+      const support = bounds.max[0] - bounds.min[0] < 0.2 && bounds.max[2] - bounds.min[2] < 0.2;
+      for (const x of [bounds.min[0], bounds.max[0]])
+        for (const y of [bounds.min[1], bounds.max[1]])
+          for (const z of [bounds.min[2], bounds.max[2]]) corners.push(place(x, y, z, support));
+      bounds.min = [0, 1, 2].map((n) => Math.min(...corners.map((p) => p[n])));
+      bounds.max = [0, 1, 2].map((n) => Math.max(...corners.map((p) => p[n])));
+    }
   const profile = eraEvolution(era);
   if (profile.detailAsset) {
     const cue = futureModel(d, parent, profile.detailAsset);

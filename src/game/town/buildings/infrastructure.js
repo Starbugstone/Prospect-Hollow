@@ -1,14 +1,117 @@
 import { bridgeDeckHeight, riverCenterX } from '../TownRiver';
-export function renderBridge(d, parent, level) {
+import { BufferGeometry, Float32BufferAttribute } from 'three';
+import { eraEvolution } from '../../../data/eras';
+import { resolveRoadStyle } from '../../../data/roadStyles';
+
+function roadDeck(d, parent, profile) {
+  const style = resolveRoadStyle(profile.roadStyle);
+  const ribbon = (key, spans, color, solid = false) => {
+    const cache = `bridge-road:${key}`;
+    if (!d.geometries[cache]) {
+      const positions = [],
+        indices = [];
+      for (const [from, to, left, right] of spans) {
+        const steps = Math.ceil((to - from) / 0.25);
+        const base = positions.length / 3;
+        for (let n = 0; n <= steps; n++) {
+          const x = from + ((to - from) * n) / steps;
+          const y = bridgeDeckHeight(riverCenterX(7.5) + x) + (solid ? 0.01 : 0.018);
+          positions.push(x, y, left, x, y, right);
+          if (solid) positions.push(x, y - 0.18, left, x, y - 0.18, right);
+          if (!n) continue;
+          const stride = solid ? 4 : 2,
+            a = base + (n - 1) * stride,
+            b = a + stride;
+          indices.push(a, a + 1, b, a + 1, b + 1, b);
+          if (solid)
+            indices.push(
+              a + 2,
+              b + 2,
+              a + 3,
+              a + 3,
+              b + 2,
+              b + 3,
+              a,
+              b,
+              a + 2,
+              a + 2,
+              b,
+              b + 2,
+              a + 1,
+              a + 3,
+              b + 1,
+              a + 3,
+              b + 3,
+              b + 1,
+            );
+        }
+        if (solid) {
+          const end = base + steps * 4;
+          indices.push(
+            base,
+            base + 2,
+            base + 1,
+            base + 1,
+            base + 2,
+            base + 3,
+            end,
+            end + 1,
+            end + 2,
+            end + 1,
+            end + 3,
+            end + 2,
+          );
+        }
+      }
+      const geometry = new BufferGeometry();
+      geometry.setAttribute('position', new Float32BufferAttribute(positions, 3));
+      geometry.setAttribute(
+        'uv',
+        new Float32BufferAttribute(new Float32Array((positions.length / 3) * 2), 2),
+      );
+      geometry.setIndex(indices);
+      geometry.computeVertexNormals();
+      d.geometries[cache] = geometry;
+    }
+    d.mesh(parent, cache, [1, 1, 1], [0, 0, 0], color).name = `Bridge ${key}`;
+  };
+  ribbon('road deck', [[-7, 7, -1.15, 1.15]], profile.roadColor ?? style.color, true);
+  ribbon(
+    'road edges',
+    [
+      [-7, 7, -1.06, -1],
+      [-7, 7, 1, 1.06],
+    ],
+    style.edge ?? '#ddd2b7',
+  );
+  const lines = [];
+  for (let x = -6.5; x < 6.5; x += 1.5)
+    for (const z of style.line === 'double' ? [-0.07, 0.07] : [0])
+      lines.push([
+        x,
+        Math.min(6.5, x + (style.line === 'double' ? 1.5 : 0.75)),
+        z - 0.02,
+        z + 0.02,
+      ]);
+  ribbon(
+    `road ${style.line === 'double' ? 'double' : 'dashed'} line`,
+    lines,
+    style.paint ?? '#eee6d0',
+  );
+}
+
+export function renderBridge(d, parent, level, era = d.town?.buildingEras?.bridge ?? d.town?.era) {
   if (!level) {
     for (const x of [-6, 6]) d.box(parent, 0.22, 1, 0.22, x, 0.5, 0, '#b1976c');
     return;
   }
+  const profile = eraEvolution(era);
+  if (profile.roadBridge) roadDeck(d, parent, profile);
   const center = riverCenterX(7.5);
   for (let i = 0; i < 56; i++) {
     const x = -7 + i * 0.25,
       height = bridgeDeckHeight(center + x);
-    d.box(parent, 0.26, 0.18, 2.3, x, height - 0.08, 0, '#a48e69');
+    if (!profile.roadBridge) d.box(parent, 0.26, 0.18, 2.3, x, height - 0.08, 0, '#a48e69');
     for (const z of [-1.12, 1.12]) {
       d.rod(
         parent,
@@ -22,8 +125,12 @@ export function renderBridge(d, parent, level) {
   }
   if (level >= 2)
     for (const x of [-4.4, 4.4]) {
-      d.box(parent, 0.75, 2.5, 2.3, x, 0.65, 0, '#b7ae98');
-      d.box(parent, 0.9, 0.2, 2.5, x, 2, 0, '#d9ccad');
+      const capTop =
+        Math.min(bridgeDeckHeight(center + x - 0.45), bridgeDeckHeight(center + x + 0.45)) - 0.19;
+      const bottom = -0.6,
+        top = capTop - 0.2;
+      d.box(parent, 0.75, top - bottom, 2.3, x, (top + bottom) / 2, 0, '#b7ae98');
+      d.box(parent, 0.9, 0.2, 2.5, x, capTop - 0.1, 0, '#d9ccad');
     }
   if (level >= 3)
     for (const x of [-3.5, 3.5])

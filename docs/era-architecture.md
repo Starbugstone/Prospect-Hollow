@@ -12,8 +12,12 @@ The styles progress from worn dirt and gravel through brick, concrete and marked
 asphalt to contemporary paved crossings. `roadColor` remains an optional tint
 override. `RoadDetails` prepares flat surface strips once per topology/era change;
 WebGL merges them into the existing static scenery batch and the SVG map groups
-the same shapes by color. Junctions, short building approaches and the bridge deck
-are left clear of lane markings. Treatments never change road width, navigation
+the same shapes by color. Junctions and short building approaches remain unmarked.
+The bridge owns its raised surface: `roadBridge` enables a continuous road deck
+with the era's paint, beginning with Motor Age modernization. Earlier bridge
+styles retain timber boards. Both use `bridgeDeckHeight()` for the existing
+pedestrian and vehicle grade; approach furniture remains outside the deck.
+Treatments never change road width, navigation
 obstacles, walking heights or traffic routes. `town-roads.test.js` covers all eras,
 future/fallback styles, geometry budgets and pedestrian/animal clearance.
 

@@ -1,12 +1,104 @@
-import { expect, it } from 'vitest';
-import { Box3, Group, MeshBasicMaterial, Raycaster, Vector3 } from 'three';
+import { afterEach, expect, it } from 'vitest';
+import { Box3, Group, MeshBasicMaterial, Raycaster, Scene, Vector3 } from 'three';
 import { createTown } from '../src/data/town';
 import { addTownRoads } from '../src/game/town/TownActivity';
 import { PLOTS } from '../src/game/town/TownLayout';
-import { riverCenterX } from '../src/game/town/TownRiver';
+import { riverCenterX, bridgeDeckHeight } from '../src/game/town/TownRiver';
+import { ERAS, ERA_BY_ID, eraEvolution } from '../src/data/eras';
+import { defineEra } from '../src/data/eraDefinitions';
+import { geometryFootprints, registerFootprints } from '../src/game/town/BuildingFootprints';
+import { townNavigation } from '../src/game/town/TownNavigation';
 import { renderBridge } from '../src/game/town/buildings/infrastructure';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
+import { TownStatics } from '../src/game/town/TownStatics';
+
+const views = [];
+afterEach(() => {
+  delete ERA_BY_ID['future-road-bridge'];
+  for (const d of views.splice(0)) {
+    Object.values(d.geometries).forEach((g) => g.dispose());
+    d.materials.forEach((m) => m.dispose());
+  }
+});
+function bridgeView(era, tier = 3) {
+  const d = Object.create(TownDiorama.prototype);
+  Object.assign(d, {
+    geometries: createTownGeometries(),
+    materials: new Map(),
+    town: createTown(),
+  });
+  views.push(d);
+  d.town.era = era;
+  d.town.buildings.bridge = 3;
+  d.town.buildingEras.bridge = era;
+  d.town.buildingEraLevels.bridge = tier;
+  const bridge = new Group();
+  bridge.position.set(riverCenterX(7.5), 0.08, 7.5);
+  d.buildPlot('bridge', bridge, d.town, {});
+  bridge.updateMatrixWorld(true);
+  return { d, bridge };
+}
+
+it.each(['post-war', 'aviation', 'broadcast', 'contemporary'])(
+  'grounds %s approach furniture and keeps it outside the driving lane',
+  (era) => {
+    const { bridge } = bridgeView(era, 1);
+    const approaches = bridge.getObjectByName(`${era} bridge approaches 1`);
+    const solids = geometryFootprints(approaches);
+    expect(solids.length).toBeGreaterThan(4);
+    // No low decorative box can straddle the ramp, even beyond the narrow
+    // navigation strip. Lamps and canopy supports reach their plot's floor.
+    for (const part of solids) {
+      if (part.yMin < 0.7) {
+        expect(Math.abs(part.cz) - part.halfD).toBeGreaterThan(1.15);
+        expect(part.yMin).toBeLessThan(0.01);
+      }
+    }
+  },
+);
+
+it.each(ERAS.map(({ id }) => id))(
+  'keeps the %s bridge navigable with the appropriate surface',
+  (era) => {
+    const { d, bridge } = bridgeView(era);
+    const road = bridge.getObjectByName('Bridge road deck');
+    expect(!!road).toBe(['motor-age', 'aviation', 'broadcast', 'contemporary'].includes(era));
+    registerFootprints(bridge, geometryFootprints(bridge), { owner: 'plot:bridge' });
+    const nav = townNavigation(bridge);
+    const ray = new Raycaster(new Vector3(), new Vector3(0, -1, 0));
+    for (let x = -6.8; x <= 6.8; x += 0.1) {
+      const wx = riverCenterX(7.5) + x,
+        y = bridgeDeckHeight(wx) + 0.08;
+      for (const z of [-0.6, 0, 0.6]) {
+        expect(nav.clear([wx, y, 7.5 + z], 0.29), `${era} ${x},${z}`).toBe(true);
+        if (road) {
+          ray.ray.origin.set(wx, 8, 7.5 + z);
+          const hit = ray.intersectObject(road, false)[0];
+          expect(hit).toBeDefined();
+          expect(Math.abs(hit.point.y - y - 0.01)).toBeLessThan(0.012);
+        }
+      }
+    }
+    if (road) expect(road.geometry.index.count / 3).toBeLessThan(500);
+    const statics = new TownStatics(new Scene());
+    statics.rebuild([bridge]);
+    expect(statics.meshes).toHaveLength(1);
+    statics.dispose();
+  },
+);
+
+it('lets future eras inherit a road bridge and unknown eras retain the timber fallback', () => {
+  ERA_BY_ID['future-road-bridge'] = defineEra({
+    ...ERA_BY_ID.contemporary,
+    id: 'future-road-bridge',
+    evolution: { ...eraEvolution('contemporary') },
+  });
+  expect(bridgeView('future-road-bridge').bridge.getObjectByName('Bridge road deck')).toBeDefined();
+  expect(
+    bridgeView('unknown-bridge-era').bridge.getObjectByName('Bridge road deck'),
+  ).toBeUndefined();
+});
 
 it.each([1, 2, 3])('keeps level %s bridge pillars and caps below the ramp surface', (level) => {
   const d = Object.create(TownDiorama.prototype);
