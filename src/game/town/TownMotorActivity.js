@@ -1,3 +1,4 @@
+import { trafficRoutes, trafficTour } from './TownTrafficRoutes';
 import { eraEvolution } from '../../data/eras';
 import { prepareRoute, routePose } from './TownRoutes';
 import { motorVehicle, animateVehicle } from './TownVehicles';
@@ -45,7 +46,22 @@ export function addMotorActivity(d, town) {
   bus.userData.animated = true;
   bus.userData.trafficRadius = 1.4;
   (d.trafficActors ??= []).push(bus);
+  const travel = trafficTour(
+    bus,
+    trafficRoutes(
+      { town, itineraries: d.itineraries },
+      plotStreet('garage'),
+      plotStreet('busDepot'),
+    ),
+    {
+      seed: 23,
+    },
+  );
   d.motions.push((time) => {
+    if (travel) {
+      animateVehicle(bus, travel(time));
+      return;
+    }
     const pose = busPose(path, time - (bus.userData.trafficDelay ?? 0));
     const bridge = pose.x >= 24 && pose.x <= 38 && Math.abs(pose.z - 7.5) < 1;
     bus.position.set(pose.x, bridge ? bridgeDeckHeight(pose.x) + 0.17 : 0.07, pose.z);

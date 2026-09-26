@@ -209,7 +209,7 @@ it('coordinates visible feeding and pauses every animal on the village clock', (
   const frozen = poses();
   for (let n = 0; n < 20; n++) d.motions.forEach((motion) => motion(d.elapsed));
   expect(poses()).toEqual(frozen);
-  advance(d, d.elapsed + 22);
+  for (let n = 0; n < 350 && d.animalFeeder.active; n++) advance(d, d.elapsed + 0.1);
   expect(d.animalFeeder.active).toBe(false);
   expect(d.animalFeeder.grain.visible).toBe(false);
 });
@@ -221,7 +221,6 @@ it.each(['frontier', 'industrial', 'motor-age', 'unknown-animal-era'])(
     addTownAnimals(d, d.town);
     const food = d.animalFeeder;
     expect(d.actors).toContain(food);
-    const start = food.root.position.clone();
     let active = false,
       returned = false,
       travel = 0;
@@ -239,7 +238,9 @@ it.each(['frontier', 'industrial', 'motor-age', 'unknown-animal-era'])(
       }
       if (active && food.workRoutine.phase === 'rest') {
         returned = true;
-        expect(food.root.position.distanceTo(start)).toBeLessThan(1e-5);
+        expect(food.root.position.distanceTo(new Vector3(...food.walkPath.points[0]))).toBeLessThan(
+          1e-5,
+        );
       }
     }
     expect(active).toBe(true);

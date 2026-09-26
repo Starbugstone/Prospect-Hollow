@@ -269,6 +269,7 @@ const emit = defineEmits([
   'raid-cue',
   'raid-complete',
   'camera-distance',
+  'vip-spend',
   'presentation-ready',
   'presentation-unavailable',
   'cinematic-ready',
@@ -539,6 +540,7 @@ async function initialize() {
       (distance) => emit('camera-distance', distance),
       recoverGraphics,
     );
+    scene.onVipSpend = (receipt) => emit('vip-spend', receipt);
     scene.onVillagerLabel = (label) => {
       villagerLabel.value = label;
     };

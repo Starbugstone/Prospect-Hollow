@@ -74,6 +74,15 @@ it.each(ERAS.slice(1).map((era, i) => [ERAS[i].id, era.id]))(
       expect(hammer.visible).toBe(true);
       expect(worker.root.position.distanceTo(arrivals[i])).toBeGreaterThan(1);
       expect(worker.root.position.z).toBeLessThan(-16);
+      const deck = effect.scaffold.children.filter(
+        (part) => part.name === 'Builder working platform',
+      )[i];
+      const bounds = new Box3().setFromObject(deck);
+      expect(bounds.max.y).toBeCloseTo(worker.root.position.y, 4);
+      expect(worker.root.position.x).toBeGreaterThan(bounds.min.x);
+      expect(worker.root.position.x).toBeLessThan(bounds.max.x);
+      expect(worker.root.position.z).toBeGreaterThan(bounds.min.z);
+      expect(worker.root.position.z).toBeLessThan(bounds.max.z);
       expect(worker.root.position.x).toBeGreaterThan(-7);
       expect(d.navigation.clear(worker.root.position.toArray())).toBe(true);
     });

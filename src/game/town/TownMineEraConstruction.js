@@ -3,6 +3,7 @@ import { addMineWorks } from './TownMineWorks';
 import { TownBuildSequence } from './TownBuildSequence';
 import { ERA_CONSTRUCTION } from '../../data/mineEvolution';
 import { TownNavigation } from './TownNavigation';
+import { mineExcavationHeight } from './TownMineShaft';
 
 export class TownMineEraConstruction {
   constructor(d, definition) {
@@ -32,6 +33,22 @@ export class TownMineEraConstruction {
     });
     this.scaffold = d.group(this.root);
     this.scaffold.name = 'Temporary mine scaffolding';
+    // Bridge the excavation with a temporary working deck. Workers stand at
+    // yard height while the sloped mine entrance remains open below them.
+    for (const {
+      station: [x, z],
+      path,
+    } of this.sequence.crew) {
+      const y = path?.points.at(-1)?.[1] ?? 0.08;
+      const platform = d.group(this.scaffold, x, y, z);
+      platform.name = 'Builder working platform';
+      for (const dx of [-0.32, 0, 0.32]) d.box(platform, 0.3, 0.08, 1.25, dx, -0.04, 0, '#b99464');
+      for (const dx of [-0.42, 0.42])
+        for (const dz of [-0.5, 0.5]) {
+          const foot = Math.min(0, mineExcavationHeight(x + dx, z + dz)) - 0.1;
+          d.rod(platform, [dx, foot - y, dz], [dx, -0.08, dz], 0.055, '#977448');
+        }
+    }
     for (const x of [-4.8, -2.5]) {
       d.rod(this.scaffold, [x, 0.1, -19.7], [x, 3.3, -19.7], 0.055, '#b99464');
       d.rod(this.scaffold, [x, 0.1, -17.4], [x, 3.3, -17.4], 0.055, '#b99464');

@@ -357,7 +357,12 @@ function startFlight(animal, target, startled = false) {
     target,
     elapsed: 0,
     cruise: Math.max(animal.space.ceiling, from[1] + 3, to[1] + 3),
-    travel: Math.max(2, Math.hypot(to[0] - from[0], to[2] - from[2]) / animal.speed),
+    travel: Math.max(
+      2,
+      Math.hypot(to[0] - from[0], to[2] - from[2]) /
+        (animal.speed * (0.8 + random(animal.seed + animal.visit * 17) * 0.4)),
+    ),
+    bend: (random(animal.seed + animal.visit * 31) - 0.5) * 8,
   };
   animal.state = startled ? 'startled' : 'flying';
   animal.root.rotation.y = Math.atan2(to[0] - from[0], to[2] - from[2]);
@@ -373,16 +378,26 @@ function updateBird(d, animal, time, dt, habitats, profile) {
     const lift = smooth(f.elapsed / 2);
     const across = smooth((f.elapsed - 2) / f.travel);
     const land = smooth((f.elapsed - 2 - f.travel) / 2);
+    const arc = Math.sin(across * Math.PI) * f.bend;
+    const dx = f.to[0] - f.from[0],
+      dz = f.to[2] - f.from[2];
+    const length = Math.hypot(dx, dz) || 1;
+    if (across > 0 && across < 1)
+      root.rotation.y = Math.atan2(
+        dx + (dz / length) * Math.cos(across * Math.PI) * Math.PI * f.bend,
+        dz - (dx / length) * Math.cos(across * Math.PI) * Math.PI * f.bend,
+      );
     root.position.set(
-      f.from[0] + (f.to[0] - f.from[0]) * across,
+      f.from[0] + dx * across + (dz / length) * arc,
       f.from[1] + (f.cruise - f.from[1]) * lift + (f.to[1] - f.cruise) * land,
-      f.from[2] + (f.to[2] - f.from[2]) * across,
+      f.from[2] + dz * across - (dx / length) * arc,
     );
     if (f.elapsed >= f.travel + 4) {
       root.position.fromArray(f.to);
+      animal.recent = [animal.habitat, ...(animal.recent ?? [])].slice(0, 2);
       animal.habitat = f.target;
       animal.flight = null;
-      animal.rest = f.target.kind === 'air' ? 0 : 8 + random(++animal.visit + animal.seed) * 14;
+      animal.rest = f.target.kind === 'air' ? 0 : 4 + random(++animal.visit + animal.seed) * 19;
       animal.state = f.target.kind === 'perch' ? 'perching' : 'pecking';
     }
   } else {
@@ -390,9 +405,11 @@ function updateBird(d, animal, time, dt, habitats, profile) {
     const food = d.animalFeeder;
     const feeding = food?.active && animal.habitat.building === food.habitat.building;
     animal.rest -= dt;
-    if (feeding) animal.rest = Math.max(0.5, animal.rest);
+    if (feeding && random(animal.seed + animal.visit * 19) < 0.45)
+      animal.rest = Math.max(0.5, animal.rest);
     if (animal.rest <= 0 || threat) {
-      let candidates = habitats.filter((h) => h !== animal.habitat);
+      let candidates = habitats.filter((h) => h !== animal.habitat && !animal.recent?.includes(h));
+      if (!candidates.length) candidates = habitats.filter((h) => h !== animal.habitat);
       // Prefer nearby destinations and give open public spaces regular visits;
       // a large late-era power network must not overwhelm the ground habitats.
       const local = candidates.filter(
@@ -409,7 +426,7 @@ function updateBird(d, animal, time, dt, habitats, profile) {
             Math.hypot(h.point[0] - root.position.x, h.point[2] - root.position.z) > 4,
         );
       let target =
-        food?.active && !threat && !feeding
+        food?.active && !threat && !feeding && random(animal.seed + animal.visit * 23) < 0.6
           ? habitats.find((h) => h.building === food.habitat.building)
           : candidates[Math.floor(random(animal.seed + ++animal.visit) * candidates.length)];
       target ??= {
@@ -579,12 +596,14 @@ function* populateAnimals(d, town, preparedSpace) {
     if (!ground.length) break;
     const sites = habitats.flatMap((h) => {
       if (h.kind === 'perch') return [h];
-      const point = landingPoint(d, nav, [
-        h.point[0] + (n - 1) * 0.9,
-        h.point[1],
-        h.point[2] + 0.3,
-      ]);
-      return point ? [{ ...h, point }] : [];
+      return [-0.8, 0.3, 1.2].flatMap((offset) => {
+        const point = landingPoint(d, nav, [
+          h.point[0] + (n - 1) * 0.9,
+          h.point[1],
+          h.point[2] + offset,
+        ]);
+        return point ? [{ ...h, point }] : [];
+      });
     });
     const groundSites = sites.filter((h) => h.kind === 'ground');
     const habitat = groundSites[n % groundSites.length];

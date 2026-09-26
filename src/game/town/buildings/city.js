@@ -99,6 +99,44 @@ export function addCityModernization(d, parent, kind, era, level) {
   if (kind !== 'bridge' || !isCityEra(era)) return;
   const root = cityModel(d, parent, `${era}-bridge`);
   root.name = `${era} bridge approaches ${level}`;
+  // Canopies must clear the rising deck. Stretch their upper supports while
+  // keeping planters and post feet at ground level; reuse the adapted geometry.
+  const joints = [];
+  root.traverse((part) => {
+    if (part.userData.exportFootprints) joints.push(part);
+  });
+  let covered = joints.some((joint) =>
+    joint.userData.exportFootprints.some(
+      ({ min, max }) => min[1] > 1.7 && min[2] < 0.6 && max[2] > -0.6 && max[0] - min[0] > 0.8,
+    ),
+  );
+  if (!covered)
+    root.traverse((part) => {
+      const p = part.geometry?.attributes.position;
+      for (let i = 0; p && i < p.count && !covered; i++)
+        if (p.getY(i) > 1.7 && Math.abs(p.getZ(i)) < 0.65 && Math.abs(p.getX(i)) > 4)
+          covered = true;
+    });
+  if (covered) {
+    const raise = (y) => (y > 1.7 ? y + 1.6 : y);
+    root.traverse((part) => {
+      if (!part.isMesh) return;
+      const key = `bridge-headroom:${part.geometry.uuid}`;
+      if (!d.geometries[key]) {
+        const geometry = part.geometry.clone(),
+          positions = geometry.attributes.position;
+        for (let i = 0; i < positions.count; i++) positions.setY(i, raise(positions.getY(i)));
+        geometry.computeVertexNormals();
+        d.geometries[key] = geometry;
+      }
+      part.geometry = d.geometries[key];
+    });
+    for (const joint of joints)
+      for (const bounds of joint.userData.exportFootprints) {
+        bounds.min[1] = raise(bounds.min[1]);
+        bounds.max[1] = raise(bounds.max[1]);
+      }
+  }
   const profile = eraEvolution(era);
   if (profile.detailAsset) {
     const cue = futureModel(d, parent, profile.detailAsset);

@@ -193,6 +193,7 @@
           @raid-cue="playRaidCue"
           @raid-complete="finishRaid"
           @camera-distance="cameraDistance = $event"
+          @vip-spend="collectVipSpending"
         />
         <TownResourceCollection
           v-if="collection"
@@ -203,6 +204,16 @@
           :reduced-motion="settings.reducedMotion"
           @cue="game.audioManager?.playArcadeCue?.($event.name, $event.index)"
           @close="collection = null"
+        />
+        <TownResourceCollection
+          v-for="reward in vipCollections"
+          :key="`vip-${reward.serial}`"
+          :amount="reward.amount"
+          resource="vip-coins"
+          :origin="reward.origin"
+          :reduced-motion="settings.reducedMotion"
+          @cue="game.audioManager?.playArcadeCue?.($event.name, $event.index)"
+          @close="vipCollections = vipCollections.filter((item) => item.serial !== reward.serial)"
         />
         <TownRaidNotice
           v-if="raidNotice"
@@ -862,6 +873,7 @@ const paused = ref(false),
   latestMoment = ref(null);
 const raidNotice = ref(null);
 const collection = ref(null);
+const vipCollections = ref([]);
 let collectionSerial = 0;
 const activeRaid = ref(null),
   raidPhase = ref('Riders on the ridge');
@@ -992,6 +1004,15 @@ function closeDialog() {
 }
 function openDirectory() {
   dialogMode.value = 'directory';
+}
+function collectVipSpending(receipt) {
+  const amount = campaign.collectVipSpending(receipt);
+  if (!amount) return;
+  vipCollections.value.push({
+    amount,
+    serial: ++collectionSerial,
+    origin: townScene.value?.collectionOrigin(receipt.building),
+  });
 }
 function collectIncome() {
   collectionNow.value = Date.now();

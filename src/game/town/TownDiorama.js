@@ -1,3 +1,4 @@
+import { TownItineraries, updateItinerary } from './TownItineraries';
 import { setTownAtmosphere, horizonMaterial } from './TownAtmosphere';
 import { applyRoadSetbacks } from './BuildingSetbacks';
 import { addTownAnimals } from './TownAnimals';
@@ -653,13 +654,17 @@ export class TownDiorama {
     const view = this,
       generation = this.generation;
     function* repairRoutes() {
+      view.itineraries = new TownItineraries(view);
       for (const actor of actors) {
         const path = actor.walkPath ?? actor.path;
         if (!path?.points.length) continue;
         const intersects = path.points.some(
           (p, i) => i && !view.navigation.segment(path.points[i - 1], p, actor.radius ?? 0.45),
         );
-        if (!intersects) continue;
+        if (!intersects) {
+          if (actor.itinerary) yield* view.itineraries.prepare(actor);
+          continue;
+        }
         const position = actor.root.position.toArray();
         const next = path.building
           ? buildingWalk(view, path.building, path.frontage)
@@ -670,6 +675,14 @@ export class TownDiorama {
         if (actor.walkPath) actor.walkPath = next;
         else actor.path = next;
         if (actor.motion) actor.motion.path = null;
+        if (actor.itinerary) {
+          actor.itinerary.path = next;
+          actor.itinerary.anchor = next.points[0];
+          actor.itinerary.stops = [];
+          actor.itinerary.phase = 'finishing';
+          actor.routeLimit = next.total;
+          yield* view.itineraries.prepare(actor);
+        }
         yield;
       }
     }
@@ -889,6 +902,7 @@ export class TownDiorama {
     });
   }
   *populateLife(town) {
+    this.itineraries = new TownItineraries(this);
     const household = population(town);
     addEraActivity(this, town);
     yield;
@@ -995,6 +1009,8 @@ export class TownDiorama {
     }
     this.vipArrivals ??= new TownVipArrivals(this);
     this.vipArrivals.attach(town);
+    for (const actor of [...this.actors, ...this.vipArrivals.actors])
+      yield* this.itineraries.prepare(actor);
 
     this.actors.forEach((actor) => {
       if (!actor.motion) this.animatePerson(actor, this.elapsed);
@@ -1406,16 +1422,17 @@ export class TownDiorama {
   }
   animatePerson(actor, time) {
     updateWorkRoutine(actor, time);
+    updateItinerary(this, actor, time);
     time = actor.motion?.animationTime ?? time;
     const { root, body, torso, head, arms, legs, curve, duration, seed, work } = actor;
     const cycle = (time + seed) % (duration + 4);
-    if (!actor.workRoutine) actor.routeResting = !work && cycle >= duration;
+    if (!actor.workRoutine && !actor.itinerary) actor.routeResting = !work && cycle >= duration;
     let walking = !work && cycle < duration;
     const progress = work?.length ? 0.1 : Math.min(cycle / duration, 0.9999);
     const placedWorker = work && (actor.motion || actor.workRoutine);
     if (!actor.walkPath && !placedWorker) root.position.copy(curve.getPointAt(progress));
-    let routeProgress = progress;
-    if (actor.visitor && !actor.transportVisitor) {
+    let routeProgress = actor.itinerary ? (actor.routeProgress ?? 0) : progress;
+    if (actor.visitor && !actor.transportVisitor && !actor.itinerary) {
       const phase = (time + seed) % (duration + 7);
       actor.routeResting = phase >= duration;
       const visit = Math.floor((time + seed) / (duration + 7));
@@ -1436,7 +1453,10 @@ export class TownDiorama {
     }
 
     if (actor.motion && actor.walkPath?.total && (!actor.manual || actor.transportVisitor))
-      routeProgress = (actor.motion.routeDistance % actor.walkPath.total) / actor.walkPath.total;
+      routeProgress =
+        actor.itinerary && actor.itinerary.phase !== 'finishing'
+          ? Math.min(1, actor.motion.routeDistance / actor.walkPath.total)
+          : (actor.motion.routeDistance % actor.walkPath.total) / actor.walkPath.total;
     if (!actor.workRoutine) actor.routeProgress = routeProgress;
     if (actor.walkPath && !placedWorker) {
       const pose = walkPose(actor.walkPath, routeProgress, actor.walkPose);

@@ -63,13 +63,18 @@ describe('A visible, articulated frontier encounter', () => {
       d.motions.forEach((motion) => motion(0));
       updateTownLocomotion(d);
       const starts = d.trafficActors.map((root) => root.position.clone());
+      const travelled = starts.map(() => 0);
       for (let frame = 1; frame <= 120; frame++) {
         if (frame === 60) d.rebuildActors();
         d.motions.forEach((motion) => motion(frame / 60));
         updateTownLocomotion(d);
+        d.trafficActors.forEach((root, i) => {
+          travelled[i] += root.position.distanceTo(starts[i]);
+          starts[i].copy(root.position);
+        });
       }
       for (const [i, root] of d.trafficActors.entries())
-        expect(root.position.distanceTo(starts[i])).toBeGreaterThan(1);
+        expect(travelled[i], root.name).toBeGreaterThan(1);
       d.clearGroup(d.world);
       Object.values(d.geometries).forEach((g) => g.dispose());
       d.materials.forEach((m) => m.dispose());

@@ -1,3 +1,4 @@
+import { bridgeDeckHeight } from './TownRiver';
 import { footprintDistance, sweptClear } from './BuildingFootprints';
 import { Vector3 } from 'three';
 import { prepareRoute, routePose } from './TownRoutes';
@@ -40,7 +41,18 @@ function distanceToSegment(o, a, b) {
   const t = length ? Math.max(0, Math.min(1, ((o.x - a[0]) * dx + (o.z - a[2]) * dz) / length)) : 0;
   return Math.hypot(o.x - a[0] - dx * t, o.z - a[2] - dz * t);
 }
-const sameHeight = (o, p) => p[1] + 1.65 > o.y && p[1] + 0.08 < o.y + o.height;
+const sameHeight = (o, p) => {
+  // A ramp's next plank/support is higher than the previous foot position.
+  // Treat the bridge deck as a walking surface while keeping its rails solid.
+  if (
+    o.owner === 'plot:bridge' &&
+    Math.abs(p[2] - 7.5) < 0.9 &&
+    p[1] >= bridgeDeckHeight(p[0]) + 0.04 &&
+    o.y + o.height <= bridgeDeckHeight(o.x) + 0.2
+  )
+    return false;
+  return p[1] + 1.65 > o.y && p[1] + 0.08 < o.y + o.height;
+};
 const ring = (o, margin, y) =>
   o.polygon
     ? o.polygon.map(([x, z], i, polygon) => {
