@@ -4,6 +4,9 @@ let paused = 0,
   loadedId = null,
   loadedStorage;
 export const localProfile = {
+  get writesSuspended() {
+    return paused > 0;
+  },
   load() {
     loadedId = null;
     loadedStorage = globalThis.localStorage;

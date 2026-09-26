@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, expect, it, vi } from 'vitest';
-import { townStorage, SAVE_KEY } from '../src/services/townStorage';
+import { townStorage, townViewChanged, SAVE_KEY } from '../src/services/townStorage';
 import { createSyncService } from '../src/services/syncService';
 let values, owner, api, sync, applied, canApply;
 const profile = (coins = 1) => ({
@@ -66,6 +66,56 @@ it('migrates a local save to an immutable identity and persists dirty metadata w
   expect(raw.town.coins).toBe(7);
   expect(raw._cloud.active.id).toBe(id);
   expect(raw._cloud.active.dirty).toBe(true);
+});
+it('does not rebuild the village for account login or sync receipts from another tab', () => {
+  const beforeLogin = values.get(SAVE_KEY);
+  setupAccount();
+  expect(townViewChanged(beforeLogin, values.get(SAVE_KEY))).toBe(false);
+  const beforeReceipt = values.get(SAVE_KEY);
+  townStorage.mutate(townStorage.active().meta.id, owner.id, (record) => {
+    record.meta.cloudAt = 200;
+    record.meta.baseRevision++;
+    record.meta.pending = null;
+  });
+  expect(townViewChanged(beforeReceipt, values.get(SAVE_KEY))).toBe(false);
+});
+it('breaks cross-tab mount/save feedback while still displaying earned income', () => {
+  const original = {
+    ...profile(),
+    town: { ...profile().town, income: { at: 100, stored: 0, remainder: 0 } },
+  };
+  townStorage.save(original);
+  const before = values.get(SAVE_KEY);
+  townStorage.save({
+    ...original,
+    town: { ...original.town, income: { ...original.town.income, at: 200 } },
+  });
+  expect(townViewChanged(before, values.get(SAVE_KEY))).toBe(false);
+  const checkpoint = values.get(SAVE_KEY);
+  townStorage.save({
+    ...original,
+    town: { ...original.town, income: { at: 300, stored: 1, remainder: 50 } },
+  });
+  expect(townViewChanged(checkpoint, values.get(SAVE_KEY))).toBe(true);
+});
+it('refreshes the displayed town for progress or a switch to an identical town', () => {
+  const before = values.get(SAVE_KEY);
+  townStorage.save(profile(7));
+  expect(townViewChanged(before, values.get(SAVE_KEY))).toBe(true);
+  const identical = JSON.parse(before);
+  identical._cloud.active.id = 'another-town';
+  expect(townViewChanged(before, JSON.stringify(identical))).toBe(true);
+  expect(townViewChanged(before, null)).toBe(true);
+});
+it('does not echo normalized object ordering back as new gameplay or a dirty cloud save', () => {
+  setupAccount();
+  const before = values.get(SAVE_KEY);
+  const original = townStorage.active().profile;
+  const reordered = Object.fromEntries(Object.entries(original).reverse());
+  reordered.town = Object.fromEntries(Object.entries(original.town).reverse());
+  townStorage.save(reordered);
+  expect(townStorage.active().meta.dirty).toBe(false);
+  expect(townViewChanged(before, values.get(SAVE_KEY))).toBe(false);
 });
 it('uploads changed local progress when the server has not changed', async () => {
   setupAccount();

@@ -26,12 +26,12 @@
   />
 </template>
 <script setup>
-import { ref, onMounted, onBeforeUnmount, defineAsyncComponent, watch } from 'vue';
+import { ref, nextTick, onMounted, onBeforeUnmount, defineAsyncComponent, watch } from 'vue';
 import App from '../App.vue';
 import { useCampaignStore } from '../stores/campaignStore';
 import { useGameStore } from '../stores/gameStore';
 import { cloud, configureSync, refreshAccount, syncNow } from '../services/cloudProfile';
-import { townStorage, TOWN_CHANGED, SAVE_KEY } from '../services/townStorage';
+import { townStorage, townViewChanged, TOWN_CHANGED, SAVE_KEY } from '../services/townStorage';
 import { t } from '../i18n';
 import { localProfile } from '../services/localProfile';
 const AccountPanel = defineAsyncComponent(() => import('./account/AccountPanel.vue'));
@@ -49,20 +49,25 @@ function reload() {
   const release = localProfile.suspendWrites();
   try {
     game.exitLevel();
+    campaign.reloadLocal();
+    viewVersion.value++;
   } finally {
-    release();
+    // Vue unmounts the old view and mounts the replacement on its next flush.
+    // Their income/cleanup hooks must not echo a stale snapshot into another tab.
+    nextTick(release);
   }
-  campaign.reloadLocal();
-  viewVersion.value++;
 }
-try {
-  if (!campaign.readOnly) townStorage.ensure(JSON.parse(campaign.exportSave()).profile);
+function configureTownSync() {
   configureSync({
     canApply: (id) => townStorage.active()?.meta.id !== id || !game.sessionActive,
     applied: (id) => {
       if (townStorage.active()?.meta.id === id) reload();
     },
   });
+}
+try {
+  if (!campaign.readOnly) townStorage.ensure(JSON.parse(campaign.exportSave()).profile);
+  configureTownSync();
 } catch (error) {
   cloud.error = error.message;
 }
@@ -76,9 +81,19 @@ function resume() {
 }
 function fromOtherTab(event) {
   if (event.key !== SAVE_KEY) return;
-  reload();
-  configureSync({ canApply: () => !game.sessionActive, applied: reload });
-  schedule();
+  try {
+    if (townViewChanged(event.oldValue, event.newValue)) reload();
+    else {
+      // Keep elapsed income time shared without rebuilding the renderer or saving.
+      const checkpoint = townStorage.active()?.profile.town?.income?.at;
+      if (Number.isSafeInteger(checkpoint) && campaign.town.income)
+        campaign.town.income.at = Math.max(campaign.town.income.at ?? 0, checkpoint);
+    }
+    if (townStorage.state()?.account?.id !== cloud.account?.id) configureTownSync();
+    schedule();
+  } catch (error) {
+    cloud.error = error.message;
+  }
 }
 function readLink() {
   const token = new URLSearchParams(location.hash.slice(1)).get('login');

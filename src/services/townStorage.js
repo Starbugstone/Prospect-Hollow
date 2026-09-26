@@ -7,15 +7,37 @@ const profileOf = ({ _cloud, ...profile }) => profile;
 // Advancing an idle income checkpoint alone is not new player progress. A changed
 // stored balance or fractional earning still makes the snapshot dirty.
 const progressKey = (profile) =>
-  JSON.stringify({
-    ...profile,
-    town: profile.town
-      ? {
-          ...profile.town,
-          income: profile.town.income ? { ...profile.town.income, at: null } : undefined,
-        }
-      : undefined,
-  });
+  JSON.stringify(
+    {
+      ...profile,
+      town: profile.town
+        ? {
+            ...profile.town,
+            income: profile.town.income ? { ...profile.town.income, at: null } : undefined,
+          }
+        : undefined,
+    },
+    // Loading normalizes object key order. That must not look like new gameplay
+    // to either cloud synchronization or another tab's renderer.
+    (_, value) =>
+      value && typeof value === 'object' && !Array.isArray(value)
+        ? Object.fromEntries(
+            Object.keys(value)
+              .sort()
+              .map((key) => [key, value[key]]),
+          )
+        : value,
+  );
+// Account metadata and idle-clock checkpoints do not replace the displayed town.
+// Remounting for those writes makes tabs echo new mount-time checkpoints forever.
+export function townViewChanged(previousValue, nextValue) {
+  const previous = previousValue ? JSON.parse(previousValue) : {};
+  const next = nextValue ? JSON.parse(nextValue) : {};
+  return (
+    previous._cloud?.active.id !== next._cloud?.active.id ||
+    progressKey(profileOf(previous)) !== progressKey(profileOf(next))
+  );
+}
 const freshMeta = (name = 'My town') => ({
   id: crypto.randomUUID(),
   name,
