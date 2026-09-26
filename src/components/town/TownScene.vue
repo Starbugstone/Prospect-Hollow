@@ -30,6 +30,11 @@
     @pointercancel="cancelPointer"
     @lostpointercapture="cancelPointer"
   >
+    <GameViewStatus
+      v-if="!graphicsReady"
+      class="town-graphics-loading"
+      label="Preparing your village…"
+    />
     <canvas
       :key="canvasVersion"
       ref="canvas"
@@ -233,6 +238,7 @@
 </template>
 <script setup>
 import GameIcon from '../GameIcon.vue';
+import GameViewStatus from '../GameViewStatus.vue';
 import { townIndicatorScale } from '../../data/townIndicators';
 import { eraBuildingLevel } from '../../game/town/TownEras';
 import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue';
@@ -284,7 +290,8 @@ const canvas = ref(null),
   canvasVersion = ref(0),
   map = ref(null),
   anchors = ref([]),
-  fallback = ref(false);
+  fallback = ref(false),
+  graphicsReady = ref(false);
 const suggestedId = computed(() => nextGoal(props.town)?.id);
 const quietPlot = (id) =>
   id !== 'mine' &&
@@ -475,6 +482,7 @@ async function recoverGraphics(error, contextLost = false) {
     return;
   }
   recovering = true;
+  graphicsReady.value = false;
   if (scene) {
     recoveryPose = {
       position: scene.camera.position.toArray(),
@@ -539,6 +547,7 @@ async function initialize() {
       recoveryPose = null;
     }
     startRaid();
+    graphicsReady.value = true;
   } catch (error) {
     useFallback(error);
   } finally {
@@ -664,3 +673,11 @@ onBeforeUnmount(() => {
   scene = null;
 });
 </script>
+<style scoped>
+.town-graphics-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+</style>

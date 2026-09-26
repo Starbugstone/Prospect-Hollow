@@ -1,27 +1,67 @@
 <template>
   <aside ref="bar" class="cloud-bar" :aria-label="t('Account and cloud save')">
+    <div class="cloud-town-name">
+      <img src="/art/amethyst.svg" alt="" />
+      <div>
+        <strong>{{ townName }}</strong
+        ><small>{{ t(accountTown ? 'Account town' : 'Local town · this device only') }}</small>
+      </div>
+    </div>
     <span role="status">{{ t(cloud.status) }}</span>
-    <button v-if="cloud.account" :disabled="cloud.busy || !ready" @click="syncNow()">
+    <button v-if="accountTown" :disabled="cloud.busy || !ready" @click="syncNow()">
       {{ t('Sync now') }}
     </button>
     <button :disabled="campaign.readOnly" @click="accountOpen = true">
       {{ t(cloud.account ? 'My towns' : 'Protect my progress') }}
     </button>
   </aside>
-  <main v-if="!ready" class="town-tab-notice" role="status">
-    <h1>{{ t('Prospect Hollow') }}</h1>
-    <p>{{ t(opening ? 'Opening town…' : notice) }}</p>
-    <p v-if="!opening">
-      {{
-        t(
-          'Different towns can be played in separate tabs. Close the other tab to open this town here.',
-        )
-      }}
-    </p>
-    <button v-if="!opening" @click="activate">{{ t('Try opening this town again') }}</button>
-    <button @click="accountOpen = true">
-      {{ t(cloud.account ? 'Choose another town' : 'Protect my progress') }}
-    </button>
+  <main v-if="!ready" class="town-launch-screen">
+    <section class="town-tab-notice" aria-live="polite" :aria-busy="opening">
+      <img class="town-tab-gem" src="/art/amethyst.svg" alt="" />
+      <p class="town-tab-brand">PROSPECT HOLLOW</p>
+      <h1>
+        {{
+          opening
+            ? t('Opening {town}…', { town: townName })
+            : blocked
+              ? t('This town is already open')
+              : t('Unable to open this town')
+        }}
+      </h1>
+      <template v-if="opening">
+        <p>{{ t('Preparing your saved town on this device.') }}</p>
+      </template>
+      <template v-else-if="blocked">
+        <p>
+          {{
+            t('{town} is safe in your other tab. You can keep playing there.', { town: townName })
+          }}
+        </p>
+        <p class="town-tab-hint">
+          {{
+            t(
+              'To play here, close the other tab, then open your town below. Different towns can stay open in separate tabs.',
+            )
+          }}
+        </p>
+        <div class="town-tab-actions">
+          <button class="town-tab-primary" @click="activate">{{ t('Open my town here') }}</button>
+          <button @click="accountOpen = true">
+            {{ t(cloud.account ? 'My towns' : 'Protect my progress') }}
+          </button>
+        </div>
+      </template>
+      <template v-else>
+        <p role="alert">{{ t(notice) }}</p>
+        <p>{{ t('Your saved progress has been kept.') }}</p>
+        <div class="town-tab-actions">
+          <button class="town-tab-primary" @click="start">{{ t('Try again') }}</button>
+          <button @click="accountOpen = true">
+            {{ t(cloud.account ? 'My towns' : 'Protect my progress') }}
+          </button>
+        </div>
+      </template>
+    </section>
   </main>
   <App v-if="ready" :key="viewVersion" :suspended="accountOpen || communityOpen" />
   <AccountPanel
@@ -42,7 +82,15 @@
   />
 </template>
 <script setup>
-import { ref, nextTick, onMounted, onBeforeUnmount, defineAsyncComponent, watch } from 'vue';
+import {
+  computed,
+  ref,
+  nextTick,
+  onMounted,
+  onBeforeUnmount,
+  defineAsyncComponent,
+  watch,
+} from 'vue';
 import App from '../App.vue';
 import { useCampaignStore } from '../stores/campaignStore';
 import { useGameStore } from '../stores/gameStore';
@@ -71,7 +119,23 @@ const accountOpen = ref(false),
   bar = ref(null),
   ready = ref(false),
   opening = ref(true),
+  blocked = ref(false),
   notice = ref('This town is open in another tab.');
+const activeTown = computed(() => {
+  void cloud.storageVersion;
+  return townStorage.active();
+});
+const accountTown = computed(
+  () => !!cloud.account && activeTown.value?.meta.owner === cloud.account.id,
+);
+const townName = computed(() => activeTown.value?.meta.name || t('Your town'));
+watch(
+  townName,
+  (name) => {
+    document.title = `${name} · Prospect Hollow`;
+  },
+  { immediate: true },
+);
 const visitId = ref(new URLSearchParams(location.hash.slice(1)).get('town') ?? '');
 let observer,
   loadedKey,
@@ -95,6 +159,7 @@ function activate() {
     .then(async () => {
       if (ready.value && loadedKey === townStorage.selectedKey()) return;
       opening.value = true;
+      blocked.value = false;
       ready.value = false;
       const release = localProfile.suspendWrites();
       try {
@@ -102,7 +167,10 @@ function activate() {
         await nextTick();
         await townCoordinator.release();
         loadedKey = townStorage.selectedKey();
-        if (!(await townCoordinator.acquire(loadedKey))) return;
+        if (!(await townCoordinator.acquire(loadedKey))) {
+          blocked.value = true;
+          return;
+        }
         if (loadedKey !== townStorage.selectedKey()) {
           activate();
           return;
@@ -116,7 +184,8 @@ function activate() {
         if (meta?.owner) url.searchParams.set('play', meta.id);
         else url.searchParams.delete('play');
         history.replaceState(null, '', url);
-        if (cloud.account) await syncNow();
+        // Cloud latency must never delay local play or the duplicate-tab notice.
+        if (cloud.account) void syncNow();
       } catch (error) {
         notice.value = error.message;
       } finally {
@@ -192,12 +261,31 @@ function fromOtherTab(event) {
   // Another town's writes never reload this renderer or schedule its uploads.
   cloud.storageVersion++;
 }
-async function openRequestedTown() {
-  const id = new URL(location.href).searchParams.get('play');
-  if (id && cloud.account && townStorage.active()?.meta.id !== id) {
+async function openRequestedTown(initial = false) {
+  let id = new URL(location.href).searchParams.get('play');
+  if (!id && initial && cloud.account && !townStorage.hasSelection())
+    id = townStorage.preferredTown(cloud.account.id)?.meta.id;
+  if (id && cloud.account && townStorage.selectedKey() !== townKey(id, cloud.account.id)) {
     await cacheTown({ townId: id });
     townStorage.select(id, cloud.account.id);
   }
+  townStorage.pinSelection();
+}
+function start() {
+  opening.value = true;
+  blocked.value = false;
+  // A cached selection (including a URL opened in another tab) is entirely local.
+  openRequestedTown(true)
+    .then(activate)
+    .catch((error) => {
+      opening.value = false;
+      notice.value = error.message;
+    });
+  if (cloud.account)
+    refreshAccount().catch((error) => {
+      cloud.error = error.message;
+      cloud.status = 'Offline — cloud backup pending';
+    });
 }
 function readLink() {
   const token = new URLSearchParams(location.hash.slice(1)).get('login');
@@ -244,16 +332,7 @@ onMounted(() => {
     if (cloud.account) communityOpen.value = true;
     else accountOpen.value = true;
   }
-  if (cloud.account)
-    refreshAccount()
-      .then(openRequestedTown)
-      .then(activate)
-      .catch((error) => {
-        cloud.error = error.message;
-        cloud.status = 'Offline — cloud backup pending';
-        activate();
-      });
-  else activate();
+  start();
 });
 onBeforeUnmount(() => {
   scheduler.dispose();
@@ -269,23 +348,85 @@ onBeforeUnmount(() => {
 });
 </script>
 <style>
-.town-tab-notice {
-  max-width: 42rem;
-  margin: 3rem auto;
-  padding: 1.5rem;
-  font: 1rem/1.6 system-ui;
-  background: #fbf8ef;
+.town-launch-screen {
+  min-height: calc(100dvh - var(--cloud-bar-height, 54px));
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 4vw, 3rem);
+  background: radial-gradient(ellipse at top, #e9eddc, #f6f1e6 65%);
   color: #294139;
-  border-radius: 16px;
 }
-.town-tab-notice button {
-  padding: 0.7rem;
-  margin: 0.3rem;
+.town-tab-notice {
+  width: min(100%, 36rem);
+  box-sizing: border-box;
+  padding: clamp(1.4rem, 4vw, 3rem);
+  text-align: center;
+  font: 1rem/1.65 system-ui;
+  background: #fffdf6;
+  border: 1px solid #d9d6c1;
+  border-radius: 1.5rem;
+  box-shadow: 0 1rem 3rem #1838320d;
+}
+.town-tab-gem {
+  width: 3.5rem;
+  height: 3.5rem;
+}
+.town-tab-brand {
+  color: #896b38;
+  letter-spacing: 0.2em;
+  font-size: 0.75rem;
+}
+.town-tab-notice h1 {
+  font:
+    clamp(1.6rem, 4vw, 2.1rem)/1.25 Georgia,
+    serif;
+  margin: 1rem 0;
+}
+.town-tab-hint {
+  color: #596b5f;
+  font-size: 0.9rem;
+}
+.town-tab-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 1.5rem;
+}
+.town-tab-actions button {
+  padding: 0.8rem 1rem;
   cursor: pointer;
-  background: #ffdc99;
-  color: #193d30;
-  border: 1px solid #c4bea9;
-  border-radius: 8px;
+  font: inherit;
+  background: #fffdf6;
+  color: #294139;
+  border: 1px solid #bdc6b4;
+  border-radius: 0.65rem;
+}
+.town-tab-actions .town-tab-primary {
+  background: #315940;
+  color: #fffdf6;
+  border-color: #315940;
+}
+.town-tab-actions button:focus-visible {
+  outline: 3px solid #ab813e;
+  outline-offset: 3px;
+}
+.cloud-town-name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-right: auto;
+  overflow-wrap: anywhere;
+}
+.cloud-town-name small {
+  display: block;
+  color: #e1d9bd;
+  font-size: 0.68rem;
+  line-height: 1.25;
+}
+.cloud-town-name img {
+  width: 1.5rem;
+  height: 1.5rem;
 }
 .cloud-mode .town-map-frame.town-fullscreen {
   top: var(--cloud-bar-height, 54px);

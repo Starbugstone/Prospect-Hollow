@@ -87,3 +87,24 @@ it('rejects late responses after another tab signs into the same account again',
   await expect(task).rejects.toThrow('account changed');
   expect(cloud.csrf).toBe('');
 });
+it('shares account refresh while local startup and background sync run together', async () => {
+  townStorage.account({ id: 'account-a' });
+  configureSync({});
+  const { refreshAccount } = await import('../src/services/cloudProfile');
+  let complete;
+  fetch.mockReturnValue(
+    new Promise((resolve) => {
+      complete = resolve;
+    }),
+  );
+  const first = refreshAccount(),
+    second = refreshAccount();
+  expect(first).toBe(second);
+  expect(fetch).toHaveBeenCalledOnce();
+  complete({
+    ok: true,
+    json: async () => ({ account: { id: 'account-a' }, csrf: 'current', towns: [] }),
+  });
+  await Promise.all([first, second]);
+  expect(cloud.csrf).toBe('current');
+});

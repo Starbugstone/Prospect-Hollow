@@ -58,10 +58,25 @@
       <section v-if="writable && active && !active.meta.owner">
         <h2>{{ t('Town on this device') }}</h2>
         <p>{{ summary(active.profile) }}</p>
-        <label
+        <p v-if="registeredLocal">
+          {{
+            t(
+              'This is a separate local copy. Open your account town to continue its saved progress; this local copy will be kept.',
+            )
+          }}
+        </p>
+        <button
+          v-if="registeredLocal"
+          :disabled="busy || game.sessionActive"
+          @click="act(() => openTown(registeredLocal))"
+        >
+          {{ t('Open my account town') }}
+        </button>
+        <label v-if="!registeredLocal"
           >{{ t('Town name') }}<input v-model="localName" minlength="3" maxlength="24"
         /></label>
         <button
+          v-if="!registeredLocal"
           :disabled="
             busy ||
             (cloud.towns.length >= 3 && !cloud.towns.some((t) => t.townId === active.meta.id))
@@ -82,7 +97,12 @@
         <li v-for="town in cloud.towns" :key="town.townId">
           <strong>{{ town.name }}</strong
           ><small>{{ t('Cloud saved') }}: {{ date(town.updatedAt * 1000) }}</small>
-          <span v-if="writable && active?.meta.id === town.townId">{{ t('Current town') }}</span>
+          <span
+            v-if="
+              writable && active?.meta.owner === cloud.account.id && active?.meta.id === town.townId
+            "
+            >{{ t('Current town') }}</span
+          >
           <button v-else :disabled="busy || game.sessionActive" @click="act(() => openTown(town))">
             {{ t('Open town') }}
           </button>
@@ -259,6 +279,11 @@ const active = computed(() => {
   void cloud.storageVersion;
   return townStorage.active();
 });
+const registeredLocal = computed(() =>
+  active.value && !active.value.meta.owner
+    ? cloud.towns.find((town) => town.townId === active.value.meta.id)
+    : null,
+);
 const conflicts = computed(() => {
   void cloud.storageVersion;
   return props.writable && active.value?.meta.conflict ? [active.value] : [];

@@ -261,17 +261,16 @@
 const props = defineProps({ suspended: Boolean });
 import MineTip from './components/MineTip.vue';
 import { t } from './i18n';
-import {
-  computed,
-  nextTick,
-  defineAsyncComponent,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-  watch,
-} from 'vue';
-const TownView = defineAsyncComponent(() => import('./components/town/TownView.vue'));
-const BoardCanvas = defineAsyncComponent(() => import('./components/BoardCanvas.vue'));
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { asyncGameView } from './services/asyncGameView';
+const TownView = asyncGameView(
+  () => import('./components/town/TownView.vue'),
+  'Loading your village…',
+);
+const BoardCanvas = asyncGameView(
+  () => import('./components/BoardCanvas.vue'),
+  'Loading your mine…',
+);
 import TownDialog from './components/town/TownDialog.vue';
 import { constructionReady } from './game/town/TownRules';
 import MineBackdrop from './components/MineBackdrop.vue';

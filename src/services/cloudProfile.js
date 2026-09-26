@@ -8,7 +8,8 @@ const base = (import.meta.env.VITE_API_BASE ?? '/api/v1').replace(/\/$/, '');
 let bearer = '',
   epoch = 0,
   service,
-  sessionGeneration;
+  sessionGeneration,
+  accountRefresh;
 export const cloud = reactive({
   account: null,
   csrf: '',
@@ -79,7 +80,16 @@ export function configureSync(options) {
   cloud.account = stored;
   return service;
 }
-export async function refreshAccount() {
+export function refreshAccount() {
+  const generation = townStorage.auth().generation;
+  if (accountRefresh?.generation === generation) return accountRefresh.promise;
+  const promise = fetchAccount().finally(() => {
+    if (accountRefresh?.promise === promise) accountRefresh = undefined;
+  });
+  accountRefresh = { generation, promise };
+  return promise;
+}
+async function fetchAccount() {
   if (!cloud.account) return;
   const generation = townStorage.auth().generation;
   const result = await request('account');
