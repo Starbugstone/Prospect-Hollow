@@ -147,10 +147,14 @@ it.each(ERAS.map(({ id }) => id))(
     d.world.updateMatrixWorld(true);
     const ray = new Raycaster(new Vector3(), new Vector3(0, -1, 0));
     for (let x = tip + 0.01; x <= BRIDGE.eastJunction; x += 0.1) {
-      ray.ray.origin.set(x, 0.5, BRIDGE.z);
-      const hit = ray.intersectObject(d.world, true)[0];
-      expect(hit).toBeDefined();
-      expect(hit.point.y).toBeLessThan(0.07);
+      // Support the whole deck width; a thin service-path strip leaves the
+      // ramp's corners ending abruptly in bare ground.
+      for (const dz of [-BRIDGE.halfWidth + 0.02, 0, BRIDGE.halfWidth - 0.02]) {
+        ray.ray.origin.set(x, 0.5, BRIDGE.z + dz);
+        const hit = ray.intersectObject(d.world, true)[0];
+        expect(hit, `${era} approach at ${x},${dz}`).toBeDefined();
+        expect(hit.point.y).toBeLessThan(0.07);
+      }
       expect(streetHeight(x, BRIDGE.z)).toBeCloseTo(0.07, 10);
     }
     d.world.traverse((object) => {

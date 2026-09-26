@@ -1,7 +1,12 @@
 import { BufferGeometry, Float32BufferAttribute, Mesh, Shape, ShapeGeometry } from 'three';
 import { townTracks } from './TownLayout';
 import { roadAppearance } from './TownEvolution';
-import { roadDetails, roadDetailCorners, roadHalfWidth } from './RoadDetails';
+import {
+  roadDetails,
+  roadDetailCorners,
+  roadHalfWidth,
+  bridgeApproachSurfaces,
+} from './RoadDetails';
 
 export function addRoadSurfaces(d, roads, town) {
   const meshes = [];
@@ -9,7 +14,7 @@ export function addRoadSurfaces(d, roads, town) {
     tracks = townTracks(town);
   roads.userData.roadStyle = style.id;
   for (const [index, track] of tracks.entries()) {
-    if (track.crossing) continue; // The bridge owns its raised deck.
+    if (track.crossing || track.approach) continue; // Raised decks and shaped approaches own their surface.
     const { from, to } = track;
     const length = Math.hypot(to[0] - from[0], to[1] - from[1]);
     if (!length) continue;
@@ -31,6 +36,20 @@ export function addRoadSurfaces(d, roads, town) {
     const surface = new Mesh(geometry, d.material(style.color));
     surface.rotation.y = Math.atan2(to[0] - from[0], to[1] - from[1]);
     surface.position.set((from[0] + to[0]) / 2, 0.028 + index * 0.0002, (from[1] + to[1]) / 2);
+    surface.receiveShadow = true;
+    roads.add(surface);
+    meshes.push(surface);
+  }
+  for (const { points, color, kind } of bridgeApproachSurfaces(town, tracks)) {
+    const shape = new Shape();
+    points.forEach(([x, z], i) => (i ? shape.lineTo(x, -z) : shape.moveTo(x, -z)));
+    shape.closePath();
+    const geometry = new ShapeGeometry(shape);
+    geometry.rotateX(-Math.PI / 2);
+    geometry.userData.owned = true;
+    const surface = new Mesh(geometry, d.material(color));
+    surface.name = kind;
+    surface.position.y = kind === 'bridge-approach' ? 0.048 : 0.054;
     surface.receiveShadow = true;
     roads.add(surface);
     meshes.push(surface);

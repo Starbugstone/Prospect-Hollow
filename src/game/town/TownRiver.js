@@ -11,6 +11,7 @@ export const BRIDGE = Object.freeze({
   centerX: bridgeCenter,
   z: 7.5,
   halfLength: 7,
+  halfWidth: 1.15,
   westJunction: bridgeCenter - 7,
   eastJunction: 38,
 });

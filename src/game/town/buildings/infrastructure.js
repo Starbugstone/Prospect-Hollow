@@ -75,7 +75,12 @@ function roadDeck(d, parent, profile) {
     }
     d.mesh(parent, cache, [1, 1, 1], [0, 0, 0], color).name = `Bridge ${key}`;
   };
-  ribbon('road deck', [[-7, 7, -1.15, 1.15]], profile.roadColor ?? style.color, true);
+  ribbon(
+    'road deck',
+    [[-7, 7, -BRIDGE.halfWidth, BRIDGE.halfWidth]],
+    profile.roadColor ?? style.color,
+    true,
+  );
   ribbon(
     'road edges',
     [
@@ -111,7 +116,8 @@ export function renderBridge(d, parent, level, era = d.town?.buildingEras?.bridg
   for (let i = 0; i < 56; i++) {
     const x = -7 + i * 0.25,
       height = bridgeDeckHeight(center + x);
-    if (!profile.roadBridge) d.box(parent, 0.26, 0.18, 2.3, x, height - 0.08, 0, '#a48e69');
+    if (!profile.roadBridge)
+      d.box(parent, 0.26, 0.18, BRIDGE.halfWidth * 2, x, height - 0.08, 0, '#a48e69');
     for (const z of [-1.12, 1.12]) {
       d.rod(
         parent,

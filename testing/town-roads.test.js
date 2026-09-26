@@ -6,7 +6,12 @@ import { defineEra } from '../src/data/eraDefinitions';
 import { resolveRoadStyle } from '../src/data/roadStyles';
 import { roadAppearance } from '../src/game/town/TownEvolution';
 import { townTracks, routeGraph, segmentDistance } from '../src/game/town/TownLayout';
-import { roadDetails, roadDetailCorners, roadHalfWidth } from '../src/game/town/RoadDetails';
+import {
+  roadDetails,
+  roadDetailCorners,
+  roadHalfWidth,
+  bridgeApproachSurfaces,
+} from '../src/game/town/RoadDetails';
 import { addTownRoads } from '../src/game/town/TownActivity';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { TownStatics } from '../src/game/town/TownStatics';
@@ -39,14 +44,26 @@ it('gives all eight eras distinct treatments and lets a future era inherit or ov
   expect(roadAppearance(successor)).toMatchObject({ id: 'civic', color: '#123456' });
   const base = townFor('contemporary');
   expect(roadDetails(successor, townTracks(base))).toEqual(roadDetails(base));
+  expect(bridgeApproachSurfaces(successor)[0]).toMatchObject({
+    color: '#123456',
+    points: bridgeApproachSurfaces(base)[0].points,
+  });
   ERA_BY_ID['incomplete-road-era'] = { evolution: { roadStyle: 'not-a-surface' } };
   expect(roadAppearance(townFor('incomplete-road-era'))).toMatchObject({
     id: 'dirt',
     color: '#c3a477',
     paved: false,
   });
+  expect(bridgeApproachSurfaces(townFor('incomplete-road-era'))[0].color).toBe('#c3a477');
   for (const id of ['missing', 'constructor', '__proto__', undefined])
     expect(resolveRoadStyle(id)).toBe(resolveRoadStyle('dirt'));
+});
+
+it('adds the bridge landing only when the crossing is open', () => {
+  expect(bridgeApproachSurfaces(townFor('frontier'))).toEqual([]);
+  const town = townFor('contemporary');
+  town.buildings.bridge = 0;
+  expect(bridgeApproachSurfaces(town)).toEqual([]);
 });
 
 it.each(ERAS.map(({ id }) => id))(

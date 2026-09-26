@@ -553,7 +553,12 @@ import {
   powerGrid,
   roadSurface,
 } from '../../game/town/TownEvolution';
-import { roadDetails, roadDetailCorners, roadHalfWidth } from '../../game/town/RoadDetails';
+import {
+  roadDetails,
+  roadDetailCorners,
+  roadHalfWidth,
+  bridgeApproachSurfaces,
+} from '../../game/town/RoadDetails';
 import { computed, nextTick, ref, useId, watch } from 'vue';
 import {
   nextGoal,
@@ -670,14 +675,15 @@ const roadDrawing = computed(() => {
     paved = pavedTown(props.town);
   const layers = new Map();
   const add = (part) => {
-    const points = roadDetailCorners(part).map(mapPoint);
+    const points = (part.points ?? roadDetailCorners(part)).map(mapPoint);
     if (!points.length) return;
     const path = `M${points.map((p) => p.join(' ')).join('L')}Z`;
     layers.set(part.color, (layers.get(part.color) ?? '') + path);
   };
   for (const track of tracks)
-    if (!track.crossing)
+    if (!track.crossing && !track.approach)
       add({ ...track, width: roadHalfWidth(track, paved) * 2, color: roadSurface(props.town) });
+  for (const part of bridgeApproachSurfaces(props.town, tracks)) add(part);
   for (const part of roadDetails(props.town, tracks)) add(part);
   return [...layers].map(([color, path]) => ({ color, path }));
 });

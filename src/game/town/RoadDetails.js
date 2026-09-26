@@ -1,7 +1,77 @@
 import { townTracks, segmentDistance } from './TownLayout';
 import { roadAppearance } from './TownEvolution';
+import { BRIDGE } from './TownRiver';
 
-export const roadHalfWidth = (track, paved) => track.width * (paved ? 0.7 : 0.5);
+const BRIDGE_FLARE = 0.55;
+export const roadHalfWidth = (track, paved) =>
+  track.approach === 'bridge' ? BRIDGE.halfWidth + BRIDGE_FLARE : track.width * (paved ? 0.7 : 0.5);
+
+// A flat, full-width landing with rounded corners into the bank street. These
+// shared polygons are visual only; the prepared road graph and heights stay put.
+export function bridgeApproachSurfaces(town, tracks = townTracks(town)) {
+  const approach = tracks.find((track) => track.approach === 'bridge');
+  if (!approach) return [];
+  const street = tracks.find(
+    ({ from, to }) =>
+      from[0] === approach.to[0] &&
+      to[0] === approach.to[0] &&
+      from[1] < BRIDGE.z &&
+      to[1] > BRIDGE.z,
+  );
+  if (!street) return [];
+  const style = roadAppearance(town);
+  const start = approach.from[0] - 0.12;
+  const end = approach.to[0] - roadHalfWidth(street, style.paved);
+  const length = end - start;
+  const sides = [-1, 1].map((side) => {
+    const outer = [],
+      trim = [],
+      inner = [];
+    for (let n = 0; n <= 8; n++) {
+      const t = n / 8,
+        angle = (t * Math.PI) / 2;
+      const x = start + length * Math.sin(angle);
+      const z = BRIDGE.halfWidth + BRIDGE_FLARE * (1 - Math.cos(angle));
+      const dx = length * Math.cos(angle),
+        dz = BRIDGE_FLARE * Math.sin(angle);
+      const normalLength = Math.hypot(dx, dz);
+      const inset = (amount) => [
+        x + (dz / normalLength) * amount,
+        BRIDGE.z + side * (z - (dx / normalLength) * amount),
+      ];
+      outer.push(inset(0));
+      // Match the bridge's thin edge at one end and the street's 13 cm edging
+      // at the other. Nothing raised is added across the pedestrian walkway.
+      trim.push(inset(0.09 * (1 - t)));
+      inner.push(inset(0.15 * (1 - t) + 0.13 * t));
+    }
+    // Reach the next street-edge segment so its regular tiling cannot leave a
+    // visible break immediately after the rounded corner.
+    const join = BRIDGE.z + side * (BRIDGE.halfWidth + BRIDGE_FLARE + 0.9);
+    trim.push([end, join]);
+    inner.push([end + 0.13, join]);
+    return { outer, trim, inner };
+  });
+  const surfaces = [
+    {
+      kind: 'bridge-approach',
+      color: style.color,
+      points: [
+        ...sides[0].outer,
+        ...sides.map(({ outer }) => [end + 0.14, outer.at(-1)[1]]),
+        ...sides[1].outer.toReversed(),
+      ],
+    },
+  ];
+  if (style.edge)
+    for (const { trim, inner } of sides)
+      surfaces.push({
+        kind: 'bridge-approach-edge',
+        color: style.edge,
+        points: [...trim, ...inner.toReversed()],
+      });
+  return surfaces;
+}
 
 export function roadDetailCorners({ from, to, width }) {
   const dx = to[0] - from[0],

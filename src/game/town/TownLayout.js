@@ -195,7 +195,14 @@ export const townTracks = (town) => [
   ...(town.era !== 'frontier' && town.buildings.bridge
     ? [
         CROSSING,
-        road([BRIDGE.centerX + BRIDGE.halfLength, BRIDGE.z], [BRIDGE.eastJunction, BRIDGE.z], 0.85),
+        {
+          ...road(
+            [BRIDGE.centerX + BRIDGE.halfLength, BRIDGE.z],
+            [BRIDGE.eastJunction, BRIDGE.z],
+            0.85,
+          ),
+          approach: 'bridge',
+        },
         ...EAST_TRACKS,
       ]
     : []),
