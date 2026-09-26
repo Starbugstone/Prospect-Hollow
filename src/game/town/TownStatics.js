@@ -1,3 +1,4 @@
+import { horizonMaterial } from './TownAtmosphere';
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 
@@ -8,7 +9,9 @@ export class TownStatics {
     this.scene = scene;
     this.meshes = [];
     this.batches = new Map();
-    this.material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.88 });
+    this.material = horizonMaterial(
+      new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.88 }),
+    );
   }
   rebuild(roots) {
     this.clear();

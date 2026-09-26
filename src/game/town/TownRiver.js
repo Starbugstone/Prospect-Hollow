@@ -1,3 +1,4 @@
+import { horizonMaterial } from './TownAtmosphere';
 import * as THREE from 'three';
 import { MILLRACE, millraceWaterEdge } from './TownMillrace';
 
@@ -55,10 +56,18 @@ export function buildRiver(town, parent) {
   geometry.setIndex(indices);
   geometry.userData.owned = true;
   const material = new THREE.ShaderMaterial({
-    uniforms: { time: { value: 0 } },
-    vertexShader:
-      'varying vec2 riverUv; void main() { riverUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fog: true,
+    uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { time: { value: 0 } }]),
+    vertexShader: `varying vec2 riverUv;
+      #include <fog_pars_vertex>
+      void main() {
+        riverUv = uv;
+        vec3 transformed = position;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(transformed, 1.0);
+        #include <fog_vertex>
+      }`,
     fragmentShader: `uniform float time; varying vec2 riverUv;
+      #include <fog_pars_fragment>
       void main() {
         float across = clamp(riverUv.x, 0., 1.);
         float ripple = smoothstep(.94, 1., sin(riverUv.y * 3. + sin(across * 20.) - time * .45));
@@ -66,8 +75,10 @@ export function buildRiver(town, parent) {
         gl_FragColor = vec4(color + ripple * .035, 1.);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
+        #include <fog_fragment>
       }`,
   });
+  horizonMaterial(material);
   material.userData.transient = true;
   const water = new THREE.Mesh(geometry, material);
   water.name = 'Prospect river';

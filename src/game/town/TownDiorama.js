@@ -1,3 +1,4 @@
+import { setTownAtmosphere, horizonMaterial } from './TownAtmosphere';
 import { applyRoadSetbacks } from './BuildingSetbacks';
 import { addTownAnimals } from './TownAnimals';
 import { footprintsFor, plotFootprintKey } from './FootprintCatalog';
@@ -95,8 +96,7 @@ export class TownDiorama {
     this.materials = new Map();
     this.geometries = createTownGeometries();
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color('#e9e8da');
-    this.scene.fog = new THREE.Fog('#e9e8da', 125, 205);
+    setTownAtmosphere(this.scene);
     this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 400);
     this.camera.position.set(12, 12, 25);
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
@@ -111,6 +111,7 @@ export class TownDiorama {
       opacity: 0.16,
       depthWrite: false,
     });
+    horizonMaterial(this.contactShadowMaterial);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.25;
@@ -224,7 +225,10 @@ export class TownDiorama {
   }
   material(color) {
     if (!this.materials.has(color))
-      this.materials.set(color, new THREE.MeshStandardMaterial({ color, roughness: 0.88 }));
+      this.materials.set(
+        color,
+        horizonMaterial(new THREE.MeshStandardMaterial({ color, roughness: 0.88 })),
+      );
     return this.materials.get(color);
   }
   mesh(parent, shape, size, position, color) {
@@ -287,7 +291,7 @@ export class TownDiorama {
       ctx.fillText(text, 256, 68, 480);
       const texture = new THREE.CanvasTexture(canvas);
       texture.colorSpace = THREE.SRGBColorSpace;
-      material = new THREE.MeshStandardMaterial({ map: texture, roughness: 1 });
+      material = horizonMaterial(new THREE.MeshStandardMaterial({ map: texture, roughness: 1 }));
       this.signMaterials.set(text, material);
     }
     const sign = this.box(parent, width, 0.35, 0.012, x, y, z + 0.058, '#ffffff');
@@ -791,11 +795,6 @@ export class TownDiorama {
       : town.era !== 'frontier'
         ? 160
         : 110;
-    // Expanded towns need a farther overview on phones; keep buildings ahead of the fog.
-    if (this.scene.fog) {
-      this.scene.fog.near = town.era !== 'frontier' ? 325 : 125;
-      this.scene.fog.far = town.era !== 'frontier' ? 390 : 205;
-    }
     for (const {
       id,
       position: [x, z],
@@ -1566,6 +1565,7 @@ export class TownDiorama {
         opacity: 0.85,
       }),
     );
+    horizonMaterial(this.selection.material);
     this.selection.rotation.x = -Math.PI / 2;
     this.selection.position.set(x, 0.095, z);
     this.world.add(this.selection);

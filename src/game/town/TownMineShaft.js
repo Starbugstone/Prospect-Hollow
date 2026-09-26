@@ -1,3 +1,4 @@
+import { horizonMaterial } from './TownAtmosphere';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import * as THREE from 'three';
 import { MINE_POSITION, MINE_SHAFT } from '../../data/mineSite';
@@ -39,6 +40,7 @@ function ownedMesh(parent, positions, color) {
   geometry.computeVertexNormals();
   geometry.userData.owned = true;
   const material = new THREE.MeshStandardMaterial({ color, roughness: 1, side: THREE.DoubleSide });
+  horizonMaterial(material);
   material.userData.transient = true;
   const mesh = new THREE.Mesh(geometry, material);
   mesh.receiveShadow = true;

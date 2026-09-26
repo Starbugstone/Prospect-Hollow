@@ -1,3 +1,4 @@
+import { horizonMaterial } from './TownAtmosphere';
 import { Group, InstancedMesh, MeshStandardMaterial, DynamicDrawUsage } from 'three';
 
 // Keep articulated joints in the scene graph, but draw matching parts together.
@@ -9,7 +10,7 @@ export class TownActors {
     scene.add(this.group);
     this.buckets = [];
     this.roots = [];
-    this.material = new MeshStandardMaterial({ roughness: 0.88 });
+    this.material = horizonMaterial(new MeshStandardMaterial({ roughness: 0.88 }));
   }
   rebuild(roots) {
     this.clear();
@@ -28,7 +29,7 @@ export class TownActors {
       const colored = first.material.isMeshStandardMaterial && !first.material.transparent;
       const mesh = new InstancedMesh(
         first.geometry,
-        colored ? this.material : first.material,
+        colored ? this.material : horizonMaterial(first.material),
         objects.length,
       );
       mesh.instanceMatrix.setUsage(DynamicDrawUsage);

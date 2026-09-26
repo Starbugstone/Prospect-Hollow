@@ -1,3 +1,4 @@
+import { horizonMaterial } from './TownAtmosphere';
 import {
   addTunnelPortals,
   RAIL_TUNNEL,
@@ -171,6 +172,7 @@ export function buildMineHillside(town, parent, mineZ, railZ, groundHeight, rail
   geometry.computeVertexNormals();
   geometry.userData.owned = true;
   const material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 });
+  horizonMaterial(material);
   material.userData.transient = true;
   const mesh = new THREE.Mesh(geometry, material);
   mesh.name = 'Mine shoulder and tunnel';
