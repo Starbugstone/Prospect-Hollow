@@ -22,5 +22,15 @@ test-results/
 # Hosting metadata and generated build cache
 .vercel/
 
+/backend/vendor/
+/backend/var/
+/backend/.env.local
+/.env
+/release/
+/backups/
+!/.env.example
+!/backend/.env.example
 # Python caches from Blender asset tooling
 __pycache__/
+
+!/scripts/o2switch/*.env.example

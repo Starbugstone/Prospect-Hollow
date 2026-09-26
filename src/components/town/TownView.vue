@@ -750,8 +750,8 @@ watch(
     eraReady.value = false;
   },
 );
-function beginEra() {
-  if (activeRaid.value || !campaign.advanceEra(town.value.era)) return;
+async function beginEra() {
+  if (activeRaid.value || !(await campaign.advanceEra(town.value.era))) return;
   closeDialog();
   fullscreen.value = true;
   eraRevealed.value = false;
@@ -984,9 +984,9 @@ function closeDialog() {
 function openDirectory() {
   dialogMode.value = 'directory';
 }
-function collectIncome() {
+async function collectIncome() {
   collectionNow.value = Date.now();
-  const coins = campaign.collectSaloonIncome(collectionNow.value);
+  const coins = await campaign.collectSaloonIncome(collectionNow.value);
   if (!coins) return false;
   showCollection('coins', coins, 'saloon');
   return true;
@@ -1007,7 +1007,7 @@ async function selectBuilding(id) {
     finishBuilding(id);
     return;
   }
-  if (id === 'saloon' && collectIncome()) return;
+  if (id === 'saloon' && (await collectIncome())) return;
   if (id === 'square' && gate.value.available && !activeRaid.value) {
     beginEra();
     return;
@@ -1018,14 +1018,14 @@ async function selectBuilding(id) {
   }
   collection.value = null;
   collectionNow.value = Date.now();
-  if (id === 'blacksmith' && campaign.collectForgeTNT(collectionNow.value)) {
+  if (id === 'blacksmith' && (await campaign.collectForgeTNT(collectionNow.value))) {
     showCollection('tnt', 1, 'blacksmith');
     return;
   }
   await inspectBuilding(id);
 }
-function ringBell() {
-  if (!campaign.ringTownBell(event.value?.id)) return false;
+async function ringBell() {
+  if (!(await campaign.ringTownBell(event.value?.id))) return false;
   game.audioManager?.playArcadeCue?.('town-bell');
   announcement.value = t('Bell rung · remaining loss: {coins} coins', { coins: event.value.loss });
   return true;
@@ -1083,8 +1083,8 @@ function plotStatus(place) {
       })
     : t('Empty plot');
 }
-function repair(stage, keepDirectory = false) {
-  if (!campaign.upgradeBuilding(selected.value, stage)) return;
+async function repair(stage, keepDirectory = false) {
+  if (!(await campaign.upgradeBuilding(selected.value, stage))) return;
   showConstruction(keepDirectory);
   const complete = !town.value.projects[selected.value];
   const puzzles = town.value.projects[selected.value]?.required ?? 0;
@@ -1119,9 +1119,9 @@ function showConstruction(keepDirectory = false) {
   construction.value = { id: selected.value, serial: (construction.value?.serial ?? 0) + 1 };
   if (!keepDirectory) mapFrame.value?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
 }
-function finishBuilding(id, keepDirectory = false) {
+async function finishBuilding(id, keepDirectory = false) {
   const stage = town.value.projects[id]?.stage;
-  if (!campaign.finishConstruction(id, stage)) return;
+  if (!(await campaign.finishConstruction(id, stage))) return;
   selected.value = id;
   showConstruction(keepDirectory);
   celebrateBuilding();
@@ -1137,16 +1137,16 @@ function celebrateBuilding() {
     building: t(BUILDING_BY_ID[selected.value].shortName),
   });
 }
-function useHammer(stage, keepDirectory = false) {
-  if (!campaign.useBuilderHammer(selected.value, stage)) return;
+async function useHammer(stage, keepDirectory = false) {
+  if (!(await campaign.useBuilderHammer(selected.value, stage))) return;
   showConstruction(keepDirectory);
   celebrateBuilding();
 }
 
-function finishRaid() {
+async function finishRaid() {
   if (!activeRaid.value) return;
   const id = activeRaid.value.id;
-  if (!event.value?.seen && !campaign.markRaidSeen(id)) return;
+  if (!event.value?.seen && !(await campaign.markRaidSeen(id))) return;
   const receipt = { ...event.value };
   if (receipt.outcome === 'protected' || receipt.loss > 0) raidNotice.value = receipt;
   if (receipt.bounty) game.audioManager?.playArcadeCue?.('jackpot');

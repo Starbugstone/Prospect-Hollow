@@ -122,3 +122,9 @@ Mine teardown explicitly releases its WebGL context. If the village loses its gr
 The [24 September deployment review](docs/deployment-audit-2026-09-24.md) maps the changes against main to their intended behavior and records the verification evidence and remaining limits.
 
 The [Motor Age progression review](docs/motor-age-progression.md) records the earlier four-era, 144-level campaign and its verification. The [earlier progression and visual UX review](docs/progression-ux-review.md) documents the original 72-level tuning pass.
+
+## Account backend and FTP deployment
+
+This branch adds a PHP/Symfony application with server-validated game actions and shared account progress. Start it locally with Docker Compose, or build a precompiled bundle for FTP hosting. See [local setup and hosting](docs/backend/hosting.md), [security boundaries](docs/backend/security.md), and the [API contract](docs/backend/openapi.yaml). Automated deployment is disabled on this branch.
+
+The [26 September backend review](docs/backend/review-2026-09-26.md) records the newer local-first, per-town cloud-save requirements and the changes needed to replace this branch's original server-authoritative design. The existing backend is not yet aligned with that scope.

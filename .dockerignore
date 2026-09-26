@@ -1,0 +1,16 @@
+.git
+node_modules
+dist
+output
+.playwright-cli
+backend/vendor
+backend/var
+.env
+.env.*
+backend/.env.local
+release
+backups
+backend/.env
+backend/.env.*
+!backend/.env.example
+*.dump

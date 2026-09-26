@@ -1,0 +1,12 @@
+CREATE TABLE IF NOT EXISTS schema_versions (version INTEGER PRIMARY KEY);
+CREATE TABLE players (id VARCHAR(64) PRIMARY KEY, email VARCHAR(254) NOT NULL UNIQUE, created_at BIGINT NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE TABLE sessions (token_hash VARCHAR(64) PRIMARY KEY, player_id VARCHAR(64) NOT NULL, csrf_hash VARCHAR(64) NOT NULL, created_at BIGINT NOT NULL, expires_at BIGINT NOT NULL, FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE TABLE login_intents (token_hash VARCHAR(64) PRIMARY KEY, email VARCHAR(254) NOT NULL, expires_at BIGINT NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE TABLE identities (email_hash VARCHAR(64) PRIMARY KEY) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE TABLE limits (bucket VARCHAR(64) PRIMARY KEY, hits INTEGER NOT NULL, until_at BIGINT NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE TABLE towns (id VARCHAR(36) PRIMARY KEY, player_id VARCHAR(64) NOT NULL, name VARCHAR(160) NOT NULL, normalized_name VARCHAR(160), revision BIGINT NOT NULL, profile LONGTEXT NOT NULL, saved_at BIGINT NOT NULL, public_id VARCHAR(32) NOT NULL UNIQUE, listed INTEGER NOT NULL DEFAULT 0, appearance LONGTEXT, upload_id VARCHAR(64), upload_hash VARCHAR(64), deleted_at BIGINT, UNIQUE(player_id,normalized_name), FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE TABLE town_history (town_id VARCHAR(36) NOT NULL, revision BIGINT NOT NULL, profile LONGTEXT NOT NULL, saved_at BIGINT NOT NULL, PRIMARY KEY(town_id,revision), FOREIGN KEY(town_id) REFERENCES towns(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX towns_owner ON towns(player_id,deleted_at);
+CREATE INDEX towns_public ON towns(listed,public_id);
+CREATE INDEX sessions_player ON sessions(player_id);
+INSERT INTO schema_versions(version) VALUES (10);

@@ -107,7 +107,7 @@
         {{ t('Shift + arrow to swap. Esc to cancel.') }}
       </p>
     </div>
-    <div class="testing-reset">
+    <div v-if="!campaign.readOnly && !townStorage.state()?.active.owner" class="testing-reset">
       <button v-if="!confirmReset" class="text-button" @click="confirmReset = true">
         {{ t('Start a new village') }}
       </button>
@@ -129,6 +129,7 @@
 </template>
 <script setup>
 import { t } from '../i18n';
+import { townStorage } from '../services/townStorage';
 import { ref, watch } from 'vue';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useCampaignStore } from '../stores/campaignStore';

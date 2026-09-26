@@ -1,0 +1,815 @@
+{
+  'openapi': '3.1.0',
+  'info':
+    {
+      'title': 'Prospect Hollow account saves',
+      'version': '10.0.0',
+      'description': 'Local-first single-player snapshots. All town operations require an account. No guest or gameplay action API.',
+    },
+  'servers': [{ 'url': '/api/v1' }],
+  'security': [{ 'sessionCookie': [] }, { 'nativeBearer': [] }],
+  'paths':
+    {
+      '/api/health':
+        {
+          'servers': [{ 'url': '/' }],
+          'get':
+            {
+              'summary': 'o2switch deployment readiness and executing release identity',
+              'security': [],
+              'parameters': [{ 'name': 'check', 'in': 'query', 'schema': { 'type': 'string' } }],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'Schema/database ready; the installed release supplies X-Release-Id.',
+                      'headers':
+                        {
+                          'X-Release-Id':
+                            {
+                              'schema':
+                                {
+                                  'type': 'string',
+                                  'pattern': '^[a-f0-9]{40}-[0-9]{14}-[a-f0-9]{8}$',
+                                },
+                            },
+                        },
+                      'content':
+                        {
+                          'application/json':
+                            {
+                              'schema':
+                                {
+                                  'type': 'object',
+                                  'properties': { 'status': { 'const': 'ok' } },
+                                  'required': ['status'],
+                                },
+                            },
+                        },
+                    },
+                  '503':
+                    { 'description': 'Database or required schema unavailable; generic response.' },
+                },
+            },
+        },
+      '/health':
+        {
+          'get':
+            {
+              'summary': 'Database health',
+              'responses':
+                {
+                  '200': { 'description': 'Success' },
+                  '401': { 'description': 'Sign in again' },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '422': { 'description': 'Invalid request' },
+                  '429': { 'description': 'Rate limited' },
+                },
+              'security': [],
+            },
+        },
+      '/auth/login-link':
+        {
+          'post':
+            {
+              'summary': 'Request a single-use 15-minute email proof',
+              'responses':
+                {
+                  '200': { 'description': 'Success' },
+                  '401': { 'description': 'Sign in again' },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '422': { 'description': 'Invalid request' },
+                  '429': { 'description': 'Rate limited' },
+                  '409':
+                    {
+                      'description': 'Revision conflict, duplicate name/ID, or three slots full. Save conflicts include the owned cloud copy.',
+                      'content':
+                        {
+                          'application/json':
+                            { 'schema': { '$ref': '#/components/schemas/Error' } },
+                        },
+                    },
+                  '413': { 'description': 'Body exceeds 1,100,000 bytes or profile exceeds 1 MiB' },
+                },
+              'security': [],
+              'requestBody':
+                {
+                  'required': true,
+                  'content':
+                    {
+                      'application/json':
+                        {
+                          'schema':
+                            {
+                              'type': 'object',
+                              'additionalProperties': false,
+                              'required': ['email'],
+                              'properties': { 'email': { 'type': 'string', 'format': 'email' } },
+                            },
+                        },
+                    },
+                },
+              'parameters':
+                [
+                  {
+                    'name': 'X-CSRF-Token',
+                    'in': 'header',
+                    'required': false,
+                    'schema': { 'type': 'string' },
+                  },
+                ],
+            },
+        },
+      '/auth/confirm':
+        {
+          'post':
+            {
+              'summary': 'Explicitly consume email proof',
+              'responses':
+                {
+                  '200': { 'description': 'Success' },
+                  '401': { 'description': 'Sign in again' },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '422': { 'description': 'Invalid request' },
+                  '429': { 'description': 'Rate limited' },
+                  '409':
+                    {
+                      'description': 'Revision conflict, duplicate name/ID, or three slots full. Save conflicts include the owned cloud copy.',
+                      'content':
+                        {
+                          'application/json':
+                            { 'schema': { '$ref': '#/components/schemas/Error' } },
+                        },
+                    },
+                  '413': { 'description': 'Body exceeds 1,100,000 bytes or profile exceeds 1 MiB' },
+                },
+              'security': [],
+              'requestBody':
+                {
+                  'required': true,
+                  'content':
+                    {
+                      'application/json':
+                        {
+                          'schema':
+                            {
+                              'type': 'object',
+                              'additionalProperties': false,
+                              'required': ['token'],
+                              'properties':
+                                {
+                                  'token': { 'type': 'string', 'pattern': '^[a-f0-9]{64}$' },
+                                  'native': { 'type': 'boolean' },
+                                },
+                            },
+                        },
+                    },
+                },
+              'parameters':
+                [
+                  {
+                    'name': 'X-CSRF-Token',
+                    'in': 'header',
+                    'required': false,
+                    'schema': { 'type': 'string' },
+                  },
+                ],
+            },
+        },
+      '/auth/logout':
+        {
+          'post':
+            {
+              'summary': 'Revoke session',
+              'responses':
+                {
+                  '200': { 'description': 'Success' },
+                  '401': { 'description': 'Sign in again' },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '422': { 'description': 'Invalid request' },
+                  '429': { 'description': 'Rate limited' },
+                  '409':
+                    {
+                      'description': 'Revision conflict, duplicate name/ID, or three slots full. Save conflicts include the owned cloud copy.',
+                      'content':
+                        {
+                          'application/json':
+                            { 'schema': { '$ref': '#/components/schemas/Error' } },
+                        },
+                    },
+                  '413': { 'description': 'Body exceeds 1,100,000 bytes or profile exceeds 1 MiB' },
+                },
+              'requestBody':
+                {
+                  'required': true,
+                  'content':
+                    {
+                      'application/json':
+                        {
+                          'schema':
+                            {
+                              'type': 'object',
+                              'additionalProperties': false,
+                              'required': [],
+                              'properties': {},
+                            },
+                        },
+                    },
+                },
+              'parameters':
+                [
+                  {
+                    'name': 'X-CSRF-Token',
+                    'in': 'header',
+                    'required': true,
+                    'schema': { 'type': 'string' },
+                  },
+                ],
+            },
+        },
+      '/auth/revoke-all':
+        {
+          'post':
+            {
+              'summary': 'Revoke sessions and pending login links',
+              'responses':
+                {
+                  '200': { 'description': 'Success' },
+                  '401': { 'description': 'Sign in again' },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '422': { 'description': 'Invalid request' },
+                  '429': { 'description': 'Rate limited' },
+                  '409':
+                    {
+                      'description': 'Revision conflict, duplicate name/ID, or three slots full. Save conflicts include the owned cloud copy.',
+                      'content':
+                        {
+                          'application/json':
+                            { 'schema': { '$ref': '#/components/schemas/Error' } },
+                        },
+                    },
+                  '413': { 'description': 'Body exceeds 1,100,000 bytes or profile exceeds 1 MiB' },
+                },
+              'requestBody':
+                {
+                  'required': true,
+                  'content':
+                    {
+                      'application/json':
+                        {
+                          'schema':
+                            {
+                              'type': 'object',
+                              'additionalProperties': false,
+                              'required': [],
+                              'properties': {},
+                            },
+                        },
+                    },
+                },
+              'parameters':
+                [
+                  {
+                    'name': 'X-CSRF-Token',
+                    'in': 'header',
+                    'required': true,
+                    'schema': { 'type': 'string' },
+                  },
+                ],
+            },
+        },
+      '/account':
+        {
+          'get':
+            {
+              'summary': 'Account, CSRF token and up to three town metadata records',
+              'responses':
+                {
+                  '200': { 'description': 'Success' },
+                  '401': { 'description': 'Sign in again' },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '422': { 'description': 'Invalid request' },
+                  '429': { 'description': 'Rate limited' },
+                },
+            },
+          'delete':
+            {
+              'summary': 'Permanently delete account and live account data',
+              'responses':
+                {
+                  '200': { 'description': 'Success' },
+                  '401': { 'description': 'Sign in again' },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '422': { 'description': 'Invalid request' },
+                  '429': { 'description': 'Rate limited' },
+                  '409':
+                    {
+                      'description': 'Revision conflict, duplicate name/ID, or three slots full. Save conflicts include the owned cloud copy.',
+                      'content':
+                        {
+                          'application/json':
+                            { 'schema': { '$ref': '#/components/schemas/Error' } },
+                        },
+                    },
+                  '413': { 'description': 'Body exceeds 1,100,000 bytes or profile exceeds 1 MiB' },
+                },
+              'requestBody':
+                {
+                  'required': true,
+                  'content':
+                    {
+                      'application/json':
+                        {
+                          'schema':
+                            {
+                              'type': 'object',
+                              'additionalProperties': false,
+                              'required': ['confirmation'],
+                              'properties': { 'confirmation': { 'const': 'DELETE MY ACCOUNT' } },
+                            },
+                        },
+                    },
+                },
+              'parameters':
+                [
+                  {
+                    'name': 'X-CSRF-Token',
+                    'in': 'header',
+                    'required': true,
+                    'schema': { 'type': 'string' },
+                  },
+                ],
+            },
+        },
+      '/towns':
+        {
+          'post':
+            {
+              'summary': 'Attach offline UUID or create town; revision starts at one',
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'Success',
+                      'content':
+                        {
+                          'application/json': { 'schema': { '$ref': '#/components/schemas/Town' } },
+                        },
+                    },
+                  '401': { 'description': 'Sign in again' },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '422': { 'description': 'Invalid request' },
+                  '429': { 'description': 'Rate limited' },
+                  '409':
+                    {
+                      'description': 'Revision conflict, duplicate name/ID, or three slots full. Save conflicts include the owned cloud copy.',
+                      'content':
+                        {
+                          'application/json':
+                            { 'schema': { '$ref': '#/components/schemas/Error' } },
+                        },
+                    },
+                  '413': { 'description': 'Body exceeds 1,100,000 bytes or profile exceeds 1 MiB' },
+                },
+              'requestBody':
+                {
+                  'required': true,
+                  'content':
+                    {
+                      'application/json':
+                        { 'schema': { '$ref': '#/components/schemas/CreateTown' } },
+                    },
+                },
+              'parameters':
+                [
+                  {
+                    'name': 'X-CSRF-Token',
+                    'in': 'header',
+                    'required': true,
+                    'schema': { 'type': 'string' },
+                  },
+                ],
+            },
+        },
+      '/towns/{townId}':
+        {
+          'get':
+            {
+              'summary': 'Read an owned town',
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'Success',
+                      'content':
+                        {
+                          'application/json': { 'schema': { '$ref': '#/components/schemas/Town' } },
+                        },
+                    },
+                  '401': { 'description': 'Sign in again' },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '422': { 'description': 'Invalid request' },
+                  '429': { 'description': 'Rate limited' },
+                },
+              'parameters':
+                [
+                  {
+                    'name': 'townId',
+                    'in': 'path',
+                    'required': true,
+                    'schema': { 'type': 'string', 'format': 'uuid' },
+                  },
+                ],
+            },
+          'put':
+            {
+              'summary': 'Compare-and-swap complete snapshot',
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'Success',
+                      'content':
+                        {
+                          'application/json': { 'schema': { '$ref': '#/components/schemas/Town' } },
+                        },
+                    },
+                  '401': { 'description': 'Sign in again' },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '422': { 'description': 'Invalid request' },
+                  '429': { 'description': 'Rate limited' },
+                  '409':
+                    {
+                      'description': 'Revision conflict, duplicate name/ID, or three slots full. Save conflicts include the owned cloud copy.',
+                      'content':
+                        {
+                          'application/json':
+                            { 'schema': { '$ref': '#/components/schemas/Error' } },
+                        },
+                    },
+                  '413': { 'description': 'Body exceeds 1,100,000 bytes or profile exceeds 1 MiB' },
+                },
+              'parameters':
+                [
+                  {
+                    'name': 'townId',
+                    'in': 'path',
+                    'required': true,
+                    'schema': { 'type': 'string', 'format': 'uuid' },
+                  },
+                  {
+                    'name': 'X-CSRF-Token',
+                    'in': 'header',
+                    'required': true,
+                    'schema': { 'type': 'string' },
+                  },
+                ],
+              'requestBody':
+                {
+                  'required': true,
+                  'content':
+                    { 'application/json': { 'schema': { '$ref': '#/components/schemas/Upload' } } },
+                },
+            },
+          'delete':
+            {
+              'summary': 'Delete cloud town and listing; exact current name required',
+              'responses':
+                {
+                  '200': { 'description': 'Success' },
+                  '401': { 'description': 'Sign in again' },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '422': { 'description': 'Invalid request' },
+                  '429': { 'description': 'Rate limited' },
+                  '409':
+                    {
+                      'description': 'Revision conflict, duplicate name/ID, or three slots full. Save conflicts include the owned cloud copy.',
+                      'content':
+                        {
+                          'application/json':
+                            { 'schema': { '$ref': '#/components/schemas/Error' } },
+                        },
+                    },
+                  '413': { 'description': 'Body exceeds 1,100,000 bytes or profile exceeds 1 MiB' },
+                },
+              'parameters':
+                [
+                  {
+                    'name': 'townId',
+                    'in': 'path',
+                    'required': true,
+                    'schema': { 'type': 'string', 'format': 'uuid' },
+                  },
+                  {
+                    'name': 'X-CSRF-Token',
+                    'in': 'header',
+                    'required': true,
+                    'schema': { 'type': 'string' },
+                  },
+                ],
+              'requestBody':
+                {
+                  'required': true,
+                  'content':
+                    {
+                      'application/json':
+                        {
+                          'schema':
+                            {
+                              'type': 'object',
+                              'additionalProperties': false,
+                              'required': ['baseRevision', 'confirmation'],
+                              'properties':
+                                {
+                                  'baseRevision': { 'type': 'integer' },
+                                  'confirmation': { 'type': 'string' },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+      '/towns/{townId}/resolve':
+        {
+          'put':
+            {
+              'summary': 'Compare-and-swap complete snapshot after explicit conflict choice',
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'Success',
+                      'content':
+                        {
+                          'application/json': { 'schema': { '$ref': '#/components/schemas/Town' } },
+                        },
+                    },
+                  '401': { 'description': 'Sign in again' },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '422': { 'description': 'Invalid request' },
+                  '429': { 'description': 'Rate limited' },
+                  '409':
+                    {
+                      'description': 'Revision conflict, duplicate name/ID, or three slots full. Save conflicts include the owned cloud copy.',
+                      'content':
+                        {
+                          'application/json':
+                            { 'schema': { '$ref': '#/components/schemas/Error' } },
+                        },
+                    },
+                  '413': { 'description': 'Body exceeds 1,100,000 bytes or profile exceeds 1 MiB' },
+                },
+              'parameters':
+                [
+                  {
+                    'name': 'townId',
+                    'in': 'path',
+                    'required': true,
+                    'schema': { 'type': 'string', 'format': 'uuid' },
+                  },
+                  {
+                    'name': 'X-CSRF-Token',
+                    'in': 'header',
+                    'required': true,
+                    'schema': { 'type': 'string' },
+                  },
+                ],
+              'requestBody':
+                {
+                  'required': true,
+                  'content':
+                    { 'application/json': { 'schema': { '$ref': '#/components/schemas/Upload' } } },
+                },
+            },
+        },
+      '/towns/{townId}/settings':
+        {
+          'patch':
+            {
+              'summary': 'Rename or change opt-in visibility; advances town revision',
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'Success',
+                      'content':
+                        {
+                          'application/json': { 'schema': { '$ref': '#/components/schemas/Town' } },
+                        },
+                    },
+                  '401': { 'description': 'Sign in again' },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '422': { 'description': 'Invalid request' },
+                  '429': { 'description': 'Rate limited' },
+                  '409':
+                    {
+                      'description': 'Revision conflict, duplicate name/ID, or three slots full. Save conflicts include the owned cloud copy.',
+                      'content':
+                        {
+                          'application/json':
+                            { 'schema': { '$ref': '#/components/schemas/Error' } },
+                        },
+                    },
+                  '413': { 'description': 'Body exceeds 1,100,000 bytes or profile exceeds 1 MiB' },
+                },
+              'parameters':
+                [
+                  {
+                    'name': 'townId',
+                    'in': 'path',
+                    'required': true,
+                    'schema': { 'type': 'string', 'format': 'uuid' },
+                  },
+                  {
+                    'name': 'X-CSRF-Token',
+                    'in': 'header',
+                    'required': true,
+                    'schema': { 'type': 'string' },
+                  },
+                ],
+              'requestBody':
+                {
+                  'required': true,
+                  'content':
+                    {
+                      'application/json':
+                        {
+                          'schema':
+                            {
+                              'type': 'object',
+                              'additionalProperties': false,
+                              'required': ['baseRevision', 'name', 'isPublic'],
+                              'properties':
+                                {
+                                  'baseRevision': { 'type': 'integer' },
+                                  'name': { 'type': 'string' },
+                                  'isPublic': { 'type': 'boolean' },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+      '/towns/{townId}/history':
+        {
+          'get':
+            {
+              'summary': 'Five previous snapshots, newest first',
+              'responses':
+                {
+                  '200': { 'description': 'Success' },
+                  '401': { 'description': 'Sign in again' },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '422': { 'description': 'Invalid request' },
+                  '429': { 'description': 'Rate limited' },
+                },
+              'parameters':
+                [
+                  {
+                    'name': 'townId',
+                    'in': 'path',
+                    'required': true,
+                    'schema': { 'type': 'string', 'format': 'uuid' },
+                  },
+                ],
+            },
+        },
+      '/villages':
+        {
+          'get':
+            {
+              'summary': 'Paginated public appearances, ordered by public ID (not rank)',
+              'responses':
+                {
+                  '200': { 'description': 'Success' },
+                  '401': { 'description': 'Sign in again' },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '422': { 'description': 'Invalid request' },
+                  '429': { 'description': 'Rate limited' },
+                },
+              'parameters':
+                [
+                  {
+                    'name': 'page',
+                    'in': 'query',
+                    'schema': { 'type': 'integer', 'minimum': 1, 'maximum': 10000, 'default': 1 },
+                  },
+                ],
+            },
+        },
+      '/villages/{publicId}':
+        {
+          'get':
+            {
+              'summary': 'Read-only public appearance; 404 when private or deleted',
+              'responses':
+                {
+                  '200': { 'description': 'Success' },
+                  '401': { 'description': 'Sign in again' },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '422': { 'description': 'Invalid request' },
+                  '429': { 'description': 'Rate limited' },
+                },
+              'parameters':
+                [
+                  {
+                    'name': 'publicId',
+                    'in': 'path',
+                    'required': true,
+                    'schema': { 'type': 'string', 'pattern': '^[a-f0-9]{32}$' },
+                  },
+                ],
+            },
+        },
+    },
+  'components':
+    {
+      'securitySchemes':
+        {
+          'sessionCookie': { 'type': 'apiKey', 'in': 'cookie', 'name': '__Host-cascade' },
+          'nativeBearer':
+            {
+              'type': 'http',
+              'scheme': 'bearer',
+              'description': 'Only explicitly allowed native origins.',
+            },
+        },
+      'schemas':
+        {
+          'Profile':
+            {
+              'type': 'object',
+              'required': ['schemaVersion', 'town', 'records', 'continuousRecords', 'powers'],
+              'properties':
+                {
+                  'schemaVersion': { 'const': 2 },
+                  'town':
+                    {
+                      'type': 'object',
+                      'required': ['era', 'buildings'],
+                      'properties':
+                        { 'era': { 'type': 'string' }, 'buildings': { 'type': 'object' } },
+                    },
+                  'records': { 'type': 'object' },
+                  'continuousRecords': { 'type': 'object' },
+                  'powers': { 'type': 'array' },
+                },
+              'description': 'Opaque gameplay snapshot, at most 1 MiB. Server validates envelope, never recalculates rewards.',
+            },
+          'Upload':
+            {
+              'type': 'object',
+              'additionalProperties': false,
+              'required': ['baseRevision', 'uploadId', 'profile'],
+              'properties':
+                {
+                  'baseRevision': { 'type': 'integer', 'minimum': 0 },
+                  'uploadId': { 'type': 'string', 'minLength': 16, 'maxLength': 64 },
+                  'profile': { '$ref': '#/components/schemas/Profile' },
+                },
+            },
+          'CreateTown':
+            {
+              'type': 'object',
+              'additionalProperties': false,
+              'required': ['baseRevision', 'uploadId', 'profile', 'townId', 'name'],
+              'properties':
+                {
+                  'baseRevision': { 'const': 0 },
+                  'uploadId': { 'type': 'string', 'minLength': 16, 'maxLength': 64 },
+                  'profile': { '$ref': '#/components/schemas/Profile' },
+                  'townId': { 'type': 'string', 'format': 'uuid' },
+                  'name': { 'type': 'string', 'minLength': 3, 'maxLength': 24 },
+                },
+            },
+          'Town':
+            {
+              'type': 'object',
+              'required':
+                ['townId', 'name', 'revision', 'updatedAt', 'isPublic', 'publicId', 'profile'],
+              'properties':
+                {
+                  'townId': { 'type': 'string', 'format': 'uuid' },
+                  'name': { 'type': 'string' },
+                  'revision': { 'type': 'integer', 'minimum': 1 },
+                  'updatedAt': { 'type': 'integer', 'description': 'Unix seconds' },
+                  'isPublic': { 'type': 'boolean' },
+                  'publicId': { 'type': 'string', 'pattern': '^[a-f0-9]{32}$' },
+                  'profile': { '$ref': '#/components/schemas/Profile' },
+                },
+            },
+          'Error':
+            {
+              'type': 'object',
+              'properties':
+                {
+                  'error': { 'type': 'string' },
+                  'code': { 'type': 'string' },
+                  'cloud': { '$ref': '#/components/schemas/Town' },
+                },
+            },
+        },
+    },
+}

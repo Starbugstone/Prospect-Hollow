@@ -92,7 +92,7 @@
       ref="townView"
       v-if="townVisited"
       v-show="townActive"
-      :active="townActive"
+      :active="townActive && !props.suspended"
       :mine-entry-pending="!!pendingMineEntry"
       :key="townVisit"
       :open-museum="returnToMuseum"
@@ -258,6 +258,7 @@
 </template>
 
 <script setup>
+const props = defineProps({ suspended: Boolean });
 import MineTip from './components/MineTip.vue';
 import { t } from './i18n';
 import {
@@ -432,7 +433,11 @@ watch(
 );
 const updateInputPause = () => {
   game.inputPaused =
-    document.hidden || settings.isSettingsOpen || mobileDetailsOpen.value || guideOpen.value;
+    props.suspended ||
+    document.hidden ||
+    settings.isSettingsOpen ||
+    mobileDetailsOpen.value ||
+    guideOpen.value;
   game.renderer?.input?.reset();
   if (game.inputPaused) game.cancelHint(true);
   else if (game.sessionActive && !game.levelCleared) {
@@ -440,9 +445,10 @@ const updateInputPause = () => {
     game.scheduleHint();
   }
 };
+watch(() => props.suspended, updateInputPause);
 const visibilityChanged = () => {
   updateInputPause();
-  campaign.accrueSaloonIncome();
+  if (!props.suspended) campaign.accrueSaloonIncome();
   if (document.hidden) audio.stopAmbientLoop({ fadeMs: 0 });
   else if (game.sessionActive) audio.playAmbientLoop();
 };
@@ -450,7 +456,7 @@ onMounted(() => {
   game.bootstrap();
   campaign.accrueSaloonIncome();
   incomeInterval = setInterval(() => {
-    if (!document.hidden) campaign.accrueSaloonIncome();
+    if (!document.hidden && !props.suspended) campaign.accrueSaloonIncome();
   }, 30000);
   clockInterval = setInterval(() => game.syncRunClock(), 100);
   game.setAudioManager(audio);

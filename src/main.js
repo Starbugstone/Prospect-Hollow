@@ -2,14 +2,14 @@ import { createApp, watch } from 'vue';
 import { locale, browserLocale } from './i18n';
 import { createPinia } from 'pinia';
 import { createTestingTools } from './services/testingTools';
-import App from './App.vue';
+import CloudRoot from './components/CloudRoot.vue';
 import './styles/base.css';
 import './styles/theme.css';
 import './styles/arcade.css';
 import './styles/mine.css';
 import './styles/ux.css';
 
-const app = createApp(App);
+const app = createApp(CloudRoot);
 const pinia = createPinia();
 
 app.use(pinia);

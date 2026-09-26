@@ -1,0 +1,17 @@
+# Account-save security boundary
+
+The server owns account identity, town ownership, three-slot capacity, revision ordering, history, names and public visibility. The client owns single-player gameplay, rewards and progression. Saves are not competitive evidence. There is no server action queue, engine parity contract, wallet authority or ranked campaign score.
+
+Email proofs are hashed, single-use, expire after 15 minutes and require explicit POST confirmation. Browser sessions use HttpOnly, SameSite Strict cookies with Secure and the `__Host-` prefix on HTTPS. Mutations require an exact permitted Origin and session CSRF token. Native bearer transport requires an explicitly allowed app origin; bearer values are never saved in browser storage. Both transports expire after 30 days and support current/all-device revocation. Email and IP limits apply to login; account limits apply to save writes. Tokens, profile contents and emails are not logged by application error handling.
+
+Every private town operation resolves ownership through the authenticated account. A UUID is an identifier, never authorization. Account locks serialize the three-town capacity check and save writes; revisions belong to individual towns. The session is rechecked under the account lock. A stale base revision receives HTTP 409 with the owned cloud copy. Upload IDs bind to the complete upload payload, allowing acknowledgment-loss retries without applying the save twice. History retains the previous five snapshots.
+
+Input validation bounds request size, JSON depth, schema version, profile envelope, UUIDs, names and command fields. It deliberately does not reproduce gameplay rules. Unsupported future saves are refused without rewriting the device copy. Rendering never injects names or save fields as HTML.
+
+Town names are NFKC-normalized, 3–24 characters and unique case-insensitively within an account. Public names additionally pass the attributed English/French vocabulary in `backend/content/moderation`, including normalization of spacing, accents and common leetspeak. Private names skip profanity moderation. This is a deterministic filter, not a guarantee against every abusive name.
+
+Public browsing requires an account. It uses an explicitly generated appearance projection: immutable public ID, town name, era and allowed building appearance fields. No email, account ID, private town UUID, wallet, inventory, mine state or reward data is included. Listings are paginated by stable public ID, not competitive progress. Unpublishing/deleting makes a share link unavailable; renaming keeps its ID. The renderer is read-only.
+
+Local storage holds one active town plus account-scoped cached snapshots and one signed-out local slot. It is device storage, not an access-control boundary against someone controlling that browser. Account changes invalidate in-flight transport responses. Snapshots are saved atomically with revision/dirty metadata; stale game instances cannot save into a newly selected town. Network errors do not block gameplay. Storage quota/read failures surface through existing save error handling and must not overwrite the last valid save.
+
+The server accepts only its configured Host/scheme/port. Production needs HTTPS, private configuration, a nonpublic database, restricted logs/backups and a properly configured web root. See [hosting](hosting.md) for configuration and native-session limitations.

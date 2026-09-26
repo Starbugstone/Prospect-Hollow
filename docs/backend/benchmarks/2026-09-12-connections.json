@@ -1,0 +1,50 @@
+[
+  {
+    "newConnectionSamples": 200,
+    "newConnectionP50Ms": 18.259248,
+    "newConnectionP95Ms": 24.857516,
+    "reusedConnectionQueryMeanMs": 0.150614359,
+    "engine": "pg",
+    "repeat": 1
+  },
+  {
+    "newConnectionSamples": 200,
+    "newConnectionP50Ms": 1.457511,
+    "newConnectionP95Ms": 3.715411,
+    "reusedConnectionQueryMeanMs": 0.14667581400000002,
+    "engine": "my",
+    "repeat": 1
+  },
+  {
+    "newConnectionSamples": 200,
+    "newConnectionP50Ms": 1.443898,
+    "newConnectionP95Ms": 2.551953,
+    "reusedConnectionQueryMeanMs": 0.092108966,
+    "engine": "my",
+    "repeat": 2
+  },
+  {
+    "newConnectionSamples": 200,
+    "newConnectionP50Ms": 22.524548,
+    "newConnectionP95Ms": 32.502468,
+    "reusedConnectionQueryMeanMs": 0.106419057,
+    "engine": "pg",
+    "repeat": 2
+  },
+  {
+    "newConnectionSamples": 200,
+    "newConnectionP50Ms": 20.833132,
+    "newConnectionP95Ms": 31.774309,
+    "reusedConnectionQueryMeanMs": 0.125457259,
+    "engine": "pg",
+    "repeat": 3
+  },
+  {
+    "newConnectionSamples": 200,
+    "newConnectionP50Ms": 1.176957,
+    "newConnectionP95Ms": 1.771793,
+    "reusedConnectionQueryMeanMs": 0.172157997,
+    "engine": "my",
+    "repeat": 3
+  }
+]
