@@ -1,4 +1,4 @@
-import { walkPath } from './TownNavigation';
+import { buildingWalk } from './TownPedestrians';
 
 // A prepared out-and-back walk shared by outdoor activities. Locomotion owns
 // travel; the village clock only times pauses after the actor actually arrives.
@@ -32,19 +32,13 @@ export function updateWorkRoutine(actor, time) {
   actor.direction = routine.phase === 'return' ? -1 : 1;
   actor.routeLimit = actor.direction < 0 ? 0 : actor.walkPath.total;
 }
-export function addWorkBreak(d, actor, from, options) {
+export function addWorkBreak(d, actor, building, options) {
   const station = actor.curve.getPointAt(0.1).toArray();
-  const points = [[from[0], station[1], from[1]], station];
-  let path = d.navigation ? d.navigation.plan(points) : walkPath(points);
-  // A larger era model can project both anchors onto the same corner. Find a
-  // short usable street leg once during preparation, never in the frame loop.
-  if (d.navigation && path.total < 1)
-    for (const offset of [3, -3, 6, -6]) {
-      const candidate = d.navigation.plan([[from[0], station[1], from[1] + offset], station]);
-      if (candidate.total >= 1) {
-        path = candidate;
-        break;
-      }
-    }
+  const path = buildingWalk(d, building, {
+    station,
+    radius: actor.radius ?? 0.29,
+    axis: options?.axis,
+  });
+  actor.activityBuilding = building;
   setWorkRoutine(actor, path, { ...options, atWork: true });
 }

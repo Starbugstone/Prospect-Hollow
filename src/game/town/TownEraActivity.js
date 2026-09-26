@@ -66,7 +66,7 @@ export function addEraActivity(d, town) {
       work: 'fishing',
     });
     fisher.root.name = 'Neighbor fishing';
-    addWorkBreak(d, fisher, plotStreet('fisherman'), { work: 26, rest: 5 });
+    addWorkBreak(d, fisher, 'fisherman', { work: 26, rest: 5, axis: [0, 1] });
     d.rod(fisher.arms[1].lower, [0, -0.19, 0], [0, -0.19, 1.5], 0.015, '#987c54').name =
       'Hand-held fishing rod';
   }

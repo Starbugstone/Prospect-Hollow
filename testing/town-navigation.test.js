@@ -350,23 +350,17 @@ it('includes the park dog-walker and its leashed dog in cached avoidance', () =>
   d.navigation = new TownNavigation([pole(x, z + 3.8)]);
   addLeisureActivity(d, d.town);
   const visit = d.world.getObjectByName('Park dog walk');
+  const plans = d.navigation.plans;
   for (let t = 0; t <= 60; t += 0.1) {
     d.motions.forEach((m) => m(t));
     expect(d.navigation.clear(visit.position.toArray(), 1.2)).toBe(true);
   }
-  expect(d.navigation.plans).toBe(1);
+  expect(d.navigation.plans).toBe(plans);
 });
 
 it('keeps the dog walker at walking speed and turns back on a shortened open route', () => {
   const d = fixture();
-  d.navigation = {
-    obstacles: [{}],
-    plan: () =>
-      walkPath([
-        [0, 0.13, 0],
-        [0, 0.13, 2],
-      ]),
-  };
+  d.navigation = new TownNavigation();
   addLeisureActivity(d, d.town);
   const walker = d.world.getObjectByName('Park dog walk');
   let travel = 0,
@@ -377,7 +371,7 @@ it('keeps the dog walker at walking speed and turns back on a shortened open rou
     const step = walker.position.distanceTo(before);
     expect(step).toBeLessThanOrEqual(0.055 + 1e-6);
     travel += step;
-    if (walker.position.z < before.z) turnedBack = true;
+    if (walker.position.x < before.x || walker.position.z < before.z) turnedBack = true;
   }
   expect(travel).toBeGreaterThan(6);
   expect(turnedBack).toBe(true);

@@ -10,6 +10,7 @@ import { population } from './TownRules';
 import { animalModel, animateAnimal } from './TownAnimalModels';
 import { animalNavigation, animalSpace } from './TownAnimalSpace';
 import { setWorkRoutine } from './TownWorkRoutine';
+import { buildingWalk } from './TownPedestrians';
 
 const clamp = (n) => Math.max(0, Math.min(1, n));
 const smooth = (n) => {
@@ -152,7 +153,8 @@ function addFeeder(d, habitat, nav, era) {
   const [x, y, z] = habitat.point;
   const station = nav.safePoint([x + 1.05, y, z + 0.45], 0.45, 1.5);
   if (!station) return null;
-  const path = nav.plan([[station[0] + 2, y, station[2] + 0.5], station], 0.45, 1.5);
+  const clearance = (from, to, radius) => d.animalSpace.segment(from, to, radius, 1.5);
+  const path = buildingWalk(d, habitat.building, { station, radius: 0.45, clearance });
   if (!path.total) return null;
   const actor = d.person({
     color: '#84946d',
@@ -168,7 +170,8 @@ function addFeeder(d, habitat, nav, era) {
   });
   actor.root.name = 'Neighbor feeding animals';
   actor.radius = 0.45;
-  actor.clearance = (from, to, radius) => d.animalSpace.segment(from, to, radius, 1.5);
+  actor.activityBuilding = habitat.building;
+  actor.clearance = clearance;
   setWorkRoutine(actor, path, { work: 20, rest: 8 });
   const bag = d.group(actor.arms[0].lower, 0, -0.2, 0.07);
   d.ball(bag, 0, 0, 0, [0.12, 0.17, 0.1], '#c5aa76');
@@ -197,7 +200,7 @@ function addFeeder(d, habitat, nav, era) {
   return Object.assign(actor, {
     path,
     habitat,
-    station,
+    station: path.points.at(-1),
     grain,
     seeds,
     seedTargets,

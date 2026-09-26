@@ -2,8 +2,7 @@ import { addTownAnimals } from './TownAnimals';
 import { Vector3 } from 'three';
 import { atPlot, plotStreet, routeBetween } from './TownLayout';
 import { population } from './TownRules';
-import { walkPath } from './TownNavigation';
-import { setWorkRoutine } from './TownWorkRoutine';
+import { addWorkBreak } from './TownWorkRoutine';
 
 // Small daily routines make completed buildings feel inhabited. All motion uses
 // the diorama clock, so hidden views, pauses and reduced motion freeze it together.
@@ -35,7 +34,7 @@ export function addTownLife(d, town) {
 
   if (town.buildings.square && population(town) >= 6) {
     for (let n = 0; n < 2; n++) {
-      const point = atPlot('square', 4.4, 1.3 + n * 1.4);
+      const point = atPlot('square', n ? 0.7 : -0.7, 3);
       const neighbor = d.person({
         color: n ? '#b57f6f' : '#729595',
         skin: n ? '#9e7559' : '#d3ae84',
@@ -45,15 +44,10 @@ export function addTownLife(d, town) {
         work: 'greet',
       });
       neighbor.root.name = 'Neighbors chatting';
-      const points = [
-        [point[0], 0.07, point[1] + (n ? 4 : -4)],
-        [point[0], 0.07, point[1]],
-      ];
-      const path = d.navigation ? d.navigation.plan(points) : walkPath(points);
-      setWorkRoutine(neighbor, path, { work: 12 + n * 2, rest: 3, atWork: true });
+      addWorkBreak(d, neighbor, 'square', { work: 12 + n * 2, rest: 3, axis: [n ? 1 : -1, 0] });
       d.motions.push((time) => {
         if (neighbor.workActive) {
-          neighbor.root.rotation.y = n ? Math.PI : 0;
+          neighbor.root.rotation.y = n ? -Math.PI / 2 : Math.PI / 2;
           neighbor.head.rotation.x = Math.sin(time * 1.5 + n) * 0.08;
         } else neighbor.head.rotation.x = 0;
       });

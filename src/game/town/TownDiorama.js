@@ -11,6 +11,7 @@ import { townTracks, railEdges } from './TownLayout';
 import { demote } from '../phaser/boardRetention';
 import { townNavigation, prepareActorWalk, walkPose, placeSafely } from './TownNavigation';
 import { addWorkBreak, updateWorkRoutine } from './TownWorkRoutine';
+import { buildingWalk } from './TownPedestrians';
 import { TownVipArrivals } from './TownVipArrivals';
 import { hasVisitorTransport } from '../../data/visitorArrivals';
 import { villagerIdentity, vipVisitor } from '../../data/villagers';
@@ -656,10 +657,12 @@ export class TownDiorama {
         );
         if (!intersects) continue;
         const position = actor.root.position.toArray();
-        const next = view.navigation.plan(
-          actor.workRoutine ? path.points : [position, ...path.points.slice(1), position],
-          actor.radius ?? 0.45,
-        );
+        const next = path.building
+          ? buildingWalk(view, path.building, path.frontage)
+          : view.navigation.plan(
+              [position, ...path.points.slice(1), position],
+              actor.radius ?? 0.45,
+            );
         if (actor.walkPath) actor.walkPath = next;
         else actor.path = next;
         if (actor.motion) actor.motion.path = null;
@@ -962,7 +965,7 @@ export class TownDiorama {
         work: 'farm',
       });
       farmer.root.name = 'Farmer tending crops';
-      addWorkBreak(this, farmer, plotStreet('farm'), { work: 18, rest: 4 });
+      addWorkBreak(this, farmer, 'farm', { work: 18, rest: 4 });
     }
     if (town.buildings.saloon) {
       const host = this.person({
@@ -975,7 +978,7 @@ export class TownDiorama {
         dress: true,
       });
       host.root.name = 'Saloon host';
-      addWorkBreak(this, host, plotStreet('saloon'), { work: 14, rest: 4 });
+      addWorkBreak(this, host, 'saloon', { work: 14, rest: 4 });
     }
     if (town.buildings.sheriff)
       this.person({

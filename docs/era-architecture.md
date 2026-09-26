@@ -286,6 +286,15 @@ arrival starts the task timer. Task animation never overwrites the accepted
 position. Routes are prepared on layout changes, not searched each frame.
 The leashed park walk also uses distance-based speed and turns back on open paths.
 
+`TownPedestrians.buildingWalk` prepares these activity routes beside their owning
+building. It keeps both task and rest positions outside the carriageway, tests
+the complete walk against scenery, and prefers a leg parallel to the road.
+Authored entrances/services and a bounded search of the frontage or grounds
+handle larger era models without projecting workers into traffic. Fishers stay
+along the bank; the leashed park pair reserves room for both bodies and stays near
+the park. Building replacement repeats this preparation only when its route is
+obstructed. Crowd yielding remains a moving-crowd fallback, not task-site placement.
+
 People, ground animals and road traffic yield to other actors for at most three
 blocked attempts, then pass through the crowd until clear. A clear step resets
 that budget. This exception never bypasses scenery clearance or an unreachable

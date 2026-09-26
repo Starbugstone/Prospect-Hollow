@@ -12,6 +12,7 @@ import { TownStatics } from '../src/game/town/TownStatics';
 import { TownUpgradeGlow } from '../src/game/town/TownUpgradeGlow';
 import { eraIndex } from '../src/game/town/TownEras';
 import { BUILDINGS, createTown } from '../src/data/town';
+import { PLOTS, segmentDistance, townTracks } from '../src/game/town/TownLayout';
 
 const views = [];
 function fixture() {
@@ -143,10 +144,17 @@ it.each(ERAS.filter((era) => era.enabled).map((era) => era.id))(
       town.buildingEraLevels[building.id] = 3;
     }
     view.update(town, labels);
+    const roads = townTracks(town).filter((road) => road.width >= 0.85);
+    for (const actor of view.actors.filter((a) => a.work)) {
+      expect(actor.workRoutine, actor.root.name).toBeDefined();
+      expect(PLOTS[actor.activityBuilding], actor.root.name).toBeDefined();
+      expect(actor.walkPath.total, actor.root.name).toBeGreaterThanOrEqual(1.5);
+    }
     const tracks = view.actors.map((actor) => ({
       actor,
       previous: actor.root.position.clone(),
       travel: 0,
+      roadGap: Infinity,
       phases: new Set(),
     }));
     for (let frame = 1; frame <= 1200; frame++) {
@@ -155,15 +163,23 @@ it.each(ERAS.filter((era) => era.enabled).map((era) => era.id))(
       view.motions.forEach((motion) => motion(view.elapsed));
       updateTownLocomotion(view, 0.1);
       for (const track of tracks) {
+        if (track.actor.workRoutine) {
+          const p = track.actor.root.position;
+          for (const road of roads)
+            track.roadGap = Math.min(track.roadGap, segmentDistance(p.x, p.z, road.from, road.to));
+        }
         track.travel += track.actor.root.position.distanceTo(track.previous);
         track.previous.copy(track.actor.root.position);
         if (track.actor.workRoutine) track.phases.add(track.actor.workRoutine.phase);
       }
     }
-    for (const { actor, travel, phases } of tracks) {
+    for (const { actor, travel, phases, roadGap } of tracks) {
       const label = `${actor.root.name || actor.work || 'walker'} ${actor.seed}`;
       expect.soft(travel, label).toBeGreaterThan(1);
       if (actor.work) {
+        expect(roadGap, `${label} in carriageway`).toBeGreaterThanOrEqual(
+          0.65 + (actor.radius ?? 0.29) + 0.049,
+        );
         expect(phases, label).toContain('work');
         expect(phases, label).toContain('return');
       }
