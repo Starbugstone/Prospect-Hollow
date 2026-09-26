@@ -119,6 +119,38 @@ it('breaks lane paint at junctions and keeps crossings on the approaches', () =>
   expect(roadDetails(townFor('aviation'), [{ ...tracks[0], crossing: 'bridge' }])).toEqual([]);
 });
 
+it.each(['aviation', 'broadcast', 'contemporary'])(
+  'paints %s zebra stripes along traffic, spaced across both road directions',
+  (era) => {
+    const tracks = [
+      { from: [-10, 0], to: [10, 0], width: 1.05 },
+      { from: [0, -10], to: [0, 10], width: 1.05 },
+    ];
+    const stripes = roadDetails(townFor(era), tracks).filter(({ kind }) => kind === 'crossing');
+    expect(stripes).toHaveLength(16);
+    for (const axis of [0, 1])
+      for (const side of [-1, 1]) {
+        const across = 1 - axis;
+        const crossing = stripes.filter(({ from, to }) => (side * (from[axis] + to[axis])) / 2 > 1);
+        expect(crossing).toHaveLength(4);
+        const alongCenters = [],
+          acrossCenters = [];
+        for (const { from, to, width } of crossing) {
+          expect(to[across]).toBeCloseTo(from[across]);
+          expect(Math.abs(to[axis] - from[axis])).toBeGreaterThan(width * 3);
+          alongCenters.push((from[axis] + to[axis]) / 2);
+          acrossCenters.push((from[across] + to[across]) / 2);
+        }
+        expect(Math.max(...alongCenters) - Math.min(...alongCenters)).toBeCloseTo(0);
+        acrossCenters.sort((a, b) => a - b);
+        expect(acrossCenters[0]).toBeLessThan(-0.4);
+        expect(acrossCenters[3]).toBeGreaterThan(0.4);
+        for (let n = 1; n < acrossCenters.length; n++)
+          expect(acrossCenters[n] - acrossCenters[n - 1]).toBeGreaterThan(crossing[n].width);
+      }
+  },
+);
+
 it('draws the same era treatments in the SVG fallback with bounded element counts', async () => {
   for (const { id } of ERAS) {
     const town = townFor(id);

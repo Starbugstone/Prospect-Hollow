@@ -119,8 +119,10 @@ export function roadDetails(town, tracks = townTracks(town)) {
           if (!clear(center, 0.8)) continue;
           if (style.crossingColor)
             strip(center, 0, 0.9, half * 2 - 0.27, style.crossingColor, 'crossing-bed');
+          // Four stripes and three gaps span the street; each stripe follows traffic.
+          const stripeWidth = (half * 2 - 0.36) / 7;
           for (let n = 0; n < 4; n++)
-            strip(center + (n - 1.5) * 0.22, 0, half * 2 - 0.36, 0.12, '#f0e9d3', 'crossing', true);
+            strip(center, (n - 1.5) * stripeWidth * 2, 0.78, stripeWidth, '#f0e9d3', 'crossing');
         }
       }
     }
