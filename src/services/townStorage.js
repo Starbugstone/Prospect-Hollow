@@ -19,14 +19,13 @@ export const progressKey = (profile) =>
     },
     // Loading normalizes object key order. That must not look like new gameplay
     // to either cloud synchronization or another tab's renderer.
-    (_, value) =>
-      value && typeof value === 'object' && !Array.isArray(value)
-        ? Object.fromEntries(
-            Object.keys(value)
-              .sort()
-              .map((key) => [key, value[key]]),
-          )
-        : value,
+    (_, value) => {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
+      // A null prototype keeps a saved "__proto__" key as ordinary data.
+      const sorted = Object.create(null);
+      for (const key of Object.keys(value).sort()) sorted[key] = value[key];
+      return sorted;
+    },
   );
 const freshMeta = (name = 'My town') => ({
   id: crypto.randomUUID(),
@@ -45,9 +44,10 @@ const SELECTION_KEY = 'prospect-selected-town-v2';
 const PREFERRED_PREFIX = 'prospect-preferred-town-v2:';
 const CREATION_PREFIX = 'prospect-creation-v2:';
 export const townKey = (id, owner) => (owner ? `${TOWN_PREFIX}${owner}:${id}` : SAVE_KEY);
+// Only ever passed straight to write(), which serializes it; no defensive copy.
 const rootOf = (entry) => ({
-  ...copy(entry.profile),
-  _cloud: { version: 2, active: copy(entry.meta) },
+  ...entry.profile,
+  _cloud: { version: 2, active: entry.meta },
 });
 const entryOf = (root) =>
   root?._cloud ? { profile: profileOf(root), meta: copy(root._cloud.active) } : null;
@@ -212,7 +212,9 @@ export function createTownStorage({
     save(profile) {
       const root = activeRoot();
       const entry = entryOf(root) ?? { profile: {}, meta: freshMeta() };
-      if (progressKey(entry.profile) !== progressKey(profile)) {
+      // Snapshot the live store once; comparing plain data avoids walking it again.
+      const next = copy(profile);
+      if (progressKey(entry.profile) !== progressKey(next)) {
         entry.meta = {
           ...entry.meta,
           dirty: true,
@@ -220,8 +222,9 @@ export function createTownStorage({
           updatedAt: Date.now(),
         };
       }
-      entry.profile = copy(profile);
+      entry.profile = next;
       persist(entry);
+      return entry.meta;
     },
     account(account, newSession = false) {
       const previous = this.auth();
