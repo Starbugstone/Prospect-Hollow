@@ -89,11 +89,29 @@ it.each(ERAS.slice(1).map((era, i) => [ERAS[i].id, era.id]))(
     const arm = effect.sequence.crew[0].worker.arms[1].upper.rotation.x;
     effect.frame(8.2);
     expect(effect.sequence.crew[0].worker.arms[1].upper.rotation.x).not.toBe(arm);
+    // The completed model and the crew have separate lifetimes. Keep the
+    // working platforms through the pause and every staggered departure.
+    for (const time of [
+      ERA_CONSTRUCTION.buildEnd,
+      ERA_CONSTRUCTION.leave,
+      ERA_CONSTRUCTION.leave + 0.5,
+      ERA_CONSTRUCTION.leave + 3.5,
+    ]) {
+      effect.frame(time);
+      expect(effect.sequence.sections.every(({ part }) => part.visible && part.scale.y === 1)).toBe(
+        true,
+      );
+      expect(effect.sequence.crew.some(({ worker }) => worker.root.visible)).toBe(true);
+      expect(effect.scaffold.visible, `scaffold at ${time}s`).toBe(true);
+    }
+    expect(effect.sequence.crew[0].worker.root.visible).toBe(false);
+    expect(effect.sequence.crew.at(-1).worker.root.visible).toBe(true);
     effect.frame(ERA_CONSTRUCTION.duration);
     expect(effect.sequence.sections.every(({ part }) => part.visible && part.scale.y === 1)).toBe(
       true,
     );
     expect(effect.sequence.crew.every(({ worker }) => !worker.root.visible)).toBe(true);
+    expect(effect.scaffold.visible).toBe(false);
     const complete = new Box3().setFromObject(effect.next);
     expect(complete.isEmpty()).toBe(false);
     expect(effect.next.userData.profile.portal).not.toBe(effect.previous.userData.profile.portal);
@@ -110,8 +128,9 @@ it('hides the new static batch after the era reveal and restores it on skip/clea
     batch = { visible: true };
   d.staticScenery.entries.set('mine-works', { group });
   d.buildingRenderer.batches.set(group, batch);
-  d.eraFrame(0.5);
+  d.eraFrame(0.9);
   expect(batch.visible).toBe(false);
+  expect(shot.effect.scaffold.visible).toBe(true);
   d.setCinematic(false);
   expect(batch.visible).toBe(true);
   expect(shot.effect.root.parent).toBeNull();

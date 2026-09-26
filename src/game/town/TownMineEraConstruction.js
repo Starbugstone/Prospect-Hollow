@@ -77,8 +77,11 @@ export class TownMineEraConstruction {
     }
     // The temporary and final models come from the exact same assembly function.
     this.previous.visible = !still && time < ERA_CONSTRUCTION.buildStart;
-    this.scaffold.visible = !still && time > 3 && time < ERA_CONSTRUCTION.leave;
     this.sequence.frame(time, still);
+    // Departure is staggered. Keep the working deck until the last builder
+    // has left, rather than removing it as soon as the first starts walking.
+    this.scaffold.visible =
+      time > 3 && this.sequence.crew.some(({ worker }) => worker.root.visible);
     this.next.userData.mineUpdate?.(still ? 0 : time);
     const reveal = Math.max(
       0,
