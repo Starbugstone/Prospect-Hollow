@@ -24,7 +24,7 @@ import { updateTownLocomotion, vehicleDistance } from '../src/game/town/TownLoco
 import { addTownLife } from '../src/game/town/TownLife';
 import { createTown } from '../src/data/town';
 import { routeBetween, plotStreet } from '../src/game/town/TownLayout';
-import { TownNavigation } from '../src/game/town/TownNavigation';
+import { TownNavigation, walkPath } from '../src/game/town/TownNavigation';
 import { riverDistance, RIVER } from '../src/game/town/TownRiver';
 
 // Exercise articulated geometry and its timeline without requiring a GPU.
@@ -76,6 +76,30 @@ describe('A visible, articulated frontier encounter', () => {
       d.contactShadowMaterial.dispose();
     },
   );
+  it('keeps a horse at walking speed when scenery shortens its prepared circuit', () => {
+    const d = diorama();
+    d.town = createTown();
+    d.town.buildings.stable = 1;
+    d.navigation = {
+      obstacles: [{}],
+      plan: () =>
+        walkPath([
+          [3.5, 0.07, 0],
+          [3.5, 0.07, 10],
+          [3.5, 0.07, 0],
+        ]),
+    };
+    addTownVisitors(d, d.town);
+    d.motions.forEach((motion) => motion(0));
+    const horse = d.trafficActors[0],
+      before = horse.position.clone();
+    d.motions.forEach((motion) => motion(2));
+    expect(horse.position.distanceTo(before)).toBeCloseTo(2.4);
+    d.clearGroup(d.world);
+    Object.values(d.geometries).forEach((g) => g.dispose());
+    d.materials.forEach((m) => m.dispose());
+    d.contactShadowMaterial.dispose();
+  });
   it('lets a horse pass a road worker after three failed yielding attempts', () => {
     const d = diorama();
     d.town = createTown();
@@ -158,6 +182,56 @@ describe('A visible, articulated frontier encounter', () => {
     }
     expect(place).toHaveBeenCalledTimes(1);
     place.mockRestore();
+    d.clearGroup(d.world);
+    Object.values(d.geometries).forEach((g) => g.dispose());
+    d.materials.forEach((m) => m.dispose());
+    d.contactShadowMaterial.dispose();
+  });
+  it('keeps visitors visible until their actual trip returns to the door, including long waits', () => {
+    const d = diorama();
+    d.town = createTown();
+    d.navigation = new TownNavigation([{ x: 10, z: 10, y: 0, height: 2, radius: 0.2 }]);
+    const actor = d.person({
+      color: '#809267',
+      skin: '#af7b56',
+      hat: '#d7b671',
+      seed: 0,
+      visitor: true,
+      linear: true,
+      route: [
+        [0, 0],
+        [0, 3],
+        [3, 3],
+        [3, 0],
+      ],
+      loop: true,
+    });
+    const frame = (time) => {
+      d.animatePerson(actor, time);
+      updateTownLocomotion(d, 0.1);
+    };
+    for (let time = 0; time < 4; time += 0.1) frame(time);
+    const stopped = actor.root.position.clone();
+    d.reducedMotion = true;
+    for (let time = 4; time < actor.duration * 3; time += 0.1) {
+      frame(time);
+      expect(actor.root.visible).toBe(true);
+      expect(actor.root.position).toEqual(stopped);
+    }
+    d.reducedMotion = false;
+    let hidden = false,
+      returned = false;
+    const door = new Vector3(...actor.walkPath.points[0]);
+    for (let time = 0; time < actor.duration * 2 + 10; time += 0.1) {
+      const before = actor.root.position.clone();
+      frame(time);
+      expect(actor.root.position.distanceTo(before)).toBeLessThanOrEqual(0.055 + 1e-5);
+      if (actor.root.scale.x < 0.9) expect(actor.root.position.distanceTo(door)).toBeLessThan(0.6);
+      if (!actor.root.visible) hidden = true;
+      if (hidden && actor.root.scale.x === 1) returned = true;
+    }
+    expect(hidden).toBe(true);
+    expect(returned).toBe(true);
     d.clearGroup(d.world);
     Object.values(d.geometries).forEach((g) => g.dispose());
     d.materials.forEach((m) => m.dispose());

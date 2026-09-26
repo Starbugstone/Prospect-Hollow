@@ -209,9 +209,12 @@ export function addTownVisitors(d, town) {
         0.08,
       );
       const path = !motorTraffic(town) && planCurve(d, curve, 0.8);
+      const routeLength = path?.total || curve.getLength();
+      const speed = motorTraffic(town) ? 1.6 : 1.2;
       d.motions.push((time) => {
         const progress =
-            ((time - (mounted.root.userData.trafficDelay ?? 0)) / 65 + n / town.buildings.stable) %
+            (((time - (mounted.root.userData.trafficDelay ?? 0)) * speed) / routeLength +
+              n / town.buildings.stable) %
             1,
           tangent = curve.getTangentAt(progress);
         mounted.root.position.copy(curve.getPointAt(progress));

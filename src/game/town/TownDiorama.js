@@ -14,7 +14,7 @@ import { TownVipArrivals } from './TownVipArrivals';
 import { hasVisitorTransport } from '../../data/visitorArrivals';
 import { villagerIdentity, vipVisitor } from '../../data/villagers';
 import { SIDEWALK_OFFSET } from './TownTraffic';
-import { updateTownLocomotion, LOCOMOTION_STEP, MAX_SUBSTEPS } from './TownLocomotion';
+import { updateTownLocomotion } from './TownLocomotion';
 import { townWardrobe, vipOutfit } from '../../data/townWardrobes';
 import { MINE_SHAFT, addMineShaft, mineTrackHeight, mineTrackPitch } from './TownMineShaft';
 import { TownPresentation } from './TownPresentation';
@@ -1379,8 +1379,10 @@ export class TownDiorama {
     }
   }
   animatePerson(actor, time) {
+    time = actor.motion?.animationTime ?? time;
     const { root, body, torso, head, arms, legs, curve, duration, seed, work } = actor;
     const cycle = (time + seed) % (duration + 4);
+    actor.routeResting = !work && cycle >= duration;
     let walking = !work && cycle < duration;
     const progress = work?.length ? 0.1 : Math.min(cycle / duration, 0.9999);
     const placedWorker = work && actor.motion;
@@ -1388,6 +1390,7 @@ export class TownDiorama {
     let routeProgress = progress;
     if (actor.visitor && !actor.transportVisitor) {
       const phase = (time + seed) % (duration + 7);
+      actor.routeResting = phase >= duration;
       const visit = Math.floor((time + seed) / (duration + 7));
       if (actor.visit !== visit) {
         actor.visit = visit;
@@ -1407,6 +1410,7 @@ export class TownDiorama {
 
     if (actor.motion && actor.walkPath?.total && (!actor.manual || actor.transportVisitor))
       routeProgress = (actor.motion.routeDistance % actor.walkPath.total) / actor.walkPath.total;
+    actor.routeProgress = routeProgress;
     if (actor.walkPath && !placedWorker) {
       const pose = walkPose(actor.walkPath, routeProgress, actor.walkPose);
       root.position.set(pose.x, pose.y, pose.z);
@@ -1862,19 +1866,17 @@ export class TownDiorama {
     const activeDelta = this.lastFrame ? Math.max(0, (now - this.lastFrame) / 1000) : 0;
     this.activeElapsed = (this.activeElapsed ?? 0) + activeDelta;
     this.lastFrame = now;
-    this.locomotionRemainder = Math.min(
-      (this.locomotionRemainder ?? 0) + activeDelta,
-      LOCOMOTION_STEP * MAX_SUBSTEPS,
-    );
-    while (this.locomotionRemainder >= LOCOMOTION_STEP - 1e-9) {
-      this.elapsed += LOCOMOTION_STEP;
+    // Prepared routes need one sample per displayed frame, not repeated physics
+    // catch-up steps. Preserve real-time speed down to 4 FPS; bound long stalls.
+    const movementDelta = Math.min(activeDelta, 0.25);
+    if (movementDelta > 0) {
+      this.elapsed += movementDelta;
       if (!this.reducedMotion) {
         this.actors?.forEach((actor) => this.animatePerson(actor, this.elapsed));
         this.motions?.forEach((motion) => motion(this.elapsed));
         this.vipArrivals?.update();
       }
-      updateTownLocomotion(this, LOCOMOTION_STEP);
-      this.locomotionRemainder -= LOCOMOTION_STEP;
+      updateTownLocomotion(this, movementDelta);
     }
     if (this.waterMaterial) this.waterMaterial.uniforms.time.value = this.elapsed;
     this.tryActivatePlot?.();

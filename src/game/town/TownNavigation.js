@@ -81,6 +81,7 @@ export class TownNavigation {
     this.reindex();
   }
   reindex() {
+    this.revision = (this.revision ?? 0) + 1;
     this.cells.clear();
     this.bounds = new WeakMap();
     for (const o of this.obstacles) {
@@ -240,6 +241,7 @@ export class TownNavigation {
   }
   track(path, margin) {
     if (!path.points.length) return path;
+    path.clearance = { navigation: this, revision: this.revision, margin };
     const xs = path.points.map((p) => p[0]),
       zs = path.points.map((p) => p[2]);
     this.prepared.set(path, {
@@ -315,7 +317,19 @@ export function walkPath(points) {
     ends.push(total);
     headings.push(Math.atan2(points[i][0] - points[i - 1][0], points[i][2] - points[i - 1][2]));
   }
-  return { points, ends, headings, total };
+  const closed =
+    points.length > 1 && Math.hypot(...points[0].map((v, i) => v - points.at(-1)[i])) < 1e-5;
+  return { points, ends, headings, total, closed };
+}
+// Sample distance along verified edges. Open routes turn back at their ends;
+// wrapping an open route would teleport an actor to the opposite endpoint.
+export function routeStepPose(path, distance, out = {}) {
+  const period = path.total * (path.closed ? 1 : 2);
+  const along = period ? ((distance % period) + period) % period : 0;
+  const returning = !path.closed && along > path.total;
+  walkPose(path, path.total ? (returning ? period - along : along) / path.total : 0, out);
+  if (returning) out.heading += Math.PI;
+  return out;
 }
 export function routeDistanceAt(path, x, z) {
   let best = Infinity,

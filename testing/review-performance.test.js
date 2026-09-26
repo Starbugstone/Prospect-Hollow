@@ -413,3 +413,105 @@ it('uses a provisional footprint around the actual unsupported visual', () => {
   root.children[0].geometry.dispose();
   root.children[0].material.dispose();
 });
+
+it('follows prepared corners without repeated scenery queries or cutting across the corner', () => {
+  const nav = new TownNavigation([
+    {
+      x: 0.5,
+      z: 0.5,
+      y: 0,
+      height: 2,
+      radius: 1,
+      polygon: [
+        [0, 0],
+        [1, 0],
+        [1, 1],
+        [0, 1],
+      ],
+    },
+  ]);
+  const path = nav.plan(
+    [
+      [-0.2, 0.07, -0.2],
+      [-0.2, 0.07, 1.2],
+      [1.2, 0.07, 1.2],
+    ],
+    0.18,
+  );
+  const actor = { root: new Group(), walkPath: path, radius: 0.18 };
+  actor.root.position.fromArray(path.points[0]);
+  const d = { actors: [actor], navigation: nav };
+  const queries = vi.spyOn(nav, 'segment');
+  for (let frame = 0; frame < 200; frame++) {
+    const before = actor.root.position.clone();
+    updateTownLocomotion(d, 0.1);
+    expect(actor.root.position.distanceTo(before)).toBeLessThanOrEqual(0.055 + 1e-6);
+    expect(nav.clear(actor.root.position.toArray(), 0.18)).toBe(true);
+  }
+  expect(actor.motion.routeDistance).toBeCloseTo(11);
+  expect(queries).not.toHaveBeenCalled();
+});
+
+it('turns back at an open route endpoint instead of wrapping across the map', () => {
+  const actor = {
+    root: new Group(),
+    walkPath: walkPath([
+      [0, 0.07, 0],
+      [2, 0.07, 0],
+    ]),
+  };
+  actor.root.position.y = 0.07;
+  const d = { actors: [actor] };
+  let returning = false;
+  for (let frame = 0; frame < 100; frame++) {
+    const before = actor.root.position.clone();
+    updateTownLocomotion(d, 0.1);
+    expect(actor.root.position.distanceTo(before)).toBeLessThanOrEqual(0.055 + 1e-6);
+    if (actor.root.position.x < before.x) returning = true;
+  }
+  expect(returning).toBe(true);
+  expect(actor.motion.routeDistance).toBeCloseTo(5.5);
+});
+
+it('rechecks a prepared route when scenery changes and resumes after the obstruction is removed', () => {
+  const nav = new TownNavigation();
+  const actor = {
+    root: new Group(),
+    walkPath: nav.plan([
+      [0, 0.07, 0],
+      [4, 0.07, 0],
+    ]),
+  };
+  actor.root.position.y = 0.07;
+  const d = { actors: [actor], navigation: nav };
+  updateTownLocomotion(d, 0.1);
+  const before = actor.root.position.clone();
+  nav.replaceOwner('new-house', [{ x: 2, z: 0, y: 0, height: 2, radius: 0.5 }]);
+  const queries = vi.spyOn(nav, 'segment');
+  for (let frame = 0; frame < 30; frame++) updateTownLocomotion(d, 0.1);
+  expect(actor.root.position).toEqual(before);
+  expect(queries).toHaveBeenCalledTimes(1);
+  nav.replaceOwner('new-house', [], 'removed');
+  updateTownLocomotion(d, 0.1);
+  expect(actor.root.position.x).toBeGreaterThan(before.x);
+  nav.obstacles.push({ x: 2, z: 0, y: 0, height: 2, radius: 0.5 });
+  nav.reindex();
+  const stopped = actor.root.position.clone();
+  updateTownLocomotion(d, 0.1);
+  expect(actor.root.position).toEqual(stopped);
+});
+
+it.each([60, 30, 10])('updates life once per frame at real-time speed at %s FPS', (fps) => {
+  const d = Object.create(TownDiorama.prototype);
+  const motion = vi.fn();
+  Object.assign(d, {
+    elapsed: 0,
+    actors: [],
+    motions: [motion],
+    actorRenderer: { update: vi.fn() },
+    drawFrame: () => false,
+  });
+  for (let frame = 0; frame <= fps * 3; frame++) d.tick(1000 + (frame * 1000) / fps);
+  expect(d.elapsed).toBeCloseTo(3);
+  expect(motion).toHaveBeenCalledTimes(fps * 3);
+});

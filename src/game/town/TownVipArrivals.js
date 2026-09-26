@@ -69,6 +69,7 @@ export class TownVipArrivals {
     this.seed = (this.seed + 104729) >>> 0;
     for (const actor of this.actors) {
       actor.started = undefined;
+      actor.motion = undefined;
       actor.root.visible = false;
       actor.root.userData.villager.name = null;
     }
@@ -130,13 +131,14 @@ export class TownVipArrivals {
         ) {
           d.setVillagerIdentity(actor, guest, this.seed + transport.visit * 997);
           actor.started = d.elapsed;
+          actor.motion = undefined;
           actor.distance = 0;
           actor.lastPosition = null;
           this.active = { actor, vehicle: transport.root, started: d.elapsed };
         }
       }
       if (actor.started === undefined || d.paused) continue;
-      const age = d.elapsed - actor.started;
+      const age = actor.motion?.animationTime ?? d.elapsed - actor.started;
       if (age >= actor.duration || this.blocked()) {
         actor.root.visible = false;
         actor.started = undefined;

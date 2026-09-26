@@ -1,10 +1,9 @@
 import { Vector3 } from 'three';
 const blockerPosition = new Vector3();
 import { sweptClear } from './BuildingFootprints';
-import { walkPose, routeDistanceAt } from './TownNavigation';
+import { routeStepPose, routeDistanceAt } from './TownNavigation';
 
 export const LOCOMOTION_STEP = 1 / 60;
-export const MAX_SUBSTEPS = 4;
 const GAP = 0.04;
 export const DYNAMIC_AVOIDANCE_ATTEMPTS = 3;
 
@@ -98,18 +97,80 @@ function vehicleBlocksStep(vehicle, from, to, radius) {
   return !sweptClear(box, start, end, radius + GAP);
 }
 
+// Validate a prepared route only when its geometry or scenery changes. Routine
+// movement samples its edges directly, so it cannot cut corners into buildings.
+function preparedRouteClear(a, navigation) {
+  const path = a.motion.path,
+    margin = a.motion.radius;
+  const revision = navigation?.revision ?? navigation?.obstacles;
+  const old = a.routeValidation;
+  if (
+    old?.path === path &&
+    old.navigation === navigation &&
+    old.revision === revision &&
+    old.clearance === a.clearance
+  )
+    return old.clear;
+  const certificate = path.clearance;
+  const certified =
+    certificate?.navigation === navigation &&
+    certificate?.revision === revision &&
+    certificate?.margin >= margin;
+  const clear = path.points.every(
+    (point, i) =>
+      !i ||
+      ((certified || !navigation || navigation.segment(path.points[i - 1], point, margin)) &&
+        (!a.clearance || a.clearance(path.points[i - 1], point, margin))),
+  );
+  a.routeValidation = {
+    path,
+    navigation,
+    revision,
+    clearance: a.clearance,
+    clear,
+  };
+  return clear;
+}
+function prepareRouteStep(a, navigation, h) {
+  const m = a.motion,
+    p = a.proposal,
+    path = m.path;
+  p.routeTravel = 0;
+  if (!a.followRoute || a.hold) return false;
+  if (!preparedRouteClear(a, navigation)) return true;
+  const pose = routeStepPose(path, m.routeDistance, (a.locomotionPose ??= {}));
+  // A route replacement or construction exit may leave an actor off its new
+  // route. Walk to the nearest edge using the ordinary bounded clearance check.
+  if (Math.hypot(pose.x - m.x, pose.z - m.z) > 1e-4) {
+    a.targetX = pose.x;
+    a.targetZ = pose.z;
+    return false;
+  }
+  p.routeTravel = m.maxSpeed * h;
+  routeStepPose(path, m.routeDistance + a.routeDirection * p.routeTravel, pose);
+  p.dx = pose.x - m.x;
+  p.dz = pose.z - m.z;
+  p.y = pose.y;
+  p.heading = pose.heading + (a.routeDirection < 0 ? Math.PI : 0);
+  return true;
+}
+
 export function stepLocomotion(agents, statics, vehicles, grid, h = LOCOMOTION_STEP) {
   grid.rebuild(agents);
   // Compute every preferred step from the same snapshot before checking crowds.
   for (const a of grid.agents) {
     const m = a.motion,
       p = (a.proposal ??= { dx: 0, dz: 0 });
-    const dx = (a.targetX ?? m.x) - m.x,
-      dz = (a.targetZ ?? m.z) - m.z;
-    const distance = Math.hypot(dx, dz);
-    const scale = distance && !a.hold ? Math.min(m.maxSpeed * h, distance) / distance : 0;
-    p.dx = dx * scale;
-    p.dz = dz * scale;
+    p.dx = p.dz = 0;
+    const prepared = prepareRouteStep(a, statics, h);
+    if (!prepared) {
+      const dx = (a.targetX ?? m.x) - m.x,
+        dz = (a.targetZ ?? m.z) - m.z;
+      const distance = Math.hypot(dx, dz);
+      const scale = distance && !a.hold ? Math.min(m.maxSpeed * h, distance) / distance : 0;
+      p.dx = dx * scale;
+      p.dz = dz * scale;
+    }
     p.blocked = false;
     const from = (a.from ??= []),
       to = (a.to ??= []);
@@ -120,6 +181,7 @@ export function stepLocomotion(agents, statics, vehicles, grid, h = LOCOMOTION_S
     to[1] = from[1];
     to[2] = m.sz + p.dz;
     if (
+      !prepared &&
       (p.dx || p.dz) &&
       ((statics && !statics.segment(from, to, m.radius)) ||
         (a.clearance && !a.clearance(from, to, m.radius)))
@@ -154,13 +216,23 @@ export function stepLocomotion(agents, statics, vehicles, grid, h = LOCOMOTION_S
     const tx = (a.targetX ?? m.x) - m.x,
       tz = (a.targetZ ?? m.z) - m.z;
     const len = Math.hypot(tx, tz) || 1;
-    m.routeDistance += (a.routeDirection ?? 1) * Math.max(0, (p.dx * tx + p.dz * tz) / len);
+    const accepted = travel ? p.routeTravel || travel : 0;
+    if (p.routeTravel && travel) {
+      m.routeDistance += (a.routeDirection ?? 1) * p.routeTravel;
+      a.root.position.y = p.y;
+    } else if (!a.followRoute)
+      m.routeDistance += (a.routeDirection ?? 1) * Math.max(0, (p.dx * tx + p.dz * tz) / len);
+    if (Number.isFinite(m.animationTime)) {
+      if (a.routeResting) m.animationTime += h;
+      else if (accepted && m.path?.total) m.animationTime += (accepted * a.duration) / m.path.total;
+      else if (accepted) m.animationTime += accepted / m.maxSpeed;
+    }
     m.x += p.dx;
     m.z += p.dz;
     m.vx = p.dx / h;
     m.vz = p.dz / h;
     m.state = travel > 1e-7 ? 'moving' : a.noPath ? 'no-path' : 'waiting';
-    if (travel) m.heading = Math.atan2(p.dx, p.dz);
+    if (travel) m.heading = p.routeTravel ? p.heading : Math.atan2(p.dx, p.dz);
   }
 }
 
@@ -193,9 +265,14 @@ export function updateTownLocomotion(d, h = LOCOMOTION_STEP) {
   agents.length = 0;
   const add = (a) => {
     const root = a.root;
-    if (!root?.visible || root.scale.x < 0.5 || a.species === 'pigeon') return;
+    if (!root || a.species === 'pigeon') return;
+    // Indoor/fading visitors still advance their own lifecycle; hiding a mesh
+    // must not disconnect its clock from its route.
+    if ((!root.visible || root.scale.x < 0.5) && !a.visitor) return;
+    if (a.transportVisitor && a.started === undefined) return;
     a.id ??= `${a.species ?? 'person'}:${a.seed ?? root.uuid}:${root.uuid}`;
     const path = a.walkPath ?? a.path;
+    const initial = !a.motion;
     const m = (a.motion ??= {
       x: root.position.x,
       z: root.position.z,
@@ -204,34 +281,33 @@ export function updateTownLocomotion(d, h = LOCOMOTION_STEP) {
       routeDistance: a.progress ?? 0,
       radius: a.radius ?? 0.29,
       maxSpeed: a.speed ?? a.walkSpeed ?? 0.55,
+      animationTime: path?.total ? a.lastPoseTime : undefined,
     });
     if (path && m.path !== path) {
-      m.routeDistance = routeDistanceAt(path, m.x, m.z);
+      m.routeDistance =
+        initial && Number.isFinite(a.routeProgress)
+          ? a.routeProgress * path.total
+          : routeDistanceAt(path, m.x, m.z);
       m.path = path;
     }
     a.routeDirection = a.direction ?? 1;
     a.y = root.position.y;
-    a.hold = !!a.work || (a.species && !['walking', 'fleeing', 'retreating'].includes(a.state));
+    a.hold =
+      !!a.work ||
+      a.routeResting ||
+      (a.species && !['walking', 'fleeing', 'retreating'].includes(a.state));
     a.noPath = !!path && path.points.length < 2;
+    a.followRoute = !!path?.total && (!a.manual || a.transportVisitor) && !m.exitTarget;
+    a.targetX = root.position.x;
+    a.targetZ = root.position.z;
     if (m.exitTarget) {
       a.targetX = m.exitTarget[0];
       a.targetZ = m.exitTarget[2];
       a.hold = false;
-      if (Math.hypot(a.targetX - m.x, a.targetZ - m.z) < 0.06) m.exitTarget = null;
-    } else if (path?.total && (!a.manual || a.transportVisitor)) {
-      const pose = walkPose(
-        path,
-        ((((m.routeDistance + a.routeDirection * Math.max(0.08, m.maxSpeed * h)) % path.total) +
-          path.total) %
-          path.total) /
-          path.total,
-        (a.locomotionPose ??= {}),
-      );
-      a.targetX = pose.x;
-      a.targetZ = pose.z;
-    } else {
-      a.targetX = root.position.x;
-      a.targetZ = root.position.z;
+      if (Math.hypot(a.targetX - m.x, a.targetZ - m.z) < 0.01) {
+        m.exitTarget = null;
+        m.path = null;
+      }
     }
     if (d.reducedMotion && !m.exitTarget) a.hold = true;
     if (a.noPath && !m.exitTarget) {

@@ -263,9 +263,16 @@ Prepare walking paths when actors or routes are created. Use `prepareActorWalk`
 for ordinary people, `navigation.route` for prepared manual routes, or `localWalk`
 for translated construction scenes. Sample with `walkPose`; don't apply another
 sidewalk offset afterward. Facing eases at corners while positions stay on the
-clear segments. Accepted locomotion uses a fixed 1/60 second step (at most four steps per draw),
-spatial buckets, swept pair checks and oriented vehicle envelopes. Route distance
-advances only by accepted movement. Unreachable paths hold their last position.
+clear segments. Ambient movement samples prepared route distances once per rendered
+frame, using elapsed time capped at 0.25 seconds after a long stall. Scenery
+clearance is cached per route, obstacle set and animal-clearance provider; route
+or scenery changes invalidate that result. Open routes turn back at endpoints.
+Spatial buckets and narrow vehicle envelopes provide bounded crowd yielding.
+Route distance and visitor lifecycle clocks advance only by accepted movement;
+indoor rests advance normally. Visitors fade at the source after completing the
+trip, and new transport arrivals reset their movement clock. Unreachable paths
+hold their last position. Horse/car speeds are distance-based, independent of
+any route shortening during preparation.
 People, ground animals and road traffic yield to other actors for at most three
 blocked attempts, then pass through the crowd until clear. A clear step resets
 that budget. This exception never bypasses scenery clearance or an unreachable

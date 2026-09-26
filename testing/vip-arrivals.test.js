@@ -1,3 +1,5 @@
+import { TownNavigation, prepareActorWalk } from '../src/game/town/TownNavigation';
+import { updateTownLocomotion } from '../src/game/town/TownLocomotion';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Group, Scene, MeshBasicMaterial, PerspectiveCamera, Vector3, Vector4 } from 'three';
 import { TownDiorama } from '../src/game/town/TownDiorama';
@@ -194,4 +196,46 @@ it('routes airport guests around the completed lounge instead of through its add
     const inside = point.x > -46.5 && point.x < -40.5 && point.z > 6.35 && point.z < 8.85;
     expect(inside, JSON.stringify(point)).toBe(false);
   }
+});
+
+it('finishes a delayed VIP trip at its source and starts the next arrival there', () => {
+  const { d, frame, arrival } = fixture('railDepot');
+  d.navigation = new TownNavigation([{ x: 1000, z: 1000, y: 0, height: 2, radius: 0.2 }]);
+  for (const actor of d.vipArrivals.actors) prepareActorWalk(d, actor);
+  frame(arrival);
+  const actor = d.vipArrivals.active.actor;
+  const origin = new Vector3(...actor.walkPath.points[0]);
+  for (let i = 1; i <= 30; i++) {
+    frame(arrival + i * 0.1);
+    updateTownLocomotion(d, 0.1);
+  }
+  const before = actor.root.position.clone();
+  d.reducedMotion = true;
+  frame(arrival + actor.duration + 5);
+  updateTownLocomotion(d, 0.1);
+  expect(actor.root.visible).toBe(true);
+  expect(actor.root.position.distanceTo(before)).toBeLessThan(1e-8);
+  d.reducedMotion = false;
+  let time = d.elapsed;
+  for (let i = 0; i < 3000 && actor.started !== undefined; i++) {
+    time += 0.1;
+    // Advance this trip without admitting another scheduled passenger.
+    d.elapsed = time;
+    d.vipArrivals.update();
+    updateTownLocomotion(d, 0.1);
+  }
+  expect(actor.started).toBeUndefined();
+  expect(actor.root.position.distanceTo(origin)).toBeLessThan(0.1);
+  // A fresh named arrival must not inherit the preceding visitor's movement clock.
+  const transport = d.visitorTransports.get(actor.source);
+  transport.visit = Array.from({ length: 100 }, (_, i) => i + transport.visit + 1).find((visit) =>
+    vipVisitor(d.vipArrivals.seed, visit),
+  );
+  transport.arrived = true;
+  transport.sinceArrival = 0;
+  transport.root.visible = true;
+  d.vipArrivals.update();
+  expect(actor.started).toBe(d.elapsed);
+  expect(actor.root.position.distanceTo(origin)).toBeLessThan(0.1);
+  expect(actor.motion).toBeUndefined();
 });
