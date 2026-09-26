@@ -142,3 +142,57 @@ it('refuses unsafe saves when this tab does not own the selected town', () => {
   expect(() => a.save(profile(90))).toThrow('another tab');
   expect(a.active().profile.town.coins).toBe(2);
 });
+it('remembers the last account town for a new tab without switching existing tabs', () => {
+  const shared = memory();
+  const tab = () => {
+    const session = memory();
+    return createTownStorage({ storage: () => shared, session: () => session });
+  };
+  const a = tab(),
+    b = tab();
+  a.save(profile(1));
+  a.account({ id: 'user' });
+  a.remember(remote('town-a', 10), 'user');
+  a.remember(remote('town-b', 20), 'user');
+  a.select('town-a', 'user');
+  b.select('town-b', 'user');
+  const c = tab();
+  expect(c.hasSelection()).toBe(false);
+  expect(c.preferredTown('user').meta.id).toBe('town-b');
+  c.select('town-b', 'user');
+  expect(a.active().meta.id).toBe('town-a');
+  expect(b.active().meta.id).toBe('town-b');
+});
+it('pins a local session so signing in never replaces its unregistered town', () => {
+  const shared = memory(),
+    session = memory();
+  const a = createTownStorage({ storage: () => shared, session: () => session });
+  a.save(profile(123));
+  a.pinSelection();
+  a.account({ id: 'user' });
+  a.remember(remote('account-town', 10), 'user');
+  expect(a.hasSelection()).toBe(true);
+  expect(a.active().profile.town.coins).toBe(123);
+  expect(a.active().meta.owner).toBeNull();
+});
+it('opens the account copy of a retained local UUID without replacing either save', () => {
+  const shared = memory(),
+    session = memory();
+  const a = createTownStorage({ storage: () => shared, session: () => session });
+  a.save(profile(5));
+  const id = a.active().meta.id;
+  a.account({ id: 'user' });
+  a.remember(remote(id, 75), 'user');
+  expect(a.active().meta.id).toBe(id);
+  expect(a.selectedKey()).toBe(SAVE_KEY);
+  const localCopy = shared.getItem(SAVE_KEY);
+  expect(a.preferredTown('user').meta.id).toBe(id);
+  a.select(id, 'user');
+  expect(a.selectedKey()).toBe(townKey(id, 'user'));
+  expect(a.active().profile.town.coins).toBe(75);
+  a.save(profile(80));
+  expect(shared.getItem(SAVE_KEY)).toBe(localCopy);
+  a.logout();
+  expect(a.active().profile.town.coins).toBe(5);
+  expect(a.get(id, 'user').profile.town.coins).toBe(80);
+});

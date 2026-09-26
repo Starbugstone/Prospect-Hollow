@@ -42,6 +42,7 @@ const freshMeta = (name = 'My town') => ({
 export const ACCOUNT_KEY = 'prospect-account-v2';
 export const TOWN_PREFIX = 'prospect-town-v2:';
 const SELECTION_KEY = 'prospect-selected-town-v2';
+const PREFERRED_PREFIX = 'prospect-preferred-town-v2:';
 const CREATION_PREFIX = 'prospect-creation-v2:';
 export const townKey = (id, owner) => (owner ? `${TOWN_PREFIX}${owner}:${id}` : SAVE_KEY);
 const rootOf = (entry) => ({
@@ -83,6 +84,15 @@ export function createTownStorage({
       ? selectedKey
       : SAVE_KEY;
   }
+  function rememberPreference(id, owner) {
+    // This is only a default for new tabs, never a save or an ownership record.
+    // A full store must not prevent opening an already cached town.
+    try {
+      write(`${PREFERRED_PREFIX}${owner}`, id);
+    } catch {
+      /* Optional preference. */
+    }
+  }
   function selectKey(key) {
     // Commit selection before notifying the view; a failed session write must not
     // leave the game saving into a town different from the displayed one.
@@ -121,7 +131,10 @@ export function createTownStorage({
       if (!read(ACCOUNT_KEY))
         write(ACCOUNT_KEY, { account: legacy.account, generation: crypto.randomUUID() });
       if (legacy.creation) write(`${CREATION_PREFIX}${legacy.creation.owner}`, legacy.creation);
-      if (current.meta.owner) selectKey(townKey(current.meta.id, current.meta.owner));
+      if (current.meta.owner) {
+        rememberPreference(current.meta.id, current.meta.owner);
+        selectKey(townKey(current.meta.id, current.meta.owner));
+      }
       const local = current.meta.owner ? legacy.local : current;
       write(SAVE_KEY, rootOf(local ?? { profile: {}, meta: freshMeta() }));
     },
@@ -132,6 +145,23 @@ export function createTownStorage({
       return guard(selected());
     },
     selectedKey: selected,
+    hasSelection() {
+      return session()?.getItem(SELECTION_KEY) != null || fallbackSelection !== SAVE_KEY;
+    },
+    pinSelection() {
+      selectKey(selected());
+    },
+    preferredTown(owner) {
+      let preferred;
+      try {
+        preferred = read(`${PREFERRED_PREFIX}${owner}`);
+      } catch {
+        /* A damaged optional preference must not prevent opening valid saves. */
+      }
+      const known = preferred ? this.get(preferred, owner) : null;
+      if (known && !known.meta.missing) return known;
+      return this.records(owner).find((entry) => !entry.meta.missing) ?? null;
+    },
     auth() {
       return read(ACCOUNT_KEY) ?? { account: null, generation: null };
     },
@@ -204,6 +234,7 @@ export function createTownStorage({
       if (!owner || this.auth().account?.id !== owner)
         throw new Error('Sign in to use account town slots.');
       if (!this.get(id, owner)) throw new Error('Download this town before opening it.');
+      rememberPreference(id, owner);
       selectKey(townKey(id, owner));
     },
     remember(cloud, owner) {
@@ -252,6 +283,7 @@ export function createTownStorage({
         },
         townKey(cloud.townId, owner),
       );
+      rememberPreference(cloud.townId, owner);
       selectKey(townKey(cloud.townId, owner));
     },
     mutate(id, owner, operation) {

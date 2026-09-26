@@ -6,6 +6,10 @@ A signed-out browser has one device-local town and makes no background API reque
 
 Each tab keeps its selection in `sessionStorage`, and account town URLs include `?play=<town UUID>`. Every private town request includes that UUID in `/api/v1/towns/<UUID>` (with `/settings`, `/history` or `/resolve` where appropriate). Creation includes `townId` in the payload. There is no account-wide selected-town variable on the server and no persistent network connection or gameplay command stream.
 
+A new signed-in tab without a URL or existing selection opens the last selected cached account town (or the first available cached town). Existing tab selections stay independent. A local town is pinned before sign-in so authenticating cannot silently replace unregistered progress. The retained local copy and the account town can share a UUID; identity checks must compare both owner and UUID. An explicit account URL always selects the account record. The town picker must never label its retained guest copy as the current account town.
+
+The save bar and browser title identify the selected town. The bar distinguishes account towns from device-only play, and Sync is offered only for an account town. The account panel offers an explicit way to open the account version of a retained local copy, preserving both records.
+
 The backend derives the user ID from its authenticated session. All private routes look up `towns` with both `id = UUID` and `player_id = authenticated user`, excluding deleted towns. Mutations retain both fields in the SQL update predicate. A UUID, tab selection, public link or client-supplied user ID grants no permission. Another account gets HTTP 404 without a private snapshot, including for conflict resolution and history. Requests without a session get HTTP 401. Client transport also rejects a response carrying a different town UUID.
 
 ## Local writes and tab lifetime
@@ -13,6 +17,8 @@ The backend derives the user ID from its authenticated session. All private rout
 Each account town has its own `prospect-town-v2:<owner>:<UUID>` localStorage record containing the profile, revision, local sequence, dirty flag and pending upload together. `crystal-cascade-profile-v3` contains the single guest town. Account/session metadata is separate. Selecting or saving one town never rewrites another town's profile.
 
 A browser Web Lock owns each town while its game is mounted. The guest slot has its own lock. Browser-managed locks release when a tab closes or crashes, without heartbeat timers or leases that can expire while a suspended tab still owns stale game state. A tab must close before another tab can claim its town; there is no forced takeover. Switching towns disposes the old renderer with saves suspended, drains in-flight operations, releases the old lock and loads the new town under its own lock. Account management may download an unopened town under a short lock without mounting its game.
+
+Cached startup and the duplicate-tab notice do not wait for account HTTP. Concurrent startup and synchronization share the same account refresh promise within a session. A blocked tab downloads no game renderer and offers the town picker or a manual retry after closing the owner tab. Lazy game views show loading feedback and an actionable reload button if their JavaScript chunk fails; the 3D view also shows feedback while its graphics load.
 
 Web Locks require a supporting browser and a secure context (HTTPS, or localhost for development). An unsupported browser displays an explanation instead of writing without coordination. Browser-owned storage remains subject to quota, eviction and user deletion; it is not an access-control boundary against someone controlling that browser. Save failures remain visible and leave the last valid record intact. Cloud copies, five previous server revisions and downloadable backups provide additional recovery paths.
 
