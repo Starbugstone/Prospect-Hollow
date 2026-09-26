@@ -2441,5 +2441,7 @@
   "This puzzle transfer could not be restored. Its saved copy has been kept.": "Cette partie n’a pas pu être restaurée. Sa copie sauvegardée a été conservée.",
   "A town transfer is already in progress.": "Un transfert de ville est déjà en cours.",
   "Another window is already transferring this town. Try again shortly.": "Une autre fenêtre transfère déjà cette ville. Réessayez dans un instant.",
-  "Town transfer cancelled.": "Transfert de ville annulé."
+  "Town transfer cancelled.": "Transfert de ville annulé.",
+  "Town settings": "Réglages de la ville",
+  "Cloud account": "Compte en ligne"
 }

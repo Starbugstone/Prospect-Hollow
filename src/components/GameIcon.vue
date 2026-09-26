@@ -38,6 +38,9 @@ const paths = {
   sound: 'M11 4 5 9H2v6h3l6 5ZM15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14',
   muted: 'M11 4 5 9H2v6h3l6 5Zm5 5 6 6m0-6-6 6',
   close: 'm6 6 12 12M6 18 18 6',
+  sync: 'M20 11a8 8 0 0 0-14.3-4.9L4 8m0-4v4h4M4 13a8 8 0 0 0 14.3 4.9L20 16m0 4v-4h-4',
+  external: 'M14 4h6v6m0-6-9 9m7 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5',
+  cloud: 'M7 19h10a4 4 0 0 0 .6-8A6 6 0 0 0 6 10a4.5 4.5 0 0 0 1 9Z',
 };
 </script>
 <style scoped>
