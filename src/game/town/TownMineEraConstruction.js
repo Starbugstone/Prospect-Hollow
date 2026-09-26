@@ -51,7 +51,14 @@ export class TownMineEraConstruction {
     const focus = new Vector3(-2.8, 2.8, -17.8);
     const eye = new Vector3(8 - reveal * 2, 13 + reveal, -4 - reveal);
     if (this.d.camera.aspect < 0.8) eye.sub(focus).multiplyScalar(1.3).add(focus);
-    return { eye, focus, shadowPhase: Math.floor(time) };
+    return {
+      eye,
+      focus,
+      shadowPhase:
+        time >= ERA_CONSTRUCTION.buildStart && time <= ERA_CONSTRUCTION.buildEnd
+          ? time
+          : Math.floor(time),
+    };
   }
   dispose() {
     const permanent = this.d.staticScenery.entries.get('mine-works')?.group;

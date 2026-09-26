@@ -7,8 +7,9 @@ import { useSettingsStore } from './settingsStore';
 import { defineStore } from 'pinia';
 import { generateLevelConfigs } from '../game/engine/LevelGenerator';
 import { GEM_TYPES } from '../game/engine/GemFactory';
+import { recoverBoard } from '../game/engine/BoardRecovery';
 import { MatchEngine } from '../game/engine/MatchEngine';
-import { cascadeTier, simultaneousMatchCount } from '../game/engine/MatchRewards';
+import { cascadeTier, clearScore, simultaneousMatchCount } from '../game/engine/MatchRewards';
 import { TileManager } from '../game/engine/TileManager';
 import { useInventoryStore } from './inventoryStore';
 import { BonusActivator } from '../game/engine/BonusActivator';
@@ -16,7 +17,7 @@ import { HintEngine } from '../game/engine/HintEngine';
 import { detectBonusFromMatches } from '../game/engine/MatchPatterns';
 import { BoardAnimator } from '../game/phaser/BoardAnimator';
 import { BoardInput } from '../game/phaser/BoardInput';
-import { canSwapGem, layerCount } from '../game/engine/TileRules';
+import { canSwapGem, isAnchored, layerCount } from '../game/engine/TileRules';
 
 const matchEngine = new MatchEngine();
 const tileManager = new TileManager();
@@ -90,6 +91,7 @@ export const useGameStore = defineStore('game', {
     queuedSwap: null,
     queuedBonus: null,
     activeBonusMode: null,
+    powerInUse: null,
     bonusPreview: {
       indices: [],
       key: null,
@@ -119,6 +121,11 @@ export const useGameStore = defineStore('game', {
     reshuffleNotice: null,
   }),
   getters: {
+    starScoreTarget: (state) =>
+      state.availableLevels.find((level) => level.id === state.currentLevelId)?.config
+        .starScoreTarget ??
+      state.objectives.find((objective) => objective.type === 'score')?.target ??
+      0,
     activeBoard(state) {
       return state.pendingBoardState ?? state.board;
     },
@@ -131,11 +138,17 @@ export const useGameStore = defineStore('game', {
     goalProgress() {
       return this.goalTotal - this.remainingLayers - this.remainingRelics - this.remainingOre;
     },
-    layerLabel: (state) =>
-      state.currentLevelId > 36
-        ? (state.objectives.find((objective) => objective.type === 'clear-layers')?.label ??
-          'Layers')
-        : 'Ice & stone',
+    layerLabel: (state) => {
+      const tiles =
+        state.availableLevels.find((level) => level.id === state.currentLevelId)?.config.tiles ??
+        [];
+      const fallback =
+        state.objectives.find((objective) => objective.type === 'clear-layers')?.label ?? 'Layers';
+      if (tiles.some((tile) => tile.sealColor || tile.chainHealth || tile.signal)) return fallback;
+      const stone = tiles.some((tile) => tile.type === 'blocker' && tile.health > 0);
+      const ice = tiles.some((tile) => tile.type !== 'blocker' && tile.health > 0);
+      return ice ? (stone ? 'Ice & stone' : 'Ice') : stone ? 'Stone' : 'Layers';
+    },
   },
   actions: {
     showArcadeBanner(banner) {
@@ -250,7 +263,7 @@ export const useGameStore = defineStore('game', {
         this.queuedBonus = { index, bonusName };
         this.renderer?.animator?.showQueuedBonus?.(index);
         this.activeBonusMode = null;
-        this.renderer?.animator?.clearBonusPreview?.();
+        this.clearBonusPreview(true);
         return true;
       }
 
@@ -260,43 +273,58 @@ export const useGameStore = defineStore('game', {
       return this._activatePower(bonusName, index, true);
     },
     async _activatePower(bonusName, index, consume = false) {
+      if (!this.sessionActive || this.inputPaused || this.animationInProgress || this.levelCleared)
+        return false;
+      const inventory = useInventoryStore();
+      if (consume && inventory.availableQuantity(bonusName) <= 0) {
+        this.clearBonusPreview(true);
+        return false;
+      }
       const session = this.sessionVersion;
       let boardUpdated = false;
       const cols = this.boardCols ?? this.boardSize ?? 8;
       const rows = this.boardRows ?? this.boardSize ?? 8;
       const animator = this.renderer?.animator;
 
+      this.powerInUse = consume ? bonusName.replaceAll('_', '-') : null;
+      this.bonusPreview = { indices: [], key: null };
+      animator?.fadeBonusPreview?.();
       this.animationInProgress = true;
       try {
-        const clearedIndices = bonusActivator.activateBonus(
-          bonusName,
-          this.board,
-          cols,
-          rows,
-          index,
-        );
+        const rescue = bonusName === 'recovery_sweep';
+        const clearedIndices = rescue
+          ? this.board.map((_, i) => i)
+          : bonusActivator.activatePower(bonusName, this.board, cols, rows, index, this.tiles);
 
         if (clearedIndices.length === 0) {
           console.log(`Bonus ${bonusName} had no effect.`);
           return false;
         }
 
-        const matches = [{ type: bonusName, indices: clearedIndices }];
+        const matches = [
+          {
+            type: bonusName,
+            indices: clearedIndices,
+            ...(rescue ? { fusion: { targets: clearedIndices, damage: 2 } } : {}),
+          },
+        ];
 
+        const nextTiles = this.tiles.map((tile) => ({ ...tile }));
         const resolution = tileManager.getResolution({
           gemTypes: this.currentBoardLayout?.gemTypes ?? GEM_TYPES,
           board: this.board,
-          tiles: this.tiles,
+          tiles: nextTiles,
           matches: matches,
           cols,
           rows,
         });
 
         if (resolution.steps[0]) {
-          resolution.steps[0].bonusEffect = { type: bonusName, originIndex: index };
+          resolution.steps[0].bonusEffect = {
+            type: rescue ? 'rainbow' : bonusName,
+            originIndex: index,
+          };
         }
-
-        this._applyScoring(resolution.steps);
 
         this.pendingBoardState = resolution.board;
 
@@ -306,7 +334,9 @@ export const useGameStore = defineStore('game', {
         }
 
         // Consume before committing so victory rewards see the updated inventory.
-        if (consume) useInventoryStore().consumeItem(bonusName);
+        if (consume && !inventory.consumeItem(bonusName)) return false;
+        this.tiles = nextTiles;
+        this._applyScoring(resolution.steps);
         this.commitResolution(resolution);
         boardUpdated = true;
         return true;
@@ -315,6 +345,7 @@ export const useGameStore = defineStore('game', {
         return false;
       } finally {
         if (session !== this.sessionVersion) return false;
+        this.powerInUse = null;
         this.pendingBoardState = null;
         this.animationInProgress = false;
         if (this.sessionActive) {
@@ -365,7 +396,8 @@ export const useGameStore = defineStore('game', {
       }
 
       // Get the indices that would be affected
-      const indices = bonusActivator.previewBonus(bonusMode, board, cols, rows, index) ?? [];
+      const indices =
+        bonusActivator.previewBonus(bonusMode, board, cols, rows, index, this.tiles) ?? [];
 
       if (!indices.length) {
         this.clearBonusPreview();
@@ -405,7 +437,7 @@ export const useGameStore = defineStore('game', {
         this.resolveSwap(queued.aIndex, queued.bIndex);
       }
     },
-    async activateOneTimeBonus(bonusName) {
+    async activateOneTimeBonus(bonusName, { consume = false } = {}) {
       if (!this.sessionActive || this.inputPaused || this.animationInProgress || this.levelCleared)
         return false;
       this.clearBonusPreview(true);
@@ -415,7 +447,7 @@ export const useGameStore = defineStore('game', {
         bonusName === 'clear_row'
           ? Math.floor(Math.random() * rows) * cols
           : getBoardCenterIndex(cols, rows);
-      return this._activatePower(bonusName, origin);
+      return this._activatePower(bonusName, origin, consume);
     },
     notifyPlayerActivity() {
       this.cancelHint(true);
@@ -477,6 +509,7 @@ export const useGameStore = defineStore('game', {
     },
     resetRunPresentation() {
       this.levelCleared = false;
+      this.powerInUse = null;
       this.levelRewards = [];
       this.collectedJewels = 0;
       this.coinReward = 0;
@@ -490,8 +523,15 @@ export const useGameStore = defineStore('game', {
       this.arcadeBanner = null;
       this.reshuffleNotice = null;
     },
-    startLevel(levelId, mode = 'normal') {
-      if (!['normal', 'continuous'].includes(mode) || !useCampaignStore().canPlay(levelId, mode))
+    startLevel(levelId, mode = 'normal', { debugReplay = false } = {}) {
+      const campaign = useCampaignStore();
+      if (
+        !['normal', 'continuous'].includes(mode) ||
+        !(
+          campaign.canPlay(levelId, mode) ||
+          (debugReplay && mode === 'normal' && campaign.isUnlocked(levelId))
+        )
+      )
         return false;
       const selected = this.availableLevels.find((entry) => entry.id === levelId);
       if (!selected) {
@@ -835,6 +875,7 @@ export const useGameStore = defineStore('game', {
       this.playMode = 'normal';
       this.syncRunClock(false);
       this.sessionVersion += 1;
+      this.powerInUse = null;
       this.cancelHint(true);
       if (reshuffleNoticeTimeoutId) {
         clearTimeout(reshuffleNoticeTimeoutId);
@@ -923,6 +964,7 @@ export const useGameStore = defineStore('game', {
         id: this.currentLevelId,
         score: this.score,
         combo: this.maxCascade,
+        starTarget: this.starScoreTarget,
         target: this.objectives.find((objective) => objective.type === 'score')?.target ?? 0,
       });
       this.constructionReward = useCampaignStore().lastConstruction;
@@ -993,7 +1035,12 @@ export const useGameStore = defineStore('game', {
         return false;
       }
 
-      return !!hintEngine.findBestMove(board, this.tiles ?? [], cols, rows, { first: true });
+      return (
+        board.some(
+          (gem, index) =>
+            ['bomb', 'cross', 'rainbow'].includes(gem?.type) && canSwapGem(gem, this.tiles[index]),
+        ) || !!hintEngine.findBestMove(board, this.tiles ?? [], cols, rows, { first: true })
+      );
     },
     _showReshuffleNotice() {
       if (reshuffleNoticeTimeoutId) {
@@ -1007,37 +1054,36 @@ export const useGameStore = defineStore('game', {
         this.reshuffleNotice = null;
       }, 2000);
     },
-    async ensurePlayableBoard({ attempts = 0, noticeShown = false } = {}) {
-      if (this.animationInProgress || !this.sessionActive || this.levelCleared) {
+    async ensurePlayableBoard() {
+      if (
+        this.animationInProgress ||
+        !this.sessionActive ||
+        this.levelCleared ||
+        !this.board.length
+      )
         return false;
+      if (this._hasPlayableMove()) return false;
+      const session = this.sessionVersion;
+      this._showReshuffleNotice();
+      // These attempts limit random work, not the player's recovery opportunities.
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (!(await this.shuffleBoard())) return false;
+        if (session !== this.sessionVersion) return false;
+        if (this.levelCleared || this._hasPlayableMove()) return true;
+        if (this.animationInProgress) return false;
       }
-
-      const cols = this.boardCols ?? this.boardSize ?? 8;
-      const rows = this.boardRows ?? this.boardSize ?? 8;
-      const board = this.activeBoard;
-      if (!Array.isArray(board) || !board.length || !cols || !rows) {
-        return false;
+      const repaired = recoverBoard(this.board, this.tiles, this.boardCols, this.boardRows);
+      if (repaired) {
+        if (!(await this.shuffleBoard({ recoveryBoard: repaired }))) return false;
+        return session === this.sessionVersion && (this.levelCleared || this._hasPlayableMove());
       }
-
-      if (this._hasPlayableMove()) {
-        return false;
-      }
-
-      if (!noticeShown) {
-        this._showReshuffleNotice();
-        noticeShown = true;
-      }
-
-      const shuffleResult = await this.shuffleBoard();
-      if (!shuffleResult) {
-        return false;
-      }
-
-      if (!this._hasPlayableMove() && attempts < 2) {
-        return this.ensurePlayableBoard({ attempts: attempts + 1, noticeShown });
-      }
-
-      return true;
+      // With no movable gems, another permutation cannot help. A free rescue
+      // sweep releases anchors using the normal double-hit resolution rules.
+      // Each sweep reduces the remaining anchors; it never consumes inventory.
+      if (!this.tiles.some(isAnchored)) return false;
+      if (!(await this._activatePower('recovery_sweep', 0))) return false;
+      if (session !== this.sessionVersion) return false;
+      return this.levelCleared || this._hasPlayableMove();
     },
     _applyScoring(steps) {
       if (!Array.isArray(steps) || !steps.length) {
@@ -1056,7 +1102,7 @@ export const useGameStore = defineStore('game', {
           return;
         }
         const cascadeBonus = cascadeTier(step, index);
-        total += clearedCount * 100 * cascadeBonus;
+        total += clearScore(step, index);
         deepestCascade = Math.max(deepestCascade, cascadeBonus);
         if (this.playMode === 'normal') {
           if (cascadeBonus >= 2)
@@ -1078,7 +1124,7 @@ export const useGameStore = defineStore('game', {
       this.syncContinuous();
       return total;
     },
-    shuffleBoard() {
+    shuffleBoard({ recoveryBoard = null } = {}) {
       const session = this.sessionVersion;
       if (!this.sessionActive || this.animationInProgress || this.levelCleared) {
         return false;
@@ -1088,17 +1134,24 @@ export const useGameStore = defineStore('game', {
       const rows = this.boardRows ?? this.boardSize ?? 8;
       const animator = this.renderer?.animator;
 
-      const nextBoard = [...this.board];
+      const nextBoard = [...(recoveryBoard ?? this.board)];
       const movable = nextBoard
         .map((gem, index) => (canSwapGem(gem, this.tiles[index]) ? index : -1))
         .filter((index) => index >= 0);
-      for (let i = movable.length - 1; i > 0; i--) {
+      for (let i = recoveryBoard ? 0 : movable.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         const a = movable[i],
           b = movable[j];
         [nextBoard[a], nextBoard[b]] = [nextBoard[b], nextBoard[a]];
       }
 
+      const rescueBonuses = recoveryBoard
+        ? nextBoard.flatMap((gem, index) =>
+            gem && !this.board.some((old) => old?.id === gem.id)
+              ? [{ type: gem.type, index, gem }]
+              : [],
+          )
+        : [];
       this.animationInProgress = true;
       this.pendingBoardState = nextBoard;
 
@@ -1109,6 +1162,20 @@ export const useGameStore = defineStore('game', {
         : Promise.resolve();
 
       return runAnimation
+        .then(async () => {
+          if (session === this.sessionVersion && rescueBonuses.length && animator?.playSteps)
+            await animator.playSteps([
+              {
+                index: 0,
+                matches: [],
+                cleared: [],
+                tileUpdates: [],
+                bonuses: rescueBonuses,
+                drops: [],
+                spawns: [],
+              },
+            ]);
+        })
         .then(() =>
           session === this.sessionVersion
             ? this._resolveBoardAfterShuffle(nextBoard, { cols, rows, animator })

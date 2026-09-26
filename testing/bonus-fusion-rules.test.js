@@ -180,7 +180,7 @@ describe('fusion obstacle damage', () => {
     expect(result.layersCleared).toBe(layersBefore - tiles.reduce((n, t) => n + layerCount(t), 0));
     expect(result.steps[0].bonusFusion.damage).toBe(2);
   });
-  it('deals only one hit to collateral neighbors outside the fusion footprint', () => {
+  it('does not damage neighboring blocks outside the fusion footprint', () => {
     vi.spyOn(MatchEngine.prototype, 'findMatches').mockReturnValue([]);
     const board = boardFor(['bomb', 'bomb']);
     const tiles = board.map(() => ({ health: 0 }));
@@ -191,6 +191,6 @@ describe('fusion obstacle damage', () => {
     const evaluation = engine.evaluateSwap(board, 8, 8, 27, 28, tiles);
     new TileManager().getResolution({ ...evaluation, tiles });
     expect(tiles[0].health).toBe(2);
-    expect(tiles[1].health).toBe(1);
+    expect(tiles[1].health).toBe(2);
   });
 });

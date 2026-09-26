@@ -68,7 +68,7 @@ export function addMineWorks(d, parent, era) {
     d.box(finish, 1.95, 0.18, 2.4, -3.65, h + 0.95, 1.4, a.roof);
     for (const x of [-4.38, -2.92]) d.box(finish, 0.1, 0.8, 0.1, x, h + 0.5, 2.3, a.wall);
     d.box(finish, 1.4, 0.6, 0.07, -3.65, h + 0.5, 2.3, '#85b8c8');
-    if (a.machine === 'motor') d.box(finish, 1.8, 0.18, 0.9, -4.5, 1.55, 4.3, a.roof);
+
     if (['radio', 'control', 'digital'].includes(a.machine)) {
       d.rod(finish, [-4.1, h + 1, 1.3], [-4.1, h + 2, 1.3], 0.035, a.frame);
       d.rod(finish, [-4.45, h + 1.7, 1.3], [-3.75, h + 1.7, 1.3], 0.025, a.frame);
@@ -90,6 +90,40 @@ export function addMineWorks(d, parent, era) {
     if (a.machine === 'digital') {
       for (const x of [-4.9, -4.05]) d.box(finish, 0.75, 0.06, 1.1, x, 2.13, 3.55, '#526f79');
     }
+  }
+  const equipment = section(`Mine ${a.machine} surface equipment`, 3);
+  if (a.machine === 'motor') {
+    d.box(equipment, 2.5, 0.3, 1.4, -5.8, 0.25, 1.4, a.wall);
+    for (const x of [-6.85, -4.75]) d.rod(equipment, [x, 0.2, 1.8], [x, 2.5, 1.8], 0.07, a.frame);
+    d.box(equipment, 2.7, 0.18, 1.7, -5.8, 2.6, 1.4, a.roof);
+    d.box(equipment, 1.6, 0.7, 0.9, -5.8, 0.7, 1.3, a.frame);
+    d.box(equipment, 0.5, 0.8, 0.85, -6.4, 1.1, 1.3, '#85b8c8');
+    for (const x of [-6.3, -5.3])
+      for (const z of [0.85, 1.75]) d.ball(equipment, x, 0.35, z, [0.23, 0.23, 0.09], '#53635c');
+  }
+  if (a.machine === 'radio') {
+    d.box(equipment, 1.8, 1.6, 1.5, -6.1, 0.95, 1.5, a.wall);
+    d.box(equipment, 1.55, 0.75, 0.08, -6.1, 1.3, 2.28, '#85b8c8');
+    for (const x of [-6.6, -5.6]) d.rod(equipment, [x, 0.2, 0.5], [-6.1, 6.2, 0.5], 0.065, a.frame);
+    for (const y of [3, 4, 5, 6])
+      d.rod(equipment, [-6.65, y, 0.5], [-5.55, y, 0.5], 0.045, a.frame);
+  }
+  if (['control', 'digital'].includes(a.machine)) {
+    d.box(equipment, 2.4, 0.4, 2, -6.2, 0.35, 1.4, a.wall);
+    d.box(equipment, 2.15, 1.9, 1.75, -6.2, 1.5, 1.4, '#85b8c8');
+    d.box(equipment, 2.6, 0.2, 2.2, -6.2, 2.55, 1.4, a.roof);
+    for (const x of [-7.2, -6.2, -5.2]) d.box(equipment, 0.09, 1.9, 0.12, x, 1.5, 2.32, a.frame);
+  }
+  if (a.machine === 'digital') {
+    const automation = section('Automated conveyor and screen wall', 4);
+    d.box(automation, 3.4, 0.22, 0.7, -6.1, 0.85, 3.15, '#53635c');
+    for (const x of [-7.5, -6.8, -6.1, -5.4, -4.7]) {
+      d.rod(automation, [x, 0.15, 3.15], [x, 0.8, 3.15], 0.07, a.frame);
+      d.box(automation, 0.1, 0.08, 0.72, x, 1, 3.15, a.wall);
+    }
+    for (const x of [-6.8, -6.05, -5.3]) d.box(automation, 0.65, 0.8, 0.1, x, 1.6, 2.38, '#435764');
+    for (const x of [-6.8, -6.05, -5.3])
+      d.box(automation, 0.48, 0.12, 0.02, x, 1.7, 2.45, '#83c7be');
   }
   return root;
 }

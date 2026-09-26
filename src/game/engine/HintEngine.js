@@ -35,14 +35,16 @@ export class HintEngine {
           : this.matchEngine.evaluateSwap(board, cols, rows, a, b, tiles);
         if (!usesBonus && !evaluation.matches.length) continue;
         let createsBonus = !!evaluation?.bonusesCreated.length;
+        let ordinaryMatches = evaluation?.matches ?? [];
         let indices = [...new Set(evaluation?.matches.flatMap((match) => match.indices) ?? [a, b])];
         const usesFusion = SPECIAL.has(board[a].type) && SPECIAL.has(board[b].type);
         if (usesFusion) {
-          indices = bonusActivator.previewSwap(board, cols, rows, { aIndex: a, bIndex: b });
+          indices = bonusActivator.previewSwap(board, cols, rows, { aIndex: a, bIndex: b }, tiles);
         } else if (usesBonus) {
           const swapped = [...board];
           [swapped[a], swapped[b]] = [swapped[b], swapped[a]];
           const matches = this.matchEngine.findMatches(swapped, cols, rows, tiles);
+          ordinaryMatches = matches;
           createsBonus =
             detectBonusFromMatches(matches, { swap: { aIndex: a, bIndex: b } }).length > 0;
           const affected = new Set([a, b, ...matches.flatMap((match) => match.indices)]);
@@ -65,7 +67,8 @@ export class HintEngine {
           indices = [...affected];
         }
         const nearbyBlocks = new Set();
-        for (const index of indices) {
+        for (const index of new Set(ordinaryMatches.flatMap((match) => match.indices))) {
+          if (tiles[index]?.state === 'FROZEN') continue;
           for (const neighbor of neighborsOf(index, cols, rows)) {
             if (tiles[neighbor]?.type === 'blocker' && tiles[neighbor].health > 0)
               nearbyBlocks.add(neighbor);
@@ -119,6 +122,21 @@ export class HintEngine {
         if (first) return candidate;
         if (!best || candidate.heuristicScore > best.heuristicScore) best = candidate;
       }
+    }
+    if (!best) {
+      const index = board.findIndex(
+        (gem, i) => SPECIAL.has(gem?.type) && canSwapGem(gem, tiles[i]),
+      );
+      if (index >= 0)
+        return {
+          swap: { aIndex: index, bIndex: index },
+          indices: [index],
+          activateInPlace: true,
+          usesBonus: true,
+          createsBonus: false,
+          totalCleared: this.matchEngine.evaluateActivation(board, cols, rows, index, tiles)
+            .matches[0].indices.length,
+        };
     }
     return best;
   }

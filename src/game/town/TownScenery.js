@@ -9,7 +9,7 @@ import { addTownRoads } from './TownActivity';
 import { addMineForecourt } from './TownMineForecourt';
 import { addMineWorks } from './TownMineWorks';
 import { addElectricLighting } from './buildings/industrial';
-import { addPowerGrid, pavedTown } from './TownEvolution';
+import { addEraStreetscape, addPowerGrid, pavedTown } from './TownEvolution';
 import { addRailroad } from './TownEraActivity';
 
 // Infrastructure changes with access and services, not with every scaffold or
@@ -45,6 +45,7 @@ export class TownScenery {
         JSON.stringify([town.era, roadLevel(town), topology]),
         () => addTownRoads(view, town, PLOTS),
       ],
+      ['streetscape', town.era, () => addEraStreetscape(view, town)],
       ['forecourt', pavedTown(town), () => addMineForecourt(view, town)],
       ['mine-works', town.era, () => addMineWorks(view, view.world, town.era)],
       ['lights', hasElectricity(town), () => addElectricLighting(view, town)],

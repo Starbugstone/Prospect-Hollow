@@ -11,7 +11,7 @@
         <TownIcon name="coin" />
         <div>
           <strong>{{ number(town.coins) }}</strong
-          ><span>{{ t('TOWN COINS') }}</span>
+          ><span>{{ t('Coins') }}</span>
         </div>
       </div>
     </div>
@@ -19,7 +19,7 @@
       <button :aria-label="t('Village tour')" @click="tourOpen = true">
         <GameIcon name="info" />
       </button>
-      <span class="town-hammer-stock"
+      <span v-if="campaign.builderHammers > 0" class="town-hammer-stock"
         ><img src="/art/rewards/builder-hammer.svg" alt="" />{{
           t('Builder hammers: {count}/{cap}', {
             count: campaign.builderHammers,
@@ -53,12 +53,14 @@
           ref="fullscreenButton"
           class="town-fullscreen-button"
           :aria-label="t(fullscreen ? 'Exit full screen village' : 'Full screen village')"
+          :title="t(fullscreen ? 'Exit full screen village' : 'Full screen village')"
           :aria-pressed="fullscreen"
           @click="fullscreen = !fullscreen"
         >
-          <GameIcon :name="fullscreen ? 'close' : 'expand'" />
+          <GameIcon name="expand" />
         </button>
         <button
+          v-if="built > 0"
           class="town-fullscreen-button town-story-button"
           :aria-label="t('Read village story')"
           :title="t('Read village story')"
@@ -67,13 +69,20 @@
           <GameIcon name="book" />
         </button>
         <button
-          class="town-fullscreen-button town-labels-button"
-          :aria-label="t('Building labels')"
-          :title="t(settings.showVillageLabels ? 'Hide building labels' : 'Show building labels')"
-          :aria-pressed="settings.showVillageLabels"
-          @click="settings.setVillageLabels(!settings.showVillageLabels)"
+          class="town-fullscreen-button town-help-button"
+          :aria-label="t('Village tour')"
+          :title="t('Village tour')"
+          @click="tourOpen = true"
         >
-          <GameIcon :name="settings.showVillageLabels ? 'eye' : 'eye-off'" />
+          <GameIcon name="info" />
+        </button>
+        <button
+          class="town-fullscreen-button town-settings-button"
+          :aria-label="t('Settings')"
+          :title="t('Settings')"
+          @click="settings.toggleSettings(true)"
+        >
+          <GameIcon name="settings" />
         </button>
         <div
           v-if="fullscreen && !activeRaid"
@@ -82,25 +91,19 @@
         >
           <TownIcon name="coin" /><strong>{{ number(town.coins) }}</strong>
         </div>
-        <div class="town-map-caption">
-          <span>{{
-            t('{built}/{total} built', { built: built, total: currentEraPlots.length })
-          }}</span>
+        <div v-if="campaign.builderHammers > 0" class="town-map-caption">
           <span
             class="town-map-hammers"
+            :title="t('Builder hammers')"
             :aria-label="
               t('Builder hammers: {count}/{cap}', {
                 count: campaign.builderHammers,
                 cap: HAMMER_CAPACITY,
               })
             "
+            ><img src="/art/rewards/builder-hammer.svg" alt="" />{{ campaign.builderHammers }}</span
           >
-            <img src="/art/rewards/builder-hammer.svg" alt="" />{{ campaign.builderHammers }}
-          </span>
         </div>
-        <button v-if="!activeRaid" class="town-plots-button" @click="openDirectory">
-          {{ t('Available plots') }} <TownIcon name="arrow" />
-        </button>
         <button
           v-if="fullscreen && !activeRaid && (town.era !== 'frontier' || town.buildings.home > 0)"
           class="town-plots-button town-projects-button"
@@ -222,29 +225,36 @@
           "
           @close="raidNotice = null"
         />
-        <TownNextStep
+        <div
           v-if="!activeRaid && !town.transition?.pending && !openingPresentation"
-          id="village-progress"
-          v-show="progressOpen"
-          class="village-next-inline"
-          :town="town"
-          :hammers="campaign.builderHammers"
-          @select="selectBuilding"
-          @inspect="inspectBuilding"
-          @mine="goMining"
-          @advance-era="beginEra"
-        />
-        <button
-          v-if="!activeRaid && !town.transition?.pending && !openingPresentation"
-          class="town-progress-button"
-          aria-controls="village-progress"
-          :aria-expanded="progressOpen"
-          @click="progressOpen = !progressOpen"
+          class="town-progress-panel"
         >
-          <img src="/art/rewards/era-compass.svg" alt="" />{{
-            t(progressOpen ? 'Hide progress' : 'Progress')
-          }}
-        </button>
+          <div class="town-progress-toolbar">
+            <button
+              class="town-progress-handle"
+              aria-controls="village-progress"
+              :aria-expanded="progressOpen"
+              @click="progressOpen = !progressOpen"
+            >
+              <GameIcon name="chevron" />{{ t(progressOpen ? 'Hide progress' : 'Progress') }}
+            </button>
+            <button class="town-plots-button" @click="openDirectory">
+              {{ t('Available plots') }} <TownIcon name="arrow" />
+            </button>
+          </div>
+          <TownNextStep
+            id="village-progress"
+            v-show="progressOpen"
+            class="village-next-inline"
+            :town="town"
+            :hammers="campaign.builderHammers"
+            @select="selectBuilding"
+            @inspect="inspectBuilding"
+            @build-free="buildFree"
+            @mine="goMining"
+            @advance-era="beginEra"
+          />
+        </div>
         <span class="town-sr-only" role="status">{{ t(announcement) }}</span>
       </div>
       <div class="town-needs" :aria-label="t('Basic town needs')">
@@ -316,7 +326,10 @@
             : dialogMode === 'story'
               ? 'Village story'
               : dialogMode === 'directory'
-                ? 'Choose a plot'
+                ? t('Available plots · {built}/{total} built', {
+                    built,
+                    total: currentEraPlots.length,
+                  })
                 : 'Your town',
         )
       "
@@ -692,8 +705,8 @@ const campaign = useCampaignStore(),
   settings = useSettingsStore();
 const game = useGameStore();
 const town = computed(() => campaign.town);
-const progressOpen = ref(!window.matchMedia('(max-width: 900px), (max-height: 500px)').matches);
-const tourOpen = ref(!campaign.town.tourSeen),
+const progressOpen = ref(true);
+const tourOpen = ref(false),
   fullscreen = ref(false),
   mapFrame = ref(null),
   fullscreenButton = ref(null);
@@ -861,8 +874,10 @@ watch(
   openingPresentation,
   (definition) => {
     presentationReady.value = false;
+    presentationFallback.value = false;
     if (definition) {
       closeDialog();
+      museumOpen.value = false;
       fullscreen.value = true;
     }
   },
@@ -1024,6 +1039,12 @@ async function ringBell() {
   announcement.value = t('Bell rung · remaining loss: {coins} coins', { coins: event.value.loss });
   return true;
 }
+function buildFree(id) {
+  const offer = upgradeOffer(town.value, id);
+  if (!offer?.available || offer.cost !== 0) return;
+  selected.value = id;
+  repair(offer.stage);
+}
 function selectParcel(id) {
   if (constructionReady(town.value.projects[id])) finishBuilding(id, true);
   else {
@@ -1162,7 +1183,7 @@ function visibilityChanged() {
 function enterVillage() {
   collectionNow.value = Date.now();
   fullscreen.value = true;
-  tourOpen.value = !campaign.town.tourSeen;
+  tourOpen.value = false;
   museumOpen.value = props.openMuseum && campaign.canReplay;
   campaign.lastConstruction = [];
   campaign.accrueSaloonIncome();

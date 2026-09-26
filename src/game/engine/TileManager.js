@@ -108,9 +108,16 @@ export class TileManager {
       });
 
       const damageTargets = new Set([...impacted, ...protectedIndices]);
-      // A block takes one hit per cascade step, even if several matched gems
-      // or overlapping blast cells touch it. Diagonal matches do not damage it.
-      for (const index of [...damageTargets]) {
+      // Only ordinary matches damage adjacent blocks. Special effects must hit
+      // the block itself; clearing a nearby gem does not extend their footprint.
+      const matchedIndices = new Set(
+        pendingMatches
+          .filter((match) => GEM_TYPES.includes(match.type))
+          .flatMap((match) => match.indices)
+          .filter((index) => damageTargets.has(index)),
+      );
+      // A block takes at most one hit per step, including overlapping matches.
+      for (const index of matchedIndices) {
         for (const neighbor of neighborsOf(index, totalCols, totalRows)) {
           if (tiles[neighbor]?.type === 'blocker' && tiles[neighbor].health > 0)
             damageTargets.add(neighbor);
@@ -234,6 +241,7 @@ export class TileManager {
           swap,
           fusion,
           swapGems,
+          tiles,
         );
         pendingMatches = [{ type: 'bonus-activation', indices, ...(fusion ? { fusion } : {}) }];
         pendingBonus = null;
@@ -333,11 +341,9 @@ export class TileManager {
       !protectedIndices.has(index)
     ) {
       cleared.add(index);
-      // Keep the established payout ledger unchanged; ore objectives also count
-      // ordinary gems removed by a fusion, including those released from chains.
+      // Every removed jewel uses the same ledger for mining and ore objectives.
       if (GEM_TYPES.includes(board[index].type)) {
-        step.fusionOreJewels ??= [];
-        step.fusionOreJewels.push({ id: board[index].id, type: board[index].type });
+        step.collectedJewels.push({ id: board[index].id, type: board[index].type });
       }
       board[index] = null;
     }

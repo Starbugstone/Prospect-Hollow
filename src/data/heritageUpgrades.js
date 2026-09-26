@@ -27,3 +27,24 @@ export const HERITAGE_UPGRADES = {
 export function heritageUpgrade(kind) {
   return HERITAGE_UPGRADES[kind] ?? null;
 }
+
+export const HERITAGE_DESCRIPTIONS = {
+  veranda: 'Add a veranda.',
+  hayloft: 'Add a hayloft.',
+  carriage: 'Add a carriage shelter.',
+  office: 'Add patrol offices.',
+  portico: 'Add a columned portico.',
+  awning: 'Add a trading awning.',
+  gallery: 'Add a mineral gallery.',
+  freight: 'Add a freight loading shelter.',
+  workshop: 'Add a workshop.',
+  generator: 'Add a generator hall.',
+  engineBay: 'Add an engine bay.',
+  classroom: 'Add a classroom wing.',
+  clinic: 'Add a clinic wing.',
+  platform: 'Add a covered platform.',
+  dispatch: 'Add dispatch rooms and telegraph fittings.',
+};
+export const heritageDescription = (kind) =>
+  HERITAGE_DESCRIPTIONS[heritageUpgrade(kind)] ??
+  'Complete the landmark with its working extensions.';

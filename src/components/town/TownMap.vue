@@ -289,6 +289,7 @@
         :class="{
           selected: selected === building.id,
           'is-repaired': town.buildings[building.id] > 0,
+          'suggested-plot': building.id === suggestedId,
         }"
         @click="!readOnly && $emit('select', building.id)"
         @keydown.enter.prevent="!readOnly && $emit('select', building.id)"
@@ -354,9 +355,7 @@
         />
         <g
           v-if="
-            town.buildings[building.id] ||
-            town.projects[building.id] ||
-            availableIds.includes(building.id)
+            town.buildings[building.id] || town.projects[building.id] || building.id === suggestedId
           "
           class="map-label"
           transform="translate(0 35)"
@@ -371,8 +370,8 @@
             :fill="
               constructionReady(town.projects[building.id]) || hasIncome(building.id)
                 ? '#e1f0c0'
-                : availableIds.includes(building.id)
-                  ? '#d9f1fa'
+                : building.id === suggestedId
+                  ? '#f7dfa1'
                   : '#ffffff'
             "
           />
@@ -396,6 +395,10 @@
             }}
             <tspan v-if="town.buildings[building.id]" font-size="13">✓</tspan>
           </text>
+        </g>
+        <g v-else class="quiet-map-marker" transform="translate(0 35)" aria-hidden="true">
+          <circle r="22" fill="#f7f1dc" stroke="#a9a88c" />
+          <text y="7" text-anchor="middle" fill="#405b4c" font-size="25">+</text>
         </g>
       </g>
       <g v-if="hasElectricity(town)" aria-hidden="true">
@@ -568,6 +571,7 @@ import {
 } from '../../game/town/TownEvolution';
 import { computed, nextTick, ref, useId, watch } from 'vue';
 import {
+  nextGoal,
   constructionVisual,
   constructionReady,
   availablePurchases,
@@ -671,6 +675,7 @@ watch(
   },
 );
 const hasIncome = (id) => indicators.value[id] === 'coins';
+const suggestedId = computed(() => nextGoal(props.town)?.id);
 const indicators = computed(() =>
   props.readOnly ? {} : buildingIndicators(props.town, props.forgeCollectible, props.now),
 );

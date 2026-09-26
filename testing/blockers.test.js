@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { TileManager } from '../src/game/engine/TileManager';
 import { MatchEngine } from '../src/game/engine/MatchEngine';
+import { BonusActivator } from '../src/game/engine/BonusActivator';
+import { HintEngine } from '../src/game/engine/HintEngine';
 import { createGem } from '../src/game/engine/GemFactory';
 import { useGameStore } from '../src/stores/gameStore';
 
@@ -49,6 +51,66 @@ describe('Stone barriers', () => {
     const state = makeBoard();
     manager.getResolution({ ...state, matches: [{ type: 'ruby', indices: [0, 5, 10] }] });
     expect(state.tiles[12].health).toBe(2);
+  });
+  it.each(['tnt', 'tile_breaker', 'clear_row', 'color_wand', 'bonus-activation'])(
+    'does not extend %s damage to a block beside its footprint',
+    (type) => {
+      const state = makeBoard(1);
+      const result = manager.getResolution({
+        ...state,
+        matches: [{ type, indices: [6, 7, 8] }],
+      });
+      expect(state.tiles[12]).toMatchObject({ type: 'blocker', health: 1 });
+      expect(result.steps[0].tileUpdates).not.toContainEqual(
+        expect.objectContaining({ index: 12 }),
+      );
+    },
+  );
+  it('damages only blocks inside the actual bomb radius', () => {
+    const state = makeBoard(1);
+    state.board[0] = createGem('bomb');
+    state.board[6] = null;
+    state.tiles[6] = { type: 'blocker', health: 1, maxHealth: 1 };
+    state.board[7] = null;
+    state.tiles[7] = { type: 'blocker', health: 1, maxHealth: 1 };
+    const evaluation = new MatchEngine().evaluateActivation(state.board, 5, 5, 0, state.tiles);
+    manager.getResolution({ ...state, ...evaluation });
+    expect(state.tiles[6]).toMatchObject({ type: 'standard', health: 0 });
+    expect(state.tiles[7]).toMatchObject({ type: 'blocker', health: 1 });
+  });
+  it('still damages a remote block reached by a chained bomb', () => {
+    const state = makeBoard(1);
+    state.board[0] = createGem('bomb');
+    state.board[6] = createGem('bomb');
+    const indices = new BonusActivator().activate(state.board, 5, 5, { aIndex: 0, bIndex: -1 });
+    expect(indices).toContain(12);
+    manager.getResolution({ ...state, matches: [{ type: 'bonus-activation', indices }] });
+    expect(state.tiles[12].health).toBe(0);
+  });
+  it('does not reward a hint for block damage outside a bonus footprint', () => {
+    const board = Array(25).fill(null);
+    board[0] = createGem('bomb');
+    board[1] = createGem('ruby');
+    const tiles = board.map(() => ({ type: 'standard', health: 0 }));
+    const hints = new HintEngine();
+    const baseline = hints.findBestMove(board, tiles, 5, 5);
+    tiles[8] = { type: 'blocker', health: 1 };
+    expect(hints.findBestMove(board, tiles, 5, 5).heuristicScore).toBe(baseline.heuristicScore);
+    tiles[7] = { type: 'blocker', health: 1 };
+    expect(hints.findBestMove(board, tiles, 5, 5).heuristicScore).toBeGreaterThan(
+      baseline.heuristicScore,
+    );
+  });
+  it('retains adjacent match damage in a step that also contains a blast', () => {
+    const state = makeBoard();
+    manager.getResolution({
+      ...state,
+      matches: [
+        { type: 'ruby', indices: [6, 7, 8] },
+        { type: 'tnt', indices: [11, 16, 21] },
+      ],
+    });
+    expect(state.tiles[12].health).toBe(1);
   });
   it.each(['tnt', 'tile_breaker', 'bonus-activation', 'clear_row'])(
     'takes one hit from a direct %s blast and its overlapping neighbors',

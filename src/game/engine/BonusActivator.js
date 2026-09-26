@@ -1,3 +1,5 @@
+import { isAnchored } from './TileRules.js';
+import { GEM_TYPES } from './GemFactory.js';
 import { dominantGemType, getBonusFusion } from './BonusFusion.js';
 
 export class BonusActivator {
@@ -19,7 +21,7 @@ export class BonusActivator {
     return this.BONUS_TYPES.has(type);
   }
 
-  previewSwap(board, cols, rows, swap) {
+  previewSwap(board, cols, rows, swap, tiles = []) {
     if (!swap || swap.aIndex == null || swap.bIndex == null) {
       return [];
     }
@@ -36,7 +38,7 @@ export class BonusActivator {
       [clonedBoard[aIndex], clonedBoard[bIndex]] = [clonedBoard[bIndex], clonedBoard[aIndex]];
     }
 
-    return this.activate(clonedBoard, cols, rows, swap) ?? [];
+    return this.activate(clonedBoard, cols, rows, swap, undefined, null, tiles) ?? [];
   }
 
   activate(
@@ -46,80 +48,84 @@ export class BonusActivator {
     swap,
     fusion = getBonusFusion(board, cols, rows, swap),
     swapGems = null,
+    tiles = [],
   ) {
-    if (!swap) {
-      return [];
-    }
-
-    // A match may already have cleared or transformed the rainbow's chosen color.
+    if (!swap) return [];
     const { a, b } = swapGems ?? { a: board[swap.aIndex], b: board[swap.bIndex] };
+    const seeds = fusion
+      ? []
+      : [
+          [swap.aIndex, a, b],
+          [swap.bIndex, b, a],
+        ]
+          .filter(([, gem]) => this.isBonus(gem?.type))
+          .map(([index, gem, counterpart]) => ({
+            index,
+            type: gem.type,
+            context:
+              gem.type === 'rainbow'
+                ? {
+                    targetType: GEM_TYPES.includes(counterpart?.type)
+                      ? counterpart.type
+                      : dominantGemType(board),
+                  }
+                : {},
+          }));
+    return this.resolveChain(board, cols, rows, {
+      tiles,
+      fusion,
+      seeds,
+      targets: fusion?.targets ?? [],
+      processed: fusion ? [swap.aIndex, swap.bIndex] : [],
+    });
+  }
 
-    const allCleared = new Set();
-    const queue = [];
-    const processed = new Set();
+  // Toolbar powers and board bonuses share the same reaction and anchor rules.
+  activatePower(type, board, cols, rows, index, tiles = []) {
+    if (!Number.isInteger(index) || index < 0 || index >= board.length) return [];
+    const targets = this.activateBonus(type, board, cols, rows, index);
+    return this.resolveChain(board, cols, rows, { targets, tiles });
+  }
 
-    const enqueue = (index, gem, context = {}) => {
-      if (!gem || !this.isBonus(gem.type)) {
-        return;
-      }
-      queue.push({ index, type: gem.type, context });
+  resolveChain(
+    board,
+    cols,
+    rows,
+    { targets = [], seeds = [], processed = [], tiles = [], fusion = null },
+  ) {
+    const affected = new Set();
+    const visited = new Set(processed);
+    const queue = [...seeds];
+    const fusionTargets = new Set(fusion?.targets ?? []);
+    const canFire = (index) => {
+      const tile = tiles[index];
+      if (!isAnchored(tile)) return true;
+      // A fusion thaws first and spends its two hits on chains before the gem.
+      const hits = 2 - (tile?.chainHealth ?? 0);
+      return (
+        fusionTargets.has(index) && hits > 0 && (tile?.type !== 'blocker' || tile.health <= hits)
+      );
     };
-
-    const rainbowContext = (gem, counterpart) => {
-      if (!counterpart) {
-        return { mode: 'random' };
+    const touch = (index) => {
+      if (index < 0 || index >= board.length || affected.has(index)) return;
+      affected.add(index);
+      const gem = board[index];
+      if (this.isBonus(gem?.type) && !visited.has(index)) {
+        queue.push({
+          index,
+          type: gem.type,
+          context: { targetType: fusion?.targetType ?? dominantGemType(board) },
+        });
       }
-      if (counterpart.type === 'rainbow') {
-        return { mode: 'all' };
-      }
-      if (this.isBonus(counterpart.type)) {
-        return { mode: 'random' };
-      }
-      return { mode: 'target', targetType: counterpart.type };
     };
-
-    const chainContext = (gem) =>
-      fusion && gem?.type === 'rainbow'
-        ? { mode: 'target', targetType: fusion.targetType ?? dominantGemType(board) }
-        : this.chainContextFor(gem);
-    if (fusion) {
-      processed.add(swap.aIndex);
-      processed.add(swap.bIndex);
-      fusion.targets.forEach((index) => {
-        allCleared.add(index);
-        if (!processed.has(index)) enqueue(index, board[index], chainContext(board[index]));
-      });
-    } else {
-      enqueue(swap.aIndex, a, a?.type === 'rainbow' ? rainbowContext(a, b) : {});
-      enqueue(swap.bIndex, b, b?.type === 'rainbow' ? rainbowContext(b, a) : {});
+    targets.forEach(touch);
+    for (let cursor = 0; cursor < queue.length; cursor++) {
+      const { index, type, context } = queue[cursor];
+      if (visited.has(index) || !canFire(index)) continue;
+      visited.add(index);
+      this.activateBonus(type, board, cols, rows, index, context).forEach(touch);
     }
-
-    while (queue.length) {
-      const { index, type, context } = queue.shift();
-      if (processed.has(index)) {
-        continue;
-      }
-      processed.add(index);
-
-      const result = this.activateBonus(type, board, cols, rows, index, context);
-      result.forEach((resolvedIndex) => {
-        if (!allCleared.has(resolvedIndex)) {
-          allCleared.add(resolvedIndex);
-          if (resolvedIndex !== index) {
-            const gem = board[resolvedIndex];
-            if (this.isBonus(gem?.type) && !processed.has(resolvedIndex)) {
-              queue.push({
-                index: resolvedIndex,
-                type: gem.type,
-                context: chainContext(gem),
-              });
-            }
-          }
-        }
-      });
-    }
-
-    return [...allCleared];
+    return [...affected];
   }
 
   activateBonus(type, board, cols, rows, index, context = {}) {
@@ -147,88 +153,9 @@ export class BonusActivator {
     }
   }
 
-  /**
-   * Preview which tiles would be affected by a power without actually activating it.
-   * Used for hover highlighting on interactive powers.
-   */
-  previewBonus(type, board, cols, rows, index) {
-    if (!board || index == null || index < 0 || index >= board.length) {
-      return [];
-    }
-
-    // Clone the board so we don't modify the original
-    const clonedBoard = board.map((cell) => (cell ? { ...cell } : null));
-
-    switch (type) {
-      case 'tnt':
-        // TNT acts like a bomb (3x3 area)
-        return this._previewBomb(clonedBoard, cols, rows, index);
-      case 'color_wand':
-        // Color wand clears all gems of the same type
-        return this._previewColorWand(clonedBoard, index);
-      case 'tile_breaker':
-        // Tile breaker acts like a cross (row + column)
-        return this._previewCross(clonedBoard, cols, rows, index);
-      default:
-        return [index];
-    }
-  }
-
-  _previewBomb(board, cols, rows, index) {
-    const row = Math.floor(index / cols);
-    const col = index % cols;
-    const indices = [];
-
-    for (let dy = -1; dy <= 1; dy++) {
-      for (let dx = -1; dx <= 1; dx++) {
-        const nr = row + dy;
-        const nc = col + dx;
-        if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
-          indices.push(nr * cols + nc);
-        }
-      }
-    }
-    return indices;
-  }
-
-  _previewColorWand(board, index) {
-    const targetGem = board[index];
-    if (targetGem?.type === 'relic') return [];
-    if (!targetGem) return [index];
-
-    const indices = [];
-    board.forEach((gem, i) => {
-      if (gem && gem.type === targetGem.type) {
-        indices.push(i);
-      }
-    });
-    return indices;
-  }
-
-  _previewCross(board, cols, rows, index) {
-    const row = Math.floor(index / cols);
-    const col = index % cols;
-    const indices = new Set();
-
-    // Entire row
-    for (let c = 0; c < cols; c++) {
-      indices.add(row * cols + c);
-    }
-    // Entire column
-    for (let r = 0; r < rows; r++) {
-      indices.add(r * cols + col);
-    }
-    return [...indices];
-  }
-
-  chainContextFor(gem) {
-    if (!gem || !this.isBonus(gem.type)) {
-      return {};
-    }
-    if (gem.type === 'rainbow') {
-      return { mode: 'random' };
-    }
-    return {};
+  previewBonus(type, board, cols, rows, index, tiles = []) {
+    if (!Array.isArray(board)) return [];
+    return this.activatePower(type, board, cols, rows, index, tiles);
   }
 
   activateBomb(board, cols, rows, index) {
@@ -255,26 +182,11 @@ export class BonusActivator {
           cleared.add(i);
         }
       });
-    } else if (mode === 'target' && context?.targetType) {
-      board.forEach((cell, i) => {
-        if (cell?.type === context.targetType) {
-          cleared.add(i);
-        }
-      });
     } else {
-      const available = board
-        .map((cell, i) => (cell ? i : null))
-        .filter((i) => i != null && i !== index);
-
-      const picks = Math.min(15, available.length);
-      for (let count = 0; count < picks; count += 1) {
-        if (!available.length) {
-          break;
-        }
-        const randomIndex = Math.floor(Math.random() * available.length);
-        const [selected] = available.splice(randomIndex, 1);
-        cleared.add(selected);
-      }
+      const targetType = context?.targetType ?? dominantGemType(board);
+      board.forEach((cell, i) => {
+        if (cell?.type === targetType) cleared.add(i);
+      });
     }
 
     cleared.add(index);
@@ -376,7 +288,7 @@ export class BonusActivator {
 
   activateColorWand(board, cols, rows, index) {
     const targetGem = board[index];
-    if (!targetGem || targetGem.type === 'relic') return [];
+    if (!GEM_TYPES.includes(targetGem?.type)) return [];
 
     const cleared = new Set();
     board.forEach((gem, i) => {

@@ -23,13 +23,22 @@ export function addCityLandmarkDetails(d, parent, family, era, level) {
       d.box(root, 0.1, 1.8, 0.85, x, 1.02, site.z + site.depth / 2, a.wall);
   }
   if (level >= 2) {
-    const x = -site.width / 2 - 0.45;
-    d.box(root, 1.1, 1.8, 2.3, x, 1, site.z, a.wall);
+    const x = -site.width / 2 - 0.8;
+    d.box(root, 1.6, 2.6, 3, x, 1.4, site.z, a.wall);
     d.box(root, 0.9, 1.15, 0.06, x, 1.2, site.z + 1.18, '#85b8c8');
-    d.box(root, 1.3, 0.16, 2.55, x, 1.98, site.z, a.roof);
+    d.box(root, 1.8, 0.16, 3.2, x, 2.78, site.z, a.roof);
     if (a.solar)
       for (const z of [-0.65, 0, 0.65])
         d.box(root, 1.05, 0.04, 0.45, x, 2.09, site.z + z, '#526f79');
+  }
+  if (level >= 3) {
+    const front = site.z + site.depth / 2 + 1;
+    d.box(root, site.width, 0.2, 1.4, 0, 2.7, front, a.roof);
+    for (const x of [-site.width * 0.4, site.width * 0.4]) {
+      d.rod(root, [x, 0.1, front], [x, 2.7, front], 0.1, a.wall);
+      d.box(root, 0.8, 0.4, 0.8, x, 0.3, front + 0.6, a.wall);
+      d.ball(root, x, 0.8, front + 0.6, [0.45, 0.5, 0.45], '#8fa773');
+    }
   }
   if (level >= 3)
     for (const side of [-1, 1]) {

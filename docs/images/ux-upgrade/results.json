@@ -1,0 +1,225 @@
+{
+  "results": [
+    {
+      "language": "en",
+      "view": "town",
+      "size": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "language": "en",
+      "view": "town",
+      "size": {
+        "width": 1280,
+        "height": 800
+      }
+    },
+    {
+      "language": "en",
+      "view": "town",
+      "size": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "language": "en",
+      "view": "town",
+      "size": {
+        "width": 320,
+        "height": 568
+      }
+    },
+    {
+      "language": "en",
+      "view": "town",
+      "size": {
+        "width": 844,
+        "height": 390
+      }
+    },
+    {
+      "language": "en",
+      "view": "mine",
+      "size": {
+        "width": 1440,
+        "height": 900
+      },
+      "board": {
+        "x": 418.421875,
+        "y": 171,
+        "width": 603.140625,
+        "height": 703.65625
+      }
+    },
+    {
+      "language": "en",
+      "view": "mine",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "board": {
+        "x": 381.28125,
+        "y": 171,
+        "width": 517.421875,
+        "height": 603.65625
+      }
+    },
+    {
+      "language": "en",
+      "view": "mine",
+      "size": {
+        "width": 390,
+        "height": 844
+      },
+      "board": {
+        "x": 15,
+        "y": 165,
+        "width": 360,
+        "height": 420
+      }
+    },
+    {
+      "language": "en",
+      "view": "mine",
+      "size": {
+        "width": 320,
+        "height": 568
+      },
+      "board": {
+        "x": 15,
+        "y": 165,
+        "width": 290,
+        "height": 338.328125
+      }
+    },
+    {
+      "language": "en",
+      "view": "mine",
+      "size": {
+        "width": 844,
+        "height": 390
+      },
+      "board": {
+        "x": 291.859375,
+        "y": 57,
+        "width": 260.28125,
+        "height": 303.65625
+      }
+    },
+    {
+      "language": "fr",
+      "view": "town",
+      "size": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "language": "fr",
+      "view": "town",
+      "size": {
+        "width": 1280,
+        "height": 800
+      }
+    },
+    {
+      "language": "fr",
+      "view": "town",
+      "size": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "language": "fr",
+      "view": "town",
+      "size": {
+        "width": 320,
+        "height": 568
+      }
+    },
+    {
+      "language": "fr",
+      "view": "town",
+      "size": {
+        "width": 844,
+        "height": 390
+      }
+    },
+    {
+      "language": "fr",
+      "view": "mine",
+      "size": {
+        "width": 1440,
+        "height": 900
+      },
+      "board": {
+        "x": 418.421875,
+        "y": 171,
+        "width": 603.140625,
+        "height": 703.65625
+      }
+    },
+    {
+      "language": "fr",
+      "view": "mine",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "board": {
+        "x": 381.28125,
+        "y": 171,
+        "width": 517.421875,
+        "height": 603.65625
+      }
+    },
+    {
+      "language": "fr",
+      "view": "mine",
+      "size": {
+        "width": 390,
+        "height": 844
+      },
+      "board": {
+        "x": 15,
+        "y": 165,
+        "width": 360,
+        "height": 420
+      }
+    },
+    {
+      "language": "fr",
+      "view": "mine",
+      "size": {
+        "width": 320,
+        "height": 568
+      },
+      "board": {
+        "x": 15,
+        "y": 171.390625,
+        "width": 290,
+        "height": 338.328125
+      }
+    },
+    {
+      "language": "fr",
+      "view": "mine",
+      "size": {
+        "width": 844,
+        "height": 390
+      },
+      "board": {
+        "x": 291.859375,
+        "y": 57,
+        "width": 260.28125,
+        "height": 303.65625
+      }
+    }
+  ],
+  "errors": []
+}

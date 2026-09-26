@@ -286,6 +286,7 @@ describe('GameStore bonus preview highlighting', () => {
       animator: {
         showBonusPreview: vi.fn(),
         clearBonusPreview: vi.fn(),
+        fadeBonusPreview: vi.fn(),
         playSteps: vi.fn(() => Promise.resolve()),
         updateTiles: vi.fn(),
       },
@@ -307,5 +308,34 @@ describe('GameStore bonus preview highlighting', () => {
     gameStore.clearBonusPreview(true);
     expect(gameStore.bonusPreview.indices).toHaveLength(0);
     expect(gameStore.renderer.animator.clearBonusPreview).toHaveBeenCalled();
+  });
+
+  it('fades the accepted target while the power animation is still running', async () => {
+    let finish;
+    const animator = gameStore.renderer.animator;
+    animator.playSteps.mockImplementation(() => new Promise((resolve) => (finish = resolve)));
+    vi.spyOn(gameStore, 'ensurePlayableBoard').mockResolvedValue(true);
+    gameStore.activeBonusMode = 'tnt';
+    gameStore.previewPowerEffect(0);
+    useInventoryStore().quickAccessSlots.find((slot) => slot.id === 'tnt').quantity = 1;
+    const activation = gameStore.resolveBonusClick(0);
+    expect(gameStore.animationInProgress).toBe(true);
+    expect(animator.playSteps).toHaveBeenCalledOnce();
+    expect(animator.fadeBonusPreview).toHaveBeenCalledOnce();
+    expect(gameStore.bonusPreview).toEqual({ indices: [], key: null });
+    finish();
+    await activation;
+    gameStore.cancelHint(true);
+    vi.restoreAllMocks();
+  });
+
+  it('clears the cached footprint when a target is queued during a cascade', async () => {
+    gameStore.activeBonusMode = 'tnt';
+    gameStore.previewPowerEffect(0);
+    gameStore.animationInProgress = true;
+    expect(await gameStore.resolveBonusClick(0)).toBe(true);
+    expect(gameStore.queuedBonus).toEqual({ index: 0, bonusName: 'tnt' });
+    expect(gameStore.bonusPreview).toEqual({ indices: [], key: null });
+    expect(gameStore.renderer.animator.clearBonusPreview).toHaveBeenCalledOnce();
   });
 });

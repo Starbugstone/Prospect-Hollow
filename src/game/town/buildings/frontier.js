@@ -40,6 +40,9 @@ const DETAILS = {
     if (stage >= 3) d.box(parent, 0.55, 1.7, 1.5, -1.5, 1.02, 0, '#8c9e91');
   },
   saloon(d, parent, stage) {
+    const chimneyY = stage >= 2 ? 4.45 : 3;
+    d.box(parent, 0.3, 0.8, 0.35, 0.65, chimneyY, -0.6, '#a76c53');
+    d.group(parent, 0.65, chimneyY + 0.4, -0.6).name = 'chimney';
     d.box(parent, 3.1, 0.15, 0.9, 0, 0.14, 1.75, '#bca06d');
     for (const x of [-1.4, 1.4]) d.box(parent, 0.1, 1.5, 0.1, x, 0.92, 2.13, colors.trim);
     for (let n = 0; n < 8; n++) {
@@ -69,11 +72,20 @@ const DETAILS = {
       }
   },
   home(d, parent, stage) {
-    d.box(parent, 0.3, 0.8, 0.35, -0.65, 2.9, -0.6, '#a76c53');
+    d.box(parent, 0.3, 0.8, 0.35, -0.65, stage >= 3 ? 4.3 : 2.9, -0.6, '#a76c53');
+    d.group(parent, -0.65, stage >= 3 ? 4.7 : 3.3, -0.6).name = 'chimney';
     if (stage > 1) d.homeWing(parent, 4);
   },
 };
-export function renderFrontierBuilding(d, parent, id, stage, label, framing = false) {
+export function renderFrontierBuilding(
+  d,
+  parent,
+  id,
+  stage,
+  label,
+  framing = false,
+  details = true,
+) {
   const fronts = {
     home: '#c59376',
     farm: '#a96f52',
@@ -149,6 +161,6 @@ export function renderFrontierBuilding(d, parent, id, stage, label, framing = fa
     d.box(parent, w + 0.3, 0.12, 0.2, 0, 2.91, 1.3, colors.trim);
     d.sign(parent, label, 2.05, 0, 2.45, 1.39);
   } else d.sign(parent, label, 1.4, 0, 1.98, 1.3);
-  DETAILS[id]?.(d, parent, stage);
+  if (details) DETAILS[id]?.(d, parent, stage);
   for (const x of [-1.3, 1.3]) d.ball(parent, x, 0.17, 1.45, [0.32, 0.18, 0.27], '#8b9e62');
 }

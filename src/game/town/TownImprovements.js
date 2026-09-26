@@ -102,7 +102,8 @@ function tower(d, parent, x, color, windmill = false) {
 }
 export function addImprovements(d, parent, kind, stage, era = 'frontier') {
   if (stage < 2 || kind === 'square') return null;
-  if (stage >= 4) {
+  if (kind === 'well' && eraEvolution(era).style !== 'frontier') return null;
+  if (stage >= 4 && ['saloon', 'bank', 'sheriff'].includes(kind)) {
     for (const x of [-1.15, 1.15]) {
       d.box(parent, 0.8, 0.5, 0.65, x, 0.3, 2.5, '#b69c70');
       d.ball(parent, x, 0.7, 2.5, [0.5, 0.35, 0.4], '#81996a');
@@ -111,7 +112,7 @@ export function addImprovements(d, parent, kind, stage, era = 'frontier') {
       d.box(parent, 0.65, 0.9, 0.045, x * 1.35, 2.9, -1.5, '#9fbca3');
     }
   }
-  if (stage >= 5) {
+  if (stage >= 5 && ['saloon', 'bank', 'sheriff'].includes(kind)) {
     // A broad timber entrance pergola changes the silhouette even from the overview.
     for (const x of [-1.65, 1.65]) {
       d.box(parent, 0.15, 2.3, 0.15, x, 1.15, 2.6, '#e1cf9e');
@@ -144,9 +145,11 @@ export function addImprovements(d, parent, kind, stage, era = 'frontier') {
       }
     }
   } else if (kind === 'farm') {
+    d.box(parent, 1.2, 1.6, 2.1, -1.9, 0.9, -0.1, '#a96f52');
+    d.box(parent, 1.45, 0.18, 2.3, -1.9, 1.8, -0.1, '#768d81');
     d.mesh(parent, 'cylinder', [0.43, 1.5, 0.43], [1.85, 0.8, -0.7], '#b3b7a0');
     d.mesh(parent, 'cone', [0.49, 0.42, 0.49], [1.85, 1.7, -0.7], '#768d81');
-    if (stage >= 3) return tower(d, parent, -1.6, '#b6a279', true);
+    if (stage >= 3) return tower(d, parent, -2.7, '#b6a279', true);
   } else if (kind === 'sheriff') {
     const annex = d.group(parent, 1.65, 0, -0.15);
     d.box(annex, 0.85, 1.8, 1.9, 0, 1, 0, '#869f9a');

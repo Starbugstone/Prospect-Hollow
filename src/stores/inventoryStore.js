@@ -9,8 +9,10 @@ export const useInventoryStore = defineStore('inventory', {
   },
   actions: {
     availableQuantity(id) {
-      const quantity = this.quickAccessSlots.find((entry) => entry.id === id)?.quantity ?? 0;
-      return quantity;
+      const inventoryId = id.replaceAll('_', '-');
+      const quantity =
+        this.quickAccessSlots.find((entry) => entry.id === inventoryId)?.quantity ?? 0;
+      return Math.max(0, quantity - Number(useGameStore().powerInUse === inventoryId));
     },
     async usePowerUp(id) {
       const gameStore = useGameStore();
@@ -32,7 +34,8 @@ export const useInventoryStore = defineStore('inventory', {
         switch (id) {
           case 'clear-row':
             gameStore.setBonusMode(null); // Ensure other interactive bonuses toggle off
-            powerUpExecuted = await gameStore.activateOneTimeBonus('clear_row');
+            powerUpExecuted = await gameStore.activateOneTimeBonus('clear_row', { consume: true });
+            consumeImmediately = false;
             break;
           case 'shuffle':
             {
@@ -73,16 +76,7 @@ export const useInventoryStore = defineStore('inventory', {
       return powerUpExecuted;
     },
     consumeItem(id) {
-      // Map internal bonus names back to inventory IDs if needed, or assume they match for now
-      // The gameStore passes the internal bonus mode name (e.g., 'color_wand')
-      // We need to map 'color_wand' -> 'color-wand', 'tile_breaker' -> 'tile-breaker'
-      const modeToIdMap = {
-        tnt: 'tnt',
-        color_wand: 'color-wand',
-        tile_breaker: 'tile-breaker',
-      };
-
-      const inventoryId = modeToIdMap[id] || id;
+      const inventoryId = id.replaceAll('_', '-');
       const slot = this.quickAccessSlots.find((entry) => entry.id === inventoryId);
 
       if (slot && slot.quantity > 0) {

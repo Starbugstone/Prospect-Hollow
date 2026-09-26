@@ -1,17 +1,20 @@
 <template>
   <section class="village-next" :aria-label="t('Your next village step')">
-    <div class="village-needs-strip">
+    <GuidanceTip :tip="tip" />
+    <div v-if="needs.length || showEraProgress" class="village-needs-strip">
       <button
         v-for="need in needs"
         :key="need.id"
         @click="$emit('inspect', need.id)"
         :class="{ shortage: need.shortage }"
         :aria-label="need.label"
+        :title="need.label"
       >
-        <TownIcon :name="need.icon" /><span>{{ need.value }}</span
+        <TownIcon :name="need.icon" /><span>{{ t(need.name) }} {{ need.value }}</span
         ><b v-if="need.shortage" aria-hidden="true">↑</b>
       </button>
       <span
+        v-if="showEraProgress"
         class="village-era-progress"
         :aria-label="
           t('Era improvements: {count}/{total}', {
@@ -23,7 +26,7 @@
         <img src="/art/rewards/era-compass.svg" alt="" /><progress
           :value="eraProgress.done"
           :max="eraProgress.total"
-        /><small>{{ eraProgress.done }}/{{ eraProgress.total }}</small>
+        /><small>{{ t('Town upgrades') }} {{ eraProgress.done }}/{{ eraProgress.total }}</small>
       </span>
     </div>
     <TownDefenseStatus v-if="population(town)" :town="town" @select="$emit('inspect', $event)" />
@@ -88,7 +91,17 @@
           <TownIcon
             :name="ready ? 'check' : gate.available ? 'arrow' : canBuild ? 'home' : 'mine'"
           />{{
-            t(ready ? 'Finish' : gate.available ? 'Next era' : canBuild ? 'Build' : 'Go mining')
+            t(
+              ready
+                ? 'Finish'
+                : gate.available
+                  ? 'Next era'
+                  : canBuild
+                    ? goal.cost === 0
+                      ? 'Build for free'
+                      : 'Build'
+                    : t('Play level {level}', { level: campaign.nextLevel }),
+            )
           }}
         </button>
         <button
@@ -96,7 +109,7 @@
           class="next-step-mine"
           @click="$emit('mine')"
         >
-          <TownIcon name="mine" />{{ t('Mine') }}
+          <TownIcon name="mine" />{{ t('Play level {level}', { level: campaign.nextLevel }) }}
         </button>
       </div>
     </div>
@@ -104,6 +117,9 @@
   </section>
 </template>
 <script setup>
+import GuidanceTip from '../GuidanceTip.vue';
+import { townTip } from '../../data/guidance';
+import { useCampaignStore } from '../../stores/campaignStore';
 import { computed } from 'vue';
 import { t, number } from '../../i18n';
 import { BUILDINGS, BUILDING_BY_ID } from '../../data/town';
@@ -125,7 +141,13 @@ import TownBuilding from './TownBuilding.vue';
 import TownDefenseStatus from './TownDefenseStatus.vue';
 import JourneyProgress from '../JourneyProgress.vue';
 const props = defineProps({ town: Object, hammers: Number });
-const emit = defineEmits(['select', 'inspect', 'mine', 'advance-era']);
+const emit = defineEmits(['select', 'inspect', 'build-free', 'mine', 'advance-era']);
+const campaign = useCampaignStore();
+const tip = computed(() => townTip(campaign));
+const showEraProgress = computed(
+  () =>
+    props.town.era !== 'frontier' || Object.values(props.town.buildings).some((level) => level > 1),
+);
 const goal = computed(() => nextGoal(props.town));
 const gate = computed(() => eraGate(props.town));
 const readyProjects = computed(() => Object.values(props.town.projects).filter(constructionReady));
@@ -180,6 +202,8 @@ const needs = computed(() => {
     {
       id: service('well'),
       icon: 'water',
+      name: 'Water',
+      relevant: waterCapacity(town) > 0 || demand > 0,
       value: demand ? `${waterCapacity(town)}/${demand}` : waterCapacity(town),
       shortage: waterCapacity(town) < demand && serviceChoices('well').length > 0,
       label: t('Water: {capacity}/{demand}', { capacity: waterCapacity(town), demand }),
@@ -187,6 +211,8 @@ const needs = computed(() => {
     {
       id: service('farm'),
       icon: 'food',
+      name: 'Food',
+      relevant: foodCapacity(town) > 0 || demand > 0,
       value: demand ? `${foodCapacity(town)}/${demand}` : foodCapacity(town),
       shortage: foodCapacity(town) < demand && serviceChoices('farm').length > 0,
       label: t('Food: {capacity}/{demand}', { capacity: foodCapacity(town), demand }),
@@ -194,21 +220,25 @@ const needs = computed(() => {
     {
       id: service('home'),
       icon: 'people',
+      name: 'People',
+      relevant: demand > 0,
       value: population(town),
       label: t('{count} people', { count: population(town) }),
     },
     {
       id: 'square',
       icon: 'happiness',
+      name: 'Happiness',
+      relevant: demand > 0,
       value: `${happiness(town)}%`,
       label: t('Happiness: {value}%', { value: happiness(town) }),
     },
-  ];
+  ].filter((need) => need.relevant);
 });
 function act() {
   if (ready.value) emit('select', ready.value.id);
   else if (gate.value.available) emit('advance-era');
-  else if (canBuild.value) emit('inspect', goal.value.id);
+  else if (canBuild.value) emit(goal.value.cost === 0 ? 'build-free' : 'inspect', goal.value.id);
   else emit('mine');
 }
 </script>

@@ -1,3 +1,18 @@
 {
-  "hangar": { "frontX": 1.1, "backX": 8.15, "centerZ": 10, "roofRadius": 4.95 }
+  "hangar": {
+    "frontX": 1.1,
+    "backX": 8.15,
+    "centerZ": 10,
+    "roofRadius": 4.95
+  },
+  "passengerStand": {
+    "x": -1.4,
+    "z": 19.2
+  },
+  "passengerApron": {
+    "x": -0.6,
+    "z": 17.25,
+    "width": 7.5,
+    "depth": 5.5
+  }
 }

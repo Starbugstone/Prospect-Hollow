@@ -160,6 +160,7 @@
             ><span class="goal-check">✓</span>
           </div>
         </div>
+        <StarRatingGuide :target="starScoreTarget ?? scoreTarget" />
       </details>
       <p class="result-note">
         {{
@@ -189,12 +190,14 @@ import RewardChest from './RewardChest.vue';
 import CoinReward from './CoinReward.vue';
 import { chestCoinsEarned, rewardArt } from '../data/rewards';
 import { getStars, formatTime } from '../data/campaign';
+import StarRatingGuide from './StarRatingGuide.vue';
 const props = defineProps({
   levelId: { type: Number, default: 1 },
   score: { type: Number, default: 0 },
   moves: { type: Number, default: 0 },
   maxCombo: { type: Number, default: 1 },
   scoreTarget: { type: Number, default: 0 },
+  starScoreTarget: { type: Number, default: null },
   elapsedMs: { type: Number, default: 0 },
   speedTargetMs: { type: Number, default: 0 },
   coins: { type: Number, default: 0 },
@@ -253,7 +256,9 @@ const chestCoins = computed(() => chestCoinsEarned(props.rewards));
 const supplyRewards = computed(() =>
   props.rewards.flatMap((reward) => reward.items).filter((item) => item.kind !== 'coins'),
 );
-const earnedStars = computed(() => getStars(props.score, props.scoreTarget, props.maxCombo));
+const earnedStars = computed(() =>
+  getStars(props.score, props.starScoreTarget ?? props.scoreTarget, props.maxCombo),
+);
 const goalText = (source) => {
   const reward = props.rewards.find((r) => r.source === source);
   if (reward)

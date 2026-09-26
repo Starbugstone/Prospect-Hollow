@@ -2,7 +2,7 @@
 
 [Back to the era visual guide](Era-Visual-Guide.md)
 
-The 1932 town uses cream walls, teal canopies, roadside service bays, a bus station and a diner. Gardens soften the growing streets. The well’s larger tank stands on a braced steel frame, with its lid seated on the vessel. The mine control house receives a projecting service canopy.
+The 1932 town uses cream walls, teal canopies, roadside service bays, a bus station and a diner. Gardens soften the growing streets. All earlier landmarks retain their Post-war architecture, with purpose-specific additions. The mine gains a covered truck loading bay.
 
 Each comparison reads from left to right, from the first completed stage to the final upgrade. The camera and scale stay fixed within each building row. Click the comparison for full resolution, or open an individual stage below it. The mine has one permanent surface upgrade per era.
 

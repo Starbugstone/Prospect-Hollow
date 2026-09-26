@@ -25,6 +25,7 @@
     :aria-label="t(readOnly ? 'Village visit · view only' : 'Interactive 3D town')"
     @pointerdown="rememberPointer"
     @pointermove="movePointer"
+    @pointerleave="leavePointer"
     @pointerup="pick"
     @pointercancel="cancelPointer"
     @lostpointercapture="cancelPointer"
@@ -37,8 +38,9 @@
       @keydown="cameraKey"
     />
     <div
-      v-if="eventInset && raid && !reducedMotion"
+      v-if="eventInset && !reducedMotion"
       class="town-event-inset"
+      :class="{ 'passive-arrival-inset': eventInset.passive }"
       role="img"
       :aria-label="t(eventInset.label)"
       :style="{
@@ -51,7 +53,21 @@
       @pointerup.stop
     >
       <span>{{ t(eventInset.label) }}</span>
+      <span
+        v-if="eventInset.nameTag"
+        class="vip-inset-name"
+        :style="{ left: `${eventInset.nameTag.x}%`, top: `${eventInset.nameTag.y}%` }"
+      >
+        {{ eventInset.nameTag.name }}
+      </span>
     </div>
+    <span
+      v-if="villagerLabel"
+      class="villager-name"
+      role="status"
+      :style="{ left: `${villagerLabel.x}%`, top: `${villagerLabel.y}%` }"
+      >{{ t('VIP visitor') }} · {{ villagerLabel.name }}</span
+    >
     <div class="town-action-icons">
       <button
         v-for="anchor in actionAnchors"
@@ -112,6 +128,8 @@
         :style="{ left: `${anchor.x}%`, top: `${anchor.y}%` }"
         :class="{
           'scene-mine-button': anchor.id === 'mine',
+          'quiet-plot': quietPlot(anchor.id),
+          'suggested-plot': anchor.id === suggestedId,
           selected: anchor.id === selected,
           'is-ready': constructionReady(town.projects[anchor.id]),
           'raid-defense-ready': raidDefenseIds.includes(anchor.id),
@@ -130,19 +148,21 @@
                 : t('Choose {building}', { building: t(BUILDING_BY_ID[anchor.id].name) }),
           )
         "
+        :title="t(anchor.id === 'mine' ? 'Mine' : BUILDING_BY_ID[anchor.id].shortName)"
         :aria-pressed="anchor.id === 'mine' ? undefined : anchor.id === selected"
         @click="chooseLabel(anchor.id, $event)"
       >
-        {{ t(anchor.id === 'mine' ? t('Mine') : t(BUILDING_BY_ID[anchor.id].shortName)) }}
+        <span v-if="quietPlot(anchor.id)" class="quiet-plot-plus" aria-hidden="true">+</span>
+        <span class="plot-name">{{
+          t(anchor.id === 'mine' ? 'Mine' : BUILDING_BY_ID[anchor.id].shortName)
+        }}</span>
         <template v-if="readOnly">
           <small v-if="town.buildings[anchor.id]">{{
             t('Lv. {level}', { level: eraBuildingLevel(town, anchor.id) })
           }}</small>
         </template>
         <template v-else>
-          <small v-if="anchor.id === 'mine'"
-            >{{ t('Level {level}', { level: nextLevel }) }} · ✦{{ mineStage }} →</small
-          >
+          <small v-if="anchor.id === 'mine'">{{ t('Level {level}', { level: nextLevel }) }}</small>
           <small v-else-if="constructionReady(town.projects[anchor.id])">{{
             t('Tap to finish')
           }}</small>
@@ -176,7 +196,10 @@
         </template>
       </button>
     </div>
-    <div class="town-camera-bar">
+    <details class="town-camera-bar" @pointerdown.stop @pointerup.stop @pointermove.stop>
+      <summary :title="t('Camera controls')">
+        <GameIcon name="expand" /><span>{{ t('View') }}</span>
+      </summary>
       <div
         class="town-camera-controls"
         role="group"
@@ -205,7 +228,7 @@
           </svg>
         </button>
       </div>
-    </div>
+    </details>
   </div>
 </template>
 <script setup>
@@ -219,6 +242,7 @@ import {
   constructionVisual,
   constructionReady,
   availablePurchases,
+  nextGoal,
   buildingIndicators,
 } from '../../game/town/TownRules';
 import { t, locale } from '../../i18n';
@@ -261,6 +285,12 @@ const canvas = ref(null),
   map = ref(null),
   anchors = ref([]),
   fallback = ref(false);
+const suggestedId = computed(() => nextGoal(props.town)?.id);
+const quietPlot = (id) =>
+  id !== 'mine' &&
+  id !== suggestedId.value &&
+  !props.town.buildings[id] &&
+  !props.town.projects[id];
 const indicators = computed(() =>
   props.readOnly ? {} : buildingIndicators(props.town, props.forgeCollectible, props.now),
 );
@@ -324,6 +354,7 @@ let scene,
   disposed = false,
   dragged = false;
 const pointers = new Map();
+const villagerLabel = ref(null);
 const choose = (id) => {
   if (!props.readOnly) id === 'mine' ? emit('mine') : emit('select', id);
 };
@@ -343,8 +374,13 @@ const rememberPointer = (event) => {
     dragged = true;
 };
 const movePointer = (event) => {
+  if (!pointers.size && event.pointerType === 'mouse')
+    scene?.showVillager(event.clientX, event.clientY);
   const start = pointers.get(event.pointerId);
   if (start && Math.hypot(event.clientX - start[0], event.clientY - start[1]) > 6) dragged = true;
+};
+const leavePointer = (event) => {
+  if (!pointers.size && event.pointerType === 'mouse') scene?.showVillager(-Infinity, -Infinity);
 };
 const pick = (event) => {
   movePointer(event);
@@ -486,10 +522,14 @@ async function initialize() {
       (distance) => emit('camera-distance', distance),
       recoverGraphics,
     );
+    scene.onVillagerLabel = (label) => {
+      villagerLabel.value = label;
+    };
     scene.onEventInset = (view) => {
       eventInset.value = view;
     };
     update();
+    scene.vipArrivals?.reset(true);
     if (recoveryPose) {
       scene.camera.position.fromArray(recoveryPose.position);
       scene.controls.target.fromArray(recoveryPose.target);
@@ -509,10 +549,14 @@ onMounted(initialize);
 watch(
   () => props.active,
   (active) => {
-    if (!active) return;
+    if (!active) {
+      scene?.vipArrivals?.reset();
+      return;
+    }
     if (!scene) initialize();
     else {
       update();
+      scene.vipArrivals?.reset(true);
       // A context restored while hidden also needs a frame in reduced-motion mode.
       if (!scene.resize()) scene.render();
     }

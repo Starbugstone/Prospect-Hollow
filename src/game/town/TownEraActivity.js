@@ -27,7 +27,27 @@ export function trainJourney(time) {
       : phase < arrival + dwell
         ? stop
         : stop + (phase - arrival - dwell) * speed;
-  return { x, visible: phase < finish, moving, distance: x - start };
+  return {
+    x,
+    visible: phase < finish,
+    moving,
+    distance: x - start,
+    arrived: phase >= arrival && phase < arrival + dwell,
+    sinceArrival: phase - arrival,
+    visit: Math.floor((time + 25) / (finish + 25)),
+  };
+}
+
+export function boatJourney(time) {
+  const phase = (time + 18) % 95;
+  const z = phase < 23 ? -65 + phase * (61 / 23) : phase < 32 ? -4 : -4 + (phase - 32) * 3;
+  return {
+    z,
+    visible: phase < 55,
+    arrived: phase >= 23 && phase < 32,
+    sinceArrival: phase - 23,
+    visit: Math.floor((time + 18) / 95),
+  };
 }
 
 export function addEraActivity(d, town) {
@@ -42,9 +62,10 @@ export function addEraActivity(d, town) {
         [x + 2, z + 0.2],
         [x + 2, z + 0.4],
       ],
-      work: 'greet',
+      work: 'fishing',
     });
-    d.rod(fisher.root, [0, 0.8, 0.15], [0.9, 1.5, 1.2], 0.015, '#987c54');
+    d.rod(fisher.arms[1].lower, [0, -0.19, 0], [0, -0.19, 1.5], 0.015, '#987c54').name =
+      'Hand-held fishing rod';
   }
   if (town.era === 'frontier') return;
   if (town.buildings.bridge && town.buildings.home5) {
@@ -76,7 +97,7 @@ export function addEraActivity(d, town) {
           d.ball(boat, side * 0.72, 0.85, z, [0.035, 0.18, 0.18], '#8bb8bd');
       d.rod(boat, [0, 1.8, 0], [0, 2.3, 0], 0.035, '#617c76');
     } else d.mesh(boat, 'cylinder', [0.18, 1.1, 0.18], [0.3, 1.65, -0.6], '#696d62');
-    const wheel = d.group(boat, 0, 0.2, 2.2);
+    const wheel = d.group(boat, 0, 0.2, -2.2);
     for (let n = 0; n < (modern ? 0 : 8); n++) {
       const paddle = d.group(wheel);
       paddle.rotation.x = (n * Math.PI) / 4;
@@ -91,9 +112,10 @@ export function addEraActivity(d, town) {
         : 'Rebuilding river launch';
     }
     d.motions.push((time) => {
-      const phase = (time + 18) % 95;
-      boat.visible = phase < 55;
-      const z = phase < 23 ? -65 + phase * (61 / 23) : phase < 32 ? -4 : -4 + (phase - 32) * 3;
+      const journey = boatJourney(time),
+        { z } = journey;
+      boat.visible = journey.visible;
+      d.visitorTransports?.set('riverPort', { ...journey, root: boat });
       boat.position.set(riverCenterX(z), RIVER.waterHeight + 0.12, z);
       boat.rotation.y = Math.atan2(riverCenterX(z + 0.2) - riverCenterX(z), 0.2);
       wheel.rotation.x = time * 1.6;
@@ -138,6 +160,11 @@ export function addEraActivity(d, town) {
     d.motions.push((time) => {
       const journey = d.railwayOpening?.journey ?? trainJourney(time + (d.trainTimeOffset ?? 0));
       train.visible = journey.visible;
+      d.visitorTransports?.set('railDepot', {
+        ...journey,
+        root: train,
+        arrived: !d.railwayOpening && journey.arrived,
+      });
       train.position.set(journey.x, 0.035, RAIL_EDGE.from[1]);
       for (const { part, y, x } of parts) {
         part.position.y = y + railHeight(journey.x + x);

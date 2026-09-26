@@ -53,3 +53,59 @@ describe.each(['bomb', 'cross', 'rainbow'])('%s alignment during cascades', (typ
     expect(engine.evaluateSwap(result.board, 5, 5, 20, 21).matches[0].fusion).toBeDefined();
   });
 });
+
+describe('bonuses earned after gravity', () => {
+  it.each([
+    ['four', 'bomb', 32],
+    ['five', 'rainbow', 32],
+    ['vertical', 'bomb', 26],
+    ['T', 'cross', 31],
+    ['L', 'cross', 30],
+  ])('reveals and preserves the %s pattern as a %s', (shape, type, index) => {
+    let seed = 54321;
+    vi.spyOn(Math, 'random').mockImplementation(() => {
+      seed = (seed * 16807) % 2147483647;
+      return (seed - 1) / 2147483646;
+    });
+    const board = Array.from({ length: 36 }, (_, i) =>
+      createGem(GEM_TYPES[((i % 6) + 2 * Math.floor(i / 6)) % 6]),
+    );
+    const put = (indices, color = 'ruby') => {
+      for (const i of indices) board[i] = createGem(color);
+    };
+    let clears;
+    if (shape === 'four' || shape === 'five') {
+      clears = [32];
+      put([26, 30, 31, 33, ...(shape === 'five' ? [34] : [])]);
+      put([32, 35], 'sapphire');
+      if (shape === 'four') put([34], 'emerald');
+    } else if (shape === 'vertical') {
+      clears = [8, 20];
+      put([2, 14, 26, 32]);
+      put(clears, 'emerald');
+    } else if (shape === 'T') {
+      clears = [13, 25, 30];
+      put([7, 19, 31, 24, 32]);
+      put([1, 13, 25, 30, 33], 'sapphire');
+    } else {
+      clears = [12, 24, 31];
+      put([6, 18, 30, 25, 32]);
+      put([7, 19, 31, 24], 'emerald');
+      put([1, 13, 33], 'sapphire');
+    }
+    expect(engine.findMatches(board, 6, 6)).toEqual([]);
+    const result = new TileManager().getResolution({
+      board,
+      tiles: board.map(() => ({ type: 'standard', health: 0 })),
+      cols: 6,
+      rows: 6,
+      matches: [{ type: 'tnt', indices: clears }],
+    });
+    const earned = result.steps[1].bonuses;
+    expect(earned).toEqual([
+      expect.objectContaining({ type, index, gem: expect.objectContaining({ type }) }),
+    ]);
+    expect(result.steps[1].cleared).not.toContain(index);
+    expect(result.board).toContain(earned[0].gem);
+  });
+});

@@ -23,7 +23,15 @@ export class MatchEngine {
       !canSwapGem(board[index], tiles[index])
     )
       return empty;
-    const indices = bonusActivator.activate(board, cols, rows, { aIndex: index, bIndex: -1 }, null);
+    const indices = bonusActivator.activate(
+      board,
+      cols,
+      rows,
+      { aIndex: index, bIndex: -1 },
+      null,
+      null,
+      tiles,
+    );
     return { ...empty, matches: [{ type: 'bonus-activation', indices }] };
   }
 
@@ -64,7 +72,7 @@ export class MatchEngine {
     const pendingBonus = matches.length && usesBonus ? { swap, fusion, swapGems } : null;
     const bonusClear = pendingBonus
       ? []
-      : bonusActivator.activate(nextBoard, cols, rows, swap, fusion);
+      : bonusActivator.activate(nextBoard, cols, rows, swap, fusion, null, tiles);
     if (bonusClear.length > 0) {
       return {
         matches: [{ type: 'bonus-activation', indices: bonusClear, ...(fusion ? { fusion } : {}) }],

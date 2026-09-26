@@ -21,7 +21,7 @@ export function signalTargets(tiles, impacted, cols, rows) {
 export function advanceOreOrders(orders, steps) {
   if (!orders?.length) return;
   for (const step of steps)
-    for (const jewel of [...(step.collectedJewels ?? []), ...(step.fusionOreJewels ?? [])]) {
+    for (const jewel of step.collectedJewels ?? []) {
       const order = orders.find((order) => order.color === jewel.type);
       if (order) order.progress = Math.min(order.target, order.progress + 1);
     }

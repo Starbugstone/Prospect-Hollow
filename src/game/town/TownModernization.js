@@ -1,3 +1,4 @@
+import { heritageDescription } from '../../data/heritageUpgrades';
 import { watermillAppearance } from '../../data/watermill';
 import { eraEvolution } from '../../data/eras';
 import { RIVER_RAIL_VARIANTS } from '../../data/riverRail';
@@ -60,7 +61,9 @@ export function createModernizationOffer(town, building, level) {
     description:
       level === 0 || (!city && building.id === 'horseField')
         ? appearance.description
-        : profile.upgradeDescriptions[level - 1],
+        : level === 2 && ['river-rail', 'industrial'].includes(profile.style)
+          ? heritageDescription(building.kind)
+          : profile.upgradeDescriptions[level - 1],
     title: profile.upgradeTitle,
     ...(!city ? { requiresPower: profile.requiresPower && building.id !== 'railDepot' } : {}),
     benefit: benefit(profile, building, level),

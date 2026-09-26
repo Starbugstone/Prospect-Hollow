@@ -28,9 +28,10 @@ const loader = await createServer({
   appType: 'custom',
   optimizeDeps: { noDiscovery: true, entries: [] },
 });
-const { cascadeTier, simultaneousMatchCount } = await loader.ssrLoadModule(
+const { cascadeTier, clearScore, simultaneousMatchCount } = await loader.ssrLoadModule(
   '/src/game/engine/MatchRewards.js',
 );
+const { getStars } = await loader.ssrLoadModule('/src/data/campaign.js');
 const rules = await loader.ssrLoadModule('/src/game/town/TownRules.js');
 const { createTown, BANDIT_EVENT } = await loader.ssrLoadModule('/src/data/town.js');
 const { eraGate, advanceEra } = await loader.ssrLoadModule('/src/game/town/TownEras.js');
@@ -58,7 +59,9 @@ try {
         level.boardLayout.gemTypes ?? GEM_TYPES.slice(0, level.boardLayout.gemTypeCount);
       let turns = 0,
         shuffles = 0;
-      let jewels = 0;
+      let jewels = 0,
+        score = 0,
+        maxCombo = 1;
       const comboCounts = {},
         multiMatchCounts = {};
       const remaining = () =>
@@ -102,10 +105,15 @@ try {
         board = resolution.board;
         mechanics.advanceOreOrders(oreOrders, resolution.steps);
         resolution.steps.forEach((step, index) => {
+          // Keep comparisons with checkouts predating the shared score helper usable.
+          score += clearScore
+            ? clearScore(step, index)
+            : (step.cleared?.length ?? 0) * 100 * cascadeTier(step, index);
           jewels += step.collectedJewels?.length ?? 0;
           if (!step.cleared?.length) return;
           const tier = cascadeTier(step, index),
             matches = simultaneousMatchCount(step);
+          maxCombo = Math.max(maxCombo, tier);
           if (tier >= 2) comboCounts[tier] = (comboCounts[tier] ?? 0) + 1;
           if (matches >= 2) multiMatchCounts[matches] = (multiMatchCounts[matches] ?? 0) + 1;
         });
@@ -117,6 +125,11 @@ try {
         turns,
         shuffles,
         complete: !remaining(),
+        score,
+        maxCombo,
+        chestTarget: level.chestTarget,
+        starScoreTarget: level.starScoreTarget ?? level.chestTarget,
+        stars: getStars(score, level.starScoreTarget ?? level.chestTarget, maxCombo),
         remainingOre: mechanics.remainingOre(oreOrders),
         coins: rules.miningPayout(jewels, bonuses, comboCounts, multiMatchCounts, level.id),
       });

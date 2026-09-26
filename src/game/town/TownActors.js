@@ -19,13 +19,13 @@ export class TownActors {
       root.traverse((object) => {
         if (!object.isMesh) return;
         object.layers.set(1); // The camera draws their instances on layer two.
-        const key = `${object.geometry.uuid}:${object.material.isMeshStandardMaterial ? 'colored' : object.material.uuid}`;
+        const key = `${object.geometry.uuid}:${object.material.isMeshStandardMaterial && !object.material.transparent ? 'colored' : object.material.uuid}`;
         if (!buckets.has(key)) buckets.set(key, []);
         buckets.get(key).push(object);
       });
     for (const objects of buckets.values()) {
       const first = objects[0];
-      const colored = first.material.isMeshStandardMaterial;
+      const colored = first.material.isMeshStandardMaterial && !first.material.transparent;
       const mesh = new InstancedMesh(
         first.geometry,
         colored ? this.material : first.material,

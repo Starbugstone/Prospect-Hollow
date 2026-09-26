@@ -67,7 +67,7 @@ it('keeps independent line bonuses alongside a T/L', () => {
 });
 
 it.each(['bomb', 'cross', 'rainbow'])(
-  'activates a %s in place with chain reactions, without swapping or inventing a fusion',
+  'activates a %s in place using its own footprint without swapping or inventing a fusion',
   (type) => {
     const engine = new MatchEngine();
     const board = Array.from({ length: 9 }, (_, i) =>
@@ -78,7 +78,10 @@ it.each(['bomb', 'cross', 'rainbow'])(
     expect(result.matches[0].indices).toContain(4);
     expect(result.matches[0].fusion).toBeUndefined();
     expect(result.board[4]).toBe(board[4]);
-    expect(result.matches[0].indices).toContain(5);
+    if (type === 'rainbow') {
+      expect(result.matches[0].indices).not.toContain(5);
+      expect(result.matches[0].indices).toHaveLength(8);
+    } else expect(result.matches[0].indices).toContain(5);
     for (const tile of [{ chainHealth: 1 }, { state: 'FROZEN' }, { type: 'blocker', health: 1 }])
       expect(engine.evaluateActivation(board, 3, 3, 4, { 4: tile }).matches).toEqual([]);
   },
