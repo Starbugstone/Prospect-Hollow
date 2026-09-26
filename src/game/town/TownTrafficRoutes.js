@@ -3,6 +3,23 @@ import { prepareRoute, routePose } from './TownRoutes';
 import { streetHeight } from './TownItineraries';
 import { villagerRandom } from '../../data/villagers';
 
+export function placeTraffic(root, { x, z, heading }) {
+  const halfAxleSpan = (root.userData.vehicleBox?.halfLength ?? 0) * (2 / 3);
+  let height = streetHeight(x, z),
+    pitch = 0;
+  if (halfAxleSpan) {
+    const dx = Math.sin(heading) * halfAxleSpan,
+      dz = Math.cos(heading) * halfAxleSpan;
+    const front = streetHeight(x + dx, z + dz),
+      rear = streetHeight(x - dx, z - dz);
+    height = (front + rear) / 2;
+    pitch = -Math.atan2(front - rear, halfAxleSpan * 2);
+  }
+  root.position.set(x, height, z);
+  // Yaw first, then pitch around the vehicle's axle, including the return trip.
+  root.rotation.set(pitch, heading, 0, 'YXZ');
+}
+
 // Prepared circuits share a junction. Change route only at that junction, so a
 // new choice never teleports a vehicle or asks for a path during a frame.
 export function trafficRoutes(d, source = [3.5, 7.5], required) {
@@ -73,8 +90,7 @@ export function trafficTour(root, routes, { seed = 0, speed = 1.6, offset = 0 } 
     }
     const pose = routePose(routes[index], distance);
     // Keep vehicles inside their half of the carriageway, including bridge deck.
-    root.position.set(pose.x, streetHeight(pose.x, pose.z), pose.z);
-    root.rotation.y = pose.heading;
+    placeTraffic(root, pose);
     return distance;
   };
 }

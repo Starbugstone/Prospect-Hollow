@@ -348,14 +348,17 @@ export function updateTownLocomotion(d, h = LOCOMOTION_STEP) {
       };
       const v = (root.userData.locomotionBox ??= {});
       v.previousX = v.cx ?? root.position.x;
+      v.previousY = v.y ?? root.position.y;
       v.previousZ = v.cz ?? root.position.z;
       v.previousHeading = v.heading ?? root.rotation.y;
+      v.previousPitch = v.pitch ?? root.rotation.x;
       Object.assign(v, box, {
         root,
         cx: root.position.x,
         cz: root.position.z,
         y: root.position.y,
         heading: root.rotation.y,
+        pitch: root.rotation.x,
       });
       vehicles.push(v);
     }
@@ -379,8 +382,10 @@ export function updateTownLocomotion(d, h = LOCOMOTION_STEP) {
     v.root.userData.trafficWaiting = waiting;
     if (waiting) {
       v.cx = v.root.position.x = v.previousX;
+      v.y = v.root.position.y = v.previousY;
       v.cz = v.root.position.z = v.previousZ;
       v.heading = v.root.rotation.y = v.previousHeading;
+      v.pitch = v.root.rotation.x = v.previousPitch;
       v.root.userData.trafficDelay = (v.root.userData.trafficDelay ?? 0) + h;
     }
   }

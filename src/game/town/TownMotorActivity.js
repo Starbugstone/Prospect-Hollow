@@ -1,9 +1,8 @@
-import { trafficRoutes, trafficTour } from './TownTrafficRoutes';
+import { trafficRoutes, trafficTour, placeTraffic } from './TownTrafficRoutes';
 import { eraEvolution } from '../../data/eras';
 import { prepareRoute, routePose } from './TownRoutes';
 import { motorVehicle, animateVehicle } from './TownVehicles';
 import { routeBetween, plotStreet } from './TownLayout';
-import { bridgeDeckHeight } from './TownRiver';
 
 export function busPose(path, time) {
   const speed = 1.6,
@@ -63,9 +62,7 @@ export function addMotorActivity(d, town) {
       return;
     }
     const pose = busPose(path, time - (bus.userData.trafficDelay ?? 0));
-    const bridge = pose.x >= 24 && pose.x <= 38 && Math.abs(pose.z - 7.5) < 1;
-    bus.position.set(pose.x, bridge ? bridgeDeckHeight(pose.x) + 0.17 : 0.07, pose.z);
-    bus.rotation.y = pose.heading;
+    placeTraffic(bus, pose);
     animateVehicle(bus, pose.distance);
   });
 }

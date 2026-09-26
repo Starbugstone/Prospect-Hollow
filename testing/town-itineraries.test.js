@@ -1,12 +1,13 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { Group, Scene, MeshBasicMaterial } from 'three';
+import { Group, Scene, MeshBasicMaterial, Vector3 } from 'three';
 import { createPinia, setActivePinia } from 'pinia';
 import { createTown } from '../src/data/town';
 import { ERAS, ERA_BY_ID } from '../src/data/eras';
 import { vipVisitCount } from '../src/data/vipVisits';
 import { TownItineraries, beginItinerary, updateItinerary } from '../src/game/town/TownItineraries';
 import { TownNavigation, walkPath, townNavigation } from '../src/game/town/TownNavigation';
-import { trafficRoutes, trafficTour } from '../src/game/town/TownTrafficRoutes';
+import { trafficRoutes, trafficTour, placeTraffic } from '../src/game/town/TownTrafficRoutes';
+import { prepareRoute } from '../src/game/town/TownRoutes';
 import { updateTownLocomotion } from '../src/game/town/TownLocomotion';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
@@ -61,6 +62,54 @@ function fixture(era = 'motor-age') {
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+});
+it.each([0.6, 0.9, 0.85, 1.2])(
+  'pitches a vehicle of half-length %s along both bridge ramps',
+  (halfLength) => {
+    for (const direction of [1, -1]) {
+      const car = new Group();
+      car.userData.vehicleBox = { halfLength, halfWidth: 0.36 };
+      const path = prepareRoute(
+        direction === 1
+          ? [
+              [20, 7.5],
+              [42, 7.5],
+            ]
+          : [
+              [42, 7.5],
+              [20, 7.5],
+            ],
+      );
+      const move = trafficTour(car, [path], { speed: 1 });
+      for (const x of direction === 1 ? [20, 25.5, 31, 36.5, 42] : [42, 36.5, 31, 25.5, 20]) {
+        move(Math.abs(x - path.points[0][0]));
+        const front = new Vector3(0, 0, 1).applyQuaternion(car.quaternion);
+        const axle = new Vector3(1, 0, 0).applyQuaternion(car.quaternion);
+        expect(Math.sign(front.x)).toBe(direction);
+        expect(axle.y).toBeCloseTo(0, 8); // Pitch must never become sideways roll.
+        if (x === 25.5 || x === 36.5) {
+          expect(Math.sign(front.y)).toBe((x < 31 ? 1 : -1) * direction);
+          expect(Math.abs(front.y)).toBeGreaterThan(0.4);
+        } else expect(front.y).toBeCloseTo(0, 8);
+      }
+    }
+  },
+);
+it('retains bridge height and pitch while a vehicle yields to another road user', () => {
+  const car = new Group(),
+    blocker = new Group();
+  car.userData.vehicleBox = blocker.userData.vehicleBox = { halfLength: 0.6, halfWidth: 0.36 };
+  placeTraffic(car, { x: 25.5, z: 7.5, heading: Math.PI / 2 });
+  placeTraffic(blocker, { x: 26, z: 7.5, heading: -Math.PI / 2 });
+  const d = { trafficActors: [car, blocker] };
+  updateTownLocomotion(d);
+  const position = car.position.clone(),
+    orientation = car.quaternion.clone();
+  placeTraffic(car, { x: 25.52, z: 7.5, heading: Math.PI / 2 });
+  updateTownLocomotion(d);
+  expect(car.userData.trafficWaiting).toBe(true);
+  expect(car.position.distanceTo(position)).toBeLessThan(1e-9);
+  expect(car.quaternion.angleTo(orientation)).toBeLessThan(1e-7);
 });
 it('opens connected bridge routes only after completion and varies continuous vehicle trips', () => {
   const { d } = fixture();
