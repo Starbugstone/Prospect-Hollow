@@ -373,7 +373,13 @@ export class TownDiorama {
         );
         if (!industrial) {
           if (kind === 'square')
-            buildTownSquare(this, group, stage, town.buildingEras[id] === 'frontier');
+            buildTownSquare(
+              this,
+              group,
+              stage,
+              town.buildingEras[id] === 'frontier',
+              town.buildingEras[id],
+            );
           else if (kind === 'well') this.well(group);
           else this.building(group, kind, stage, labels[id]);
         }

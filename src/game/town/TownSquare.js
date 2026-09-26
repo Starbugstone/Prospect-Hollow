@@ -1,5 +1,6 @@
 import { walkObstacle } from './TownNavigation';
-// A compact, static fountain shares the scenery batch; no water simulation or extra frame work.
+import { addTownFountain } from './TownFountains';
+// The era's static fountain shares the scenery batch; no water simulation or extra frame work.
 export const SQUARE_ANCHORS = Object.freeze({
   corners: [
     [-2.35, -2.3],
@@ -33,36 +34,12 @@ export function addSquareModernization(d, parent, level, color = '#718b80') {
     }
   return root;
 }
-export function buildTownSquare(d, parent, stage, lamps = true) {
+export function buildTownSquare(d, parent, stage, lamps = true, era = 'frontier') {
   d.box(parent, 5.4, 0.12, 5.2, 0, 0.06, 0, '#c5b797');
   d.box(parent, 4.9, 0.035, 4.7, 0, 0.14, 0, '#dcccad');
   for (const x of [-2.6, 2.6]) d.box(parent, 0.16, 0.18, 5.2, x, 0.1, 0, '#aaa182');
   for (const z of [-2.5, 2.5]) d.box(parent, 5.3, 0.18, 0.16, 0, 0.1, z, '#aaa182');
-  const fountain = d.group(parent);
-  fountain.name = 'Town fountain';
-  walkObstacle(fountain, 0, 0, 1.08, 2.2);
-  d.mesh(fountain, 'cylinder', [1.08, 0.16, 1.08], [0, 0.24, 0], '#aaa58f');
-  d.mesh(fountain, 'cylinder', [0.97, 0.27, 0.97], [0, 0.4, 0], '#d2c9ad');
-  d.mesh(fountain, 'cylinder', [0.81, 0.035, 0.81], [0, 0.54, 0], '#71b8bd');
-  d.mesh(fountain, 'cylinder', [0.19, 0.48, 0.19], [0, 0.76, 0], '#b5b09b');
-  if (stage >= 3) {
-    d.mesh(fountain, 'cylinder', [0.18, 0.65, 0.18], [0, 1.28, 0], '#b5b09b');
-    d.mesh(fountain, 'cylinder', [0.66, 0.22, 0.66], [0, 1.55, 0], '#d2c9ad');
-    d.mesh(fountain, 'cylinder', [0.54, 0.035, 0.54], [0, 1.68, 0], '#71b8bd');
-  }
-  const jetHeight = stage >= 3 ? 1.85 : 1.12;
-  d.ball(fountain, 0, jetHeight - 0.07, 0, 0.14, '#c9c1a2');
-  for (let n = 0; n < 4; n++) {
-    const angle = (n / 4) * Math.PI * 2;
-    const points = [
-      [0, jetHeight],
-      [0.18, jetHeight + 0.3],
-      [0.44, jetHeight + 0.14],
-      [0.66, 0.56],
-    ].map(([radius, y]) => [Math.cos(angle) * radius, y, Math.sin(angle) * radius]);
-    for (let i = 1; i < points.length; i++)
-      d.rod(fountain, points[i - 1], points[i], 0.025, '#b8e1de');
-  }
+  addTownFountain(d, parent, stage, era);
   if (stage >= 2) {
     for (const x of [-2.05, 2.05]) {
       for (const z of [-1.3, 1.3]) {

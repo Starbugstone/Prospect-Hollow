@@ -67,8 +67,8 @@ export const CITY_DESCRIPTIONS = {
     'A faceted crystal atrium and rooftop observatory link the city to its mining roots.',
   ],
   square: [
-    'Stone seating and a formal canopy preserve the original civic fountain.',
-    'A planted pedestrian plaza and solar canopy frame the historic fountain.',
+    'Stone seating, a formal canopy and a fountain in the style of the day renew the civic square.',
+    'A planted pedestrian plaza and solar canopy frame the new fountain.',
   ],
   bridge: [
     'Broad approach rails and paired lamps frame the familiar river crossing.',

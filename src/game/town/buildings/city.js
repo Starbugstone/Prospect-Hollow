@@ -19,7 +19,17 @@ export const cityModel = (d, parent, name) => {
 };
 
 // Meshes are shared architectural pieces exported from Blender, not per-plot copies.
-export function renderCityBuilding(d, parent, kind, label, level, era, serviceLevel = 3) {
+// `fountainEra` lets a later style reuse a city square shell with its own centerpiece.
+export function renderCityBuilding(
+  d,
+  parent,
+  kind,
+  label,
+  level,
+  era,
+  serviceLevel = 3,
+  fountainEra = era,
+) {
   if (!isCityEra(era) || !CITY_FAMILIES[kind] || kind === 'bridge') return false;
   const family = CITY_FAMILIES[kind];
   const appearance = cityAppearance(era, kind);
@@ -76,7 +86,7 @@ export function renderCityBuilding(d, parent, kind, label, level, era, serviceLe
     if (level >= 2) cityModel(d, root, `${era}-finish`).position.x = -2;
     if (level >= 3) cityModel(d, root, `${era}-finish`).position.x = 2;
   } else if (family === 'square') {
-    buildTownSquare(d, root, serviceLevel, false);
+    buildTownSquare(d, root, serviceLevel, false, fountainEra);
     addSquareModernization(d, root, level, appearance.roof);
   } else {
     cityModel(d, root, asset ?? `${era}-${family}`);

@@ -62,6 +62,14 @@ receives the building's completed era, so entering a new town era alone never
 modernizes the airport. `testing/airport-art.test.js` checks extension/fallback,
 stage selection, site bounds and wing clearance.
 
+The town square centerpiece uses the `fountain` capability. Each building style has a
+default design and eras may override it; `src/data/fountains.js` lists the registered
+ids and resolves unknown ones to the frontier spring. `TownFountains.js` renders each id
+from shared primitives inside the same 1.08-unit walk radius, and `TownFountain.vue`
+draws its SVG counterpart. A new era can reuse a design by id; a new design needs both
+drawings. `testing/town-fountains.test.js` checks registration, fallback, size and the
+single translucent water material for every era and square stage.
+
 ## Introduce a genuinely new style
 
 Extend the documented `BuildingStyle` / `EraEvolution` contract and defaults in

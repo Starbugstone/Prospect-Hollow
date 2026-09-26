@@ -14,7 +14,7 @@
     </g>
     <g v-else-if="kind === 'square'">
       <path d="M-132 0 0 42 133-2 0-43Z" fill="#c1c1ac" stroke="#8b9f92" stroke-width="6" />
-      <TownSquare :stage="5" />
+      <TownSquare :stage="5" :era="era" />
       <g v-for="x in [-105, 105]" :key="x" :transform="`translate(${x} -10)`">
         <path d="M0 0V-90" stroke="#4b6962" stroke-width="5" />
         <circle cy="-96" r="10" fill="#fff0b6" stroke="#a39764" stroke-width="2" />
@@ -191,7 +191,11 @@
 import TownHeritageUpgrade from './TownHeritageUpgrade.vue';
 import { computed } from 'vue';
 import TownSquare from './TownSquare.vue';
-const props = defineProps({ kind: String, level: { type: Number, default: 1 } });
+const props = defineProps({
+  kind: String,
+  era: { type: String, default: 'industrial' },
+  level: { type: Number, default: 1 },
+});
 const civic = computed(() =>
   ['well', 'school', 'doctor', 'museum', 'bank', 'sheriff'].includes(props.kind),
 );
