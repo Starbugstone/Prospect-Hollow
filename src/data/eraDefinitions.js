@@ -1,3 +1,5 @@
+import { resolveRoadStyle } from './roadStyles';
+
 /**
  * @typedef {'frontier'|'river-rail'|'industrial'|'motor-age'|'city'} BuildingStyle
  * @typedef {Object} EraEvolution
@@ -11,6 +13,7 @@
  * @property {boolean} busService
  * @property {boolean} overheadPower
  * @property {string} roadColor
+ * @property {string} roadStyle Surface treatment registered in roadStyles.js.
  * @property {string} incident
  * @property {readonly number[]|null} prices Three modernization prices; never mining rewards.
  * @property {string|null} cityAssets Blender asset family shared by city eras.
@@ -36,7 +39,7 @@ const STYLES = {
   'river-rail': {
     wardrobe: 'rail',
     fountain: 'victorian-iron',
-    roadColor: '#b3a18a',
+    roadStyle: 'gravel',
     incident: 'cargo-theft',
     upgradeTitle: 'River & Rail level {level}: {name}',
     upgradeDescriptions: [
@@ -56,7 +59,7 @@ const STYLES = {
     electricity: true,
     modernTransport: true,
     motorTrafficLevel: 2,
-    roadColor: '#89928a',
+    roadStyle: 'brick',
     incident: 'workshop-fire',
     requiresPower: true,
   },
@@ -75,7 +78,7 @@ const STYLES = {
     motorTrafficLevel: 1,
     busService: true,
     motorMine: true,
-    roadColor: '#858b86',
+    roadStyle: 'early-asphalt',
     incident: 'workshop-fire',
   },
   city: {
@@ -86,7 +89,7 @@ const STYLES = {
     modernTransport: true,
     motorTrafficLevel: 1,
     busService: true,
-    roadColor: '#89928a',
+    roadStyle: 'concrete',
     incident: 'workshop-fire',
     cityBoat: true,
     upgradeTitle: 'City level {level}: {name}',
@@ -116,7 +119,7 @@ export function defineEra(definition) {
     motorTrafficLevel: null,
     busService: false,
     overheadPower: true,
-    roadColor: '#c3a477',
+    roadStyle: 'dirt',
     incident: 'bandits',
     waterUpgradeBenefit:
       'Adds water for twenty people when finished. All existing water stays available during work.',
@@ -139,6 +142,7 @@ export function defineEra(definition) {
     ...STYLES[style],
     ...definition.evolution,
   };
+  evolution.roadColor ??= resolveRoadStyle(evolution.roadStyle).color;
   for (const field of ['prices', 'newBuildingPrices', 'waterworks', 'farmCapacity']) {
     const values = evolution[field];
     if (

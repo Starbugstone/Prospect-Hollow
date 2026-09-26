@@ -7,6 +7,16 @@ family. Gameplay, the Three.js town and the accessible Vue drawings read these
 capabilities through `eraEvolution()` instead of maintaining separate era lists.
 Unknown save identifiers fall back to the Frontier profile.
 
+Road appearance uses the `roadStyle` capability and `data/roadStyles.js`.
+The styles progress from worn dirt and gravel through brick, concrete and marked
+asphalt to contemporary paved crossings. `roadColor` remains an optional tint
+override. `RoadDetails` prepares flat surface strips once per topology/era change;
+WebGL merges them into the existing static scenery batch and the SVG map groups
+the same shapes by color. Junctions, short building approaches and the bridge deck
+are left clear of lane markings. Treatments never change road width, navigation
+obstacles, walking heights or traffic routes. `town-roads.test.js` covers all eras,
+future/fallback styles, geometry budgets and pedestrian/animal clearance.
+
 `defineEra()` in `src/data/eraDefinitions.js` applies shared style defaults,
 validates required prices and assets, and freezes the resulting profile. This
 happens once when the catalog loads, outside animation loops. Invalid authored

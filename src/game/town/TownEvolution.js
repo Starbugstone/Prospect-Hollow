@@ -1,6 +1,7 @@
 import { walkObstacle } from './TownNavigation';
 import { cityAppearance } from '../../data/cityAppearance';
 import { eraEvolution } from '../../data/eras';
+import { resolveRoadStyle } from '../../data/roadStyles';
 import { hasElectricity } from '../../data/industrial';
 import {
   PLOTS,
@@ -121,7 +122,18 @@ export function addPowerGrid(d, town) {
   return root;
 }
 
-export const roadSurface = (town) => eraEvolution(town.era).roadColor;
+export const roadSurface = (town) => {
+  const profile = eraEvolution(town.era);
+  return profile.roadColor ?? resolveRoadStyle(profile.roadStyle).color;
+};
+export const roadAppearance = (town) => {
+  const profile = eraEvolution(town.era);
+  return {
+    ...resolveRoadStyle(profile.roadStyle),
+    color: roadSurface(town),
+    paved: !!profile.paved,
+  };
+};
 
 export function addEraStreetscape(d, town) {
   const profile = eraEvolution(town.era);

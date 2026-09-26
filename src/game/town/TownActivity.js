@@ -3,8 +3,9 @@ import { walkObstacle, walkPose, plotDoor } from './TownNavigation';
 import { prepareRoute, routePose } from './TownRoutes';
 import * as THREE from 'three';
 import { roadLevel, population, visitorPopulation } from './TownRules';
-import { LANE_X, townTracks, atPlot, plotStreet } from './TownLayout';
-import { pavedTown, motorTraffic, roadSurface } from './TownEvolution';
+import { LANE_X, atPlot, plotStreet } from './TownLayout';
+import { pavedTown, motorTraffic } from './TownEvolution';
+import { addRoadSurfaces } from './TownRoads';
 import { motorVehicle, animateVehicle } from './TownVehicles';
 
 // Actors share the town's geometry cache; only their joints move each frame.
@@ -125,31 +126,7 @@ export function addTownRoads(d, town, plots) {
   const roads = d.group(d.world);
   const paved = pavedTown(town);
   roads.name = paved ? 'Paved village roads' : 'Village dirt tracks';
-  // Slightly uneven edges keep the tracks narrow and worn, with prairie between lots.
-  for (const [index, { from, to, width, crossing }] of townTracks(town).entries()) {
-    // The bridge model supplies the elevated deck; a flat road would cut across the water.
-    if (crossing) continue;
-    const length = Math.hypot(to[0] - from[0], to[1] - from[1]);
-    const steps = Math.max(2, Math.ceil(length * 2));
-    const shape = new THREE.Shape();
-    for (const side of [-1, 1])
-      for (let n = 0; n <= steps; n++) {
-        const i = side < 0 ? n : steps - n;
-        const edge = side * width * (paved ? 0.7 : 0.5 + Math.sin(i * 1.7 + index) * 0.055);
-        const along = (i / steps - 0.5) * length;
-        if (side < 0 && n === 0) shape.moveTo(edge, along);
-        else shape.lineTo(edge, along);
-      }
-    shape.closePath();
-    const geometry = new THREE.ShapeGeometry(shape);
-    geometry.rotateX(-Math.PI / 2);
-    geometry.userData.owned = true;
-    const track = new THREE.Mesh(geometry, d.material(roadSurface(town)));
-    track.rotation.y = Math.atan2(to[0] - from[0], to[1] - from[1]);
-    track.position.set((from[0] + to[0]) / 2, 0.028 + index * 0.0002, (from[1] + to[1]) / 2);
-    track.receiveShadow = true;
-    roads.add(track);
-  }
+  const surfaces = addRoadSurfaces(d, roads, town);
   for (const [id, [x, z]] of Object.entries(plots)) {
     if (id === 'mine' || id === 'bridge' || !town.buildings[id]) continue;
     if (level >= 2 && id !== 'well' && id !== 'well2') {
@@ -182,6 +159,8 @@ export function addTownRoads(d, town, plots) {
     }
   roads.userData.static = true;
   d.batch(roads);
+  // Batching owns the merged copies; release the temporary road buffers.
+  for (const mesh of surfaces) if (!mesh.parent) mesh.geometry.dispose();
   return roads;
 }
 
