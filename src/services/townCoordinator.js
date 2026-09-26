@@ -3,7 +3,7 @@
 export function createTownCoordinator(locks = globalThis.navigator?.locks) {
   const held = new Set(),
     queues = new Map();
-  let gameKey, releaseGame;
+  let gameKey, releaseGame, gameReleased, acquisition, releasing;
   const name = (key) => `prospect-writer:${key}`;
   const unavailable = () => new Error('This town is open in another tab.');
   async function locked(key, operation) {
@@ -22,13 +22,15 @@ export function createTownCoordinator(locks = globalThis.navigator?.locks) {
   return {
     supported: !!locks,
     owns: (key) => held.has(key),
-    async acquire(key) {
+    async acquire(key, { signal } = {}) {
+      if (releasing) await releasing;
+      if (acquisition) return acquisition.key === key ? acquisition.promise : false;
       if (gameKey === key) return true;
       if (gameKey) throw new Error('Release the previous town before opening another.');
       if (!locks) throw new Error('Safe saving requires a browser with Web Locks support.');
-      return new Promise((resolve, reject) => {
-        locks
-          .request(name(key), { ifAvailable: true }, async (lock) => {
+      const promise = new Promise((resolve, reject) => {
+        gameReleased = locks
+          .request(name(key), signal ? { signal } : { ifAvailable: true }, async (lock) => {
             if (!lock) {
               resolve(false);
               return;
@@ -42,18 +44,36 @@ export function createTownCoordinator(locks = globalThis.navigator?.locks) {
             held.delete(key);
             gameKey = undefined;
           })
-          .catch(reject);
+          .catch((error) => {
+            reject(error);
+          });
       });
+      acquisition = { key, promise };
+      try {
+        return await promise;
+      } finally {
+        acquisition = undefined;
+      }
     },
-    async release() {
+    async drain(key) {
+      while (queues.has(key)) await queues.get(key).catch(() => {});
+    },
+    release() {
+      if (releasing) return releasing;
       const key = gameKey;
-      if (!key) return;
-      await queues.get(key)?.catch(() => {});
-      releaseGame();
-      // Let the lock callback finish before another acquire in this tab.
-      await Promise.resolve();
+      if (!key) return Promise.resolve();
+      releasing = (async () => {
+        await this.drain(key);
+        releaseGame();
+        // Await the browser's released promise, not just a JS microtask.
+        await gameReleased;
+      })().finally(() => {
+        releasing = undefined;
+      });
+      return releasing;
     },
     run(key, operation) {
+      if (releasing && gameKey === key) return Promise.reject(unavailable());
       const result = (queues.get(key) ?? Promise.resolve())
         .catch(() => {})
         .then(() => locked(key, operation));

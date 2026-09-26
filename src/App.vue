@@ -453,6 +453,7 @@ const visibilityChanged = () => {
 };
 onMounted(() => {
   game.bootstrap();
+  updateInputPause();
   campaign.accrueSaloonIncome();
   incomeInterval = setInterval(() => {
     if (!document.hidden && !props.suspended) campaign.accrueSaloonIncome();
