@@ -179,22 +179,41 @@ function addFeeder(d, habitat, nav, era) {
   const grain = d.group(d.world);
   grain.name = 'Scattered bird seed';
   grain.userData.animated = true;
-  const feedingSites = d.animals
-    .filter((a) => a.species === 'pigeon')
-    .flatMap((a) =>
-      a.habitats.filter((h) => h.kind === 'ground' && h.building === habitat.building),
-    );
-  const seedTargets = Array.from({ length: 14 }, (_, n) => {
-    const angle = n * 2.4;
-    const site = feedingSites[n % feedingSites.length]?.point ?? habitat.point;
-    const target = [site[0] + Math.sin(angle) * 0.075, site[1], site[2] - 0.28 - random(n) * 0.055];
-    target[1] = d.animalSpace.groundY(target) + 0.01;
-    return target;
-  });
+  const birds = d.animals.filter((a) => a.species === 'pigeon');
+  const feedingSites = birds.flatMap((a) =>
+    a.habitats.filter((h) => h.kind === 'ground' && h.building === habitat.building),
+  );
+  if (!feedingSites.length) feedingSites.push(habitat);
+  // Prepare small patches beside each landing site once. Seed lands between the
+  // feeder and the bird, within reach of its beak, even after frontage relocation.
+  const patches = new Map(
+    feedingSites.map((site) => {
+      const [sx, sy, sz] = site.point;
+      const at = path.points.at(-1);
+      const length = Math.hypot(at[0] - sx, at[2] - sz) || 1;
+      const dx = (at[0] - sx) / length,
+        dz = (at[2] - sz) / length;
+      const targets = Array.from({ length: 7 }, (_, n) => {
+        const reach = Math.min(0.28 + random(n) * 0.025, length * 0.45);
+        const scatter = Math.sin(n * 2.4) * 0.055;
+        const target = [sx + dx * reach + dz * scatter, sy, sz + dz * reach - dx * scatter];
+        target[1] = d.animalSpace.groundY(target) + 0.01;
+        return target;
+      });
+      return [site, targets];
+    }),
+  );
+  const seedTargets = Array.from({ length: 14 }, (_, n) => patches.get(feedingSites[0])[n % 7]);
   const seeds = seedTargets.map((target, n) => {
     const seed = d.ball(grain, ...target, [0.018, 0.009, 0.026], n % 2 ? '#b89854' : '#dec27f');
     seed.name = `Scattered grain ${n + 1}`;
-    seed.userData.grain = { generation: -1, consumed: false, grounded: false, age: 0 };
+    seed.userData.grain = {
+      generation: -1,
+      consumed: false,
+      grounded: false,
+      age: 0,
+      from: [0, 0, 0],
+    };
     seed.visible = false;
     return seed;
   });
@@ -205,6 +224,11 @@ function addFeeder(d, habitat, nav, era) {
     grain,
     seeds,
     seedTargets,
+    birds,
+    feedingSites,
+    patches,
+    toss: { visit: -1, index: -1, from: 0, turn: 0 },
+    hand: new Vector3(),
     active: false,
     pose: { x: actor.root.position.x, y: actor.root.position.y, z: actor.root.position.z },
   });
@@ -215,17 +239,48 @@ function updateFeeder(feeder, time) {
   const routine = feeder.workRoutine;
   feeder.active = feeder.workActive === true;
   const phase = time - (routine.since ?? time);
-  const [x, , z] = feeder.habitat.point;
-  if (feeder.active)
-    feeder.root.rotation.y = Math.atan2(x - feeder.root.position.x, z - feeder.root.position.z);
+  const tossIndex = Math.floor(phase / 1.6);
+  const tossTime = phase - tossIndex * 1.6;
+  const toss = feeder.toss;
+  if (feeder.active) {
+    if (toss.visit !== routine.visit || toss.index !== tossIndex) {
+      toss.visit = routine.visit;
+      toss.index = tossIndex;
+      let site = feeder.feedingSites[tossIndex % feeder.feedingSites.length],
+        nearest = Infinity;
+      // At most three birds, once per throw; no navigation or scenery queries.
+      for (const bird of feeder.birds) {
+        if (!bird.root.visible || bird.flight || !feeder.patches.has(bird.habitat)) continue;
+        const gap = distance(feeder.root.position, bird.root.position);
+        if (gap < nearest) {
+          nearest = gap;
+          site = bird.habitat;
+        }
+      }
+      toss.site = site;
+      toss.from = feeder.root.rotation.y;
+      const heading = Math.atan2(
+        site.point[0] - feeder.root.position.x,
+        site.point[2] - feeder.root.position.z,
+      );
+      toss.turn = Math.atan2(Math.sin(heading - toss.from), Math.cos(heading - toss.from));
+      const targets = feeder.patches.get(site);
+      for (let n = 0; n < 7; n++) feeder.seedTargets[(tossIndex % 2) * 7 + n] = targets[n];
+    }
+    // Finish turning before releasing grain, then hold the aim through its arc.
+    feeder.root.rotation.y = toss.from + toss.turn * smooth(tossTime / 0.4);
+    feeder.head.rotation.y = 0;
+  }
   feeder.torso.rotation.x = feeder.active ? 0.16 : 0;
   feeder.arms[0].upper.rotation.x = -0.7;
-  feeder.arms[1].upper.rotation.x = feeder.active ? -0.75 + Math.sin(time * 3) * 0.35 : -0.12;
+  feeder.arms[1].upper.rotation.x = feeder.active
+    ? -0.65 - Math.sin(clamp((tossTime - 0.15) / 0.85) * Math.PI) * 0.55
+    : -0.12;
   feeder.head.rotation.x = feeder.active ? 0.22 : 0;
   feeder.grain.visible = feeder.active;
   if (!feeder.grain.visible) return;
   feeder.seeds.forEach((seed, n) => {
-    const offset = Math.floor(n / 7) * 1.6 + (n % 7) * 0.045;
+    const offset = 0.4 + Math.floor(n / 7) * 1.6 + (n % 7) * 0.045;
     const emission = Math.floor((phase - offset) / 3.2);
     const generation = routine.visit * 16 + emission;
     const age = phase - offset - emission * 3.2;
@@ -233,20 +288,24 @@ function updateFeeder(feeder, time) {
     if (state.generation !== generation) {
       state.generation = generation;
       state.consumed = false;
+      if (emission >= 0 && age < 0.65) {
+        feeder.hand.set(0, -0.19, 0.03);
+        feeder.arms[1].lower.localToWorld(feeder.hand).toArray(state.from);
+      }
     }
     state.age = age;
     state.grounded = age >= 0.65;
     seed.visible = emission >= 0 && !state.consumed && age >= 0 && age < 2.4;
     const flight = clamp(age / 0.65);
     const target = feeder.seedTargets[n];
-    const from = feeder.station;
+    const from = state.from;
     // Each grain lands and rests for most of its lifetime. It stays in world
     // space and is never attached to a bird or recycled in midair.
     if (state.grounded) seed.position.fromArray(target);
     else
       seed.position.set(
         from[0] + (target[0] - from[0]) * flight,
-        (from[1] + 0.65) * (1 - flight) + target[1] * flight + Math.sin(flight * Math.PI) * 0.23,
+        from[1] * (1 - flight) + target[1] * flight + Math.sin(flight * Math.PI) * 0.23,
         from[2] + (target[2] - from[2]) * flight,
       );
     seed.scale.set(0.018, 0.009, 0.026).multiplyScalar(1 - smooth((age - 2.1) / 0.3));

@@ -249,6 +249,55 @@ it.each(['frontier', 'industrial', 'motor-age', 'unknown-animal-era'])(
   },
 );
 
+it.each([...ERAS.map((era) => era.id), 'unknown-animal-era'])(
+  'turns toward the feeding patch before throwing from his hand in %s',
+  (era) => {
+    const d = fixture(era);
+    addTownAnimals(d, d.town);
+    const food = d.animalFeeder;
+    const plans = d.navigation.plans;
+    const seeds = food.seeds.slice();
+    let throws = 0,
+      behind = 0;
+    const emitted = new Set();
+    const forward = new Vector3(),
+      toward = new Vector3();
+    for (let frame = 1; frame <= 900; frame++) {
+      advance(d, frame / 20, 0.05);
+      if (!food.active) continue;
+      if (Math.abs(food.toss.turn) > Math.PI / 2) behind++;
+      forward.set(Math.sin(food.root.rotation.y), 0, Math.cos(food.root.rotation.y));
+      for (const [index, seed] of seeds.entries()) {
+        const state = seed.userData.grain;
+        if (!seed.visible || state.grounded) continue;
+        // Every airborne grain goes forward toward the bird, not behind the
+        // feeder or toward another patch on the opposite side of the square.
+        toward.fromArray(food.seedTargets[index]).sub(food.root.position).setY(0).normalize();
+        expect(forward.dot(toward)).toBeGreaterThan(0.9);
+        const key = `${index}:${state.generation}`;
+        if (!emitted.has(key)) {
+          emitted.add(key);
+          throws++;
+          const hand = food.arms[1].lower.localToWorld(new Vector3(0, -0.19, 0.03));
+          expect(hand.distanceTo(new Vector3(...state.from))).toBeLessThan(1e-6);
+          expect(
+            new Vector3(...food.seedTargets[index])
+              .setY(0)
+              .distanceTo(new Vector3(...food.toss.site.point).setY(0)),
+          ).toBeLessThan(0.35);
+        }
+      }
+    }
+    expect(throws).toBeGreaterThan(14);
+    expect(
+      behind,
+      'exercise turning toward patches behind his arrival/previous heading',
+    ).toBeGreaterThan(0);
+    expect(food.seeds).toEqual(seeds);
+    expect(d.navigation.plans).toBe(plans);
+  },
+);
+
 it('startles grounded pigeons and makes street animals give traffic space', () => {
   const d = fixture('industrial');
   addTownAnimals(d, d.town);
