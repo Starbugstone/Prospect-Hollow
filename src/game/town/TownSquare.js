@@ -9,22 +9,16 @@ export const SQUARE_ANCHORS = Object.freeze({
     [2.35, 2.3],
   ],
   bell: [0, -2.05],
-  pavilion: [0, 3.2],
 });
 export function addSquareModernization(d, parent, level, color = '#718b80') {
   const root = d.group(parent);
   root.name = 'Square street furniture';
   for (const [x, z] of SQUARE_ANCHORS.corners) {
+    // Complete the existing corner lighting at tier two without covering the fountain.
+    if (level < 2 && z > 0) continue;
     walkObstacle(root, x, z, 0.065);
     d.rod(root, [x, 0.2, z], [x, 2.8, z], 0.065, color);
     d.ball(root, x, 2.9, z, 0.22, '#f4d58d');
-  }
-  if (level >= 2) {
-    for (const x of [-1.8, 1.8]) {
-      walkObstacle(root, x, 3.2, 0.13);
-      d.box(root, 0.18, 2.35, 0.18, x, 1.2, 3.2, color);
-    }
-    d.box(root, 4, 0.2, 1.1, 0, 2.45, 3.2, color);
   }
   if (level >= 3)
     for (const x of [-2.7, 2.7]) {

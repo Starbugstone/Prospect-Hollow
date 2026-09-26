@@ -88,6 +88,7 @@ export function renderCityBuilding(
   } else if (family === 'square') {
     buildTownSquare(d, root, serviceLevel, false, fountainEra);
     addSquareModernization(d, root, level, appearance.roof);
+    return true;
   } else {
     cityModel(d, root, asset ?? `${era}-${family}`);
     if (asset !== appearance.asset) root.userData.substitute = true;

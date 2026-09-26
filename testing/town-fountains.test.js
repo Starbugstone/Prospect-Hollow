@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Box3, Group, MeshBasicMaterial } from 'three';
 import { createSSRApp, h } from 'vue';
 import { renderToString } from 'vue/server-renderer';
@@ -10,6 +10,8 @@ import { renderEraLandmark } from '../src/game/town/buildings/BuildingRenderer';
 import { FOUNTAIN_DESIGNS, fountainDesign, resolveFountain } from '../src/data/fountains';
 import { defineEra } from '../src/data/eraDefinitions';
 import { ERAS } from '../src/data/eras';
+import { createTown } from '../src/data/town';
+import { townNavigation } from '../src/game/town/TownNavigation';
 import TownSquare from '../src/components/town/TownSquare.vue';
 
 function diorama() {
@@ -29,6 +31,34 @@ function square(d, era, stage) {
 }
 
 describe('Era town square fountains', () => {
+  it.each(ERAS.map((era) => era.id))('keeps the %s square open around its fountain', (era) => {
+    const d = diorama(),
+      root = new Group(),
+      town = createTown();
+    d.town = town;
+    d.sign = vi.fn();
+    town.era = era;
+    town.buildings.square = 5;
+    town.buildingEras.square = era;
+    town.buildingEraLevels.square = 3;
+    d.buildPlot('square', root, town, { square: 'Town square' });
+    expect(root.getObjectByName('Town fountain')?.userData.design).toBe(fountainDesign(era));
+    expect(d.sign).not.toHaveBeenCalled();
+    const navigation = townNavigation(root);
+    for (const x of [-1.8, 0, 1.8]) expect(navigation.clear([x, 0.07, 3.2], 0.3)).toBe(true);
+    root.traverse((part) => {
+      if (!part.isMesh) return;
+      const bounds = new Box3().setFromObject(part);
+      const blocksFront =
+        bounds.min.z > 2.6 && bounds.max.y > 2 && bounds.min.x < -1 && bounds.max.x > 1;
+      expect(blocksFront).toBe(false);
+    });
+    d.clearGroup(root);
+    Object.values(d.geometries).forEach((g) => g.dispose());
+    d.materials.forEach((m) => m.dispose());
+    d.contactShadowMaterial.dispose();
+  });
+
   it('gives every era its own registered centerpiece', () => {
     expect(Object.keys(FOUNTAINS).sort()).toEqual([...FOUNTAIN_DESIGNS].sort());
     const designs = ERAS.map((era) => fountainDesign(era.id));

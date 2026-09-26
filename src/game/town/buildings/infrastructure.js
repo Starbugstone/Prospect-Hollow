@@ -22,8 +22,8 @@ export function renderBridge(d, parent, level) {
   }
   if (level >= 2)
     for (const x of [-4.4, 4.4]) {
-      d.box(parent, 0.9, 2.8, 2.5, x, 0.8, 0, '#b7ae98');
-      d.box(parent, 1.2, 0.2, 2.7, x, 2.3, 0, '#d9ccad');
+      d.box(parent, 0.75, 2.5, 2.3, x, 0.65, 0, '#b7ae98');
+      d.box(parent, 0.9, 0.2, 2.5, x, 2, 0, '#d9ccad');
     }
   if (level >= 3)
     for (const x of [-3.5, 3.5])
@@ -34,7 +34,7 @@ export function renderBridge(d, parent, level) {
       }
   // Abutments stand outside the navigation channel; no central pier blocks the boat.
   for (const x of [-4.4, 4.4])
-    for (const z of [-1.12, 1.12]) d.box(parent, 0.5, 3, 0.5, x, 0.9, z, '#8c9183');
+    for (const z of [-1.12, 1.12]) d.box(parent, 0.5, 2.5, 0.5, x, 0.65, z, '#8c9183');
 }
 export function addStationDetails(d, parent) {
   d.box(parent, 6, 0.22, 1.8, 0, 0.17, -2.4, '#b5a27e');

@@ -156,6 +156,6 @@ export function renderMotorLandmark(d, parent, kind, label, level = 1, era = 'mo
       d.ball(parent, x, 1.6 + level * 0.25, 3, 0.2, '#f6db98');
     }
   }
-  d.sign(parent, label, 2.8, 0, 2.25, 1.6);
+  if (kind !== 'square') d.sign(parent, label, 2.8, 0, 2.25, 1.6);
   return true;
 }
