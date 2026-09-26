@@ -7,6 +7,8 @@ import { ERAS } from '../src/data/eras';
 import { BUILDINGS, createTown } from '../src/data/town';
 import { MINE_SHAFT, mineYardEnvelope } from '../src/data/mineSite';
 import { tunnelCeilingAt } from '../src/game/town/TownRailTunnel';
+import { buildMineHillside } from '../src/game/town/TownMineHillside';
+import { groundHeight } from '../src/game/town/TownLandscape';
 import { mineGrowth } from '../src/data/mineGrowth';
 
 it.each(ERAS.map((e) => e.id))(
@@ -65,6 +67,19 @@ it.each(ERAS.map((e) => e.id))(
           expect(b.max.z).toBeLessThanOrEqual(mineYardEnvelope().maxZ + 1e-5);
       });
     }
+    const hillside = buildMineHillside(d, new Group(), -20, -23, groundHeight, true);
+    hillside.updateMatrixWorld(true);
+    root.traverse((support) => {
+      if (support.name !== 'Hillside terrace support') return;
+      // Check the real rendered rock, including the railway shoulder cut.
+      const foot = support.localToWorld(new Vector3(0, -0.5, 0));
+      ray.set(new Vector3(foot.x, 30, foot.z), new Vector3(0, -1, 0));
+      ray.far = 40;
+      const hit = ray.intersectObject(hillside, true)[0];
+      expect(hit, `${era} support has rock beneath it`).toBeDefined();
+      expect(foot.y, `${era} support reaches the hillside`).toBeLessThan(hit.point.y);
+    });
+    d.clearGroup(hillside);
     expect(root.userData.profile.portal).toBeTruthy();
     expect(root.userData.footprints.every((o) => o.owner === 'mine-site')).toBe(true);
     expect(root.getObjectByName('Sunken mine entrance')).toBeUndefined();

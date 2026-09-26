@@ -23,6 +23,8 @@ import { PLOTS, LANE_X } from '../src/game/town/TownLayout';
 import { TownBuildSequence } from '../src/game/town/TownBuildSequence';
 import { TownConstruction, constructionParts } from '../src/game/town/TownConstruction';
 import { villagerIdentity, vipVisitor } from '../src/data/villagers';
+import { addEraActivity, railHeight } from '../src/game/town/TownEraActivity';
+import { riverCenterX } from '../src/game/town/TownRiver';
 import { airplanePose } from '../src/game/town/TownAviation';
 
 const views = [];
@@ -247,7 +249,11 @@ it('keeps the hammer handle passing through the palm and the head clear during e
     expect(handle.position.z + handle.scale.z / 2).toBeGreaterThan(0);
     expect(
       head.getWorldPosition(new Vector3()).distanceTo(hammer.getWorldPosition(new Vector3())),
-    ).toBeCloseTo(0.27, 4);
+    ).toBeCloseTo(0.3, 4);
+    const headPosition = worker.root.worldToLocal(head.getWorldPosition(new Vector3()));
+    const gripPosition = worker.root.worldToLocal(hammer.getWorldPosition(new Vector3()));
+    expect(headPosition.z).toBeGreaterThan(gripPosition.z + 0.02);
+    expect(headPosition.y).toBeGreaterThan(gripPosition.y);
   }
   sequence.dispose();
   d.clearGroup(root);
@@ -350,3 +356,49 @@ it('selects VIP names uniformly across the combined pool before deriving gender'
   for (const count of Object.values(counts)) expect(count).toBeGreaterThan(600);
   expect(Math.max(...Object.values(counts)) / Math.min(...Object.values(counts))).toBeLessThan(1.2);
 });
+
+it.each(ERAS.slice(1).map((e) => e.id))(
+  '%s pitches whole carriages along the bridge without rolling sideways',
+  (era) => {
+    const d = fixture();
+    d.town.era = era;
+    d.town.buildings.railDepot = 3;
+    d.town.buildingEras.railDepot = era;
+    addEraActivity(d, d.town);
+    const carriages = [];
+    d.world.traverse((o) => {
+      if (o.name === 'Rail carriage suspension') carriages.push(o);
+    });
+    expect(carriages).toHaveLength(3);
+    for (const dx of [-10, 0, 10]) {
+      const x = riverCenterX(-23) + dx;
+      d.railwayOpening = { journey: { x, visible: true, distance: 0 } };
+      d.motions.forEach((fn) => fn(0));
+      d.world.updateMatrixWorld(true);
+      for (const car of carriages) {
+        const center = car.getWorldPosition(new Vector3());
+        const front = car.localToWorld(new Vector3(car.userData.wheelbase / 2, 0, 0));
+        const rear = car.localToWorld(new Vector3(-car.userData.wheelbase / 2, 0, 0));
+        const left = car.localToWorld(new Vector3(0, 0, -0.5));
+        const right = car.localToWorld(new Vector3(0, 0, 0.5));
+        expect(left.y).toBeCloseTo(right.y, 8);
+        expect(front.y - rear.y).toBeCloseTo(railHeight(front.x) - railHeight(rear.x), 1);
+        for (const bogie of [front, rear])
+          expect(Math.abs(bogie.y - 0.035 - railHeight(bogie.x))).toBeLessThan(0.035);
+        if (dx === -10 && center.x > riverCenterX(-23) - 15)
+          expect(front.y).toBeGreaterThan(rear.y);
+        if (dx === 10 && center.x > riverCenterX(-23) + 5) expect(front.y).toBeLessThan(rear.y);
+        // Model-local forward must follow the same pitched axis after its authored yaw.
+        if (car.children.length === 1) {
+          const model = car.children[0];
+          const direction = model
+            .localToWorld(new Vector3(0, 0, 1))
+            .sub(model.getWorldPosition(new Vector3()))
+            .normalize();
+          const slope = front.clone().sub(rear).normalize();
+          expect(direction.dot(slope)).toBeCloseTo(1, 8);
+        }
+      }
+    }
+  },
+);

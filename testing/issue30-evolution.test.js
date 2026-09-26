@@ -103,6 +103,7 @@ describe('Issue 30: visible village evolution', () => {
     for (const era of ['river-rail', 'industrial']) {
       const d = diorama(),
         town = townAt(era);
+      d.town = town;
       addEraActivity(d, town);
       addTownVisitors(d, town);
       const boat = d.world.getObjectByName(

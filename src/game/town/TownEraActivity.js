@@ -11,6 +11,12 @@ export const railHeight = (x) => {
   const p = Math.max(0, Math.min(1, (16 - Math.abs(x - riverCenterX(RAIL_EDGE.from[1]))) / 11));
   return RAIL_HEIGHT + 2.5 * p * p * (3 - 2 * p);
 };
+// Sample both bogies so a complete carriage follows the rail grade as one body.
+export function railCarriagePose(x, wheelbase = 2.4) {
+  const rear = railHeight(x - wheelbase / 2),
+    front = railHeight(x + wheelbase / 2);
+  return { y: (rear + front) / 2, pitch: Math.atan2(front - rear, wheelbase) };
+}
 // One eastbound journey, a station dwell, then a full departure beyond the far map edge.
 export function trainJourney(time) {
   const speed = 4,
@@ -129,37 +135,48 @@ export function addEraActivity(d, town) {
     const modern = modernTransport(town, 'railDepot');
     train.name = modern ? 'Modern station railcar' : 'Station train';
     train.userData.animated = true;
-    d.box(train, 2, 0.6, 0.9, 0, 0.55, 0, '#5d7470');
-    d.box(train, 0.65, 1.1, 1, -0.7, 0.9, 0, '#b29b6c');
-    if (modern) {
-      d.box(train, 2.1, 0.9, 1.05, 0, 1, 0, '#d6c9a1');
-      d.box(train, 0.06, 0.45, 0.82, 1.08, 1.13, 0, '#8db5b6');
-      d.box(train, 2.3, 0.12, 1.12, 0, 1.5, 0, '#607f78');
-    } else d.mesh(train, 'cylinder', [0.15, 0.7, 0.15], [0.6, 1.2, 0], '#565f56');
-    for (const dx of [-2.2, -4]) d.box(train, 1.5, 0.9, 1, dx, 0.85, 0, '#a1825c');
-    if (modern)
-      for (const dx of [-4.4, -3.8, -2.6, -2, -0.6, 0.1, 0.7])
-        for (const side of [-1, 1]) d.box(train, 0.4, 0.35, 0.05, dx, 1.08, side * 0.54, '#9ec0bd');
     const wheels = [];
-    for (const x of [-4.5, -3.5, -2.7, -1.7, -0.6, 0.6])
-      for (const z of [-0.55, 0.55]) {
-        const wheel = d.mesh(train, 'cylinder', [0.25, 0.09, 0.25], [x, 0.25, z], '#50584f');
-        wheel.rotation.x = Math.PI / 2;
-        wheels.push(wheel);
-      }
+    const carriages = [];
+    const carriage = (x, wheelbase) => {
+      const pivot = d.group(train, x, 0, 0);
+      pivot.name = 'Rail carriage suspension';
+      pivot.userData.wheelbase = wheelbase;
+      carriages.push({ pivot, x, wheelbase });
+      return pivot;
+    };
     if (isCityEra(town.buildingEras.railDepot)) {
-      for (const child of [...train.children]) train.remove(child);
-      wheels.length = 0;
       train.name = eraEvolution(town.buildingEras.railDepot).digitalCity
         ? 'Electric city train'
         : 'Motor passenger railcar';
       for (const x of [0, -4, -8]) {
-        const carriage = cityModel(d, train, `${town.buildingEras.railDepot}-railcar`);
-        carriage.rotation.y = Math.PI / 2;
-        carriage.position.x = x;
+        // Keep the model's authored yaw below the pitch pivot: rotating its
+        // local Z after a 90-degree yaw rolls the carriage instead of pitching it.
+        const model = cityModel(d, carriage(x, 2.4), `${town.buildingEras.railDepot}-railcar`);
+        model.rotation.y = Math.PI / 2;
+      }
+    } else {
+      const engine = carriage(0, 1.2);
+      d.box(engine, 2, 0.6, 0.9, 0, 0.55, 0, '#5d7470');
+      d.box(engine, 0.65, 1.1, 1, -0.7, 0.9, 0, '#b29b6c');
+      if (modern) {
+        d.box(engine, 2.1, 0.9, 1.05, 0, 1, 0, '#d6c9a1');
+        d.box(engine, 0.06, 0.45, 0.82, 1.08, 1.13, 0, '#8db5b6');
+        d.box(engine, 2.3, 0.12, 1.12, 0, 1.5, 0, '#607f78');
+      } else d.mesh(engine, 'cylinder', [0.15, 0.7, 0.15], [0.6, 1.2, 0], '#565f56');
+      for (const x of [-2.2, -4]) d.box(carriage(x, 1), 1.5, 0.9, 1, 0, 0.85, 0, '#a1825c');
+      for (const { pivot, wheelbase } of carriages) {
+        if (modern)
+          for (const x of pivot === engine ? [-0.6, 0.1, 0.7] : [-0.4, 0.2])
+            for (const side of [-1, 1])
+              d.box(pivot, 0.4, 0.35, 0.05, x, 1.08, side * 0.54, '#9ec0bd');
+        for (const x of [-wheelbase / 2, wheelbase / 2])
+          for (const z of [-0.55, 0.55]) {
+            const wheel = d.mesh(pivot, 'cylinder', [0.25, 0.09, 0.25], [x, 0.25, z], '#50584f');
+            wheel.rotation.x = Math.PI / 2;
+            wheels.push(wheel);
+          }
       }
     }
-    const parts = train.children.map((part) => ({ part, y: part.position.y, x: part.position.x }));
     d.motions.push((time) => {
       const journey = d.railwayOpening?.journey ?? trainJourney(time + (d.trainTimeOffset ?? 0));
       train.visible = journey.visible;
@@ -169,13 +186,10 @@ export function addEraActivity(d, town) {
         arrived: !d.railwayOpening && journey.arrived,
       });
       train.position.set(journey.x, 0.035, RAIL_EDGE.from[1]);
-      for (const { part, y, x } of parts) {
-        part.position.y = y + railHeight(journey.x + x);
-        if (!wheels.includes(part))
-          part.rotation.z = Math.atan2(
-            railHeight(journey.x + x + 0.5) - railHeight(journey.x + x - 0.5),
-            1,
-          );
+      for (const { pivot, x, wheelbase } of carriages) {
+        const pose = railCarriagePose(journey.x + x, wheelbase);
+        pivot.position.y = pose.y;
+        pivot.rotation.z = pose.pitch;
       }
       wheels.forEach((wheel) => {
         wheel.rotation.y = -journey.distance / 0.25;

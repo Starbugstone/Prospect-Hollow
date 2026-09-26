@@ -2,8 +2,18 @@ import { MINE_SITE, MINE_POSITION } from '../../../data/mineSite';
 import { mineHillsideHeight } from '../TownMineHillside';
 import { landscapeGroundHeight } from '../TownLandscape';
 import { mineCart, haulCycle } from './MineRollingStock';
+import { Vector3 } from 'three';
+import { railEdges } from '../TownLayout';
+import { RAIL_TUNNEL, tunnelRearX } from '../TownRailTunnel';
 
 const ground = (x, z) => mineHillsideHeight(x, z, MINE_POSITION[1], landscapeGroundHeight(x, z));
+export function mineSupportFoot(x, z, railway) {
+  // The railway cuts away the outer shoulder. Brace overhanging terraces back
+  // into solid rock above the bore instead of ending in the removed terrain.
+  const cut = railway && Math.abs(z - (MINE_POSITION[1] - 3)) <= RAIL_TUNNEL.approachHalfWidth;
+  const footX = cut && Math.abs(x) > tunnelRearX - 0.25 ? Math.sign(x) * (tunnelRearX - 0.25) : x;
+  return [footX, ground(footX, z) - 0.2, z];
+}
 function terrace(d, root, point, width = 3, depth = 1.4) {
   const [x, z] = point;
   const corners = [
@@ -15,9 +25,23 @@ function terrace(d, root, point, width = 3, depth = 1.4) {
   const y = Math.max(ground(x, z), ...corners.map(([dx, dz]) => ground(x + dx, z + dz))) + 0.08;
   const g = d.group(root, x, y, z - MINE_POSITION[1]);
   for (const [dx, dz] of corners) {
-    const base = ground(x + dx, z + dz),
-      height = Math.max(0.12, y - base + 0.2);
-    d.box(g, 0.25, height, 0.25, dx, 0.2 - height / 2, dz, '#9d9a88');
+    const foot = mineSupportFoot(x + dx, z + dz, !!railEdges(d.town).length);
+    const from = new Vector3(foot[0] - x, foot[1] - y, foot[2] - z);
+    const to = new Vector3(dx, 0.2, dz);
+    const center = from.clone().add(to).multiplyScalar(0.5);
+    const support = d.box(
+      g,
+      0.25,
+      from.distanceTo(to),
+      0.25,
+      center.x,
+      center.y,
+      center.z,
+      '#9d9a88',
+    );
+    support.name = 'Hillside terrace support';
+    support.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), to.sub(from).normalize());
+    support.userData.hillFoot = foot;
   }
   d.box(g, width, 0.2, depth, 0, 0.14, 0, '#b9b39d');
   for (const side of [-1, 1])

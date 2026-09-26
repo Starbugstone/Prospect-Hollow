@@ -240,6 +240,7 @@ describe('A visible, articulated frontier encounter', () => {
   it('adds bounded daily life as buildings open and advances it without changing the town', () => {
     const d = diorama(),
       town = createTown();
+    d.town = town;
     addTownLife(d, town);
     expect(d.motions).toHaveLength(0);
     Object.assign(town.buildings, { home: 3, farm: 3, well: 3, square: 1, saloon: 1 });
@@ -284,7 +285,11 @@ describe('A visible, articulated frontier encounter', () => {
         updateTownLocomotion(d, 0.1);
         actors.forEach((a, i) => {
           expect(a.root.position.distanceTo(before[i])).toBeLessThanOrEqual(0.055 + 1e-6);
-          if (a.root.position.distanceTo(starts[i]) > 2) moved.add(a);
+          // The frontage can be shorter than two metres; verify the complete
+          // prepared walk reaches its rest end rather than demanding a road crossing.
+          const rest = new Vector3(...a.walkPath.points[0]);
+          if (a.root.position.distanceTo(rest) < 1e-5 && rest.distanceTo(starts[i]) > 0.5)
+            moved.add(a);
           if (moved.has(a) && a.workActive && a.root.position.distanceTo(starts[i]) < 1e-5)
             returned.add(a);
         });

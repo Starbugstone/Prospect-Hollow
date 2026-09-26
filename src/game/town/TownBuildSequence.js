@@ -1,4 +1,4 @@
-import { localWalk, walkPose } from './TownNavigation';
+import { localWalk, walkPath, walkPose } from './TownNavigation';
 import { TownActors } from './TownActors';
 
 const clamp = (value) => Math.max(0, Math.min(1, value));
@@ -10,7 +10,7 @@ const ease = (value) => {
 // Reusable, deterministic construction staging. It owns temporary workers and
 // assembly transforms; the caller supplies the real building and work positions.
 export class TownBuildSequence {
-  constructor(d, root, building, { era, start, end, leave, stations, focus }) {
+  constructor(d, root, building, { era, start, end, leave, stations, focus, navigation }) {
     Object.assign(this, { d, root, start, end, leave, focus });
     this.sections = building.children.map((part) => ({
       part,
@@ -35,11 +35,18 @@ export class TownBuildSequence {
       // hand, perpendicular to the forearm, so the head swings ahead of it.
       const hammer = d.group(worker.arms[1].lower, 0, -0.19, 0);
       hammer.name = 'Construction hammer grip';
-      d.box(hammer, 0.045, 0.045, 0.36, 0, 0, 0.1, '#9b7954').name = 'Hammer handle';
-      d.box(hammer, 0.24, 0.105, 0.1, 0, 0, 0.27, '#607b74').name = 'Hammer head';
+      hammer.rotation.x = 0.55;
+      d.box(hammer, 0.045, 0.045, 0.38, 0, 0, 0.105, '#9b7954').name = 'Hammer handle';
+      d.box(hammer, 0.24, 0.105, 0.1, 0, 0, 0.3, '#607b74').name = 'Hammer head';
       const load = d.box(worker.root, 0.65, 0.25, 0.35, 0, 0.85, 0.38, '#b9986b');
-      const path = localWalk(d, root, [arrival, [x, z]]);
-      return { worker, arrival, station: [x, z], path, hammer, load, delay: i * 0.35 };
+      // Start planning at the work site. If a large neighbouring building cuts
+      // off the long approach, reverse its reachable prefix so the worker still
+      // arrives at the mine, rather than hammering at the truncated street end.
+      const outward = localWalk(navigation ? { navigation } : d, root, [[x, z], arrival]);
+      const path = outward && walkPath(outward.points.slice().reverse());
+      const endPoint = path?.points.at(-1);
+      const station = endPoint ? [endPoint[0], endPoint[2]] : [x, z];
+      return { worker, arrival, station, path, hammer, load, delay: i * 0.35 };
     });
     this.actors = new TownActors(d.scene);
     this.actors.rebuild([building, ...this.crew.map(({ worker }) => worker.root)]);
@@ -84,18 +91,15 @@ export class TownBuildSequence {
       worker.root.visible = !still && time > 1 + delay && (!leaving || progress < 1);
       const working = time >= this.start + delay && time < this.end;
       const walking = !working && progress < 1;
+      const lift = (1 + Math.sin(time * 6 + delay)) / 2;
       worker.body.position.y = 0.54 + (walking ? Math.sin(time * 12 + delay) * 0.015 : 0);
       for (let n = 0; n < 2; n++) {
         const swing = Math.sin(time * 7 + delay + n * Math.PI);
         worker.legs[n].upper.rotation.x = walking ? swing * 0.4 : 0;
         worker.legs[n].lower.rotation.x = walking ? Math.max(0, -swing) * 0.5 : 0;
         worker.arms[n].upper.rotation.x =
-          working && n === 1
-            ? -0.9 + Math.sin(time * 6 + delay) * 0.75
-            : walking
-              ? -swing * 0.25
-              : 0;
-        worker.arms[n].lower.rotation.x = working ? -0.45 : -0.16;
+          working && n === 1 ? -0.55 - lift * 0.55 : walking ? -swing * 0.25 : 0;
+        worker.arms[n].lower.rotation.x = working && n === 1 ? -0.55 - lift * 0.4 : -0.16;
       }
       worker.torso.rotation.x = working ? 0.13 : 0;
       hammer.visible = working;

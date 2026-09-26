@@ -2,6 +2,7 @@ import { Vector3 } from 'three';
 import { addMineWorks } from './TownMineWorks';
 import { TownBuildSequence } from './TownBuildSequence';
 import { ERA_CONSTRUCTION } from '../../data/mineEvolution';
+import { TownNavigation } from './TownNavigation';
 
 export class TownMineEraConstruction {
   constructor(d, definition) {
@@ -10,16 +11,23 @@ export class TownMineEraConstruction {
     this.root.name = 'Mine era construction';
     this.previous = addMineWorks(d, this.root, definition.from);
     this.next = addMineWorks(d, this.root, definition.to);
+    const navigation =
+      d.navigation &&
+      new TownNavigation([
+        ...d.navigation.obstacles.filter((o) => o.owner !== 'mine-site'),
+        ...(this.next.userData.footprints ?? []),
+      ]);
     this.sequence = new TownBuildSequence(d, this.root, this.next, {
       era: definition.to,
       start: ERA_CONSTRUCTION.buildStart,
       end: ERA_CONSTRUCTION.buildEnd,
       leave: ERA_CONSTRUCTION.leave,
       focus: [-3.65, -18.55],
+      navigation,
       stations: [
-        [-5.7, -18],
-        [-2.6, -17.7],
-        [-5.7, -15.1],
+        [-3, -16.35],
+        [-1.9, -17.7],
+        [-1.9, -19.15],
       ],
     });
     this.scaffold = d.group(this.root);

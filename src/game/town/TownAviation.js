@@ -2,6 +2,7 @@ import { airportAppearance } from '../../data/airport';
 import { futureModel, cityModel } from './buildings/city';
 import { AIRPORT } from './TownLayout';
 import airportLayout from '../../data/airportLayout.json';
+import { Box3, Vector3 } from 'three';
 
 // One aircraft owns the whole sequence. Arrivals and departures cannot overlap;
 // town rebuilds sample the same clock instead of starting another flight.
@@ -15,9 +16,10 @@ export function airplaneArrival(time) {
     visit: Math.floor(time / AIRPORT_FLIGHT_CYCLE),
   };
 }
-// Passengers arrive on the apron, visibly outside the maintenance hangar.
-const standX = AIRPORT.center[0] + airportLayout.passengerStand.x;
-const taxiZ = AIRPORT.center[1] + airportLayout.passengerStand.z;
+// Park inside the bay and back straight out through its runway-facing opening.
+// The hangar definition also drives the authored model and clear taxi corridor.
+const standX = AIRPORT.center[0] + (airportLayout.hangar.frontX + airportLayout.hangar.backX) / 2;
+const taxiZ = AIRPORT.center[1] + airportLayout.hangar.centerZ;
 const startZ = AIRPORT.startZ + 2;
 const touchdownZ = AIRPORT.startZ + 7;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -133,6 +135,13 @@ export function addAviationActivity(d, town) {
   const plane =
     aircraft === 'airplane' ? futureModel(d, d.world, aircraft) : cityModel(d, d.world, aircraft);
   plane.name = aircraft === 'airplane' ? 'Regional passenger plane' : 'Passenger jet';
+  const size = new Box3().setFromObject(plane).getSize(new Vector3());
+  const bay = airportLayout.hangar;
+  // All supported aircraft must fit the same authored door and back wall.
+  // Local Z becomes the hangar's X axis after the aircraft's quarter turn.
+  plane.scale.multiplyScalar(
+    Math.min(1, (bay.backX - bay.frontX - 0.5) / size.z, (bay.roofRadius * 2 - 0.5) / size.x),
+  );
   const materials = new Map();
   plane.traverse((o) => {
     if (!o.isMesh) return;

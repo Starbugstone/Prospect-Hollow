@@ -11,7 +11,7 @@ import {
 import { AIRPORT } from '../src/game/town/TownLayout';
 
 it.each(['aviation', 'broadcast', 'contemporary'])(
-  '%s parks the entire passenger aircraft beyond the hangar roof',
+  '%s parks the entire passenger aircraft inside the hangar bay',
   (era) => {
     const d = Object.create(TownDiorama.prototype);
     Object.assign(d, {
@@ -23,9 +23,11 @@ it.each(['aviation', 'broadcast', 'contemporary'])(
     try {
       addAviationActivity(d, { buildings: { airport: 3 }, buildingEras: { airport: era } });
       const bounds = new Box3().setFromObject(d.world.children[0]);
-      const hangarEnd =
-        AIRPORT.center[1] + airportLayout.hangar.centerZ + airportLayout.hangar.roofRadius;
-      expect(bounds.min.z).toBeGreaterThan(hangarEnd);
+      const bay = airportLayout.hangar;
+      expect(bounds.min.x).toBeGreaterThan(AIRPORT.center[0] + bay.frontX + 0.15);
+      expect(bounds.max.x).toBeLessThan(AIRPORT.center[0] + bay.backX - 0.15);
+      expect(bounds.min.z).toBeGreaterThan(AIRPORT.center[1] + bay.centerZ - bay.roofRadius + 0.15);
+      expect(bounds.max.z).toBeLessThan(AIRPORT.center[1] + bay.centerZ + bay.roofRadius - 0.15);
     } finally {
       d.clearGroup(d.world);
       Object.values(d.geometries).forEach((g) => g.dispose());

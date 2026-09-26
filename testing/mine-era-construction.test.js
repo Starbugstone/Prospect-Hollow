@@ -6,6 +6,9 @@ import { mineAppearance, ERA_CONSTRUCTION } from '../src/data/mineEvolution';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { TownPresentation } from '../src/game/town/TownPresentation';
 import { addMineWorks } from '../src/game/town/TownMineWorks';
+import { PLOTS } from '../src/game/town/TownLayout';
+import { geometryFootprints, registerFootprints } from '../src/game/town/BuildingFootprints';
+import { townNavigation } from '../src/game/town/TownNavigation';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 
 const views = [];
@@ -47,8 +50,17 @@ afterEach(() => {
 it.each(ERAS.slice(1).map((era, i) => [ERAS[i].id, era.id]))(
   'constructs a visibly different %s → %s mine, with arriving and working crews',
   (from, to) => {
-    const d = fixture(from, to),
-      saved = JSON.stringify(d.town);
+    const d = fixture(from, to);
+    // A completed neighbouring bank used to truncate the third worker's approach.
+    d.town.buildings.bank = 3;
+    d.town.buildingEras.bank = to;
+    d.town.buildingEraLevels.bank = 3;
+    d.sign = () => {};
+    const bank = d.group(d.world, PLOTS.bank[0], 0.08, PLOTS.bank[1]);
+    d.buildPlot('bank', bank, d.town, { bank: 'Bank' });
+    registerFootprints(bank, geometryFootprints(bank), { owner: 'plot:bank' });
+    d.navigation = townNavigation(d.world);
+    const savedTown = JSON.stringify(d.town);
     d.setCinematic(true);
     const effect = d.cinematic.presentation.effect;
     const old = new Box3().setFromObject(effect.previous);
@@ -61,6 +73,9 @@ it.each(ERAS.slice(1).map((era, i) => [ERAS[i].id, era.id]))(
       expect(worker.root.visible).toBe(true);
       expect(hammer.visible).toBe(true);
       expect(worker.root.position.distanceTo(arrivals[i])).toBeGreaterThan(1);
+      expect(worker.root.position.z).toBeLessThan(-16);
+      expect(worker.root.position.x).toBeGreaterThan(-7);
+      expect(d.navigation.clear(worker.root.position.toArray())).toBe(true);
     });
     const arm = effect.sequence.crew[0].worker.arms[1].upper.rotation.x;
     effect.frame(8.2);
@@ -73,7 +88,7 @@ it.each(ERAS.slice(1).map((era, i) => [ERAS[i].id, era.id]))(
     const complete = new Box3().setFromObject(effect.next);
     expect(complete.isEmpty()).toBe(false);
     expect(effect.next.userData.profile.portal).not.toBe(effect.previous.userData.profile.portal);
-    expect(JSON.stringify(d.town)).toBe(saved);
+    expect(JSON.stringify(d.town)).toBe(savedTown);
   },
 );
 

@@ -781,6 +781,14 @@ const villageStats = computed(() => {
   const demand = housingCapacity(town.value) + visitorCapacity(town.value);
   return [
     {
+      id: 'era',
+      icon: 'sun',
+      label: t('Current era'),
+      value: t(ERA_BY_ID[town.value.era].label),
+      detail: t(ERA_BY_ID[town.value.era].yearLabel),
+    },
+    { id: 'mine', icon: 'mine', label: t('Mine level'), value: number(campaign.nextLevel) },
+    {
       id: 'people',
       icon: 'people',
       label: t('Population'),
