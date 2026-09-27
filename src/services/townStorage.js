@@ -50,7 +50,7 @@ const rootOf = (entry) => ({
   _cloud: { version: 2, active: entry.meta },
 });
 const entryOf = (root) =>
-  root?._cloud ? { profile: profileOf(root), meta: copy(root._cloud.active) } : null;
+  root?._cloud ? { profile: profileOf(root), meta: root._cloud.active } : null;
 
 // Injectable stores let tests model separate tabs sharing the same durable storage.
 export function createTownStorage({
@@ -60,6 +60,7 @@ export function createTownStorage({
 } = {}) {
   let fallbackSelection = SAVE_KEY,
     previousStorage,
+    progressCache,
     guard = () => true;
   function read(key) {
     const raw = storage()?.getItem(key);
@@ -69,9 +70,11 @@ export function createTownStorage({
   function write(key, value) {
     if (!storage()) throw new Error('Local storage is unavailable.');
     const serialized = JSON.stringify(value);
-    if (storage().getItem(key) === serialized) return;
-    storage().setItem(key, serialized);
-    changed();
+    if (storage().getItem(key) !== serialized) {
+      storage().setItem(key, serialized);
+      changed();
+    }
+    return serialized;
   }
   function selected() {
     if (previousStorage !== storage()) {
@@ -109,7 +112,7 @@ export function createTownStorage({
   }
   function persist(entry, key = selected()) {
     assertWrite(key);
-    write(key, rootOf(entry));
+    return write(key, rootOf(entry));
   }
   const api = {
     // Run once under the browser migration lock before mounting the application.
@@ -209,12 +212,21 @@ export function createTownStorage({
       }
       return result;
     },
-    save(profile) {
-      const root = activeRoot();
+    save(profile, expectedId = null) {
+      const key = selected(),
+        store = storage(),
+        raw = store?.getItem(key);
+      const root = raw ? JSON.parse(raw) : null;
       const entry = entryOf(root) ?? { profile: {}, meta: freshMeta() };
+      if (expectedId && entry.meta.id !== expectedId) throw new Error('The selected town changed.');
       // Snapshot the live store once; comparing plain data avoids walking it again.
       const next = copy(profile);
-      if (progressKey(entry.profile) !== progressKey(next)) {
+      const previousKey =
+        progressCache?.store === store && progressCache.key === key && progressCache.raw === raw
+          ? progressCache.progress
+          : progressKey(entry.profile);
+      const nextKey = progressKey(next);
+      if (previousKey !== nextKey) {
         entry.meta = {
           ...entry.meta,
           dirty: true,
@@ -223,18 +235,50 @@ export function createTownStorage({
         };
       }
       entry.profile = next;
-      persist(entry);
+      const serialized = persist(entry, key);
+      // Exact serialized-record matching invalidates this cache after any other writer.
+      progressCache = { store, key, raw: serialized, progress: nextKey };
       return entry.meta;
     },
     account(account, newSession = false) {
       const previous = this.auth();
       write(ACCOUNT_KEY, {
         account,
+        expired: newSession ? false : previous.expired === true,
         generation:
           newSession || account?.id !== previous.account?.id
             ? crypto.randomUUID()
             : previous.generation,
       });
+    },
+    expireSession() {
+      const auth = this.auth();
+      if (!auth.account || auth.expired) return;
+      write(ACCOUNT_KEY, { ...auth, expired: true, generation: crypto.randomUUID() });
+    },
+    forget(id, owner) {
+      const key = townKey(id, owner);
+      if (!owner || this.auth().account?.id !== owner)
+        throw new Error('Sign in to use account town slots.');
+      if (selected() === key)
+        throw new Error('Open another town before removing this device copy.');
+      assertWrite(key);
+      storage().removeItem(key);
+      changed();
+    },
+    clearAccountCache(owner) {
+      const keys = [];
+      for (let i = 0; i < (storage()?.length ?? 0); i++) {
+        const key = storage().key(i);
+        if (
+          key.startsWith(`${TOWN_PREFIX}${owner}:`) ||
+          key === `${PREFERRED_PREFIX}${owner}` ||
+          key === `${CREATION_PREFIX}${owner}`
+        )
+          keys.push(key);
+      }
+      for (const key of keys) storage().removeItem(key);
+      changed();
     },
     logout() {
       this.account(null, true);
@@ -293,6 +337,8 @@ export function createTownStorage({
         },
         townKey(cloud.townId, owner),
       );
+      // The account copy now owns retries; the retained guest copy needs no duplicate request.
+      persist({ profile: current.profile, meta: { ...current.meta, attachment: null } }, SAVE_KEY);
       rememberPreference(cloud.townId, owner);
       selectKey(townKey(cloud.townId, owner));
     },
@@ -310,7 +356,7 @@ export function createTownStorage({
     },
     attachment(body, sequence) {
       const current = this.active();
-      current.meta.attachment = { body, sequence };
+      current.meta.attachment = body ? { body, sequence } : null;
       persist(current);
     },
     renameLocal(name) {
@@ -338,6 +384,8 @@ export function createTownStorage({
         sequence: current.meta.sequence + 1,
         pending: null,
         conflict: null,
+        attachment: null,
+        uploadError: null,
         updatedAt: Date.now(),
       };
       current.profile = profile;

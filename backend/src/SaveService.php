@@ -14,7 +14,7 @@ final class SaveService {
         return $id;
     }
     public static function profile(mixed $profile): string {
-        if(!$profile instanceof \stdClass || ($profile->schemaVersion??null)!==2) throw new ApiError(422,'This save needs a compatible game version. Your local copy is safe.');
+        if(!$profile instanceof \stdClass || ($profile->schemaVersion??null)!==2) throw new ApiError(422,'This save needs a compatible game version. Your local copy is safe.',['code'=>'save_format_unsupported','supportedSchemaVersions'=>[2]]);
         foreach(['town','records','continuousRecords'] as $key) if(!($profile->$key??null) instanceof \stdClass) throw new ApiError(422,'Invalid save structure.');
         if(!is_array($profile->powers??null) || !($profile->town->buildings??null) instanceof \stdClass || !is_string($profile->town->era??null)) throw new ApiError(422,'Invalid save structure.');
         $json=json_encode($profile,JSON_THROW_ON_ERROR);
@@ -84,7 +84,7 @@ final class SaveService {
         $db->insert('town_history',['town_id'=>$row['id'],'revision'=>$row['revision'],'profile'=>$row['profile'],'saved_at'=>$row['saved_at']]);
         $db->executeStatement('DELETE FROM town_history WHERE town_id=? AND revision<?',[$row['id'],max(0,(int)$row['revision']-4)]);
     }
-    public function save(Request $r,string $id,array $body,bool $resolve=false): array {
+    public function save(Request $r,string $id,array $body): array {
         self::uuid($id);self::keys($body,['baseRevision','uploadId','profile']);[$json,$hash]=$this->upload($body);
         return $this->transaction($r,true,function($db,$a)use($id,$body,$json,$hash) {
             $row=$this->owned($db,$a['id'],$id);
@@ -107,8 +107,8 @@ final class SaveService {
             if(!is_string($body['name']??null)||!is_bool($body['isPublic']??null))throw new ApiError(422,'Choose a name and sharing preference.');
             [$name,$normalized]=$this->nameAvailable($db,$a['id'],$id,$body['name']);
             if($body['isPublic'])$this->public->moderate($name);
-            $this->archive($db,$row);
-            $changes=['name'=>$name,'normalized_name'=>$normalized,'listed'=>(int)$body['isPublic'],'revision'=>(int)$row['revision']+1,'saved_at'=>time(),'upload_id'=>null,'upload_hash'=>null,'appearance'=>$body['isPublic']?$this->public->projection(json_decode($row['profile']),$name,$row['public_id']):null];
+            // Metadata is independent of gameplay: keep its revision and upload receipt.
+            $changes=['name'=>$name,'normalized_name'=>$normalized,'listed'=>(int)$body['isPublic'],'appearance'=>$body['isPublic']?$this->public->projection(json_decode($row['profile']),$name,$row['public_id']):null];
             $db->update('towns',$changes,['id'=>$id,'player_id'=>$a['id']]);return $this->view(array_merge($row,$changes));
         });
     }

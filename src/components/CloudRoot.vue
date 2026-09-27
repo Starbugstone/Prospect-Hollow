@@ -1,5 +1,21 @@
 <template>
   <div ref="recoveryBar" class="cloud-header">
+    <aside v-if="ready && cloud.sessionExpired" class="save-recovery-notice" role="status">
+      <p>
+        {{ t('Your session expired. Keep playing offline; sign in again to resume cloud saving.') }}
+      </p>
+      <button @click="accountOpen = true">{{ t('Sign in again') }}</button>
+    </aside>
+    <aside v-else-if="ready && uploadBlocked" class="save-recovery-notice" role="alert">
+      <p>
+        {{ t('Cloud saving is paused. Your progress is saved on this device.') }}
+        {{ t(activeTown.meta.uploadError.message) }}
+      </p>
+      <button @click="syncNow({ retryRejected: true })" :disabled="cloud.busy">
+        {{ t('Retry cloud saving') }}
+      </button>
+      <button @click="accountOpen = true">{{ t('My towns') }}</button>
+    </aside>
     <aside
       v-if="ready && (activeTown?.meta.conflict || activeTown?.meta.desyncNotice)"
       class="save-recovery-notice"
@@ -170,11 +186,21 @@ const activeTown = computed(() => {
   void cloud.storageVersion;
   return townStorage.active();
 });
+const uploadBlocked = computed(() => {
+  const meta = activeTown.value?.meta;
+  return (
+    meta?.uploadError &&
+    (meta.uploadError.code === 'save_format_unsupported' ||
+      meta.uploadError.sequence === meta.sequence)
+  );
+});
 const accountTown = computed(
   () => !!cloud.account && activeTown.value?.meta.owner === cloud.account.id,
 );
 const STATUS_TONES = {
   'Cloud saved': 'saved',
+  'Sign in again — playing offline': 'alert',
+  'Cloud backup needs attention': 'alert',
   'Syncing…': 'busy',
   'Saved locally — cloud backup pending': 'pending',
   'Offline — cloud backup pending': 'pending',
@@ -190,9 +216,16 @@ provide('cloudAccount', {
   statusTone,
   status: computed(() => cloud.status),
   signedIn: computed(() => !!cloud.account),
-  canSync: computed(() => accountTown.value && ready.value && !handingOver.value && !cloud.busy),
+  canSync: computed(
+    () =>
+      accountTown.value &&
+      ready.value &&
+      !handingOver.value &&
+      !cloud.busy &&
+      !cloud.sessionExpired,
+  ),
   canOpen: computed(() => !campaign.readOnly),
-  sync: () => syncNow(),
+  sync: () => syncNow({ retryRejected: true }),
   open: () => {
     accountOpen.value = true;
   },
@@ -211,7 +244,14 @@ let handoff,
   lastResume = 0;
 const scheduler = createSyncScheduler({
   pending: () => {
-    if (!ready.value || handingOver.value || !cloud.account || !townStorage.canWrite())
+    if (
+      !ready.value ||
+      handingOver.value ||
+      !cloud.account ||
+      cloud.sessionExpired ||
+      uploadBlocked.value ||
+      !townStorage.canWrite()
+    )
       return false;
     const meta = townStorage.active()?.meta;
     return (
@@ -394,7 +434,14 @@ function schedule() {
   scheduler.schedule();
 }
 function resume() {
-  if (document.hidden || !cloud.account || !ready.value || handingOver.value) return;
+  if (
+    document.hidden ||
+    !cloud.account ||
+    cloud.sessionExpired ||
+    !ready.value ||
+    handingOver.value
+  )
+    return;
   scheduler.resume();
   // A clean town may have changed on another device. Check only on return,
   // at most once per minute, never on every local checkpoint or storage event.
@@ -441,7 +488,8 @@ function start() {
   if (cloud.account)
     refreshAccount().catch((error) => {
       cloud.error = error.message;
-      cloud.status = 'Offline — cloud backup pending';
+      if (cloud.sessionExpired) updateSaveStatus();
+      else cloud.status = 'Offline — cloud backup pending';
     });
 }
 function readLink() {

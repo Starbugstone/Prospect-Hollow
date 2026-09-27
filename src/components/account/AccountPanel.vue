@@ -22,8 +22,13 @@
       <p v-if="message || cloud.error" class="account-message" role="status">
         {{ t(message || cloud.error) }}
       </p>
-      <template v-if="!cloud.account">
-        <p class="account-lead">
+      <template v-if="!cloud.account || cloud.sessionExpired">
+        <p v-if="cloud.sessionExpired" class="account-message">
+          {{
+            t('Your session expired. Keep playing offline; sign in again to resume cloud saving.')
+          }}
+        </p>
+        <p v-else class="account-lead">
           {{
             t(
               'Play and save one town on this device. Sign in to keep up to three towns backed up across devices.',
@@ -89,7 +94,11 @@
         <p v-if="game.sessionActive" class="account-message">
           {{ t('Leave the mine before switching towns or resolving saves.') }}
         </p>
-        <section v-if="writable && active && !active.meta.owner" class="account-card">
+        <form
+          v-if="writable && active && !active.meta.owner"
+          class="account-card"
+          @submit.prevent="act(() => attachLocal(localName))"
+        >
           <h2>{{ t('Town on this device') }}</h2>
           <p class="account-hint">{{ summary(active.profile) }}</p>
           <p v-if="registeredLocal">
@@ -103,12 +112,13 @@
             v-if="registeredLocal"
             class="account-primary"
             :disabled="busy || game.sessionActive"
+            type="button"
             @click="act(() => openTown(registeredLocal))"
           >
             {{ t('Open my account town') }}
           </button>
           <label v-if="!registeredLocal" class="account-field"
-            >{{ t('Town name') }}<input v-model="localName" minlength="3" maxlength="24"
+            >{{ t('Town name') }}<input v-model="localName" minlength="3" maxlength="24" required
           /></label>
           <button
             v-if="!registeredLocal"
@@ -117,7 +127,7 @@
               busy ||
               (cloud.towns.length >= 3 && !cloud.towns.some((t) => t.townId === active.meta.id))
             "
-            @click="act(() => attachLocal(localName))"
+            type="submit"
           >
             {{ t('Add this town to my account') }}
           </button>
@@ -128,7 +138,7 @@
               )
             }}
           </p>
-        </section>
+        </form>
         <ul class="town-slots">
           <li
             v-for="town in cloud.towns"
@@ -261,9 +271,22 @@
               )
             }}
           </p>
-          <button v-if="active.meta.recovery" @click="downloadRecovery">
-            {{ t('Download previous device save') }}
-          </button>
+          <form
+            v-if="active.meta.missing"
+            @submit.prevent="act(copyMissingTown)"
+            class="account-card"
+          >
+            <label class="account-field"
+              >{{ t('Name for the recovered town')
+              }}<input v-model="copyName" minlength="3" maxlength="24" required
+            /></label>
+            <button :disabled="busy || game.sessionActive">
+              {{ t('Save as a new account town') }}
+            </button>
+            <p class="account-hint">
+              {{ t('Creates a new town from this device’s progress. The original copy is kept.') }}
+            </p>
+          </form>
           <button
             v-if="active.meta.recovery?.id"
             :disabled="busy || game.sessionActive"
@@ -282,6 +305,13 @@
           </button>
           <details class="account-danger">
             <summary>{{ t('Delete account') }}</summary>
+            <p>
+              {{
+                t(
+                  'This deletes the account and its cached towns and preserved saves on this device. Export any progress you want to keep first.',
+                )
+              }}
+            </p>
             <label class="account-field"
               >{{ t('Type DELETE MY ACCOUNT to confirm') }}<input v-model="deleteAccountText"
             /></label>
@@ -295,6 +325,53 @@
           </details>
         </footer>
       </template>
+      <details v-if="cloud.account && cachedTowns.length" class="account-card">
+        <summary>{{ t('Towns stored on this device') }}</summary>
+        <p>
+          {{
+            t(
+              'These copies are playable offline. Removing a device copy does not delete its cloud town.',
+            )
+          }}
+        </p>
+        <section v-for="town in cachedTowns" :key="town.id" class="account-card">
+          <strong>{{ town.name }}</strong>
+          <span v-if="isCurrent({ townId: town.id })">{{ t('Current town') }}</span>
+          <template v-else>
+            <button :disabled="busy || game.sessionActive" @click="act(() => openCachedTown(town))">
+              {{ t('Open device copy') }}
+            </button>
+            <button
+              :disabled="busy"
+              @click="
+                removeCacheId = town.id;
+                removeCacheName = '';
+              "
+            >
+              {{ t('Remove device copy') }}
+            </button>
+            <form
+              v-if="removeCacheId === town.id"
+              @submit.prevent="act(() => removeDeviceCopy(town))"
+            >
+              <p>
+                {{
+                  t(
+                    'This removes this device’s copy and its preserved saves. Any unsynced progress will be lost. Export anything you want to keep first.',
+                  )
+                }}
+              </p>
+              <label class="account-field"
+                >{{ t('Type the town name to confirm') }}<input v-model="removeCacheName" required
+              /></label>
+              <button class="account-destructive" :disabled="busy || removeCacheName !== town.name">
+                {{ t('Remove device copy') }}
+              </button>
+              <button type="button" @click="removeCacheId = null">{{ t('Cancel') }}</button>
+            </form>
+          </template>
+        </section>
+      </details>
     </div>
   </dialog>
 </template>
@@ -310,14 +387,14 @@ import {
   request,
   attachLocal,
   logout,
-  disconnect,
+  deleteAccount as removeAccount,
+  createAccountTown,
+  deleteCachedTown,
   restoreSave,
   townAction,
   cacheTown,
 } from '../../services/cloudProfile';
-import { townCoordinator } from '../../services/townCoordinator';
 import { townStorage } from '../../services/townStorage';
-import { createSaveFile } from '../../services/saveTransfer';
 import { freshProfile } from '../../stores/campaignStore';
 import { useGameStore } from '../../stores/gameStore';
 import GameIcon from '../GameIcon.vue';
@@ -332,6 +409,9 @@ const game = useGameStore(),
   email = ref(''),
   proof = ref(props.loginLink ?? ''),
   newName = ref(''),
+  copyName = ref(''),
+  removeCacheId = ref(null),
+  removeCacheName = ref(''),
   localName = ref(townStorage.active()?.meta.name ?? 'My town'),
   editName = ref(''),
   isPublic = ref(false),
@@ -343,6 +423,10 @@ const active = computed(() => {
   void cloud.storageVersion;
   return townStorage.active();
 });
+const cachedTowns = computed(() => {
+  void cloud.storageVersion;
+  return cloud.account ? townStorage.records(cloud.account.id).map((entry) => entry.meta) : [];
+});
 const registeredLocal = computed(() =>
   active.value && !active.value.meta.owner
     ? cloud.towns.find((town) => town.townId === active.value.meta.id)
@@ -353,7 +437,13 @@ const shareUrl = computed(
     `${import.meta.env.VITE_PUBLIC_ORIGIN || (import.meta.env.VITE_API_BASE?.startsWith('https://') ? new URL(import.meta.env.VITE_API_BASE).origin : location.origin + location.pathname)}#town=${active.value?.meta.publicId}`,
 );
 watch(
-  () => active.value?.meta.id + ':' + active.value?.meta.baseRevision,
+  () =>
+    [
+      active.value?.meta.id,
+      active.value?.meta.baseRevision,
+      active.value?.meta.name,
+      active.value?.meta.isPublic,
+    ].join(':'),
   () => {
     editName.value = active.value?.meta.name ?? '';
     isPublic.value = active.value?.meta.isPublic ?? false;
@@ -402,28 +492,25 @@ async function openTown(town) {
   townStorage.select(town.townId, cloud.account.id);
   emit('changed');
 }
-async function createTown() {
-  return townCoordinator.run(`account-creation:${cloud.account.id}`, createTownLocked);
+function openCachedTown(town) {
+  if (game.sessionActive) return;
+  townStorage.select(town.id, cloud.account.id);
+  emit('changed');
 }
-async function createTownLocked() {
-  const previous = townStorage.state()?.creation;
-  const body =
-    previous?.owner === cloud.account.id && previous.body.name === newName.value
-      ? previous.body
-      : {
-          townId: crypto.randomUUID(),
-          name: newName.value,
-          baseRevision: 0,
-          uploadId: crypto.randomUUID(),
-          profile: freshProfile(),
-        };
-  townStorage.creation({ owner: cloud.account.id, body });
-  const town = await request('towns', body);
-  townStorage.creation(null);
-  await cacheTown(town);
-  await refreshAccount();
+async function removeDeviceCopy(town) {
+  if (removeCacheName.value !== town.name) return;
+  await deleteCachedTown(town.id);
+  removeCacheId.value = null;
+}
+async function createTown() {
+  const town = await createAccountTown(newName.value, freshProfile());
   await openTown(town);
   newName.value = '';
+}
+async function copyMissingTown() {
+  const town = await createAccountTown(copyName.value, active.value.profile);
+  await openTown(town);
+  copyName.value = '';
 }
 async function updateSettings() {
   const local = active.value;
@@ -470,19 +557,8 @@ async function deleteTown() {
   await refreshAccount();
 }
 async function deleteAccount() {
-  await request('account', { confirmation: deleteAccountText.value }, 'DELETE');
-  disconnect();
+  await removeAccount(deleteAccountText.value);
   emit('changed');
-}
-function downloadRecovery() {
-  const url = URL.createObjectURL(
-    new Blob([createSaveFile(active.value.meta.recovery.profile)], { type: 'application/json' }),
-  );
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'prospect-hollow-recovery.json';
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 </script>
 <style>

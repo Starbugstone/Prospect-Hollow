@@ -56,7 +56,7 @@ final class ApiController {
         $id=$m[1];$suffix=$m[2]??'';
         return match($r->getMethod().' '.$suffix) {
             'GET '=>$this->saves->get($r,$id), 'PUT '=>$this->saves->save($r,$id,$b),
-            'PUT resolve'=>$this->saves->save($r,$id,$b,true), 'GET history'=>$this->saves->history($r,$id),
+            'PUT resolve'=>$this->saves->save($r,$id,$b), 'GET history'=>$this->saves->history($r,$id),
             'PATCH settings'=>$this->saves->metadata($r,$id,$b), 'DELETE '=>$this->saves->delete($r,$id,$b),
             default=>throw new ApiError(405,'Method is not allowed.'),
         };

@@ -26,7 +26,17 @@ final class Database {
             if($db->fetchOne('SELECT version FROM schema_versions WHERE version=?',[$version]))continue;
             $schema=file_get_contents(dirname(__DIR__).$file);
             $apply=function() use($db,$schema): void {
-                foreach(explode(';',$schema) as $statement)if(trim($statement)!=='')$db->executeStatement(trim($statement));
+                foreach(explode(';',$schema) as $statement) {
+                    $statement=trim($statement);
+                    if($statement==='')continue;
+                    // MySQL can commit DDL before an interrupted install records its version.
+                    // Tables are idempotent; indexes need a portable existence check.
+                    if(preg_match('/^CREATE INDEX (\w+) ON (\w+)\(/i',$statement,$index)) {
+                        $indexes=$db->createSchemaManager()->listTableIndexes($index[2]);
+                        if(isset($indexes[strtolower($index[1])]))continue;
+                    }
+                    $db->executeStatement($statement);
+                }
             };
             // MySQL DDL implicitly commits; PostgreSQL migrations are atomic.
             if($mysql)$apply();else $db->transactional($apply);

@@ -37,7 +37,7 @@ final class Auth {
     public function session(Request $r, bool $mutation=false): array {
         $bearer=$r->headers->get('Authorization','');
         $token=str_starts_with($bearer,'Bearer ')?substr($bearer,7):$r->cookies->get($this->cookieName(),'');
-        if($bearer!==''&&!$this->nativeOrigin($r)) throw new ApiError(403,'Token transport requires an allowed app origin.');
+        if(str_starts_with($bearer,'Bearer ')&&!$this->nativeOrigin($r)) throw new ApiError(403,'Token transport requires an allowed app origin.');
         if (!is_string($token) || !preg_match('/^[a-f0-9]{64}$/D',$token)) throw new ApiError(401,'Please sign in again.');
         $session=$this->database->get()->fetchAssociative('SELECT * FROM sessions WHERE token_hash=? AND expires_at>?',[$this->hash($token),time()]);
         if (!$session) throw new ApiError(401,'Please sign in again.');

@@ -1,6 +1,22 @@
 import { beforeEach, afterEach, expect, it, vi } from 'vitest';
 import { townStorage } from '../src/services/townStorage';
 import { createSyncService } from '../src/services/syncService';
+const { backups, outbox } = vi.hoisted(() => ({ backups: new Map(), outbox: new Map() }));
+vi.mock('../src/services/recoveryStore', () => ({
+  recoveryStore: {
+    putUpload: vi.fn(async (value) => outbox.set(value.id, structuredClone(value))),
+    getUpload: vi.fn(async (id, owner, townId) => {
+      const value = outbox.get(id);
+      return value?.owner === owner && value?.townId === townId ? structuredClone(value) : null;
+    }),
+    removeUpload: vi.fn(async (id) => outbox.delete(id)),
+    put: vi.fn(async (value) => backups.set(value.id, structuredClone(value))),
+    get: vi.fn(async (id, owner, townId) => {
+      const value = backups.get(id);
+      return value?.owner === owner && value?.townId === townId ? structuredClone(value) : null;
+    }),
+  },
+}));
 let values, owner, api, sync, applied, canApply;
 const profile = (coins = 1) => ({
   schemaVersion: 2,
@@ -34,6 +50,8 @@ function setupAccount() {
   townStorage.attach(remote(1), owner.id, townStorage.active().meta.sequence);
 }
 beforeEach(() => {
+  backups.clear();
+  outbox.clear();
   values = new Map();
   vi.stubGlobal('localStorage', {
     get length() {
@@ -109,7 +127,7 @@ it('defaults to the server and preserves the complete local save when the town d
   api.mockResolvedValue(remote(2, 10));
   await sync.sync();
   expect(townStorage.active().profile.town.coins).toBe(10);
-  expect(townStorage.active().meta.recovery.profile.town.coins).toBe(9);
+  expect(backups.get(townStorage.active().meta.recovery.id).profile.town.coins).toBe(9);
   expect(townStorage.active().meta).toMatchObject({
     baseRevision: 2,
     dirty: false,
@@ -140,7 +158,7 @@ it('preserves progress made during a download before defaulting to the server', 
   pending.resolve(remote(2, 9));
   await done;
   expect(townStorage.active().profile.town.coins).toBe(9);
-  expect(townStorage.active().meta.recovery.profile.town.coins).toBe(8);
+  expect(backups.get(townStorage.active().meta.recovery.id).profile.town.coins).toBe(8);
 });
 it('keeps a lost upload response pending and retries the same snapshot and upload ID', async () => {
   setupAccount();
@@ -154,7 +172,7 @@ it('keeps a lost upload response pending and retries the same snapshot and uploa
   townStorage.save(profile(6));
   api.mockResolvedValue(remote(2, 4));
   await sync.sync();
-  expect(api.mock.calls.at(-1)[1]).toEqual(pending.body);
+  expect(api.mock.calls.at(-1)[1]).toMatchObject(pending.body);
   expect(townStorage.active().meta.dirty).toBe(true);
   expect(townStorage.active().profile.town.coins).toBe(6);
 });
@@ -206,7 +224,7 @@ it('keeps the original recovery copy through later clean cloud updates', async (
   api.mockResolvedValue(remote(3, 12));
   await sync.sync();
   expect(townStorage.active().profile.town.coins).toBe(12);
-  expect(townStorage.active().meta.recovery.profile.town.coins).toBe(5);
+  expect(backups.get(townStorage.active().meta.recovery.id).profile.town.coins).toBe(5);
   expect(townStorage.active().meta.recovery.id).toBe(recoveryId);
 });
 it('asks again if the cloud changes while the comparison is open', async () => {
@@ -223,7 +241,7 @@ it('asks again if the cloud changes while the comparison is open', async () => {
   );
   expect(townStorage.active().profile.town.coins).toBe(11);
   expect(townStorage.active().meta.baseRevision).toBe(3);
-  expect(townStorage.active().meta.recovery.profile.town.coins).toBe(5);
+  expect(backups.get(townStorage.active().meta.recovery.id).profile.town.coins).toBe(5);
   expect(townStorage.active().meta.pending).toBeNull();
   api.mockResolvedValue(remote(3, 11));
   await sync.sync();
@@ -239,7 +257,7 @@ it('syncs other towns independently of a conflict', async () => {
     path.endsWith(first) ? remote(2, 5, first) : remote(2, 10, second),
   );
   await sync.sync();
-  expect(townStorage.active().meta.recovery.profile.town.coins).toBe(4);
+  expect(backups.get(townStorage.active().meta.recovery.id).profile.town.coins).toBe(4);
   expect(townStorage.records(owner.id).find((r) => r.meta.id === second).profile.town.coins).toBe(
     10,
   );
@@ -299,12 +317,12 @@ it('retries the exact confirmed overwrite after a lost response and recovers new
   api.mockResolvedValue(remote(3, 5));
   await sync.sync();
   expect(api.mock.calls.at(-1)[0]).toContain('/resolve');
-  expect(api.mock.calls.at(-1)[1]).toEqual(pending.body);
+  expect(api.mock.calls.at(-1)[1]).toMatchObject(pending.body);
   expect(townStorage.active().profile.town.coins).toBe(6);
   expect(townStorage.active().meta.conflict.revision).toBe(3);
   await sync.sync();
   expect(townStorage.active().profile.town.coins).toBe(5);
-  expect(townStorage.active().meta.recovery.profile.town.coins).toBe(6);
+  expect(backups.get(townStorage.active().meta.recovery.id).profile.town.coins).toBe(6);
   expect(townStorage.active().meta).toMatchObject({
     baseRevision: 3,
     dirty: false,
@@ -393,9 +411,9 @@ it('persists history restoration for retry after a lost response', async () => {
   const pending = townStorage.active().meta.pending;
   api.mockResolvedValue(remote(2, 40));
   await sync.sync();
-  expect(api.mock.calls.at(-1)[1]).toEqual(pending.body);
+  expect(api.mock.calls.at(-1)[1]).toMatchObject(pending.body);
   expect(townStorage.active().profile.town.coins).toBe(40);
-  expect(townStorage.active().meta.recovery.profile.town.coins).toBe(1);
+  expect(backups.get(townStorage.active().meta.recovery.id).profile.town.coins).toBe(1);
 });
 it('does not download unchanged towns during automatic saves', async () => {
   setupAccount();
@@ -443,13 +461,13 @@ it('replaces the whole village without combining spending, buildings or bonuses'
   api.mockResolvedValue(cloud);
   await sync.sync();
   expect(townStorage.active().profile).toEqual(cloud.profile);
-  expect(townStorage.active().meta.recovery.profile).toEqual(local);
+  expect(backups.get(townStorage.active().meta.recovery.id).profile).toEqual(local);
   const id = townStorage.active().meta.id;
   const review = await sync.reviewRecovery(id);
   api.mockImplementation(async (_, body) => ({ ...remote(3), profile: body.profile }));
   await sync.overwriteRecovery(id, review);
   expect(townStorage.active().profile).toEqual(local);
-  expect(townStorage.active().meta.recovery.profile).toEqual(cloud.profile);
+  expect(backups.get(townStorage.active().meta.recovery.id).profile).toEqual(cloud.profile);
   expect(townStorage.active().meta.desyncNotice).toBe(false);
 });
 
@@ -485,7 +503,7 @@ it('defers a desync through a mine and preserves all local results before loadin
   api.mockResolvedValue(remote(3, 60));
   await sync.sync({ pull: false });
   expect(townStorage.active().profile.town.coins).toBe(60);
-  expect(townStorage.active().meta.recovery.profile.town.coins).toBe(35);
+  expect(backups.get(townStorage.active().meta.recovery.id).profile.town.coins).toBe(35);
   expect(townStorage.active().meta).toMatchObject({
     baseRevision: 3,
     conflict: null,
@@ -507,7 +525,7 @@ it('preserves newer local changes when an in-flight upload receives a revision c
   );
   await task;
   expect(townStorage.active().profile.town.coins).toBe(50);
-  expect(townStorage.active().meta.recovery.profile.town.coins).toBe(35);
+  expect(backups.get(townStorage.active().meta.recovery.id).profile.town.coins).toBe(35);
   expect(townStorage.active().meta.pending).toBeNull();
 });
 
@@ -560,4 +578,198 @@ it('does not confirm a preserved save after the account changed', async () => {
   townStorage.account(owner);
   await expect(sync.overwriteRecovery(id, review)).rejects.toThrow('Review this town again');
   expect(api.mock.calls.filter(([, body]) => body)).toHaveLength(0);
+});
+
+it('archives consecutive conflicts and history replacements without erasing any preserved copy', async () => {
+  setupAccount();
+  townStorage.save(profile(10));
+  api.mockResolvedValue(remote(2, 20));
+  await sync.sync();
+  const first = townStorage.active().meta.recovery.id;
+  townStorage.mutate(townStorage.active().meta.id, owner.id, (r) => {
+    r.meta.desyncNotice = false;
+  });
+  townStorage.save(profile(21));
+  api.mockResolvedValue(remote(3, 30));
+  await sync.sync();
+  const second = townStorage.active().meta.recovery.id;
+  api.mockResolvedValue(remote(4, 5));
+  await sync.restore(townStorage.active().meta.id, profile(5));
+  expect(backups.get(first).profile.town.coins).toBe(10);
+  expect(backups.get(second).profile.town.coins).toBe(21);
+  expect(backups.get(townStorage.active().meta.recovery.id).profile.town.coins).toBe(30);
+  expect(townStorage.active().meta.recovery.profile).toBeUndefined();
+  api.mockResolvedValue(remote(4, 5));
+  const review = await sync.reviewRecovery(townStorage.active().meta.id, first);
+  expect(review.recovery.profile.town.coins).toBe(10);
+  api.mockResolvedValue(remote(5, 10));
+  await sync.overwriteRecovery(townStorage.active().meta.id, review);
+  expect(townStorage.active().profile.town.coins).toBe(10);
+  expect(backups.get(second).profile.town.coins).toBe(21);
+});
+it('preserves gameplay accepted while an archive transaction is still committing', async () => {
+  const { recoveryStore } = await import('../src/services/recoveryStore');
+  const saved = deferred();
+  recoveryStore.put.mockImplementationOnce(async (value) => {
+    backups.set(value.id, structuredClone(value));
+    await saved.promise;
+  });
+  setupAccount();
+  townStorage.save(profile(10));
+  api.mockResolvedValue(remote(2, 20));
+  const task = sync.sync();
+  await vi.waitFor(() => expect(backups.size).toBe(1));
+  townStorage.save(profile(11));
+  saved.resolve();
+  await task;
+  expect(townStorage.active().profile.town.coins).toBe(11);
+  expect(townStorage.active().meta.conflict.revision).toBe(2);
+  await sync.sync();
+  expect([...backups.values()].map((b) => b.profile.town.coins)).toEqual([10, 11]);
+  expect(townStorage.active().profile.town.coins).toBe(20);
+});
+it('keeps current progress when the archive is unavailable', async () => {
+  const { recoveryStore } = await import('../src/services/recoveryStore');
+  recoveryStore.put.mockRejectedValueOnce(new Error('archive unavailable'));
+  setupAccount();
+  townStorage.save(profile(10));
+  api.mockResolvedValue(remote(2, 20));
+  await expect(sync.sync()).rejects.toThrow('archive unavailable');
+  expect(townStorage.active().profile.town.coins).toBe(10);
+  expect(townStorage.active().meta.dirty).toBe(true);
+  expect(applied).not.toHaveBeenCalled();
+});
+it.each([413, 422])(
+  'stops retrying a rejected HTTP %s snapshot and can upload newer progress',
+  async (status) => {
+    setupAccount();
+    townStorage.save(profile(10));
+    api.mockImplementation(async (_, body) => {
+      if (body) throw Object.assign(new Error('Rejected save'), { status });
+      return remote(1);
+    });
+    await expect(sync.sync()).rejects.toMatchObject({ status });
+    expect(townStorage.active().meta.pending).toBeNull();
+    expect(townStorage.active().meta.uploadError.status).toBe(status);
+    const calls = api.mock.calls.length;
+    await sync.sync();
+    expect(api).toHaveBeenCalledTimes(calls);
+    townStorage.save(profile(11));
+    api.mockImplementation(async (_, body) =>
+      body ? remote(2, body.profile.town.coins) : remote(1),
+    );
+    await sync.sync();
+    expect(townStorage.active().meta.dirty).toBe(false);
+    expect(townStorage.active().meta.uploadError).toBeNull();
+    expect(api.mock.calls.at(-1)[1].profile.town.coins).toBe(11);
+  },
+);
+it('does not repeatedly submit an unsupported format as the player continues offline', async () => {
+  setupAccount();
+  townStorage.save(profile(10));
+  api.mockImplementation(async (_, body) => {
+    if (body)
+      throw Object.assign(new Error('Needs an upgrade'), {
+        status: 422,
+        data: { code: 'save_format_unsupported' },
+      });
+    return remote(1);
+  });
+  await expect(sync.sync()).rejects.toThrow('Needs an upgrade');
+  const calls = api.mock.calls.length;
+  townStorage.save(profile(11));
+  await sync.sync();
+  expect(api).toHaveBeenCalledTimes(calls);
+  expect(townStorage.active().profile.town.coins).toBe(11);
+});
+it('refreshes metadata at an unchanged gameplay revision without replacing local progress', async () => {
+  setupAccount();
+  townStorage.save(profile(8));
+  api.mockImplementation(async (_, body) => ({
+    ...remote(body ? 2 : 1, body ? body.profile.town.coins : 1),
+    name: 'Renamed Town',
+    isPublic: true,
+  }));
+  await sync.sync();
+  expect(townStorage.active().profile.town.coins).toBe(8);
+  expect(townStorage.active().meta.name).toBe('Renamed Town');
+  expect(townStorage.active().meta.isPublic).toBe(true);
+  expect(backups.size).toBe(0);
+});
+
+it('keeps immutable upload snapshots out of localStorage and retries them after reload', async () => {
+  setupAccount();
+  townStorage.save(profile(40));
+  api.mockImplementation(async (_, body) => {
+    if (body) throw new Error('lost response');
+    return remote(1);
+  });
+  await expect(sync.sync()).rejects.toThrow('lost response');
+  const pending = townStorage.active().meta.pending;
+  expect(pending.snapshot).toBe(true);
+  expect(pending.body.profile).toBeUndefined();
+  expect(outbox.get(pending.body.uploadId).profile.town.coins).toBe(40);
+  townStorage.save(profile(42));
+  const reopened = createSyncService({ storage: townStorage, request: api, account: () => owner });
+  api.mockResolvedValue(remote(2, 40));
+  await reopened.sync();
+  expect(api.mock.calls.at(-1)[1].profile.town.coins).toBe(40);
+  expect(townStorage.active().profile.town.coins).toBe(42);
+  expect(townStorage.active().meta.dirty).toBe(true);
+  expect(outbox.size).toBe(0);
+});
+it('recovers from an unavailable upload snapshot without permanently blocking the town', async () => {
+  setupAccount();
+  townStorage.save(profile(40));
+  api.mockImplementation(async (_, body) => {
+    if (body) throw new Error('offline');
+    return remote(1);
+  });
+  await expect(sync.sync()).rejects.toThrow('offline');
+  outbox.clear();
+  await sync.sync();
+  expect(townStorage.active().meta.pending).toBeNull();
+  expect(townStorage.active().meta.uploadError.message).toContain('pending upload');
+  expect(townStorage.active().profile.town.coins).toBe(40);
+  townStorage.mutate(townStorage.active().meta.id, owner.id, (r) => {
+    r.meta.uploadError = null;
+  });
+  api.mockImplementation(async (_, body) =>
+    body ? remote(2, body.profile.town.coins) : remote(1),
+  );
+  await sync.sync();
+  expect(townStorage.active().meta.dirty).toBe(false);
+});
+it('does not stage or upload progress when durable upload storage fails', async () => {
+  const { recoveryStore } = await import('../src/services/recoveryStore');
+  recoveryStore.putUpload.mockRejectedValueOnce(new Error('archive unavailable'));
+  setupAccount();
+  townStorage.save(profile(40));
+  api.mockResolvedValue(remote(1));
+  await expect(sync.sync()).rejects.toThrow('archive unavailable');
+  expect(townStorage.active().meta.pending).toBeNull();
+  expect(townStorage.active().profile.town.coins).toBe(40);
+  expect(api.mock.calls.filter(([, body]) => body)).toHaveLength(0);
+});
+it('requires a fresh confirmation if progress changes while a replacement is being staged', async () => {
+  const { recoveryStore } = await import('../src/services/recoveryStore');
+  setupAccount();
+  townStorage.save(profile(5));
+  api.mockResolvedValue(remote(2, 10));
+  await sync.sync();
+  const id = townStorage.active().meta.id,
+    review = await sync.reviewRecovery(id),
+    staged = deferred();
+  recoveryStore.putUpload.mockImplementationOnce(async (value) => {
+    outbox.set(value.id, value);
+    await staged.promise;
+  });
+  const replacing = sync.overwriteRecovery(id, review);
+  await vi.waitFor(() => expect(outbox.size).toBe(1));
+  townStorage.save(profile(11));
+  staged.resolve();
+  await expect(replacing).rejects.toThrow('Your save changed');
+  expect(townStorage.active().profile.town.coins).toBe(11);
+  expect(api.mock.calls.filter(([, body]) => body)).toHaveLength(0);
+  expect(outbox.size).toBe(0);
 });
