@@ -133,6 +133,13 @@ family.
 - Tomorrow City adds the Sky pods, Biodome and Maglev loop on a new x = 65 east-bank
   column; the east clearing now reaches x = 70 so those lots stay level.
 
+![Tomorrow City overview](images/tomorrow-city-overview.png)
+
+The same old-town view in Connected City and Tomorrow City (WebGL, headless Chromium):
+
+![Connected City old town](images/tomorrow-city-old-town-before.png)
+![Tomorrow City old town](images/tomorrow-city-old-town.png)
+
 Frame-rate rules for rounded forms: only the shared `sphere`, `cylinder`, `rounded` box
 and `rock` primitives are used (no new geometry is allocated per building), every part
 uses the seven-color palette so each batched plot stays at eight materials or fewer, and
