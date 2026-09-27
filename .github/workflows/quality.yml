@@ -86,6 +86,8 @@ jobs:
           php tests/o2switch/deploy-test.php
           php tests/o2switch/health-test.php
           bash tests/o2switch/install-preprod-test.sh
+          bash tests/o2switch/install-targets-test.sh
+          php tests/o2switch/branch-routing-test.php
       - run: composer audit --working-dir=backend
   container:
     runs-on: ubuntu-latest
