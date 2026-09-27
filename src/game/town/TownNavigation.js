@@ -19,20 +19,34 @@ export function townNavigation(world) {
     for (let node = root; node; node = node.parent)
       if (node.userData.activation === 'removed' || node.userData.activation === 'pending') return;
     obstacles.push(...(root.userData.footprints ?? []).filter((o) => o.activation !== 'removed'));
-    for (const footprint of root.userData.walkObstacles ?? []) {
-      const p = root.localToWorld(new Vector3(footprint.x, 0, footprint.z));
-      const scale = root.getWorldScale(new Vector3());
-      obstacles.push({
-        x: p.x,
-        z: p.z,
-        y: p.y,
-        radius: footprint.radius * Math.max(Math.abs(scale.x), Math.abs(scale.z)),
-        height: footprint.height * Math.abs(scale.y),
-        owner: root.userData.plot ? `plot:${root.userData.plot}` : undefined,
-      });
-    }
+    obstacles.push(...walkObstacleEntries(root));
   });
   return new TownNavigation(obstacles);
+}
+function sceneryOwner(root) {
+  for (let node = root; node; node = node.parent)
+    if (node.userData.navigationOwner) return node.userData.navigationOwner;
+}
+function walkObstacleEntries(root) {
+  return (root.userData.walkObstacles ?? []).map((footprint) => {
+    const p = root.localToWorld(new Vector3(footprint.x, 0, footprint.z));
+    const scale = root.getWorldScale(new Vector3());
+    return {
+      x: p.x,
+      z: p.z,
+      y: p.y,
+      radius: footprint.radius * Math.max(Math.abs(scale.x), Math.abs(scale.z)),
+      height: footprint.height * Math.abs(scale.y),
+      owner: root.userData.plot ? `plot:${root.userData.plot}` : sceneryOwner(root),
+    };
+  });
+}
+// Walk obstacles of one rebuilt scenery root, for `replaceOwner(root's owner, ...)`.
+export function sceneryObstacles(root) {
+  root.updateWorldMatrix(true, true);
+  const obstacles = [];
+  root.traverse((node) => obstacles.push(...walkObstacleEntries(node)));
+  return obstacles;
 }
 function distanceToSegment(o, a, b) {
   const dx = b[0] - a[0],

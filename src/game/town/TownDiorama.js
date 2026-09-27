@@ -10,7 +10,14 @@ import { updateMineGrowth } from './mine/addMineSite';
 import { afterPaint, performanceMark, scheduleWork } from '../PresentationWork';
 import { geometryFootprints, registerFootprints, footprintDistance } from './BuildingFootprints';
 import { townTracks, railEdges } from './TownLayout';
-import { townNavigation, prepareActorWalk, walkPose, placeSafely } from './TownNavigation';
+import {
+  townNavigation,
+  prepareActorWalk,
+  walkPose,
+  placeSafely,
+  sceneryObstacles,
+} from './TownNavigation';
+import { recordTownTiming, timeTown, timedSteps, watchLongTasks } from './TownProfiler';
 import { addWorkBreak, updateWorkPaths, updateWorkRoutine } from './TownWorkRoutine';
 import { buildingWalk } from './TownPedestrians';
 import { TownVipArrivals } from './TownVipArrivals';
@@ -136,6 +143,7 @@ export class TownDiorama {
       if (object.isLight) object.layers.enable(2);
     });
     this.frameCache = new TownFrameCache(this.renderer, this.renderQuality.cacheSamples);
+    watchLongTasks();
     this.upgradeGlow = new TownUpgradeGlow(this.scene);
     this.raycaster = new THREE.Raycaster();
     this.raycaster.layers.enable(1);
@@ -298,30 +306,52 @@ export class TownDiorama {
     sign.material = material;
   }
   batch(group) {
+    const work = this.batchWork(group);
+    while (!work.next().done) {}
+  }
+  // Clone one mesh or merge one material per step. The group changes only in the
+  // final step, so cancelled or interleaved frames still draw the original meshes.
+  *batchWork(group) {
     group.updateMatrixWorld(true);
     const inverse = group.matrixWorld.clone().invert(),
       buckets = new Map(),
-      meshes = [];
+      meshes = [],
+      merged = [];
     group.traverse((object) => {
       if (!object.isMesh || object.isInstancedMesh) return;
       for (let node = object; node && node !== group; node = node.parent)
         if (node.userData.animated) return;
       meshes.push(object);
-      const geometry = object.geometry
-        .clone()
-        .applyMatrix4(inverse.clone().multiply(object.matrixWorld));
-      if (!buckets.has(object.material)) buckets.set(object.material, []);
-      buckets.get(object.material).push(geometry);
     });
-    meshes.forEach((mesh) => mesh.removeFromParent());
-    for (const [material, geometries] of buckets) {
-      const geometry = mergeGeometries(geometries);
-      geometries.forEach((item) => item.dispose());
-      geometry.userData.owned = true;
-      const mesh = new THREE.Mesh(geometry, material);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      group.add(mesh);
+    let committed = false;
+    try {
+      for (const object of meshes) {
+        const geometry = object.geometry
+          .clone()
+          .applyMatrix4(inverse.clone().multiply(object.matrixWorld));
+        if (!buckets.has(object.material)) buckets.set(object.material, []);
+        buckets.get(object.material).push(geometry);
+        yield;
+      }
+      for (const [material, geometries] of buckets) {
+        const geometry = mergeGeometries(geometries);
+        geometries.forEach((item) => item.dispose());
+        buckets.delete(material);
+        geometry.userData.owned = true;
+        merged.push([geometry, material]);
+        yield;
+      }
+      meshes.forEach((mesh) => mesh.removeFromParent());
+      for (const [geometry, material] of merged) {
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        group.add(mesh);
+      }
+      committed = true;
+    } finally {
+      for (const geometries of buckets.values()) geometries.forEach((item) => item.dispose());
+      if (!committed) merged.forEach(([geometry]) => geometry.dispose());
     }
   }
   clearGroup(group) {
@@ -419,16 +449,22 @@ export class TownDiorama {
       ]),
     );
   }
+  // Named parts show which layout change forced a full rebuild in town timings.
+  topologyParts(town, labels) {
+    return Object.fromEntries(
+      Object.entries({
+        era: town.era,
+        plots: visiblePlots(town).map(({ id }) => id),
+        tracks: townTracks(town),
+        rails: railEdges(town),
+        roads: roadLevel(town),
+        electricity: hasElectricity(town),
+        labels,
+      }).map(([key, value]) => [key, JSON.stringify(value ?? null)]),
+    );
+  }
   topologySignature(town, labels) {
-    return JSON.stringify([
-      town.era,
-      visiblePlots(town).map(({ id }) => id),
-      townTracks(town),
-      railEdges(town),
-      roadLevel(town),
-      hasElectricity(town),
-      labels,
-    ]);
+    return JSON.stringify(this.topologyParts(town, labels));
   }
   prepareConstructionCue() {
     if (!this.cue) {
@@ -449,6 +485,7 @@ export class TownDiorama {
     this.drawFrame();
   }
   changeTown(town, labels, mineProgress, constructionId, reducedMotion = false) {
+    const started = performance.now();
     this.mineProgress = mineProgress;
     const works = this.staticScenery?.entries.get('mine-works')?.group;
     if (works) updateMineGrowth(works, mineGrowth(mineProgress));
@@ -456,7 +493,16 @@ export class TownDiorama {
     const changed = [...signatures].filter(
       ([id, signature]) => this.plotCache?.get(id)?.signature !== signature,
     );
-    if (!changed.length && this.topology === this.topologySignature(town, labels)) {
+    const parts = this.topologyParts(town, labels);
+    const sameTopology = this.topology === JSON.stringify(parts);
+    const record = (path) =>
+      recordTownTiming('town-change', started, {
+        path,
+        building: constructionId ?? null,
+        plots: changed.map(([id]) => id),
+        topology: Object.keys(parts).filter((key) => parts[key] !== this.topologyState?.[key]),
+      });
+    if (!changed.length && sameTopology) {
       this.town = town;
       this.render();
       return;
@@ -465,7 +511,7 @@ export class TownDiorama {
       changed.length === 1 &&
       this.lifeReady !== false &&
       changed[0][0] === 'mine' &&
-      this.topology === this.topologySignature(town, labels)
+      sameTopology
     ) {
       this.invalidatePresentationWork();
       this.town = town;
@@ -476,36 +522,51 @@ export class TownDiorama {
       this.buildingRenderer.sync(this.world.children.filter((child) => child.userData.static));
       this.repairAnimalLife();
       this.render();
+      record('mine');
       return;
     }
     if (
       changed.length === 1 &&
       this.lifeReady !== false &&
       changed[0][0] !== 'mine' &&
-      this.topology === this.topologySignature(town, labels)
+      sameTopology
     ) {
       try {
         this.swapPlot(changed[0][0], town, labels, {
           construction: constructionId && !reducedMotion,
         });
+        record('swap');
         return;
       } catch (error) {
         console.warn('Incremental plot preparation failed; rebuilding town.', error);
       }
     }
     if (constructionId && this.navigation && this.plotCache?.has(constructionId)) {
+      // Prepare the finished building once: its footprints decide when the site is
+      // clear, then the full rebuild adopts this group instead of building it again.
       const [x, z] = PLOTS[constructionId],
         probe = this.group(new THREE.Group(), x, 0.08, z);
       probe.userData.plot = constructionId;
       const oldTown = this.town;
       this.town = town;
+      let movingPart;
       try {
-        this.buildPlot(constructionId, probe, town, labels);
+        movingPart = timeTown('prepare-build', () =>
+          this.buildPlot(constructionId, probe, town, labels),
+        );
+      } catch (error) {
+        this.clearGroup(probe);
+        throw error;
       } finally {
         this.town = oldTown;
       }
-      const entries = registerFootprints(probe, geometryFootprints(probe));
-      this.clearGroup(probe);
+      const footprint = timeTown('prepare-footprints', () =>
+        this.plotFootprints(constructionId, town, probe, false),
+      );
+      const entries = registerFootprints(probe, footprint.solids, {
+        provisional: footprint.provisional,
+      });
+      this.discardPendingUpdate();
       this.pendingUpdate = {
         id: constructionId,
         entries,
@@ -513,32 +574,45 @@ export class TownDiorama {
         labels,
         mineProgress,
         constructionId: reducedMotion ? null : constructionId,
+        prepared: { id: constructionId, group: probe, movingPart, footprint },
       };
+      record('prepared-update');
       if (!this.tryActivatePlot()) return;
-    } else this.update(town, labels, mineProgress, reducedMotion ? null : constructionId);
+    } else {
+      this.update(town, labels, mineProgress, reducedMotion ? null : constructionId);
+      record('update');
+    }
     if (this.cue) this.cue.visible = false;
+  }
+  plotFootprints(id, town, group, provisionalMine = true) {
+    return id === 'mine'
+      ? { solids: geometryFootprints(group), provisional: provisionalMine }
+      : footprintsFor(plotFootprintKey(id, town), group);
+  }
+  discardPendingUpdate() {
+    // The prepared building (and any rotor inside it) never joined the world.
+    this.clearGroup(this.pendingUpdate?.prepared?.group);
+    this.pendingUpdate = null;
   }
   swapPlot(id, town, labels, { construction = false } = {}) {
     this.finishConstruction();
     this.invalidatePresentationWork();
     if (this.pendingPlot) this.clearGroup(this.pendingPlot.group);
     this.pendingPlot = null;
-    this.pendingUpdate = null;
+    this.discardPendingUpdate();
     const previous = this.plotCache.get(id);
     const [x, z] = PLOTS[id];
     const group = this.group(this.world, x, 0.08, z);
     group.userData.plot = id;
     group.userData.static = true;
     this.town = town;
-    const movingPart = this.buildPlot(id, group, town, labels);
-    const footprint =
-      id === 'mine'
-        ? { solids: geometryFootprints(group), provisional: true }
-        : footprintsFor(plotFootprintKey(id, town), group);
+    const movingPart = timeTown('prepare-build', () => this.buildPlot(id, group, town, labels));
+    const footprint = timeTown('prepare-footprints', () => this.plotFootprints(id, town, group));
     const entries = registerFootprints(group, footprint.solids, {
       provisional: footprint.provisional,
     });
     const signature = this.plotSignatures(town, labels).get(id);
+    const partKeys = new Map();
     const pending = {
       id,
       group,
@@ -547,7 +621,8 @@ export class TownDiorama {
       entries,
       signature,
       construction,
-      parts: constructionParts(group),
+      parts: timeTown('construction-parts', () => constructionParts(group, partKeys)),
+      partKeys,
     };
     group.visible = false;
     group.userData.activation = 'pending';
@@ -624,14 +699,24 @@ export class TownDiorama {
       const pending = this.pendingUpdate;
       if (!this.plotVacant(pending)) return false;
       this.pendingUpdate = null;
-      this.update(pending.town, pending.labels, pending.mineProgress, pending.constructionId);
+      timeTown('full-update', () =>
+        this.update(
+          pending.town,
+          pending.labels,
+          pending.mineProgress,
+          pending.constructionId,
+          pending.prepared,
+        ),
+      );
       if (this.cue) this.cue.visible = false;
       return true;
     }
     const pending = this.pendingPlot;
     if (!pending) return true;
-    const { id, group, previous, movingPart, entries, signature, construction, parts } = pending;
+    const { id, group, previous, movingPart, entries, signature, construction, parts, partKeys } =
+      pending;
     if (!this.plotVacant(pending)) return false;
+    const started = performance.now();
     this.pendingPlot = null;
     previous.group.userData.activation = 'removed';
     previous.group.removeFromParent();
@@ -649,6 +734,9 @@ export class TownDiorama {
       entries,
       construction ? 'temporary-reveal' : 'completed',
     );
+    // A first opening can extend frontage paving or overhead service wires. Refresh
+    // only those scenery roots here instead of leaving them stale until a full rebuild.
+    const scenery = this.refreshScenery();
     const actors = [
       ...(this.actors ?? []),
       ...(this.animals ?? []),
@@ -704,13 +792,23 @@ export class TownDiorama {
       this.motions.push(movingPart.update);
     }
     if (construction)
-      this.construction = new TownConstruction(this, group, movingPart?.rotor, previous.parts);
-    this.refreshServiceDrops(id);
-    this.buildingRenderer.sync(this.world.children.filter((child) => child.userData.static));
+      this.construction = new TownConstruction(
+        this,
+        group,
+        movingPart?.rotor,
+        previous.parts,
+        partKeys,
+      );
+    // New overhead wires replace every plot's service drop, not just this one.
+    this.refreshServiceDrops(scenery.includes('power') ? undefined : id);
+    timeTown('activate-statics', () =>
+      this.buildingRenderer.sync(this.world.children.filter((child) => child.userData.static)),
+    );
     this.clearGroup(previous.group);
     this.frameCache.valid = false;
-    this.rebuildActors();
+    timeTown('activate-actors', () => this.rebuildActors());
     this.render();
+    recordTownTiming('activate', started, { building: id, construction: !!construction, scenery });
     const reveal = this.construction;
     if (reveal)
       afterPaint(() => {
@@ -718,6 +816,15 @@ export class TownDiorama {
       });
     else this.repairAnimalLife();
     return true;
+  }
+  refreshScenery() {
+    if (!this.staticScenery) return [];
+    const changed = this.staticScenery.update(this, this.town);
+    for (const id of changed) {
+      const group = this.staticScenery.entries.get(id).group;
+      this.navigation?.replaceOwner(`scenery:${id}`, group ? sceneryObstacles(group) : []);
+    }
+    return changed;
   }
   refreshServiceDrops(changedId) {
     const previous = this.serviceDrops;
@@ -740,7 +847,7 @@ export class TownDiorama {
     this.cancelFinishWork?.();
     this.cancelRouteWork?.();
   }
-  update(town, labels, mineProgress = 0, constructionId = null) {
+  update(town, labels, mineProgress = 0, constructionId = null, prepared = null) {
     this.mineProgress = mineProgress;
     this.invalidatePresentationWork();
     // Store the rendered era separately: the campaign may mutate the same town
@@ -765,7 +872,9 @@ export class TownDiorama {
     this.lifeReady = false;
     if (this.pendingPlot) this.clearGroup(this.pendingPlot.group);
     this.pendingPlot = null;
-    this.pendingUpdate = null;
+    // Activation clears its own pending update first; any other one is superseded.
+    this.discardPendingUpdate();
+    let adopted = null;
     this.presentation?.dispose(false);
     this.presentation = null;
     const interruptedGroup = this.construction?.group;
@@ -776,7 +885,8 @@ export class TownDiorama {
     const previousPlotIds = this.cinematic?.plotIds;
     const reusable = new Map();
     const signatures = this.plotSignatures(town, labels);
-    this.topology = this.topologySignature(town, labels);
+    this.topologyState = this.topologyParts(town, labels);
+    this.topology = JSON.stringify(this.topologyState);
     this.labels = labels;
     // Keep unchanged plot meshes (and their sign textures) out of world disposal.
     // A reveal needs fresh articulated pieces, including when interrupted by a tap.
@@ -836,8 +946,11 @@ export class TownDiorama {
       position: [x, z],
     } of plots) {
       const cached = reusable.get(id);
-      const group = cached?.group ?? this.group(this.world, x, 0.08, z);
-      if (cached) this.world.add(group);
+      // A topology-changing reveal already built this plot to check its site.
+      const ready = !cached && prepared?.id === id ? prepared : null;
+      if (ready) adopted = ready;
+      const group = cached?.group ?? ready?.group ?? this.group(this.world, x, 0.08, z);
+      if (cached || ready) this.world.add(group);
       group.userData.plot = id;
       if (previousPlotIds && !previousPlotIds.has(id)) {
         group.visible = false;
@@ -850,14 +963,11 @@ export class TownDiorama {
         width: id === 'mine' ? 160 : Math.max(76, labels[id].length * 7 + 35),
         position: point(x, 0.2, z + (id === 'mine' ? 1.65 : 1.85)),
       });
-      let movingPart = cached?.movingPart;
-      if (!cached) movingPart = this.buildPlot(id, group, town, labels);
+      let movingPart = cached?.movingPart ?? ready?.movingPart;
+      if (!cached && !ready) movingPart = this.buildPlot(id, group, town, labels);
       const bounds = new THREE.Box3().setFromObject(group);
       if (!cached) {
-        const footprint =
-          id === 'mine'
-            ? { solids: geometryFootprints(group), provisional: false }
-            : footprintsFor(plotFootprintKey(id, town), group);
+        const footprint = ready?.footprint ?? this.plotFootprints(id, town, group, false);
         registerFootprints(group, footprint.solids, {
           provisional: footprint.provisional,
           activation: town.projects[id]
@@ -887,13 +997,21 @@ export class TownDiorama {
           new THREE.Vector3().setScalar(radius * 2),
         );
       }
-      const parts = cached?.parts ?? constructionParts(group);
+      const partKeys = new Map();
+      const parts = cached?.parts ?? constructionParts(group, partKeys);
       if (id === constructionId)
-        this.construction = new TownConstruction(this, group, movingPart?.rotor, previousParts);
+        this.construction = new TownConstruction(
+          this,
+          group,
+          movingPart?.rotor,
+          previousParts,
+          partKeys,
+        );
       else if (!cached) this.batch(group);
       if (movingPart) this.motions.push(movingPart.update);
       this.plotCache.set(id, { signature: signatures.get(id), group, movingPart, parts });
     }
+    if (prepared && prepared !== adopted) this.clearGroup(prepared.group);
     // Model preparation can be expensive. Start the reveal clock on its first visible frame.
     if (this.construction) this.lastFrame = 0;
     this.refreshServiceDrops();
@@ -1931,6 +2049,7 @@ export class TownDiorama {
           this.sun.shadow.mapSize.set(size, size);
           this.renderer.shadowMap.needsUpdate = true;
         }
+        this.frameCache.setSamples?.(this.renderQuality.cacheSamples);
         this.frameCache.valid = false;
       }
     }
@@ -1989,21 +2108,31 @@ export class TownDiorama {
     );
     group.userData.activation = 'completed';
     this.frameCache.valid = false;
-    this.render();
+    // A pending camera frame already redraws the town this frame; do not render twice.
+    if (!this.cameraFrame) timeTown('finish-render', () => this.render());
     const generation = this.generation;
     const view = this;
+    // Each yield lets input and frames through. Until the actor rebuild, the finished
+    // pieces still draw as instances, so the partial batches are never visible alone.
     function* settle() {
       if (group.parent !== view.world) return;
-      view.batch(group);
+      yield* timedSteps('settle-batch', view.batchWork(group));
       yield;
-      view.buildingRenderer.sync(view.world.children.filter((child) => child.userData.static));
-      view.repairAnimalLife();
-      view.rebuildActors();
+      yield* timedSteps(
+        'settle-statics',
+        view.buildingRenderer.syncWork(
+          view.world.children.filter((child) => child.userData.static),
+        ),
+      );
+      yield;
+      timeTown('settle-animals', () => view.repairAnimalLife());
+      yield;
+      timeTown('settle-actors', () => view.rebuildActors());
       view.frameCache.valid = false;
       afterPaint(() => {
         if (generation !== view.generation) return;
         view.renderer.shadowMap.needsUpdate = true;
-        view.render();
+        timeTown('settle-shadow-render', () => view.render());
       });
     }
     this.cancelFinishWork?.();
@@ -2156,6 +2285,7 @@ export class TownDiorama {
       this.selection.material.dispose();
     }
     this.staticScenery?.dispose(this);
+    this.discardPendingUpdate();
     this.clearGroup(this.world);
     this.clearGroup(this.landscape);
     this.plotCache?.clear();

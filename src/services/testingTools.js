@@ -7,6 +7,7 @@ import { ERAS, FRONTIER_ERA } from '../data/eras';
 import { BUILDINGS, BANDIT_EVENT } from '../data/town';
 import { ERA_BUILDING_LEVELS, eraGate, plotInEra } from '../game/town/TownEras';
 import { normalizeTown, settleSaloonIncome } from '../game/town/TownRules';
+import { townTimings } from '../game/town/TownProfiler';
 
 export const TESTING_TOWN_CHANGED = 'prospect-debug-town-changed';
 
@@ -24,6 +25,10 @@ export function createTestingTools(pinia) {
   return Object.freeze({
     async showNavigation(value = true) {
       return (await import('../game/town/NavigationDebug')).showNavigation(value);
+    },
+    // Construction and rebuild phase timings (ms) plus browser long tasks, for phones.
+    townTimings(options) {
+      return townTimings(options);
     },
     prepareEra(era) {
       const campaign = useCampaignStore(pinia);

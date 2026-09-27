@@ -47,6 +47,14 @@ export class TownFrameCache {
     this.valid = false;
     this.targetValidated = false;
   }
+  // Released attachments are recreated with the new sample count on the next render.
+  setSamples(samples) {
+    if (this.target.samples === samples) return;
+    this.target.samples = samples;
+    this.target.dispose();
+    this.targetValidated = false;
+    this.valid = false;
+  }
   render(scene, camera, refresh = false) {
     const renderer = this.renderer;
     renderer.getDrawingBufferSize(this.size);

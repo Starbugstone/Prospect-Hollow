@@ -6,12 +6,15 @@ const partKey = (object) =>
     object.material.uuid,
     object.matrixWorld.elements.map((v) => Math.round(v * 10000) / 10000),
   ]);
-export function constructionParts(group) {
+// `keys` optionally receives each mesh's key, so a reveal starting from the same
+// untouched group does not serialize every transform a second time.
+export function constructionParts(group, keys) {
   group.updateMatrixWorld(true);
   const parts = new Map();
   group.traverse((object) => {
     if (object.isMesh) {
       const key = partKey(object);
+      keys?.set(object, key);
       parts.set(key, (parts.get(key) ?? 0) + 1);
     }
   });
@@ -21,7 +24,7 @@ const clamp = (value) => Math.min(1, Math.max(0, value));
 
 // Temporary articulated pieces share the village's existing instanced actor renderer.
 export class TownConstruction {
-  constructor(view, group, rotor, previousParts) {
+  constructor(view, group, rotor, previousParts, keys) {
     this.group = group;
     this.rotor = rotor;
     this.start = view.activeElapsed ?? view.elapsed;
@@ -35,7 +38,7 @@ export class TownConstruction {
     const center = new Vector3();
     group.traverse((object) => {
       if (!object.isMesh) return;
-      const key = partKey(object);
+      const key = keys?.get(object) ?? partKey(object);
       if (remaining.get(key)) {
         remaining.set(key, remaining.get(key) - 1);
         return;

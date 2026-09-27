@@ -20,6 +20,22 @@ export class TownStatics {
   // Roots are immutable prepared models at fixed world transforms. A changed
   // plot/scenery root gets a new identity; retain every other GPU buffer.
   sync(roots) {
+    const work = this.syncWork(roots);
+    while (!work.next().done) {}
+  }
+  // Prepare missing batches one source mesh per step; commit them in one step, so an
+  // interrupted frame never shows a root hidden from the cache without its batch.
+  *syncWork(roots) {
+    const prepared = new Map();
+    try {
+      for (const root of roots)
+        if (!this.batches.has(root)) prepared.set(root, yield* this.prepare([root]));
+      this.commit(roots, prepared);
+    } finally {
+      for (const { geometry } of prepared.values()) geometry?.dispose();
+    }
+  }
+  commit(roots, prepared) {
     const tracked = new Set(this.batches.values());
     if (this.meshes.some((mesh) => !tracked.has(mesh))) this.clear();
     const retained = new Set(roots);
@@ -32,49 +48,77 @@ export class TownStatics {
       }
       this.batches.delete(root);
     }
-    for (const root of roots) if (!this.batches.has(root)) this.batches.set(root, this.add([root]));
+    for (const root of roots) {
+      if (this.batches.has(root)) continue;
+      const batch = prepared.get(root) ?? this.run(this.prepare([root]));
+      prepared.delete(root);
+      this.batches.set(root, this.place(batch));
+    }
     for (const [root, mesh] of this.batches) if (mesh) mesh.visible = root.visible;
     this.mesh = this.meshes.at(-1) ?? null;
   }
   add(roots) {
-    const geometries = [];
-    for (const root of roots) {
-      root.updateWorldMatrix(true, true);
-      root.traverse((object) => {
-        if (object.isInstancedMesh) return;
-        for (let node = object; node && node !== root; node = node.parent)
-          if (node.userData.animated) return;
-        if (
-          !object.isMesh ||
-          !object.material.isMeshStandardMaterial ||
-          object.material.map ||
-          object.material.transparent
-        )
-          return;
-        const geometry = object.geometry.clone();
-        geometry.applyMatrix4(object.matrixWorld);
-        geometry.deleteAttribute('uv');
-        const oldColors = geometry.getAttribute('color');
-        const colors = new Float32Array(geometry.getAttribute('position').count * 3),
-          color = object.material.color;
-        for (let i = 0; i < colors.length / 3; i++) {
-          colors[i * 3] = color.r * (oldColors?.getX(i) ?? 1);
-          colors[i * 3 + 1] = color.g * (oldColors?.getY(i) ?? 1);
-          colors[i * 3 + 2] = color.b * (oldColors?.getZ(i) ?? 1);
+    return this.place(this.run(this.prepare(roots)));
+  }
+  run(work) {
+    let next;
+    do next = work.next();
+    while (!next.done);
+    return next.value;
+  }
+  // Read-only preparation: source meshes move to the picking layer only when placed.
+  *prepare(roots) {
+    const geometries = [],
+      objects = [];
+    try {
+      for (const root of roots) {
+        root.updateWorldMatrix(true, true);
+        const sources = [];
+        root.traverse((object) => {
+          if (object.isInstancedMesh) return;
+          for (let node = object; node && node !== root; node = node.parent)
+            if (node.userData.animated) return;
+          if (
+            !object.isMesh ||
+            !object.material.isMeshStandardMaterial ||
+            object.material.map ||
+            object.material.transparent
+          )
+            return;
+          sources.push(object);
+        });
+        for (const object of sources) {
+          const geometry = object.geometry.clone();
+          geometry.applyMatrix4(object.matrixWorld);
+          geometry.deleteAttribute('uv');
+          const oldColors = geometry.getAttribute('color');
+          const colors = new Float32Array(geometry.getAttribute('position').count * 3),
+            color = object.material.color;
+          for (let i = 0; i < colors.length / 3; i++) {
+            colors[i * 3] = color.r * (oldColors?.getX(i) ?? 1);
+            colors[i * 3 + 1] = color.g * (oldColors?.getY(i) ?? 1);
+            colors[i * 3 + 2] = color.b * (oldColors?.getZ(i) ?? 1);
+          }
+          geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+          if (geometry.index) geometries.push(geometry);
+          else {
+            geometries.push(mergeVertices(geometry));
+            geometry.dispose();
+          }
+          objects.push(object);
+          yield;
         }
-        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-        if (geometry.index) geometries.push(geometry);
-        else {
-          geometries.push(mergeVertices(geometry));
-          geometry.dispose();
-        }
-        object.layers.set(1);
-      });
+      }
+      if (!geometries.length) return { geometry: null, objects };
+      return { geometry: mergeGeometries(geometries, false), objects };
+    } finally {
+      geometries.forEach((geometry) => geometry.dispose());
     }
-    if (!geometries.length) return;
-    const merged = mergeGeometries(geometries, false);
-    geometries.forEach((geometry) => geometry.dispose());
-    this.mesh = new THREE.Mesh(merged, this.material);
+  }
+  place({ geometry, objects }) {
+    for (const object of objects) object.layers.set(1);
+    if (!geometry) return;
+    this.mesh = new THREE.Mesh(geometry, this.material);
     this.mesh.castShadow = this.mesh.receiveShadow = true;
     this.scene.add(this.mesh);
     this.meshes.push(this.mesh);
