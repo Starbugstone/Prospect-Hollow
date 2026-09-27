@@ -665,7 +665,7 @@ import {
   eraEventKind,
   eventHeading,
   incidentStory,
-  incidentPhases,
+  incidentPhase,
 } from '../../data/townEvents';
 import { ERA_BY_ID } from '../../data/eras';
 import { eraGate, plotInEra, eraBuildingLevel } from '../../game/town/TownEras';
@@ -922,10 +922,9 @@ const { playRaidCue } = useTownAudio(() => ({
   river: true,
   railDepot: town.value.buildings.railDepot > 0 && !modernTransport(town.value, 'railDepot'),
   riverPort: town.value.buildings.riverPort > 0 && !modernTransport(town.value, 'riverPort'),
-  raid:
-    activeRaid.value && eventKind(activeRaid.value) === 'bandits'
-      ? `${activeRaid.value.id}-${raidPhase.value}`
-      : null,
+  // Every incident kind ducks the music and gets its own recorded cues.
+  raid: activeRaid.value ? `${activeRaid.value.id}-${raidPhase.value}` : null,
+  raidKind: activeRaid.value ? eventKind(activeRaid.value) : null,
   // Village panels pause the diorama, but its music and ambience keep playing.
   paused: !props.active || paused.value || !!town.value.transition?.pending,
 }));
@@ -1204,10 +1203,7 @@ function replayRaid() {
   raidNotice.value = null;
   if (!event.value || activeRaid.value) return;
   activeRaid.value = { ...event.value };
-  raidPhase.value =
-    eventKind(event.value) === 'bandits'
-      ? 'Riders on the ridge'
-      : incidentPhases(eventKind(event.value), 0);
+  raidPhase.value = incidentPhase(event.value, 0);
   document
     .querySelector('.town-map-frame')
     ?.scrollIntoView({ behavior: settings.reducedMotion ? 'instant' : 'smooth', block: 'start' });
@@ -1226,10 +1222,7 @@ function enterVillage() {
   campaign.resolveBandits();
   if (event.value && !event.value.seen) {
     activeRaid.value = { ...event.value };
-    raidPhase.value =
-      eventKind(event.value) === 'bandits'
-        ? 'Riders on the ridge'
-        : incidentPhases(eventKind(event.value), 0);
+    raidPhase.value = incidentPhase(event.value, 0);
   }
   if (props.openMuseum && !campaign.canReplay) {
     selectBuilding('museum');

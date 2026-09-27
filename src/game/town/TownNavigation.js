@@ -272,9 +272,16 @@ export class TownNavigation {
     return candidates.find((a) => this.clear(a, margin)) ?? null;
   }
   detour(a, b, margin) {
+    return finish(this.detourSteps(a, b, margin));
+  }
+  // The detour search in resumable steps (one yield per settled node).
+  *detourSteps(a, b, margin) {
     const key = JSON.stringify([a, b, margin]);
     if (this.detours.has(key)) return this.detours.get(key);
+    const revision = this.revision;
     const remember = (path) => {
+      // Footprints changed while this search was paused: use it once, never cache it.
+      if (this.revision !== revision) return path;
       this.detours.set(key, path);
       // Everything the search examined: a changed footprint outside this area
       // cannot block the cached path or open a better one.
@@ -298,7 +305,7 @@ export class TownNavigation {
     );
     if (!obstacles.size) return [a, b];
     const nodes = [a, b];
-    const search = () => {
+    const search = function* () {
       const distances = nodes.map(() => Infinity),
         previous = nodes.map(() => -1),
         done = new Set();
@@ -308,16 +315,20 @@ export class TownNavigation {
         for (let n = 0; n < nodes.length; n++)
           if (!done.has(n) && (at < 0 || distances[n] < distances[at])) at = n;
         if (at < 0 || !Number.isFinite(distances[at])) break;
+        yield;
         if (at === 1) {
           const path = [];
           for (let n = 1; n >= 0; n = previous[n]) path.unshift(nodes[n]);
           return path;
         }
         done.add(at);
+        let checks = 0;
         for (let next = 0; next < nodes.length; next++) {
           if (done.has(next)) continue;
           const length = Math.hypot(nodes[at][0] - nodes[next][0], nodes[at][2] - nodes[next][2]);
           if (distances[at] + length >= distances[next]) continue;
+          // Dense scenery gives each node many edges; pause between batches of checks.
+          if (++checks % 24 === 0) yield;
           if (
             this.nearbySegment(nodes[at], nodes[next], margin).some(
               (o) => !sweptClear(o, nodes[at], nodes[next], margin),
@@ -332,14 +343,20 @@ export class TownNavigation {
     };
     let frontier = [...obstacles];
     while (frontier.length) {
-      const rings = frontier.map((o) => ring(o, margin, (a[1] + b[1]) / 2));
-      nodes.push(...rings.flat().filter((p) => this.clear(p, margin)));
-      const path = search();
+      const rings = [];
+      for (const o of frontier) {
+        const points = ring(o, margin, (a[1] + b[1]) / 2);
+        rings.push(points);
+        nodes.push(...points.filter((p) => this.clear(p, margin)));
+        yield;
+      }
+      const path = yield* search.call(this);
       if (path) return remember(path);
       // Only expand a failed search. Adjacent obstacles may block its rings
       // without touching the direct line; include their outer routes as needed.
       frontier = [];
-      for (const points of rings)
+      for (const points of rings) {
+        yield;
         for (let i = 0; i < points.length; i++) {
           const from = points[i],
             to = points[(i + 1) % points.length];
@@ -349,6 +366,7 @@ export class TownNavigation {
               frontier.push(neighbour);
             }
         }
+      }
     }
     // A blocked route stops at the last safe point; never fall through scenery.
     return remember([a]);
@@ -370,17 +388,29 @@ export class TownNavigation {
     return path;
   }
   plan(points, margin = NPC_MARGIN) {
+    return finish(this.planSteps(points, margin));
+  }
+  // The same plan in resumable steps: one yield after each detour search, so a
+  // cutscene can prepare its routes within a per-frame time budget.
+  *planSteps(points, margin = NPC_MARGIN) {
     this.plans++;
     if (!points.length) return walkPath([]);
     const first = this.safePoint(points[0], margin);
     if (!first) return walkPath([]);
     const last = this.safePoint(points.at(-1), margin);
     if (!last) return walkPath([first]);
-    const anchors = [first, ...points.slice(1, -1).filter((p) => this.clear(p, margin)), last];
     const route = [first];
-    for (const p of anchors.slice(1)) {
+    // Anchors are the clear intermediate samples, then the end. Checking them as the
+    // walk proceeds (not all up front) keeps each resumable step small.
+    for (let i = 1; i < points.length; i++) {
+      const p = i < points.length - 1 ? points[i] : last;
+      if (i < points.length - 1) {
+        if (i % 8 === 0) yield;
+        if (!this.clear(p, margin)) continue;
+      }
       if (Math.hypot(p[0] - route.at(-1)[0], p[2] - route.at(-1)[2]) < EPS) continue;
-      const section = this.detour(route.at(-1), p, margin);
+      const section = yield* this.detourSteps(route.at(-1), p, margin);
+      yield;
       if (section.length < 2) {
         // If a loop is blocked, retrace the verified prefix. Repeating a truncated
         // loop would otherwise jump from its dead end back to the start.
@@ -393,6 +423,10 @@ export class TownNavigation {
     return this.track(walkPath(route), margin);
   }
   route(route, offset = 0, margin = NPC_MARGIN) {
+    return finish(this.routeSteps(route, offset, margin));
+  }
+  // Resumable route(); both share one cache, so a warmed route is reused as is.
+  *routeSteps(route, offset = 0, margin = NPC_MARGIN) {
     let variants = this.routes.get(route);
     if (!variants) {
       variants = new Map();
@@ -406,7 +440,11 @@ export class TownNavigation {
       const p = routePose(original, (original.total * i) / count);
       return [p.x + Math.cos(p.heading) * offset, 0.07, p.z - Math.sin(p.heading) * offset];
     });
-    const path = this.plan(points, margin);
+    const revision = this.revision;
+    const path = yield* this.planSteps(points, margin);
+    // A synchronous route() may have finished this variant while we were paused,
+    // or footprints changed meanwhile; the next route() then plans afresh.
+    if (variants.has(key) || this.revision !== revision) return variants.get(key) ?? path;
     variants.set(key, path);
     this.prepared.set(path, {
       path,
@@ -420,6 +458,41 @@ export class TownNavigation {
       },
     });
     return path;
+  }
+}
+const finish = (steps) => {
+  let step = steps.next();
+  while (!step.done) step = steps.next();
+  return step.value;
+};
+
+// Plans cutscene routes ahead of need within a small per-frame budget, measured in
+// real time so slower devices take more frames instead of dropping one.
+export class RouteWarmup {
+  constructor(navigation, budget = 2, now = () => performance.now()) {
+    Object.assign(this, { navigation, budget, now, queue: [], current: null });
+  }
+  // `due` orders the queue: the route needed soonest is planned first.
+  add(route, due = 0, offset = 0, margin = NPC_MARGIN) {
+    if (!this.navigation || !route) return;
+    const at = this.queue.findIndex((entry) => entry.due > due);
+    const entry = { args: [route, offset, margin], due };
+    this.queue.splice(at < 0 ? this.queue.length : at, 0, entry);
+  }
+  get pending() {
+    return this.queue.length + (this.current ? 1 : 0);
+  }
+  step() {
+    if (!this.navigation) return;
+    const end = this.now() + this.budget;
+    do {
+      if (!this.current) {
+        const next = this.queue.shift();
+        if (!next) return;
+        this.current = this.navigation.routeSteps(...next.args);
+      }
+      if (this.current.next().done) this.current = null;
+    } while (this.now() < end);
   }
 }
 export function walkPath(points) {

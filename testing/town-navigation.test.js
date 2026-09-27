@@ -8,6 +8,7 @@ import {
   walkPath,
   walkObstacle,
   townNavigation,
+  RouteWarmup,
 } from '../src/game/town/TownNavigation';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
@@ -496,4 +497,53 @@ it('filters nearby mesh components by their bounds before exact segment checks',
     },
   ]);
   expect(nav.nearbySegment(from, to, 0.1)).toHaveLength(2);
+});
+
+it('prepares cutscene routes in resumable steps within a frame budget, sharing the route cache', () => {
+  const obstacles = [pole(0, 0, 0.5), pole(2, 0.2, 0.5), pole(4, -0.2, 0.5), pole(6, 0, 0.5)];
+  const direct = new TownNavigation(obstacles.map((o) => ({ ...o })));
+  const warmed = new TownNavigation(obstacles.map((o) => ({ ...o })));
+  const soon = prepareRoute([
+    [-3, 0],
+    [9, 0],
+  ]);
+  const later = prepareRoute([
+    [9, 0.4],
+    [-3, 0.4],
+  ]);
+  const expected = direct.route(soon);
+  let clock = 0;
+  // Each budget check advances a fake clock, so one frame allows only a few steps.
+  const warmup = new RouteWarmup(warmed, 2, () => (clock += 0.5));
+  warmup.add(later, 30);
+  warmup.add(soon, 2);
+  let frames = 0;
+  while (warmup.pending) {
+    warmup.step();
+    frames++;
+  }
+  expect(frames).toBeGreaterThan(1);
+  const plans = warmed.plans;
+  // The route needed first was planned first, and route() now reuses it untouched.
+  const prepared = warmed.route(soon);
+  expect(warmed.plans).toBe(plans);
+  expect(prepared.points).toEqual(expected.points);
+  expect(warmed.route(later).points.length).toBeGreaterThan(1);
+  expect(warmed.plans).toBe(plans);
+});
+
+it('never caches a route that was paused while footprints changed', () => {
+  const navigation = new TownNavigation([pole(0, 0, 0.5)]);
+  const path = prepareRoute([
+    [-3, 0],
+    [3, 0],
+  ]);
+  const steps = navigation.routeSteps(path);
+  steps.next();
+  navigation.replaceOwner('late-building', [pole(1.5, 0, 0.5)]);
+  let step = steps.next();
+  while (!step.done) step = steps.next();
+  const fresh = navigation.route(path);
+  expect(fresh).not.toBe(step.value);
+  for (const point of fresh.points) expect(navigation.clear(point)).toBe(true);
 });

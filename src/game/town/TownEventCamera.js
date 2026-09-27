@@ -36,7 +36,9 @@ function subjectFrame(raid, subject, frame, aspect, minimum, followLeader = fals
   actors?.forEach((actor) => include(actor.root));
   if (subject === 'responders') {
     include(raid.vehicle?.root);
-    if (raid.props && raid.vehicle?.root?.position.distanceTo(raid.props.position) < 12)
+    // Keep the incident itself in shot once any responder (on foot or driving) is near it.
+    const near = (root) => root?.visible && root.position.distanceTo(raid.props.position) < 12;
+    if (raid.props && (near(raid.vehicle?.root) || actors?.some((actor) => near(actor.root))))
       include(raid.props);
   }
   if (count) frame.focus.addVectors(frame.min, frame.max).multiplyScalar(0.5).y += 1.2;

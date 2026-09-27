@@ -159,6 +159,32 @@ To reproduce a silent video, generate era demos and run
 `scripts/capture-completion-fireworks.js` through Playwright CLI in a disposable
 browser. Encode `output/playwright/completion-fireworks-frames/%05d.jpg` at 24 fps.
 
+### Incident scripts
+
+`townEvents.incidentScript(event)` turns a saved receipt into the facts every
+incident cutscene stages: responders (sheriff, bank and fire-station levels),
+thieves caught and escaped, bank-locked and stolen crates, fire intensity, arrival
+and resolution beats, and the captions. `TownEraIncident`, `TownRaid` and the
+banner all read this one script, so a caption can never describe something the
+scene does not show. The rules it guarantees:
+
+- Responders always reach the scene before anyone is caught or flees. Uncovered
+  thieves bolt only as the patrol comes into sight, and escape through the back
+  lot on the side away from the patrol, never back along its road.
+- A loss always leaves with a visible thief; bank cover keeps crates padlocked.
+  Protected receipts show every thief caught and led to the lock-up.
+- No patrol means no "Hands up!". No fire station sends neighbours with buckets
+  instead of a brigade. Weaker stations mean a bigger, longer fire, and soot
+  stays on the façade only when the town paid for cleanup.
+- Defenses finished or the bell rung mid-scene recast the script until the
+  outcome is revealed; afterwards the staged facts are committed.
+
+`testing/incident-story.test.js` checks every gang, sheriff and bank combination
+against these rules, and plays full scenes to confirm arrival order, escape
+direction, prisoner escort, stolen crates, fire damage and storm cleanup. New
+incident kinds should add their beats and captions to `incidentScript` and their
+strings to `fr.json`; `testing/i18n.test.js` enumerates every caption and story.
+
 ### Incident cameras
 
 `TownEventCamera.INCIDENT_SHOTS` assigns two subjects to each incident kind.
