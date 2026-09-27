@@ -1,66 +1,65 @@
-import { Box3, Ray, Triangle, Vector3 } from 'three';
+import { Box3, Ray, Vector3 } from 'three';
 import { TownNavigation, walkPath } from './TownNavigation';
 
 const STEP = 0.4;
 const snapshots = new WeakMap();
 const point = (p) => new Vector3(...p);
 
-// A balanced tree keeps each triangle exactly once. Splitting large terrain or
-// roof triangles into spatial octants would duplicate them and waste memory.
-function tree(triangles) {
-  const bounds = new Box3();
-  for (const t of triangles) bounds.expandByPoint(t.a).expandByPoint(t.b).expandByPoint(t.c);
-  if (triangles.length <= 24) return { bounds, triangles };
-  const size = bounds.getSize(new Vector3());
-  const axis = size.x > size.y && size.x > size.z ? 'x' : size.y > size.z ? 'y' : 'z';
-  triangles.sort((a, b) => a.a[axis] + a.b[axis] + a.c[axis] - b.a[axis] - b.b[axis] - b.c[axis]);
-  const middle = triangles.length >> 1;
-  return { bounds, left: tree(triangles.slice(0, middle)), right: tree(triangles.slice(middle)) };
-}
-function query(node, overlaps, match) {
-  if (!overlaps(node.bounds)) return false;
-  if (node.triangles) return node.triangles.some(match);
-  return query(node.left, overlaps, match) || query(node.right, overlaps, match);
-}
+import { triangleIndex, queryTriangles as query } from './TriangleIndex';
 
-function snapshot(root) {
-  if (snapshots.has(root)) return snapshots.get(root);
-  root.updateWorldMatrix(true, true);
-  const triangles = [];
-  const visit = (object) => {
-    if (object.userData.animated) return;
-    if (object.isMesh && !object.material.transparent) {
-      const { geometry } = object,
-        vertices = geometry.attributes.position;
-      const positions = Array.from({ length: vertices.count }, (_, n) =>
-        new Vector3().fromBufferAttribute(vertices, n).applyMatrix4(object.matrixWorld),
-      );
-      const index = geometry.index;
-      for (let n = 0; n < (index?.count ?? vertices.count); n += 3) {
-        const at = (i) => positions[index ? index.getX(i) : i];
-        triangles.push(new Triangle(at(n), at(n + 1), at(n + 2)));
-      }
-    }
-    object.children.forEach(visit);
-  };
-  visit(root);
-  const entry = triangles.length ? tree(triangles) : null;
-  snapshots.set(root, entry);
+function* snapshot(root) {
+  const revision = root.userData.geometryRevision ?? 0;
+  const cached = snapshots.get(root);
+  if (cached?.revision === revision) return cached.entry;
+  const entry = yield* triangleIndex(root);
+  snapshots.set(root, { revision, entry });
   return entry;
 }
-
+export function* AnimalSpaceBuilder(d) {
+  const entries = [];
+  for (const root of [d.landscape, ...d.world.children]) {
+    if (!root || ['removed', 'pending'].includes(root.userData.activation)) continue;
+    if (root.userData.animated) {
+      if (root.userData.animalSolid)
+        entries.push({ bounds: root.userData.animalSolid.clone(), solid: true });
+    } else {
+      const entry = yield* snapshot(root);
+      if (entry) {
+        const footprints = (root.userData.footprints ?? []).map((o) => {
+          const xs = o.polygon.map((p) => p[0]),
+            zs = o.polygon.map((p) => p[1]);
+          return new Box3(
+            new Vector3(Math.min(...xs), o.y, Math.min(...zs)),
+            new Vector3(Math.max(...xs), o.y + o.height, Math.max(...zs)),
+          );
+        });
+        const envelope = new Box3();
+        footprints.forEach((box) => envelope.union(box));
+        // Generated components narrow building queries. If an unmapped visual
+        // extends outside their envelope, keep the complete triangle fallback.
+        const broadphase =
+          footprints.length && envelope.expandByScalar(1e-5).containsBox(entry.bounds)
+            ? footprints
+            : null;
+        entries.push({ ...entry, broadphase });
+      }
+    }
+    yield;
+  }
+  return createSpace(entries);
+}
 // Static geometry is indexed once per immutable scenery root, including merged
 // Blender meshes and the landscape outside d.world. Only the animal planner uses
 // this extra index; the existing pedestrian navigation contract stays unchanged.
 export function animalSpace(d) {
-  const entries = [d.landscape, ...d.world.children]
-    .filter((root) => root && (!root.userData.animated || root.userData.animalSolid))
-    .map((root) =>
-      root.userData.animated
-        ? { bounds: root.userData.animalSolid.clone(), solid: true }
-        : snapshot(root),
-    )
-    .filter(Boolean);
+  const builder = AnimalSpaceBuilder(d);
+  let step;
+  do {
+    step = builder.next();
+  } while (!step.done);
+  return step.value;
+}
+function createSpace(entries) {
   const box = new Box3(),
     ray = new Ray(),
     hit = new Vector3();
@@ -68,6 +67,8 @@ export function animalSpace(d) {
   const intersects = (bounds) => {
     for (const entry of entries) {
       if (!entry.bounds.intersectsBox(bounds)) continue;
+      if (entry.broadphase && !entry.broadphase.some((part) => part.intersectsBox(bounds)))
+        continue;
       if (entry.solid) return true;
       if (
         query(

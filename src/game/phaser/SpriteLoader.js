@@ -1,12 +1,43 @@
 import { GEM_TYPES } from '../engine/GemFactory';
-import { GEM_FINISHES } from '../../data/gemAppearance';
+import frames from '../../assets/board/frames.json';
+import coreUrl from '../../assets/board/board-core.png';
+import bonusUrl from '../../assets/board/board-bonus.png';
+import classicUrl from '../../assets/board/gems-classic.png';
+import cutUrl from '../../assets/board/gems-cut.png';
+import geodeUrl from '../../assets/board/gems-geode.png';
+import { spriteRef } from './spriteRefs';
+import { performanceMark } from '../PresentationWork';
+import { gemFinish, GEM_FINISHES } from '../../data/gemAppearance';
 
 export const BONUS_TYPES = ['bomb', 'rainbow', 'cross'];
 const BONUS_FRAME_SIZE = 192;
 const BONUS_FRAME_COUNT = 8;
 
-// Vector art is rasterized once at load time; animation uses a single GPU atlas.
-export function preloadSpriteAssets(scene) {
+// Vector art is rasterized at build time; failed atlases recover through the source SVGs.
+const urls = {
+  'board-core': coreUrl,
+  'board-bonus': bonusUrl,
+  'gems-classic': classicUrl,
+  'gems-cut': cutUrl,
+  'gems-geode': geodeUrl,
+};
+export function preloadSpriteAssets(scene, { levelId = 1 } = {}) {
+  const keys = new Set(['board-core', 'board-bonus', 'gems-classic', `gems-${gemFinish(levelId)}`]);
+  let fallback = false;
+  const failed = (file) => {
+    if (!keys.has(file.key) || fallback) return;
+    fallback = true;
+    preloadSvgAssets(scene);
+  };
+  scene.load.on('loaderror', failed);
+  scene.load.once('complete', () => {
+    scene.load.off('loaderror', failed);
+    performanceMark('board-textures-ready');
+  });
+  for (const key of keys)
+    if (!scene.textures.exists(key)) scene.load.atlas(key, urls[key], frames[key]);
+}
+export function preloadSvgAssets(scene) {
   GEM_TYPES.forEach((type) =>
     scene.load.svg(`gem-${type}`, `/art/${type}.svg`, { width: 160, height: 160 }),
   );
@@ -41,9 +72,13 @@ export function preloadSpriteAssets(scene) {
 }
 
 export function loadSpriteAtlas(scene) {
-  const textures = Object.fromEntries(GEM_TYPES.map((type) => [type, { key: `gem-${type}` }]));
-  textures.relic = { key: 'gem-relic' };
-  const atlas = scene.textures.get('bonus-atlas');
+  const textures = Object.fromEntries(
+    GEM_TYPES.map((type) => [type, spriteRef(`gem-${type}`, scene.textures)]),
+  );
+  textures.relic = spriteRef('gem-relic', scene.textures);
+  const atlas = scene.textures.get(
+    scene.textures.exists('board-bonus') ? 'board-bonus' : 'bonus-atlas',
+  );
   BONUS_TYPES.forEach((type, row) => {
     const frames = Array.from({ length: BONUS_FRAME_COUNT }, (_, frame) => {
       const name = `${type}-${frame}`;
@@ -56,7 +91,7 @@ export function loadSpriteAtlas(scene) {
           BONUS_FRAME_SIZE,
           BONUS_FRAME_SIZE,
         );
-      return { key: 'bonus-atlas', frame: name };
+      return spriteRef(name, scene.textures);
     });
     const animation = `bonus-${type}`;
     if (!scene.anims.exists(animation))
@@ -66,7 +101,7 @@ export function loadSpriteAtlas(scene) {
         frameRate: type === 'rainbow' ? 12 : 10,
         repeat: -1,
       });
-    textures[type] = { key: 'bonus-atlas', frame: `${type}-0`, animation };
+    textures[type] = { ...spriteRef(`${type}-0`, scene.textures), animation };
   });
   return { textures };
 }

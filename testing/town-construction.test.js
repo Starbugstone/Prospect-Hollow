@@ -1,3 +1,5 @@
+import { TownDiorama } from '../src/game/town/TownDiorama';
+import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { expect, it } from 'vitest';
 import { BoxGeometry, Group, Mesh, MeshStandardMaterial } from 'three';
 import { TownConstruction } from '../src/game/town/TownConstruction';
@@ -33,6 +35,8 @@ it('assembles from the ground up over 1.8 seconds and restores meshes for static
   expect(group.userData).toMatchObject({ animated: true, static: false });
   expect(rotor.visible).toBe(false);
   expect(roof.visible).toBe(false);
+  construction.presentFirstStrike();
+  construction.update(4);
   for (let t = 4.01; t < 4.7; t += 0.01) construction.update(t);
   expect(construction.update(4.7)).toBe(false);
   expect(foundation.position.y).toBe(0);
@@ -59,4 +63,31 @@ it('assembles from the ground up over 1.8 seconds and restores meshes for static
   expect(group.children).toHaveLength(3);
   geometry.dispose();
   material.dispose();
+});
+
+it('caps stalled reveal frames and freezes while hidden', () => {
+  const view = Object.create(TownDiorama.prototype),
+    group = new Group();
+  Object.assign(view, { geometries: createTownGeometries(), materials: new Map(), elapsed: 0 });
+  view.box(group, 1, 1, 1, 0, 0.5, 0, '#aabbcc');
+  const construction = new TownConstruction(view, group);
+  construction.update(100);
+  expect(construction.elapsed).toBeLessThan(0.1);
+  construction.presentFirstStrike();
+  construction.update(100);
+  expect(construction.update(100.5)).toBe(false);
+  expect(construction.elapsed).toBeCloseTo(0.05);
+  construction.pause();
+  construction.update(700);
+  expect(construction.elapsed).toBeCloseTo(0.05);
+  construction.resume();
+  construction.update(900);
+  expect(construction.elapsed).toBeCloseTo(0.05);
+  expect(construction.update(903)).toBe(false);
+  expect(construction.elapsed).toBeCloseTo(0.1);
+  expect(construction.hammer.visible).toBe(true);
+  for (let frame = 1; frame <= 110; frame++) construction.update(903 + frame / 60);
+  expect(construction.elapsed).toBeGreaterThanOrEqual(1.8);
+  Object.values(view.geometries).forEach((g) => g.dispose());
+  view.materials.forEach((m) => m.dispose());
 });

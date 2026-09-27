@@ -60,7 +60,7 @@ const sfxHowls = new Map();
 const ensureAmbientHowl = (settingsStore) => {
   if (!ambientHowl) {
     ambientHowl = new Howl({
-      src: AMBIENT_SOURCES,
+      src: AMBIENT_SOURCES.filter((src) => Howler.codecs(src.split('.').at(-1))),
       loop: true,
       preload: true,
       volume: clampVolume(settingsStore.musicVolume) * AMBIENT_VOLUME,
@@ -99,6 +99,10 @@ const ensureSfxHowl = (key, settingsStore) => {
   return entry;
 };
 
+export function prepareAudio(settingsStore) {
+  ensureAmbientHowl(settingsStore);
+  Object.keys(SFX_DEFINITIONS).forEach((key) => ensureSfxHowl(key, settingsStore));
+}
 export const useAudio = () => {
   const settingsStore = useSettingsStore();
 
@@ -286,6 +290,7 @@ export const useAudio = () => {
   });
 
   return {
+    prepareAudio: () => prepareAudio(settingsStore),
     playAmbientLoop,
     stopAmbientLoop,
     playSfx,

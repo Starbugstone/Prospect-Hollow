@@ -1,10 +1,11 @@
 import { addLeisureActivity } from '../src/game/town/TownLeisure';
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { Group, Scene, MeshBasicMaterial, Vector3 } from 'three';
 import {
   TownNavigation,
   NPC_MARGIN,
   walkPose,
+  walkPath,
   walkObstacle,
   townNavigation,
 } from '../src/game/town/TownNavigation';
@@ -16,12 +17,45 @@ import { addPowerGrid, addEraStreetscape } from '../src/game/town/TownEvolution'
 import { addElectricLighting } from '../src/game/town/buildings/industrial';
 import { TownVipArrivals } from '../src/game/town/TownVipArrivals';
 import { TownBuildSequence } from '../src/game/town/TownBuildSequence';
-import { TownRaid, addTownVisitors } from '../src/game/town/TownActivity';
+import { TownRaid, addTownVisitors, addTownRoads } from '../src/game/town/TownActivity';
 import { TownEraIncident } from '../src/game/town/TownEraIncident';
 import { prepareRoute } from '../src/game/town/TownRoutes';
-import { resolveTownTraffic } from '../src/game/town/TownTraffic';
+import { placeTownSpawns } from '../src/game/town/TownTraffic';
 import { PLOTS } from '../src/game/town/TownLayout';
+import { BRIDGE, streetHeight } from '../src/game/town/TownRiver';
+import { geometryFootprints, registerFootprints } from '../src/game/town/BuildingFootprints';
+import { updateTownLocomotion } from '../src/game/town/TownLocomotion';
 const pole = (x, z, radius = 0.055) => ({ x, z, y: 0, height: 5, radius });
+it('reuses detour searches until the obstacle geometry changes', () => {
+  const nav = new TownNavigation([{ ...pole(0, 0, 1), owner: 'plot:test' }]);
+  const points = [
+    [-4, 0.07, 0],
+    [4, 0.07, 0],
+  ];
+  const first = nav.plan(points);
+  expect(first.total).toBeGreaterThan(8);
+  const queries = vi.spyOn(nav, 'nearbySegment');
+  expect(nav.plan(points).points).toEqual(first.points);
+  expect(queries).not.toHaveBeenCalled();
+  nav.replaceOwner('plot:test', [], 'removed');
+  expect(nav.plan(points).points).toEqual(points);
+  expect(queries).toHaveBeenCalled();
+});
+it('detours around a chain of neighbours outside the direct corridor', () => {
+  const obstacles = [
+    pole(0, 0, 1),
+    ...[-1, 1].flatMap((sign) => [1.7, 3.4, 5.1].map((z) => pole(0, sign * z, 1))),
+  ];
+  const nav = new TownNavigation(obstacles);
+  for (const sign of [-1, 1]) {
+    const from = [-4 * sign, 0.07, 0],
+      to = [4 * sign, 0.07, 0];
+    const path = nav.plan([from, to]);
+    expect(path.points.at(-1)).toEqual(to);
+    expect(path.points.some((p) => Math.abs(p[2]) > 6)).toBe(true);
+    clearance(path, obstacles);
+  }
+});
 function clearance(path, obstacles, margin = NPC_MARGIN) {
   for (let i = 1; i < path.points.length; i++) {
     const a = path.points[i - 1],
@@ -157,10 +191,61 @@ afterEach(() => {
     d.contactShadowMaterial.dispose();
   }
 });
+it.each(ERAS.map(({ id }) => id))(
+  'keeps a finishing legacy walker on the %s bridge deck in both directions',
+  (era) => {
+    const d = fixture(era);
+    d.town.buildingEras.bridge = era;
+    d.town.buildingEraLevels.bridge = 3;
+    const bridge = d.group(d.world, PLOTS.bridge[0], 0.08, PLOTS.bridge[1]);
+    d.buildPlot('bridge', bridge, d.town, {});
+    registerFootprints(bridge, geometryFootprints(bridge), { owner: 'plot:bridge' });
+    d.navigation = townNavigation(d.world);
+    const actor = d.person({
+      color: '#84946d',
+      skin: '#cc9f79',
+      hat: '#c4aa79',
+      route: [
+        [19, BRIDGE.z],
+        [40, BRIDGE.z],
+      ],
+      linear: true,
+      seed: 0,
+    });
+    actor.radius = 0.45;
+    // Population handoff lets legacy routes finish before adopting an itinerary.
+    actor.itinerary = { phase: 'finishing', stops: [], stop: 0, visit: 0, since: 0 };
+    actor.routeProgress = 0;
+    actor.routeLimit = actor.walkPath.total;
+    const plans = d.navigation.plans;
+    const crests = new Set();
+    let checked = 0;
+    for (let frame = 0; frame < Math.ceil(actor.duration * 30); frame++) {
+      d.elapsed = frame / 30;
+      d.animatePerson(actor, d.elapsed);
+      updateTownLocomotion(d, 1 / 30);
+      const { x, y, z } = actor.root.position;
+      if (Math.abs(x - BRIDGE.centerX) < BRIDGE.halfLength) {
+        // The deck is 8 cm below the normal foot anchor. Retain that small
+        // clearance without cutting the crest or floating over the approaches.
+        const aboveDeck = y - (streetHeight(x, z) - 0.08);
+        expect(aboveDeck, `${era} feet below deck at ${x},${z}`).toBeGreaterThan(-0.01);
+        expect(aboveDeck, `${era} feet above deck at ${x},${z}`).toBeLessThan(0.12);
+        expect(d.navigation.clear([x, y, z], actor.radius)).toBe(true);
+        checked++;
+        if (Math.abs(x - BRIDGE.centerX) < 1) crests.add(Math.sign(actor.motion.vx));
+      }
+    }
+    expect(checked).toBeGreaterThan(100);
+    expect([...crests].sort()).toEqual([-1, 1]);
+    expect(d.navigation.plans).toBe(plans);
+  },
+);
 it.each([...ERAS.map((e) => e.id), 'unknown-navigation-era'])(
   'keeps residents and every VIP transport route clear in %s',
   (era) => {
     const d = fixture(era);
+    addTownRoads(d, d.town, PLOTS);
     addPowerGrid(d, d.town);
     addElectricLighting(d, d.town);
     addEraStreetscape(d, d.town);
@@ -209,7 +294,7 @@ it('keeps crowd and vehicle separation from pushing walkers into a pole', () => 
   const vehicle = new Group();
   vehicle.position.set(1.3, 0.07, 0);
   d.trafficActors = [vehicle];
-  resolveTownTraffic(d);
+  placeTownSpawns(d);
   for (const a of d.actors) expect(d.navigation.clear(a.root.position.toArray())).toBe(true);
   expect(d.actors[0].root.position.distanceTo(d.actors[1].root.position)).toBeGreaterThanOrEqual(
     0.549,
@@ -349,9 +434,66 @@ it('includes the park dog-walker and its leashed dog in cached avoidance', () =>
   d.navigation = new TownNavigation([pole(x, z + 3.8)]);
   addLeisureActivity(d, d.town);
   const visit = d.world.getObjectByName('Park dog walk');
+  const plans = d.navigation.plans;
   for (let t = 0; t <= 60; t += 0.1) {
     d.motions.forEach((m) => m(t));
     expect(d.navigation.clear(visit.position.toArray(), 1.2)).toBe(true);
   }
-  expect(d.navigation.plans).toBe(1);
+  expect(d.navigation.plans).toBe(plans);
+});
+
+it('keeps the dog walker at walking speed and turns back on a shortened open route', () => {
+  const d = fixture();
+  d.navigation = new TownNavigation();
+  addLeisureActivity(d, d.town);
+  const walker = d.world.getObjectByName('Park dog walk');
+  let travel = 0,
+    turnedBack = false;
+  for (let frame = 1; frame <= 120; frame++) {
+    const before = walker.position.clone();
+    d.motions.forEach((motion) => motion(frame / 10));
+    const step = walker.position.distanceTo(before);
+    expect(step).toBeLessThanOrEqual(0.055 + 1e-6);
+    travel += step;
+    if (walker.position.x < before.x || walker.position.z < before.z) turnedBack = true;
+  }
+  expect(travel).toBeGreaterThan(6);
+  expect(turnedBack).toBe(true);
+});
+
+it('filters nearby mesh components by their bounds before exact segment checks', () => {
+  const remote = {
+    x: 1.5,
+    z: 2,
+    y: 0,
+    height: 2,
+    radius: 2,
+    polygon: [
+      [-0.5, 1.9],
+      [3.5, 1.9],
+      [3.5, 2.1],
+      [-0.5, 2.1],
+    ],
+  };
+  const obstacle = pole(0, 0);
+  const nav = new TownNavigation([remote, obstacle]);
+  const from = [-0.5, 0.07, 0],
+    to = [0.5, 0.07, 0];
+  expect(nav.near(0, 0)).toContain(remote);
+  expect(nav.nearbySegment(from, to, 0.1)).toEqual([obstacle]);
+  expect(nav.segment(from, to, 0.1)).toBe(false);
+  nav.replaceOwner('moving-wall', [remote]);
+  expect(nav.segment(from, to, 0.1)).toBe(false);
+  nav.replaceOwner('moving-wall', [
+    {
+      ...remote,
+      polygon: [
+        [-0.5, -0.1],
+        [3.5, -0.1],
+        [3.5, 0.1],
+        [-0.5, 0.1],
+      ],
+    },
+  ]);
+  expect(nav.nearbySegment(from, to, 0.1)).toHaveLength(2);
 });

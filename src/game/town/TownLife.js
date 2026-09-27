@@ -2,6 +2,7 @@ import { addTownAnimals } from './TownAnimals';
 import { Vector3 } from 'three';
 import { atPlot, plotStreet, routeBetween } from './TownLayout';
 import { population } from './TownRules';
+import { addWorkBreak } from './TownWorkRoutine';
 
 // Small daily routines make completed buildings feel inhabited. All motion uses
 // the diorama clock, so hidden views, pauses and reduced motion freeze it together.
@@ -21,16 +22,19 @@ export function addTownLife(d, town) {
       });
       neighbor.root.name = 'Neighbor fetching water';
       neighbor.duration *= 0.8;
-      const bucket = d.group(neighbor.arms[0].lower, 0, -0.3, 0);
-      d.mesh(bucket, 'cylinder', [0.12, 0.17, 0.12], [0, -0.02, 0], '#8a9c98');
-      d.rod(bucket, [-0.1, 0.05, 0], [0, 0.15, 0], 0.012, '#6c7467');
-      d.rod(bucket, [0, 0.15, 0], [0.1, 0.05, 0], 0.012, '#6c7467');
+      if (!neighbor.root.getObjectByName('Water bucket')) {
+        const bucket = d.group(neighbor.arms[0].lower, 0, -0.3, 0);
+        bucket.name = 'Water bucket';
+        d.mesh(bucket, 'cylinder', [0.12, 0.17, 0.12], [0, -0.02, 0], '#8a9c98');
+        d.rod(bucket, [-0.1, 0.05, 0], [0, 0.15, 0], 0.012, '#6c7467');
+        d.rod(bucket, [0, 0.15, 0], [0.1, 0.05, 0], 0.012, '#6c7467');
+      }
     }
   }
 
   if (town.buildings.square && population(town) >= 6) {
     for (let n = 0; n < 2; n++) {
-      const point = atPlot('square', 2 + n * 0.8, 1.9);
+      const point = atPlot('square', n ? 0.7 : -0.7, 3);
       const neighbor = d.person({
         color: n ? '#b57f6f' : '#729595',
         skin: n ? '#9e7559' : '#d3ae84',
@@ -40,9 +44,12 @@ export function addTownLife(d, town) {
         work: 'greet',
       });
       neighbor.root.name = 'Neighbors chatting';
+      addWorkBreak(d, neighbor, 'square', { work: 12 + n * 2, rest: 3, axis: [n ? 1 : -1, 0] });
       d.motions.push((time) => {
-        neighbor.root.rotation.y = n ? -Math.PI / 2 : Math.PI / 2;
-        neighbor.head.rotation.x = Math.sin(time * 1.5 + n) * 0.08;
+        if (neighbor.workActive) {
+          neighbor.root.rotation.y = n ? -Math.PI / 2 : Math.PI / 2;
+          neighbor.head.rotation.x = Math.sin(time * 1.5 + n) * 0.08;
+        } else neighbor.head.rotation.x = 0;
       });
     }
   }

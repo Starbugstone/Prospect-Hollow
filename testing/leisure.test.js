@@ -151,7 +151,8 @@ it('keeps horses in their field and the continuous leashed walk on the shared an
     if (walk.visible) {
       const size = new Box3().setFromObject(walk).getSize(new Vector3());
       expect(size.x).toBeLessThan(2);
-      expect(Math.abs(walk.position.x - PLOTS.park[0])).toBeLessThan(2);
+      expect(Math.abs(walk.position.x - PLOTS.park[0])).toBeLessThan(5);
+      expect(walk.userData.activityBuilding).toBe('park');
     }
     const snapshot = d.world.toJSON();
     d.motions.forEach((fn) => fn(time));

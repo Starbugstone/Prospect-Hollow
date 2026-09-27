@@ -11,7 +11,6 @@
     :reduced-motion="reducedMotion"
     :paused="paused"
     :next-level="nextLevel"
-    :mine-stage="mineStage"
     :fullscreen="fullscreen"
     :construction="construction"
     @select="$emit('select', $event)"
@@ -95,6 +94,9 @@
                   ? t('Advance to the next era')
                   : t('Collect 1 TNT')
         "
+        @focus="anchor.id === 'mine' && prefetchBoard()"
+        @pointerenter="anchor.id === 'mine' && prefetchBoard()"
+        @pointerdown="anchor.id === 'mine' && prefetchBoard()"
         @click="chooseLabel(anchor.id, $event)"
       >
         <img
@@ -142,6 +144,9 @@
         "
         :title="t(anchor.id === 'mine' ? 'Mine' : BUILDING_BY_ID[anchor.id].shortName)"
         :aria-pressed="anchor.id === 'mine' ? undefined : anchor.id === selected"
+        @focus="anchor.id === 'mine' && prefetchBoard()"
+        @pointerenter="anchor.id === 'mine' && prefetchBoard()"
+        @pointerdown="anchor.id === 'mine' && prefetchBoard()"
         @click="chooseLabel(anchor.id, $event)"
       >
         <span v-if="quietPlot(anchor.id)" class="quiet-plot-plus" aria-hidden="true">+</span>
@@ -217,6 +222,13 @@
   </div>
 </template>
 <script setup>
+import { ERAS } from '../../data/eras';
+import { loadFootprints } from '../../game/town/FootprintCatalog';
+import { loadFamilies, requiredFamilies } from '../../game/town/assets/MeshCatalog';
+import { performanceMark, afterPaint, scheduleWork } from '../../game/PresentationWork';
+import { prefetchBoard } from '../../game/phaser/loadBoard';
+import { prepareAudio } from '../../composables/useAudio';
+import { useSettingsStore } from '../../stores/settingsStore';
 import GameIcon from '../GameIcon.vue';
 import { townIndicatorScale } from '../../data/townIndicators';
 import { eraBuildingLevel } from '../../game/town/TownEras';
@@ -246,7 +258,6 @@ const props = defineProps({
   reducedMotion: Boolean,
   paused: Boolean,
   nextLevel: Number,
-  mineStage: { type: Number, default: 0 },
   raid: Object,
   raidDefenseIds: { type: Array, default: () => [] },
   construction: Object,
@@ -258,6 +269,7 @@ const emit = defineEmits([
   'raid-cue',
   'raid-complete',
   'camera-distance',
+  'vip-spend',
   'presentation-ready',
   'presentation-unavailable',
   'cinematic-ready',
@@ -394,7 +406,10 @@ const cameraKey = (event) => {
   event.preventDefault();
   scene?.cameraAction(action);
 };
-function update() {
+let updateGeneration = 0;
+const settings = useSettingsStore();
+async function update() {
+  const generation = ++updateGeneration;
   if (fallback.value) {
     emit('cinematic-unavailable');
     emit('cinematic-ready');
@@ -407,7 +422,7 @@ function update() {
     BUILDINGS.map((building) => [building.id, t(building.shortName)]),
   );
   const visual =
-    props.mineStage +
+    props.nextLevel +
     JSON.stringify(
       BUILDINGS.map(({ id }) => [
         id,
@@ -421,11 +436,27 @@ function update() {
     props.town.era;
   const newConstruction = props.construction?.serial !== lastConstruction;
   if (visual !== lastVisual || newConstruction) {
-    scene.update(
+    const constructionId = newConstruction ? props.construction?.id : null;
+    if (constructionId) {
+      scene.beginConstructionCue(constructionId);
+      await new Promise((resolve) => afterPaint(resolve));
+      if (disposed || generation !== updateGeneration || !props.active) return;
+      performanceMark('first-build-frame');
+    }
+    if (
+      !(await loadFamilies(requiredFamilies(props.town), {
+        isCurrent: () => !disposed && generation === updateGeneration && props.active,
+      }))
+    )
+      return;
+    await loadFootprints(props.town);
+    if (disposed || generation !== updateGeneration || !props.active) return;
+    scene.changeTown(
       props.town,
       { ...labels, mine: t('Mine') },
-      props.mineStage,
-      newConstruction && !props.reducedMotion ? props.construction?.id : null,
+      Math.max(0, (props.nextLevel ?? 1) - 1),
+      constructionId,
+      props.reducedMotion,
     );
     lastVisual = visual;
     lastConstruction = props.construction?.serial;
@@ -443,9 +474,10 @@ function update() {
   scene.setAvailable([...availableIds.value, ...(props.town.income.stored > 0 ? ['saloon'] : [])]);
   scene.setUpgradeable(props.cinematic ? [] : upgradeIds.value);
   scene.select(props.selected);
-  scene.setMotion(!props.paused && !props.reducedMotion);
+  scene.setMotion(props.active && !document.hidden && !props.paused, props.reducedMotion);
   scene.setPaused(props.paused);
 }
+const warmAudio = () => prepareAudio(settings);
 let initializing = false;
 let recovering = false;
 let recoveryAttempts = 0;
@@ -494,6 +526,10 @@ async function initialize() {
   initializing = true;
   try {
     const { TownDiorama } = await import('../../game/town/TownDiorama');
+    performanceMark('town-module-ready');
+    await loadFamilies(requiredFamilies(props.town));
+    await loadFootprints(props.town);
+    performanceMark('assets-ready');
     if (disposed || !props.active) return;
     scene = new TownDiorama(
       canvas.value,
@@ -504,13 +540,26 @@ async function initialize() {
       (distance) => emit('camera-distance', distance),
       recoverGraphics,
     );
+    scene.onVipSpend = (receipt) => emit('vip-spend', receipt);
     scene.onVillagerLabel = (label) => {
       villagerLabel.value = label;
     };
     scene.onEventInset = (view) => {
       eventInset.value = view;
     };
-    update();
+    scene.onFirstFrame = () => {
+      scheduleWork(
+        (function* () {
+          yield;
+          prefetchBoard();
+          const next = ERAS[ERAS.findIndex((era) => era.id === props.town.era) + 1];
+          if (next?.enabled) loadFamilies(requiredFamilies({ ...props.town, era: next.id }));
+          if (navigator.userActivation?.hasBeenActive) prepareAudio(settings);
+          else document.addEventListener('pointerdown', warmAudio, { once: true, passive: true });
+        })(),
+      );
+    };
+    await update();
     scene.vipArrivals?.reset(true);
     if (recoveryPose) {
       scene.camera.position.fromArray(recoveryPose.position);
@@ -527,11 +576,19 @@ async function initialize() {
     initializing = false;
   }
 }
-onMounted(initialize);
+const visibilityChanged = () => {
+  scene?.setMotion(props.active && !document.hidden && !props.paused, props.reducedMotion);
+};
+onMounted(() => {
+  document.addEventListener('visibilitychange', visibilityChanged);
+  initialize();
+});
 watch(
   () => props.active,
   (active) => {
     if (!active) {
+      updateGeneration++;
+      scene?.setMotion(false);
       scene?.vipArrivals?.reset();
       return;
     }
@@ -617,7 +674,7 @@ watch(
     JSON.stringify(props.town.buildingEras),
     JSON.stringify(props.town.buildingEraLevels),
     props.town.era,
-    props.mineStage,
+    props.nextLevel,
     props.construction?.serial,
     locale.value,
   ],
@@ -630,8 +687,8 @@ watch(
   },
 );
 watch(
-  () => props.paused || props.reducedMotion,
-  (paused) => scene?.setMotion(!paused),
+  () => [props.paused, props.reducedMotion],
+  () => visibilityChanged(),
 );
 watch(
   () => props.paused,
@@ -642,6 +699,9 @@ watch(
 );
 onBeforeUnmount(() => {
   disposed = true;
+  updateGeneration++;
+  document.removeEventListener('visibilitychange', visibilityChanged);
+  document.removeEventListener('pointerdown', warmAudio);
   scene?.dispose();
   scene = null;
 });

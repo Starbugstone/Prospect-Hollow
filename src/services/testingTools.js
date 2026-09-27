@@ -22,6 +22,9 @@ function saveChanges(campaign, changes) {
 // Console-only tools for this device-local game, also available in preview builds.
 export function createTestingTools(pinia) {
   return Object.freeze({
+    async showNavigation(value = true) {
+      return (await import('../game/town/NavigationDebug')).showNavigation(value);
+    },
     prepareEra(era) {
       const campaign = useCampaignStore(pinia);
       era ??= campaign.town.era;

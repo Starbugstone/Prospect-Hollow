@@ -105,7 +105,7 @@ export const MOTOR_AGE_VARIANTS = {
   ],
   square: [
     'Prospect garden square',
-    'Cream stone borders and shaded benches frame the familiar fountain.',
+    'An Art Deco fountain, cream stone borders and shaded benches brighten the square.',
   ],
   saloon: [
     'The Golden Hour pavilion',

@@ -1,10 +1,13 @@
-import { planOrbit, walkPose } from './TownNavigation';
+import { routeStepPose } from './TownNavigation';
+import { buildingWalk } from './TownPedestrians';
 import { leisureModel } from './LeisureAssets';
+import { available } from './assets/MeshCatalog';
 import { PLOTS } from './TownLayout';
 
 // A bounded cast on the existing scene clock. No timers, reward callbacks or
 // independent animation loops: pause, hidden views and reduced motion all apply.
 export function addLeisureActivity(d, town) {
+  if (!available('leisure')) return;
   const horses = Math.min(3, town.buildings.horseField ?? 0);
   const spots = [
     [-1.3, 0.25],
@@ -43,42 +46,20 @@ export function addLeisureActivity(d, town) {
   );
   const [x, z] = PLOTS.park;
   // The footprint includes the leashed dog, not just the person at the origin.
-  let path = d.animalNavigation
-    ? d.animalNavigation.plan(
-        Array.from({ length: 65 }, (_, i) => {
-          const angle = (i / 64) * Math.PI * 2;
-          return [x + Math.sin(angle) * 1.55, 0.13, z + 2.7 + Math.cos(angle) * 1.1];
-        }),
-        1.2,
-        1.65,
-      )
-    : planOrbit(d, x, z + 2.7, 1.55, 1.1, 1.2, 0.13);
-  // A fully expanded park and horse field can leave too little room for the
-  // person plus leash at the front. Use the open side promenade in that case.
-  if (d.animalNavigation && path.total < 2)
-    path = d.animalNavigation.plan(
-      [
-        [x - 4.6, 0.13, z + 3.8],
-        [x - 4.6, 0.13, z - 2.5],
-        [x - 4.6, 0.13, z + 3.8],
-      ],
-      1.2,
-      1.65,
-    );
+  const path = buildingWalk({ ...d, town }, 'park', {
+    station: [x, 0.13, z + 2.3],
+    radius: 1.2,
+    length: 4,
+    clearance: d.animalSpace && ((a, b, radius) => d.animalSpace.segment(a, b, radius, 1.65)),
+  });
+  visit.userData.activityBuilding = 'park';
   visit.userData.walkPath = path;
   const update = (time) => {
-    const phase = time % 60;
-    // A continuous oval joins the promenade to the street entrance. The
-    // walker remains present and turns over several steps at each end.
-    visit.visible = !path || path.points.length > 0;
-    const angle = (phase / 60) * Math.PI * 2;
-    visit.position.set(x + Math.sin(angle) * 1.55, 0.13, z + 2.7 + Math.cos(angle) * 1.1);
-    visit.rotation.y = Math.atan2(Math.cos(angle) * 1.55, -Math.sin(angle) * 1.1);
-    if (path) {
-      const pose = walkPose(path, phase / 60);
-      visit.position.set(pose.x, pose.y, pose.z);
-      visit.rotation.y = pose.heading;
-    }
+    visit.visible = path.total > 0;
+    if (!visit.visible) return;
+    const pose = routeStepPose(path, time * 0.55, (visit.userData.pose ??= {}));
+    visit.position.set(pose.x, pose.y, pose.z);
+    visit.rotation.y = pose.heading;
     legs.forEach((group) =>
       group.forEach((leg, i) => {
         leg.rotation.x = Math.sin(time * 5 + (i === 0 || i === 3 ? 0 : Math.PI)) * 0.28;

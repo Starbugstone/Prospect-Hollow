@@ -1,8 +1,9 @@
 import { NPC_MARGIN } from './TownNavigation';
 // Vehicles use the carriageway and walkers use the right-hand sidewalk in each
-// direction. At crossings, choose the nearest clear point outside the small
-// exclusion circles. Already placed walkers have priority, so queues stay apart.
-export const SIDEWALK_OFFSET = 0.9;
+// direction. Placement below is only for unseen spawns and explicit recovery.
+// Frame movement belongs to TownLocomotion and never calls this projection.
+export { SIDEWALK_OFFSET } from '../../data/townClearances';
+import { SIDEWALK_OFFSET } from '../../data/townClearances';
 export const WALKER_CLEARANCE = 0.55;
 function clearPosition(position, obstacles, sceneryClear) {
   const clear = (x, z) =>
@@ -59,7 +60,7 @@ function clearPosition(position, obstacles, sceneryClear) {
     position.z = best[1];
   }
 }
-export function resolveTownTraffic(d) {
+export function placeTownSpawns(d) {
   const walkers = [
     ...(d.actors ?? []),
     ...(d.vipArrivals?.actors ?? []),

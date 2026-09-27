@@ -1,10 +1,11 @@
+import { updateTownLocomotion, vehicleDistance } from '../src/game/town/TownLocomotion';
 import { afterEach, expect, it } from 'vitest';
 import { Box3, Group, MeshBasicMaterial, Scene } from 'three';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { animalSpace, animalNavigation } from '../src/game/town/TownAnimalSpace';
 import { townNavigation, TownNavigation } from '../src/game/town/TownNavigation';
-import { resolveTownTraffic } from '../src/game/town/TownTraffic';
+import { placeTownSpawns } from '../src/game/town/TownTraffic';
 import { addTownAnimals } from '../src/game/town/TownAnimals';
 import { addLeisureActivity } from '../src/game/town/TownLeisure';
 import { buildLandscape } from '../src/game/town/TownLandscape';
@@ -94,7 +95,7 @@ it('reserves moving scenery and prevents traffic correction from pushing an anim
   const car = new Group();
   car.position.set(1.5, 0.07, 0);
   d.trafficActors = [car];
-  resolveTownTraffic(d);
+  placeTownSpawns(d);
   expect(d.animalSpace.clear(root.position.toArray(), 0.64)).toBe(true);
   expect(root.position.x).toBeGreaterThan(0.65);
   expect(root.position.distanceTo(car.position)).toBeGreaterThanOrEqual(0.8 + 0.64 + 0.05 - 1e-6);
@@ -164,7 +165,7 @@ it.each(ERAS.flatMap((era, index) => [1, 3].map((tier) => [era.id, index, tier])
       const time = frame / 4;
       d.actors.forEach((a) => d.animatePerson(a, time));
       d.motions.forEach((motion) => motion(time));
-      resolveTownTraffic(d);
+      updateTownLocomotion(d);
       for (const a of d.animals) {
         if (!a.root.visible) continue;
         expect(

@@ -87,7 +87,7 @@ export const INDUSTRIAL_VARIANTS = {
   well: ['Municipal waterworks', 'A larger tank and municipal pump serve the growing town.'],
   square: [
     'Electric civic square',
-    'Electric globes frame the familiar fountain and gathering place.',
+    'A bronze prospector fountain and electric globes crown the gathering place.',
   ],
   railDepot: [
     'Brick railway station',

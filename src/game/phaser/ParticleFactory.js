@@ -16,7 +16,7 @@ export function createParticleFactory(scene, fxLayer) {
     ],
     true,
   );
-  art.generateTexture('spark', 32, 32);
+  if (!scene.textures.exists('spark')) art.generateTexture('spark', 32, 32);
   art.clear();
   art.fillStyle(0xdffaff);
   art.fillTriangle(2, 2, 22, 7, 9, 30);
@@ -24,7 +24,7 @@ export function createParticleFactory(scene, fxLayer) {
   art.fillTriangle(2, 2, 9, 30, 10, 11);
   art.lineStyle(1, 0xffffff, 0.9);
   art.strokeTriangle(2, 2, 22, 7, 9, 30);
-  art.generateTexture('ice-shard', 24, 32);
+  if (!scene.textures.exists('ice-shard')) art.generateTexture('ice-shard', 24, 32);
   art.destroy();
   // Capped emitters recycle particles; bursts create no tweens or game objects.
   const emitter = scene.add.particles(0, 0, 'spark', {

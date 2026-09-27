@@ -31,7 +31,7 @@ import {
   routeBetween,
   plotStreet,
 } from '../src/game/town/TownLayout';
-import { RIVER, riverDistance, riverCenterX, wetBank } from '../src/game/town/TownRiver';
+import { BRIDGE, RIVER, riverDistance, riverCenterX, wetBank } from '../src/game/town/TownRiver';
 import { groundHeight } from '../src/game/town/TownLandscape';
 
 const frontier = () => {
@@ -496,8 +496,9 @@ describe('River, gated parcels and permitted crossings', () => {
     expect(visiblePlots(town).some((p) => p.id === 'home5')).toBe(true);
     const path = routeBetween(town, plotStreet('home5'), plotStreet('saloon'));
     expect(path.length).toBeGreaterThan(3);
-    expect(path).toContainEqual([24, 7.5]);
-    expect(path).toContainEqual([38, 7.5]);
+    expect(path).toContainEqual([BRIDGE.westJunction, BRIDGE.z]);
+    expect(path).toContainEqual([BRIDGE.centerX + BRIDGE.halfLength, BRIDGE.z]);
+    expect(path).toContainEqual([BRIDGE.eastJunction, BRIDGE.z]);
     for (const edge of townTracks(town))
       for (let n = 0; n <= 20; n++) {
         const x = edge.from[0] + ((edge.to[0] - edge.from[0]) * n) / 20;
