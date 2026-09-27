@@ -2,18 +2,24 @@ import { townStorage } from './townStorage';
 import { AD_POLICY } from '../data/advertising';
 
 // The provider reports outcomes; only these callers may apply optional benefits.
-export function canRewardShuffle(game, campaign, inventory) {
+export function canOfferRewardedShuffle(game, campaign, inventory) {
   return (
     game.sessionActive &&
     game.playMode === 'normal' &&
     !game.levelCleared &&
-    !game.animationInProgress &&
-    !game.inputPaused &&
-    !game.activeBonusMode &&
     !campaign.readOnly &&
     inventory.availableQuantity('shuffle') === 0 &&
     (campaign.advertising.lastShuffleRun !== game.runId ||
-      campaign.advertising.shuffleCount < AD_POLICY.shufflesPerRun) &&
+      campaign.advertising.shuffleCount < AD_POLICY.shufflesPerRun)
+  );
+}
+
+export function canRewardShuffle(game, campaign, inventory) {
+  return (
+    canOfferRewardedShuffle(game, campaign, inventory) &&
+    !game.animationInProgress &&
+    !game.inputPaused &&
+    !game.activeBonusMode &&
     game._hasPlayableMove()
   );
 }

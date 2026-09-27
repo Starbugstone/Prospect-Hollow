@@ -6,6 +6,7 @@ import { useInventoryStore } from '../src/stores/inventoryStore';
 import { AD_POLICY } from '../src/data/advertising';
 import { AD_CHEST_DROPS, chestReward } from '../src/data/rewards';
 import {
+  canOfferRewardedShuffle,
   canRewardShuffle,
   rewardBonusChest,
   rewardManualShuffle,
@@ -176,6 +177,26 @@ it('gives stored shuffle priority and permits one immediate rewarded shuffle wit
   expect(slot.quantity).toBe(0);
   expect(await rewardManualShuffle({ game, campaign, inventory, ads })).toBe(false);
   expect(ads.showRewarded).toHaveBeenCalledTimes(1);
+});
+
+it.each([
+  ['animationInProgress', true],
+  ['inputPaused', true],
+  ['activeBonusMode', 'color_wand'],
+])('keeps the shuffle offer visible during %s without starting an ad', async (property, value) => {
+  const game = useGameStore(),
+    campaign = useCampaignStore(),
+    inventory = useInventoryStore();
+  game.bootstrap();
+  game.startLevel(1);
+  const previous = game[property];
+  game[property] = value;
+  const ads = fakeAds();
+  expect(canOfferRewardedShuffle(game, campaign, inventory)).toBe(true);
+  expect(await rewardManualShuffle({ game, campaign, inventory, ads })).toBe(false);
+  expect(ads.showRewarded).not.toHaveBeenCalled();
+  game[property] = previous;
+  expect(canRewardShuffle(game, campaign, inventory)).toBe(true);
 });
 
 it('leaves no-fill boards untouched, excludes continuous play, and keeps automatic dead-board recovery free', async () => {

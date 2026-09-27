@@ -1,6 +1,6 @@
 <template>
   <section
-    v-if="visiblePowers.length || canWatchShuffle"
+    v-if="visiblePowers.length || showAdShuffle"
     class="powerup-section"
     :aria-label="t('Power-ups')"
   >
@@ -38,9 +38,9 @@
         ><span class="powerup-name">{{ t(item.label) }}</span>
       </button>
       <button
-        v-if="canWatchShuffle"
+        v-if="showAdShuffle"
         class="powerup-button"
-        :disabled="adState.busy"
+        :disabled="!canRewardShuffle(game, campaign, inventory) || adState.busy"
         @click="watchShuffle"
       >
         <span class="powerup-art"><img src="/art/powers/shuffle.svg" alt="" /></span>
@@ -55,7 +55,11 @@ import { t } from '../i18n';
 import { computed, ref } from 'vue';
 import { useCampaignStore } from '../stores/campaignStore';
 import { useAdvertising } from '../composables/useAdvertising';
-import { canRewardShuffle, rewardManualShuffle } from '../services/adGameplay';
+import {
+  canOfferRewardedShuffle,
+  canRewardShuffle,
+  rewardManualShuffle,
+} from '../services/adGameplay';
 import { useGameStore } from '../stores/gameStore';
 import { useInventoryStore } from '../stores/inventoryStore';
 const inventory = useInventoryStore();
@@ -63,10 +67,12 @@ const game = useGameStore();
 const campaign = useCampaignStore();
 const { ads, adState } = useAdvertising();
 const adNotice = ref('');
-const canWatchShuffle = computed(() => {
+// Keep the row mounted during swaps and cascades: its height determines board size.
+const showAdShuffle = computed(() => {
   void adState.value;
   return (
-    canRewardShuffle(game, campaign, inventory) && ads.isAvailable('rewarded', 'manual-shuffle')
+    canOfferRewardedShuffle(game, campaign, inventory) &&
+    ads.isAvailable('rewarded', 'manual-shuffle')
   );
 });
 async function watchShuffle() {

@@ -2,6 +2,62 @@
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const stableShuffleDuringMove = async (page, shuffle) => {
+  await page.waitForFunction(() => {
+    const game = window.testStores.get('game');
+    return game.renderer && !game.animationInProgress && !game.inputPaused;
+  });
+  const result = await shuffle.evaluate(async (button) => {
+    const game = window.testStores.get('game');
+    const board = document.querySelector('.board-canvas');
+    const section = button.closest('.powerup-section');
+    const bounds = (element) => {
+      const { x, y, width, height } = element.getBoundingClientRect();
+      return { x, y, width, height };
+    };
+    // Allow the renderer's ResizeObserver to settle after changing the viewport.
+    await new Promise(requestAnimationFrame);
+    await new Promise(requestAnimationFrame);
+    const before = { board: bounds(board), section: bounds(section) };
+    const frames = [];
+    let finished = false;
+    const sample = () => {
+      frames.push({
+        board: bounds(board),
+        section: bounds(section),
+        connected: button.isConnected,
+        animating: game.animationInProgress,
+        disabled: button.disabled,
+      });
+      if (!finished) requestAnimationFrame(sample);
+    };
+    game.computeHintMove();
+    const [a, b] = game.hintMove.indices;
+    requestAnimationFrame(sample);
+    const moved = await game.resolveSwap(a, b);
+    await new Promise(requestAnimationFrame);
+    finished = true;
+    return { before, frames, moved, disabledAfter: button.disabled };
+  });
+  assert.equal(result.moved, true, 'the regression must exercise a real matching move');
+  assert.ok(
+    result.frames.some((frame) => frame.animating),
+    'must observe the animation',
+  );
+  for (const frame of result.frames) {
+    assert.equal(frame.connected, true, 'ad shuffle disappeared during a move');
+    for (const element of ['board', 'section']) {
+      for (const dimension of ['x', 'y', 'width', 'height']) {
+        assert.ok(
+          Math.abs(frame[element][dimension] - result.before[element][dimension]) < 0.5,
+          `${element} ${dimension} changed during a move`,
+        );
+      }
+    }
+    if (frame.animating) assert.equal(frame.disabled, true, 'shuffle must wait for the cascade');
+  }
+  assert.equal(result.disabledAfter, false, 'shuffle must be usable again after the move');
+};
 const rewardedFlow = async (page) => {
   await page.evaluate(() => {
     Object.defineProperty(navigator, 'languages', { value: ['en-US'], configurable: true });
@@ -21,6 +77,16 @@ const rewardedFlow = async (page) => {
     window.testStores = Object.getOwnPropertySymbols(provides)
       .map((k) => provides[k])
       .find((v) => v?._s?.get)._s;
+  });
+  for (const viewport of [
+    { width: 1440, height: 1000 },
+    { width: 390, height: 650 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await stableShuffleDuringMove(page, shuffle);
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.evaluate(() => {
     window.adBoardBefore = JSON.stringify(window.testStores.get('game').board);
   });
   await shuffle.click();
@@ -191,7 +257,7 @@ const chapterFlow = async (page) => {
     assert.equal(await phone.getByRole('button', { name: 'Tout refuser', exact: true }).count(), 0);
     await mobile.close();
     console.log(
-      'Advertising browser checks passed: consent, rejection, shuffle, chest, chapter/no-fill, mobile French, no external requests.',
+      'Advertising browser checks passed: stable board and shuffle during desktop/mobile moves, consent, rejection, shuffle, chest, chapter/no-fill, mobile French, no external requests.',
     );
   } finally {
     await browser.close();
