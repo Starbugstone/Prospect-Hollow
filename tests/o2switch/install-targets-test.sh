@@ -39,7 +39,7 @@ for target in preprod production; do
     printf 'Wrong-target installer unexpectedly succeeded\n' >&2
     exit 1
   fi
-  rg -q 'does not match this target' "$test_root/rejection.log"
+  grep -Fq 'does not match this target' "$test_root/rejection.log"
   cmp "$test_root/config.before" "$project_root/control/config.json"
   [[ $(cat "$project_root/control/build-prospect.sh") == control-code-must-be-preserved ]]
   [[ $(cat "$project_root/shared/.env.local") == private-test-configuration ]]

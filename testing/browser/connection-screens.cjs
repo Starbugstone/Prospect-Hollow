@@ -90,7 +90,10 @@ const fs = require('node:fs');
     await page.getByRole('button', { name: 'My towns & saves', exact: true }).click();
     const card = page.locator('.town-slot').filter({ hasText: 'Other Device Town' });
     await card.getByText('3 buildings · 900 coins', { exact: true }).waitFor();
-    await card.getByText('Industrial / Electric Town', { exact: true }).waitFor();
+    await card
+      .locator('.town-slot-era')
+      .filter({ hasText: 'Industrial / Electric Town' })
+      .waitFor();
     assert.equal(
       calls.filter((c) => c.path === 'towns/' + ids[1]).length,
       0,
@@ -106,6 +109,10 @@ const fs = require('node:fs');
     fs.mkdirSync('output/playwright', { recursive: true });
     await page.screenshot({ path: 'output/playwright/connection-towns-desktop.png' });
     await page.setViewportSize({ width: 390, height: 844 });
+    await card
+      .locator('.town-slot-era-mobile')
+      .filter({ hasText: 'Industrial / Electric Town' })
+      .waitFor();
     await card.getByText('3 buildings · 900 coins', { exact: true }).scrollIntoViewIfNeeded();
     await page.screenshot({ path: 'output/playwright/connection-towns-mobile.png' });
     assert(
