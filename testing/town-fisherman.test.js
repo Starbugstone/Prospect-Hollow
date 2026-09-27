@@ -54,6 +54,15 @@ it.each([...ERAS.map(({ id }) => id), 'future-fishing-era'])(
     const space = animalSpace(d);
     addEraActivity(d, d.town);
     const actor = d.actors.find((a) => a.work === 'fishing');
+    for (let rebuild = 0; rebuild < 3; rebuild++) {
+      d.retainedActors = new Map([[actor.persistentKey, actor]]);
+      d.actors = [];
+      addEraActivity(d, d.town);
+      expect(d.actors).toContain(actor);
+      expect(
+        actor.arms[1].lower.children.filter((o) => o.name === 'Hand-held fishing rod'),
+      ).toHaveLength(1);
+    }
     const station = actor.root.position.clone();
     expect(station.x).toBeGreaterThan(riverCenterX(z) - RIVER.halfWidth);
     expect(station.x).toBeLessThan(riverCenterX(z) - 1.5);

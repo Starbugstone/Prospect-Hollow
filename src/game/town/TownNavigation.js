@@ -94,6 +94,7 @@ export class TownNavigation {
   }
   reindex() {
     this.revision = (this.revision ?? 0) + 1;
+    this.detours = new Map();
     this.cells.clear();
     this.bounds = new WeakMap();
     for (const o of this.obstacles) {
@@ -210,46 +211,71 @@ export class TownNavigation {
     return candidates.find((a) => this.clear(a, margin)) ?? null;
   }
   detour(a, b, margin) {
-    const obstacles = this.nearbySegment(a, b, margin).filter((o) => !sweptClear(o, a, b, margin));
-    if (obstacles.every((o) => sweptClear(o, a, b, margin))) return [a, b];
-    const nodes = [
-      a,
-      b,
-      ...obstacles
-        .flatMap((o) => ring(o, margin, (a[1] + b[1]) / 2))
-        .filter((p) => this.clear(p, margin)),
-    ];
-    const distances = nodes.map(() => Infinity),
-      previous = nodes.map(() => -1),
-      done = new Set();
-    distances[0] = 0;
-    while (done.size < nodes.length) {
-      let at = -1;
-      for (let n = 0; n < nodes.length; n++)
-        if (!done.has(n) && (at < 0 || distances[n] < distances[at])) at = n;
-      if (at < 0 || !Number.isFinite(distances[at])) break;
-      if (at === 1) {
-        const path = [];
-        for (let n = 1; n >= 0; n = previous[n]) path.unshift(nodes[n]);
-        return path;
-      }
-      done.add(at);
-      for (let next = 0; next < nodes.length; next++) {
-        if (done.has(next)) continue;
-        const length = Math.hypot(nodes[at][0] - nodes[next][0], nodes[at][2] - nodes[next][2]);
-        if (distances[at] + length >= distances[next]) continue;
-        if (
-          this.nearbySegment(nodes[at], nodes[next], margin).some(
-            (o) => !sweptClear(o, nodes[at], nodes[next], margin),
+    const key = JSON.stringify([a, b, margin]);
+    if (this.detours.has(key)) return this.detours.get(key);
+    const remember = (path) => {
+      this.detours.set(key, path);
+      return path;
+    };
+    const obstacles = new Set(
+      this.nearbySegment(a, b, margin).filter((o) => !sweptClear(o, a, b, margin)),
+    );
+    if (!obstacles.size) return [a, b];
+    const nodes = [a, b];
+    const search = () => {
+      const distances = nodes.map(() => Infinity),
+        previous = nodes.map(() => -1),
+        done = new Set();
+      distances[0] = 0;
+      while (done.size < nodes.length) {
+        let at = -1;
+        for (let n = 0; n < nodes.length; n++)
+          if (!done.has(n) && (at < 0 || distances[n] < distances[at])) at = n;
+        if (at < 0 || !Number.isFinite(distances[at])) break;
+        if (at === 1) {
+          const path = [];
+          for (let n = 1; n >= 0; n = previous[n]) path.unshift(nodes[n]);
+          return path;
+        }
+        done.add(at);
+        for (let next = 0; next < nodes.length; next++) {
+          if (done.has(next)) continue;
+          const length = Math.hypot(nodes[at][0] - nodes[next][0], nodes[at][2] - nodes[next][2]);
+          if (distances[at] + length >= distances[next]) continue;
+          if (
+            this.nearbySegment(nodes[at], nodes[next], margin).some(
+              (o) => !sweptClear(o, nodes[at], nodes[next], margin),
+            )
           )
-        )
-          continue;
-        distances[next] = distances[at] + length;
-        previous[next] = at;
+            continue;
+          distances[next] = distances[at] + length;
+          previous[next] = at;
+        }
       }
+      return null;
+    };
+    let frontier = [...obstacles];
+    while (frontier.length) {
+      const rings = frontier.map((o) => ring(o, margin, (a[1] + b[1]) / 2));
+      nodes.push(...rings.flat().filter((p) => this.clear(p, margin)));
+      const path = search();
+      if (path) return remember(path);
+      // Only expand a failed search. Adjacent obstacles may block its rings
+      // without touching the direct line; include their outer routes as needed.
+      frontier = [];
+      for (const points of rings)
+        for (let i = 0; i < points.length; i++) {
+          const from = points[i],
+            to = points[(i + 1) % points.length];
+          for (const neighbour of this.nearbySegment(from, to, margin))
+            if (!obstacles.has(neighbour) && !sweptClear(neighbour, from, to, margin)) {
+              obstacles.add(neighbour);
+              frontier.push(neighbour);
+            }
+        }
     }
     // A blocked route stops at the last safe point; never fall through scenery.
-    return [a];
+    return remember([a]);
   }
   track(path, margin) {
     if (!path.points.length) return path;

@@ -84,8 +84,9 @@ export function addEraActivity(d, town) {
     // frontage walks can relocate a station beside the hut or onto a road.
     setWorkRoutine(fisher, walkPath([shore, station]), { work: 26, rest: 5, atWork: true });
     fisher.root.rotation.y = Math.PI / 2;
-    d.rod(fisher.arms[1].lower, [0, -0.19, 0], [0, -0.19, 1.5], 0.015, '#987c54').name =
-      'Hand-held fishing rod';
+    if (!fisher.arms[1].lower.getObjectByName('Hand-held fishing rod'))
+      d.rod(fisher.arms[1].lower, [0, -0.19, 0], [0, -0.19, 1.5], 0.015, '#987c54').name =
+        'Hand-held fishing rod';
   }
   if (town.era === 'frontier') return;
   if (town.buildings.bridge && town.buildings.home5) {

@@ -5,6 +5,7 @@ import { routeStepPose, routeDistanceAt } from './TownNavigation';
 
 export const LOCOMOTION_STEP = 1 / 60;
 const GAP = 0.04;
+const CELL = 3;
 export const DYNAMIC_AVOIDANCE_ATTEMPTS = 3;
 
 // Yield briefly to other actors, then keep the authored route through a crowd.
@@ -27,30 +28,67 @@ export class LocomotionGrid {
     this.cells = new Map();
     this.agents = [];
   }
-  rebuild(agents) {
+  bucket(x, z) {
+    const key = `${x},${z}`;
+    if (!this.cells.has(key)) this.cells.set(key, { agents: [], vehicles: [] });
+    return this.cells.get(key);
+  }
+  rebuild(agents, vehicles = []) {
     this.agents.length = 0;
-    for (const bucket of this.cells.values()) bucket.length = 0;
+    this.maxRadius = 0;
+    for (const bucket of this.cells.values()) {
+      bucket.agents.length = 0;
+      bucket.vehicles.length = 0;
+    }
     for (const a of agents) {
       this.agents.push(a);
       const m = a.motion;
       m.sx = m.x;
       m.sz = m.z;
-      const key = `${Math.floor(m.x / 3)},${Math.floor(m.z / 3)}`;
-      if (!this.cells.has(key)) this.cells.set(key, []);
-      this.cells.get(key).push(a);
+      this.maxRadius = Math.max(this.maxRadius, m.radius);
+      this.bucket(Math.floor(m.x / CELL), Math.floor(m.z / CELL)).agents.push(a);
     }
-    this.agents.sort((a, b) => a.id.localeCompare(b.id));
+    for (const vehicle of vehicles) {
+      const bounds = vehicleBounds(vehicle);
+      for (let x = Math.floor(bounds.minX / CELL); x <= Math.floor(bounds.maxX / CELL); x++)
+        for (let z = Math.floor(bounds.minZ / CELL); z <= Math.floor(bounds.maxZ / CELL); z++)
+          this.bucket(x, z).vehicles.push(vehicle);
+    }
+  }
+  *candidates(kind, bounds) {
+    const seen = new Set();
+    for (let x = Math.floor(bounds.minX / CELL); x <= Math.floor(bounds.maxX / CELL); x++)
+      for (let z = Math.floor(bounds.minZ / CELL); z <= Math.floor(bounds.maxZ / CELL); z++)
+        for (const candidate of this.cells.get(`${x},${z}`)?.[kind] ?? [])
+          if (!seen.has(candidate)) {
+            seen.add(candidate);
+            yield candidate;
+          }
   }
   neighbours(a, visit) {
-    const x = Math.floor(a.motion.sx / 3),
-      z = Math.floor(a.motion.sz / 3);
+    const x = Math.floor(a.motion.sx / CELL),
+      z = Math.floor(a.motion.sz / CELL);
     for (let dx = -1; dx <= 1; dx++)
       for (let dz = -1; dz <= 1; dz++) {
         const bucket = this.cells.get(`${x + dx},${z + dz}`);
         if (bucket)
-          for (const b of bucket) if (a !== b && Math.abs((a.y ?? 0) - (b.y ?? 0)) < 1) visit(b);
+          for (const b of bucket.agents)
+            if (a !== b && Math.abs((a.y ?? 0) - (b.y ?? 0)) < 1) visit(b);
       }
   }
+}
+function vehicleBounds(vehicle, margin = 0) {
+  // Include the entire swept box, including long vehicles and cell crossings.
+  const c = Math.abs(Math.cos(vehicle.heading)),
+    s = Math.abs(Math.sin(vehicle.heading));
+  const x = c * vehicle.halfWidth + s * vehicle.halfLength + margin;
+  const z = s * vehicle.halfWidth + c * vehicle.halfLength + margin;
+  return {
+    minX: Math.min(vehicle.cx, vehicle.previousX ?? vehicle.cx) - x,
+    maxX: Math.max(vehicle.cx, vehicle.previousX ?? vehicle.cx) + x,
+    minZ: Math.min(vehicle.cz, vehicle.previousZ ?? vehicle.cz) - z,
+    maxZ: Math.max(vehicle.cz, vehicle.previousZ ?? vehicle.cz) + z,
+  };
 }
 export function vehicleDistance(vehicle, x, z) {
   const c = Math.cos(vehicle.heading),
@@ -158,7 +196,7 @@ function prepareRouteStep(a, navigation, h) {
 }
 
 export function stepLocomotion(agents, statics, vehicles, grid, h = LOCOMOTION_STEP) {
-  grid.rebuild(agents);
+  grid.rebuild(agents, vehicles);
   // Compute every preferred step from the same snapshot before checking crowds.
   for (const a of grid.agents) {
     const m = a.motion,
@@ -200,13 +238,18 @@ export function stepLocomotion(agents, statics, vehicles, grid, h = LOCOMOTION_S
         a.proposal.blocked = b.proposal.blocked = true;
       }
     });
-    if (
-      vehicles.some(
-        (v) =>
-          Math.abs((v.y ?? a.y) - a.y) < 1 && vehicleBlocksStep(v, a.from, a.to, a.motion.radius),
-      )
-    )
-      a.proposal.blocked = true;
+    const margin = a.motion.radius + GAP;
+    for (const v of grid.candidates('vehicles', {
+      minX: Math.min(a.from[0], a.to[0]) - margin,
+      maxX: Math.max(a.from[0], a.to[0]) + margin,
+      minZ: Math.min(a.from[2], a.to[2]) - margin,
+      maxZ: Math.max(a.from[2], a.to[2]) + margin,
+    })) {
+      if (Math.abs((v.y ?? a.y) - a.y) < 1 && vehicleBlocksStep(v, a.from, a.to, a.motion.radius)) {
+        a.proposal.blocked = true;
+        break;
+      }
+    }
   }
   for (const a of grid.agents) {
     const m = a.motion,
@@ -364,14 +407,16 @@ export function updateTownLocomotion(d, h = LOCOMOTION_STEP) {
     }
   // Decide from all proposals first, so changing the traffic array order cannot
   // give one horse an unlimited right of way over another.
+  grid.rebuild(agents, vehicles);
   for (const v of vehicles) {
+    const bounds = vehicleBounds(v, grid.maxRadius + GAP);
     v.blocked =
-      agents.some(
+      [...grid.candidates('agents', bounds)].some(
         (a) =>
           Math.abs(a.y - v.y) < 1 &&
           vehicleDistance(v, a.motion.x, a.motion.z) < a.motion.radius + GAP,
       ) ||
-      vehicles.some(
+      [...grid.candidates('vehicles', bounds)].some(
         (other) => other !== v && Math.abs(other.y - v.y) < 1 && vehiclesOverlap(v, other),
       );
   }

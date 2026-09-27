@@ -80,7 +80,6 @@ export const useGameStore = defineStore('game', {
     sessionVersion: 0,
     introTaskSession: null,
     introFinalized: null,
-    introClaimed: null,
     rendererRecovering: false,
     inputPaused: false,
     board: [],
@@ -571,6 +570,8 @@ export const useGameStore = defineStore('game', {
       const freshBoard = cloneBoardState(config.board);
       const freshTiles = cloneTileLayers(config.tiles);
       this.sessionActive = true;
+      // Start audio in the mine-entry gesture, before renderer/paint callbacks.
+      this.audioManager?.playAmbientLoop?.();
       this.resetRunPresentation();
       this.boardCols = config.boardCols ?? config.boardSize ?? 8;
       this.boardRows = config.boardRows ?? config.boardCols ?? config.boardSize ?? 8;
@@ -641,7 +642,6 @@ export const useGameStore = defineStore('game', {
           if (ready.current(binding, session)) break;
         }
         if (!ready.current(binding, session) || session !== this.sessionVersion) return;
-        this.introClaimed = session;
         try {
           await binding.animator.playIntroCascade?.();
         } catch (error) {
@@ -718,7 +718,6 @@ export const useGameStore = defineStore('game', {
           this.scheduleHint();
           this.processQueuedInput();
         }
-        this.audioManager?.playAmbientLoop?.();
       };
       if (typeof requestAnimationFrame === 'function') afterPaint(present);
       else present();

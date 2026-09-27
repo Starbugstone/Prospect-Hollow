@@ -1,4 +1,3 @@
-import { resetRetentionPolicy } from '../game/phaser/boardRetention';
 import { useCampaignStore } from '../stores/campaignStore';
 import { useGameStore } from '../stores/gameStore';
 import { HAMMER_CAPACITY } from '../data/rewards';
@@ -26,7 +25,6 @@ export function createTestingTools(pinia) {
     async showNavigation(value = true) {
       return (await import('../game/town/NavigationDebug')).showNavigation(value);
     },
-    resetRetentionPolicy,
     prepareEra(era) {
       const campaign = useCampaignStore(pinia);
       era ??= campaign.town.era;

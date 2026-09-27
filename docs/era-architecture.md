@@ -393,7 +393,8 @@ uses packed triangles, a permutation and median partitioning, yielding between
 bounded pieces. Immutable geometry snapshots are cached per root/revision.
 Render tiers start at medium unless a measured tier was stored: DPR caps
 1/1.25/1.5, shadow maps 1024/2048/2048, cache samples 0/2/4. Runtime adaptation
-changes DPR and shadows outside presentations; target sample counts are fixed
+changes DPR and shadows outside presentations, with tier thresholds relative to
+the device's maximum DPR; target sample counts are fixed
 at allocation.
 
 `loadBoard` owns the shared Phaser import. Generated PNG atlases use
@@ -401,15 +402,11 @@ at allocation.
 Only the active gem finish and shared board art load initially. `requestIntro`
 is the single session owner: renderer readiness, an intro rejection, detachment
 or recovery cannot run queued input twice or finalize another puzzle.
-`BoardHost` owns teardown/parking; reset and import always replace its renderer.
-
-Board retention starts with an **empty eligibility table**. It remains off until
-production builds pass a named desktop, mid-range Android and supported
-low-memory iPhone gate: 50 town/mine cycles, at least 20 timing samples, stable
-resource plateaus, background/foreground and context recovery without state loss.
-A policy reset clears demotion only; it cannot grant eligibility. Unexpected
-context loss demotes; intentional context release is ignored. Physical mobile
-and deployed cache-header checks require their actual environments.
+`BoardHost` mounts only during a mine session and tears down its renderer on exit;
+reset and import always replace the renderer. Mine ambience starts synchronously
+in `startLevel`, preserving the entry gesture, and renderer recovery does not
+restart it. Physical mobile and deployed cache-header checks require their actual
+environments.
 
 Hashed `/assets/*` get immutable hosting headers; the shell revalidates. CI fails
 for JavaScript chunks above 2 MB or static mesh-catalog imports.
@@ -433,12 +430,12 @@ An accepted purchase is already persisted before presentation starts. A pooled
 hammer draws before preparation. Occupied new solids wait for a swept-clear
 walk out, with a visible work-site gate if no exit is available. The same gate
 protects full-rebuild fallback. The 1.8-second reveal starts after its first
-paint; active time is independent from bounded locomotion time and stops while
-hidden or paused. Static batching and shadow refresh settle afterward.
+paint; reveal time advances by at most 50 ms per frame so stalls cannot skip its
+stages, and stops while hidden or paused. Static batching and shadow refresh settle
+afterward. Plot swaps recompute only the changed building's service drop.
 
 Use `prospectDebug.showNavigation(true)` for active/provisional footprints,
 owner metadata, authored anchors, prepared routes and accepted/preferred poses.
-`prospectDebug.resetRetentionPolicy()` clears a measured configuration's demotion.
 
 ### Mine site and growth
 

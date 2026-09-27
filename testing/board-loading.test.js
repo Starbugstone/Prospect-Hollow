@@ -146,6 +146,23 @@ function session() {
   game.animationInProgress = true;
   vi.stubGlobal('window', {});
 }
+it('starts mine audio synchronously and does not replay it on renderer recovery', () => {
+  const audio = { playAmbientLoop: vi.fn() };
+  game.setAudioManager(audio);
+  vi.spyOn(game, 'refreshBoardVisuals').mockImplementation(() => {});
+  vi.spyOn(game, 'requestIntro').mockImplementation(() => {});
+  const frames = [];
+  vi.stubGlobal('requestAnimationFrame', (callback) => frames.push(callback));
+  game.bootstrap();
+  game.startLevel(1);
+  expect(audio.playAmbientLoop).toHaveBeenCalledOnce();
+  for (let recovery = 0; recovery < 2; recovery++) {
+    attach();
+    while (frames.length) frames.shift()();
+    expect(audio.playAmbientLoop).toHaveBeenCalledOnce();
+    game.detachRenderer();
+  }
+});
 it('waits for a cold renderer and releases queued input once after the single intro', async () => {
   let complete;
   const intro = vi.spyOn(BoardAnimator.prototype, 'playIntroCascade').mockImplementation(

@@ -2,7 +2,6 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { BoxGeometry, Group, Mesh, MeshStandardMaterial, Vector3 } from 'three';
 import { createMeshCatalog, requiredFamilies } from '../src/game/town/assets/MeshCatalog';
 import { BoardReadiness } from '../src/game/phaser/BoardReadiness';
-import { retentionMode, demote, POLICY_VERSION } from '../src/game/phaser/boardRetention';
 import {
   geometryFootprints,
   registerFootprints,
@@ -21,6 +20,7 @@ import {
 import { createTown } from '../src/data/town';
 import { triangleIndex, queryTriangles } from '../src/game/town/TriangleIndex';
 import { applyRoadSetbacks, plotSetbacks } from '../src/game/town/BuildingSetbacks';
+import { setWorkRoutine, updateWorkRoutine } from '../src/game/town/TownWorkRoutine';
 
 afterEach(() => vi.restoreAllMocks());
 it('preserves empty corners and exported component gaps in merged geometry', () => {
@@ -114,28 +114,6 @@ it('invalidates old renderer generations and cancels waits without replaying ano
   ready.cancel();
   expect(await stale).toBeNull();
 });
-it('keeps retention opt-in after a policy reset and ignores intentional teardown', () => {
-  let saved = null;
-  const storage = {
-    getItem: () => saved,
-    setItem: (_, value) => {
-      saved = value;
-    },
-  };
-  expect(retentionMode({}, [], storage)).toBe('evict');
-  const rules = [{ matches: (env) => env.validated }];
-  expect(retentionMode({ validated: true }, rules, storage)).toBe('retain');
-  demote('teardown', { storage, teardownInProgress: true });
-  expect(saved).toBeNull();
-  demote('unexpected-loss', { storage });
-  expect(JSON.parse(saved).version).toBe(POLICY_VERSION);
-  expect(retentionMode({ validated: true }, rules, storage)).toBe('evict');
-  expect(
-    retentionMode({}, [], {
-      getItem: () => JSON.stringify({ version: POLICY_VERSION - 1, mode: 'retain' }),
-    }),
-  ).toBe('evict');
-});
 it('round-trips footprint coordinates and invalidates only intersecting routes', () => {
   const geometry = new BoxGeometry(2, 2, 1),
     material = new MeshStandardMaterial();
@@ -202,6 +180,99 @@ function walker(id, x, z, targetX, targetZ, radius = 0.25) {
     motion: { x, z, vx: 0, vz: 0, routeDistance: 0, maxSpeed: 0.55, radius },
   };
 }
+it('checks swept nearby vehicles without testing distant traffic or missing long rotated boxes', () => {
+  const distant = Array.from({ length: 100 }, (_, i) => ({
+    cx: 100 + i * 10,
+    cz: 100,
+    heading: 0,
+    halfWidth: 0.4,
+    halfLength: 1,
+  }));
+  const grid = new LocomotionGrid();
+  for (const vehicle of [
+    { cx: 4, cz: 0, previousX: -4, previousZ: 0, heading: 0, halfWidth: 0.4, halfLength: 1 },
+    { cx: 4, cz: 0, heading: Math.PI / 2, halfWidth: 0.4, halfLength: 4 },
+  ]) {
+    const actor = walker('walker', 0, 0, 1, 0);
+    stepLocomotion([actor], null, [...distant, vehicle], grid);
+    expect(actor.motion.state).toBe('waiting');
+    expect(actor.motion.dynamicAttempts).toBe(1);
+  }
+  // The narrow phase creates its cached footprint only for nearby candidates.
+  expect(distant.every((v) => !v.footprint)).toBe(true);
+});
+
+it.each([false, true])(
+  'repairs dormant work variants and preserves placement (started: %s)',
+  async (started) => {
+    vi.useFakeTimers();
+    try {
+      const actor = { root: new Group(), seed: 6, radius: 0.29, work: 'greet' };
+      setWorkRoutine(
+        actor,
+        walkPath([
+          [-4, 0.07, 0],
+          [4, 0.07, 0],
+        ]),
+        { work: 0.1, rest: 0.1, atWork: true },
+      );
+      const stale = actor.workRoutine.paths;
+      // The current short route is clear; only a later, longer break hits the new plot.
+      actor.walkPath = walkPath([
+        [2, 0.07, 0],
+        [4, 0.07, 0],
+      ]);
+      const previous = { group: new Group() },
+        group = new Group();
+      const view = Object.assign(Object.create(TownDiorama.prototype), {
+        town: createTown(),
+        actors: [actor],
+        world: new Group(),
+        generation: 1,
+        navigation: new TownNavigation(),
+        plotCache: new Map([['home', previous]]),
+        targets: [previous.group],
+        frameCache: {},
+        pendingPlot: {
+          id: 'home',
+          group,
+          previous,
+          entries: [{ x: 0, z: 0, y: 0, height: 2, radius: 1 }],
+        },
+        refreshServiceDrops: vi.fn(),
+        buildingRenderer: { sync: vi.fn() },
+        rebuildActors: vi.fn(),
+        repairAnimalLife: vi.fn(),
+        render: vi.fn(),
+      });
+      if (started) updateTownLocomotion(view);
+      const position = actor.root.position.clone();
+      expect(view.tryActivatePlot()).toBe(true);
+      await vi.runAllTimersAsync();
+      expect(actor.root.position.equals(position)).toBe(true);
+      expect(actor.workRoutine.paths).not.toBe(stale);
+      for (const path of actor.workRoutine.paths)
+        expect(
+          path.points.every(
+            (p, i) => !i || view.navigation.segment(path.points[i - 1], p, actor.radius),
+          ),
+        ).toBe(true);
+      const visits = actor.workRoutine.visit;
+      let travel = 0;
+      for (let frame = 1; frame <= 1500; frame++) {
+        updateWorkRoutine(actor, frame / 10);
+        const before = actor.root.position.clone();
+        updateTownLocomotion(view, 0.1);
+        travel += actor.root.position.distanceTo(before);
+        expect(view.navigation.clear(actor.root.position.toArray(), actor.radius)).toBe(true);
+      }
+      expect(travel).toBeGreaterThan(15);
+      expect(actor.workRoutine.visit).toBeGreaterThan(visits + 2);
+    } finally {
+      vi.useRealTimers();
+    }
+  },
+);
 it('bounds movement and permits crowded crossings after three attempts independently of array order', () => {
   const run = (reverse) => {
     const agents = [

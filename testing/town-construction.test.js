@@ -65,7 +65,7 @@ it('assembles from the ground up over 1.8 seconds and restores meshes for static
   material.dispose();
 });
 
-it('uses active reveal time across slow frames and freezes while hidden', () => {
+it('caps stalled reveal frames and freezes while hidden', () => {
   const view = Object.create(TownDiorama.prototype),
     group = new Group();
   Object.assign(view, { geometries: createTownGeometries(), materials: new Map(), elapsed: 0 });
@@ -76,14 +76,18 @@ it('uses active reveal time across slow frames and freezes while hidden', () => 
   construction.presentFirstStrike();
   construction.update(100);
   expect(construction.update(100.5)).toBe(false);
-  expect(construction.elapsed).toBeCloseTo(0.5);
+  expect(construction.elapsed).toBeCloseTo(0.05);
   construction.pause();
   construction.update(700);
-  expect(construction.elapsed).toBeCloseTo(0.5);
+  expect(construction.elapsed).toBeCloseTo(0.05);
   construction.resume();
   construction.update(900);
-  expect(construction.elapsed).toBeCloseTo(0.5);
-  expect(construction.update(901.31)).toBe(true);
+  expect(construction.elapsed).toBeCloseTo(0.05);
+  expect(construction.update(903)).toBe(false);
+  expect(construction.elapsed).toBeCloseTo(0.1);
+  expect(construction.hammer.visible).toBe(true);
+  for (let frame = 1; frame <= 110; frame++) construction.update(903 + frame / 60);
+  expect(construction.elapsed).toBeGreaterThanOrEqual(1.8);
   Object.values(view.geometries).forEach((g) => g.dispose());
   view.materials.forEach((m) => m.dispose());
 });

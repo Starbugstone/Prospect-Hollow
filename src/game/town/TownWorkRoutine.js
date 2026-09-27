@@ -8,7 +8,16 @@ export function setWorkRoutine(actor, path, { work = 20, rest = 8, atWork = fals
   if (!path?.total) return;
   actor.workRoutine ??= { phase: atWork ? 'work' : 'approach', since: null, visit: 0 };
   Object.assign(actor.workRoutine, { work, rest });
-  actor.workRoutine.paths = [1, 0.75, 0.55].map((fraction) => {
+  updateWorkPaths(actor, path);
+  if (!actor.motion) {
+    actor.routeProgress = atWork ? 1 : 0;
+    actor.root.position.fromArray(atWork ? path.points.at(-1) : path.points[0]);
+  }
+}
+
+// Refresh every future break without resetting placement, phase or pause time.
+export function updateWorkPaths(actor, path) {
+  actor.workRoutine.paths = (path.total ? [1, 0.75, 0.55] : []).map((fraction) => {
     const start = path.total * (1 - fraction);
     const pose = routeStepPose(path, start, {});
     let distance = 0;
@@ -22,11 +31,8 @@ export function setWorkRoutine(actor, path, { work = 20, rest = 8, atWork = fals
     variant.frontage = path.frontage;
     return variant;
   });
+  if (!path.total) actor.workRoutine.paths = [path];
   actor.walkPath = path;
-  if (!actor.motion) {
-    actor.routeProgress = atWork ? 1 : 0;
-    actor.root.position.fromArray(atWork ? path.points.at(-1) : path.points[0]);
-  }
 }
 
 export function updateWorkRoutine(actor, time) {

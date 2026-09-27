@@ -10,9 +10,8 @@ import { updateMineGrowth } from './mine/addMineSite';
 import { afterPaint, performanceMark, scheduleWork } from '../PresentationWork';
 import { geometryFootprints, registerFootprints, footprintDistance } from './BuildingFootprints';
 import { townTracks, railEdges } from './TownLayout';
-import { demote } from '../phaser/boardRetention';
 import { townNavigation, prepareActorWalk, walkPose, placeSafely } from './TownNavigation';
-import { addWorkBreak, updateWorkRoutine } from './TownWorkRoutine';
+import { addWorkBreak, updateWorkPaths, updateWorkRoutine } from './TownWorkRoutine';
 import { buildingWalk } from './TownPedestrians';
 import { TownVipArrivals } from './TownVipArrivals';
 import { hasVisitorTransport } from '../../data/visitorArrivals';
@@ -203,7 +202,6 @@ export class TownDiorama {
   }
   handleContextLoss(event) {
     event.preventDefault();
-    demote('town-context-lost', { teardownInProgress: this.disposed });
     this.contextUnavailable = true;
     this.frameCache.valid = false;
     this.renderer.setAnimationLoop(null);
@@ -661,7 +659,9 @@ export class TownDiorama {
     function* repairRoutes() {
       view.itineraries = new TownItineraries(view);
       for (const actor of actors) {
-        const path = actor.walkPath ?? actor.path;
+        // The active break may be a short variant. Repair the full work route
+        // so later visits cannot restore a path through the changed footprint.
+        const path = actor.workRoutine?.paths[0] ?? actor.walkPath ?? actor.path;
         if (!path?.points.length) continue;
         const intersects = path.points.some(
           (p, i) => i && !view.navigation.segment(path.points[i - 1], p, actor.radius ?? 0.45),
@@ -674,10 +674,13 @@ export class TownDiorama {
         const next = path.building
           ? buildingWalk(view, path.building, path.frontage)
           : view.navigation.plan(
-              [position, ...path.points.slice(1), position],
+              actor.workRoutine ? path.points : [position, ...path.points.slice(1), position],
               actor.radius ?? 0.45,
             );
-        if (actor.walkPath) actor.walkPath = next;
+        if (actor.workRoutine) {
+          updateWorkPaths(actor, next);
+          actor.routeLimit = actor.direction < 0 ? 0 : next.total;
+        } else if (actor.walkPath) actor.walkPath = next;
         else actor.path = next;
         if (actor.motion) actor.motion.path = null;
         if (actor.itinerary) {
@@ -702,7 +705,7 @@ export class TownDiorama {
     }
     if (construction)
       this.construction = new TownConstruction(this, group, movingPart?.rotor, previous.parts);
-    this.refreshServiceDrops();
+    this.refreshServiceDrops(id);
     this.buildingRenderer.sync(this.world.children.filter((child) => child.userData.static));
     this.clearGroup(previous.group);
     this.frameCache.valid = false;
@@ -716,13 +719,19 @@ export class TownDiorama {
     else this.repairAnimalLife();
     return true;
   }
-  refreshServiceDrops() {
-    if (this.serviceDrops?.parent) this.clearGroup(this.serviceDrops);
+  refreshServiceDrops(changedId) {
+    const previous = this.serviceDrops;
     this.serviceDrops = addServiceDrops(
       this,
       this.staticScenery?.entries.get('power')?.group,
-      new Map([...this.plotCache].map(([id, { group }]) => [id, group])),
+      new Map(
+        [...this.plotCache]
+          .filter(([id]) => changedId === undefined || id === changedId)
+          .map(([id, { group }]) => [id, group]),
+      ),
+      changedId === undefined ? null : previous,
     );
+    if (previous?.parent) this.clearGroup(previous);
   }
   invalidatePresentationWork() {
     this.generation = (this.generation ?? 0) + 1;
@@ -1942,8 +1951,10 @@ export class TownDiorama {
     }
     if (this.waterMaterial) this.waterMaterial.uniforms.time.value = this.elapsed;
     this.tryActivatePlot?.();
-    if (this.reducedMotion && !this.pendingPlot && !this.pendingUpdate)
+    if (this.reducedMotion && !this.pendingPlot && !this.pendingUpdate) {
+      this.motionEnabled = false;
       this.renderer.setAnimationLoop(null);
+    }
     if (this.construction?.update(this.activeElapsed)) this.finishConstruction();
     if (this.raid?.update(this.elapsed)) {
       this.raid = null;

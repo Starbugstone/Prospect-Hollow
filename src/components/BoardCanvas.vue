@@ -21,7 +21,6 @@ import Phaser from 'phaser';
 import { useGameStore } from '../stores/gameStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { BoardScene } from '../game/phaser/BoardScene';
-import { demote } from '../game/phaser/boardRetention';
 import { releaseContextOnDestroy } from '../game/phaser/RendererLifecycle';
 
 const canvasRoot = ref(null);
@@ -36,7 +35,6 @@ let teardownInProgress = false;
 const contextLost = (event) => {
   if (teardownInProgress) return;
   event.preventDefault();
-  demote('board-context-lost');
   gameStore.rendererRecovering = true;
   gameStore.animationInProgress = true;
   gameStore.detachRenderer();
@@ -50,19 +48,14 @@ const contextRestored = () => {
 watch(
   () => [gameStore.sessionActive, gameStore.sessionVersion],
   ([active]) => {
-    if (!game) return;
+    if (!game || !active) return;
     gameStore.detachRenderer();
     game.scene.stop('BoardScene');
-    if (active) {
-      game.loop.wake();
-      const scene = game.scene.getScene('BoardScene');
-      scene.levelId = gameStore.currentLevelId;
-      game.scene.start('BoardScene');
-      resize();
-    } else {
-      game.loop.sleep();
-      gameStore.audioManager?.stopAmbientLoop?.();
-    }
+    game.loop.wake();
+    const scene = game.scene.getScene('BoardScene');
+    scene.levelId = gameStore.currentLevelId;
+    game.scene.start('BoardScene');
+    resize();
   },
   { flush: 'post' },
 );
