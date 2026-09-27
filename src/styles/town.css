@@ -2293,17 +2293,6 @@ html:has(.town-museum[open]) {
   flex: 1 1 140px;
 }
 
-.town-projects-button {
-  left: 16px;
-  right: auto;
-  top: max(104px, calc(env(safe-area-inset-top) + 104px));
-}
-@media (max-width: 600px) {
-  .town-projects-button {
-    top: max(160px, calc(env(safe-area-inset-top) + 160px));
-  }
-}
-
 /* The transparent frame labels the second view rendered in the town canvas. */
 .town-event-inset {
   position: absolute;

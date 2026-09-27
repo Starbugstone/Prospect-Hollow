@@ -10,6 +10,17 @@ const savedVillageLabels = () => {
   }
 };
 
+// null until the player first opens or hides village progress themselves.
+const VILLAGE_PROGRESS_KEY = 'crystal-cascade-village-progress';
+const savedVillageProgress = () => {
+  try {
+    const saved = globalThis.localStorage?.getItem(VILLAGE_PROGRESS_KEY);
+    return saved === null || saved === undefined ? null : saved === 'true';
+  } catch {
+    return null;
+  }
+};
+
 export const useSettingsStore = defineStore('settings', {
   state: () => ({
     isSettingsOpen: false,
@@ -20,12 +31,21 @@ export const useSettingsStore = defineStore('settings', {
       (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false),
     highContrastMode: false,
     showVillageLabels: savedVillageLabels(),
+    villageProgressOpen: savedVillageProgress(),
   }),
   actions: {
     setVillageLabels(visible) {
       this.showVillageLabels = visible !== false;
       try {
         globalThis.localStorage?.setItem(VILLAGE_LABELS_KEY, String(this.showVillageLabels));
+      } catch {
+        // Storage restrictions still allow the choice for this session.
+      }
+    },
+    setVillageProgress(open) {
+      this.villageProgressOpen = open === true;
+      try {
+        globalThis.localStorage?.setItem(VILLAGE_PROGRESS_KEY, String(this.villageProgressOpen));
       } catch {
         // Storage restrictions still allow the choice for this session.
       }
