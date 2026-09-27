@@ -25,18 +25,24 @@ export class TownRenderQuality {
     const slow = ordered[30];
     this.samples = [];
     let next = this.ratio;
+    let recovering = false;
     if (slow > 34) {
       next = Math.max(Math.min(0.6, this.maxRatio), this.ratio * 0.8);
       this.fastWindows = 0;
     } else if (slow < 19) {
       if (++this.fastWindows >= 8) {
+        recovering = true;
         next = Math.min(this.maxRatio, this.ratio / 0.8);
         this.fastWindows = 0;
       }
     } else this.fastWindows = 0;
-    if (Math.abs(next - this.ratio) < 0.01) return null;
+    // Tier thresholds describe the fraction of the device's drawing budget,
+    // not an absolute DPR. A native-DPR-1 display can recover high quality too.
+    const relative = (next / this.maxRatio) * RENDER_TIERS.high.dpr;
+    const tier = relative <= 1 ? 'low' : relative <= 1.25 ? 'medium' : 'high';
+    if (Math.abs(next - this.ratio) < 0.01 && (!recovering || tier === this.tier)) return null;
     this.ratio = next;
-    this.tier = next <= 1 ? 'low' : next <= 1.25 ? 'medium' : 'high';
+    this.tier = tier;
     try {
       globalThis.localStorage?.setItem('prospect.renderTier', this.tier);
     } catch {}

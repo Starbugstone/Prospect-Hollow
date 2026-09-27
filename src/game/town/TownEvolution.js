@@ -184,7 +184,7 @@ function surface(target, a, b, radius = 0.035) {
 /** Service drops run from their street pole to the first surface of the finished
  * building, so a wire never continues through a wall or roof. Built after the plots
  * (and again when one plot is swapped); `plots` maps plot ids to their groups. */
-export function addServiceDrops(d, grid, plots) {
+export function addServiceDrops(d, grid, plots, previous = null) {
   const connections = grid?.userData.connections;
   if (!connections?.length) return null;
   const root = d.group(d.world);
@@ -192,7 +192,13 @@ export function addServiceDrops(d, grid, plots) {
   root.userData.static = true;
   for (const { id, from, to } of connections) {
     const target = plots.get(id);
-    if (!target) continue;
+    if (!target) {
+      const retained = previous?.getObjectByName(`Service drop ${id}`);
+      if (retained) root.add(retained);
+      continue;
+    }
+    const drop = d.group(root);
+    drop.name = `Service drop ${id}`;
     target.updateMatrixWorld(true);
     const points = [from];
     let end;
@@ -213,17 +219,16 @@ export function addServiceDrops(d, grid, plots) {
       const below = surface(target, to, [to[0], 0, to[2]], 0.08);
       if (below) points.push(below);
       else {
-        walkObstacle(root, to[0], to[2], 0.06, to[1]);
-        d.rod(root, [to[0], 0, to[2]], [to[0], to[1] + 0.15, to[2]], 0.06, '#897255').name =
+        walkObstacle(drop, to[0], to[2], 0.06, to[1]);
+        d.rod(drop, [to[0], 0, to[2]], [to[0], to[1] + 0.15, to[2]], 0.06, '#897255').name =
           `Meter post ${id}`;
       }
     }
-    const drop = d.group(root);
-    drop.name = `Service drop ${id}`;
     for (let i = 1; i < points.length; i++) d.rod(drop, points[i - 1], points[i], 0.017, WIRE);
     d.ball(drop, ...points.at(-1), 0.045, '#c6d7c4');
+    // Preserve per-plot geometry so a swap only repeats its own surface queries.
+    d.batch(drop);
   }
-  d.batch(root);
   return root;
 }
 

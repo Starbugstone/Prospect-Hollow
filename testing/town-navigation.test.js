@@ -1,5 +1,5 @@
 import { addLeisureActivity } from '../src/game/town/TownLeisure';
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { Group, Scene, MeshBasicMaterial, Vector3 } from 'three';
 import {
   TownNavigation,
@@ -26,6 +26,36 @@ import { BRIDGE, streetHeight } from '../src/game/town/TownRiver';
 import { geometryFootprints, registerFootprints } from '../src/game/town/BuildingFootprints';
 import { updateTownLocomotion } from '../src/game/town/TownLocomotion';
 const pole = (x, z, radius = 0.055) => ({ x, z, y: 0, height: 5, radius });
+it('reuses detour searches until the obstacle geometry changes', () => {
+  const nav = new TownNavigation([{ ...pole(0, 0, 1), owner: 'plot:test' }]);
+  const points = [
+    [-4, 0.07, 0],
+    [4, 0.07, 0],
+  ];
+  const first = nav.plan(points);
+  expect(first.total).toBeGreaterThan(8);
+  const queries = vi.spyOn(nav, 'nearbySegment');
+  expect(nav.plan(points).points).toEqual(first.points);
+  expect(queries).not.toHaveBeenCalled();
+  nav.replaceOwner('plot:test', [], 'removed');
+  expect(nav.plan(points).points).toEqual(points);
+  expect(queries).toHaveBeenCalled();
+});
+it('detours around a chain of neighbours outside the direct corridor', () => {
+  const obstacles = [
+    pole(0, 0, 1),
+    ...[-1, 1].flatMap((sign) => [1.7, 3.4, 5.1].map((z) => pole(0, sign * z, 1))),
+  ];
+  const nav = new TownNavigation(obstacles);
+  for (const sign of [-1, 1]) {
+    const from = [-4 * sign, 0.07, 0],
+      to = [4 * sign, 0.07, 0];
+    const path = nav.plan([from, to]);
+    expect(path.points.at(-1)).toEqual(to);
+    expect(path.points.some((p) => Math.abs(p[2]) > 6)).toBe(true);
+    clearance(path, obstacles);
+  }
+});
 function clearance(path, obstacles, margin = NPC_MARGIN) {
   for (let i = 1; i < path.points.length; i++) {
     const a = path.points[i - 1],

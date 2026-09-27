@@ -111,7 +111,6 @@ export const useGameStore = defineStore('game', {
     sessionVersion: 0,
     introTaskSession: null,
     introFinalized: null,
-    introClaimed: null,
     rendererRecovering: false,
     inputPaused: false,
     board: [],
@@ -239,7 +238,6 @@ export const useGameStore = defineStore('game', {
           // renderer (including context recovery) must resume that same session.
           introTaskSession: session,
           introFinalized: session,
-          introClaimed: session,
           rendererRecovering: false,
           boardVersion: this.boardVersion + 1,
           animationInProgress: false,
@@ -259,6 +257,7 @@ export const useGameStore = defineStore('game', {
       campaign.continuousRun = snapshot.continuousRun
         ? JSON.parse(JSON.stringify(snapshot.continuousRun))
         : null;
+      this.audioManager?.playAmbientLoop?.();
     },
     showArcadeBanner(banner) {
       if (!this.sessionActive || this.levelCleared) return;
@@ -295,7 +294,10 @@ export const useGameStore = defineStore('game', {
       this.elapsedMs = this.playClock.setRunning(canPlay);
     },
     setAudioManager(manager) {
+      const changed = manager !== this.audioManager;
       this.audioManager = manager ? markRaw(manager) : null;
+      // A transferred mine can resume before its App mounts the audio manager.
+      if (changed && this.sessionActive) this.audioManager?.playAmbientLoop?.();
       const animator = this.renderer?.animator;
       if (animator?.setAudioManager) {
         animator.setAudioManager(this.audioManager);
@@ -668,6 +670,8 @@ export const useGameStore = defineStore('game', {
       const freshBoard = cloneBoardState(config.board);
       const freshTiles = cloneTileLayers(config.tiles);
       this.sessionActive = true;
+      // Start audio in the mine-entry gesture, before renderer/paint callbacks.
+      this.audioManager?.playAmbientLoop?.();
       this.resetRunPresentation();
       this.boardCols = config.boardCols ?? config.boardSize ?? 8;
       this.boardRows = config.boardRows ?? config.boardCols ?? config.boardSize ?? 8;
@@ -738,7 +742,6 @@ export const useGameStore = defineStore('game', {
           if (ready.current(binding, session)) break;
         }
         if (!ready.current(binding, session) || session !== this.sessionVersion) return;
-        this.introClaimed = session;
         try {
           await binding.animator.playIntroCascade?.();
         } catch (error) {
@@ -815,7 +818,6 @@ export const useGameStore = defineStore('game', {
           this.scheduleHint();
           this.processQueuedInput();
         }
-        this.audioManager?.playAmbientLoop?.();
       };
       if (typeof requestAnimationFrame === 'function') afterPaint(present);
       else present();

@@ -136,6 +136,11 @@ it('recovers a transferred mine renderer without replaying the intro or leaving 
   game.bootstrap();
   game.startLevel(1);
   const next = transfer(game);
+  const audio = { playAmbientLoop: vi.fn() };
+  next.setAudioManager(audio);
+  expect(audio.playAmbientLoop).toHaveBeenCalledOnce();
+  next.setAudioManager(audio);
+  expect(audio.playAmbientLoop).toHaveBeenCalledOnce();
   const board = JSON.parse(JSON.stringify(next.board));
   const runId = next.runId;
   vi.spyOn(next, 'refreshBoardVisuals').mockImplementation(() => {});
@@ -151,4 +156,5 @@ it('recovers a transferred mine renderer without replaying the intro or leaving 
   expect(queued).toHaveBeenCalledOnce();
   expect(next.board).toEqual(board);
   expect(next.runId).toBe(runId);
+  expect(audio.playAmbientLoop).toHaveBeenCalledOnce();
 });

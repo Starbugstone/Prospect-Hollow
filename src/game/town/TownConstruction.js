@@ -80,7 +80,9 @@ export class TownConstruction {
       this.elapsed = 0;
       this.lastTime = time;
     } else {
-      this.elapsed += this.lastTime === null ? 0 : Math.max(0, time - this.lastTime);
+      // Shader compilation or GC must not skip the strike and roof reveal.
+      this.elapsed +=
+        this.lastTime === null ? 0 : Math.min(0.05, Math.max(0, time - this.lastTime));
       this.lastTime = time;
     }
     const elapsed = this.elapsed;

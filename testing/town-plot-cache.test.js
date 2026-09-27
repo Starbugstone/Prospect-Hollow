@@ -3,7 +3,7 @@ import { vi as testTiming } from 'vitest';
 testTiming.setConfig({ testTimeout: 20000 });
 import { ERAS } from '../src/data/eras';
 import { afterEach, expect, it, vi } from 'vitest';
-import { MeshBasicMaterial, Scene } from 'three';
+import { MeshBasicMaterial, Raycaster, Scene } from 'three';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { updateTownLocomotion } from '../src/game/town/TownLocomotion';
@@ -73,6 +73,32 @@ it('swaps a ready plot without resetting other actors and cancels superseded pre
   const rebuild = vi.spyOn(view, 'update').mockImplementation(() => {});
   view.changeTown({ ...updated, buildings: { ...updated.buildings, well: 2 } }, labels, 0, null);
   expect(rebuild).toHaveBeenCalledOnce();
+});
+
+it('recomputes only the swapped plot service drop and retains the other wire geometry', () => {
+  const { view, town, labels } = fixture();
+  town.era = 'industrial';
+  Object.assign(town.buildings, { powerHouse: 1, saloon: 1 });
+  view.update(town, labels);
+  const drops = view.serviceDrops;
+  const retained = drops.children.filter((drop) => drop.name !== 'Service drop home');
+  const oldHome = drops.getObjectByName('Service drop home');
+  expect(oldHome).toBeTruthy();
+  expect(retained.length).toBeGreaterThan(1);
+  const rays = vi.spyOn(Raycaster.prototype, 'intersectObject');
+  const clear = vi.spyOn(view, 'plotVacant').mockReturnValue(true);
+  try {
+    const updated = { ...town, buildings: { ...town.buildings, home: 3 } };
+    view.changeTown(updated, labels, 0, null);
+    const home = view.plotCache.get('home').group;
+    expect(view.serviceDrops.getObjectByName('Service drop home')).not.toBe(oldHome);
+    for (const drop of retained) expect(drop.parent).toBe(view.serviceDrops);
+    expect(rays).toHaveBeenCalled();
+    expect(rays.mock.calls.every(([target]) => target === home)).toBe(true);
+  } finally {
+    rays.mockRestore();
+    clear.mockRestore();
+  }
 });
 
 it.each([
