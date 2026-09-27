@@ -9,6 +9,9 @@ export class TownStatics {
     this.scene = scene;
     this.meshes = [];
     this.batches = new Map();
+    // Prepared geometry per child of a `staticContainer` root (service drops), so a
+    // replaced container re-merges retained children without cloning them again.
+    this.pieces = new Map();
     this.material = horizonMaterial(
       new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.88 }),
     );
@@ -56,6 +59,17 @@ export class TownStatics {
     }
     for (const [root, mesh] of this.batches) if (mesh) mesh.visible = root.visible;
     this.mesh = this.meshes.at(-1) ?? null;
+    this.prunePieces();
+  }
+  prunePieces() {
+    const live = new Set();
+    for (const root of this.batches.keys())
+      if (root.userData.staticContainer) root.children.forEach((child) => live.add(child));
+    for (const [child, piece] of this.pieces)
+      if (!live.has(child)) {
+        piece.geometry?.dispose();
+        this.pieces.delete(child);
+      }
   }
   add(roots) {
     return this.place(this.run(this.prepare(roots)));
@@ -69,10 +83,26 @@ export class TownStatics {
   // Read-only preparation: source meshes move to the picking layer only when placed.
   *prepare(roots) {
     const geometries = [],
+      shared = new Set(),
       objects = [];
     try {
       for (const root of roots) {
         root.updateWorldMatrix(true, true);
+        if (root.userData.staticContainer) {
+          for (const child of root.children) {
+            let piece = this.pieces.get(child);
+            if (!piece) {
+              piece = yield* this.prepare([child]);
+              this.pieces.set(child, piece);
+            }
+            if (piece.geometry) {
+              geometries.push(piece.geometry);
+              shared.add(piece.geometry);
+            }
+            objects.push(...piece.objects);
+          }
+          continue;
+        }
         const sources = [];
         root.traverse((object) => {
           if (object.isInstancedMesh) return;
@@ -109,14 +139,15 @@ export class TownStatics {
           yield;
         }
       }
-      if (!geometries.length) return { geometry: null, objects };
-      return { geometry: mergeGeometries(geometries, false), objects };
+      if (!geometries.length) return { geometry: null, objects, roots };
+      return { geometry: mergeGeometries(geometries, false), objects, roots };
     } finally {
-      geometries.forEach((geometry) => geometry.dispose());
+      geometries.forEach((geometry) => shared.has(geometry) || geometry.dispose());
     }
   }
-  place({ geometry, objects }) {
+  place({ geometry, objects, roots = [] }) {
     for (const object of objects) object.layers.set(1);
+    roots.forEach(freezeStatic);
     if (!geometry) return;
     this.mesh = new THREE.Mesh(geometry, this.material);
     this.mesh.castShadow = this.mesh.receiveShadow = true;
@@ -135,6 +166,20 @@ export class TownStatics {
   }
   dispose() {
     this.clear();
+    this.prunePieces();
     this.material.dispose();
   }
+}
+// Batched roots never move (see `sync`). Skip their per-render matrix work: three
+// otherwise recomposes every static node's matrix on each render call. Animated
+// subtrees keep updating from their frozen, still-correct parents.
+export function freezeStatic(root) {
+  root.updateWorldMatrix(true, true);
+  const visit = (node) => {
+    if (node.userData.animated) return;
+    node.matrixAutoUpdate = false;
+    node.matrixWorldAutoUpdate = false;
+    node.children.forEach(visit);
+  };
+  visit(root);
 }

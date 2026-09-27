@@ -9,6 +9,44 @@ export const NPC_MARGIN = NPC_BODY_MARGIN;
 const CELL = 4,
   SIDES = 12,
   EPS = 1e-6;
+// Numeric keys avoid building a string for every cell lookup.
+const cellKey = (x, z) => (x + 32768) * 65536 + (z + 32768);
+function obstacleBounds(o) {
+  return o.polygon
+    ? {
+        minX: Math.min(...o.polygon.map((p) => p[0])),
+        maxX: Math.max(...o.polygon.map((p) => p[0])),
+        minZ: Math.min(...o.polygon.map((p) => p[1])),
+        maxZ: Math.max(...o.polygon.map((p) => p[1])),
+      }
+    : { minX: o.x - o.radius, maxX: o.x + o.radius, minZ: o.z - o.radius, maxZ: o.z + o.radius };
+}
+function forCells(bounds, visit) {
+  for (let x = Math.floor((bounds.minX - 2) / CELL); x <= Math.floor((bounds.maxX + 2) / CELL); x++)
+    for (
+      let z = Math.floor((bounds.minZ - 2) / CELL);
+      z <= Math.floor((bounds.maxZ + 2) / CELL);
+      z++
+    )
+      visit(cellKey(x, z));
+}
+const overlaps = (a, b) =>
+  a.minX <= b.maxX && a.maxX >= b.minX && a.minZ <= b.maxZ && a.maxZ >= b.minZ;
+function extend(area, minX, maxX, minZ, maxZ) {
+  area.minX = Math.min(area.minX, minX);
+  area.maxX = Math.max(area.maxX, maxX);
+  area.minZ = Math.min(area.minZ, minZ);
+  area.maxZ = Math.max(area.maxZ, maxZ);
+}
+const SHAPE_KEYS = ['x', 'z', 'y', 'radius', 'height'];
+function sameShape(a, b) {
+  if (SHAPE_KEYS.some((key) => a[key] !== b[key])) return false;
+  if (!a.polygon || !b.polygon) return a.polygon === b.polygon;
+  return (
+    a.polygon.length === b.polygon.length &&
+    a.polygon.every((p, i) => p[0] === b.polygon[i][0] && p[1] === b.polygon[i][1])
+  );
+}
 export function walkObstacle(root, x, z, radius, height = 3) {
   (root.userData.walkObstacles ??= []).push({ x, z, radius, height });
 }
@@ -109,49 +147,51 @@ export class TownNavigation {
   reindex() {
     this.revision = (this.revision ?? 0) + 1;
     this.detours = new Map();
+    this.detourBounds = new Map();
     this.cells.clear();
     this.bounds = new WeakMap();
-    for (const o of this.obstacles) {
-      const bounds = o.polygon
-        ? {
-            minX: Math.min(...o.polygon.map((p) => p[0])),
-            maxX: Math.max(...o.polygon.map((p) => p[0])),
-            minZ: Math.min(...o.polygon.map((p) => p[1])),
-            maxZ: Math.max(...o.polygon.map((p) => p[1])),
-          }
-        : {
-            minX: o.x - o.radius,
-            maxX: o.x + o.radius,
-            minZ: o.z - o.radius,
-            maxZ: o.z + o.radius,
-          };
-      this.bounds.set(o, bounds);
-      for (
-        let x = Math.floor((bounds.minX - 2) / CELL);
-        x <= Math.floor((bounds.maxX + 2) / CELL);
-        x++
-      )
-        for (
-          let z = Math.floor((bounds.minZ - 2) / CELL);
-          z <= Math.floor((bounds.maxZ + 2) / CELL);
-          z++
-        ) {
-          const key = `${x},${z}`;
-          if (!this.cells.has(key)) this.cells.set(key, []);
-          this.cells.get(key).push(o);
-        }
-    }
+    for (const o of this.obstacles) this.index(o);
+  }
+  index(o) {
+    const bounds = obstacleBounds(o);
+    this.bounds.set(o, bounds);
+    forCells(bounds, (key) => {
+      if (!this.cells.has(key)) this.cells.set(key, []);
+      this.cells.get(key).push(o);
+    });
+  }
+  unindex(o) {
+    const bounds = this.bounds.get(o);
+    if (!bounds) return;
+    forCells(bounds, (key) => {
+      const cell = this.cells.get(key);
+      const at = cell?.indexOf(o) ?? -1;
+      if (at >= 0) cell.splice(at, 1);
+      if (cell && !cell.length) this.cells.delete(key);
+    });
+    this.bounds.delete(o);
   }
   segment(a, b, margin = NPC_MARGIN) {
     return this.nearbySegment(a, b, margin).every((o) => sweptClear(o, a, b, margin));
   }
+  // Re-index only this owner's cells. Detours and prepared routes are dropped only
+  // where the changed footprints could affect them.
   replaceOwner(owner, entries, activation = 'completed') {
     const old = this.obstacles.filter((o) => o.owner === owner);
-    this.obstacles = this.obstacles.filter((o) => o.owner !== owner);
     const next = entries.map((entry) => ({ ...entry, owner, activation }));
-    if (activation !== 'removed') this.obstacles.push(...next);
-    this.reindex();
+    const kept = activation === 'removed' ? [] : next;
+    // A reveal completing keeps its footprints; only labels such as activation change.
+    if (old.length && old.length === kept.length && old.every((o, i) => sameShape(o, kept[i]))) {
+      old.forEach((o, i) => Object.assign(o, kept[i]));
+      return [];
+    }
+    this.obstacles = this.obstacles.filter((o) => o.owner !== owner);
+    this.obstacles.push(...kept);
+    for (const o of old) this.unindex(o);
+    for (const o of kept) this.index(o);
+    this.revision++;
     const changed = [...old, ...next];
+    this.forgetDetours(changed.map(obstacleBounds));
     return this.invalidateRegion(
       changed.length
         ? {
@@ -162,6 +202,13 @@ export class TownNavigation {
           }
         : null,
     );
+  }
+  forgetDetours(changed) {
+    for (const [key, bounds] of this.detourBounds)
+      if (changed.some((b) => overlaps(bounds, b))) {
+        this.detourBounds.delete(key);
+        this.detours.delete(key);
+      }
   }
   invalidateRegion(bounds) {
     const ids = [];
@@ -183,7 +230,7 @@ export class TownNavigation {
     return ids;
   }
   near(x, z) {
-    return this.cells.get(`${Math.floor(x / CELL)},${Math.floor(z / CELL)}`) ?? [];
+    return this.cells.get(cellKey(Math.floor(x / CELL), Math.floor(z / CELL))) ?? [];
   }
   nearbySegment(a, b, margin = NPC_MARGIN) {
     const found = new Set();
@@ -201,7 +248,7 @@ export class TownNavigation {
         z <= Math.floor((Math.max(a[2], b[2]) + margin) / CELL);
         z++
       )
-        for (const o of this.cells.get(`${x},${z}`) ?? []) {
+        for (const o of this.cells.get(cellKey(x, z)) ?? []) {
           const bounds = this.bounds.get(o);
           if (bounds.maxX < minX || bounds.minX > maxX || bounds.maxZ < minZ || bounds.minZ > maxZ)
             continue;
@@ -229,6 +276,21 @@ export class TownNavigation {
     if (this.detours.has(key)) return this.detours.get(key);
     const remember = (path) => {
       this.detours.set(key, path);
+      // Everything the search examined: a changed footprint outside this area
+      // cannot block the cached path or open a better one.
+      const area = { minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity };
+      for (const p of [a, b, ...path]) extend(area, p[0], p[0], p[2], p[2]);
+      for (const o of obstacles) {
+        const bounds = this.bounds.get(o);
+        if (bounds) extend(area, bounds.minX, bounds.maxX, bounds.minZ, bounds.maxZ);
+      }
+      const pad = margin + CELL;
+      this.detourBounds.set(key, {
+        minX: area.minX - pad,
+        maxX: area.maxX + pad,
+        minZ: area.minZ - pad,
+        maxZ: area.maxZ + pad,
+      });
       return path;
     };
     const obstacles = new Set(

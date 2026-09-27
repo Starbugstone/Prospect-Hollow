@@ -10,6 +10,7 @@ import {
   Vector2,
   WebGLRenderTarget,
 } from 'three';
+import { frameEnd, frameStart, frameValue } from './TownProfiler';
 
 // The town only changes when the camera or a building changes. Cache its color
 // AND depth so moving people remain correctly hidden by porches, hills and walls.
@@ -84,15 +85,24 @@ export class TownFrameCache {
         )
           throw new Error('Town framebuffer unavailable');
         this.targetValidated = true;
+        const started = frameStart();
         renderer.render(scene, camera);
+        frameEnd('static-cache', started);
+        frameValue('static-draw-calls', renderer.info?.render.calls);
+        frameValue('static-triangles', renderer.info?.render.triangles);
         this.valid = true;
       }
       renderer.setRenderTarget(previousTarget);
+      const composite = frameStart();
       renderer.render(this.scene, this.camera);
+      frameEnd('composite', composite);
       renderer.autoClear = false;
       camera.layers.set(2);
       scene.background = null;
+      const foreground = frameStart();
       renderer.render(scene, camera);
+      frameEnd('foreground', foreground);
+      frameValue('foreground-draw-calls', renderer.info?.render.calls);
     } catch (error) {
       this.valid = false;
       throw error;

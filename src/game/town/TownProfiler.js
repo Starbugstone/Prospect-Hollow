@@ -3,7 +3,8 @@
 const LIMIT = 300;
 const entries = [];
 const longTasks = [];
-let observer = null;
+let observer = null,
+  longTaskCount = 0;
 const now = () => globalThis.performance?.now() ?? Date.now();
 
 function push(list, entry) {
@@ -52,8 +53,10 @@ export function watchLongTasks() {
   if (observer || !globalThis.PerformanceObserver?.supportedEntryTypes?.includes('longtask'))
     return;
   observer = new PerformanceObserver((list) => {
-    for (const task of list.getEntries())
+    for (const task of list.getEntries()) {
+      longTaskCount++;
       push(longTasks, { start: task.startTime, ms: task.duration });
+    }
   });
   observer.observe({ type: 'longtask', buffered: true });
 }
@@ -81,4 +84,86 @@ export function townTimings({ clear = false } = {}) {
     longTasks.length = 0;
   }
   return report;
+}
+
+// Per-frame phase sampling for `prospectDebug.townFrameStats()`. Hooks cost one
+// boolean check unless a collection window is open.
+const frame = { active: false, phases: new Map(), values: new Map(), context: null };
+export const frameStart = () => (frame.active ? now() : null);
+export function frameEnd(name, started) {
+  if (started === null || !frame.active) return;
+  const list = frame.phases.get(name) ?? [];
+  list.push(now() - started);
+  frame.phases.set(name, list);
+}
+export function frameValue(name, value) {
+  if (!frame.active || !Number.isFinite(value)) return;
+  const list = frame.values.get(name) ?? [];
+  list.push(value);
+  frame.values.set(name, list);
+}
+// The live town reports its render settings; the last registered owner wins.
+export function setFrameContext(owner, read) {
+  frame.context = { owner, read };
+}
+export function clearFrameContext(owner) {
+  if (frame.context?.owner === owner) frame.context = null;
+}
+const round = (value) => Math.round(value * 100) / 100;
+function describe(list) {
+  const ordered = [...list].sort((a, b) => a - b);
+  const total = ordered.reduce((sum, value) => sum + value, 0);
+  return {
+    count: ordered.length,
+    mean: round(total / (ordered.length || 1)),
+    p95: round(ordered[Math.floor((ordered.length - 1) * 0.95)] ?? 0),
+    max: round(ordered.at(-1) ?? 0),
+    total: round(total),
+  };
+}
+export function townFrameStats(seconds = 5) {
+  if (frame.active) return Promise.reject(new Error('Town frame stats are already collecting.'));
+  frame.active = true;
+  frame.phases.clear();
+  frame.values.clear();
+  const stamps = [],
+    started = now(),
+    longTasksBefore = longTaskCount;
+  const raf = globalThis.requestAnimationFrame ?? ((fn) => setTimeout(() => fn(now()), 16));
+  const cancel = globalThis.cancelAnimationFrame ?? clearTimeout;
+  let handle = raf(function sample(time) {
+    stamps.push(time);
+    handle = raf(sample);
+  });
+  return new Promise((resolve) =>
+    setTimeout(() => {
+      cancel(handle);
+      frame.active = false;
+      const intervals = stamps.slice(1).map((time, i) => time - stamps[i]);
+      const elapsed = (now() - started) / 1000;
+      resolve({
+        seconds: round(elapsed),
+        frames: {
+          ...describe(intervals),
+          over33ms: intervals.filter((ms) => ms > 33.4).length,
+          over50ms: intervals.filter((ms) => ms > 50).length,
+        },
+        // Milliseconds per call; `perSecond` is busy time per second of the window.
+        phases: Object.fromEntries(
+          [...frame.phases].map(([name, list]) => {
+            const stats = describe(list);
+            return [name, { ...stats, perSecond: round(stats.total / elapsed) }];
+          }),
+        ),
+        values: Object.fromEntries(
+          [...frame.values].map(([name, list]) => {
+            const { mean, max } = describe(list);
+            return [name, { mean, max, last: list.at(-1) }];
+          }),
+        ),
+        longTasks: longTaskCount - longTasksBefore,
+        context: frame.context?.read() ?? null,
+      });
+    }, seconds * 1000),
+  );
 }

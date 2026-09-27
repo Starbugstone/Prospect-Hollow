@@ -1,4 +1,4 @@
-import { DoubleSide, Raycaster, Vector3 } from 'three';
+import { Box3, DoubleSide, Raycaster, Vector3 } from 'three';
 import { walkObstacle } from './TownNavigation';
 import { cityAppearance } from '../../data/cityAppearance';
 import { eraEvolution } from '../../data/eras';
@@ -136,9 +136,30 @@ const along = new Vector3(),
   side = new Vector3(),
   normal = new Vector3(),
   origin = new Vector3();
+const reach = new Box3();
+// Imported models include open, one-sided panels: every probe of one building tests
+// both faces. A probe outside the building's bounds cannot hit it and casts no rays.
+function withSurfaces(target, probe) {
+  const sides = new Map();
+  target.traverse(({ isMesh, material }) => {
+    if (isMesh && !sides.has(material)) sides.set(material, material.side);
+  });
+  for (const material of sides.keys()) material.side = DoubleSide;
+  try {
+    return probe({ target, bounds: new Box3().setFromObject(target) });
+  } finally {
+    for (const [material, value] of sides) material.side = value;
+  }
+}
 // Distance to the first building surface met by a rod of `radius` from a to b: the
 // centerline and four rays along its edges, so a wire cannot graze a roof edge.
-function surface(target, a, b, radius = 0.035) {
+function surface({ target, bounds }, a, b, radius = 0.035) {
+  reach.makeEmpty();
+  reach
+    .expandByPoint(start.set(...a))
+    .expandByPoint(origin.set(...b))
+    .expandByScalar(radius);
+  if (!reach.intersectsBox(bounds)) return undefined;
   start.set(...a);
   along.set(...b).sub(start);
   const length = along.length();
@@ -147,34 +168,24 @@ function surface(target, a, b, radius = 0.035) {
   if (side.lengthSq() < 1e-6) side.set(1, 0, 0);
   side.normalize();
   normal.copy(along).cross(side);
-  // Imported models include open, one-sided panels: test both faces, then restore.
-  const sides = new Map();
-  target.traverse(({ isMesh, material }) => {
-    if (isMesh && !sides.has(material)) sides.set(material, material.side);
-  });
-  for (const material of sides.keys()) material.side = DoubleSide;
   let nearest = Infinity;
-  try {
-    for (const [u, v] of [
-      [0, 0],
-      [1, 0],
-      [-1, 0],
-      [0, 1],
-      [0, -1],
-    ]) {
-      origin
-        .copy(start)
-        .addScaledVector(side, u * radius)
-        .addScaledVector(normal, v * radius);
-      ray.set(origin, along);
-      ray.far = length;
-      const hit = ray
-        .intersectObject(target, true)
-        .find(({ object }) => object.isMesh && !object.material.transparent);
-      if (hit) nearest = Math.min(nearest, hit.distance);
-    }
-  } finally {
-    for (const [material, value] of sides) material.side = value;
+  for (const [u, v] of [
+    [0, 0],
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+  ]) {
+    origin
+      .copy(start)
+      .addScaledVector(side, u * radius)
+      .addScaledVector(normal, v * radius);
+    ray.set(origin, along);
+    ray.far = length;
+    const hit = ray
+      .intersectObject(target, true)
+      .find(({ object }) => object.isMesh && !object.material.transparent);
+    if (hit) nearest = Math.min(nearest, hit.distance);
   }
   // Stop just short of the surface so the insulator rests against it.
   return nearest < Infinity
@@ -190,6 +201,8 @@ export function addServiceDrops(d, grid, plots, previous = null) {
   const root = d.group(d.world);
   root.name = 'Building service drops';
   root.userData.static = true;
+  // Static batching caches each drop, so a swap re-merges retained drops cheaply.
+  root.userData.staticContainer = true;
   for (const { id, from, to } of connections) {
     const target = plots.get(id);
     if (!target) {
@@ -201,28 +214,29 @@ export function addServiceDrops(d, grid, plots, previous = null) {
     drop.name = `Service drop ${id}`;
     target.updateMatrixWorld(true);
     const points = [from];
-    let end;
-    for (let i = 1; i <= 6 && !end; i++) {
-      const next = sag(from, to, i / 6);
-      end = surface(target, points.at(-1), next);
-      points.push(end ?? next);
-    }
-    // Low buildings: continue level toward the plot center to reach a wall.
-    if (!end) {
-      end = surface(target, to, [target.position.x, to[1], target.position.z]);
-      if (end) points.push(end);
-    }
-    // Open lots (fields, docks, squares) take the drop on a meter post, or on
-    // whatever low structure already stands beneath the wire.
-    if (!end) {
-      end = to;
-      const below = surface(target, to, [to[0], 0, to[2]], 0.08);
-      if (below) points.push(below);
-      else {
-        walkObstacle(drop, to[0], to[2], 0.06, to[1]);
-        d.rod(drop, [to[0], 0, to[2]], [to[0], to[1] + 0.15, to[2]], 0.06, '#897255').name =
-          `Meter post ${id}`;
+    const post = withSurfaces(target, (probe) => {
+      let end;
+      for (let i = 1; i <= 6 && !end; i++) {
+        const next = sag(from, to, i / 6);
+        end = surface(probe, points.at(-1), next);
+        points.push(end ?? next);
       }
+      // Low buildings: continue level toward the plot center to reach a wall.
+      if (!end) {
+        end = surface(probe, to, [target.position.x, to[1], target.position.z]);
+        if (end) points.push(end);
+      }
+      if (end) return false;
+      // Open lots (fields, docks, squares) take the drop on a meter post, or on
+      // whatever low structure already stands beneath the wire.
+      const below = surface(probe, to, [to[0], 0, to[2]], 0.08);
+      if (below) points.push(below);
+      return !below;
+    });
+    if (post) {
+      walkObstacle(drop, to[0], to[2], 0.06, to[1]);
+      d.rod(drop, [to[0], 0, to[2]], [to[0], to[1] + 0.15, to[2]], 0.06, '#897255').name =
+        `Meter post ${id}`;
     }
     for (let i = 1; i < points.length; i++) d.rod(drop, points[i - 1], points[i], 0.017, WIRE);
     d.ball(drop, ...points.at(-1), 0.045, '#c6d7c4');

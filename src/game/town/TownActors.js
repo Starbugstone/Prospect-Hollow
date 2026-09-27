@@ -1,5 +1,6 @@
 import { horizonMaterial } from './TownAtmosphere';
 import { Group, InstancedMesh, MeshStandardMaterial, DynamicDrawUsage } from 'three';
+import { frameEnd, frameStart } from './TownProfiler';
 
 // Keep articulated joints in the scene graph, but draw matching parts together.
 // This lets a busy town share one draw call for all matching boots, hats or limbs.
@@ -47,6 +48,7 @@ export class TownActors {
     this.update();
   }
   update() {
+    const started = frameStart();
     for (const root of this.roots) root.updateWorldMatrix(true, true);
     for (const { mesh, objects, colored, colors } of this.buckets) {
       let count = 0,
@@ -83,6 +85,7 @@ export class TownActors {
       mesh.instanceMatrix.needsUpdate = true;
       if (colorsChanged && mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     }
+    frameEnd('actors', started);
   }
   clear() {
     for (const { mesh } of this.buckets) {

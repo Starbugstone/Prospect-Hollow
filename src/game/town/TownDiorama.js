@@ -17,7 +17,16 @@ import {
   placeSafely,
   sceneryObstacles,
 } from './TownNavigation';
-import { recordTownTiming, timeTown, timedSteps, watchLongTasks } from './TownProfiler';
+import {
+  clearFrameContext,
+  frameEnd,
+  frameStart,
+  recordTownTiming,
+  setFrameContext,
+  timeTown,
+  timedSteps,
+  watchLongTasks,
+} from './TownProfiler';
 import { addWorkBreak, updateWorkPaths, updateWorkRoutine } from './TownWorkRoutine';
 import { buildingWalk } from './TownPedestrians';
 import { TownVipArrivals } from './TownVipArrivals';
@@ -144,6 +153,24 @@ export class TownDiorama {
     });
     this.frameCache = new TownFrameCache(this.renderer, this.renderQuality.cacheSamples);
     watchLongTasks();
+    setFrameContext(this, () => {
+      let objects = 0,
+        frozen = 0;
+      this.scene.traverse((object) => {
+        objects++;
+        if (!object.matrixAutoUpdate) frozen++;
+      });
+      return {
+        dpr: this.renderer.getPixelRatio(),
+        tier: this.renderQuality.tier,
+        cacheSamples: this.frameCache.target.samples,
+        shadowMap: this.sun.shadow.mapSize.x,
+        drawingBuffer: [this.canvas.width, this.canvas.height],
+        sceneObjects: objects,
+        frozenObjects: frozen,
+        staticBatches: this.buildingRenderer.meshes.length + this.sceneryRenderer.meshes.length,
+      };
+    });
     this.upgradeGlow = new TownUpgradeGlow(this.scene);
     this.raycaster = new THREE.Raycaster();
     this.raycaster.layers.enable(1);
@@ -1935,10 +1962,17 @@ export class TownDiorama {
       !this.canvas.clientHeight
     )
       return;
+    const started = frameStart();
     this.actorRenderer.update();
     if (this.drawFrame(true)) this.projectLabels();
+    frameEnd('render', started);
   }
   projectLabels() {
+    const started = frameStart();
+    this.projectLabelPositions();
+    frameEnd('labels', started);
+  }
+  projectLabelPositions() {
     const cameraDistance = this.camera.position.distanceTo(this.controls.target);
     if (Math.abs(cameraDistance - (this.lastAudioDistance ?? 0)) > 0.05) {
       this.lastAudioDistance = cameraDistance;
@@ -2030,64 +2064,69 @@ export class TownDiorama {
   }
 
   tick(now) {
-    if (this.contextUnavailable) return;
-    if (this.lastFrame && now - this.lastFrame < 1000 / 60 - 1) return;
-    if (
-      this.lastFrame &&
-      !this.cameraGesture &&
-      !this.presentation &&
-      (!this.cinematic || this.cinematic.finished) &&
-      !this.construction
-    ) {
-      const ratio = this.renderQuality?.sample(now - this.lastFrame);
-      if (ratio !== null && ratio !== undefined) {
-        this.renderer.setPixelRatio(ratio);
-        const size = this.renderQuality.shadowSize;
-        if (this.sun.shadow.mapSize.x !== size) {
-          this.sun.shadow.map?.dispose();
-          this.sun.shadow.map = null;
-          this.sun.shadow.mapSize.set(size, size);
-          this.renderer.shadowMap.needsUpdate = true;
+    const started = frameStart();
+    try {
+      if (this.contextUnavailable) return;
+      if (this.lastFrame && now - this.lastFrame < 1000 / 60 - 1) return;
+      if (
+        this.lastFrame &&
+        !this.cameraGesture &&
+        !this.presentation &&
+        (!this.cinematic || this.cinematic.finished) &&
+        !this.construction
+      ) {
+        const ratio = this.renderQuality?.sample(now - this.lastFrame);
+        if (ratio !== null && ratio !== undefined) {
+          this.renderer.setPixelRatio(ratio);
+          const size = this.renderQuality.shadowSize;
+          if (this.sun.shadow.mapSize.x !== size) {
+            this.sun.shadow.map?.dispose();
+            this.sun.shadow.map = null;
+            this.sun.shadow.mapSize.set(size, size);
+            this.renderer.shadowMap.needsUpdate = true;
+          }
+          this.frameCache.setSamples?.(this.renderQuality.cacheSamples);
+          this.frameCache.valid = false;
         }
-        this.frameCache.setSamples?.(this.renderQuality.cacheSamples);
-        this.frameCache.valid = false;
       }
-    }
-    const activeDelta = this.lastFrame ? Math.max(0, (now - this.lastFrame) / 1000) : 0;
-    this.activeElapsed = (this.activeElapsed ?? 0) + activeDelta;
-    this.lastFrame = now;
-    // Prepared routes need one sample per displayed frame, not repeated physics
-    // catch-up steps. Preserve real-time speed down to 4 FPS; bound long stalls.
-    const movementDelta = Math.min(activeDelta, 0.25);
-    if (movementDelta > 0) {
-      this.elapsed += movementDelta;
-      if (!this.reducedMotion) {
-        this.actors?.forEach((actor) => this.animatePerson(actor, this.elapsed));
-        this.motions?.forEach((motion) => motion(this.elapsed));
-        this.vipArrivals?.update();
+      const activeDelta = this.lastFrame ? Math.max(0, (now - this.lastFrame) / 1000) : 0;
+      this.activeElapsed = (this.activeElapsed ?? 0) + activeDelta;
+      this.lastFrame = now;
+      // Prepared routes need one sample per displayed frame, not repeated physics
+      // catch-up steps. Preserve real-time speed down to 4 FPS; bound long stalls.
+      const movementDelta = Math.min(activeDelta, 0.25);
+      if (movementDelta > 0) {
+        this.elapsed += movementDelta;
+        if (!this.reducedMotion) {
+          this.actors?.forEach((actor) => this.animatePerson(actor, this.elapsed));
+          this.motions?.forEach((motion) => motion(this.elapsed));
+          this.vipArrivals?.update();
+        }
+        updateTownLocomotion(this, movementDelta);
       }
-      updateTownLocomotion(this, movementDelta);
-    }
-    if (this.waterMaterial) this.waterMaterial.uniforms.time.value = this.elapsed;
-    this.tryActivatePlot?.();
-    if (this.reducedMotion && !this.pendingPlot && !this.pendingUpdate) {
-      this.motionEnabled = false;
-      this.renderer.setAnimationLoop(null);
-    }
-    if (this.construction?.update(this.activeElapsed)) this.finishConstruction();
-    if (this.raid?.update(this.elapsed)) {
-      this.raid = null;
-      this.rebuildActors();
-      restoreEventCamera(this);
-    }
-    const eventCameraMoved = updateEventCamera(this);
-    // Advance life during camera motion too; its scheduled render draws the new pose.
-    if (this.cameraFrame || this.presentation || (this.cinematic && !this.cinematic.finished))
-      return;
-    this.actorRenderer.update();
-    if (this.drawFrame()) {
-      if (eventCameraMoved) this.projectLabels();
-      else this.projectVillager?.();
+      if (this.waterMaterial) this.waterMaterial.uniforms.time.value = this.elapsed;
+      this.tryActivatePlot?.();
+      if (this.reducedMotion && !this.pendingPlot && !this.pendingUpdate) {
+        this.motionEnabled = false;
+        this.renderer.setAnimationLoop(null);
+      }
+      if (this.construction?.update(this.activeElapsed)) this.finishConstruction();
+      if (this.raid?.update(this.elapsed)) {
+        this.raid = null;
+        this.rebuildActors();
+        restoreEventCamera(this);
+      }
+      const eventCameraMoved = updateEventCamera(this);
+      // Advance life during camera motion too; its scheduled render draws the new pose.
+      if (this.cameraFrame || this.presentation || (this.cinematic && !this.cinematic.finished))
+        return;
+      this.actorRenderer.update();
+      if (this.drawFrame()) {
+        if (eventCameraMoved) this.projectLabels();
+        else this.projectVillager?.();
+      }
+    } finally {
+      frameEnd('tick', started);
     }
   }
   repairAnimalLife() {
@@ -2257,6 +2296,7 @@ export class TownDiorama {
     this.renderer.setAnimationLoop(enabled && !this.contextUnavailable ? this.tick : null);
   }
   dispose() {
+    clearFrameContext(this);
     this.generation++;
     this.cancelAnimalWork?.();
     this.cancelLifeWork?.();

@@ -76,6 +76,7 @@
       <button
         v-for="anchor in actionAnchors"
         :key="anchor.id"
+        :ref="(element) => trackElement(actionElements, anchor.id, element)"
         class="town-action-icon"
         :class="{
           'town-era-icon': indicators[anchor.id] === 'era',
@@ -130,6 +131,7 @@
         v-for="anchor in anchors"
         :disabled="readOnly"
         :key="anchor.id"
+        :ref="(element) => trackElement(labelElements, anchor.id, element)"
         :data-town-plot="anchor.id"
         v-show="anchor.visible"
         :style="{ left: `${anchor.x}%`, top: `${anchor.y}%` }"
@@ -253,7 +255,8 @@ import GameIcon from '../GameIcon.vue';
 import GameViewStatus from '../GameViewStatus.vue';
 import { townIndicatorScale } from '../../data/townIndicators';
 import { eraBuildingLevel } from '../../game/town/TownEras';
-import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onBeforeUnmount, ref, shallowRef, watch } from 'vue';
+import { placeLabels, trackElement, updateLabels } from '../../game/town/TownLabels';
 import { BUILDING_BY_ID, BUILDINGS } from '../../data/town';
 import {
   constructionRuns,
@@ -298,10 +301,14 @@ const emit = defineEmits([
   'cinematic-unavailable',
 ]);
 const eventInset = ref(null);
+// Camera frames move labels directly; Vue re-renders only when their layout changes.
+const labelElements = new Map(),
+  actionElements = new Map();
+let anchorLayout = '';
 const canvas = ref(null),
   canvasVersion = ref(0),
   map = ref(null),
-  anchors = ref([]),
+  anchors = shallowRef([]),
   fallback = ref(false),
   graphicsReady = ref(false);
 const suggestedId = computed(() => nextGoal(props.town)?.id);
@@ -527,6 +534,7 @@ async function recoverGraphics(error, contextLost = false) {
   lastVisual = '';
   lastConstruction = undefined;
   anchors.value = [];
+  anchorLayout = '';
   canvasVersion.value++;
   await nextTick();
   recovering = false;
@@ -561,7 +569,12 @@ async function initialize() {
       canvas.value,
       choose,
       (positions) => {
-        anchors.value = positions;
+        const layout = updateLabels(anchors.value, positions, anchorLayout);
+        if (layout === null) placeLabels(anchors.value, labelElements, actionElements);
+        else {
+          anchorLayout = layout;
+          anchors.value = positions;
+        }
       },
       (distance) => emit('camera-distance', distance),
       recoverGraphics,

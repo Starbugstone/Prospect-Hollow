@@ -1,3 +1,4 @@
+import { frameEnd, frameStart } from './TownProfiler';
 // Shared secondary view for fixed incidents and passive visitor arrivals.
 export function eventInsetRect(width, height) {
   const w = Math.floor(Math.min(320, Math.max(156, width * 0.4), width * 0.46, height * 0.45));
@@ -22,8 +23,12 @@ export function hideEventInset(d) {
   d.onEventInset?.(null);
 }
 export function drawCameraInset(d, shot, rect, label, passive = false, details = {}) {
-  const signature = `${rect.width}:${rect.height}:${rect.x}:${label}:${passive}`;
-  if (!d.eventInsetVisible || signature !== d.insetSignature || details.nameTag) {
+  // A following name tag re-renders the overlay only when it moves visibly (0.5%).
+  const tag = details.nameTag;
+  const signature = `${rect.width}:${rect.height}:${rect.x}:${label}:${passive}:${
+    tag ? `${tag.name}:${Math.round(tag.x * 2)}:${Math.round(tag.y * 2)}` : ''
+  }`;
+  if (!d.eventInsetVisible || signature !== d.insetSignature) {
     d.onEventInset?.({ ...rect, label, passive, ...details });
     d.insetSignature = signature;
     d.eventInsetVisible = true;
@@ -38,7 +43,9 @@ export function drawCameraInset(d, shot, rect, label, passive = false, details =
     renderer.setScissor(rect.x, rect.y, rect.width, rect.height);
     renderer.setScissorTest(true);
     renderer.autoClear = true;
+    const started = frameStart();
     renderer.render(d.scene, shot.insetCamera);
+    frameEnd('inset', started);
   } finally {
     renderer.setViewport(shot.viewport);
     renderer.setScissor(shot.scissor);
