@@ -10,6 +10,8 @@ import './styles/theme.css';
 import './styles/arcade.css';
 import './styles/mine.css';
 import './styles/ux.css';
+import { privacy } from './services/privacy';
+import { ads } from './services/ads';
 
 const app = createApp(CloudRoot);
 const pinia = createPinia();
@@ -29,6 +31,8 @@ const stopLanguageWatch = watch(
 );
 window.addEventListener('languagechange', languageChanged);
 app.onUnmount(() => {
+  ads.destroy();
+  privacy.dispose();
   window.removeEventListener('languagechange', languageChanged);
   stopLanguageWatch();
   delete window.prospectDebug;
@@ -44,6 +48,9 @@ async function start() {
       throw new Error('Safe saving requires a browser with Web Locks support.');
     }
     app.mount('#app');
+    // Privacy and ads never delay the game or load advertisers without permission.
+    void privacy.initialize({ locale: locale.value });
+    void ads.initialize();
     if (useCampaignStore(pinia).hasVisitedVillage) {
       import('./components/town/TownView.vue');
       import('./game/town/TownDiorama');

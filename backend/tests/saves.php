@@ -74,6 +74,33 @@ try {
  check(strlen($native['token'])===64,'native bearer issued');status(200,callApi('GET','account',null,[],['HTTP_ORIGIN'=>'capacitor://localhost','HTTP_AUTHORIZATION'=>'Bearer '.$native['token']]),'native API');
  status(403,callApi('GET','account',null,[],['HTTP_ORIGIN'=>'https://evil.test','HTTP_AUTHORIZATION'=>'Bearer '.$native['token']]),'native origin allowlist');
  status(200,callApi('POST','auth/revoke-all',(object)[],$a),'revoke all');status(401,callApi('GET','account',null,$a),'revoked session');
- status(200,callApi('DELETE','account',['confirmation'=>'DELETE MY ACCOUNT'],$b),'delete account');status(401,callApi('GET','account',null,$b),'deleted account session');
+ // Account erasure covers every session, town revision, listing and pending login.
+ $deletedTown=townBody('Erased Town');$deletedId=$deletedTown['townId'];
+ $deletedCreated=status(200,callApi('POST','towns',$deletedTown,$b),'create town before account deletion');
+ status(200,callApi('PUT','towns/'.$deletedId,['baseRevision'=>1,'uploadId'=>uuid(),'profile'=>profile(99)],$b),'save account deletion history');
+ status(200,callApi('PATCH','towns/'.$deletedId.'/settings',['baseRevision'=>2,'name'=>'Erased Town','isPublic'=>true],$b),'publish before account deletion');
+ $deletedEmail=$db->get()->fetchOne('SELECT email FROM players WHERE id=?',[$b['id']]);
+ $extraToken=bin2hex(random_bytes(32));$db->get()->insert('login_intents',['token_hash'=>$auth->hash($extraToken),'email'=>$deletedEmail,'expires_at'=>time()+900]);
+ $extraSession=status(200,callApi('POST','auth/confirm',['token'=>$extraToken,'native'=>true],[],['HTTP_ORIGIN'=>'capacitor://localhost']),'second device before account deletion');
+ $pendingToken=bin2hex(random_bytes(32));$db->get()->insert('login_intents',['token_hash'=>$auth->hash($pendingToken),'email'=>$deletedEmail,'expires_at'=>time()+900]);
+ $confirmation=['confirmation'=>'DELETE MY ACCOUNT'];
+ status(401,callApi('DELETE','account',$confirmation),'anonymous account deletion rejected');
+ status(403,callApi('DELETE','account',$confirmation,$b,['HTTP_X_CSRF_TOKEN'=>'wrong']),'account deletion needs CSRF');
+ status(403,callApi('DELETE','account',$confirmation,$b,['HTTP_ORIGIN'=>'https://evil.test']),'account deletion checks origin');
+ status(422,callApi('DELETE','account',['confirmation'=>'wrong'],$b),'account deletion needs exact confirmation');
+ check((int)$db->get()->fetchOne('SELECT COUNT(*) FROM town_history WHERE town_id=?',[$deletedId])>0,'history exists before deletion');
+ $deletion=callApi('DELETE','account',$confirmation,$b);status(200,$deletion,'delete account');
+ check($deletion['response']->headers->getCookies()[0]->getExpiresTime()<time(),'account deletion expires browser cookie');
+ foreach(['players'=>'id','towns'=>'player_id','sessions'=>'player_id'] as $table=>$column)
+  check((int)$db->get()->fetchOne('SELECT COUNT(*) FROM '.$table.' WHERE '.$column.'=?',[$b['id']])===0,'account deletion clears '.$table);
+ check((int)$db->get()->fetchOne('SELECT COUNT(*) FROM town_history WHERE town_id=?',[$deletedId])===0,'account deletion clears history');
+ check((int)$db->get()->fetchOne('SELECT COUNT(*) FROM login_intents WHERE email=?',[$deletedEmail])===0,'account deletion clears login links');
+ check((int)$db->get()->fetchOne('SELECT COUNT(*) FROM identities WHERE email_hash=?',[$auth->hash('identity:'.$deletedEmail)])===0,'account deletion clears email identity');
+ check((bool)$db->get()->fetchOne('SELECT id FROM players WHERE id=?',[$a['id']]),'other account survives deletion');
+ status(401,callApi('GET','account',null,$b),'deleted account session');
+ status(401,callApi('GET','account',null,[],['HTTP_ORIGIN'=>'capacitor://localhost','HTTP_AUTHORIZATION'=>'Bearer '.$extraSession['token']]),'deleted native session');
+ status(401,callApi('POST','auth/confirm',['token'=>$pendingToken]),'deleted login link cannot recreate account');
+ status(401,callApi('POST','towns',$deletedTown,$b),'stale device cannot recreate deleted towns');
+ status(404,callApi('GET','villages/'.$deletedCreated['publicId'],null,[],['HTTP_ORIGIN'=>'capacitor://localhost','HTTP_AUTHORIZATION'=>'Bearer '.$native['token']]),'deleted account listing unavailable');
  echo "Save API checks passed ($count assertions).\n";
 } finally {cleanup();}

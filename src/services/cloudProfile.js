@@ -352,19 +352,31 @@ export async function deleteCachedTown(id) {
   });
 }
 export async function deleteAccount(confirmation) {
-  const owner = cloud.account.id;
+  const owner = cloud.account?.id;
+  if (!owner) throw new Error('Sign in to delete your account.');
+  if (confirmation !== 'DELETE MY ACCOUNT') throw new Error('Type DELETE MY ACCOUNT to confirm.');
   await request('account', { confirmation }, 'DELETE');
   // Explicit account deletion removes this device's caches, unlike expiry/logout.
-  disconnect(); // Fence other tabs and in-flight replies before removing their cached records.
-  townStorage.clearAccountCache(owner);
+  // Server success is final even if a browser refuses local cleanup. Try both
+  // storage systems and report the difference instead of offering deletion again.
+  let localCleanupComplete = true;
+  try {
+    disconnect(); // Fence other tabs and in-flight replies before removing their cached records.
+  } catch {
+    localCleanupComplete = false;
+  }
+  try {
+    townStorage.clearAccountCache(owner);
+  } catch {
+    localCleanupComplete = false;
+  }
   try {
     await recoveryStore.clearOwner(owner);
-  } catch (error) {
-    throw new Error(
-      'The account was deleted, but browser backup cleanup failed. Clear this site’s storage to remove the remaining local backups.',
-      { cause: error },
-    );
+  } catch {
+    localCleanupComplete = false;
   }
+  cloud.storageVersion++;
+  return { localCleanupComplete };
 }
 export function updateSaveStatus() {
   const meta = townStorage.active()?.meta;

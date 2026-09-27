@@ -25,6 +25,7 @@ import {
 import { TIP_IDS } from '../data/guidance';
 import { grantChapterGift } from '../data/journey';
 import { TOWN_PROJECTS } from '../data/townProjects';
+import { AD_POLICY, localAdDay, normalizeAdvertising } from '../data/advertising';
 
 import { townStorage } from '../services/townStorage';
 import { localProfile, SAVE_KEY } from '../services/localProfile';
@@ -82,6 +83,7 @@ const defaults = () => ({
   builderHammers: 0,
   chestsWithoutBuilderHammer: 0,
   pendingChests: [],
+  advertising: normalizeAdvertising(),
   shopStock: [],
   shopVisit: 0,
   seenObstacles: [],
@@ -136,6 +138,7 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
       saved.settledRun <= state.issuedRun
     )
       state.settledRun = saved.settledRun;
+    state.advertising = normalizeAdvertising(saved?.advertising, state.issuedRun, LEVEL_COUNT);
     for (let id = 1; id <= LEVEL_COUNT; id++) {
       const continuous = saved?.continuousRecords?.[id];
       if (
@@ -185,7 +188,8 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
       (chest) =>
         chest?.runId > 0 &&
         chest.runId === state.settledRun &&
-        ['completion', 'score', 'speed'].includes(chest.source),
+        ['completion', 'score', 'speed', 'ad'].includes(chest.source) &&
+        (chest.source !== 'ad' || state.advertising.lastChestRun === chest.runId),
     );
     const recoveredSources = new Set();
     for (const chest of recovered) {
@@ -196,6 +200,7 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
         savedId === 'hammer' ? 'tnt' : savedId,
         chest.levelId,
         chest.economyVersion ?? 1,
+        chest.source,
       );
       if (drop) grantReward(state, drop);
     }
@@ -236,6 +241,7 @@ const profileData = (state) => ({
   builderHammers: state.builderHammers,
   chestsWithoutBuilderHammer: state.chestsWithoutBuilderHammer,
   pendingChests: state.pendingChests,
+  advertising: state.advertising,
   shopStock: state.shopStock,
   shopVisit: state.shopVisit,
   vipReceipts: state.vipReceipts,
@@ -641,8 +647,13 @@ export const useCampaignStore = defineStore('campaign', {
     claimChest(id, selection) {
       const chest = this.pendingChests.find((entry) => entry.id === id);
       if (!chest) return null;
-      const chosen = chestReward(selection, chest.levelId, chest.economyVersion ?? 1);
-      const fallback = chestReward(chest.items[0].id, chest.levelId, chest.economyVersion ?? 1);
+      const chosen = chestReward(selection, chest.levelId, chest.economyVersion ?? 1, chest.source);
+      const fallback = chestReward(
+        chest.items[0].id,
+        chest.levelId,
+        chest.economyVersion ?? 1,
+        chest.source,
+      );
       const granted = grantReward(this, chosen ?? fallback);
       this.pendingChests = this.pendingChests.filter((entry) => entry.id !== id);
       this.save();
@@ -653,6 +664,75 @@ export const useCampaignStore = defineStore('campaign', {
         id: chest.id,
         reward: this.claimChest(chest.id),
       }));
+    },
+    canOfferAdChest(runId, now = new Date()) {
+      const state = this.advertising;
+      const day = localAdDay(now);
+      return (
+        !this.readOnly &&
+        !this.activeRun &&
+        !this.continuousRun &&
+        runId > 0 &&
+        runId === this.issuedRun &&
+        runId === this.settledRun &&
+        state.lastChestRun !== runId &&
+        this.pendingChests.length === 0 &&
+        (day > state.chestDay || state.chestCount < AD_POLICY.chestsPerDay)
+      );
+    },
+    grantAdChest(runId, levelId, now = new Date()) {
+      if (!this.canOfferAdChest(runId, now) || !this.records[levelId]) return null;
+      const previous = this.advertising;
+      const day = localAdDay(now);
+      const drop = rollChestReward(Math.random, this, 'ad');
+      const chest = {
+        ...CHEST_TIERS[0],
+        id: `${runId}-ad`,
+        runId,
+        levelId,
+        economyVersion: CHEST_ECONOMY_VERSION,
+        source: 'ad',
+        count: 1,
+        items: [chestReward(drop.id, levelId, CHEST_ECONOMY_VERSION, 'ad')],
+      };
+      this.advertising = {
+        ...previous,
+        lastChestRun: runId,
+        chestDay: day > previous.chestDay ? day : previous.chestDay,
+        chestCount: day > previous.chestDay ? 1 : previous.chestCount + 1,
+      };
+      this.pendingChests.push(chest);
+      if (this.save()) return chest;
+      this.advertising = previous;
+      this.pendingChests = this.pendingChests.filter((entry) => entry.id !== chest.id);
+      return null;
+    },
+    reserveAdShuffle(runId) {
+      if (
+        this.readOnly ||
+        !runId ||
+        this.activeRun !== runId ||
+        this.continuousRun ||
+        (this.advertising.lastShuffleRun === runId &&
+          this.advertising.shuffleCount >= AD_POLICY.shufflesPerRun)
+      )
+        return false;
+      const previous = this.advertising;
+      this.advertising = {
+        ...previous,
+        lastShuffleRun: runId,
+        shuffleCount: previous.lastShuffleRun === runId ? previous.shuffleCount + 1 : 1,
+      };
+      if (this.save()) return true;
+      this.advertising = previous;
+      return false;
+    },
+    consumeChapterAd(nextLevelId) {
+      if (this.advertising.pendingChapterAd?.nextLevelId !== nextLevelId) return false;
+      const { completedChapter } = this.advertising.pendingChapterAd;
+      this.advertising = { ...this.advertising, pendingChapterAd: null };
+      // Commit before calling a provider: a reload or no-fill must not retry this placement.
+      return this.save() && completedChapter >= AD_POLICY.minimumChapter;
     },
     recordVictory({
       id,
@@ -751,6 +831,12 @@ export const useCampaignStore = defineStore('campaign', {
         this.town.coins + miningPayout(jewels, bonusGems, comboCounts, multiMatchCounts, id),
       );
       this.settledRun = runId;
+      if (!previous && id % 6 === 0 && id < LEVEL_COUNT) {
+        this.advertising = {
+          ...this.advertising,
+          pendingChapterAd: { completedChapter: id / 6, nextLevelId: id + 1 },
+        };
+      }
       this.town = queueCampaignPresentations(this.town, this.records);
       // Campaign, chest rewards, and town income move together before any reveal.
       this.save();

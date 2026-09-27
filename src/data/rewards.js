@@ -1,5 +1,6 @@
 import { POWERS } from './campaign';
 import { chestCoinReward } from './economy';
+import { AD_POLICY } from './advertising';
 
 export const BONUS_CAPACITIES = [3, 5, 8, 20];
 export const CONTINUOUS_COIN_CAP = 25;
@@ -23,21 +24,28 @@ export const CHEST_DROPS = [
     weight: 10,
   },
 ];
+export const AD_CHEST_DROPS = [
+  ...CHEST_DROPS.filter((drop) => drop.kind === 'power'),
+  { id: 'coins', label: 'Coins', kind: 'coins', quantity: AD_POLICY.chestCoins, weight: 5 },
+];
 // Resolve from the catalog, never from a saved or client-supplied quantity.
-export function chestReward(id, levelId = 1, economyVersion) {
-  const drop = CHEST_DROPS.find((entry) => entry.id === id);
+export function chestReward(id, levelId = 1, economyVersion, source) {
+  const drop = (source === 'ad' ? AD_CHEST_DROPS : CHEST_DROPS).find((entry) => entry.id === id);
   return drop
     ? {
         id: drop.id,
         label: drop.label,
         kind: drop.kind,
-        quantity: drop.kind === 'coins' ? chestCoinReward(levelId, economyVersion) : drop.quantity,
+        quantity:
+          drop.kind === 'coins' && source !== 'ad'
+            ? chestCoinReward(levelId, economyVersion)
+            : drop.quantity,
       }
     : null;
 }
 // Shuffle the visual reel without changing the catalog used by weighted awards.
-export const availableChestDrops = (state) =>
-  CHEST_DROPS.filter((drop) =>
+export const availableChestDrops = (state, source) =>
+  (source === 'ad' ? AD_CHEST_DROPS : CHEST_DROPS).filter((drop) =>
     drop.kind === 'coins'
       ? true
       : drop.kind === 'builder-hammer'
@@ -67,9 +75,11 @@ export function chestRewardFits(state, drop) {
     : (state.powers.find((power) => power.id === drop.id)?.quantity ?? 0) + reserved <
         bonusCapacity(state.town);
 }
-export function rollChestReward(random = Math.random, state) {
+export function rollChestReward(random = Math.random, state, source) {
   // Automatic prizes remain useful, including when two chests await opening.
-  const available = CHEST_DROPS.filter((drop) => chestRewardFits(state, drop));
+  const available = (source === 'ad' ? AD_CHEST_DROPS : CHEST_DROPS).filter((drop) =>
+    chestRewardFits(state, drop),
+  );
   let roll = random() * available.reduce((sum, drop) => sum + drop.weight, 0);
   const drop = available.find((item) => (roll -= item.weight) < 0) ?? available.at(-1);
   return { id: drop.id, label: drop.label, kind: drop.kind, quantity: drop.quantity };

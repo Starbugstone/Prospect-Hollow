@@ -17,7 +17,7 @@ let cloud, configureSync, request, disconnect, townStorage;
 beforeEach(async () => {
   vi.resetModules();
   uploads.clear();
-  cleanupArchive.mockClear();
+  cleanupArchive.mockReset();
   cleanupTown.mockClear();
   const values = new Map();
   vi.stubGlobal('localStorage', {
@@ -312,16 +312,37 @@ it('deleting an account clears only its local caches and archive after server co
   townStorage.remember({ ...town, townId: ownId }, account.id);
   townStorage.remember({ ...town, townId: otherId }, 'different-account');
   townStorage.select(ownId, account.id);
+  townStorage.creation({ owner: account.id, body: { townId: 'pending-town' } });
+  localStorage.setItem('prospect.showVillageLabels', 'false');
   configureSync({});
+  const generation = townStorage.auth().generation;
   fetch.mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
   const { deleteAccount } = await import('../src/services/cloudProfile');
-  await deleteAccount('DELETE MY ACCOUNT');
+  await expect(deleteAccount('DELETE MY ACCOUNT')).resolves.toEqual({ localCleanupComplete: true });
   expect(JSON.parse(fetch.mock.calls[0][1].body).confirmation).toBe('DELETE MY ACCOUNT');
+  expect(fetch.mock.calls[0][1].method).toBe('DELETE');
   expect(cloud.account).toBeNull();
+  expect(cloud.csrf).toBe('');
+  expect(cloud.towns).toEqual([]);
+  expect(townStorage.auth().account).toBeNull();
+  expect(townStorage.auth().generation).not.toBe(generation);
   expect(townStorage.records(account.id)).toHaveLength(0);
   expect(townStorage.records('different-account')).toHaveLength(1);
   expect(townStorage.active().meta.owner).toBeNull();
+  expect(townStorage.active().profile.town.coins).toBe(5);
+  expect(localStorage.getItem('prospect-preferred-town-v2:' + account.id)).toBeNull();
+  expect(localStorage.getItem('prospect-creation-v2:' + account.id)).toBeNull();
+  expect(localStorage.getItem('prospect.showVillageLabels')).toBe('false');
   expect(cleanupArchive).toHaveBeenCalledWith(account.id);
+});
+it('requires sign-in and exact account deletion confirmation before contacting the server', async () => {
+  const { deleteAccount } = await import('../src/services/cloudProfile');
+  await expect(deleteAccount('DELETE MY ACCOUNT')).rejects.toThrow('Sign in');
+  townStorage.account({ id: 'account-a' });
+  configureSync({});
+  await expect(deleteAccount('delete my account')).rejects.toThrow('Type DELETE MY ACCOUNT');
+  expect(fetch).not.toHaveBeenCalled();
+  expect(cleanupArchive).not.toHaveBeenCalled();
 });
 it('a rejected account deletion does not remove cached progress', async () => {
   townStorage.account({ id: 'account-a' });
@@ -329,7 +350,67 @@ it('a rejected account deletion does not remove cached progress', async () => {
   const before = townStorage.active();
   fetch.mockResolvedValue({ ok: false, status: 403, json: async () => ({ error: 'Rejected' }) });
   const { deleteAccount } = await import('../src/services/cloudProfile');
-  await expect(deleteAccount('incorrect confirmation')).rejects.toThrow('Rejected');
+  await expect(deleteAccount('DELETE MY ACCOUNT')).rejects.toThrow('Rejected');
+  expect(townStorage.active()).toEqual(before);
+  expect(cloud.account.id).toBe('account-a');
+  expect(cleanupArchive).not.toHaveBeenCalled();
+});
+it('does not claim account deletion or clear progress when the server is unreachable', async () => {
+  townStorage.account({ id: 'account-a' });
+  configureSync({});
+  const before = townStorage.active();
+  fetch.mockRejectedValue(new TypeError('Network unavailable'));
+  const { deleteAccount } = await import('../src/services/cloudProfile');
+  await expect(deleteAccount('DELETE MY ACCOUNT')).rejects.toThrow('Network unavailable');
+  expect(cloud.account.id).toBe('account-a');
   expect(townStorage.active()).toEqual(before);
   expect(cleanupArchive).not.toHaveBeenCalled();
+});
+it('reports completed server deletion with incomplete local cleanup when IndexedDB fails', async () => {
+  townStorage.account({ id: 'account-a' });
+  configureSync({});
+  cleanupArchive.mockRejectedValueOnce(new Error('IndexedDB unavailable'));
+  fetch.mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
+  const { deleteAccount } = await import('../src/services/cloudProfile');
+  await expect(deleteAccount('DELETE MY ACCOUNT')).resolves.toEqual({
+    localCleanupComplete: false,
+  });
+  expect(cloud.account).toBeNull();
+  expect(townStorage.auth().account).toBeNull();
+});
+it('still erases archived copies if localStorage cleanup fails after server deletion', async () => {
+  const owner = 'account-a',
+    townId = crypto.randomUUID();
+  townStorage.account({ id: owner });
+  townStorage.remember({ townId, profile: townStorage.active().profile }, owner);
+  configureSync({});
+  localStorage.removeItem = vi.fn(() => {
+    throw new Error('Storage access denied');
+  });
+  fetch.mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
+  const { deleteAccount } = await import('../src/services/cloudProfile');
+  await expect(deleteAccount('DELETE MY ACCOUNT')).resolves.toEqual({
+    localCleanupComplete: false,
+  });
+  expect(cleanupArchive).toHaveBeenCalledWith(owner);
+  expect(cloud.account).toBeNull();
+});
+it('discards late account responses after deletion and prevents a new account request', async () => {
+  townStorage.account({ id: 'account-a' });
+  configureSync({});
+  let finish;
+  fetch.mockImplementationOnce(() => new Promise((resolve) => (finish = resolve)));
+  const pending = request('account');
+  fetch.mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
+  const { deleteAccount } = await import('../src/services/cloudProfile');
+  await deleteAccount('DELETE MY ACCOUNT');
+  finish({
+    ok: true,
+    json: async () => ({ account: { id: 'account-a' }, csrf: 'deleted-session' }),
+  });
+  await expect(pending).rejects.toThrow('account changed');
+  await expect(request('account')).rejects.toThrow('Sign in');
+  expect(cloud.account).toBeNull();
+  expect(cloud.csrf).toBe('');
+  expect(fetch).toHaveBeenCalledTimes(2);
 });

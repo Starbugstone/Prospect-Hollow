@@ -69,6 +69,30 @@ cached towns offline and explicitly removing unused local copies and their
 archives, without deleting the cloud town. Removal requires confirmation and
 the town's writer lock; a town currently open in another tab cannot be removed.
 
+## Account deletion
+
+Signed-in players can open **Settings → Account & deletion** and expand
+**Delete my account…**. The screen identifies the account, explains the scope,
+and requires the exact phrase `DELETE MY ACCOUNT`. Closing the confirmation
+clears the phrase. Failed requests retain the account and local progress; the
+client reports success only after the deletion endpoint confirms it.
+
+The authenticated, CSRF-protected deletion transaction removes the email login
+identity, pending email links and player row. Foreign keys erase every account
+session, town, cloud history and public listing. The identity lock uses the same
+order as sign-in so concurrent email confirmation cannot restore deleted data.
+Short-lived abuse-prevention rate buckets expire through the normal cleanup job;
+hosting logs and provider backup retention remain operator responsibilities.
+
+After server confirmation, the browser invalidates pending account responses,
+signs out, and removes only that account's town caches, preferences for town
+selection, pending creations, recovery copies and upload snapshots. The separate
+guest town, general preferences and other accounts' device copies remain. Both
+localStorage and IndexedDB cleanup are attempted even if one fails. The success
+screen distinguishes completed erasure from incomplete device cleanup and tells
+the player how to clear that device's site/app data if required. Exported files
+and offline copies on other devices cannot be erased remotely.
+
 ## Database installation
 
 Initial table creation is idempotent and existing indexes are detected before
@@ -87,6 +111,7 @@ they do not access player accounts. Install Playwright separately or point
 ```sh
 node testing/browser/session-expiry.cjs
 node testing/browser/save-durability.cjs
+node testing/browser/account-deletion.cjs
 ```
 
 `PH_TEST_ORIGIN` overrides the dev-server origin. The checks cover live puzzles
