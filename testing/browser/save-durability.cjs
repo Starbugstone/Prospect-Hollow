@@ -209,20 +209,19 @@ const fs = require('node:fs');
     await b.page.reload();
     await b.page.getByRole('button', { name: 'Play level 1', exact: true }).waitFor();
     assert.equal((await archive(b)).length, 2);
-    await b.page.getByRole('button', { name: 'Review preserved local save', exact: true }).click();
+    await b.page.getByRole('button', { name: 'Compare saves', exact: true }).click();
     await b.page.getByRole('combobox').selectOption(firstId);
-    await b.page.getByRole('cell', { name: '57', exact: true }).waitFor();
+    await b.page.locator('.recovery-choice dd').filter({ hasText: /^57/ }).waitFor();
     const downloadPromise = b.page.waitForEvent('download');
-    await b.page.getByRole('button', { name: 'Download preserved save', exact: true }).click();
+    await b.page.getByRole('button', { name: 'Download this device’s save', exact: true }).click();
     const download = await downloadPromise;
     const backup = JSON.parse(fs.readFileSync(await download.path(), 'utf8'));
     assert.equal(backup.profile.town.coins, 57);
     await b.page.setViewportSize({ width: 390, height: 844 });
     fs.mkdirSync('output/playwright', { recursive: true });
     await b.page.screenshot({ path: 'output/playwright/durability-recovery-mobile.png' });
-    await b.page
-      .getByRole('button', { name: 'Replace cloud save with this local save', exact: true })
-      .click();
+    await b.page.getByRole('button', { name: 'Switch to this save', exact: true }).click();
+    await b.page.getByRole('button', { name: 'Switch save', exact: true }).click();
     await b.page.getByRole('dialog').waitFor({ state: 'hidden' });
     assert.equal(remote.profile.town.coins, 57);
     assert.equal(await current(b), 57);
@@ -299,7 +298,7 @@ const fs = require('node:fs');
           .id === cachedId
       );
     }, cachedId);
-    await b.page.getByRole('button', { name: 'Close account settings', exact: true }).click();
+    await b.page.getByRole('dialog').waitFor({ state: 'hidden' });
     await b.page.getByRole('button', { name: 'Play level 1', exact: true }).waitFor();
     const callsWhileExpired = requests.length;
     await b.page.getByRole('button', { name: 'Sign in again', exact: true }).click();

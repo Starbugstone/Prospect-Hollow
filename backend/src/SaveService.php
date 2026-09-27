@@ -23,7 +23,19 @@ final class SaveService {
     }
     public function view(array $row,bool $profile=true): array {
         $result=['townId'=>$row['id'],'name'=>$row['name'],'revision'=>(int)$row['revision'],'updatedAt'=>(int)$row['saved_at'],'isPublic'=>(bool)$row['listed'],'publicId'=>$row['public_id']];
-        if($profile) $result['profile']=json_decode($row['profile'],false,64,JSON_THROW_ON_ERROR);
+        $save=json_decode($row['profile'],false,64,JSON_THROW_ON_ERROR);
+        if($profile) $result['profile']=$save;
+        else {
+            // Owner-only card data; never send full saves in the town list.
+            $town=$save->town??new \stdClass();
+            $coins=$town->coins??0;
+            $buildings=is_object($town->buildings??null)?get_object_vars($town->buildings):[];
+            $result['summary']=[
+                'era'=>is_string($town->era??null)?$town->era:'',
+                'coins'=>(is_int($coins)||is_float($coins))?max(0,min(9007199254740991,$coins)):0,
+                'buildings'=>count(array_filter($buildings,fn($level)=>(is_int($level)||is_float($level))&&$level>0)),
+            ];
+        }
         return $result;
     }
     private function transaction(Request $r,bool $write,callable $operation): mixed {
@@ -38,7 +50,7 @@ final class SaveService {
     }
     public function account(Request $r): array {
         return $this->transaction($r,false,function($db,$account,$session) {
-            $towns=$db->fetchAllAssociative('SELECT id,name,revision,saved_at,listed,public_id FROM towns WHERE player_id=? AND deleted_at IS NULL ORDER BY name,id',[$account['id']]);
+            $towns=$db->fetchAllAssociative('SELECT id,name,revision,saved_at,listed,public_id,profile FROM towns WHERE player_id=? AND deleted_at IS NULL ORDER BY name,id',[$account['id']]);
             return ['account'=>['id'=>$account['id'],'email'=>$account['email']],'csrf'=>$session['csrf'],'towns'=>array_map(fn($row)=>$this->view($row,false),$towns),'limit'=>3];
         });
     }

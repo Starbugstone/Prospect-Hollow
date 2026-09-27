@@ -1,5 +1,5 @@
 import { createApp, watch } from 'vue';
-import { locale, browserLocale } from './i18n';
+import { locale, browserLocale, t } from './i18n';
 import { createPinia } from 'pinia';
 import { createTestingTools } from './services/testingTools';
 import { townStorage } from './services/townStorage';
@@ -49,9 +49,57 @@ async function start() {
       import('./game/town/TownDiorama');
     }
   } catch (error) {
-    const notice = document.createElement('p');
-    notice.textContent = `${error.message} Your existing save has been kept. Close other game tabs and try again.`;
-    document.getElementById('app').replaceChildren(notice);
+    showStartupError(error);
   }
 }
-start();
+// Uses the launch screen styles bundled with CloudRoot; Vue never mounted here.
+function showStartupError(error) {
+  const insecure = !navigator.locks && location.protocol === 'http:';
+  const element = (tag, className, text) => {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text) node.textContent = text;
+    return node;
+  };
+  const gem = element('img', 'town-tab-gem');
+  gem.src = '/art/amethyst.svg';
+  gem.alt = '';
+  const action = element(
+    'button',
+    'town-tab-primary',
+    t(insecure ? 'Open the secure site' : 'Try again'),
+  );
+  action.addEventListener('click', () =>
+    insecure ? location.replace(location.href.replace(/^http:/, 'https:')) : location.reload(),
+  );
+  const actions = element('div', 'town-tab-actions');
+  actions.append(action);
+  const card = element('section', 'town-tab-notice');
+  card.setAttribute('role', 'alert');
+  card.append(
+    gem,
+    element('p', 'town-tab-brand', 'PROSPECT HOLLOW'),
+    element(
+      'h1',
+      '',
+      t(navigator.locks ? 'Unable to open this town' : 'This page cannot save safely'),
+    ),
+    element(
+      'p',
+      '',
+      navigator.locks
+        ? `${t(error.message)} ${t('Your existing save has been kept. Close other game tabs and try again.')}`
+        : t(
+            'Saving needs a secure (https) connection and an up-to-date browser. Your village on this device is safe.',
+          ),
+    ),
+    actions,
+  );
+  const screen = element('main', 'town-launch-screen');
+  screen.append(card);
+  document.getElementById('app').replaceChildren(screen);
+}
+// Browsers only offer Web Locks, and so safe saving, on secure pages.
+if (import.meta.env.PROD && !window.isSecureContext && location.protocol === 'http:')
+  location.replace(location.href.replace(/^http:/, 'https:'));
+else start();

@@ -282,7 +282,8 @@
         {
           'get':
             {
-              'summary': 'Account, CSRF token and up to three town metadata records',
+              'summary': 'Account, CSRF token and up to three owned town cards',
+              'description': 'Each town contains townId, name, revision, updatedAt, isPublic, publicId and summary {era, coins, buildings}. Buildings counts positive numeric building levels. The list never includes full profiles; GET /towns/{id} loads a playable save. Summaries are private to the authenticated owner.',
               'responses':
                 {
                   '200': { 'description': 'Success' },
@@ -587,7 +588,7 @@
         {
           'patch':
             {
-              'summary': 'Rename or change opt-in visibility; advances town revision',
+              'summary': 'Rename or change opt-in visibility; preserves gameplay revision',
               'responses':
                 {
                   '200':

@@ -538,9 +538,6 @@
   }
 }
 /* Keep the village tools clear of the plot list on narrow screens. */
-.town-map-frame > .town-map-wallet {
-  top: 12px;
-}
 .town-map-frame > .town-plots-button {
   top: 64px;
 }

@@ -1604,8 +1604,12 @@
   border-radius: 9px;
   min-height: 36px;
 }
-.town-tools button:last-child {
+.town-tools button:last-child,
+.town-tools .town-tools-community {
   margin-left: auto;
+}
+.town-tools .town-tools-community + button {
+  margin-left: 0;
 }
 .town-tools img {
   width: 23px;
@@ -2124,6 +2128,21 @@ html:has(.town-museum[open]) {
   overflow-wrap: anywhere;
 }
 
+.town-map-corner {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  right: 16px;
+  z-index: 7;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.town-map-corner .town-map-wallet {
+  position: static;
+  max-width: none;
+  min-height: 44px;
+  box-sizing: border-box;
+}
 .town-raid-actions .town-map-wallet {
   position: static;
   max-width: 100%;
@@ -2201,7 +2220,7 @@ html:has(.town-museum[open]) {
   display: none;
 }
 .town-in-cinematic > button,
-.town-in-cinematic > .town-map-wallet,
+.town-in-cinematic > .town-map-corner,
 .town-in-cinematic > .town-map-caption,
 .town-in-cinematic .town-scene-labels,
 .town-in-cinematic .town-action-icons,

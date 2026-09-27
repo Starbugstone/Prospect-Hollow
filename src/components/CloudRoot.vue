@@ -1,44 +1,68 @@
 <template>
-  <div ref="recoveryBar" class="cloud-header">
-    <aside v-if="ready && cloud.sessionExpired" class="save-recovery-notice" role="status">
-      <p>
-        {{ t('Your session expired. Keep playing offline; sign in again to resume cloud saving.') }}
-      </p>
-      <button @click="accountOpen = true">{{ t('Sign in again') }}</button>
-    </aside>
-    <aside v-else-if="ready && uploadBlocked" class="save-recovery-notice" role="alert">
-      <p>
-        {{ t('Cloud saving is paused. Your progress is saved on this device.') }}
-        {{ t(activeTown.meta.uploadError.message) }}
-      </p>
-      <button @click="syncNow({ retryRejected: true })" :disabled="cloud.busy">
-        {{ t('Retry cloud saving') }}
-      </button>
-      <button @click="accountOpen = true">{{ t('My towns') }}</button>
-    </aside>
-    <aside
-      v-if="ready && (activeTown?.meta.conflict || activeTown?.meta.desyncNotice)"
-      class="save-recovery-notice"
-      role="status"
+  <aside
+    v-if="ready && !handingOver && !game.sessionActive && cloud.sessionExpired"
+    class="save-recovery-toast"
+    role="status"
+  >
+    <GameIcon name="cloud" />
+    <p>
+      {{ t('Your session expired. Keep playing offline; sign in again to resume cloud saving.') }}
+    </p>
+    <button class="save-recovery-compare" @click="accountOpen = true">
+      {{ t('Sign in again') }}
+    </button>
+  </aside>
+  <aside
+    v-else-if="ready && !handingOver && !game.sessionActive && uploadBlocked"
+    class="save-recovery-toast"
+    role="alert"
+  >
+    <GameIcon name="cloud" />
+    <p>
+      {{ t('Cloud saving is paused. Your progress is saved on this device.') }}
+      {{ t(activeTown.meta.uploadError.message) }}
+    </p>
+    <button
+      class="save-recovery-compare"
+      @click="syncNow({ retryRejected: true })"
+      :disabled="cloud.busy"
     >
-      <p>
-        {{
-          t(
-            activeTown?.meta.conflict
-              ? 'This town changed on another device. The latest cloud save will load when you return to the village. Your local progress will be kept.'
-              : 'This town changed on another device. The latest cloud save has been loaded. Your local save has been kept.',
-          )
-        }}
-      </p>
-      <button
-        :disabled="game.sessionActive || !!activeTown?.meta.conflict"
-        @click="recoveryOpen = true"
-      >
-        {{ t('Review preserved local save') }}
-      </button>
-      <button v-if="!activeTown?.meta.conflict" @click="dismissRecovery">{{ t('Dismiss') }}</button>
-    </aside>
-  </div>
+      {{ t('Retry cloud saving') }}
+    </button>
+  </aside>
+  <aside
+    v-else-if="ready && !handingOver && recoveryToast"
+    class="save-recovery-toast"
+    role="status"
+  >
+    <GameIcon name="devices" />
+    <p>
+      {{
+        t(
+          activeTown.meta.conflict
+            ? 'You played {town} on another device. That save will load when you return to the village.'
+            : 'You played {town} on another device, so we loaded that save.',
+          { town: townName },
+        )
+      }}
+    </p>
+    <button
+      v-if="!activeTown.meta.conflict"
+      class="save-recovery-compare"
+      @click="recoveryOpen = true"
+    >
+      {{ t('Compare saves') }}
+    </button>
+    <button
+      v-if="!activeTown.meta.conflict"
+      class="save-recovery-dismiss"
+      :aria-label="t('Dismiss')"
+      :title="t('Dismiss')"
+      @click="dismissRecovery"
+    >
+      <GameIcon name="close" />
+    </button>
+  </aside>
   <main v-if="!ready" class="town-launch-screen">
     <section class="town-tab-notice" aria-live="polite" :aria-busy="opening">
       <img class="town-tab-gem" src="/art/amethyst.svg" alt="" />
@@ -48,7 +72,9 @@
           opening
             ? t(takingOver ? 'Moving {town} here…' : 'Opening {town}…', { town: townName })
             : blocked
-              ? t(moved ? 'Play moved to another window' : 'This town is already open')
+              ? t(moved ? 'Play moved to another window' : '{town} is open in another tab', {
+                  town: townName,
+                })
               : t('Unable to open this town')
         }}
       </h1>
@@ -68,26 +94,18 @@
           {{
             t(
               moved
-                ? 'This window is paused. Your town is now being played in another tab or window.'
-                : '{town} is open in another tab or window.',
-              { town: townName },
-            )
-          }}
-        </p>
-        <p class="town-tab-hint">
-          {{
-            t(
-              'Open it here to move your game to this window and pause the other one. Different towns can stay open at the same time.',
+                ? 'This window is paused while you play in the other one.'
+                : 'Only one tab plays a town at a time, so no progress gets lost.',
             )
           }}
         </p>
         <p v-if="transferError" role="alert">{{ t(transferError) }}</p>
         <div class="town-tab-actions">
           <button class="town-tab-primary" @click="activate({ takeOver: true })">
-            {{ t('Open my town here') }}
+            {{ t('Play here instead') }}
           </button>
-          <button @click="accountOpen = true">
-            {{ t(cloud.account ? 'My towns' : 'Protect my progress') }}
+          <button v-if="cloud.account" @click="accountOpen = true">
+            {{ t('Play another town') }}
           </button>
         </div>
       </template>
@@ -111,13 +129,21 @@
     :key="viewVersion"
     :suspended="handingOver || accountOpen || communityOpen || recoveryOpen"
   />
-  <SaveRecoveryDialog v-if="recoveryOpen && ready" @close="recoveryOpen = false" />
+  <SaveRecoveryDialog
+    v-if="recoveryOpen && ready"
+    @close="recoveryOpen = false"
+    @keep="
+      recoveryOpen = false;
+      dismissRecovery();
+    "
+  />
   <AccountPanel
     v-if="accountOpen"
     :login-link="loginLink"
     :writable="ready"
     @close="accountOpen = false"
     @changed="reload"
+    @signed-in="loginLink = ''"
     @recovery="
       accountOpen = false;
       recoveryOpen = true;
@@ -161,14 +187,14 @@ import { localProfile } from '../services/localProfile';
 import { townCoordinator } from '../services/townCoordinator';
 import { createTownHandoff } from '../services/townHandoff';
 import { createSyncScheduler } from '../services/syncScheduler';
+import { describeSaveState } from '../services/saveStatus';
+import GameIcon from './GameIcon.vue';
 const AccountPanel = defineAsyncComponent(() => import('./account/AccountPanel.vue'));
 const CommunityPanel = defineAsyncComponent(() => import('./community/CommunityPanel.vue'));
 const SaveRecoveryDialog = defineAsyncComponent(() => import('./account/SaveRecoveryDialog.vue'));
 townStorage.setWriteGuard(townCoordinator.owns);
 const campaign = useCampaignStore(),
   game = useGameStore();
-const recoveryBar = ref(null);
-let recoveryObserver;
 const accountOpen = ref(false),
   recoveryOpen = ref(false),
   communityOpen = ref(false),
@@ -197,24 +223,30 @@ const uploadBlocked = computed(() => {
 const accountTown = computed(
   () => !!cloud.account && activeTown.value?.meta.owner === cloud.account.id,
 );
-const STATUS_TONES = {
-  'Cloud saved': 'saved',
-  'Sign in again — playing offline': 'alert',
-  'Cloud backup needs attention': 'alert',
-  'Syncing…': 'busy',
-  'Saved locally — cloud backup pending': 'pending',
-  'Offline — cloud backup pending': 'pending',
-  'Cloud update pending — local save kept': 'alert',
-  'Cloud town unavailable — local copy kept': 'alert',
-};
-const statusTone = computed(() => STATUS_TONES[cloud.status] ?? 'local');
 const townName = computed(() => activeTown.value?.meta.name || t('Your town'));
-// Account controls live in the settings drawer instead of a permanent top bar.
+const saveState = computed(() =>
+  describeSaveState({
+    signedIn: !!cloud.account,
+    sessionExpired: cloud.sessionExpired,
+    accountTown: accountTown.value,
+    status: cloud.status,
+    meta: activeTown.value?.meta,
+  }),
+);
+// Never cover an active puzzle; the notice waits for the village.
+const recoveryToast = computed(
+  () =>
+    accountTown.value &&
+    !game.sessionActive &&
+    (activeTown.value.meta.conflict || activeTown.value.meta.desyncNotice) &&
+    !recoveryOpen.value,
+);
+// Account controls live in the village save pill and the settings drawer.
 provide('cloudAccount', {
   townName,
   accountTown,
-  statusTone,
-  status: computed(() => cloud.status),
+  saveState,
+  cloudAt: computed(() => (activeTown.value?.meta.cloudAt ?? 0) * 1000),
   signedIn: computed(() => !!cloud.account),
   canSync: computed(
     () =>
@@ -225,9 +257,16 @@ provide('cloudAccount', {
       !cloud.sessionExpired,
   ),
   canOpen: computed(() => !campaign.readOnly),
+  canReview: computed(() => ready.value && !handingOver.value && !game.sessionActive),
   sync: () => syncNow({ retryRejected: true }),
   open: () => {
     accountOpen.value = true;
+  },
+  openRecovery: () => {
+    if (!game.sessionActive) recoveryOpen.value = true;
+  },
+  openCommunity: () => {
+    communityOpen.value = true;
   },
 });
 watch(
@@ -521,14 +560,6 @@ watch(
   },
 );
 onMounted(() => {
-  document.documentElement.classList.add('cloud-mode');
-  recoveryObserver = new ResizeObserver(() =>
-    document.documentElement.style.setProperty(
-      '--cloud-bar-height',
-      `${recoveryBar.value.offsetHeight}px`,
-    ),
-  );
-  recoveryObserver.observe(recoveryBar.value);
   if (typeof BroadcastChannel === 'function')
     handoff = createTownHandoff({ coordinator: townCoordinator, prepare: prepareHandoff });
   window.addEventListener(TOWN_CHANGED, schedule);
@@ -545,9 +576,6 @@ onMounted(() => {
   start();
 });
 onBeforeUnmount(() => {
-  recoveryObserver?.disconnect();
-  document.documentElement.classList.remove('cloud-mode');
-  document.documentElement.style.removeProperty('--cloud-bar-height');
   handoff?.dispose();
   scheduler.dispose();
   townCoordinator.release();
@@ -560,38 +588,73 @@ onBeforeUnmount(() => {
 });
 </script>
 <style>
-.save-recovery-notice {
+.save-recovery-toast {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  left: 50%;
+  z-index: 150;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
   gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  color: #294139;
-  background: #fff0ca;
-  border-bottom: 1px solid #c9b781;
-  font: 0.95rem/1.5 system-ui;
+  width: max-content;
+  max-width: calc(100vw - 24px);
+  box-sizing: border-box;
+  padding: 0.55rem 0.6rem 0.55rem 1rem;
+  color: #fff7df;
+  background: #183832;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px #0005;
+  font: 0.9rem/1.4 system-ui;
 }
-.save-recovery-notice p {
-  flex: 1 1 24rem;
+.save-recovery-toast > svg {
+  width: 20px;
+  height: 20px;
+}
+.save-recovery-toast p {
   margin: 0;
 }
-.save-recovery-notice button {
-  font: inherit;
-  padding: 0.65rem 0.8rem;
-  border: 1px solid #bdc5af;
-  border-radius: 0.6rem;
-  background: #fffdf6;
-  color: #294139;
+.save-recovery-toast button {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  min-height: 36px;
+  padding: 0.4rem 0.9rem;
+  font: 600 0.85rem system-ui;
+  border: 0;
+  border-radius: 999px;
   cursor: pointer;
 }
-.save-recovery-notice button:disabled {
+.save-recovery-compare {
+  background: #e9c46a;
+  color: #183832;
+}
+.save-recovery-dismiss {
+  width: 36px;
+  padding: 0;
+  background: #ffffff1a;
+  color: #fff7df;
+}
+.save-recovery-dismiss svg {
+  width: 16px;
+  height: 16px;
+}
+.save-recovery-toast button:disabled {
   opacity: 0.6;
   cursor: default;
 }
-.cloud-header {
-  position: sticky;
-  top: 0;
-  z-index: 95;
+.save-recovery-toast button:focus-visible {
+  outline: 3px solid #e9c46a;
+  outline-offset: 2px;
+}
+@media (max-width: 560px) {
+  .save-recovery-toast {
+    flex-wrap: wrap;
+    width: calc(100vw - 24px);
+  }
+  .save-recovery-toast p {
+    flex: 1 1 12rem;
+  }
 }
 .town-handoff-overlay {
   position: fixed;
@@ -640,10 +703,6 @@ onBeforeUnmount(() => {
     serif;
   margin: 1rem 0;
 }
-.town-tab-hint {
-  color: #596b5f;
-  font-size: 0.9rem;
-}
 .town-tab-actions {
   display: flex;
   flex-wrap: wrap;
@@ -668,9 +727,5 @@ onBeforeUnmount(() => {
 .town-tab-actions button:focus-visible {
   outline: 3px solid #ab813e;
   outline-offset: 3px;
-}
-.cloud-mode .town-map-frame.town-fullscreen {
-  top: var(--cloud-bar-height, 0px);
-  height: calc(100dvh - var(--cloud-bar-height, 0px));
 }
 </style>

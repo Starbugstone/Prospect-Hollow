@@ -36,6 +36,13 @@
       >
         {{ t('Town projects') }} →
       </button>
+      <button
+        v-if="cloudAccount?.signedIn.value"
+        class="town-tools-community"
+        @click="cloudAccount.openCommunity()"
+      >
+        <GameIcon name="eye" />{{ t('Shared towns') }} →
+      </button>
       <button @click="inspectBuilding('armory')">{{ t('Supplies') }} →</button>
     </div>
     <section class="town-world" :aria-label="t('Your town')">
@@ -84,12 +91,15 @@
         >
           <GameIcon name="settings" />
         </button>
-        <div
-          v-if="fullscreen && !activeRaid"
-          class="town-map-wallet"
-          :aria-label="t('Town savings')"
-        >
-          <TownIcon name="coin" /><strong>{{ number(town.coins) }}</strong>
+        <div class="town-map-corner">
+          <SaveStatusPill v-if="cloudAccount && !activeRaid" />
+          <div
+            v-if="fullscreen && !activeRaid"
+            class="town-map-wallet"
+            :aria-label="t('Town savings')"
+          >
+            <TownIcon name="coin" /><strong>{{ number(town.coins) }}</strong>
+          </div>
         </div>
         <div v-if="campaign.builderHammers > 0" class="town-map-caption">
           <span
@@ -647,7 +657,7 @@ import { pendingPresentation } from '../../data/townPresentations';
 
 import { motorTraffic, modernTransport } from '../../game/town/TownEvolution';
 import { civicIncident } from '../../data/townEvents';
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { t, number } from '../../i18n';
 import { BUILDINGS, BUILDING_BY_ID, BANDIT_EVENT, INITIAL_STORY } from '../../data/town';
 import {
@@ -687,6 +697,7 @@ import { LEVEL_COUNT } from '../../data/campaign';
 import TownMuseum from './TownMuseum.vue';
 import TownTour from './TownTour.vue';
 import GameIcon from '../GameIcon.vue';
+import SaveStatusPill from '../SaveStatusPill.vue';
 import { useTownAudio } from '../../composables/useTownAudio';
 import TownScene from './TownScene.vue';
 import TownEraCinematic from './TownEraCinematic.vue';
@@ -706,6 +717,8 @@ const props = defineProps({
 const emit = defineEmits(['mine', 'replay', 'continuous', 'museum-change']);
 const campaign = useCampaignStore(),
   settings = useSettingsStore();
+// Provided by CloudRoot; absent when the village renders without account support.
+const cloudAccount = inject('cloudAccount', null);
 const game = useGameStore();
 const town = computed(() => campaign.town);
 const progressOpen = ref(true);

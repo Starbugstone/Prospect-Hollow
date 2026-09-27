@@ -13,39 +13,26 @@
         <GameIcon name="close" />
       </button>
     </header>
-    <section v-if="account" class="account-settings" :aria-label="t('Account and cloud save')">
+    <section v-if="account" class="account-settings" :aria-label="t('Your town')">
+      <h3>{{ t('Your town') }}</h3>
       <div class="account-town">
         <img src="/art/amethyst.svg" alt="" />
         <span>
           <strong>{{ account.townName.value }}</strong>
-          <small>{{
-            t(account.accountTown.value ? 'Account town' : 'Local town · this device only')
+          <small class="account-status" :data-tone="account.saveState.value.tone" role="status">{{
+            t(account.saveState.value.label)
           }}</small>
         </span>
       </div>
-      <p class="account-status" :data-tone="account.statusTone.value" role="status">
-        {{ t(account.status.value) }}
-      </p>
-      <div class="save-actions">
-        <button
-          type="button"
-          class="account-open"
-          :disabled="!account.canOpen.value"
-          @click="openAccount"
-        >
-          <GameIcon :name="account.signedIn.value ? 'home' : 'cloud'" />
-          {{ t(account.signedIn.value ? 'My towns' : 'Protect my progress') }}
-        </button>
-        <button
-          v-if="account.accountTown.value"
-          type="button"
-          :disabled="!account.canSync.value"
-          @click="account.sync()"
-        >
-          <GameIcon name="sync" />
-          {{ t('Sync now') }}
-        </button>
-      </div>
+      <button
+        type="button"
+        class="account-open"
+        :disabled="!account.canOpen.value"
+        @click="openAccount"
+      >
+        {{ t(account.signedIn.value ? 'My towns & saves' : 'Protect my progress') }}
+        <GameIcon name="arrow" />
+      </button>
     </section>
     <label
       ><span>
@@ -94,71 +81,76 @@
         :checked="settings.showVillageLabels"
         @change="settings.setVillageLabels($event.target.checked)"
     /></label>
-    <section v-if="allowSaveTransfer" class="save-transfer" :aria-label="t('Save your village')">
-      <h3>{{ t('Save your village') }}</h3>
-      <p>
-        {{ t('Keep a backup of your village, or load it on another device.') }}
-      </p>
-      <div class="save-actions">
-        <button type="button" @click="exportProgress">{{ t('Save a backup file') }}</button>
-        <button type="button" :disabled="readingFile" @click="saveInput.click()">
-          {{ t('Load a backup file') }}
-        </button>
-      </div>
-      <input
-        ref="saveInput"
-        type="file"
-        accept=".json,application/json"
-        hidden
-        :aria-label="t('Load a backup file')"
-        @change="selectSave"
-      />
-      <div v-if="pendingSave" class="import-confirmation">
-        <p class="save-filename">{{ pendingSave.name }}</p>
-        <p>
-          {{
-            t(
-              'Replace your current village with this backup? Save a backup first if you want to keep it.',
-            )
-          }}
-        </p>
-        <div class="save-actions">
-          <button type="button" @click="importProgress">{{ t('Replace and continue') }}</button>
-          <button type="button" @click="pendingSave = null">{{ t('Cancel') }}</button>
-        </div>
-      </div>
-      <p v-if="saveError" role="alert" class="save-error">{{ t(saveError) }}</p>
-      <p v-if="saveStatus" role="status">{{ t(saveStatus) }}</p>
-    </section>
     <p class="audio-credits">
       <a :href="audioCreditsUrl" target="_blank" rel="noopener">{{ t('Audio credits') }}</a>
     </p>
-    <div class="keyboard-guide">
-      <h3>{{ t('Keyboard controls') }}</h3>
-      <p>
-        {{ t('Swipe or tap neighboring gems.') }} <br />
-        {{ t('Keyboard: arrows to explore, Enter to select.') }} <br />
-        {{ t('Shift + arrow to swap. Esc to cancel.') }}
-      </p>
-    </div>
-    <div v-if="!campaign.readOnly && !townStorage.state()?.active.owner" class="testing-reset">
-      <button v-if="!confirmReset" class="text-button" @click="confirmReset = true">
-        {{ t('Start a new village') }}
-      </button>
-      <template v-else>
+    <details class="settings-more">
+      <summary>
+        {{ t('More options') }}<small>{{ t('Backup file, keyboard controls') }}</small>
+      </summary>
+      <section v-if="allowSaveTransfer" class="save-transfer" :aria-label="t('Save your village')">
+        <h3>{{ t('Save your village') }}</h3>
         <p>
-          {{
-            t(
-              'Reset all progress on this device? Your town, completed levels, and power-ups will start over.',
-            )
-          }}
+          {{ t('Keep a backup of your village, or load it on another device.') }}
         </p>
-        <div>
-          <button @click="resetProgress">{{ t('Reset all progress') }}</button
-          ><button @click="confirmReset = false">{{ t('Cancel') }}</button>
+        <div class="save-actions">
+          <button type="button" @click="exportProgress">{{ t('Save a backup file') }}</button>
+          <button type="button" :disabled="readingFile" @click="saveInput.click()">
+            {{ t('Load a backup file') }}
+          </button>
         </div>
-      </template>
-    </div>
+        <input
+          ref="saveInput"
+          type="file"
+          accept=".json,application/json"
+          hidden
+          :aria-label="t('Load a backup file')"
+          @change="selectSave"
+        />
+        <div v-if="pendingSave" class="import-confirmation">
+          <p class="save-filename">{{ pendingSave.name }}</p>
+          <p>
+            {{
+              t(
+                'Replace your current village with this backup? Save a backup first if you want to keep it.',
+              )
+            }}
+          </p>
+          <div class="save-actions">
+            <button type="button" @click="importProgress">{{ t('Replace and continue') }}</button>
+            <button type="button" @click="pendingSave = null">{{ t('Cancel') }}</button>
+          </div>
+        </div>
+        <p v-if="saveError" role="alert" class="save-error">{{ t(saveError) }}</p>
+        <p v-if="saveStatus" role="status">{{ t(saveStatus) }}</p>
+      </section>
+      <div class="keyboard-guide">
+        <h3>{{ t('Keyboard controls') }}</h3>
+        <p>
+          {{ t('Swipe or tap neighboring gems.') }} <br />
+          {{ t('Keyboard: arrows to explore, Enter to select.') }} <br />
+          {{ t('Shift + arrow to swap. Esc to cancel.') }}
+        </p>
+      </div>
+      <div v-if="!campaign.readOnly && !townStorage.state()?.active.owner" class="testing-reset">
+        <button v-if="!confirmReset" class="text-button" @click="confirmReset = true">
+          {{ t('Start a new village') }}
+        </button>
+        <template v-else>
+          <p>
+            {{
+              t(
+                'Reset all progress on this device? Your town, completed levels, and power-ups will start over.',
+              )
+            }}
+          </p>
+          <div>
+            <button @click="resetProgress">{{ t('Reset all progress') }}</button
+            ><button @click="confirmReset = false">{{ t('Cancel') }}</button>
+          </div>
+        </template>
+      </div>
+    </details>
   </dialog>
 </template>
 <script setup>
@@ -167,7 +159,7 @@ import { townStorage } from '../services/townStorage';
 import { inject, ref, watch } from 'vue';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useCampaignStore } from '../stores/campaignStore';
-import { MAX_SAVE_FILE_BYTES, parseSaveFile } from '../services/saveTransfer';
+import { MAX_SAVE_FILE_BYTES, downloadSaveFile, parseSaveFile } from '../services/saveTransfer';
 import GameIcon from './GameIcon.vue';
 const props = defineProps({ open: Boolean, allowSaveTransfer: Boolean });
 const emit = defineEmits(['close', 'reset-progress', 'import-progress']);
@@ -188,15 +180,10 @@ function exportProgress() {
   saveError.value = '';
   saveStatus.value = '';
   try {
-    const blob = new Blob([campaign.exportSave()], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `prospect-hollow-save-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
-    document.body.append(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    downloadSaveFile(
+      campaign.exportSave(),
+      `prospect-hollow-save-${new Date().toISOString().replace(/[:.]/g, '-')}.json`,
+    );
     saveStatus.value = 'Save file download started.';
   } catch {
     saveError.value = 'Your save could not be exported. Please try again.';
@@ -281,10 +268,18 @@ const closeBackdrop = (event) => {
 <style scoped>
 .account-settings {
   margin: 22px 0 30px;
-  padding: 18px;
+  padding: 16px 18px 18px;
   border: 1px solid #84619e88;
   border-radius: 10px;
   background: #c29ae80a;
+}
+.account-settings h3 {
+  margin: 0 0 12px;
+  color: #cdb4e6;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 .account-town {
   display: flex;
@@ -305,14 +300,11 @@ const closeBackdrop = (event) => {
   font-size: 18px;
   font-weight: 400;
 }
-.account-town small {
-  margin-top: 2px;
-}
 .account-status {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 14px 0;
+  gap: 7px;
+  margin-top: 2px;
   color: #d6c4db;
   font-size: 12px;
 }
@@ -336,20 +328,69 @@ const closeBackdrop = (event) => {
   background: #ff8a70;
   box-shadow: 0 0 0 3px #ff8a7040;
 }
-.account-settings .save-actions button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-.account-settings .save-actions svg {
-  width: 16px;
-  height: 16px;
-}
 .account-settings .account-open {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 14px;
+  padding: 10px 14px;
+  border: 1px solid #b48cdd;
+  border-radius: 8px;
   background: #6d527e;
-  border-color: #b48cdd;
   color: #fff5e1;
+  font-size: 14px;
+  font-weight: 600;
+}
+.account-open svg {
+  width: 18px;
+  height: 18px;
+}
+.account-open:disabled {
+  opacity: 0.5;
+}
+.account-open:focus-visible,
+.settings-more summary:focus-visible {
+  outline: 2px solid #e4c1ff;
+  outline-offset: 3px;
+}
+.settings-more {
+  margin-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.settings-more summary {
+  position: relative;
+  display: grid;
+  padding: 16px 28px 16px 0;
+  cursor: pointer;
+  list-style: none;
+  font-size: 14px;
+}
+.settings-more summary::-webkit-details-marker {
+  display: none;
+}
+.settings-more summary::after {
+  content: '';
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid #cdb4e6;
+  border-bottom: 2px solid #cdb4e6;
+  transform: translateY(-70%) rotate(45deg);
+}
+.settings-more[open] summary::after {
+  transform: translateY(-30%) rotate(-135deg);
+}
+.settings-more summary small {
+  margin-top: 2px;
+  color: #cbbdd8;
+  font-size: 12px;
+}
+.settings-more[open] summary {
+  margin-bottom: 8px;
 }
 .save-transfer {
   margin-bottom: 30px;

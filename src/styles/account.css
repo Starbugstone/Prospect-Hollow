@@ -1,0 +1,835 @@
+/* Shared by the account panel and the save recovery dialog, which load separately. */
+.account-panel {
+  color-scheme: light;
+  width: min(620px, calc(100vw - 24px));
+  max-height: min(88dvh, 860px);
+  padding: 0;
+  border: 1px solid #ded5bd;
+  border-radius: 20px;
+  background: #fbf8ef;
+  color: #294139;
+  font:
+    0.95rem/1.5 system-ui,
+    sans-serif;
+  box-shadow: 0 24px 100px #10292380;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.account-panel::backdrop {
+  background: #102923bb;
+  backdrop-filter: blur(2px);
+}
+.account-heading {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem 0.85rem 1.3rem;
+  background: #183832;
+  color: #fff7df;
+}
+.account-heading img {
+  width: 1.6rem;
+  height: 1.6rem;
+}
+.account-heading h1 {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font:
+    1.5rem Georgia,
+    serif;
+}
+.account-panel .account-round {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  color: #fff7df;
+  background: #ffffff12;
+  border: 1px solid #ffffff2b;
+  border-radius: 50%;
+}
+.account-panel .account-round:hover:not(:disabled) {
+  background: #ffffff26;
+}
+.account-panel .account-round svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+.account-body {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem 1.4rem 1.4rem;
+}
+.account-body p {
+  margin: 0;
+}
+.account-lead {
+  font:
+    1.1rem/1.45 Georgia,
+    serif;
+}
+.account-hint {
+  color: #64756a;
+  font-size: 0.85rem;
+}
+.account-center {
+  text-align: center;
+}
+.account-message {
+  padding: 0.7rem 0.9rem;
+  background: #fff1cf;
+  border: 1px solid #ecd49a;
+  border-radius: 10px;
+}
+.account-panel h2 {
+  margin: 0;
+  font:
+    1.3rem Georgia,
+    serif;
+  overflow-wrap: anywhere;
+}
+.account-field {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4d6156;
+}
+.account-panel input:not([type='checkbox']) {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.65rem 0.8rem;
+  font: 400 0.95rem system-ui;
+  color: #294139;
+  background: #fff;
+  border: 1px solid #cfc8b3;
+  border-radius: 10px;
+}
+.account-panel input:focus-visible {
+  outline: 2px solid #ab813e;
+  outline-offset: 1px;
+  border-color: #ab813e;
+}
+.account-panel button,
+.account-panel a[role='menuitem'] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  font: 600 0.9rem system-ui;
+  padding: 0.6rem 1rem;
+  background: #fffdf6;
+  color: #294139;
+  border: 1px solid #c9c3ad;
+  border-radius: 999px;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.account-panel button svg,
+.account-panel a svg,
+.account-panel summary svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+.account-panel button:hover:not(:disabled) {
+  background: #f1ecdd;
+}
+.account-panel button:focus-visible,
+.account-panel summary:focus-visible,
+.account-panel a:focus-visible,
+.account-panel input[type='checkbox']:focus-visible {
+  outline: 3px solid #ab813e;
+  outline-offset: 2px;
+}
+.account-panel button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.account-panel .account-primary {
+  background: #315940;
+  color: #fffdf6;
+  border-color: #315940;
+}
+.account-panel .account-primary:hover:not(:disabled) {
+  background: #264a34;
+}
+.account-panel .account-wide {
+  width: 100%;
+  padding: 0.85rem;
+  font-size: 1rem;
+}
+.account-panel .account-link {
+  padding: 0.3rem 0.2rem;
+  color: #315940;
+  background: none;
+  border-color: transparent;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.account-panel .account-link:hover:not(:disabled) {
+  background: none;
+  color: #183832;
+}
+.account-panel .account-destructive {
+  background: #fff;
+  color: #a53a2a;
+  border-color: #e0a79c;
+}
+.account-panel .account-destructive:hover:not(:disabled) {
+  background: #fbe9e5;
+}
+.account-panel a {
+  color: #315940;
+  font-weight: 600;
+}
+.account-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.account-stack {
+  display: grid;
+  gap: 0.75rem;
+}
+
+/* Sign-in */
+.account-sign-in {
+  display: grid;
+  gap: 1rem;
+}
+.account-step {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #896b38;
+  font: 600 0.7rem system-ui;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.account-step span {
+  width: 1.6rem;
+  height: 3px;
+  border-radius: 2px;
+  background: #e3dbc7;
+}
+.account-step span.is-done {
+  background: #896b38;
+}
+.account-benefits {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.account-benefits li {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.account-benefits span,
+.account-avatar,
+.account-envelope,
+.town-slot-plus {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: #e9efdf;
+  color: #315940;
+}
+.account-benefits svg,
+.account-avatar svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+.account-sent {
+  display: grid;
+  justify-items: center;
+  gap: 0.7rem;
+  text-align: center;
+}
+.account-sent > p {
+  max-width: 26rem;
+}
+.account-envelope {
+  width: 4.2rem;
+  height: 4.2rem;
+}
+.account-envelope svg {
+  width: 2rem;
+  height: 2rem;
+}
+.account-fold {
+  width: 100%;
+  margin-top: 0.4rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid #e3dbc7;
+  text-align: left;
+}
+
+/* Towns */
+.account-towns {
+  display: grid;
+  gap: 1rem;
+}
+.account-slot-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.account-slots {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #64756a;
+  font-size: 0.85rem;
+}
+.account-pip {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  border: 1.5px solid #9fb09f;
+}
+.account-pip.is-used {
+  background: #315940;
+  border-color: #315940;
+}
+.account-pip:last-of-type {
+  margin-right: 0.3rem;
+}
+.account-save-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.account-save-state::before {
+  content: '';
+  width: 0.55rem;
+  height: 0.55rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #a1a99a;
+}
+.account-save-state[data-tone='saved']::before {
+  background: #3f9a5a;
+  box-shadow: 0 0 0 3px #3f9a5a2e;
+}
+.account-save-state[data-tone='busy']::before,
+.account-save-state[data-tone='pending']::before {
+  background: #e39a1f;
+  box-shadow: 0 0 0 3px #e39a1f33;
+}
+.account-save-state[data-tone='alert']::before {
+  background: #d25a3c;
+  box-shadow: 0 0 0 3px #d25a3c33;
+}
+.account-panel .account-icon {
+  width: 2.3rem;
+  height: 2.3rem;
+  padding: 0;
+  border-radius: 50%;
+}
+.account-icon.is-busy svg {
+  animation: cloud-spin 0.9s linear infinite;
+}
+.account-callout {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  padding: 0.8rem 1rem;
+  background: #fff1cf;
+  border: 1px solid #ecd49a;
+  border-radius: 14px;
+}
+.account-callout > svg {
+  width: 1.4rem;
+  height: 1.4rem;
+  color: #b07a17;
+}
+.account-callout p {
+  flex: 1 1 14rem;
+  font-size: 0.88rem;
+}
+.account-callout strong {
+  display: block;
+}
+.town-slots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.town-slot {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: #fffdf6;
+  border: 1px solid #e3dbc7;
+  border-radius: 16px;
+}
+.town-slot.is-current {
+  border-color: #315940;
+  box-shadow: 0 0 0 1px #315940;
+}
+.town-slot-art {
+  --slot-hue: 90;
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 84px;
+  border-radius: 15px 15px 0 0;
+  background:
+    radial-gradient(ellipse 70% 45% at 25% 100%, hsl(var(--slot-hue) 28% 58%) 98%, transparent),
+    radial-gradient(ellipse 80% 50% at 85% 105%, hsl(var(--slot-hue) 32% 50%) 98%, transparent),
+    linear-gradient(170deg, hsl(calc(var(--slot-hue) + 10) 45% 90%), hsl(var(--slot-hue) 35% 76%));
+  overflow: hidden;
+}
+.town-slot-art img {
+  width: 2.4rem;
+  height: 2.4rem;
+  filter: drop-shadow(0 4px 6px #18383240);
+}
+.town-slot-era {
+  position: absolute;
+  left: 0.5rem;
+  bottom: 0.45rem;
+  max-width: calc(100% - 1rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: #183832d9;
+  color: #fff7df;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.account-panel .town-slot-more {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border-radius: 50%;
+  background: #fffdf6e6;
+  border-color: #0000001a;
+}
+.town-slot-more svg {
+  stroke-width: 3.5;
+}
+.town-slot-menu {
+  position: absolute;
+  z-index: 3;
+  top: 2.7rem;
+  right: 0.4rem;
+  display: grid;
+  min-width: 12rem;
+  padding: 0.35rem;
+  background: #fff;
+  border: 1px solid #e3dbc7;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px #1838322e;
+}
+.account-panel .town-slot-menu > button,
+.account-panel .town-slot-menu > a {
+  justify-content: flex-start;
+  padding: 0.5rem 0.6rem;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.account-panel .town-slot-menu > :hover {
+  background: #f1ecdd;
+}
+.account-panel .town-slot-menu .is-danger {
+  color: #a53a2a;
+}
+.town-slot-info {
+  display: grid;
+  align-content: start;
+  gap: 0.15rem;
+  padding: 0.6rem 0.75rem 0.75rem;
+  overflow-wrap: anywhere;
+}
+.town-slot-info strong {
+  font:
+    1.1rem Georgia,
+    serif;
+}
+.town-slot-info small {
+  color: #64756a;
+  font-size: 0.76rem;
+}
+.town-slot-info button,
+.town-slot-playing {
+  margin-top: 0.5rem;
+}
+.town-slot-playing {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.45rem;
+  border-radius: 999px;
+  background: #e9efdf;
+  color: #315940;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+.town-slot-playing svg {
+  width: 1rem;
+  height: 1rem;
+}
+.town-slot.is-empty {
+  display: block;
+  background: transparent;
+  border: 1.5px dashed #cfc5a8;
+}
+.town-slot.is-local {
+  background: #fffaeb;
+  border-color: #e0b75b;
+}
+.account-panel .town-slot-add {
+  width: 100%;
+  height: 100%;
+  min-height: 11rem;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.35rem;
+  padding: 1rem;
+  border: 0;
+  border-radius: 15px;
+  background: none;
+  font-weight: 400;
+  text-align: center;
+}
+.town-slot-add strong {
+  font:
+    1.05rem Georgia,
+    serif;
+}
+.town-slot-add small {
+  color: #64756a;
+  font-size: 0.8rem;
+}
+.town-slot-plus {
+  width: 2.6rem;
+  height: 2.6rem;
+}
+.is-local .town-slot-plus {
+  background: #fff1cf;
+  color: #b07a17;
+}
+.town-slot-form {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.9rem;
+}
+.account-towns-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 0.8rem;
+  border-top: 1px solid #e3dbc7;
+}
+
+/* Manage and account */
+.account-manage {
+  display: grid;
+  gap: 1rem;
+}
+.account-section {
+  display: grid;
+  gap: 0.65rem;
+  padding: 1rem 1.1rem;
+  background: #fffdf6;
+  border: 1px solid #e3dbc7;
+  border-radius: 14px;
+}
+.account-panel .account-section > h2 {
+  color: #896b38;
+  font: 600 0.7rem system-ui;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.account-inline {
+  display: flex;
+  gap: 0.5rem;
+}
+.account-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  cursor: pointer;
+}
+.account-toggle > span {
+  flex: 1;
+  display: grid;
+}
+.account-toggle small {
+  color: #64756a;
+  font-size: 0.8rem;
+}
+.account-toggle input {
+  appearance: none;
+  position: relative;
+  flex-shrink: 0;
+  width: 46px;
+  height: 26px;
+  margin: 0;
+  border-radius: 999px;
+  background: #cfc8b3;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.account-toggle input::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s;
+}
+.account-toggle input:checked {
+  background: #315940;
+}
+.account-toggle input:checked::after {
+  transform: translateX(20px);
+}
+.account-toggle input:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.account-share {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.4rem 0.4rem 0.8rem;
+  border-radius: 10px;
+  background: #eef3e6;
+  color: #4d6156;
+  font-size: 0.82rem;
+}
+.account-share > svg {
+  width: 1rem;
+  height: 1rem;
+}
+.account-share code {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.account-panel .account-share button {
+  padding: 0.35rem 0.8rem;
+  font-size: 0.8rem;
+}
+.account-timeline {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.account-timeline li {
+  display: grid;
+  grid-template-columns: 1rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.2rem 0.7rem;
+  padding: 0.45rem 0;
+}
+.account-timeline li > i {
+  justify-self: center;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  border: 2px solid #9fb09f;
+}
+.account-timeline li > i.is-now {
+  background: #315940;
+  border-color: #315940;
+}
+.account-timeline li.is-kept > i {
+  border-color: #e0b75b;
+  background: #fff1cf;
+}
+.account-timeline li > span {
+  display: grid;
+}
+.account-timeline small {
+  color: #64756a;
+  font-size: 0.78rem;
+}
+.account-panel .account-timeline button:not(.account-icon) {
+  padding: 0.35rem 0.85rem;
+  font-size: 0.82rem;
+}
+.account-confirm {
+  grid-column: 2 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.8rem;
+  background: #fff1cf;
+  border-radius: 10px;
+}
+.account-confirm p {
+  flex-basis: 100%;
+}
+.account-panel details {
+  width: 100%;
+}
+.account-panel summary {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  font-weight: 600;
+  color: #4d6156;
+}
+.account-panel details[open] > summary {
+  margin-bottom: 0.75rem;
+}
+.account-panel details > :not(summary) + :not(summary) {
+  margin-top: 0.75rem;
+}
+.account-danger summary {
+  color: #a53a2a;
+}
+.account-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+.account-identity > span:last-child {
+  display: grid;
+}
+.account-identity small {
+  color: #64756a;
+}
+.account-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+@keyframes cloud-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.town-slot-era-mobile {
+  display: none;
+}
+@media (max-width: 560px) {
+  .town-slot-era-mobile {
+    display: block;
+  }
+  .account-panel {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 92dvh;
+    margin: auto 0 0;
+    border-radius: 20px 20px 0 0;
+  }
+  .account-body {
+    padding: 1rem;
+  }
+  .town-slots {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .town-slot:not(.is-empty) {
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    grid-template-rows: auto;
+    align-items: center;
+  }
+  .town-slot-art {
+    height: 100%;
+    min-height: 4.5rem;
+    border-radius: 15px 0 0 15px;
+  }
+  .town-slot-art img {
+    width: 1.8rem;
+    height: 1.8rem;
+  }
+  .town-slot-era {
+    display: none;
+  }
+  .town-slot-info {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 0.55rem 2.8rem 0.55rem 0.75rem;
+  }
+  .town-slot-info > :not(button, .town-slot-playing) {
+    grid-column: 1;
+  }
+  .town-slot-info button,
+  .town-slot-playing {
+    grid-column: 2;
+    grid-row: 1 / span 4;
+    align-self: center;
+    margin: 0;
+  }
+  .account-panel .town-slot-more {
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .town-slot-menu {
+    top: calc(50% + 1.3rem);
+  }
+  .account-panel .town-slot-add {
+    min-height: 0;
+    grid-auto-flow: column;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    place-content: stretch;
+    justify-items: start;
+    column-gap: 0.8rem;
+    text-align: left;
+  }
+  .town-slot-add .town-slot-plus {
+    grid-row: span 2;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .account-icon.is-busy svg {
+    animation: none;
+  }
+}
+
+.account-field select {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 0.6rem;
+  border: 1px solid #bdc5af;
+  border-radius: 0.6rem;
+  background: #fffdf6;
+  color: #294139;
+  font: inherit;
+}

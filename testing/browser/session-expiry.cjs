@@ -152,15 +152,19 @@ const assert = require('node:assert/strict');
       });
     }
     await a.bringToFront();
-    await a.evaluate(() => window.stores().get('settings').toggleSettings(true));
+
     expired = true;
-    await a.getByRole('button', { name: 'Synchroniser', exact: true }).click();
+    await a.evaluate(async () => (await window.cloudModule()).syncNow());
 
     for (const p of [a, b]) {
       await p.waitForFunction(
         () => JSON.parse(localStorage.getItem('prospect-account-v2')).expired === true,
       );
-      await p.getByRole('button', { name: 'Se reconnecter', exact: true }).waitFor();
+      assert.equal(
+        await p.locator('.save-recovery-toast').count(),
+        0,
+        'no interruption during puzzles',
+      );
     }
     for (const p of [a, b]) {
       const state = await p.evaluate(() => ({
@@ -172,10 +176,13 @@ const assert = require('node:assert/strict');
       assert.equal(state.moves, 25);
       assert(state.selected.includes('prospect-town-v2:'));
     }
-    await a.evaluate(async () => {
-      const m = await window.cloudModule();
-      await m.confirmLogin('a'.repeat(64));
+    // A fresh emailed link can arrive while the account dialog is already open.
+    await a.evaluate(() => window.stores().get('settings').toggleSettings(true));
+    await a.getByRole('button', { name: 'Mes villes et sauvegardes', exact: true }).click();
+    await a.evaluate(() => {
+      location.hash = 'login=' + 'a'.repeat(64);
     });
+    await a.getByRole('button', { name: 'Se connecter', exact: true }).click();
     for (const p of [a, b]) {
       await p.waitForFunction(
         () => JSON.parse(localStorage.getItem('prospect-account-v2')).expired === false,

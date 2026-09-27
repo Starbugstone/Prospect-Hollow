@@ -12,6 +12,9 @@ try {
  status(200,callApi('GET','account',null,$a,['HTTP_AUTHORIZATION'=>'Basic '.base64_encode('host:test')]),'hosting basic auth uses account cookie');
  status(401,callApi('GET','account',null,[],['HTTP_AUTHORIZATION'=>'Basic '.base64_encode('host:test')]),'basic auth alone grants no account');
  $body=townBody();$town=status(200,callApi('POST','towns',$body,$a),'attach');$id=$town['townId'];
+ $listed=status(200,callApi('GET','account',null,$a),'owner town summaries')['towns'];
+ check(count($listed)===1 && $listed[0]['summary']===['era'=>'frontier','coins'=>25,'buildings'=>1],'new device gets card details');
+ check(!isset($listed[0]['profile'],$listed[0]['records'],$listed[0]['powers']),'list omits full private saves');
  check($town['revision']===1 && !$town['isPublic'],'private first revision');
  check(status(200,callApi('POST','towns',$body,$a),'lost attach response')===$town,'attachment retry stable');
  status(404,callApi('GET','towns/'.$id,null,$b),'ownership read');
@@ -42,6 +45,9 @@ try {
  status(200,callApi('POST','towns',townBody('Copper Creek'),$a),'third town');status(409,callApi('POST','towns',townBody('Fourth Town'),$a),'three slots');
  $upload=['baseRevision'=>1,'uploadId'=>uuid(),'profile'=>profile(900)];
  $saved=status(200,callApi('PUT','towns/'.$id,$upload,$a),'save client progress');check($saved['profile']['town']['coins']===900,'single player coins are not recalculated');
+ $listed=status(200,callApi('GET','account',null,$a),'summaries after save')['towns'];
+ $card=array_values(array_filter($listed,fn($entry)=>$entry['townId']===$id))[0];
+ check($card['summary']['coins']===900 && $card['revision']===2,'summary follows latest saved revision');
  check(status(200,callApi('PUT','towns/'.$id,$upload,$a),'lost response')===$saved,'same upload gets same revision');
  $upload['profile']=profile(901);status(409,callApi('PUT','towns/'.$id,$upload,$a),'changed upload fingerprint');$upload['uploadId']=uuid();
  $conflict=status(409,callApi('PUT','towns/'.$id,$upload,$a),'divergence');check($conflict['cloud']['revision']===2,'conflict includes comparison');
