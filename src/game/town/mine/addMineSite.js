@@ -8,6 +8,7 @@ import { hasElectricity } from '../../../data/industrial';
 import { addMineWorksBase } from './MineWorksBase';
 import { MINE_FEATURES } from './MineFeatures';
 import { addMineHaul } from './MineRollingStock';
+import { ROUNDED_PALETTE } from '../../../data/roundedArchitecture';
 
 export function addMinePortal(d, root, profile, appearance) {
   const entry = d.group(
@@ -46,6 +47,10 @@ export function addMinePortal(d, root, profile, appearance) {
       appearance.wall,
     );
     if (profile.portal !== 'stepped-cream') d.box(entry, 2.1, 0.3, 0.06, 0, 2.95, 0.28, '#517a86');
+  }
+  if (profile.portal === 'rounded-arch') {
+    // A glazed half-dome hood shelters the entrance in rounded eras.
+    d.ball(entry, 0, 2.5, 0.1, [1.9, 0.85, 0.75], ROUNDED_PALETTE.glass);
   }
   return entry;
 }

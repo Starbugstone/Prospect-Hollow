@@ -62,6 +62,7 @@ it('orders rebuilding after Electric and before cars, with two saved, idempotent
     'aviation',
     'broadcast',
     'contemporary',
+    'tomorrow',
   ]);
   for (const from of ['industrial', 'motor-age']) {
     let c = useCampaignStore();
@@ -232,14 +233,21 @@ it('continues existing 144-level saves at 145 without resetting records and comp
   expect(c.isUnlocked(LEVEL_COUNT + 1)).toBe(false);
   expect(c.records[144]).toEqual(records[144]);
 });
-it('only finishes the entire city once every contemporary plot and modernization is complete', () => {
+it('opens Tomorrow City only after the complete Connected City', () => {
   const town = complete('contemporary');
+  expect(eraGate(town)).toMatchObject({ available: true, next: { id: 'tomorrow' } });
+  const copy = structuredClone(town);
+  copy.buildings.library = 2;
+  expect(eraGate(copy).available).toBe(false);
+});
+it('only finishes the entire city once every tomorrow plot and modernization is complete', () => {
+  const town = complete('tomorrow');
   expect(isEraComplete(town)).toBe(true);
   expect(eraGate(town).next).toBeUndefined();
   expect(nextGoal(town)).toBeNull();
   for (const b of BUILDINGS) {
     const copy = structuredClone(town);
-    if (b.introducedEra === 'contemporary') copy.buildings[b.id] = 2;
+    if (b.introducedEra === 'tomorrow') copy.buildings[b.id] = 2;
     else copy.buildingEraLevels[b.id] = 2;
     expect(isEraComplete(copy), b.id).toBe(false);
   }

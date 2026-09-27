@@ -7,7 +7,8 @@ export const CITY_LEVEL_PRICES = Object.fromEntries(
   CITY_ERAS.map((era) => [era, eraEvolution(era).prices]),
 );
 // Large civic landmarks carry a modest premium; earnings and rewards stay unchanged.
-export const isMajorCityBuilding = (id) => ['airport', 'skyline', 'cityHomes'].includes(id);
+export const isMajorCityBuilding = (id) =>
+  ['airport', 'skyline', 'cityHomes', 'skyPods'].includes(id);
 export const cityBuildingPrice = (id, price) =>
   Math.ceil(price * (isMajorCityBuilding(id) ? 1.25 : 1));
 export const CITY_FAMILIES = {
@@ -362,6 +363,81 @@ export const CITY_BUILDINGS = [
       'Adds 2 happiness in total.',
       'Adds 4 happiness in total.',
       'Adds 6 happiness in total.',
+    ],
+  },
+  {
+    id: 'skyPods',
+    kind: 'skyPods',
+    name: 'Cloudberry sky pods',
+    shortName: 'Sky pods',
+    purpose: 'Round homes stacked above a garden street',
+    introducedEra: 'tomorrow',
+    family: 'residence',
+    effects: {
+      housing: 6,
+      happiness: 1,
+    },
+    color: '#71938a',
+    unlock: [
+      {
+        id: 'bridge',
+        level: 1,
+      },
+    ],
+    benefits: [
+      'Room for 6 residents, with food and water. Adds 1 happiness in total.',
+      'Room for 12 residents, with food and water. Adds 2 happiness in total.',
+      'Room for 18 residents, with food and water. Adds 3 happiness in total.',
+    ],
+  },
+  {
+    id: 'biodome',
+    kind: 'biodome',
+    name: 'Prospect solar biodome',
+    shortName: 'Biodome',
+    purpose: 'Fresh harvests under glass all year round',
+    introducedEra: 'tomorrow',
+    family: 'farm',
+    effects: {
+      food: 18,
+      happiness: 1,
+    },
+    color: '#71938a',
+    unlock: [
+      {
+        id: 'bridge',
+        level: 1,
+      },
+    ],
+    benefits: [
+      'Adds food for 18 people. Adds 1 happiness in total.',
+      'Adds food for 36 people. Adds 2 happiness in total.',
+      'Adds food for 54 people. Adds 3 happiness in total.',
+    ],
+  },
+  {
+    id: 'maglevStation',
+    kind: 'maglevStation',
+    name: 'Hollow maglev loop',
+    shortName: 'Maglev loop',
+    purpose: 'Quiet pods glide visitors across the valley',
+    introducedEra: 'tomorrow',
+    family: 'station',
+    effects: {
+      visitors: 2,
+      happiness: 1,
+    },
+    color: '#71938a',
+    unlock: [
+      {
+        id: 'bridge',
+        level: 1,
+      },
+    ],
+    benefits: [
+      'Room for 2 visitors, with food and water. Adds 1 happiness in total.',
+      'Room for 4 visitors, with food and water. Adds 2 happiness in total.',
+      'Room for 6 visitors, with food and water. Adds 3 happiness in total.',
     ],
   },
 ].map(({ benefits, ...building }) => ({

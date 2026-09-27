@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Group, Scene, BoxGeometry, MeshBasicMaterial, Box3, Vector3 } from 'three';
 import { createTown, BUILDINGS } from '../src/data/town';
+import { ERAS } from '../src/data/eras';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import {
   pavedTown,
@@ -23,16 +24,8 @@ import {
 const townAt = (era) => {
   const town = createTown();
   town.era = era;
-  const eras = [
-    'frontier',
-    'river-rail',
-    'industrial',
-    'post-war',
-    'motor-age',
-    'aviation',
-    'broadcast',
-    'contemporary',
-  ];
+  // The catalog order; an era missing from a hard-coded list would match every building.
+  const eras = ERAS.map(({ id }) => id);
   for (const b of BUILDINGS.filter((b) => eras.indexOf(b.introducedEra) <= eras.indexOf(era))) {
     town.buildings[b.id] = b.upgrades.length;
     town.buildingEras[b.id] = era;

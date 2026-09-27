@@ -957,13 +957,8 @@ export class TownDiorama {
     this.staticScenery.update(this, town);
     const mineWorks = this.staticScenery.entries.get('mine-works')?.group;
     if (mineWorks) updateMineGrowth(mineWorks, mineGrowth(mineProgress));
-    this.controls.maxDistance = [
-      'post-war',
-      'motor-age',
-      'aviation',
-      'broadcast',
-      'contemporary',
-    ].includes(town.era)
+    // City-scale eras (and Motor Age, built on a city shell) need the wider orbit.
+    this.controls.maxDistance = ['city', 'motor-age'].includes(eraEvolution(town.era).style)
       ? 270
       : town.era !== 'frontier'
         ? 160

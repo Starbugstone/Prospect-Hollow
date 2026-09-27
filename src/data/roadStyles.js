@@ -51,6 +51,15 @@ export const ROAD_STYLES = Object.freeze(
         crossing: 'pavers',
         crossingColor: '#b8977d',
       },
+      'glow-lane': {
+        color: '#a2aba6',
+        edge: '#dcd6c4',
+        line: 'dash',
+        paint: '#86cfc9',
+        edgeLine: true,
+        crossing: 'pavers',
+        crossingColor: '#9cc4bd',
+      },
     }).map(([id, profile]) => [id, Object.freeze({ id, ...profile })]),
   ),
 );

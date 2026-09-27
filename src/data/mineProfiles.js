@@ -17,6 +17,7 @@ export const MINE_FEATURE_KEYS = [
   'wind-turbine',
   'heritage-wheel',
   'solar-canopy',
+  'sorting-dome',
 ];
 export const MINE_PROFILES = {
   frontier: {
@@ -100,6 +101,11 @@ export const MINE_PROFILES = {
     site: ['upper-terrace', 'sorting-plant', 'solar-canopy', 'wind-turbine', 'heritage-wheel'],
     motion: ['turbine', 'ore-flow'],
   },
+  tomorrow: {
+    inherits: 'contemporary',
+    portal: 'rounded-arch',
+    site: [{ feature: 'sorting-dome', replaces: ['sorting-plant', 'solar-canopy'] }],
+  },
 };
 const portals = new Set(Object.values(MINE_PROFILES).map((p) => p.portal));
 const works = new Set(Object.values(MINE_PROFILES).map((p) => p.works));
@@ -146,6 +152,13 @@ export function mineProfile(era, definitions = MINE_PROFILES) {
         ]),
       ).values(),
     ];
+    // A feature may supersede structures it encloses, keeping the mine within budget.
+    const replaced = new Set(
+      result.site.flatMap((entry) => (typeof entry === 'string' ? [] : (entry.replaces ?? []))),
+    );
+    result.site = result.site.filter(
+      (entry) => !replaced.has(typeof entry === 'string' ? entry : entry.feature),
+    );
     result.heritage = [...new Set([...parent.heritage, ...(own.heritage ?? [])])];
     if (!result.motion?.length || result.motion.some((m) => !motions.has(m)))
       result.motion = parent.motion;
@@ -172,6 +185,8 @@ export function validateMineProfiles(definitions = MINE_PROFILES) {
       if (!MINE_FEATURE_KEYS.includes(feature)) errors.push(`${id}: unknown ${feature}`);
       if (item.requires && !item.optional && !MINE_FEATURE_KEYS.includes(item.substitute))
         errors.push(`${id}: missing substitute for ${feature}`);
+      for (const replaced of item.replaces ?? [])
+        if (!MINE_FEATURE_KEYS.includes(replaced)) errors.push(`${id}: unknown ${replaced}`);
     }
   }
   return errors;

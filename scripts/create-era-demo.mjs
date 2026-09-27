@@ -108,20 +108,20 @@ try {
     const profile = JSON.stringify({
       schemaVersion: 2,
       town: state,
-      records: ['post-war', 'motor-age', 'aviation', 'broadcast', 'contemporary'].includes(
-        state.era,
-      )
-        ? Object.fromEntries(
-            Array.from({ length: 120 }, (_, i) => [i + 1, { score: 100, stars: 1 }]),
-          )
-        : state.era === 'industrial'
-          ? {
-              ...records,
-              ...Object.fromEntries(
-                Array.from({ length: 6 }, (_, i) => [67 + i, { score: 100, stars: 1 }]),
-              ),
-            }
-          : records,
+      records:
+        ERAS.findIndex(({ id }) => id === state.era) >=
+        ERAS.findIndex(({ id }) => id === 'post-war')
+          ? Object.fromEntries(
+              Array.from({ length: 120 }, (_, i) => [i + 1, { score: 100, stars: 1 }]),
+            )
+          : state.era === 'industrial'
+            ? {
+                ...records,
+                ...Object.fromEntries(
+                  Array.from({ length: 6 }, (_, i) => [67 + i, { score: 100, stars: 1 }]),
+                ),
+              }
+            : records,
       issuedRun: completed,
       settledRun: completed,
     });
@@ -132,7 +132,7 @@ try {
     );
   }
   console.log(
-    `Created all eight-era disposable profiles in ${directory}/. See docs/settlement-eras.md for testing steps.`,
+    `Created disposable profiles for all ${ERAS.length} eras in ${directory}/. See docs/settlement-eras.md for testing steps.`,
   );
 } finally {
   await server.close();

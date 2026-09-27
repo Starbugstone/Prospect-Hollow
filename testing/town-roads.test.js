@@ -33,8 +33,8 @@ afterEach(() => {
   delete ERA_BY_ID['incomplete-road-era'];
 });
 
-it('gives all eight eras distinct treatments and lets a future era inherit or override them', () => {
-  expect(new Set(ERAS.map(({ id }) => roadAppearance(townFor(id)).id)).size).toBe(8);
+it('gives every era a distinct treatment and lets a future era inherit or override them', () => {
+  expect(new Set(ERAS.map(({ id }) => roadAppearance(townFor(id)).id)).size).toBe(ERAS.length);
   ERA_BY_ID['road-successor'] = defineEra({
     ...ERA_BY_ID.contemporary,
     id: 'road-successor',

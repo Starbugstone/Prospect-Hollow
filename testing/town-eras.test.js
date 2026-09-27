@@ -377,6 +377,7 @@ describe('Two eras and explicit modernization', () => {
       'aviation',
       'broadcast',
       'contemporary',
+      'tomorrow',
     ]);
   });
   it('saves the transition before presenting it and cannot advance twice across reload', () => {

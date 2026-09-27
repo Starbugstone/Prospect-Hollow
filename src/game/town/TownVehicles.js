@@ -1,9 +1,11 @@
 import { isCityEra } from '../../data/city';
+import { isRoundedEra, ROUNDED_PALETTE } from '../../data/roundedArchitecture';
 import { cityModel } from './buildings/city';
 const cream = '#e1cfab',
   glass = '#9cbbb5';
 export function motorVehicle(d, parent, bus = false, appearanceEra) {
   const era = appearanceEra ?? d.town?.era ?? d.town?.buildingEras?.[bus ? 'busDepot' : 'stable'];
+  if (isRoundedEra(era)) return hoverPod(d, parent, bus);
   if (isCityEra(era)) {
     const root = cityModel(d, parent, `${era}-${bus ? 'bus' : 'car'}`);
     root.userData.vehicleBox = { halfWidth: 0.36, halfLength: bus ? 1.2 : 0.85 };
@@ -31,6 +33,18 @@ export function motorVehicle(d, parent, bus = false, appearanceEra) {
     }
     d.ball(root, side * 0.2, 0.5, bus ? 0.89 : 0.59, 0.065, '#f7df9b');
   }
+  return root;
+}
+
+// Wheel-less hover pods: three shared-primitive parts, so traffic stays cheap to draw.
+function hoverPod(d, parent, bus) {
+  const root = d.group(parent);
+  const length = bus ? 1.15 : 0.75;
+  root.userData.vehicleBox = { halfWidth: 0.36, halfLength: bus ? 1.2 : 0.85 };
+  root.userData.wheels = [];
+  d.ball(root, 0, 0.5, 0, [0.36, 0.3, length], bus ? ROUNDED_PALETTE.warm : ROUNDED_PALETTE.shell);
+  d.ball(root, 0, 0.66, bus ? 0 : 0.12, [0.28, 0.22, length * 0.62], ROUNDED_PALETTE.glass);
+  d.mesh(root, 'cylinder', [0.3, 0.05, length * 0.85], [0, 0.24, 0], ROUNDED_PALETTE.light);
   return root;
 }
 
