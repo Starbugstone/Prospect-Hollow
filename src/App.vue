@@ -238,6 +238,7 @@
       :can-continue="campaign.completedCount < LEVEL_NAMES.length"
       @next="startLevel(campaign.nextLevel)"
       @claimed="game.levelRewards[$event.index].items = [$event.reward]"
+      @bonus="game.levelRewards.push($event)"
       @menu="showTown"
       @town="showTown"
       @replay="startLevel(game.currentLevelId)"
@@ -255,6 +256,8 @@
       @reset-progress="resetProgress"
       @import-progress="resumeImportedVillage"
     />
+    <PrivacyConsent />
+    <MockAdvertisement />
   </div>
 </template>
 
@@ -290,8 +293,19 @@ import { LEVEL_NAMES } from './data/levelNames';
 import { obstaclesInLevel } from './data/obstacles';
 import ObstacleGuide from './components/ObstacleGuide.vue';
 import { TESTING_TOWN_CHANGED } from './services/testingTools';
+import { Howler } from 'howler';
+import { useAdvertising } from './composables/useAdvertising';
+import MockAdvertisement from './components/MockAdvertisement.vue';
+import PrivacyConsent from './components/privacy/PrivacyConsent.vue';
+import { privacy } from './services/privacy';
 
 const game = useGameStore();
+const { ads, adState } = useAdvertising();
+const privacyOpen = ref(privacy.getState().dialogOpen);
+const stopPrivacy = privacy.subscribe((state) => {
+  privacyOpen.value = state.dialogOpen;
+});
+const enteringMine = ref(false);
 const campaign = useCampaignStore();
 const view = ref(campaign.hasVisitedVillage ? 'town' : 'landing');
 const townView = ref(null);
@@ -301,6 +315,7 @@ const townVisited = ref(campaign.hasVisitedVillage);
 const townActive = computed(() => !game.sessionActive && view.value === 'town');
 const returnToMuseum = ref(false);
 const showTown = () => {
+  if (adState.value.busy || enteringMine.value) return;
   performanceMark('village-intent');
   returnToMuseum.value = game.playMode === 'continuous';
   game.exitLevel();
@@ -392,6 +407,7 @@ const levelName = computed(() => LEVEL_NAMES[game.currentLevelId - 1]);
 const powerName = computed(() => game.activeBonusMode?.replaceAll('_', ' '));
 const scoreTarget = computed(() => game.objectives.find((o) => o.type === 'score')?.target ?? 0);
 const startLevel = (id, mode = 'normal') => {
+  if (adState.value.busy || enteringMine.value) return;
   if (!campaign.canPlay(id, mode)) return;
   if (!game.sessionActive && Object.values(campaign.town.projects).some(constructionReady)) {
     pendingMineEntry.value = { id, mode };
@@ -409,14 +425,25 @@ const returnToConstruction = () => {
   showVillage();
   nextTick(() => townView.value?.showConstructionSites());
 };
-const enterMine = (id, mode) => {
-  if (!campaign.canPlay(id, mode)) return;
-  view.value = 'town';
-  returnToMuseum.value = false;
-  mobileDetailsOpen.value = false;
-  game.startLevel(id, mode);
-  campaign.markTipSeen('mine');
-  window.scrollTo({ top: 0, behavior: 'instant' });
+const enterMine = async (id, mode) => {
+  if (enteringMine.value || adState.value.busy || !campaign.canPlay(id, mode)) return;
+  enteringMine.value = true;
+  const version = game.sessionVersion;
+  try {
+    if (mode === 'normal' && campaign.consumeChapterAd(id)) {
+      await ads.showInterstitial('chapter-transition');
+      if (version !== game.sessionVersion || props.suspended || document.hidden) return;
+    }
+    if (!campaign.canPlay(id, mode)) return;
+    view.value = 'town';
+    returnToMuseum.value = false;
+    mobileDetailsOpen.value = false;
+    game.startLevel(id, mode);
+    campaign.markTipSeen('mine');
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  } finally {
+    enteringMine.value = false;
+  }
 };
 watch(
   () => [
@@ -432,6 +459,8 @@ watch(
 const updateInputPause = () => {
   game.inputPaused =
     props.suspended ||
+    privacyOpen.value ||
+    adState.value.busy ||
     document.hidden ||
     settings.isSettingsOpen ||
     mobileDetailsOpen.value ||
@@ -444,6 +473,15 @@ const updateInputPause = () => {
   }
 };
 watch(() => props.suspended, updateInputPause);
+watch(privacyOpen, updateInputPause, { flush: 'sync' });
+watch(
+  () => adState.value.busy,
+  (busy) => {
+    updateInputPause();
+    Howler.mute(busy);
+  },
+  { flush: 'sync' },
+);
 const visibilityChanged = () => {
   updateInputPause();
   if (!props.suspended) campaign.accrueSaloonIncome();
@@ -451,6 +489,7 @@ const visibilityChanged = () => {
   else if (game.sessionActive) audio.playAmbientLoop();
 };
 onMounted(() => {
+  void ads.initialize();
   game.bootstrap();
   updateInputPause();
   campaign.accrueSaloonIncome();
@@ -474,6 +513,8 @@ watch([() => settings.isSettingsOpen, mobileDetailsOpen, guideOpen], updateInput
   flush: 'sync',
 });
 onBeforeUnmount(() => {
+  ads.cancelActive('view-unmounted');
+  stopPrivacy();
   clearInterval(clockInterval);
   clearInterval(incomeInterval);
   campaign.accrueSaloonIncome();
@@ -481,5 +522,6 @@ onBeforeUnmount(() => {
   window.removeEventListener(TESTING_TOWN_CHANGED, resumeImportedVillage);
   game.exitLevel();
   game.setAudioManager(null);
+  Howler.mute(false);
 });
 </script>

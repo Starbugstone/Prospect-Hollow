@@ -84,6 +84,21 @@
     <p class="audio-credits">
       <a :href="audioCreditsUrl" target="_blank" rel="noopener">{{ t('Audio credits') }}</a>
     </p>
+    <section class="account-settings" :aria-label="t('Privacy')">
+      <h3>{{ t('Privacy') }}</h3>
+      <button type="button" class="account-open" @click="openPrivacy">
+        {{ t('Privacy choices') }}<GameIcon name="arrow" />
+      </button>
+      <button
+        v-if="account?.signedIn.value"
+        type="button"
+        class="account-open"
+        :disabled="!account.canOpen.value"
+        @click="openAccountPrivacy"
+      >
+        {{ t('Account & deletion') }}<GameIcon name="arrow" />
+      </button>
+    </section>
     <details class="settings-more">
       <summary>
         {{ t('More options') }}<small>{{ t('Backup file, keyboard controls') }}</small>
@@ -161,6 +176,7 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { useCampaignStore } from '../stores/campaignStore';
 import { MAX_SAVE_FILE_BYTES, downloadSaveFile, parseSaveFile } from '../services/saveTransfer';
 import GameIcon from './GameIcon.vue';
+import { privacy } from '../services/privacy';
 const props = defineProps({ open: Boolean, allowSaveTransfer: Boolean });
 const emit = defineEmits(['close', 'reset-progress', 'import-progress']);
 const campaign = useCampaignStore();
@@ -169,6 +185,14 @@ const account = inject('cloudAccount', null);
 function openAccount() {
   emit('close');
   account.open();
+}
+function openPrivacy() {
+  emit('close');
+  privacy.openPreferences();
+}
+function openAccountPrivacy() {
+  emit('close');
+  account.open('account');
 }
 const saveInput = ref(null);
 const pendingSave = ref(null);

@@ -139,6 +139,7 @@
   />
   <AccountPanel
     v-if="accountOpen"
+    :initial-view="accountView"
     :login-link="loginLink"
     :writable="ready"
     @close="accountOpen = false"
@@ -196,6 +197,7 @@ townStorage.setWriteGuard(townCoordinator.owns);
 const campaign = useCampaignStore(),
   game = useGameStore();
 const accountOpen = ref(false),
+  accountView = ref('towns'),
   recoveryOpen = ref(false),
   communityOpen = ref(false),
   viewVersion = ref(0),
@@ -259,7 +261,8 @@ provide('cloudAccount', {
   canOpen: computed(() => !campaign.readOnly),
   canReview: computed(() => ready.value && !handingOver.value && !game.sessionActive),
   sync: () => syncNow({ retryRejected: true }),
-  open: () => {
+  open: (view = 'towns') => {
+    accountView.value = view === 'account' ? 'account' : 'towns';
     accountOpen.value = true;
   },
   openRecovery: () => {
@@ -268,6 +271,9 @@ provide('cloudAccount', {
   openCommunity: () => {
     communityOpen.value = true;
   },
+});
+watch(accountOpen, (open) => {
+  if (!open) accountView.value = 'towns';
 });
 watch(
   townName,

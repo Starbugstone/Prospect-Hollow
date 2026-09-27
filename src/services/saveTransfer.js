@@ -102,7 +102,8 @@ export function parseSaveFile(text) {
         nonnegativeInteger(chest.runId) &&
         chest.runId > 0 &&
         chest.runId === profile.settledRun &&
-        ['completion', 'score', 'speed'].includes(chest.source) &&
+        ['completion', 'score', 'speed', 'ad'].includes(chest.source) &&
+        (chest.source !== 'ad' || profile.advertising?.lastChestRun === chest.runId) &&
         Number.isInteger(chest.levelId) &&
         chest.levelId >= 1 &&
         chest.levelId <= LEVEL_COUNT &&
@@ -110,7 +111,12 @@ export function parseSaveFile(text) {
         Array.isArray(chest.items) &&
         chest.items.length === 1 &&
         isObject(chest.items[0]) &&
-        !!chestReward(chest.items[0].id === 'hammer' ? 'tnt' : chest.items[0].id, chest.levelId),
+        !!chestReward(
+          chest.items[0].id === 'hammer' ? 'tnt' : chest.items[0].id,
+          chest.levelId,
+          chest.economyVersion,
+          chest.source,
+        ),
     ) ||
     !Array.isArray(profile.shopStock) ||
     !Array.isArray(profile.seenObstacles)

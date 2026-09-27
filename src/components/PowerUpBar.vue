@@ -1,5 +1,9 @@
 <template>
-  <section v-if="visiblePowers.length" class="powerup-section" :aria-label="t('Power-ups')">
+  <section
+    v-if="visiblePowers.length || showAdShuffle"
+    class="powerup-section"
+    :aria-label="t('Power-ups')"
+  >
     <div class="powerup-bar">
       <button
         v-for="item in visiblePowers"
@@ -33,16 +37,49 @@
           }}</span></span
         ><span class="powerup-name">{{ t(item.label) }}</span>
       </button>
+      <button
+        v-if="showAdShuffle"
+        class="powerup-button"
+        :disabled="!canRewardShuffle(game, campaign, inventory) || adState.busy"
+        @click="watchShuffle"
+      >
+        <span class="powerup-art"><img src="/art/powers/shuffle.svg" alt="" /></span>
+        <span class="powerup-name">{{ t('Watch ad · Shuffle') }}</span>
+      </button>
     </div>
+    <p v-if="adNotice" role="status">{{ t(adNotice) }}</p>
   </section>
 </template>
 <script setup>
 import { t } from '../i18n';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import { useCampaignStore } from '../stores/campaignStore';
+import { useAdvertising } from '../composables/useAdvertising';
+import {
+  canOfferRewardedShuffle,
+  canRewardShuffle,
+  rewardManualShuffle,
+} from '../services/adGameplay';
 import { useGameStore } from '../stores/gameStore';
 import { useInventoryStore } from '../stores/inventoryStore';
 const inventory = useInventoryStore();
 const game = useGameStore();
+const campaign = useCampaignStore();
+const { ads, adState } = useAdvertising();
+const adNotice = ref('');
+// Keep the row mounted during swaps and cascades: its height determines board size.
+const showAdShuffle = computed(() => {
+  void adState.value;
+  return (
+    canOfferRewardedShuffle(game, campaign, inventory) &&
+    ads.isAvailable('rewarded', 'manual-shuffle')
+  );
+});
+async function watchShuffle() {
+  adNotice.value = '';
+  if (!(await rewardManualShuffle({ game, campaign, inventory, ads })))
+    adNotice.value = 'No ad reward this time. Your board is unchanged.';
+}
 const activeId = computed(() => game.activeBonusMode?.replaceAll('_', '-'));
 const visiblePowers = computed(() =>
   inventory.quickAccessSlots.filter((item) => item.quantity > 0 || activeId.value === item.id),

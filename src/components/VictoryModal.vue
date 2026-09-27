@@ -4,7 +4,7 @@
     class="arcade-victory"
     :class="{ 'showing-chest': showingChest }"
     :aria-label="t(showingChest ? 'Bonus chest reward' : 'Level results')"
-    @cancel.prevent="showingChest ? showResults() : $emit('menu')"
+    @cancel.prevent="!adState.busy && (showingChest ? showResults() : $emit('menu'))"
   >
     <RewardChest
       v-if="showingChest"
@@ -46,9 +46,31 @@
           ><img :src="rewardArt(item)" :alt="t(item.label)" /><b>+{{ item.quantity }}</b></span
         >
       </div>
+      <section
+        v-if="canOfferChest"
+        class="ad-chest-offer"
+        :aria-label="t('Extra Prospector chest')"
+      >
+        <strong>{{ t('Extra Prospector chest') }}</strong>
+        <p>
+          {{
+            t(
+              rewardedAvailable
+                ? 'Watch an ad for one extra supply chest.'
+                : 'Advertising rewards are unavailable. Your normal rewards are saved.',
+            )
+          }}
+        </p>
+        <button v-if="rewardedAvailable" :disabled="adState.busy" @click="watchBonusChest">
+          {{ t('Watch ad · Bonus chest') }}
+        </button>
+        <button v-else @click="privacy.openPreferences()">{{ t('Privacy choices') }}</button>
+        <p v-if="adNotice" role="status">{{ t(adNotice) }}</p>
+      </section>
       <div class="result-destinations">
         <button
           v-if="canContinue"
+          :disabled="adState.busy"
           class="result-next"
           :class="{ 'result-village': villageHasNextStep }"
           @click="$emit('next')"
@@ -57,6 +79,7 @@
         </button>
         <button
           class="result-next"
+          :disabled="adState.busy"
           :class="{ 'result-village': !villageHasNextStep }"
           @click="$emit('town')"
         >
@@ -149,11 +172,13 @@
             ><span
               ><strong>{{
                 t(
-                  reward.source === 'completion'
-                    ? 'Completion chest'
-                    : reward.source === 'score'
-                      ? 'SCORE CHEST'
-                      : 'SPEED CHEST',
+                  reward.source === 'ad'
+                    ? 'Extra Prospector chest'
+                    : reward.source === 'completion'
+                      ? 'Completion chest'
+                      : reward.source === 'score'
+                        ? 'SCORE CHEST'
+                        : 'SPEED CHEST',
                 )
               }}</strong
               ><small>{{ goalText(reward.source) }}</small></span
@@ -172,7 +197,9 @@
         }}
       </p>
       <div class="victory-actions">
-        <button v-if="canReplay" @click="$emit('replay')">{{ t('Play again') }}</button>
+        <button v-if="canReplay" :disabled="adState.busy" @click="$emit('replay')">
+          {{ t('Play again') }}
+        </button>
       </div>
     </section>
   </dialog>
@@ -180,7 +207,11 @@
 <script setup>
 import { t, number } from '../i18n';
 import { BUILDING_BY_ID } from '../data/town';
-import { computed, nextTick, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { useGameStore } from '../stores/gameStore';
+import { useAdvertising } from '../composables/useAdvertising';
+import { rewardBonusChest } from '../services/adGameplay';
+import { privacy } from '../services/privacy';
 import GameIcon from './GameIcon.vue';
 import TownBuilding from './town/TownBuilding.vue';
 import TownIcon from './town/TownIcon.vue';
@@ -210,9 +241,32 @@ const props = defineProps({
   canContinue: Boolean,
   rewards: { type: Array, default: () => [] },
 });
-const emit = defineEmits(['menu', 'replay', 'next', 'town', 'claimed']);
+const emit = defineEmits(['menu', 'replay', 'next', 'town', 'claimed', 'bonus']);
 import { useCampaignStore } from '../stores/campaignStore';
 const campaign = useCampaignStore();
+const game = useGameStore();
+const { ads, adState } = useAdvertising();
+const adNotice = ref('');
+const canOfferChest = computed(
+  () => game.playMode === 'normal' && campaign.canOfferAdChest(game.runId),
+);
+const rewardedAvailable = computed(() => {
+  void adState.value;
+  return ads.isAvailable('rewarded', 'bonus-chest');
+});
+async function watchBonusChest() {
+  adNotice.value = '';
+  const chest = await rewardBonusChest({ game, campaign, ads });
+  if (!chest) {
+    adNotice.value = 'No ad reward this time. You can keep playing.';
+    return;
+  }
+  emit('bonus', chest);
+  await nextTick();
+  chestIndex.value = props.rewards.findIndex((entry) => entry.id === chest.id);
+  showingChest.value = true;
+  focusAction();
+}
 const readyBuildings = computed(() =>
   Object.values(campaign.town.projects).filter(constructionReady),
 );
@@ -229,6 +283,13 @@ onMounted(() => {
   dialog.value.showModal();
   focusAction();
 });
+watch(
+  () => adState.value.active,
+  (active) => {
+    if (active) dialog.value?.close();
+    else dialog.value?.showModal();
+  },
+);
 const focusAction = async () => {
   await nextTick();
   dialog.value
@@ -273,6 +334,26 @@ const goalText = (source) => {
 };
 </script>
 <style scoped>
+.ad-chest-offer {
+  padding: 14px;
+  margin-bottom: 20px;
+  border: 1px solid #8c719c;
+  border-radius: 12px;
+  background: #291c39;
+}
+.ad-chest-offer p {
+  margin: 8px 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.ad-chest-offer button {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid #bfa56f;
+  border-radius: 8px;
+  background: #433352;
+  color: #fff0d1;
+}
 .victory-seal {
   display: grid;
   place-items: center;

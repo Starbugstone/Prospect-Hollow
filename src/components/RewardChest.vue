@@ -40,22 +40,26 @@
             t(
               phase === 'opened'
                 ? 'JACKPOT!'
-                : reward.source === 'speed'
+                : reward.source === 'ad'
                   ? 'A LITTLE EXTRA!'
-                  : reward.source === 'completion'
-                    ? 'YOU DID IT!'
-                    : 'HIGH SCORE!',
+                  : reward.source === 'speed'
+                    ? 'A LITTLE EXTRA!'
+                    : reward.source === 'completion'
+                      ? 'YOU DID IT!'
+                      : 'HIGH SCORE!',
             )
           }}
         </h2>
         <p>
           {{
             t(
-              reward.source === 'speed'
-                ? 'A quick puzzle and an extra surprise.'
-                : reward.source === 'completion'
-                  ? 'Every finished puzzle deserves a little treasure.'
-                  : 'You crushed the target. Here’s your score chest.',
+              reward.source === 'ad'
+                ? 'An extra thank-you for watching an ad.'
+                : reward.source === 'speed'
+                  ? 'A quick puzzle and an extra surprise.'
+                  : reward.source === 'completion'
+                    ? 'Every finished puzzle deserves a little treasure.'
+                    : 'You crushed the target. Here’s your score chest.',
             )
           }}
         </p>
@@ -233,7 +237,13 @@
     </div>
     <footer class="chest-controls">
       <p v-if="phase === 'closed'" class="chest-open-hint">
-        {{ t('Puzzle bonuses, coins, or a builder hammer await.') }}
+        {{
+          t(
+            reward.source === 'ad'
+              ? 'Puzzle supplies or a small coin bonus await.'
+              : 'Puzzle bonuses, coins, or a builder hammer await.',
+          )
+        }}
       </p>
       <p v-else-if="phase === 'charging' || phase === 'opening'" class="chest-open-hint">
         {{
@@ -281,12 +291,17 @@ const game = useGameStore();
 const phase = ref('closed');
 const roulette = ref(null);
 const campaign = useCampaignStore();
-const eligibleDrops = availableChestDrops(campaign);
+const eligibleDrops = availableChestDrops(campaign, props.reward.source);
 const savedPrize = props.reward.items[0];
 const prize = ref(
   eligibleDrops.some((drop) => drop.id === savedPrize.id)
     ? savedPrize
-    : chestReward('coins', props.reward.levelId, props.reward.economyVersion ?? 1),
+    : chestReward(
+        'coins',
+        props.reward.levelId,
+        props.reward.economyVersion ?? 1,
+        props.reward.source,
+      ),
 );
 // Each chest gets a fresh order, with two chances to catch every reward.
 const reelOrder = shuffleChestDrops(Math.random, eligibleDrops);

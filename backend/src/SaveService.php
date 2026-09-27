@@ -38,10 +38,17 @@ final class SaveService {
         }
         return $result;
     }
-    private function transaction(Request $r,bool $write,callable $operation): mixed {
+    private function transaction(Request $r,bool $write,callable $operation,bool $lockIdentity=false): mixed {
         $session=$this->auth->session($r,$write);$db=$this->database->get();
         if($write)$this->auth->limit('save:'.$session['player_id'],120,60);
-        return $db->transactional(function() use($db,$session,$operation) {
+        return $db->transactional(function() use($db,$session,$operation,$lockIdentity) {
+            if($lockIdentity) {
+                // Sign-in locks identity before player. Use that same order when
+                // deleting the identity so an old email link cannot recreate it.
+                $email=$db->fetchOne('SELECT email FROM players WHERE id=?',[$session['player_id']]);
+                if(!$email)throw new ApiError(401,'Please sign in again.');
+                $db->fetchOne('SELECT email_hash FROM identities WHERE email_hash=? FOR UPDATE',[$this->auth->hash('identity:'.$email)]);
+            }
             $account=$db->fetchAssociative('SELECT * FROM players WHERE id=? FOR UPDATE',[$session['player_id']]);
             if(!$account)throw new ApiError(401,'Please sign in again.');
             $this->auth->recheck($session);
@@ -145,7 +152,10 @@ final class SaveService {
         self::keys($body,['confirmation']);
         if(($body['confirmation']??null)!=='DELETE MY ACCOUNT')throw new ApiError(422,'Type DELETE MY ACCOUNT to confirm.');
         return $this->transaction($r,true,function($db,$a) {
-            $db->delete('login_intents',['email'=>$a['email']]);$db->delete('players',['id'=>$a['id']]);return ['ok'=>true];
-        });
+            $db->delete('login_intents',['email'=>$a['email']]);
+            $db->delete('players',['id'=>$a['id']]);
+            $db->delete('identities',['email_hash'=>$this->auth->hash('identity:'.$a['email'])]);
+            return ['ok'=>true];
+        },true);
     }
 }
