@@ -220,7 +220,7 @@ it('continues existing 144-level saves at 145 without resetting records and comp
   setActivePinia(createPinia());
   const c = useCampaignStore();
   expect(c.nextLevel).toBe(145);
-  expect(LEVEL_COUNT).toBe(324);
+  expect(LEVEL_COUNT).toBe(372);
   for (let id = 145; id <= LEVEL_COUNT; id++) {
     const runId = c.beginRun('normal', id);
     expect(runId).toBeTruthy();

@@ -4,6 +4,7 @@ import { LEVEL_COUNT, CHAPTERS, getLevelGemTypes } from '../../data/campaign.js'
 import { EXPANSION_LEVELS } from '../../data/expansion.js';
 import { getEarlyLevelSpec, stonePositions, iceRank } from '../../data/earlyLevels.js';
 import { layerCount } from './TileRules.js';
+import { CORE_CHARGES } from './ChapterMechanics.js';
 import { getLevelStarTarget } from '../../data/starRating.js';
 
 const createSeededRng = (seed) => {
@@ -177,6 +178,13 @@ const createExpansionLevel = (id) => {
     tiles[index].signal = spec.survey ? 'survey' : 'lantern';
     if (spec.survey) tiles[index].surveyOrder = order + 1;
   }
+  // Charge cores alternate their reward so later boards mix line and area bonuses.
+  for (const [order, index] of (spec.cores ?? []).entries())
+    Object.assign(tiles[index], {
+      signal: 'core',
+      signalHealth: CORE_CHARGES,
+      coreBonus: order % 2 ? 'bomb' : 'cross',
+    });
   if (spec.orders?.length) tiles[0].oreOrderGuide = true;
   const iceCells = tiles.flatMap((tile, index) =>
     tile.type === 'standard' &&
@@ -206,13 +214,15 @@ const createExpansionLevel = (id) => {
   const board = createPlayableBoard(layout, rng, { minMoves: DEFAULT_MIN_STARTING_MOVES, tiles });
   // Reward targets follow each puzzle's workload, including the chapter breathers.
   const chestTarget = Math.ceil((totalLayers * 380 + relicCount * 1500) / 500) * 500;
-  const layerLabel = spec.signals?.length
-    ? 'Tiles and light markers'
-    : tiles.some((tile) => tile.sealColor)
-      ? 'Ice, stone & seals'
-      : tiles.some((tile) => tile.chainHealth)
-        ? 'Ice, stone & chains'
-        : 'Ice & stone';
+  const layerLabel = spec.cores?.length
+    ? 'Tiles and charge cores'
+    : spec.signals?.length
+      ? 'Tiles and light markers'
+      : tiles.some((tile) => tile.sealColor)
+        ? 'Ice, stone & seals'
+        : tiles.some((tile) => tile.chainHealth)
+          ? 'Ice, stone & chains'
+          : 'Ice & stone';
   return {
     id,
     chapter,

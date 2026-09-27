@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest';
+import { LEVEL_COUNT } from '../src/data/campaign';
 import { Box3, Group, Raycaster, Vector3 } from 'three';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
@@ -23,7 +24,7 @@ it.each(ERAS.map((e) => e.id))(
     });
     d.town.era = era;
     d.town.buildings.railDepot = 3;
-    const root = addMineSite(d, new Group(), era, mineGrowth(324));
+    const root = addMineSite(d, new Group(), era, mineGrowth(LEVEL_COUNT));
     let triangles = 0,
       animated = 0;
     root.traverse((o) => {

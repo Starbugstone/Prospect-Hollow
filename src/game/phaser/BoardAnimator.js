@@ -2,6 +2,7 @@ import { spriteRef } from './spriteRefs';
 import { t } from '../../i18n';
 import { GEM_COLORS } from './SpriteLoader';
 import { GEM_TYPES } from '../engine/GemFactory';
+import { CORE_CHARGES } from '../engine/ChapterMechanics';
 import { gemTexture } from '../../data/gemAppearance';
 import { BonusEffects } from './BonusEffects';
 import {
@@ -578,6 +579,20 @@ export class BoardAnimator {
         .setDisplaySize(size * 0.43, size * 0.43)
         .setAlpha(lit ? 0.5 : 1);
       overlay.add(marker);
+      // Charge pips: three small static dots, rebuilt only when the charge changes.
+      if (tile.signal === 'core')
+        for (let pip = 0; pip < CORE_CHARGES; pip++)
+          overlay.add(
+            this.scene.add
+              .circle(
+                -size * 0.04 + pip * size * 0.13,
+                size * 0.41,
+                Math.max(2.5, size * 0.045),
+                pip < CORE_CHARGES - tile.signalHealth ? 0xffd36e : 0x1d3f55,
+                1,
+              )
+              .setStrokeStyle(1.5, 0xbff6ff, 0.95),
+          );
       if (tile.surveyOrder)
         overlay.add(
           this.scene.add
