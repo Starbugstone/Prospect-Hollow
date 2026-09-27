@@ -41,8 +41,8 @@ Run `php bin/cleanup.php` daily to remove expired sessions, links, rate buckets 
 
 Use `./scripts/backup-database.sh` for local PostgreSQL dumps. Protect backups as account data; restore into a separate database and verify account recovery and revisions before switching traffic. Hosting backup schedules, SMTP delivery and disaster recovery remain operator responsibilities. The previous benchmark measured the removed authoritative prototype and is historical evidence only.
 
-Quality CI tests both databases, the packaged application and the hosting hooks. The o2switch poller deploys the exact `preprod` commit only after successful push CI; GitHub uploads no deployment artifact. Azure deployment was removed and Vercel Git deployments are disabled.
+Quality CI tests both databases, the packaged application and the hosting hooks. Independent o2switch pollers deploy the exact `preprod` commit to preprod and the exact `main` commit to production, each only after successful push CI for its configured branch. GitHub uploads no deployment artifact. This branch removes the Azure workflow and disables Vercel Git deployments; these files must reach `main` as part of the production migration.
 
-## Preproduction branch
+## Hosted environments
 
-PR #38 targets `preprod`. The repository is prepared for the verified o2switch polling deployment at `https://preprod.prospecthollow.starbugstone.com`. Host resources and polling have not been configured or activated. Follow the [preprod setup guide](preprod.md). The future production domain is `https://prospecthollow.starbugstone.com`.
+Follow the [preprod setup guide](preprod.md) for `preprod` at `https://preprod.prospecthollow.starbugstone.com` and the [production setup guide](production.md) for `main` at `https://prospecthollow.starbugstone.com`. Both use the same o2switch account with separate installations, Git checkouts, databases, secrets and cron entries. Repository setup alone does not activate production or migrate its domain from Vercel.

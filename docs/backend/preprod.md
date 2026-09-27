@@ -1,17 +1,19 @@
 # Preprod automatic deployment
 
-PR [#38](https://github.com/Starbugstone/Prospect-Hollow/pull/38) targets `preprod`, created from `main`. After merge, a successful **push** run of `.github/workflows/quality.yml` for the current `preprod` SHA makes that exact commit eligible for the o2switch poller. Pull-request runs, `main` runs, failed runs and stale commits cannot authorize deployment.
+A successful **push** run of `.github/workflows/quality.yml` for the current `preprod` SHA makes that exact commit eligible for the o2switch poller. Pull-request runs, `main` runs, failed runs and stale commits cannot authorize deployment.
 
-| Target            | URL                                               | Deployment configuration                                            |
-| ----------------- | ------------------------------------------------- | ------------------------------------------------------------------- |
-| Preprod           | `https://preprod.prospecthollow.starbugstone.com` | `preprod` → successful `quality.yml` push run → hosting build       |
-| Future production | `https://prospecthollow.starbugstone.com`         | Reserved; no production target or branch activation configured here |
+| Target     | URL                                               | Deployment configuration                                                     |
+| ---------- | ------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Preprod    | `https://preprod.prospecthollow.starbugstone.com` | `preprod` → successful `quality.yml` push run → preprod host poller          |
+| Production | `https://prospecthollow.starbugstone.com`         | `main` → successful `quality.yml` push run → separate production host poller |
+
+The [production setup guide](production.md) configures the second target. Each site requires its own installation and cron entry; merging this code alone does not activate production.
 
 This uses the [verified test-auto-deploy template](https://github.com/Starbugstone/test-auto-deploy/tree/a5270a76b4acfdf5c89f5c63321468f8bec5229d). Its controller is copied unchanged, with application-specific build/preparation hooks. The host fetches/builds the exact checked commit, verifies PHP/database readiness and its release identity, activates it through `current`, and retains three successful versions. Failed readiness restores the previous code; database migrations are not reversed by code rollback.
 
-## One-time hosting setup, after this PR merges
+## One-time hosting setup
 
-Nothing has been configured on the host by this work. Use a **separate** preprod database, domain and deployment root. The example checkout is `/home/CPANEL_USER/repositories/prospect-hollow`; the deployment root is `/home/CPANEL_USER/apps/prospect-hollow-preprod`. Replace the account and tool paths below with the actual hosting values.
+These repository instructions do not verify or change the installed host configuration. Use a **separate** preprod database, domain and deployment root. The example checkout is `/home/CPANEL_USER/repositories/prospect-hollow`; the deployment root is `/home/CPANEL_USER/apps/prospect-hollow-preprod`. Replace the account and tool paths below with the actual hosting values.
 
 1. Connect/clone this GitHub repository on hosting and check out `preprod`. For private Git access, install a dedicated read-only deploy key and verify GitHub's host fingerprint. The hosting API token needs Actions read access to this repository, even for a public checkout. Do not copy the template demo's credentials or deployment directory.
 2. Select PHP 8.3+ with PDO/MySQL or PostgreSQL, intl and the locked Composer requirements; a Composer PHP executable/PHAR; and Node/npm 24. Node is used for builds only. Create the preprod database/user, SMTP account and domain. The new schema must not be imported over the old prototype database.
@@ -24,7 +26,7 @@ Nothing has been configured on the host by this work. Use a **separate** preprod
    bash "$project_checkout/scripts/o2switch/install-preprod.sh" "$project_root" "$project_php"
    ```
 
-   The installer creates the private controller, custom hooks, preprod configuration and application environment example. Polling starts disabled. Reinstallation preserves existing configuration, secrets and enable state; pause polling before installing later controller updates.
+   The installer creates the private controller, custom hooks, preprod configuration and application environment example. Polling starts disabled. Reinstallation preserves existing configuration, secrets and enable state; pause polling before installing later controller updates. It refuses an existing configuration for another target before replacing control code.
 
 4. Complete `control/config.json`: verify `repository_path`, the Composer PHP executable, Node binary directory and optional SSH key path. Repository, branch, workflow and URL are already set to this project, `preprod`, `quality.yml` and the preprod domain. Keep `profile=custom`, `health_mode=symfony`, the two installed hook paths and `report_github=false`.
 5. Privately edit `shared/.env.local`: generate `APP_SECRET`, enter the preprod database connection and encrypted SMTP credentials, and verify `MAIL_FROM`. `APP_ORIGIN` is already the preprod HTTPS URL. Put the API token into `shared/github-token`. Keep these files mode `600`; never put secrets into GitHub workflow arguments or frontend `VITE_*` settings. This project's custom profile uses the provided environment example and private editing, not the upstream generic setup wizard.
@@ -54,4 +56,4 @@ Nothing has been configured on the host by this work. Use a **separate** preprod
 
 CI tests controller rollback/retention/CI eligibility, readiness identity and outage behavior, installer preservation, plus a real build/preparation of these hooks against PostgreSQL. Both database jobs check the release-health protocol. The packaged application check verifies actual `/api/health` routing.
 
-For maintenance, disable polling, wait for running work, back up the database and follow the [template maintenance guide](https://github.com/Starbugstone/test-auto-deploy/blob/a5270a76b4acfdf5c89f5c63321468f8bec5229d/docs/o2switch-setup.md#8-maintenance-retry-and-rollback). Retained code releases do not replace database backups. Production will need its own separate root, database, secrets and explicit deployment configuration when ready.
+For maintenance, disable polling, wait for running work, back up the database and follow the [template maintenance guide](https://github.com/Starbugstone/test-auto-deploy/blob/a5270a76b4acfdf5c89f5c63321468f8bec5229d/docs/o2switch-setup.md#8-maintenance-retry-and-rollback). Retained code releases do not replace database backups. Production uses the [separate main-branch installation](production.md), including a separate Git checkout so concurrent fetches cannot share `FETCH_HEAD`.
