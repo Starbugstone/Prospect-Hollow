@@ -16,6 +16,7 @@ const groups = {
       'seal-emerald',
       'lantern',
       'survey',
+      'core',
     ].map((t) => [`tile-${t}`, `obstacles/${t}.svg`, 160]),
     ...['tnt', 'color-wand', 'clear-row', 'shuffle', 'tile-breaker'].map((t) => [
       `power-${t}`,

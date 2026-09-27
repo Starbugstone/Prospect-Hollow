@@ -1,4 +1,5 @@
 import { vi as testTiming } from 'vitest';
+import { LEVEL_COUNT } from '../src/data/campaign';
 // Full geometry galleries and long cosmetic simulations may exceed the default 5s on CI.
 testTiming.setConfig({ testTimeout: 20000 });
 import { ERAS } from '../src/data/eras';
@@ -317,7 +318,7 @@ it('fills cart cargo without changing mine scenery, navigation or village life',
   const actors = [...view.actors];
   const rebuild = vi.spyOn(view, 'update');
   const before = JSON.stringify(town);
-  for (const completed of [1, 6, 24, 54, 160, 323]) {
+  for (const completed of [1, 6, 24, 54, 160, LEVEL_COUNT - 1]) {
     view.changeTown(town, labels, completed, null);
     expect(view.staticScenery.entries.get('mine-works').group).toBe(site);
     expect(view.buildingRenderer.batches.get(site)).toBe(geometry);

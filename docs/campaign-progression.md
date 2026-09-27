@@ -2,6 +2,8 @@
 
 For the current four-era, 144-level campaign, see the [Motor Age progression review](motor-age-progression.md). The measurements below document the earlier 60-level tuning pass.
 
+Levels 325–372 (Tomorrow City) and the charge core mechanic are documented in [Tomorrow City mine chapters](tomorrow-levels.md).
+
 The campaign keeps all 60 level IDs and existing saves. The opening board still measures 6 × 7, but now uses four jewel types. Its 32 single-layer ice targets are tuned for a complete introductory puzzle: the easiest levels should typically take 8–10 moves, then grow gradually. Players have no move limit; score and active time award optional chests. New obstacle introductions pause the clock.
 
 Each six-level chapter owns its dimensions and active jewel count. The count increases to five only when the board grows at level 13. It stays at five when the board grows again at 37: the extra room supports learning chains, seals and relic delivery. Jewel identities rotate every two levels, using different subsets of the existing six silhouettes. Opening boards, ordinary cascades, power refills and shuffle cascades all use the same explicit palette. Ruby, sapphire and emerald remain available wherever their seals appear.

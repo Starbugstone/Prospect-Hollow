@@ -78,6 +78,10 @@ function tileRenderer(mode) {
     setOrigin() {
       return this;
     },
+    setStrokeStyle() {
+      return this;
+    },
+    destroy() {},
   });
   const image = vi.fn((x, y, key, frame) => {
     // Model Phaser's real lookup: old standalone keys are absent in atlas mode.
@@ -85,13 +89,14 @@ function tileRenderer(mode) {
       throw new Error(`Missing texture: ${key}/${frame}`);
     return object();
   });
+  const circle = vi.fn(object);
   const animator = new BoardAnimator({
-    scene: { textures, add: { image, container: object, text: object } },
+    scene: { textures, add: { image, container: object, text: object, circle } },
     tileLayer: { add: vi.fn() },
   });
   animator.boardSize = animator.boardRows = 6;
   animator.cellSize = 48;
-  return { animator, image };
+  return { animator, image, circle };
 }
 it.each([
   ['atlas', 'ice'],
@@ -137,6 +142,25 @@ it.each(['atlas', 'svg'])('renders lantern and survey markers from %s textures',
     ),
   );
 });
+it.each(['atlas', 'svg'])(
+  'renders a charge core and redraws its pips only when the charge changes (%s)',
+  (mode) => {
+    const { animator, image, circle } = tileRenderer(mode);
+    animator.tiles = [{ signal: 'core', signalHealth: 2 }];
+    animator.drawTileOverlay(0);
+    expect(image.mock.calls.map((args) => args.slice(2))).toEqual([
+      mode === 'atlas' ? ['board-core', 'tile-core'] : ['tile-core', undefined],
+    ]);
+    expect(circle.mock.calls.map((args) => args[3])).toEqual([0xffd36e, 0x1d3f55, 0x1d3f55]);
+    animator.drawTileOverlay(0);
+    expect(circle).toHaveBeenCalledTimes(3);
+    animator.tiles[0].signalHealth = 0;
+    animator.drawTileOverlay(0);
+    expect(circle.mock.calls.slice(3).map((args) => args[3])).toEqual([
+      0xffd36e, 0xffd36e, 0xffd36e,
+    ]);
+  },
+);
 function attach() {
   game.attachRenderer({ scene: {}, boardContainer: {} });
 }

@@ -176,6 +176,28 @@
         <ellipse v-for="n in 5" :key="n" cx="150" :cy="400 + n * 52" rx="20" ry="9" />
         <ellipse v-for="n in 5" :key="n" cx="1290" :cy="420 + n * 52" rx="20" ry="9" />
       </g>
+      <g v-if="futuristic" class="mine-tomorrow" fill="none" stroke="var(--mine-accent)">
+        <path
+          d="M40 930V720a130 130 0 0 1 260 0V930M1140 930V720a130 130 0 0 1 260 0V930"
+          stroke-width="6"
+          opacity=".38"
+        />
+        <path
+          d="M83 930V720m87-116V930m87-210V930M1183 930V720m87-116V930m87-210V930"
+          stroke-width="2"
+          opacity=".22"
+        />
+        <path
+          d="M230 118Q720 238 1210 118M260 150Q720 262 1180 150"
+          stroke-width="4"
+          stroke-dasharray="26 18"
+          opacity=".3"
+        />
+        <ellipse cx="1296" cy="330" rx="64" ry="20" stroke-width="4" opacity=".4" />
+        <circle cx="1296" cy="330" r="22" fill="var(--mine-accent)" stroke="none" opacity=".22" />
+        <circle cx="140" cy="360" r="9" fill="var(--mine-accent)" stroke="none" opacity=".35" />
+        <path d="M112 396h56M124 412h32" stroke-width="3" opacity=".3" />
+      </g>
       <g fill="none" stroke="var(--mine-edge)" opacity=".18">
         <path d="M360 1000 630 785M1090 1000 810 785" stroke-width="9" />
         <path d="M394 971H1052M450 925H993M508 881H935M564 837H876" stroke-width="12" />
@@ -185,7 +207,12 @@
 </template>
 <script setup>
 import { computed } from 'vue';
+import { TOMORROW_CHAPTERS } from '../data/tomorrowLevels';
 const props = defineProps({ theme: String, era: { type: String, default: 'frontier' } });
+// Tomorrow City chambers share one lightweight vector layer: domes, a hover lane and an orbit.
+const futuristic = computed(() =>
+  TOMORROW_CHAPTERS.some((chapter) => chapter.theme === props.theme),
+);
 const crystals = computed(() => {
   const offset = [
     'lantern',
@@ -212,6 +239,7 @@ const crystals = computed(() => {
     'garden',
     'chrome',
     'sunrise',
+    ...TOMORROW_CHAPTERS.map((chapter) => chapter.theme),
   ].indexOf(props.theme);
   return [
     [90, 550 + offset * 14, -22],

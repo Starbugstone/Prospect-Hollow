@@ -106,6 +106,9 @@ export const iceRank = (index, cols, rows, motif) => {
     steps: Math.abs(x - (1 + (y % (cols - 2)))) + Math.abs(y - cy) * 0.2,
     pool: Math.abs(x - cx) * 0.4 + Math.abs(y - cy) * 2,
     arch: Math.abs(Math.abs(x - cx) + Math.abs(y - cy) - 2),
+    // Appended Tomorrow City shapes: a rounded dome over an open floor, and an orbit ring.
+    dome: Math.abs(Math.hypot(x - cx, (y - (rows - 3)) * 0.9) - 3.2),
+    orbit: Math.abs(Math.hypot((x - cx) / 2.2, (y - cy) / 3.1) - 1) * 3,
   };
   return edge + ranks[motif];
 };

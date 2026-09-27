@@ -3,7 +3,7 @@ import { createGem, randomGemType, GEM_TYPES } from './GemFactory.js';
 import { detectBonusFromMatches } from './MatchPatterns.js';
 import { isAnchored, neighborsOf } from './TileRules.js';
 import { BonusActivator } from './BonusActivator.js';
-import { signalTargets } from './ChapterMechanics.js';
+import { signalTargets, isChargeCore, coreReleaseTarget } from './ChapterMechanics.js';
 
 const matchEngine = new MatchEngine();
 const bonusActivator = new BonusActivator();
@@ -44,6 +44,8 @@ export class TileManager {
       fusion: match.fusion,
     }));
     let totalLayersCleared = 0;
+    // A charge core gains at most one charge per move, however long the cascade.
+    const chargedCores = new Set();
     let relicsCollected = 0;
 
     while (pendingMatches.length) {
@@ -151,9 +153,29 @@ export class TileManager {
       for (const index of hasSignals
         ? signalTargets(tiles, [...impacted, ...protectedIndices], totalCols, totalRows)
         : []) {
-        tiles[index].signalHealth = 0;
+        const core = isChargeCore(tiles[index]);
+        if (core && chargedCores.has(index)) continue;
+        if (core) chargedCores.add(index);
+        // Lanterns and survey markers light at once; a core gains one charge.
+        tiles[index].signalHealth = core ? tiles[index].signalHealth - 1 : 0;
         totalLayersCleared++;
-        step.tileUpdates.push({ index, signalHealth: 0 });
+        step.tileUpdates.push({ index, signalHealth: tiles[index].signalHealth });
+        if (!core || tiles[index].signalHealth) continue;
+        const target = coreReleaseTarget(
+          workingBoard,
+          tiles,
+          index,
+          totalCols,
+          totalRows,
+          protectedIndices,
+        );
+        if (target < 0) continue;
+        // Like an earned cascade bonus: the gem becomes the bonus and is not cleared.
+        const gem = createGem(tiles[index].coreBonus ?? 'cross');
+        workingBoard[target] = gem;
+        protectedIndices.add(target);
+        cleared.delete(target);
+        step.bonuses.push({ type: gem.type, index: target, gem, core: index });
       }
       damageTargets.forEach((index) => {
         if (fusionTargets.has(index)) {

@@ -24,6 +24,14 @@ export const OBSTACLES = [
     present: (tile) => tile.oreOrderGuide === true,
   },
   {
+    id: 'charge-core',
+    name: 'Charge core',
+    art: '/art/obstacles/core.svg',
+    instruction:
+      'Match on or beside the core to charge it, one charge per move. Three charges release a free bonus gem. Gems pass freely.',
+    present: (tile) => tile.signal === 'core',
+  },
+  {
     id: 'ice',
     name: 'Ice',
     art: '/art/ice/frost.svg',
