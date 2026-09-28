@@ -32,10 +32,9 @@ import { buildingWalk } from './TownPedestrians';
 import { TownVipArrivals } from './TownVipArrivals';
 import { hasVisitorTransport } from '../../data/visitorArrivals';
 import { villagerIdentity, vipVisitor } from '../../data/villagers';
-import { guestVipIdentity } from '../../data/guestVip';
 import { SIDEWALK_OFFSET } from './TownTraffic';
 import { updateTownLocomotion } from './TownLocomotion';
-import { townWardrobe, vipOutfit } from '../../data/townWardrobes';
+import { townWardrobe, vipOutfit, guestOutfit } from '../../data/townWardrobes';
 import { MINE_SHAFT, addMineShaft, mineTrackHeight, mineTrackPitch } from './TownMineShaft';
 import { TownPresentation } from './TownPresentation';
 import { ERA_CONSTRUCTION } from '../../data/mineEvolution';
@@ -1623,14 +1622,10 @@ export class TownDiorama {
     prepareActorWalk(this, actor);
     return actor;
   }
-  // Every VIP arrival draws here: the latest share-link guest arrives first after each
-  // new visit, then the usual random guests. A read-only visit has no VIPs at all.
+  // Every random VIP draw goes through here. A read-only shared town has no VIPs at all;
+  // the owner's share-link guest has its own arrival in TownVipArrivals.
   drawVip(seed, visit = 0) {
-    if (this.vipsHidden) return null;
-    const guest = this.town?.guestVip;
-    if (!guest || this.guestShown === guest.at) return vipVisitor(seed, visit);
-    this.guestShown = guest.at;
-    return guestVipIdentity(guest, villagerIdentity(seed).gender);
+    return this.vipsHidden ? null : vipVisitor(seed, visit);
   }
   setVillagerIdentity(actor, identity, outfitSeed = actor.seed ?? 0) {
     actor.root.userData.villager = identity;
@@ -1642,7 +1637,8 @@ export class TownDiorama {
     actor.shirt.scale.x = female ? 0.26 : 0.32;
     actor.vip.visible = !!identity.name;
     if (identity.name) {
-      const outfit = vipOutfit(eraEvolution(a.era), outfitSeed);
+      const profile = eraEvolution(a.era);
+      const outfit = identity.guest ? guestOutfit(profile) : vipOutfit(profile, outfitSeed);
       actor.root.userData.outfit = outfit;
       for (const part of ['shirt', 'trousers', 'boots', 'hat', 'accent'])
         for (const mesh of actor.clothing[part]) mesh.material = this.material(outfit[part]);

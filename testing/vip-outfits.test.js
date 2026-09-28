@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { ERAS, eraEvolution } from '../src/data/eras';
-import { vipOutfit, townWardrobe } from '../src/data/townWardrobes';
+import { vipOutfit, townWardrobe, guestOutfit, guestSuit } from '../src/data/townWardrobes';
 it('provides three reproducible, coordinated VIP outfits in every era', () => {
   const periods = new Set();
   for (const era of ERAS) {
@@ -25,4 +25,25 @@ it('provides three reproducible, coordinated VIP outfits in every era', () => {
   }
   expect(periods.size).toBe(ERAS.length);
   expect(vipOutfit({ wardrobe: 'unknown' }, 11)).toEqual(vipOutfit({ wardrobe: 'frontier' }, 11));
+});
+it('dresses share-link guests in their own suit each era, never an ordinary VIP palette', () => {
+  const suits = new Set();
+  for (const era of ERAS) {
+    const profile = eraEvolution(era.id),
+      wardrobe = townWardrobe(profile),
+      outfit = guestOutfit(profile);
+    expect(wardrobe.guest).toHaveLength(5);
+    expect([outfit.shirt, outfit.trousers, outfit.hat, outfit.boots, outfit.accent]).toEqual(
+      wardrobe.guest,
+    );
+    for (const palette of wardrobe.palettes) expect(palette).not.toContain(outfit.shirt);
+    expect(outfit).toMatchObject({ variant: 'guest', accessory: 'scarf' });
+    if (wardrobe.hat === 'none') expect(outfit.hatVisible).toBe(false);
+    suits.add(outfit.shirt);
+  }
+  // Periods sharing one wardrobe share its suit; every distinct wardrobe has its own.
+  expect(suits.size).toBe(new Set(ERAS.map((era) => townWardrobe(eraEvolution(era.id)))).size);
+  expect(guestOutfit({ wardrobe: 'unknown' })).toEqual(guestOutfit({ wardrobe: 'frontier' }));
+  // A future period without a guest suit falls back to the default one.
+  expect(guestSuit({ palettes: [] })).toEqual(guestSuit(townWardrobe({ wardrobe: 'frontier' })));
 });

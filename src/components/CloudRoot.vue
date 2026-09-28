@@ -76,7 +76,7 @@
         })
       }}</template>
       <template v-if="visitorNotice.town">{{
-        t('The mayor of {town} visited your village.', { town: visitorNotice.town })
+        t('A visitor from {town} is coming to see your village.', { town: visitorNotice.town })
       }}</template>
     </p>
     <button

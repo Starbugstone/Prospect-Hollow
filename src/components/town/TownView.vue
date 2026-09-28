@@ -206,6 +206,7 @@
           @raid-complete="finishRaid"
           @camera-distance="cameraDistance = $event"
           @vip-spend="collectVipSpending"
+          @guest-vip="campaign.markGuestSeen"
         />
         <TownResourceCollection
           v-if="collection"
