@@ -110,8 +110,11 @@ describe('append-only Tomorrow City campaign', () => {
         expect(tile.chainHealth ?? 0).toBe(0);
         expect(tile.exit).toBeFalsy();
         expect(level.board[index].type).not.toBe('relic');
-        expect(tile.signalHealth).toBe(CORE_CHARGES);
+        // Chapter 55 teaches three-charge cores; later chapters need four or five.
+        expect(tile.coreCharges).toBe(level.id <= 330 ? 3 : level.id <= 360 ? 4 : 5);
+        expect(tile.signalHealth).toBe(tile.coreCharges);
         expect(['cross', 'bomb']).toContain(tile.coreBonus);
+        if (level.id > FIRST) expect(tile.coreBonus).toBe('bomb');
       }
       for (const [x, y] of [
         [0, 0],
@@ -203,6 +206,19 @@ describe('charge core resolution', () => {
     expect(result.steps.filter((step) => step.cleared.length).length).toBeGreaterThan(1);
     expect(state.tiles[12].signalHealth).toBe(2);
     expect(result.layersCleared).toBe(1);
+  });
+
+  it('needs one move per authored charge before releasing, never more', () => {
+    const state = makeBoard();
+    state.tiles[12] = { ...core(5, 'bomb'), coreCharges: 5 };
+    let board = state.board;
+    for (let move = 1; move <= 5; move++) {
+      const result = hit({ ...state, board }, [11]);
+      board = result.board;
+      expect(state.tiles[12].signalHealth).toBe(5 - move);
+      const releases = result.steps.flatMap((step) => step.bonuses.filter((b) => b.core === 12));
+      expect(releases).toHaveLength(move === 5 ? 1 : 0);
+    }
   });
 
   it.each(['tnt', 'tile_breaker', 'clear_row', 'color_wand', 'bonus-activation'])(
@@ -299,7 +315,7 @@ describe('charge cores can never block completion', () => {
     vi.useRealTimers();
   });
 
-  it.each([FIRST, 348, 372])(
+  it.each([FIRST, 330, 348, 354, 362, 372])(
     'completes level %i by normal play beyond 100 moves after the speed target elapsed',
     async (id) => {
       let random = id * 7919;
@@ -363,7 +379,7 @@ describe('Tomorrow City pacing', () => {
     }
   });
 
-  it('eases into the new mechanic and keeps the chapters below a slog', () => {
+  it('eases into the new mechanic, ramps toward the late campaign and stays below a slog', () => {
     const turns = (ids) =>
       ids.flatMap((id) => runs.get(id).map((run) => run.turns)).sort((a, b) => a - b);
     const median = (values) => values[Math.floor(values.length / 2)];
@@ -379,7 +395,13 @@ describe('Tomorrow City pacing', () => {
           .sort((a, b) => a - b),
       ),
     ).toBeLessThanOrEqual(16);
-    expect(median(all)).toBeLessThanOrEqual(22);
+    // Measured (30 seeds): chapter medians 17, 19, 19, 19, 19, 20, 21, 21.
+    expect(median(all)).toBeGreaterThanOrEqual(17);
+    expect(median(all)).toBeLessThanOrEqual(23);
+    expect(median(later)).toBeGreaterThanOrEqual(18);
+    expect(median(turns([...runs.keys()].filter((id) => id > FIRST + 35)))).toBeGreaterThanOrEqual(
+      median(turns([...runs.keys()].filter((id) => id > FIRST + 5 && id <= FIRST + 17))),
+    );
     expect(all[Math.ceil(all.length * 0.9) - 1]).toBeLessThanOrEqual(42);
     // Rest puzzles stay lighter than their chapter finales.
     for (let chapter = 0; chapter < 8; chapter++) {

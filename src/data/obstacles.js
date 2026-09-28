@@ -28,7 +28,7 @@ export const OBSTACLES = [
     name: 'Charge core',
     art: '/art/obstacles/core.svg',
     instruction:
-      'Match on or beside the core to charge it, one charge per move. Three charges release a free bonus gem. Gems pass freely.',
+      'Match on or beside the core to charge it, one charge per move. When every pip is lit, it releases a free bonus gem. Gems pass freely.',
     present: (tile) => tile.signal === 'core',
   },
   {

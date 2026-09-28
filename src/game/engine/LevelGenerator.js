@@ -4,7 +4,7 @@ import { LEVEL_COUNT, CHAPTERS, getLevelGemTypes } from '../../data/campaign.js'
 import { EXPANSION_LEVELS } from '../../data/expansion.js';
 import { getEarlyLevelSpec, stonePositions, iceRank } from '../../data/earlyLevels.js';
 import { layerCount } from './TileRules.js';
-import { CORE_CHARGES } from './ChapterMechanics.js';
+import { CORE_BONUSES, CORE_CHARGES } from './ChapterMechanics.js';
 import { getLevelStarTarget } from '../../data/starRating.js';
 
 const createSeededRng = (seed) => {
@@ -178,12 +178,15 @@ const createExpansionLevel = (id) => {
     tiles[index].signal = spec.survey ? 'survey' : 'lantern';
     if (spec.survey) tiles[index].surveyOrder = order + 1;
   }
-  // Charge cores alternate their reward so later boards mix line and area bonuses.
+  // Charge cores cycle through their authored rewards (cross, then bomb, by default).
   for (const [order, index] of (spec.cores ?? []).entries())
     Object.assign(tiles[index], {
       signal: 'core',
-      signalHealth: CORE_CHARGES,
-      coreBonus: order % 2 ? 'bomb' : 'cross',
+      signalHealth: spec.coreCharges ?? CORE_CHARGES,
+      coreCharges: spec.coreCharges ?? CORE_CHARGES,
+      coreBonus: (spec.coreBonuses ?? CORE_BONUSES)[
+        order % (spec.coreBonuses ?? CORE_BONUSES).length
+      ],
     });
   if (spec.orders?.length) tiles[0].oreOrderGuide = true;
   const iceCells = tiles.flatMap((tile, index) =>

@@ -5,8 +5,9 @@
 //   .  open cell (ice is seeded around the authored structures)
 //   #  stone          X  reinforced stone     c  chained gem
 //   r/b/g  ruby/sapphire/emerald seal        R  relic   E  bottom exit
-//   o  charge core (new): a floor marker that fills from three nearby matches
-//      and releases a free bonus gem; gems fall through it like a lantern
+//   o  charge core (new): a floor marker that gains one charge per nearby
+//      move and releases a free bonus gem when full; gems fall through it.
+//      Chapter 55 teaches three-charge cores; later chapters use four.
 //   l  lantern        1–4  numbered survey markers
 // Guardrails (tested): clear corners, stone-free side columns, open bottom
 // rows, at most two ice layers, cores never on stone, chains or relics.
@@ -15,6 +16,7 @@
 const CHAPTER_PLANS = [
   {
     id: 'dome-gardens',
+    coreBonuses: ['bomb'],
     name: 'Dome gardens',
     description: 'Charge the solar cores beneath the glass domes of Tomorrow City.',
     motif: 'dome',
@@ -32,20 +34,21 @@ const CHAPTER_PLANS = [
           .......
           .......`,
         ice: 42,
+        coreBonuses: ['cross'],
         tip: 'Match on or beside the charge core three times. When it is full, it gives you a free bonus gem.',
       },
       {
         board: `
           .......
           .......
-          ..#....
+          ..#.#..
           .......
           .o...o.
           .......
-          ....#..
+          ..#.#..
           .......
           .......`,
-        ice: 64,
+        ice: 76,
         tip: 'Two cores to charge. Their bonuses can reach the stones for you.',
       },
       {
@@ -53,13 +56,13 @@ const CHAPTER_PLANS = [
           .......
           ..R.R..
           .......
-          .......
+          .c...c.
           ...o...
           .#...#.
           .......
           .......
           ..E.E..`,
-        ice: 56,
+        ice: 66,
         tip: 'Charge the core, then use its bonus to open a path for the seed pods.',
       },
       {
@@ -67,13 +70,13 @@ const CHAPTER_PLANS = [
           .......
           .......
           .X...X.
-          .......
+          ...#...
           .......
           .o...o.
-          .......
+          .c...c.
           .......
           .......`,
-        ice: 66,
+        ice: 76,
         tip: 'Save a core bonus for the reinforced shelves.',
       },
       {
@@ -87,7 +90,7 @@ const CHAPTER_PLANS = [
           .......
           .......
           .......`,
-        ice: 50,
+        ice: 62,
         tip: 'A quiet canopy. Enjoy the open board and flowing cascades.',
       },
       {
@@ -96,18 +99,20 @@ const CHAPTER_PLANS = [
           .R...R.
           .......
           ..#.#..
-          .......
+          ...X...
           .o...o.
-          .......
+          .c...c.
           .......
           .E...E.`,
-        ice: 68,
+        ice: 76,
         tip: 'Bring both seed pods home, then finish charging the garden cores.',
       },
     ],
   },
   {
     id: 'maglev-loops',
+    coreCharges: 4,
+    coreBonuses: ['bomb'],
     name: 'Maglev loops',
     description: 'Release the chained capsules along the silent maglev loops.',
     motif: 'orbit',
@@ -124,7 +129,7 @@ const CHAPTER_PLANS = [
           ..c.c..
           .......
           .......`,
-        ice: 58,
+        ice: 66,
         tip: 'Match through each chained gem. Every nearby match also charges the core.',
       },
       {
@@ -138,7 +143,7 @@ const CHAPTER_PLANS = [
           .c...c.
           .......
           .......`,
-        ice: 64,
+        ice: 72,
         tip: 'Follow the loop from both sides and charge the cores as you go.',
       },
       {
@@ -149,10 +154,10 @@ const CHAPTER_PLANS = [
           .c.o.c.
           .......
           ..#.#..
-          .......
+          ..c.c..
           .......
           .E...E.`,
-        ice: 66,
+        ice: 74,
         tip: 'Release the chains beneath the express pods so they can glide to the exits.',
       },
       {
@@ -166,7 +171,7 @@ const CHAPTER_PLANS = [
           ...o...
           .......
           .......`,
-        ice: 74,
+        ice: 78,
         tip: 'Charge the upper core between the reinforced shelves to break them open.',
       },
       {
@@ -180,7 +185,7 @@ const CHAPTER_PLANS = [
           .......
           .......
           .......`,
-        ice: 52,
+        ice: 50,
         tip: 'Night service. A gentle loop with room for combinations.',
       },
       {
@@ -194,13 +199,15 @@ const CHAPTER_PLANS = [
           .......
           .......
           ..E.E..`,
-        ice: 70,
+        ice: 72,
         tip: 'Send both pods around the grand loop, then finish the remaining ice.',
       },
     ],
   },
   {
     id: 'solar-terraces',
+    coreCharges: 4,
+    coreBonuses: ['bomb'],
     name: 'Solar terraces',
     description: 'Collect sun-bright ore across the stepped solar terraces.',
     motif: 'steps',
@@ -211,14 +218,14 @@ const CHAPTER_PLANS = [
           .......
           .......
           .#.....
-          .......
+          ....#..
           ...o...
           .......
           .....#.
           .......
           .......`,
-        ice: 62,
-        orders: [['emerald', 12]],
+        ice: 70,
+        orders: [['emerald', 18]],
         tip: 'Collect the pictured ore while you charge the core. Every match counts.',
       },
       {
@@ -232,8 +239,8 @@ const CHAPTER_PLANS = [
           ....o..
           .......
           .......`,
-        ice: 64,
-        orders: [['ruby', 16]],
+        ice: 76,
+        orders: [['ruby', 20]],
         tip: 'Work down the terraces. Core bonuses collect ore too.',
       },
       {
@@ -247,8 +254,8 @@ const CHAPTER_PLANS = [
           .......
           .......
           .E...E.`,
-        ice: 60,
-        orders: [['sapphire', 14]],
+        ice: 66,
+        orders: [['sapphire', 18]],
         tip: 'Guide the harvest down the open side of each terrace.',
       },
       {
@@ -262,10 +269,10 @@ const CHAPTER_PLANS = [
           .......
           .......
           .......`,
-        ice: 72,
+        ice: 76,
         orders: [
-          ['emerald', 14],
-          ['sapphire', 14],
+          ['emerald', 16],
+          ['sapphire', 16],
         ],
         tip: 'Two orders on the high terrace. Charge a core beside each reinforced shelf.',
       },
@@ -292,17 +299,19 @@ const CHAPTER_PLANS = [
           .......
           .....#.
           .o...o.
-          .......
+          ..c.c..
           .......
           ..E.E..`,
-        ice: 76,
-        orders: [['emerald', 16]],
+        ice: 78,
+        orders: [['emerald', 20]],
         tip: 'Solar noon: fill the order, charge every core and bring the relics home.',
       },
     ],
   },
   {
     id: 'hover-lanes',
+    coreCharges: 4,
+    coreBonuses: ['bomb'],
     name: 'Hover lanes',
     description: 'Clear the hover lanes and guide the cargo pods to their docks.',
     motif: 'ribbon',
@@ -313,13 +322,13 @@ const CHAPTER_PLANS = [
           .......
           ...R...
           .......
-          .o...o.
+          .o.c.o.
           .......
-          .......
+          ..#.#..
           .......
           .......
           ...E...`,
-        ice: 64,
+        ice: 76,
         tip: 'Open the central lane below the cargo pod. The side cores keep bonuses coming.',
       },
       {
@@ -333,7 +342,7 @@ const CHAPTER_PLANS = [
           .......
           .......
           ..E.E..`,
-        ice: 68,
+        ice: 80,
         tip: 'Clear both lanes. A charged core can open a lane in one move.',
       },
       {
@@ -347,7 +356,7 @@ const CHAPTER_PLANS = [
           .......
           .......
           .E.E.E.`,
-        ice: 52,
+        ice: 64,
         tip: 'Three pods, three docks. Work the open lanes beside the central stone.',
       },
       {
@@ -361,7 +370,7 @@ const CHAPTER_PLANS = [
           .......
           .......
           ..E.E..`,
-        ice: 70,
+        ice: 80,
         tip: 'Rush hour: break the reinforced shelves, then send the pods through.',
       },
       {
@@ -390,13 +399,15 @@ const CHAPTER_PLANS = [
           .......
           .E.E.E.`,
         ice: 68,
-        orders: [['sapphire', 14]],
+        orders: [['sapphire', 16]],
         tip: 'Bring every cargo pod down the skyway, then clear the remaining ice.',
       },
     ],
   },
   {
     id: 'orbital-observatory',
+    coreCharges: 4,
+    coreBonuses: ['bomb'],
     name: 'Orbital observatory',
     description: 'Align the numbered survey lights around the orbital observatory.',
     motif: 'orbit',
@@ -414,29 +425,30 @@ const CHAPTER_PLANS = [
           .......
           .......
           ..1.2..
-          .......
+          .c...c.
           ...o...
-          .......
-          ..3....
+          .#...#.
+          ..3.4..
           .......
           .......`,
-        ice: 64,
+        ice: 62,
+        orders: [['emerald', 20]],
         tip: 'Light the numbered markers in order. The core in the middle helps with every step.',
       },
       {
         board: `
           .......
-          .......
+          ...R...
           ..1....
-          .....2.
+          .c...2.
           ...o...
           .4.....
           .#..3..
           .......
-          .......`,
-        ice: 72,
-        orders: [['ruby', 18]],
-        tip: 'Follow the orbit from one to four. Charge the core to light a far marker.',
+          ...E...`,
+        ice: 80,
+        orders: [['ruby', 20]],
+        tip: 'Follow the orbit from one to four while the relic drops to its exit.',
       },
       {
         board: `
@@ -449,23 +461,23 @@ const CHAPTER_PLANS = [
           .3.#.4.
           .......
           ..E.E..`,
-        ice: 66,
+        ice: 62,
         tip: 'Light the survey trail on the way while the relics fall to the exits.',
       },
       {
         board: `
           .......
-          .......
+          .R...R.
           .1X.X2.
           ...o...
-          .c...c.
-          .......
+          ...c...
+          ...X...
           ..4.3..
           .......
-          .......`,
-        ice: 68,
-        orders: [['sapphire', 14]],
-        tip: 'An eclipse of reinforced stone. Save a core bonus for the next number.',
+          .E...E.`,
+        ice: 78,
+        orders: [['sapphire', 18]],
+        tip: 'An eclipse of reinforced stone. Light the next number while the relics fall to the exits.',
       },
       {
         board: `
@@ -478,7 +490,7 @@ const CHAPTER_PLANS = [
           .......
           .......
           .......`,
-        ice: 46,
+        ice: 58,
         tip: 'Low orbit. Two markers and plenty of room to rest.',
       },
       {
@@ -488,17 +500,19 @@ const CHAPTER_PLANS = [
           ...1...
           .4...2.
           ..#.#..
-          .......
+          .c...c.
           .o.3.o.
           .......
           .E...E.`,
-        ice: 72,
+        ice: 80,
         tip: 'Complete the full circle, charge every core and bring both relics home.',
       },
     ],
   },
   {
     id: 'capsule-commons',
+    coreCharges: 4,
+    coreBonuses: ['bomb'],
     name: 'Capsule commons',
     description: 'Open the colored capsule seals around the shared commons.',
     motif: 'pool',
@@ -519,10 +533,10 @@ const CHAPTER_PLANS = [
           .......
           ...o...
           .......
-          .......
+          ..#.#..
           .......
           .......`,
-        ice: 62,
+        ice: 76,
         orders: [['emerald', 18]],
         tip: 'Match rubies on the R seals. A core bonus opens a seal of any color.',
       },
@@ -537,8 +551,8 @@ const CHAPTER_PLANS = [
           .b...r.
           .......
           .......`,
-        ice: 64,
-        orders: [['ruby', 14]],
+        ice: 78,
+        orders: [['ruby', 20]],
         tip: 'Two seal colors. Charge the cores to open whichever seal is hardest to reach.',
       },
       {
@@ -563,10 +577,11 @@ const CHAPTER_PLANS = [
           .......
           .c...c.
           .......
-          .......
+          ...#...
           .......
           .......`,
-        ice: 66,
+        ice: 76,
+        orders: [['ruby', 16]],
         tip: 'The sealed wing: break the reinforced stone beside the upper core.',
       },
       {
@@ -594,7 +609,7 @@ const CHAPTER_PLANS = [
           ..g.g..
           .......
           .E...E.`,
-        ice: 72,
+        ice: 76,
         orders: [['sapphire', 16]],
         tip: 'Open house: unlock every seal and deliver both relics.',
       },
@@ -602,6 +617,8 @@ const CHAPTER_PLANS = [
   },
   {
     id: 'fusion-sphere',
+    coreCharges: 5,
+    coreBonuses: ['bomb'],
     name: 'Fusion sphere',
     description: 'Wake the fusion sphere at the heart of Tomorrow City.',
     motif: 'pocket',
@@ -610,32 +627,32 @@ const CHAPTER_PLANS = [
       {
         board: `
           .......
-          .......
-          ..#.#..
-          .......
+          ...R...
+          ..X.X..
+          .c...c.
           .X.o.X.
           .......
-          ..#.#..
+          ..X.X..
           .......
-          .......`,
+          ...E...`,
         ice: 64,
-        orders: [['ruby', 12]],
-        tip: 'Charge the core inside the sphere. Its bonus breaks the surrounding stone.',
+        orders: [['ruby', 20]],
+        tip: 'Charge the core inside the sphere, then guide the relic down through the opened ring.',
       },
       {
         board: `
           .......
-          .......
+          .R...R.
           ..X.X..
-          ...#...
+          ...X...
           .o...o.
-          ...#...
+          ...X...
           ..X.X..
           .......
-          .......`,
-        ice: 66,
-        orders: [['sapphire', 18]],
-        tip: 'Two cores in the magnet ring. Collect sapphires while you charge them.',
+          .E...E.`,
+        ice: 64,
+        orders: [['sapphire', 20]],
+        tip: 'Two cores in the magnet ring. Collect sapphires and bring both relics down the outer lanes.',
       },
       {
         board: `
@@ -648,7 +665,7 @@ const CHAPTER_PLANS = [
           .......
           .......
           ..E.E..`,
-        ice: 58,
+        ice: 72,
         tip: 'Lift the relics past the reinforced ring on either side.',
       },
       {
@@ -659,13 +676,13 @@ const CHAPTER_PLANS = [
           .X.o.X.
           .......
           .o...o.
-          ...#...
+          ...X...
           .......
           .......`,
-        ice: 70,
+        ice: 80,
         orders: [
-          ['ruby', 18],
-          ['sapphire', 14],
+          ['ruby', 20],
+          ['sapphire', 16],
         ],
         tip: 'Containment: open the ring from below, then charge the central core.',
       },
@@ -680,7 +697,7 @@ const CHAPTER_PLANS = [
           .......
           .......
           .......`,
-        ice: 54,
+        ice: 62,
         tip: 'A cooling loop. An open chamber for a calm puzzle.',
       },
       {
@@ -694,14 +711,16 @@ const CHAPTER_PLANS = [
           ..c.c..
           .......
           .E...E.`,
-        ice: 72,
-        orders: [['emerald', 18]],
+        ice: 80,
+        orders: [['emerald', 20]],
         tip: 'Full power: charge every core, fill the order and deliver the relics.',
       },
     ],
   },
   {
     id: 'tomorrow-skyline',
+    coreCharges: 5,
+    coreBonuses: ['bomb'],
     name: 'Skyline of tomorrow',
     description: 'Bring every discovery home to the bright skyline of Tomorrow City.',
     motif: 'arch',
@@ -710,35 +729,35 @@ const CHAPTER_PLANS = [
       {
         board: `
           .......
-          .......
+          ...R...
           .l...l.
-          ..#.#..
+          ..X.X..
           ...o...
           .#...#.
+          .c...c.
           .......
-          .......
-          .......`,
-        ice: 68,
-        orders: [['sapphire', 18]],
-        tip: 'Light the lanterns and charge the core across the sky bridge.',
+          ...E...`,
+        ice: 72,
+        orders: [['sapphire', 20]],
+        tip: 'Light the lanterns, charge the core and send the relic across the sky bridge.',
       },
       {
         board: `
           .......
-          .......
+          .R...R.
           .l.#.l.
           ..X.X..
           .o.c.o.
-          ...#...
+          .g.#.b.
           .l.r.l.
           .......
-          .......`,
-        ice: 70,
+          .E...E.`,
+        ice: 56,
         orders: [
-          ['emerald', 18],
-          ['sapphire', 12],
+          ['emerald', 20],
+          ['sapphire', 14],
         ],
-        tip: 'Beacon lights: light all four lanterns and release the chained gem.',
+        tip: 'Beacon lights: light all four lanterns and guide both relics down the outer lanes.',
       },
       {
         board: `
@@ -751,25 +770,22 @@ const CHAPTER_PLANS = [
           .......
           .......
           .E.E.E.`,
-        ice: 50,
+        ice: 72,
         tip: 'Send the rooftop parcels down between the stones, lighting lanterns on the way.',
       },
       {
         board: `
           .......
-          .......
+          ..R.R..
           .X.o.X.
           .c...c.
           ..g.b..
           .o...o.
           .#.#.#.
           .......
-          .......`,
-        ice: 76,
-        orders: [
-          ['ruby', 18],
-          ['sapphire', 16],
-        ],
+          ..E.E..`,
+        ice: 70,
+        orders: [['ruby', 20]],
         tip: 'The spire mixes every rule you know. Use core bonuses where they help most.',
       },
       {
@@ -783,22 +799,22 @@ const CHAPTER_PLANS = [
           .......
           .......
           .......`,
-        ice: 52,
+        ice: 62,
         tip: 'The garden deck. Take a breath before the final puzzle.',
       },
       {
         board: `
           .......
           .R...R.
-          .......
-          .l...l.
-          .c...c.
-          .o.#.o.
           ..r.b..
+          .l...l.
+          ..c.c..
+          .o.#.o.
+          .......
           .......
           .E...E.`,
-        ice: 70,
-        orders: [['emerald', 16]],
+        ice: 66,
+        orders: [['emerald', 12]],
         tip: 'Welcome to tomorrow: charge the cores, light the lanterns and bring both relics home.',
       },
     ],
@@ -847,12 +863,23 @@ export const TOMORROW_LEVEL_NAMES = CHAPTER_PLANS.flatMap(({ name, stops }) =>
   stops.map((stop) => `${name}: ${stop}`),
 );
 export const TOMORROW_LEVELS = CHAPTER_PLANS.flatMap((plan) =>
-  plan.levels.map(({ board, ice, orders = [], tip }) => ({
-    ...parseTomorrowBoard(board),
-    openExitRows: 2,
-    orders,
-    ice,
-    motif: plan.motif,
-    tip,
-  })),
+  plan.levels.map(
+    ({
+      board,
+      ice,
+      orders = [],
+      coreCharges = plan.coreCharges,
+      coreBonuses = plan.coreBonuses,
+      tip,
+    }) => ({
+      ...parseTomorrowBoard(board),
+      openExitRows: 2,
+      orders,
+      ice,
+      coreCharges: coreCharges ?? 3,
+      ...(coreBonuses ? { coreBonuses } : {}),
+      motif: plan.motif,
+      tip,
+    }),
+  ),
 );

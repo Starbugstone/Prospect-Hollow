@@ -13,7 +13,7 @@ still reshuffles for free.
 | 56      | 331–336 | Maglev loops        | Silent maglev loops and express pods     | Chains, relics                                     |
 | 57      | 337–342 | Solar terraces      | Stepped solar terraces                   | Ore orders, staggered shelves, relics              |
 | 58      | 343–348 | Hover lanes         | Hover lanes with cargo pods and docks    | Relic delivery (one to three pods), chains         |
-| 59      | 349–354 | Orbital observatory | Orbital ring and observatory             | Numbered survey trail                              |
+| 59      | 349–354 | Orbital observatory | Orbital ring and observatory             | Numbered survey trail and relics                   |
 | 60      | 355–360 | Capsule commons     | Shared capsule commons                   | Colored seals, ore orders                          |
 | 61      | 361–366 | Fusion sphere       | Fusion sphere inside a stone ring        | Reinforced rings, ore orders, relics               |
 | 62      | 367–372 | Skyline of tomorrow | The finished skyline                     | Lanterns, seals, chains, orders and relics         |
@@ -45,13 +45,15 @@ Rules:
   or power blast that reaches it also adds one charge.
 - A core gains **at most one charge per move**, however long the cascade. Each
   full charge counts toward the level's "Tiles and charge cores" objective.
-  Each core needs three charges.
-- At full charge, the gem on the core becomes a free bonus. The bonus alternates
-  by core: cross fire, then bomb. The gem is not cleared or collected. It uses
+  Chapter 55 teaches three-charge cores. Chapters 56–60 use four charges and
+  chapters 61–62 use five. Each pip on the core shows one charge.
+- At full charge, the gem on the core becomes a free bonus. Level 325 releases
+  cross fire. The rest of chapter 55 and every later chapter release a bomb,
+  a smaller area than a whole row and column. The gem is not cleared or collected. It uses
   the normal "bonus ready" reveal. If a relic, an anchored tile or another bonus
   occupies the core, the release moves to the first ordinary neighbor. If no
   neighbor can hold it, the charge still counts and completion is unaffected.
-- A full core stays on the board, dimmed, with three gold pips. It does nothing
+- A full core stays on the board, dimmed, with every pip gold. It does nothing
   else.
 - It never spreads, counts down, harms the board or fails a puzzle.
 
@@ -70,8 +72,9 @@ Guardrails (checked by `testing/tomorrow-levels.test.js`):
   the existing late-campaign formula: 75 s + 1 s per layer + 20 s per relic.
   They are optional chest thresholds.
 - Other regression tests cover:
-  - completing levels 325, 348 and 372 through the real store beyond 100 moves,
-    after the speed target has elapsed
+  - completing levels 325, 330, 348, 354, 362 and 372 through the real store
+    beyond 100 moves, after the speed target has elapsed
+  - one release after exactly the authored number of charges (three to five)
   - reshuffling a dead board that contains a core without moving or spending it
   - one charge per move during cascades
   - all bonus and power routes
@@ -80,7 +83,7 @@ Guardrails (checked by `testing/tomorrow-levels.test.js`):
 
 Rendering reuses the `board-core` atlas with a new `tile-core` frame. The core
 art is `public/art/obstacles/core.svg`, and the SVG fallback covers failed
-atlases. The overlay is one image and three static circles. It is cached by
+atlases. The overlay is one image and one static circle per charge. It is cached by
 charge and rebuilt only when the charge changes. There are no tweens or
 particles, and no work happens on each frame. The goal bar shows "Core
 charges". The obstacle guide and all new text have French translations.
@@ -100,37 +103,56 @@ These are simulations, not human completion rates:
 board bonuses and free dead-board shuffles, used no inventory powers, and ran
 30 refill seeds per level. All 1,440 new runs finished.
 
-| Chapter                        | Median moves | 90th percentile | Longest sample | Shuffles |
-| ------------------------------ | -----------: | --------------: | -------------: | -------: |
-| 49–54 (levels 289–324)         |        19–23 |           30–39 |          47–84 |        1 |
-| 55 Dome gardens                |           14 |              21 |             42 |        0 |
-| 56 Maglev loops                |           16 |              27 |             55 |        0 |
-| 57 Solar terraces              |           16 |              31 |             45 |        0 |
-| 58 Hover lanes                 |           17 |              30 |             69 |        0 |
-| 59 Orbital observatory         |           16 |              25 |             62 |        0 |
-| 60 Capsule commons             |           17 |              27 |             58 |        0 |
-| 61 Fusion sphere               |           16 |              24 |             60 |        4 |
-| 62 Skyline of tomorrow         |           16 |              28 |             61 |        0 |
-| All of 325–372                 |           16 |              27 |             69 |        4 |
-| All of 241–324, for comparison |           21 |              34 |             84 |        — |
+### Difficulty pass (after review)
 
-A new era starts with an easier introduction, then settles into a steady band.
-Cores are a helpful mechanic, so these chapters average about five fewer moves
-than the preceding late chapters. Several tuning passes checked extra ice,
-stone and ore. They moved medians only slightly, because each core supplies a
-free bonus. Limiting charging to one per move keeps that help readable and
-stops long cascades from filling a core instantly.
+The first version was noticeably lighter than the preceding late chapters, and
+the review asked for a gentle climb toward them. Three changes do most of the
+work, and they are combined rather than simply inflating counts:
 
-Star targets for levels 325–372 use the existing calibration: the effective
-score's 55th percentile, rounded down to 200 points. Re-running it reproduced
-all 324 existing targets exactly. On the calibration seeds, 52% of the new runs
-earn three stars. The held-out test keeps the 241–372 band within 30–65%.
+- **Fewer free bonuses.** Later chapters use four- and five-charge cores that
+  release a bomb instead of cross fire. Level 325 keeps its three-charge cross
+  fire introduction.
+- **More deliveries.** Relics are added to levels 350, 352, 361, 362, 367 and
+  368, always with an open lane and an exit in the relic's own column.
+- **Heavier structure.** There is more double ice, with 62–80 ice layers
+  outside rest puzzles and never more than two layers per cell. There are also
+  stone pairs, reinforced rings, flank chains and larger ore orders of 16–20.
 
-Mining payouts scale with chapter depth, so earnings stay comparable to the
-previous 48 levels even though the puzzles are shorter. Across the 48 new
-levels, the median simulated mining payout is **1.29 million coins** (range
-1.14–1.41 million over 30 seeds; about 27,000 per level). Levels 277–324 pay a
-median of 1.27 million. This figure excludes these extra sources:
+The layout guardrails are unchanged. After tuning, chains no longer sit
+directly in a relic lane where they produced long outliers. Rest puzzles stay
+lighter than their finales.
+
+| Chapter                        | Before: median / p90 / longest | After: median / p90 / longest | Shuffles after |
+| ------------------------------ | -----------------------------: | ----------------------------: | -------------: |
+| 49–54 (levels 289–324)         |             19–23 / 30–39 / 84 |                   (unchanged) |              1 |
+| 55 Dome gardens                |                   14 / 21 / 42 |                  17 / 30 / 63 |              1 |
+| 56 Maglev loops                |                   16 / 27 / 55 |                  19 / 27 / 55 |              0 |
+| 57 Solar terraces              |                   16 / 31 / 45 |                  19 / 33 / 64 |              1 |
+| 58 Hover lanes                 |                   17 / 30 / 69 |                  19 / 36 / 61 |              0 |
+| 59 Orbital observatory         |                   16 / 25 / 62 |                  20 / 31 / 66 |              0 |
+| 60 Capsule commons             |                   17 / 27 / 58 |                  21 / 35 / 65 |              0 |
+| 61 Fusion sphere               |                   16 / 24 / 60 |                  21 / 33 / 63 |              0 |
+| 62 Skyline of tomorrow         |                   16 / 28 / 61 |                  21 / 39 / 52 |              1 |
+| All of 325–372                 |                   16 / 27 / 69 |                  19 / 33 / 66 |              3 |
+| All of 241–324, for comparison |                   21 / 34 / 84 |                   (unchanged) |              — |
+
+Chapter 55 remains the gentlest. Level 325 has a median of 12 moves. The
+following chapters climb from 19 to 21, into the range of the preceding late
+chapters (19–23). The finale chapters are at the top of the new set. Individual
+levels vary more than chapters: the hardest non-rest boards have medians of
+24–30, while rest puzzles have 13–18.
+
+Star targets for levels 325–372 were recalibrated with the existing script: the
+effective score's 55th percentile, rounded down to 200 points. Re-running it
+reproduced all 324 existing targets exactly. On the calibration seeds, 51% of
+the new runs earn three stars, mostly through the ×4 cascade route. The
+held-out test keeps the 241–372 band within 30–65%.
+
+Mining payouts scale with chapter depth, and longer puzzles collect more jewels.
+Across the 48 new levels, the median simulated mining payout is **1.44 million
+coins** (range 1.33–1.68 million over 30 seeds; about 30,000 per level). Before
+the difficulty pass it was 1.29 million. Levels 277–324 pay a median of 1.27
+million. This figure excludes these extra sources:
 
 - chest coins: each chest pays 4,000 at this depth, and each puzzle earns one
   or two chests
