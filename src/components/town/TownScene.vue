@@ -14,7 +14,8 @@
     :next-level="nextLevel"
     :fullscreen="fullscreen"
     :construction="construction"
-    @select="!readOnly && $emit('select', $event)"
+    :visitor-taps="visitorTaps"
+    @select="choose"
     @mine="!readOnly && $emit('mine')"
   />
   <div
@@ -91,15 +92,17 @@
           '--action-scale': townIndicatorScale(indicators[anchor.id]),
         }"
         :aria-label="
-          indicators[anchor.id] === 'ready'
-            ? t('Finish {building}', { building: t(BUILDING_BY_ID[anchor.id].shortName) })
-            : anchor.id === 'saloon'
-              ? t('Collect {coins} coins', { coins: town.income.stored })
-              : indicators[anchor.id] === 'bell'
-                ? t('Ring town bell · halve the loss')
-                : indicators[anchor.id] === 'era'
-                  ? t('Advance to the next era')
-                  : t('Collect 1 TNT')
+          readOnly
+            ? t('Collect the saloon takings for the mayor')
+            : indicators[anchor.id] === 'ready'
+              ? t('Finish {building}', { building: t(BUILDING_BY_ID[anchor.id].shortName) })
+              : anchor.id === 'saloon'
+                ? t('Collect {coins} coins', { coins: town.income.stored })
+                : indicators[anchor.id] === 'bell'
+                  ? t('Ring town bell · halve the loss')
+                  : indicators[anchor.id] === 'era'
+                    ? t('Advance to the next era')
+                    : t('Collect 1 TNT')
         "
         @focus="anchor.id === 'mine' && prefetchBoard()"
         @pointerenter="anchor.id === 'mine' && prefetchBoard()"
@@ -129,7 +132,7 @@
     >
       <button
         v-for="anchor in anchors"
-        :disabled="readOnly"
+        :disabled="readOnly && !visitorTaps.includes(anchor.id)"
         :key="anchor.id"
         :ref="(element) => trackElement(labelElements, anchor.id, element)"
         :data-town-plot="anchor.id"
@@ -270,6 +273,8 @@ import { t, locale } from '../../i18n';
 import TownMap from './TownMap.vue';
 const props = defineProps({
   readOnly: Boolean,
+  // Buildings a read-only visitor may still tap, for example to collect the saloon.
+  visitorTaps: { type: Array, default: () => [] },
   fullscreen: Boolean,
   cinematic: Boolean,
   presentation: Object,
@@ -289,6 +294,7 @@ const props = defineProps({
 });
 const emit = defineEmits([
   'select',
+  'visit',
   'mine',
   'raid-phase',
   'raid-cue',
@@ -319,9 +325,10 @@ const quietPlot = (id) =>
   !props.town.projects[id];
 // Purchases depend on the town only; the one-second clock just re-checks cooldowns.
 const townPurchases = computed(() => availablePurchases(props.town));
+// A visitor sees only the coins of buildings they may collect for the owner.
 const indicators = computed(() =>
   props.readOnly
-    ? {}
+    ? Object.fromEntries(props.visitorTaps.map((id) => [id, 'coins']))
     : buildingIndicators(props.town, props.forgeCollectible, props.now, townPurchases.value),
 );
 const availableIds = computed(() =>
@@ -387,6 +394,7 @@ const pointers = new Map();
 const villagerLabel = ref(null);
 const choose = (id) => {
   if (!props.readOnly) id === 'mine' ? emit('mine') : emit('select', id);
+  else if (props.visitorTaps.includes(id)) emit('visit', id);
 };
 const chooseLabel = (id, event) => {
   // Pointer taps are settled on pointerup; keep native keyboard/AT activation.
@@ -417,7 +425,7 @@ const pick = (event) => {
   const start = pointers.get(event.pointerId);
   const tap = start && !dragged;
   pointers.delete(event.pointerId);
-  if (tap && !props.readOnly) {
+  if (tap && (!props.readOnly || props.visitorTaps.length)) {
     if (start[2]) choose(start[2]);
     else scene?.pick(event.clientX, event.clientY);
   }

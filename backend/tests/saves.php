@@ -63,6 +63,22 @@ try {
  $settings=['baseRevision'=>10,'name'=>'New Austin','isPublic'=>true];$renamed=status(200,callApi('PATCH','towns/'.$id.'/settings',$settings,$a),'rename');check($renamed['publicId']===$publicId,'stable share id');check(status(200,callApi('PUT','towns/'.$id,$lastUpload,$a),'retry receipt after rename')['revision']===10,'metadata preserves upload receipt');
  status(200,callApi('PATCH','towns/'.$town2['townId'].'/settings',['baseRevision'=>1,'name'=>'Other Details','isPublic'=>false],$a),'other device changes metadata');
  check(status(200,callApi('PUT','towns/'.$town2['townId'],['baseRevision'=>1,'uploadId'=>uuid(),'profile'=>profile(777)],$a),'offline progress after metadata')['profile']['town']['coins']===777,'metadata does not conflict with offline progress');
+ // Share-link visits: an anonymous saloon tap and the latest signed-in guest reach only the owner.
+ $shared=status(200,callApi('PATCH','towns/'.$town2['townId'].'/settings',['baseRevision'=>2,'name'=>'Other Details','isPublic'=>true],$a),'publish second town')['publicId'];
+ $sharedVisit=status(200,callApi('GET','villages/'.$shared),'anonymous visit');check($sharedVisit['saloonReadyAt']===0&&!isset($sharedVisit['guest'],$sharedVisit['visits']),'visit shows only saloon readiness');
+ check(status(409,callApi('POST','villages/'.$shared.'/saloon',(object)[]),'no saloon to collect')['code']==='no_saloon','saloon must be built');
+ $saloon=profile(40);$saloon->town->buildings->saloon=1;status(200,callApi('PUT','towns/'.$town2['townId'],['baseRevision'=>2,'uploadId'=>uuid(),'profile'=>$saloon],$a),'build saloon');
+ status(422,callApi('POST','villages/'.$shared.'/saloon',['coins'=>999]),'visitors cannot name an amount');
+ $tap=status(200,callApi('POST','villages/'.$shared.'/saloon',(object)[]),'anonymous saloon tap');check($tap['readyAt']>time(),'saloon rests after a tap');
+ $rest=status(409,callApi('POST','villages/'.$shared.'/saloon',(object)[],$b),'second visitor within the hour');check($rest['code']==='saloon_resting'&&$rest['readyAt']===$tap['readyAt'],'one saloon tap per town per hour');
+ check(status(200,callApi('GET','villages/'.$shared),'visit after tap')['saloonReadyAt']===$tap['readyAt'],'visitors see when the saloon reopens');
+ $visits=function() use($a,$town2){foreach(status(200,callApi('GET','account',null,$a),'owner visits')['towns'] as $t)if($t['townId']===$town2['townId'])return $t['visits'];};
+ status(200,callApi('GET','villages/'.$shared,null,$a),'owner visits own town');check($visits()===['saloonAt'=>($tap['readyAt']-3600)*1000,'guest'=>null],'owner receives the tap but is not their own guest');
+ status(200,callApi('GET','villages/'.$shared,null,$b),'signed-in visit');$guest=$visits()['guest'];check($guest['name']==='DUSTWATER'&&$guest['at']>=(time()-5)*1000,'guest named after their town');
+ status(200,callApi('POST','towns',townBody('merde town'),$b),'newer private unmoderated town');$db->get()->executeStatement("UPDATE towns SET saved_at=saved_at-100 WHERE name='DUSTWATER'");
+ status(200,callApi('GET','villages/'.$shared,null,$b),'visit after new town');check($visits()['guest']['name']==='DUSTWATER','unmoderated private names are never shown to another player');
+ $silver=status(200,callApi('POST','towns',townBody('Silver Creek'),$b),'visitor public town');status(200,callApi('PATCH','towns/'.$silver['townId'].'/settings',['baseRevision'=>1,'name'=>'Silver Creek','isPublic'=>true],$b),'visitor shares town');
+ status(200,callApi('GET','villages/'.$shared,null,$b),'later visit');check($visits()['guest']['name']==='Silver Creek','only the latest guest, preferring a shared town');
  foreach(['fuck town','p u t a i n','M3RDE','ＦＵＣＫ'] as $badName)status(422,callApi('PATCH','towns/'.$id.'/settings',['baseRevision'=>10,'name'=>$badName,'isPublic'=>true],$a),'public moderation');
  $private=status(200,callApi('PATCH','towns/'.$id.'/settings',['baseRevision'=>10,'name'=>'merde town','isPublic'=>false],$a),'private name playable');status(404,callApi('GET','villages/'.$publicId,null,$b),'unpublish');status(404,callApi('GET','villages/'.$publicId),'unpublished share link');
  $republished=status(200,callApi('PATCH','towns/'.$id.'/settings',['baseRevision'=>10,'name'=>'Dustwater','isPublic'=>true],$a),'republish');check($republished['publicId']===$publicId,'public id survives visibility change');

@@ -51,7 +51,8 @@ final class ApiController {
     private function logout(Request $r,array $b,bool $all): JsonResponse {SaveService::keys($b,[]);return $this->auth->logout($r,$all);}
     private function deleteAccount(Request $r,array $b): JsonResponse {$this->saves->deleteAccount($r,$b);return $this->auth->clearCookie();}
     private function townRoute(Request $r,string $path,array $b): mixed {
-        if($r->isMethod('GET')&&preg_match('~^villages/([a-f0-9]{32})$~D',$path,$m))return $this->public->visit($m[1]);
+        if($r->isMethod('GET')&&preg_match('~^villages/([a-f0-9]{32})$~D',$path,$m))return $this->public->visit($r,$m[1]);
+        if($r->isMethod('POST')&&preg_match('~^villages/([a-f0-9]{32})/saloon$~D',$path,$m)){SaveService::keys($b,[]);return $this->public->tapSaloon($r,$m[1]);}
         if(!preg_match('~^towns/([a-f0-9-]{36})(?:/(resolve|history|settings))?$~D',$path,$m))throw new ApiError(404,'Endpoint not found.');
         $id=$m[1];$suffix=$m[2]??'';
         return match($r->getMethod().' '.$suffix) {

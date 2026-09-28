@@ -32,6 +32,7 @@ import { buildingWalk } from './TownPedestrians';
 import { TownVipArrivals } from './TownVipArrivals';
 import { hasVisitorTransport } from '../../data/visitorArrivals';
 import { villagerIdentity, vipVisitor } from '../../data/villagers';
+import { guestVip } from '../../data/townVisitors';
 import { SIDEWALK_OFFSET } from './TownTraffic';
 import { updateTownLocomotion } from './TownLocomotion';
 import { townWardrobe, vipOutfit } from '../../data/townWardrobes';
@@ -1420,7 +1421,7 @@ export class TownDiorama {
       prepareActorWalk(this, retained);
       return retained;
     }
-    const firstVIP = visitor && !manual ? vipVisitor(seed, 0) : null;
+    const firstVIP = visitor && !manual ? this.drawVip(seed, 0) : null;
     const identity = firstVIP ?? villagerIdentity(seed, gender ?? (dress ? 'female' : undefined));
     const female = identity.gender === 'female';
     const wardrobe = townWardrobe(eraEvolution(era));
@@ -1622,6 +1623,14 @@ export class TownDiorama {
     prepareActorWalk(this, actor);
     return actor;
   }
+  // Every VIP arrival draws here: the latest share-link guest arrives first after each
+  // new visit, then the usual random guests.
+  drawVip(seed, visit = 0) {
+    const guest = this.town?.visitors?.guest;
+    if (!guest || this.guestShown === guest.at) return vipVisitor(seed, visit);
+    this.guestShown = guest.at;
+    return guestVip(guest, villagerIdentity(seed).gender);
+  }
   setVillagerIdentity(actor, identity, outfitSeed = actor.seed ?? 0) {
     actor.root.userData.villager = identity;
     const female = identity.gender === 'female';
@@ -1678,7 +1687,7 @@ export class TownDiorama {
       const visit = Math.floor((time + seed) / (duration + 7));
       if (actor.visit !== visit) {
         actor.visit = visit;
-        const chosen = hasVisitorTransport(this.town) ? null : vipVisitor(seed, visit);
+        const chosen = hasVisitorTransport(this.town) ? null : this.drawVip(seed, visit);
         this.setVillagerIdentity(actor, chosen ?? villagerIdentity(seed), seed + visit * 997);
       }
       const isVIP = !!root.userData.villager.name;

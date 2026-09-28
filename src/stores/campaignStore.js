@@ -34,6 +34,7 @@ import {
   chestRewardFits,
 } from '../data/rewards';
 import { createTown, BANDIT_EVENT } from '../data/town';
+import { newVisits } from '../data/townVisitors';
 import { advanceEra } from '../game/town/TownEras';
 import {
   normalizeTown,
@@ -498,6 +499,39 @@ export const useCampaignStore = defineStore('campaign', {
         return 0;
       }
       return coins;
+    },
+    // Share-link visits reach the owner's game on reconnect. A visitor's saloon tap
+    // collects the reserved coins as if the owner had tapped it, so nothing is minted.
+    receiveVisitors(remote, now = Date.now()) {
+      const visits = newVisits(this.town.visitors, remote);
+      if ((!visits.saloonAt && !visits.guest) || !Number.isSafeInteger(now)) return null;
+      const previous = this.town,
+        previousIncome = this.lastSaloonIncome;
+      let town = previous,
+        coins = 0;
+      if (visits.saloonAt && town.buildings.saloon) {
+        town = settleSaloonIncome(town, now).town;
+        coins = Math.min(town.income.stored ?? 0, Number.MAX_SAFE_INTEGER - town.coins);
+        town = {
+          ...town,
+          coins: town.coins + coins,
+          income: { ...town.income, stored: town.income.stored - coins },
+        };
+      }
+      this.town = {
+        ...town,
+        visitors: {
+          saloonAt: visits.saloonAt || town.visitors.saloonAt,
+          guest: visits.guest ?? town.visitors.guest,
+        },
+      };
+      if (coins) this.lastSaloonIncome = coins;
+      if (!this.save()) {
+        this.town = previous;
+        this.lastSaloonIncome = previousIncome;
+        return null;
+      }
+      return { coins, guest: visits.guest?.name ?? null };
     },
     upgradeBuilding(id, expectedStage) {
       this.accrueSaloonIncome(Date.now(), false);

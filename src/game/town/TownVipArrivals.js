@@ -1,7 +1,6 @@
 import { beginItinerary } from './TownItineraries';
 import { prepareActorWalk } from './TownNavigation';
 import { PerspectiveCamera, Vector3, Vector4 } from 'three';
-import { vipVisitor } from '../../data/villagers';
 import { VISITOR_TRANSPORTS, VISITOR_ARRIVAL_SITES } from '../../data/visitorArrivals';
 import { visitorPopulation } from './TownRules';
 import { PLOTS, plotStreet, routeBetween } from './TownLayout';
@@ -89,7 +88,7 @@ export class TownVipArrivals {
     if (!allowExisting || !this.actors.length) return;
     // This visitor arrived off-screen while the player was mining. Start on
     // the outbound street leg; there is deliberately no arrival inset.
-    const guest = vipVisitor(this.seed, 0);
+    const guest = this.d.drawVip(this.seed, 0);
     if (!guest) return;
     const actor = this.actors[this.seed % this.actors.length];
     this.d.setVillagerIdentity(actor, guest, this.seed);
@@ -123,7 +122,7 @@ export class TownVipArrivals {
         this.seen.set(actor.source, transport.visit);
         // Never replay a missed arrival when returning from a modal/cinematic.
         // The 1s window also rejects loading a town halfway through a dwell.
-        const guest = vipVisitor(
+        const guest = d.drawVip(
           this.seed + VISITOR_TRANSPORTS.indexOf(actor.source) * 101,
           transport.visit,
         );

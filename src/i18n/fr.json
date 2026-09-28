@@ -2807,5 +2807,14 @@
   "Load and continue": "Charger et continuer",
   "Play Prospect Hollow": "Jouer à Prospect Hollow",
   "This share link is incomplete.": "Ce lien de partage est incomplet.",
-  "This town is no longer shared.": "Cette ville n’est plus partagée."
+  "This town is no longer shared.": "Cette ville n’est plus partagée.",
+  "Mayor of {town}": "Maire de {town}",
+  "A visitor collected {coins} coins from your saloon for you.": "Un visiteur a récupéré {coins} pièces au saloon pour vous.",
+  "The mayor of {town} visited your village.": "Le maire de {town} a visité votre village.",
+  "You collected the saloon takings for the mayor of {town}. Thank you!": "Vous avez récupéré la recette du saloon pour le maire de {town}. Merci !",
+  "A visitor collected the saloon recently. Come back in {minutes} min.": "Un visiteur a récupéré la recette du saloon récemment. Revenez dans {minutes} min.",
+  "This town has no saloon yet.": "Cette ville n’a pas encore de saloon.",
+  "A visitor already collected this saloon. Come back later.": "Un visiteur a déjà récupéré la recette de ce saloon. Revenez plus tard.",
+  "Tap the coins over the saloon to collect its takings for the mayor.": "Touchez les pièces au-dessus du saloon pour récupérer sa recette pour le maire.",
+  "Collect the saloon takings for the mayor": "Récupérer la recette du saloon pour le maire"
 }

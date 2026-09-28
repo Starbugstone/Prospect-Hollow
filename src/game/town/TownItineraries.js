@@ -2,7 +2,7 @@ import { ERA_BY_ID, FRONTIER_ERA } from '../../data/eras';
 import { PLOTS, plotStreet, routeGraph, routeOnGraph } from './TownLayout';
 import { walkPath } from './TownNavigation';
 import { BRIDGE, streetHeight } from './TownRiver';
-import { villagerRandom, vipVisitor, villagerIdentity } from '../../data/villagers';
+import { villagerRandom, villagerIdentity } from '../../data/villagers';
 import { hasVisitorTransport } from '../../data/visitorArrivals';
 import { vipVisitBuildings, vipVisitCount } from '../../data/vipVisits';
 
@@ -274,7 +274,7 @@ export function beginItinerary(d, actor) {
   r.stop = 0;
   r.tour = `${actor.root.uuid}:${r.visit}`;
   if (actor.visitor && !actor.transportVisitor) {
-    const guest = hasVisitorTransport(d.town) ? null : vipVisitor(actor.seed, r.visit);
+    const guest = hasVisitorTransport(d.town) ? null : d.drawVip(actor.seed, r.visit);
     d.setVillagerIdentity(actor, guest ?? villagerIdentity(actor.seed), seed);
   }
   const count = actor.root.userData.villager?.name ? vipVisitCount(seed) : 0;

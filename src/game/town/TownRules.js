@@ -1,4 +1,5 @@
 import { normalizePresentations } from '../../data/townPresentations';
+import { normalizeVisitors } from '../../data/townVisitors';
 import { eraEvolution } from '../../data/eras';
 import { RIVER_RAIL_LEVEL_PRICES } from '../../data/economy';
 import { buildingServiceLevel, hasShortProgression } from '../../data/buildingProgression';
@@ -44,6 +45,7 @@ export function normalizeTown(saved) {
     const at = saved?.lastCollections?.[id];
     if (Number.isSafeInteger(at) && at >= 0) town.lastCollections[id] = at;
   }
+  town.visitors = normalizeVisitors(saved?.visitors);
   // Missing or malformed additions leave existing v3 receipts intact.
   const forge = saved?.forge;
   town.forge.charge = forge?.charge === 1 ? 1 : 0;

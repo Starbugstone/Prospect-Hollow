@@ -269,8 +269,8 @@
       <g
         v-for="building in orderedBuildings"
         :key="building.id"
-        :role="readOnly ? 'img' : 'button'"
-        :tabindex="readOnly ? undefined : 0"
+        :role="tappable(building.id) ? 'button' : 'img'"
+        :tabindex="tappable(building.id) ? 0 : undefined"
         :aria-label="
           indicators[building.id] === 'era'
             ? t('Advance to the next era')
@@ -288,9 +288,9 @@
           'is-repaired': town.buildings[building.id] > 0,
           'suggested-plot': building.id === suggestedId,
         }"
-        @click="!readOnly && $emit('select', building.id)"
-        @keydown.enter.prevent="!readOnly && $emit('select', building.id)"
-        @keydown.space.prevent="!readOnly && $emit('select', building.id)"
+        @click="tappable(building.id) && $emit('select', building.id)"
+        @keydown.enter.prevent="tappable(building.id) && $emit('select', building.id)"
+        @keydown.space.prevent="tappable(building.id) && $emit('select', building.id)"
       >
         <ellipse
           class="plot-ring"
@@ -597,6 +597,7 @@ import TownMine from './TownMine.vue';
 import { townIndicatorScale } from '../../data/townIndicators';
 const props = defineProps({
   readOnly: Boolean,
+  visitorTaps: { type: Array, default: () => [] },
   town: { type: Object, required: true },
   builderHammers: { type: Number, default: 0 },
   forgeCollectible: Boolean,
@@ -609,6 +610,7 @@ const props = defineProps({
   nextLevel: { type: Number, required: true },
   construction: Object,
 });
+const tappable = (id) => !props.readOnly || props.visitorTaps.includes(id);
 defineEmits(['select', 'mine']);
 const scene = ref(null);
 const grid = computed(() => powerGrid(props.town));
