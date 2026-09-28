@@ -1624,8 +1624,9 @@ export class TownDiorama {
     return actor;
   }
   // Every VIP arrival draws here: the latest share-link guest arrives first after each
-  // new visit, then the usual random guests.
+  // new visit, then the usual random guests. A read-only visit has no VIPs at all.
   drawVip(seed, visit = 0) {
+    if (this.vipsHidden) return null;
     const guest = this.town?.visitors?.guest;
     if (!guest || this.guestShown === guest.at) return vipVisitor(seed, visit);
     this.guestShown = guest.at;

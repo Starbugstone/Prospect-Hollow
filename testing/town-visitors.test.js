@@ -95,4 +95,11 @@ describe('share-link visits reaching the owner', () => {
     scene.town = { ...scene.town, visitors: { saloonAt: 0, guest: { name: 'Red Rock', at: 9 } } };
     expect(draw.call(scene, 7, 3).name).toBe('Mayor of Red Rock');
   });
+
+  it('shows no VIPs at all in a read-only shared town', () => {
+    const draw = TownDiorama.prototype.drawVip;
+    const guest = { name: 'Red Rock', at: 5 };
+    const scene = { vipsHidden: true, town: { ...createTown(), visitors: { saloonAt: 0, guest } } };
+    for (let visit = 0; visit < 200; visit++) expect(draw.call(scene, 7, visit)).toBeNull();
+  });
 });
