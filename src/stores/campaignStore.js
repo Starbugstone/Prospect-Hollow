@@ -14,18 +14,12 @@ import { campaignCompletion } from '../data/campaignCompletion';
 import { miningDepthBonus, CHEST_ECONOMY_VERSION } from '../data/economy';
 import { defineStore } from 'pinia';
 import { SHOP_ITEMS, rollShopStock, shopSlots, shopSpace } from '../data/shop';
-import {
-  LEVEL_COUNT,
-  POWERS,
-  CHEST_TIERS,
-  getChestTier,
-  getSpeedChestTier,
-  getStars,
-} from '../data/campaign';
+import { LEVEL_COUNT, POWERS, runChests, getStars } from '../data/campaign';
 import { TIP_IDS } from '../data/guidance';
 import { grantChapterGift } from '../data/journey';
 import { TOWN_PROJECTS } from '../data/townProjects';
 
+import { townStorage } from '../services/townStorage';
 import { localProfile, SAVE_KEY } from '../services/localProfile';
 import { createSaveFile, parseSaveFile } from '../services/saveTransfer';
 import {
@@ -61,6 +55,7 @@ import {
   buildWithHammer,
 } from '../game/town/TownRules';
 export { SAVE_KEY };
+export const freshProfile = () => profileData(defaults());
 
 const defaults = () => ({
   hasVisitedVillage: false,
@@ -349,7 +344,7 @@ export const useCampaignStore = defineStore('campaign', {
       return Number.isInteger(id) && id >= 1 && id <= this.nextLevel;
     },
     save() {
-      if (this.readOnly) return false;
+      if (this.readOnly || localProfile.writesSuspended) return false;
       const saved = localProfile.save(profileData(this));
       this.saveWarning = saved
         ? ''
@@ -361,11 +356,21 @@ export const useCampaignStore = defineStore('campaign', {
         throw new Error('This save cannot be exported by this version of the game.');
       return createSaveFile(profileData(this));
     },
+    reloadLocal() {
+      this.$patch((state) => Object.assign(state, load()));
+    },
     importSave(text) {
-      const next = load({ data: parseSaveFile(text) }, false);
+      const parsed = parseSaveFile(text);
+      const next = load({ data: parsed }, false);
       // Commit the normalized profile before replacing any live progress.
-      if (!localProfile.save(profileData(next)))
-        throw new Error('The save could not be stored. Your current progress has not changed.');
+      try {
+        townStorage.import(profileData(next), parsed._backupTown);
+      } catch (error) {
+        throw new Error(
+          `${error.message || 'The save could not be stored.'} Your current progress has not changed.`,
+        );
+      }
+      localProfile.load();
       this.$patch((state) => Object.assign(state, next));
     },
     collectForgeTNT(now = Date.now()) {
@@ -427,8 +432,14 @@ export const useCampaignStore = defineStore('campaign', {
       return true;
     },
     resetProgress() {
+      try {
+        townStorage.reset(profileData(defaults()));
+      } catch {
+        return false;
+      }
+      localProfile.load();
       this.$patch((state) => Object.assign(state, defaults()));
-      return this.save();
+      return true;
     },
     accrueSaloonIncome(now = Date.now(), persist = true) {
       const result = settleSaloonIncome(this.town, now);
@@ -692,13 +703,7 @@ export const useCampaignStore = defineStore('campaign', {
           ? { chapter: this.mineStage, gift: grantChapterGift(this, this.mineStage) }
           : null;
       const rewards = [];
-      const scoreTier = getChestTier(score, target);
-      const speedTier = getSpeedChestTier(elapsedMs, speedTargetMs);
-      for (const [source, tier] of [
-        [scoreTier ? 'score' : 'completion', scoreTier ?? (speedTier ? null : CHEST_TIERS[0])],
-        ['speed', speedTier],
-      ]) {
-        if (!tier) continue;
+      for (const { source, label } of runChests(score, target, elapsedMs, speedTargetMs)) {
         const rolled =
           this.chestsWithoutBuilderHammer >= 9
             ? CHEST_DROPS.find(
@@ -716,8 +721,8 @@ export const useCampaignStore = defineStore('campaign', {
           ? { id: reward.id, kind: reward.kind, label: reward.label, quantity: reward.quantity }
           : grantReward(this, reward);
         const chest = {
-          ...tier,
           id: `${runId}-${source}`,
+          label,
           runId,
           levelId: id,
           economyVersion: CHEST_ECONOMY_VERSION,

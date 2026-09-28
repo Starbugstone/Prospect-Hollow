@@ -11,7 +11,6 @@ export class TownRenderQuality {
       initialTier ??= globalThis.localStorage?.getItem('prospect.renderTier');
     } catch {}
     this.tier = Object.hasOwn(RENDER_TIERS, initialTier ?? '') ? initialTier : 'medium';
-    this.cacheSamples = RENDER_TIERS[this.tier].samples;
     this.maxRatio = Math.min(1.5, maxRatio);
     this.ratio = Math.min(this.maxRatio, RENDER_TIERS[this.tier].dpr);
     this.samples = [];
@@ -50,6 +49,10 @@ export class TownRenderQuality {
   }
   get shadowSize() {
     return RENDER_TIERS[this.tier].shadow;
+  }
+  // Follows the current tier, so a demotion also lowers the cached frame's MSAA.
+  get cacheSamples() {
+    return RENDER_TIERS[this.tier].samples;
   }
   resetWindow() {
     this.samples = [];

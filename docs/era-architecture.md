@@ -89,6 +89,12 @@ windpump's swept wheel stays clear of every wing and hayloft, era street furnitu
 off lots and sidewalks, and each overhead service drop is cut where it first meets its
 finished building (`addServiceDrops`), so wires never pass through a wall or roof.
 
+The square owns its corner lamps. `squareLampCorners()` in `src/data/townSquare.js`
+reports which corners the square lights for its era and level, and `electricLamps()`
+drops the First Lights street lamps beside those corners in both the 3D town and the
+SVG map. `testing/square-lighting.test.js` checks one lamp per corner in every
+electrified era, including unfinished and unknown square eras.
+
 ## Introduce a genuinely new style
 
 Extend the documented `BuildingStyle` / `EraEvolution` contract and defaults in
@@ -102,6 +108,58 @@ Keep era-specific artistic details inside their renderer. Share repeated rules
 and capabilities rather than flattening distinctive buildings into one generic
 design. A new capability used by several systems belongs in the era profile;
 avoid adding the same era-name conditional independently to each consumer.
+
+### City architecture: Tomorrow City's rounded forms
+
+City eras choose their building forms with the `architecture` capability. `standard`
+(the default) keeps the Blender period shells; `rounded` renders every city family as
+procedural domes, drums, barrel vaults, pods and tubes. `defineEra()` rejects unknown
+architectures and non-city styles that try to change it. Tomorrow City (2065) is the
+first rounded era and keeps `cityAssets: 'contemporary'`, so shared pieces (vehicle
+fallbacks, bridge approaches, garden finishes) still resolve through the Connected City
+family.
+
+- `data/roundedArchitecture.js` holds the shared palette and the family → form table
+  (`residence: tower`, `civic: rotunda`, `retail: vault`, `depot: hangar`, `water: tanks`,
+  `station: tube`, `culture`/`concert: shell`, `research: geodesic`, `farm: greenhouse`,
+  `river: pavilion`, `park`/`field: garden`, `radio: mast`, `television: orb`,
+  `skyline: spire`). Building identities from `cityBuildingStyles.json` (for example
+  `pods`, `twin`, `columns`, `power`) pick the variation within a form.
+- `buildings/rounded.js` draws the 3D forms. `renderCityBuilding()` looks the renderer up
+  in its `ARCHITECTURES` registry; a renderer returning `false` (airport, square, bridge)
+  leaves that kind to the shared shells. The airport's rooftop lounge becomes a glass dome
+  via `addRoundedLounge`, the square uses the `orbital-rings` fountain and the watermill
+  swaps its gable for a glazed dome.
+- `TownRoundedBuilding.vue` draws the same forms and palette for the SVG map, and
+  `TownBuilding.vue` routes rounded eras to it before the standard city drawing.
+- Traffic in rounded eras uses wheel-less hover cars, a hover shuttle bus and rounded
+  incident response pods that bob via `userData.hoverBody` (`TownVehicles.js`). Villagers wear
+  the `tomorrow` wardrobe (`hat: 'visor'` and a `trim` collar ring) built from existing shapes. The
+  airport, station and port switch to a sky saucer, a solar express train on the rails and a
+  hover ferry (`RoundedTransports.js`) once that building itself is rounded.
+- The mine gains a `rounded-arch` portal hood and a geodesic `sorting-dome`. A site entry
+  may declare `replaces: [...]` to supersede features it encloses; the dome replaces the
+  sorting plant and solar canopy, keeping the mine under its 6,000-triangle budget.
+- Tomorrow City adds the Sky pods, Biodome and Maglev loop on a new x = 65 east-bank
+  column; the east clearing now reaches x = 70 so those lots stay level.
+
+![Tomorrow City overview](images/tomorrow-city/01-overview.png)
+
+The same old-town view in Connected City and Tomorrow City (WebGL, headless Chromium):
+
+![Connected City old town](images/tomorrow-city/00-old-town-before-connected-city.png)
+![Tomorrow City old town](images/tomorrow-city/02-old-town.png)
+
+More captures, including phone sizes: [Tomorrow City gallery](tomorrow-city-gallery.md).
+
+Frame-rate rules for rounded forms: only the shared `sphere`, `cylinder`, `rounded` box
+and `rock` primitives are used (no new geometry is allocated per building), every part
+uses the seven-color palette so each batched plot stays at eight materials or fewer, and
+nothing is animated. A fully built Tomorrow town draws about 108,000 building triangles
+against about 132,000 for Connected City. `testing/tomorrow-era.test.js` enforces the
+per-building budget (under 4,000 triangles, at most eight materials), the whole-town
+comparison, level-by-level visible changes, a synthetic rounded successor era, the new
+plots, prices, benefit previews and the SVG forms.
 
 ## Regression evidence
 
@@ -158,6 +216,32 @@ saved receipts, future milestone definitions, visual disposal and this final hol
 To reproduce a silent video, generate era demos and run
 `scripts/capture-completion-fireworks.js` through Playwright CLI in a disposable
 browser. Encode `output/playwright/completion-fireworks-frames/%05d.jpg` at 24 fps.
+
+### Incident scripts
+
+`townEvents.incidentScript(event)` turns a saved receipt into the facts every
+incident cutscene stages: responders (sheriff, bank and fire-station levels),
+thieves caught and escaped, bank-locked and stolen crates, fire intensity, arrival
+and resolution beats, and the captions. `TownEraIncident`, `TownRaid` and the
+banner all read this one script, so a caption can never describe something the
+scene does not show. The rules it guarantees:
+
+- Responders always reach the scene before anyone is caught or flees. Uncovered
+  thieves bolt only as the patrol comes into sight, and escape through the back
+  lot on the side away from the patrol, never back along its road.
+- A loss always leaves with a visible thief; bank cover keeps crates padlocked.
+  Protected receipts show every thief caught and led to the lock-up.
+- No patrol means no "Hands up!". No fire station sends neighbours with buckets
+  instead of a brigade. Weaker stations mean a bigger, longer fire, and soot
+  stays on the façade only when the town paid for cleanup.
+- Defenses finished or the bell rung mid-scene recast the script until the
+  outcome is revealed; afterwards the staged facts are committed.
+
+`testing/incident-story.test.js` checks every gang, sheriff and bank combination
+against these rules, and plays full scenes to confirm arrival order, escape
+direction, prisoner escort, stolen crates, fire damage and storm cleanup. New
+incident kinds should add their beats and captions to `incidentScript` and their
+strings to `fr.json`; `testing/i18n.test.js` enumerates every caption and story.
 
 ### Incident cameras
 

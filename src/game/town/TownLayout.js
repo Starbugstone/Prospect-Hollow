@@ -61,6 +61,9 @@ export const PLOTS = {
   crystalLab: [58, -12],
   cityHomes: [50, 28],
   riverPark: [42, 28],
+  maglevStation: [65, -4],
+  biodome: [65, 12],
+  skyPods: [65, 28],
 };
 export const AIRPORT = {
   center: PLOTS.airport,
@@ -186,6 +189,9 @@ const INDUSTRIAL_TRACKS = [
   'cityHomes',
   'riverPark',
   'skyline',
+  'maglevStation',
+  'biodome',
+  'skyPods',
 ].flatMap((id) => [
   road([38, plotStreet(id)[1]], plotStreet(id), 0.85, id),
   road(atPlot(id, 0, 2), plotStreet(id), 0.75, id),
@@ -207,7 +213,7 @@ export const townTracks = (town) => [
       ]
     : []),
   ...(plotUnlocked(town, 'transitHub') ? [road([38, -8.5], [38, -0.5], 1.05)] : []),
-  ...(plotUnlocked(town, 'riverPark') || plotUnlocked(town, 'skyline')
+  ...(['riverPark', 'skyline', 'skyPods'].some((id) => plotUnlocked(town, id))
     ? [road([38, 23.5], [38, 31.5], 1.05)]
     : []),
   ...INDUSTRIAL_TRACKS.filter(({ plot }) => plotUnlocked(town, plot)),

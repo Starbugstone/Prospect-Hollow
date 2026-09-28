@@ -461,6 +461,38 @@ function splashPlaza(d, g, grand) {
   }
 }
 
+// 2065: a round pool with two tilted rings floating around a glowing orb; water
+// arcs from the orb's equator and the finished square adds a third ring and jets.
+function orbitalRings(d, g, grand) {
+  const shell = '#ece5d3',
+    teal = '#6d9f98',
+    glow = '#f3dc92',
+    glass = '#a6d3d4';
+  d.mesh(g, 'cylinder', [1.08, 0.12, 1.08], [0, 0.22, 0], shell);
+  d.mesh(g, 'cylinder', [1.1, 0.04, 1.1], [0, 0.3, 0], teal);
+  pool(d, g, 0.96, 0.29);
+  d.mesh(g, 'cylinder', [0.12, 0.5, 0.12], [0, 0.55, 0], teal);
+  d.ball(g, 0, 1.08, 0, 0.3, glass);
+  d.ball(g, 0, 1.08, 0, [0.33, 0.05, 0.33], glow);
+  const rings = grand ? [0.62, -0.5, 0.2] : [0.62, -0.5];
+  rings.forEach((tilt, n) => {
+    const ring = d.mesh(
+      g,
+      'cylinder',
+      [0.62 + n * 0.1, 0.035, 0.62 + n * 0.1],
+      [0, 1.08, 0],
+      n ? teal : shell,
+    );
+    ring.rotation.set(tilt, n * 1.1, tilt * 0.4);
+  });
+  radialArcs(d, g, grand ? 6 : 4, [0.3, 1.08], [0.82, 0.3], 0.18, Math.PI / 4);
+  if (!grand) return;
+  for (let n = 0; n < 4; n++) {
+    const a = (n / 4) * TAU;
+    jet(d, g, Math.cos(a) * 0.55, Math.sin(a) * 0.55, 0.29, 0.28, 0.026);
+  }
+}
+
 /** One renderer for each id in FOUNTAIN_DESIGNS (src/data/fountains.js). */
 export const FOUNTAINS = Object.freeze({
   'frontier-spring': frontierSpring,
@@ -471,6 +503,7 @@ export const FOUNTAINS = Object.freeze({
   'mid-century': midCentury,
   postmodern,
   'splash-plaza': splashPlaza,
+  'orbital-rings': orbitalRings,
 });
 /** Build the central fountain for a square completed in `era`; stage 3 adds its tier. */
 export function addTownFountain(d, parent, stage, era = 'frontier') {

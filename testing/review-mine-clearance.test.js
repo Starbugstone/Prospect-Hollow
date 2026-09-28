@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest';
+import { LEVEL_COUNT } from '../src/data/campaign';
 import { Box3, Group, Raycaster, Vector3 } from 'three';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
@@ -8,7 +9,7 @@ import { BUILDINGS, createTown } from '../src/data/town';
 import { MINE_SHAFT, mineYardEnvelope } from '../src/data/mineSite';
 import { tunnelCeilingAt } from '../src/game/town/TownRailTunnel';
 import { buildMineHillside } from '../src/game/town/TownMineHillside';
-import { groundHeight } from '../src/game/town/TownLandscape';
+import { groundHeight, landscapeColor } from '../src/game/town/TownLandscape';
 import { mineGrowth } from '../src/data/mineGrowth';
 
 it.each(ERAS.map((e) => e.id))(
@@ -23,7 +24,7 @@ it.each(ERAS.map((e) => e.id))(
     });
     d.town.era = era;
     d.town.buildings.railDepot = 3;
-    const root = addMineSite(d, new Group(), era, mineGrowth(324));
+    const root = addMineSite(d, new Group(), era, mineGrowth(LEVEL_COUNT));
     let triangles = 0,
       animated = 0;
     root.traverse((o) => {
@@ -67,7 +68,15 @@ it.each(ERAS.map((e) => e.id))(
           expect(b.max.z).toBeLessThanOrEqual(mineYardEnvelope().maxZ + 1e-5);
       });
     }
-    const hillside = buildMineHillside(d, new Group(), -20, -23, groundHeight, true);
+    const hillside = buildMineHillside(
+      d,
+      new Group(),
+      -20,
+      -23,
+      groundHeight,
+      landscapeColor,
+      true,
+    );
     hillside.updateMatrixWorld(true);
     root.traverse((support) => {
       if (support.name !== 'Hillside terrace support') return;

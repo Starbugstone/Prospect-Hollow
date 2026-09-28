@@ -1,0 +1,396 @@
+{
+  "format": "crystal-cascade-profile-v3",
+  "version": 1,
+  "exportedAt": "2026-09-28T14:29:27.289Z",
+  "profile": {
+    "schemaVersion": 2,
+    "records": {
+      "1": {
+        "score": 3000,
+        "stars": 2,
+        "bestTimeMs": 50000
+      },
+      "2": {
+        "score": 6000,
+        "stars": 3,
+        "bestTimeMs": 50000
+      },
+      "3": {
+        "score": 9000,
+        "stars": 1,
+        "bestTimeMs": 50000
+      },
+      "4": {
+        "score": 12000,
+        "stars": 2,
+        "bestTimeMs": 50000
+      },
+      "5": {
+        "score": 15000,
+        "stars": 3,
+        "bestTimeMs": 50000
+      },
+      "6": {
+        "score": 18000,
+        "stars": 1,
+        "bestTimeMs": 50000
+      },
+      "7": {
+        "score": 21000,
+        "stars": 2,
+        "bestTimeMs": 50000
+      },
+      "8": {
+        "score": 24000,
+        "stars": 3,
+        "bestTimeMs": 50000
+      },
+      "9": {
+        "score": 27000,
+        "stars": 1,
+        "bestTimeMs": 50000
+      },
+      "10": {
+        "score": 30000,
+        "stars": 2,
+        "bestTimeMs": 50000
+      },
+      "11": {
+        "score": 33000,
+        "stars": 3,
+        "bestTimeMs": 50000
+      },
+      "12": {
+        "score": 36000,
+        "stars": 1,
+        "bestTimeMs": 50000
+      },
+      "13": {
+        "score": 39000,
+        "stars": 2,
+        "bestTimeMs": 50000
+      },
+      "14": {
+        "score": 42000,
+        "stars": 3,
+        "bestTimeMs": 50000
+      },
+      "15": {
+        "score": 60000,
+        "stars": 3,
+        "bestTimeMs": 30000
+      }
+    },
+    "continuousRecords": {
+      "3": {
+        "coins": 20,
+        "score": 9000
+      }
+    },
+    "powers": [
+      {
+        "id": "clear-row",
+        "label": "Clear Row",
+        "dropWeight": 30,
+        "quantity": 0
+      },
+      {
+        "id": "tnt",
+        "label": "TNT",
+        "dropWeight": 25,
+        "quantity": 0
+      },
+      {
+        "id": "color-wand",
+        "label": "Color Wand",
+        "dropWeight": 20,
+        "quantity": 0
+      },
+      {
+        "id": "shuffle",
+        "label": "Shuffle",
+        "dropWeight": 10,
+        "quantity": 0
+      },
+      {
+        "id": "tile-breaker",
+        "label": "Tile Breaker",
+        "dropWeight": 15,
+        "quantity": 0
+      }
+    ],
+    "builderHammers": 2,
+    "chestsWithoutBuilderHammer": 2,
+    "pendingChests": [
+      {
+        "id": "1-score",
+        "label": "Celestial chest",
+        "multiplier": 2,
+        "count": 1,
+        "runId": 1,
+        "levelId": 15,
+        "economyVersion": 2,
+        "source": "score",
+        "items": [
+          {
+            "id": "tnt",
+            "kind": "power",
+            "label": "TNT",
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "id": "1-speed",
+        "label": "Celestial chest",
+        "multiplier": 2,
+        "count": 1,
+        "timeMultiplier": 0.5,
+        "runId": 1,
+        "levelId": 15,
+        "economyVersion": 2,
+        "source": "speed",
+        "items": [
+          {
+            "id": "clear-row",
+            "kind": "power",
+            "label": "Clear Row",
+            "quantity": 1
+          }
+        ]
+      }
+    ],
+    "shopStock": [
+      {
+        "id": "clear-row",
+        "sold": false
+      },
+      {
+        "id": "tile-breaker",
+        "sold": false
+      },
+      {
+        "id": "color-wand",
+        "sold": false
+      },
+      {
+        "id": "shuffle",
+        "sold": false
+      },
+      {
+        "id": "tnt",
+        "sold": false
+      }
+    ],
+    "shopVisit": 1,
+    "seenObstacles": [],
+    "seenTips": [],
+    "town": {
+      "era": "industrial",
+      "buildingEras": {
+        "well": "industrial",
+        "farm": "industrial",
+        "home": "industrial",
+        "saloon": "industrial",
+        "stable": "industrial",
+        "sheriff": "industrial",
+        "museum": "industrial",
+        "armory": "industrial",
+        "bank": "industrial",
+        "shop": "industrial",
+        "square": "industrial",
+        "watermill": "industrial",
+        "fisherman": "industrial",
+        "blacksmith": "industrial",
+        "school": "industrial",
+        "doctor": "industrial",
+        "bridge": "industrial",
+        "riverPort": "industrial",
+        "railDepot": "industrial",
+        "post": "industrial",
+        "warehouse": "industrial",
+        "hotel": "industrial",
+        "home5": "industrial",
+        "market": "industrial",
+        "powerHouse": "industrial",
+        "fireStation": "industrial",
+        "rowHouses": "industrial",
+        "mill": "industrial",
+        "garage": "frontier",
+        "busDepot": "frontier",
+        "gardenCourt": "frontier",
+        "diner": "frontier",
+        "airport": "frontier",
+        "radioTower": "frontier",
+        "concertHall": "frontier",
+        "television": "frontier",
+        "skyline": "frontier",
+        "cityHall": "frontier",
+        "apartments": "frontier",
+        "supermarket": "frontier",
+        "waterPlant": "frontier",
+        "transitHub": "frontier",
+        "library": "frontier",
+        "crystalLab": "frontier",
+        "cityHomes": "frontier",
+        "riverPark": "frontier",
+        "horseField": "industrial",
+        "park": "frontier",
+        "home2": "industrial",
+        "home3": "industrial",
+        "home4": "industrial",
+        "well2": "industrial",
+        "farm2": "industrial",
+        "farm3": "industrial"
+      },
+      "buildingEraLevels": {
+        "well": 3,
+        "farm": 3,
+        "home": 3,
+        "saloon": 3,
+        "stable": 3,
+        "sheriff": 3,
+        "museum": 3,
+        "armory": 3,
+        "bank": 3,
+        "shop": 3,
+        "square": 3,
+        "watermill": 3,
+        "fisherman": 3,
+        "blacksmith": 3,
+        "school": 3,
+        "doctor": 3,
+        "bridge": 3,
+        "riverPort": 3,
+        "railDepot": 3,
+        "post": 3,
+        "warehouse": 3,
+        "hotel": 3,
+        "home5": 3,
+        "market": 3,
+        "powerHouse": 3,
+        "fireStation": 3,
+        "rowHouses": 3,
+        "mill": 3,
+        "garage": 0,
+        "busDepot": 0,
+        "gardenCourt": 0,
+        "diner": 0,
+        "airport": 0,
+        "radioTower": 0,
+        "concertHall": 0,
+        "television": 0,
+        "skyline": 0,
+        "cityHall": 0,
+        "apartments": 0,
+        "supermarket": 0,
+        "waterPlant": 0,
+        "transitHub": 0,
+        "library": 0,
+        "crystalLab": 0,
+        "cityHomes": 0,
+        "riverPark": 0,
+        "horseField": 3,
+        "park": 0,
+        "home2": 3,
+        "home3": 3,
+        "home4": 3,
+        "well2": 3,
+        "farm2": 3,
+        "farm3": 3
+      },
+      "eraTransitionSeen": {
+        "frontier": true,
+        "river-rail": true,
+        "industrial": true
+      },
+      "firstLightsSeen": true,
+      "infrastructure": {
+        "bridge": 3,
+        "rail": 3,
+        "riverPort": 3
+      },
+      "forge": {
+        "progress": 1,
+        "charge": 0
+      },
+      "coins": 5120,
+      "tourSeen": true,
+      "constructionTipSeen": true,
+      "buildings": {
+        "well": 3,
+        "farm": 3,
+        "home": 3,
+        "saloon": 5,
+        "stable": 3,
+        "sheriff": 5,
+        "museum": 3,
+        "armory": 3,
+        "bank": 5,
+        "shop": 3,
+        "square": 5,
+        "watermill": 3,
+        "fisherman": 3,
+        "blacksmith": 5,
+        "school": 3,
+        "doctor": 3,
+        "bridge": 3,
+        "riverPort": 3,
+        "railDepot": 3,
+        "post": 3,
+        "warehouse": 3,
+        "hotel": 3,
+        "home5": 3,
+        "market": 3,
+        "powerHouse": 3,
+        "fireStation": 3,
+        "rowHouses": 3,
+        "mill": 3,
+        "garage": 0,
+        "busDepot": 0,
+        "gardenCourt": 0,
+        "diner": 0,
+        "airport": 0,
+        "radioTower": 0,
+        "concertHall": 0,
+        "television": 0,
+        "skyline": 0,
+        "cityHall": 0,
+        "apartments": 0,
+        "supermarket": 0,
+        "waterPlant": 0,
+        "transitHub": 0,
+        "library": 0,
+        "crystalLab": 0,
+        "cityHomes": 0,
+        "riverPark": 0,
+        "horseField": 3,
+        "park": 0,
+        "home2": 3,
+        "home3": 3,
+        "home4": 3,
+        "well2": 3,
+        "farm2": 3,
+        "farm3": 3
+      },
+      "events": {},
+      "presentations": {},
+      "projects": {},
+      "completedRuns": 1,
+      "nextRaidRun": null,
+      "income": {
+        "at": 1790605767285,
+        "stored": 0,
+        "remainder": 26424
+      },
+      "lastCollections": {
+        "saloon": null,
+        "blacksmith": null
+      },
+      "progressionVersion": 1
+    },
+    "townProjectFocus": "",
+    "issuedRun": 1,
+    "settledRun": 1
+  }
+}

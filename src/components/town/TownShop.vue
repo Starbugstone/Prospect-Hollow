@@ -54,8 +54,8 @@ const offers = computed(() =>
     };
   }),
 );
-function buy(item) {
-  if (campaign.buyShopItem(item.id, item.visit))
+async function buy(item) {
+  if (await campaign.buyShopItem(item.id, item.visit))
     notice.value = t('{item} added to your supplies.', { item: t(item.label) });
 }
 </script>

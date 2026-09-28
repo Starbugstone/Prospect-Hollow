@@ -1,3 +1,5 @@
+import { isRoundedEra } from '../../data/roundedArchitecture';
+import { roundedAircraft } from './RoundedTransports';
 import { airportAppearance } from '../../data/airport';
 import { futureModel, cityModel } from './buildings/city';
 import { AIRPORT } from './TownLayout';
@@ -130,11 +132,19 @@ export function airplanePose(time) {
 }
 
 export function addAviationActivity(d, town) {
-  if (!town.buildings.airport) return;
+  if (!town.buildings.airport) return null;
   const aircraft = airportAppearance(town.buildingEras?.airport).aircraft ?? 'airplane';
-  const plane =
-    aircraft === 'airplane' ? futureModel(d, d.world, aircraft) : cityModel(d, d.world, aircraft);
-  plane.name = aircraft === 'airplane' ? 'Regional passenger plane' : 'Passenger jet';
+  const rounded = isRoundedEra(town.buildingEras?.airport);
+  const plane = rounded
+    ? roundedAircraft(d, d.world)
+    : aircraft === 'airplane'
+      ? futureModel(d, d.world, aircraft)
+      : cityModel(d, d.world, aircraft);
+  plane.name = rounded
+    ? 'Sky saucer'
+    : aircraft === 'airplane'
+      ? 'Regional passenger plane'
+      : 'Passenger jet';
   const size = new Box3().setFromObject(plane).getSize(new Vector3());
   const bay = airportLayout.hangar;
   // All supported aircraft must fit the same authored door and back wall.
@@ -169,4 +179,5 @@ export function addAviationActivity(d, town) {
   };
   update(0);
   d.motions.push(update);
+  return { root: plane, motion: update };
 }

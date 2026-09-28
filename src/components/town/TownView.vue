@@ -36,6 +36,13 @@
       >
         {{ t('Town projects') }} →
       </button>
+      <button
+        v-if="cloudAccount?.signedIn.value"
+        class="town-tools-community"
+        @click="cloudAccount.openCommunity()"
+      >
+        <GameIcon name="eye" />{{ t('Shared towns') }} →
+      </button>
       <button @click="inspectBuilding('armory')">{{ t('Supplies') }} →</button>
     </div>
     <section class="town-world" :aria-label="t('Your town')">
@@ -69,6 +76,15 @@
           <GameIcon name="book" />
         </button>
         <button
+          v-if="fullscreen && !activeRaid && (town.era !== 'frontier' || town.buildings.home > 0)"
+          class="town-fullscreen-button town-projects-button"
+          :aria-label="t('Town projects')"
+          :title="t('Town projects')"
+          @click="dialogMode = 'projects'"
+        >
+          <GameIcon name="clipboard" />
+        </button>
+        <button
           class="town-fullscreen-button town-help-button"
           :aria-label="t('Village tour')"
           :title="t('Village tour')"
@@ -84,12 +100,15 @@
         >
           <GameIcon name="settings" />
         </button>
-        <div
-          v-if="fullscreen && !activeRaid"
-          class="town-map-wallet"
-          :aria-label="t('Town savings')"
-        >
-          <TownIcon name="coin" /><strong>{{ number(town.coins) }}</strong>
+        <div class="town-map-corner">
+          <SaveStatusPill v-if="cloudAccount && !activeRaid" />
+          <div
+            v-if="fullscreen && !activeRaid"
+            class="town-map-wallet"
+            :aria-label="t('Town savings')"
+          >
+            <TownIcon name="coin" /><strong>{{ number(town.coins) }}</strong>
+          </div>
         </div>
         <div v-if="campaign.builderHammers > 0" class="town-map-caption">
           <span
@@ -104,13 +123,6 @@
             ><img src="/art/rewards/builder-hammer.svg" alt="" />{{ campaign.builderHammers }}</span
           >
         </div>
-        <button
-          v-if="fullscreen && !activeRaid && (town.era !== 'frontier' || town.buildings.home > 0)"
-          class="town-plots-button town-projects-button"
-          @click="dialogMode = 'projects'"
-        >
-          {{ t('Town projects') }} <TownIcon name="arrow" />
-        </button>
         <div v-if="activeRaid" class="town-raid-banner" role="status" aria-live="polite">
           <span class="town-kicker"
             >{{ t(eventHeading(activeRaid))
@@ -247,6 +259,14 @@
               @click="progressOpen = !progressOpen"
             >
               <GameIcon name="chevron" />{{ t(progressOpen ? 'Hide progress' : 'Progress') }}
+            </button>
+            <button
+              v-if="!progressOpen"
+              class="town-next-action"
+              :class="{ 'is-ready': nextAction.kind !== 'mine' }"
+              @click="nextAct"
+            >
+              <TownIcon :name="nextAction.icon" />{{ t(nextAction.label, nextAction.params) }}
             </button>
             <button class="town-plots-button" @click="openDirectory">
               {{ t('Available plots') }} <TownIcon name="arrow" />
@@ -647,7 +667,7 @@ import { pendingPresentation } from '../../data/townPresentations';
 
 import { motorTraffic, modernTransport } from '../../game/town/TownEvolution';
 import { civicIncident } from '../../data/townEvents';
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { t, number } from '../../i18n';
 import { BUILDINGS, BUILDING_BY_ID, BANDIT_EVENT, INITIAL_STORY } from '../../data/town';
 import {
@@ -655,7 +675,7 @@ import {
   eraEventKind,
   eventHeading,
   incidentStory,
-  incidentPhases,
+  incidentPhase,
 } from '../../data/townEvents';
 import { ERA_BY_ID } from '../../data/eras';
 import { eraGate, plotInEra, eraBuildingLevel } from '../../game/town/TownEras';
@@ -687,6 +707,7 @@ import { LEVEL_COUNT } from '../../data/campaign';
 import TownMuseum from './TownMuseum.vue';
 import TownTour from './TownTour.vue';
 import GameIcon from '../GameIcon.vue';
+import SaveStatusPill from '../SaveStatusPill.vue';
 import { useTownAudio } from '../../composables/useTownAudio';
 import TownScene from './TownScene.vue';
 import TownEraCinematic from './TownEraCinematic.vue';
@@ -696,6 +717,7 @@ import TownIcon from './TownIcon.vue';
 import TownRaidNotice from './TownRaidNotice.vue';
 import TownResourceCollection from './TownResourceCollection.vue';
 import TownNextStep from './TownNextStep.vue';
+import { useNextStepAction, villageProgressOpen } from '../../composables/useNextStepAction';
 import TownDefenseStatus from './TownDefenseStatus.vue';
 
 const props = defineProps({
@@ -706,9 +728,27 @@ const props = defineProps({
 const emit = defineEmits(['mine', 'replay', 'continuous', 'museum-change']);
 const campaign = useCampaignStore(),
   settings = useSettingsStore();
+// Provided by CloudRoot; absent when the village renders without account support.
+const cloudAccount = inject('cloudAccount', null);
 const game = useGameStore();
 const town = computed(() => campaign.town);
-const progressOpen = ref(true);
+const progressOpen = computed({
+  get: () => villageProgressOpen(settings.villageProgressOpen, town.value),
+  set: (open) => settings.setVillageProgress(open),
+});
+// Keeps the next step one tap away while progress is collapsed.
+const { action: nextAction, act: nextAct } = useNextStepAction(
+  town,
+  () => campaign.builderHammers,
+  (event, id) =>
+    ({
+      select: selectBuilding,
+      inspect: inspectBuilding,
+      'build-free': buildFree,
+      'advance-era': beginEra,
+      mine: goMining,
+    })[event](id),
+);
 const tourOpen = ref(false),
   fullscreen = ref(false),
   mapFrame = ref(null),
@@ -762,8 +802,8 @@ watch(
     eraReady.value = false;
   },
 );
-function beginEra() {
-  if (activeRaid.value || !campaign.advanceEra(town.value.era)) return;
+async function beginEra() {
+  if (activeRaid.value || !(await campaign.advanceEra(town.value.era))) return;
   closeDialog();
   fullscreen.value = true;
   eraRevealed.value = false;
@@ -909,10 +949,9 @@ const { playRaidCue } = useTownAudio(() => ({
   river: true,
   railDepot: town.value.buildings.railDepot > 0 && !modernTransport(town.value, 'railDepot'),
   riverPort: town.value.buildings.riverPort > 0 && !modernTransport(town.value, 'riverPort'),
-  raid:
-    activeRaid.value && eventKind(activeRaid.value) === 'bandits'
-      ? `${activeRaid.value.id}-${raidPhase.value}`
-      : null,
+  // Every incident kind ducks the music and gets its own recorded cues.
+  raid: activeRaid.value ? `${activeRaid.value.id}-${raidPhase.value}` : null,
+  raidKind: activeRaid.value ? eventKind(activeRaid.value) : null,
   // Village panels pause the diorama, but its music and ambience keep playing.
   paused: !props.active || paused.value || !!town.value.transition?.pending,
 }));
@@ -1014,9 +1053,9 @@ function collectVipSpending(receipt) {
     origin: townScene.value?.collectionOrigin(receipt.building),
   });
 }
-function collectIncome() {
+async function collectIncome() {
   collectionNow.value = Date.now();
-  const coins = campaign.collectSaloonIncome(collectionNow.value);
+  const coins = await campaign.collectSaloonIncome(collectionNow.value);
   if (!coins) return false;
   showCollection('coins', coins, 'saloon');
   return true;
@@ -1037,7 +1076,7 @@ async function selectBuilding(id) {
     finishBuilding(id);
     return;
   }
-  if (id === 'saloon' && collectIncome()) return;
+  if (id === 'saloon' && (await collectIncome())) return;
   if (id === 'square' && gate.value.available && !activeRaid.value) {
     beginEra();
     return;
@@ -1048,14 +1087,14 @@ async function selectBuilding(id) {
   }
   collection.value = null;
   collectionNow.value = Date.now();
-  if (id === 'blacksmith' && campaign.collectForgeTNT(collectionNow.value)) {
+  if (id === 'blacksmith' && (await campaign.collectForgeTNT(collectionNow.value))) {
     showCollection('tnt', 1, 'blacksmith');
     return;
   }
   await inspectBuilding(id);
 }
-function ringBell() {
-  if (!campaign.ringTownBell(event.value?.id)) return false;
+async function ringBell() {
+  if (!(await campaign.ringTownBell(event.value?.id))) return false;
   game.audioManager?.playArcadeCue?.('town-bell');
   announcement.value = t('Bell rung · remaining loss: {coins} coins', { coins: event.value.loss });
   return true;
@@ -1113,8 +1152,8 @@ function plotStatus(place) {
       })
     : t('Empty plot');
 }
-function repair(stage, keepDirectory = false) {
-  if (!campaign.upgradeBuilding(selected.value, stage)) return;
+async function repair(stage, keepDirectory = false) {
+  if (!(await campaign.upgradeBuilding(selected.value, stage))) return;
   showConstruction(keepDirectory);
   const complete = !town.value.projects[selected.value];
   const puzzles = town.value.projects[selected.value]?.required ?? 0;
@@ -1149,10 +1188,10 @@ function showConstruction(keepDirectory = false) {
   construction.value = { id: selected.value, serial: (construction.value?.serial ?? 0) + 1 };
   if (!keepDirectory) mapFrame.value?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
 }
-function finishBuilding(id, keepDirectory = false) {
+async function finishBuilding(id, keepDirectory = false) {
   performanceMark('build-tap');
   const stage = town.value.projects[id]?.stage;
-  if (!campaign.finishConstruction(id, stage)) return;
+  if (!(await campaign.finishConstruction(id, stage))) return;
   performanceMark('build-accepted');
   selected.value = id;
   showConstruction(keepDirectory);
@@ -1169,16 +1208,16 @@ function celebrateBuilding() {
     building: t(BUILDING_BY_ID[selected.value].shortName),
   });
 }
-function useHammer(stage, keepDirectory = false) {
-  if (!campaign.useBuilderHammer(selected.value, stage)) return;
+async function useHammer(stage, keepDirectory = false) {
+  if (!(await campaign.useBuilderHammer(selected.value, stage))) return;
   showConstruction(keepDirectory);
   celebrateBuilding();
 }
 
-function finishRaid() {
+async function finishRaid() {
   if (!activeRaid.value) return;
   const id = activeRaid.value.id;
-  if (!event.value?.seen && !campaign.markRaidSeen(id)) return;
+  if (!event.value?.seen && !(await campaign.markRaidSeen(id))) return;
   const receipt = { ...event.value };
   if (receipt.outcome === 'protected' || receipt.loss > 0) raidNotice.value = receipt;
   if (receipt.bounty) game.audioManager?.playArcadeCue?.('jackpot');
@@ -1191,10 +1230,7 @@ function replayRaid() {
   raidNotice.value = null;
   if (!event.value || activeRaid.value) return;
   activeRaid.value = { ...event.value };
-  raidPhase.value =
-    eventKind(event.value) === 'bandits'
-      ? 'Riders on the ridge'
-      : incidentPhases(eventKind(event.value), 0);
+  raidPhase.value = incidentPhase(event.value, 0);
   document
     .querySelector('.town-map-frame')
     ?.scrollIntoView({ behavior: settings.reducedMotion ? 'instant' : 'smooth', block: 'start' });
@@ -1213,10 +1249,7 @@ function enterVillage() {
   campaign.resolveBandits();
   if (event.value && !event.value.seen) {
     activeRaid.value = { ...event.value };
-    raidPhase.value =
-      eventKind(event.value) === 'bandits'
-        ? 'Riders on the ridge'
-        : incidentPhases(eventKind(event.value), 0);
+    raidPhase.value = incidentPhase(event.value, 0);
   }
   if (props.openMuseum && !campaign.canReplay) {
     selectBuilding('museum');

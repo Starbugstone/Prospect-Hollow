@@ -3,7 +3,7 @@ import { addSquareModernization } from '../TownSquare';
 import { BRIDGE, bridgeDeckHeight } from '../TownRiver';
 import { addHeritageUpgrade } from './HeritageDetails';
 import { addFishingDock } from './river';
-import { INDUSTRIAL_VARIANTS, ELECTRIC_LAMPS, hasElectricity } from '../../../data/industrial';
+import { INDUSTRIAL_VARIANTS, electricLamps, hasElectricity } from '../../../data/industrial';
 import { t } from '../../../i18n';
 import { renderLeisureBuilding } from '../LeisureAssets';
 
@@ -102,14 +102,14 @@ export function addElectricLighting(d, town) {
   const lights = d.group(d.world);
   lights.name = 'First Lights electric street lamps';
   lights.userData.static = true;
-  for (const [x, z] of ELECTRIC_LAMPS) {
+  for (const [x, z] of electricLamps(town)) {
     walkObstacle(lights, x, z, 0.15);
     d.mesh(lights, 'cylinder', [0.15, 0.2, 0.15], [x, 0.13, z], iron);
     d.rod(lights, [x, 0.2, z], [x, 2.5, z], 0.055, iron);
     d.ball(lights, x, 2.62, z, [0.22, 0.27, 0.22], '#fff0b6');
     d.box(lights, 0.38, 0.09, 0.38, x, 2.9, z, iron);
   }
-  // Static globes stay readable in daylight without adding seven shadow-casting lights.
+  // Static globes stay readable in daylight without adding shadow-casting lights.
   d.batch(lights);
   return lights;
 }

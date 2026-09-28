@@ -4,7 +4,7 @@ import { CHAPTERS, LEVEL_COUNT } from './campaign';
 // Coin prices share one multiplier so buildings and supplies stay in step.
 export const purchasePrice = (basePrice) => Math.ceil(basePrice * 1.5);
 
-const miningChapter = (levelId) =>
+export const miningChapter = (levelId) =>
   Number.isInteger(levelId) && levelId >= 1 && levelId <= LEVEL_COUNT
     ? 1 + Math.floor((levelId - 1) / (LEVEL_COUNT / CHAPTERS.length))
     : 1;

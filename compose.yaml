@@ -1,0 +1,36 @@
+name: prospect-cloud
+services:
+  app:
+    build: .
+    ports:
+      - '127.0.0.1:${APP_PORT:-8094}:80'
+    environment:
+      APP_SECRET: ${APP_SECRET:?Set a random APP_SECRET in .env}
+      APP_ORIGIN: ${APP_ORIGIN:-http://localhost:8094}
+      DATABASE_URL: postgresql://cascade:${DB_PASSWORD}@db:5432/cascade
+      MAILER_DSN: smtp://mail:1025
+      NATIVE_ORIGINS: ${NATIVE_ORIGINS:-}
+      MAIL_FROM: village@localhost.test
+    depends_on:
+      db: { condition: service_healthy }
+    restart: unless-stopped
+  db:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_DB: cascade
+      POSTGRES_USER: cascade
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - account-save-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U cascade -d cascade']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+  mail:
+    image: axllent/mailpit:v1.27
+    ports:
+      - '127.0.0.1:8095:8025'
+volumes:
+  account-save-data:

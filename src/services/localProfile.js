@@ -1,17 +1,23 @@
-// This release starts a new progress generation once. Keep this key stable in later releases.
-// Earlier v1/v2 profiles are deliberately not imported, including writes from old open tabs.
-export const SAVE_KEY = 'crystal-cascade-profile-v3';
-
-// This adapter is the progress storage boundary. The Symfony follow-up can replace it.
+import { townStorage, SAVE_KEY } from './townStorage';
+export { SAVE_KEY };
+let paused = 0,
+  loadedId = null,
+  loadedStorage;
 export const localProfile = {
+  get writesSuspended() {
+    return paused > 0 || !townStorage.canWrite();
+  },
   load() {
+    loadedId = null;
+    loadedStorage = globalThis.localStorage;
     try {
       const storage = globalThis.localStorage;
       if (!storage)
         return { data: null, warning: 'Progress can only be kept until this page closes.' };
-      const current = storage.getItem(SAVE_KEY);
+      const current = townStorage.load();
       if (current != null) {
-        const data = JSON.parse(current);
+        const data = current;
+        loadedId = data?._cloud?.active.id ?? null;
         if (data?.schemaVersion > 2)
           return {
             data,
@@ -29,10 +35,22 @@ export const localProfile = {
       };
     }
   },
+  suspendWrites() {
+    paused++;
+    let released = false;
+    return () => {
+      if (!released) paused--;
+      released = true;
+    };
+  },
   save(data) {
     try {
-      if (!globalThis.localStorage) return false;
-      globalThis.localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+      if (paused) return false;
+      loadedId = townStorage.save(
+        data,
+        loadedStorage === globalThis.localStorage ? loadedId : null,
+      ).id;
+      loadedStorage = globalThis.localStorage;
       return true;
     } catch {
       return false;

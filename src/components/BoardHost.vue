@@ -4,11 +4,12 @@
   </Teleport>
 </template>
 <script setup>
-import { defineAsyncComponent, ref, onBeforeUnmount } from 'vue';
+import { ref, onBeforeUnmount } from 'vue';
 import { useCampaignStore } from '../stores/campaignStore';
 import { useGameStore } from '../stores/gameStore';
 import { loadBoard } from '../game/phaser/loadBoard';
-const BoardCanvas = defineAsyncComponent(loadBoard);
+import { asyncGameView } from '../services/asyncGameView';
+const BoardCanvas = asyncGameView(loadBoard, 'Loading your mine…');
 const game = useGameStore();
 const epoch = ref(0);
 const stop = useCampaignStore().$onAction(({ name, after }) => {

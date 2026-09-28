@@ -1,10 +1,10 @@
 # Settlement eras
 
-Eight eras are playable: Frontier → River & Rail → Electric → Post-war Rebuilding → Motor Age → Aviation & Radio (1958) → Music & Television (1986) → Connected City (2005). The village has 53 plots and the campaign has 240 puzzles. See [issue #41 fixes and browser verification](issue41-era-visuals.md) for current behavior. The historical reports below describe earlier milestones.
+Nine eras are playable: Frontier → River & Rail → Electric → Post-war Rebuilding → Motor Age → Aviation & Radio (1958) → Music & Television (1986) → Connected City (2005) → Tomorrow City (2065). Tomorrow City rebuilds every modernized building with rounded domes, pods and vaults; see [the era architecture guide](era-architecture.md#city-architecture-tomorrow-citys-rounded-forms). The village has 53 plots and the campaign has 240 puzzles. See [issue #41 fixes and browser verification](issue41-era-visuals.md) for current behavior. The historical reports below describe earlier milestones.
 
 ## Try the eras immediately
 
-Run `npm run dev` and `npm run demo:eras`. The latter creates local fixtures for all eight eras under the ignored `output/era-demo/` directory:
+Run `npm run dev` and `npm run demo:eras`. The latter creates local fixtures for every era under the ignored `output/era-demo/` directory:
 
 | Fixture                                                      | Starting point                                                       |
 | ------------------------------------------------------------ | -------------------------------------------------------------------- |
@@ -19,6 +19,7 @@ Run `npm run dev` and `npm run demo:eras`. The latter creates local fixtures for
 | `motor-age-complete`                                         | All 43 plots at Motor Age level three                                |
 | `post-war`, `post-war-open`, `post-war-complete`             | Rebuilding transition, ready to build, or all 38 plots completed     |
 | `contemporary`, `contemporary-open`, `contemporary-complete` | Crystal City transition, ready to build, or all 48 plots completed   |
+| `tomorrow`, `tomorrow-open`, `tomorrow-complete`             | Tomorrow City transition, ready to build, or every plot rounded      |
 | `storm-cleanup`                                              | Saved Contemporary cleanup encounter                                 |
 | `cargo-theft`                                                | Saved River & Rail freight-yard encounter                            |
 | `workshop-fire`                                              | Saved Industrial fire with an unprotected workshop                   |

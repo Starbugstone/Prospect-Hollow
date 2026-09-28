@@ -11,6 +11,11 @@ import { CITY_FAMILIES, isCityEra } from '../../../data/city';
 import { blenderModel, leisureModel } from '../LeisureAssets';
 import { buildTownSquare } from '../TownSquare';
 import { cityFamily, resolveModel } from '../assets/MeshCatalog';
+import { addRoundedLounge, renderRoundedBuilding } from './rounded';
+
+/** Procedural city architectures by the era's `architecture` capability. A renderer
+ * returning false leaves that kind to the shared Blender shells (e.g. the airport). */
+const ARCHITECTURES = { rounded: renderRoundedBuilding };
 
 export const futureModel = (d, parent, name) => blenderModel(d, parent, null, name, 'future');
 export const cityModel = (d, parent, name) => {
@@ -31,6 +36,18 @@ export function renderCityBuilding(
   fountainEra = era,
 ) {
   if (!isCityEra(era) || !CITY_FAMILIES[kind] || kind === 'bridge') return false;
+  if (
+    ARCHITECTURES[eraEvolution(era).architecture]?.(
+      d,
+      parent,
+      kind,
+      label,
+      level,
+      era,
+      serviceLevel,
+    )
+  )
+    return true;
   const family = CITY_FAMILIES[kind];
   const appearance = cityAppearance(era, kind);
   let asset = appearance.asset;
@@ -66,10 +83,13 @@ export function renderCityBuilding(
         const lounge = d.group(root);
         lounge.name = 'Airport rooftop observation lounge';
         d.box(lounge, 4.8, 0.18, 3.2, 4.5, floor, -2.8, a.roof);
-        d.box(lounge, 4.4, 1.6, 2.8, 4.5, floor + 0.85, -2.8, '#85b8c8');
-        d.box(lounge, 4.9, 0.18, 3.3, 4.5, floor + 1.75, -2.8, a.roof);
-        for (const x of [2.3, 4.5, 6.7])
-          d.box(lounge, 0.1, 1.6, 0.15, x, floor + 0.85, -1.35, a.frame);
+        if (profile.architecture === 'rounded') addRoundedLounge(d, lounge, 4.5, floor, -2.8);
+        else {
+          d.box(lounge, 4.4, 1.6, 2.8, 4.5, floor + 0.85, -2.8, '#85b8c8');
+          d.box(lounge, 4.9, 0.18, 3.3, 4.5, floor + 1.75, -2.8, a.roof);
+          for (const x of [2.3, 4.5, 6.7])
+            d.box(lounge, 0.1, 1.6, 0.15, x, floor + 0.85, -1.35, a.frame);
+        }
       }
     } else addCityLandmarkDetails(d, root, family, era, level);
     if (family === 'airport') d.sign(root, label, 4.2, 4.5, 2.7, 1.22);

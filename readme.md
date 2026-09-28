@@ -115,6 +115,12 @@ Phaser loads when a chapter opens. Vue never wraps the renderer's internal objec
 
 See [the era architecture guide](docs/era-architecture.md) for loading, presentation and navigation contracts. Capacitor configuration and the existing Azure deployment workflow are retained; native platforms need their usual platform setup before using the `cap:*` commands.
 
-Run `npm run verify` for formatting, generated-footprint drift, the complete regression suite, and production chunk budgets. GitHub Quality checks runs the same command for pull requests and pushes to main and develop; verify it and the Vercel preview before merging a release.
+Run `npm run verify` for formatting, generated-footprint drift, the complete regression suite, and production chunk budgets. GitHub Quality checks runs the same command for pull requests and pushes to main, develop and preprod; verify it and the Vercel preview before merging a release.
 
 Mine teardown explicitly releases its WebGL context. If the village loses its graphics context, it rebuilds the 3D scene on a fresh canvas while preserving the camera. Repeated recovery failures use the playable SVG town. Interrupted frame-cache renders restore renderer state before another draw.
+
+## Account backend and preproduction deployment
+
+Gameplay is fully local and works offline. Signed-out players have one device-only town; accounts can back up three independent towns through the PHP/Symfony API. Revision checks prevent competing devices from silently overwriting each other. On divergence, the latest server save is loaded with a preserved local copy and an explicit, reviewed overwrite option. See [browser saving](docs/backend/browser-saving.md), [local setup and hosting](docs/backend/hosting.md), [security boundaries](docs/backend/security.md), and the [API contract](docs/backend/openapi.yaml).
+
+The `preprod` branch deploys to o2switch after its exact commit passes Quality checks. The private hosting controller and cron job must be enabled on the host. See [the preproduction setup](docs/backend/preprod.md).

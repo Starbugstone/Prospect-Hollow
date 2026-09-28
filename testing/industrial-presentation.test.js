@@ -8,7 +8,12 @@ import {
   renderIndustrialLandmark,
   addIndustrialModernization,
 } from '../src/game/town/buildings/industrial';
-import { TownEraIncident, INCIDENT_DURATION } from '../src/game/town/TownEraIncident';
+import {
+  TownEraIncident,
+  INCIDENT_DURATION,
+  INCIDENT_SPEED,
+} from '../src/game/town/TownEraIncident';
+import { incidentScript } from '../src/data/townEvents';
 import { TownActors } from '../src/game/town/TownActors';
 import { PLOTS } from '../src/game/town/TownLayout';
 import { RIVER, riverDistance, bridgeDeckHeight } from '../src/game/town/TownRiver';
@@ -75,10 +80,17 @@ describe('Substantial Industrial structures and village incidents', () => {
       const event = {
         id: 1,
         kind,
+        gangSize: 4,
+        sheriffLevel: 2,
+        bankLevel: 2,
+        fireStationLevel: kind === 'cargo-theft' ? 0 : 1,
         targets: [kind === 'workshop-fire' ? 'mill' : 'warehouse'],
-        loss: 0,
-        outcome: 'protected',
+        loss: kind === 'cargo-theft' ? 0 : 7,
+        outcome: kind === 'cargo-theft' ? 'protected' : 'stolen',
       };
+      const script = incidentScript(event);
+      // Sample while the responders are working at the scene.
+      const working = Math.round(((script.arrive + 2) / INCIDENT_SPEED) * 10);
       const done = vi.fn(),
         phases = vi.fn();
       const incident = new TownEraIncident(d, event, PLOTS, phases, done);
@@ -95,7 +107,7 @@ describe('Substantial Industrial structures and village incidents', () => {
       for (let tick = 0; tick < INCIDENT_DURATION * 10; tick++) {
         const now = tick / 10;
         incident.update(now);
-        if (tick === 100) {
+        if (tick === working) {
           d.actorRenderer.update();
           for (const actor of incident.crew) expect(actor.root.visible).toBe(true);
           if (incident.vehicle) {
@@ -135,7 +147,9 @@ describe('Substantial Industrial structures and village incidents', () => {
       incident.update(INCIDENT_DURATION + 1);
       expect(done).toHaveBeenCalledTimes(1);
       expect(incident.root.parent).toBeNull();
-      expect(phases).toHaveBeenCalledTimes(3);
+      expect(phases.mock.calls.map(([phase]) => phase)).toEqual(
+        script.phases.map(([, phase]) => phase),
+      );
     },
   );
 });

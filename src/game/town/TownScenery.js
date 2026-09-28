@@ -1,8 +1,8 @@
 import { buildMineHillside } from './TownMineHillside';
-import { groundHeight } from './TownLandscape';
+import { groundHeight, landscapeColor } from './TownLandscape';
 import { RAIL_EDGE } from './TownLayout';
 import { eraEvolution } from '../../data/eras';
-import { hasElectricity } from '../../data/industrial';
+import { electricLamps, hasElectricity } from '../../data/industrial';
 import { roadLevel } from './TownRules';
 import { PLOTS, townTracks, railEdges } from './TownLayout';
 import { addTownRoads } from './TownActivity';
@@ -21,11 +21,14 @@ export class TownScenery {
   detach() {
     for (const { group } of this.entries.values()) group?.removeFromParent();
   }
+  // Returns the ids whose infrastructure was rebuilt, so callers can refresh navigation.
   update(view, town) {
-    const topology = JSON.stringify([
-      townTracks(town),
-      Object.keys(PLOTS).filter((id) => town.buildings[id] > 0),
-    ]);
+    const tracks = JSON.stringify(townTracks(town));
+    const built = Object.keys(PLOTS).filter((id) => town.buildings[id] > 0);
+    const level = roadLevel(town);
+    // Only frontage paving (road level 2+) and overhead service wires follow the
+    // completed plots. Earlier roads keep their batch when a new building opens.
+    const overhead = hasElectricity(town) && !!eraEvolution(town.era).overheadPower;
     const definitions = [
       [
         'mine-hillside',
@@ -37,12 +40,13 @@ export class TownScenery {
             PLOTS.mine[1],
             RAIL_EDGE.from[1],
             groundHeight,
+            landscapeColor,
             !!railEdges(town).length,
           ),
       ],
       [
         'roads',
-        JSON.stringify([town.era, roadLevel(town), topology]),
+        JSON.stringify([town.era, level, tracks, level >= 2 ? built : null]),
         () => addTownRoads(view, town, PLOTS),
       ],
       ['streetscape', town.era, () => addEraStreetscape(view, town)],
@@ -52,14 +56,19 @@ export class TownScenery {
         JSON.stringify([town.era, !!railEdges(town).length]),
         () => addMineWorks(view, view.world, town.era),
       ],
-      ['lights', hasElectricity(town), () => addElectricLighting(view, town)],
+      ['lights', JSON.stringify(electricLamps(town)), () => addElectricLighting(view, town)],
       [
         'power',
-        JSON.stringify([hasElectricity(town), !eraEvolution(town.era).overheadPower, topology]),
+        JSON.stringify([
+          hasElectricity(town),
+          !eraEvolution(town.era).overheadPower,
+          overhead ? [tracks, built] : null,
+        ]),
         () => addPowerGrid(view, town),
       ],
       ['railroad', !!railEdges(town).length, () => addRailroad(view, town)],
     ];
+    const changed = [];
     for (const [id, signature, build] of definitions) {
       let cached = this.entries.get(id);
       if (!cached || cached.signature !== signature) {
@@ -67,7 +76,9 @@ export class TownScenery {
           view.motions = view.motions.filter((m) => m !== cached.group.userData.mineUpdate);
         view.clearGroup(cached?.group);
         cached = { signature, group: build() };
+        if (cached.group) cached.group.userData.navigationOwner = `scenery:${id}`;
         this.entries.set(id, cached);
+        changed.push(id);
       }
       if (cached.group) {
         view.world.add(cached.group);
@@ -78,6 +89,7 @@ export class TownScenery {
           view.motions.push(cached.group.userData.mineUpdate);
       }
     }
+    return changed;
   }
   dispose(view) {
     for (const { group } of this.entries.values()) view.clearGroup(group);

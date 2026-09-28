@@ -30,7 +30,7 @@
     </div>
     <div class="starlight" aria-hidden="true"></div>
     <header class="app-header">
-      <button class="brand" :aria-label="t('Prospect Hollow home')" @click="showVillage">
+      <button class="brand" :aria-label="t('Prospect Hollow home')" @click="showHome">
         <img src="/art/amethyst.svg" alt="" />
         <span>PROSPECT <b>HOLLOW</b></span>
       </button>
@@ -87,12 +87,16 @@
       @guide="openGuide"
     />
 
-    <LandingView v-if="!game.sessionActive && view === 'landing'" @enter="showTown" />
+    <LandingView
+      v-if="!game.sessionActive && view === 'landing'"
+      @enter="showTown"
+      @imported="resumeImportedVillage"
+    />
     <TownView
       ref="townView"
       v-if="townVisited"
       v-show="townActive"
-      :active="townActive"
+      :active="townActive && !props.suspended"
       :mine-entry-pending="!!pendingMineEntry"
       :key="townVisit"
       :open-museum="returnToMuseum"
@@ -169,6 +173,7 @@
           </template>
         </div>
         <div class="board-topline">
+          <MineScoreMeter />
           <div class="board-tools">
             <button
               class="icon-button"
@@ -251,7 +256,12 @@
     <SettingsDrawer
       :open="settings.isSettingsOpen"
       :allow-save-transfer="!game.sessionActive"
+      :show-home="view === 'town'"
       @close="settings.toggleSettings(false)"
+      @home="
+        settings.toggleSettings(false);
+        showHome();
+      "
       @reset-progress="resetProgress"
       @import-progress="resumeImportedVillage"
     />
@@ -259,18 +269,15 @@
 </template>
 
 <script setup>
+const props = defineProps({ suspended: Boolean });
 import MineTip from './components/MineTip.vue';
 import { t } from './i18n';
-import {
-  computed,
-  nextTick,
-  defineAsyncComponent,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-  watch,
-} from 'vue';
-const TownView = defineAsyncComponent(() => import('./components/town/TownView.vue'));
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { asyncGameView } from './services/asyncGameView';
+const TownView = asyncGameView(
+  () => import('./components/town/TownView.vue'),
+  'Loading your village…',
+);
 import BoardHost from './components/BoardHost.vue';
 import { performanceMark } from './game/PresentationWork';
 import TownDialog from './components/town/TownDialog.vue';
@@ -278,6 +285,7 @@ import { constructionReady } from './game/town/TownRules';
 import MineBackdrop from './components/MineBackdrop.vue';
 import ArcadeBanner from './components/ArcadeBanner.vue';
 import MineHeader from './components/MineHeader.vue';
+import MineScoreMeter from './components/MineScoreMeter.vue';
 import PowerUpBar from './components/PowerUpBar.vue';
 import LandingView from './components/LandingView.vue';
 import './styles/town.css';
@@ -293,14 +301,16 @@ import { LEVEL_NAMES } from './data/levelNames';
 import { obstaclesInLevel } from './data/obstacles';
 import ObstacleGuide from './components/ObstacleGuide.vue';
 import { TESTING_TOWN_CHANGED } from './services/testingTools';
+import { isPlayRoute, navigate, syncTownParam } from './services/appRoute';
 
 const game = useGameStore();
 const campaign = useCampaignStore();
-const view = ref(campaign.hasVisitedVillage ? 'town' : 'landing');
+const view = ref(isPlayRoute() ? 'town' : 'landing');
 const townView = ref(null);
 const pendingMineEntry = ref(null);
 const townVisit = ref(0);
-const townVisited = ref(campaign.hasVisitedVillage);
+const townVisited = ref(view.value === 'town');
+if (townVisited.value) campaign.visitVillage();
 const townActive = computed(() => !game.sessionActive && view.value === 'town');
 const returnToMuseum = ref(false);
 const showTown = () => {
@@ -314,6 +324,18 @@ const showTown = () => {
 const showVillage = () => {
   if (game.sessionActive || view.value !== 'town') showTown();
   returnToMuseum.value = false;
+};
+const showHome = () => {
+  game.exitLevel();
+  pendingMineEntry.value = null;
+  view.value = 'landing';
+};
+// The address follows the view; back and forward move between home and game.
+watch(view, (next) => navigate(next === 'town'));
+const followRoute = () => {
+  if (!isPlayRoute()) showHome();
+  else if (view.value !== 'town') showTown();
+  else syncTownParam();
 };
 const showMuseum = () => {
   if (game.sessionActive || view.value !== 'town') showTown();
@@ -434,7 +456,11 @@ watch(
 );
 const updateInputPause = () => {
   game.inputPaused =
-    document.hidden || settings.isSettingsOpen || mobileDetailsOpen.value || guideOpen.value;
+    props.suspended ||
+    document.hidden ||
+    settings.isSettingsOpen ||
+    mobileDetailsOpen.value ||
+    guideOpen.value;
   game.renderer?.input?.reset();
   if (game.inputPaused) game.cancelHint(true);
   else if (game.sessionActive && !game.levelCleared) {
@@ -442,22 +468,25 @@ const updateInputPause = () => {
     game.scheduleHint();
   }
 };
+watch(() => props.suspended, updateInputPause);
 const visibilityChanged = () => {
   updateInputPause();
-  campaign.accrueSaloonIncome();
+  if (!props.suspended) campaign.accrueSaloonIncome();
   if (document.hidden) audio.stopAmbientLoop({ fadeMs: 0 });
   else if (game.sessionActive) audio.playAmbientLoop();
 };
 onMounted(() => {
   game.bootstrap();
+  updateInputPause();
   campaign.accrueSaloonIncome();
   incomeInterval = setInterval(() => {
-    if (!document.hidden) campaign.accrueSaloonIncome();
+    if (!document.hidden && !props.suspended) campaign.accrueSaloonIncome();
   }, 30000);
   clockInterval = setInterval(() => game.syncRunClock(), 100);
   game.setAudioManager(audio);
   document.addEventListener('visibilitychange', visibilityChanged);
   window.addEventListener(TESTING_TOWN_CHANGED, resumeImportedVillage);
+  window.addEventListener('popstate', followRoute);
 });
 watch(
   () => game.sessionActive,
@@ -476,6 +505,7 @@ onBeforeUnmount(() => {
   campaign.accrueSaloonIncome();
   document.removeEventListener('visibilitychange', visibilityChanged);
   window.removeEventListener(TESTING_TOWN_CHANGED, resumeImportedVillage);
+  window.removeEventListener('popstate', followRoute);
   game.exitLevel();
   game.setAudioManager(null);
 });

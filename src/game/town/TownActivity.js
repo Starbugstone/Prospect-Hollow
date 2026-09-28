@@ -1,5 +1,5 @@
 import { trafficRoutes, trafficTour } from './TownTrafficRoutes';
-import { walkObstacle, walkPose, plotDoor } from './TownNavigation';
+import { walkObstacle, walkPose, plotDoor, RouteWarmup } from './TownNavigation';
 import { prepareRoute, routePose } from './TownRoutes';
 import * as THREE from 'three';
 import { roadLevel, population, visitorPopulation } from './TownRules';
@@ -7,6 +7,7 @@ import { LANE_X, atPlot, plotStreet } from './TownLayout';
 import { pavedTown, motorTraffic } from './TownEvolution';
 import { addRoadSurfaces } from './TownRoads';
 import { motorVehicle, animateVehicle } from './TownVehicles';
+import { incidentScript, phaseAt } from '../../data/townEvents';
 
 // Actors share the town's geometry cache; only their joints move each frame.
 export function mountedRider(
@@ -213,19 +214,6 @@ export function addTownVisitors(d, town) {
 
 export const RAID_DURATION = 24;
 export const RAID_SPEED = 2;
-const raidPhase = (time, protectedTown) =>
-  time < 8
-    ? 'Riders on the ridge'
-    : time < 12
-      ? 'Warning shots'
-      : time < 17
-        ? protectedTown
-          ? 'The law holds the line'
-          : 'Bandits at the mine'
-        : time < 22
-          ? 'Hands up!'
-          : 'Back to the open trail';
-
 // All positions use the open forecourt, with a separate column for each capture team.
 export class TownRaid {
   constructor(d, event, plots, onPhase, onComplete, onCue = () => {}) {
@@ -269,6 +257,9 @@ export class TownRaid {
       return Object.assign(actor, { rope, loop });
     });
     this.patrol = [];
+    // Detours are planned ahead of need within a per-frame budget, never all at once
+    // when the escort or getaway starts.
+    this.warmup = new RouteWarmup(d.navigation);
     this.updateEvent(event);
     this.dust = Array.from({ length: event.gangSize * 3 }, () => {
       const dust = d.ball(this.root, 0, 0.2, 0, 0.2, '#cbb78d', 'rock');
@@ -285,10 +276,16 @@ export class TownRaid {
         hold: prepareRoute([stop, [stop[0], stop[1] + 1]]),
       };
     });
+    this.banditPaths.forEach((path, n) => {
+      this.warmup.add(path.hold, 8, 0, 0.8);
+      this.warmup.add(path.exit, 19, 0, 0.8);
+      this.warmup.add(path.escort, 22 + (n % this.columns) * 3, 0, 0.8);
+    });
     this.update(d.elapsed);
   }
   updateEvent(event) {
     this.event = event;
+    this.script = incidentScript(event);
     while (this.patrol.length < Math.min(event.sheriffLevel, this.columns))
       this.patrol.push(
         mountedRider(this.d, this.root, {
@@ -306,6 +303,11 @@ export class TownRaid {
         entry: prepareRoute([...route].reverse()),
         hold: prepareRoute([line, [line[0], line[1] - 1]]),
       };
+    });
+    this.patrolPaths.forEach((path, n) => {
+      this.warmup.add(path.entry, 8 + n * 0.8, 0, 0.8);
+      this.warmup.add(path.hold, 17, 0, 0.8);
+      this.warmup.add(path.escort, 22 + n * 3, 0, 0.8);
     });
     this.arrivalSpeed = Math.max(
       5.5,
@@ -364,7 +366,7 @@ export class TownRaid {
     if (this.disposed) return true;
     const time = (elapsed - this.started) * RAID_SPEED,
       { event } = this;
-    const phase = raidPhase(time, event.outcome === 'protected');
+    const phase = phaseAt(this.script, time);
     if (phase !== this.phase) {
       this.phase = phase;
       this.onPhase(phase);
@@ -380,6 +382,11 @@ export class TownRaid {
       const arrival = 8 + n * 0.8;
       let moving = false;
       actor.root.visible = time >= arrival;
+      // Nothing to pose (or plan) before the rider appears.
+      if (!actor.root.visible) {
+        actor.flash.visible = false;
+        return;
+      }
       if (time < 17)
         moving = this.travel(actor, path.entry, Math.max(0, time - arrival) * this.arrivalSpeed);
       else if (time < depart) {
@@ -457,6 +464,7 @@ export class TownRaid {
         dust.scale.setScalar(0.12 + drift * 0.3);
       }
     });
+    this.warmup.step();
     if (time >= RAID_DURATION * RAID_SPEED) {
       this.dispose();
       this.onComplete();

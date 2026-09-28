@@ -49,6 +49,10 @@
     <path v-if="style.aerial" d="M-8-124v-25m-9 6h18" fill="none" />
     <path v-if="style.tall" d="M-38-103v-21l22 4v9" :fill="style.wall" />
     <path v-if="style.solar" d="m-2-111 32 28-9 6-32-28Z" fill="#3f6475" />
+    <g v-if="style.rounded">
+      <path d="M-44-104a36 22 0 0 1 72 0Z" fill="#a6d3d4" />
+      <ellipse cx="-8" cy="-104" rx="42" ry="7" fill="#8fb07a" />
+    </g>
   </g>
 </template>
 <script setup>

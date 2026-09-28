@@ -55,7 +55,16 @@ export function mineHillsideHeight(x, z, mineZ, baseHeight) {
 
 // The exposed surface and portal retaining faces share an exact world-space grid.
 // The rock stops at the BACK of the masonry; its bore meets the inner arch there.
-export function buildMineHillside(town, parent, mineZ, railZ, groundHeight, railway = false) {
+// Where the shoulder merely lies on the plain it takes the plain's own color.
+export function buildMineHillside(
+  town,
+  parent,
+  mineZ,
+  railZ,
+  groundHeight,
+  groundColor,
+  railway = false,
+) {
   const root = town.group(parent);
   root.name = 'Connected mine hillside';
   root.userData.static = true;
@@ -87,27 +96,41 @@ export function buildMineHillside(town, parent, mineZ, railZ, groundHeight, rail
   ].sort((a, b) => a - b);
   const positions = [],
     colors = [];
-  const triangle = (a, b, c, hex) => {
-    positions.push(...a, ...b, ...c);
-    const tone = new THREE.Color(hex);
-    for (let i = 0; i < 3; i++) colors.push(tone.r, tone.g, tone.b);
+  const plain = new Map(),
+    tone = new THREE.Color();
+  const tint = ([x, y, z], hex) => {
+    const key = `${x}|${z}`;
+    if (!plain.has(key)) plain.set(key, groundColor(x, z));
+    return tone.set(hex).lerp(plain.get(key), 1 - smooth(0.05, 0.6, y - groundHeight(x, z)));
   };
-  const quad = (a, b, c, d, color) => {
-    triangle(a, b, c, color);
-    triangle(a, c, d, color);
+  // Retaining walls and the bore stay bare rock right down to the rails.
+  const triangle = (a, b, c, hex, blend) => {
+    positions.push(...a, ...b, ...c);
+    for (const vertex of [a, b, c]) {
+      const color = blend ? tint(vertex, hex) : tone.set(hex);
+      colors.push(color.r, color.g, color.b);
+    }
+  };
+  const quad = (a, b, c, d, color, blend = true) => {
+    triangle(a, b, c, color, blend);
+    triangle(a, c, d, color, blend);
   };
   const wall = (a, b, c, d) => {
-    quad(a, b, c, d, '#a29377');
-    quad(c, b, a, d, '#a29378');
+    quad(a, b, c, d, '#a29377', false);
+    quad(c, b, a, d, '#a29378', false);
   };
   const height = (x, z) => mineHillsideHeight(x, z, mineZ, groundHeight(x, z));
   const point = (x, z) => [x, height(x, z), z];
+  const onPlain = (...corners) => corners.every(([x, y, z]) => y === groundHeight(x, z));
   for (let row = 1; row < rows.length; row++) {
     const front = rows[row - 1],
       back = rows[row];
     const approach =
       railway && front <= railZ + approachHalfWidth && back >= railZ - approachHalfWidth;
     const bore = railway && front <= railZ + radius && back >= railZ - radius;
+    const cutting =
+      front <= railZ + MINE_HILLSIDE.tunnelHalfWidth &&
+      back >= railZ - MINE_HILLSIDE.tunnelHalfWidth;
     for (let col = 1; col < columns.length; col++) {
       const left = columns[col - 1],
         right = columns[col];
@@ -116,6 +139,9 @@ export function buildMineHillside(town, parent, mineZ, railZ, groundHeight, rail
         b = point(right, front),
         c = point(right, back),
         d = point(left, back);
+      // The landscape keeps its full height along the rail line for the future
+      // cutting. Leave that flat strip to it instead of drawing a second surface.
+      if (!railway && cutting && onPlain(a, b, c, d)) continue;
       quad(a, b, c, d, front > mineZ - 6 ? '#b5a485' : '#c2b18a');
       if (bore)
         quad(
@@ -124,6 +150,7 @@ export function buildMineHillside(town, parent, mineZ, railZ, groundHeight, rail
           [right, tunnelCeilingAt(front, railZ), front],
           [left, tunnelCeilingAt(front, railZ), front],
           '#8e826e',
+          false,
         );
     }
   }

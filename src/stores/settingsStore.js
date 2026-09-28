@@ -10,22 +10,62 @@ const savedVillageLabels = () => {
   }
 };
 
+// null until the player first opens or hides village progress themselves.
+const VILLAGE_PROGRESS_KEY = 'crystal-cascade-village-progress';
+const savedVillageProgress = () => {
+  try {
+    const saved = globalThis.localStorage?.getItem(VILLAGE_PROGRESS_KEY);
+    return saved === null || saved === undefined ? null : saved === 'true';
+  } catch {
+    return null;
+  }
+};
+
+// Audio levels stay on this device only; they are not part of the synced save.
+const AUDIO_LEVELS_KEY = 'crystal-cascade-audio-levels';
+const DEFAULT_AUDIO_LEVELS = Object.freeze({ music: 0.6, sfx: 0.8 });
+const audioLevel = (value, fallback) =>
+  typeof value === 'number' && Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : fallback;
+const savedAudioLevels = () => {
+  try {
+    const saved = JSON.parse(globalThis.localStorage?.getItem(AUDIO_LEVELS_KEY) ?? 'null');
+    return {
+      music: audioLevel(saved?.music, DEFAULT_AUDIO_LEVELS.music),
+      sfx: audioLevel(saved?.sfx, DEFAULT_AUDIO_LEVELS.sfx),
+    };
+  } catch {
+    return { ...DEFAULT_AUDIO_LEVELS };
+  }
+};
+
 export const useSettingsStore = defineStore('settings', {
-  state: () => ({
-    isSettingsOpen: false,
-    musicVolume: 0.6,
-    sfxVolume: 0.8,
-    reducedMotion:
-      typeof window !== 'undefined' &&
-      (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false),
-    highContrastMode: false,
-    showVillageLabels: savedVillageLabels(),
-  }),
+  state: () => {
+    const audio = savedAudioLevels();
+    return {
+      isSettingsOpen: false,
+      musicVolume: audio.music,
+      sfxVolume: audio.sfx,
+      reducedMotion:
+        typeof window !== 'undefined' &&
+        (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false),
+      highContrastMode: false,
+      showVillageLabels: savedVillageLabels(),
+      villageProgressOpen: savedVillageProgress(),
+    };
+  },
   actions: {
     setVillageLabels(visible) {
       this.showVillageLabels = visible !== false;
       try {
         globalThis.localStorage?.setItem(VILLAGE_LABELS_KEY, String(this.showVillageLabels));
+      } catch {
+        // Storage restrictions still allow the choice for this session.
+      }
+    },
+    setVillageProgress(open) {
+      this.villageProgressOpen = open === true;
+      try {
+        globalThis.localStorage?.setItem(VILLAGE_PROGRESS_KEY, String(this.villageProgressOpen));
       } catch {
         // Storage restrictions still allow the choice for this session.
       }
@@ -38,10 +78,22 @@ export const useSettingsStore = defineStore('settings', {
       this.isSettingsOpen = !this.isSettingsOpen;
     },
     setMusicVolume(value) {
-      this.musicVolume = Number(value);
+      this.musicVolume = audioLevel(Number(value), this.musicVolume);
+      this.saveAudioLevels();
     },
     setSfxVolume(value) {
-      this.sfxVolume = Number(value);
+      this.sfxVolume = audioLevel(Number(value), this.sfxVolume);
+      this.saveAudioLevels();
+    },
+    saveAudioLevels() {
+      try {
+        globalThis.localStorage?.setItem(
+          AUDIO_LEVELS_KEY,
+          JSON.stringify({ music: this.musicVolume, sfx: this.sfxVolume }),
+        );
+      } catch {
+        // Storage restrictions still allow the levels for this session.
+      }
     },
     setReducedMotion(value) {
       this.reducedMotion = value;

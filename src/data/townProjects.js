@@ -68,6 +68,14 @@ export const TOWN_PROJECTS = [
     ['cityHomes', 'apartments', 'waterPlant'],
   ],
   ['contemporary', 'shared-history', 'Bring our history online', ['library', 'museum', 'cityHall']],
+  ['tomorrow', 'dome-district', 'Raise the dome district', ['skyPods', 'biodome', 'maglevStation']],
+  ['tomorrow', 'garden-rings', 'Grow the garden rings', ['farm', 'park', 'supermarket']],
+  [
+    'tomorrow',
+    'quiet-power',
+    'Round out the quiet grid',
+    ['powerHouse', 'waterPlant', 'crystalLab'],
+  ],
 ].map(([era, id, title, buildings]) => ({ era, id, title, buildings }));
 
 export const PROJECT_MILESTONES = ['Open the doors', 'Make room to grow', 'Complete the project'];

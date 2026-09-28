@@ -1,3 +1,5 @@
+import { INCIDENT_AUDIO } from '../../data/townEvents';
+
 // Recorded village audio. Provenance and edits: public/sound/village/credits.html.
 const asset = (name) => `${import.meta.env.BASE_URL}sound/village/${name}.mp3`;
 export const VILLAGE_AUDIO = Object.freeze({
@@ -12,14 +14,29 @@ export const VILLAGE_AUDIO = Object.freeze({
   'bandit-shot': { src: asset('bandit-shot'), volume: 0.58 },
   'sheriff-shot': { src: asset('sheriff-shot'), volume: 0.6 },
   yeehaw: { src: asset('yeehaw'), volume: 0.75 },
+  'crate-break': { src: asset('crate-break'), volume: 0.5 },
+  'patrol-whistle': { src: asset('patrol-whistle'), volume: 0.55 },
+  'fire-crackle': { src: asset('fire-crackle'), volume: 0.5, loop: true },
+  'fire-bell': { src: asset('fire-bell'), volume: 0.5 },
+  'fire-hose': { src: asset('fire-hose'), volume: 0.38, loop: true },
+  'bucket-splash': { src: asset('bucket-splash'), volume: 0.42 },
+  thunder: { src: asset('thunder'), volume: 0.6 },
+  chainsaw: { src: asset('chainsaw'), volume: 0.3, loop: true },
   river: { src: `${import.meta.env.BASE_URL}sound/village/river.wav`, volume: 0.12, loop: true },
   train: { src: `${import.meta.env.BASE_URL}sound/village/train.wav`, volume: 0.1 },
   steamboat: { src: `${import.meta.env.BASE_URL}sound/village/steamboat.wav`, volume: 0.1 },
 });
 
+// Incident cues are only valid while their own kind of incident plays.
+const INCIDENT_CUES = new Set(Object.values(INCIDENT_AUDIO).flat());
+const raidKind = (state) => state.raidKind ?? 'bandits';
+export const incidentCues = (state) => (state.raid ? (INCIDENT_AUDIO[raidKind(state)] ?? []) : []);
+
 export const villageSounds = (state) =>
   state.raid
-    ? ['hooves']
+    ? raidKind(state) === 'bandits'
+      ? ['hooves']
+      : []
     : [
         'birds',
         ...(state.river ? ['river'] : []),
@@ -133,8 +150,7 @@ export class TownSoundscape {
     } else {
       // Load short, eligible cues ahead of their visible events. Never load music as a buffer.
       for (const kind of villageSounds(state)) this.loadBuffer(kind);
-      if (state.raid)
-        for (const kind of ['bandit-shot', 'sheriff-shot', 'yeehaw']) this.loadBuffer(kind);
+      for (const kind of incidentCues(state)) this.loadBuffer(kind);
       if (newBuild && !state.raid) this.playConstruction();
       if (raidChanged && state.raid) {
         if (String(state.raid).includes('Riders on the ridge')) this.playLife('hooves');
@@ -190,8 +206,11 @@ export class TownSoundscape {
 
   canPlay(kind) {
     if (!this.running || this.disposed || clamp(this.state.sfxVolume) === 0) return false;
-    if (['bandit-shot', 'sheriff-shot', 'yeehaw'].includes(kind))
-      return !!this.state.raid && !String(this.state.raid).includes('The raid has passed');
+    if (INCIDENT_CUES.has(kind))
+      return (
+        incidentCues(this.state).includes(kind) &&
+        !String(this.state.raid).includes('The raid has passed')
+      );
     if (kind === 'warning') return String(this.state.raid).includes('Warning shots');
     if (kind === 'building' && this.state.buildCue && !this.state.raid) return true;
     return villageSounds(this.state).includes(kind);
@@ -227,15 +246,11 @@ export class TownSoundscape {
     return pending;
   }
 
-  playRaidCue({ kind, raidId, pan = 0 }) {
-    if (
-      !['bandit-shot', 'sheriff-shot', 'yeehaw'].includes(kind) ||
-      !String(this.state.raid).startsWith(`${raidId}-`)
-    )
-      return;
+  playRaidCue({ kind, raidId, pan = 0, stop = false }) {
+    if (!INCIDENT_CUES.has(kind) || !String(this.state.raid).startsWith(`${raidId}-`)) return;
     this.pending.delete(kind);
-    this.quietSource(kind);
-    return this.playLife(kind, pan);
+    this.quietSource(kind, stop ? 0.3 : 0.015);
+    if (!stop) return this.playLife(kind, pan);
   }
 
   async playLife(kind, pan = 0) {
@@ -253,7 +268,8 @@ export class TownSoundscape {
     gain.gain.setValueAtTime(0, this.ctx.currentTime);
     gain.gain.linearRampToValueAtTime(
       this.level(kind),
-      this.ctx.currentTime + (source.loop ? 1.8 : 0.015),
+      // Ambience beds swell in slowly; incident loops start with the action.
+      this.ctx.currentTime + (source.loop ? (INCIDENT_CUES.has(kind) ? 0.4 : 1.8) : 0.015),
     );
     source.connect(gain);
     const panner = this.ctx.createStereoPanner?.();
@@ -290,14 +306,15 @@ export class TownSoundscape {
     }, delay);
   }
 
-  quietSource(kind) {
+  quietSource(kind, release = 0.015) {
     const voice = this.sources.get(kind);
     if (!voice) return;
     this.sources.delete(kind);
-    // Short release avoids a click when a dialog or raid interrupts a recording.
+    // Short release avoids a click when a dialog or raid interrupts a recording;
+    // a scripted stop (flames out, saw finished) fades more naturally.
     voice.gain.gain.cancelScheduledValues(this.ctx.currentTime);
-    voice.gain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.015);
-    voice.source.stop(this.ctx.currentTime + 0.08);
+    voice.gain.gain.setTargetAtTime(0, this.ctx.currentTime, release);
+    voice.source.stop(this.ctx.currentTime + release * 5 + 0.005);
   }
 
   quietSources() {

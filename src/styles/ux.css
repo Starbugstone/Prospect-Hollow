@@ -357,6 +357,19 @@
 .town-map-frame .town-story-button {
   left: 160px;
 }
+/* Projects joins the icon row so full screen keeps the town view clear. */
+.town-map-frame .town-projects-button {
+  left: 160px;
+}
+.town-map-frame .town-story-button ~ .town-projects-button {
+  left: 208px;
+}
+/* Full screen phones cannot fit the icon row and the save and coin pills on one line. */
+@media (max-width: 600px) {
+  .town-map-frame.town-fullscreen .town-map-corner {
+    top: max(64px, calc(env(safe-area-inset-top) + 52px));
+  }
+}
 .town-map-frame .town-map-caption {
   top: 64px;
   left: 16px;
@@ -538,14 +551,8 @@
   }
 }
 /* Keep the village tools clear of the plot list on narrow screens. */
-.town-map-frame > .town-map-wallet {
-  top: 12px;
-}
 .town-map-frame > .town-plots-button {
   top: 64px;
-}
-.town-map-frame > .town-projects-button {
-  top: 116px;
 }
 @media (max-height: 500px) and (min-width: 480px) and (max-width: 1000px) {
   .app-shell.is-playing .play-area {
@@ -580,8 +587,18 @@
   }
   .app-shell.is-playing .board-topline {
     grid-area: tools;
+    flex-wrap: wrap;
     justify-content: center;
+    row-gap: 8px;
     width: 100%;
+    height: auto;
+  }
+  .app-shell.is-playing .board-topline .mine-score-meter {
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 8px;
+    margin: 4px 0 0;
   }
   .app-shell.is-playing .powerup-section {
     grid-area: powers;
@@ -608,6 +625,33 @@
   width: auto;
   border: 0;
   min-height: 44px;
+}
+.town-progress-toolbar .town-next-action {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  align-self: center;
+  margin: 4px 8px;
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid #36583f;
+  border-radius: 9px;
+  background: #456c50;
+  color: #fffbe7;
+  box-shadow: 0 2px #2c4835;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.town-progress-toolbar .town-next-action.is-ready {
+  border-color: #b79950;
+  background: #ecd18b;
+  color: #40523d;
+  box-shadow: 0 2px #ac9049;
+}
+.town-progress-toolbar .town-next-action svg {
+  width: 17px;
+  height: 17px;
 }
 .town-progress-toolbar .town-plots-button {
   position: static;

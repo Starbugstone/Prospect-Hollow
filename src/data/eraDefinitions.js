@@ -2,8 +2,11 @@ import { resolveRoadStyle } from './roadStyles';
 
 /**
  * @typedef {'frontier'|'river-rail'|'industrial'|'motor-age'|'city'} BuildingStyle
+ * @typedef {'standard'|'rounded'} CityArchitecture
  * @typedef {Object} EraEvolution
  * @property {BuildingStyle} style Shared building/modernization renderer family.
+ * @property {CityArchitecture} architecture City building forms: Blender period shells
+ *   (`standard`) or the procedural rounded domes, pods and vaults of `rounded`.
  * @property {string} wardrobe Wardrobe catalog key for this era.
  * @property {string|null} baseCityEra Retained city shell for an intermediate style.
  * @property {boolean} paved
@@ -34,6 +37,9 @@ import { resolveRoadStyle } from './roadStyles';
  * @property {string} waterUpgradeBenefit
  * @property {boolean} motorMine Trim on the accessible mine drawing.
  */
+
+/** Registered city building forms; renderers and SVG drawings exist for each. */
+export const CITY_ARCHITECTURES = Object.freeze(['standard', 'rounded']);
 
 const STYLES = {
   frontier: {},
@@ -115,6 +121,7 @@ export function defineEra(definition) {
     throw new Error('An era needs an id and a registered building style');
   const evolution = {
     wardrobe: 'frontier',
+    architecture: 'standard',
     baseCityEra: null,
     paved: false,
     electricity: false,
@@ -166,6 +173,10 @@ export function defineEra(definition) {
     throw new Error(`Missing modernization copy for era ${definition.id}`);
   if (style !== 'frontier' && !evolution.prices)
     throw new Error(`Missing modernization prices for era ${definition.id}`);
+  if (!CITY_ARCHITECTURES.includes(evolution.architecture))
+    throw new Error(`Unsupported architecture for era ${definition.id}`);
+  if (evolution.architecture !== 'standard' && style !== 'city')
+    throw new Error(`Only city eras can change their architecture: ${definition.id}`);
   if (style === 'city' && (!evolution.cityAssets || !evolution.newBuildingPrices))
     throw new Error(`Missing city assets or prices for era ${definition.id}`);
   for (const [key, value] of Object.entries(evolution))

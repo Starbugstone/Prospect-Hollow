@@ -30,7 +30,20 @@
           )
         }}</span
       >
-      <div class="victory-seal" aria-hidden="true"><TownIcon name="check" /></div>
+      <div
+        class="victory-stars"
+        role="img"
+        :aria-label="t('{count} stars earned', { count: earnedStars })"
+      >
+        <span
+          v-for="i in 3"
+          :key="i"
+          class="victory-star"
+          :class="{ earned: i <= earnedStars }"
+          :style="{ '--i': i }"
+          ><GameIcon name="star" /><i v-if="i <= earnedStars" class="star-burst"></i
+        ></span>
+      </div>
       <h2 id="victory-title" tabindex="-1" autofocus>{{ t('YOU DID IT!') }}</h2>
       <CoinReward
         :level-id="levelId"
@@ -122,9 +135,6 @@
       <JourneyProgress />
       <details class="result-details">
         <summary>{{ t('Puzzle highlights') }}</summary>
-        <div class="victory-stars" :aria-label="t('{count} stars earned', { count: earnedStars })">
-          <span v-for="i in earnedStars" :key="i" class="earned">✦</span>
-        </div>
         <div class="result-stats">
           <div>
             <span>{{ t('POINTS') }}</span
@@ -273,21 +283,6 @@ const goalText = (source) => {
 };
 </script>
 <style scoped>
-.victory-seal {
-  display: grid;
-  place-items: center;
-  width: 58px;
-  height: 58px;
-  margin: 14px auto;
-  background: #557557;
-  border: 3px double #ffdc7d;
-  border-radius: 50%;
-}
-.victory-seal svg {
-  width: 34px;
-  height: 34px;
-  color: #ffefba;
-}
 .result-supplies {
   display: flex;
   justify-content: center;
@@ -428,17 +423,74 @@ const goalText = (source) => {
   color: #d1abd9;
   font-weight: 800;
 }
+/* Earned stars land one after another; empty slots show what is left to win. */
 .victory-stars {
   display: flex;
   justify-content: center;
-  gap: 18px;
-  font-size: 44px;
-  color: #5b3b69;
-  margin: 15px 0 10px;
+  align-items: flex-end;
+  gap: 10px;
+  margin: 14px 0 6px;
 }
-.victory-stars .earned {
+.victory-star {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  color: #5b3b69;
+}
+.victory-star:nth-child(2) {
+  width: 76px;
+  height: 76px;
+  margin-bottom: 14px;
+}
+.victory-star svg {
+  width: 100%;
+  height: 100%;
+  stroke-width: 1.2;
+}
+.victory-star.earned {
   color: #ffdc7d;
-  text-shadow: 0 0 24px #ffbd6544;
+  filter: drop-shadow(0 0 14px #ffbd6588);
+}
+.victory-star.earned svg {
+  fill: #ffcf5a;
+  animation: victory-star-land 0.7s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+  animation-delay: calc(0.2s + var(--i) * 0.38s);
+}
+.star-burst {
+  position: absolute;
+  inset: -30%;
+  border-radius: 50%;
+  border: 3px solid #ffe7a1;
+  opacity: 0;
+  pointer-events: none;
+  animation: victory-star-burst 0.7s ease-out forwards;
+  animation-delay: calc(0.62s + var(--i) * 0.38s);
+}
+@keyframes victory-star-land {
+  0% {
+    opacity: 0;
+    transform: translateY(-60px) scale(2.4) rotate(-160deg);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(0) scale(0.86) rotate(8deg);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes victory-star-burst {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.3);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.2);
+  }
 }
 .arcade-results h2 {
   font:
@@ -586,8 +638,16 @@ const goalText = (source) => {
     padding-block: 20px;
   }
   .victory-stars {
-    font-size: 30px;
-    margin: 8px 0;
+    margin: 6px 0 2px;
+  }
+  .victory-star {
+    width: 42px;
+    height: 42px;
+  }
+  .victory-star:nth-child(2) {
+    width: 54px;
+    height: 54px;
+    margin-bottom: 10px;
   }
   .arcade-results h2 {
     font-size: 38px;

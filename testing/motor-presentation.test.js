@@ -1,4 +1,5 @@
 import { addMineSite } from '../src/game/town/mine/addMineSite';
+import { LEVEL_COUNT } from '../src/data/campaign';
 import { Matrix4 } from 'three';
 import { expect, it } from 'vitest';
 import { Box3, BoxGeometry, Group, MeshBasicMaterial, Scene, Vector3 } from 'three';
@@ -107,7 +108,7 @@ it('runs one bus on connected roads with bounded geometry and a pausable shared 
 it('keeps progress gems inside instanced cart cargo instead of on the hillside', () => {
   const d = diorama();
   d.town = createTown();
-  d.mineProgress = 324;
+  d.mineProgress = LEVEL_COUNT;
   const site = addMineSite(d, d.world, 'frontier');
   const cargo = site.getObjectByName('Mine cart gems');
   expect(cargo.isInstancedMesh).toBe(true);

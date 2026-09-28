@@ -1,3 +1,5 @@
+import { isRoundedEra } from '../../data/roundedArchitecture';
+import { roundedFerry, roundedRailcar } from './RoundedTransports';
 import { eraEvolution } from '../../data/eras';
 import { isCityEra } from '../../data/city';
 import { cityModel } from './buildings/city';
@@ -101,113 +103,142 @@ export function addEraActivity(d, town) {
         linear: true,
       });
   }
-  if (town.buildings.riverPort) {
-    const boat = d.group(d.world, riverCenterX(-8), RIVER.waterHeight + 0.12, -8);
-    const modern = modernTransport(town, 'riverPort');
-    boat.name = modern ? 'Modern river launch' : 'Paddle-wheel steamboat';
-    boat.userData.animated = true;
-    d.ball(boat, 0, 0, 0, [1.1, 0.35, 2.6], '#725d45');
-    d.box(boat, 2.1, 0.15, 4.5, 0, 0.25, 0, '#dfcca2');
-    d.box(boat, 1.4, 0.8, 2.4, 0, 0.73, 0, '#e3d3af');
-    d.box(boat, 1.85, 0.14, 3, 0, 1.2, 0, '#8c9f91');
-    if (modern) {
-      d.box(boat, 1.65, 0.55, 1.1, 0, 1.48, 0.35, '#d9ddce');
-      d.box(boat, 1.5, 0.32, 0.06, 0, 1.52, 0.93, '#729d9d');
-      for (const side of [-1, 1])
-        for (const z of [-0.6, 0.1, 0.8])
-          d.ball(boat, side * 0.72, 0.85, z, [0.035, 0.18, 0.18], '#8bb8bd');
-      d.rod(boat, [0, 1.8, 0], [0, 2.3, 0], 0.035, '#617c76');
-    } else d.mesh(boat, 'cylinder', [0.18, 1.1, 0.18], [0.3, 1.65, -0.6], '#696d62');
-    const wheel = d.group(boat, 0, 0.2, -2.2);
-    for (let n = 0; n < (modern ? 0 : 8); n++) {
-      const paddle = d.group(wheel);
-      paddle.rotation.x = (n * Math.PI) / 4;
-      d.box(paddle, 1.5, 0.15, 0.3, 0, 0.55, 0, '#9b6e51');
-    }
-    const portEra = town.buildingEras.riverPort;
-    if (eraEvolution(portEra).cityBoat) {
-      for (const child of [...boat.children]) boat.remove(child);
+  trackTransport(d, 'riverPort', town, addRiverBoat(d, town));
+  trackTransport(d, 'railDepot', town, addStationTrain(d, town));
+}
+
+/** Remember which building era each vehicle was built for, so a finished modernization
+ * can rebuild just that vehicle instead of waiting for a full town rebuild. */
+export function trackTransport(d, id, town, built) {
+  if (!built) return null;
+  (d.transports ??= new Map()).set(id, { ...built, era: town.buildingEras?.[id] });
+  return built;
+}
+
+// The port's boat follows the era the river port was completed in.
+export function addRiverBoat(d, town) {
+  if (town.era === 'frontier' || !town.buildings.riverPort) return null;
+  const boat = d.group(d.world, riverCenterX(-8), RIVER.waterHeight + 0.12, -8);
+  const modern = modernTransport(town, 'riverPort');
+  boat.name = modern ? 'Modern river launch' : 'Paddle-wheel steamboat';
+  boat.userData.animated = true;
+  d.ball(boat, 0, 0, 0, [1.1, 0.35, 2.6], '#725d45');
+  d.box(boat, 2.1, 0.15, 4.5, 0, 0.25, 0, '#dfcca2');
+  d.box(boat, 1.4, 0.8, 2.4, 0, 0.73, 0, '#e3d3af');
+  d.box(boat, 1.85, 0.14, 3, 0, 1.2, 0, '#8c9f91');
+  if (modern) {
+    d.box(boat, 1.65, 0.55, 1.1, 0, 1.48, 0.35, '#d9ddce');
+    d.box(boat, 1.5, 0.32, 0.06, 0, 1.52, 0.93, '#729d9d');
+    for (const side of [-1, 1])
+      for (const z of [-0.6, 0.1, 0.8])
+        d.ball(boat, side * 0.72, 0.85, z, [0.035, 0.18, 0.18], '#8bb8bd');
+    d.rod(boat, [0, 1.8, 0], [0, 2.3, 0], 0.035, '#617c76');
+  } else d.mesh(boat, 'cylinder', [0.18, 1.1, 0.18], [0.3, 1.65, -0.6], '#696d62');
+  const wheel = d.group(boat, 0, 0.2, -2.2);
+  for (let n = 0; n < (modern ? 0 : 8); n++) {
+    const paddle = d.group(wheel);
+    paddle.rotation.x = (n * Math.PI) / 4;
+    d.box(paddle, 1.5, 0.15, 0.3, 0, 0.55, 0, '#9b6e51');
+  }
+  const portEra = town.buildingEras.riverPort;
+  if (eraEvolution(portEra).cityBoat) {
+    for (const child of [...boat.children]) boat.remove(child);
+    if (isRoundedEra(portEra)) {
+      roundedFerry(d, boat);
+      boat.name = 'Hover river ferry';
+    } else {
       cityModel(d, boat, `${portEra}-boat`);
       boat.name = eraEvolution(portEra).digitalCity
         ? 'Solar river ferry'
         : 'Rebuilding river launch';
     }
-    d.motions.push((time) => {
-      const journey = boatJourney(time),
-        { z } = journey;
-      boat.visible = journey.visible;
-      d.visitorTransports?.set('riverPort', { ...journey, root: boat });
-      boat.position.set(riverCenterX(z), RIVER.waterHeight + 0.12, z);
-      boat.rotation.y = Math.atan2(riverCenterX(z + 0.2) - riverCenterX(z), 0.2);
-      wheel.rotation.x = time * 1.6;
-    });
   }
-  if (railEdges(town).length) {
-    const train = d.group(d.world, -17, 0.3, -23);
-    const modern = modernTransport(town, 'railDepot');
-    train.name = modern ? 'Modern station railcar' : 'Station train';
-    train.userData.animated = true;
-    const wheels = [];
-    const carriages = [];
-    const carriage = (x, wheelbase) => {
-      const pivot = d.group(train, x, 0, 0);
-      pivot.name = 'Rail carriage suspension';
-      pivot.userData.wheelbase = wheelbase;
-      carriages.push({ pivot, x, wheelbase });
-      return pivot;
-    };
-    if (isCityEra(town.buildingEras.railDepot)) {
-      train.name = eraEvolution(town.buildingEras.railDepot).digitalCity
-        ? 'Electric city train'
-        : 'Motor passenger railcar';
-      for (const x of [0, -4, -8]) {
-        // Keep the model's authored yaw below the pitch pivot: rotating its
-        // local Z after a 90-degree yaw rolls the carriage instead of pitching it.
-        const model = cityModel(d, carriage(x, 2.4), `${town.buildingEras.railDepot}-railcar`);
-        model.rotation.y = Math.PI / 2;
-      }
-    } else {
-      const engine = carriage(0, 1.2);
-      d.box(engine, 2, 0.6, 0.9, 0, 0.55, 0, '#5d7470');
-      d.box(engine, 0.65, 1.1, 1, -0.7, 0.9, 0, '#b29b6c');
-      if (modern) {
-        d.box(engine, 2.1, 0.9, 1.05, 0, 1, 0, '#d6c9a1');
-        d.box(engine, 0.06, 0.45, 0.82, 1.08, 1.13, 0, '#8db5b6');
-        d.box(engine, 2.3, 0.12, 1.12, 0, 1.5, 0, '#607f78');
-      } else d.mesh(engine, 'cylinder', [0.15, 0.7, 0.15], [0.6, 1.2, 0], '#565f56');
-      for (const x of [-2.2, -4]) d.box(carriage(x, 1), 1.5, 0.9, 1, 0, 0.85, 0, '#a1825c');
-      for (const { pivot, wheelbase } of carriages) {
-        if (modern)
-          for (const x of pivot === engine ? [-0.6, 0.1, 0.7] : [-0.4, 0.2])
-            for (const side of [-1, 1])
-              d.box(pivot, 0.4, 0.35, 0.05, x, 1.08, side * 0.54, '#9ec0bd');
-        for (const x of [-wheelbase / 2, wheelbase / 2])
-          for (const z of [-0.55, 0.55]) {
-            const wheel = d.mesh(pivot, 'cylinder', [0.25, 0.09, 0.25], [x, 0.25, z], '#50584f');
-            wheel.rotation.x = Math.PI / 2;
-            wheels.push(wheel);
-          }
-      }
+  const motion = (time) => {
+    const journey = boatJourney(time),
+      { z } = journey;
+    boat.visible = journey.visible;
+    d.visitorTransports?.set('riverPort', { ...journey, root: boat });
+    boat.position.set(riverCenterX(z), RIVER.waterHeight + 0.12, z);
+    boat.rotation.y = Math.atan2(riverCenterX(z + 0.2) - riverCenterX(z), 0.2);
+    wheel.rotation.x = time * 1.6;
+  };
+  d.motions.push(motion);
+  return { root: boat, motion };
+}
+
+// The station's train follows the era the railway station was completed in.
+export function addStationTrain(d, town) {
+  if (!railEdges(town).length) return null;
+  const train = d.group(d.world, -17, 0.3, -23);
+  const modern = modernTransport(town, 'railDepot');
+  train.name = modern ? 'Modern station railcar' : 'Station train';
+  train.userData.animated = true;
+  const wheels = [];
+  const carriages = [];
+  const carriage = (x, wheelbase) => {
+    const pivot = d.group(train, x, 0, 0);
+    pivot.name = 'Rail carriage suspension';
+    pivot.userData.wheelbase = wheelbase;
+    carriages.push({ pivot, x, wheelbase });
+    return pivot;
+  };
+  if (isRoundedEra(town.buildingEras.railDepot)) {
+    train.name = 'Solar express train';
+    for (const x of [0, -4, -8])
+      wheels.push(...roundedRailcar(d, carriage(x, 2.4), x === 0).userData.wheels);
+  } else if (isCityEra(town.buildingEras.railDepot)) {
+    train.name = eraEvolution(town.buildingEras.railDepot).digitalCity
+      ? 'Electric city train'
+      : 'Motor passenger railcar';
+    for (const x of [0, -4, -8]) {
+      // Keep the model's authored yaw below the pitch pivot: rotating its
+      // local Z after a 90-degree yaw rolls the carriage instead of pitching it.
+      const model = cityModel(d, carriage(x, 2.4), `${town.buildingEras.railDepot}-railcar`);
+      model.rotation.y = Math.PI / 2;
     }
-    d.motions.push((time) => {
-      const journey = d.railwayOpening?.journey ?? trainJourney(time + (d.trainTimeOffset ?? 0));
-      train.visible = journey.visible;
-      d.visitorTransports?.set('railDepot', {
-        ...journey,
-        root: train,
-        arrived: !d.railwayOpening && journey.arrived,
-      });
-      train.position.set(journey.x, 0.035, RAIL_EDGE.from[1]);
-      for (const { pivot, x, wheelbase } of carriages) {
-        const pose = railCarriagePose(journey.x + x, wheelbase);
-        pivot.position.y = pose.y;
-        pivot.rotation.z = pose.pitch;
-      }
-      wheels.forEach((wheel) => {
-        wheel.rotation.y = -journey.distance / 0.25;
-      });
-    });
+  } else {
+    const engine = carriage(0, 1.2);
+    d.box(engine, 2, 0.6, 0.9, 0, 0.55, 0, '#5d7470');
+    d.box(engine, 0.65, 1.1, 1, -0.7, 0.9, 0, '#b29b6c');
+    if (modern) {
+      d.box(engine, 2.1, 0.9, 1.05, 0, 1, 0, '#d6c9a1');
+      d.box(engine, 0.06, 0.45, 0.82, 1.08, 1.13, 0, '#8db5b6');
+      d.box(engine, 2.3, 0.12, 1.12, 0, 1.5, 0, '#607f78');
+    } else d.mesh(engine, 'cylinder', [0.15, 0.7, 0.15], [0.6, 1.2, 0], '#565f56');
+    for (const x of [-2.2, -4]) d.box(carriage(x, 1), 1.5, 0.9, 1, 0, 0.85, 0, '#a1825c');
+    for (const { pivot, wheelbase } of carriages) {
+      if (modern)
+        for (const x of pivot === engine ? [-0.6, 0.1, 0.7] : [-0.4, 0.2])
+          for (const side of [-1, 1])
+            d.box(pivot, 0.4, 0.35, 0.05, x, 1.08, side * 0.54, '#9ec0bd');
+      for (const x of [-wheelbase / 2, wheelbase / 2])
+        for (const z of [-0.55, 0.55]) {
+          const wheel = d.mesh(pivot, 'cylinder', [0.25, 0.09, 0.25], [x, 0.25, z], '#50584f');
+          wheel.rotation.x = Math.PI / 2;
+          wheels.push(wheel);
+        }
+    }
   }
+  const motion = (time) => {
+    const journey = d.railwayOpening?.journey ?? trainJourney(time + (d.trainTimeOffset ?? 0));
+    train.visible = journey.visible;
+    d.visitorTransports?.set('railDepot', {
+      ...journey,
+      root: train,
+      arrived: !d.railwayOpening && journey.arrived,
+    });
+    train.position.set(journey.x, 0.035, RAIL_EDGE.from[1]);
+    for (const { pivot, x, wheelbase } of carriages) {
+      const pose = railCarriagePose(journey.x + x, wheelbase);
+      pivot.position.y = pose.y;
+      pivot.rotation.z = pose.pitch;
+    }
+    wheels.forEach((wheel) => {
+      wheel.rotation.y = -journey.distance / 0.25;
+    });
+  };
+  d.motions.push(motion);
+  return { root: train, motion };
 }
 
 export function addRailroad(d, town, { batch = true } = {}) {

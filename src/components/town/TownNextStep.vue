@@ -88,21 +88,7 @@
       </div>
       <div class="next-step-buttons">
         <button class="next-step-primary" @click="act">
-          <TownIcon
-            :name="ready ? 'check' : gate.available ? 'arrow' : canBuild ? 'home' : 'mine'"
-          />{{
-            t(
-              ready
-                ? 'Finish'
-                : gate.available
-                  ? 'Next era'
-                  : canBuild
-                    ? goal.cost === 0
-                      ? 'Build for free'
-                      : 'Build'
-                    : t('Play level {level}', { level: campaign.nextLevel }),
-            )
-          }}
+          <TownIcon :name="action.icon" />{{ t(action.label, action.params) }}
         </button>
         <button
           v-if="ready || canBuild || gate.available"
@@ -123,10 +109,9 @@ import { useCampaignStore } from '../../stores/campaignStore';
 import { computed } from 'vue';
 import { t, number } from '../../i18n';
 import { BUILDINGS, BUILDING_BY_ID } from '../../data/town';
-import { eraGate, plotInEra, eraBuildingLevel } from '../../game/town/TownEras';
+import { plotInEra, eraBuildingLevel } from '../../game/town/TownEras';
+import { useNextStepAction } from '../../composables/useNextStepAction';
 import {
-  nextGoal,
-  constructionReady,
   constructionRuns,
   population,
   housingCapacity,
@@ -148,10 +133,11 @@ const showEraProgress = computed(
   () =>
     props.town.era !== 'frontier' || Object.values(props.town.buildings).some((level) => level > 1),
 );
-const goal = computed(() => nextGoal(props.town));
-const gate = computed(() => eraGate(props.town));
-const readyProjects = computed(() => Object.values(props.town.projects).filter(constructionReady));
-const ready = computed(() => readyProjects.value[0]);
+const { goal, gate, readyProjects, ready, canBuild, action, act } = useNextStepAction(
+  () => props.town,
+  () => props.hammers,
+  emit,
+);
 const project = computed(() => Object.values(props.town.projects)[0]);
 const place = computed(
   () => BUILDING_BY_ID[ready.value?.id ?? goal.value?.id ?? project.value?.id],
@@ -163,9 +149,6 @@ const previewStage = computed(() =>
     : preview.value?.stage + Number(preview.value === goal.value),
 );
 const previewEraLevel = computed(() => preview.value?.eraLevel ?? previewStage.value);
-const canBuild = computed(
-  () => goal.value?.available && (props.town.coins >= goal.value.cost || props.hammers > 0),
-);
 const eraProgress = computed(() =>
   BUILDINGS.filter((b) => plotInEra(props.town, b.id)).reduce(
     (progress, b) => {
@@ -235,12 +218,6 @@ const needs = computed(() => {
     },
   ].filter((need) => need.relevant);
 });
-function act() {
-  if (ready.value) emit('select', ready.value.id);
-  else if (gate.value.available) emit('advance-era');
-  else if (canBuild.value) emit(goal.value.cost === 0 ? 'build-free' : 'inspect', goal.value.id);
-  else emit('mine');
-}
 </script>
 <style scoped>
 .village-next {

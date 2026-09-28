@@ -1,9 +1,11 @@
 import { isCityEra } from '../../data/city';
+import { isRoundedEra, ROUNDED_PALETTE } from '../../data/roundedArchitecture';
 import { cityModel } from './buildings/city';
 const cream = '#e1cfab',
   glass = '#9cbbb5';
 export function motorVehicle(d, parent, bus = false, appearanceEra) {
   const era = appearanceEra ?? d.town?.era ?? d.town?.buildingEras?.[bus ? 'busDepot' : 'stable'];
+  if (isRoundedEra(era)) return hoverPod(d, parent, bus);
   if (isCityEra(era)) {
     const root = cityModel(d, parent, `${era}-${bus ? 'bus' : 'car'}`);
     root.userData.vehicleBox = { halfWidth: 0.36, halfLength: bus ? 1.2 : 0.85 };
@@ -34,12 +36,32 @@ export function motorVehicle(d, parent, bus = false, appearanceEra) {
   return root;
 }
 
+// Wheel-less hover cars and shuttles from shared primitives. The body floats in its own
+// group so traffic can bob it gently; parts stay few because vehicles move every frame.
+function hoverPod(d, parent, bus) {
+  const root = d.group(parent);
+  const length = bus ? 1.15 : 0.75;
+  root.userData.vehicleBox = { halfWidth: 0.36, halfLength: bus ? 1.2 : 0.85 };
+  root.userData.wheels = [];
+  const body = d.group(root);
+  root.userData.hoverBody = body;
+  const P = ROUNDED_PALETTE;
+  d.ball(body, 0, 0.5, 0, [0.38, 0.28, length], bus ? P.warm : P.shell);
+  if (bus) d.ball(body, 0, 0.72, 0, [0.35, 0.2, length * 0.92], P.glass);
+  else d.ball(body, 0, 0.66, 0.1, [0.27, 0.22, length * 0.55], P.glass);
+  d.mesh(body, 'cylinder', [0.34, 0.05, length * 0.88], [0, 0.26, 0], P.light);
+  d.ball(body, 0, 0.5, -length + 0.04, [0.2, 0.06, 0.05], P.warm);
+  return root;
+}
+
 export function animateVehicle(root, distance) {
   for (const wheel of root.userData.wheels ?? []) wheel.rotation.x = distance / 0.18;
+  if (root.userData.hoverBody) root.userData.hoverBody.position.y = Math.sin(distance * 1.7) * 0.04;
 }
 
 // Purpose-built response bodies share wheels and period palettes, never bus shells.
-export function responseVehicle(d, parent, service = false) {
+export function responseVehicle(d, parent, service = false, era = d.town?.era) {
+  if (isRoundedEra(era)) return roundedResponsePod(d, parent, service);
   const root = d.group(parent);
   root.userData.vehicleBox = { halfWidth: 0.62, halfLength: 1.3 };
   root.userData.wheels = [];
@@ -66,5 +88,21 @@ export function responseVehicle(d, parent, service = false) {
     for (const x of [-0.61, 0.61]) d.rod(axle, [x, -0.16, 0], [x, 0.16, 0], 0.035, cream);
     root.userData.wheels.push(axle);
   }
+  return root;
+}
+
+// Rounded eras send a hovering response pod with a light bar instead of a truck.
+function roundedResponsePod(d, parent, service) {
+  const root = d.group(parent);
+  root.userData.vehicleBox = { halfWidth: 0.62, halfLength: 1.3 };
+  root.userData.wheels = [];
+  const body = d.group(root);
+  root.userData.hoverBody = body;
+  const P = ROUNDED_PALETTE;
+  const color = service ? '#c8ad67' : '#b65346';
+  d.ball(body, 0, 0.72, 0, [0.6, 0.42, 1.3], color);
+  d.ball(body, 0, 0.98, 0.55, [0.45, 0.28, 0.55], P.glass);
+  d.mesh(body, 'cylinder', [0.55, 0.06, 1.15], [0, 0.32, 0], P.light);
+  d.ball(body, 0, 1.24, -0.2, [0.3, 0.08, 0.14], service ? '#e5a05c' : '#e05a4a');
   return root;
 }

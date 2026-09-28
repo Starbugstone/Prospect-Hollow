@@ -1,0 +1,423 @@
+{
+  "time": "2026-09-12T10:57:11Z",
+  "commit": "2647659e72e5d6e30b5c0cd61eb802ed467ba788",
+  "fixture_sha256": "6d6122ac012cf8a61dc5e2be25c081d7f121296c5cc2d4a91f610c1a5696df0f",
+  "parameters": {
+    "count": 256,
+    "repeats": 3,
+    "workloads": ["profile", "community", "save", "mining"],
+    "concurrencies": [1, 8, 32]
+  },
+  "containers": {
+    "ph-bench-pg": {
+      "image": "sha256:a2ea0e68c465e0acf4c3672471b22b6b62972bb341e6f31544c855d85ba43745",
+      "config_image": "postgres:17-bookworm",
+      "memory": 1073741824,
+      "nano_cpus": 2000000000,
+      "command": [
+        "-c",
+        "shared_buffers=256MB",
+        "-c",
+        "max_connections=100",
+        "-c",
+        "fsync=on",
+        "-c",
+        "synchronous_commit=on"
+      ]
+    },
+    "ph-bench-app-pg": {
+      "image": "sha256:1a82d09512b6cf8d9961cedbbc5c799a6cfd23bd8edf6f330bf58ec3af09820d",
+      "config_image": "prospect-hollow:ftp",
+      "memory": 1610612736,
+      "nano_cpus": 2000000000,
+      "command": ["apache2-foreground"]
+    },
+    "ph-bench-my": {
+      "image": "sha256:8eccfc5e5aebbf3a49375b13956a88cd244d13ac6b25b52dec792b7526363b19",
+      "config_image": "mysql:8.4",
+      "memory": 1073741824,
+      "nano_cpus": 2000000000,
+      "command": [
+        "--innodb-buffer-pool-size=268435456",
+        "--innodb-flush-log-at-trx-commit=1",
+        "--sync-binlog=1",
+        "--max-connections=100"
+      ]
+    },
+    "ph-bench-app-my": {
+      "image": "sha256:1a82d09512b6cf8d9961cedbbc5c799a6cfd23bd8edf6f330bf58ec3af09820d",
+      "config_image": "prospect-hollow:ftp",
+      "memory": 1610612736,
+      "nano_cpus": 2000000000,
+      "command": ["apache2-foreground"]
+    }
+  },
+  "host_cpu": "Architecture:                            x86_64\nCPU op-mode(s):                          32-bit, 64-bit\nAddress sizes:                           39 bits physical, 48 bits virtual\nByte Order:                              Little Endian\nCPU(s):                                  8\nOn-line CPU(s) list:                     0-7\nVendor ID:                               GenuineIntel\nModel name:                              Intel(R) Core(TM) i7-10750H CPU @ 2.60GHz\nCPU family:                              6\nModel:                                   165\nThread(s) per core:                      2\nCore(s) per socket:                      4\nSocket(s):                               1\nStepping:                                2\nBogoMIPS:                                5184.01\nFlags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow ept vpid ept_ad fsgsbase bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt xsaveopt xsavec xgetbv1 xsaves vnmi md_clear flush_l1d arch_capabilities\nVirtualization:                          VT-x\nHypervisor vendor:                       Microsoft\nVirtualization type:                     full\nL1d cache:                               128 KiB (4 instances)\nL1i cache:                               128 KiB (4 instances)\nL2 cache:                                1 MiB (4 instances)\nL3 cache:                                12 MiB (1 instance)\nNUMA node(s):                            1\nNUMA node0 CPU(s):                       0-7\nVulnerability Gather data sampling:      Unknown: Dependent on hypervisor status\nVulnerability Ghostwrite:                Not affected\nVulnerability Indirect target selection: Mitigation; Aligned branch/return thunks\nVulnerability Itlb multihit:             KVM: Mitigation: Split huge pages\nVulnerability L1tf:                      Not affected\nVulnerability Mds:                       Not affected\nVulnerability Meltdown:                  Not affected\nVulnerability Mmio stale data:           Vulnerable: Clear CPU buffers attempted, no microcode; SMT Host state unknown\nVulnerability Old microcode:             Not affected\nVulnerability Reg file data sampling:    Not affected\nVulnerability Retbleed:                  Mitigation; Enhanced IBRS\nVulnerability Spec rstack overflow:      Not affected\nVulnerability Spec store bypass:         Mitigation; Speculative Store Bypass disabled via prctl\nVulnerability Spectre v1:                Mitigation; usercopy/swapgs barriers and __user pointer sanitization\nVulnerability Spectre v2:                Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS SW sequence; BHI SW loop, KVM SW loop\nVulnerability Srbds:                     Unknown: Dependent on hypervisor status\nVulnerability Tsa:                       Not affected\nVulnerability Tsx async abort:           Not affected\nVulnerability Vmscape:                   Not affected",
+  "host_memory": "total        used        free      shared  buff/cache   available\nMem:           11961        6165         626         144        5525        5796\nSwap:           8192          72        8119",
+  "pg_version": "postgres (PostgreSQL) 17.11 (Debian 17.11-1.pgdg12+2)",
+  "my_version": "/usr/sbin/mysqld  Ver 8.4.11 for Linux on x86_64 (MySQL Community Server - GPL)",
+  "php_version": "PHP 8.4.25 (cli) (built: Aug 27 2026 20:20:29) (NTS)\nCopyright (c) The PHP Group\nBuilt by https://github.com/docker-library/php\nZend Engine v4.4.25, Copyright (c) Zend Technologies\n    with Zend OPcache v8.4.25, Copyright (c), by Zend Technologies",
+  "load_generator_image": "sha256:ec7d6c95cd3692a2e2d228a8b1ca74e4025b54121fcc4c5da6f09cfa473315ad",
+  "host_pressure_samples": [
+    {
+      "tag": "profile-c1-r1-pg",
+      "before": "some avg10=60.01 avg60=59.86 avg300=59.57 total=11640904210\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=59.25 avg60=59.67 avg300=59.54 total=11651841454\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "profile-c1-r1-my",
+      "before": "some avg10=58.91 avg60=59.53 avg300=59.51 total=11656679023\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=56.89 avg60=58.91 avg300=59.38 total=11663439496\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "profile-c1-r2-my",
+      "before": "some avg10=56.94 avg60=58.38 avg300=59.23 total=11672139083\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=56.43 avg60=58.08 avg300=59.13 total=11678269932\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "profile-c1-r2-pg",
+      "before": "some avg10=57.85 avg60=58.16 avg300=59.11 total=11684383740\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=58.36 avg60=58.14 avg300=59.05 total=11693969595\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "profile-c1-r3-pg",
+      "before": "some avg10=58.82 avg60=58.28 avg300=59.05 total=11700262310\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=58.12 avg60=58.15 avg300=58.97 total=11710363424\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "profile-c1-r3-my",
+      "before": "some avg10=57.18 avg60=57.92 avg300=58.90 total=11714888459\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=56.29 avg60=57.52 avg300=58.77 total=11720993842\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "profile-c8-r1-my",
+      "before": "some avg10=58.40 avg60=57.81 avg300=58.81 total=11723726373\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=61.28 avg60=58.38 avg300=58.92 total=11727436772\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "profile-c8-r1-pg",
+      "before": "some avg10=63.82 avg60=59.12 avg300=59.06 total=11730967812\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=69.35 avg60=60.92 avg300=59.46 total=11736536388\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "profile-c8-r2-pg",
+      "before": "some avg10=68.41 avg60=61.42 avg300=59.59 total=11740208736\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=69.31 avg60=62.49 avg300=59.87 total=11745711953\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "profile-c8-r2-my",
+      "before": "some avg10=66.55 avg60=62.37 avg300=59.88 total=11749211139\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=67.13 avg60=62.99 avg300=60.08 total=11753707454\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "profile-c8-r3-my",
+      "before": "some avg10=65.68 avg60=62.96 avg300=60.11 total=11756926116\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=67.80 avg60=63.61 avg300=60.31 total=11760801259\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "profile-c8-r3-pg",
+      "before": "some avg10=66.76 avg60=63.69 avg300=60.39 total=11765081163\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=71.90 avg60=66.51 avg300=61.28 total=11779367773\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "profile-c32-r1-pg",
+      "before": "some avg10=76.93 avg60=68.06 avg300=62.00 total=11797937335\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=79.70 avg60=69.91 avg300=62.67 total=11808565749\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "profile-c32-r1-my",
+      "before": "some avg10=73.82 avg60=69.37 avg300=62.65 total=11811570027\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=75.23 avg60=69.99 avg300=62.92 total=11815761072\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "profile-c32-r2-my",
+      "before": "some avg10=71.08 avg60=69.51 avg300=62.92 total=11818668900\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=76.06 avg60=70.59 avg300=63.28 total=11822976110\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "profile-c32-r2-pg",
+      "before": "some avg10=73.61 avg60=70.44 avg300=63.39 total=11826744706\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=78.57 avg60=71.66 avg300=63.79 total=11832941849\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "profile-c32-r3-pg",
+      "before": "some avg10=75.30 avg60=71.54 avg300=63.92 total=11837395975\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=80.92 avg60=73.13 avg300=64.47 total=11843846169\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "profile-c32-r3-my",
+      "before": "some avg10=75.79 avg60=72.77 avg300=64.57 total=11847186648\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=74.92 avg60=72.83 avg300=64.75 total=11851239790\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "community-c1-r1-my",
+      "before": "some avg10=66.96 avg60=71.36 avg300=64.60 total=11855828142\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=60.15 avg60=68.81 avg300=64.30 total=11862048152\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "community-c1-r1-pg",
+      "before": "some avg10=59.35 avg60=67.26 avg300=64.11 total=11867669659\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=58.93 avg60=65.34 avg300=63.84 total=11877425084\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "community-c1-r2-pg",
+      "before": "some avg10=56.89 avg60=61.67 avg300=63.08 total=11899617793\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=58.39 avg60=60.60 avg300=62.69 total=11916801629\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "community-c1-r2-my",
+      "before": "some avg10=58.23 avg60=60.27 avg300=62.57 total=11921015954\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=57.03 avg60=59.56 avg300=62.31 total=11928477253\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "community-c1-r3-my",
+      "before": "some avg10=57.12 avg60=59.25 avg300=62.15 total=11934007480\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=56.55 avg60=58.66 avg300=61.88 total=11941426162\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "community-c1-r3-pg",
+      "before": "some avg10=58.75 avg60=58.85 avg300=61.79 total=11948612611\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=59.50 avg60=58.99 avg300=61.64 total=11960380776\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "community-c8-r1-pg",
+      "before": "some avg10=63.73 avg60=59.86 avg300=61.74 total=11967107251\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=71.36 avg60=62.32 avg300=62.20 total=11975317851\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "community-c8-r1-my",
+      "before": "some avg10=65.82 avg60=61.98 avg300=62.13 total=11979157001\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=65.77 avg60=62.37 avg300=62.21 total=11983533173\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "community-c8-r2-my",
+      "before": "some avg10=65.71 avg60=62.54 avg300=62.25 total=11986437332\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=67.21 avg60=63.08 avg300=62.36 total=11990941833\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "community-c8-r2-pg",
+      "before": "some avg10=68.27 avg60=63.66 avg300=62.50 total=11996180169\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=71.20 avg60=64.89 avg300=62.81 total=12002925765\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "community-c8-r3-pg",
+      "before": "some avg10=69.86 avg60=65.00 avg300=62.86 total=12006795735\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=73.04 avg60=66.24 avg300=63.18 total=12012592405\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "community-c8-r3-my",
+      "before": "some avg10=69.43 avg60=66.09 avg300=63.21 total=12016183004\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=70.07 avg60=66.48 avg300=63.35 total=12020775746\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "community-c32-r1-my",
+      "before": "some avg10=69.19 avg60=66.57 avg300=63.45 total=12025534906\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=73.28 avg60=67.76 avg300=63.79 total=12031511569\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "community-c32-r1-pg",
+      "before": "some avg10=72.65 avg60=68.00 avg300=63.92 total=12036016600\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=76.91 avg60=69.46 avg300=64.34 total=12042200516\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "community-c32-r2-pg",
+      "before": "some avg10=72.92 avg60=69.11 avg300=64.34 total=12046158199\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=80.54 avg60=71.23 avg300=64.93 total=12051691534\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "community-c32-r2-my",
+      "before": "some avg10=74.17 avg60=70.58 avg300=64.87 total=12055277450\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=77.39 avg60=71.62 avg300=65.25 total=12060524309\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "community-c32-r3-my",
+      "before": "some avg10=74.38 avg60=71.37 avg300=65.32 total=12065197779\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=77.57 avg60=72.19 avg300=65.61 total=12070675912\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "community-c32-r3-pg",
+      "before": "some avg10=73.13 avg60=71.78 avg300=65.66 total=12074826698\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=77.94 avg60=72.87 avg300=66.06 total=12081235148\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "save-c1-r1-pg",
+      "before": "some avg10=65.41 avg60=70.76 avg300=65.87 total=12088094248\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=60.87 avg60=67.76 avg300=65.46 total=12099072480\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "save-c1-r1-my",
+      "before": "some avg10=56.71 avg60=65.50 avg300=65.05 total=12105112298\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=54.44 avg60=62.57 avg300=64.40 total=12115380434\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "save-c1-r2-my",
+      "before": "some avg10=54.83 avg60=61.22 avg300=64.03 total=12121622155\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=55.56 avg60=59.46 avg300=63.40 total=12134039794\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "save-c1-r2-pg",
+      "before": "some avg10=58.45 avg60=59.33 avg300=63.13 total=12144960289\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=59.83 avg60=59.48 avg300=62.91 total=12157383483\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "save-c1-r3-pg",
+      "before": "some avg10=58.42 avg60=59.21 avg300=62.71 total=12164006738\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=58.19 avg60=58.80 avg300=62.38 total=12176041713\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "save-c1-r3-my",
+      "before": "some avg10=54.68 avg60=57.90 avg300=62.06 total=12181601486\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=55.35 avg60=57.10 avg300=61.59 total=12192072673\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "save-c8-r1-my",
+      "before": "some avg10=54.61 avg60=56.77 avg300=61.40 total=12196958730\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=56.17 avg60=56.70 avg300=61.16 total=12204405662\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "save-c8-r1-pg",
+      "before": "some avg10=60.81 avg60=57.60 avg300=61.21 total=12211536596\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=66.38 avg60=59.19 avg300=61.45 total=12216928272\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "save-c8-r2-pg",
+      "before": "some avg10=64.83 avg60=59.50 avg300=61.47 total=12221141754\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=66.90 avg60=60.78 avg300=61.68 total=12227081980\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "save-c8-r2-my",
+      "before": "some avg10=61.45 avg60=60.41 avg300=61.56 total=12233947555\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=61.22 avg60=60.47 avg300=61.55 total=12237948011\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "save-c8-r3-my",
+      "before": "some avg10=60.59 avg60=60.38 avg300=61.52 total=12240909976\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=61.97 avg60=60.66 avg300=61.55 total=12244380202\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "save-c8-r3-pg",
+      "before": "some avg10=63.08 avg60=60.91 avg300=61.58 total=12248517674\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=68.61 avg60=62.31 avg300=61.87 total=12254169968\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "save-c32-r1-pg",
+      "before": "some avg10=67.90 avg60=62.65 avg300=61.95 total=12258209716\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=75.87 avg60=64.94 avg300=62.46 total=12264353640\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "save-c32-r1-my",
+      "before": "some avg10=70.83 avg60=64.84 avg300=62.48 total=12268120980\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=72.88 avg60=65.73 avg300=62.72 total=12273030022\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "save-c32-r2-my",
+      "before": "some avg10=71.60 avg60=66.00 avg300=62.83 total=12276730980\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=75.51 avg60=67.26 avg300=63.16 total=12281862312\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "save-c32-r2-pg",
+      "before": "some avg10=71.90 avg60=67.13 avg300=63.22 total=12286194624\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=78.02 avg60=69.33 avg300=63.83 total=12293374133\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "save-c32-r3-pg",
+      "before": "some avg10=77.49 avg60=69.90 avg300=64.06 total=12297993028\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=79.52 avg60=71.29 avg300=64.52 total=12304465709\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "save-c32-r3-my",
+      "before": "some avg10=73.66 avg60=70.66 avg300=64.48 total=12308035738\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=71.09 avg60=70.45 avg300=64.60 total=12312635006\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "mining-c1-r1-my",
+      "before": "some avg10=60.78 avg60=68.08 avg300=64.28 total=12318734424\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=55.51 avg60=64.87 avg300=63.75 total=12327761096\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "mining-c1-r1-pg",
+      "before": "some avg10=58.82 avg60=63.78 avg300=63.55 total=12335942155\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=59.32 avg60=62.43 avg300=63.24 total=12349636556\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "mining-c1-r2-pg",
+      "before": "some avg10=58.92 avg60=61.63 avg300=63.02 total=12357300750\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=57.73 avg60=60.30 avg300=62.58 total=12372071408\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "mining-c1-r2-my",
+      "before": "some avg10=54.30 avg60=58.69 avg300=62.07 total=12382886069\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=56.20 avg60=56.92 avg300=61.01 total=12410085865\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "mining-c1-r3-my",
+      "before": "some avg10=55.73 avg60=55.78 avg300=60.04 total=12438694303\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=56.05 avg60=55.74 avg300=59.19 total=12473277269\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "mining-c1-r3-pg",
+      "before": "some avg10=59.54 avg60=58.28 avg300=59.47 total=12495297384\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=59.20 avg60=58.54 avg300=59.44 total=12509414820\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "mining-c8-r1-pg",
+      "before": "some avg10=62.09 avg60=59.11 avg300=59.54 total=12514460496\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=67.89 avg60=60.71 avg300=59.87 total=12519329534\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "mining-c8-r1-my",
+      "before": "some avg10=64.87 avg60=60.57 avg300=59.86 total=12522194025\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=64.12 avg60=60.77 avg300=59.91 total=12525717264\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "mining-c8-r2-my",
+      "before": "some avg10=63.67 avg60=60.93 avg300=59.96 total=12529319390\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=63.83 avg60=61.20 avg300=60.04 total=12532897860\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "mining-c8-r2-pg",
+      "before": "some avg10=63.87 avg60=61.35 avg300=60.09 total=12536714812\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=69.34 avg60=62.82 avg300=60.44 total=12542401568\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "mining-c8-r3-pg",
+      "before": "some avg10=69.39 avg60=63.49 avg300=60.64 total=12547681972\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=72.93 avg60=65.08 avg300=61.08 total=12555063930\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "mining-c8-r3-my",
+      "before": "some avg10=68.12 avg60=64.79 avg300=61.10 total=12559238149\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=67.56 avg60=65.02 avg300=61.25 total=12564346704\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "mining-c32-r1-my",
+      "before": "some avg10=64.83 avg60=64.63 avg300=61.26 total=12568375412\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=68.20 avg60=65.23 avg300=61.46 total=12573059215\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "mining-c32-r1-pg",
+      "before": "some avg10=69.86 avg60=65.73 avg300=61.64 total=12577556966\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=78.57 avg60=68.05 avg300=62.25 total=12584041233\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "mining-c32-r2-pg",
+      "before": "some avg10=75.39 avg60=68.20 avg300=62.39 total=12588424824\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=78.85 avg60=69.76 avg300=62.88 total=12594704371\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "mining-c32-r2-my",
+      "before": "some avg10=70.10 avg60=68.72 avg300=62.88 total=12601764753\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=66.88 avg60=67.83 avg300=62.94 total=12610181936\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "mining-c32-r3-my",
+      "before": "some avg10=66.06 avg60=67.16 avg300=63.09 total=12623188075\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=70.68 avg60=68.85 avg300=63.91 total=12645880014\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    },
+    {
+      "tag": "mining-c32-r3-pg",
+      "before": "some avg10=68.39 avg60=68.27 avg300=63.96 total=12653771503\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "after": "some avg10=75.66 avg60=69.82 avg300=64.41 total=12660772199\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+    }
+  ]
+}

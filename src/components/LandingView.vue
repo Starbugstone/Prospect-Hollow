@@ -6,10 +6,87 @@
         <p class="landing-intro">
           {{ t('Match gems in the mine and build your village with the coins you earn.') }}
         </p>
+        <div v-if="campaign.hasVisitedVillage" class="landing-town" :style="townHue">
+          <img src="/art/amethyst.svg" alt="" />
+          <span>
+            <small>{{ t('Current town') }}</small>
+            <strong>{{ townName }}</strong>
+            <span>{{ townLine }}</span>
+          </span>
+        </div>
         <button class="town-primary landing-enter" @click="$emit('enter')">
-          {{ t('Play') }}
+          {{ t(campaign.hasVisitedVillage ? 'Continue' : 'Play') }}
           <TownIcon name="arrow" />
         </button>
+        <section
+          v-if="account"
+          class="landing-cloud"
+          :data-state="cloudState"
+          aria-labelledby="landing-cloud-title"
+        >
+          <template v-if="cloudState === 'signed-in'">
+            <h2 id="landing-cloud-title">
+              <span class="landing-cloud-badge"><GameIcon name="check" /></span
+              >{{ t('You’re signed in') }}
+            </h2>
+            <p class="landing-cloud-status" :data-tone="account.saveState.value.tone">
+              <strong>{{ t(account.saveState.value.label) }}</strong>
+              {{ t(account.saveState.value.detail) }}
+            </p>
+            <div v-if="cloud.towns.length" class="landing-cloud-slots">
+              <span>{{ t('{count} of 3 slots used', { count: cloud.towns.length }) }}</span>
+              <span class="landing-cloud-pips" aria-hidden="true"
+                ><i
+                  v-for="slot in 3"
+                  :key="slot"
+                  :class="{ 'is-used': slot <= cloud.towns.length }"
+              /></span>
+            </div>
+            <button
+              class="town-secondary"
+              :disabled="!account.canOpen.value"
+              @click="account.open()"
+            >
+              <GameIcon name="layers" />{{ t('My towns') }}
+            </button>
+          </template>
+          <template v-else-if="cloudState === 'expired'">
+            <h2 id="landing-cloud-title"><GameIcon name="cloud" />{{ t('Sign in again') }}</h2>
+            <p>
+              {{
+                t(
+                  'Your session expired. Keep playing offline; sign in again to resume cloud saving.',
+                )
+              }}
+            </p>
+            <button
+              class="town-secondary"
+              :disabled="!account.canOpen.value"
+              @click="account.open()"
+            >
+              <GameIcon name="mail" />{{ t('Sign in with email') }}
+            </button>
+          </template>
+          <template v-else>
+            <h2 id="landing-cloud-title">
+              <GameIcon name="cloud" />{{ t('Save your progress online') }}
+            </h2>
+            <ul>
+              <li><GameIcon name="devices" />{{ t('Play on your phone, tablet or computer') }}</li>
+              <li><GameIcon name="layers" />{{ t('Keep up to three towns') }}</li>
+              <li><GameIcon name="history" />{{ t('Restore an earlier save') }}</li>
+            </ul>
+            <button
+              class="town-secondary"
+              :disabled="!account.canOpen.value"
+              @click="account.open()"
+            >
+              <GameIcon name="mail" />{{ t('Sign in with email') }}
+            </button>
+            <small>{{ t('Free and optional. No password: we email you a link.') }}</small>
+          </template>
+        </section>
+        <OldGameSaveImport @imported="$emit('imported')" />
       </div>
       <div class="landing-vista" aria-hidden="true" inert>
         <svg viewBox="0 0 700 590" fill="none">
@@ -68,6 +145,16 @@
         <img class="landing-crystal" src="/art/amethyst.svg" alt="" />
       </div>
     </section>
+    <section class="landing-updates" aria-labelledby="landing-updates-title">
+      <h2 id="landing-updates-title">{{ t('What’s new') }}</h2>
+      <ol>
+        <li v-for="update in updates" :key="update.title">
+          <time :datetime="update.date">{{ updateDate(update.date) }}</time>
+          <h3>{{ t(update.title) }}</h3>
+          <p>{{ t(update.text) }}</p>
+        </li>
+      </ol>
+    </section>
     <footer class="landing-footer">
       <span>PROSPECT HOLLOW</span
       ><span>{{ t(campaign.saveWarning || 'Your adventure is saved on this device.') }}</span>
@@ -75,14 +162,37 @@
   </main>
 </template>
 <script setup>
-import { t } from '../i18n';
+import { computed, inject } from 'vue';
+import { t, locale } from '../i18n';
+import { latestUpdates } from '../data/updates';
 import { useCampaignStore } from '../stores/campaignStore';
+import { cloud } from '../services/cloudProfile';
 import TownBuilding from './town/TownBuilding.vue';
 import TownMine from './town/TownMine.vue';
 import TownIcon from './town/TownIcon.vue';
+import GameIcon from './GameIcon.vue';
+import OldGameSaveImport from './OldGameSaveImport.vue';
+import { eraHue, townSummary } from './account/accountContext';
 import '../styles/landing.css';
-defineEmits(['enter']);
+defineEmits(['enter', 'imported']);
 const campaign = useCampaignStore();
+// Provided by CloudRoot, so the email sign-in is offered before the first visit.
+const account = inject('cloudAccount', null);
+const cloudState = computed(() =>
+  !account?.signedIn.value ? 'guest' : cloud.sessionExpired ? 'expired' : 'signed-in',
+);
+// The town that Continue opens, so players never have to open My towns to check.
+const townName = computed(() => account?.townName.value ?? t('Your town'));
+const townLine = computed(() => townSummary({ town: campaign.town }));
+const townHue = computed(() => {
+  const hue = eraHue(campaign.town?.era);
+  return hue === null ? {} : { '--town-hue': hue };
+});
+const updates = latestUpdates();
+const updateDate = (date) =>
+  new Intl.DateTimeFormat(locale.value, { day: 'numeric', month: 'long', timeZone: 'UTC' }).format(
+    new Date(date),
+  );
 const trees = [
   [83, 337, 0.8],
   [598, 311, 0.75],

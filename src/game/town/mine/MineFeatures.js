@@ -1,3 +1,4 @@
+import { ROUNDED_PALETTE } from '../../../data/roundedArchitecture';
 import { MINE_SITE, MINE_POSITION } from '../../../data/mineSite';
 import { mineHillsideHeight } from '../TownMineHillside';
 import { landscapeGroundHeight } from '../TownLandscape';
@@ -270,6 +271,13 @@ export const MINE_FEATURES = {
       const panel = d.box(g, 0.7, 0.08, 1.1, x - 1.2 + i * 0.8, y, z - MINE_POSITION[1], '#456d7b');
       panel.rotation.x = -0.24;
     }
+  },
+  // Tomorrow City encloses the sorting terrace in a geodesic glass dome. It replaces
+  // the plant and canopy inside it, so the rounded mine stays within its budget.
+  'sorting-dome'(d, g) {
+    const r = terrace(d, g, MINE_SITE.sortingPlant, 3.5);
+    d.ball(r, 0, 0.25, 0, [1.85, 1.9, 1.05], ROUNDED_PALETTE.glass, 'rock');
+    d.mesh(r, 'cylinder', [1.9, 0.14, 1.1], [0, 0.3, 0], ROUNDED_PALETTE.green);
   },
   'wind-turbine'(d, g, a, motions) {
     const [x, z] = MINE_SITE.turbine,

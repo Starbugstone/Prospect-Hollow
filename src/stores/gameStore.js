@@ -32,6 +32,37 @@ const tileManager = new TileManager();
 const bonusActivator = new BonusActivator();
 const hintEngine = new HintEngine();
 const HINT_DELAY_MS = 15000;
+// Logical mine state only. Renderer objects, timers and input queues belong to
+// their original window and must never cross a town handoff.
+const HANDOFF_FIELDS = [
+  'board',
+  'tiles',
+  'boardSize',
+  'boardCols',
+  'boardRows',
+  'score',
+  'maxCascade',
+  'cascadeMultiplier',
+  'objectives',
+  'oreOrders',
+  'moves',
+  'totalLayers',
+  'remainingLayers',
+  'totalRelics',
+  'levelCleared',
+  'levelRewards',
+  'collectedJewels',
+  'runId',
+  'coinReward',
+  'remainingBonusGems',
+  'comboCounts',
+  'multiMatchCounts',
+  'playMode',
+  'constructionReward',
+  'speedTargetMs',
+  'currentBoardLayout',
+  'currentLevelId',
+];
 let hintTimerId = null;
 let arcadeImpactTimeout = null;
 let arcadeBannerTimeout = null;
@@ -162,6 +193,72 @@ export const useGameStore = defineStore('game', {
     },
   },
   actions: {
+    captureHandoff() {
+      if (!this.sessionActive) return null;
+      if (this.animationInProgress || this.pendingBoardState)
+        throw new Error('The current move is still finishing. Try again shortly.');
+      this.syncRunClock(false);
+      return JSON.parse(
+        JSON.stringify({
+          version: 1,
+          state: Object.fromEntries(HANDOFF_FIELDS.map((key) => [key, this[key]])),
+          elapsedMs: this.elapsedMs,
+          clockStarted: this.playClock.started,
+          continuousRun: useCampaignStore().continuousRun,
+        }),
+      );
+    },
+    restoreHandoff(snapshot) {
+      if (!snapshot) return;
+      const campaign = useCampaignStore();
+      const state = snapshot.state;
+      if (
+        snapshot.version !== 1 ||
+        !state ||
+        !HANDOFF_FIELDS.every((key) => Object.hasOwn(state, key)) ||
+        state.runId !== campaign.issuedRun ||
+        (!state.levelCleared && state.runId <= campaign.settledRun) ||
+        !Array.isArray(state.board) ||
+        state.board.length !== state.boardCols * state.boardRows
+      )
+        throw new Error(
+          'This puzzle transfer could not be restored. Its saved copy has been kept.',
+        );
+      this.bootstrap();
+      boardReadiness(this).cancel();
+      const session = this.sessionVersion + 1;
+      this.$patch((target) =>
+        Object.assign(target, {
+          ...JSON.parse(
+            JSON.stringify(Object.fromEntries(HANDOFF_FIELDS.map((key) => [key, state[key]]))),
+          ),
+          sessionActive: true,
+          sessionVersion: session,
+          // The transferred puzzle has already played its intro. Recreating its
+          // renderer (including context recovery) must resume that same session.
+          introTaskSession: session,
+          introFinalized: session,
+          rendererRecovering: false,
+          boardVersion: this.boardVersion + 1,
+          animationInProgress: false,
+          pendingBoardState: null,
+          queuedSwap: null,
+          queuedBonus: null,
+          activeBonusMode: null,
+          powerInUse: null,
+          inputPaused: true,
+        }),
+      );
+      this.playClock.reset();
+      this.playClock.elapsed = Math.max(0, snapshot.elapsedMs);
+      this.playClock.started = !!snapshot.clockStarted;
+      this.elapsedMs = this.playClock.elapsed;
+      campaign.activeRun = state.levelCleared ? null : state.runId;
+      campaign.continuousRun = snapshot.continuousRun
+        ? JSON.parse(JSON.stringify(snapshot.continuousRun))
+        : null;
+      this.audioManager?.playAmbientLoop?.();
+    },
     showArcadeBanner(banner) {
       if (!this.sessionActive || this.levelCleared) return;
       if (
@@ -197,7 +294,10 @@ export const useGameStore = defineStore('game', {
       this.elapsedMs = this.playClock.setRunning(canPlay);
     },
     setAudioManager(manager) {
+      const changed = manager !== this.audioManager;
       this.audioManager = manager ? markRaw(manager) : null;
+      // A transferred mine can resume before its App mounts the audio manager.
+      if (changed && this.sessionActive) this.audioManager?.playAmbientLoop?.();
       const animator = this.renderer?.animator;
       if (animator?.setAudioManager) {
         animator.setAudioManager(this.audioManager);

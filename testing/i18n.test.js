@@ -4,7 +4,7 @@ import { browserLocale, locale, setLocale, t, number } from '../src/i18n';
 import fr from '../src/i18n/fr.json';
 import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
 import { LEVEL_NAMES } from '../src/data/levelNames';
-import { CHAPTERS, POWERS, CHEST_TIERS } from '../src/data/campaign';
+import { CHAPTERS, POWERS, CHEST_LABELS } from '../src/data/campaign';
 import { CHEST_DROPS } from '../src/data/rewards';
 import { FUSION_STYLES } from '../src/game/engine/BonusFusion';
 import { BUILDINGS, INITIAL_STORY } from '../src/data/town';
@@ -13,6 +13,39 @@ import { ERAS } from '../src/data/eras';
 import { MOTOR_AGE_VARIANTS } from '../src/data/motorAge';
 import { INDUSTRIAL_VARIANTS } from '../src/data/industrial';
 import { RIVER_RAIL_VARIANTS } from '../src/data/riverRail';
+import { incidentScript, incidentStory } from '../src/data/townEvents';
+
+// Every caption and story an incident can show, across defenses and outcomes.
+const incidentMessages = () =>
+  ['bandits', 'cargo-theft', 'workshop-fire', 'storm-cleanup'].flatMap((kind) =>
+    [0, 1, 3].flatMap((level) =>
+      [
+        ['protected', 0],
+        ['stolen', 9],
+        ['harmless', 0],
+      ].flatMap(([outcome, loss]) =>
+        [['warehouse'], ['railDepot'], ['riverPort'], []].flatMap((targets) => {
+          const event = {
+            kind,
+            gangSize: 4,
+            sheriffLevel: level,
+            bankLevel: level,
+            fireStationLevel: level,
+            outcome,
+            loss,
+            targets,
+          };
+          const story = incidentStory(event);
+          return [
+            ...incidentScript(event).phases.map(([, phase]) => phase),
+            story.speaker,
+            story.title,
+            story.text,
+          ];
+        }),
+      ),
+    ),
+  );
 
 afterEach(() => setLocale('en'));
 describe('One browser language across the game and town', () => {
@@ -47,7 +80,7 @@ describe('One browser language across the game and town', () => {
       ...OBSTACLES.flatMap((item) => [item.name, item.instruction]),
       ...CHAPTERS.flatMap((c) => [c.name, c.description]),
       ...POWERS.map((p) => p.label),
-      ...CHEST_TIERS.map((c) => c.label),
+      ...Object.values(CHEST_LABELS),
       ...Object.values(INITIAL_STORY),
       ...ERAS.flatMap((era) => [era.label, era.yearLabel, ...(era.story ? [era.story] : [])]),
       ...Object.values(RIVER_RAIL_VARIANTS).flat(),
@@ -55,6 +88,7 @@ describe('One browser language across the game and town', () => {
       ...Object.values(MOTOR_AGE_VARIANTS).flat(),
       ...CHEST_DROPS.map((drop) => drop.label),
       ...Object.values(FUSION_STYLES).flatMap((style) => [style.label, style.detail]),
+      ...incidentMessages(),
     ];
     for (const building of BUILDINGS)
       messages.push(

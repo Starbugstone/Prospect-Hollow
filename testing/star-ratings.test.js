@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { getStars, getLevelStarTarget, starGoals } from '../src/data/starRating';
 import { STAR_SCORE_TARGETS } from '../src/data/starScoreTargets';
-import { LEVEL_COUNT, getChestTier } from '../src/data/campaign';
+import { LEVEL_COUNT, scoreChestEarned } from '../src/data/campaign';
 import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
 import { useGameStore } from '../src/stores/gameStore';
 import { useCampaignStore } from '../src/stores/campaignStore';
@@ -79,7 +79,7 @@ it('uses the level star target at victory without changing chest targets or exis
   game.remainingLayers = 0;
   game.completeLevel();
   expect(campaign.records[1]).toMatchObject({ score: 3000, stars: 3 });
-  expect(getChestTier(game.score, levels[0].chestTarget)).toBeUndefined();
+  expect(scoreChestEarned(game.score, levels[0].chestTarget)).toBe(false);
   expect(game.levelRewards.map((reward) => reward.source)).toEqual(['completion']);
   campaign.recordVictory({ id: 1, score: 1, target: 7500, starTarget: 2000, combo: 1 });
   expect(campaign.records[1].stars).toBe(3);

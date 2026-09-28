@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { existsSync, readFileSync } from 'node:fs';
+import { INCIDENT_AUDIO } from '../src/data/townEvents';
 import {
   TownSoundscape,
   villageSounds,
@@ -306,6 +308,43 @@ describe('Recorded village soundscape', () => {
     update({ raid: null });
     await flush();
     expect([...audio.sources.keys()]).toEqual(['birds', 'chatter']);
+  });
+
+  it('plays each era incident’s own cues, loops fire until it is out, and never plays hooves', async () => {
+    const { audio, update, fetchAudio, sources } = setup();
+    await audio.unlock();
+    await flush();
+    update({ raid: '3-Smoke at the workshop', raidKind: 'workshop-fire' });
+    await flush();
+    expect(villageSounds(audio.state)).toEqual([]);
+    expect([...audio.sources.keys()]).toEqual([]);
+    // Cues load with the scene, before their first beat.
+    for (const kind of INCIDENT_AUDIO['workshop-fire'])
+      expect(fetchAudio).toHaveBeenCalledWith(VILLAGE_AUDIO[kind].src, expect.anything());
+    await audio.playRaidCue({ raidId: 3, kind: 'bandit-shot' });
+    await audio.playRaidCue({ raidId: 3, kind: 'patrol-whistle' });
+    expect(audio.sources.size).toBe(0);
+    await audio.playRaidCue({ raidId: 3, kind: 'fire-crackle', pan: 0.3 });
+    await audio.playRaidCue({ raidId: 3, kind: 'fire-bell' });
+    expect([...audio.sources.keys()]).toEqual(['fire-crackle', 'fire-bell']);
+    const crackle = sources.at(-2);
+    expect(crackle.loop).toBe(true);
+    await audio.playRaidCue({ raidId: 3, kind: 'fire-crackle', stop: true });
+    expect(crackle.stop).toHaveBeenCalled();
+    expect([...audio.sources.keys()]).toEqual(['fire-bell']);
+    update({ raid: '3-The raid has passed', raidKind: 'workshop-fire' });
+    expect(audio.sources.size).toBe(0);
+    update({ raid: '4-Thieves break into the warehouse', raidKind: 'cargo-theft' });
+    await audio.playRaidCue({ raidId: 4, kind: 'patrol-whistle' });
+    expect([...audio.sources.keys()]).toEqual(['patrol-whistle']);
+  });
+
+  it('ships a credited recording for every incident cue', () => {
+    const credits = readFileSync('public/sound/village/credits.html', 'utf8');
+    for (const kind of Object.values(INCIDENT_AUDIO).flat()) {
+      expect(existsSync(`public/sound/village/${kind}.mp3`), kind).toBe(true);
+      expect(credits, kind).toContain(`${kind}.mp3`);
+    }
   });
 
   it('isolates a failed sample, avoids retry storms, and recovers after the cooldown', async () => {
