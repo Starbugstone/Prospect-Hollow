@@ -452,6 +452,13 @@
   border-radius: 12px;
   box-shadow: 0 10px 30px #1838322e;
 }
+/* The scrolling panel clips overflow, so the left column opens its menu rightwards. */
+@media (min-width: 561px) {
+  .town-slot:nth-child(3n + 1) .town-slot-menu {
+    left: 0.4rem;
+    right: auto;
+  }
+}
 .account-panel .town-slot-menu > button,
 .account-panel .town-slot-menu > a {
   justify-content: flex-start;
