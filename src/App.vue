@@ -252,7 +252,12 @@
     <SettingsDrawer
       :open="settings.isSettingsOpen"
       :allow-save-transfer="!game.sessionActive"
+      :show-home="view === 'town'"
       @close="settings.toggleSettings(false)"
+      @home="
+        settings.toggleSettings(false);
+        showHome();
+      "
       @reset-progress="resetProgress"
       @import-progress="resumeImportedVillage"
     />
