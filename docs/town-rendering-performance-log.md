@@ -125,6 +125,31 @@ after a mine run; main-thread tasks from the tap onward:
 | Villager and animal re-planning | seven tasks of 100–350 ms | route repair tasks under 160 ms |
 | Longest task after the tap      | 1,326 ms                  | 432 ms (dog/cat street route)   |
 
+## Tomorrow City (PR #56) against these changes
+
+The rounded era uses the same pipeline, so every change above applies without era-specific code:
+rounded buildings are static plot batches (frozen by A1, one matrix update per frame from B1),
+Tomorrow plots use the generated footprint catalog (the swap paths never fall back to provisional
+geometry), and the new people/animal parts reuse existing geometries so B4 instancing keeps them
+in the existing buckets. Only the space dog's transparent helmet adds one instanced bucket.
+
+Headless Chromium, phone viewport, complete towns, camera orbiting, 25 s warm-up, three
+interleaved runs each (loaded machine; compare ranges, not single values):
+
+| Measurement                  | Connected City | Tomorrow City   |
+| ---------------------------- | -------------- | --------------- |
+| Plots                        | 55             | 58              |
+| Static triangles             | 307k–312k      | 295k–297k       |
+| Static draw calls            | 89–94          | 96–99           |
+| Foreground draw calls (mean) | 116–124        | 103–107         |
+| Camera-frame `render()` mean | 6.0–11.1 ms    | 6.5–9.0 ms      |
+| Provisional plot footprints  | 0              | 0               |
+| Frozen static meshes         | all            | all (583 / 583) |
+| Long tasks while orbiting    | 0–2            | 0               |
+
+The extra static draw calls come from the three new Tomorrow plots; per plot, rounded buildings use
+no more materials than the Blender shells (`testing/tomorrow-era.test.js`).
+
 ## On-device checks for preprod
 
 1. Orbit and zoom the town, then run `await prospectDebug.townFrameStats(5)` while dragging. Compare
