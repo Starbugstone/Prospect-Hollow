@@ -7,7 +7,7 @@
           {{ t('Match gems in the mine and build your village with the coins you earn.') }}
         </p>
         <button class="town-primary landing-enter" @click="$emit('enter')">
-          {{ t('Play') }}
+          {{ t(campaign.hasVisitedVillage ? 'Continue' : 'Play') }}
           <TownIcon name="arrow" />
         </button>
         <section
@@ -136,6 +136,16 @@
         <img class="landing-crystal" src="/art/amethyst.svg" alt="" />
       </div>
     </section>
+    <section class="landing-updates" aria-labelledby="landing-updates-title">
+      <h2 id="landing-updates-title">{{ t('What’s new') }}</h2>
+      <ol>
+        <li v-for="update in updates" :key="update.title">
+          <time :datetime="update.date">{{ updateDate(update.date) }}</time>
+          <h3>{{ t(update.title) }}</h3>
+          <p>{{ t(update.text) }}</p>
+        </li>
+      </ol>
+    </section>
     <footer class="landing-footer">
       <span>PROSPECT HOLLOW</span
       ><span>{{ t(campaign.saveWarning || 'Your adventure is saved on this device.') }}</span>
@@ -144,7 +154,8 @@
 </template>
 <script setup>
 import { computed, inject } from 'vue';
-import { t } from '../i18n';
+import { t, locale } from '../i18n';
+import { latestUpdates } from '../data/updates';
 import { useCampaignStore } from '../stores/campaignStore';
 import { cloud } from '../services/cloudProfile';
 import TownBuilding from './town/TownBuilding.vue';
@@ -159,6 +170,11 @@ const account = inject('cloudAccount', null);
 const cloudState = computed(() =>
   !account?.signedIn.value ? 'guest' : cloud.sessionExpired ? 'expired' : 'signed-in',
 );
+const updates = latestUpdates();
+const updateDate = (date) =>
+  new Intl.DateTimeFormat(locale.value, { day: 'numeric', month: 'long', timeZone: 'UTC' }).format(
+    new Date(date),
+  );
 const trees = [
   [83, 337, 0.8],
   [598, 311, 0.75],

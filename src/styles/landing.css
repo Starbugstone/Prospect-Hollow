@@ -316,6 +316,50 @@
 .landing-treasures img:nth-child(2) {
   transform: translateY(-10px) rotate(12deg);
 }
+.landing-updates {
+  padding: 36px 0 40px;
+  border-top: 1px solid #ddd9c9;
+}
+.landing-updates h2 {
+  margin: 0 0 22px;
+  font:
+    400 27px Georgia,
+    serif;
+  color: #40594b;
+}
+.landing-updates ol {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.landing-updates li {
+  padding: 18px 20px;
+  background: #fffaf0;
+  border: 1px solid #e6dcc0;
+  border-radius: 10px;
+}
+.landing-updates time {
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #a0804a;
+}
+.landing-updates h3 {
+  margin: 6px 0 8px;
+  font:
+    400 19px Georgia,
+    serif;
+  color: #4b6351;
+}
+.landing-updates p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #6f725f;
+}
 .landing-footer {
   display: flex;
   justify-content: space-between;
@@ -441,6 +485,10 @@
   }
   .landing-footer {
     flex-direction: column;
+  }
+  .landing-updates ol {
+    grid-template-columns: 1fr;
+    gap: 14px;
   }
   .continuous-banner {
     flex-wrap: wrap;

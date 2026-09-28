@@ -188,6 +188,7 @@ import { townCoordinator } from '../services/townCoordinator';
 import { createTownHandoff } from '../services/townHandoff';
 import { createSyncScheduler } from '../services/syncScheduler';
 import { describeSaveState } from '../services/saveStatus';
+import { syncTownParam } from '../services/appRoute';
 import GameIcon from './GameIcon.vue';
 const AccountPanel = defineAsyncComponent(() => import('./account/AccountPanel.vue'));
 const CommunityPanel = defineAsyncComponent(() => import('./community/CommunityPanel.vue'));
@@ -342,11 +343,7 @@ function activate({ takeOver = false } = {}) {
         }
         moved.value = false;
         ready.value = true;
-        const url = new URL(location.href),
-          meta = townStorage.active()?.meta;
-        if (meta?.owner) url.searchParams.set('play', meta.id);
-        else url.searchParams.delete('play');
-        history.replaceState(null, '', url);
+        syncTownParam();
         // Cloud latency must never delay local play or the duplicate-tab notice.
         if (cloud.account) void syncNow();
       } catch (error) {

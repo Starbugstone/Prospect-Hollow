@@ -196,6 +196,7 @@ import { freshProfile } from '../../stores/campaignStore';
 import { useGameStore } from '../../stores/gameStore';
 import { useAccountContext, eraName, eraHue } from './accountContext';
 import GameIcon from '../GameIcon.vue';
+import { townUrl } from '../../services/appRoute';
 import { t, number } from '../../i18n';
 const SLOT_LIMIT = 3;
 const props = defineProps({ writable: Boolean });
@@ -255,7 +256,6 @@ const art = (summary) => {
   const hue = eraHue(summary?.era);
   return hue === null ? {} : { '--slot-hue': hue };
 };
-const townUrl = (id) => `${location.origin}${location.pathname}?play=${encodeURIComponent(id)}`;
 function manage(section) {
   menu.value = null;
   emit('manage', section);
