@@ -166,3 +166,25 @@ Reproduce with:
 node scripts/measure-campaign.mjs . 30 372 $(seq -s, 325 372) > /tmp/tomorrow.json
 npx vitest run testing/tomorrow-levels.test.js testing/chapter-progression.test.js
 ```
+
+## Screenshots
+
+Captured in headless Chromium at phone (390 × 844) and desktop (1280 × 800) sizes.
+
+Level 325 introduces the charge core with the first-time guide:
+
+<img src="images/tomorrow-levels/level-325-core-intro-guide-phone-390x844.png" alt="Level 325 guide, phone" width="300">
+
+![Level 325 guide, desktop](images/tomorrow-levels/level-325-core-intro-guide-desktop-1280x800.png)
+
+Level 356 with two cores partly charged (2 of 4 and 1 of 4 pips lit):
+
+<img src="images/tomorrow-levels/level-356-partial-charge-phone-390x844.png" alt="Level 356, phone" width="300">
+
+![Level 356, desktop](images/tomorrow-levels/level-356-partial-charge-desktop-1280x800.png)
+
+Level 372, the Skyline of tomorrow finale, mixing cores, relics, chains, seals and stone:
+
+<img src="images/tomorrow-levels/level-372-finale-phone-390x844.png" alt="Level 372, phone" width="300">
+
+![Level 372, desktop](images/tomorrow-levels/level-372-finale-desktop-1280x800.png)
