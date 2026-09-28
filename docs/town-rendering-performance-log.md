@@ -100,13 +100,40 @@ Interleaved A/B in one page (industrial town, no CPU slowdown, loaded machine):
 Before/after screenshots of the overview, far horizon, low horizon, millrace and mine views showed
 the same terrain; pixel differences came from villagers, water animation and a VIP arrival.
 
+## Batch C: returning from the mine
+
+Leaving the mine advances every construction project at once, so several plots change their
+scaffolding together. `changeTown()` only swapped a single changed plot incrementally; two or more
+fell back to the full `update()`, which rebuilt every plot and service drop synchronously inside the
+tap and then re-planned every villager and animal route for several seconds.
+
+| Change                                       | Where                                                                                                       | Effect / revert note                                                                                                                                                                                                                                                                                                                                                                                                                |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| C0. Multi-plot swaps, one per frame          | `TownDiorama.changeTown()` (`plotQueue`), `tryActivatePlot()`, `plotsPending()`; `setMotion()` and `tick()` | Same-layout changes to several non-mine plots are queued and swapped by `tick()` one per frame, after the current town is back on screen. Only villagers whose routes cross a changed plot are re-planned. A building the player finishes goes last so no later swap cuts its reveal short. A newer town change or a full `update()` clears the queue. Revert: restore the `changed.length === 1` condition and remove `plotQueue`. |
+| C0b. Purchases once per town, not per second | `buildingIndicators(…, purchases)` in `TownRules.js`; `townPurchases` in `TownScene.vue` and `TownMap.vue`  | The one-second collection clock only re-checks collection cooldowns; the upgrade offers for every building are computed when the town changes. Revert: drop the `purchases` argument at both call sites.                                                                                                                                                                                                                            |
+
+Tests: `testing/town-construction-stutter.test.js` (several advancing projects, a finished building
+among them, a superseded queue, purchases passed once).
+
+Headless Chromium, phone viewport, 4× CPU slowdown, motor-age town with three projects advancing
+after a mine run; main-thread tasks from the tap onward:
+
+| Measurement                     | Before                    | After                           |
+| ------------------------------- | ------------------------- | ------------------------------- |
+| Tap back to the village         | 1,326 ms (full rebuild)   | 217 ms                          |
+| Plot changes                    | inside the tap            | 3 frames of about 200–250 ms    |
+| Villager and animal re-planning | seven tasks of 100–350 ms | route repair tasks under 160 ms |
+| Longest task after the tap      | 1,326 ms                  | 432 ms (dog/cat street route)   |
+
 ## On-device checks for preprod
 
 1. Orbit and zoom the town, then run `await prospectDebug.townFrameStats(5)` while dragging. Compare
    `phases.render`, `phases.foreground` and `frames.p95` with a run on the previous build if needed.
 2. Complete an ordinary upgrade and one that unlocks plots (for example Home level 2), then read
    `prospectDebug.townTimings()`. Look at `activate`, `settle-*` and `longTasks`.
-3. Visual checks: buildings, roads, power wires and service drops sit in the right places; tapping a
+3. With two or more buildings under construction, finish a mine level and return. `town-change`
+   should show `path: "swap"` with every advanced plot, followed by one `activate` per plot.
+4. Visual checks: buildings, roads, power wires and service drops sit in the right places; tapping a
    building still selects it; labels and action icons follow the camera and appear or hide correctly;
    villagers walk around newly built buildings.
 
@@ -117,8 +144,11 @@ the same terrain; pixel differences came from villagers, water animation and a V
 - **B2.** Render event and VIP insets offscreen at about 20–30 Hz instead of re-rendering the whole
   town every frame.
 - **B3.** Put the 28–54 per-building sign textures in one atlas.
-- **C1.** An incremental path for layout-changing completions (multi-plot swap plus scenery refresh);
-  keep the full rebuild for era changes only.
+- **C1.** An incremental path for layout-changing completions (scenery refresh with new plots);
+  keep the full rebuild for era changes only. Same-layout multi-plot changes are covered by C0.
+- **C4.** Split the dog and cat street route (`streetRoute()` in `TownAnimals.js`) into yielding
+  steps, or keep animal routes that no changed footprint crosses. It is the longest task left after
+  returning from the mine.
 - **C2.** An interaction quality mode (lower pixel ratio and cache MSAA during drags and reveals).
 - **C3.** Cheaper character instancing updates (per-root visibility instead of per-mesh ancestor
   walks).

@@ -317,8 +317,12 @@ const quietPlot = (id) =>
   id !== suggestedId.value &&
   !props.town.buildings[id] &&
   !props.town.projects[id];
+// Purchases depend on the town only; the one-second clock just re-checks cooldowns.
+const townPurchases = computed(() => availablePurchases(props.town));
 const indicators = computed(() =>
-  props.readOnly ? {} : buildingIndicators(props.town, props.forgeCollectible, props.now),
+  props.readOnly
+    ? {}
+    : buildingIndicators(props.town, props.forgeCollectible, props.now, townPurchases.value),
 );
 const availableIds = computed(() =>
   props.readOnly ? [] : availablePurchases(props.town, props.builderHammers).map(({ id }) => id),

@@ -535,6 +535,8 @@ export class TownDiorama {
         plots: changed.map(([id]) => id),
         topology: Object.keys(parts).filter((key) => parts[key] !== this.topologyState?.[key]),
       });
+    // A newer town supersedes plots still waiting from an earlier change.
+    this.plotQueue = [];
     if (!changed.length && sameTopology) {
       this.town = town;
       this.render();
@@ -559,18 +561,27 @@ export class TownDiorama {
       return;
     }
     if (
-      changed.length === 1 &&
+      changed.length &&
       this.lifeReady !== false &&
-      changed[0][0] !== 'mine' &&
+      changed.every(([id]) => id !== 'mine') &&
       sameTopology
     ) {
+      // Several plots can change at once, e.g. every project advancing after a mine
+      // run. Swap them one per frame instead of rebuilding the town and all its life,
+      // starting after the current town is back on screen. The player's finished
+      // building goes last so no later swap cuts its reveal short.
+      const ids = changed.map(([id]) => id);
+      const queue = [
+        ...ids.filter((id) => id !== constructionId),
+        ...ids.filter((id) => id === constructionId),
+      ].map((id) => ({ id, town, labels, construction: id === constructionId && !reducedMotion }));
       try {
-        this.swapPlot(changed[0][0], town, labels, {
-          construction: constructionId && !reducedMotion,
-        });
+        if (queue.length > 1) this.plotQueue = queue;
+        else this.swapPlot(queue[0].id, town, labels, { construction: queue[0].construction });
         record('swap');
         return;
       } catch (error) {
+        this.plotQueue = [];
         console.warn('Incremental plot preparation failed; rebuilding town.', error);
       }
     }
@@ -745,7 +756,19 @@ export class TownDiorama {
       return true;
     }
     const pending = this.pendingPlot;
-    if (!pending) return true;
+    if (!pending) {
+      const next = this.plotQueue?.shift();
+      if (next) {
+        try {
+          this.swapPlot(next.id, next.town, next.labels, { construction: next.construction });
+        } catch (error) {
+          console.warn('Incremental plot preparation failed; rebuilding town.', error);
+          this.plotQueue = [];
+          this.update(next.town, next.labels, this.mineProgress);
+        }
+      }
+      return true;
+    }
     const { id, group, previous, movingPart, entries, signature, construction, parts, partKeys } =
       pending;
     if (!this.plotVacant(pending)) return false;
@@ -850,6 +873,9 @@ export class TownDiorama {
     else this.repairAnimalLife();
     return true;
   }
+  plotsPending() {
+    return !!this.pendingPlot || !!this.pendingUpdate || !!this.plotQueue?.length;
+  }
   refreshScenery() {
     if (!this.staticScenery) return [];
     const changed = this.staticScenery.update(this, this.town);
@@ -903,6 +929,7 @@ export class TownDiorama {
     }
     this.lifeEra = town.era;
     this.lifeReady = false;
+    this.plotQueue = [];
     if (this.pendingPlot) this.clearGroup(this.pendingPlot.group);
     this.pendingPlot = null;
     // Activation clears its own pending update first; any other one is superseded.
@@ -2111,7 +2138,7 @@ export class TownDiorama {
       }
       if (this.waterMaterial) this.waterMaterial.uniforms.time.value = this.elapsed;
       this.tryActivatePlot?.();
-      if (this.reducedMotion && !this.pendingPlot && !this.pendingUpdate) {
+      if (this.reducedMotion && !this.plotsPending()) {
         this.motionEnabled = false;
         this.renderer.setAnimationLoop(null);
       }
@@ -2290,7 +2317,7 @@ export class TownDiorama {
   setMotion(enabled, reducedMotion = false) {
     const wasReduced = this.reducedMotion;
     this.reducedMotion = reducedMotion;
-    enabled = enabled && (!reducedMotion || !!this.pendingPlot || !!this.pendingUpdate);
+    enabled = enabled && (!reducedMotion || this.plotsPending());
     if (this.motionEnabled === enabled && wasReduced === reducedMotion) return;
     this.motionEnabled = enabled;
     if (enabled) this.construction?.resume();
