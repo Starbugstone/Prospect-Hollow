@@ -164,8 +164,9 @@ export function addEraActivity(d, town) {
       return pivot;
     };
     if (isRoundedEra(town.buildingEras.railDepot)) {
-      train.name = 'Maglev pod train';
-      for (const x of [0, -4, -8]) roundedRailcar(d, carriage(x, 2.4), x === 0);
+      train.name = 'Solar express train';
+      for (const x of [0, -4, -8])
+        wheels.push(...roundedRailcar(d, carriage(x, 2.4), x === 0).userData.wheels);
     } else if (isCityEra(town.buildingEras.railDepot)) {
       train.name = eraEvolution(town.buildingEras.railDepot).digitalCity
         ? 'Electric city train'

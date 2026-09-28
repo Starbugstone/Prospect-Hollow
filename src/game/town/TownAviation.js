@@ -141,7 +141,7 @@ export function addAviationActivity(d, town) {
       ? futureModel(d, d.world, aircraft)
       : cityModel(d, d.world, aircraft);
   plane.name = rounded
-    ? 'Electric sky liner'
+    ? 'Sky saucer'
     : aircraft === 'airplane'
       ? 'Regional passenger plane'
       : 'Passenger jet';

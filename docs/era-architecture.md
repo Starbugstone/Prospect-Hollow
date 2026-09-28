@@ -129,8 +129,8 @@ family.
 - Traffic in rounded eras uses wheel-less hover cars, a hover shuttle bus and rounded
   incident response pods that bob via `userData.hoverBody` (`TownVehicles.js`). Villagers wear
   the `tomorrow` wardrobe (`hat: 'visor'` and a `trim` collar ring) built from existing shapes. The
-  airport, station and port switch to an electric sky liner, a maglev pod train and a hover
-  ferry (`RoundedTransports.js`) once that building itself is rounded.
+  airport, station and port switch to a sky saucer, a solar express train on the rails and a
+  hover ferry (`RoundedTransports.js`) once that building itself is rounded.
 - The mine gains a `rounded-arch` portal hood and a geodesic `sorting-dome`. A site entry
   may declare `replaces: [...]` to supersede features it encloses; the dome replaces the
   sorting plant and solar canopy, keeping the mine under its 6,000-triangle budget.

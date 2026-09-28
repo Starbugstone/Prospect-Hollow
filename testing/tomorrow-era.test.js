@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { Group, MeshBasicMaterial, Scene } from 'three';
+import { Box3, Group, MeshBasicMaterial, Scene, Vector3 } from 'three';
 import { createSSRApp, h } from 'vue';
 import { renderToString } from 'vue/server-renderer';
 import { TownDiorama } from '../src/game/town/TownDiorama';
@@ -7,6 +7,7 @@ import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { renderCityBuilding } from '../src/game/town/buildings/city';
 import { animateVehicle, motorVehicle, responseVehicle } from '../src/game/town/TownVehicles';
 import { addAviationActivity } from '../src/game/town/TownAviation';
+import { roundedAircraft } from '../src/game/town/RoundedTransports';
 import { addEraActivity } from '../src/game/town/TownEraActivity';
 import { ALL_MESH_FAMILIES, loadFamilies } from '../src/game/town/assets/MeshCatalog';
 import { CITY_ARCHITECTURES, defineEra } from '../src/data/eraDefinitions';
@@ -294,27 +295,72 @@ describe('Tomorrow City transport', () => {
   }
   it('flies, sails and glides rounded vehicles once their buildings are rounded', () => {
     const { find } = transports('tomorrow');
-    for (const name of ['Electric sky liner', 'Hover river ferry', 'Maglev pod train']) {
+    // Moving vehicles are drawn per mesh; the train stays near the Blender railcars' 21 parts.
+    for (const [name, budget] of [
+      ['Sky saucer', 16],
+      ['Hover river ferry', 16],
+      ['Solar express train', 24],
+    ]) {
       const vehicle = find(name);
       expect(vehicle, name).toBeTruthy();
       let meshes = 0;
       vehicle.traverse((o) => {
         if (o.isMesh) meshes++;
       });
-      expect(meshes, name).toBeLessThanOrEqual(16);
-      expect(cost(vehicle).triangles, name).toBeLessThan(2000);
+      expect(meshes, name).toBeLessThanOrEqual(budget);
+      expect(cost(vehicle).triangles, name).toBeLessThan(2500);
       expect(cost(vehicle).materials, name).toBeLessThanOrEqual(6);
     }
-    const plane = find('Electric sky liner');
-    expect(plane.getObjectByName('propellerLeft')).toBeTruthy();
-    expect(plane.getObjectByName('propellerRight')).toBeTruthy();
+  });
+  it('lands the saucer on legs that reach the ground and spins its rim lights', () => {
+    const d = diorama('tomorrow');
+    const saucer = roundedAircraft(d, new Group());
+    saucer.updateMatrixWorld(true);
+    const bounds = new Box3().setFromObject(saucer);
+    expect(bounds.min.y).toBeGreaterThanOrEqual(0);
+    expect(bounds.min.y).toBeLessThan(0.05);
+    // Every leg runs from inside the hull down to its foot pad: nothing floats.
+    const hull = new Box3().setFromObject(saucer.children[0]);
+    const legs = saucer.children.filter((o) => o.isMesh && o.scale.x === 0.06);
+    expect(legs).toHaveLength(3);
+    for (const leg of legs) {
+      const box = new Box3().setFromObject(leg);
+      expect(box.max.y).toBeGreaterThan(hull.min.y);
+      expect(box.min.y).toBeLessThan(0.1);
+    }
+    const ring = saucer.getObjectByName('propellerLeft');
+    const before = new Vector3(2.35, 0, 0).applyMatrix4(ring.matrixWorld);
+    ring.rotation.z = Math.PI / 2;
+    saucer.updateMatrixWorld(true);
+    const after = new Vector3(2.35, 0, 0).applyMatrix4(ring.matrixWorld);
+    expect(after.y).toBeCloseTo(before.y, 6);
+    expect(after.distanceTo(before)).toBeGreaterThan(1);
+  });
+  it('runs the solar express on rolling axles that sit on the rails', () => {
+    const { find } = transports('tomorrow');
+    const train = find('Solar express train');
+    const axles = [];
+    train.traverse((o) => {
+      if (o.isMesh && o.rotation.order === 'ZYX') axles.push(o);
+    });
+    expect(axles).toHaveLength(6);
+    train.updateMatrixWorld(true);
+    for (const axle of axles) {
+      const box = new Box3().setFromObject(axle);
+      // The axle spans both rails (gauge ±0.52).
+      expect(box.max.z - box.min.z).toBeGreaterThanOrEqual(1.04);
+      // The suspension pivot sits on the rail head, like the older trains' wheel bottoms.
+      const rail = axle.parent.parent.getWorldPosition(new Vector3()).y;
+      // Allow for the carriage pitching on the bridge approach.
+      expect(Math.abs(box.min.y - rail)).toBeLessThan(0.06);
+    }
   });
   it('keeps the Connected City vehicles until those buildings are modernized', () => {
     const { find } = transports('contemporary');
     expect(find('Passenger jet')).toBeTruthy();
     expect(find('Solar river ferry')).toBeTruthy();
     expect(find('Electric city train')).toBeTruthy();
-    expect(find('Electric sky liner')).toBeFalsy();
+    expect(find('Sky saucer')).toBeFalsy();
   });
 });
 

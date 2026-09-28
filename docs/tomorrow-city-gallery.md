@@ -52,19 +52,24 @@ _Town square with the orbital-rings fountain._
 
 The airport, station and port each switch to a rounded vehicle once that building is
 modernized in Tomorrow City (`src/game/town/RoundedTransports.js`). Each is built from
-the shared primitives with at most 16 meshes, so the moving vehicles stay cheap to draw.
+the shared primitives with at most 16 meshes (24 for the three-car train), so the moving
+vehicles stay cheap to draw.
 
-![Electric sky liner in flight](images/tomorrow-city/13-sky-liner-flight.png)
+![Sky saucer in flight](images/tomorrow-city/13-sky-saucer-flight.png)
 
-_Electric sky liner: blended wings and ducted fans, on approach._
+_Sky saucer on approach: a disc hull under a glass dome, with spinning rim lights._
 
-![Electric sky liner taxiing](images/tomorrow-city/14-sky-liner-taxi.png)
+![Sky saucer landed on the runway](images/tomorrow-city/14-sky-saucer-landed.png)
 
-_The sky liner taxiing by the domed airport lounge._
+_Landed on its three legs, which reach from the hull down to foot pads on the runway._
 
-![Maglev pod train](images/tomorrow-city/15-maglev-pod-train.png)
+![Solar express train](images/tomorrow-city/15-solar-express-train.png)
 
-_Maglev pod train, floating on guideway skids over the railway._
+_Solar express: a streamlined lead car and two glazed carriages running on the rails._
+
+![Solar express bogies](images/tomorrow-city/15b-solar-express-bogies.png)
+
+_Its skirted underframe, with rolling wheel axles on both rails._
 
 ![Hover river ferry](images/tomorrow-city/16-hover-ferry.png)
 
