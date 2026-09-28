@@ -2798,5 +2798,11 @@
   "Safer saves across devices": "Des sauvegardes plus sûres entre appareils",
   "When you play one town on two devices, both saves are kept so you can choose which one to continue.": "Si vous jouez une même ville sur deux appareils, les deux sauvegardes sont conservées pour que vous choisissiez laquelle continuer.",
   "Home page and news": "Accueil et nouveautés",
-  "{town}, save status: {status}": "{town}, état de la sauvegarde : {status}"
+  "{town}, save status: {status}": "{town}, état de la sauvegarde : {status}",
+  "Played the earlier beta?": "Vous avez joué à la bêta précédente ?",
+  "Bring your village with you. In the old game, open Settings and choose “Save a backup file”, then load that file here.": "Emportez votre village. Dans l’ancien jeu, ouvrez les Réglages et choisissez « Enregistrer une sauvegarde », puis chargez ce fichier ici.",
+  "Load my old save": "Charger mon ancienne sauvegarde",
+  "Replace the town you have here with this old save?": "Remplacer la ville que vous avez ici par cette ancienne sauvegarde ?",
+  "Continue with the village from this old save?": "Continuer avec le village de cette ancienne sauvegarde ?",
+  "Load and continue": "Charger et continuer"
 }

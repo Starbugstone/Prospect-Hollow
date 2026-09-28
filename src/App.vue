@@ -87,7 +87,11 @@
       @guide="openGuide"
     />
 
-    <LandingView v-if="!game.sessionActive && view === 'landing'" @enter="showTown" />
+    <LandingView
+      v-if="!game.sessionActive && view === 'landing'"
+      @enter="showTown"
+      @imported="resumeImportedVillage"
+    />
     <TownView
       ref="townView"
       v-if="townVisited"

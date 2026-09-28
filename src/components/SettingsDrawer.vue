@@ -121,7 +121,7 @@
           </p>
           <div class="save-actions">
             <button type="button" @click="importProgress">{{ t('Replace and continue') }}</button>
-            <button type="button" @click="pendingSave = null">{{ t('Cancel') }}</button>
+            <button type="button" @click="cancel">{{ t('Cancel') }}</button>
           </div>
         </div>
         <p v-if="saveError" role="alert" class="save-error">{{ t(saveError) }}</p>
@@ -162,7 +162,8 @@ import { townStorage } from '../services/townStorage';
 import { inject, ref, watch } from 'vue';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useCampaignStore } from '../stores/campaignStore';
-import { MAX_SAVE_FILE_BYTES, downloadSaveFile, parseSaveFile } from '../services/saveTransfer';
+import { downloadSaveFile } from '../services/saveTransfer';
+import { useSaveImport } from '../composables/useSaveImport';
 import GameIcon from './GameIcon.vue';
 const props = defineProps({ open: Boolean, allowSaveTransfer: Boolean, showHome: Boolean });
 const emit = defineEmits(['close', 'home', 'reset-progress', 'import-progress']);
@@ -174,11 +175,16 @@ function openAccount() {
   account.open();
 }
 const saveInput = ref(null);
-const pendingSave = ref(null);
-const readingFile = ref(false);
-const saveError = ref('');
-const saveStatus = ref('');
-let selectionVersion = 0;
+const {
+  pendingSave,
+  readingFile,
+  saveError,
+  saveStatus,
+  reset,
+  selectSave,
+  importProgress,
+  cancel,
+} = useSaveImport(() => emit('import-progress'));
 function exportProgress() {
   saveError.value = '';
   saveStatus.value = '';
@@ -190,46 +196,6 @@ function exportProgress() {
     saveStatus.value = 'Save file download started.';
   } catch {
     saveError.value = 'Your save could not be exported. Please try again.';
-  }
-}
-async function selectSave(event) {
-  const file = event.target.files?.[0];
-  event.target.value = '';
-  if (!file) return;
-  const version = ++selectionVersion;
-  pendingSave.value = null;
-  saveError.value = '';
-  saveStatus.value = '';
-  readingFile.value = true;
-  try {
-    if (file.size > MAX_SAVE_FILE_BYTES) throw new Error('Choose a backup file smaller than 5 MB.');
-    const text = await file.text();
-    if (version !== selectionVersion) return;
-    parseSaveFile(text);
-    pendingSave.value = { name: file.name, text };
-  } catch (error) {
-    if (version === selectionVersion)
-      saveError.value =
-        error.message?.startsWith('Choose a backup') ||
-        error.message?.startsWith('This save format')
-          ? error.message
-          : 'That file is not a Prospect Hollow backup.';
-  } finally {
-    if (version === selectionVersion) readingFile.value = false;
-  }
-}
-function importProgress() {
-  saveError.value = '';
-  try {
-    campaign.importSave(pendingSave.value.text);
-    pendingSave.value = null;
-    saveStatus.value = 'Save imported. Your village is ready to continue.';
-    emit('import-progress');
-  } catch (error) {
-    saveError.value =
-      error.message === 'The save could not be stored. Your current progress has not changed.'
-        ? error.message
-        : 'That file is not a Prospect Hollow backup.';
   }
 }
 const confirmReset = ref(false);
@@ -245,11 +211,7 @@ watch(
   () => props.open,
   (open) => {
     confirmReset.value = false;
-    selectionVersion++;
-    pendingSave.value = null;
-    readingFile.value = false;
-    saveError.value = '';
-    saveStatus.value = '';
+    reset();
     if (open) dialog.value?.showModal();
     else dialog.value?.close();
   },

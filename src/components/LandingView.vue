@@ -86,6 +86,7 @@
             <small>{{ t('Free and optional. No password: we email you a link.') }}</small>
           </template>
         </section>
+        <OldGameSaveImport @imported="$emit('imported')" />
       </div>
       <div class="landing-vista" aria-hidden="true" inert>
         <svg viewBox="0 0 700 590" fill="none">
@@ -170,9 +171,10 @@ import TownBuilding from './town/TownBuilding.vue';
 import TownMine from './town/TownMine.vue';
 import TownIcon from './town/TownIcon.vue';
 import GameIcon from './GameIcon.vue';
+import OldGameSaveImport from './OldGameSaveImport.vue';
 import { eraHue, townSummary } from './account/accountContext';
 import '../styles/landing.css';
-defineEmits(['enter']);
+defineEmits(['enter', 'imported']);
 const campaign = useCampaignStore();
 // Provided by CloudRoot, so the email sign-in is offered before the first visit.
 const account = inject('cloudAccount', null);

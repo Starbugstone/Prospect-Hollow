@@ -4,6 +4,13 @@ import { useCampaignStore, SAVE_KEY } from '../src/stores/campaignStore';
 import { MAX_SAVE_FILE_BYTES, parseSaveFile } from '../src/services/saveTransfer';
 import { LEVEL_COUNT } from '../src/data/campaign';
 import { CHEST_DROPS, chestReward } from '../src/data/rewards';
+import { useSaveImport } from '../src/composables/useSaveImport';
+import { readFileSync } from 'node:fs';
+
+// Real backups written by the game on main, so beta testers can carry their village
+// from the old address to this one.
+const mainBackup = (name) =>
+  readFileSync(new URL(`./fixtures/main-beta-save-${name}.json`, import.meta.url), 'utf8');
 
 let saved;
 beforeEach(() => {
@@ -171,4 +178,56 @@ it.each([
 it('accepts a UTF-8 BOM and rejects oversized files', () => {
   expect(parseSaveFile('\uFEFF' + useCampaignStore().exportSave()).schemaVersion).toBe(2);
   expect(() => parseSaveFile(' '.repeat(MAX_SAVE_FILE_BYTES + 1))).toThrow();
+});
+
+it.each(['industrial', 'contemporary'])(
+  'loads a %s village exported by the old game and keeps it after reload',
+  (name) => {
+    const text = mainBackup(name);
+    const old = JSON.parse(text).profile;
+    const campaign = useCampaignStore();
+    campaign.importSave(text);
+    const tntBefore = old.powers.find((power) => power.id === 'tnt').quantity;
+    const tntChests = old.pendingChests.filter((chest) => chest.items[0].id === 'tnt').length;
+    setActivePinia(createPinia());
+    const loaded = useCampaignStore();
+    expect(loaded.records).toEqual(old.records);
+    expect(loaded.continuousRecords).toEqual(old.continuousRecords);
+    expect(loaded.nextLevel).toBe(Object.keys(old.records).length + 1);
+    expect(loaded.town.era).toBe(old.town.era);
+    expect(loaded.town.coins).toBeGreaterThanOrEqual(old.town.coins);
+    expect(loaded.town.buildings).toMatchObject(old.town.buildings);
+    expect(loaded.builderHammers).toBe(old.builderHammers);
+    // Unopened chests from the old game are paid out once instead of being lost.
+    expect(loaded.pendingChests).toEqual([]);
+    expect(loaded.powers.find((power) => power.id === 'tnt').quantity).toBe(tntBefore + tntChests);
+  },
+);
+
+it('offers the old-game backup for confirmation before replacing the village', async () => {
+  const text = mainBackup('industrial');
+  const campaign = useCampaignStore();
+  campaign.town.coins = 7;
+  campaign.save();
+  const imported = vi.fn();
+  const importer = useSaveImport(imported);
+  const event = (file) => ({ target: { files: [file], value: 'chosen' } });
+  const choice = event({ name: 'old.json', size: text.length, text: async () => text });
+  await importer.selectSave(choice);
+  expect(choice.target.value).toBe('');
+  expect(importer.pendingSave.value.name).toBe('old.json');
+  expect(campaign.town.coins).toBe(7);
+  importer.importProgress();
+  expect(imported).toHaveBeenCalledOnce();
+  expect(importer.pendingSave.value).toBeNull();
+  expect(campaign.town.era).toBe('industrial');
+
+  await importer.selectSave(event({ name: 'x.json', size: 5, text: async () => '{bad' }));
+  expect(importer.pendingSave.value).toBeNull();
+  expect(importer.saveError.value).toBe('That file is not a Prospect Hollow backup.');
+  await importer.selectSave(
+    event({ name: 'big.json', size: MAX_SAVE_FILE_BYTES + 1, text: async () => text }),
+  );
+  expect(importer.saveError.value).toBe('Choose a backup file smaller than 5 MB.');
+  expect(imported).toHaveBeenCalledOnce();
 });
