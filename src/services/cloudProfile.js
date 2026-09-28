@@ -108,6 +108,8 @@ export const publicVillage = (id) =>
 // Any visitor may collect a shared town's saloon for its owner, once per hour per town.
 export const tapSaloon = (id) =>
   request(`villages/${encodeURIComponent(id)}/saloon`, {}, 'POST', true);
+// Once the owner's save holds the latest guest, the server forgets that visitor.
+export const clearGuest = (id, guestAt) => request(`towns/${id}/guest`, { guestAt }, 'DELETE');
 export function refreshAccount() {
   const generation = townStorage.auth().generation;
   if (accountRefresh?.generation === generation) return accountRefresh.promise;

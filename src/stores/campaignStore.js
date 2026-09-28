@@ -34,7 +34,7 @@ import {
   chestRewardFits,
 } from '../data/rewards';
 import { createTown, BANDIT_EVENT } from '../data/town';
-import { newVisits } from '../data/townVisitors';
+import { newerGuest } from '../data/guestVip';
 import { advanceEra } from '../game/town/TownEras';
 import {
   normalizeTown,
@@ -500,16 +500,16 @@ export const useCampaignStore = defineStore('campaign', {
       }
       return coins;
     },
-    // Share-link visits reach the owner's game on reconnect. A visitor's saloon tap
-    // collects the reserved coins as if the owner had tapped it, so nothing is minted.
-    receiveVisitors(remote, now = Date.now()) {
-      const visits = newVisits(this.town.visitors, remote);
-      if ((!visits.saloonAt && !visits.guest) || !Number.isSafeInteger(now)) return null;
+    // A share-link visitor collected the saloon: move its reserved coins as if the owner
+    // had tapped it, once per collection, so nothing is minted. Returns coins moved.
+    collectSaloonForVisitor(at, now = Date.now()) {
+      if (!Number.isSafeInteger(at) || at <= this.town.saloonVisitAt || !Number.isSafeInteger(now))
+        return null;
       const previous = this.town,
         previousIncome = this.lastSaloonIncome;
       let town = previous,
         coins = 0;
-      if (visits.saloonAt && town.buildings.saloon) {
+      if (town.buildings.saloon) {
         town = settleSaloonIncome(town, now).town;
         coins = Math.min(town.income.stored ?? 0, Number.MAX_SAFE_INTEGER - town.coins);
         town = {
@@ -518,20 +518,26 @@ export const useCampaignStore = defineStore('campaign', {
           income: { ...town.income, stored: town.income.stored - coins },
         };
       }
-      this.town = {
-        ...town,
-        visitors: {
-          saloonAt: visits.saloonAt || town.visitors.saloonAt,
-          guest: visits.guest ?? town.visitors.guest,
-        },
-      };
+      this.town = { ...town, saloonVisitAt: at };
       if (coins) this.lastSaloonIncome = coins;
       if (!this.save()) {
         this.town = previous;
         this.lastSaloonIncome = previousIncome;
         return null;
       }
-      return { coins, guest: visits.guest?.name ?? null };
+      return coins;
+    },
+    // A signed-in visitor viewed the shared town: only the latest becomes the guest VIP.
+    welcomeGuest(remote) {
+      const guest = newerGuest(this.town.guestVip, remote);
+      if (!guest) return null;
+      const previous = this.town;
+      this.town = { ...previous, guestVip: guest };
+      if (!this.save()) {
+        this.town = previous;
+        return null;
+      }
+      return guest.name;
     },
     upgradeBuilding(id, expectedStage) {
       this.accrueSaloonIncome(Date.now(), false);

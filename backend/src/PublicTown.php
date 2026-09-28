@@ -44,50 +44,58 @@ final class PublicTown {
     }
     public const SALOON_REST=3600;
     // A share link needs no account: anyone holding the unguessable public ID may see the
-    // appearance projection. Browsing the full list still needs one. A signed-in visitor
-    // is remembered as the town's latest guest, named after one of their own towns.
+    // appearance projection. Browsing the full list still needs one.
     public function visit(Request $r,string $id): object {
-        $db=$this->database->get();
-        $row=$db->fetchAssociative('SELECT t.id,t.player_id,t.appearance,v.saloon_at FROM towns t LEFT JOIN town_visits v ON v.town_id=t.id WHERE t.public_id=? AND t.listed=1 AND t.deleted_at IS NULL',[$id]);
+        $row=$this->database->get()->fetchAssociative('SELECT t.id,t.player_id,t.appearance,s.collected_at FROM towns t LEFT JOIN saloon_collections s ON s.town_id=t.id WHERE t.public_id=? AND t.listed=1 AND t.deleted_at IS NULL',[$id]);
         if(!$row)throw new ApiError(404,'Town unavailable.');
-        $visitor=$this->visitor($r);
-        if($visitor && $visitor!==$row['player_id'] && ($name=$this->guestName($visitor)))
-            $this->record($row['id'],['guest_name'=>$name,'guest_at'=>time()]);
+        $this->welcomeGuest($r,$row);
         $village=json_decode($row['appearance']);
-        $village->saloonReadyAt=$this->saloonReadyAt($row['saloon_at']);
+        $village->saloonReadyAt=$this->saloonReadyAt($row['collected_at']);
         return $village;
     }
-    // Any visitor may collect the saloon for its owner, at most once per hour per town.
-    // Only a timestamp is stored: the owner's game moves its own reserved coins, so no
-    // money is created and a burst of taps collects nothing extra.
+
+    // Saloon: any visitor may collect it for the owner, at most once per hour per town.
+    // Only the time is stored: the owner's game moves its own reserved coins, so no money
+    // is created and several open tabs cannot collect twice.
     public function tapSaloon(Request $r,string $id): array {
         $this->auth->limit('saloon:'.($r->getClientIp()??'unknown'),30,3600);
         return $this->database->get()->transactional(function($db) use($id) {
             $row=$db->fetchAssociative('SELECT id,appearance FROM towns WHERE public_id=? AND listed=1 AND deleted_at IS NULL FOR UPDATE',[$id]);
             if(!$row)throw new ApiError(404,'Town unavailable.');
             if((json_decode($row['appearance'])->appearance->buildings->saloon??0)<1)throw new ApiError(409,'This town has no saloon yet.',['code'=>'no_saloon']);
-            $readyAt=$this->saloonReadyAt($db->fetchOne('SELECT saloon_at FROM town_visits WHERE town_id=?',[$row['id']]));
+            $readyAt=$this->saloonReadyAt($db->fetchOne('SELECT collected_at FROM saloon_collections WHERE town_id=?',[$row['id']]));
             if($readyAt>time())throw new ApiError(409,'A visitor already collected this saloon. Come back later.',['code'=>'saloon_resting','readyAt'=>$readyAt]);
-            $now=time();$this->record($row['id'],['saloon_at'=>$now]);
+            $now=time();$this->upsert('saloon_collections',$row['id'],['collected_at'=>$now]);
             return ['readyAt'=>$now+self::SALOON_REST];
         });
     }
     private function saloonReadyAt(mixed $at): int {return $at===null||$at===false?0:(int)$at+self::SALOON_REST;}
-    private function visitor(Request $r): ?string {
-        try {return $this->auth->session($r)['player_id'];}catch(ApiError){return null;}
-    }
-    // Private town names skip moderation, so only a name that would pass it is shown to another player.
-    private function guestName(string $player): ?string {
-        $names=$this->database->get()->fetchFirstColumn('SELECT name FROM towns WHERE player_id=? AND deleted_at IS NULL ORDER BY listed DESC,saved_at DESC',[$player]);
-        foreach($names as $name) {
-            try {$this->moderate($name);return $name;}catch(ApiError){}
+
+    // Guest: a signed-in viewer becomes the town's only guest, replacing any earlier one,
+    // until the owner's game has saved them as a VIP. Owners are never their own guest.
+    private function welcomeGuest(Request $r,array $town): void {
+        try {$visitor=$this->auth->session($r)['player_id'];}catch(ApiError){return;}
+        if($visitor===$town['player_id'])return;
+        $names=$this->database->get()->fetchFirstColumn('SELECT name FROM towns WHERE player_id=? AND deleted_at IS NULL ORDER BY listed DESC,saved_at DESC',[$visitor]);
+        foreach($names as $name)if($label=$this->guestName($name)) {
+            $this->upsert('town_guests',$town['id'],['name'=>$label,'visited_at'=>time()]);
+            return;
         }
-        return null;
     }
-    private function record(string $town,array $values): void {
+    // Guest names appear in another player's village: never a link or an email, only
+    // letters, digits and single spaces, and they must pass the public-name moderation.
+    public function guestName(string $name): ?string {
+        $name=\Normalizer::normalize($name,\Normalizer::FORM_KC);
+        if(preg_match('~@|://|\bwww\b|\.[a-z]{2,}\b~iu',$name))return null;
+        $clean=trim(preg_replace('/ +/u',' ',preg_replace('/[^\p{L}\p{M}\p{N} ]+/u','',$name)));
+        if(mb_strlen($clean)<3||mb_strlen($clean)>24||preg_match('~(^| )(https?|www)~iu',$clean))return null;
+        try {$this->moderate($clean);}catch(ApiError){return null;}
+        return $clean;
+    }
+    private function upsert(string $table,string $town,array $values): void {
         $db=$this->database->get();
-        if(!$db->update('town_visits',$values,['town_id'=>$town]))
-            try {$db->insert('town_visits',['town_id'=>$town]+$values);}
-            catch(\Doctrine\DBAL\Exception\UniqueConstraintViolationException){$db->update('town_visits',$values,['town_id'=>$town]);}
+        if(!$db->update($table,$values,['town_id'=>$town]))
+            try {$db->insert($table,['town_id'=>$town]+$values);}
+            catch(\Doctrine\DBAL\Exception\UniqueConstraintViolationException){$db->update($table,$values,['town_id'=>$town]);}
     }
 }
