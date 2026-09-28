@@ -78,7 +78,9 @@ function groundRoute(nav, points, radius) {
   );
 }
 
-function streetRoute(nav, graph, ids, radius) {
+// Resumable: the whole-town loop is the longest animal plan, so it yields between
+// navigation steps when prepared in the background.
+function* streetRoute(nav, graph, ids, radius) {
   const points = [];
   for (let n = 0; n < ids.length; n++) {
     const section = routeOnGraph(graph, plotStreet(ids[n]), plotStreet(ids[(n + 1) % ids.length]));
@@ -88,10 +90,10 @@ function streetRoute(nav, graph, ids, radius) {
   if (points.length < 2) return null;
   // Keep small animals on the verge, away from carriage wheels. The animal
   // itinerary stays on this bank; no unsupported straight-line river crossings.
-  const path = nav.route(points, 1.2, radius);
+  const path = yield* nav.routeSteps(points, 1.2, radius);
   // A return leg can approach the starting street from the opposite direction.
   // Close its sidewalk offset through navigation rather than jumping lanes.
-  return path.points.length ? nav.plan([...path.points, path.points[0]], radius) : path;
+  return path.points.length ? yield* nav.planSteps([...path.points, path.points[0]], radius) : path;
 }
 
 function threatNear(d, animal, profile) {
@@ -601,7 +603,8 @@ function* populateAnimals(d, town, preparedSpace) {
     const ids = (
       species === 'dog' ? ['home', 'saloon', 'farm', 'shop'] : ['home', 'park', 'shop', 'farm']
     ).filter((id) => town.buildings[id]);
-    let path = ids.length > 1 ? streetRoute(nav, graph, ids, TOWN_ANIMALS[species].radius) : null;
+    let path =
+      ids.length > 1 ? yield* streetRoute(nav, graph, ids, TOWN_ANIMALS[species].radius) : null;
     if (!path?.total) {
       const [x, z] = plotStreet(ids[0] ?? 'home');
       path = groundRoute(
