@@ -9,7 +9,7 @@ import { BUILDINGS, createTown } from '../src/data/town';
 import { MINE_SHAFT, mineYardEnvelope } from '../src/data/mineSite';
 import { tunnelCeilingAt } from '../src/game/town/TownRailTunnel';
 import { buildMineHillside } from '../src/game/town/TownMineHillside';
-import { groundHeight } from '../src/game/town/TownLandscape';
+import { groundHeight, landscapeColor } from '../src/game/town/TownLandscape';
 import { mineGrowth } from '../src/data/mineGrowth';
 
 it.each(ERAS.map((e) => e.id))(
@@ -68,7 +68,15 @@ it.each(ERAS.map((e) => e.id))(
           expect(b.max.z).toBeLessThanOrEqual(mineYardEnvelope().maxZ + 1e-5);
       });
     }
-    const hillside = buildMineHillside(d, new Group(), -20, -23, groundHeight, true);
+    const hillside = buildMineHillside(
+      d,
+      new Group(),
+      -20,
+      -23,
+      groundHeight,
+      landscapeColor,
+      true,
+    );
     hillside.updateMatrixWorld(true);
     root.traverse((support) => {
       if (support.name !== 'Hillside terrace support') return;

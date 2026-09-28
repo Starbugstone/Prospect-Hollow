@@ -6,6 +6,14 @@
         <p class="landing-intro">
           {{ t('Match gems in the mine and build your village with the coins you earn.') }}
         </p>
+        <div v-if="campaign.hasVisitedVillage" class="landing-town" :style="townHue">
+          <img src="/art/amethyst.svg" alt="" />
+          <span>
+            <small>{{ t('Current town') }}</small>
+            <strong>{{ townName }}</strong>
+            <span>{{ townLine }}</span>
+          </span>
+        </div>
         <button class="town-primary landing-enter" @click="$emit('enter')">
           {{ t(campaign.hasVisitedVillage ? 'Continue' : 'Play') }}
           <TownIcon name="arrow" />
@@ -162,6 +170,7 @@ import TownBuilding from './town/TownBuilding.vue';
 import TownMine from './town/TownMine.vue';
 import TownIcon from './town/TownIcon.vue';
 import GameIcon from './GameIcon.vue';
+import { eraHue, townSummary } from './account/accountContext';
 import '../styles/landing.css';
 defineEmits(['enter']);
 const campaign = useCampaignStore();
@@ -170,6 +179,13 @@ const account = inject('cloudAccount', null);
 const cloudState = computed(() =>
   !account?.signedIn.value ? 'guest' : cloud.sessionExpired ? 'expired' : 'signed-in',
 );
+// The town that Continue opens, so players never have to open My towns to check.
+const townName = computed(() => account?.townName.value ?? t('Your town'));
+const townLine = computed(() => townSummary({ town: campaign.town }));
+const townHue = computed(() => {
+  const hue = eraHue(campaign.town?.era);
+  return hue === null ? {} : { '--town-hue': hue };
+});
 const updates = latestUpdates();
 const updateDate = (date) =>
   new Intl.DateTimeFormat(locale.value, { day: 'numeric', month: 'long', timeZone: 'UTC' }).format(

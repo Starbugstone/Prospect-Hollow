@@ -2,7 +2,7 @@ import { TownActors } from './TownActors';
 import { MeshBasicMaterial, Vector3 } from 'three';
 import { addRailroad } from './TownEraActivity';
 import { buildMineHillside } from './TownMineHillside';
-import { groundHeight } from './TownLandscape';
+import { groundHeight, landscapeColor } from './TownLandscape';
 import { PLOTS, RAIL_EDGE } from './TownLayout';
 
 const clamp = (t) => Math.max(0, Math.min(1, t));
@@ -14,13 +14,21 @@ export class TownRailwayOpening {
     const temporary = Object.create(d);
     temporary.world = this.root;
     this.rails = addRailroad(temporary, d.town, { batch: false });
-    this.solid = buildMineHillside(d, this.root, PLOTS.mine[1], RAIL_EDGE.from[1], groundHeight);
+    this.solid = buildMineHillside(
+      d,
+      this.root,
+      PLOTS.mine[1],
+      RAIL_EDGE.from[1],
+      groundHeight,
+      landscapeColor,
+    );
     this.tunnel = buildMineHillside(
       d,
       this.root,
       PLOTS.mine[1],
       RAIL_EDGE.from[1],
       groundHeight,
+      landscapeColor,
       true,
     );
     this.stones = [];

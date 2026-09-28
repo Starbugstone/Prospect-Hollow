@@ -4,7 +4,11 @@ import { TownDiorama } from '../src/game/town/TownDiorama';
 import { TownStatics } from '../src/game/town/TownStatics';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { buildMineHillside } from '../src/game/town/TownMineHillside';
-import { groundHeight, landscapeGroundHeight } from '../src/game/town/TownLandscape';
+import {
+  groundHeight,
+  landscapeColor,
+  landscapeGroundHeight,
+} from '../src/game/town/TownLandscape';
 import { landscapeGeometry } from '../src/game/town/TownMillrace';
 import { RAIL_TUNNEL, tunnelCeilingAt, tunnelOuterHeightAt } from '../src/game/town/TownRailTunnel';
 import {
@@ -44,7 +48,16 @@ function fixture(build, check) {
 }
 it('fits both stone arches and their terrain collar to the same bore without intrusions or gaps', () => {
   fixture(
-    (d, root) => buildMineHillside(d, root, PLOTS.mine[1], RAIL_EDGE.from[1], groundHeight, true),
+    (d, root) =>
+      buildMineHillside(
+        d,
+        root,
+        PLOTS.mine[1],
+        RAIL_EDGE.from[1],
+        groundHeight,
+        landscapeColor,
+        true,
+      ),
     ({ hit }) => {
       const railZ = RAIL_EDGE.from[1];
       for (const side of [-1, 1]) {

@@ -1,14 +1,15 @@
 import { expect, it } from 'vitest';
-import { Group, Mesh, MeshBasicMaterial, Raycaster, Vector3 } from 'three';
+import { Color, Group, Mesh, MeshBasicMaterial, Raycaster, Vector3 } from 'three';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 import {
   addMineCliff,
   groundHeight,
+  landscapeColor,
   landscapeGroundHeight,
   cameraTerrainHeight,
 } from '../src/game/town/TownLandscape';
-import { buildMineHillside } from '../src/game/town/TownMineHillside';
+import { MINE_HILLSIDE, buildMineHillside } from '../src/game/town/TownMineHillside';
 import { landscapeGeometry } from '../src/game/town/TownMillrace';
 import { PLOTS, RAIL_EDGE } from '../src/game/town/TownLayout';
 
@@ -20,7 +21,15 @@ it.each([false, true])(
     d.materials = new Map();
     const root = new Group();
     addMineCliff(d, root);
-    buildMineHillside(d, root, PLOTS.mine[1], RAIL_EDGE.from[1], groundHeight, railway);
+    buildMineHillside(
+      d,
+      root,
+      PLOTS.mine[1],
+      RAIL_EDGE.from[1],
+      groundHeight,
+      landscapeColor,
+      railway,
+    );
     const geometry = landscapeGeometry();
     const positions = geometry.attributes.position;
     for (let i = 0; i < positions.count; i++)
@@ -63,3 +72,48 @@ it.each([false, true])(
     }
   },
 );
+
+it('leaves the flat future rail cutting to the landscape before the railway opens', () => {
+  const d = Object.create(TownDiorama.prototype);
+  const railZ = RAIL_EDGE.from[1];
+  const root = buildMineHillside(
+    d,
+    new Group(),
+    PLOTS.mine[1],
+    railZ,
+    groundHeight,
+    landscapeColor,
+  );
+  const mesh = root.getObjectByName('Mine shoulder and tunnel');
+  const { index, attributes } = mesh.geometry;
+  const { position, color } = attributes;
+  const expected = new Color();
+  try {
+    let plain = 0;
+    for (let i = 0; i < position.count; i++) {
+      const [x, y, z] = [position.getX(i), position.getY(i), position.getZ(i)];
+      if (Math.abs(y - groundHeight(x, z)) > 1e-6) continue;
+      // Rock resting on the plain wears the plain's tint: no pale patch.
+      landscapeColor(x, z, expected);
+      expect(color.getX(i), `${x}, ${z}`).toBeCloseTo(expected.r, 5);
+      expect(color.getY(i), `${x}, ${z}`).toBeCloseTo(expected.g, 5);
+      expect(color.getZ(i), `${x}, ${z}`).toBeCloseTo(expected.b, 5);
+      plain++;
+    }
+    expect(plain).toBeGreaterThan(0);
+    // The unrecessed landscape already covers this strip. A second surface at
+    // the same height would flicker against it.
+    for (let i = 0; i < index.count; i += 3) {
+      const corners = [0, 1, 2].map((k) => index.getX(i + k));
+      const inside = corners.every(
+        (v) =>
+          Math.abs(position.getZ(v) - railZ) <= MINE_HILLSIDE.tunnelHalfWidth &&
+          Math.abs(position.getY(v) - groundHeight(position.getX(v), position.getZ(v))) < 1e-6,
+      );
+      expect(inside, `triangle ${i / 3}`).toBe(false);
+    }
+  } finally {
+    mesh.geometry.dispose();
+    mesh.material.dispose();
+  }
+});

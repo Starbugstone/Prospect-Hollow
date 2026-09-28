@@ -5,8 +5,13 @@
       :data-tone="state.tone"
       :aria-expanded="open"
       aria-haspopup="dialog"
-      :aria-label="t('Save status: {status}', { status: t(state.label) })"
-      :title="t(state.label)"
+      :aria-label="
+        t('{town}, save status: {status}', {
+          town: account.townName.value,
+          status: t(state.label),
+        })
+      "
+      :title="`${account.townName.value} · ${t(state.label)}`"
       @click="toggle"
     >
       <span class="save-pill-led" aria-hidden="true"></span>
@@ -14,6 +19,7 @@
         :name="state.tone === 'local' ? 'phone' : 'cloud'"
         :class="{ 'save-pill-cloud': state.tone !== 'local' }"
       />
+      <span class="save-pill-town">{{ account.townName.value }}</span>
       <span class="save-pill-label">{{ t(state.label) }}</span>
     </button>
     <div v-if="open" class="save-pill-pop" role="dialog" :aria-label="t('Save status')">
@@ -111,6 +117,21 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', outside, true)
 .save-pill svg {
   width: 17px;
   height: 17px;
+}
+/* The open town is always named, so switching towns never needs My towns to check. */
+.save-pill-town {
+  max-width: 150px;
+  overflow: hidden;
+  font:
+    700 14px Georgia,
+    serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.save-pill-label {
+  padding-left: 8px;
+  border-left: 1px solid #cfc3a0;
+  font-weight: 600;
 }
 .save-pill[data-tone='alert'] {
   border-color: #e0b75b;
@@ -218,6 +239,9 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', outside, true)
   }
   .save-pill-cloud {
     display: block;
+  }
+  .save-pill-town {
+    max-width: 96px;
   }
 }
 </style>
