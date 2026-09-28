@@ -132,7 +132,7 @@ export function airplanePose(time) {
 }
 
 export function addAviationActivity(d, town) {
-  if (!town.buildings.airport) return;
+  if (!town.buildings.airport) return null;
   const aircraft = airportAppearance(town.buildingEras?.airport).aircraft ?? 'airplane';
   const rounded = isRoundedEra(town.buildingEras?.airport);
   const plane = rounded
@@ -179,4 +179,5 @@ export function addAviationActivity(d, town) {
   };
   update(0);
   d.motions.push(update);
+  return { root: plane, motion: update };
 }

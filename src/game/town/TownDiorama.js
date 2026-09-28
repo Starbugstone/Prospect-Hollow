@@ -65,7 +65,8 @@ import {
   renderModernization,
   renderEraLandmark,
 } from './buildings/BuildingRenderer';
-import { addEraActivity } from './TownEraActivity';
+import { addEraActivity, trackTransport } from './TownEraActivity';
+import { refreshTransport } from './TownTransports';
 import { addScaffolding, addImprovements } from './TownImprovements';
 import { addTownVisitors, TownRaid } from './TownActivity';
 import { TownEraIncident } from './TownEraIncident';
@@ -890,6 +891,8 @@ export class TownDiorama {
       );
     // New overhead wires replace every plot's service drop, not just this one.
     this.refreshServiceDrops(scenery.includes('power') ? undefined : id);
+    // A finished airport, port or station modernization restyles its vehicle too.
+    refreshTransport(this, id, this.town);
     timeTown('activate-statics', () =>
       this.buildingRenderer.sync(this.world.children.filter((child) => child.userData.static)),
     );
@@ -1134,6 +1137,7 @@ export class TownDiorama {
   }
   *populateLife(town) {
     this.itineraries = new TownItineraries(this);
+    this.transports = new Map();
     const household = population(town);
     addEraActivity(this, town);
     yield;
@@ -1145,7 +1149,7 @@ export class TownDiorama {
     yield;
     addLeisureActivity(this, town);
     yield;
-    addAviationActivity(this, town);
+    trackTransport(this, 'airport', town, addAviationActivity(this, town));
     yield;
     this.person({
       color: '#738a83',
