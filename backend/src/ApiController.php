@@ -53,12 +53,13 @@ final class ApiController {
     private function townRoute(Request $r,string $path,array $b): mixed {
         if($r->isMethod('GET')&&preg_match('~^villages/([a-f0-9]{32})$~D',$path,$m))return $this->public->visit($r,$m[1]);
         if($r->isMethod('POST')&&preg_match('~^villages/([a-f0-9]{32})/saloon$~D',$path,$m)){SaveService::keys($b,[]);return $this->public->tapSaloon($r,$m[1]);}
-        if(!preg_match('~^towns/([a-f0-9-]{36})(?:/(resolve|history|settings))?$~D',$path,$m))throw new ApiError(404,'Endpoint not found.');
+        if(!preg_match('~^towns/([a-f0-9-]{36})(?:/(resolve|history|settings|guest))?$~D',$path,$m))throw new ApiError(404,'Endpoint not found.');
         $id=$m[1];$suffix=$m[2]??'';
         return match($r->getMethod().' '.$suffix) {
             'GET '=>$this->saves->get($r,$id), 'PUT '=>$this->saves->save($r,$id,$b),
             'PUT resolve'=>$this->saves->save($r,$id,$b), 'GET history'=>$this->saves->history($r,$id),
             'PATCH settings'=>$this->saves->metadata($r,$id,$b), 'DELETE '=>$this->saves->delete($r,$id,$b),
+            'DELETE guest'=>$this->saves->clearGuest($r,$id,$b),
             default=>throw new ApiError(405,'Method is not allowed.'),
         };
     }

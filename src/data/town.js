@@ -7,7 +7,6 @@ import { INDUSTRIAL_BUILDINGS, INDUSTRIAL_LEVEL_PRICES } from './industrial';
 import { CITY_BUILDINGS } from './city';
 import { MOTOR_AGE_BUILDINGS } from './motorAge';
 import { LEISURE_BUILDINGS } from './leisure';
-import { createVisitors } from './townVisitors';
 
 const ORIGINAL_BUILDINGS = [
   {
@@ -642,6 +641,8 @@ export const createTown = () => ({
   nextRaidRun: null,
   income: { at: null, remainder: 0, stored: 0 },
   lastCollections: { saloon: null, blacksmith: null },
-  visitors: createVisitors(),
+  // Share-link events: the last visitor saloon collection applied, and the latest guest.
+  saloonVisitAt: 0,
+  guestVip: null,
   progressionVersion: 1,
 });

@@ -32,7 +32,7 @@ import { buildingWalk } from './TownPedestrians';
 import { TownVipArrivals } from './TownVipArrivals';
 import { hasVisitorTransport } from '../../data/visitorArrivals';
 import { villagerIdentity, vipVisitor } from '../../data/villagers';
-import { guestVip } from '../../data/townVisitors';
+import { guestVipIdentity } from '../../data/guestVip';
 import { SIDEWALK_OFFSET } from './TownTraffic';
 import { updateTownLocomotion } from './TownLocomotion';
 import { townWardrobe, vipOutfit } from '../../data/townWardrobes';
@@ -1627,10 +1627,10 @@ export class TownDiorama {
   // new visit, then the usual random guests. A read-only visit has no VIPs at all.
   drawVip(seed, visit = 0) {
     if (this.vipsHidden) return null;
-    const guest = this.town?.visitors?.guest;
+    const guest = this.town?.guestVip;
     if (!guest || this.guestShown === guest.at) return vipVisitor(seed, visit);
     this.guestShown = guest.at;
-    return guestVip(guest, villagerIdentity(seed).gender);
+    return guestVipIdentity(guest, villagerIdentity(seed).gender);
   }
   setVillagerIdentity(actor, identity, outfitSeed = actor.seed ?? 0) {
     actor.root.userData.villager = identity;

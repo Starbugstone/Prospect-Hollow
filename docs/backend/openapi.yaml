@@ -283,7 +283,7 @@
           'get':
             {
               'summary': 'Account, CSRF token and up to three owned town cards',
-              'description': 'Each town contains townId, name, revision, updatedAt, isPublic, publicId and summary {era, coins, buildings}. Buildings counts positive numeric building levels. visits {saloonAt, guest {name, at} | null} reports share-link visits in milliseconds: the last time a visitor collected the saloon, and the latest signed-in guest named after one of their own presentable towns. The owner game applies each visit once and records it in the save. The list never includes full profiles; GET /towns/{id} loads a playable save. Summaries are private to the authenticated owner.',
+              'description': 'Each town contains townId, name, revision, updatedAt, isPublic, publicId and summary {era, coins, buildings}. Buildings counts positive numeric building levels. saloonCollectedAt is the last time a share-link visitor collected the saloon (milliseconds, 0 if never); the owner game moves its reserved coins once per collection. guest {name, at} | null is the latest signed-in viewer, named after one of their towns after sanitising; the owner game saves it as a VIP and then deletes it. The list never includes full profiles; GET /towns/{id} loads a playable save. Summaries are private to the authenticated owner.',
               'responses':
                 {
                   '200': { 'description': 'Success' },
@@ -581,6 +581,55 @@
                   'required': true,
                   'content':
                     { 'application/json': { 'schema': { '$ref': '#/components/schemas/Upload' } } },
+                },
+            },
+        },
+      '/towns/{townId}/guest':
+        {
+          'delete':
+            {
+              'summary': 'Delete the latest share-link guest once the owner game has saved it as a VIP',
+              'description': 'Deletes the guest only when guestAt still matches, so a newer visitor who replaced it stays for the next reconnect.',
+              'responses':
+                {
+                  '200': { 'description': 'cleared is true when that guest was deleted' },
+                  '401': { 'description': 'Sign in again' },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '404': { 'description': 'Town unavailable' },
+                  '422': { 'description': 'Invalid request' },
+                  '429': { 'description': 'Rate limited' },
+                },
+              'parameters':
+                [
+                  {
+                    'name': 'townId',
+                    'in': 'path',
+                    'required': true,
+                    'schema': { 'type': 'string', 'format': 'uuid' },
+                  },
+                  {
+                    'name': 'X-CSRF-Token',
+                    'in': 'header',
+                    'required': true,
+                    'schema': { 'type': 'string' },
+                  },
+                ],
+              'requestBody':
+                {
+                  'required': true,
+                  'content':
+                    {
+                      'application/json':
+                        {
+                          'schema':
+                            {
+                              'type': 'object',
+                              'additionalProperties': false,
+                              'required': ['guestAt'],
+                              'properties': { 'guestAt': { 'type': 'integer', 'minimum': 1000 } },
+                            },
+                        },
+                    },
                 },
             },
         },

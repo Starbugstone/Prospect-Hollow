@@ -200,6 +200,7 @@ import {
   refreshAccount,
   syncNow,
   cacheTown,
+  clearGuest,
   updateSaveStatus,
 } from '../services/cloudProfile';
 import { townStorage, townKey, TOWN_CHANGED, ACCOUNT_KEY } from '../services/townStorage';
@@ -246,18 +247,26 @@ const accountTown = computed(
   () => !!cloud.account && activeTown.value?.meta.owner === cloud.account.id,
 );
 const townName = computed(() => activeTown.value?.meta.name || t('Your town'));
-// Share-link visits reach the owner's own game when it reconnects, never mid-puzzle.
+// Two share-link events reach the owner's own game when it reconnects, never mid-puzzle:
+// a visitor's saloon collection, and the latest signed-in viewer as a guest VIP.
 const visitorNotice = ref(null);
+let clearedGuest = 0;
 watch(
   () => [cloud.towns, ready.value, game.sessionActive, accountTown.value],
   () => {
     const id = activeTown.value?.meta.id;
-    const visits = cloud.towns.find((entry) => entry.townId === id)?.visits;
-    if (!visits || !ready.value || game.sessionActive || !accountTown.value || campaign.readOnly)
+    const card = cloud.towns.find((entry) => entry.townId === id);
+    if (!card || !ready.value || game.sessionActive || !accountTown.value || campaign.readOnly)
       return;
-    const received = campaign.receiveVisitors(visits);
-    if (received?.coins || received?.guest)
-      visitorNotice.value = { coins: received.coins, town: received.guest };
+    const coins = campaign.collectSaloonForVisitor(card.saloonCollectedAt);
+    const guest = campaign.welcomeGuest(card.guest);
+    if (coins || guest) visitorNotice.value = { coins, town: guest };
+    // Once this save holds the guest, the server deletes it; this also retries a failed delete.
+    const guestAt = card.guest?.at;
+    if (guestAt && guestAt !== clearedGuest && campaign.town.guestVip?.at >= guestAt)
+      clearGuest(id, guestAt)
+        .then(() => (clearedGuest = guestAt))
+        .catch(() => {});
   },
 );
 const saveState = computed(() =>

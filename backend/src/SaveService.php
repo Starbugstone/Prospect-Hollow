@@ -35,11 +35,11 @@ final class SaveService {
                 'coins'=>(is_int($coins)||is_float($coins))?max(0,min(9007199254740991,$coins)):0,
                 'buildings'=>count(array_filter($buildings,fn($level)=>(is_int($level)||is_float($level))&&$level>0)),
             ];
-            // Share-link visits, applied by the owner's own game when it next reconnects.
-            if(array_key_exists('saloon_at',$row))$result['visits']=[
-                'saloonAt'=>$row['saloon_at']===null?0:(int)$row['saloon_at']*1000,
-                'guest'=>$row['guest_name']===null?null:['name'=>$row['guest_name'],'at'=>(int)$row['guest_at']*1000],
-            ];
+            // Share-link events for the owner's own game to apply when it reconnects (milliseconds).
+            if(array_key_exists('saloon_collected_at',$row)) {
+                $result['saloonCollectedAt']=$row['saloon_collected_at']===null?0:(int)$row['saloon_collected_at']*1000;
+                $result['guest']=$row['guest_name']===null?null:['name'=>$row['guest_name'],'at'=>(int)$row['guest_at']*1000];
+            }
         }
         return $result;
     }
@@ -55,7 +55,7 @@ final class SaveService {
     }
     public function account(Request $r): array {
         return $this->transaction($r,false,function($db,$account,$session) {
-            $towns=$db->fetchAllAssociative('SELECT t.id,t.name,t.revision,t.saved_at,t.listed,t.public_id,t.profile,v.saloon_at,v.guest_name,v.guest_at FROM towns t LEFT JOIN town_visits v ON v.town_id=t.id WHERE t.player_id=? AND t.deleted_at IS NULL ORDER BY t.name,t.id',[$account['id']]);
+            $towns=$db->fetchAllAssociative('SELECT t.id,t.name,t.revision,t.saved_at,t.listed,t.public_id,t.profile,s.collected_at AS saloon_collected_at,g.name AS guest_name,g.visited_at AS guest_at FROM towns t LEFT JOIN saloon_collections s ON s.town_id=t.id LEFT JOIN town_guests g ON g.town_id=t.id WHERE t.player_id=? AND t.deleted_at IS NULL ORDER BY t.name,t.id',[$account['id']]);
             return ['account'=>['id'=>$account['id'],'email'=>$account['email']],'csrf'=>$session['csrf'],'towns'=>array_map(fn($row)=>$this->view($row,false),$towns),'limit'=>3];
         });
     }
@@ -114,6 +114,18 @@ final class SaveService {
             $changes=['profile'=>$json,'revision'=>(int)$row['revision']+1,'saved_at'=>time(),'upload_id'=>$body['uploadId'],'upload_hash'=>$hash];
             if($row['listed'])$changes['appearance']=$this->public->projection(json_decode($json),$row['name'],$row['public_id']);
             $db->update('towns',$changes,['id'=>$id,'player_id'=>$a['id']]);return $this->view(array_merge($row,$changes));
+        });
+    }
+    // The owner's game saved this guest as a VIP, so delete it. Only that exact visit is
+    // deleted: a newer visitor who replaced it meanwhile stays for the next reconnect.
+    public function clearGuest(Request $r,string $id,array $body): array {
+        self::uuid($id);self::keys($body,['guestAt']);
+        $at=$body['guestAt']??null;
+        if(!is_int($at)||$at<=0||$at%1000)throw new ApiError(422,'Invalid guest visit.');
+        return $this->transaction($r,true,function($db,$a)use($id,$at) {
+            $this->owned($db,$a['id'],$id);
+            $cleared=$db->executeStatement('DELETE FROM town_guests WHERE town_id=? AND visited_at=?',[$id,intdiv($at,1000)]);
+            return ['cleared'=>$cleared>0];
         });
     }
     public function metadata(Request $r,string $id,array $body): array {
