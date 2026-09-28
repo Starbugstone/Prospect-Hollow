@@ -42,8 +42,9 @@ final class PublicTown {
         $rows=$this->database->get()->createQueryBuilder()->select('appearance')->from('towns')->where('listed=1 AND deleted_at IS NULL')->orderBy('public_id','ASC')->setFirstResult(($page-1)*20)->setMaxResults(21)->executeQuery()->fetchFirstColumn();
         return ['entries'=>array_map(fn($r)=>json_decode($r),array_slice($rows,0,20)),'page'=>$page,'hasNext'=>count($rows)>20];
     }
-    public function visit(Request $r,string $id): object {
-        $this->auth->session($r);
+    // A share link is view-only: anyone holding the unguessable public ID may see the
+    // appearance projection without an account. Browsing the full list still needs one.
+    public function visit(string $id): object {
         if(!preg_match('/^[a-f0-9]{32}$/D',$id))throw new ApiError(404,'Town unavailable.');
         $json=$this->database->get()->fetchOne('SELECT appearance FROM towns WHERE public_id=? AND listed=1 AND deleted_at IS NULL',[$id]);
         if(!$json)throw new ApiError(404,'Town unavailable.');return json_decode($json);
