@@ -102,6 +102,13 @@ export function configureSync(options) {
   cloud.sessionExpired = townStorage.auth().expired === true;
   return service;
 }
+// The view-only visit page reads the stored sign-in without opening or syncing a town.
+export function restoreSession() {
+  const auth = townStorage.auth();
+  cloud.account = auth.account;
+  cloud.sessionExpired = auth.expired === true;
+  sessionGeneration = auth.generation;
+}
 export function refreshAccount() {
   const generation = townStorage.auth().generation;
   if (accountRefresh?.generation === generation) return accountRefresh.promise;

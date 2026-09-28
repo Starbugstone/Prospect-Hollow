@@ -1,18 +1,23 @@
-import { createApp, watch } from 'vue';
+import { createApp, defineAsyncComponent, watch } from 'vue';
 import { locale, browserLocale, t } from './i18n';
 import { createPinia } from 'pinia';
 import { createTestingTools } from './services/testingTools';
 import { townStorage } from './services/townStorage';
 import CloudRoot from './components/CloudRoot.vue';
 import { useCampaignStore } from './stores/campaignStore';
-import { isPlayRoute, upgradeLegacyLink } from './services/appRoute';
+import { isPlayRoute, isVisitRoute, upgradeLegacyLink } from './services/appRoute';
 import './styles/base.css';
 import './styles/theme.css';
 import './styles/arcade.css';
 import './styles/mine.css';
 import './styles/ux.css';
 
-const app = createApp(CloudRoot);
+upgradeLegacyLink();
+// A share link mounts only the read-only visit page: no game, town or sync starts.
+const visiting = isVisitRoute();
+const app = createApp(
+  visiting ? defineAsyncComponent(() => import('./components/community/VisitRoot.vue')) : CloudRoot,
+);
 const pinia = createPinia();
 
 app.use(pinia);
@@ -44,9 +49,8 @@ async function start() {
       // Do not migrate or write saves without browser-enforced ownership.
       throw new Error('Safe saving requires a browser with Web Locks support.');
     }
-    upgradeLegacyLink();
     app.mount('#app');
-    if (isPlayRoute() || useCampaignStore(pinia).hasVisitedVillage) {
+    if (!visiting && (isPlayRoute() || useCampaignStore(pinia).hasVisitedVillage)) {
       import('./components/town/TownView.vue');
       import('./game/town/TownDiorama');
     }

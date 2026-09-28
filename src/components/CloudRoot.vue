@@ -153,11 +153,7 @@
       accountOpen = false;
     "
   />
-  <CommunityPanel
-    :visit-id="visitId"
-    v-if="communityOpen && cloud.account"
-    @close="communityOpen = false"
-  />
+  <CommunityPanel v-if="communityOpen && cloud.account" @close="communityOpen = false" />
 </template>
 <script setup>
 import {
@@ -277,7 +273,6 @@ watch(
   },
   { immediate: true },
 );
-const visitId = ref(new URLSearchParams(location.hash.slice(1)).get('town') ?? '');
 let handoff,
   loadedKey,
   activation = Promise.resolve(),
@@ -538,10 +533,6 @@ function readLink() {
 watch(
   () => cloud.account?.id,
   (next, previous) => {
-    if (next && visitId.value) {
-      communityOpen.value = true;
-      accountOpen.value = false;
-    }
     if (previous && !next) communityOpen.value = false;
     openRequestedTown()
       .then(activate)
@@ -566,10 +557,6 @@ onMounted(() => {
   window.addEventListener('hashchange', readLink);
   document.addEventListener('visibilitychange', resume);
   readLink();
-  if (visitId.value) {
-    if (cloud.account) communityOpen.value = true;
-    else accountOpen.value = true;
-  }
   start();
 });
 onBeforeUnmount(() => {

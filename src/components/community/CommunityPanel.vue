@@ -24,16 +24,7 @@
         >
           {{ t('Back to shared towns') }}
         </button>
-        <h2>{{ village.name }}</h2>
-        <p>{{ t('View only') }} · {{ t(ERA_BY_ID[village.era]?.label ?? village.era) }}</p>
-        <div class="community-world town-map-frame">
-          <TownScene
-            :key="village.villageId"
-            :town="town"
-            :read-only="true"
-            :reduced-motion="settings.reducedMotion"
-          />
-        </div>
+        <VillageVisit :village="village" />
       </template>
       <template v-else>
         <p>{{ t('Explore the villages our players have chosen to share.') }}</p>
@@ -60,26 +51,20 @@
   </dialog>
 </template>
 <script setup>
-import { computed, ref, onBeforeUnmount } from 'vue';
+import { ref, onBeforeUnmount } from 'vue';
 import { request } from '../../services/cloudProfile';
-import { villageAppearance } from '../../services/publicVillage';
 import { useNativeDialog } from '../../composables/useNativeDialog';
-import { useSettingsStore } from '../../stores/settingsStore';
 import { ERA_BY_ID } from '../../data/eras';
 import { t } from '../../i18n';
-import TownScene from '../town/TownScene.vue';
-import '../../styles/town.css';
-const props = defineProps({ visitId: String });
+import VillageVisit from './VillageVisit.vue';
 const emit = defineEmits(['close']);
 const { dialog, closeButton, dismissBackdrop } = useNativeDialog(() => emit('close'));
-const settings = useSettingsStore();
 const entries = ref([]),
   page = ref(1),
   hasNext = ref(false),
   loading = ref(false),
   error = ref(''),
   village = ref(null);
-const town = computed(() => (village.value ? villageAppearance(village.value) : null));
 let generation = 0;
 onBeforeUnmount(() => {
   generation++;
@@ -114,8 +99,7 @@ async function visit(id) {
     if (current === generation) loading.value = false;
   }
 }
-if (props.visitId) visit(props.visitId);
-else load(1);
+load(1);
 </script>
 <style>
 .community-dialog {
@@ -257,24 +241,6 @@ else load(1);
   border-radius: 20px;
   white-space: nowrap;
 }
-.community-world {
-  height: min(62dvh, 600px);
-  min-height: 330px;
-  border-radius: 16px;
-  overflow: hidden;
-  position: relative;
-}
-.community-world .town-scene {
-  height: 100%;
-}
-.community-world .town-scene-labels button:disabled {
-  opacity: 1;
-  pointer-events: none;
-}
-.community-world .town-map-read-only .map-building,
-.community-world .town-map-read-only .town-mine-entrance {
-  cursor: default;
-}
 .community-stats {
   display: flex;
   gap: 2rem;
@@ -309,9 +275,6 @@ else load(1);
   .community-stats {
     gap: 1rem;
     font-size: 0.85rem;
-  }
-  .community-world {
-    min-height: 330px;
   }
   .community-visit-heading h2 {
     font-size: 1.4rem;

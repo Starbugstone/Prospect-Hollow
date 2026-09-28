@@ -148,6 +148,7 @@ import {
   getRecovery,
 } from '../../services/cloudProfile';
 import { townStorage } from '../../services/townStorage';
+import { visitUrl } from '../../services/appRoute';
 import { createSaveFile, downloadSaveFile } from '../../services/saveTransfer';
 import { useGameStore } from '../../stores/gameStore';
 import { useAccountContext, townSummary } from './accountContext';
@@ -168,10 +169,7 @@ const game = useGameStore(),
   deleteSection = ref(null);
 const meta = computed(() => props.active.meta);
 const locked = computed(() => !!(meta.value.dirty || meta.value.conflict || meta.value.pending));
-const shareUrl = computed(
-  () =>
-    `${import.meta.env.VITE_PUBLIC_ORIGIN || (import.meta.env.VITE_API_BASE?.startsWith('https://') ? new URL(import.meta.env.VITE_API_BASE).origin : location.origin + location.pathname)}#town=${meta.value.publicId}`,
-);
+const shareUrl = computed(() => visitUrl(meta.value.publicId));
 const when = (at) =>
   at
     ? new Date(at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
