@@ -6,6 +6,8 @@ import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { renderCityBuilding } from '../src/game/town/buildings/city';
 import { motorVehicle } from '../src/game/town/TownVehicles';
+import { addAviationActivity } from '../src/game/town/TownAviation';
+import { addEraActivity } from '../src/game/town/TownEraActivity';
 import { ALL_MESH_FAMILIES, loadFamilies } from '../src/game/town/assets/MeshCatalog';
 import { CITY_ARCHITECTURES, defineEra } from '../src/data/eraDefinitions';
 import { ERAS, ERA_BY_ID, eraEvolution } from '../src/data/eras';
@@ -226,6 +228,45 @@ describe('Rounded architecture rendering', () => {
       expect(pod.userData.vehicleBox).toEqual({ halfWidth: 0.36, halfLength: bus ? 1.2 : 0.85 });
       expect(cost(pod).triangles).toBeLessThan(400);
     }
+  });
+});
+
+describe('Tomorrow City transport', () => {
+  // Vehicles move every frame and are never batched: count meshes, not just triangles.
+  function transports(era) {
+    const d = diorama(era);
+    Object.assign(d, { world: new Group(), motions: [], actors: [], visitorTransports: new Map() });
+    const town = complete(era);
+    d.town = town;
+    addAviationActivity(d, town);
+    addEraActivity(d, town);
+    d.motions.forEach((motion) => motion(3));
+    const find = (name) => d.world.getObjectByName(name);
+    return { d, find };
+  }
+  it('flies, sails and glides rounded vehicles once their buildings are rounded', () => {
+    const { find } = transports('tomorrow');
+    for (const name of ['Electric sky liner', 'Hover river ferry', 'Maglev pod train']) {
+      const vehicle = find(name);
+      expect(vehicle, name).toBeTruthy();
+      let meshes = 0;
+      vehicle.traverse((o) => {
+        if (o.isMesh) meshes++;
+      });
+      expect(meshes, name).toBeLessThanOrEqual(16);
+      expect(cost(vehicle).triangles, name).toBeLessThan(2000);
+      expect(cost(vehicle).materials, name).toBeLessThanOrEqual(6);
+    }
+    const plane = find('Electric sky liner');
+    expect(plane.getObjectByName('propellerLeft')).toBeTruthy();
+    expect(plane.getObjectByName('propellerRight')).toBeTruthy();
+  });
+  it('keeps the Connected City vehicles until those buildings are modernized', () => {
+    const { find } = transports('contemporary');
+    expect(find('Passenger jet')).toBeTruthy();
+    expect(find('Solar river ferry')).toBeTruthy();
+    expect(find('Electric city train')).toBeTruthy();
+    expect(find('Electric sky liner')).toBeFalsy();
   });
 });
 

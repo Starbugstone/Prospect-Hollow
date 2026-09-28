@@ -126,7 +126,9 @@ family.
   swaps its gable for a glazed dome.
 - `TownRoundedBuilding.vue` draws the same forms and palette for the SVG map, and
   `TownBuilding.vue` routes rounded eras to it before the standard city drawing.
-- Traffic in rounded eras uses three-part, wheel-less hover pods (`TownVehicles.js`).
+- Traffic in rounded eras uses three-part, wheel-less hover pods (`TownVehicles.js`). The
+  airport, station and port switch to an electric sky liner, a maglev pod train and a hover
+  ferry (`RoundedTransports.js`) once that building itself is rounded.
 - The mine gains a `rounded-arch` portal hood and a geodesic `sorting-dome`. A site entry
   may declare `replaces: [...]` to supersede features it encloses; the dome replaces the
   sorting plant and solar canopy, keeping the mine under its 6,000-triangle budget.

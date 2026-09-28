@@ -1,3 +1,5 @@
+import { isRoundedEra } from '../../data/roundedArchitecture';
+import { roundedFerry, roundedRailcar } from './RoundedTransports';
 import { eraEvolution } from '../../data/eras';
 import { isCityEra } from '../../data/city';
 import { cityModel } from './buildings/city';
@@ -127,10 +129,15 @@ export function addEraActivity(d, town) {
     const portEra = town.buildingEras.riverPort;
     if (eraEvolution(portEra).cityBoat) {
       for (const child of [...boat.children]) boat.remove(child);
-      cityModel(d, boat, `${portEra}-boat`);
-      boat.name = eraEvolution(portEra).digitalCity
-        ? 'Solar river ferry'
-        : 'Rebuilding river launch';
+      if (isRoundedEra(portEra)) {
+        roundedFerry(d, boat);
+        boat.name = 'Hover river ferry';
+      } else {
+        cityModel(d, boat, `${portEra}-boat`);
+        boat.name = eraEvolution(portEra).digitalCity
+          ? 'Solar river ferry'
+          : 'Rebuilding river launch';
+      }
     }
     d.motions.push((time) => {
       const journey = boatJourney(time),
@@ -156,7 +163,10 @@ export function addEraActivity(d, town) {
       carriages.push({ pivot, x, wheelbase });
       return pivot;
     };
-    if (isCityEra(town.buildingEras.railDepot)) {
+    if (isRoundedEra(town.buildingEras.railDepot)) {
+      train.name = 'Maglev pod train';
+      for (const x of [0, -4, -8]) roundedRailcar(d, carriage(x, 2.4), x === 0);
+    } else if (isCityEra(town.buildingEras.railDepot)) {
       train.name = eraEvolution(town.buildingEras.railDepot).digitalCity
         ? 'Electric city train'
         : 'Motor passenger railcar';

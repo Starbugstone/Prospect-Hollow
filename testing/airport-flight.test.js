@@ -10,7 +10,7 @@ import {
 } from '../src/game/town/TownAviation';
 import { AIRPORT } from '../src/game/town/TownLayout';
 
-it.each(['aviation', 'broadcast', 'contemporary'])(
+it.each(['aviation', 'broadcast', 'contemporary', 'tomorrow'])(
   '%s parks the entire passenger aircraft inside the hangar bay',
   (era) => {
     const d = Object.create(TownDiorama.prototype);

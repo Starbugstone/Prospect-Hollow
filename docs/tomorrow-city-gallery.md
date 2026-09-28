@@ -48,6 +48,28 @@ _Mine with the glazed portal hood and geodesic sorting dome._
 
 _Town square with the orbital-rings fountain._
 
+## Transport
+
+The airport, station and port each switch to a rounded vehicle once that building is
+modernized in Tomorrow City (`src/game/town/RoundedTransports.js`). Each is built from
+the shared primitives with at most 16 meshes, so the moving vehicles stay cheap to draw.
+
+![Electric sky liner in flight](images/tomorrow-city/13-sky-liner-flight.png)
+
+_Electric sky liner: blended wings and ducted fans, on approach._
+
+![Electric sky liner taxiing](images/tomorrow-city/14-sky-liner-taxi.png)
+
+_The sky liner taxiing by the domed airport lounge._
+
+![Maglev pod train](images/tomorrow-city/15-maglev-pod-train.png)
+
+_Maglev pod train, floating on guideway skids over the railway._
+
+![Hover river ferry](images/tomorrow-city/16-hover-ferry.png)
+
+_Hover river ferry with a glazed dome cabin, passing the domed watermill._
+
 ## Phone
 
 <img src="images/tomorrow-city/11-phone-old-town.png" alt="Phone: old town" width="300"> <img src="images/tomorrow-city/12-phone-east.png" alt="Phone: east bank" width="300">
