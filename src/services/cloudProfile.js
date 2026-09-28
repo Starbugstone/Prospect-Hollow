@@ -105,6 +105,9 @@ export function configureSync(options) {
 // A share link is view-only, so anyone can open it without an account or a town.
 export const publicVillage = (id) =>
   request(`villages/${encodeURIComponent(id)}`, undefined, 'GET', true);
+// Any visitor may collect a shared town's saloon for its owner, once per hour per town.
+export const tapSaloon = (id) =>
+  request(`villages/${encodeURIComponent(id)}/saloon`, {}, 'POST', true);
 export function refreshAccount() {
   const generation = townStorage.auth().generation;
   if (accountRefresh?.generation === generation) return accountRefresh.promise;

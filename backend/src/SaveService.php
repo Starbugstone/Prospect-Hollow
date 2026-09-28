@@ -35,6 +35,11 @@ final class SaveService {
                 'coins'=>(is_int($coins)||is_float($coins))?max(0,min(9007199254740991,$coins)):0,
                 'buildings'=>count(array_filter($buildings,fn($level)=>(is_int($level)||is_float($level))&&$level>0)),
             ];
+            // Share-link visits, applied by the owner's own game when it next reconnects.
+            if(array_key_exists('saloon_at',$row))$result['visits']=[
+                'saloonAt'=>$row['saloon_at']===null?0:(int)$row['saloon_at']*1000,
+                'guest'=>$row['guest_name']===null?null:['name'=>$row['guest_name'],'at'=>(int)$row['guest_at']*1000],
+            ];
         }
         return $result;
     }
@@ -50,7 +55,7 @@ final class SaveService {
     }
     public function account(Request $r): array {
         return $this->transaction($r,false,function($db,$account,$session) {
-            $towns=$db->fetchAllAssociative('SELECT id,name,revision,saved_at,listed,public_id,profile FROM towns WHERE player_id=? AND deleted_at IS NULL ORDER BY name,id',[$account['id']]);
+            $towns=$db->fetchAllAssociative('SELECT t.id,t.name,t.revision,t.saved_at,t.listed,t.public_id,t.profile,v.saloon_at,v.guest_name,v.guest_at FROM towns t LEFT JOIN town_visits v ON v.town_id=t.id WHERE t.player_id=? AND t.deleted_at IS NULL ORDER BY t.name,t.id',[$account['id']]);
             return ['account'=>['id'=>$account['id'],'email'=>$account['email']],'csrf'=>$session['csrf'],'towns'=>array_map(fn($row)=>$this->view($row,false),$towns),'limit'=>3];
         });
     }

@@ -42,11 +42,52 @@ final class PublicTown {
         $rows=$this->database->get()->createQueryBuilder()->select('appearance')->from('towns')->where('listed=1 AND deleted_at IS NULL')->orderBy('public_id','ASC')->setFirstResult(($page-1)*20)->setMaxResults(21)->executeQuery()->fetchFirstColumn();
         return ['entries'=>array_map(fn($r)=>json_decode($r),array_slice($rows,0,20)),'page'=>$page,'hasNext'=>count($rows)>20];
     }
-    // A share link is view-only: anyone holding the unguessable public ID may see the
-    // appearance projection without an account. Browsing the full list still needs one.
-    public function visit(string $id): object {
-        if(!preg_match('/^[a-f0-9]{32}$/D',$id))throw new ApiError(404,'Town unavailable.');
-        $json=$this->database->get()->fetchOne('SELECT appearance FROM towns WHERE public_id=? AND listed=1 AND deleted_at IS NULL',[$id]);
-        if(!$json)throw new ApiError(404,'Town unavailable.');return json_decode($json);
+    public const SALOON_REST=3600;
+    // A share link needs no account: anyone holding the unguessable public ID may see the
+    // appearance projection. Browsing the full list still needs one. A signed-in visitor
+    // is remembered as the town's latest guest, named after one of their own towns.
+    public function visit(Request $r,string $id): object {
+        $db=$this->database->get();
+        $row=$db->fetchAssociative('SELECT t.id,t.player_id,t.appearance,v.saloon_at FROM towns t LEFT JOIN town_visits v ON v.town_id=t.id WHERE t.public_id=? AND t.listed=1 AND t.deleted_at IS NULL',[$id]);
+        if(!$row)throw new ApiError(404,'Town unavailable.');
+        $visitor=$this->visitor($r);
+        if($visitor && $visitor!==$row['player_id'] && ($name=$this->guestName($visitor)))
+            $this->record($row['id'],['guest_name'=>$name,'guest_at'=>time()]);
+        $village=json_decode($row['appearance']);
+        $village->saloonReadyAt=$this->saloonReadyAt($row['saloon_at']);
+        return $village;
+    }
+    // Any visitor may collect the saloon for its owner, at most once per hour per town.
+    // Only a timestamp is stored: the owner's game moves its own reserved coins, so no
+    // money is created and a burst of taps collects nothing extra.
+    public function tapSaloon(Request $r,string $id): array {
+        $this->auth->limit('saloon:'.($r->getClientIp()??'unknown'),30,3600);
+        return $this->database->get()->transactional(function($db) use($id) {
+            $row=$db->fetchAssociative('SELECT id,appearance FROM towns WHERE public_id=? AND listed=1 AND deleted_at IS NULL FOR UPDATE',[$id]);
+            if(!$row)throw new ApiError(404,'Town unavailable.');
+            if((json_decode($row['appearance'])->appearance->buildings->saloon??0)<1)throw new ApiError(409,'This town has no saloon yet.',['code'=>'no_saloon']);
+            $readyAt=$this->saloonReadyAt($db->fetchOne('SELECT saloon_at FROM town_visits WHERE town_id=?',[$row['id']]));
+            if($readyAt>time())throw new ApiError(409,'A visitor already collected this saloon. Come back later.',['code'=>'saloon_resting','readyAt'=>$readyAt]);
+            $now=time();$this->record($row['id'],['saloon_at'=>$now]);
+            return ['readyAt'=>$now+self::SALOON_REST];
+        });
+    }
+    private function saloonReadyAt(mixed $at): int {return $at===null||$at===false?0:(int)$at+self::SALOON_REST;}
+    private function visitor(Request $r): ?string {
+        try {return $this->auth->session($r)['player_id'];}catch(ApiError){return null;}
+    }
+    // Private town names skip moderation, so only a name that would pass it is shown to another player.
+    private function guestName(string $player): ?string {
+        $names=$this->database->get()->fetchFirstColumn('SELECT name FROM towns WHERE player_id=? AND deleted_at IS NULL ORDER BY listed DESC,saved_at DESC',[$player]);
+        foreach($names as $name) {
+            try {$this->moderate($name);return $name;}catch(ApiError){}
+        }
+        return null;
+    }
+    private function record(string $town,array $values): void {
+        $db=$this->database->get();
+        if(!$db->update('town_visits',$values,['town_id'=>$town]))
+            try {$db->insert('town_visits',['town_id'=>$town]+$values);}
+            catch(\Doctrine\DBAL\Exception\UniqueConstraintViolationException){$db->update('town_visits',$values,['town_id'=>$town]);}
     }
 }

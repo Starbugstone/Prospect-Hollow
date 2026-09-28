@@ -63,6 +63,31 @@
       <GameIcon name="close" />
     </button>
   </aside>
+  <aside
+    v-else-if="ready && !handingOver && !game.sessionActive && visitorNotice"
+    class="save-recovery-toast"
+    role="status"
+  >
+    <GameIcon name="eye" />
+    <p>
+      <template v-if="visitorNotice.coins">{{
+        t('A visitor collected {coins} coins from your saloon for you.', {
+          coins: number(visitorNotice.coins),
+        })
+      }}</template>
+      <template v-if="visitorNotice.town">{{
+        t('The mayor of {town} visited your village.', { town: visitorNotice.town })
+      }}</template>
+    </p>
+    <button
+      class="save-recovery-dismiss"
+      :aria-label="t('Dismiss')"
+      :title="t('Dismiss')"
+      @click="visitorNotice = null"
+    >
+      <GameIcon name="close" />
+    </button>
+  </aside>
   <main v-if="!ready" class="town-launch-screen">
     <section class="town-tab-notice" aria-live="polite" :aria-busy="opening">
       <img class="town-tab-gem" src="/art/amethyst.svg" alt="" />
@@ -178,7 +203,7 @@ import {
   updateSaveStatus,
 } from '../services/cloudProfile';
 import { townStorage, townKey, TOWN_CHANGED, ACCOUNT_KEY } from '../services/townStorage';
-import { t } from '../i18n';
+import { t, number } from '../i18n';
 import { localProfile } from '../services/localProfile';
 import { townCoordinator } from '../services/townCoordinator';
 import { createTownHandoff } from '../services/townHandoff';
@@ -221,6 +246,20 @@ const accountTown = computed(
   () => !!cloud.account && activeTown.value?.meta.owner === cloud.account.id,
 );
 const townName = computed(() => activeTown.value?.meta.name || t('Your town'));
+// Share-link visits reach the owner's own game when it reconnects, never mid-puzzle.
+const visitorNotice = ref(null);
+watch(
+  () => [cloud.towns, ready.value, game.sessionActive, accountTown.value],
+  () => {
+    const id = activeTown.value?.meta.id;
+    const visits = cloud.towns.find((entry) => entry.townId === id)?.visits;
+    if (!visits || !ready.value || game.sessionActive || !accountTown.value || campaign.readOnly)
+      return;
+    const received = campaign.receiveVisitors(visits);
+    if (received?.coins || received?.guest)
+      visitorNotice.value = { coins: received.coins, town: received.guest };
+  },
+);
 const saveState = computed(() =>
   describeSaveState({
     signedIn: !!cloud.account,

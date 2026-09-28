@@ -283,7 +283,7 @@
           'get':
             {
               'summary': 'Account, CSRF token and up to three owned town cards',
-              'description': 'Each town contains townId, name, revision, updatedAt, isPublic, publicId and summary {era, coins, buildings}. Buildings counts positive numeric building levels. The list never includes full profiles; GET /towns/{id} loads a playable save. Summaries are private to the authenticated owner.',
+              'description': 'Each town contains townId, name, revision, updatedAt, isPublic, publicId and summary {era, coins, buildings}. Buildings counts positive numeric building levels. visits {saloonAt, guest {name, at} | null} reports share-link visits in milliseconds: the last time a visitor collected the saloon, and the latest signed-in guest named after one of their own presentable towns. The owner game applies each visit once and records it in the save. The list never includes full profiles; GET /towns/{id} loads a playable save. Summaries are private to the authenticated owner.',
               'responses':
                 {
                   '200': { 'description': 'Success' },
@@ -704,12 +704,42 @@
         {
           'get':
             {
-              'summary': 'Read-only public appearance for a share link, no account needed; 404 when private or deleted',
+              'summary': 'Read-only public appearance and saloonReadyAt for a share link, no account needed; a signed-in visitor becomes the latest guest; 404 when private or deleted',
               'security': [],
               'responses':
                 {
                   '200': { 'description': 'Success' },
                   '404': { 'description': 'Town unavailable' },
+                  '429': { 'description': 'Rate limited' },
+                },
+              'parameters':
+                [
+                  {
+                    'name': 'publicId',
+                    'in': 'path',
+                    'required': true,
+                    'schema': { 'type': 'string', 'pattern': '^[a-f0-9]{32}$' },
+                  },
+                ],
+            },
+        },
+      '/villages/{publicId}/saloon':
+        {
+          'post':
+            {
+              'summary': 'Collect a shared town saloon for its owner, once per hour per town; no account needed',
+              'description': 'Stores only the collection time. The owner game moves its own reserved saloon coins when it reconnects, so no coins are created. The request body must be an empty JSON object.',
+              'security': [],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'Collected; readyAt is when the saloon can be collected again (seconds)',
+                    },
+                  '403': { 'description': 'Origin rejected' },
+                  '404': { 'description': 'Town unavailable' },
+                  '409': { 'description': 'no_saloon, or saloon_resting with readyAt (seconds)' },
+                  '422': { 'description': 'Invalid request' },
                   '429': { 'description': 'Rate limited' },
                 },
               'parameters':
