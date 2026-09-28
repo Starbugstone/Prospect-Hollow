@@ -34,6 +34,9 @@
         <GameIcon name="arrow" />
       </button>
     </section>
+    <button v-if="showHome" type="button" class="settings-home" @click="$emit('home')">
+      <GameIcon name="home" />{{ t('Home page and news') }}
+    </button>
     <label
       ><span>
         {{ t('Music') }} <small>{{ t(Math.round(settings.musicVolume * 100)) }}%</small></span
@@ -161,8 +164,8 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { useCampaignStore } from '../stores/campaignStore';
 import { MAX_SAVE_FILE_BYTES, downloadSaveFile, parseSaveFile } from '../services/saveTransfer';
 import GameIcon from './GameIcon.vue';
-const props = defineProps({ open: Boolean, allowSaveTransfer: Boolean });
-const emit = defineEmits(['close', 'reset-progress', 'import-progress']);
+const props = defineProps({ open: Boolean, allowSaveTransfer: Boolean, showHome: Boolean });
+const emit = defineEmits(['close', 'home', 'reset-progress', 'import-progress']);
 const campaign = useCampaignStore();
 // Provided by CloudRoot; absent when the game runs without account support.
 const account = inject('cloudAccount', null);
@@ -350,7 +353,28 @@ const closeBackdrop = (event) => {
 .account-open:disabled {
   opacity: 0.5;
 }
+.settings-home {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  margin: 14px 0 22px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.settings-home svg {
+  width: 18px;
+  height: 18px;
+}
 .account-open:focus-visible,
+.settings-home:focus-visible,
 .settings-more summary:focus-visible {
   outline: 2px solid #e4c1ff;
   outline-offset: 3px;

@@ -107,23 +107,29 @@ scaffolding together. `changeTown()` only swapped a single changed plot incremen
 fell back to the full `update()`, which rebuilt every plot and service drop synchronously inside the
 tap and then re-planned every villager and animal route for several seconds.
 
-| Change                                       | Where                                                                                                       | Effect / revert note                                                                                                                                                                                                                                                                                                                                                                                                                |
-| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| C0. Multi-plot swaps, one per frame          | `TownDiorama.changeTown()` (`plotQueue`), `tryActivatePlot()`, `plotsPending()`; `setMotion()` and `tick()` | Same-layout changes to several non-mine plots are queued and swapped by `tick()` one per frame, after the current town is back on screen. Only villagers whose routes cross a changed plot are re-planned. A building the player finishes goes last so no later swap cuts its reveal short. A newer town change or a full `update()` clears the queue. Revert: restore the `changed.length === 1` condition and remove `plotQueue`. |
-| C0b. Purchases once per town, not per second | `buildingIndicators(…, purchases)` in `TownRules.js`; `townPurchases` in `TownScene.vue` and `TownMap.vue`  | The one-second collection clock only re-checks collection cooldowns; the upgrade offers for every building are computed when the town changes. Revert: drop the `purchases` argument at both call sites.                                                                                                                                                                                                                            |
+| Change                                       | Where                                                                                                             | Effect / revert note                                                                                                                                                                                                                                                                                                                                                                                                                |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| C0. Multi-plot swaps, one per frame          | `TownDiorama.changeTown()` (`plotQueue`), `tryActivatePlot()`, `plotsPending()`; `setMotion()` and `tick()`       | Same-layout changes to several non-mine plots are queued and swapped by `tick()` one per frame, after the current town is back on screen. Only villagers whose routes cross a changed plot are re-planned. A building the player finishes goes last so no later swap cuts its reveal short. A newer town change or a full `update()` clears the queue. Revert: restore the `changed.length === 1` condition and remove `plotQueue`. |
+| C0b. Purchases once per town, not per second | `buildingIndicators(…, purchases)` in `TownRules.js`; `townPurchases` in `TownScene.vue` and `TownMap.vue`        | The one-second collection clock only re-checks collection cooldowns; the upgrade offers for every building are computed when the town changes. Revert: drop the `purchases` argument at both call sites.                                                                                                                                                                                                                            |
+| C4. Resumable dog and cat street routes      | `streetRoute()` in `TownAnimals.js`; `planSteps()`, `routeSteps()` in `animalNavigation()` (`TownAnimalSpace.js`) | The town-wide dog and cat loop was one uninterruptible plan when animals re-settled after a swap. It now yields after each navigation and animal detour step; `plan()`/`route()` run the same steps to completion. Revert: make `streetRoute()` a plain function calling `nav.route()`/`nav.plan()`.                                                                                                                                |
+| C5. Animal routes kept across swaps          | `keptRoute()` and `d.animalRoutes` in `TownAnimals.js`; `routeClearSteps()` in `animalNavigation()`               | Each ground animal route (dog, cat, hens, fox, raccoon) is cached under what it connects. When animals re-settle after a swap, a cached route is reused if every point is still clear and every leg still open in the rebuilt animal space; only blocked routes are planned again. The cache resets with the era. Revert: call the planners directly instead of `route(key, …)` in `populateAnimals()`.                             |
 
 Tests: `testing/town-construction-stutter.test.js` (several advancing projects, a finished building
-among them, a superseded queue, purchases passed once).
+among them, a superseded queue, purchases passed once); `testing/town-animals.test.js` and
+`testing/town-animal-clearance.test.js` cover the animal routes, including kept and re-planned
+routes after a change.
 
 Headless Chromium, phone viewport, 4× CPU slowdown, motor-age town with three projects advancing
 after a mine run; main-thread tasks from the tap onward:
 
-| Measurement                     | Before                    | After                           |
-| ------------------------------- | ------------------------- | ------------------------------- |
-| Tap back to the village         | 1,326 ms (full rebuild)   | 217 ms                          |
-| Plot changes                    | inside the tap            | 3 frames of about 200–250 ms    |
-| Villager and animal re-planning | seven tasks of 100–350 ms | route repair tasks under 160 ms |
-| Longest task after the tap      | 1,326 ms                  | 432 ms (dog/cat street route)   |
+| Measurement                       | Before                        | After                              |
+| --------------------------------- | ----------------------------- | ---------------------------------- |
+| Tap back to the village           | 1,326 ms (full rebuild)       | 217 ms                             |
+| Plot changes                      | inside the tap                | 3 frames of about 200–250 ms       |
+| Villager and animal re-planning   | seven tasks of 100–350 ms     | route repair tasks under 160 ms    |
+| Longest task after the tap        | 1,326 ms                      | about 230 ms (one plot swap frame) |
+| Dog/cat street route              | one 432 ms task (after C0)    | steps of at most 104 ms (C4)       |
+| Animal route planning after swaps | every ground route re-planned | none when no route is blocked (C5) |
 
 ## Tomorrow City (PR #56) against these changes
 
@@ -171,9 +177,6 @@ no more materials than the Blender shells (`testing/tomorrow-era.test.js`).
 - **B3.** Put the 28–54 per-building sign textures in one atlas.
 - **C1.** An incremental path for layout-changing completions (scenery refresh with new plots);
   keep the full rebuild for era changes only. Same-layout multi-plot changes are covered by C0.
-- **C4.** Split the dog and cat street route (`streetRoute()` in `TownAnimals.js`) into yielding
-  steps, or keep animal routes that no changed footprint crosses. It is the longest task left after
-  returning from the mine.
 - **C2.** An interaction quality mode (lower pixel ratio and cache MSAA during drags and reveals).
 - **C3.** Cheaper character instancing updates (per-root visibility instead of per-mesh ancestor
   walks).

@@ -81,7 +81,7 @@ const fs = require('node:fs');
       });
       const page = await context.newPage();
       page.on('pageerror', (e) => errors.push(e.message));
-      await page.goto(origin + (signedIn ? '/?play=' + ids[0] : '/'));
+      await page.goto(origin + (signedIn ? '/?play=' + ids[0] : '/play'));
       await page.getByRole('button', { name: 'Play level 1', exact: true }).waitFor();
       return { page, context };
     }

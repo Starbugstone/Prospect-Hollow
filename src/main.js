@@ -5,6 +5,7 @@ import { createTestingTools } from './services/testingTools';
 import { townStorage } from './services/townStorage';
 import CloudRoot from './components/CloudRoot.vue';
 import { useCampaignStore } from './stores/campaignStore';
+import { isPlayRoute, upgradeLegacyLink } from './services/appRoute';
 import './styles/base.css';
 import './styles/theme.css';
 import './styles/arcade.css';
@@ -43,8 +44,9 @@ async function start() {
       // Do not migrate or write saves without browser-enforced ownership.
       throw new Error('Safe saving requires a browser with Web Locks support.');
     }
+    upgradeLegacyLink();
     app.mount('#app');
-    if (useCampaignStore(pinia).hasVisitedVillage) {
+    if (isPlayRoute() || useCampaignStore(pinia).hasVisitedVillage) {
       import('./components/town/TownView.vue');
       import('./game/town/TownDiorama');
     }

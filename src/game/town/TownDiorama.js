@@ -921,6 +921,7 @@ export class TownDiorama {
       this.animalMotion = null;
       this.animalSpace = null;
       this.animalNavigation = null;
+      this.animalRoutes = null;
       this.animalHabitats = [];
       this.locomotionGrid = null;
       this.locomotionAgents = [];

@@ -30,7 +30,7 @@
     </div>
     <div class="starlight" aria-hidden="true"></div>
     <header class="app-header">
-      <button class="brand" :aria-label="t('Prospect Hollow home')" @click="showVillage">
+      <button class="brand" :aria-label="t('Prospect Hollow home')" @click="showHome">
         <img src="/art/amethyst.svg" alt="" />
         <span>PROSPECT <b>HOLLOW</b></span>
       </button>
@@ -252,7 +252,12 @@
     <SettingsDrawer
       :open="settings.isSettingsOpen"
       :allow-save-transfer="!game.sessionActive"
+      :show-home="view === 'town'"
       @close="settings.toggleSettings(false)"
+      @home="
+        settings.toggleSettings(false);
+        showHome();
+      "
       @reset-progress="resetProgress"
       @import-progress="resumeImportedVillage"
     />
@@ -292,14 +297,16 @@ import { LEVEL_NAMES } from './data/levelNames';
 import { obstaclesInLevel } from './data/obstacles';
 import ObstacleGuide from './components/ObstacleGuide.vue';
 import { TESTING_TOWN_CHANGED } from './services/testingTools';
+import { isPlayRoute, navigate, syncTownParam } from './services/appRoute';
 
 const game = useGameStore();
 const campaign = useCampaignStore();
-const view = ref(campaign.hasVisitedVillage ? 'town' : 'landing');
+const view = ref(isPlayRoute() ? 'town' : 'landing');
 const townView = ref(null);
 const pendingMineEntry = ref(null);
 const townVisit = ref(0);
-const townVisited = ref(campaign.hasVisitedVillage);
+const townVisited = ref(view.value === 'town');
+if (townVisited.value) campaign.visitVillage();
 const townActive = computed(() => !game.sessionActive && view.value === 'town');
 const returnToMuseum = ref(false);
 const showTown = () => {
@@ -313,6 +320,18 @@ const showTown = () => {
 const showVillage = () => {
   if (game.sessionActive || view.value !== 'town') showTown();
   returnToMuseum.value = false;
+};
+const showHome = () => {
+  game.exitLevel();
+  pendingMineEntry.value = null;
+  view.value = 'landing';
+};
+// The address follows the view; back and forward move between home and game.
+watch(view, (next) => navigate(next === 'town'));
+const followRoute = () => {
+  if (!isPlayRoute()) showHome();
+  else if (view.value !== 'town') showTown();
+  else syncTownParam();
 };
 const showMuseum = () => {
   if (game.sessionActive || view.value !== 'town') showTown();
@@ -463,6 +482,7 @@ onMounted(() => {
   game.setAudioManager(audio);
   document.addEventListener('visibilitychange', visibilityChanged);
   window.addEventListener(TESTING_TOWN_CHANGED, resumeImportedVillage);
+  window.addEventListener('popstate', followRoute);
 });
 watch(
   () => game.sessionActive,
@@ -481,6 +501,7 @@ onBeforeUnmount(() => {
   campaign.accrueSaloonIncome();
   document.removeEventListener('visibilitychange', visibilityChanged);
   window.removeEventListener(TESTING_TOWN_CHANGED, resumeImportedVillage);
+  window.removeEventListener('popstate', followRoute);
   game.exitLevel();
   game.setAudioManager(null);
 });

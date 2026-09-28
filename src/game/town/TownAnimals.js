@@ -79,7 +79,19 @@ function groundRoute(nav, points, radius) {
   );
 }
 
-function streetRoute(nav, graph, ids, radius) {
+// Animal routes survive a re-population when the town around them still allows them,
+// as villager routes do: only routes that a changed building now blocks are planned
+// again. Keys name what a route connects; a route for other inputs is never reused.
+function* keptRoute(previous, routes, key, nav, radius, plan) {
+  const kept = previous?.get(key);
+  const path = kept && (yield* nav.routeClearSteps(kept, radius)) ? kept : yield* plan();
+  routes.set(key, path);
+  return path;
+}
+
+// Resumable: the whole-town loop is the longest animal plan, so it yields between
+// navigation steps when prepared in the background.
+function* streetRoute(nav, graph, ids, radius) {
   const points = [];
   for (let n = 0; n < ids.length; n++) {
     const section = routeOnGraph(graph, plotStreet(ids[n]), plotStreet(ids[(n + 1) % ids.length]));
@@ -89,10 +101,10 @@ function streetRoute(nav, graph, ids, radius) {
   if (points.length < 2) return null;
   // Keep small animals on the verge, away from carriage wheels. The animal
   // itinerary stays on this bank; no unsupported straight-line river crossings.
-  const path = nav.route(points, 1.2, radius);
+  const path = yield* nav.routeSteps(points, 1.2, radius);
   // A return leg can approach the starting street from the opposite direction.
   // Close its sidewalk offset through navigation rather than jumping lanes.
-  return path.points.length ? nav.plan([...path.points, path.points[0]], radius) : path;
+  return path.points.length ? yield* nav.planSteps([...path.points, path.points[0]], radius) : path;
 }
 
 function threatNear(d, animal, profile) {
@@ -562,6 +574,7 @@ export function addTownAnimals(d, town, preparedSpace) {
           'animalHabitats',
           'animalSpace',
           'animalNavigation',
+          'animalRoutes',
           'animalMotion',
         ])
           d[key] = stage[key];
@@ -595,6 +608,9 @@ function* populateAnimals(d, town, preparedSpace) {
   d.animalHabitats = [];
   d.animalSpace = preparedSpace ?? animalSpace(d);
   const nav = (d.animalNavigation = animalNavigation(d.navigation, d.animalSpace));
+  const previousRoutes = d.animalRoutes;
+  const routes = (d.animalRoutes = new Map());
+  const route = (key, radius, plan) => keptRoute(previousRoutes, routes, key, nav, radius, plan);
   if (!population(town) && !town.buildings.farm) return;
   const profile = eraEvolution(town.era);
   const graph = routeGraph(town);
@@ -605,18 +621,26 @@ function* populateAnimals(d, town, preparedSpace) {
     const ids = (
       species === 'dog' ? ['home', 'saloon', 'farm', 'shop'] : ['home', 'park', 'shop', 'farm']
     ).filter((id) => town.buildings[id]);
-    let path = ids.length > 1 ? streetRoute(nav, graph, ids, TOWN_ANIMALS[species].radius) : null;
+    const { radius } = TOWN_ANIMALS[species];
+    let path =
+      ids.length > 1
+        ? yield* route(`street:${species}:${ids}`, radius, () =>
+            streetRoute(nav, graph, ids, radius),
+          )
+        : null;
     if (!path?.total) {
       const [x, z] = plotStreet(ids[0] ?? 'home');
-      path = groundRoute(
-        nav,
-        [
-          [x - 2, z + 0.6],
-          [x + 2, z + 0.6],
-          [x - 2, z + 0.6],
-        ],
-        TOWN_ANIMALS[species].radius,
-      );
+      path = yield* route(`yard:${species}:${ids[0] ?? 'home'}`, radius, function* () {
+        return groundRoute(
+          nav,
+          [
+            [x - 2, z + 0.6],
+            [x + 2, z + 0.6],
+            [x - 2, z + 0.6],
+          ],
+          radius,
+        );
+      });
     }
     // The era wardrobe may dress the village dog (Tomorrow City's space dog).
     const costume = species === 'dog' ? (townWardrobe(profile).petCostume ?? null) : null;
@@ -633,7 +657,10 @@ function* populateAnimals(d, town, preparedSpace) {
         [-1.8, 3.7],
         [-2, 2.8],
       ].map(([x, z]) => atPlot('farm', x, z + n * 0.13));
-      addGroundAnimal(d, 'hen', groundRoute(nav, points, TOWN_ANIMALS.hen.radius), 30 + n * 11);
+      const path = yield* route(`hen:${n}`, TOWN_ANIMALS.hen.radius, function* () {
+        return groundRoute(nav, points, TOWN_ANIMALS.hen.radius);
+      });
+      addGroundAnimal(d, 'hen', path, 30 + n * 11);
       yield;
     }
   const ground = habitats.filter((h) => h.kind === 'ground');
@@ -709,13 +736,10 @@ function* populateAnimals(d, town, preparedSpace) {
       [-13, z + 2.5],
       [-20, z],
     ];
-    addGroundAnimal(
-      d,
-      species,
-      groundRoute(nav, points, TOWN_ANIMALS[species].radius),
-      91 + n * 43,
-      { wild: true },
-    );
+    const path = yield* route(`wild:${species}:${z}`, TOWN_ANIMALS[species].radius, function* () {
+      return groundRoute(nav, points, TOWN_ANIMALS[species].radius);
+    });
+    addGroundAnimal(d, species, path, 91 + n * 43, { wild: true });
     yield;
   }
   for (const animal of d.animals) animal.root.visible = true;

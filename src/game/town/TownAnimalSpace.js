@@ -4,6 +4,11 @@ import { TownNavigation, walkPath } from './TownNavigation';
 const STEP = 0.4;
 const snapshots = new WeakMap();
 const point = (p) => new Vector3(...p);
+const finish = (steps) => {
+  let step = steps.next();
+  while (!step.done) step = steps.next();
+  return step.value;
+};
 
 import { triangleIndex, queryTriangles as query } from './TriangleIndex';
 
@@ -228,14 +233,17 @@ export function animalNavigation(base = new TownNavigation(), space) {
     }
     return null;
   };
-  const plan = (points, radius = 0.45, height = 1) => {
-    const original = base.plan(points, radius);
+  // Resumable plans: one yield after each detour search, so a town-wide animal route
+  // can be prepared across frames instead of in one long task.
+  function* planSteps(points, radius = 0.45, height = 1) {
+    const original = yield* base.planSteps(points, radius);
     const first = original.points[0] && safePoint(original.points[0], radius, height);
     if (!first) return walkPath([]);
     const route = [first];
     for (const p of original.points.slice(1)) {
       const end = safePoint(p, radius, height);
       const section = end && detour(route.at(-1), end, radius, height);
+      yield;
       if (!section) break;
       route.push(...section.slice(1));
     }
@@ -244,12 +252,32 @@ export function animalNavigation(base = new TownNavigation(), space) {
       route.push(...(closing ? closing.slice(1) : route.slice(0, -1).reverse()));
     }
     return walkPath(route);
-  };
+  }
+  function* routeSteps(points, offset, radius) {
+    const routed = yield* base.routeSteps(points, offset, radius);
+    return yield* planSteps(routed.points, radius);
+  }
+  // Whether a prepared route still clears the current town, checked the way plans are
+  // built: every point clear and every leg open in the animal space. Resumable, and far
+  // cheaper than planning again.
+  function* routeClearSteps(path, radius = 0.45, height = 1) {
+    const points = path?.points ?? [];
+    if (points.length < 2) return false;
+    for (let i = 0; i < points.length; i++) {
+      if (!clear(points[i], radius, height)) return false;
+      if (i && !space.segment(points[i - 1], points[i], radius, height)) return false;
+      if (i % 16 === 15) yield;
+    }
+    return true;
+  }
   return {
     obstacles: base.obstacles,
     safePoint,
+    routeClearSteps,
     clear: (p, radius, height = 1) => clear(p, radius, height),
-    plan,
-    route: (points, offset, radius) => plan(base.route(points, offset, radius).points, radius),
+    planSteps,
+    routeSteps,
+    plan: (points, radius, height) => finish(planSteps(points, radius, height)),
+    route: (points, offset, radius) => finish(routeSteps(points, offset, radius)),
   };
 }
