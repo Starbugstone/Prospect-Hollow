@@ -160,39 +160,44 @@ export function keepCameraAboveTerrain(position, target, minPolarAngle = 0.25) {
   return true;
 }
 
+const SAND = new THREE.Color('#cdbb8b'),
+  SAGE = new THREE.Color('#a8af80'),
+  SCREE = new THREE.Color('#a3967c'),
+  TRACK = new THREE.Color('#bd9c6e'),
+  RIVER_BANK = new THREE.Color('#a79570'),
+  MILLRACE_BANK = new THREE.Color('#968569');
+// The prairie tint at any point. Surfaces laid over the plain reuse it so they
+// cannot show as a differently colored patch.
+export function landscapeColor(x, z, color = new THREE.Color()) {
+  const meadow = smooth(0.32, 0.78, noise(x * 0.095 + 18, z * 0.095));
+  color.copy(SAND).lerp(SAGE, meadow * 0.64);
+  if (Math.abs(x + 1) < 24 && z < -25 && z > -53) {
+    const slope = Math.hypot(
+      groundHeight(x + 0.65, z) - groundHeight(x - 0.65, z),
+      groundHeight(x, z + 0.65) - groundHeight(x, z - 0.65),
+    );
+    color.lerp(SCREE, smooth(0.6, 2.5, slope) * 0.78);
+  }
+  color.multiplyScalar(0.96 + noise(x * 0.35, z * 0.35) * 0.09);
+  color.lerp(TRACK, (1 - smooth(0.05, 0.35, trackDistance(x, z))) * 0.5);
+  color.lerp(RIVER_BANK, 1 - smooth(RIVER.halfWidth, RIVER.bankWidth, riverDistance(x, z)));
+  return color.lerp(
+    MILLRACE_BANK,
+    1 - smooth(0.45, MILLRACE.bankWidth + 0.1, millraceDistance(x, z)),
+  );
+}
+
 export function buildLandscape(town) {
   const landscape = new THREE.Group();
   const geometry = landscapeGeometry();
   const positions = geometry.attributes.position;
   const colors = [],
-    sand = new THREE.Color('#cdbb8b'),
-    sage = new THREE.Color('#a8af80');
-  const track = new THREE.Color('#bd9c6e'),
     color = new THREE.Color();
   for (let i = 0; i < positions.count; i++) {
     const x = positions.getX(i),
-      z = positions.getZ(i),
-      height = landscapeGroundHeight(x, z);
-    positions.setY(i, height);
-    const meadow = smooth(0.32, 0.78, noise(x * 0.095 + 18, z * 0.095));
-    color.copy(sand).lerp(sage, meadow * 0.64);
-    if (Math.abs(x + 1) < 24 && z < -25 && z > -53) {
-      const slope = Math.hypot(
-        groundHeight(x + 0.65, z) - groundHeight(x - 0.65, z),
-        groundHeight(x, z + 0.65) - groundHeight(x, z - 0.65),
-      );
-      color.lerp(new THREE.Color('#a3967c'), smooth(0.6, 2.5, slope) * 0.78);
-    }
-    color.multiplyScalar(0.96 + noise(x * 0.35, z * 0.35) * 0.09);
-    color.lerp(track, (1 - smooth(0.05, 0.35, trackDistance(x, z))) * 0.5);
-    color.lerp(
-      new THREE.Color('#a79570'),
-      1 - smooth(RIVER.halfWidth, RIVER.bankWidth, riverDistance(x, z)),
-    );
-    color.lerp(
-      new THREE.Color('#968569'),
-      1 - smooth(0.45, MILLRACE.bankWidth + 0.1, millraceDistance(x, z)),
-    );
+      z = positions.getZ(i);
+    positions.setY(i, landscapeGroundHeight(x, z));
+    landscapeColor(x, z, color);
     colors.push(color.r, color.g, color.b);
   }
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));

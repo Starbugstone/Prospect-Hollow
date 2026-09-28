@@ -1,5 +1,5 @@
 import { buildMineHillside } from './TownMineHillside';
-import { groundHeight } from './TownLandscape';
+import { groundHeight, landscapeColor } from './TownLandscape';
 import { RAIL_EDGE } from './TownLayout';
 import { eraEvolution } from '../../data/eras';
 import { hasElectricity } from '../../data/industrial';
@@ -40,6 +40,7 @@ export class TownScenery {
             PLOTS.mine[1],
             RAIL_EDGE.from[1],
             groundHeight,
+            landscapeColor,
             !!railEdges(town).length,
           ),
       ],
