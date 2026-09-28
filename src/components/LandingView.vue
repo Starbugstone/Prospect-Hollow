@@ -10,6 +10,37 @@
           {{ t('Play') }}
           <TownIcon name="arrow" />
         </button>
+        <section v-if="account" class="landing-cloud" aria-labelledby="landing-cloud-title">
+          <template v-if="account.signedIn.value">
+            <h2 id="landing-cloud-title"><GameIcon name="cloud" />{{ t('Signed in') }}</h2>
+            <p>{{ t('Pick a town or back up this one from My towns.') }}</p>
+            <button
+              class="town-secondary"
+              :disabled="!account.canOpen.value"
+              @click="account.open()"
+            >
+              <GameIcon name="layers" />{{ t('My towns') }}
+            </button>
+          </template>
+          <template v-else>
+            <h2 id="landing-cloud-title">
+              <GameIcon name="cloud" />{{ t('Save your progress online') }}
+            </h2>
+            <ul>
+              <li><GameIcon name="devices" />{{ t('Play on your phone, tablet or computer') }}</li>
+              <li><GameIcon name="layers" />{{ t('Keep up to three towns') }}</li>
+              <li><GameIcon name="history" />{{ t('Restore an earlier save') }}</li>
+            </ul>
+            <button
+              class="town-secondary"
+              :disabled="!account.canOpen.value"
+              @click="account.open()"
+            >
+              <GameIcon name="mail" />{{ t('Sign in with email') }}
+            </button>
+            <small>{{ t('Free and optional. No password: we email you a link.') }}</small>
+          </template>
+        </section>
       </div>
       <div class="landing-vista" aria-hidden="true" inert>
         <svg viewBox="0 0 700 590" fill="none">
@@ -75,14 +106,18 @@
   </main>
 </template>
 <script setup>
+import { inject } from 'vue';
 import { t } from '../i18n';
 import { useCampaignStore } from '../stores/campaignStore';
 import TownBuilding from './town/TownBuilding.vue';
 import TownMine from './town/TownMine.vue';
 import TownIcon from './town/TownIcon.vue';
+import GameIcon from './GameIcon.vue';
 import '../styles/landing.css';
 defineEmits(['enter']);
 const campaign = useCampaignStore();
+// Provided by CloudRoot, so the email sign-in is offered before the first visit.
+const account = inject('cloudAccount', null);
 const trees = [
   [83, 337, 0.8],
   [598, 311, 0.75],

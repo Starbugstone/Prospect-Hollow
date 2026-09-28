@@ -2641,5 +2641,11 @@
   "Restore this save? Your current save will be preserved on this device.": "Restaurer cette sauvegarde ? Votre sauvegarde actuelle sera préservée sur cet appareil.",
   "3 stars earned": "3 étoiles gagnées",
   "Next star at {score} points": "Prochaine étoile à {score} points",
-  "Speed chest": "Coffre de vitesse"
+  "Speed chest": "Coffre de vitesse",
+  "Save your progress online": "Sauvegardez votre progression en ligne",
+  "Play on your phone, tablet or computer": "Jouez sur votre téléphone, tablette ou ordinateur",
+  "Restore an earlier save": "Restaurez une sauvegarde précédente",
+  "Sign in with email": "Se connecter par e-mail",
+  "Free and optional. No password: we email you a link.": "Gratuit et facultatif. Pas de mot de passe : nous vous envoyons un lien par e-mail.",
+  "Pick a town or back up this one from My towns.": "Choisissez une ville ou sauvegardez celle-ci depuis Mes villes."
 }
