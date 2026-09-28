@@ -591,6 +591,8 @@ async function initialize() {
       (distance) => emit('camera-distance', distance),
       recoverGraphics,
     );
+    // A shared town is only a view: VIP guests visit the owner's own game.
+    scene.vipsHidden = props.readOnly;
     scene.onVipSpend = (receipt) => emit('vip-spend', receipt);
     scene.onVillagerLabel = (label) => {
       villagerLabel.value = label;
