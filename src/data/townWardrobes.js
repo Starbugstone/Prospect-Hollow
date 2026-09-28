@@ -129,7 +129,9 @@ const WARDROBES = {
   tomorrow: {
     skirtLength: 0.3,
     crown: 'none',
-    hat: 'none',
+    hat: 'visor',
+    visor: '#a6d3d4',
+    trim: '#f3dc92',
     trousers: '#4f6f78',
     boots: '#eef0e8',
     coat: 0.34,

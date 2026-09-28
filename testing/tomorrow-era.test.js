@@ -5,7 +5,7 @@ import { renderToString } from 'vue/server-renderer';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { renderCityBuilding } from '../src/game/town/buildings/city';
-import { motorVehicle } from '../src/game/town/TownVehicles';
+import { animateVehicle, motorVehicle, responseVehicle } from '../src/game/town/TownVehicles';
 import { addAviationActivity } from '../src/game/town/TownAviation';
 import { addEraActivity } from '../src/game/town/TownEraActivity';
 import { ALL_MESH_FAMILIES, loadFamilies } from '../src/game/town/assets/MeshCatalog';
@@ -218,6 +218,54 @@ describe('Rounded architecture rendering', () => {
       renderCityBuilding(d, b, kind, kind, 3, 'tomorrow-successor', 3);
       expect(cost(b)).toEqual(cost(a));
     }
+  });
+
+  it('dresses Tomorrow villagers in visors and collar rings without new instanced shapes', () => {
+    const d = diorama('tomorrow');
+    Object.assign(d, { world: new Group(), actors: [], motions: [] });
+    const shapes = (era) => {
+      const actor = d.person({
+        route: [
+          [0, 0],
+          [1, 0],
+        ],
+        color: '#6fb5b0',
+        skin: '#d8ae83',
+        hat: '#baa06d',
+        seed: 4,
+        manual: true,
+        era,
+      });
+      const geometries = new Set();
+      actor.root.traverse((o) => {
+        if (o.isMesh) geometries.add(o.geometry.uuid);
+      });
+      return { actor, geometries };
+    };
+    const tomorrow = shapes('tomorrow'),
+      contemporary = shapes('contemporary');
+    expect(tomorrow.actor.root.getObjectByName('Glowing collar ring')).toBeTruthy();
+    expect(contemporary.actor.root.getObjectByName('Glowing collar ring')).toBeFalsy();
+    expect(tomorrow.actor.clothing.hat).toHaveLength(1);
+    expect(contemporary.actor.clothing.hat).toHaveLength(0);
+    // Actor instancing groups by geometry, so new parts must reuse existing shapes.
+    for (const uuid of tomorrow.geometries) expect(contemporary.geometries.has(uuid)).toBe(true);
+  });
+
+  it('floats hover cars and response pods on a gentle bob', () => {
+    const d = diorama('tomorrow');
+    for (const vehicle of [
+      motorVehicle(d, new Group(), false, 'tomorrow'),
+      responseVehicle(d, new Group(), true, 'tomorrow'),
+    ]) {
+      const body = vehicle.userData.hoverBody;
+      expect(body).toBeTruthy();
+      animateVehicle(vehicle, 1);
+      expect(Math.abs(body.position.y)).toBeGreaterThan(0);
+      expect(Math.abs(body.position.y)).toBeLessThanOrEqual(0.04);
+    }
+    const truck = responseVehicle(d, new Group(), true, 'contemporary');
+    expect(truck.userData.wheels.length).toBeGreaterThan(0);
   });
 
   it('moves traffic in wheel-less hover pods with the usual clearance box', () => {

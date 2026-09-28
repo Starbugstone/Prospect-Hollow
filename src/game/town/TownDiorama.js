@@ -1394,6 +1394,10 @@ export class TownDiorama {
       this.box(torso, 0.055, 0.04, 0.02, 0, -0.01, 0.105, '#ffd15b');
     }
     this.rod(torso, [0, 0.29, 0], [0, 0.39, 0], 0.055, skin);
+    if (wardrobe.trim) {
+      const collar = this.mesh(torso, 'cylinder', [0.13, 0.035, 0.1], [0, 0.29, 0], wardrobe.trim);
+      collar.name = 'Glowing collar ring';
+    }
     const head = this.group(torso, 0, 0.46, 0);
     this.ball(head, 0, 0, 0, [0.12, 0.145, 0.115], skin);
     this.ball(head, 0, 0.045, -0.03, [0.123, 0.12, 0.097], '#73563d');
@@ -1412,6 +1416,9 @@ export class TownDiorama {
     if (wardrobe.hat === 'cap' || (sheriff && wardrobe.patrol)) {
       this.ball(headwear, 0, 0.11, -0.005, [0.135, 0.065, 0.12], hat);
       this.box(headwear, 0.17, 0.025, 0.11, 0, 0.11, 0.105, hat, true);
+    } else if (wardrobe.hat === 'visor') {
+      // A wrap-around visor at eye level: one shared sphere, so it stays instanced.
+      this.ball(headwear, 0, 0.03, 0.02, [0.128, 0.036, 0.118], wardrobe.visor ?? hat);
     } else if (wardrobe.hat !== 'none') {
       this.mesh(headwear, 'cylinder', [wardrobe.brim ?? 0.195, 0.025, 0.18], [0, 0.105, 0], hat);
       if (wardrobe.crown === 'round') this.ball(headwear, 0, 0.16, 0, [0.12, 0.11, 0.11], hat);

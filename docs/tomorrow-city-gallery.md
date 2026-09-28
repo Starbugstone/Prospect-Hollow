@@ -70,6 +70,33 @@ _Maglev pod train, floating on guideway skids over the railway._
 
 _Hover river ferry with a glazed dome cabin, passing the domed watermill._
 
+## Cars and people
+
+Traffic becomes hover cars and a hover shuttle bus that bob gently as they move, and
+incident crews arrive in rounded response pods (`TownVehicles.js`). Villagers wear the
+`tomorrow` wardrobe: a wrap-around visor and a glowing collar ring. Both new outfit parts
+reuse existing shapes, so GPU instancing adds no draw calls.
+
+![Villagers with visors and collar rings](images/tomorrow-city/17-villagers-visors.png)
+
+_Villagers at the square in visors and glowing collar rings._
+
+![A villager outside the saloon](images/tomorrow-city/18-villager-street.png)
+
+_A villager outside the vaulted saloon._
+
+![Hover car](images/tomorrow-city/19-hover-car.png)
+
+_A touring hover car with a glass canopy, glow skirt and tail light._
+
+![Hover shuttle bus](images/tomorrow-city/20-hover-shuttle-bus.png)
+
+_The village hover shuttle bus by the blacksmith's hangar._
+
+![Storm response pod](images/tomorrow-city/21-storm-response-pod.png)
+
+_The storm-cleanup crew's hovering response pod at the river promenade._
+
 ## Phone
 
 <img src="images/tomorrow-city/11-phone-old-town.png" alt="Phone: old town" width="300"> <img src="images/tomorrow-city/12-phone-east.png" alt="Phone: east bank" width="300">
