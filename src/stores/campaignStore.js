@@ -703,7 +703,7 @@ export const useCampaignStore = defineStore('campaign', {
           ? { chapter: this.mineStage, gift: grantChapterGift(this, this.mineStage) }
           : null;
       const rewards = [];
-      for (const { source, tier } of runChests(score, target, elapsedMs, speedTargetMs)) {
+      for (const { source, label } of runChests(score, target, elapsedMs, speedTargetMs)) {
         const rolled =
           this.chestsWithoutBuilderHammer >= 9
             ? CHEST_DROPS.find(
@@ -721,8 +721,8 @@ export const useCampaignStore = defineStore('campaign', {
           ? { id: reward.id, kind: reward.kind, label: reward.label, quantity: reward.quantity }
           : grantReward(this, reward);
         const chest = {
-          ...tier,
           id: `${runId}-${source}`,
+          label,
           runId,
           levelId: id,
           economyVersion: CHEST_ECONOMY_VERSION,

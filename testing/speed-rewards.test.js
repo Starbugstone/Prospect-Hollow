@@ -3,7 +3,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { markRaw } from 'vue';
 import { PlayClock } from '../src/game/engine/PlayClock';
-import { getSpeedChestTier } from '../src/data/campaign';
+import { speedChestEarned } from '../src/data/campaign';
 import { useCampaignStore, SAVE_KEY } from '../src/stores/campaignStore';
 import { useGameStore } from '../src/stores/gameStore';
 
@@ -57,7 +57,7 @@ it.each([
   [Infinity, 0],
   [undefined, 0],
 ])('maps %s active milliseconds to %i speed powers', (elapsed, count) => {
-  expect(getSpeedChestTier(elapsed, 60000)?.count ?? 0).toBe(count);
+  expect(Number(speedChestEarned(elapsed, 60000))).toBe(count);
 });
 
 it.each([

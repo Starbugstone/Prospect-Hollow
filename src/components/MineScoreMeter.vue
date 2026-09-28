@@ -25,7 +25,7 @@
     <template v-if="!continuous">
       <span
         class="meter-chest"
-        :class="chests[0]?.tier.id"
+        :class="chests[0]?.source"
         role="img"
         :aria-label="chestLabel"
         :title="chestLabel"
@@ -78,7 +78,7 @@ const starHint = computed(() =>
 );
 const chestLabel = computed(
   () =>
-    chests.value.map((chest) => t(chest.tier.label)).join(' · ') +
+    chests.value.map((chest) => t(chest.label)).join(' · ') +
     (chestTarget.value
       ? ` — ${t('Score {score} for a bonus chest', { score: number(chestTarget.value) })}`
       : ''),
@@ -169,11 +169,8 @@ watch(stars, (now, before) => {
 .meter-chest {
   color: #9fd4ea;
 }
-.meter-chest.radiant {
+.meter-chest.score {
   color: #ffd66e;
-}
-.meter-chest.celestial {
-  color: #d9a8ff;
 }
 .meter-chest b {
   font-size: 11px;

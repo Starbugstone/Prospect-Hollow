@@ -4,7 +4,7 @@ import { browserLocale, locale, setLocale, t, number } from '../src/i18n';
 import fr from '../src/i18n/fr.json';
 import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
 import { LEVEL_NAMES } from '../src/data/levelNames';
-import { CHAPTERS, POWERS, CHEST_TIERS } from '../src/data/campaign';
+import { CHAPTERS, POWERS, CHEST_LABELS } from '../src/data/campaign';
 import { CHEST_DROPS } from '../src/data/rewards';
 import { FUSION_STYLES } from '../src/game/engine/BonusFusion';
 import { BUILDINGS, INITIAL_STORY } from '../src/data/town';
@@ -80,7 +80,7 @@ describe('One browser language across the game and town', () => {
       ...OBSTACLES.flatMap((item) => [item.name, item.instruction]),
       ...CHAPTERS.flatMap((c) => [c.name, c.description]),
       ...POWERS.map((p) => p.label),
-      ...CHEST_TIERS.map((c) => c.label),
+      ...Object.values(CHEST_LABELS),
       ...Object.values(INITIAL_STORY),
       ...ERAS.flatMap((era) => [era.label, era.yearLabel, ...(era.story ? [era.story] : [])]),
       ...Object.values(RIVER_RAIL_VARIANTS).flat(),
