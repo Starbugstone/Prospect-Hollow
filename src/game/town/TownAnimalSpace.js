@@ -257,9 +257,23 @@ export function animalNavigation(base = new TownNavigation(), space) {
     const routed = yield* base.routeSteps(points, offset, radius);
     return yield* planSteps(routed.points, radius);
   }
+  // Whether a prepared route still clears the current town, checked the way plans are
+  // built: every point clear and every leg open in the animal space. Resumable, and far
+  // cheaper than planning again.
+  function* routeClearSteps(path, radius = 0.45, height = 1) {
+    const points = path?.points ?? [];
+    if (points.length < 2) return false;
+    for (let i = 0; i < points.length; i++) {
+      if (!clear(points[i], radius, height)) return false;
+      if (i && !space.segment(points[i - 1], points[i], radius, height)) return false;
+      if (i % 16 === 15) yield;
+    }
+    return true;
+  }
   return {
     obstacles: base.obstacles,
     safePoint,
+    routeClearSteps,
     clear: (p, radius, height = 1) => clear(p, radius, height),
     planSteps,
     routeSteps,

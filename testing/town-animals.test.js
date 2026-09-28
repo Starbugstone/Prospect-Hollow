@@ -404,3 +404,39 @@ it('clears tall future roofs and makes wildlife retreat away from an approaching
   expect(wildlife.state).toBe('retreating');
   expect(wildlife.root.position.distanceTo(observer.position)).toBeGreaterThan(before);
 });
+
+// C5: re-settling animals after a plot swap keeps every route the town still allows.
+it('keeps animal routes that the changed town still allows', () => {
+  const d = fixture();
+  addTownAnimals(d, d.town);
+  const paths = new Map(d.animals.map((a) => [`${a.species}:${a.seed}`, a.path]));
+  const plans = d.navigation.plans;
+  addTownAnimals(d, d.town);
+  for (const animal of d.animals.filter((a) => a.species !== 'pigeon'))
+    expect(animal.path).toBe(paths.get(`${animal.species}:${animal.seed}`));
+  // No ground route was planned again; only the feeder may plan its own walk.
+  expect(d.navigation.plans - plans).toBeLessThanOrEqual(1);
+});
+
+it('plans again only the animal route that a new building now blocks', () => {
+  const d = fixture();
+  addTownAnimals(d, d.town);
+  const before = new Map(
+    d.animals.filter((a) => a.species !== 'pigeon').map((a) => [`${a.species}:${a.seed}`, a.path]),
+  );
+  const dog = d.animals.find((a) => a.species === 'dog');
+  const [x, , z] = dog.path.points[Math.floor(dog.path.points.length / 2)];
+  const block = d.group(d.world, x, 0, z);
+  d.box(block, 1.4, 1.6, 1.4, 0, 0.8, 0, '#777777');
+  d.navigation = townNavigation(d.world);
+  addTownAnimals(d, d.town);
+  const near = (path) => path.points.some(([px, , pz]) => Math.hypot(px - x, pz - z) < 2);
+  const replanned = d.animals.find((a) => a.species === 'dog').path;
+  expect(replanned).not.toBe(dog.path);
+  expect(replanned.points.every(([px, , pz]) => Math.hypot(px - x, pz - z) > 0.7)).toBe(true);
+  // Routes well away from the new block are kept as they were.
+  const untouched = [...before].filter(([, path]) => !near(path));
+  expect(untouched.length).toBeGreaterThan(0);
+  for (const [key, path] of untouched)
+    expect(d.animals.find((a) => `${a.species}:${a.seed}` === key).path).toBe(path);
+});
