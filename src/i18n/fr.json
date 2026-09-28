@@ -2392,7 +2392,7 @@
   "Town name": "Nom de la ville",
   "Add this town to my account": "Ajouter cette ville à mon compte",
   "Your account is full. This local town stays playable. Remove a cloud town to free a slot.": "Votre compte est plein. Vous pouvez continuer à jouer avec cette ville locale. Supprimez une ville en ligne pour libérer un emplacement.",
-  "Current town": "Ville actuelle",
+  "Current town": "Ville en cours",
   "Open town": "Ouvrir la ville",
   "New town name": "Nom de la nouvelle ville",
   "Create account town": "Créer une ville sur le compte",
@@ -2588,7 +2588,6 @@
   "Save": "Enregistrer",
   "Save history": "Historique des sauvegardes",
   "Save status": "État de la sauvegarde",
-  "Save status: {status}": "État de la sauvegarde : {status}",
   "Saved on this device and in your account.": "Enregistré sur cet appareil et sur votre compte.",
   "Saved on this device. The backup to your account will follow shortly.": "Enregistré sur cet appareil. La sauvegarde sur votre compte suivra sous peu.",
   "Saved on this device. The backup will retry automatically.": "Enregistré sur cet appareil. La sauvegarde réessaiera automatiquement.",
@@ -2658,5 +2657,6 @@
   "The village no longer freezes after a trip to the mine and gets more of the screen on phones.": "Le village ne se fige plus au retour de la mine et occupe davantage l’écran sur téléphone.",
   "Safer saves across devices": "Des sauvegardes plus sûres entre appareils",
   "When you play one town on two devices, both saves are kept so you can choose which one to continue.": "Si vous jouez une même ville sur deux appareils, les deux sauvegardes sont conservées pour que vous choisissiez laquelle continuer.",
-  "Home page and news": "Accueil et nouveautés"
+  "Home page and news": "Accueil et nouveautés",
+  "{town}, save status: {status}": "{town}, état de la sauvegarde : {status}"
 }

@@ -122,7 +122,7 @@ const fs = require('node:fs');
     await page.close();
     const { page: guest } = await device(false);
     assert.equal(calls.filter((c) => !c.signedIn).length, 0, 'guests do not use backend');
-    await guest.getByRole('button', { name: 'Save status: On this device', exact: true }).click();
+    await guest.getByRole('button', { name: /, save status: On this device$/ }).click();
     await guest.getByRole('button', { name: 'Protect my progress', exact: true }).click();
     await guest.getByLabel('Email address', { exact: true }).fill('guest@example.test');
     await guest.getByRole('button', { name: 'Email me a sign-in link', exact: true }).click();
