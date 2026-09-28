@@ -354,7 +354,6 @@ export function updateTownLocomotion(d, h = LOCOMOTION_STEP) {
         m.path = null;
       }
     }
-    if (d.reducedMotion && !m.exitTarget) a.hold = true;
     if (a.noPath && !m.exitTarget) {
       a.targetX = m.x;
       a.targetZ = m.z;

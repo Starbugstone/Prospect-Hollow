@@ -45,6 +45,8 @@ export const useSettingsStore = defineStore('settings', {
       isSettingsOpen: false,
       musicVolume: audio.music,
       sfxVolume: audio.sfx,
+      // Follows the system "reduce motion" preference: it softens big one-off effects
+      // (cinematics, bursts, count-ups, raids). The village itself always moves.
       reducedMotion:
         typeof window !== 'undefined' &&
         (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false),
@@ -94,9 +96,6 @@ export const useSettingsStore = defineStore('settings', {
       } catch {
         // Storage restrictions still allow the levels for this session.
       }
-    },
-    setReducedMotion(value) {
-      this.reducedMotion = value;
     },
     setHighContrast(value) {
       this.highContrastMode = value;

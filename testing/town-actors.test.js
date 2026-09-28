@@ -192,7 +192,7 @@ describe('A visible, articulated frontier encounter', () => {
     d.materials.forEach((m) => m.dispose());
     d.contactShadowMaterial.dispose();
   });
-  it('keeps visitors visible until their actual trip returns to the door, including long waits', () => {
+  it('keeps visitors visible until their actual trip returns to the door', () => {
     const d = diorama();
     d.town = createTown();
     d.navigation = new TownNavigation([{ x: 10, z: 10, y: 0, height: 2, radius: 0.2 }]);
@@ -216,14 +216,6 @@ describe('A visible, articulated frontier encounter', () => {
       updateTownLocomotion(d, 0.1);
     };
     for (let time = 0; time < 4; time += 0.1) frame(time);
-    const stopped = actor.root.position.clone();
-    d.reducedMotion = true;
-    for (let time = 4; time < actor.duration * 3; time += 0.1) {
-      frame(time);
-      expect(actor.root.visible).toBe(true);
-      expect(actor.root.position).toEqual(stopped);
-    }
-    d.reducedMotion = false;
     let hidden = false,
       returned = false;
     const door = new Vector3(...actor.walkPath.points[0]);

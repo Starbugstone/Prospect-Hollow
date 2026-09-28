@@ -98,7 +98,7 @@ The board’s lightbulb shows a move immediately; automatic hints still appear a
 
 The mine header shows the level and remaining objectives. Open Level status and controls for full objective progress, score, active time, star requirements, audio, settings and the play guide; opening these controls pauses play and the optional speed clock. The arcade banner stays above the board, which uses the available screen space. Owned power-ups show their icons, quantities and short labels, beneath the board in portrait and beside it in landscape. After the opening two chapters, a compact objective header and a smaller feedback strip give the taller boards more room. Narrow phones show remaining counts and a check mark for cleared goals; pause details retain completed/total progress. The board supports touch swipes and tapping two neighbors.
 
-Keyboard controls: focus the board with Tab, use arrows to move, Enter or Space to select, and Shift + arrow to swap. Escape cancels a selection or closes settings. Settings include music, sound effects, reduced motion and high contrast. The board uses the available viewport space on desktop and phones.
+Keyboard controls: focus the board with Tab, use arrows to move, Enter or Space to select, and Shift + arrow to swap. Escape cancels a selection or closes settings. Settings include music, sound effects and high contrast. The system reduce-motion preference softens bursts, count-ups, raids and cinematics; the village itself always moves. The board uses the available viewport space on desktop and phones.
 
 Mining is accompanied by **“Lanterns Below”**, an original two-minute, 64 BPM instrumental with warm plucked strings, low sustained tones and distant crystal echoes. Its seamless loop and soft entrance sit beneath the gem effects, at the same restrained music level as the village. The score uses no external samples; regenerate its OGG and MP3 assets with `FFMPEG=/path/to/ffmpeg node scripts/generate-mining-music.mjs`.
 
@@ -117,7 +117,7 @@ See [the era architecture guide](docs/era-architecture.md) for loading, presenta
 
 Run `npm run verify` for formatting, generated-footprint drift, the complete regression suite, and production chunk budgets. GitHub Quality checks runs the same command for pull requests and pushes to main, develop and preprod; verify it and the Vercel preview before merging a release.
 
-Mine teardown explicitly releases its WebGL context. If the village loses its graphics context, it rebuilds the 3D scene on a fresh canvas while preserving the camera. Repeated recovery failures use the playable SVG town. Interrupted frame-cache renders restore renderer state before another draw.
+Mine teardown explicitly releases its WebGL context. If the village loses its graphics context, it rebuilds the 3D scene on a fresh canvas while preserving the camera. Repeated recovery failures show a notice with a Try again button; the village needs 3D graphics. Interrupted frame-cache renders restore renderer state before another draw.
 
 ## Account backend and preproduction deployment
 

@@ -18,9 +18,6 @@ import { TownStatics } from '../src/game/town/TownStatics';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { townNavigation } from '../src/game/town/TownNavigation';
 import { animalSpace } from '../src/game/town/TownAnimalSpace';
-import { createSSRApp, h } from 'vue';
-import { renderToString } from 'vue/server-renderer';
-import TownMap from '../src/components/town/TownMap.vue';
 
 function townFor(era) {
   const town = createTown();
@@ -167,15 +164,3 @@ it.each(['aviation', 'broadcast', 'contemporary'])(
       }
   },
 );
-
-it('draws the same era treatments in the SVG fallback with bounded element counts', async () => {
-  for (const { id } of ERAS) {
-    const town = townFor(id);
-    const html = await renderToString(
-      createSSRApp({ render: () => h(TownMap, { town, paused: true }) }),
-    );
-    const colors = new Set(roadDetails(town).map(({ color }) => color));
-    for (const color of colors) expect(html).toContain(`fill="${color}"`);
-    expect(colors.size).toBeLessThanOrEqual(6);
-  }
-});

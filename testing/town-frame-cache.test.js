@@ -4,7 +4,7 @@ import { TownDiorama } from '../src/game/town/TownDiorama';
 import { beginEventCamera, restoreEventCamera } from '../src/game/town/TownEventCamera';
 import { TownFrameCache } from '../src/game/town/TownFrameCache';
 
-it('restarts reduced-motion activation after a previous pending plot has settled', () => {
+it('keeps the village moving after pending plots settle', () => {
   const view = Object.create(TownDiorama.prototype);
   Object.assign(view, {
     elapsed: 0,
@@ -15,16 +15,16 @@ it('restarts reduced-motion activation after a previous pending plot has settled
       this.pendingPlot = null;
     },
   });
-  for (let purchase = 0; purchase < 2; purchase++) {
-    view.pendingPlot = {};
-    view.setMotion(true, true);
-    expect(view.renderer.setAnimationLoop).toHaveBeenLastCalledWith(view.tick);
-    expect(view.motionEnabled).toBe(true);
-    view.tick(1000 + purchase * 1000);
-    expect(view.pendingPlot).toBeNull();
-    expect(view.motionEnabled).toBe(false);
-    expect(view.renderer.setAnimationLoop).toHaveBeenLastCalledWith(null);
-  }
+  view.pendingPlot = {};
+  view.setMotion(true);
+  expect(view.renderer.setAnimationLoop).toHaveBeenLastCalledWith(view.tick);
+  view.tick(1000);
+  view.tick(2000);
+  expect(view.pendingPlot).toBeNull();
+  expect(view.motionEnabled).toBe(true);
+  expect(view.renderer.setAnimationLoop).toHaveBeenCalledTimes(1);
+  view.setMotion(false);
+  expect(view.renderer.setAnimationLoop).toHaveBeenLastCalledWith(null);
 });
 
 it('keeps villagers and raid time moving while the camera owns the next draw', () => {

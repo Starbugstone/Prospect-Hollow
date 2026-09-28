@@ -123,8 +123,6 @@
   "Set the mood for your next cascade.": "Préparez l’ambiance de votre prochaine cascade.",
   "Music": "Musique",
   "Sound effects": "Effets sonores",
-  "Reduced motion": "Animations réduites",
-  "Gentler movement, without bursts or flashes.": "Des mouvements doux, sans explosions ni flashs.",
   "High contrast": "Contraste élevé",
   "Stronger outlines and brighter text.": "Des contours plus marqués et un texte plus lisible.",
   "PLAY YOUR WAY": "JOUEZ À VOTRE FAÇON",
@@ -2816,5 +2814,7 @@
   "Tap the coins over the saloon to collect its takings for the mayor.": "Touchez les pièces au-dessus du saloon pour récupérer sa recette pour le maire.",
   "Collect the saloon takings for the mayor": "Récupérer la recette du saloon pour le maire",
   "From {town}": "De {town}",
-  "A visitor from {town} is coming to see your village.": "Un visiteur de {town} vient voir votre village."
+  "A visitor from {town} is coming to see your village.": "Un visiteur de {town} vient voir votre village.",
+  "The village needs 3D graphics, which could not start on this device.": "Le village a besoin de graphismes 3D, qui n’ont pas pu démarrer sur cet appareil.",
+  "Enter the mine": "Entrer dans la mine"
 }
