@@ -704,13 +704,12 @@
         {
           'get':
             {
-              'summary': 'Read-only public appearance; 404 when private or deleted',
+              'summary': 'Read-only public appearance for a share link, no account needed; 404 when private or deleted',
+              'security': [],
               'responses':
                 {
                   '200': { 'description': 'Success' },
-                  '401': { 'description': 'Sign in again' },
-                  '403': { 'description': 'Origin or CSRF rejected' },
-                  '422': { 'description': 'Invalid request' },
+                  '404': { 'description': 'Town unavailable' },
                   '429': { 'description': 'Rate limited' },
                 },
               'parameters':

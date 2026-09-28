@@ -102,13 +102,9 @@ export function configureSync(options) {
   cloud.sessionExpired = townStorage.auth().expired === true;
   return service;
 }
-// The view-only visit page reads the stored sign-in without opening or syncing a town.
-export function restoreSession() {
-  const auth = townStorage.auth();
-  cloud.account = auth.account;
-  cloud.sessionExpired = auth.expired === true;
-  sessionGeneration = auth.generation;
-}
+// A share link is view-only, so anyone can open it without an account or a town.
+export const publicVillage = (id) =>
+  request(`villages/${encodeURIComponent(id)}`, undefined, 'GET', true);
 export function refreshAccount() {
   const generation = townStorage.auth().generation;
   if (accountRefresh?.generation === generation) return accountRefresh.promise;
