@@ -213,13 +213,13 @@ it('finishes a delayed VIP trip at its source and starts the next arrival there'
     frame(arrival + i * 0.1);
     updateTownLocomotion(d, 0.1);
   }
+  // A paused village delays the trip without hiding or moving the guest.
   const before = actor.root.position.clone();
-  d.reducedMotion = true;
+  d.paused = true;
   frame(arrival + actor.duration + 5);
-  updateTownLocomotion(d, 0.1);
   expect(actor.root.visible).toBe(true);
   expect(actor.root.position.distanceTo(before)).toBeLessThan(1e-8);
-  d.reducedMotion = false;
+  d.paused = false;
   let time = d.elapsed;
   for (let i = 0; i < 3000 && actor.started !== undefined; i++) {
     time += 0.1;

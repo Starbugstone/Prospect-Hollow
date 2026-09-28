@@ -1,25 +1,5 @@
 <template>
-  <TownMap
-    v-if="fallback"
-    ref="map"
-    :town="town"
-    :read-only="readOnly"
-    :builder-hammers="builderHammers"
-    :forge-collectible="forgeCollectible"
-    :now="now"
-    :selected="selected"
-    :population="population"
-    :reduced-motion="reducedMotion"
-    :paused="paused"
-    :next-level="nextLevel"
-    :fullscreen="fullscreen"
-    :construction="construction"
-    :visitor-taps="visitorTaps"
-    @select="choose"
-    @mine="!readOnly && $emit('mine')"
-  />
   <div
-    v-else
     class="town-scene"
     :class="{ 'is-raiding': raid && !reducedMotion, 'is-read-only': readOnly }"
     :aria-label="t(readOnly ? 'Village visit · view only' : 'Interactive 3D town')"
@@ -30,8 +10,17 @@
     @pointercancel="cancelPointer"
     @lostpointercapture="cancelPointer"
   >
+    <div v-if="unavailable" class="town-graphics-unavailable" role="alert">
+      <p>{{ t('The village needs 3D graphics, which could not start on this device.') }}</p>
+      <span>
+        <button type="button" @click="retryGraphics">{{ t('Try again') }}</button>
+        <button v-if="!readOnly" type="button" @click="$emit('mine')">
+          {{ t('Enter the mine') }}
+        </button>
+      </span>
+    </div>
     <GameViewStatus
-      v-if="!graphicsReady"
+      v-else-if="!graphicsReady"
       class="town-graphics-loading"
       label="Preparing your village…"
     />
@@ -270,7 +259,6 @@ import {
   buildingIndicators,
 } from '../../game/town/TownRules';
 import { t, locale } from '../../i18n';
-import TownMap from './TownMap.vue';
 const props = defineProps({
   readOnly: Boolean,
   // Buildings a read-only visitor may still tap, for example to collect the saloon.
@@ -314,9 +302,8 @@ const labelElements = new Map(),
 let anchorLayout = '';
 const canvas = ref(null),
   canvasVersion = ref(0),
-  map = ref(null),
   anchors = shallowRef([]),
-  fallback = ref(false),
+  unavailable = ref(false),
   graphicsReady = ref(false);
 const suggestedId = computed(() => nextGoal(props.town)?.id);
 const quietPlot = (id) =>
@@ -346,19 +333,6 @@ const actionAnchors = computed(() =>
   ),
 );
 function collectionOrigin(id) {
-  if (fallback.value) {
-    const element = map.value?.$el.querySelector(`[data-town-plot="${id}"]`);
-    const frame = element?.closest('.town-map-frame').getBoundingClientRect();
-    const bounds = element?.getBoundingClientRect();
-    if (frame && bounds)
-      return {
-        x: Math.max(8, Math.min(92, ((bounds.x + bounds.width / 2 - frame.x) / frame.width) * 100)),
-        y: Math.max(
-          20,
-          Math.min(90, ((bounds.y + bounds.height / 2 - frame.y) / frame.height) * 100),
-        ),
-      };
-  }
   const anchor = anchors.value.find((anchor) => anchor.id === id);
   const origin = anchor?.collection?.visible ? anchor.collection : anchor;
   return {
@@ -455,7 +429,7 @@ let updateGeneration = 0;
 const settings = useSettingsStore();
 async function update() {
   const generation = ++updateGeneration;
-  if (fallback.value) {
+  if (unavailable.value) {
     emit('cinematic-unavailable');
     emit('cinematic-ready');
     emit('presentation-unavailable');
@@ -519,7 +493,7 @@ async function update() {
   scene.setAvailable([...availableIds.value, ...(props.town.income.stored > 0 ? ['saloon'] : [])]);
   scene.setUpgradeable(props.cinematic ? [] : upgradeIds.value);
   scene.select(props.selected);
-  scene.setMotion(props.active && !document.hidden && !props.paused, props.reducedMotion);
+  scene.setMotion(props.active && !document.hidden && !props.paused);
   scene.setPaused(props.paused);
 }
 const warmAudio = () => prepareAudio(settings);
@@ -528,9 +502,9 @@ let recovering = false;
 let recoveryAttempts = 0;
 let recoveryPose;
 async function recoverGraphics(error, contextLost = false) {
-  if (disposed || fallback.value || recovering) return;
+  if (disposed || unavailable.value || recovering) return;
   if (!contextLost || recoveryAttempts++ >= 2) {
-    useFallback(error);
+    showUnavailable(error);
     return;
   }
   recovering = true;
@@ -553,9 +527,11 @@ async function recoverGraphics(error, contextLost = false) {
   recovering = false;
   initialize();
 }
-function useFallback(error) {
-  if (disposed || fallback.value) return;
-  fallback.value = true;
+// Without 3D the village cannot be shown: say so and let the player retry. Cinematics
+// and raids still end, so nothing waits on a scene that is not there.
+function showUnavailable(error) {
+  if (disposed || unavailable.value) return;
+  unavailable.value = true;
   emit('cinematic-unavailable');
   emit('cinematic-ready');
   emit('presentation-unavailable');
@@ -566,10 +542,22 @@ function useFallback(error) {
     scene = null;
   });
   if (props.raid) emit('raid-phase', 'The raid has passed');
-  console.warn('3D town unavailable; using the accessible SVG scene.', error);
+  console.warn('3D town unavailable.', error);
+}
+async function retryGraphics() {
+  unavailable.value = false;
+  recoveryAttempts = 0;
+  graphicsReady.value = false;
+  lastVisual = '';
+  lastConstruction = undefined;
+  anchors.value = [];
+  anchorLayout = '';
+  canvasVersion.value++;
+  await nextTick();
+  initialize();
 }
 async function initialize() {
-  if (scene || initializing || recovering || disposed || !props.active || fallback.value) return;
+  if (scene || initializing || recovering || disposed || !props.active || unavailable.value) return;
   initializing = true;
   try {
     const { TownDiorama } = await import('../../game/town/TownDiorama');
@@ -627,13 +615,13 @@ async function initialize() {
     startRaid();
     graphicsReady.value = true;
   } catch (error) {
-    useFallback(error);
+    showUnavailable(error);
   } finally {
     initializing = false;
   }
 }
 const visibilityChanged = () => {
-  scene?.setMotion(props.active && !document.hidden && !props.paused, props.reducedMotion);
+  scene?.setMotion(props.active && !document.hidden && !props.paused);
 };
 onMounted(() => {
   document.addEventListener('visibilitychange', visibilityChanged);
@@ -652,7 +640,6 @@ watch(
     else {
       update();
       scene.vipArrivals?.reset(true);
-      // A context restored while hidden also needs a frame in reduced-motion mode.
       if (!scene.resize()) scene.render();
     }
   },
@@ -661,7 +648,7 @@ watch(
 function startRaid() {
   scene?.stopRaid();
   if (!props.raid || !props.active) return;
-  if (props.reducedMotion || fallback.value) {
+  if (props.reducedMotion || unavailable.value) {
     emit('raid-phase', 'The raid has passed');
     return;
   }
@@ -696,7 +683,7 @@ watch(
     cinematicProgress = 0;
     scene?.setCinematic(value, props.town.transition);
     if (value && scene) emit('cinematic-ready');
-    if (value && fallback.value) {
+    if (value && unavailable.value) {
       emit('cinematic-unavailable');
       emit('cinematic-ready');
     }
@@ -743,7 +730,7 @@ watch(
   },
 );
 watch(
-  () => [props.paused, props.reducedMotion],
+  () => props.paused,
   () => visibilityChanged(),
 );
 watch(
@@ -763,6 +750,34 @@ onBeforeUnmount(() => {
 });
 </script>
 <style scoped>
+.town-graphics-unavailable {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.8rem;
+  padding: 1.5rem;
+  text-align: center;
+  background: #eadab5;
+  color: #4b3d24;
+}
+.town-graphics-unavailable span {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+}
+.town-graphics-unavailable button {
+  font: inherit;
+  padding: 0.55rem 1rem;
+  border: 1px solid #b59a66;
+  border-radius: 9px;
+  background: #fff6dc;
+  color: inherit;
+  cursor: pointer;
+}
 .town-graphics-loading {
   position: absolute;
   inset: 0;

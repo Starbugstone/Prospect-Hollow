@@ -92,11 +92,4 @@ async function collectSaloon() {
   height: 100%;
   aspect-ratio: auto;
 }
-.community-world .town-map-read-only .map-building,
-.community-world .town-map-read-only .town-mine-entrance {
-  cursor: default;
-}
-.community-world .town-map-read-only .map-building[role='button'] {
-  cursor: pointer;
-}
 </style>

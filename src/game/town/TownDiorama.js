@@ -2175,19 +2175,13 @@ export class TownDiorama {
       const movementDelta = Math.min(activeDelta, 0.25);
       if (movementDelta > 0) {
         this.elapsed += movementDelta;
-        if (!this.reducedMotion) {
-          this.actors?.forEach((actor) => this.animatePerson(actor, this.elapsed));
-          this.motions?.forEach((motion) => motion(this.elapsed));
-          this.vipArrivals?.update();
-        }
+        this.actors?.forEach((actor) => this.animatePerson(actor, this.elapsed));
+        this.motions?.forEach((motion) => motion(this.elapsed));
+        this.vipArrivals?.update();
         updateTownLocomotion(this, movementDelta);
       }
       if (this.waterMaterial) this.waterMaterial.uniforms.time.value = this.elapsed;
       this.tryActivatePlot?.();
-      if (this.reducedMotion && !this.plotsPending()) {
-        this.motionEnabled = false;
-        this.renderer.setAnimationLoop(null);
-      }
       if (this.construction?.update(this.activeElapsed)) this.finishConstruction();
       if (this.raid?.update(this.elapsed)) {
         this.raid = null;
@@ -2360,11 +2354,9 @@ export class TownDiorama {
     this.paused = paused;
     this.controls.enabled = !paused && !this.cinematic && !this.eventCamera;
   }
-  setMotion(enabled, reducedMotion = false) {
-    const wasReduced = this.reducedMotion;
-    this.reducedMotion = reducedMotion;
-    enabled = enabled && (!reducedMotion || this.plotsPending());
-    if (this.motionEnabled === enabled && wasReduced === reducedMotion) return;
+  // The village always lives while it is shown; only a hidden or paused view stops.
+  setMotion(enabled) {
+    if (this.motionEnabled === enabled) return;
     this.motionEnabled = enabled;
     if (enabled) this.construction?.resume();
     else this.construction?.pause();

@@ -188,34 +188,6 @@
   width: 100%;
   display: block;
 }
-.map-building {
-  cursor: pointer;
-  outline: none;
-}
-.map-building .plot-ring {
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-.map-building:hover .plot-ring,
-.map-building.selected .plot-ring,
-.map-building:focus-visible .plot-ring {
-  opacity: 1;
-}
-.map-building:focus-visible .plot-ring {
-  stroke: #335f51;
-  stroke-width: 5;
-  stroke-dasharray: none;
-}
-.map-building:hover .map-label rect {
-  stroke: #79865d;
-  stroke-width: 2;
-}
-.map-building .town-building-art {
-  transition: filter 0.2s;
-}
-.map-building:hover .town-building-art {
-  filter: brightness(1.05);
-}
 .town-needs {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -440,96 +412,6 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
 }
-@keyframes town-repair {
-  0% {
-    opacity: 0.3;
-    transform: translateY(-12px) scale(0.95);
-    filter: brightness(1.8);
-  }
-  65% {
-    transform: translateY(0) scale(1.03);
-  }
-  100% {
-    opacity: 1;
-    transform: none;
-    filter: none;
-  }
-}
-.resident-one {
-  transform: translate(416px, 231px);
-  animation: town-walk-one 26s ease-in-out infinite;
-}
-.resident-two {
-  transform: translate(584px, 343px);
-  animation: town-walk-two 32s ease-in-out infinite;
-}
-.resident-three {
-  transform: translate(140px, 455px);
-  animation: town-walk-three 23s ease-in-out infinite;
-}
-.sheriff-walk {
-  offset-anchor: 0px 0px;
-  offset-rotate: 0deg;
-  animation: town-patrol 80s linear infinite;
-}
-.horse-idle {
-  animation: town-horse 5s ease-in-out infinite;
-  transform-origin: 0 0;
-}
-@keyframes town-walk-one {
-  0%,
-  15%,
-  100% {
-    transform: translate(416px, 231px);
-  }
-  45%,
-  65% {
-    transform: translate(416px, 567px);
-  }
-}
-@keyframes town-walk-two {
-  0%,
-  12%,
-  100% {
-    transform: translate(584px, 343px);
-  }
-  45%,
-  65% {
-    transform: translate(584px, 455px);
-  }
-}
-@keyframes town-walk-three {
-  0%,
-  20%,
-  100% {
-    transform: translate(140px, 455px);
-  }
-  45%,
-  60% {
-    transform: translate(332px, 455px);
-  }
-}
-@keyframes town-patrol {
-  from {
-    offset-distance: 0%;
-  }
-  to {
-    offset-distance: 100%;
-  }
-}
-@keyframes town-horse {
-  0%,
-  60%,
-  100% {
-    transform: rotate(0);
-  }
-  70%,
-  85% {
-    transform: rotate(-3deg);
-  }
-}
-.town-map-paused *,
-.town-map-still *,
 .reduced-motion .town-map * {
   animation-play-state: paused !important;
 }
@@ -685,15 +567,6 @@
   .town-map-caption span:first-child {
     gap: 4px;
   }
-  .town-map .map-label text {
-    font-size: 26px;
-  }
-  .town-map .map-label rect {
-    x: -83px;
-    width: 166px;
-    height: 40px;
-    y: -23px;
-  }
   .town-needs {
     padding: 18px 0;
   }
@@ -746,15 +619,6 @@
   background: #e9ecdf;
   perspective: 1100px;
 }
-.town-diorama {
-  transform: rotateX(calc(var(--look-y) * -3deg)) rotateY(calc(var(--look-x) * 3deg));
-  transform-origin: 50% 60%;
-  transition: transform 0.35s ease-out;
-}
-.town-backdrop {
-  transform: translate(calc(var(--look-x) * -9px), calc(var(--look-y) * -5px));
-  transition: transform 0.35s ease-out;
-}
 .town-mine-entrance {
   cursor: pointer;
   outline: none;
@@ -774,13 +638,6 @@
 }
 .mine-lantern-glow {
   animation: lantern-glow 3s ease-in-out infinite;
-}
-.town-cloud {
-  animation: cloud-drift 38s ease-in-out infinite alternate;
-}
-.cloud-two {
-  animation-delay: -18s;
-  animation-duration: 47s;
 }
 .loose-sign {
   transform-origin: -60px -117px;
@@ -802,20 +659,6 @@
 .smoke-three {
   animation-delay: -3.4s;
 }
-.tumbleweed-trail {
-  animation: tumbleweed-travel 20s linear infinite;
-}
-.tumbleweed-spin {
-  transform-origin: 0 -6px;
-  animation: tumbleweed-turn 2.8s linear infinite;
-}
-.walker-leg {
-  transform-origin: 0 -6px;
-  animation: walking-step 0.7s ease-in-out infinite alternate;
-}
-.leg-right {
-  animation-delay: -0.7s;
-}
 @keyframes mine-cart-roll {
   0%,
   20%,
@@ -834,14 +677,6 @@
   }
   50% {
     opacity: 0.38;
-  }
-}
-@keyframes cloud-drift {
-  from {
-    transform: translateX(-40px);
-  }
-  to {
-    transform: translateX(60px);
   }
 }
 @keyframes sign-sway {
@@ -881,46 +716,6 @@
   to {
     transform: translate(18px, -43px) scale(2.2);
     opacity: 0;
-  }
-}
-@keyframes tumbleweed-travel {
-  0% {
-    transform: translate(92px, 548px);
-    opacity: 0;
-  }
-  5%,
-  85% {
-    opacity: 0.85;
-  }
-  100% {
-    transform: translate(862px, 585px);
-    opacity: 0;
-  }
-}
-@keyframes tumbleweed-turn {
-  to {
-    transform: rotate(360deg);
-  }
-}
-@keyframes walking-step {
-  from {
-    transform: rotate(-13deg);
-  }
-  to {
-    transform: rotate(13deg);
-  }
-}
-.town-map-paused .town-diorama,
-.town-map-paused .town-backdrop,
-.town-map-still .town-diorama,
-.town-map-still .town-backdrop {
-  transform: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  .town-diorama,
-  .town-backdrop {
-    transform: none !important;
-    transition: none;
   }
 }
 .town-scene {
@@ -2215,7 +2010,6 @@ html:has(.town-museum[open]) {
   left: 112px;
 }
 .town-labels-hidden .town-scene-labels,
-.town-labels-hidden .map-label,
 .town-labels-hidden .mine-label {
   display: none;
 }
@@ -2225,13 +2019,8 @@ html:has(.town-museum[open]) {
 .town-in-cinematic .town-scene-labels,
 .town-in-cinematic .town-action-icons,
 .town-in-cinematic .town-camera-bar,
-.town-in-cinematic .map-label,
-.town-in-cinematic .map-action-icon,
 .town-in-cinematic .mine-label {
   visibility: hidden;
-}
-.town-in-cinematic .map-upgrade-glow {
-  opacity: 0;
 }
 
 .town-action-icons {
@@ -2265,12 +2054,6 @@ html:has(.town-museum[open]) {
 .town-completion-icon img {
   width: calc(36px * var(--action-scale, 1));
   height: calc(36px * var(--action-scale, 1));
-}
-.map-action-icon {
-  filter: drop-shadow(0 2px 2px #543d3860);
-}
-.map-upgrade-glow {
-  pointer-events: none;
 }
 .town-plot-ready {
   color: #426654;

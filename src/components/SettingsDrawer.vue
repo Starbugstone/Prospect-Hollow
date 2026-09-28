@@ -61,15 +61,6 @@
     /></label>
     <label class="toggle-row"
       ><span>
-        {{ t('Reduced motion') }}
-        <small> {{ t('Gentler movement, without bursts or flashes.') }} </small></span
-      ><input
-        type="checkbox"
-        :checked="settings.reducedMotion"
-        @change="settings.setReducedMotion($event.target.checked)"
-    /></label>
-    <label class="toggle-row"
-      ><span>
         {{ t('High contrast') }}
         <small> {{ t('Stronger outlines and brighter text.') }} </small></span
       ><input
