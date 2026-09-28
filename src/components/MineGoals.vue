@@ -33,6 +33,12 @@ const groups = [
     value: (tile) => (tile.signal === 'survey' ? tile.signalHealth : 0),
   },
   {
+    id: 'core',
+    label: 'Core charges',
+    art: '/art/obstacles/core.svg',
+    value: (tile) => (tile.signal === 'core' ? tile.signalHealth : 0),
+  },
+  {
     id: 'ice',
     label: 'Ice',
     art: '/art/ice/frost.svg',

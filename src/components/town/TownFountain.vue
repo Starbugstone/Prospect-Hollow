@@ -204,6 +204,30 @@
       <circle cy="-29" r="5" fill="#c7cfd3" />
     </template>
 
+    <template v-else-if="design === 'orbital-rings'">
+      <ellipse cy="-22" rx="41" ry="16" fill="#ece5d3" stroke="#6d9f98" stroke-width="3" />
+      <ellipse cy="-25" rx="36" ry="13" :fill="water" />
+      <path d="M-3-26v-22h6v22Z" fill="#6d9f98" />
+      <path
+        v-for="n in grand ? 6 : 4"
+        :key="n"
+        :d="`M0 -60q${Math.cos((n / (grand ? 6 : 4)) * 6.283) * 20}-4 ${Math.cos((n / (grand ? 6 : 4)) * 6.283) * 30} ${30 + Math.sin((n / (grand ? 6 : 4)) * 6.283) * 8}`"
+        v-bind="jet"
+      />
+      <circle cy="-60" r="12" fill="#a6d3d4" stroke="#f3dc92" stroke-width="3" />
+      <ellipse
+        v-for="(tilt, n) in grand ? [-18, 20, 0] : [-18, 20]"
+        :key="n"
+        cy="-60"
+        :rx="24 + n * 3"
+        ry="6"
+        fill="none"
+        :stroke="n % 2 ? '#6d9f98' : '#ece5d3'"
+        stroke-width="3"
+        :transform="`rotate(${tilt} 0 -60)`"
+      />
+    </template>
+
     <template v-else>
       <ellipse cy="-24" rx="40" ry="18" fill="#8d8470" />
       <circle

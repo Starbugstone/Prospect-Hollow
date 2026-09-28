@@ -54,7 +54,8 @@ export function watermillAppearance(era) {
     streamlined: profile.style === 'motor-age',
     city: profile.style === 'city',
     aerial: !!profile.detailAsset,
-    tall: profile.tallCity,
-    solar: profile.digitalCity,
+    tall: profile.tallCity && profile.architecture !== 'rounded',
+    solar: profile.digitalCity && profile.architecture !== 'rounded',
+    rounded: profile.architecture === 'rounded',
   };
 }

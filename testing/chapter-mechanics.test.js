@@ -11,6 +11,7 @@ import { PlayClock } from '../src/game/engine/PlayClock';
 import { canSwapGem, layerCount } from '../src/game/engine/TileRules';
 import { useGameStore } from '../src/stores/gameStore';
 import { useCampaignStore } from '../src/stores/campaignStore';
+import { LEVEL_COUNT } from '../src/data/campaign';
 import * as chestRewards from '../src/data/rewards';
 
 const manager = new TileManager();
@@ -351,7 +352,8 @@ describe('append-only campaign and replay', () => {
 
   it('gives every appended puzzle a reachable chapter mechanic and available ore colors', () => {
     const levels = generateLevelConfigs().slice(240);
-    expect(levels).toHaveLength(84);
+    // 84 late levels plus the 48 Tomorrow City levels with charge cores.
+    expect(levels).toHaveLength(132);
     for (const level of levels) {
       const signals = level.tiles.filter((tile) => tile.signalHealth);
       expect(signals.length + level.oreOrders.length, `level ${level.id}`).toBeGreaterThan(0);
@@ -370,7 +372,7 @@ describe('append-only campaign and replay', () => {
     const game = useGameStore();
     const campaign = useCampaignStore();
     campaign.records = Object.fromEntries(
-      Array.from({ length: 324 }, (_, index) => [index + 1, { score: 1, stars: 1 }]),
+      Array.from({ length: LEVEL_COUNT }, (_, index) => [index + 1, { score: 1, stars: 1 }]),
     );
     game.bootstrap();
     campaign.town.buildings.museum = 1;

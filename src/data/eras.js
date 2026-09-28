@@ -158,6 +158,44 @@ export const ERAS = [
     horizon: 'Prospect Hollow is going online.',
     finale: 'From the first well to the river promenade. This is our Prospect Hollow.',
   },
+  {
+    id: 'tomorrow',
+    evolution: {
+      style: 'city',
+      // Rounded forms are procedural; the Connected City family still supplies
+      // shared vehicles, bridge approaches, garden finishes and fallbacks.
+      architecture: 'rounded',
+      prices: [9000, 10600, 12200],
+      cityAssets: 'contemporary',
+      wardrobe: 'tomorrow',
+      newBuildingPrices: [10000, 12500, 15000],
+      detailAsset: 'digital-detail',
+      airportStyle: 'connected',
+      fountain: 'orbital-rings',
+      roadStyle: 'glow-lane',
+      waterworks: [80, 80, 80],
+      farmCapacity: [20, 20, 20],
+      tallCity: true,
+      digitalCity: true,
+      motorMine: true,
+      overheadPower: false,
+      incident: 'storm-cleanup',
+      upgradeTitle: 'Tomorrow level {level}: {name}',
+      upgradeDescriptions: [
+        'Add a glazed capsule wing and a curved garden canopy.',
+        'Complete the dome with its ring terrace and soft evening lights.',
+      ],
+      cityDescription:
+        'Rounded domes, glass capsules and garden rings reshape the familiar street.',
+    },
+    label: 'Tomorrow City',
+    yearLabel: '2065',
+    enabled: true,
+    story:
+      'Solar domes, quiet maglev pods and garden rings grow around the old streets. Prospect Hollow imagines its next century.',
+    horizon: 'Tomorrow is taking shape in Prospect Hollow.',
+    finale: 'Round roofs, green rings and the same warm neighbors. Tomorrow feels like home.',
+  },
 ].map(defineEra);
 export const ERA_BY_ID = Object.fromEntries(ERAS.map((era) => [era.id, era]));
 export const FRONTIER_ERA = ERAS[0].id;

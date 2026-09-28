@@ -66,7 +66,7 @@ it.each(ERAS.map(({ id }) => id))(
   (era) => {
     const { d, bridge } = bridgeView(era);
     const road = bridge.getObjectByName('Bridge road deck');
-    expect(!!road).toBe(['motor-age', 'aviation', 'broadcast', 'contemporary'].includes(era));
+    expect(!!road).toBe(eraEvolution(era).roadBridge);
     registerFootprints(bridge, geometryFootprints(bridge), { owner: 'plot:bridge' });
     const nav = townNavigation(bridge);
     const ray = new Raycaster(new Vector3(), new Vector3(0, -1, 0));

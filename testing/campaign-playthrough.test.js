@@ -65,7 +65,7 @@ it.each(levels.map((level) => [level.id, level]))(
 
 it('keeps the appended campaign median and upper-decile workload below a slog', () => {
   const turns = levels
-    .slice(240)
+    .slice(240, 324)
     .flatMap((level) => playLevel(level.id, level))
     .sort((a, b) => a - b);
   expect(turns).toHaveLength(84 * 3);

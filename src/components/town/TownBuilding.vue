@@ -4,6 +4,12 @@
     :era="era"
     :level="eraEvolution(era).style === 'frontier' ? stage : eraLevel"
   />
+  <TownRoundedBuilding
+    v-else-if="built && isRoundedEra(era) && roundedForm(kind)"
+    :kind="kind"
+    :era="era"
+    :level="eraLevel"
+  />
   <TownCityBuilding
     v-else-if="built && isCityEra(era)"
     :kind="kind"
@@ -487,6 +493,8 @@ import TownWatermill from './TownWatermill.vue';
 import { isCityEra } from '../../data/city';
 import { eraEvolution } from '../../data/eras';
 import TownCityBuilding from './TownCityBuilding.vue';
+import TownRoundedBuilding from './TownRoundedBuilding.vue';
+import { isRoundedEra, roundedForm } from '../../data/roundedArchitecture';
 import { BUILDING_BY_ID } from '../../data/town';
 import { RIVER_RAIL_VARIANTS } from '../../data/riverRail';
 import TownSquare from './TownSquare.vue';

@@ -32,12 +32,21 @@
         :stroke="appearance.frame"
         stroke-width="2"
       >
-        <path d="M-19 9V-13H19V9Z" /><path
-          d="M-23-13H23"
-          :stroke="appearance.roof"
-          stroke-width="5"
+        <path
+          v-if="building.feature === 'sorting-dome'"
+          d="M-24 9a24 24 0 0 1 48 0Z"
+          fill="#a6d3d4"
+          stroke="#8fb07a"
+          stroke-width="4"
         />
-        <path d="M-12-4H12" stroke="#7aa5ac" stroke-width="5" />
+        <template v-else>
+          <path d="M-19 9V-13H19V9Z" /><path
+            d="M-23-13H23"
+            :stroke="appearance.roof"
+            stroke-width="5"
+          />
+          <path d="M-12-4H12" stroke="#7aa5ac" stroke-width="5" />
+        </template>
       </g>
       <g v-if="features.has('benches')" stroke="#bdb69e" stroke-width="8"
         ><path d="M-87-18H-33M-81-34H-28M-72-50H-23"
@@ -82,6 +91,9 @@
         :stroke="appearance.roof"
         stroke-width="10"
       />
+      <g v-if="profile.portal === 'rounded-arch'">
+        <path d="M-60-16a60 34 0 0 1 120 0Z" fill="#a6d3d4" stroke="#6d9f98" stroke-width="5" />
+      </g>
       <path
         v-if="features.has('solar-canopy')"
         d="M-69-35-38-51 53-34 31-20Z"
@@ -163,6 +175,7 @@ const hillsideBuildings = computed(() =>
     { feature: 'fan-house', x: 45, y: -29 },
     { feature: 'upper-terrace', x: -27, y: -63 },
     { feature: 'sorting-plant', x: 32, y: -80 },
+    { feature: 'sorting-dome', x: 32, y: -80 },
   ].filter(({ feature }) => features.value.has(feature)),
 );
 defineEmits(['enter']);

@@ -28,7 +28,8 @@ move's cascades, without playing on to accumulate stars.
 
 For each run, the effective score is its score if it achieved a ×4 cascade,
 otherwise its score divided by 1.5. Targets use the 10th percentile for levels
-1–12, the 20th for levels 13–36, then the 35th rising to the 55th by level 240.
+1–12, the 20th for levels 13–36, then the 35th rising to the 55th by level 240
+(and the 55th thereafter, including the appended Tomorrow City levels 325–372).
 Targets round down to 200-point increments; introductory targets never exceed
 their old chest targets. This accounts for each puzzle's actual layout and
 scoring opportunities instead of assuming later levels always produce higher

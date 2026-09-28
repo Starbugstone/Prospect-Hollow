@@ -1,4 +1,5 @@
 import { LATE_CHAPTERS } from './lateLevels.js';
+import { TOMORROW_CHAPTERS } from './tomorrowLevels.js';
 // A chapter owns its board dimensions and active jewel count. Two-level seams
 // rotate identities only; larger boards introduce the fifth color at level 13.
 import { CITY_CHAPTERS } from './cityLevels.js';
@@ -221,6 +222,7 @@ export const CHAPTERS = [
   },
   ...CITY_CHAPTERS,
   ...LATE_CHAPTERS,
+  ...TOMORROW_CHAPTERS,
 ];
 export const LEVEL_COUNT = CHAPTERS.length * 6;
 

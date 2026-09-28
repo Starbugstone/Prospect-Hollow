@@ -44,7 +44,7 @@ export function groundHeight(x, z) {
     (height, [hx, hz, rise]) => height + rise * Math.exp(-((x - hx) ** 2 + (z - hz) ** 2) / 440),
     0,
   );
-  const eastClearing = Math.hypot(Math.max(37 - x, 0, x - 62), Math.max(-17 - z, 0, z - 33));
+  const eastClearing = Math.hypot(Math.max(37 - x, 0, x - 70), Math.max(-17 - z, 0, z - 33));
   const westClearing = Math.hypot(Math.max(-59 - x, 0, x + 28), Math.max(-18 - z, 0, z - 26));
   // Low rolling hills leave room for orbiting and a north/south flight corridor.
   const flightCorridor = smooth(4, 13, Math.abs(x + 53));

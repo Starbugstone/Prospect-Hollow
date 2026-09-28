@@ -11,6 +11,7 @@ export const FOUNTAIN_DESIGNS = Object.freeze([
   'mid-century',
   'postmodern',
   'splash-plaza',
+  'orbital-rings',
 ]);
 /** Unknown or missing designs fall back to the original frontier spring. */
 export const resolveFountain = (id) => (FOUNTAIN_DESIGNS.includes(id) ? id : FOUNTAIN_DESIGNS[0]);

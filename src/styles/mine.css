@@ -472,3 +472,69 @@
   --mine-dark: #322d49;
   --mine-rock: #665578;
 }
+
+/* Tomorrow City chambers (levels 325–372): cool glass, solar gold and lilac light. */
+.is-playing[data-mine-theme='dome-gardens'] {
+  --mine-accent: #a8f0d0;
+  --mine-edge: #6fa8a0;
+  --mine-dark: #13262e;
+  --mine-haze: #2c5a5a;
+  --mine-rock: #274650;
+  --mine-timber: #3b5a63;
+}
+.is-playing[data-mine-theme='maglev-loops'] {
+  --mine-accent: #9fdcff;
+  --mine-edge: #7195c4;
+  --mine-dark: #141d33;
+  --mine-haze: #2d4170;
+  --mine-rock: #2b3a5c;
+  --mine-timber: #3e4c6c;
+}
+.is-playing[data-mine-theme='solar-terraces'] {
+  --mine-accent: #ffd98a;
+  --mine-edge: #b59a6c;
+  --mine-dark: #24222f;
+  --mine-haze: #5a4a44;
+  --mine-rock: #45404c;
+  --mine-timber: #5c5260;
+}
+.is-playing[data-mine-theme='hover-lanes'] {
+  --mine-accent: #8ff3ef;
+  --mine-edge: #5fa3b4;
+  --mine-dark: #10212c;
+  --mine-haze: #235166;
+  --mine-rock: #223f4f;
+  --mine-timber: #36576a;
+}
+.is-playing[data-mine-theme='orbital-observatory'] {
+  --mine-accent: #d4c4ff;
+  --mine-edge: #8f87c4;
+  --mine-dark: #151530;
+  --mine-haze: #36346b;
+  --mine-rock: #2e2d55;
+  --mine-timber: #45436e;
+}
+.is-playing[data-mine-theme='capsule-commons'] {
+  --mine-accent: #ffc3d8;
+  --mine-edge: #b4899f;
+  --mine-dark: #251d2e;
+  --mine-haze: #54405f;
+  --mine-rock: #45374f;
+  --mine-timber: #5b4a66;
+}
+.is-playing[data-mine-theme='fusion-sphere'] {
+  --mine-accent: #ffb987;
+  --mine-edge: #b07f6f;
+  --mine-dark: #251a24;
+  --mine-haze: #5a3a45;
+  --mine-rock: #493540;
+  --mine-timber: #604853;
+}
+.is-playing[data-mine-theme='tomorrow-skyline'] {
+  --mine-accent: #b9ecff;
+  --mine-edge: #86a9c9;
+  --mine-dark: #172437;
+  --mine-haze: #37557a;
+  --mine-rock: #2f4462;
+  --mine-timber: #455d7c;
+}

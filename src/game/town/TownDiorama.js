@@ -1,7 +1,7 @@
 import { TownItineraries, updateItinerary, streetHeight } from './TownItineraries';
 import { setTownAtmosphere, horizonMaterial } from './TownAtmosphere';
 import { applyRoadSetbacks } from './BuildingSetbacks';
-import { addTownAnimals } from './TownAnimals';
+import { addTownAnimals, animalKey } from './TownAnimals';
 import { footprintsFor, plotFootprintKey } from './FootprintCatalog';
 import { navigationScene, drawNavigation, releaseNavigation } from './NavigationDebug';
 import { hasElectricity } from '../../data/industrial';
@@ -965,7 +965,7 @@ export class TownDiorama {
     this.plotCache = new Map();
     this.retainedVipActors = new Map((this.vipArrivals?.actors ?? []).map((a) => [a.source, a]));
     for (const a of this.retainedVipActors.values()) a.root.removeFromParent();
-    this.retainedAnimals = new Map((this.animals ?? []).map((a) => [`${a.species}:${a.seed}`, a]));
+    this.retainedAnimals = new Map((this.animals ?? []).map((a) => [animalKey(a), a]));
     for (const a of this.retainedAnimals.values()) a.root.removeFromParent();
     this.retainedActors = new Map(
       (this.actors ?? []).filter((a) => a.persistentKey).map((a) => [a.persistentKey, a]),
@@ -991,13 +991,8 @@ export class TownDiorama {
     this.staticScenery.update(this, town);
     const mineWorks = this.staticScenery.entries.get('mine-works')?.group;
     if (mineWorks) updateMineGrowth(mineWorks, mineGrowth(mineProgress));
-    this.controls.maxDistance = [
-      'post-war',
-      'motor-age',
-      'aviation',
-      'broadcast',
-      'contemporary',
-    ].includes(town.era)
+    // City-scale eras (and Motor Age, built on a city shell) need the wider orbit.
+    this.controls.maxDistance = ['city', 'motor-age'].includes(eraEvolution(town.era).style)
       ? 270
       : town.era !== 'frontier'
         ? 160
@@ -1433,6 +1428,10 @@ export class TownDiorama {
       this.box(torso, 0.055, 0.04, 0.02, 0, -0.01, 0.105, '#ffd15b');
     }
     this.rod(torso, [0, 0.29, 0], [0, 0.39, 0], 0.055, skin);
+    if (wardrobe.trim) {
+      const collar = this.mesh(torso, 'cylinder', [0.13, 0.035, 0.1], [0, 0.29, 0], wardrobe.trim);
+      collar.name = 'Glowing collar ring';
+    }
     const head = this.group(torso, 0, 0.46, 0);
     this.ball(head, 0, 0, 0, [0.12, 0.145, 0.115], skin);
     this.ball(head, 0, 0.045, -0.03, [0.123, 0.12, 0.097], '#73563d');
@@ -1451,6 +1450,9 @@ export class TownDiorama {
     if (wardrobe.hat === 'cap' || (sheriff && wardrobe.patrol)) {
       this.ball(headwear, 0, 0.11, -0.005, [0.135, 0.065, 0.12], hat);
       this.box(headwear, 0.17, 0.025, 0.11, 0, 0.11, 0.105, hat, true);
+    } else if (wardrobe.hat === 'visor') {
+      // A wrap-around visor at eye level: one shared sphere, so it stays instanced.
+      this.ball(headwear, 0, 0.03, 0.02, [0.128, 0.036, 0.118], wardrobe.visor ?? hat);
     } else if (wardrobe.hat !== 'none') {
       this.mesh(headwear, 'cylinder', [wardrobe.brim ?? 0.195, 0.025, 0.18], [0, 0.105, 0], hat);
       if (wardrobe.crown === 'round') this.ball(headwear, 0, 0.16, 0, [0.12, 0.11, 0.11], hat);
@@ -2162,7 +2164,7 @@ export class TownDiorama {
     }
   }
   repairAnimalLife() {
-    this.retainedAnimals = new Map((this.animals ?? []).map((a) => [`${a.species}:${a.seed}`, a]));
+    this.retainedAnimals = new Map((this.animals ?? []).map((a) => [animalKey(a), a]));
     if (this.animalMotion) this.motions = this.motions.filter((m) => m !== this.animalMotion);
     addTownAnimals(this, this.town);
   }

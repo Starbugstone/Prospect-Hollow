@@ -41,7 +41,11 @@ it('retains every earlier site feature while later eras update their appearance'
   for (const { id } of ERAS) {
     const profile = mineProfile(id);
     const features = profile.site.map((item) => (typeof item === 'string' ? item : item.feature));
-    expect(features).toEqual(expect.arrayContaining(previous));
+    // Only a feature that explicitly encloses an earlier one may supersede it.
+    const replaced = profile.site.flatMap((item) => item.replaces ?? []);
+    expect(features).toEqual(
+      expect.arrayContaining(previous.filter((feature) => !replaced.includes(feature))),
+    );
     expect(new Set(features).size).toBe(features.length);
     previous = features;
   }
@@ -52,6 +56,25 @@ it('retains every earlier site feature while later eras update their appearance'
   expect(
     mineProfile('future', { ...MINE_PROFILES, future: { inherits: 'motor-age' } }).site,
   ).toEqual(motor.site);
+});
+it('lets the Tomorrow sorting dome supersede only the structures it encloses', () => {
+  const contemporary = mineProfile('contemporary').site.map((item) =>
+    typeof item === 'string' ? item : item.feature,
+  );
+  const tomorrow = mineProfile('tomorrow');
+  const keys = tomorrow.site.map((item) => (typeof item === 'string' ? item : item.feature));
+  expect(tomorrow.portal).toBe('rounded-arch');
+  expect(keys).toContain('sorting-dome');
+  expect(keys).not.toContain('sorting-plant');
+  expect(keys).not.toContain('solar-canopy');
+  const kept = contemporary.filter((f) => !['sorting-plant', 'solar-canopy'].includes(f));
+  expect(keys).toEqual(expect.arrayContaining(kept));
+  expect(
+    validateMineProfiles({
+      ...MINE_PROFILES,
+      broken: { site: [{ feature: 'sorting-dome', replaces: ['not-a-feature'] }] },
+    }),
+  ).toContain('broken: unknown not-a-feature');
 });
 it.each([54, 324, 600])('fills bounded cart cargo across a %s level campaign', (total) => {
   let count = 0;

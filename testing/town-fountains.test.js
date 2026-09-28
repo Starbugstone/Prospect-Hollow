@@ -72,6 +72,7 @@ describe('Era town square fountains', () => {
       'mid-century',
       'postmodern',
       'splash-plaza',
+      'orbital-rings',
     ]);
   });
 

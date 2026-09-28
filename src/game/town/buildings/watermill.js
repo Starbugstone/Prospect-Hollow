@@ -1,3 +1,4 @@
+import { ROUNDED_PALETTE } from '../../../data/roundedArchitecture';
 import { WATERMILL_SITE, watermillAppearance } from '../../../data/watermill';
 
 export function renderWatermill(d, parent, era, level, label) {
@@ -13,10 +14,15 @@ export function renderWatermill(d, parent, era, level, label) {
   }
   for (let y = 0.55; y < height; y += 0.32)
     d.box(root, 2.6, 0.025, 0.035, -0.35, y, 1.27, style.masonry ? '#d1bfa1' : '#906c45');
-  for (const side of [-1, 1]) {
-    const roof = d.box(root, 1.85, 0.16, 3.1, -0.35 + side * 0.73, height + 0.6, 0, style.roof);
-    roof.rotation.z = -side * 0.55;
-  }
+  if (style.rounded) {
+    // Rounded eras replace the gabled roof with a glazed dome and garden ring.
+    d.ball(root, -0.35, height + 0.25, 0, [1.5, 1, 1.4], ROUNDED_PALETTE.glass);
+    d.mesh(root, 'cylinder', [1.55, 0.12, 1.45], [-0.35, height + 0.28, 0], ROUNDED_PALETTE.green);
+  } else
+    for (const side of [-1, 1]) {
+      const roof = d.box(root, 1.85, 0.16, 3.1, -0.35 + side * 0.73, height + 0.6, 0, style.roof);
+      roof.rotation.z = -side * 0.55;
+    }
   d.box(root, 0.7, 1.3, 0.08, -0.35, 0.9, 1.3, '#574735');
   d.window(root, -1.05, 1.4, 1.31);
   if (level >= 2) {

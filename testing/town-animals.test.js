@@ -418,6 +418,27 @@ it('keeps animal routes that the changed town still allows', () => {
   expect(d.navigation.plans - plans).toBeLessThanOrEqual(1);
 });
 
+// The reuse key includes an era costume, so Tomorrow City's space dog is kept, not rebuilt,
+// on both the immediate path and the deferred path the live village uses (C5).
+it('keeps the costumed space dog when the Tomorrow town re-settles', async () => {
+  const d = fixture('tomorrow');
+  addTownAnimals(d, d.town);
+  const dog = d.animals.find((a) => a.species === 'dog');
+  expect(dog.root.userData.costume).toBe('space-helmet');
+  addTownAnimals(d, d.town);
+  expect(d.animals.find((a) => a.species === 'dog').path).toBe(dog.path);
+  const settled = d.animals.find((a) => a.species === 'dog');
+  Object.assign(d, { deferLife: true, generation: 1, rebuildActors() {}, render() {} });
+  const before = d.animals;
+  addTownAnimals(d, d.town);
+  for (let n = 0; n < 400 && d.animals === before; n++)
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  expect(d.animals).not.toBe(before);
+  const kept = d.animals.find((a) => a.species === 'dog');
+  expect(kept).toBe(settled);
+  expect(kept.root.getObjectByName('Space dog helmet')).toBeTruthy();
+});
+
 it('plans again only the animal route that a new building now blocks', () => {
   const d = fixture();
   addTownAnimals(d, d.town);

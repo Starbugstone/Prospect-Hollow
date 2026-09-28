@@ -250,5 +250,26 @@
     "width": 3.6,
     "height": 2.5,
     "detail": null
+  },
+  "skyPods": {
+    "family": "residence",
+    "identity": "pods",
+    "width": 4.2,
+    "height": 6.4,
+    "detail": "solar"
+  },
+  "biodome": {
+    "family": "farm",
+    "identity": "biodome",
+    "width": 4.4,
+    "height": 2.8,
+    "detail": null
+  },
+  "maglevStation": {
+    "family": "station",
+    "identity": "maglev",
+    "width": 4.6,
+    "height": 3,
+    "detail": null
   }
 }

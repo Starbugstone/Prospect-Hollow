@@ -27,6 +27,8 @@ export function buildingBenefit(town, id, stage, modernization = false) {
     buildingEraLevels: { ...town.buildingEraLevels, [id]: offer?.eraLevel ?? stage },
   };
   const kind = BUILDING_BY_ID[id].kind;
+  // City buildings declare their service; later eras need no new id lists here.
+  const effects = BUILDING_BY_ID[id].effects ?? {};
   let icon = 'home',
     label = 'Building level',
     read = (value) => value.buildings[id],
@@ -45,22 +47,19 @@ export function buildingBenefit(town, id, stage, modernization = false) {
       after: offer.eraLevel,
       suffix: '/3',
     };
-  if (kind === 'well' || id === 'waterPlant') {
+  if (kind === 'well' || effects.water) {
     icon = 'water';
     label = 'Water capacity';
     read = waterCapacity;
-  } else if (kind === 'farm' || id === 'fisherman' || id === 'market' || id === 'supermarket') {
+  } else if (kind === 'farm' || id === 'fisherman' || id === 'market' || effects.food) {
     icon = 'food';
     label = 'Food capacity';
     read = foodCapacity;
-  } else if (
-    kind === 'home' ||
-    ['gardenCourt', 'rowHouses', 'apartments', 'cityHomes'].includes(id)
-  ) {
+  } else if (kind === 'home' || effects.housing || ['gardenCourt', 'rowHouses'].includes(id)) {
     icon = 'people';
     label = 'Resident capacity';
     read = housingCapacity;
-  } else if (['stable', 'hotel', 'railDepot', 'busDepot', 'transitHub'].includes(id)) {
+  } else if (effects.visitors || ['stable', 'hotel', 'railDepot', 'busDepot'].includes(id)) {
     icon = 'people';
     label = 'Visitor capacity';
     read = visitorCapacity;

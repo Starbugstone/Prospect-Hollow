@@ -103,6 +103,58 @@ and capabilities rather than flattening distinctive buildings into one generic
 design. A new capability used by several systems belongs in the era profile;
 avoid adding the same era-name conditional independently to each consumer.
 
+### City architecture: Tomorrow City's rounded forms
+
+City eras choose their building forms with the `architecture` capability. `standard`
+(the default) keeps the Blender period shells; `rounded` renders every city family as
+procedural domes, drums, barrel vaults, pods and tubes. `defineEra()` rejects unknown
+architectures and non-city styles that try to change it. Tomorrow City (2065) is the
+first rounded era and keeps `cityAssets: 'contemporary'`, so shared pieces (vehicle
+fallbacks, bridge approaches, garden finishes) still resolve through the Connected City
+family.
+
+- `data/roundedArchitecture.js` holds the shared palette and the family → form table
+  (`residence: tower`, `civic: rotunda`, `retail: vault`, `depot: hangar`, `water: tanks`,
+  `station: tube`, `culture`/`concert: shell`, `research: geodesic`, `farm: greenhouse`,
+  `river: pavilion`, `park`/`field: garden`, `radio: mast`, `television: orb`,
+  `skyline: spire`). Building identities from `cityBuildingStyles.json` (for example
+  `pods`, `twin`, `columns`, `power`) pick the variation within a form.
+- `buildings/rounded.js` draws the 3D forms. `renderCityBuilding()` looks the renderer up
+  in its `ARCHITECTURES` registry; a renderer returning `false` (airport, square, bridge)
+  leaves that kind to the shared shells. The airport's rooftop lounge becomes a glass dome
+  via `addRoundedLounge`, the square uses the `orbital-rings` fountain and the watermill
+  swaps its gable for a glazed dome.
+- `TownRoundedBuilding.vue` draws the same forms and palette for the SVG map, and
+  `TownBuilding.vue` routes rounded eras to it before the standard city drawing.
+- Traffic in rounded eras uses wheel-less hover cars, a hover shuttle bus and rounded
+  incident response pods that bob via `userData.hoverBody` (`TownVehicles.js`). Villagers wear
+  the `tomorrow` wardrobe (`hat: 'visor'` and a `trim` collar ring) built from existing shapes. The
+  airport, station and port switch to a sky saucer, a solar express train on the rails and a
+  hover ferry (`RoundedTransports.js`) once that building itself is rounded.
+- The mine gains a `rounded-arch` portal hood and a geodesic `sorting-dome`. A site entry
+  may declare `replaces: [...]` to supersede features it encloses; the dome replaces the
+  sorting plant and solar canopy, keeping the mine under its 6,000-triangle budget.
+- Tomorrow City adds the Sky pods, Biodome and Maglev loop on a new x = 65 east-bank
+  column; the east clearing now reaches x = 70 so those lots stay level.
+
+![Tomorrow City overview](images/tomorrow-city/01-overview.png)
+
+The same old-town view in Connected City and Tomorrow City (WebGL, headless Chromium):
+
+![Connected City old town](images/tomorrow-city/00-old-town-before-connected-city.png)
+![Tomorrow City old town](images/tomorrow-city/02-old-town.png)
+
+More captures, including phone sizes: [Tomorrow City gallery](tomorrow-city-gallery.md).
+
+Frame-rate rules for rounded forms: only the shared `sphere`, `cylinder`, `rounded` box
+and `rock` primitives are used (no new geometry is allocated per building), every part
+uses the seven-color palette so each batched plot stays at eight materials or fewer, and
+nothing is animated. A fully built Tomorrow town draws about 108,000 building triangles
+against about 132,000 for Connected City. `testing/tomorrow-era.test.js` enforces the
+per-building budget (under 4,000 triangles, at most eight materials), the whole-town
+comparison, level-by-level visible changes, a synthetic rounded successor era, the new
+plots, prices, benefit previews and the SVG forms.
+
 ## Regression evidence
 
 `testing/era-definitions.test.js` covers invalid definitions, immutable shared

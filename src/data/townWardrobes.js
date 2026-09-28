@@ -126,6 +126,23 @@ const WARDROBES = {
       ['#82936e', '#525f6c', '#7e9277', '#eee7d7', '#d7debc'],
     ],
   },
+  tomorrow: {
+    skirtLength: 0.3,
+    crown: 'none',
+    hat: 'visor',
+    visor: '#a6d3d4',
+    trim: '#f3dc92',
+    petCostume: 'space-helmet',
+    trousers: '#4f6f78',
+    boots: '#eef0e8',
+    coat: 0.34,
+    patrol: true,
+    palettes: [
+      ['#6fb5b0', '#4f6f78', '#a6d3d4', '#f1efe6', '#f3dc92'],
+      ['#d99a82', '#5a6477', '#e7c4b8', '#eeeae2', '#a6d3d4'],
+      ['#9cbf86', '#56676a', '#d8e4c4', '#f2efe4', '#e9b9c9'],
+    ],
+  },
 };
 // Existing/future city profiles that omit a period wardrobe use the casual set.
 WARDROBES.casual = WARDROBES.broadcast;

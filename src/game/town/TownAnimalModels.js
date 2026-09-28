@@ -1,4 +1,6 @@
+import { MeshStandardMaterial } from 'three';
 import { TOWN_ANIMALS } from '../../data/townAnimals';
+import { horizonMaterial } from './TownAtmosphere';
 import { catGeometries, pigeonGeometries } from './TownAnimalGeometries';
 
 function finishModel(d, model) {
@@ -57,7 +59,7 @@ function catModel(d, root) {
 
 // Small articulated meshes use the same geometry/material caches and instancing
 // as villagers. All species face +Z and put their feet at the root's ground plane.
-export function animalModel(d, species, variant = 0) {
+export function animalModel(d, species, variant = 0, costume = null) {
   const root = d.group(d.world);
   root.name = TOWN_ANIMALS[species].name;
   root.userData.animated = true;
@@ -73,8 +75,17 @@ export function animalModel(d, species, variant = 0) {
     pigeon: ['#8497a7', '#b2bec4'],
   };
   const [coat, light] = colors[species];
+  const space = species === 'dog' && costume === 'space-helmet';
   const body = d.group(root);
-  d.ball(body, 0, bird ? 0.22 : 0.3, 0, bird ? [0.16, 0.2, 0.25] : [0.18, 0.21, 0.36], coat);
+  // A space dog's suit replaces the coat on the body only; head, ears and tail stay furry.
+  d.ball(
+    body,
+    0,
+    bird ? 0.22 : 0.3,
+    0,
+    bird ? [0.16, 0.2, 0.25] : [0.18, 0.21, 0.36],
+    space ? SUIT : coat,
+  );
   const head = d.group(body, 0, bird ? 0.4 : 0.47, bird ? 0.16 : 0.28);
   d.ball(head, 0, 0, 0, bird ? 0.105 : [0.14, 0.15, 0.16], coat);
   const legs = [],
@@ -133,7 +144,42 @@ export function animalModel(d, species, variant = 0) {
       for (const z of [-0.1, -0.25, -0.4])
         d.ball(tail, 0, -0.02, z, [0.143, 0.143, 0.045], '#535b54');
   }
+  if (space) addSpaceSuit(d, root, body, head, legs);
   return finishModel(d, { root, body, head, legs, wings, tail, species });
+}
+
+const SUIT = '#ece5d3',
+  SUIT_RED = '#c9504a',
+  HELMET_KEY = 'space-dog-helmet';
+function helmetGlass(d) {
+  if (!d.materials.has(HELMET_KEY))
+    d.materials.set(
+      HELMET_KEY,
+      horizonMaterial(
+        new MeshStandardMaterial({
+          color: '#dff3f4',
+          roughness: 0.15,
+          transparent: true,
+          opacity: 0.4,
+          depthWrite: false,
+        }),
+      ),
+    );
+  return d.materials.get(HELMET_KEY);
+}
+// Cosmo-style space dog: a clear bubble helmet on a white collar ring, a white suit with
+// red star patches and red boots. Only shared primitives; one extra (transparent) material.
+function addSpaceSuit(d, root, body, head, legs) {
+  root.userData.costume = 'space-helmet';
+  const helmet = d.group(head);
+  helmet.name = 'Space dog helmet';
+  const bubble = d.ball(helmet, 0, 0.01, 0.03, [0.25, 0.25, 0.26], '#dff3f4');
+  bubble.material = helmetGlass(d);
+  // The collar ring sits under the bubble, behind the snout.
+  const collar = d.mesh(helmet, 'cylinder', [0.18, 0.06, 0.18], [0, -0.16, -0.06], SUIT);
+  collar.rotation.x = -0.25;
+  for (const side of [-1, 1]) d.ball(body, side * 0.18, 0.33, -0.02, [0.02, 0.06, 0.06], SUIT_RED);
+  for (const leg of legs) d.ball(leg, 0, -0.2, 0.025, [0.058, 0.045, 0.085], SUIT_RED);
 }
 
 export function animateAnimal(model, time, state, moving) {

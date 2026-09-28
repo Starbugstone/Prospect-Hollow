@@ -57,6 +57,7 @@ export function preloadSvgAssets(scene) {
     'seal-emerald',
     'lantern',
     'survey',
+    'core',
   ])
     scene.load.svg(`tile-${type}`, `/art/obstacles/${type}.svg`, { width: 160, height: 160 });
   scene.load.svg('bonus-atlas', '/art/bonuses/atlas.svg', {
