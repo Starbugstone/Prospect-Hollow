@@ -111,6 +111,8 @@ export class TownDiorama {
     this.materials = new Map();
     this.geometries = createTownGeometries();
     this.scene = new THREE.Scene();
+    // drawFrame() updates world matrices once for all of a frame's render calls.
+    this.scene.matrixWorldAutoUpdate = false;
     setTownAtmosphere(this.scene);
     this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 400);
     this.camera.position.set(12, 12, 25);
@@ -244,8 +246,12 @@ export class TownDiorama {
     // a fresh canvas. No buffers or cached attachments cross graphics contexts.
     this.onUnavailable?.(new Error('Town graphics context lost'), true);
   }
+  // three would otherwise update every world matrix again inside each render call
+  // (static cache, foreground, inset). Update once per drawn frame instead.
   drawFrame(refresh = false) {
     try {
+      this.scene?.updateMatrixWorld();
+      this.actorRenderer?.update(this.scene);
       this.frameCache.render(this.scene, this.camera, refresh);
       renderEventInset(this);
       return true;
@@ -1963,7 +1969,6 @@ export class TownDiorama {
     )
       return;
     const started = frameStart();
-    this.actorRenderer.update();
     if (this.drawFrame(true)) this.projectLabels();
     frameEnd('render', started);
   }
@@ -2120,7 +2125,6 @@ export class TownDiorama {
       // Advance life during camera motion too; its scheduled render draws the new pose.
       if (this.cameraFrame || this.presentation || (this.cinematic && !this.cinematic.finished))
         return;
-      this.actorRenderer.update();
       if (this.drawFrame()) {
         if (eventCameraMoved) this.projectLabels();
         else this.projectVillager?.();
