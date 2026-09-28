@@ -32,11 +32,13 @@ export const remainingOre = (orders) =>
   (orders ?? []).reduce((sum, order) => sum + Math.max(0, order.target - order.progress), 0);
 
 // Charge cores are floor markers like lanterns: gems keep moving over them.
-// Each cascade step that touches a core (on or beside it) adds one charge. A
+// Each move whose match or blast touches a core (on or beside it) adds one charge. A
 // full core releases a free bonus on its own cell, or on the first ordinary
 // neighbor when a relic, anchor or existing bonus occupies it. The release is
 // only ever a help; missing a target never blocks completion.
+// Levels may author a larger count (tile.coreCharges); three is the default.
 export const CORE_CHARGES = 3;
+export const CORE_BONUSES = ['cross', 'bomb'];
 export const isChargeCore = (tile) => tile?.signal === 'core';
 
 export function coreReleaseTarget(board, tiles, index, cols, rows, reserved = new Set()) {

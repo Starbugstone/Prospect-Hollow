@@ -39,7 +39,7 @@
               ><img src="/art/obstacles/exit.svg" alt="" /><b class="demo-check">✓</b>
             </template>
             <template v-else-if="obstacle.id === 'charge-core'">
-              <img :src="obstacle.art" alt="" /><b>3×</b><b>→</b
+              <img :src="obstacle.art" alt="" /><b>●●●</b><b>→</b
               ><img src="/art/bonuses/cross.svg" alt="" />
             </template>
             <template v-else>
