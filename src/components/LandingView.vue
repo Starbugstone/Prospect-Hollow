@@ -10,16 +10,53 @@
           {{ t('Play') }}
           <TownIcon name="arrow" />
         </button>
-        <section v-if="account" class="landing-cloud" aria-labelledby="landing-cloud-title">
-          <template v-if="account.signedIn.value">
-            <h2 id="landing-cloud-title"><GameIcon name="cloud" />{{ t('Signed in') }}</h2>
-            <p>{{ t('Pick a town or back up this one from My towns.') }}</p>
+        <section
+          v-if="account"
+          class="landing-cloud"
+          :data-state="cloudState"
+          aria-labelledby="landing-cloud-title"
+        >
+          <template v-if="cloudState === 'signed-in'">
+            <h2 id="landing-cloud-title">
+              <span class="landing-cloud-badge"><GameIcon name="check" /></span
+              >{{ t('You’re signed in') }}
+            </h2>
+            <p class="landing-cloud-status" :data-tone="account.saveState.value.tone">
+              <strong>{{ t(account.saveState.value.label) }}</strong>
+              {{ t(account.saveState.value.detail) }}
+            </p>
+            <div v-if="cloud.towns.length" class="landing-cloud-slots">
+              <span>{{ t('{count} of 3 slots used', { count: cloud.towns.length }) }}</span>
+              <span class="landing-cloud-pips" aria-hidden="true"
+                ><i
+                  v-for="slot in 3"
+                  :key="slot"
+                  :class="{ 'is-used': slot <= cloud.towns.length }"
+              /></span>
+            </div>
             <button
               class="town-secondary"
               :disabled="!account.canOpen.value"
               @click="account.open()"
             >
               <GameIcon name="layers" />{{ t('My towns') }}
+            </button>
+          </template>
+          <template v-else-if="cloudState === 'expired'">
+            <h2 id="landing-cloud-title"><GameIcon name="cloud" />{{ t('Sign in again') }}</h2>
+            <p>
+              {{
+                t(
+                  'Your session expired. Keep playing offline; sign in again to resume cloud saving.',
+                )
+              }}
+            </p>
+            <button
+              class="town-secondary"
+              :disabled="!account.canOpen.value"
+              @click="account.open()"
+            >
+              <GameIcon name="mail" />{{ t('Sign in with email') }}
             </button>
           </template>
           <template v-else>
@@ -106,9 +143,10 @@
   </main>
 </template>
 <script setup>
-import { inject } from 'vue';
+import { computed, inject } from 'vue';
 import { t } from '../i18n';
 import { useCampaignStore } from '../stores/campaignStore';
+import { cloud } from '../services/cloudProfile';
 import TownBuilding from './town/TownBuilding.vue';
 import TownMine from './town/TownMine.vue';
 import TownIcon from './town/TownIcon.vue';
@@ -118,6 +156,9 @@ defineEmits(['enter']);
 const campaign = useCampaignStore();
 // Provided by CloudRoot, so the email sign-in is offered before the first visit.
 const account = inject('cloudAccount', null);
+const cloudState = computed(() =>
+  !account?.signedIn.value ? 'guest' : cloud.sessionExpired ? 'expired' : 'signed-in',
+);
 const trees = [
   [83, 337, 0.8],
   [598, 311, 0.75],

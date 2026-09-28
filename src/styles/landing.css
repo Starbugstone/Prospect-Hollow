@@ -118,6 +118,90 @@
   color: #8a886d;
   text-align: center;
 }
+.landing-cloud[data-state='signed-in'] {
+  background: #f1f6ec;
+  border-color: #9fbf98;
+}
+.landing-cloud[data-state='expired'] {
+  border-color: #d9a48f;
+}
+.landing-cloud-badge {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  border-radius: 50%;
+  background: #3f8a55;
+}
+.landing-cloud h2 .landing-cloud-badge svg {
+  width: 16px;
+  height: 16px;
+  flex-basis: 16px;
+  color: #fff;
+}
+.landing-cloud .landing-cloud-status {
+  display: block;
+}
+.landing-cloud-status strong {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #34523f;
+}
+.landing-cloud-status strong::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #9a9a87;
+}
+.landing-cloud-status[data-tone='saved'] strong::before {
+  background: #3f9a5a;
+  box-shadow: 0 0 0 3px #3f9a5a2e;
+}
+.landing-cloud-status[data-tone='busy'] strong::before,
+.landing-cloud-status[data-tone='pending'] strong::before {
+  background: #e39a1f;
+  box-shadow: 0 0 0 3px #e39a1f33;
+}
+.landing-cloud-status[data-tone='alert'] strong::before {
+  background: #d25a3c;
+  box-shadow: 0 0 0 3px #d25a3c33;
+}
+.landing-cloud-slots {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  background: #fffdf6;
+  font-size: 12px;
+  color: #5f6a58;
+}
+.landing-cloud-pips {
+  display: flex;
+  gap: 5px;
+}
+.landing-cloud-pips i {
+  width: 22px;
+  height: 7px;
+  border-radius: 4px;
+  background: #dcdcc9;
+}
+.landing-cloud-pips i.is-used {
+  background: #5a9168;
+}
+.landing-cloud[data-state='signed-in'] .town-secondary {
+  border-color: #3f6e51;
+  background: #4f7a5e;
+  color: #fff6e5;
+}
+.landing-cloud[data-state='signed-in'] .town-secondary:hover:not(:disabled) {
+  background: #3f6e51;
+}
 .landing-promise {
   font-size: 12px;
   color: #8a886d;
