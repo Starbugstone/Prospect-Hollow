@@ -4,8 +4,16 @@ let activeMeta = null;
 vi.mock('../src/services/townStorage', () => ({
   townStorage: { active: () => (activeMeta ? { meta: activeMeta } : null) },
 }));
-const { isPlayRoute, navigate, syncTownParam, upgradeLegacyLink, townUrl } =
-  await import('../src/services/appRoute');
+const {
+  isPlayRoute,
+  isVisitRoute,
+  visitId,
+  visitUrl,
+  navigate,
+  syncTownParam,
+  upgradeLegacyLink,
+  townUrl,
+} = await import('../src/services/appRoute');
 
 // A minimal browser address bar: history entries update location in place.
 function browser(href) {
@@ -72,12 +80,59 @@ describe('Home page and game addresses', () => {
   });
 
   it('sends links made before the game had its own address to the game', () => {
-    const { location } = browser('https://hollow.test/?play=town-2#town=public');
+    const { location } = browser('https://hollow.test/?play=town-2');
     upgradeLegacyLink();
-    expect(location.href).toBe('https://hollow.test/play?play=town-2#town=public');
+    expect(location.href).toBe('https://hollow.test/play?play=town-2');
     browser('https://hollow.test/');
     upgradeLegacyLink();
     expect(isPlayRoute()).toBe(false);
     expect(townUrl('a b')).toBe('https://hollow.test/play?play=a%20b');
+  });
+});
+
+describe('Shared town links', () => {
+  const id = '8202b62f62f3b5d5e16125f7f43efff3';
+
+  it('shares a view-only address, never the game, from whichever page made it', () => {
+    for (const page of ['https://hollow.test/play?play=town-1', 'https://hollow.test/']) {
+      browser(page);
+      const link = new URL(visitUrl(id, {}));
+      expect(link.href).toBe(`https://hollow.test/visit#town=${id}`);
+      expect(isPlayRoute(link)).toBe(false);
+      expect(isVisitRoute(link)).toBe(true);
+      expect(link.searchParams.has('play')).toBe(false);
+      expect(visitId(link)).toBe(id);
+    }
+    expect(visitUrl(id, { VITE_PUBLIC_ORIGIN: 'https://hollow.example/' })).toBe(
+      `https://hollow.example/visit#town=${id}`,
+    );
+    expect(visitUrl(id, { VITE_API_BASE: 'https://api.hollow.example/api/v1' })).toBe(
+      `https://api.hollow.example/visit#town=${id}`,
+    );
+  });
+
+  it('moves old shared links off the game address and drops any town to play', () => {
+    for (const old of [
+      `https://hollow.test/play#town=${id}`,
+      `https://hollow.test/#town=${id}`,
+      `https://hollow.test/play?play=town-2#town=${id}`,
+    ]) {
+      const { location } = browser(old);
+      upgradeLegacyLink();
+      expect(location.href).toBe(`https://hollow.test/visit#town=${id}`);
+      expect(isPlayRoute()).toBe(false);
+    }
+  });
+
+  it('keeps the visit address apart from the game and home page', () => {
+    const { location } = browser(`https://hollow.test/visit/#town=${id}`);
+    upgradeLegacyLink();
+    expect(location.href).toBe(`https://hollow.test/visit/#town=${id}`);
+    expect(isVisitRoute()).toBe(true);
+    expect(isPlayRoute()).toBe(false);
+    browser('https://hollow.test/visitors');
+    expect(isVisitRoute()).toBe(false);
+    browser('https://hollow.test/play');
+    expect(visitId()).toBe('');
   });
 });

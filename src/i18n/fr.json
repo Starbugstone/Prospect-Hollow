@@ -2804,5 +2804,9 @@
   "Load my old save": "Charger mon ancienne sauvegarde",
   "Replace the town you have here with this old save?": "Remplacer la ville que vous avez ici par cette ancienne sauvegarde ?",
   "Continue with the village from this old save?": "Continuer avec le village de cette ancienne sauvegarde ?",
-  "Load and continue": "Charger et continuer"
+  "Load and continue": "Charger et continuer",
+  "Play Prospect Hollow": "Jouer à Prospect Hollow",
+  "This share link is incomplete.": "Ce lien de partage est incomplet.",
+  "Sign in to Prospect Hollow to visit shared towns, then open this link again.": "Connectez-vous à Prospect Hollow pour visiter les villes partagées, puis rouvrez ce lien.",
+  "This town is no longer shared.": "Cette ville n’est plus partagée."
 }
