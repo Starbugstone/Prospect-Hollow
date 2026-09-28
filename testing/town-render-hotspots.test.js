@@ -2,7 +2,17 @@ import { vi as testTiming } from 'vitest';
 // Full town rebuilds may exceed the default 5s on CI.
 testTiming.setConfig({ testTimeout: 20000 });
 import { afterEach, expect, it, vi } from 'vitest';
-import { BoxGeometry, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, Scene } from 'three';
+import {
+  BoxGeometry,
+  Group,
+  Matrix4,
+  Mesh,
+  MeshBasicMaterial,
+  MeshStandardMaterial,
+  Scene,
+} from 'three';
+import { MILLRACE, landscapeGeometry } from '../src/game/town/TownMillrace';
+import { MINE_SHAFT } from '../src/data/mineSite';
 import { TownNavigation } from '../src/game/town/TownNavigation';
 import { TownStatics, freezeStatic } from '../src/game/town/TownStatics';
 import { labelLayout, placeLabels, trackElement, updateLabels } from '../src/game/town/TownLabels';
@@ -288,4 +298,129 @@ it('freezes a whole town, keeps every plot pickable and updates only live actors
     view.materials.forEach((material) => material.dispose());
     view.contactShadowMaterial.dispose();
   }
+});
+
+it('keeps instanced actor buffers across rebuilds while their parts fit', () => {
+  const scene = new Scene(),
+    renderer = new TownActors(scene),
+    geometry = new BoxGeometry(),
+    material = new MeshStandardMaterial();
+  const actor = (count) => {
+    const root = new Group();
+    for (let i = 0; i < count; i++) root.add(new Mesh(geometry, material));
+    scene.add(root);
+    return root;
+  };
+  const first = actor(4);
+  renderer.rebuild([first]);
+  const [bucket] = renderer.buckets;
+  const mesh = bucket.mesh,
+    dispose = vi.spyOn(mesh, 'dispose');
+  renderer.rebuild([first]);
+  expect(renderer.buckets[0].mesh).toBe(mesh);
+  const second = actor(2);
+  renderer.rebuild([first, second]);
+  expect(renderer.buckets[0].mesh).toBe(mesh);
+  expect(mesh.count).toBe(6);
+  expect(dispose).not.toHaveBeenCalled();
+  const crowd = actor(20);
+  renderer.rebuild([first, second, crowd]);
+  expect(dispose).toHaveBeenCalledOnce();
+  expect(renderer.buckets[0].mesh).not.toBe(mesh);
+  expect(renderer.buckets[0].mesh.count).toBe(26);
+  const grown = renderer.buckets[0].mesh,
+    released = vi.spyOn(grown, 'dispose');
+  renderer.rebuild([]);
+  expect(released).toHaveBeenCalledOnce();
+  expect(renderer.buckets).toHaveLength(0);
+  renderer.dispose();
+  geometry.dispose();
+  material.dispose();
+});
+
+it('updates world matrices once per drawn frame and still places detached actors', () => {
+  const scene = new Scene();
+  scene.matrixWorldAutoUpdate = false;
+  const renderer = new TownActors(scene),
+    geometry = new BoxGeometry(),
+    material = new MeshStandardMaterial();
+  const inScene = new Group(),
+    detached = new Group();
+  inScene.add(new Mesh(geometry, material));
+  detached.add(new Mesh(geometry, material));
+  scene.add(inScene);
+  renderer.rebuild([inScene, detached]);
+  const own = vi.spyOn(inScene, 'updateWorldMatrix'),
+    staged = vi.spyOn(detached, 'updateWorldMatrix');
+  const view = Object.assign(Object.create(TownDiorama.prototype), {
+    scene,
+    actorRenderer: renderer,
+    frameCache: { render: vi.fn() },
+  });
+  const update = vi.spyOn(scene, 'updateMatrixWorld');
+  inScene.position.x = 4;
+  detached.position.x = 7;
+  expect(view.drawFrame()).toBe(true);
+  expect(update).toHaveBeenCalledOnce();
+  expect(own).not.toHaveBeenCalled();
+  expect(staged).toHaveBeenCalled();
+  const matrix = new Matrix4();
+  renderer.buckets[0].mesh.getMatrixAt(0, matrix);
+  expect(matrix.elements[12]).toBe(4);
+  renderer.buckets[0].mesh.getMatrixAt(1, matrix);
+  expect(matrix.elements[12]).toBe(7);
+  renderer.dispose();
+  geometry.dispose();
+  material.dispose();
+});
+
+it('keeps the terrain crack-free and complete with local millrace refinement', () => {
+  const geometry = landscapeGeometry();
+  const p = geometry.attributes.position,
+    index = geometry.index.array;
+  expect(index.length / 3).toBeLessThan(50000);
+  const edges = new Map();
+  let area = 0;
+  for (let i = 0; i < index.length; i += 3) {
+    const [a, b, c] = [index[i], index[i + 1], index[i + 2]];
+    const cross =
+      (p.getZ(b) - p.getZ(a)) * (p.getX(c) - p.getX(a)) -
+      (p.getX(b) - p.getX(a)) * (p.getZ(c) - p.getZ(a));
+    expect(cross).toBeGreaterThan(0);
+    area += cross / 2;
+    for (const [u, w] of [
+      [a, b],
+      [b, c],
+      [c, a],
+    ]) {
+      const key = u < w ? `${u},${w}` : `${w},${u}`;
+      edges.set(key, (edges.get(key) ?? 0) + 1);
+    }
+  }
+  const hole = 2 * MINE_SHAFT.bankWidth * (MINE_SHAFT.rampStartZ - MINE_SHAFT.portalZ);
+  expect(area).toBeCloseTo(260 * 260 - hole, 3);
+  // Open edges exist only on the map border and around the shaft opening.
+  for (const [key, uses] of edges) {
+    expect(uses).toBeLessThanOrEqual(2);
+    if (uses === 2) continue;
+    const [u, w] = key.split(',').map(Number);
+    const onBorder = [u, w].every(
+      (i) => Math.max(Math.abs(p.getX(i)), Math.abs(p.getZ(i))) === 130,
+    );
+    // Positions are float32, so compare the shaft limits with a small tolerance.
+    const onShaft = [u, w].every(
+      (i) =>
+        Math.abs(p.getX(i)) <= MINE_SHAFT.bankWidth + 1e-5 &&
+        p.getZ(i) >= MINE_SHAFT.portalZ - 1e-5 &&
+        p.getZ(i) <= MINE_SHAFT.rampStartZ + 1e-5,
+    );
+    expect(onBorder || onShaft, key).toBe(true);
+  }
+  // The millrace keeps its 0.2-unit channel detail; the town keeps 1.25-unit cells.
+  const xs = new Set();
+  for (let i = 0; i < p.count; i++)
+    if (Math.abs(p.getZ(i) - (MILLRACE.minZ + MILLRACE.maxZ) / 2) < 0.2) xs.add(p.getX(i));
+  const channel = [...xs].filter((x) => x > MILLRACE.minX && x < MILLRACE.maxX);
+  expect(channel.length).toBeGreaterThanOrEqual((MILLRACE.maxX - MILLRACE.minX) / 0.2 - 2);
+  geometry.dispose();
 });

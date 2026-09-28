@@ -487,9 +487,15 @@ export function upgradeOffer(town, id) {
 }
 
 // Immediate collection/completion takes priority over an affordable coin purchase.
-// Hammers do not affect these ambient hints.
-export function buildingIndicators(town, forgeCollectible = true, now = Date.now()) {
-  const indicators = Object.fromEntries(availablePurchases(town).map(({ id }) => [id, 'upgrade']));
+// Hammers do not affect these ambient hints. Callers that re-check every second can
+// pass `purchases` computed once per town, since only the collection cooldowns use `now`.
+export function buildingIndicators(
+  town,
+  forgeCollectible = true,
+  now = Date.now(),
+  purchases = availablePurchases(town),
+) {
+  const indicators = Object.fromEntries(purchases.map(({ id }) => [id, 'upgrade']));
   for (const { id } of BUILDINGS) {
     if (constructionReady(town.projects[id])) indicators[id] = 'ready';
     else if (

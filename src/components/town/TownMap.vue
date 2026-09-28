@@ -678,8 +678,12 @@ watch(
 );
 const hasIncome = (id) => indicators.value[id] === 'coins';
 const suggestedId = computed(() => nextGoal(props.town)?.id);
+// Purchases depend on the town only; the one-second clock just re-checks cooldowns.
+const townPurchases = computed(() => availablePurchases(props.town));
 const indicators = computed(() =>
-  props.readOnly ? {} : buildingIndicators(props.town, props.forgeCollectible, props.now),
+  props.readOnly
+    ? {}
+    : buildingIndicators(props.town, props.forgeCollectible, props.now, townPurchases.value),
 );
 const availableIds = computed(() =>
   props.readOnly ? [] : availablePurchases(props.town, props.builderHammers).map(({ id }) => id),

@@ -34,3 +34,15 @@ it('keeps the toggle usable when preference storage is unavailable', () => {
   expect(() => settings.setVillageLabels(false)).not.toThrow();
   expect(settings.showVillageLabels).toBe(false);
 });
+it('remembers whether the player keeps village progress open or hidden', () => {
+  const saved = new Map();
+  vi.stubGlobal('localStorage', {
+    getItem: (key) => saved.get(key) ?? null,
+    setItem: (key, value) => saved.set(key, value),
+  });
+  expect(freshSettings().villageProgressOpen).toBeNull();
+  freshSettings().setVillageProgress(true);
+  expect(freshSettings().villageProgressOpen).toBe(true);
+  freshSettings().setVillageProgress(false);
+  expect(freshSettings().villageProgressOpen).toBe(false);
+});

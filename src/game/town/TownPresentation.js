@@ -31,7 +31,6 @@ export class TownPresentation {
       d.camera.lookAt(d.controls.target);
     }
     for (const motion of d.motions) motion(d.elapsed);
-    d.actorRenderer.update();
     const phase = shadowPhase ?? (time < 7 ? 0 : 1);
     if (this.phase !== phase) d.renderer.shadowMap.needsUpdate = true;
     this.phase = phase;

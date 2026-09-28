@@ -2778,5 +2778,8 @@
   "Backup paused": "Sauvegarde en pause",
   "Backup pending": "Sauvegarde en attente",
   "Load earlier saves": "Charger les sauvegardes précédentes",
-  "Restore this save? Your current save will be preserved on this device.": "Restaurer cette sauvegarde ? Votre sauvegarde actuelle sera préservée sur cet appareil."
+  "Restore this save? Your current save will be preserved on this device.": "Restaurer cette sauvegarde ? Votre sauvegarde actuelle sera préservée sur cet appareil.",
+  "3 stars earned": "3 étoiles gagnées",
+  "Next star at {score} points": "Prochaine étoile à {score} points",
+  "Speed chest": "Coffre de vitesse"
 }

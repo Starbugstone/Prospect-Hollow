@@ -76,6 +76,15 @@
           <GameIcon name="book" />
         </button>
         <button
+          v-if="fullscreen && !activeRaid && (town.era !== 'frontier' || town.buildings.home > 0)"
+          class="town-fullscreen-button town-projects-button"
+          :aria-label="t('Town projects')"
+          :title="t('Town projects')"
+          @click="dialogMode = 'projects'"
+        >
+          <GameIcon name="clipboard" />
+        </button>
+        <button
           class="town-fullscreen-button town-help-button"
           :aria-label="t('Village tour')"
           :title="t('Village tour')"
@@ -114,13 +123,6 @@
             ><img src="/art/rewards/builder-hammer.svg" alt="" />{{ campaign.builderHammers }}</span
           >
         </div>
-        <button
-          v-if="fullscreen && !activeRaid && (town.era !== 'frontier' || town.buildings.home > 0)"
-          class="town-plots-button town-projects-button"
-          @click="dialogMode = 'projects'"
-        >
-          {{ t('Town projects') }} <TownIcon name="arrow" />
-        </button>
         <div v-if="activeRaid" class="town-raid-banner" role="status" aria-live="polite">
           <span class="town-kicker"
             >{{ t(eventHeading(activeRaid))
@@ -257,6 +259,14 @@
               @click="progressOpen = !progressOpen"
             >
               <GameIcon name="chevron" />{{ t(progressOpen ? 'Hide progress' : 'Progress') }}
+            </button>
+            <button
+              v-if="!progressOpen"
+              class="town-next-action"
+              :class="{ 'is-ready': nextAction.kind !== 'mine' }"
+              @click="nextAct"
+            >
+              <TownIcon :name="nextAction.icon" />{{ t(nextAction.label, nextAction.params) }}
             </button>
             <button class="town-plots-button" @click="openDirectory">
               {{ t('Available plots') }} <TownIcon name="arrow" />
@@ -707,6 +717,7 @@ import TownIcon from './TownIcon.vue';
 import TownRaidNotice from './TownRaidNotice.vue';
 import TownResourceCollection from './TownResourceCollection.vue';
 import TownNextStep from './TownNextStep.vue';
+import { useNextStepAction, villageProgressOpen } from '../../composables/useNextStepAction';
 import TownDefenseStatus from './TownDefenseStatus.vue';
 
 const props = defineProps({
@@ -721,7 +732,23 @@ const campaign = useCampaignStore(),
 const cloudAccount = inject('cloudAccount', null);
 const game = useGameStore();
 const town = computed(() => campaign.town);
-const progressOpen = ref(true);
+const progressOpen = computed({
+  get: () => villageProgressOpen(settings.villageProgressOpen, town.value),
+  set: (open) => settings.setVillageProgress(open),
+});
+// Keeps the next step one tap away while progress is collapsed.
+const { action: nextAction, act: nextAct } = useNextStepAction(
+  town,
+  () => campaign.builderHammers,
+  (event, id) =>
+    ({
+      select: selectBuilding,
+      inspect: inspectBuilding,
+      'build-free': buildFree,
+      'advance-era': beginEra,
+      mine: goMining,
+    })[event](id),
+);
 const tourOpen = ref(false),
   fullscreen = ref(false),
   mapFrame = ref(null),

@@ -72,25 +72,83 @@ vehicles, which must update every frame, so A1 gained less than the measured upp
 all matrix work. `refreshServiceDrops` stayed at about 20 ms in this scenario: its remaining cost is
 ray casting against the rebuilt building itself.
 
+## Batch B: matrices, terrain and actor buffers
+
+| Change                                        | Where                                                                                                                                    | Effect / revert note                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. One matrix update per drawn frame          | `TownDiorama` constructor (`scene.matrixWorldAutoUpdate = false`), `drawFrame()`; `TownActors.update(scene)`; `TownPresentation.frame()` | `drawFrame()` updates world matrices once, then the static cache, foreground and inset renders reuse them. Character instancing skips its own per-root update for roots in the scene. Anything that renders `d.scene` must go through `drawFrame()`. Revert: remove the constructor line and the two `drawFrame()` lines, and restore `actorRenderer.update()` before `drawFrame()` in `tick()`/`render()` and in `TownPresentation.frame()`. |
+| 2. Graded terrain with a local millrace patch | `landscapeGeometry()` in `TownMillrace.js`                                                                                               | 1.25-unit cells inside ±62.5, 2.5 to ±95 and 5 to ±130. The 0.2-unit millrace lines form a local patch whose border vertices are shared with fan-triangulated neighbors (crack-free), instead of full-map strips. The ground mesh drops from 116k to 43k triangles; the shaft opening, the channel and all walkable areas keep the same detail. Revert: restore the previous `landscapeGeometry()` (tensor `PlaneGeometry`).                  |
+| 4. Incremental actor instancing               | `TownActors.rebuild()`, `bucket()`                                                                                                       | Buckets keep their `InstancedMesh` (and GPU buffers) while their parts fit, with 25% headroom; only overflowing or removed buckets are recreated. Revert: call `this.clear()` at the start of `rebuild()`.                                                                                                                                                                                                                                    |
+
+Tried and dropped: an exact triangle grid for service-drop wire probing. Building the grid cost more
+than the few rays it saved (6.7–9.1 ms against 3.7–4.1 ms per drop), so wire probing keeps three's
+ray casting with the Batch A bounds check.
+
+Tests: `testing/town-render-hotspots.test.js` (actor buffers, one matrix update per frame, terrain
+seams and coverage).
+
+Interleaved A/B in one page (industrial town, no CPU slowdown, loaded machine):
+
+| Measurement                          | Before     | After      |
+| ------------------------------------ | ---------- | ---------- |
+| Camera-frame `render()` (mean)       | 7.0 ms     | 5.1 ms     |
+| `rebuildActors()` (mean, 30 buckets) | 4.6 ms     | 2.8 ms     |
+| Render right after an actor rebuild  | 7.4 ms     | 6.9 ms     |
+| Static triangles per full render     | 415,758    | 340,394    |
+| Landscape batch triangles            | about 208k | about 135k |
+
+Before/after screenshots of the overview, far horizon, low horizon, millrace and mine views showed
+the same terrain; pixel differences came from villagers, water animation and a VIP arrival.
+
+## Batch C: returning from the mine
+
+Leaving the mine advances every construction project at once, so several plots change their
+scaffolding together. `changeTown()` only swapped a single changed plot incrementally; two or more
+fell back to the full `update()`, which rebuilt every plot and service drop synchronously inside the
+tap and then re-planned every villager and animal route for several seconds.
+
+| Change                                       | Where                                                                                                       | Effect / revert note                                                                                                                                                                                                                                                                                                                                                                                                                |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| C0. Multi-plot swaps, one per frame          | `TownDiorama.changeTown()` (`plotQueue`), `tryActivatePlot()`, `plotsPending()`; `setMotion()` and `tick()` | Same-layout changes to several non-mine plots are queued and swapped by `tick()` one per frame, after the current town is back on screen. Only villagers whose routes cross a changed plot are re-planned. A building the player finishes goes last so no later swap cuts its reveal short. A newer town change or a full `update()` clears the queue. Revert: restore the `changed.length === 1` condition and remove `plotQueue`. |
+| C0b. Purchases once per town, not per second | `buildingIndicators(…, purchases)` in `TownRules.js`; `townPurchases` in `TownScene.vue` and `TownMap.vue`  | The one-second collection clock only re-checks collection cooldowns; the upgrade offers for every building are computed when the town changes. Revert: drop the `purchases` argument at both call sites.                                                                                                                                                                                                                            |
+
+Tests: `testing/town-construction-stutter.test.js` (several advancing projects, a finished building
+among them, a superseded queue, purchases passed once).
+
+Headless Chromium, phone viewport, 4× CPU slowdown, motor-age town with three projects advancing
+after a mine run; main-thread tasks from the tap onward:
+
+| Measurement                     | Before                    | After                           |
+| ------------------------------- | ------------------------- | ------------------------------- |
+| Tap back to the village         | 1,326 ms (full rebuild)   | 217 ms                          |
+| Plot changes                    | inside the tap            | 3 frames of about 200–250 ms    |
+| Villager and animal re-planning | seven tasks of 100–350 ms | route repair tasks under 160 ms |
+| Longest task after the tap      | 1,326 ms                  | 432 ms (dog/cat street route)   |
+
 ## On-device checks for preprod
 
 1. Orbit and zoom the town, then run `await prospectDebug.townFrameStats(5)` while dragging. Compare
    `phases.render`, `phases.foreground` and `frames.p95` with a run on the previous build if needed.
 2. Complete an ordinary upgrade and one that unlocks plots (for example Home level 2), then read
    `prospectDebug.townTimings()`. Look at `activate`, `settle-*` and `longTasks`.
-3. Visual checks: buildings, roads, power wires and service drops sit in the right places; tapping a
+3. With two or more buildings under construction, finish a mine level and return. `town-change`
+   should show `path: "swap"` with every advanced plot, followed by one `activate` per plot.
+4. Visual checks: buildings, roads, power wires and service drops sit in the right places; tapping a
    building still selects it; labels and action icons follow the camera and appear or hide correctly;
    villagers walk around newly built buildings.
 
 ## Proposed next steps (not implemented)
 
-- **B1.** Rebuild the terrain mesh: refine only around the millrace instead of full-map strips, use
-  coarser cells far out, and stop the ground casting shadows. The landscape is about 208k of the
-  town's roughly 460k static triangles.
+- **B1 (rest).** Stop the ground casting shadows. Kept for now because the mine hillside inside the
+  shadow camera can shade the mine works.
 - **B2.** Render event and VIP insets offscreen at about 20–30 Hz instead of re-rendering the whole
   town every frame.
 - **B3.** Put the 28–54 per-building sign textures in one atlas.
-- **C1.** An incremental path for layout-changing completions (multi-plot swap plus scenery refresh);
-  keep the full rebuild for era changes only.
+- **C1.** An incremental path for layout-changing completions (scenery refresh with new plots);
+  keep the full rebuild for era changes only. Same-layout multi-plot changes are covered by C0.
+- **C4.** Split the dog and cat street route (`streetRoute()` in `TownAnimals.js`) into yielding
+  steps, or keep animal routes that no changed footprint crosses. It is the longest task left after
+  returning from the mine.
 - **C2.** An interaction quality mode (lower pixel ratio and cache MSAA during drags and reveals).
-- **C3.** Cheaper character instancing updates.
+- **C3.** Cheaper character instancing updates (per-root visibility instead of per-mesh ancestor
+  walks).

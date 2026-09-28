@@ -246,23 +246,28 @@ export const POWERS = [
   { id: 'shuffle', label: 'Shuffle', dropWeight: 10 },
   { id: 'tile-breaker', label: 'Tile Breaker', dropWeight: 15 },
 ];
-export const CHEST_TIERS = [
-  { id: 'crystal', label: 'Crystal chest', multiplier: 1, count: 1 },
-  { id: 'radiant', label: 'Radiant chest', multiplier: 1.5, count: 1 },
-  { id: 'celestial', label: 'Celestial chest', multiplier: 2, count: 1 },
-];
-export const getChestTier = (score, target) =>
-  target > 0 ? [...CHEST_TIERS].reverse().find((tier) => score >= target * tier.multiplier) : null;
-export const SPEED_CHEST_TIERS = CHEST_TIERS.map((tier, index) => ({
-  ...tier,
-  timeMultiplier: [1, 0.75, 0.5][index],
-}));
-export const getSpeedChestTier = (elapsedMs, targetMs) =>
-  Number.isFinite(elapsedMs) && elapsedMs > 0 && Number.isFinite(targetMs) && targetMs > 0
-    ? ([...SPEED_CHEST_TIERS]
-        .reverse()
-        .find((tier) => elapsedMs <= targetMs * tier.timeMultiplier) ?? null)
-    : null;
+// One chest per goal met. Chests have no tiers for now; see issue #57 for tier ideas.
+export const CHEST_LABELS = Object.freeze({
+  completion: 'Completion chest',
+  score: 'Score chest',
+  speed: 'Speed chest',
+});
+export const scoreChestEarned = (score, target) => target > 0 && score >= target;
+export const speedChestEarned = (elapsedMs, targetMs) =>
+  Number.isFinite(elapsedMs) &&
+  elapsedMs > 0 &&
+  Number.isFinite(targetMs) &&
+  targetMs > 0 &&
+  elapsedMs <= targetMs;
+// The chests a finished run earns: a score chest (or the completion chest when no
+// other chest is earned) plus a speed chest. Shared by rewards and the live meter.
+export const runChests = (score, target, elapsedMs, targetMs) => {
+  const scored = scoreChestEarned(score, target);
+  const fast = speedChestEarned(elapsedMs, targetMs);
+  return [scored ? 'score' : fast ? null : 'completion', fast ? 'speed' : null]
+    .filter(Boolean)
+    .map((source) => ({ source, label: CHEST_LABELS[source] }));
+};
 export const formatTime = (ms) => {
   const seconds = Math.floor(Math.max(0, ms ?? 0) / 1000);
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;

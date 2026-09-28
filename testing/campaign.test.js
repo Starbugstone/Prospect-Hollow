@@ -5,7 +5,7 @@ import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
 import { useGameStore } from '../src/stores/gameStore';
 import { useCampaignStore, SAVE_KEY } from '../src/stores/campaignStore';
 import { useInventoryStore } from '../src/stores/inventoryStore';
-import { LEVEL_COUNT, getChestTier } from '../src/data/campaign';
+import { LEVEL_COUNT, scoreChestEarned } from '../src/data/campaign';
 import { localProfile } from '../src/services/localProfile';
 
 let saved;
@@ -112,7 +112,7 @@ it.each([
   expect(reward[0]?.items.length ?? 0).toBe(count);
   expect(campaign.powers.reduce((sum, power) => sum + power.quantity, 0)).toBe(0);
   expect(campaign.town.coins).toBe(count * 500);
-  expect(getChestTier(score, 0)).toBeNull();
+  expect(scoreChestEarned(score, 0)).toBe(false);
 });
 it('keeps the best score and stars on replay, and saves used powers', () => {
   const campaign = useCampaignStore();

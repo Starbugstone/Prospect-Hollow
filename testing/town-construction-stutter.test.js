@@ -12,6 +12,14 @@ import { TownFrameCache } from '../src/game/town/TownFrameCache';
 import { TownRenderQuality } from '../src/game/town/TownRenderQuality';
 import { timedSteps, townTimings } from '../src/game/town/TownProfiler';
 import { BUILDINGS, createTown } from '../src/data/town';
+import {
+  advanceConstruction,
+  buildingIndicators,
+  constructionReady,
+  finishConstruction,
+  purchase,
+  upgradeOffer,
+} from '../src/game/town/TownRules';
 
 // Issue #54: construction and completion must not repeat synchronous work or
 // hide stale scenery, and settlement must yield between geometry steps.
@@ -249,4 +257,96 @@ it('records scheduled work as one entry with its longest step, even when cancell
   const [entry] = townTimings({ clear: true }).entries;
   expect(entry).toMatchObject({ name: 'example', detail: { steps: 2 } });
   expect(entry.detail.longest).toBeLessThanOrEqual(entry.ms);
+});
+
+// Returning from the mine advances every project at once. Several changed plots used
+// to force a full rebuild (all villagers and animals re-planned); they now swap one
+// per frame through the incremental path.
+function withProjects(town) {
+  town.coins = 1e6;
+  let next = town;
+  for (const { id } of BUILDINGS) {
+    if (Object.keys(next.projects).length >= 3) break;
+    if (upgradeOffer(next, id)?.available) next = purchase(next, id, next.buildings[id]) ?? next;
+  }
+  return next;
+}
+const changedPlots = (view, town, labels) =>
+  [...view.plotSignatures(town, labels)]
+    .filter(([id, signature]) => view.plotCache.get(id)?.signature !== signature)
+    .map(([id]) => id);
+
+it('swaps every advancing project one per frame instead of rebuilding the town', () => {
+  const { view, town, labels } = fixture();
+  const started = withProjects(town);
+  view.update(started, labels);
+  vi.spyOn(view, 'plotVacant').mockReturnValue(true);
+  const update = vi.spyOn(view, 'update');
+  const returned = advanceConstruction(started);
+  const changed = changedPlots(view, returned, labels);
+  expect(changed.length).toBeGreaterThan(1);
+  view.changeTown(returned, labels, 0);
+  // Nothing is rebuilt during the return itself; the current town stays on screen.
+  expect(view.plotQueue.map(({ id }) => id)).toEqual(changed);
+  expect(view.plotsPending()).toBe(true);
+  for (let frame = 0; frame < changed.length; frame++) view.tryActivatePlot();
+  expect(view.plotsPending()).toBe(false);
+  expect(update).not.toHaveBeenCalled();
+  expect(changedPlots(view, returned, labels)).toEqual([]);
+  const change = townTimings().entries.findLast(({ name }) => name === 'town-change');
+  expect(change.detail).toMatchObject({ path: 'swap', plots: changed });
+});
+
+it('reveals the finished building after the other changed plots swap silently', () => {
+  const { view, town, labels } = fixture();
+  const started = withProjects(town);
+  // Every project is ready; the player finishes one whose opening keeps the layout.
+  const ready = {
+    ...started,
+    projects: Object.fromEntries(
+      Object.entries(started.projects).map(([id, project]) => [id, { ...project, wins: 1 }]),
+    ),
+  };
+  view.update(ready, labels);
+  vi.spyOn(view, 'plotVacant').mockReturnValue(true);
+  const choices = Object.keys(ready.projects).map((id) => [
+    id,
+    finishConstruction(ready, id, ready.projects[id].stage),
+  ]);
+  const [readyId, finished] = choices.find(
+    ([, next]) => next && view.topologySignature(next, labels) === view.topology,
+  );
+  expect(constructionReady(ready.projects[readyId])).toBe(true);
+  // Another plot changes at the same moment as the finished building.
+  const other = Object.keys(ready.projects).find((id) => id !== readyId);
+  const both = { ...finished, projects: { ...finished.projects } };
+  delete both.projects[other];
+  const changed = changedPlots(view, both, labels);
+  expect(changed).toEqual(expect.arrayContaining([readyId, other]));
+  view.changeTown(both, labels, 0, readyId);
+  expect(view.plotQueue.at(-1)).toMatchObject({ id: readyId, construction: true });
+  expect(view.plotQueue.slice(0, -1).every(({ construction }) => !construction)).toBe(true);
+  for (let frame = 0; frame < changed.length; frame++) view.tryActivatePlot();
+  expect(view.construction.group).toBe(view.plotCache.get(readyId).group);
+  view.finishConstruction();
+});
+
+it('lets a newer town change replace plots still waiting from the previous one', () => {
+  const { view, town, labels } = fixture();
+  const started = withProjects(town);
+  view.update(started, labels);
+  vi.spyOn(view, 'plotVacant').mockReturnValue(true);
+  view.changeTown(advanceConstruction(started), labels, 0);
+  expect(view.plotQueue.length).toBeGreaterThan(1);
+  view.update(started, labels);
+  expect(view.plotsPending()).toBe(false);
+});
+
+it('checks building purchases once per town, not on every collection-clock tick', () => {
+  const town = withProjects(createTown());
+  const indicators = buildingIndicators(town, true, 0);
+  expect(buildingIndicators(town, true, 0, [])).not.toHaveProperty(
+    Object.keys(indicators).find((id) => indicators[id] === 'upgrade') ?? 'none',
+  );
+  expect(buildingIndicators(town, true, 0, undefined)).toEqual(indicators);
 });
