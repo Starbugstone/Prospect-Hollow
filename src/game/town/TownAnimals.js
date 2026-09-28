@@ -544,7 +544,7 @@ export function addTownAnimals(d, town, preparedSpace) {
         const retained =
           d.retainedAnimals ?? new Map((d.animals ?? []).map((a) => [animalKey(a), a]));
         stage.animals = stage.animals.map((fresh) => {
-          const key = `${fresh.species}:${fresh.seed}`,
+          const key = animalKey(fresh),
             old = retained.get(key);
           if (!old) return fresh;
           retained.delete(key);
