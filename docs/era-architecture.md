@@ -89,6 +89,12 @@ windpump's swept wheel stays clear of every wing and hayloft, era street furnitu
 off lots and sidewalks, and each overhead service drop is cut where it first meets its
 finished building (`addServiceDrops`), so wires never pass through a wall or roof.
 
+The square owns its corner lamps. `squareLampCorners()` in `src/data/townSquare.js`
+reports which corners the square lights for its era and level, and `electricLamps()`
+drops the First Lights street lamps beside those corners in both the 3D town and the
+SVG map. `testing/square-lighting.test.js` checks one lamp per corner in every
+electrified era, including unfinished and unknown square eras.
+
 ## Introduce a genuinely new style
 
 Extend the documented `BuildingStyle` / `EraEvolution` contract and defaults in

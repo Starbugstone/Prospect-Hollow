@@ -2,7 +2,7 @@ import { buildMineHillside } from './TownMineHillside';
 import { groundHeight, landscapeColor } from './TownLandscape';
 import { RAIL_EDGE } from './TownLayout';
 import { eraEvolution } from '../../data/eras';
-import { hasElectricity } from '../../data/industrial';
+import { electricLamps, hasElectricity } from '../../data/industrial';
 import { roadLevel } from './TownRules';
 import { PLOTS, townTracks, railEdges } from './TownLayout';
 import { addTownRoads } from './TownActivity';
@@ -56,7 +56,7 @@ export class TownScenery {
         JSON.stringify([town.era, !!railEdges(town).length]),
         () => addMineWorks(view, view.world, town.era),
       ],
-      ['lights', hasElectricity(town), () => addElectricLighting(view, town)],
+      ['lights', JSON.stringify(electricLamps(town)), () => addElectricLighting(view, town)],
       [
         'power',
         JSON.stringify([

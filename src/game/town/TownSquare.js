@@ -1,21 +1,16 @@
 import { walkObstacle } from './TownNavigation';
 import { addTownFountain } from './TownFountains';
+import { SQUARE_CORNERS, modernSquareLampCorners } from '../../data/townSquare';
 // The era's static fountain shares the scenery batch; no water simulation or extra frame work.
 export const SQUARE_ANCHORS = Object.freeze({
-  corners: [
-    [-2.35, -2.3],
-    [2.35, -2.3],
-    [-2.35, 2.3],
-    [2.35, 2.3],
-  ],
+  corners: SQUARE_CORNERS,
   bell: [0, -2.05],
 });
 export function addSquareModernization(d, parent, level, color = '#718b80') {
   const root = d.group(parent);
   root.name = 'Square street furniture';
-  for (const [x, z] of SQUARE_ANCHORS.corners) {
-    // Complete the existing corner lighting at tier two without covering the fountain.
-    if (level < 2 && z > 0) continue;
+  for (const i of modernSquareLampCorners(level)) {
+    const [x, z] = SQUARE_CORNERS[i];
     walkObstacle(root, x, z, 0.065);
     d.rod(root, [x, 0.2, z], [x, 2.8, z], 0.065, color);
     d.ball(root, x, 2.9, z, 0.22, '#f4d58d');

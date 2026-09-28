@@ -417,7 +417,7 @@
           />
         </g>
         <g
-          v-for="(lamp, index) in ELECTRIC_LAMPS"
+          v-for="(lamp, index) in electricLamps(town)"
           :key="index"
           :transform="`translate(${mapPoint(lamp)})`"
         >
@@ -558,7 +558,7 @@ import { eraEvolution } from '../../data/eras';
 import { isCityEra } from '../../data/city';
 
 import { t } from '../../i18n';
-import { hasElectricity, ELECTRIC_LAMPS } from '../../data/industrial';
+import { hasElectricity, electricLamps } from '../../data/industrial';
 import {
   pavedTown,
   modernTransport,

@@ -1,4 +1,5 @@
 import { eraEvolution } from './eras';
+import { squareLampCorners } from './townSquare';
 // First Lights adds civic milestones, not a second resource economy.
 export const INDUSTRIAL_BUILDINGS = [
   [
@@ -135,12 +136,21 @@ export const INDUSTRIAL_VARIANTS = {
 export const INDUSTRIAL_LEVEL_PRICES = eraEvolution('industrial').prices;
 export const hasElectricity = (town) =>
   eraEvolution(town.era).electricity && town.buildings.powerHouse > 0;
-export const ELECTRIC_LAMPS = [
+// The first four lamps stand beside the square's corners (SQUARE_CORNERS order) and
+// give way wherever the square already lights that corner itself.
+const SQUARE_ELECTRIC_LAMPS = [
   [-3, -7.5],
   [3, -7.5],
   [-3, -2.5],
   [3, -2.5],
+];
+const STREET_ELECTRIC_LAMPS = [
   [-3, 7],
   [3, 15],
   [-14, -16.5],
 ];
+export function electricLamps(town) {
+  if (!hasElectricity(town)) return [];
+  const lit = squareLampCorners(town);
+  return [...SQUARE_ELECTRIC_LAMPS.filter((_, i) => !lit.includes(i)), ...STREET_ELECTRIC_LAMPS];
+}
