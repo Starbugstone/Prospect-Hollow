@@ -587,8 +587,18 @@
   }
   .app-shell.is-playing .board-topline {
     grid-area: tools;
+    flex-wrap: wrap;
     justify-content: center;
+    row-gap: 8px;
     width: 100%;
+    height: auto;
+  }
+  .app-shell.is-playing .board-topline .mine-score-meter {
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 8px;
+    margin: 4px 0 0;
   }
   .app-shell.is-playing .powerup-section {
     grid-area: powers;

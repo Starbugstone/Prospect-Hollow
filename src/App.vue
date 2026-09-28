@@ -169,6 +169,7 @@
           </template>
         </div>
         <div class="board-topline">
+          <MineScoreMeter />
           <div class="board-tools">
             <button
               class="icon-button"
@@ -275,6 +276,7 @@ import { constructionReady } from './game/town/TownRules';
 import MineBackdrop from './components/MineBackdrop.vue';
 import ArcadeBanner from './components/ArcadeBanner.vue';
 import MineHeader from './components/MineHeader.vue';
+import MineScoreMeter from './components/MineScoreMeter.vue';
 import PowerUpBar from './components/PowerUpBar.vue';
 import LandingView from './components/LandingView.vue';
 import './styles/town.css';

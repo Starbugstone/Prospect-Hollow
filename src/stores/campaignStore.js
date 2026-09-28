@@ -14,14 +14,7 @@ import { campaignCompletion } from '../data/campaignCompletion';
 import { miningDepthBonus, CHEST_ECONOMY_VERSION } from '../data/economy';
 import { defineStore } from 'pinia';
 import { SHOP_ITEMS, rollShopStock, shopSlots, shopSpace } from '../data/shop';
-import {
-  LEVEL_COUNT,
-  POWERS,
-  CHEST_TIERS,
-  getChestTier,
-  getSpeedChestTier,
-  getStars,
-} from '../data/campaign';
+import { LEVEL_COUNT, POWERS, runChests, getStars } from '../data/campaign';
 import { TIP_IDS } from '../data/guidance';
 import { grantChapterGift } from '../data/journey';
 import { TOWN_PROJECTS } from '../data/townProjects';
@@ -710,13 +703,7 @@ export const useCampaignStore = defineStore('campaign', {
           ? { chapter: this.mineStage, gift: grantChapterGift(this, this.mineStage) }
           : null;
       const rewards = [];
-      const scoreTier = getChestTier(score, target);
-      const speedTier = getSpeedChestTier(elapsedMs, speedTargetMs);
-      for (const [source, tier] of [
-        [scoreTier ? 'score' : 'completion', scoreTier ?? (speedTier ? null : CHEST_TIERS[0])],
-        ['speed', speedTier],
-      ]) {
-        if (!tier) continue;
+      for (const { source, tier } of runChests(score, target, elapsedMs, speedTargetMs)) {
         const rolled =
           this.chestsWithoutBuilderHammer >= 9
             ? CHEST_DROPS.find(

@@ -261,6 +261,18 @@ export const getSpeedChestTier = (elapsedMs, targetMs) =>
         .reverse()
         .find((tier) => elapsedMs <= targetMs * tier.timeMultiplier) ?? null)
     : null;
+// The chests a finished run earns: a score chest (or the completion chest when no
+// other chest is earned) plus a speed chest. Shared by rewards and the live meter.
+export const runChests = (score, target, elapsedMs, targetMs) => {
+  const scoreTier = getChestTier(score, target);
+  const speedTier = getSpeedChestTier(elapsedMs, targetMs);
+  return [
+    [scoreTier ? 'score' : 'completion', scoreTier ?? (speedTier ? null : CHEST_TIERS[0])],
+    ['speed', speedTier],
+  ]
+    .filter(([, tier]) => tier)
+    .map(([source, tier]) => ({ source, tier }));
+};
 export const formatTime = (ms) => {
   const seconds = Math.floor(Math.max(0, ms ?? 0) / 1000);
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
