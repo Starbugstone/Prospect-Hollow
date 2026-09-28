@@ -539,6 +539,16 @@ export const useCampaignStore = defineStore('campaign', {
       }
       return guest.name;
     },
+    // The guest walked into the village: they arrive once per visit.
+    markGuestSeen(at) {
+      const guest = this.town.guestVip;
+      if (!guest || guest.at !== at || guest.seen) return false;
+      const previous = this.town;
+      this.town = { ...previous, guestVip: { ...guest, seen: true } };
+      if (this.save()) return true;
+      this.town = previous;
+      return false;
+    },
     upgradeBuilding(id, expectedStage) {
       this.accrueSaloonIncome(Date.now(), false);
       const next = purchase(this.town, id, expectedStage);

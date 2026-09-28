@@ -301,6 +301,7 @@ const emit = defineEmits([
   'raid-complete',
   'camera-distance',
   'vip-spend',
+  'guest-vip',
   'presentation-ready',
   'presentation-unavailable',
   'cinematic-ready',
@@ -594,6 +595,7 @@ async function initialize() {
     // A shared town is only a view: VIP guests visit the owner's own game.
     scene.vipsHidden = props.readOnly;
     scene.onVipSpend = (receipt) => emit('vip-spend', receipt);
+    scene.onGuestVip = (at) => emit('guest-vip', at);
     scene.onVillagerLabel = (label) => {
       villagerLabel.value = label;
     };

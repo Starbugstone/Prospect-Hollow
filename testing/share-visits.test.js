@@ -4,8 +4,11 @@ import { useCampaignStore } from '../src/stores/campaignStore';
 import { createTown } from '../src/data/town';
 import { normalizeTown } from '../src/game/town/TownRules';
 import { newerGuest, normalizeGuestVip } from '../src/data/guestVip';
-import { vipVisitor } from '../src/data/villagers';
 import { TownDiorama } from '../src/game/town/TownDiorama';
+import { TownVipArrivals } from '../src/game/town/TownVipArrivals';
+import { createTownGeometries } from '../src/game/town/TownGeometries';
+import { visitorPopulation } from '../src/game/town/TownRules';
+import { Group, MeshBasicMaterial, Scene } from 'three';
 
 beforeEach(() => {
   const saves = new Map();
@@ -60,6 +63,7 @@ describe('the latest signed-in viewer as a guest VIP', () => {
     expect(normalizeGuestVip({ name: 'Silver Creek', at: 12 })).toEqual({
       name: 'Silver Creek',
       at: 12,
+      seen: false,
     });
     for (const name of ['<script>', 'a@b.fr', 'www.example.com', "O'Hara", 'ab', 'Two  Spaces'])
       expect(normalizeGuestVip({ name, at: 12 })).toBeNull();
@@ -74,26 +78,109 @@ describe('the latest signed-in viewer as a guest VIP', () => {
     expect(c.welcomeGuest(null)).toBeNull();
     expect(c.welcomeGuest({ name: 'Red Rock', at: 4_000 })).toBe('Red Rock');
     expect(c.town).toMatchObject({ coins: 100, saloonVisitAt: 0 });
-    expect(roundTrip(c.town).guestVip).toEqual({ name: 'Red Rock', at: 4_000 });
+    expect(roundTrip(c.town).guestVip).toEqual({ name: 'Red Rock', at: 4_000, seen: false });
   });
 
-  it('sends the latest guest as the next VIP after each new visit, then ordinary VIPs', () => {
-    const draw = TownDiorama.prototype.drawVip;
-    const scene = { town: createTown() };
-    expect(draw.call(scene, 7, 3)).toEqual(vipVisitor(7, 3));
-    scene.town = { ...scene.town, guestVip: { name: 'Red Rock', at: 5 } };
-    expect(draw.call(scene, 7, 3).name).toBe('Mayor of Red Rock');
-    expect(draw.call(scene, 7, 3)).toEqual(vipVisitor(7, 3));
-    scene.town = { ...scene.town, guestVip: { name: 'Red Rock', at: 9 } };
-    expect(draw.call(scene, 7, 3).name).toBe('Mayor of Red Rock');
+  it('marks the guest seen once they walk in, and a newer visit arrives again', () => {
+    const c = saloonTown();
+    c.welcomeGuest({ name: 'Red Rock', at: 4_000 });
+    expect(c.town.guestVip).toEqual({ name: 'Red Rock', at: 4_000, seen: false });
+    expect(c.markGuestSeen(3_000)).toBe(false);
+    expect(c.markGuestSeen(4_000)).toBe(true);
+    expect(roundTrip(c.town).guestVip.seen).toBe(true);
+    expect(c.welcomeGuest({ name: 'Red Rock', at: 4_000 })).toBeNull();
+    c.welcomeGuest({ name: 'Blue Hill', at: 5_000 });
+    expect(c.town.guestVip).toEqual({ name: 'Blue Hill', at: 5_000, seen: false });
+  });
+});
+
+// A lightweight scene, as in vip-arrivals.test.js, without WebGL.
+function guestScene(guestVip, buildings = { home: 1, well: 1 }) {
+  const d = Object.create(TownDiorama.prototype);
+  const town = { ...createTown(), guestVip };
+  Object.assign(town.buildings, buildings);
+  Object.assign(d, {
+    town,
+    elapsed: 0,
+    scene: new Scene(),
+    world: new Group(),
+    geometries: createTownGeometries(),
+    materials: new Map(),
+    contactShadowMaterial: new MeshBasicMaterial(),
+    actors: [],
+    motions: [],
+    visitorTransports: new Map(),
+    onGuestVip: vi.fn(),
+  });
+  d.scene.add(d.world);
+  d.vipArrivals = new TownVipArrivals(d, 11);
+  return d;
+}
+const guestActor = (d) => d.vipArrivals.actors.find((actor) => actor.source === 'guest');
+
+describe('the guest VIP arrival', () => {
+  it('is guaranteed on connection, even in a town without visitors or transport', () => {
+    const d = guestScene({ name: 'Red Rock', at: 5, seen: false });
+    expect(visitorPopulation(d.town)).toBe(0);
+    d.vipArrivals.attach(d.town);
+    d.vipArrivals.update();
+    const actor = guestActor(d);
+    expect(actor.started).toBe(0);
+    expect(actor.root.userData.villager.name).toBe('From Red Rock');
+    expect(actor.root.userData.outfit.variant).toBe('guest');
+    expect(d.onGuestVip).toHaveBeenCalledExactlyOnceWith(5);
+    d.vipArrivals.update();
+    expect(d.onGuestVip).toHaveBeenCalledTimes(1);
   });
 
-  it('shows no VIPs at all in a read-only shared town', () => {
-    const draw = TownDiorama.prototype.drawVip;
-    const scene = {
-      vipsHidden: true,
-      town: { ...createTown(), guestVip: { name: 'Red Rock', at: 5 } },
-    };
-    for (let visit = 0; visit < 200; visit++) expect(draw.call(scene, 7, visit)).toBeNull();
+  it('waits for a raid or cinematic to end instead of being lost', () => {
+    const d = guestScene({ name: 'Red Rock', at: 5, seen: false });
+    d.cinematic = true;
+    d.vipArrivals.attach(d.town);
+    d.vipArrivals.update();
+    expect(guestActor(d).started).toBeUndefined();
+    expect(d.onGuestVip).not.toHaveBeenCalled();
+    d.cinematic = false;
+    d.vipArrivals.update();
+    expect(guestActor(d).started).toBe(0);
+    expect(d.onGuestVip).toHaveBeenCalledOnce();
+  });
+
+  it('keeps walking when the save marks them seen, and does not return on later connections', () => {
+    const d = guestScene({ name: 'Red Rock', at: 5, seen: false });
+    d.vipArrivals.attach(d.town);
+    d.vipArrivals.update();
+    const walking = guestActor(d);
+    d.town = { ...d.town, guestVip: { name: 'Red Rock', at: 5, seen: true } };
+    d.retainedVipActors = new Map(d.vipArrivals.actors.map((actor) => [actor.source, actor]));
+    d.vipArrivals.attach(d.town);
+    expect(guestActor(d)).toBe(walking);
+    const later = guestScene({ name: 'Red Rock', at: 5, seen: true });
+    later.vipArrivals.attach(later.town);
+    later.vipArrivals.update();
+    expect(guestActor(later)).toBeUndefined();
+    expect(later.onGuestVip).not.toHaveBeenCalled();
+  });
+
+  it('arrives when a guest is applied while the village is already open', () => {
+    const d = guestScene(null);
+    d.vipArrivals.attach(d.town);
+    d.vipArrivals.update();
+    expect(guestActor(d)).toBeUndefined();
+    d.rebuildActors = vi.fn();
+    d.town = { ...d.town, guestVip: { name: 'Blue Hill', at: 9, seen: false } };
+    d.vipArrivals.update();
+    expect(guestActor(d).root.userData.villager.name).toBe('From Blue Hill');
+    expect(d.rebuildActors).toHaveBeenCalledOnce();
+    expect(d.onGuestVip).toHaveBeenCalledExactlyOnceWith(9);
+  });
+
+  it('never appears, like any VIP, in a read-only shared town', () => {
+    const d = guestScene({ name: 'Red Rock', at: 5, seen: false });
+    d.vipsHidden = true;
+    d.vipArrivals.attach(d.town);
+    d.vipArrivals.update();
+    expect(guestActor(d)).toBeUndefined();
+    for (let visit = 0; visit < 200; visit++) expect(d.drawVip(7, visit)).toBeNull();
   });
 });

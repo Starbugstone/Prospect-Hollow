@@ -2,6 +2,8 @@ import { villagerRandom } from './villagers';
 
 // Shared silhouettes and three coordinated visitor palettes per period.
 // Palette order: jacket/dress, trousers, hat, shoes, lapel/collar.
+// `guest` is the share-link guest's suit for the period: a plum and gold family that
+// never matches an ordinary VIP palette, so returning visitors stand out.
 const WARDROBES = {
   frontier: {
     skirtLength: 0.49,
@@ -13,6 +15,7 @@ const WARDROBES = {
     coat: 0.38,
     patrol: false,
     skirt: true,
+    guest: ['#5b2d5e', '#3d2b36', '#2c2230', '#2e2420', '#d9b24c'],
     palettes: [
       ['#527c78', '#65553e', '#ac8051', '#574030', '#ddc798'],
       ['#945746', '#564f45', '#7b5b3c', '#453d32', '#ead7b2'],
@@ -29,6 +32,7 @@ const WARDROBES = {
     coat: 0.46,
     patrol: false,
     skirt: true,
+    guest: ['#63284f', '#35283a', '#2b2330', '#2a2226', '#e0bb55'],
     palettes: [
       ['#485c70', '#434c55', '#615044', '#3f342d', '#d9c5a2'],
       ['#755267', '#514954', '#8a7363', '#403638', '#e2d2b9'],
@@ -44,6 +48,7 @@ const WARDROBES = {
     coat: 0.44,
     patrol: true,
     skirt: true,
+    guest: ['#6a3a6e', '#3f3444', '#4a3550', '#34292b', '#d8b04a'],
     palettes: [
       ['#516d79', '#4a5356', '#897a61', '#493e33', '#d1c6a5'],
       ['#866d4c', '#4d5658', '#686956', '#4f4437', '#e2ceb0'],
@@ -60,6 +65,7 @@ const WARDROBES = {
     coat: 0.4,
     patrol: true,
     skirt: true,
+    guest: ['#58306b', '#3a2f45', '#2e2638', '#2c2528', '#e4c35e'],
     palettes: [
       ['#526e75', '#475a66', '#a89c80', '#454446', '#e1cba7'],
       ['#8b667d', '#655967', '#b6a17f', '#514146', '#e6d8bf'],
@@ -76,6 +82,7 @@ const WARDROBES = {
     coat: 0.36,
     patrol: true,
     skirt: true,
+    guest: ['#6d2f5f', '#3c3040', '#3a2a3e', '#2f2a2c', '#e2bf52'],
     palettes: [
       ['#507e83', '#4c6070', '#b9aa87', '#414b49', '#e9d7b4'],
       ['#a47760', '#665c53', '#8c7965', '#4f4037', '#eed9b7'],
@@ -92,6 +99,7 @@ const WARDROBES = {
     coat: 0.32,
     patrol: true,
     skirt: true,
+    guest: ['#7a4a8c', '#4d4460', '#e8d6a0', '#e9e1cd', '#f0c95a'],
     palettes: [
       ['#62a1a4', '#576e80', '#d2b690', '#eee2c8', '#f4e8d0'],
       ['#cc8c87', '#697889', '#a9a386', '#ddc6aa', '#f2d8c5'],
@@ -106,6 +114,7 @@ const WARDROBES = {
     boots: '#e2dbca',
     coat: 0.3,
     patrol: true,
+    guest: ['#8a4f94', '#4f4a66', '#6b4b78', '#ece3d2', '#f2cd5c'],
     palettes: [
       ['#698ea5', '#536b86', '#648991', '#eee5d3', '#d7d2bc'],
       ['#aa799f', '#606c91', '#827898', '#ebdccb', '#e7cbd6'],
@@ -120,6 +129,7 @@ const WARDROBES = {
     boots: '#e5ddcb',
     coat: 0.3,
     patrol: true,
+    guest: ['#6e3f7d', '#3f3b52', '#5a3d66', '#ece5d8', '#e8c35a'],
     palettes: [
       ['#4d858c', '#435968', '#748c83', '#eee6d9', '#c3d9c7'],
       ['#9b6585', '#525363', '#847991', '#e5dbd0', '#e5c8d7'],
@@ -137,6 +147,7 @@ const WARDROBES = {
     boots: '#eef0e8',
     coat: 0.34,
     patrol: true,
+    guest: ['#8e62b0', '#4d4a6e', '#d9c6f0', '#f1eef6', '#f3d27a'],
     palettes: [
       ['#6fb5b0', '#4f6f78', '#a6d3d4', '#f1efe6', '#f3dc92'],
       ['#d99a82', '#5a6477', '#e7c4b8', '#eeeae2', '#a6d3d4'],
@@ -163,5 +174,25 @@ export function vipOutfit(profile, seed = 0) {
     coat: wardrobe.coat + (variant === 1 ? 0.025 : variant === 2 ? -0.02 : 0),
     skirt: !!wardrobe.skirt || variant === 1,
     hatVisible: wardrobe.hat !== 'none' && !(profile?.wardrobe === 'aviation' && variant === 2),
+  };
+}
+// Eras that do not define a guest suit use this one.
+const GUEST_SUIT = ['#5b2d5e', '#3d2b36', '#2c2230', '#2e2420', '#d9b24c'];
+export const guestSuit = (wardrobe) => wardrobe?.guest ?? GUEST_SUIT;
+export function guestOutfit(profile) {
+  const wardrobe = townWardrobe(profile);
+  const [shirt, trousers, hat, boots, accent] = guestSuit(wardrobe);
+  return {
+    variant: 'guest',
+    accessory: 'scarf',
+    skirtLength: wardrobe.skirtLength,
+    shirt,
+    trousers,
+    hat,
+    boots,
+    accent,
+    coat: wardrobe.coat + 0.03,
+    skirt: !!wardrobe.skirt,
+    hatVisible: wardrobe.hat !== 'none',
   };
 }
