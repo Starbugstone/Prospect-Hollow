@@ -10,6 +10,8 @@ import { TownStatics } from '../src/game/town/TownStatics';
 import { TownUpgradeGlow } from '../src/game/town/TownUpgradeGlow';
 import { TownFrameCache } from '../src/game/town/TownFrameCache';
 import { TownRenderQuality } from '../src/game/town/TownRenderQuality';
+import { footprintDistance } from '../src/game/town/BuildingFootprints';
+import { PLOTS } from '../src/game/town/TownLayout';
 import { timedSteps, townTimings } from '../src/game/town/TownProfiler';
 import { BUILDINGS, createTown } from '../src/data/town';
 import {
@@ -155,6 +157,47 @@ it('prepares static batches without moving source meshes until the batch is plac
   expect(root.children.every((mesh) => mesh.layers.mask === 2)).toBe(true);
   expect(statics.batches.get(root).parent).toBe(view.scene);
   expect(statics.meshes).toHaveLength(1);
+});
+
+// A villager boxed in on a finished building's site (or held by a crowd) used to
+// hold its swap forever. Every later build queued behind it, so no reveal played,
+// scaffolding stayed up and the construction cue hammer never went away.
+it('moves a villager who cannot leave a finished building site so the reveal still plays', () => {
+  const { view, town, labels } = fixture();
+  view.update(town, labels);
+  const [x, z] = PLOTS.home;
+  const stuck = { root: new Group(), radius: 0.45 };
+  stuck.root.position.set(x, 0.08, z);
+  Object.assign(view, { actors: [stuck], animals: [], vipArrivals: null });
+  view.drawFrame = () => true;
+  view.beginConstructionCue('home');
+  view.changeTown(built(town, { home: 3 }), labels, 0, 'home');
+  expect(view.pendingPlot?.id).toBe('home');
+  expect(view.cue.visible).toBe(true);
+  // Locomotion never runs here, so the villager stays put, as when blocked.
+  view.elapsed = 1;
+  expect(view.tryActivatePlot()).toBe(false);
+  expect(view.construction).toBeFalsy();
+  view.elapsed = 2.5;
+  expect(view.tryActivatePlot()).toBe(true);
+  expect(view.pendingPlot).toBeNull();
+  expect(view.construction.group.userData.plot).toBe('home');
+  expect(view.cue.visible).toBe(false);
+  expect(view.constructionGate.visible).toBe(false);
+  const { x: px, z: pz } = stuck.root.position;
+  const site = view.construction.group.userData.footprints;
+  expect(site.length).toBeGreaterThan(0);
+  expect(site.every((o) => footprintDistance(o, px, pz) >= stuck.radius - 1e-6)).toBe(true);
+  view.finishConstruction();
+});
+
+it('retires the construction cue when the finished building is already shown', () => {
+  const { view, town, labels } = fixture();
+  view.update(town, labels);
+  view.drawFrame = () => true;
+  view.beginConstructionCue('home');
+  view.changeTown(town, labels, 0, 'home');
+  expect(view.cue.visible).toBe(false);
 });
 
 it('skips the immediate completion render when a camera frame will draw it', () => {

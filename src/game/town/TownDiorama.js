@@ -88,6 +88,8 @@ import { overlapsEventInset } from './TownInset';
 import { PLOTS, LANE_X, atPlot, plotStreet, SHERIFF_PATROL, visiblePlots } from './TownLayout';
 import { riverCenterX } from './TownRiver';
 export { PLOTS } from './TownLayout';
+// Village seconds a finished building waits for villagers to walk off its site.
+const SITE_CLEAR_SECONDS = 2;
 const colors = {
   sand: '#c8ad7a',
   wood: '#9c7048',
@@ -539,6 +541,8 @@ export class TownDiorama {
     this.plotQueue = [];
     if (!changed.length && sameTopology) {
       this.town = town;
+      // No plot will activate to retire a construction cue shown for this change.
+      if (this.cue) this.cue.visible = false;
       this.render();
       return;
     }
@@ -702,24 +706,19 @@ export class TownDiorama {
             footprintDistance(o, a.root.position.x, a.root.position.z) < (a.radius ?? 0.45),
         ),
     );
-    if (occupants.length) {
+    const now = this.elapsed ?? 0;
+    if (occupants.length) pending.waitStarted ??= now;
+    // Anyone still on the site after the grace period, boxed in or held by a
+    // crowd, steps off it. The build must not wait on them, or every later
+    // build queued behind it keeps its scaffolding and never plays its reveal.
+    if (occupants.length && now - pending.waitStarted < SITE_CLEAR_SECONDS) {
       this.showConstructionGate(pending.id);
       for (const actor of occupants) {
         if (actor.motion?.exitTarget) continue;
-        if (pending.retryAt && (this.elapsed ?? 0) < pending.retryAt) continue;
-        const p = actor.root.position,
-          candidates = [];
-        for (let ring = 1; ring <= 12; ring++)
-          for (let i = 0; i < 16; i++) {
-            const angle = (i * Math.PI) / 8,
-              q = [p.x + Math.cos(angle) * ring * 0.5, p.y, p.z + Math.sin(angle) * ring * 0.5];
-            if (
-              entries.every((o) => footprintDistance(o, q[0], q[2]) >= (actor.radius ?? 0.45)) &&
-              this.navigation.segment(p.toArray(), q, actor.radius ?? 0.45)
-            )
-              candidates.push(q);
-          }
-        if (candidates.length) {
+        if (pending.retryAt && now < pending.retryAt) continue;
+        const exit = this.siteExit(actor, entries, true);
+        if (exit) {
+          const p = actor.root.position;
           actor.motion ??= {
             x: p.x,
             z: p.z,
@@ -729,14 +728,48 @@ export class TownDiorama {
             radius: actor.radius ?? 0.45,
             maxSpeed: actor.walkSpeed ?? 0.55,
           };
-          actor.motion.exitTarget = candidates[0];
+          actor.motion.exitTarget = exit;
         } else pending.deferredReason = 'No swept-clear exit from pending structure';
       }
-      pending.retryAt = (this.elapsed ?? 0) + 0.5;
+      pending.retryAt = now + 0.5;
       return false;
+    }
+    for (const actor of occupants) {
+      const exit =
+        actor.motion?.exitTarget ??
+        this.siteExit(actor, entries, true) ??
+        this.siteExit(actor, entries, false);
+      if (!exit) continue;
+      actor.root.position.set(exit[0], actor.root.position.y, exit[2]);
+      if (actor.motion) {
+        actor.motion.x = exit[0];
+        actor.motion.z = exit[2];
+        actor.motion.vx = actor.motion.vz = 0;
+        actor.motion.exitTarget = null;
+        actor.motion.path = null;
+      }
     }
     if (this.constructionGate) this.constructionGate.visible = false;
     return true;
+  }
+  // Nearest point clear of the new footprint. A swept exit is reachable in a
+  // straight walk; otherwise any point open in the navigation grid will do.
+  siteExit(actor, entries, swept) {
+    const p = actor.root.position,
+      radius = actor.radius ?? 0.45;
+    for (let ring = 1; ring <= 12; ring++)
+      for (let i = 0; i < 16; i++) {
+        const angle = (i * Math.PI) / 8,
+          q = [p.x + Math.cos(angle) * ring * 0.5, p.y, p.z + Math.sin(angle) * ring * 0.5];
+        if (
+          entries.every((o) => footprintDistance(o, q[0], q[2]) >= radius) &&
+          (swept
+            ? this.navigation.segment(p.toArray(), q, radius)
+            : this.navigation.clear(q, radius))
+        )
+          return q;
+      }
+    return null;
   }
   tryActivatePlot() {
     if (this.pendingUpdate) {
