@@ -8,6 +8,9 @@ import { renderCityBuilding } from '../src/game/town/buildings/city';
 import { animateVehicle, motorVehicle, responseVehicle } from '../src/game/town/TownVehicles';
 import { addAviationActivity } from '../src/game/town/TownAviation';
 import { roundedAircraft } from '../src/game/town/RoundedTransports';
+import { animalModel } from '../src/game/town/TownAnimalModels';
+import { animalKey } from '../src/game/town/TownAnimals';
+import { townWardrobe } from '../src/data/townWardrobes';
 import { addEraActivity } from '../src/game/town/TownEraActivity';
 import { ALL_MESH_FAMILIES, loadFamilies } from '../src/game/town/assets/MeshCatalog';
 import { CITY_ARCHITECTURES, defineEra } from '../src/data/eraDefinitions';
@@ -251,6 +254,26 @@ describe('Rounded architecture rendering', () => {
     expect(contemporary.actor.clothing.hat).toHaveLength(0);
     // Actor instancing groups by geometry, so new parts must reuse existing shapes.
     for (const uuid of tomorrow.geometries) expect(contemporary.geometries.has(uuid)).toBe(true);
+  });
+
+  it('dresses the village dog as a Cosmo-style space dog in Tomorrow City only', () => {
+    const d = diorama('tomorrow');
+    Object.assign(d, { world: new Group() });
+    const space = animalModel(d, 'dog', 4, townWardrobe(eraEvolution('tomorrow')).petCostume);
+    const plain = animalModel(d, 'dog', 4, townWardrobe(eraEvolution('contemporary')).petCostume);
+    expect(space.root.userData.costume).toBe('space-helmet');
+    expect(space.root.getObjectByName('Space dog helmet')).toBeTruthy();
+    expect(plain.root.getObjectByName('Space dog helmet')).toBeFalsy();
+    // The bubble is see-through so the dog's face stays visible, and it encloses the head.
+    const bubble = space.root.getObjectByName('Space dog helmet').children[0];
+    expect(bubble.material.transparent).toBe(true);
+    space.root.updateMatrixWorld(true);
+    const head = new Box3().setFromObject(space.head.children[0]);
+    expect(new Box3().setFromObject(bubble).containsBox(head)).toBe(true);
+    // A costume change must not reuse the plain dog across an era rebuild.
+    expect(animalKey({ species: 'dog', seed: 4, costume: 'space-helmet' })).not.toBe(
+      animalKey({ species: 'dog', seed: 4 }),
+    );
   });
 
   it('floats hover cars and response pods on a gentle bob', () => {

@@ -1,3 +1,4 @@
+import { townWardrobe } from '../../data/townWardrobes';
 import { scheduleWork } from '../PresentationWork';
 import { AnimalSpaceBuilder } from './TownAnimalSpace';
 import { Group, Vector3 } from 'three';
@@ -128,9 +129,12 @@ function threatNear(d, animal, profile) {
   return closest;
 }
 
+// Retained animals are reused only when they would look the same (costume included).
+export const animalKey = (a) => `${a.species}:${a.seed}:${a.costume ?? ''}`;
+
 function addGroundAnimal(d, species, path, seed, options = {}) {
   if (!path?.total) return null;
-  const model = animalModel(d, species, seed);
+  const model = animalModel(d, species, seed, options.costume);
   const animal = {
     ...model,
     ...TOWN_ANIMALS[species],
@@ -526,7 +530,7 @@ export function addTownAnimals(d, town, preparedSpace) {
         yield* populateAnimals(stage, town, next.value);
         if (generation !== d.generation) return;
         const retained =
-          d.retainedAnimals ?? new Map((d.animals ?? []).map((a) => [`${a.species}:${a.seed}`, a]));
+          d.retainedAnimals ?? new Map((d.animals ?? []).map((a) => [animalKey(a), a]));
         stage.animals = stage.animals.map((fresh) => {
           const key = `${fresh.species}:${fresh.seed}`,
             old = retained.get(key);
@@ -614,7 +618,9 @@ function* populateAnimals(d, town, preparedSpace) {
         TOWN_ANIMALS[species].radius,
       );
     }
-    addGroundAnimal(d, species, path, species === 'dog' ? 4 : 17);
+    // The era wardrobe may dress the village dog (Tomorrow City's space dog).
+    const costume = species === 'dog' ? (townWardrobe(profile).petCostume ?? null) : null;
+    addGroundAnimal(d, species, path, species === 'dog' ? 4 : 17, costume ? { costume } : {});
     yield;
   }
   if (town.buildings.farm)
@@ -715,9 +721,9 @@ function* populateAnimals(d, town, preparedSpace) {
   for (const animal of d.animals) animal.root.visible = true;
   if (d.retainedAnimals) {
     d.animals = d.animals.map((fresh) => {
-      const old = d.retainedAnimals.get(`${fresh.species}:${fresh.seed}`);
+      const old = d.retainedAnimals.get(animalKey(fresh));
       if (!old) return fresh;
-      d.retainedAnimals.delete(`${fresh.species}:${fresh.seed}`);
+      d.retainedAnimals.delete(animalKey(fresh));
       d.clearGroup(fresh.root);
       Object.assign(old, {
         path: fresh.path,

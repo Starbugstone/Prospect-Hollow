@@ -102,6 +102,17 @@ _The village hover shuttle bus by the blacksmith's hangar._
 
 _The storm-cleanup crew's hovering response pod at the river promenade._
 
+## The space dog
+
+In Tomorrow City the village dog becomes a Cosmo-style space dog. The `tomorrow` wardrobe
+declares `petCostume: 'space-helmet'`, so a later era can reuse the costume without an
+era-name check. The dog wears a clear bubble helmet (the only extra material, and a
+transparent one) on a white collar ring, a white suit with red star patches, and red boots.
+
+![Space dog, front](images/tomorrow-city/22-space-dog.png)
+
+![Space dog, side](images/tomorrow-city/23-space-dog-side.png)
+
 ## Phone
 
 <img src="images/tomorrow-city/11-phone-old-town.png" alt="Phone: old town" width="300"> <img src="images/tomorrow-city/12-phone-east.png" alt="Phone: east bank" width="300">

@@ -1,7 +1,7 @@
 import { TownItineraries, updateItinerary, streetHeight } from './TownItineraries';
 import { setTownAtmosphere, horizonMaterial } from './TownAtmosphere';
 import { applyRoadSetbacks } from './BuildingSetbacks';
-import { addTownAnimals } from './TownAnimals';
+import { addTownAnimals, animalKey } from './TownAnimals';
 import { footprintsFor, plotFootprintKey } from './FootprintCatalog';
 import { navigationScene, drawNavigation, releaseNavigation } from './NavigationDebug';
 import { hasElectricity } from '../../data/industrial';
@@ -964,7 +964,7 @@ export class TownDiorama {
     this.plotCache = new Map();
     this.retainedVipActors = new Map((this.vipArrivals?.actors ?? []).map((a) => [a.source, a]));
     for (const a of this.retainedVipActors.values()) a.root.removeFromParent();
-    this.retainedAnimals = new Map((this.animals ?? []).map((a) => [`${a.species}:${a.seed}`, a]));
+    this.retainedAnimals = new Map((this.animals ?? []).map((a) => [animalKey(a), a]));
     for (const a of this.retainedAnimals.values()) a.root.removeFromParent();
     this.retainedActors = new Map(
       (this.actors ?? []).filter((a) => a.persistentKey).map((a) => [a.persistentKey, a]),
@@ -2163,7 +2163,7 @@ export class TownDiorama {
     }
   }
   repairAnimalLife() {
-    this.retainedAnimals = new Map((this.animals ?? []).map((a) => [`${a.species}:${a.seed}`, a]));
+    this.retainedAnimals = new Map((this.animals ?? []).map((a) => [animalKey(a), a]));
     if (this.animalMotion) this.motions = this.motions.filter((m) => m !== this.animalMotion);
     addTownAnimals(this, this.town);
   }

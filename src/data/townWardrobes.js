@@ -132,6 +132,7 @@ const WARDROBES = {
     hat: 'visor',
     visor: '#a6d3d4',
     trim: '#f3dc92',
+    petCostume: 'space-helmet',
     trousers: '#4f6f78',
     boots: '#eef0e8',
     coat: 0.34,
