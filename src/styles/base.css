@@ -114,12 +114,6 @@ a {
   gap: 12px;
   align-items: center;
 }
-.edition {
-  font-size: 9px;
-  letter-spacing: 2.2px;
-  margin-right: 25px;
-  color: var(--muted);
-}
 .icon-button {
   width: 40px;
   height: 40px;
@@ -138,14 +132,6 @@ a {
   width: 18px;
   height: 18px;
 }
-.eyebrow {
-  display: block;
-  font-size: 9px;
-  font-weight: 600;
-  line-height: 1.6;
-  letter-spacing: 2px;
-  color: var(--muted);
-}
 .welcome {
   position: relative;
   display: grid;
@@ -155,295 +141,24 @@ a {
   padding: 66px 40px 64px;
   margin: auto;
 }
-.hero {
-  padding-top: 11px;
-}
-.hero .eyebrow {
-  color: var(--gold);
-}
-.hero .eyebrow i {
-  display: inline-block;
-  width: 5px;
-  height: 5px;
-  margin: 0 7px 2px 0;
-  border-radius: 50%;
-  background: #ebc996;
-  box-shadow: 0 0 12px #e9c893;
-}
 h1,
 h2,
 h3,
 p {
   margin: 0;
 }
-.hero h1 {
-  font-family: var(--font-heading);
-  font-size: clamp(56px, 5.6vw, 80px);
-  font-weight: 400;
-  line-height: 1.09;
-  letter-spacing: -2.5px;
-  margin: 24px 0 24px;
-}
-.hero h1 em {
-  color: #dec0fb;
-  font-weight: 400;
-}
-.hero > p {
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.9;
-}
-.crystal-orbit {
-  position: relative;
-  height: 292px;
-  width: 340px;
-  margin: 14px 0 0 8px;
-}
-.crystal-orbit::before {
-  content: '';
-  position: absolute;
-  width: 240px;
-  height: 240px;
-  top: 30px;
-  left: 50px;
-  border-radius: 50%;
-  background: radial-gradient(circle, #9154ca50, transparent 70%);
-}
 .orbit {
   position: absolute;
   border: 1px solid #c598ed24;
   border-radius: 50%;
 }
-.orbit-one {
-  inset: 33px 30px 12px;
-  transform: rotate(-25deg);
-}
-.orbit-two {
-  inset: 67px 2px 60px;
-  transform: rotate(-30deg);
-}
-.hero-gem {
-  position: absolute;
-  width: 170px;
-  height: 190px;
-  top: 54px;
-  left: 86px;
-  transform: rotate(12deg);
-  filter: drop-shadow(0 18px 24px #9d4ed15c);
-  animation: float 6s ease-in-out infinite;
-}
-.satellite {
-  position: absolute;
-  width: 55px;
-  height: 55px;
-  filter: drop-shadow(0 4px 12px #10091b);
-}
-.satellite-one {
-  left: 22px;
-  top: 82px;
-  transform: rotate(-22deg);
-}
-.satellite-two {
-  right: 11px;
-  top: 95px;
-  transform: rotate(17deg);
-  width: 47px;
-}
-.satellite-three {
-  right: 88px;
-  bottom: 1px;
-  width: 39px;
-  transform: rotate(-16deg);
-}
-.orbit-spark {
-  position: absolute;
-  color: var(--gold);
-  top: 25px;
-  right: 70px;
-  font-size: 20px;
-}
-.hero-note {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  margin-top: 14px;
-  color: var(--muted);
-  font-size: 11px;
-  letter-spacing: 0.4px;
-}
-.hero-note svg {
-  width: 18px;
-  color: var(--gold);
-}
-.hero-note b {
-  font-weight: 400;
-  color: #d3c4e3;
-}
 .collection {
   min-width: 0;
-}
-.collection-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 23px;
-}
-.collection-heading > svg {
-  color: var(--gold);
-  width: 22px;
-}
-.collection-heading h2 {
-  font-family: var(--font-heading);
-  font-size: 31px;
-  font-weight: 400;
-  margin-top: 8px;
-  display: flex;
-  gap: 22px;
-  align-items: center;
-}
-.collection-heading h2 span {
-  font-family: 'Segoe UI', sans-serif;
-  font-size: 9px;
-  letter-spacing: 1.5px;
-  color: #897b9b;
-  padding-top: 5px;
-}
-.featured-level {
-  width: 100%;
-  border: 1px solid #a87bca55;
-  border-radius: 16px;
-  background:
-    radial-gradient(ellipse at 14% 90%, #73489c65, transparent 70%),
-    linear-gradient(125deg, #2b2139, #221b2f);
-  padding: 27px 22px;
-  display: flex;
-  gap: 20px;
-  text-align: left;
-  position: relative;
-  overflow: hidden;
-}
-.featured-level:hover {
-  border-color: #d0adef;
-  transform: translateY(-2px);
-}
-.featured-level .eyebrow {
-  color: #cbb0df;
-  font-size: 8px;
-  letter-spacing: 1.7px;
-}
-.featured-level h3 {
-  font-family: var(--font-heading);
-  font-size: 29px;
-  font-weight: 400;
-  margin: 5px 0 8px;
-}
-.featured-level p {
-  color: #b6a7c5;
-  font-size: 11px;
-}
-.featured-art {
-  flex: 0 0 95px;
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-.featured-art img {
-  width: 93px;
-  transform: rotate(-12deg);
-  filter: drop-shadow(0 0 20px #31c89544);
-}
-.featured-art span {
-  position: absolute;
-  right: -1px;
-  top: 7px;
-  color: var(--gold);
-  font-size: 13px;
-}
-.featured-play {
-  color: #f4dfb9;
-  display: flex;
-  align-items: center;
-  gap: 35px;
-  margin-top: 21px;
-  font-size: 12px;
-}
-.featured-play svg {
-  width: 19px;
-}
-.level-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 16px;
-}
-.level-button {
-  border: 1px solid var(--line);
-  border-radius: 11px;
-  background: #221a2c85;
-  min-height: 118px;
-  position: relative;
-  padding: 13px 3px 11px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.level-button:hover {
-  background: #3f2d55;
-  border-color: #b890d6;
-  transform: translateY(-3px);
-}
-.level-number {
-  position: absolute;
-  left: 10px;
-  top: 9px;
-  font-size: 8px;
-  color: #9d8fad;
-}
-.level-button img {
-  width: 39px;
-  height: 42px;
-  margin: 0 0 9px;
 }
 .level-name {
   font-size: 9px;
   color: #cebedf;
   white-space: nowrap;
-}
-.level-dots {
-  font-size: 12px;
-  color: #ac89c2;
-  margin-top: 6px;
-  letter-spacing: 2px;
-  opacity: 0.7;
-}
-.collection-note {
-  color: #93829f;
-  font-size: 10px;
-  margin-top: 21px;
-  display: flex;
-  gap: 9px;
-  justify-content: center;
-}
-.collection-note > span {
-  color: var(--gold);
-}
-.app-footer {
-  border-top: 1px solid var(--line);
-  position: relative;
-  margin: 0 5%;
-  padding: 23px 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: #85758f;
-  font-size: 10px;
-}
-.app-footer > :first-child {
-  font-size: 8px;
-  letter-spacing: 2px;
-}
-.footer-spark {
-  color: var(--gold);
 }
 .game-layout {
   position: relative;
@@ -468,23 +183,6 @@ p {
 .text-button:hover {
   color: #f1dcb7;
 }
-.back-button {
-  margin: 12px 0 36px;
-}
-.back-button svg {
-  width: 16px;
-}
-.level-heading h1 {
-  font-family: var(--font-heading);
-  font-size: 35px;
-  font-weight: 400;
-  margin-top: 10px;
-}
-.level-heading p {
-  color: #a498b0;
-  font-size: 12px;
-  margin-top: 10px;
-}
 .hud-panel {
   margin-top: 32px;
 }
@@ -493,10 +191,6 @@ p {
   border: 1px solid var(--line);
   border-radius: 13px;
   background: radial-gradient(ellipse at top right, #60407645, transparent 85%), #221b2e77;
-}
-.score-card .eyebrow {
-  color: #c1a9d4;
-  font-size: 8px;
 }
 .score-value {
   font-size: 46px;
@@ -524,8 +218,7 @@ p {
   font-size: 9px;
   color: #b7a7c5;
 }
-.score-track,
-.objective-track {
+.score-track {
   background: #110c1e;
   height: 4px;
   border-radius: 5px;
@@ -534,8 +227,7 @@ p {
 .score-track {
   flex: 1;
 }
-.score-track i,
-.objective-track i {
+.score-track i {
   display: block;
   height: 100%;
   background: linear-gradient(90deg, #9470b6, #ebc8fa);
@@ -545,95 +237,13 @@ p {
 .score-track i {
   background: linear-gradient(90deg, #ac7940, #efd7a2);
 }
-.stats-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 24px 9px;
-  border-bottom: 1px solid var(--line);
-}
-.stats-row .eyebrow {
-  font-size: 8px;
-}
-.stats-row strong {
-  display: block;
-  font-family: var(--font-heading);
-  font-weight: 400;
-  font-size: 30px;
-  margin-top: 7px;
-}
-.stats-row > :last-child {
-  text-align: right;
-}
-.cascade-value {
-  color: #dcc1f7;
-}
 .objective {
   margin-top: 25px;
-}
-.objective-title {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 11px;
-}
-.objective-title > span {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.objective-title svg {
-  width: 17px;
-  color: var(--gold);
-}
-.objective-title strong {
-  font-weight: 400;
-  color: #d7c1e9;
-}
-.objective-title small {
-  color: #8f7d9f;
-}
-.objective-track {
-  margin: 13px 0 11px;
-  height: 5px;
 }
 .objective p {
   font-size: 10px;
   line-height: 1.6;
   color: #a89bb6;
-}
-.match-guide {
-  margin-top: 35px;
-  padding-top: 24px;
-  border-top: 1px solid var(--line);
-}
-.match-guide .eyebrow {
-  font-size: 8px;
-}
-.guide-gems {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  margin: 14px 0 9px;
-}
-.guide-gems img {
-  width: 30px;
-  height: 32px;
-}
-.guide-gems svg {
-  margin-left: 14px;
-  color: #d9bafa;
-  width: 19px;
-}
-.match-guide p {
-  color: #b6a8c3;
-  font-size: 11px;
-  line-height: 1.8;
-}
-.guide-footnote {
-  color: #847391;
-  font-size: 10px;
-  display: block;
-  margin-top: 14px;
 }
 .play-area {
   width: 100%;
@@ -653,13 +263,6 @@ p {
   display: flex;
   align-items: center;
   gap: 9px;
-}
-.live-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #c3abde;
-  box-shadow: 0 0 8px #cca4fa;
 }
 .board-topline .icon-button {
   width: 30px;
@@ -760,21 +363,6 @@ p {
 .powerup-section {
   padding-top: 10px;
 }
-.powerup-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 14px;
-}
-.powerup-heading > span {
-  font-size: 8px;
-  letter-spacing: 1.4px;
-  color: #9988aa;
-}
-.powerup-heading > :last-child {
-  color: #71637e;
-  font-size: 7px;
-}
 .powerup-bar {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -835,28 +423,6 @@ p {
   font-size: 8px;
   color: #c3afd2;
 }
-.focus-mode .game-sidebar,
-.focus-mode .app-footer {
-  display: none;
-}
-.focus-mode .game-layout {
-  display: block;
-  max-width: 640px;
-  padding-top: 12px;
-}
-.focus-mode .app-header {
-  height: 65px;
-}
-
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0) rotate(12deg);
-  }
-  50% {
-    transform: translateY(-11px) rotate(16deg);
-  }
-}
 @keyframes score-pop {
   from {
     opacity: 0.65;
@@ -899,15 +465,8 @@ p {
     gap: 65px;
     padding-top: 12px;
   }
-  .back-button {
-    margin-bottom: 24px;
-  }
   .hud-panel {
     margin-top: 24px;
-  }
-  .match-guide {
-    margin-top: 25px;
-    padding-top: 18px;
   }
   .welcome {
     padding-top: 42px;
@@ -919,47 +478,13 @@ p {
     gap: 35px;
     padding: 45px 30px;
   }
-  .hero h1 {
-    font-size: 57px;
-  }
-  .crystal-orbit {
-    transform: scale(0.83);
-    transform-origin: left center;
-    width: 300px;
-  }
-  .featured-art {
-    flex-basis: 65px;
-  }
-  .featured-art img {
-    width: 67px;
-  }
-  .featured-level {
-    padding: 24px 14px;
-    gap: 12px;
-  }
-  .featured-level p {
-    font-size: 10px;
-  }
-  .level-grid {
-    gap: 7px;
-    grid-template-columns: repeat(3, 1fr);
-  }
-  .level-button {
-    min-height: 105px;
-  }
   .game-layout {
     grid-template-columns: 230px minmax(0, 460px);
     gap: 30px;
     padding: 22px;
   }
-  .edition {
-    display: none;
-  }
   .score-card {
     padding: 18px;
-  }
-  .level-heading h1 {
-    font-size: 31px;
   }
 }
 @media (max-width: 640px) {
@@ -989,76 +514,11 @@ p {
     display: block;
     padding: 30px 22px;
   }
-  .hero {
-    position: relative;
-    padding: 0;
-    min-height: 226px;
-  }
-  .hero .eyebrow {
-    font-size: 8px;
-    letter-spacing: 1.5px;
-  }
-  .hero h1 {
-    font-size: 49px;
-    margin: 19px 0 15px;
-  }
-  .hero > p {
-    font-size: 11px;
-    line-height: 1.8;
-  }
-  .crystal-orbit {
-    transform: scale(0.48);
-    transform-origin: right center;
-    position: absolute;
-    right: -17px;
-    top: -5px;
-    margin: 0;
-    width: 340px;
-    pointer-events: none;
-  }
-  .hero-note {
-    display: none;
-  }
   .collection {
     margin-top: 24px;
   }
-  .collection-heading h2 {
-    font-size: 27px;
-  }
-  .collection-heading .eyebrow {
-    font-size: 8px;
-  }
-  .featured-art {
-    flex-basis: 78px;
-  }
-  .featured-art img {
-    width: 77px;
-  }
-  .featured-level {
-    gap: 20px;
-    padding: 21px;
-  }
-  .featured-level h3 {
-    font-size: 27px;
-  }
-  .featured-play {
-    margin-top: 16px;
-  }
-  .level-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 9px;
-  }
   .level-name {
     font-size: 9px;
-  }
-  .app-footer {
-    margin: 0 22px;
-    font-size: 8px;
-    padding: 20px 0;
-  }
-  .app-footer > :first-child {
-    font-size: 7px;
-    letter-spacing: 1px;
   }
   .game-layout {
     display: flex;
@@ -1066,30 +526,6 @@ p {
     gap: 0;
     padding: 14px 16px 26px;
     max-width: 490px;
-  }
-  .game-sidebar {
-    width: 100%;
-  }
-  .back-button {
-    margin: 0 0 12px;
-    font-size: 10px;
-  }
-  .level-heading {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-  }
-  .level-heading .eyebrow {
-    font-size: 8px;
-    letter-spacing: 1px;
-  }
-  .level-heading h1 {
-    font-size: 25px;
-    margin: 0;
-  }
-  .level-heading p,
-  .match-guide {
-    display: none;
   }
   .hud-panel {
     display: grid;
@@ -1102,10 +538,6 @@ p {
     border: 0;
     background: none;
   }
-  .score-card .eyebrow {
-    font-size: 7px;
-    letter-spacing: 1.3px;
-  }
   .score-value {
     font-size: 32px;
   }
@@ -1115,32 +547,12 @@ p {
   .score-stars {
     display: none;
   }
-  .stats-row {
-    border: 0;
-    padding: 0;
-    justify-content: space-around;
-  }
-  .stats-row strong {
-    font-size: 26px;
-    margin-top: 1px;
-  }
-  .stats-row .eyebrow {
-    font-size: 7px;
-    letter-spacing: 1px;
-  }
   .objective {
     grid-column: 1 / -1;
     margin: 4px 0 2px;
   }
-  .objective-title {
-    font-size: 10px;
-  }
   .objective p {
     display: none;
-  }
-  .objective-track {
-    margin: 7px 0 0;
-    height: 4px;
   }
   .board-topline {
     height: 29px;
@@ -1164,12 +576,6 @@ p {
   .powerup-section {
     padding-top: 6px;
   }
-  .powerup-heading {
-    margin-bottom: 11px;
-  }
-  .powerup-heading > span {
-    font-size: 7px;
-  }
   .powerup-bar {
     gap: 7px;
   }
@@ -1183,12 +589,6 @@ p {
   .powerup-art > svg {
     width: 23px;
     height: 23px;
-  }
-  .focus-mode .game-layout {
-    padding: 10px 12px 20px;
-  }
-  .focus-mode .app-header {
-    height: 60px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1204,27 +604,15 @@ p {
   .is-playing .app-header {
     height: 60px;
   }
-  .is-playing .app-footer {
-    display: none;
-  }
   .is-playing .game-layout {
     padding-top: 10px;
     padding-bottom: 16px;
   }
-  .is-playing .back-button {
-    margin-bottom: 8px;
-  }
 }
 
 @media (min-width: 1000px) and (max-height: 850px) {
-  .is-playing .app-footer {
-    display: none;
-  }
   .game-layout {
     grid-template-columns: 270px minmax(0, clamp(320px, calc((100dvh - 335px) * 0.8889), 445px));
-  }
-  .match-guide {
-    display: none;
   }
 }
 
@@ -1280,100 +668,6 @@ p {
   }
 }
 
-/* Campaign route and score rewards. */
-.journey-stars {
-  color: var(--gold);
-  font-size: 15px;
-  white-space: nowrap;
-}
-.journey-stars small {
-  color: var(--muted);
-  font-size: 9px;
-}
-.journey-track {
-  height: 3px;
-  background: #37283f;
-  margin: 22px 0 28px;
-  border-radius: 3px;
-  overflow: hidden;
-}
-.journey-track i {
-  display: block;
-  height: 100%;
-  background: var(--gold);
-}
-.journey-chapter {
-  margin-top: 25px;
-}
-.chapter-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-.chapter-heading .eyebrow {
-  color: #d4bedf;
-  letter-spacing: 1.4px;
-}
-.chapter-heading small {
-  color: var(--muted);
-  font-size: 9px;
-  white-space: nowrap;
-}
-.journey-chapter > p {
-  font-size: 10px;
-  line-height: 1.7;
-  color: #a99ab9;
-  margin: 5px 0 12px;
-}
-.journey-chapter .level-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin-top: 0;
-}
-.level-button:disabled {
-  opacity: 0.48;
-  background: #1c1724;
-}
-.level-button:disabled:hover {
-  transform: none;
-  border-color: var(--line);
-}
-.level-button.is-current {
-  border-color: #ddc18d;
-  box-shadow: inset 0 0 24px #c9973e14;
-}
-.level-button.is-complete {
-  border-color: #8a7496;
-}
-.level-lock {
-  width: 28px;
-  height: 32px;
-  margin: 3px auto;
-  color: #b7a0c7;
-}
-.level-dots .earned {
-  color: var(--gold);
-}
-.chest-progress {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 5px;
-  font-size: 9px;
-  color: #bca8c9;
-  margin-top: 12px;
-  line-height: 1.5;
-}
-.chest-progress small {
-  font-size: 8px;
-  color: #9985ab;
-}
-.chest-progress.qualified > span {
-  color: #ebce97;
-}
-.mobile-guide {
-  display: none;
-}
 /* Keep the board and touch controls together inside the available phone height. */
 @media (max-width: 640px) {
   .is-playing .app-header {
@@ -1395,25 +689,9 @@ p {
   .is-playing .app-header .brand b {
     font-size: 9px;
   }
-  .is-playing .app-footer {
-    display: none;
-  }
   .game-layout {
     padding: 8px 10px max(10px, env(safe-area-inset-bottom));
     max-width: 490px;
-  }
-  .game-sidebar .back-button {
-    display: none;
-  }
-  .level-heading {
-    gap: 8px;
-    min-height: 24px;
-  }
-  .level-heading h1 {
-    font-size: 21px;
-  }
-  .level-heading .eyebrow {
-    font-size: 7px;
   }
   .hud-panel {
     margin-top: 6px;
@@ -1424,34 +702,8 @@ p {
     font-size: 27px;
     margin: 1px 0;
   }
-  .score-card > .eyebrow {
-    display: none;
-  }
-  .stats-row strong {
-    font-size: 23px;
-  }
-  .stats-row .eyebrow {
-    font-size: 6px;
-  }
-  .chest-progress {
-    font-size: 8px;
-    margin-top: 0;
-    gap: 1px;
-  }
-  .chest-progress small {
-    font-size: 7px;
-  }
   .objective {
     margin: 2px 0 0;
-  }
-  .objective-track {
-    margin: 5px 0 0;
-  }
-  .objective-title {
-    font-size: 9px;
-  }
-  .objective-title svg {
-    width: 13px;
   }
   .board-topline {
     height: 30px;
@@ -1492,9 +744,6 @@ p {
   .powerup-section {
     padding-top: 0;
   }
-  .powerup-heading {
-    display: none;
-  }
   .powerup-bar {
     gap: 5px;
   }
@@ -1516,60 +765,17 @@ p {
   .powerup-name {
     font-size: 8px;
   }
-  .mobile-guide {
-    display: block;
-    color: #b7a5c5;
-    font-size: 10px;
-    margin-top: 0;
-  }
-  .mobile-guide summary {
-    text-align: center;
-    min-height: 32px;
-    padding: 10px;
-    cursor: pointer;
-  }
-  .mobile-guide p {
-    line-height: 1.8;
-    padding: 4px 12px 16px;
-  }
-  .focus-mode .game-layout {
-    padding: 8px 10px;
-  }
-  .focus-mode .board-frame {
-    width: min(100%, calc((100dvh - 215px) * var(--board-ratio) + 12px));
-  }
-  .focus-mode .app-header {
-    height: 54px;
-  }
   .collection {
     margin-top: 10px;
   }
   .welcome {
     padding-top: 20px;
   }
-  .hero {
-    min-height: 160px;
-  }
-  .hero h1 {
-    font-size: 38px;
-    margin: 12px 0;
-  }
-  .hero > p {
-    font-size: 10px;
-  }
-  .hero .crystal-orbit {
-    transform: scale(0.38);
-    top: -45px;
-  }
 }
 @media (max-height: 500px) and (min-width: 641px) {
   .is-playing .app-header {
     height: 48px;
   }
-  .is-playing .app-footer,
-  .game-sidebar .back-button,
-  .match-guide,
-  .level-heading p,
   .objective p {
     display: none;
   }
@@ -1578,10 +784,6 @@ p {
     padding: 8px 16px;
     gap: 24px;
     justify-content: center;
-  }
-  .level-heading h1 {
-    font-size: 24px;
-    margin: 5px 0;
   }
   .hud-panel {
     margin-top: 10px;
@@ -1592,9 +794,6 @@ p {
   .score-value {
     font-size: 28px;
     margin: 4px 0;
-  }
-  .stats-row {
-    padding: 10px 0;
   }
   .objective {
     margin-top: 10px;
@@ -1611,9 +810,6 @@ p {
   .board-caption {
     min-height: 25px;
     font-size: 8px;
-  }
-  .powerup-heading {
-    display: none;
   }
   .powerup-section {
     padding-top: 0;
@@ -1638,14 +834,8 @@ p {
     display: flex;
     height: 36px;
   }
-  .board-tools .focus-toggle {
-    display: none;
-  }
   .play-area {
     margin-top: 8px;
-  }
-  .objective-title svg {
-    height: 13px;
   }
   .board-frame {
     width: min(

@@ -171,7 +171,6 @@
         <TownScene
           ref="townScene"
           :active="active"
-          :fullscreen="fullscreen"
           :town="sceneTown"
           :cinematic="!!town.transition?.pending"
           @cinematic-ready="eraReady = true"
@@ -183,7 +182,6 @@
           :now="collectionNow"
           :builder-hammers="campaign.builderHammers"
           :selected="selected"
-          :population="people"
           :reduced-motion="settings.reducedMotion"
           :paused="
             !active ||

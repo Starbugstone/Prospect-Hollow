@@ -24,9 +24,6 @@
   width: 33px;
   height: 36px;
 }
-.is-town .edition {
-  display: none;
-}
 .is-town .app-header .icon-button {
   color: #6d7969;
   background: transparent;
@@ -34,9 +31,6 @@
 }
 .is-town .app-header .icon-button:hover {
   background: #e6e8db;
-}
-.is-town .app-footer {
-  display: none;
 }
 .world-nav {
   display: flex;
@@ -184,10 +178,6 @@
   border-radius: 20px;
   letter-spacing: 0;
 }
-.town-map > svg {
-  width: 100%;
-  display: block;
-}
 .town-needs {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -226,21 +216,6 @@
   color: #92917e;
   font-weight: 400;
   margin-top: 5px;
-}
-.town-needs .need-ready {
-  width: 15px;
-  height: 15px;
-  flex-basis: 15px;
-  margin-left: auto;
-  color: #80916c;
-}
-.town-stage {
-  font-size: 9px;
-  border-radius: 4px;
-  padding: 4px 7px;
-  background: #ede9db;
-  color: #8b8469;
-  align-self: start;
 }
 .town-building-preview {
   margin: 5px -5px 10px;
@@ -412,9 +387,6 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
 }
-.reduced-motion .town-map * {
-  animation-play-state: paused !important;
-}
 .reduced-motion .town-view *,
 .reduced-motion .town-view *::before {
   transition: none !important;
@@ -426,8 +398,7 @@
 .high-contrast .town-view .town-kicker,
 .high-contrast .town-view p,
 .high-contrast .town-view small,
-.high-contrast .town-bottom-note,
-.high-contrast .town-stage {
+.high-contrast .town-bottom-note {
   color: #4f5840;
 }
 .high-contrast .town-map-frame,
@@ -438,9 +409,6 @@
   .town-needs > button {
     gap: 7px;
     padding-inline: 8px;
-  }
-  .town-needs .need-ready {
-    display: none;
   }
   .town-needs small {
     font-size: 9px;
@@ -606,19 +574,8 @@
     font-size: 8px;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .town-map * {
-    animation: none !important;
-  }
-}
 
-/* A shallow diorama camera complements the buildings' solid faces and cast shadows. */
-.town-map {
-  --look-x: 0;
-  --look-y: 0;
-  background: #e9ecdf;
-  perspective: 1100px;
-}
+/* The SVG mine illustration on the landing page and in the tour. */
 .town-mine-entrance {
   cursor: pointer;
   outline: none;
@@ -636,29 +593,6 @@
 .mine-cart {
   animation: mine-cart-roll 7s ease-in-out infinite;
 }
-.mine-lantern-glow {
-  animation: lantern-glow 3s ease-in-out infinite;
-}
-.loose-sign {
-  transform-origin: -60px -117px;
-  animation: sign-sway 4.5s ease-in-out infinite alternate;
-}
-.well-bucket {
-  animation: well-draw 8s ease-in-out infinite;
-}
-.well-ripple {
-  transform-origin: 0 -12px;
-  animation: well-water 3s ease-out infinite;
-}
-.chimney-smoke {
-  animation: chimney-drift 5s ease-out infinite both;
-}
-.smoke-two {
-  animation-delay: -1.7s;
-}
-.smoke-three {
-  animation-delay: -3.4s;
-}
 @keyframes mine-cart-roll {
   0%,
   20%,
@@ -668,54 +602,6 @@
   55%,
   75% {
     transform: translate(1px, 15px);
-  }
-}
-@keyframes lantern-glow {
-  0%,
-  100% {
-    opacity: 0.18;
-  }
-  50% {
-    opacity: 0.38;
-  }
-}
-@keyframes sign-sway {
-  from {
-    transform: rotate(8deg);
-  }
-  to {
-    transform: rotate(15deg);
-  }
-}
-@keyframes well-draw {
-  0%,
-  20%,
-  100% {
-    transform: translateY(0);
-  }
-  50%,
-  70% {
-    transform: translateY(10px);
-  }
-}
-@keyframes well-water {
-  from {
-    transform: scale(0.55);
-    opacity: 0.7;
-  }
-  to {
-    transform: scale(1.2);
-    opacity: 0;
-  }
-}
-@keyframes chimney-drift {
-  from {
-    transform: translate(0, 0) scale(0.6);
-    opacity: 0.6;
-  }
-  to {
-    transform: translate(18px, -43px) scale(2.2);
-    opacity: 0;
   }
 }
 .town-scene {
@@ -1784,59 +1670,15 @@ html:has(.town-museum[open]) {
   padding-bottom: env(safe-area-inset-bottom);
   background: #e1dcc1;
 }
-.town-fullscreen .town-scene,
-.town-fullscreen .town-map-scene {
+.town-fullscreen .town-scene {
   flex: 1;
   height: 0;
   min-height: 0;
   aspect-ratio: auto;
   width: 100%;
 }
-.town-fullscreen .town-map-scene svg {
-  height: 100%;
-}
-.town-fullscreen .town-map {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  align-items: flex-start;
-  overflow: auto;
-  background: #e9ecdf;
-}
-.town-fullscreen .town-map > svg {
-  flex: 0 0 auto;
-  width: max(100%, 900px);
-  height: auto;
-  margin-block: auto;
-}
 .town-fullscreen .town-fullscreen-button {
   top: max(60px, calc(env(safe-area-inset-top) + 60px));
-}
-
-.town-progress-button {
-  position: absolute;
-  right: 12px;
-  top: 112px;
-  z-index: 6;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 44px;
-  padding: 6px 12px;
-  border: 1px solid #a99b76;
-  border-radius: 12px;
-  color: #405b4c;
-  background: #fff9e9ee;
-  box-shadow: 0 3px 14px #54452d1c;
-  font-size: 13px;
-  font-weight: 700;
-}
-.town-progress-button img {
-  width: 26px;
-  height: 26px;
-}
-.town-fullscreen .town-progress-button {
-  top: max(112px, calc(env(safe-area-inset-top) + 112px));
 }
 .town-fullscreen > .village-next-inline {
   max-height: 48%;
@@ -1853,23 +1695,6 @@ html:has(.town-museum[open]) {
 .town-has-raid .town-fullscreen-button {
   top: auto;
   bottom: calc(96px + env(safe-area-inset-bottom));
-}
-
-.town-construction-tip {
-  flex: 0 0 auto;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
-  border: 1px solid #b5bb8c;
-  border-radius: 12px;
-  background: #f3edcc;
-  color: #465c4e;
-  font-size: 14px;
-}
-.town-construction-tip .game-icon {
-  flex-shrink: 0;
 }
 
 .town-story-button {
@@ -2004,10 +1829,6 @@ html:has(.town-museum[open]) {
   height: 12px;
   margin-top: 8px;
   accent-color: #8ca866;
-}
-
-.town-labels-button {
-  left: 112px;
 }
 .town-labels-hidden .town-scene-labels,
 .town-labels-hidden .mine-label {

@@ -14,50 +14,6 @@
 .brand img {
   filter: drop-shadow(0 0 10px #c966ff66);
 }
-.hero h1 {
-  font-family: Impact, 'Arial Black', sans-serif;
-  font-style: italic;
-  font-weight: 900;
-  letter-spacing: 0;
-  text-shadow: 3px 4px #5b2279;
-}
-.hero h1 em {
-  color: #ffdd82;
-  text-shadow:
-    3px 4px #a13b9a,
-    6px 7px #37133e;
-}
-.hero .eyebrow,
-.hero-note b {
-  color: #f7bdff;
-}
-.featured-level {
-  border-color: #d18dec88;
-  background:
-    radial-gradient(ellipse at 10% 80%, #9d4e9855, transparent 60%),
-    linear-gradient(120deg, #352145, #251e36);
-  box-shadow:
-    0 5px 0 #08051355,
-    inset 0 1px #f4b0ff22;
-}
-.featured-play {
-  color: #ffe19a;
-  font-weight: 900;
-  letter-spacing: 1px;
-}
-.level-button.is-current {
-  box-shadow:
-    0 0 22px #ffd35b22,
-    inset 0 0 20px #e7a84418;
-}
-.is-playing .level-heading h1 {
-  font-family: Impact, 'Arial Black', sans-serif;
-  font-weight: 900;
-  font-style: italic;
-  letter-spacing: 0.5px;
-  color: #fff2d4;
-  text-shadow: 2px 3px #7b2d9c;
-}
 .score-card {
   background: linear-gradient(125deg, #6f328833, #29183288);
   border-color: #ba76da66;
@@ -68,37 +24,8 @@
   color: #ffe29c;
   text-shadow: 2px 3px #7f338e;
 }
-.stats-row strong {
-  font-family: 'Arial Black', 'Trebuchet MS', sans-serif;
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-}
-.run-time {
-  color: #8bf7ff;
-}
-.run-time.expired {
-  color: #b09cb9;
-}
-.speed-target {
-  display: block;
-  font-size: 8px;
-  line-height: 1.4;
-  color: #8fdde9;
-  margin-top: 4px;
-  white-space: nowrap;
-}
-.chest-progress {
-  color: #ffd384;
-}
-.chest-progress.qualified > span {
-  color: #ffeb91;
-}
 .score-track i {
   background: linear-gradient(90deg, #e86ddc, #ffe575);
-}
-.objective-track i {
-  background: linear-gradient(90deg, #be6ffa, #8cffff);
-  box-shadow: 0 0 9px #89ffff;
 }
 .board-frame {
   border-color: #bf83db;
@@ -182,9 +109,6 @@
 .board-frame.fusion-impact {
   animation: fusion-cabinet 850ms ease-out both;
 }
-.match-guide .fusion-tip {
-  color: #f4c5ff;
-}
 .fusion-reward {
   color: #ffe49b;
   letter-spacing: 1px;
@@ -243,26 +167,6 @@
   .score-value {
     font-size: 29px;
   }
-  .speed-target {
-    font-size: 6px;
-    margin-top: 2px;
-  }
-  .stats-row strong {
-    font-size: 20px;
-  }
-  .stats-row .eyebrow {
-    font-size: 6px;
-    letter-spacing: 0.6px;
-  }
-  .stats-row {
-    gap: 12px;
-  }
-  .run-time {
-    white-space: nowrap;
-  }
-  .chest-progress small {
-    font-size: 7px;
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   .arcade-screen-impact {
@@ -273,15 +177,7 @@
   display: none;
 }
 
-.relic-caption {
-  color: #ffdf7d;
-  white-space: nowrap;
-}
-
 @media (max-width: 640px), (max-height: 500px) and (max-width: 1000px) {
-  .is-playing .game-sidebar {
-    display: none;
-  }
   .is-playing .game-layout {
     display: flex;
     flex-direction: column;
@@ -362,9 +258,6 @@
     grid-row: 2;
     width: 100%;
   }
-  .board-tools .focus-toggle {
-    display: none;
-  }
   .is-playing .play-area .arcade-announcer {
     grid-column: 1 / -1;
     height: 32px;
@@ -395,9 +288,6 @@
   .is-playing .powerup-art > img {
     width: 30px;
     height: 30px;
-  }
-  .is-playing .powerup-heading {
-    display: none;
   }
   .is-playing .board-caption {
     grid-column: 1 / -1;

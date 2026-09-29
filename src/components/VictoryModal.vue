@@ -502,23 +502,6 @@ const goalText = (source) => {
     3px 4px #a645b0,
     5px 7px #30113e;
 }
-.result-score {
-  font:
-    italic 900 64px/1 Impact,
-    'Arial Black',
-    sans-serif;
-  color: #ffdf80;
-  margin: 25px 0;
-}
-.result-score small {
-  display: block;
-  font:
-    800 9px 'Trebuchet MS',
-    sans-serif;
-  color: #b393c7;
-  letter-spacing: 3px;
-  margin-top: 10px;
-}
 .result-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -651,10 +634,6 @@ const goalText = (source) => {
   }
   .arcade-results h2 {
     font-size: 38px;
-  }
-  .result-score {
-    font-size: 44px;
-    margin: 15px 0;
   }
   .result-stats {
     padding: 10px 0;

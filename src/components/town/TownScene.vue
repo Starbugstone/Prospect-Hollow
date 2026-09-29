@@ -263,7 +263,6 @@ const props = defineProps({
   readOnly: Boolean,
   // Buildings a read-only visitor may still tap, for example to collect the saloon.
   visitorTaps: { type: Array, default: () => [] },
-  fullscreen: Boolean,
   cinematic: Boolean,
   presentation: Object,
   active: { type: Boolean, default: true },
@@ -272,7 +271,6 @@ const props = defineProps({
   forgeCollectible: Boolean,
   now: { type: Number, default: Date.now },
   selected: String,
-  population: Number,
   reducedMotion: Boolean,
   paused: Boolean,
   nextLevel: Number,

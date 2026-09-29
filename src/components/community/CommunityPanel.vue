@@ -52,7 +52,7 @@
 </template>
 <script setup>
 import { ref, onBeforeUnmount } from 'vue';
-import { request } from '../../services/cloudProfile';
+import { publicVillage, request } from '../../services/cloudProfile';
 import { useNativeDialog } from '../../composables/useNativeDialog';
 import { ERA_BY_ID } from '../../data/eras';
 import { t } from '../../i18n';
@@ -91,7 +91,7 @@ async function visit(id) {
   loading.value = true;
   error.value = '';
   try {
-    const result = await request(`villages/${id}`);
+    const result = await publicVillage(id);
     if (current === generation) village.value = result;
   } catch (e) {
     if (current === generation) error.value = e.message;
@@ -128,12 +128,6 @@ load(1);
   background: #183832;
   color: #fff7df;
 }
-.community-heading p {
-  font-size: 0.7rem;
-  letter-spacing: 0.15em;
-  margin: 0 0 0.35rem;
-  color: #dcc899;
-}
 .community-heading h1 {
   margin: 0;
   font:
@@ -160,24 +154,6 @@ load(1);
 .community-content {
   padding: 1.5rem;
 }
-.community-intro {
-  font:
-    1.2rem Georgia,
-    serif;
-}
-.community-ranking {
-  font-size: 0.88rem;
-  color: #53665d;
-}
-.community-own {
-  display: flex;
-  gap: 1rem;
-  justify-content: space-between;
-  align-items: center;
-  border-block: 1px solid #e0d7c1;
-  padding: 1rem 0;
-  margin: 1.2rem 0;
-}
 .community-list {
   list-style: none;
   padding: 0;
@@ -190,65 +166,12 @@ load(1);
   padding: 1rem;
   border-bottom: 1px solid #e3dbc7;
 }
-.community-list .is-own {
-  background: #e9efdf;
-}
-.community-rank {
-  width: 2rem;
-  text-align: center;
-  font:
-    1.6rem Georgia,
-    serif;
-  color: #866837;
-  flex-shrink: 0;
-}
-.community-entry {
-  flex: 1;
-  min-width: 0;
-  display: grid;
-  gap: 0.3rem;
-  overflow-wrap: anywhere;
-}
-.community-entry strong {
-  font-size: 1.05rem;
-}
-.community-entry strong small {
-  margin-left: 0.5rem;
-  color: #507250;
-}
-.community-entry span,
-.community-entry small {
-  color: #64756a;
-}
-.community-pages,
-.community-visit-heading {
+.community-pages {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
   margin-top: 1rem;
-}
-.community-visit-heading h2 {
-  margin: 1rem 0 0.35rem;
-  font:
-    1.8rem Georgia,
-    serif;
-  overflow-wrap: anywhere;
-}
-.community-readonly {
-  background: #e6ecdc;
-  padding: 0.4rem 0.8rem;
-  border-radius: 20px;
-  white-space: nowrap;
-}
-.community-stats {
-  display: flex;
-  gap: 2rem;
-  flex-wrap: wrap;
-}
-.community-stats dd {
-  font-size: 1.4rem;
-  margin: 0.3rem 0;
 }
 @media (max-width: 600px) {
   .community-content {
@@ -257,10 +180,6 @@ load(1);
   .community-heading {
     padding: 1rem;
   }
-  .community-own {
-    align-items: flex-start;
-    flex-direction: column;
-  }
   .community-list li {
     gap: 0.6rem;
     padding: 0.85rem 0.25rem;
@@ -268,16 +187,6 @@ load(1);
   }
   .community-list li > button {
     margin-left: 2.6rem;
-  }
-  .community-entry {
-    flex-basis: calc(100% - 3rem);
-  }
-  .community-stats {
-    gap: 1rem;
-    font-size: 0.85rem;
-  }
-  .community-visit-heading h2 {
-    font-size: 1.4rem;
   }
 }
 </style>

@@ -292,5 +292,3 @@ export function segmentDistance(x, z, from, to) {
   );
   return Math.hypot(x - from[0] - t * dx, z - from[1] - t * dz);
 }
-// One projection keeps the accessible SVG map's plots and dirt tracks together.
-export const mapPoint = ([x, z]) => [500 + x * 24, 350 + z * 14];
