@@ -168,7 +168,11 @@
             </button>
           </div>
         </div>
-        <TownVisitorNotice :notice="visitorNotice" @dismiss="dismissVisitorNotice" />
+        <TownVisitorNotice
+          :notice="visitorNotice"
+          @dismiss="dismissVisitorNotice"
+          @find="findVisitor"
+        />
         <TownScene
           ref="townScene"
           :active="active"
@@ -367,6 +371,8 @@
           :snapshot="visitorSnapshot"
           :error="visitorError"
           :era="town.era"
+          can-find
+          @find="findVisitor"
         />
         <section class="town-story-stats" :aria-label="t('Village overview')">
           <h2>{{ t('Village overview') }}</h2>
@@ -751,7 +757,16 @@ const {
   present: liveVisitors,
   notice: visitorNotice,
   dismissNotice: dismissVisitorNotice,
-} = useTownVisitors(() => props.active);
+  enqueue: enqueueVisitorNotice,
+} = useTownVisitors(() => props.active, {
+  collectSaloon: (at) => (campaign.readOnly ? null : campaign.collectSaloonForVisitor(at)),
+});
+async function findVisitor(id) {
+  closeDialog();
+  dismissVisitorNotice();
+  await nextTick();
+  if (!townScene.value?.findVisitor(id)) enqueueVisitorNotice([{ kind: 'unavailable' }]);
+}
 const progressOpen = computed({
   get: () => villageProgressOpen(settings.villageProgressOpen, town.value),
   set: (open) => settings.setVillageProgress(open),

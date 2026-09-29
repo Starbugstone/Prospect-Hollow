@@ -3,7 +3,11 @@
   <p>{{ t('View only') }} · {{ t(ERA_BY_ID[current.era]?.label ?? current.era) }}</p>
   <p v-if="unshared" role="alert">{{ t('This town is no longer shared.') }}</p>
   <template v-else>
-    <VisitPresence :key="current.villageId" :village-id="current.villageId" />
+    <VisitPresence
+      :key="current.villageId"
+      :village-id="current.villageId"
+      @presence="ownVisitId = $event"
+    />
     <p v-if="saloonMessage" class="village-saloon" role="status">{{ saloonMessage }}</p>
     <div class="community-world town-map-frame" :class="{ 'town-fullscreen': fullscreen }">
       <button
@@ -21,10 +25,14 @@
         <strong>{{ current.name }}</strong
         ><template v-if="saloonMessage"> · {{ saloonMessage }}</template>
       </p>
+      <p v-if="findError" class="village-find-error" role="status">{{ t(findError) }}</p>
       <TownScene
+        ref="townScene"
         :key="current.villageId"
         :town="town"
         :read-only="true"
+        :live-visitors="liveVisitors"
+        :live-visitor-town-id="current.villageId"
         :visitor-taps="collectable ? ['saloon'] : []"
         :reduced-motion="settings.reducedMotion"
         @visit="collectSaloon"
@@ -32,6 +40,17 @@
       />
     </div>
     <p class="village-hint">{{ t('Tap a building or the mine to see its details.') }}</p>
+    <div class="village-guestbook-actions" :class="{ 'village-guestbook-fullscreen': fullscreen }">
+      <button @click="inspected = 'guestbook'">{{ t("Mayor's guestbook") }}</button>
+      <button
+        v-if="ownVisitId"
+        :disabled="!liveVisitors.some((visitor) => visitor.id === ownVisitId)"
+        @click="findVisitor(ownVisitId)"
+      >
+        {{ t('Find me') }}
+      </button>
+    </div>
+
     <TownDialog
       v-if="inspected"
       :class="{ 'village-level-dialog': showsLevels }"
@@ -39,7 +58,16 @@
       close-label="Close building details"
       @close="inspected = ''"
     >
-      <section v-if="inspected === 'mine'" class="town-building-details">
+      <TownGuestbook
+        v-if="inspected === 'guestbook'"
+        :village-id="current.villageId"
+        :snapshot="visitorSnapshot"
+        :error="visitorError"
+        :era="town.era"
+        can-find
+        @find="findVisitor"
+      />
+      <section v-else-if="inspected === 'mine'" class="town-building-details">
         <div class="town-detail-title">
           <div>
             <p class="town-kicker">{{ t('Mine level') }}</p>
@@ -71,7 +99,7 @@
         <p v-else class="museum-empty">{{ t('Level awards are not available yet.') }}</p>
       </section>
       <TownBuildingDetails
-        v-if="inspected !== 'mine'"
+        v-if="!['mine', 'guestbook'].includes(inspected)"
         :key="inspected"
         :id="inspected"
         :town="town"
@@ -82,7 +110,9 @@
   </template>
 </template>
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
+import { useVillageVisitors } from '../../composables/useVillageVisitors';
+import TownGuestbook from '../town/TownGuestbook.vue';
 import VisitPresence from './VisitPresence.vue';
 import { villageAppearance, villageLevels } from '../../services/publicVillage';
 import { latestVillage, tapSaloon } from '../../services/cloudProfile';
@@ -106,6 +136,26 @@ const settings = useSettingsStore();
 const current = shallowRef(props.village),
   unshared = ref(false);
 const town = computed(() => villageAppearance(current.value));
+const ownVisitId = ref(null),
+  townScene = ref(null),
+  findError = ref('');
+const { snapshot: visitorSnapshot, error: visitorError } = useVillageVisitors(() =>
+  unshared.value ? null : props.village.villageId,
+);
+const liveVisitors = computed(() =>
+  (visitorSnapshot.value?.present ?? []).map((visitor) => ({
+    ...visitor,
+    self: visitor.id === ownVisitId.value,
+  })),
+);
+async function findVisitor(id) {
+  inspected.value = '';
+  findError.value = '';
+  await nextTick();
+  if (!townScene.value?.findVisitor(id))
+    findError.value =
+      'This visitor is no longer visible. Check the guestbook for the latest visit details.';
+}
 // Tolerate older public responses while client and server versions roll forward.
 const mineLevel = computed(() => current.value.appearance?.mineLevel ?? 0);
 const inspected = ref('');
@@ -195,6 +245,27 @@ async function collectSaloon() {
 }
 </script>
 <style>
+.village-guestbook-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.village-guestbook-actions button {
+  padding: 10px 14px;
+  border: 1px solid #bca8bf;
+  border-radius: 10px;
+  background: #faf5fa;
+  color: #48364d;
+  font: inherit;
+  cursor: pointer;
+}
+.village-guestbook-fullscreen {
+  position: fixed;
+  z-index: 91;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  left: 16px;
+  right: 16px;
+}
 .town-dialog.village-level-dialog {
   width: min(920px, calc(100vw - 32px));
 }
@@ -242,6 +313,17 @@ async function collectSaloon() {
   border-radius: 16px;
   overflow: hidden;
   position: relative;
+}
+.village-find-error {
+  position: absolute;
+  z-index: 7;
+  top: 70px;
+  left: 16px;
+  right: 16px;
+  padding: 10px;
+  background: #faf5fa;
+  color: #48364d;
+  border-radius: 10px;
 }
 /* A visit shows just the town: no building names, only the saloon coins when collectable. */
 .community-world .town-scene-labels {

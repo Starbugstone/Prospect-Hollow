@@ -1,25 +1,42 @@
 <template>
   <aside v-show="notice" class="town-visitor-notice">
-    <GameIcon name="eye" aria-hidden="true" />
+    <GameIcon :name="notice?.kind === 'collection' ? 'chest' : 'eye'" aria-hidden="true" />
     <p role="status" aria-live="polite" aria-atomic="true">
       {{
         notice
-          ? t(
-              notice.kind === 'arrival' ? '{name} arrived in your town.' : '{name} left your town.',
-              { name: visitorLabel(notice.visitor) },
-            )
+          ? notice.kind === 'collection'
+            ? t('A visitor collected {coins} coins from your saloon for you.', {
+                coins: number(notice.coins),
+              })
+            : notice.kind === 'unavailable'
+              ? t(
+                  'This visitor is no longer visible. Check the guestbook for the latest visit details.',
+                )
+              : t(
+                  notice.kind === 'arrival'
+                    ? '{name} arrived in your town.'
+                    : '{name} left your town.',
+                  { name: visitorLabel(notice.visitor) },
+                )
           : ''
       }}
     </p>
+    <button
+      v-if="notice?.kind === 'arrival'"
+      class="visitor-find"
+      @click="$emit('find', notice.visitor.id)"
+    >
+      {{ t('Find visitor') }}
+    </button>
     <button :aria-label="t('Dismiss visitor notification')" @click="$emit('dismiss')">×</button>
   </aside>
 </template>
 <script setup>
 import GameIcon from '../GameIcon.vue';
 import { visitorLabel } from '../../data/liveVisitors';
-import { t } from '../../i18n';
+import { t, number } from '../../i18n';
 defineProps({ notice: Object });
-defineEmits(['dismiss']);
+defineEmits(['dismiss', 'find']);
 </script>
 <style scoped>
 .town-visitor-notice {
@@ -67,5 +84,12 @@ button {
 button:focus-visible {
   outline: 2px solid #82518b;
   outline-offset: 2px;
+}
+.visitor-find {
+  width: auto;
+  padding: 8px;
+  border-radius: 8px;
+  font: inherit;
+  max-width: 90px;
 }
 </style>

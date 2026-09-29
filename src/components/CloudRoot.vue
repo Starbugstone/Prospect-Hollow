@@ -63,28 +63,6 @@
       <GameIcon name="close" />
     </button>
   </aside>
-  <aside
-    v-else-if="ready && !handingOver && !game.sessionActive && visitorNotice"
-    class="save-recovery-toast"
-    role="status"
-  >
-    <GameIcon name="eye" />
-    <p>
-      <template v-if="visitorNotice.coins">{{
-        t('A visitor collected {coins} coins from your saloon for you.', {
-          coins: number(visitorNotice.coins),
-        })
-      }}</template>
-    </p>
-    <button
-      class="save-recovery-dismiss"
-      :aria-label="t('Dismiss')"
-      :title="t('Dismiss')"
-      @click="visitorNotice = null"
-    >
-      <GameIcon name="close" />
-    </button>
-  </aside>
   <main v-if="!ready" class="town-launch-screen">
     <section class="town-tab-notice" aria-live="polite" :aria-busy="opening">
       <img class="town-tab-gem" src="/art/amethyst.svg" alt="" />
@@ -200,7 +178,7 @@ import {
   updateSaveStatus,
 } from '../services/cloudProfile';
 import { townStorage, townKey, TOWN_CHANGED, ACCOUNT_KEY } from '../services/townStorage';
-import { t, number } from '../i18n';
+import { t } from '../i18n';
 import { localProfile } from '../services/localProfile';
 import { townCoordinator } from '../services/townCoordinator';
 import { createTownHandoff } from '../services/townHandoff';
@@ -237,20 +215,6 @@ const accountTown = computed(
   () => !!cloud.account && activeTown.value?.meta.owner === cloud.account.id,
 );
 const townName = computed(() => activeTown.value?.meta.name || t('Your town'));
-// Saloon collections are applied outside puzzles. Live guests have their own
-// presence lifecycle and guestbook; they never enter the playable save.
-const visitorNotice = ref(null);
-watch(
-  () => [cloud.towns, ready.value, game.sessionActive, accountTown.value],
-  () => {
-    const id = activeTown.value?.meta.id;
-    const card = cloud.towns.find((entry) => entry.townId === id);
-    if (!card || !ready.value || game.sessionActive || !accountTown.value || campaign.readOnly)
-      return;
-    const coins = campaign.collectSaloonForVisitor(card.saloonCollectedAt);
-    if (coins) visitorNotice.value = { coins };
-  },
-);
 const saveState = computed(() =>
   describeSaveState({
     signedIn: !!cloud.account,

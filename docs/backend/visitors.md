@@ -1,6 +1,6 @@
 # Public profiles and live town visitors
 
-Shared-town visits have live presence and an owner-only guestbook. They are
+Shared-town visits have live presence and a public guestbook for shared towns. They are
 independent of playable saves, normal VIP arrivals, population, transport and
 saloon collection. No visit affects puzzle moves, rewards or progression.
 
@@ -17,7 +17,7 @@ there is no usable home town. Signed-out visitors appear as “Visitor” and we
 the host town's current era. Players without a usable home town also use the
 host era. Visitors from other eras retain their home town's dress style.
 
-The host sees live visitor characters at valid walking positions without a
+The host and visitors see all live visitor characters at valid walking positions without a
 transport arrival. They have a distinct visitor accessory and do not consume
 ordinary visitor capacity. The guestbook lists people here now and visit
 history, with arrival/departure times and duration. History includes visits made
@@ -29,10 +29,20 @@ establishes a fresh baseline without replaying earlier arrivals; entering the
 mine or switching towns clears the queue. Failed requests never generate
 departure notices or duplicate arrivals on reconnect.
 
+Visitors can open the mayor's guestbook, locate themselves with Find me, and
+locate another present guest with Find visitor. These camera actions pin a
+nametag and never change saves. Clicking the VIP arrival inset pins its displayed
+VIP using the same selection behavior as clicking the person. Live guests do not
+compete with ordinary NPC or VIP visitor slots.
+
+Owner polls also apply pending saloon collections through the campaign's existing
+persisted receipt timestamp. A credited collection queues a coin notification;
+account refreshes and later polls cannot credit or announce it twice. Puzzle play
+pauses these notifications and collection is applied on returning to town.
+
 ## Presence lifecycle
 
-The visit page sends a heartbeat immediately and every 12 seconds. The visible
-host checks visitors every 3 seconds. Normal arrivals/departures therefore
+The visit page sends a heartbeat immediately and every 12 seconds. Both visible town views check visitors every 3 seconds. Normal arrivals/departures therefore
 appear within a few seconds plus network latency; this implementation does not
 use a persistent push connection.
 
@@ -61,11 +71,16 @@ The API contract is in [openapi.yaml](openapi.yaml):
   out returns a null profile and no towns.
 - `PATCH /api/v1/account/profile`: save `displayName` and `visitingTownId`.
 - `POST /api/v1/villages/{publicId}/presence`: join or renew using `token`,
-  `sequence`, optional `browserToken` and optional owned `townId`.
+  `sequence`, optional `browserToken` and optional owned `townId`. Active replies
+  include `visitId` so the visitor can identify their own character.
 - `DELETE /api/v1/villages/{publicId}/presence`: end the tab's `token` lease,
   including its latest `sequence`.
 - `GET /api/v1/towns/{townId}/visitors?page=1`: owner-only current presence plus
-  20 history entries per page, newest first. All timestamps use Unix milliseconds.
+  20 history entries per page, newest first, plus `saloonCollectedAt` for collection
+  receipts. All timestamps use Unix milliseconds.
+- `GET /api/v1/villages/{publicId}/visitors?page=1`: the same public visitor
+  entries and paginated history for a shared town, without the collection receipt.
+  No account is required; private/deleted towns return 404.
 
 The `present` entry's `era: null` means that the renderer should use the host's
 current era. A history entry retains its arrival era. Presence endpoints expose
@@ -83,8 +98,8 @@ profile rows are deleted with their account. Deleting an origin town removes
 its relational link but retains the visit's name/era snapshot in the host's
 history. Presence tokens are stored as keyed hashes, never raw browser tokens.
 
-The shared-town row lock serializes joins, departures, expiry and owner reads.
+The shared-town row lock serializes joins, departures, expiry and guestbook reads.
 Origin validation, signed-in mutation CSRF checks and per-IP rate limits apply.
 Departure additionally uses the unguessable lease token, so logout does not
 prevent a tab from closing its own lease. Unpublishing stops new arrivals and
-closes active visits on the next presence/owner read.
+closes active visits on the next presence/guestbook read.

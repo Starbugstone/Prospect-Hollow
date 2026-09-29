@@ -24,7 +24,7 @@ final class ApiController {
                     if(!$object instanceof \stdClass)throw new ApiError(422,'Request must be a JSON object.');
                     $body=(array)$object;
                 }
-                if($r->query->count() && !($method==='GET'&&($path==='villages'||preg_match('~^towns/[a-f0-9-]{36}/visitors$~D',$path))&&array_keys($r->query->all())===['page']))throw new ApiError(422,'Unsupported query parameters.');
+                if($r->query->count() && !($method==='GET'&&($path==='villages'||preg_match('~^(towns/[a-f0-9-]{36}|villages/[a-f0-9]{32})/visitors$~D',$path))&&array_keys($r->query->all())===['page']))throw new ApiError(422,'Unsupported query parameters.');
                 $ip=$r->getClientIp()??'unknown';$this->auth->limit('http:'.$ip,600,60);
                 if(in_array($path,['auth/login-link','auth/confirm'],true))$this->auth->limit('auth:'.$ip,30,900);
                 $result=match($method.' '.$path) {
@@ -55,6 +55,7 @@ final class ApiController {
     private function deleteAccount(Request $r,array $b): JsonResponse {$this->saves->deleteAccount($r,$b);return $this->auth->clearCookie();}
     private function townRoute(Request $r,string $path,array $b): mixed {
         if(in_array($r->getMethod(),['POST','DELETE'],true)&&preg_match('~^villages/([a-f0-9]{32})/presence$~D',$path,$m))return $this->visitors->presence($r,$m[1],$b);
+        if($r->isMethod('GET')&&preg_match('~^villages/([a-f0-9]{32})/visitors$~D',$path,$m))return $this->visitors->publicGuestbook($r,$m[1]);
         if($r->isMethod('GET')&&preg_match('~^towns/([a-f0-9-]{36})/visitors$~D',$path,$m))return $this->visitors->visitors($r,$m[1]);
         if($r->isMethod('GET')&&preg_match('~^villages/([a-f0-9]{32})(/latest)?$~D',$path,$m))return $this->public->visit($r,$m[1],($m[2]??'')==='');
         if($r->isMethod('POST')&&preg_match('~^villages/([a-f0-9]{32})/saloon$~D',$path,$m)){SaveService::keys($b,[]);return $this->public->tapSaloon($r,$m[1]);}

@@ -1,11 +1,11 @@
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import { cloud } from '../services/cloudProfile';
 import { townStorage } from '../services/townStorage';
-import { createOwnerVisitorPoller } from '../services/visitorPresence';
+import { createVisitorPoller } from '../services/visitorPresence';
 import { townVisitors } from '../services/visitorApi';
 import { visitorChanges } from '../data/liveVisitors';
 
-export function useTownVisitors(active) {
+export function useTownVisitors(active, { collectSaloon = () => null } = {}) {
   const snapshot = shallowRef(null),
     notices = shallowRef([]),
     error = ref('');
@@ -20,6 +20,17 @@ export function useTownVisitors(active) {
       : null;
   });
   let poller, noticeTimer;
+  function enqueue(changes) {
+    if (!changes.length) return;
+    const wasEmpty = notices.value.length === 0;
+    notices.value = [...notices.value, ...changes];
+    if (wasEmpty) scheduleNotice();
+  }
+  function applyCollection(at) {
+    if (!Number.isSafeInteger(at) || at <= 0) return;
+    const coins = collectSaloon(at);
+    if (coins > 0) enqueue([{ kind: 'collection', coins }]);
+  }
   function scheduleNotice() {
     clearTimeout(noticeTimer);
     if (notices.value.length) noticeTimer = setTimeout(dismissNotice, 6000);
@@ -38,16 +49,13 @@ export function useTownVisitors(active) {
       error.value = '';
       if (!id || !enabled) return;
       let confirmed = null;
-      poller = createOwnerVisitorPoller({
+      poller = createVisitorPoller({
         load: () => townVisitors(id),
         apply(result) {
           const changes = visitorChanges(confirmed, result.present);
           confirmed = result.present;
-          if (changes.length) {
-            const wasEmpty = notices.value.length === 0;
-            notices.value = [...notices.value, ...changes];
-            if (wasEmpty) scheduleNotice();
-          }
+          enqueue(changes);
+          applyCollection(result.saloonCollectedAt);
           snapshot.value = result;
           error.value = '';
         },
@@ -58,6 +66,16 @@ export function useTownVisitors(active) {
         },
       });
       poller.start();
+    },
+    { immediate: true },
+  );
+  // Cached account receipts still work on reconnect, even if live polling fails.
+  // The campaign's saved timestamp deduplicates both sources and later polls.
+  watch(
+    () => [townId.value, active(), cloud.towns],
+    ([id, enabled]) => {
+      if (id && enabled)
+        applyCollection(cloud.towns?.find((entry) => entry.townId === id)?.saloonCollectedAt);
     },
     { immediate: true },
   );
@@ -79,5 +97,6 @@ export function useTownVisitors(active) {
     present: computed(() => snapshot.value?.present ?? []),
     notice: computed(() => notices.value[0] ?? null),
     dismissNotice,
+    enqueue,
   };
 }

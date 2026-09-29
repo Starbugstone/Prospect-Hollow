@@ -909,6 +909,43 @@
                 },
             },
         },
+      '/villages/{publicId}/visitors':
+        {
+          'get':
+            {
+              'security': [],
+              'summary': 'Public current visitors and paginated guestbook for a shared town',
+              'description': 'Newest first, 20 history entries per page. Current visitors are returned on every page. Identity snapshots remain stable after profile changes; publicId is null when the origin town is private/deleted. Present era:null means use the host current era. All timestamps are Unix milliseconds.',
+              'parameters':
+                [
+                  {
+                    'name': 'publicId',
+                    'in': 'path',
+                    'required': true,
+                    'schema': { 'type': 'string', 'pattern': '^[a-f0-9]{32}$' },
+                  },
+                  {
+                    'name': 'page',
+                    'in': 'query',
+                    'schema': { 'type': 'integer', 'minimum': 1, 'maximum': 1000000, 'default': 1 },
+                  },
+                ],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'Success',
+                      'content':
+                        {
+                          'application/json':
+                            { 'schema': { '$ref': '#/components/schemas/VisitorGuestbook' } },
+                        },
+                    },
+                  '404': { 'description': 'Town unavailable' },
+                  '422': { 'description': 'Invalid fields or selected town' },
+                },
+            },
+        },
       '/villages':
         {
           'get':
@@ -1106,6 +1143,11 @@
               'properties':
                 {
                   'active': { 'type': 'boolean' },
+                  'visitId':
+                    {
+                      'type': ['string', 'null'],
+                      'description': 'Grouped visit ID for identifying the visitor own character; absent when inactive.',
+                    },
                   'expiresAt': { 'type': ['integer', 'null'] },
                   'serverNow': { 'type': 'integer', 'description': 'Unix milliseconds' },
                 },
@@ -1138,6 +1180,11 @@
                     { 'type': 'array', 'items': { '$ref': '#/components/schemas/VisitorEntry' } },
                   'history':
                     { 'type': 'array', 'items': { '$ref': '#/components/schemas/VisitorEntry' } },
+                  'saloonCollectedAt':
+                    {
+                      'type': 'integer',
+                      'description': 'Owner endpoint only. Last visitor collection in Unix milliseconds, or zero.',
+                    },
                   'page': { 'type': 'integer' },
                   'hasNext': { 'type': 'boolean' },
                   'serverNow': { 'type': 'integer', 'description': 'Unix milliseconds' },

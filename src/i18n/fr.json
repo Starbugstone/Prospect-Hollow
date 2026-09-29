@@ -2363,5 +2363,12 @@
   "Level {level}: {name}": "Niveau {level} : {name}",
   "{name} arrived in your town.": "{name} est arrivé dans votre ville.",
   "{name} left your town.": "{name} a quitté votre ville.",
-  "Dismiss visitor notification": "Fermer la notification de visite"
+  "Dismiss visitor notification": "Fermer la notification de visite",
+  "Mayor's guestbook": "Livre d’or du maire",
+  "Find me": "Me trouver",
+  "Find visitor": "Trouver ce visiteur",
+  "You · {name}": "Vous · {name}",
+  "Town visitor": "Visiteur de la ville",
+  "Show visitor nametag": "Afficher le nom du visiteur",
+  "This visitor is no longer visible. Check the guestbook for the latest visit details.": "Ce visiteur n’est plus visible. Consultez le livre d’or pour les dernières informations sur sa visite."
 }

@@ -59,7 +59,7 @@ export function createVisitorPresence({
       const result = await send({ token: visit.token, sequence: ++visit.sequence });
       if (stopped || current !== visit) return;
       visit.failures = 0;
-      changed(result.active !== false);
+      changed(result.active !== false, result);
     } catch (error) {
       if (stopped || current !== visit) return;
       visit.failures++;
@@ -105,9 +105,9 @@ export function createVisitorPresence({
   };
 }
 
-// Poll only the visible owner's village. Replies from a closed/switched town are
+// Poll only a visible village view. Replies from a closed/switched town are
 // ignored; failures back off and never touch the campaign or its save status.
-export function createOwnerVisitorPoller({
+export function createVisitorPoller({
   load,
   apply,
   failed = () => {},

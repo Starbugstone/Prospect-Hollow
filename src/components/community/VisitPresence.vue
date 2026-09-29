@@ -29,6 +29,7 @@ import { visitorLabel } from '../../data/liveVisitors';
 import { t } from '../../i18n';
 
 const props = defineProps({ villageId: { type: String, required: true } });
+const emit = defineEmits(['presence']);
 const profile = ref(null),
   towns = ref([]),
   townId = ref(null),
@@ -54,7 +55,8 @@ async function start() {
   presence = createVisitorPresence({
     send: (visit) => joinVillage(id, { ...visit, browserToken, townId: sourceTown }),
     leave: (visit) => leaveVillage(id, visit),
-    changed(active) {
+    changed(active, result) {
+      emit('presence', active ? (result?.visitId ?? null) : null);
       if (active) error.value = '';
     },
     failed(problem) {

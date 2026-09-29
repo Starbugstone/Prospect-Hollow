@@ -6,7 +6,6 @@ import { prepareActorWalk } from './TownNavigation';
 
 // Presence is transient scene state. It never enters town saves or VIP shopping
 // itineraries, and it does not consume population/transport capacity.
-export const LIVE_VISITOR_LIMIT = 24;
 const TRANSITION_SECONDS = 0.45;
 const seedFor = (id) => {
   let seed = 0;
@@ -34,7 +33,7 @@ export class TownLiveVisitors {
       this.d.rebuildActors?.();
     }
     this.entries = new Map(
-      (this.d.vipsHidden ? [] : entries)
+      entries
         .filter((entry) => entry?.id !== undefined && entry?.id !== null)
         .map((entry) => [String(entry.id), entry]),
     );
@@ -47,9 +46,11 @@ export class TownLiveVisitors {
     return JSON.stringify([
       !!this.d.liveVisitorsReducedMotion,
       this.d.motionEnabled === false,
-      [...this.entries]
-        .slice(0, LIVE_VISITOR_LIMIT)
-        .map(([id, entry]) => [id, visitorLabel(entry), visitorEra(entry, this.d.town)]),
+      [...this.entries].map(([id, entry]) => [
+        id,
+        visitorLabel(entry),
+        visitorEra(entry, this.d.town),
+      ]),
     ]);
   }
   detach() {
@@ -57,7 +58,7 @@ export class TownLiveVisitors {
   }
   attach() {
     const d = this.d;
-    const wanted = new Map([...this.entries].slice(0, LIVE_VISITOR_LIMIT));
+    const wanted = new Map([...this.entries]);
     for (const actor of [...this.actors]) {
       const entry = wanted.get(actor.liveId);
       if (entry && actor.appearance.era !== visitorEra(entry, d.town)) {
@@ -73,12 +74,7 @@ export class TownLiveVisitors {
       } else actor.leavingAt ??= d.elapsed;
     }
     for (const [id, entry] of wanted) {
-      // Departures free their visual slots immediately when a crowd is full.
-      if (this.actors.length >= LIVE_VISITOR_LIMIT) {
-        const departed = this.actors.find((actor) => actor.leavingAt !== undefined);
-        if (departed) this.remove(departed);
-      }
-      if (this.actors.length < LIVE_VISITOR_LIMIT) this.create(id, entry);
+      this.create(id, entry);
     }
     this.update();
     this.signature = this.appearanceSignature();

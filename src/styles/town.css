@@ -1924,9 +1924,13 @@ html:has(.town-museum[open]) {
   visibility: hidden;
 }
 
-/* Passive arrivals leave the camera gestures and town taps available. */
+/* The arrival window selects the passenger without moving the main camera. */
 .town-event-inset.passive-arrival-inset {
-  pointer-events: none;
+  cursor: pointer;
+}
+.town-event-inset.passive-arrival-inset:focus-visible {
+  outline: 3px solid #e5c47b;
+  outline-offset: 3px;
 }
 .town-event-inset .vip-inset-name {
   bottom: auto;

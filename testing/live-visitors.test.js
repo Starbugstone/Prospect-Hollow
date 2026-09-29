@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { Group, Scene } from 'three';
+import { Group, Scene, PerspectiveCamera, Vector3 } from 'three';
 import { TownDiorama } from '../src/game/town/TownDiorama';
-import { TownLiveVisitors, LIVE_VISITOR_LIMIT } from '../src/game/town/TownLiveVisitors';
+import { TownLiveVisitors } from '../src/game/town/TownLiveVisitors';
 import { TownVipArrivals } from '../src/game/town/TownVipArrivals';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { TownNavigation } from '../src/game/town/TownNavigation';
@@ -213,20 +213,48 @@ it('walks without a VIP shopping itinerary or random name replacement, and resum
   expect(actor.root.visible).toBe(true);
 });
 
-it('bounds the animated crowd while retaining the complete presence snapshot', () => {
+it('shows the complete live crowd without dropping visitors beyond the first 24', () => {
   const d = fixture();
-  const visits = Array.from({ length: LIVE_VISITOR_LIMIT + 5 }, (_, id) => visitor(id));
-  d.setLiveVisitors(visits);
-  expect(d.liveVisitors.actors).toHaveLength(LIVE_VISITOR_LIMIT);
-  expect(d.liveVisitors.entries.size).toBe(visits.length);
-  d.setLiveVisitors(visits.slice(1));
-  expect(d.liveVisitors.actors).toHaveLength(LIVE_VISITOR_LIMIT);
-  expect(d.liveVisitors.actors.some((actor) => actor.liveId === String(LIVE_VISITOR_LIMIT))).toBe(
-    true,
-  );
+  const visits = Array.from({ length: 29 }, (_, id) => visitor(id));
+  d.setLiveVisitors(visits, true);
+  expect(d.liveVisitors.actors).toHaveLength(visits.length);
+  d.setLiveVisitors(visits.slice(1), true);
+  expect(d.liveVisitors.actors).toHaveLength(visits.length - 1);
 });
 
-it('suppresses old queued arrivals and public-scene live actors while preserving ordinary VIP arrivals', () => {
+it('finds and pins a named live guest independently of ordinary town actors', () => {
+  const d = fixture();
+  d.camera = new PerspectiveCamera(45, 1.5, 0.1, 300);
+  d.camera.position.set(30, 25, 40);
+  d.canvas = { clientWidth: 960, clientHeight: 600 };
+  d.controls = {
+    target: new Vector3(),
+    update: () => {
+      d.camera.lookAt(d.controls.target);
+      d.camera.updateMatrixWorld();
+    },
+  };
+  d.onVillagerLabel = vi.fn();
+  const saved = JSON.stringify(d.town);
+  d.setLiveVisitors([visitor('self', { self: true }), visitor('matt', { name: 'Matt' })], true);
+  expect(d.findVisitor('matt')).toBe(true);
+  expect(d.namedVillager.liveId).toBe('matt');
+  expect(d.villagerLabelPinned).toBe(true);
+  expect(d.onVillagerLabel).toHaveBeenLastCalledWith(
+    expect.objectContaining({ name: expect.stringContaining('Matt'), live: true }),
+  );
+  expect(d.findVisitor('self')).toBe(true);
+  expect(d.namedVillager.root.userData.villager.name).toContain('You ·');
+  expect(d.findVisitor('missing')).toBe(false);
+  d.raid = {};
+  expect(d.findVisitor('matt')).toBe(false);
+  d.raid = null;
+  d.setLiveVisitors([], true);
+  expect(d.findVisitor('matt')).toBe(false);
+  expect(JSON.stringify(d.town)).toBe(saved);
+});
+
+it('shows public live guests while suppressing ordinary VIPs and legacy guests', () => {
   const d = fixture();
   d.town.guestVip = { name: 'Old Guest', at: 123, seen: false };
   d.setLiveVisitors([]);
@@ -235,6 +263,7 @@ it('suppresses old queued arrivals and public-scene live actors while preserving
   expect(arrivals.actors).toHaveLength(0);
   expect(d.drawVip).toBe(TownDiorama.prototype.drawVip);
   d.vipsHidden = true;
-  d.setLiveVisitors([visitor('a')]);
-  expect(d.liveVisitors.actors).toHaveLength(0);
+  d.setLiveVisitors([visitor('a', { self: true }), visitor('b', { name: 'Matt' })]);
+  expect(d.liveVisitors.actors).toHaveLength(2);
+  expect(d.drawVip(1, 1)).toBeNull();
 });

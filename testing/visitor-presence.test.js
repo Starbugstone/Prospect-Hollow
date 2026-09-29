@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createVisitorPresence,
-  createOwnerVisitorPoller,
+  createVisitorPoller,
   VISITOR_AWAY_MS,
   VISITOR_HEARTBEAT_MS,
   VISITOR_POLL_MS,
@@ -131,7 +131,7 @@ describe('owner presence updates', () => {
       .fn()
       .mockResolvedValueOnce({ present: [{ id: 'one' }] })
       .mockReturnValue(pending.promise);
-    const poller = createOwnerVisitorPoller({ load, apply, hidden: () => hidden });
+    const poller = createVisitorPoller({ load, apply, hidden: () => hidden });
     poller.start();
     await vi.advanceTimersByTimeAsync(VISITOR_POLL_MS);
     expect(load).toHaveBeenCalledTimes(2);
@@ -147,7 +147,7 @@ describe('owner presence updates', () => {
       .mockRejectedValueOnce(new Error('offline'))
       .mockResolvedValue({ present: [] });
     const failed = vi.fn();
-    const poller = createOwnerVisitorPoller({ load, apply: vi.fn(), failed, hidden: () => hidden });
+    const poller = createVisitorPoller({ load, apply: vi.fn(), failed, hidden: () => hidden });
     poller.start();
     await vi.advanceTimersByTimeAsync(VISITOR_POLL_MS);
     expect(load).toHaveBeenCalledOnce();

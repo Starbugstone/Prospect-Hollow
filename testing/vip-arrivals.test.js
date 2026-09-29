@@ -280,3 +280,26 @@ it.each(['aviation', 'broadcast', 'contemporary'])(
     expect(d.navigation.plans).toBe(plans);
   },
 );
+
+it('clicking the VIP inset pins the same actor, preserves the camera, and toggles on a second click', () => {
+  const { d, frame, arrival } = fixture('riverPort');
+  d.render = vi.fn();
+  frame(arrival);
+  frame(arrival + 0.25);
+  renderEventInset(d);
+  const actor = d.vipArrivals.active.actor;
+  const position = d.camera.position.clone();
+  d.selectInsetVisitor();
+  expect(d.namedVillager).toBe(actor);
+  expect(d.villagerLabelPinned).toBe(true);
+  expect(d.camera.position).toEqual(position);
+  d.showVillager(-Infinity, -Infinity);
+  expect(d.namedVillager).toBe(actor);
+  d.selectInsetVisitor();
+  expect(d.namedVillager).toBeNull();
+  d.selectInsetVisitor();
+  frame(arrival + VIP_INSET_SECONDS + 0.5);
+  renderEventInset(d);
+  expect(d.namedVillager).toBe(actor);
+  expect(d.villagerLabelPinned).toBe(true);
+});

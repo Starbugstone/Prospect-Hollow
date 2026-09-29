@@ -104,7 +104,7 @@ final class VisitorService {
             if($lease&&((int)$lease['ended']===1||$sequence<(int)$lease['sequence']))return ['active'=>false,'expiresAt'=>null,'serverNow'=>$now*1000];
             if($lease&&array_key_exists('sequence',$body)&&$sequence===(int)$lease['sequence']) {
                 $active=$lease['departed_at']===null;
-                return ['active'=>$active,'expiresAt'=>$active?(int)$lease['expires_at']*1000:null,'serverNow'=>$now*1000];
+                return ['active'=>$active,'visitId'=>$active?$lease['visit_id']:null,'expiresAt'=>$active?(int)$lease['expires_at']*1000:null,'serverNow'=>$now*1000];
             }
             if($lease&&$lease['departed_at']===null) {
                 $visit=$lease['visit_id'];
@@ -121,7 +121,7 @@ final class VisitorService {
             if($lease)$db->update('visitor_leases',$values,['token_hash'=>$token]);
             else $db->insert('visitor_leases',['token_hash'=>$token]+$values);
             $db->update('visitor_visits',['last_seen_at'=>$now],['id'=>$visit]);
-            return ['active'=>true,'expiresAt'=>($now+self::LEASE_SECONDS)*1000,'serverNow'=>$now*1000];
+            return ['active'=>true,'visitId'=>$visit,'expiresAt'=>($now+self::LEASE_SECONDS)*1000,'serverNow'=>$now*1000];
         });
         if($result instanceof ApiError)throw $result;
         return $result;
@@ -165,17 +165,30 @@ final class VisitorService {
 
     public function visitors(Request $r,string $town): array {
         $session=$this->auth->session($r);
+        return $this->guestbook($r,$town,$session['player_id']);
+    }
+
+    public function publicGuestbook(Request $r,string $publicId): array {
+        return $this->guestbook($r,$publicId,null);
+    }
+
+    private function guestbook(Request $r,string $id,?string $owner): array {
         $page=filter_var($r->query->get('page','1'),FILTER_VALIDATE_INT,['options'=>['min_range'=>1,'max_range'=>1000000]]);
         if(!$page)throw new ApiError(422,'Invalid page.');
-        return $this->database->get()->transactional(function($db) use($town,$session,$page) {
-            $host=$db->fetchAssociative('SELECT id,listed FROM towns WHERE id=? AND player_id=? AND deleted_at IS NULL FOR UPDATE',[$town,$session['player_id']]);
+        return $this->database->get()->transactional(function($db) use($id,$owner,$page) {
+            $host=$owner===null
+                ?$db->fetchAssociative('SELECT id,listed FROM towns WHERE public_id=? AND listed=1 AND deleted_at IS NULL FOR UPDATE',[$id])
+                :$db->fetchAssociative('SELECT id,listed FROM towns WHERE id=? AND player_id=? AND deleted_at IS NULL FOR UPDATE',[$id,$owner]);
             if(!$host)throw new ApiError(404,'Town unavailable.');
+            $town=$host['id'];
             $now=time();$this->expire($town,$now,!(bool)$host['listed']);
             $select='SELECT v.*,t.public_id,t.listed,t.deleted_at FROM visitor_visits v LEFT JOIN towns t ON t.id=v.origin_town_id WHERE v.town_id=?';
             $present=$db->fetchAllAssociative($select.' AND v.departed_at IS NULL ORDER BY v.arrived_at DESC,v.id DESC',[$town]);
             $history=$db->fetchAllAssociative($select.' ORDER BY v.arrived_at DESC,v.id DESC LIMIT '.(self::PAGE_SIZE+1).' OFFSET '.(($page-1)*self::PAGE_SIZE),[$town]);
             $project=fn($row)=>['id'=>$row['id'],'name'=>$row['name'],'townName'=>$row['town_name'],'era'=>$row['era'],'publicId'=>$row['listed']&&$row['deleted_at']===null?$row['public_id']:null,'arrivedAt'=>(int)$row['arrived_at']*1000,'lastSeenAt'=>(int)$row['last_seen_at']*1000,'departedAt'=>$row['departed_at']===null?null:(int)$row['departed_at']*1000];
-            return ['present'=>array_map(fn($row)=>array_replace($project($row),['era'=>$row['town_name']===null?null:$row['era']]),$present),'history'=>array_map($project,array_slice($history,0,self::PAGE_SIZE)),'page'=>$page,'hasNext'=>count($history)>self::PAGE_SIZE,'serverNow'=>$now*1000];
+            $result=['present'=>array_map(fn($row)=>array_replace($project($row),['era'=>$row['town_name']===null?null:$row['era']]),$present),'history'=>array_map($project,array_slice($history,0,self::PAGE_SIZE)),'page'=>$page,'hasNext'=>count($history)>self::PAGE_SIZE,'serverNow'=>$now*1000];
+            if($owner!==null)$result['saloonCollectedAt']=(int)$db->fetchOne('SELECT collected_at FROM saloon_collections WHERE town_id=?',[$town])*1000;
+            return $result;
         });
     }
 }

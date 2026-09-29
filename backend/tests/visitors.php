@@ -8,12 +8,14 @@ function visitorApi(string $method,string $path,mixed $body=null,array $session=
 }
 try {
     $owner=account();$guest=account();$other=account();
-    $host=status(200,visitorApi('POST','towns',townBody('Host Harbor'),$owner),'host town');
+    $hostBody=townBody('Host Harbor');$hostBody['profile']->town->buildings->saloon=1;
+    $host=status(200,visitorApi('POST','towns',$hostBody,$owner),'host town');
     $hostId=$host['townId'];
     $hostPath='towns/'.$hostId;
     $publicId=status(200,visitorApi('PATCH',$hostPath.'/settings',['baseRevision'=>1,'name'=>'Host Harbor','isPublic'=>true],$owner),'share host')['publicId'];
     $presence='villages/'.$publicId.'/presence';
     $book=fn($page=1)=>status(200,visitorApi('GET',$hostPath.'/visitors?page='.$page,null,$owner),'owner guestbook');
+    $publicBook=fn($page=1)=>status(200,visitorApi('GET','villages/'.$publicId.'/visitors?page='.$page),'public guestbook');
     $originBody=townBody('Silver Creek');$originBody['profile']->town->era='industrial';
     $origin=status(200,visitorApi('POST','towns',$originBody,$guest),'visitor home');
     $originId=$origin['townId'];
@@ -44,10 +46,20 @@ try {
     $entries=$book();$visitor=$entries['present'][0];$visitId=$visitor['id'];
     check(count($entries['history'])===1&&$visitor['name']==='Camille Rose'&&$visitor['townName']==='Silver Creek'&&$visitor['era']==='industrial'&&$visitor['publicId']===null,'server identity and home era even for private origin');
     check(!isset($visitor['player_id'],$visitor['visitor_key'],$visitor['origin_town_id'],$visitor['token_hash']),'guestbook hides identifiers and lease secrets');
+    check($joined['visitId']===$visitId,'presence identifies own grouped character');
+    $publicEntries=$publicBook();
+    check($publicEntries['present']===$entries['present']&&$publicEntries['history']===$entries['history'],'public view has same guests and history');
+    check(!array_key_exists('saloonCollectedAt',$publicEntries),'public guestbook omits owner collection receipt');
+    check(array_keys($publicEntries['present'][0])===['id','name','townName','era','publicId','arrivedAt','lastSeenAt','departedAt'],'public guestbook whitelist excludes private identifiers and tokens');
+    status(422,visitorApi('GET','villages/'.$publicId.'/visitors?page=0'),'public invalid page');
+    status(422,visitorApi('GET','villages/'.$publicId.'/visitors?extra=1'),'public unknown query');
+    $collection=status(200,visitorApi('POST','villages/'.$publicId.'/saloon',(object)[]),'visitor collects saloon');
+    check($book()['saloonCollectedAt']===($collection['readyAt']-3600)*1000,'owner live poll receives collection timestamp in milliseconds');
     $retryExpiry=time()+10;
     $db->get()->update('visitor_leases',['expires_at'=>$retryExpiry],['token_hash'=>$auth->hash('visitor:'.$token)]);
     $retry=status(200,visitorApi('POST',$presence,$body,$guest),'duplicate heartbeat sequence');
     check($retry['active']&&$retry['expiresAt']===$retryExpiry*1000,'duplicate heartbeat does not extend the lease');
+    check($retry['visitId']===$visitId,'idempotent heartbeat retains same character');
     status(401,visitorApi('GET',$hostPath.'/visitors'),'anonymous guestbook denied');
     status(404,visitorApi('GET',$hostPath.'/visitors',null,$guest),'foreign guestbook denied');
     status(422,visitorApi('GET',$hostPath.'/visitors?page=0',null,$owner),'invalid page');
@@ -88,6 +100,7 @@ try {
     check(count($entries['present'])===1&&$expired['departedAt']===$past*1000,'lost connection closes at actual expiry time');
     status(200,visitorApi('PATCH',$hostPath.'/settings',['baseRevision'=>1,'name'=>'Host Harbor','isPublic'=>false],$owner),'unshare host');
     status(404,visitorApi('POST',$presence,['token'=>bin2hex(random_bytes(32))]),'unshared host rejects arrivals');
+    status(404,visitorApi('GET','villages/'.$publicId.'/visitors'),'unshared host guestbook unavailable');
     check(count($book()['present'])===0,'unsharing removes all live visitors but keeps history');
     status(200,visitorApi('PATCH',$hostPath.'/settings',['baseRevision'=>1,'name'=>'Host Harbor','isPublic'=>true],$owner),'share again');
     // Paginated permanent history, independent of save revisions and saloon.
@@ -98,6 +111,7 @@ try {
     }
     $first=$book();$second=$book(2);
     check(count($first['history'])===20&&$first['hasNext']&&count($second['history'])===5&&!$second['hasNext'],'all visits are paginated without truncation');
+    check($publicBook(2)['history']===$second['history'],'public visit history supports later pages');
     check(count(array_intersect(array_column($first['history'],'id'),array_column($second['history'],'id')))===0,'history pages do not overlap');
     check((int)$db->get()->fetchOne('SELECT revision FROM towns WHERE id=?',[$hostId])===1,'presence never changes game save revision');
     check(!$db->get()->fetchOne('SELECT town_id FROM town_guests WHERE town_id=?',[$hostId]),'presence does not queue ordinary VIP arrivals');
@@ -129,5 +143,7 @@ try {
     check(count($book()['present'])===1&&(int)$db->get()->fetchOne('SELECT COUNT(*) FROM visitor_visits WHERE town_id=?',[$hostId])===$before+1,'simultaneous tabs produce exactly one visitor and log');
     foreach($tabs as $tab)status(200,visitorApi('DELETE',$presence,['token'=>$tab,'sequence'=>2]),'close concurrent tab');
     check($book()['present']===[],'last concurrent tab departure closes presence');
+    status(200,visitorApi('DELETE',$hostPath,['baseRevision'=>1,'confirmation'=>'Host Harbor'],$owner),'delete host');
+    status(404,visitorApi('GET','villages/'.$publicId.'/visitors'),'deleted guestbook unavailable');
     echo "Visitor API checks passed ($count assertions).\n";
 } finally {cleanup();}

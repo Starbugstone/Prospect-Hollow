@@ -1888,10 +1888,7 @@ export class TownDiorama {
       }
     }
     if (pin && nearest) {
-      const dismiss = this.villagerLabelPinned && this.namedVillager === nearest;
-      this.namedVillager = dismiss ? null : nearest;
-      this.villagerLabelPinned = !dismiss;
-      this.dismissedVillager = dismiss ? nearest : null;
+      this.selectVillager(nearest);
     } else if (!this.villagerLabelPinned || !this.namedVillager) {
       // A second click stays dismissed until the pointer leaves this visitor.
       if (nearest !== this.dismissedVillager) this.dismissedVillager = null;
@@ -1900,6 +1897,48 @@ export class TownDiorama {
     }
     this.projectVillager();
     return !!nearest;
+  }
+  selectVillager(actor, toggle = true) {
+    const dismiss = toggle && this.villagerLabelPinned && this.namedVillager === actor;
+    this.namedVillager = dismiss ? null : actor;
+    this.villagerLabelPinned = !dismiss;
+    this.dismissedVillager = dismiss ? actor : null;
+    this.projectVillager();
+  }
+  selectInsetVisitor() {
+    const actor = this.vipArrivals?.active?.actor;
+    if (
+      !this.eventInsetVisible ||
+      !actor ||
+      this.raid ||
+      this.cinematic ||
+      this.presentation ||
+      this.eventCamera
+    )
+      return;
+    this.selectVillager(actor);
+    this.render();
+  }
+  findVisitor(id) {
+    if (this.raid || this.cinematic || this.presentation || this.eventCamera) return false;
+    const actor = this.liveVisitors?.actors.find(
+      (entry) => entry.liveId === String(id) && entry.leavingAt === undefined,
+    );
+    if (!actor?.root.visible || !this.world.children.includes(actor.root)) return false;
+    const target = actor.root.position.clone().add(point(0, 1, 0));
+    const offset = this.camera.position
+      .clone()
+      .sub(this.controls.target)
+      .normalize()
+      .multiplyScalar(16);
+    this.controls.target.copy(target);
+    this.camera.position.copy(target).add(offset);
+    keepCameraAboveTerrain(this.camera.position, target);
+    this.overview = false;
+    this.controls.update();
+    this.selectVillager(actor, false);
+    this.render();
+    return true;
   }
   projectVillager() {
     const actor = this.namedVillager;
@@ -1932,7 +1971,12 @@ export class TownDiorama {
           ((1 - p.y) * this.canvas.clientHeight) / 2,
           180,
         )
-        ? { name: actor.root.userData.villager.name, x: (p.x + 1) * 50, y: (1 - p.y) * 50 }
+        ? {
+            name: actor.root.userData.villager.name,
+            live: !!actor.root.userData.villager.live,
+            x: (p.x + 1) * 50,
+            y: (1 - p.y) * 50,
+          }
         : null,
     );
   }

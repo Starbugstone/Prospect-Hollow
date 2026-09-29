@@ -37,8 +37,12 @@
       v-if="eventInset && !reducedMotion"
       class="town-event-inset"
       :class="{ 'passive-arrival-inset': eventInset.passive }"
-      role="img"
-      :aria-label="t(eventInset.label)"
+      :role="eventInset.passive ? 'button' : 'img'"
+      :tabindex="eventInset.passive ? 0 : undefined"
+      :aria-label="eventInset.passive ? t('Show visitor nametag') : t(eventInset.label)"
+      @click.stop="eventInset.passive && scene?.selectInsetVisitor()"
+      @keydown.enter.prevent.stop="eventInset.passive && scene?.selectInsetVisitor()"
+      @keydown.space.prevent.stop="eventInset.passive && scene?.selectInsetVisitor()"
       :style="{
         left: `${eventInset.x}px`,
         bottom: `${eventInset.y}px`,
@@ -62,7 +66,7 @@
       class="villager-name"
       role="status"
       :style="{ left: `${villagerLabel.x}%`, top: `${villagerLabel.y}%` }"
-      >{{ t('VIP visitor') }} · {{ villagerLabel.name }}</span
+      >{{ t(villagerLabel.live ? 'Town visitor' : 'VIP visitor') }} · {{ villagerLabel.name }}</span
     >
     <div class="town-action-icons">
       <button
@@ -345,6 +349,7 @@ function collectionOrigin(id) {
 let presentationTime = 0;
 let cinematicProgress = 0;
 defineExpose({
+  findVisitor: (id) => scene?.findVisitor(id) ?? false,
   collectionOrigin,
   cinematicFrame: (progress) => {
     cinematicProgress = progress;
@@ -585,11 +590,7 @@ async function initialize() {
     );
     // A shared town is only a view: VIP guests visit the owner's own game.
     scene.vipsHidden = props.readOnly;
-    scene.setLiveVisitors(
-      props.readOnly ? [] : props.liveVisitors,
-      props.reducedMotion,
-      props.liveVisitorTownId,
-    );
+    scene.setLiveVisitors(props.liveVisitors, props.reducedMotion, props.liveVisitorTownId);
     scene.onVipSpend = (receipt) => emit('vip-spend', receipt);
     scene.onGuestVip = (at) => emit('guest-vip', at);
     scene.onVillagerLabel = (label) => {
@@ -634,11 +635,7 @@ const visibilityChanged = () => {
 watch(
   () => [props.liveVisitors, props.liveVisitorTownId, props.reducedMotion, locale.value],
   () => {
-    scene?.setLiveVisitors(
-      props.readOnly ? [] : props.liveVisitors,
-      props.reducedMotion,
-      props.liveVisitorTownId,
-    );
+    scene?.setLiveVisitors(props.liveVisitors, props.reducedMotion, props.liveVisitorTownId);
   },
 );
 onMounted(() => {

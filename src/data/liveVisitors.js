@@ -13,7 +13,8 @@ export function visitorTitle(visitor) {
 }
 
 export function visitorLabel(visitor) {
-  return [visitorName(visitor), visitorTitle(visitor)].filter(Boolean).join(' · ');
+  const name = [visitorName(visitor), visitorTitle(visitor)].filter(Boolean).join(' · ');
+  return visitor.self ? t('You · {name}', { name }) : name;
 }
 
 // Compare confirmed server snapshots by stay ID, not by name or heartbeat time.

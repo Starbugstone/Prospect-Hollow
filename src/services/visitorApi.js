@@ -20,3 +20,5 @@ export const leaveVillage = (id, presence) =>
   );
 export const townVisitors = (id, page = 1) =>
   request(`towns/${encodeURIComponent(id)}/visitors?page=${page}`);
+export const villageVisitors = (id, page = 1) =>
+  request(`villages/${encodeURIComponent(id)}/visitors?page=${page}`, undefined, 'GET', true);

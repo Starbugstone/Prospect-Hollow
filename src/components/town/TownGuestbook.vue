@@ -1,7 +1,9 @@
 <template>
   <section class="town-guestbook" :aria-label="t('Visitors')">
     <h2>{{ t('Visitors') }}</h2>
-    <p v-if="!townId">{{ t('Back up and share your town to welcome other players.') }}</p>
+    <p v-if="!townId && !villageId">
+      {{ t('Back up and share your town to welcome other players.') }}
+    </p>
     <template v-else>
       <p v-if="error || problem" role="status">{{ t(error || problem) }}</p>
       <h3>{{ t('Here now · {count}', { count: number(snapshot?.present?.length ?? 0) }) }}</h3>
@@ -15,6 +17,7 @@
             ><small v-if="visitorTitle(visitor)">{{ visitorTitle(visitor) }}</small
             ><small>{{ eraName(visitor.era) }}</small>
           </div>
+          <button v-if="canFind" @click="$emit('find', visitor.id)">{{ t('Find visitor') }}</button>
           <a
             v-if="visitor.publicId"
             :href="visitUrl(visitor.publicId)"
@@ -24,7 +27,7 @@
           >
         </li>
       </ul>
-      <details :key="townId" class="guestbook-past">
+      <details :key="townId || villageId" class="guestbook-past">
         <summary>{{ t('Visit history') }}</summary>
         <p v-if="!entries.length && snapshot">
           {{ t('Your guestbook is waiting for its first visitor.') }}
@@ -72,12 +75,20 @@
 </template>
 <script setup>
 import { computed, onBeforeUnmount, ref, shallowRef, watch } from 'vue';
-import { townVisitors } from '../../services/visitorApi';
+import { townVisitors, villageVisitors } from '../../services/visitorApi';
 import { visitUrl } from '../../services/appRoute';
 import { visitorName, visitorTitle } from '../../data/liveVisitors';
 import { ERA_BY_ID } from '../../data/eras';
 import { t, number, locale } from '../../i18n';
-const props = defineProps({ townId: String, snapshot: Object, error: String, era: String });
+const props = defineProps({
+  townId: String,
+  villageId: String,
+  snapshot: Object,
+  error: String,
+  era: String,
+  canFind: Boolean,
+});
+defineEmits(['find']);
 const page = ref(1),
   result = shallowRef(null),
   busy = ref(false),
@@ -92,7 +103,7 @@ const when = (at) =>
   new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', timeStyle: 'short' }).format(at);
 let generation = 0;
 watch(
-  () => props.townId,
+  () => props.townId || props.villageId,
   () => {
     generation++;
     page.value = 1;
@@ -111,7 +122,9 @@ async function load(next) {
   busy.value = true;
   problem.value = '';
   try {
-    const loaded = await townVisitors(props.townId, next);
+    const loaded = props.villageId
+      ? await villageVisitors(props.villageId, next)
+      : await townVisitors(props.townId, next);
     if (current !== generation) return;
     page.value = next;
     result.value = loaded;
@@ -213,6 +226,13 @@ onBeforeUnmount(() => {
 @media (max-width: 480px) {
   .town-guestbook {
     padding: 0.75rem;
+  }
+  .guestbook-now li {
+    flex-wrap: wrap;
+  }
+  .guestbook-now li > div {
+    flex: 1;
+    min-width: 50%;
   }
   .guestbook-history li {
     align-items: flex-start;
