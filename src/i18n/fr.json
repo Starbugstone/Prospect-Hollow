@@ -2816,5 +2816,8 @@
   "From {town}": "De {town}",
   "A visitor from {town} is coming to see your village.": "Un visiteur de {town} vient voir votre village.",
   "The village needs 3D graphics, which could not start on this device.": "Le village a besoin de graphismes 3D, qui n’ont pas pu démarrer sur cet appareil.",
-  "Enter the mine": "Entrer dans la mine"
+  "Enter the mine": "Entrer dans la mine",
+  "Backup file": "Fichier de sauvegarde",
+  "Keep a copy of {town} on your device, or load one of its backups.": "Conservez une copie de {town} sur votre appareil, ou chargez l’une de ses sauvegardes.",
+  "This backup belongs to another town. Sign out to load it into the local slot, then attach it to an available account slot.": "Cette sauvegarde appartient à une autre ville. Déconnectez-vous pour la charger dans l’emplacement local, puis rattachez-la à un emplacement libre de votre compte."
 }

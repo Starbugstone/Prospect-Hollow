@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import { useCampaignStore } from '../stores/campaignStore';
 import { MAX_SAVE_FILE_BYTES, parseSaveFile } from '../services/saveTransfer';
+import { OTHER_TOWN_BACKUP } from '../services/townStorage';
 
 /**
  * Choose, validate and confirm a JSON backup before it replaces the current village.
@@ -60,7 +61,9 @@ export function useSaveImport(onImported = () => {}) {
       saveError.value =
         error.message === 'The save could not be stored. Your current progress has not changed.'
           ? error.message
-          : 'That file is not a Prospect Hollow backup.';
+          : error.message?.startsWith(OTHER_TOWN_BACKUP)
+            ? OTHER_TOWN_BACKUP
+            : 'That file is not a Prospect Hollow backup.';
     }
   }
   return {

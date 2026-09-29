@@ -711,6 +711,10 @@
 .account-confirm p {
   flex-basis: 100%;
 }
+/* Outside the save timeline, the confirmation spans its one-column section. */
+.account-section > .account-confirm {
+  grid-column: auto;
+}
 .account-panel details {
   width: 100%;
 }

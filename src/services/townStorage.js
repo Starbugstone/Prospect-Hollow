@@ -27,6 +27,9 @@ export const progressKey = (profile) =>
       return sorted;
     },
   );
+// Account towns only accept their own backups; the import screens show this as written.
+export const OTHER_TOWN_BACKUP =
+  'This backup belongs to another town. Sign out to load it into the local slot, then attach it to an available account slot.';
 const freshMeta = (name = 'My town') => ({
   id: crypto.randomUUID(),
   name,
@@ -373,9 +376,7 @@ export function createTownStorage({
     import(profile, identity) {
       const current = this.active() ?? { profile: {}, meta: freshMeta() };
       if (current.meta.owner && identity && identity.id !== current.meta.id)
-        throw new Error(
-          'This backup belongs to another town. Sign out to load it into the local slot, then attach it to an available account slot.',
-        );
+        throw new Error(OTHER_TOWN_BACKUP);
       if (!current.meta.owner && identity)
         current.meta = { ...freshMeta(identity.name), id: identity.id };
       current.meta = {

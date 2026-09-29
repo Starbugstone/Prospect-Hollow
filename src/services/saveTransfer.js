@@ -30,6 +30,22 @@ export function createSaveFile(profile) {
 }
 
 /**
+ * Name a downloaded backup after its town, so players can tell their towns' files apart.
+ * @param {string} [townName] Falls back to a generic name when the town has none.
+ * @param {Date} [now]
+ * @returns {string} For example "prospect-hollow-Silver-Creek-2026-09-29T10-00-00-000Z.json".
+ */
+export function saveFileName(townName, now = new Date()) {
+  const town = String(townName ?? '')
+    .normalize('NFC')
+    .replace(/[\\/:*?"<>|\u0000-\u001f\u007f.]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, '-')
+    .slice(0, 40);
+  return `prospect-hollow-${town ? `${town}-` : ''}${now.toISOString().replace(/[:.]/g, '-')}.json`;
+}
+
+/**
  * Start a browser download of a JSON save without navigating away from the game.
  * @param {string} text Serialized save, for example from createSaveFile.
  * @param {string} filename
