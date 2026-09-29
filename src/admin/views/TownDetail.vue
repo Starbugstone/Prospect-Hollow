@@ -11,10 +11,12 @@
         <p class="admin-muted">Town {{ town.id }} · revision {{ town.revision }}</p>
       </header>
       <div class="admin-town-layout">
-        <div class="admin-town-frame">
-          <TownViewer v-if="data.appearance" :key="town.revision" :appearance="data.appearance" />
-          <p v-else class="admin-empty">This save cannot be drawn.</p>
-        </div>
+        <TownPreview
+          v-if="data.appearance"
+          :key="`${town.id}/${town.revision}`"
+          :appearance="data.appearance"
+        />
+        <p v-else class="admin-empty">This save cannot be drawn.</p>
         <dl class="admin-facts admin-facts-column">
           <div>
             <dt>Era</dt>
@@ -206,15 +208,14 @@
   </section>
 </template>
 <script setup>
-import { computed, defineAsyncComponent, onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { adminApi } from '../api';
 import { go, shownEmail } from '../state';
 import { dateTime, relativeTime, whole } from '../format';
 import { BUILDINGS, LEVEL_COUNT, buildingLabel, eraLabel, powerLabel } from '../labels';
 import ConfirmAction from '../components/ConfirmAction.vue';
 import TownState from '../components/TownState.vue';
-// The 3D renderer is large: load it only when a town is opened.
-const TownViewer = defineAsyncComponent(() => import('./TownViewer.vue'));
+import TownPreview from '../components/TownPreview.vue';
 const props = defineProps({ id: String });
 const data = ref(null),
   error = ref(''),

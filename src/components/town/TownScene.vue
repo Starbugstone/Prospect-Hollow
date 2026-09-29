@@ -766,6 +766,30 @@ onBeforeUnmount(() => {
 });
 </script>
 <style scoped>
+/* Keep camera controls with the renderer so standalone admin views have them too. */
+details.town-camera-bar {
+  display: block;
+  width: fit-content;
+  right: auto;
+  pointer-events: auto;
+}
+.town-camera-bar > summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  width: fit-content;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid #a99b76;
+  border-radius: 10px;
+  background: #fff8e9;
+  color: #405448;
+  font-size: 12px;
+}
+.town-camera-bar .town-camera-controls {
+  margin-top: 6px;
+}
 .town-graphics-unavailable {
   position: absolute;
   inset: 0;
