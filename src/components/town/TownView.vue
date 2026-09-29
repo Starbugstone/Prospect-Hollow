@@ -590,7 +590,7 @@
         :powers="campaign.powers"
         :last-income="campaign.lastSaloonIncome"
         :now="collectionNow"
-        @build="repair"
+        @build="startWork"
         @hammer="useHammer"
         @finish="finishBuilding(selected)"
         @ring-bell="ringBell"

@@ -30,6 +30,8 @@ export default [
       'no-empty': ['error', { allowEmptyCatch: true }],
       // Route planners share one generator contract; some finish without yielding.
       'require-yield': 'off',
+      // Catch stale template handlers when script functions are renamed.
+      'vue/no-undef-properties': 'error',
       // The admin panel names its single-word views after their routes.
       'vue/multi-word-component-names': 'off',
     },
