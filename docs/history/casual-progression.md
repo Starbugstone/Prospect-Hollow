@@ -2,7 +2,7 @@
 
 > Historical review of the earlier 72-level checkout. The merged Electric era and fourth-era extension are covered in the [current Motor Age progression review](motor-age-progression.md). Measurements below describe that earlier build.
 
-The intended loop is a relaxed puzzle, a visible reward, and a useful next step in the village. Players should feel successful when they take their time or ignore score targets; the shared implementation contracts are documented in [the era architecture guide](era-architecture.md).
+The intended loop is a relaxed puzzle, a visible reward, and a useful next step in the village. Players should feel successful when they take their time or ignore score targets; the shared implementation contracts are documented in [the era architecture guide](../era-architecture.md).
 
 ## Reward cadence
 
@@ -44,11 +44,11 @@ These routines use the existing diorama clock and shared geometry. Actor counts 
 - Live actor positions changed across animation frames. Reduced motion stopped the diorama clock. A forced SVG fallback rendered three hens and one dog, with CSS animation switching from running to paused.
 - The normal browser flows finished with zero unhandled page errors and zero failed HTTP responses. The deliberate WebGL-disabled fallback was checked separately.
 
-![French results with an earned bonus and village action](images/casual-results-french-small.png)
+![French results with an earned bonus and village action](../images/casual-results-french-small.png)
 
-![French village guidance and chapter stamps on a small phone](images/casual-village-french-small.png)
+![French village guidance and chapter stamps on a small phone](../images/casual-village-french-small.png)
 
-![Inhabited village with daily routines](images/casual-village-life.png)
+![Inhabited village with daily routines](../images/casual-village-life.png)
 
 ## Remaining content limit
 

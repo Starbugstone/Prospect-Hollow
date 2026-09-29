@@ -2,7 +2,7 @@
 
 A walkthrough of the current `develop` build as a first-time player: the landing page, the village tour, the first free building, level 1 of the mine, and the mine at phone size. The goal is an interface that feels hand-made, calm and obvious to navigate, instead of dense, over-explained and generic.
 
-This is the original proposal. Current implementation contracts and extension checks are maintained in [the era architecture guide](era-architecture.md).
+This is the original proposal. Current implementation contracts and extension checks are maintained in [the era architecture guide](../era-architecture.md).
 
 ## How this review was done
 
@@ -19,7 +19,7 @@ Effort: **S** is copy or CSS only, **M** is one component, **L** spans several c
 - **Unlimited moves stay.** Removing the words "No move limit" is a copy change only. There must be no move cap, move budget or hard timer (see `AGENTS.md`). Keep `testing/chapter-progression.test.js` passing, including the check for more than 100 moves.
 - **Translations.** English strings are translation keys. Every changed string needs a matching entry in `src/i18n/fr.json`, or the French build falls back to English.
 - **Accessibility.** Keep the existing `aria-label`s, keyboard board controls, reduced motion and high contrast. When a visible label is removed, the accessible name must remain.
-- **Era architecture.** Village changes that affect plots, building cards or indicators should go through the shared era contracts in [era-architecture.md](era-architecture.md), not per-era copies.
+- **Era architecture.** Village changes that affect plots, building cards or indicators should go through the shared era contracts in [era-architecture.md](../era-architecture.md), not per-era copies.
 
 ## Summary
 

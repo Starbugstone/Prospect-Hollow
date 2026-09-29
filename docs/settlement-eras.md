@@ -1,6 +1,6 @@
 # Settlement eras
 
-Nine eras are playable: Frontier → River & Rail → Electric → Post-war Rebuilding → Motor Age → Aviation & Radio (1958) → Music & Television (1986) → Connected City (2005) → Tomorrow City (2065). Tomorrow City rebuilds every modernized building with rounded domes, pods and vaults; see [the era architecture guide](era-architecture.md#city-architecture-tomorrow-citys-rounded-forms). The village has 53 plots and the campaign has 240 puzzles. See [issue #41 fixes and browser verification](issue41-era-visuals.md) for current behavior. The historical reports below describe earlier milestones.
+Nine eras are playable: Frontier → River & Rail → Electric → Post-war Rebuilding → Motor Age → Aviation & Radio (1958) → Music & Television (1986) → Connected City (2005) → Tomorrow City (2065). Tomorrow City rebuilds every modernized building with rounded domes, pods and vaults; see [the era architecture guide](era-architecture.md#city-architecture-tomorrow-citys-rounded-forms). The village has 53 plots and the campaign has 240 puzzles. See [issue #41 fixes and browser verification](history/issue41-era-visuals.md) for current behavior. The historical reports below describe earlier milestones.
 
 ## Try the eras immediately
 
@@ -56,7 +56,7 @@ The existing `crystal-cascade-profile-v3` key is unchanged. Missing era fields d
 
 The river is carved into the existing deterministic landscape with a gradual valley and wet-bank vegetation exclusions. One lightweight water mesh animates separately from cached terrain. The fisherman, one steamboat and one train use the existing actor/motion lifecycle. Audio adds a quiet river loop and occasional procedural boat/train effects; sources are documented in the audio credits. New construction, modernization and transport details also appear in the SVG fallback. Reduced motion freezes ambient movement, and hidden/paused village state suspends town animation and audio.
 
-Motor Age adds up to six slots per bonus (garage), six visitors (bus station), eighteen residents (garden court), and a 15% saloon income increase (diner). The Steam well adds twenty water at stages two and three; Electric and Motor Age each add twenty more at the final stage. Previous supply carries forward. The main farm adds twenty food at its final Motor Age stage. Electricity and the fire brigade remain active. See [current progression and validation](motor-age-progression.md).
+Motor Age adds up to six slots per bonus (garage), six visitors (bus station), eighteen residents (garden court), and a 15% saloon income increase (diner). The Steam well adds twenty water at stages two and three; Electric and Motor Age each add twenty more at the final stage. Previous supply carries forward. The main farm adds twenty food at its final Motor Age stage. Electricity and the fire brigade remain active. See [current progression and validation](history/motor-age-progression.md).
 
 ## Verification
 

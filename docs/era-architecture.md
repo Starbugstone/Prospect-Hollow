@@ -11,8 +11,7 @@ Road appearance uses the `roadStyle` capability and `data/roadStyles.js`.
 The styles progress from worn dirt and gravel through brick, concrete and marked
 asphalt to contemporary paved crossings. `roadColor` remains an optional tint
 override. `RoadDetails` prepares flat surface strips once per topology/era change;
-WebGL merges them into the existing static scenery batch and the SVG map groups
-the same shapes by color. Junctions and short building approaches remain unmarked.
+WebGL merges them into the existing static scenery batch. Junctions and short building approaches remain unmarked.
 The bridge owns its raised surface: `roadBridge` enables a continuous road deck
 with the era's paint, beginning with Motor Age modernization. Earlier bridge
 styles retain timber boards. Both use `bridgeDeckHeight()` for the existing
@@ -68,7 +67,7 @@ alone does not establish that an upgrade is visible from the camera.
 
 Airport architecture uses the optional `airportStyle` capability. The shared
 `src/data/airportStyles.json` catalog drives Blender authoring, runtime asset
-selection and the SVG fallback through `airportAppearance()`. Regional (1958),
+selection and the SVG building illustrations through `airportAppearance()`. Regional (1958),
 metropolitan (1986) and connected (2005) definitions each export a base, lounge
 and finishing stage. New eras can inherit a style without renderer changes;
 missing or unsupported styles safely use the regional airport. The renderer
@@ -91,8 +90,8 @@ finished building (`addServiceDrops`), so wires never pass through a wall or roo
 
 The square owns its corner lamps. `squareLampCorners()` in `src/data/townSquare.js`
 reports which corners the square lights for its era and level, and `electricLamps()`
-drops the First Lights street lamps beside those corners in both the 3D town and the
-SVG map. `testing/square-lighting.test.js` checks one lamp per corner in every
+drops the First Lights street lamps beside those corners in the 3D town.
+`testing/square-lighting.test.js` checks one lamp per corner in every
 electrified era, including unfinished and unknown square eras.
 
 ## Introduce a genuinely new style
@@ -130,7 +129,8 @@ family.
   leaves that kind to the shared shells. The airport's rooftop lounge becomes a glass dome
   via `addRoundedLounge`, the square uses the `orbital-rings` fountain and the watermill
   swaps its gable for a glazed dome.
-- `TownRoundedBuilding.vue` draws the same forms and palette for the SVG map, and
+- `TownRoundedBuilding.vue` draws the same forms and palette for the SVG building
+  illustrations (building cards, tour and landing page), and
   `TownBuilding.vue` routes rounded eras to it before the standard city drawing.
 - Traffic in rounded eras uses wheel-less hover cars, a hover shuttle bus and rounded
   incident response pods that bob via `userData.hoverBody` (`TownVehicles.js`). Villagers wear
@@ -266,7 +266,7 @@ stand outside their vehicle and storm branches sit above the promenade pavement.
 ### Period architecture and mine construction
 
 `cityStyles.json` drives the city Blender exporter, runtime landmark additions and
-SVG fallback through `cityAppearance()`. Each city era names its own `cityAssets`
+SVG building illustrations through `cityAppearance()`. Each city era names its own `cityAssets`
 family. The 1958 family uses ribbon windows and broad cornices; the 1986 family
 uses concrete blades and stepped parapets. `cityBuildingStyles.json` defines each
 building kind’s family, footprint and identity. `cityAppearance(era, kind)` chooses
@@ -286,8 +286,8 @@ The `era-mine` content adapter uses the common `TownPresentation` camera lifecyc
 hammering; callers provide their assembly, timing and work positions. The era
 receipt remains the persistence authority. The timeline waits for graphics,
 pauses with the view, and resumes a pending receipt on the next village visit.
-Reduced motion shows the complete result without camera animation. Graphics
-fallback uses the SVG era drawing and a still completion dialog.
+Reduced motion shows the complete result without camera animation. Without 3D
+graphics the village shows a retry notice and the dialog uses its still mode.
 
 `testing/building-era-contract.test.js` checks every available building and all
 three later-era stages. `city-era-art.test.js` checks period families, exported
@@ -530,7 +530,7 @@ drops an earlier mine facility. Permanent feature locations leave space for
 future additions, while shared era colors, glazing and facade details modernize
 existing workshops. `MineFeatures`
 and `addMineSite` compose the same assembly in permanent and cinematic views;
-`TownMine.vue` consumes the same profile and growth definitions for SVG fallback.
+`TownMine.vue` consumes the same profile and growth definitions for its SVG illustration.
 Add new feature behavior once in the registry and compose it in definitions.
 
 Each era has a full-scale portal, distinct works/machinery, rolling stock and
@@ -543,7 +543,7 @@ with its visible assembly and releases temporary owners on cleanup.
 `mineGrowth` maps completed puzzle levels to a bounded cart load of 1–12 gems.
 Cargo uses a fixed instanced mesh and updates its visible count without rebuilding
 scenery, navigation or villagers. All buildings, hillside facilities, stockpiles
-and equipment depend on the era, never on puzzle level. The SVG fallback and tour
-use the same era profile and level-based cart cargo. The shared haul clock controls
+and equipment depend on the era, never on puzzle level. The SVG mine illustration
+(landing page and tour) uses the same era profile and level-based cart cargo. The shared haul clock controls
 load/travel/unload/return and freezes with the town. Display capacity never limits
 puzzle moves, rewards or campaign progress.

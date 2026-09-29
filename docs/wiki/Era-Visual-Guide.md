@@ -2,7 +2,7 @@
 
 Prospect Hollow grows from a timber settlement into a connected city while keeping its soft colors, compact proportions and low-poly style. This guide shows the actual building models and explains what changes as the town advances.
 
-The galleries contain **975 individual stage images** and **327 comparison sheets** across eight eras. They cover every building available in each era, including separate plots that share an architectural family, plus the mine's permanent surface equipment.
+The galleries contain **975 individual stage images** and **327 comparison sheets** across the first eight eras; Tomorrow City (2065) has its own [gallery](../tomorrow-city-gallery.md). They cover every building available in each era, including separate plots that share an architectural family, plus the mine's permanent surface equipment.
 
 ## How the upgrades work
 

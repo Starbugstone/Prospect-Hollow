@@ -33,12 +33,12 @@ Browser checks use disposable developer fixtures at `http://127.0.0.1:5174` in C
 
 The production build retains bundle-size warnings for the game's large JavaScript chunks. Detailed commands, fixtures and browser artifacts are under ignored `output/issue41/`.
 
-![Aviation district](images/issue41-airport.png)
+![Aviation district](../images/issue41-airport.png)
 
-![Music and television district](images/issue41-broadcast.png)
+![Music and television district](../images/issue41-broadcast.png)
 
-![Connected city](images/issue41-connected-city.png)
+![Connected city](../images/issue41-connected-city.png)
 
-![Restored automobile-era pier](images/issue41-pier.png)
+![Restored automobile-era pier](../images/issue41-pier.png)
 
-![Horse field during construction](images/issue41-horse-field.png)
+![Horse field during construction](../images/issue41-horse-field.png)

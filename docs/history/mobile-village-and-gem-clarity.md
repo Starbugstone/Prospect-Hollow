@@ -17,6 +17,6 @@ All **64 targeted tests** passed (progression guidance, beta feedback, expansion
 
 ## Screenshots
 
-- [Unobstructed mobile village](images/polish-village-mobile.png) and [optional progress popup](images/polish-village-progress.png)
-- [Original art with subtle variants and matching seals](images/polish-gem-comparison.png)
-- [French seal guide](images/polish-sapphire-guide.png) and [seals on the board](images/polish-seals-board.png)
+- [Unobstructed mobile village](../images/polish-village-mobile.png) and [optional progress popup](../images/polish-village-progress.png)
+- [Original art with subtle variants and matching seals](../images/polish-gem-comparison.png)
+- [French seal guide](../images/polish-sapphire-guide.png) and [seals on the board](../images/polish-seals-board.png)

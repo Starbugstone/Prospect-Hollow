@@ -2,7 +2,7 @@
 
 For the current four-era, 144-level campaign, see the [Motor Age progression review](motor-age-progression.md). The measurements below document the earlier 60-level tuning pass.
 
-Levels 325–372 (Tomorrow City) and the charge core mechanic are documented in [Tomorrow City mine chapters](tomorrow-levels.md).
+Levels 325–372 (Tomorrow City) and the charge core mechanic are documented in [Tomorrow City mine chapters](../tomorrow-levels.md).
 
 The campaign keeps all 60 level IDs and existing saves. The opening board still measures 6 × 7, but now uses four jewel types. Its 32 single-layer ice targets are tuned for a complete introductory puzzle: the easiest levels should typically take 8–10 moves, then grow gradually. Players have no move limit; score and active time award optional chests. New obstacle introductions pause the clock.
 
@@ -92,6 +92,6 @@ These are hint-led simulations, not human completion rates or universal upper bo
 
 Verified at `http://127.0.0.1:5174` in Chromium: all ten chapter themes, a full level using real pointer swipes, the paused obstacle introduction, chapter changes, and the selected jewel previews. Desktop checks used 1440 × 900; phone checks used 390 × 844, 320 × 568 and 844 × 390. The board and power controls fit in the viewport, with no horizontal overflow. Focus mode, French text, the French obstacle guide, reduced motion and high-contrast mode were exercised. No application exceptions, failed requests or HTTP error responses were recorded during the main browser run.
 
-![Frost gallery on desktop](images/mine-frost-desktop.jpg)
+![Frost gallery on desktop](../images/mine-frost-desktop.jpg)
 
-![Four-color opening on mobile](images/mine-first-light-mobile.png)
+![Four-color opening on mobile](../images/mine-first-light-mobile.png)

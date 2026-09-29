@@ -1,4 +1,4 @@
-> Historical benchmark of the retired authoritative prototype. Its load harness and gameplay endpoints have been removed; these results do not measure the account-save replacement. See [current validation](validation.md).
+> Historical benchmark of the retired authoritative prototype. Its load harness and gameplay endpoints have been removed; these results do not measure the account-save replacement. See [current validation](../../backend/validation.md).
 
 # PostgreSQL versus MySQL: game API benchmark
 
@@ -125,7 +125,7 @@ players or a claimed production capacity.
 
 ## Reproduce and inspect
 
-[Harness and setup instructions](../../backend/benchmarks/README.md) include resource
+Harness and setup instructions include resource
 limits, fixture guards, request checks and cleanup. The measured command is:
 
 ```sh

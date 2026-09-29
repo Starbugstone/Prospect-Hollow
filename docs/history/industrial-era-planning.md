@@ -45,4 +45,4 @@ The original eighteen-level estimate was insufficient for the approved requireme
 
 Streetcars, day/night cycles, printing offices and additional mine mechanics are outside this implementation. Electricity remains a one-time civic milestone. The next era needs its own content and approval before being enabled.
 
-See [settlement eras](settlement-eras.md) for fixtures and verification.
+See [settlement eras](../settlement-eras.md) for fixtures and verification.

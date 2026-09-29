@@ -49,12 +49,12 @@ Reproduce the engine measurement with `node scripts/measure-campaign.mjs . 5 240
 
 `npm run verify` passes all 1,030 tests and the production build. It covers formatting, unit/integration tests, deterministic authored-campaign playthroughs and production compilation. Added contracts exercise every applicable plot through all six eras, preserved services during all three modernization stages, save normalization and transitions, benefit previews, new plot routes and dry land, old Motor receipts, contemporary incident settlement, campaign continuation, adaptive resolution and continuous bandit movement/spacing.
 
-`npm run demo:eras` creates disposable fixtures for opening and completing all six eras, plus cargo, fire and storm encounters. Fixtures and Playwright screenshots/logs remain under ignored `output/`. See [settlement-era testing](settlement-eras.md).
+`npm run demo:eras` creates disposable fixtures for opening and completing all six eras, plus cargo, fire and storm encounters. Fixtures and Playwright screenshots/logs remain under ignored `output/`. See [settlement-era testing](../settlement-eras.md).
 
 Real Chromium checks at `http://127.0.0.1:5186/` covered the persisted Electric → Rebuilding transition, city-hall purchase and construction finish (a normal completion receipt was supplied through the store), retained older facades, complete Rebuilding and Contemporary districts, and desktop/mobile framing. The French SVG fallback exposes all 48 plot controls; library selection and high contrast/reduced motion worked at 320×568, 390×844 and 844×390 with no page overflow or uncaught errors. The fallback map scrolls horizontally so plot controls remain usable. Contemporary storm crews and debris removal were inspected using its paused presentation clock. The same town scene survived a mine visit, motion stopped while hidden, and forced context loss recovered on a fresh canvas. Recovery exceeded the initial 10-second harness timeout under software WebGL; the subsequent check confirmed the new canvas and rendered scene.
 
-![Completed Rebuilding district](images/post-war-district.png)
+![Completed Rebuilding district](../images/post-war-district.png)
 
-![Completed Contemporary district](images/contemporary-district.png)
+![Completed Contemporary district](../images/contemporary-district.png)
 
 The full-city profiling environment is headless Chromium with SwiftShader software WebGL. CPU actor updates and drawing submissions were small, but the software renderer sustained only about 12 frames per second. Adaptive resolution lowered the 3D buffer to 60% on sustained slow frames; this did not establish a higher measured frame rate in that environment. HTML controls and labels retain native resolution. Physical mobile/GPU frame rates and a full human playthrough are not verified; no 60-fps claim is made.
