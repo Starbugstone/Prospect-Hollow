@@ -1,11 +1,6 @@
 import { localWalk, walkPath, walkPose } from './TownNavigation';
 import { TownActors } from './TownActors';
-
-const clamp = (value) => Math.max(0, Math.min(1, value));
-const ease = (value) => {
-  const t = clamp(value);
-  return t * t * (3 - 2 * t);
-};
+import { clamp01, smooth01 } from './TownMath';
 
 // Reusable, deterministic construction staging. It owns temporary workers and
 // assembly transforms; the caller supplies the real building and work positions.
@@ -54,7 +49,7 @@ export class TownBuildSequence {
   frame(time, still = false) {
     for (const { part, y, phase } of this.sections) {
       const step = (this.end - this.start) / this.phases;
-      const t = still ? 1 : ease((time - this.start - phase * step) / (step * 0.9));
+      const t = still ? 1 : smooth01((time - this.start - phase * step) / (step * 0.9));
       part.visible = t > 0;
       part.position.y = y + (1 - t) * 0.7;
       part.scale.y = Math.max(0.001, t);
@@ -62,8 +57,8 @@ export class TownBuildSequence {
     for (const { worker, arrival, station, path, hammer, load, delay } of this.crew) {
       const leaving = time >= this.leave + delay;
       const progress = leaving
-        ? ease((time - this.leave - delay) / 3)
-        : ease((time - 1 - delay) / (this.start - 1));
+        ? smooth01((time - this.leave - delay) / 3)
+        : smooth01((time - 1 - delay) / (this.start - 1));
       const a = leaving ? station : arrival,
         b = leaving ? arrival : station;
       worker.root.position.set(

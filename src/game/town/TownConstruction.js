@@ -1,4 +1,5 @@
 import { Vector3 } from 'three';
+import { clamp01 } from './TownMath';
 const CONSTRUCTION_SECONDS = 1.8;
 const partKey = (object) =>
   JSON.stringify([
@@ -20,7 +21,6 @@ export function constructionParts(group, keys) {
   });
   return parts;
 }
-const clamp = (value) => Math.min(1, Math.max(0, value));
 
 // Temporary articulated pieces share the village's existing instanced actor renderer.
 export class TownConstruction {
@@ -49,7 +49,7 @@ export class TownConstruction {
     });
     if (this.pieces.length) center.divideScalar(this.pieces.length);
     const height = Math.max(1, ...this.pieces.map(({ y }) => y));
-    for (const piece of this.pieces) piece.delay = clamp(piece.y / height) * 0.8;
+    for (const piece of this.pieces) piece.delay = clamp01(piece.y / height) * 0.8;
     group.userData.static = false;
     group.userData.animated = true;
     if (rotor) rotor.visible = false;
@@ -90,13 +90,13 @@ export class TownConstruction {
     }
     const elapsed = this.elapsed;
     for (const { object, y, visible, delay } of this.pieces) {
-      const progress = clamp((elapsed - delay) / 0.65);
+      const progress = clamp01((elapsed - delay) / 0.65);
       object.visible = visible && elapsed >= delay;
       object.position.y = y + (1 - progress) ** 3 * 1.3;
     }
     this.hammer.visible = elapsed < 1.25;
     this.hammer.rotation.z = -0.9 + Math.abs(Math.sin((elapsed / 0.22) * Math.PI)) * 1.6;
-    const puff = clamp((elapsed - 0.08) / 1.5);
+    const puff = clamp01((elapsed - 0.08) / 1.5);
     this.dust.forEach((dust, n) => {
       const angle = (n / this.dust.length) * Math.PI * 2;
       const radius = 1.1 + puff * 1.5;

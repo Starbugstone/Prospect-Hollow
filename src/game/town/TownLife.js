@@ -3,6 +3,7 @@ import { Vector3 } from 'three';
 import { atPlot, plotStreet, routeBetween } from './TownLayout';
 import { population } from './TownRules';
 import { addWorkBreak } from './TownWorkRoutine';
+import { smokePuff } from './TownAtmosphere';
 
 // Small daily routines make completed buildings feel inhabited. All motion uses
 // the diorama clock, so hidden views, pauses and reduced motion freeze it together.
@@ -62,14 +63,7 @@ export function addTownLife(d, town) {
     const smoke = d.group(d.world, origin.x, origin.y, origin.z);
     smoke.name = 'Warm chimney smoke';
     smoke.userData.animated = true;
-    const puffs = Array.from({ length: 3 }, () => {
-      const puff = d.ball(smoke, 0, 0, 0, 1, '#d8d4ba');
-      puff.material = puff.material.clone();
-      puff.material.transparent = true;
-      puff.material.depthWrite = false;
-      puff.material.userData.transient = true;
-      return puff;
-    });
+    const puffs = Array.from({ length: 3 }, () => smokePuff(d, smoke, 0, 0, 0, 1, '#d8d4ba'));
     d.motions.push((time) =>
       puffs.forEach((puff, n) => {
         const phase = (time / 5 + n / 3) % 1;

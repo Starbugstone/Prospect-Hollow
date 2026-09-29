@@ -1,4 +1,4 @@
-import { Color, Fog } from 'three';
+import { Color, Fog, MeshStandardMaterial } from 'three';
 
 // Keep every current plot clear, then dissolve the prairie before its 130-unit
 // boundary. World-space fog stays consistent when the mobile overview zooms out.
@@ -34,4 +34,20 @@ export function horizonMaterial(material) {
   material.customProgramCacheKey = () => `${key}|town-horizon-v1`;
   material.needsUpdate = true;
   return material;
+}
+// A matte terrain material owned by its mesh: it fades into the horizon, and
+// clearing the mesh's group disposes it.
+export function terrainMaterial(params) {
+  const material = horizonMaterial(new MeshStandardMaterial({ roughness: 1, ...params }));
+  material.userData.transient = true;
+  return material;
+}
+// A see-through smoke puff that fades on its own; its group disposes the material.
+export function smokePuff(d, parent, x, y, z, size, color) {
+  const puff = d.ball(parent, x, y, z, size, color);
+  puff.material = puff.material.clone();
+  puff.material.transparent = true;
+  puff.material.depthWrite = false;
+  puff.material.userData.transient = true;
+  return puff;
 }

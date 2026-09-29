@@ -1,7 +1,7 @@
 import { INCIDENT_AUDIO } from '../../data/townEvents';
 
 // Recorded village audio. Provenance and edits: public/sound/village/credits.html.
-const asset = (name) => `${import.meta.env.BASE_URL}sound/village/${name}.mp3`;
+const asset = (name) => `/sound/village/${name}.mp3`;
 export const VILLAGE_AUDIO = Object.freeze({
   music: { src: asset('porch-swing'), volume: 0.45 },
   birds: { src: asset('birds'), volume: 0.5, loop: true },
@@ -22,9 +22,9 @@ export const VILLAGE_AUDIO = Object.freeze({
   'bucket-splash': { src: asset('bucket-splash'), volume: 0.42 },
   thunder: { src: asset('thunder'), volume: 0.6 },
   chainsaw: { src: asset('chainsaw'), volume: 0.3, loop: true },
-  river: { src: `${import.meta.env.BASE_URL}sound/village/river.wav`, volume: 0.12, loop: true },
-  train: { src: `${import.meta.env.BASE_URL}sound/village/train.wav`, volume: 0.1 },
-  steamboat: { src: `${import.meta.env.BASE_URL}sound/village/steamboat.wav`, volume: 0.1 },
+  river: { src: '/sound/village/river.wav', volume: 0.12, loop: true },
+  train: { src: '/sound/village/train.wav', volume: 0.1 },
+  steamboat: { src: '/sound/village/steamboat.wav', volume: 0.1 },
 });
 
 // Incident cues are only valid while their own kind of incident plays.

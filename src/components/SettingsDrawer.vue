@@ -199,7 +199,7 @@ function resetProgress() {
 }
 const dialog = ref(null);
 const settings = useSettingsStore();
-const audioCreditsUrl = `${import.meta.env.BASE_URL}sound/village/credits.html`;
+const audioCreditsUrl = '/sound/village/credits.html';
 watch(
   () => props.open,
   (open) => {
@@ -479,12 +479,6 @@ h2 {
   font-size: 25px;
   font-weight: 400;
   margin-top: 8px;
-}
-.settings-intro {
-  color: #b5a3c4;
-  font-size: 12px;
-  line-height: 1.6;
-  margin: 20px 0 35px;
 }
 label {
   display: flex;
