@@ -22,7 +22,7 @@ final class Database {
         $mysql=$db->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
         $suffix=$mysql?'':'-postgresql';
         if($db->fetchOne('SELECT version FROM schema_versions WHERE version<10')) throw new \RuntimeException('This undeployed prototype schema must be replaced with a fresh database.');
-        foreach([10=>'/schema'.$suffix.'.sql',11=>'/schema-visits'.$suffix.'.sql',12=>'/schema-saloon-guests'.$suffix.'.sql'] as $version=>$file) {
+        foreach([10=>'/schema'.$suffix.'.sql',11=>'/schema-visits'.$suffix.'.sql',12=>'/schema-saloon-guests'.$suffix.'.sql',13=>'/schema-admin'.$suffix.'.sql'] as $version=>$file) {
             if($db->fetchOne('SELECT version FROM schema_versions WHERE version=?',[$version]))continue;
             $schema=file_get_contents(dirname(__DIR__).$file);
             $apply=function() use($db,$schema): void {

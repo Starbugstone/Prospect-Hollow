@@ -37,11 +37,15 @@ The account screen accepts a pasted email link so native login does not depend o
 
 Normal saves are atomic local snapshots. Uploads carry a durable upload ID and base revision. A lost response retries the same snapshot. Divergence stops sync for that town and asks the player to compare device/cloud copies; there is no automatic field merge. The five previous cloud revisions remain recoverable. Choosing the cloud version also retains the losing device copy for download. Export/import works signed in or signed out; backups include the town UUID and no credentials.
 
-Run `php bin/cleanup.php` daily to remove expired sessions, links, rate buckets and town deletion tombstones older than 30 days. Town deletion immediately frees the account slot and removes its listing. Account deletion cascades through live account data. Provider backups expire according to the operator's policy.
+Run `php bin/cleanup.php` daily to remove expired sessions (player and admin), links, rate buckets, active-day marks older than 90 days and town deletion tombstones older than 30 days. Town deletion immediately frees the account slot and removes its listing. Account deletion cascades through live account data. Provider backups expire according to the operator's policy.
 
 Use `./scripts/backup-database.sh` for local PostgreSQL dumps. Protect backups as account data; restore into a separate database and verify account recovery and revisions before switching traffic. Hosting backup schedules, SMTP delivery and disaster recovery remain operator responsibilities. The previous benchmark measured the removed authoritative prototype and is historical evidence only.
 
 Quality CI tests both databases, the packaged application and the hosting hooks. Independent o2switch pollers deploy the exact `preprod` commit to preprod and the exact `main` commit to production, each only after successful push CI for its configured branch. GitHub uploads no deployment artifact. This branch removes the Azure workflow and disables Vercel Git deployments; these files must reach `main` as part of the production migration.
+
+## Admin panel
+
+Schema version 13 adds the admin and player-activity tables; `php bin/migrate.php` (run by the release preparation) installs them. Create the first admin on each environment with `php bin/admin.php create USERNAME` from its `current` release, then finish at `https://HOST/admin`. See the [admin guide](admin.md) for recovery commands and what is recorded.
 
 ## Hosted environments
 

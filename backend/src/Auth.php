@@ -43,7 +43,26 @@ final class Auth {
         if (!$session) throw new ApiError(401,'Please sign in again.');
         if ($mutation && !hash_equals($session['csrf_hash'],$this->hash($r->headers->get('X-CSRF-Token','')))) throw new ApiError(403,'Refresh this page before trying again.');
         $session['csrf']=$this->hash('csrf:'.$token);
+        $this->touch($r,$session['player_id'],str_starts_with($bearer,'Bearer '));
         return $session;
+    }
+    // Admin-only record of the player's latest connection: minute precision, the last IP
+    // and browser only, plus one row per active day. It must never block a request.
+    private function touch(Request $r,string $player,bool $native,bool $signIn=false): void {
+        $db=$this->database->get();
+        if($db->isTransactionActive())return;
+        try {
+            $mysql=$db->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
+            $agent=substr(preg_replace('/[^\x20-\x7E]/','',(string)$r->headers->get('User-Agent','')),0,255);
+            $now=time();
+            $row=[$player,$signIn?$now:intdiv($now,60)*60,substr($r->getClientIp()??'',0,45)?:null,$agent?:null,$native?'app':'web',$signIn?$now:null,$signIn?1:0];
+            $sql='INSERT INTO player_activity(player_id,seen_at,ip,agent,platform,signed_in_at,sign_ins) VALUES (?,?,?,?,?,?,?) ';
+            if($mysql)$sql.='ON DUPLICATE KEY UPDATE seen_at=VALUES(seen_at),ip=VALUES(ip),agent=VALUES(agent),platform=VALUES(platform)'.($signIn?',signed_in_at=VALUES(signed_in_at),sign_ins=sign_ins+1':'');
+            else $sql.='ON CONFLICT(player_id) DO UPDATE SET seen_at=EXCLUDED.seen_at,ip=EXCLUDED.ip,agent=EXCLUDED.agent,platform=EXCLUDED.platform'.($signIn?',signed_in_at=EXCLUDED.signed_in_at,sign_ins=player_activity.sign_ins+1':' WHERE (player_activity.seen_at,player_activity.ip,player_activity.agent,player_activity.platform) IS DISTINCT FROM (EXCLUDED.seen_at,EXCLUDED.ip,EXCLUDED.agent,EXCLUDED.platform)');
+            // Unchanged within the same minute: no write, so the day is already recorded.
+            if(!$db->executeStatement($sql,$row))return;
+            $db->executeStatement($mysql?'INSERT INTO activity_days(day,player_id) VALUES (?,?) ON DUPLICATE KEY UPDATE day=day':'INSERT INTO activity_days(day,player_id) VALUES (?,?) ON CONFLICT DO NOTHING',[intdiv($now,86400),$player]);
+        } catch(\Throwable $e) { error_log(json_encode(['event'=>'activity_not_recorded','type'=>get_class($e)])); }
     }
     /** Call only after taking the player row lock, inside the same transaction. */
     public function recheck(array $session): void {
@@ -77,7 +96,8 @@ final class Auth {
         $db=$this->database->get(); $hash=$this->hash($body['token']);
         $intent=$db->fetchAssociative('SELECT * FROM login_intents WHERE token_hash=?',[$hash]);
         if(!$intent||(int)$intent['expires_at']<=time()) throw new ApiError(401,'This link has expired or was already used.');
-        return $db->transactional(function() use($db,$r,$body,$hash,$intent) {
+        $id=null;
+        $response=$db->transactional(function() use($db,$r,$body,$hash,$intent,&$id) {
             $emailHash=$this->hash('identity:'.$intent['email']);
             $mysql=$db->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
             $db->executeStatement($mysql?'INSERT INTO identities(email_hash) VALUES (?) ON DUPLICATE KEY UPDATE email_hash=VALUES(email_hash)':'INSERT INTO identities(email_hash) VALUES (?) ON CONFLICT(email_hash) DO NOTHING',[$emailHash]);
@@ -89,6 +109,8 @@ final class Auth {
             $db->delete('login_intents',['token_hash'=>$hash]);
             return $this->issue($id,$body['native']??false);
         });
+        $this->touch($r,$id,$body['native']??false,true);
+        return $response;
     }
     public function clearCookie(): JsonResponse {
         $response=new JsonResponse(['ok'=>true]);

@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS player_activity (player_id VARCHAR(64) PRIMARY KEY, seen_at BIGINT NOT NULL, ip VARCHAR(45), agent VARCHAR(255), platform VARCHAR(8), signed_in_at BIGINT, sign_ins INTEGER NOT NULL DEFAULT 0, FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE);
+CREATE TABLE IF NOT EXISTS activity_days (day INTEGER NOT NULL, player_id VARCHAR(64) NOT NULL, PRIMARY KEY(day,player_id), FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE);
+CREATE TABLE IF NOT EXISTS admins (id VARCHAR(32) PRIMARY KEY, username VARCHAR(32) NOT NULL UNIQUE, password_hash VARCHAR(255) NOT NULL, must_change INTEGER NOT NULL DEFAULT 1, totp_secret VARCHAR(255), totp_enabled INTEGER NOT NULL DEFAULT 0, totp_step BIGINT NOT NULL DEFAULT 0, created_at BIGINT NOT NULL, created_by VARCHAR(32), last_login_at BIGINT);
+CREATE TABLE IF NOT EXISTS admin_sessions (token_hash VARCHAR(64) PRIMARY KEY, admin_id VARCHAR(32) NOT NULL, csrf_hash VARCHAR(64) NOT NULL, stage VARCHAR(8) NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, created_at BIGINT NOT NULL, used_at BIGINT NOT NULL, expires_at BIGINT NOT NULL, FOREIGN KEY (admin_id) REFERENCES admins(id) ON DELETE CASCADE);
+CREATE TABLE IF NOT EXISTS admin_audit (id BIGSERIAL PRIMARY KEY, at BIGINT NOT NULL, admin VARCHAR(32) NOT NULL, action VARCHAR(40) NOT NULL, target VARCHAR(80), detail VARCHAR(255));
+CREATE INDEX activity_seen ON player_activity(seen_at);
+CREATE INDEX admin_sessions_admin ON admin_sessions(admin_id);
+CREATE INDEX players_created ON players(created_at);
+INSERT INTO schema_versions(version) VALUES (13);

@@ -2,6 +2,8 @@ services:
   _defaults: { autowire: true, autoconfigure: true }
   App\:
     resource: '../src/'
-    exclude: ['../src/Kernel.php', '../src/ApiError.php']
+    exclude: ['../src/Kernel.php', '../src/ApiError.php', '../src/Totp.php']
   App\ApiController:
+    tags: [controller.service_arguments]
+  App\AdminController:
     tags: [controller.service_arguments]
