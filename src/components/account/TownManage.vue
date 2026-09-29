@@ -61,9 +61,11 @@
           <i></i>
           <span
             ><strong>{{ t('Kept from this device') }}</strong
-            ><small
-              >{{ when(meta.recovery.updatedAt) }} · {{ townSummary(meta.recovery.profile) }}</small
-            ></span
+            ><small>{{
+              [when(meta.recovery.updatedAt), townSummary(meta.recovery.profile)]
+                .filter(Boolean)
+                .join(' · ')
+            }}</small></span
           >
           <span class="account-row">
             <button
@@ -107,11 +109,12 @@
             ><button @click="choice = null">{{ t('Cancel') }}</button>
           </div>
         </li>
-        <li v-if="!historyLoaded && !loadingHistory">
-          <button :disabled="busy" @click="act(loadHistory)">{{ t('Load earlier saves') }}</button>
-        </li>
-        <li v-if="loadingHistory" class="account-hint">{{ t('Loading saves…') }}</li>
       </ul>
+      <p v-if="loadingHistory" class="account-hint">{{ t('Loading saves…') }}</p>
+      <p v-else-if="!historyLoaded">
+        <button :disabled="busy" @click="act(loadHistory)">{{ t('Load earlier saves') }}</button>
+      </p>
+      <p v-else-if="!history.length" class="account-hint">{{ t('No earlier saves yet.') }}</p>
       <p class="account-hint">
         {{ t('Your current save is preserved on this device before replacement.') }}
       </p>
@@ -200,7 +203,7 @@ import { useCampaignStore } from '../../stores/campaignStore';
 import { useGameStore } from '../../stores/gameStore';
 import { useAccountContext, townSummary } from './accountContext';
 import GameIcon from '../GameIcon.vue';
-import { t } from '../../i18n';
+import { t, locale } from '../../i18n';
 const props = defineProps({ active: { type: Object, required: true }, focus: String });
 const { busy, act, recovery, changed } = useAccountContext();
 const campaign = useCampaignStore(),
@@ -221,7 +224,7 @@ const locked = computed(() => !!(meta.value.dirty || meta.value.conflict || meta
 const shareUrl = computed(() => visitUrl(meta.value.publicId));
 const when = (at) =>
   at
-    ? new Date(at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
+    ? new Date(at).toLocaleString(locale.value, { dateStyle: 'medium', timeStyle: 'short' })
     : t('Not synced yet');
 watch(
   () => [meta.value.id, meta.value.baseRevision, meta.value.name, meta.value.isPublic].join(':'),
@@ -307,8 +310,16 @@ async function downloadRecovery() {
     downloadSaveFile(createSaveFile(profile), saveFileName(`${meta.value.name} recovery`));
   });
 }
+// History keeps only a few snapshots, so it is shown as soon as the page opens
+// and refreshed whenever this town gets a new cloud revision.
+watch(
+  () => meta.value.baseRevision,
+  () => {
+    if (historyLoaded.value && !loadingHistory.value) loadHistory().catch(() => {});
+  },
+);
 onMounted(() => {
-  if (props.focus === 'history') act(loadHistory);
+  act(loadHistory);
   const target = { history: historySection, delete: deleteSection }[props.focus] ?? details;
   target.value?.scrollIntoView({ block: 'nearest' });
 });
