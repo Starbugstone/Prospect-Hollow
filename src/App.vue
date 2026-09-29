@@ -290,7 +290,7 @@ import PowerUpBar from './components/PowerUpBar.vue';
 import LandingView from './components/LandingView.vue';
 import './styles/town.css';
 import { CONTINUOUS_COIN_CAP } from './data/rewards';
-import { LEVEL_COUNT } from './data/campaign';
+import { LEVEL_COUNT, POWERS } from './data/campaign';
 import VictoryModal from './components/VictoryModal.vue';
 import SettingsDrawer from './components/SettingsDrawer.vue';
 import GameIcon from './components/GameIcon.vue';
@@ -408,11 +408,11 @@ const toggleMute = () => {
     settings.setSfxVolume(0);
   }
 };
-const currentConfig = computed(
-  () => game.availableLevels.find((level) => level.id === game.currentLevelId)?.config,
-);
+const currentConfig = computed(() => game.currentLevel?.config);
 const levelName = computed(() => LEVEL_NAMES[game.currentLevelId - 1]);
-const powerName = computed(() => game.activeBonusMode?.replaceAll('_', ' '));
+const powerName = computed(
+  () => POWERS.find((power) => power.id === game.activeBonusMode)?.label ?? '',
+);
 const scoreTarget = computed(() => game.objectives.find((o) => o.type === 'score')?.target ?? 0);
 const startLevel = (id, mode = 'normal') => {
   if (!campaign.canPlay(id, mode)) return;

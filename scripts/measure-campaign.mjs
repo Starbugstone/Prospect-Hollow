@@ -96,8 +96,7 @@ try {
           evaluation = {
             board,
             matches,
-            bonusesCreated: bonuses.map((bonus) => bonus.type),
-            bonusIndices: bonuses.map((bonus) => bonus.index),
+            bonuses,
           };
           shuffles++;
         }

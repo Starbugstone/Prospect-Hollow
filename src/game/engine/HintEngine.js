@@ -1,11 +1,11 @@
 import { MatchEngine } from './MatchEngine.js';
 import { BonusActivator } from './BonusActivator.js';
-import { canSwapGem, neighborsOf } from './TileRules.js';
+import { BOARD_BONUSES, canSwapGem, neighborsOf } from './TileRules.js';
 import { detectBonusFromMatches } from './MatchPatterns.js';
 import { signalTargets } from './ChapterMechanics.js';
 const bonusActivator = new BonusActivator();
 
-const SPECIAL = new Set(['bomb', 'cross', 'rainbow']);
+const SPECIAL = new Set(BOARD_BONUSES);
 
 export class HintEngine {
   constructor() {
@@ -34,7 +34,7 @@ export class HintEngine {
           ? null
           : this.matchEngine.evaluateSwap(board, cols, rows, a, b, tiles);
         if (!usesBonus && !evaluation.matches.length) continue;
-        let createsBonus = !!evaluation?.bonusesCreated.length;
+        let createsBonus = !!evaluation?.bonuses.length;
         let ordinaryMatches = evaluation?.matches ?? [];
         let indices = [...new Set(evaluation?.matches.flatMap((match) => match.indices) ?? [a, b])];
         const usesFusion = SPECIAL.has(board[a].type) && SPECIAL.has(board[b].type);

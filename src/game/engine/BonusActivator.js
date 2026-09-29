@@ -7,10 +7,10 @@ const ACTIVATABLE = new Set([
   'bomb',
   'rainbow',
   'cross',
-  'clear_row',
+  'clear-row',
   'tnt',
-  'color_wand',
-  'tile_breaker',
+  'color-wand',
+  'tile-breaker',
 ]);
 
 export class BonusActivator {
@@ -133,13 +133,13 @@ export class BonusActivator {
         return this.activateCross(board, cols, rows, index);
       case 'rainbow':
         return this.activateRainbow(board, cols, rows, index, context);
-      case 'clear_row':
+      case 'clear-row':
         return this.activateClearRow(board, cols, rows, index);
       case 'tnt':
         return this.activateTNT(board, cols, rows, index);
-      case 'color_wand':
+      case 'color-wand':
         return this.activateColorWand(board, cols, rows, index);
-      case 'tile_breaker':
+      case 'tile-breaker':
         return this.activateTileBreaker(board, cols, rows, index);
       default:
         return [index];

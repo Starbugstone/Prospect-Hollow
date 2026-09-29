@@ -1,3 +1,4 @@
+import { BOARD_BONUSES, isAdjacent } from '../engine/TileRules';
 export class BoardInput {
   constructor({ scene, boardContainer, gameStore }) {
     Object.assign(this, { scene, boardContainer, gameStore });
@@ -112,11 +113,7 @@ export class BoardInput {
       this.lastTap.version === this.gameStore.boardVersion &&
       now - this.lastTap.at <= 350;
     this.lastTap = { index, gemId: gem?.id, version: this.gameStore.boardVersion, at: now };
-    if (
-      doubleTap &&
-      ['bomb', 'cross', 'rainbow'].includes(gem?.type) &&
-      !this.gameStore.activeBonusMode
-    ) {
+    if (doubleTap && BOARD_BONUSES.includes(gem?.type) && !this.gameStore.activeBonusMode) {
       this.reset();
       this.gameStore.activateBonusGem(index);
       return;
@@ -133,7 +130,7 @@ export class BoardInput {
       this.clearHighlights();
       return;
     }
-    if (this.selectedCell !== null && this.adjacent(this.selectedCell, index)) {
+    if (this.selectedCell !== null && isAdjacent(this.selectedCell, index, this.layout.boardCols)) {
       this.lastTap = null;
       const first = this.selectedCell;
       this.selectedCell = null;
@@ -143,13 +140,6 @@ export class BoardInput {
     }
     this.selectedCell = index;
     this.highlightCell(index);
-  }
-  adjacent(a, b) {
-    const cols = this.layout.boardCols;
-    return (
-      Math.abs((a % cols) - (b % cols)) + Math.abs(Math.floor(a / cols) - Math.floor(b / cols)) ===
-      1
-    );
   }
   handleKey(event) {
     if (!this.enabled) return;
@@ -161,7 +151,7 @@ export class BoardInput {
       this.lastTap = null;
       event.preventDefault();
       const next = this.focusIndex + offsets[event.key];
-      if (next >= 0 && next < cols * rows && this.adjacent(this.focusIndex, next)) {
+      if (next >= 0 && next < cols * rows && isAdjacent(this.focusIndex, next, cols)) {
         if (event.shiftKey) this.gameStore.resolveSwap(this.focusIndex, next);
         this.focusIndex = next;
         this.highlightCell(next);

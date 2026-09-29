@@ -9,6 +9,7 @@ import { HintEngine } from '../src/game/engine/HintEngine';
 import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
 import { createGem } from '../src/game/engine/GemFactory';
 import { TileManager } from '../src/game/engine/TileManager';
+import { isAdjacent } from '../src/game/engine/TileRules';
 
 const engine = new MatchEngine();
 beforeEach(() => setActivePinia(createPinia()));
@@ -179,7 +180,7 @@ it('buffers input during a rejected swap and drains it after the bounce', async 
   let invalid;
   for (let a = 0; a < store.board.length - 1; a++)
     if (
-      engine.areAdjacent(a, a + 1, store.boardCols) &&
+      isAdjacent(a, a + 1, store.boardCols) &&
       !engine.evaluateSwap(store.board, store.boardCols, store.boardRows, a, a + 1).matches.length
     ) {
       invalid = [a, a + 1];

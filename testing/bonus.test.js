@@ -27,7 +27,7 @@ describe('GameStore - Bonus Activation', () => {
     };
   });
 
-  it('should activate a clear_row bonus and clear a row', async () => {
+  it('should activate a clear-row bonus and clear a row', async () => {
     // Mock Math.random to always return 0 (first row)
     const originalRandom = Math.random;
     Math.random = () => 0;
@@ -47,7 +47,7 @@ describe('GameStore - Bonus Activation', () => {
 
     const initialBoard = [...gameStore.board];
 
-    await gameStore.activateOneTimeBonus('clear_row');
+    await gameStore.activateOneTimeBonus('clear-row');
 
     // Restore Math.random
     Math.random = originalRandom;
@@ -56,14 +56,14 @@ describe('GameStore - Bonus Activation', () => {
     // The board should have changed
     expect(gameStore.board).not.toEqual(initialBoard);
     const firstStep = gameStore.renderer.animator.playSteps.mock.calls[0][0][0];
-    expect(firstStep.bonusEffect).toEqual({ type: 'clear_row', originIndex: 0 });
+    expect(firstStep.bonusEffect).toEqual({ type: 'clear-row', originIndex: 0 });
     expect(firstStep.cleared).toEqual([0, 1, 2]);
   });
 
   it('rejects a one-time power while input is paused without changing the board or score', async () => {
     gameStore.inputPaused = true;
     const before = JSON.stringify({ board: gameStore.board, tiles: gameStore.tiles });
-    expect(await gameStore.activateOneTimeBonus('clear_row')).toBe(false);
+    expect(await gameStore.activateOneTimeBonus('clear-row')).toBe(false);
     expect(JSON.stringify({ board: gameStore.board, tiles: gameStore.tiles })).toBe(before);
     expect(gameStore.renderer.animator.playSteps).not.toHaveBeenCalled();
     expect(gameStore.score).toBe(0);
@@ -79,7 +79,7 @@ describe('GameStore - Bonus Activation', () => {
         }),
     );
     const commit = vi.spyOn(gameStore, 'commitResolution');
-    const activation = gameStore.activateOneTimeBonus('clear_row');
+    const activation = gameStore.activateOneTimeBonus('clear-row');
     gameStore.sessionVersion++;
     const nextBoard = [createGem('ruby')];
     gameStore.board = nextBoard;
@@ -92,7 +92,7 @@ describe('GameStore - Bonus Activation', () => {
   it('should not activate bonus if session is not active', async () => {
     gameStore.sessionActive = false;
     const initialBoard = [...gameStore.board];
-    const activated = await gameStore.activateOneTimeBonus('clear_row');
+    const activated = await gameStore.activateOneTimeBonus('clear-row');
     expect(activated).toBe(false);
     expect(gameStore.board).toEqual(initialBoard);
   });
@@ -196,7 +196,7 @@ describe('Interactive Bonuses', () => {
 
     const activated = await inventoryStore.usePowerUp('color-wand');
     expect(activated).toBe(true);
-    expect(gameStore.activeBonusMode).toBe('color_wand');
+    expect(gameStore.activeBonusMode).toBe('color-wand');
 
     // Board has rubies at 0 and 6
     const result = await gameStore.resolveBonusClick(0);

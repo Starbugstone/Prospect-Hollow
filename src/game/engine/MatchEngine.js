@@ -1,6 +1,6 @@
 import { BonusActivator } from './BonusActivator.js';
-import { detectBonusFromMatches } from './MatchPatterns.js';
-import { canSwapGem } from './TileRules.js';
+import { applyBonuses, detectBonusFromMatches } from './MatchPatterns.js';
+import { BOARD_BONUSES, canSwapGem, isAdjacent } from './TileRules.js';
 import { getBonusFusion } from './BonusFusion.js';
 
 const bonusActivator = new BonusActivator();
@@ -10,8 +10,7 @@ const noMatch = (board, cols, rows) => ({
   cols,
   rows,
   swap: null,
-  bonusesCreated: [],
-  bonusIndices: [],
+  bonuses: [],
 });
 export class MatchEngine {
   evaluateActivation(board, cols, rows, index, tiles = []) {
@@ -19,7 +18,7 @@ export class MatchEngine {
       !Number.isInteger(index) ||
       index < 0 ||
       index >= board.length ||
-      !['bomb', 'cross', 'rainbow'].includes(board[index]?.type) ||
+      !BOARD_BONUSES.includes(board[index]?.type) ||
       !canSwapGem(board[index], tiles[index])
     )
       return noMatch(board, cols, rows);
@@ -46,7 +45,7 @@ export class MatchEngine {
       !canSwapGem(board[aIndex], tiles[aIndex]) ||
       !canSwapGem(board[bIndex], tiles[bIndex]) ||
       aIndex === bIndex ||
-      !this.areAdjacent(aIndex, bIndex, cols)
+      !isAdjacent(aIndex, bIndex, cols)
     )
       return noMatch(board, cols, rows);
 
@@ -77,24 +76,11 @@ export class MatchEngine {
         rows,
         swap,
         bonusSwap,
-        bonusesCreated: [],
-        bonusIndices: [],
+        bonuses: [],
       };
     }
 
     if (!matches.length) return noMatch(board, cols, rows);
-
-    const bonuses = detectBonusFromMatches(matches, { swap });
-    const bonusesCreated = [];
-    const bonusIndices = [];
-
-    if (bonuses.length > 0) {
-      bonuses.forEach((bonus) => {
-        nextBoard[bonus.index] = { ...nextBoard[bonus.index], type: bonus.type };
-        bonusesCreated.push(bonus.type);
-        bonusIndices.push(bonus.index);
-      });
-    }
 
     return {
       matches,
@@ -102,8 +88,7 @@ export class MatchEngine {
       cols,
       rows,
       swap,
-      bonusesCreated,
-      bonusIndices,
+      bonuses: applyBonuses(nextBoard, detectBonusFromMatches(matches, { swap })),
       ...(pendingBonus ? { pendingBonus, bonusSwap } : {}),
     };
   }
@@ -159,15 +144,5 @@ export class MatchEngine {
     }
 
     return matches;
-  }
-
-  areAdjacent(aIndex, bIndex, cols) {
-    const ax = aIndex % cols;
-    const ay = Math.floor(aIndex / cols);
-    const bx = bIndex % cols;
-    const by = Math.floor(bIndex / cols);
-    const dx = Math.abs(ax - bx);
-    const dy = Math.abs(ay - by);
-    return (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
   }
 }

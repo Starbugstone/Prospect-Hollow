@@ -74,7 +74,7 @@ describe('light marker resolution', () => {
     expect(state.tiles[10].signalHealth).toBe(1);
   });
 
-  it.each(['tnt', 'tile_breaker', 'clear_row', 'color_wand', 'bonus-activation'])(
+  it.each(['tnt', 'tile-breaker', 'clear-row', 'color-wand', 'bonus-activation'])(
     'lights a marker hit directly by %s',
     (type) => {
       const state = makeBoard();
@@ -92,8 +92,7 @@ describe('light marker resolution', () => {
     const result = manager.getResolution({
       ...state,
       matches: [{ type: 'ruby', indices: [10, 11, 12, 13] }],
-      bonusesCreated: ['bomb'],
-      bonusIndices: [12],
+      bonuses: [{ type: 'bomb', index: 12 }],
     });
     expect(state.tiles[12].signalHealth).toBe(0);
     expect(result.board).toContain(bomb);
@@ -105,7 +104,7 @@ describe('light marker resolution', () => {
     state.tiles[12] = signal(1);
     const above = state.board[7];
     expect(canSwapGem(state.board[12], state.tiles[12])).toBe(true);
-    const result = resolveHits(state, [17, 22], 'clear_row');
+    const result = resolveHits(state, [17, 22], 'clear-row');
     expect(result.steps[0].drops).toContainEqual({ from: 7, to: 17, gem: above });
     expect(state.tiles[12].signal).toBe('survey');
     expect(result.board.every(Boolean)).toBe(true);
@@ -114,11 +113,11 @@ describe('light marker resolution', () => {
   it('requires a later impact for the next survey marker even when one blast touches all markers', () => {
     const state = makeBoard();
     for (const [order, index] of [11, 12, 13].entries()) state.tiles[index] = signal(order + 1);
-    const first = resolveHits(state, [10, 11, 12, 13, 14], 'clear_row');
+    const first = resolveHits(state, [10, 11, 12, 13, 14], 'clear-row');
     expect([11, 12, 13].map((index) => state.tiles[index].signalHealth)).toEqual([0, 1, 1]);
-    const second = resolveHits({ ...state, board: first.board }, [12], 'tile_breaker');
+    const second = resolveHits({ ...state, board: first.board }, [12], 'tile-breaker');
     expect([11, 12, 13].map((index) => state.tiles[index].signalHealth)).toEqual([0, 0, 1]);
-    const third = resolveHits({ ...state, board: second.board }, [13], 'tile_breaker');
+    const third = resolveHits({ ...state, board: second.board }, [13], 'tile-breaker');
     expect([11, 12, 13].map((index) => state.tiles[index].signalHealth)).toEqual([0, 0, 0]);
     expect(first.layersCleared + second.layersCleared + third.layersCleared).toBe(3);
   });
@@ -143,7 +142,7 @@ describe('light marker resolution', () => {
     state.tiles[5] = signal(1);
     state.tiles[19] = signal(2);
     state.tiles[18] = signal();
-    const result = resolveHits(state, [19], 'tile_breaker');
+    const result = resolveHits(state, [19], 'tile-breaker');
     expect(state.tiles[5].signalHealth).toBe(1);
     expect(state.tiles[19].signalHealth).toBe(1);
     expect(state.tiles[18].signalHealth).toBe(0);
@@ -162,8 +161,7 @@ describe('ore order collection', () => {
     const result = manager.getResolution({
       ...state,
       matches: [{ type: 'ruby', indices: [10, 11, 12, 13] }],
-      bonusesCreated: ['bomb'],
-      bonusIndices: [12],
+      bonuses: [{ type: 'bomb', index: 12 }],
     });
     const orders = [{ color: 'ruby', target: 10, progress: 0 }];
     advanceOreOrders(orders, result.steps);
@@ -208,7 +206,7 @@ describe('ore order collection', () => {
     expect(game.oreOrders[0].progress).toBe(expected);
   });
 
-  it.each(['tnt', 'clear_row', 'tile_breaker', 'color_wand'])(
+  it.each(['tnt', 'clear-row', 'tile-breaker', 'color-wand'])(
     'updates ore through the actual %s inventory-power action before checking victory',
     async (mode) => {
       const state = makeBoard();
@@ -227,7 +225,7 @@ describe('ore order collection', () => {
         oreOrders: [{ color: 'ruby', target: 1, progress: 0 }],
         activeBonusMode: mode,
       });
-      useCampaignStore().powers.find((slot) => slot.id === mode.replaceAll('_', '-')).quantity = 1;
+      useCampaignStore().powers.find((slot) => slot.id === mode).quantity = 1;
       expect(await game.resolveBonusClick(12)).toBe(true);
       expect(game.remainingLayers).toBe(0);
       expect(game.remainingOre).toBe(0);

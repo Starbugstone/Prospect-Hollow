@@ -195,8 +195,7 @@ describe('Colored seals', () => {
     manager.getResolution({
       ...state,
       matches: [{ type: 'ruby', indices: [10, 11, 12, 13] }],
-      bonusesCreated: ['bomb'],
-      bonusIndices: [12],
+      bonuses: [{ type: 'bomb', index: 12 }],
     });
     expect(state.tiles[12].health).toBe(0);
   });

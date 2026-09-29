@@ -8,10 +8,10 @@ const POWER_COLOR = {
   bomb: 0xffbb64,
   tnt: 0xff7655,
   rainbow: 0xe0afff,
-  color_wand: 0xe0afff,
+  'color-wand': 0xe0afff,
   cross: 0x93efff,
-  tile_breaker: 0x93efff,
-  clear_row: 0x93efff,
+  'tile-breaker': 0x93efff,
+  'clear-row': 0x93efff,
 };
 
 // Descriptors preserve the actual origin and affected cells, including toolbar powers.
@@ -77,10 +77,10 @@ export class BonusEffects {
       bomb: 'BOOM!',
       tnt: 'BOOM!',
       rainbow: 'RAINBOW RUSH!',
-      color_wand: 'COLOR RUSH!',
+      'color-wand': 'COLOR RUSH!',
       cross: 'CROSS FIRE!',
-      tile_breaker: 'CROSS FIRE!',
-      clear_row: 'ROW ROCKET!',
+      'tile-breaker': 'CROSS FIRE!',
+      'clear-row': 'ROW ROCKET!',
     };
     this.callout(
       effects.length > 1
@@ -94,8 +94,7 @@ export class BonusEffects {
 
   icon(type, position, size) {
     const a = this.a;
-    const texture =
-      a.textures[type] ?? spriteRef(`power-${type.replaceAll('_', '-')}`, a.scene?.textures);
+    const texture = a.textures[type] ?? spriteRef(`power-${type}`, a.scene?.textures);
     return a.scene.add
       .image(position.x, position.y, texture.key, texture.frame)
       .setDisplaySize(size, size);
@@ -140,7 +139,7 @@ export class BonusEffects {
   sound(type) {
     const audio = this.a.audio;
     if (type === 'bomb' || type === 'tnt') audio?.playBomb?.();
-    else if (type === 'rainbow' || type === 'color_wand') audio?.playRainbowLaser?.();
+    else if (type === 'rainbow' || type === 'color-wand') audio?.playRainbowLaser?.();
     else audio?.playCrossFire?.();
   }
 
@@ -149,8 +148,8 @@ export class BonusEffects {
     const p = a.position(index);
     this.sound(type);
     if (type === 'bomb' || type === 'tnt') this.explosion(p);
-    else if (type === 'rainbow' || type === 'color_wand') this.rainbow(p, targets);
-    else this.cross(p, type === 'clear_row');
+    else if (type === 'rainbow' || type === 'color-wand') this.rainbow(p, targets);
+    else this.cross(p, type === 'clear-row');
   }
 
   highlightTargets(indices, color) {

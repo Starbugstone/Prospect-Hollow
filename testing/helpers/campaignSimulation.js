@@ -66,8 +66,7 @@ export function simulateCampaignLevel(level, seed) {
         evaluation = {
           board,
           matches,
-          bonusesCreated: bonuses.map((b) => b.type),
-          bonusIndices: bonuses.map((b) => b.index),
+          bonuses,
         };
         shuffles++;
       }

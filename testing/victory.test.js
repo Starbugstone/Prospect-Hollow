@@ -9,12 +9,8 @@ vi.mock('../src/game/engine/MatchEngine', () => ({
       return {
         matches: [{ type: 'standard', indices: [0, 1] }],
         board: [],
-        bonusesCreated: [],
-        bonusIndices: [],
+        bonuses: [],
       };
-    }
-    areAdjacent() {
-      return true;
     }
     findMatches() {
       return [];

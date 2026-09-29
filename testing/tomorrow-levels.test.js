@@ -221,7 +221,7 @@ describe('charge core resolution', () => {
     }
   });
 
-  it.each(['tnt', 'tile_breaker', 'clear_row', 'color_wand', 'bonus-activation'])(
+  it.each(['tnt', 'tile-breaker', 'clear-row', 'color-wand', 'bonus-activation'])(
     'is charged by %s',
     (type) => {
       const state = makeBoard();
@@ -268,7 +268,7 @@ describe('charge core resolution', () => {
       tiles,
       cols: 3,
       rows: 1,
-      matches: [{ type: 'tile_breaker', indices: [0] }],
+      matches: [{ type: 'tile-breaker', indices: [0] }],
     });
     expect(tiles[0].signalHealth).toBe(0);
     expect(result.layersCleared).toBe(1);
@@ -280,7 +280,7 @@ describe('charge core resolution', () => {
     for (const index of [7, 12, 17]) state.tiles[index] = core();
     expect(canSwapGem(state.board[12], state.tiles[12])).toBe(true);
     const above = state.board[2];
-    const result = hit(state, [12, 17, 22], 'clear_row');
+    const result = hit(state, [12, 17, 22], 'clear-row');
     expect(result.steps[0].drops).toContainEqual({ from: 2, to: 17, gem: above });
     expect(result.board.every(Boolean)).toBe(true);
     expect([7, 12, 17].map((index) => state.tiles[index].signal)).toEqual(['core', 'core', 'core']);

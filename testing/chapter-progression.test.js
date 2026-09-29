@@ -88,7 +88,7 @@ it.each(['swap', 'targeted power', 'row power', 'shuffle'])(
       game.setBonusMode('tnt');
       await game.resolveBonusClick(14);
     } else if (action === 'row power') {
-      await game.activateOneTimeBonus('clear_row');
+      await game.activateOneTimeBonus('clear-row');
     } else {
       const board = [...game.board];
       for (const index of [0, 1, 2]) board[index] = createGem(palette[0]);
