@@ -162,7 +162,6 @@ export function buildMineHillside(
           back = rows[row];
         if (front > railZ + approachHalfWidth || back < railZ - approachHalfWidth) continue;
         const arch = front <= railZ + radius + 0.5 && back >= railZ - radius - 0.5;
-        const low = (z) => (arch ? tunnelOuterHeightAt(z, railZ) : groundHeight(x, z));
         // A fitted rock collar slopes onto the OUTER edge of the arch face.
         // This buries its backing instead of leaving a second opening above it.
         const faceX = side * RAIL_TUNNEL.portalX;

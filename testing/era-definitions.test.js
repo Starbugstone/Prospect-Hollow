@@ -15,7 +15,6 @@ import {
   renderEraLandmark,
   renderModernization,
 } from '../src/game/town/buildings/BuildingRenderer';
-import { addMineEra } from '../src/game/town/TownMineEvolution';
 
 const additions = [];
 const register = (definition) => {
@@ -137,7 +136,7 @@ it.each(['river-rail', 'industrial', 'motor-age', 'contemporary'])(
       const root = new Group();
       renderEraLandmark(view, root, 'home', 'Home', 3, era, 3);
       renderModernization(view, root, 'bridge', era, 3);
-      addMineEra(view, root, era);
+      renderModernization(view, root, 'saloon', era, 3);
       root.updateMatrixWorld(true);
       const parts = [];
       root.traverse((part) => {

@@ -407,10 +407,7 @@ export const useGameStore = defineStore('game', {
           ? this.board.map((_, i) => i)
           : bonusActivator.activatePower(bonusName, this.board, cols, rows, index, this.tiles);
 
-        if (clearedIndices.length === 0) {
-          console.log(`Bonus ${bonusName} had no effect.`);
-          return false;
-        }
+        if (clearedIndices.length === 0) return false;
 
         const matches = [
           {
@@ -652,10 +649,9 @@ export const useGameStore = defineStore('game', {
       }
 
       this.playMode = mode;
-      this.runId = useCampaignStore().beginRun(mode, levelId);
+      this.runId = campaign.beginRun(mode, levelId);
       boardReadiness(this).cancel();
       this.sessionVersion += 1;
-      const session = this.sessionVersion;
       this.renderer?.animator?.clear();
       this.renderer?.input?.reset();
       const { config } = selected;
@@ -680,9 +676,6 @@ export const useGameStore = defineStore('game', {
       this.clearBonusPreview(true);
       this.tiles = freshTiles;
       this.currentBoardLayout = config.boardLayout || this.currentBoardLayout;
-      if (this.renderer?.animator) {
-        this.renderer.animator.boardLayout = this.currentBoardLayout;
-      }
       this.oreOrders = (config.oreOrders ?? []).map((order) => ({ ...order, progress: 0 }));
       this.objectives = config.objectives.map((objective) => ({ ...objective, progress: 0 }));
       this.moves = 0;
@@ -786,7 +779,6 @@ export const useGameStore = defineStore('game', {
         settings: useSettingsStore(),
         onImpact: (effect) => this.showArcadeImpact(effect),
         onBanner: (banner) => this.showArcadeBanner(banner),
-        boardLayout: this.currentBoardLayout,
       });
 
       const input = new BoardInput({

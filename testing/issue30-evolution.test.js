@@ -12,7 +12,6 @@ import {
 import { PLOTS } from '../src/game/town/TownLayout';
 import { addEraActivity } from '../src/game/town/TownEraActivity';
 import { addTownVisitors } from '../src/game/town/TownActivity';
-import { addMineEra } from '../src/game/town/TownMineEvolution';
 import { addMineForecourt } from '../src/game/town/TownMineForecourt';
 import {
   waterCapacity,
@@ -116,20 +115,6 @@ describe('Issue 30: visible village evolution', () => {
       d.motions.forEach((m) => m(5));
       expect(traffic.position.distanceTo(before)).toBeGreaterThan(0.1);
     }
-  });
-  it('gives each later mine a different entrance silhouette', () => {
-    const signatures = [];
-    for (const era of ['frontier', 'river-rail', 'industrial', 'motor-age']) {
-      const d = diorama(),
-        root = new Group();
-      addMineEra(d, root, era);
-      let count = 0;
-      root.traverse((o) => {
-        if (o.isMesh) count++;
-      });
-      signatures.push(count);
-    }
-    expect(new Set(signatures).size).toBe(4);
   });
   it('extends the mine floor across the encounter while keeping tall props outside its lanes', () => {
     const d = diorama();

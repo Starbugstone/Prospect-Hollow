@@ -2,10 +2,6 @@ import { walkObstacle } from './TownNavigation';
 import { addTownFountain } from './TownFountains';
 import { SQUARE_CORNERS, modernSquareLampCorners } from '../../data/townSquare';
 // The era's static fountain shares the scenery batch; no water simulation or extra frame work.
-export const SQUARE_ANCHORS = Object.freeze({
-  corners: SQUARE_CORNERS,
-  bell: [0, -2.05],
-});
 export function addSquareModernization(d, parent, level, color = '#718b80') {
   const root = d.group(parent);
   root.name = 'Square street furniture';

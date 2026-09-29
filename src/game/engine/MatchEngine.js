@@ -4,17 +4,17 @@ import { canSwapGem } from './TileRules.js';
 import { getBonusFusion } from './BonusFusion.js';
 
 const bonusActivator = new BonusActivator();
+const noMatch = (board, cols, rows) => ({
+  matches: [],
+  board,
+  cols,
+  rows,
+  swap: null,
+  bonusesCreated: [],
+  bonusIndices: [],
+});
 export class MatchEngine {
   evaluateActivation(board, cols, rows, index, tiles = []) {
-    const empty = {
-      matches: [],
-      board,
-      cols,
-      rows,
-      swap: null,
-      bonusesCreated: [],
-      bonusIndices: [],
-    };
     if (
       !Number.isInteger(index) ||
       index < 0 ||
@@ -22,7 +22,7 @@ export class MatchEngine {
       !['bomb', 'cross', 'rainbow'].includes(board[index]?.type) ||
       !canSwapGem(board[index], tiles[index])
     )
-      return empty;
+      return noMatch(board, cols, rows);
     const indices = bonusActivator.activate(
       board,
       cols,
@@ -32,7 +32,7 @@ export class MatchEngine {
       null,
       tiles,
     );
-    return { ...empty, matches: [{ type: 'bonus-activation', indices }] };
+    return { ...noMatch(board, cols, rows), matches: [{ type: 'bonus-activation', indices }] };
   }
 
   evaluateSwap(board, cols, rows, aIndex, bIndex, tiles = []) {
@@ -45,14 +45,10 @@ export class MatchEngine {
       bIndex >= board.length ||
       !canSwapGem(board[aIndex], tiles[aIndex]) ||
       !canSwapGem(board[bIndex], tiles[bIndex]) ||
-      aIndex === bIndex
-    ) {
-      return { matches: [], board, cols, rows, swap: null, bonusesCreated: [], bonusIndices: [] };
-    }
-
-    if (!this.areAdjacent(aIndex, bIndex, cols)) {
-      return { matches: [], board, cols, rows, swap: null, bonusesCreated: [], bonusIndices: [] };
-    }
+      aIndex === bIndex ||
+      !this.areAdjacent(aIndex, bIndex, cols)
+    )
+      return noMatch(board, cols, rows);
 
     const nextBoard = [...board];
     [nextBoard[aIndex], nextBoard[bIndex]] = [nextBoard[bIndex], nextBoard[aIndex]];
@@ -86,9 +82,7 @@ export class MatchEngine {
       };
     }
 
-    if (!matches.length) {
-      return { matches: [], board, cols, rows, swap: null, bonusesCreated: [], bonusIndices: [] };
-    }
+    if (!matches.length) return noMatch(board, cols, rows);
 
     const bonuses = detectBonusFromMatches(matches, { swap });
     const bonusesCreated = [];

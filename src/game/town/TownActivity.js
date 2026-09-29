@@ -2,7 +2,7 @@ import { trafficRoutes, trafficTour } from './TownTrafficRoutes';
 import { walkObstacle, walkPose, plotDoor, RouteWarmup } from './TownNavigation';
 import { prepareRoute, routePose } from './TownRoutes';
 import * as THREE from 'three';
-import { roadLevel, population, visitorPopulation } from './TownRules';
+import { roadLevel, visitorPopulation } from './TownRules';
 import { LANE_X, atPlot, plotStreet } from './TownLayout';
 import { pavedTown, motorTraffic } from './TownEvolution';
 import { addRoadSurfaces } from './TownRoads';

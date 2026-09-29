@@ -35,7 +35,7 @@ import { villagerIdentity, vipVisitor } from '../../data/villagers';
 import { SIDEWALK_OFFSET } from './TownTraffic';
 import { updateTownLocomotion } from './TownLocomotion';
 import { townWardrobe, vipOutfit, guestOutfit } from '../../data/townWardrobes';
-import { MINE_SHAFT, addMineShaft, mineTrackHeight, mineTrackPitch } from './TownMineShaft';
+import { MINE_SHAFT, addMineShaft } from './TownMineShaft';
 import { TownPresentation } from './TownPresentation';
 import { ERA_CONSTRUCTION } from '../../data/mineEvolution';
 import { eraEvolution } from '../../data/eras';
@@ -83,10 +83,9 @@ import { buildLandscape, keepCameraAboveTerrain } from './TownLandscape';
 import { addMotorActivity } from './TownMotorActivity';
 import { addServiceDrops, motorTraffic } from './TownEvolution';
 import { TownScenery } from './TownScenery';
-import { addMineEra } from './TownMineEvolution';
 import { overlapsEventInset } from './TownInset';
 
-import { PLOTS, LANE_X, atPlot, plotStreet, SHERIFF_PATROL, visiblePlots } from './TownLayout';
+import { PLOTS, LANE_X, atPlot, SHERIFF_PATROL, visiblePlots } from './TownLayout';
 import { riverCenterX } from './TownRiver';
 export { PLOTS } from './TownLayout';
 // Village seconds a finished building waits for villagers to walk off its site.

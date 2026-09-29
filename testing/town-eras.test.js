@@ -3,7 +3,6 @@ import { createPinia, setActivePinia } from 'pinia';
 import { BUILDINGS, createTown, BANDIT_EVENT } from '../src/data/town';
 import { CHAPTERS } from '../src/data/campaign';
 import { ERAS, forgeProductionRuns } from '../src/data/eras';
-import { campaignMilestoneReached } from '../src/data/campaignMilestones';
 import {
   normalizeTown,
   purchase,
@@ -360,7 +359,6 @@ describe('Two eras and explicit modernization', () => {
   it('requires every frontier parcel without any mine progress', () => {
     const town = frontier(),
       records = milestoneRecords();
-    expect(campaignMilestoneReached(records, 'river-discovery')).toBe(true);
     expect(eraGate(town).available).toBe(true);
     expect(eraGate(town, records).available).toBe(true);
     for (const b of BUILDINGS.filter((b) => b.introducedEra === 'frontier')) {

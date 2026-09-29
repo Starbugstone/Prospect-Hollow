@@ -2,23 +2,20 @@ import { isAnchored } from './TileRules.js';
 import { GEM_TYPES } from './GemFactory.js';
 import { dominantGemType, getBonusFusion } from './BonusFusion.js';
 
-export class BonusActivator {
-  constructor() {
-    this.BONUS_TYPES = new Set([
-      'bomb',
-      'rainbow',
-      'cross',
-      'clear_row',
-      'transform_gems',
-      'unfreeze_all',
-      'tnt',
-      'color_wand',
-      'tile_breaker',
-    ]);
-  }
+// Board bonuses plus the toolbar powers that share their reaction rules.
+const ACTIVATABLE = new Set([
+  'bomb',
+  'rainbow',
+  'cross',
+  'clear_row',
+  'tnt',
+  'color_wand',
+  'tile_breaker',
+]);
 
+export class BonusActivator {
   isBonus(type) {
-    return this.BONUS_TYPES.has(type);
+    return ACTIVATABLE.has(type);
   }
 
   previewSwap(board, cols, rows, swap, tiles = []) {
@@ -138,10 +135,6 @@ export class BonusActivator {
         return this.activateRainbow(board, cols, rows, index, context);
       case 'clear_row':
         return this.activateClearRow(board, cols, rows, index);
-      case 'transform_gems':
-        return this.activateTransformGems(board, cols, rows, index, context);
-      case 'unfreeze_all':
-        return this.activateUnfreezeAll(board);
       case 'tnt':
         return this.activateTNT(board, cols, rows, index);
       case 'color_wand':
@@ -174,21 +167,10 @@ export class BonusActivator {
 
   activateRainbow(board, cols, rows, index, context) {
     const cleared = new Set();
-    const mode = context?.mode ?? 'target';
-
-    if (mode === 'all') {
-      board.forEach((cell, i) => {
-        if (cell) {
-          cleared.add(i);
-        }
-      });
-    } else {
-      const targetType = context?.targetType ?? dominantGemType(board);
-      board.forEach((cell, i) => {
-        if (cell?.type === targetType) cleared.add(i);
-      });
-    }
-
+    const targetType = context?.targetType ?? dominantGemType(board);
+    board.forEach((cell, i) => {
+      if (cell?.type === targetType) cleared.add(i);
+    });
     cleared.add(index);
     return [...cleared];
   }
@@ -213,72 +195,6 @@ export class BonusActivator {
     for (let i = 0; i < cols; i++) {
       cleared.add(row * cols + i);
     }
-    return [...cleared];
-  }
-
-  activateTransformGems(board, cols, rows, index, context) {
-    if (!board || index == null) {
-      return [];
-    }
-
-    const sourceGem = board[index];
-    const targetType = context?.targetType ?? sourceGem?.type;
-    if (!targetType) {
-      return [];
-    }
-
-    const scope = context?.scope ?? 'global';
-    const radius = context?.radius ?? 1;
-    const cleared = new Set();
-
-    const withinRadius = (row, col) => {
-      const centerRow = Math.floor(index / cols);
-      const centerCol = index % cols;
-      return Math.abs(centerRow - row) + Math.abs(centerCol - col) <= radius;
-    };
-
-    const shouldTransform = (i) => {
-      const cell = board[i];
-      if (!cell || cell.type !== targetType) {
-        return false;
-      }
-
-      if (scope === 'global') {
-        return true;
-      }
-
-      const row = Math.floor(i / cols);
-      const col = i % cols;
-
-      if (scope === 'cross') {
-        const centerRow = Math.floor(index / cols);
-        const centerCol = index % cols;
-        return row === centerRow || col === centerCol;
-      }
-
-      if (scope === 'radius') {
-        return withinRadius(row, col);
-      }
-
-      return false;
-    };
-
-    for (let i = 0; i < board.length; i++) {
-      if (shouldTransform(i)) {
-        cleared.add(i);
-      }
-    }
-
-    return [...cleared];
-  }
-
-  activateUnfreezeAll(board) {
-    const cleared = new Set();
-    board.forEach((cell, i) => {
-      if (cell?.state === 'FROZEN') {
-        cleared.add(i);
-      }
-    });
     return [...cleared];
   }
 

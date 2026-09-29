@@ -86,13 +86,6 @@ export function sceneryObstacles(root) {
   root.traverse((node) => obstacles.push(...walkObstacleEntries(node)));
   return obstacles;
 }
-function distanceToSegment(o, a, b) {
-  const dx = b[0] - a[0],
-    dz = b[2] - a[2],
-    length = dx * dx + dz * dz;
-  const t = length ? Math.max(0, Math.min(1, ((o.x - a[0]) * dx + (o.z - a[2]) * dz) / length)) : 0;
-  return Math.hypot(o.x - a[0] - dx * t, o.z - a[2] - dz * t);
-}
 const sameHeight = (o, p) => {
   // A ramp's next plank/support is higher than the previous foot position.
   // Treat the bridge deck as a walking surface while keeping its rails solid.
@@ -622,14 +615,6 @@ export function localWalk(d, parent, points, margin = NPC_MARGIN) {
   const path = d.navigation.plan(world, margin);
   return walkPath(path.points.map((p) => parent.worldToLocal(new Vector3(...p)).toArray()));
 }
-export function planCurve(d, curve, margin = NPC_MARGIN) {
-  if (!d.navigation?.obstacles.length) return null;
-  const count = Math.max(8, Math.ceil(curve.getLength() / 0.35));
-  return d.navigation.plan(
-    Array.from({ length: count + 1 }, (_, i) => curve.getPointAt(i / count).toArray()),
-    margin,
-  );
-}
 const placement = new Vector3();
 export function placeSafely(d, root, margin = NPC_MARGIN) {
   if (!d.navigation?.obstacles.length) return;
@@ -638,17 +623,6 @@ export function placeSafely(d, root, margin = NPC_MARGIN) {
   root.parent.localToWorld(placement);
   const safe = d.navigation.safePoint(placement.toArray(), margin);
   if (safe) root.position.copy(root.parent.worldToLocal(placement.fromArray(safe)));
-}
-
-export function planOrbit(d, x, z, rx, rz, margin, y = 0.07) {
-  if (!d.navigation?.obstacles.length) return null;
-  return d.navigation.plan(
-    Array.from({ length: 65 }, (_, i) => {
-      const angle = (i / 64) * Math.PI * 2;
-      return [x + Math.sin(angle) * rx, y, z + Math.cos(angle) * rz];
-    }),
-    margin,
-  );
 }
 
 export function plotDoor(d, id, fallback) {

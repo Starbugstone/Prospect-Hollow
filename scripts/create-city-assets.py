@@ -174,10 +174,6 @@ for era,style in styles.items():
             box('Bridge lamp head',(.7,.12,.22),(x,2.3,z),'#eddda9')
         if modern:canopy(x,2.5,0,1.5,True)
         else:box('Approach planter',(.6,.4,2.5),(x,.4,0),cream)
-    model(f'{era}-mine')
-    for x in [-1.55,1.55]:box('Mine safety pillar',(.45,3.1,.5),(x,1.6,1),cream)
-    canopy(0,3.28,1.05,3.65,modern)
-    box('Mine control kiosk',(.85,1.25,.7),(-2.25,.7,1.1),glass if modern else teal)
     # Compact vehicles keep the village's stylized proportions; wheels are real cylinders.
     for vehicle in ['car','bus','railcar']:
         model(f'{era}-{vehicle}')

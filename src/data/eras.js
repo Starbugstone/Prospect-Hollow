@@ -144,7 +144,6 @@ export const ERAS = [
       farmCapacity: [20, 20, 20],
       tallCity: true,
       digitalCity: true,
-      motorMine: true,
       overheadPower: false,
       incident: 'storm-cleanup',
       cityDescription:
@@ -177,7 +176,6 @@ export const ERAS = [
       farmCapacity: [20, 20, 20],
       tallCity: true,
       digitalCity: true,
-      motorMine: true,
       overheadPower: false,
       incident: 'storm-cleanup',
       upgradeTitle: 'Tomorrow level {level}: {name}',

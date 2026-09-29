@@ -431,8 +431,4 @@ export class TileManager {
       }
     }
   }
-
-  applyMatchResult(payload) {
-    return this.getResolution(payload).board;
-  }
 }

@@ -5,7 +5,7 @@ import { RIVER_RAIL_LEVEL_PRICES } from '../../data/economy';
 import { buildingServiceLevel, hasShortProgression } from '../../data/buildingProgression';
 import { t } from '../../i18n';
 import { miningDepthBonus } from '../../data/economy';
-import { isCityEra, cityCapacity, isMajorCityBuilding } from '../../data/city';
+import { cityCapacity, isMajorCityBuilding } from '../../data/city';
 import { hasElectricity } from '../../data/industrial';
 import { eventKind, eraEventKind, fireProtection, civicIncident } from '../../data/townEvents';
 import { forgeProductionRuns } from '../../data/eras';

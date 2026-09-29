@@ -3,7 +3,6 @@ import { NPC_MARGIN } from './TownNavigation';
 // direction. Placement below is only for unseen spawns and explicit recovery.
 // Frame movement belongs to TownLocomotion and never calls this projection.
 export { SIDEWALK_OFFSET } from '../../data/townClearances';
-import { SIDEWALK_OFFSET } from '../../data/townClearances';
 export const WALKER_CLEARANCE = 0.55;
 function clearPosition(position, obstacles, sceneryClear) {
   const clear = (x, z) =>

@@ -26,7 +26,6 @@ export class BoardAnimator {
     textures,
     particles,
     audio,
-    boardLayout,
     settings,
     onImpact,
     onBanner,
@@ -41,7 +40,6 @@ export class BoardAnimator {
       textures,
       particles,
       audio,
-      boardLayout,
       settings,
       onImpact,
       onBanner,
@@ -640,8 +638,6 @@ export class BoardAnimator {
   clearCellHighlights() {
     this.clearMarkers('selected');
   }
-  setGemHighlight() {}
-  clearGemHighlights() {}
   showQueuedSwap(a, b) {
     this.showMarkers('queued', [a, b], 0xdec7ff);
   }
