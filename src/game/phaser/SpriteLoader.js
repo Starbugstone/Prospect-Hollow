@@ -37,7 +37,7 @@ export function preloadSpriteAssets(scene, { levelId = 1 } = {}) {
   for (const key of keys)
     if (!scene.textures.exists(key)) scene.load.atlas(key, urls[key], frames[key]);
 }
-export function preloadSvgAssets(scene) {
+function preloadSvgAssets(scene) {
   GEM_TYPES.forEach((type) =>
     scene.load.svg(`gem-${type}`, `/art/${type}.svg`, { width: 160, height: 160 }),
   );

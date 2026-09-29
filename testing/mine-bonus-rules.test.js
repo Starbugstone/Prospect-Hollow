@@ -26,7 +26,7 @@ it('activates a rainbow in place against the most common color without randomnes
   expect(random).not.toHaveBeenCalled();
 });
 
-it.each(['tnt', 'clear_row', 'tile_breaker'])(
+it.each(['tnt', 'clear-row', 'tile-breaker'])(
   '%s chains a cross and then a remote bomb, including its full preview',
   (type) => {
     const state = fixture();
@@ -54,8 +54,8 @@ it('does not let a color wand select a bonus or relic as though it were a color'
   const { board, tiles } = fixture();
   for (const type of ['bomb', 'rainbow', 'cross', 'relic']) {
     board[0] = createGem(type);
-    expect(activator.activatePower('color_wand', board, 6, 6, 0, tiles)).toEqual([]);
-    expect(activator.previewBonus('color_wand', board, 6, 6, 0, tiles)).toEqual([]);
+    expect(activator.activatePower('color-wand', board, 6, 6, 0, tiles)).toEqual([]);
+    expect(activator.previewBonus('color-wand', board, 6, 6, 0, tiles)).toEqual([]);
   }
 });
 

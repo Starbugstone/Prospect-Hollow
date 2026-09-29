@@ -8,7 +8,7 @@ import { railEdges } from '../TownLayout';
 import { RAIL_TUNNEL, tunnelRearX } from '../TownRailTunnel';
 
 const ground = (x, z) => mineHillsideHeight(x, z, MINE_POSITION[1], landscapeGroundHeight(x, z));
-export function mineSupportFoot(x, z, railway) {
+function mineSupportFoot(x, z, railway) {
   // The railway cuts away the outer shoulder. Brace overhanging terraces back
   // into solid rock above the bore instead of ending in the removed terrain.
   const cut = railway && Math.abs(z - (MINE_POSITION[1] - 3)) <= RAIL_TUNNEL.approachHalfWidth;

@@ -1,8 +1,8 @@
 import { trafficRoutes, trafficTour } from './TownTrafficRoutes';
-import { walkObstacle, walkPose, plotDoor, RouteWarmup } from './TownNavigation';
+import { walkObstacle, walkPose, plotDoor, RouteWarmup, standingPose } from './TownNavigation';
 import { prepareRoute, routePose } from './TownRoutes';
 import * as THREE from 'three';
-import { roadLevel, population, visitorPopulation } from './TownRules';
+import { roadLevel, visitorPopulation } from './TownRules';
 import { LANE_X, atPlot, plotStreet } from './TownLayout';
 import { pavedTown, motorTraffic } from './TownEvolution';
 import { addRoadSurfaces } from './TownRoads';
@@ -336,15 +336,7 @@ export class TownRaid {
   travel(actor, points, distance) {
     const path = this.d.navigation?.route(points, 0, 0.8);
     const pose = path
-      ? walkPose(
-          path,
-          distance / (path.total || 1),
-          (actor.travelPose ??= {
-            x: actor.root.position.x,
-            y: actor.root.position.y,
-            z: actor.root.position.z,
-          }),
-        )
+      ? walkPose(path, distance / (path.total || 1), (actor.travelPose ??= standingPose(actor)))
       : routePose(points, distance);
     actor.root.position.set(pose.x, 0.07, pose.z);
     actor.root.rotation.y = pose.heading;

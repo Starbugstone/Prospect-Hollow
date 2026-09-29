@@ -4,10 +4,10 @@ import { walkPath } from './TownNavigation';
 // The ordinary car/bus lane includes its lateral offset. Reserve it during
 // preparation, so a work break never relies on crowd yielding to dodge traffic.
 const CARRIAGEWAY = 0.65;
-export function pedestrianRoads(town) {
+function pedestrianRoads(town) {
   return townTracks(town).filter((road) => road.width >= 0.85);
 }
-export function outsideCarriageway(point, roads, radius = 0.29) {
+function outsideCarriageway(point, roads, radius = 0.29) {
   return roads.every(
     ({ from, to }) => segmentDistance(point[0], point[2], from, to) >= CARRIAGEWAY + radius + 0.05,
   );

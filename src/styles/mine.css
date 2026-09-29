@@ -103,12 +103,6 @@
   background: #11121bdb;
   border-color: #ffffff14;
 }
-.is-playing .level-heading h1 {
-  text-shadow: 2px 3px #10121b;
-}
-.is-playing .level-heading > p {
-  color: var(--mine-accent);
-}
 .is-playing .board-frame:not(.power-active) {
   border-color: var(--mine-edge);
   background: linear-gradient(
@@ -130,35 +124,6 @@
 }
 .is-playing .board-topline > span {
   color: #e0dbe7;
-}
-.is-playing .live-dot {
-  background: var(--mine-accent);
-  box-shadow: 0 0 8px var(--mine-accent);
-}
-.mine-seam {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  font-size: 10px;
-  color: #e4deea;
-}
-.mine-seam-copy {
-  display: grid;
-  gap: 3px;
-}
-.mine-seam-copy small {
-  color: var(--mine-accent);
-  font-size: 9px;
-}
-.mine-jewels {
-  display: flex;
-  gap: 2px;
-}
-.mine-jewels img {
-  width: 24px;
-  height: 27px;
 }
 .high-contrast .mine-backdrop {
   opacity: 0.35;
@@ -184,9 +149,6 @@
   .is-playing:not(.focus-mode) .powerup-section {
     padding-top: 4px;
   }
-  .is-playing:not(.focus-mode) .powerup-heading {
-    display: none;
-  }
   .is-playing:not(.focus-mode) .powerup-button {
     padding: 6px 3px;
     gap: 3px;
@@ -208,17 +170,6 @@
   .mine-backdrop::after {
     background: #10121b70;
   }
-  .mine-seam {
-    padding-inline: 5px;
-    font-size: 9px;
-  }
-  .mine-seam-copy small {
-    font-size: 8px;
-  }
-  .mine-jewels img {
-    width: 22px;
-    height: 24px;
-  }
 }
 .is-playing[data-mine-theme='river'] {
   --mine-dark: #0e282e;
@@ -227,12 +178,6 @@
   --mine-edge: #6f9b92;
   --mine-timber: #5d6c59;
   --mine-accent: #8bd3bb;
-}
-@media (max-height: 500px) and (min-width: 480px) and (max-width: 1000px) {
-  .mine-jewels,
-  .mine-seam-copy small {
-    display: none;
-  }
 }
 .is-playing[data-mine-theme='rail'] {
   --mine-dark: #232321;

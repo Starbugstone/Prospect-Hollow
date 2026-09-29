@@ -80,9 +80,12 @@
     </p>
     <details class="settings-more">
       <summary>
-        {{ t('More options') }}<small>{{ t('Backup file, keyboard controls') }}</small>
+        {{ t('More options')
+        }}<small>{{
+          t(backupHere ? 'Backup file, keyboard controls' : 'Keyboard controls')
+        }}</small>
       </summary>
-      <section v-if="allowSaveTransfer" class="save-transfer" :aria-label="t('Save your village')">
+      <section v-if="backupHere" class="save-transfer" :aria-label="t('Save your village')">
         <h3>{{ t('Save your village') }}</h3>
         <p>
           {{ t('Keep a backup of your village, or load it on another device.') }}
@@ -150,10 +153,10 @@
 <script setup>
 import { t } from '../i18n';
 import { townStorage } from '../services/townStorage';
-import { inject, ref, watch } from 'vue';
+import { computed, inject, ref, watch } from 'vue';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useCampaignStore } from '../stores/campaignStore';
-import { downloadSaveFile } from '../services/saveTransfer';
+import { downloadSaveFile, saveFileName } from '../services/saveTransfer';
 import { useSaveImport } from '../composables/useSaveImport';
 import GameIcon from './GameIcon.vue';
 const props = defineProps({ open: Boolean, allowSaveTransfer: Boolean, showHome: Boolean });
@@ -161,6 +164,8 @@ const emit = defineEmits(['close', 'home', 'reset-progress', 'import-progress'])
 const campaign = useCampaignStore();
 // Provided by CloudRoot; absent when the game runs without account support.
 const account = inject('cloudAccount', null);
+// Account towns are backed up and loaded from their management page in My towns instead.
+const backupHere = computed(() => props.allowSaveTransfer && !account?.accountTown.value);
 function openAccount() {
   emit('close');
   account.open();
@@ -180,10 +185,7 @@ function exportProgress() {
   saveError.value = '';
   saveStatus.value = '';
   try {
-    downloadSaveFile(
-      campaign.exportSave(),
-      `prospect-hollow-save-${new Date().toISOString().replace(/[:.]/g, '-')}.json`,
-    );
+    downloadSaveFile(campaign.exportSave(), saveFileName(townStorage.state()?.active.name));
     saveStatus.value = 'Save file download started.';
   } catch {
     saveError.value = 'Your save could not be exported. Please try again.';
@@ -197,7 +199,7 @@ function resetProgress() {
 }
 const dialog = ref(null);
 const settings = useSettingsStore();
-const audioCreditsUrl = `${import.meta.env.BASE_URL}sound/village/credits.html`;
+const audioCreditsUrl = '/sound/village/credits.html';
 watch(
   () => props.open,
   (open) => {
@@ -477,12 +479,6 @@ h2 {
   font-size: 25px;
   font-weight: 400;
   margin-top: 8px;
-}
-.settings-intro {
-  color: #b5a3c4;
-  font-size: 12px;
-  line-height: 1.6;
-  margin: 20px 0 35px;
 }
 label {
   display: flex;

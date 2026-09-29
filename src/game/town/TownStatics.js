@@ -1,4 +1,5 @@
 import { horizonMaterial } from './TownAtmosphere';
+import { finishWork } from '../PresentationWork';
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 
@@ -23,8 +24,7 @@ export class TownStatics {
   // Roots are immutable prepared models at fixed world transforms. A changed
   // plot/scenery root gets a new identity; retain every other GPU buffer.
   sync(roots) {
-    const work = this.syncWork(roots);
-    while (!work.next().done) {}
+    finishWork(this.syncWork(roots));
   }
   // Prepare missing batches one source mesh per step; commit them in one step, so an
   // interrupted frame never shows a root hidden from the cache without its batch.
@@ -173,7 +173,7 @@ export class TownStatics {
 // Batched roots never move (see `sync`). Skip their per-render matrix work: three
 // otherwise recomposes every static node's matrix on each render call. Animated
 // subtrees keep updating from their frozen, still-correct parents.
-export function freezeStatic(root) {
+function freezeStatic(root) {
   root.updateWorldMatrix(true, true);
   const visit = (node) => {
     if (node.userData.animated) return;

@@ -4,7 +4,7 @@ import { prepareRoute, routePose } from './TownRoutes';
 import { motorVehicle, animateVehicle } from './TownVehicles';
 import { routeBetween, plotStreet } from './TownLayout';
 
-export function busPose(path, time) {
+function busPose(path, time) {
   const speed = 1.6,
     radius = 0.25,
     turnSeconds = (Math.PI * radius) / speed;

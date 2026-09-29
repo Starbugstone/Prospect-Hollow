@@ -4,7 +4,7 @@ testTiming.setConfig({ testTimeout: 20000 });
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createPinia } from 'pinia';
 import { useCampaignStore } from '../src/stores/campaignStore';
-import { createTestingTools } from '../src/services/testingTools';
+import { createTestingTools, debugToolsAllowed } from '../src/services/testingTools';
 import { useGameStore } from '../src/stores/gameStore';
 import { SAVE_KEY } from '../src/services/localProfile';
 import { ERAS } from '../src/data/eras';
@@ -92,8 +92,6 @@ it.each(ERAS.filter((era) => era.enabled).map((era) => era.id))(
         expect(upgradeOffer(town, building.id)).toBeNull();
         if (era !== 'frontier') expect(eraBuildingLevel(town, building.id)).toBe(3);
       }
-      expect(town.infrastructure.rail).toBe(town.buildings.railDepot);
-      expect(town.infrastructure.bridge).toBe(town.buildings.bridge);
     }
     expect(JSON.stringify(campaign.records)).toBe(records);
     expect(JSON.stringify(campaign.powers)).toBe(powers);
@@ -313,4 +311,13 @@ it('requires entering the mine and rolls back the collection and celebration if 
   );
   expect(saves.get(SAVE_KEY)).toBe(saved);
   expect(game.sessionActive).toBe(true);
+});
+
+it('keeps the console cheats out of the public game', () => {
+  const production = { DEV: false };
+  expect(debugToolsAllowed({ DEV: true }, 'prospecthollow.starbugstone.com')).toBe(true);
+  expect(debugToolsAllowed(production, 'preprod.prospecthollow.starbugstone.com')).toBe(true);
+  expect(debugToolsAllowed(production, 'prospecthollow.starbugstone.com')).toBe(false);
+  expect(debugToolsAllowed(production, 'localhost')).toBe(false);
+  expect(debugToolsAllowed({ DEV: false, VITE_DEBUG_TOOLS: 'true' }, 'localhost')).toBe(true);
 });

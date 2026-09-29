@@ -1,7 +1,7 @@
-const clamp = (x) => Math.min(1, Math.max(0, x));
+import { clamp01 } from './TownMath';
 const turn = (a, b, amount) => {
   const delta = Math.atan2(Math.sin(b - a), Math.cos(b - a));
-  const t = clamp(amount);
+  const t = clamp01(amount);
   return a + delta * t * t * (3 - 2 * t);
 };
 // Positions stay on valid edges. Only heading eases across a corner, so actors
@@ -26,7 +26,7 @@ export function routePose(route, distance) {
   let remaining = Math.max(0, distance);
   for (let i = 0; i < lengths.length; i++) {
     if (remaining <= lengths[i] || i === lengths.length - 1) {
-      const fraction = clamp(remaining / (lengths[i] || 1));
+      const fraction = clamp01(remaining / (lengths[i] || 1));
       const a = points[i],
         b = points[i + 1];
       const radius = Math.min(0.6, lengths[i] / 3);

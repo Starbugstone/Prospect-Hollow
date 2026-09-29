@@ -168,11 +168,17 @@
             </button>
           </div>
         </div>
+        <TownVisitorNotice
+          :notice="visitorNotice"
+          @dismiss="dismissVisitorNotice"
+          @find="findVisitor"
+        />
         <TownScene
           ref="townScene"
           :active="active"
-          :fullscreen="fullscreen"
           :town="sceneTown"
+          :live-visitors="liveVisitors"
+          :live-visitor-town-id="visitorTownId"
           :cinematic="!!town.transition?.pending"
           @cinematic-ready="eraReady = true"
           @cinematic-unavailable="eraFallback = true"
@@ -183,7 +189,6 @@
           :now="collectionNow"
           :builder-hammers="campaign.builderHammers"
           :selected="selected"
-          :population="people"
           :reduced-motion="settings.reducedMotion"
           :paused="
             !active ||
@@ -361,6 +366,14 @@
     >
       <TownProjects v-if="dialogMode === 'projects'" :town="town" @inspect="inspectBuilding" />
       <template v-else-if="dialogMode === 'story'">
+        <TownGuestbook
+          :town-id="visitorTownId"
+          :snapshot="visitorSnapshot"
+          :error="visitorError"
+          :era="town.era"
+          can-find
+          @find="findVisitor"
+        />
         <section class="town-story-stats" :aria-label="t('Village overview')">
           <h2>{{ t('Village overview') }}</h2>
           <dl>
@@ -663,6 +676,9 @@
 import { performanceMark } from '../../game/PresentationWork';
 import { isCityEra } from '../../data/city';
 import TownProjects from './TownProjects.vue';
+import TownGuestbook from './TownGuestbook.vue';
+import TownVisitorNotice from './TownVisitorNotice.vue';
+import { useTownVisitors } from '../../composables/useTownVisitors';
 import TownPresentationCinematic from './TownPresentationCinematic.vue';
 import { pendingPresentation } from '../../data/townPresentations';
 
@@ -676,6 +692,7 @@ import {
   eraEventKind,
   eventHeading,
   incidentStory,
+  CARETAKER,
   incidentPhase,
 } from '../../data/townEvents';
 import { ERA_BY_ID } from '../../data/eras';
@@ -733,6 +750,23 @@ const campaign = useCampaignStore(),
 const cloudAccount = inject('cloudAccount', null);
 const game = useGameStore();
 const town = computed(() => campaign.town);
+const {
+  townId: visitorTownId,
+  snapshot: visitorSnapshot,
+  error: visitorError,
+  present: liveVisitors,
+  notice: visitorNotice,
+  dismissNotice: dismissVisitorNotice,
+  enqueue: enqueueVisitorNotice,
+} = useTownVisitors(() => props.active, {
+  collectSaloon: (at) => (campaign.readOnly ? null : campaign.collectSaloonForVisitor(at)),
+});
+async function findVisitor(id) {
+  closeDialog();
+  dismissVisitorNotice();
+  await nextTick();
+  if (!townScene.value?.findVisitor(id)) enqueueVisitorNotice([{ kind: 'unavailable' }]);
+}
 const progressOpen = computed({
   get: () => villageProgressOpen(settings.villageProgressOpen, town.value),
   set: (open) => settings.setVillageProgress(open),
@@ -803,8 +837,8 @@ watch(
     eraReady.value = false;
   },
 );
-async function beginEra() {
-  if (activeRaid.value || !(await campaign.advanceEra(town.value.era))) return;
+function beginEra() {
+  if (activeRaid.value || !campaign.advanceEra(town.value.era)) return;
   closeDialog();
   fullscreen.value = true;
   eraRevealed.value = false;
@@ -972,49 +1006,18 @@ watch(
   },
   { flush: 'sync' },
 );
-const banditStory = computed(() =>
-  event.value && eventKind(event.value) !== 'bandits'
-    ? {
-        ...incidentStory(event.value),
-        text: t(incidentStory(event.value).text, { coins: event.value.loss }),
-      }
-    : event.value?.outcome === 'protected'
-      ? {
-          speaker: 'Sam · the sheriff',
-          title: 'The town stood its ground.',
-          text: event.value.bounty
-            ? t(
-                'The sheriff captured {count} bandits. Every coin is safe, and the town earned a {coins}-coin bounty.',
-                {
-                  count: Math.min(event.value.gangSize, event.value.sheriffLevel * 2),
-                  coins: event.value.bounty,
-                },
-              )
-            : t(
-                'The sheriff stopped the gang. Every coin is safe. A capture bounty is awarded when the raid ends.',
-              ),
-        }
-      : event.value?.outcome === 'stolen'
-        ? {
-            speaker: 'Ada · the caretaker',
-            title: 'Trouble rode through town.',
-            text: t(
-              'The gang took {coins} coins. Upgrade both bank and sheriff to protect against {gang} riders.',
-              { coins: event.value.loss, gang: event.value.gangSize },
-            ),
-          }
-        : {
-            speaker: 'Ada · the caretaker',
-            title: 'The riders moved on.',
-            text: 'The gang found no spare coins. Your last savings are safe.',
-          },
-);
+// Every incident kind, bandits included, closes with its own saved story.
+const banditStory = computed(() => {
+  if (!event.value) return null;
+  const story = incidentStory(event.value);
+  return { ...story, text: t(story.text, story.params) };
+});
 const moment = computed(
   () =>
     latestMoment.value ??
     (built.value
       ? {
-          speaker: 'Ada · the caretaker',
+          speaker: CARETAKER,
           title: activeProjects.value.length
             ? 'A little more with every puzzle.'
             : 'It’s good to have neighbors again.',
@@ -1054,9 +1057,9 @@ function collectVipSpending(receipt) {
     origin: townScene.value?.collectionOrigin(receipt.building),
   });
 }
-async function collectIncome() {
+function collectIncome() {
   collectionNow.value = Date.now();
-  const coins = await campaign.collectSaloonIncome(collectionNow.value);
+  const coins = campaign.collectSaloonIncome(collectionNow.value);
   if (!coins) return false;
   showCollection('coins', coins, 'saloon');
   return true;
@@ -1077,7 +1080,7 @@ async function selectBuilding(id) {
     finishBuilding(id);
     return;
   }
-  if (id === 'saloon' && (await collectIncome())) return;
+  if (id === 'saloon' && collectIncome()) return;
   if (id === 'square' && gate.value.available && !activeRaid.value) {
     beginEra();
     return;
@@ -1088,14 +1091,14 @@ async function selectBuilding(id) {
   }
   collection.value = null;
   collectionNow.value = Date.now();
-  if (id === 'blacksmith' && (await campaign.collectForgeTNT(collectionNow.value))) {
+  if (id === 'blacksmith' && campaign.collectForgeTNT(collectionNow.value)) {
     showCollection('tnt', 1, 'blacksmith');
     return;
   }
   await inspectBuilding(id);
 }
-async function ringBell() {
-  if (!(await campaign.ringTownBell(event.value?.id))) return false;
+function ringBell() {
+  if (!campaign.ringTownBell(event.value?.id)) return false;
   game.audioManager?.playArcadeCue?.('town-bell');
   announcement.value = t('Bell rung · remaining loss: {coins} coins', { coins: event.value.loss });
   return true;
@@ -1104,7 +1107,7 @@ function buildFree(id) {
   const offer = upgradeOffer(town.value, id);
   if (!offer?.available || offer.cost !== 0) return;
   selected.value = id;
-  repair(offer.stage);
+  startWork(offer.stage);
 }
 function selectParcel(id) {
   if (constructionReady(town.value.projects[id])) finishBuilding(id, true);
@@ -1112,7 +1115,7 @@ function selectParcel(id) {
     const offer = upgradeOffer(town.value, id);
     if (!offer?.available) return;
     selected.value = id;
-    if (town.value.coins >= offer.cost) repair(offer.stage, true);
+    if (town.value.coins >= offer.cost) startWork(offer.stage, true);
     else useHammer(offer.stage, true);
   }
 }
@@ -1153,8 +1156,8 @@ function plotStatus(place) {
       })
     : t('Empty plot');
 }
-async function repair(stage, keepDirectory = false) {
-  if (!(await campaign.upgradeBuilding(selected.value, stage))) return;
+function startWork(stage, keepDirectory = false) {
+  if (!campaign.upgradeBuilding(selected.value, stage)) return;
   showConstruction(keepDirectory);
   const complete = !town.value.projects[selected.value];
   const puzzles = town.value.projects[selected.value]?.required ?? 0;
@@ -1170,7 +1173,7 @@ async function repair(stage, keepDirectory = false) {
     },
   );
   latestMoment.value = {
-    speaker: 'Ada · the caretaker',
+    speaker: CARETAKER,
     title: complete ? 'Building complete!' : 'The first step is yours.',
     text: complete
       ? (BUILDING_BY_ID[selected.value].upgrades[stage]?.story ??
@@ -1189,10 +1192,10 @@ function showConstruction(keepDirectory = false) {
   construction.value = { id: selected.value, serial: (construction.value?.serial ?? 0) + 1 };
   if (!keepDirectory) mapFrame.value?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
 }
-async function finishBuilding(id, keepDirectory = false) {
+function finishBuilding(id, keepDirectory = false) {
   performanceMark('build-tap');
   const stage = town.value.projects[id]?.stage;
-  if (!(await campaign.finishConstruction(id, stage))) return;
+  if (!campaign.finishConstruction(id, stage)) return;
   performanceMark('build-accepted');
   selected.value = id;
   showConstruction(keepDirectory);
@@ -1209,16 +1212,16 @@ function celebrateBuilding() {
     building: t(BUILDING_BY_ID[selected.value].shortName),
   });
 }
-async function useHammer(stage, keepDirectory = false) {
-  if (!(await campaign.useBuilderHammer(selected.value, stage))) return;
+function useHammer(stage, keepDirectory = false) {
+  if (!campaign.useBuilderHammer(selected.value, stage)) return;
   showConstruction(keepDirectory);
   celebrateBuilding();
 }
 
-async function finishRaid() {
+function finishRaid() {
   if (!activeRaid.value) return;
   const id = activeRaid.value.id;
-  if (!event.value?.seen && !(await campaign.markRaidSeen(id))) return;
+  if (!event.value?.seen && !campaign.markRaidSeen(id)) return;
   const receipt = { ...event.value };
   if (receipt.outcome === 'protected' || receipt.loss > 0) raidNotice.value = receipt;
   if (receipt.bounty) game.audioManager?.playArcadeCue?.('jackpot');
@@ -1232,9 +1235,10 @@ function replayRaid() {
   if (!event.value || activeRaid.value) return;
   activeRaid.value = { ...event.value };
   raidPhase.value = incidentPhase(event.value, 0);
-  document
-    .querySelector('.town-map-frame')
-    ?.scrollIntoView({ behavior: settings.reducedMotion ? 'instant' : 'smooth', block: 'start' });
+  mapFrame.value?.scrollIntoView({
+    behavior: settings.reducedMotion ? 'instant' : 'smooth',
+    block: 'start',
+  });
 }
 function visibilityChanged() {
   paused.value = document.hidden;

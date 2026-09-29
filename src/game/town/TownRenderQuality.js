@@ -1,4 +1,4 @@
-export const RENDER_TIERS = Object.freeze({
+const RENDER_TIERS = Object.freeze({
   low: { dpr: 1, shadow: 1024, samples: 0 },
   medium: { dpr: 1.25, shadow: 2048, samples: 2 },
   high: { dpr: 1.5, shadow: 2048, samples: 4 },

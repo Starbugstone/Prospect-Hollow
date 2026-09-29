@@ -15,8 +15,7 @@ export class TileManager {
     matches,
     cols,
     rows,
-    bonusesCreated,
-    bonusIndices,
+    bonuses = [],
     pendingBonus = null,
     gemTypes = GEM_TYPES,
   }) {
@@ -69,41 +68,15 @@ export class TileManager {
         });
       });
 
-      if (steps.length > 0) {
-        const newBonuses = detectBonusFromMatches(pendingMatches);
-        if (newBonuses.length > 0) {
-          newBonuses.forEach((bonus) => {
-            cascadeBonuses.push(bonus);
-            workingBoard[bonus.index] = createGem(bonus.type);
-          });
+      // The swap's own bonuses already sit on the board; cascades earn new ones.
+      if (steps.length === 0) cascadeBonuses.push(...bonuses);
+      else
+        for (const bonus of detectBonusFromMatches(pendingMatches)) {
+          cascadeBonuses.push(bonus);
+          workingBoard[bonus.index] = createGem(bonus.type);
         }
-      }
 
-      // Only the first step creates and protects bonuses earned by the swap.
-      if (steps.length === 0) {
-        const hasBonusArrays = Array.isArray(bonusesCreated) && Array.isArray(bonusIndices);
-        if (hasBonusArrays) {
-          const loopCount = Math.min(bonusesCreated.length, bonusIndices.length);
-          for (let i = 0; i < loopCount; i += 1) {
-            const bonusIndex = bonusIndices[i];
-            protectedIndices.add(bonusIndex);
-            cleared.delete(bonusIndex);
-            cascadeBonuses.push({ type: bonusesCreated[i], index: bonusIndex });
-          }
-          if (bonusesCreated.length !== bonusIndices.length) {
-            console.warn('TileManager: bonus metadata length mismatch', {
-              bonusesCreatedLength: bonusesCreated.length,
-              bonusIndicesLength: bonusIndices.length,
-            });
-          }
-        } else if (bonusesCreated || bonusIndices) {
-          console.warn(
-            'TileManager: expected arrays for bonusesCreated and bonusIndices during initial swap handling',
-          );
-        }
-      }
-
-      // Handle bonus from cascade
+      // Earned bonuses are protected from this step's clear.
       cascadeBonuses.forEach((bonus) => {
         protectedIndices.add(bonus.index);
         cleared.delete(bonus.index);
@@ -410,9 +383,8 @@ export class TileManager {
         let type = randomGemType(gemTypes);
         // A pathological RNG (or deterministic test) must not create an endless cascade.
         if (iteration >= 24) {
-          const types = gemTypes;
           type =
-            types.find(
+            gemTypes.find(
               (candidate) =>
                 ![1, totalCols].some((stride) =>
                   [-2, -1, 0].some((offset) => {
@@ -430,9 +402,5 @@ export class TileManager {
         step.spawns.push({ index, gem: newGem });
       }
     }
-  }
-
-  applyMatchResult(payload) {
-    return this.getResolution(payload).board;
   }
 }

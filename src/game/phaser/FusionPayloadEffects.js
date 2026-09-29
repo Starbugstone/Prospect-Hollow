@@ -89,7 +89,7 @@ function blast(a, node, color) {
 function laser(a, node, color) {
   const p = a.position(node.index),
     size = a.cellSize;
-  const width = a.boardSize * size,
+  const width = a.boardCols * size,
     height = a.boardRows * size;
   const directions =
     node.type === 'row'
@@ -135,7 +135,7 @@ export async function playFusionPayload(a, combo, center) {
   let nodes = combo.nodes ?? [];
   if (combo.key === 'rainbow+rainbow') {
     nodes = Array.from({ length: a.boardRows }, (_, row) => ({
-      index: row * a.boardSize,
+      index: row * a.boardCols,
       type: 'row',
     }));
   }

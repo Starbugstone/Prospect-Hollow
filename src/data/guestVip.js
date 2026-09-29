@@ -2,7 +2,7 @@ import { t } from '../i18n';
 
 // Guest VIP: its own register, separate from random VIPs. The latest signed-in viewer of
 // the owner's shared town, named after one of their towns (sanitised by the server), is
-// guaranteed to walk in on the owner's next connection, then behaves like any VIP.
+// guaranteed to walk in on the owner's next connection, without VIP coin rewards.
 // `seen` records that they walked in, so they arrive once per visit.
 const GUEST_NAME = /^[\p{L}\p{M}\p{N}]+(?: [\p{L}\p{M}\p{N}]+)*$/u;
 

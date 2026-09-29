@@ -32,6 +32,7 @@ describe('honorific VIP visitor names', () => {
         continue;
       }
       expect(names[selected.gender]).toContain(selected.name);
+      expect(selected.vip).toBe(true);
       counts[selected.name]++;
     }
     // Deterministic seeds make this reproducible. A gender-first draw would give

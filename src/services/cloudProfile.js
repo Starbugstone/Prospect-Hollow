@@ -2,7 +2,7 @@ import { reactive } from 'vue';
 import { Capacitor } from '@capacitor/core';
 import { townStorage, townKey } from './townStorage';
 import { townCoordinator } from './townCoordinator';
-import { createSyncService } from './syncService';
+import { createSyncService, legacyRecovery, uploadBlocked } from './syncService';
 import { recoveryStore } from './recoveryStore';
 const native = Capacitor.isNativePlatform();
 const base = (import.meta.env.VITE_API_BASE ?? '/api/v1').replace(/\/$/, '');
@@ -11,16 +11,24 @@ let bearer = '',
   service,
   sessionGeneration,
   accountRefresh;
+// Sync status codes: local, syncing, offline, expired, blocked, conflict, missing,
+// pending, saved. `describeSaveState` turns them into player-facing text.
 export const cloud = reactive({
   account: null,
   sessionExpired: false,
   csrf: '',
   towns: [],
-  status: 'Saved locally',
+  status: 'local',
   busy: false,
   error: '',
   storageVersion: 0,
 });
+// Fence replies from the previous session and forget its credentials.
+function resetSession() {
+  epoch++;
+  bearer = '';
+  cloud.csrf = '';
+}
 export async function request(
   path,
   body,
@@ -67,9 +75,7 @@ export async function request(
     throw new Error('The server returned a different town. Your local save has been kept.');
   if (!response.ok) {
     if (response.status === 401 && !authentication) {
-      epoch++;
-      bearer = '';
-      cloud.csrf = '';
+      resetSession();
       cloud.sessionExpired = true;
       townStorage.expireSession();
       sessionGeneration = townStorage.auth().generation;
@@ -86,9 +92,7 @@ export async function request(
 export function configureSync(options) {
   const stored = townStorage.auth().account;
   if (stored?.id !== cloud.account?.id || sessionGeneration !== townStorage.auth().generation) {
-    epoch++;
-    bearer = '';
-    cloud.csrf = '';
+    resetSession();
     cloud.towns = [];
   }
   sessionGeneration = townStorage.auth().generation;
@@ -105,6 +109,9 @@ export function configureSync(options) {
 // A share link is view-only, so anyone can open it without an account or a town.
 export const publicVillage = (id) =>
   request(`villages/${encodeURIComponent(id)}`, undefined, 'GET', true);
+// The same view, refreshed while the visitor watches; it never counts as another visit.
+export const latestVillage = (id) =>
+  request(`villages/${encodeURIComponent(id)}/latest`, undefined, 'GET', true);
 // Any visitor may collect a shared town's saloon for its owner, once per hour per town.
 export const tapSaloon = (id) =>
   request(`villages/${encodeURIComponent(id)}/saloon`, {}, 'POST', true);
@@ -143,7 +150,7 @@ export async function syncNow({ pull = true, retryRejected = false } = {}) {
       });
   }
   cloud.busy = true;
-  cloud.status = 'Syncing…';
+  cloud.status = 'syncing';
   cloud.error = '';
   try {
     if (!cloud.csrf) await refreshAccount();
@@ -153,7 +160,7 @@ export async function syncNow({ pull = true, retryRejected = false } = {}) {
   } catch (error) {
     updateSaveStatus();
     if (cloud.account && !cloud.sessionExpired && !townStorage.active()?.meta.uploadError)
-      cloud.status = 'Offline — cloud backup pending';
+      cloud.status = 'offline';
     cloud.error = error.message;
     return false;
   } finally {
@@ -177,13 +184,11 @@ export async function confirmLogin(link) {
   await syncNow();
 }
 export function disconnect() {
-  epoch++;
-  bearer = '';
+  resetSession();
   cloud.account = null;
   cloud.sessionExpired = false;
-  cloud.csrf = '';
   cloud.towns = [];
-  cloud.status = 'Saved locally';
+  cloud.status = 'local';
   townStorage.logout();
   cloud.storageVersion++;
 }
@@ -197,7 +202,7 @@ const rejectedCreation = (error) =>
   (error.status === 409 && ['name_taken', 'slots_full'].includes(error.data?.code));
 function townName(name) {
   name = name.normalize('NFKC').trim().replace(/ +/g, ' ');
-  if (!/^[\p{L}\p{N}][\p{L}\p{M}\p{N} '’\-]{2,23}$/u.test(name))
+  if (!/^[\p{L}\p{N}][\p{L}\p{M}\p{N} '’-]{2,23}$/u.test(name))
     throw new Error('Use 3–24 letters, numbers, spaces, apostrophes or hyphens for the town name.');
   return name;
 }
@@ -324,7 +329,7 @@ export async function listRecoveries(id) {
   const owner = cloud.account?.id;
   const legacy = townStorage.get(id, owner)?.meta.recovery;
   if (legacy?.profile) {
-    await recoveryStore.put({ ...legacy, owner, townId: id, createdAt: legacy.updatedAt ?? 0 });
+    await recoveryStore.put(legacyRecovery(legacy, owner, id));
     townStorage.mutate(id, owner, (r) => {
       if (r.meta.recovery?.id !== legacy.id) return false;
       const { profile, ...descriptor } = legacy;
@@ -374,22 +379,14 @@ export async function deleteAccount(confirmation) {
     );
   }
 }
+function saveStatusOf(meta) {
+  if (!cloud.account || meta?.owner !== cloud.account.id) return 'local';
+  if (cloud.sessionExpired) return 'expired';
+  if (uploadBlocked(meta)) return 'blocked';
+  if (meta.conflict) return 'conflict';
+  if (meta.missing) return 'missing';
+  return meta.dirty || meta.pending ? 'pending' : 'saved';
+}
 export function updateSaveStatus() {
-  const meta = townStorage.active()?.meta;
-  cloud.status =
-    !cloud.account || meta?.owner !== cloud.account.id
-      ? 'Saved locally'
-      : cloud.sessionExpired
-        ? 'Sign in again — playing offline'
-        : meta.uploadError &&
-            (meta.uploadError.code === 'save_format_unsupported' ||
-              meta.uploadError.sequence === meta.sequence)
-          ? 'Cloud backup needs attention'
-          : meta.conflict
-            ? 'Cloud update pending — local save kept'
-            : meta.missing
-              ? 'Cloud town unavailable — local copy kept'
-              : meta.dirty || meta.pending
-                ? 'Saved locally — cloud backup pending'
-                : 'Cloud saved';
+  cloud.status = saveStatusOf(townStorage.active()?.meta);
 }

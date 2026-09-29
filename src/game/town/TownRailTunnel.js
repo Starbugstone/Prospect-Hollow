@@ -13,7 +13,7 @@ export const RAIL_TUNNEL = Object.freeze({
 });
 export const tunnelRearX = RAIL_TUNNEL.portalX - RAIL_TUNNEL.portalDepth;
 // The bore, masonry and terrain all use these same polygonal arch sections.
-export function tunnelProfile(radius = RAIL_TUNNEL.radius) {
+function tunnelProfile(radius = RAIL_TUNNEL.radius) {
   return Array.from({ length: RAIL_TUNNEL.segments + 1 }, (_, i) => {
     const angle = Math.PI - (i * Math.PI) / RAIL_TUNNEL.segments;
     return [radius * Math.cos(angle), RAIL_TUNNEL.spring + radius * Math.sin(angle)];
@@ -21,7 +21,7 @@ export function tunnelProfile(radius = RAIL_TUNNEL.radius) {
 }
 export const tunnelInnerProfile = tunnelProfile();
 export const tunnelOuterProfile = tunnelProfile(RAIL_TUNNEL.radius + RAIL_TUNNEL.thickness);
-export function profileHeight(profile, offset) {
+function profileHeight(profile, offset) {
   for (let i = 1; i < profile.length; i++) {
     const [a, ay] = profile[i - 1],
       [b, by] = profile[i];

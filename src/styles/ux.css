@@ -1,5 +1,4 @@
 /* Shared presentation rules for the village and mine. Gameplay budgets are unchanged. */
-.eyebrow,
 .town-kicker {
   text-transform: none;
   letter-spacing: normal;
@@ -374,29 +373,6 @@
   top: 64px;
   left: 16px;
   bottom: auto;
-}
-.town-map-frame details.town-camera-bar {
-  display: block;
-  width: fit-content;
-  right: auto;
-  pointer-events: auto;
-}
-.town-camera-bar > summary {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  width: fit-content;
-  min-height: 44px;
-  padding: 8px 12px;
-  border: 1px solid #a99b76;
-  border-radius: 10px;
-  background: #fff8e9;
-  color: #405448;
-  font-size: 12px;
-}
-.town-camera-bar .town-camera-controls {
-  margin-top: 6px;
 }
 .town-scene-labels button.quiet-plot {
   min-width: 44px;

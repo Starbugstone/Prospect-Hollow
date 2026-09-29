@@ -2,7 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useCampaignStore } from '../src/stores/campaignStore';
 import { createTown } from '../src/data/town';
-import { normalizeTown } from '../src/game/town/TownRules';
+import {
+  HOUR_MS,
+  normalizeTown,
+  saloonIncomeRate,
+  settleSaloonIncome,
+} from '../src/game/town/TownRules';
 import { newerGuest, normalizeGuestVip } from '../src/data/guestVip';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { TownVipArrivals } from '../src/game/town/TownVipArrivals';
@@ -36,7 +41,7 @@ describe('visitor saloon collection reaching the owner', () => {
     expect(normalizeTown({ saloonVisitAt: -4 }).saloonVisitAt).toBe(0);
   });
 
-  it('collects the reserved coins once, as if the owner had tapped the saloon', () => {
+  it('collects a reserve smaller than one hour once', () => {
     const c = saloonTown(40);
     expect(c.collectSaloonForVisitor(2_000, 1_000)).toBe(40);
     expect(c.town).toMatchObject({ coins: 140, saloonVisitAt: 2_000, guestVip: null });
@@ -50,11 +55,59 @@ describe('visitor saloon collection reaching the owner', () => {
     expect(roundTrip(c.town).saloonVisitAt).toBe(2_000);
   });
 
+  it.each([0, 8])(
+    'limits visitor help to one hour after a long absence with %i hours already stored',
+    (storedHours) => {
+      const c = saloonTown(0);
+      const rate = saloonIncomeRate(c.town);
+      c.town.income.stored = storedHours * rate;
+      const now = 1_000 + 24 * HOUR_MS;
+      const reserve = (storedHours || 5) * rate;
+
+      expect(c.collectSaloonForVisitor(2_000, now)).toBe(rate);
+      expect(c.town.coins).toBe(100 + rate);
+      expect(c.town.income.stored).toBe(reserve - rate);
+      expect(c.lastSaloonIncome).toBe(rate);
+
+      setActivePinia(createPinia());
+      const reloaded = useCampaignStore();
+      expect(reloaded.collectSaloonForVisitor(2_000, now)).toBeNull();
+      expect(reloaded.town.income.stored).toBe(reserve - rate);
+      expect(reloaded.collectSaloonIncome(now)).toBe(reserve - rate);
+      expect(reloaded.town.coins).toBe(100 + reserve);
+      expect(reloaded.town.income.stored).toBe(0);
+    },
+  );
+
   it('never creates coins beyond what the saloon had earned', () => {
     const c = saloonTown(0);
     expect(c.collectSaloonForVisitor(5_000, 1_000)).toBe(0);
     expect(c.town.coins).toBe(100);
     expect(c.town.saloonVisitAt).toBe(5_000);
+  });
+
+  // The server only records when a visitor collected; the coins live in one place, the
+  // owner's save, so an owner tap and a visitor collection drain the same takings.
+  it('pays the takings once when the owner and a visitor collect at the same time', () => {
+    const hour = settleSaloonIncome(
+      { ...saloonTown(0).town, income: { at: 1_000, stored: 0, remainder: 0 } },
+      1_000 + HOUR_MS,
+    ).earned;
+    expect(hour).toBeGreaterThan(0);
+    for (const ownerFirst of [true, false]) {
+      setActivePinia(createPinia());
+      const c = saloonTown(40);
+      const taps = ownerFirst
+        ? [c.collectSaloonIncome(1_000), c.collectSaloonForVisitor(2_000, 1_000)]
+        : [c.collectSaloonForVisitor(2_000, 1_000), c.collectSaloonIncome(1_000)];
+      expect(taps.sort()).toEqual([0, 40]);
+      expect(c.town.coins).toBe(140);
+      // Takings earned afterwards are the owner's next collection, not a second payout.
+      expect(c.collectSaloonIncome(1_000 + HOUR_MS)).toBe(hour);
+      expect(c.collectSaloonForVisitor(2_000, 1_000 + HOUR_MS)).toBeNull();
+      expect(c.town.coins).toBe(140 + hour);
+      expect(c.town.income.stored).toBe(0);
+    }
   });
 });
 

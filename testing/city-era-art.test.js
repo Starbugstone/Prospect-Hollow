@@ -16,7 +16,7 @@ it('gives every shared city building its own period architecture and complete up
         family,
       ),
   );
-  for (const family of [...families, 'wing', 'finish', 'garden', 'mine']) {
+  for (const family of [...families, 'wing', 'finish', 'garden']) {
     const shapes = new Set();
     for (const era of ['post-war', 'aviation', 'broadcast', 'contemporary']) {
       const asset = resolveCityAsset(`${era}-${family}`, ERAS);

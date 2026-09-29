@@ -52,7 +52,7 @@ describe('Stone barriers', () => {
     manager.getResolution({ ...state, matches: [{ type: 'ruby', indices: [0, 5, 10] }] });
     expect(state.tiles[12].health).toBe(2);
   });
-  it.each(['tnt', 'tile_breaker', 'clear_row', 'color_wand', 'bonus-activation'])(
+  it.each(['tnt', 'tile-breaker', 'clear-row', 'color-wand', 'bonus-activation'])(
     'does not extend %s damage to a block beside its footprint',
     (type) => {
       const state = makeBoard(1);
@@ -112,7 +112,7 @@ describe('Stone barriers', () => {
     });
     expect(state.tiles[12].health).toBe(1);
   });
-  it.each(['tnt', 'tile_breaker', 'bonus-activation', 'clear_row'])(
+  it.each(['tnt', 'tile-breaker', 'bonus-activation', 'clear-row'])(
     'takes one hit from a direct %s blast and its overlapping neighbors',
     (type) => {
       const state = makeBoard();
@@ -158,8 +158,7 @@ describe('Stone barriers', () => {
     manager.getResolution({
       ...state,
       matches: [{ type: 'ruby', indices: [5, 6, 7, 8] }],
-      bonusesCreated: ['bomb'],
-      bonusIndices: [7],
+      bonuses: [{ type: 'bomb', index: 7 }],
     });
     expect(state.tiles[12].health).toBe(1);
   });

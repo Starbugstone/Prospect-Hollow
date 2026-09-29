@@ -20,7 +20,7 @@ const makeAnimator = (reducedMotion = false) => {
     fxLayer: { add: vi.fn() },
     audio: { playBonusAppears: vi.fn() },
   });
-  animator.boardSize = animator.boardRows = 6;
+  animator.boardCols = animator.boardRows = 6;
   animator.cellSize = 48;
   animator.clearGems = vi.fn().mockResolvedValue();
   animator.drawCells = vi.fn();

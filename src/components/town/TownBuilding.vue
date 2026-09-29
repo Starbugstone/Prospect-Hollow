@@ -61,30 +61,29 @@
       stroke="#8c9183"
       stroke-width="3"
     />
-    <g v-if="stage >= 3" v-for="x in [-95, 95]" :key="x" :transform="`translate(${x} -20)`">
-      <path d="M0 0v-45" stroke="#526e70" stroke-width="4" /><path
-        d="M-6-45h12v-15H-6Z"
-        fill="#f5dc9c"
-        stroke="#526e70"
-        stroke-width="3"
-      />
-    </g>
+    <template v-if="stage >= 3">
+      <g v-for="x in [-95, 95]" :key="x" :transform="`translate(${x} -20)`">
+        <path d="M0 0v-45" stroke="#526e70" stroke-width="4" /><path
+          d="M-6-45h12v-15H-6Z"
+          fill="#f5dc9c"
+          stroke="#526e70"
+          stroke-width="3"
+        />
+      </g>
+    </template>
   </g>
   <g v-else-if="kind === 'square'">
     <TownSquare :stage="stage" :era="era" />
-    <g
-      v-if="built && eraEvolution(era).style === 'river-rail'"
-      v-for="x in [-90, 90]"
-      :key="x"
-      :transform="`translate(${x} -25)`"
-    >
-      <path d="M0 0v-80" stroke="#526e70" stroke-width="5" /><path
-        d="M-7-80h14v-18H-7Z"
-        fill="#f5dc9c"
-        stroke="#526e70"
-        stroke-width="3"
-      />
-    </g>
+    <template v-if="built && eraEvolution(era).style === 'river-rail'">
+      <g v-for="x in [-90, 90]" :key="x" :transform="`translate(${x} -25)`">
+        <path d="M0 0v-80" stroke="#526e70" stroke-width="5" /><path
+          d="M-7-80h14v-18H-7Z"
+          fill="#f5dc9c"
+          stroke="#526e70"
+          stroke-width="3"
+        />
+      </g>
+    </template>
   </g>
   <g v-else class="town-building-art" stroke-linejoin="round" stroke-linecap="round">
     <ellipse
@@ -496,7 +495,6 @@ import TownCityBuilding from './TownCityBuilding.vue';
 import TownRoundedBuilding from './TownRoundedBuilding.vue';
 import { isRoundedEra, roundedForm } from '../../data/roundedArchitecture';
 import { BUILDING_BY_ID } from '../../data/town';
-import { RIVER_RAIL_VARIANTS } from '../../data/riverRail';
 import TownSquare from './TownSquare.vue';
 import TownIndustrialBuilding from './TownIndustrialBuilding.vue';
 import TownMotorBuilding from './TownMotorBuilding.vue';

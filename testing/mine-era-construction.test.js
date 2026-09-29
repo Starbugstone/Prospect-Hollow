@@ -63,7 +63,6 @@ it.each(ERAS.slice(1).map((era, i) => [ERAS[i].id, era.id]))(
     const savedTown = JSON.stringify(d.town);
     d.setCinematic(true);
     const effect = d.cinematic.presentation.effect;
-    const old = new Box3().setFromObject(effect.previous);
     effect.frame(3);
     expect(effect.previous.visible).toBe(true);
     const arrivals = effect.sequence.crew.map(({ worker }) => worker.root.position.clone());

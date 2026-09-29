@@ -13,7 +13,7 @@
     </button>
   </aside>
   <aside
-    v-else-if="ready && !handingOver && !game.sessionActive && uploadBlocked"
+    v-else-if="ready && !handingOver && !game.sessionActive && blockedUpload"
     class="save-recovery-toast"
     role="alert"
   >
@@ -59,31 +59,6 @@
       :aria-label="t('Dismiss')"
       :title="t('Dismiss')"
       @click="dismissRecovery"
-    >
-      <GameIcon name="close" />
-    </button>
-  </aside>
-  <aside
-    v-else-if="ready && !handingOver && !game.sessionActive && visitorNotice"
-    class="save-recovery-toast"
-    role="status"
-  >
-    <GameIcon name="eye" />
-    <p>
-      <template v-if="visitorNotice.coins">{{
-        t('A visitor collected {coins} coins from your saloon for you.', {
-          coins: number(visitorNotice.coins),
-        })
-      }}</template>
-      <template v-if="visitorNotice.town">{{
-        t('A visitor from {town} is coming to see your village.', { town: visitorNotice.town })
-      }}</template>
-    </p>
-    <button
-      class="save-recovery-dismiss"
-      :aria-label="t('Dismiss')"
-      :title="t('Dismiss')"
-      @click="visitorNotice = null"
     >
       <GameIcon name="close" />
     </button>
@@ -200,16 +175,16 @@ import {
   refreshAccount,
   syncNow,
   cacheTown,
-  clearGuest,
   updateSaveStatus,
 } from '../services/cloudProfile';
 import { townStorage, townKey, TOWN_CHANGED, ACCOUNT_KEY } from '../services/townStorage';
-import { t, number } from '../i18n';
+import { t } from '../i18n';
 import { localProfile } from '../services/localProfile';
 import { townCoordinator } from '../services/townCoordinator';
 import { createTownHandoff } from '../services/townHandoff';
 import { createSyncScheduler } from '../services/syncScheduler';
 import { describeSaveState } from '../services/saveStatus';
+import { uploadBlocked } from '../services/syncService';
 import { syncTownParam } from '../services/appRoute';
 import GameIcon from './GameIcon.vue';
 const AccountPanel = defineAsyncComponent(() => import('./account/AccountPanel.vue'));
@@ -235,40 +210,11 @@ const activeTown = computed(() => {
   void cloud.storageVersion;
   return townStorage.active();
 });
-const uploadBlocked = computed(() => {
-  const meta = activeTown.value?.meta;
-  return (
-    meta?.uploadError &&
-    (meta.uploadError.code === 'save_format_unsupported' ||
-      meta.uploadError.sequence === meta.sequence)
-  );
-});
+const blockedUpload = computed(() => uploadBlocked(activeTown.value?.meta));
 const accountTown = computed(
   () => !!cloud.account && activeTown.value?.meta.owner === cloud.account.id,
 );
 const townName = computed(() => activeTown.value?.meta.name || t('Your town'));
-// Two share-link events reach the owner's own game when it reconnects, never mid-puzzle:
-// a visitor's saloon collection, and the latest signed-in viewer as a guest VIP.
-const visitorNotice = ref(null);
-let clearedGuest = 0;
-watch(
-  () => [cloud.towns, ready.value, game.sessionActive, accountTown.value],
-  () => {
-    const id = activeTown.value?.meta.id;
-    const card = cloud.towns.find((entry) => entry.townId === id);
-    if (!card || !ready.value || game.sessionActive || !accountTown.value || campaign.readOnly)
-      return;
-    const coins = campaign.collectSaloonForVisitor(card.saloonCollectedAt);
-    const guest = campaign.welcomeGuest(card.guest);
-    if (coins || guest) visitorNotice.value = { coins, town: guest };
-    // Once this save holds the guest, the server deletes it; this also retries a failed delete.
-    const guestAt = card.guest?.at;
-    if (guestAt && guestAt !== clearedGuest && campaign.town.guestVip?.at >= guestAt)
-      clearGuest(id, guestAt)
-        .then(() => (clearedGuest = guestAt))
-        .catch(() => {});
-  },
-);
 const saveState = computed(() =>
   describeSaveState({
     signedIn: !!cloud.account,
@@ -332,7 +278,7 @@ const scheduler = createSyncScheduler({
       handingOver.value ||
       !cloud.account ||
       cloud.sessionExpired ||
-      uploadBlocked.value ||
+      blockedUpload.value ||
       !townStorage.canWrite()
     )
       return false;
@@ -378,7 +324,7 @@ function activate({ takeOver = false } = {}) {
         }
         release();
         campaign.reloadLocal();
-        if (!campaign.readOnly) townStorage.ensure(JSON.parse(campaign.exportSave()).profile);
+        if (!campaign.readOnly) townStorage.ensure(campaign.profile());
         const puzzle = townStorage.handoff();
         if (puzzle) {
           game.restoreHandoff(puzzle);
@@ -440,7 +386,7 @@ async function prepareHandoff(key, checkDeadline) {
     await townCoordinator.drain(key);
     check();
     game.syncContinuous();
-    campaign.accrueSaloonIncome(Date.now(), false);
+    campaign.accrueSaloonIncome();
     const puzzle = game.captureHandoff();
     if (!campaign.save())
       throw new Error('Your progress could not be saved. Keep playing in the original window.');
@@ -568,7 +514,7 @@ function start() {
     refreshAccount().catch((error) => {
       cloud.error = error.message;
       if (cloud.sessionExpired) updateSaveStatus();
-      else cloud.status = 'Offline — cloud backup pending';
+      else cloud.status = 'offline';
     });
 }
 function readLink() {

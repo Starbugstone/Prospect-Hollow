@@ -111,7 +111,7 @@ describe('Motor Age follows the complete Post-war Rebuilding era', () => {
     expect(c.town.transition.pending).toBe(true);
     save.mockRestore();
     expect(c.acknowledgeEra()).toBe(true);
-    expect(JSON.parse(saves.get(SAVE_KEY)).town.eraTransitionSeen['motor-age']).toBe(true);
+    expect(JSON.parse(saves.get(SAVE_KEY)).town.transition.pending).toBe(false);
     expect(c.advanceEra('post-war')).toBe(false);
   });
   it.each(

@@ -65,6 +65,7 @@
 }
 .account-body {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
   padding: 1.25rem 1.4rem 1.4rem;
 }
@@ -568,10 +569,13 @@
 /* Manage and account */
 .account-manage {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
 }
+/* Single shrinkable columns keep long links and names inside the panel width. */
 .account-section {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.65rem;
   padding: 1rem 1.1rem;
   background: #fffdf6;
@@ -637,6 +641,7 @@
 }
 .account-share {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
   padding: 0.4rem 0.4rem 0.4rem 0.8rem;
@@ -646,17 +651,19 @@
   font-size: 0.82rem;
 }
 .account-share > svg {
+  flex-shrink: 0;
   width: 1rem;
   height: 1rem;
 }
+/* On narrow screens the copy button moves under the link instead of squeezing it. */
 .account-share code {
-  flex: 1;
+  flex: 1 1 14rem;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 .account-panel .account-share button {
+  flex-shrink: 0;
+  margin-left: auto;
   padding: 0.35rem 0.8rem;
   font-size: 0.8rem;
 }
@@ -691,6 +698,11 @@
 .account-timeline li > span {
   display: grid;
 }
+/* Keeps Compare and download side by side; the text span rule above would stack them. */
+.account-timeline li > .account-row {
+  display: flex;
+  flex-wrap: nowrap;
+}
 .account-timeline small {
   color: #64756a;
   font-size: 0.78rem;
@@ -710,6 +722,10 @@
 }
 .account-confirm p {
   flex-basis: 100%;
+}
+/* Outside the save timeline, the confirmation spans its one-column section. */
+.account-section > .account-confirm {
+  grid-column: auto;
 }
 .account-panel details {
   width: 100%;

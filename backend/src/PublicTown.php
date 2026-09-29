@@ -3,35 +3,36 @@ declare(strict_types=1);
 namespace App;
 use Symfony\Component\HttpFoundation\Request;
 final class PublicTown {
-    public function __construct(private Database $database,private Auth $auth) {}
+    public function __construct(private Database $database,private Auth $auth,private NameModeration $names=new NameModeration()) {}
     public function name(string $name): array {
         $name=\Normalizer::normalize(trim($name),\Normalizer::FORM_KC);
         $name=preg_replace('/ +/u',' ',$name);
         if(!preg_match("/^[\\p{L}\\p{N}][\\p{L}\\p{M}\\p{N} '\x{2019}-]{2,23}$/uD",$name))throw new ApiError(422,'Use 3–24 letters, numbers, spaces, apostrophes or hyphens for the town name.');
         return [$name,transliterator_transliterate('Any-Lower',$name)];
     }
-    private function normalized(string $text): string {
-        $text=transliterator_transliterate('Any-Latin; Latin-ASCII; Lower',\Normalizer::normalize($text,\Normalizer::FORM_KC));
-        return preg_replace('/[^a-z]/','',strtr($text,['0'=>'o','1'=>'i','3'=>'e','4'=>'a','5'=>'s','7'=>'t','8'=>'b']));
-    }
     public function moderate(string $name): void {
-        $compact=$this->normalized($name);
-        $tokens=array_map(fn($s)=>$this->normalized($s),preg_split('/[\s\x{2019}\'-]+/u',$name));
-        foreach(['en','fr'] as $lang)foreach(file(dirname(__DIR__).'/content/moderation/'.$lang.'.txt',FILE_IGNORE_NEW_LINES|FILE_SKIP_EMPTY_LINES) as $word) {
-            $bad=$this->normalized($word);
-            // Short words require a full token to avoid blocking ordinary names such as Scunthorpe.
-            if($bad!=='' && ($compact===$bad||in_array($bad,$tokens,true)||(strlen($bad)>=5&&str_contains($compact,$bad))))throw new ApiError(422,'This town name cannot be used publicly. Rename it before sharing.');
-        }
+        if(!$this->names->allows($name))throw new ApiError(422,'This town name cannot be used publicly. Rename it before sharing.');
     }
     public function projection(object $profile,string $name,string $publicId): string {
         $schema=json_decode(file_get_contents(dirname(__DIR__).'/content/public-schema.json'),true,32,JSON_THROW_ON_ERROR);
         $town=$profile->town;$era=in_array($town->era,$schema['eras'],true)?$town->era:$schema['eras'][0];
         $appearance=['era'=>$era,'buildings'=>new \stdClass(),'buildingEras'=>new \stdClass(),'buildingEraLevels'=>new \stdClass(),'projects'=>new \stdClass()];
         foreach($schema['buildings'] as $id) {
-            foreach(['buildings','buildingEraLevels'] as $key) {
-                $value=$town->$key->$id??0;$appearance[$key]->$id=is_int($value)?max(0,min(3,$value)):0;
+            // Frontier landmarks such as the saloon reach level 5; levels within a later era stop at 3.
+            foreach(['buildings'=>$schema['buildingLevels'][$id]??3,'buildingEraLevels'=>3] as $key=>$max) {
+                $value=$town->$key->$id??0;$appearance[$key]->$id=is_int($value)?max(0,min($max,$value)):0;
             }
             $value=$town->buildingEras->$id??$era;$appearance['buildingEras']->$id=in_array($value,$schema['eras'],true)?$value:$era;
+        }
+        // Like the owner's own mine sign: the first puzzle without a completion record.
+        $records=(array)($profile->records??[]);$appearance['mineLevel']=1;
+        while($appearance['mineLevel']<($schema['levels']??1)&&isset($records[$appearance['mineLevel']]))$appearance['mineLevel']++;
+        // Share only authored level IDs and their earned stars, never the full save records.
+        $appearance['levelRecords']=new \stdClass();
+        foreach($records as $id=>$record) {
+            if(!ctype_digit((string)$id)||(int)$id<1||(int)$id>($schema['levels']??1))continue;
+            $stars=is_object($record)?($record->stars??null):null;
+            if(is_int($stars)&&$stars>=1&&$stars<=3)$appearance['levelRecords']->{(string)(int)$id}=(object)['stars'=>$stars];
         }
         return json_encode(['villageId'=>$publicId,'name'=>$name,'era'=>$era,'appearance'=>$appearance],JSON_THROW_ON_ERROR);
     }
@@ -44,12 +45,19 @@ final class PublicTown {
     }
     public const SALOON_REST=3600;
     // A share link needs no account: anyone holding the unguessable public ID may see the
-    // appearance projection. Browsing the full list still needs one.
-    public function visit(Request $r,string $id): object {
+    // appearance projection. Browsing the full list still needs one. Live presence is
+    // handled separately by VisitorService; viewing never queues an ordinary VIP.
+    public function visit(Request $r,string $id,bool $arrival=true): object {
         $row=$this->database->get()->fetchAssociative('SELECT t.id,t.player_id,t.appearance,s.collected_at FROM towns t LEFT JOIN saloon_collections s ON s.town_id=t.id WHERE t.public_id=? AND t.listed=1 AND t.deleted_at IS NULL',[$id]);
         if(!$row)throw new ApiError(404,'Town unavailable.');
-        $this->welcomeGuest($r,$row);
         $village=json_decode($row['appearance']);
+        // Older shared appearances predate level awards. Project their saved progress
+        // on read so visitors need not wait for the owner to connect and save again.
+        if(!isset($village->appearance->levelRecords)) {
+            $saved=$this->database->get()->fetchAssociative('SELECT profile,name,public_id FROM towns WHERE id=? AND listed=1 AND deleted_at IS NULL',[$row['id']]);
+            if(!$saved)throw new ApiError(404,'Town unavailable.');
+            $village=json_decode($this->projection(json_decode($saved['profile']),$saved['name'],$saved['public_id']));
+        }
         $village->saloonReadyAt=$this->saloonReadyAt($row['collected_at']);
         return $village;
     }
@@ -71,17 +79,6 @@ final class PublicTown {
     }
     private function saloonReadyAt(mixed $at): int {return $at===null||$at===false?0:(int)$at+self::SALOON_REST;}
 
-    // Guest: a signed-in viewer becomes the town's only guest, replacing any earlier one,
-    // until the owner's game has saved them as a VIP. Owners are never their own guest.
-    private function welcomeGuest(Request $r,array $town): void {
-        try {$visitor=$this->auth->session($r)['player_id'];}catch(ApiError){return;}
-        if($visitor===$town['player_id'])return;
-        $names=$this->database->get()->fetchFirstColumn('SELECT name FROM towns WHERE player_id=? AND deleted_at IS NULL ORDER BY listed DESC,saved_at DESC',[$visitor]);
-        foreach($names as $name)if($label=$this->guestName($name)) {
-            $this->upsert('town_guests',$town['id'],['name'=>$label,'visited_at'=>time()]);
-            return;
-        }
-    }
     // Guest names appear in another player's village: never a link or an email, only
     // letters, digits and single spaces, and they must pass the public-name moderation.
     public function guestName(string $name): ?string {

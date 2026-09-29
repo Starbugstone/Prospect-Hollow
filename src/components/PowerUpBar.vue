@@ -16,14 +16,17 @@
         "
         :aria-pressed="activeId === item.id"
         :aria-label="
-          t('{value0}, {value1} remaining. {value2}', {
-            value0: t(item.label),
-            value1: inventory.availableQuantity(item.id),
-            value2: t(descriptions[item.id]),
+          t('{power}, {count} remaining. {description}', {
+            power: t(item.label),
+            count: inventory.availableQuantity(item.id),
+            description: t(descriptions[item.id]),
           })
         "
         :title="
-          t('{value0}: {value1}', { value0: t(item.label), value1: t(descriptions[item.id]) })
+          t('{power}: {description}', {
+            power: t(item.label),
+            description: t(descriptions[item.id]),
+          })
         "
         @click="inventory.usePowerUp(item.id)"
       >
@@ -43,7 +46,7 @@ import { useGameStore } from '../stores/gameStore';
 import { useInventoryStore } from '../stores/inventoryStore';
 const inventory = useInventoryStore();
 const game = useGameStore();
-const activeId = computed(() => game.activeBonusMode?.replaceAll('_', '-'));
+const activeId = computed(() => game.activeBonusMode);
 const visiblePowers = computed(() =>
   inventory.quickAccessSlots.filter((item) => item.quantity > 0 || activeId.value === item.id),
 );

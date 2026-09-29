@@ -1,6 +1,29 @@
 import { recoveryStore } from './recoveryStore';
 const queues = new WeakMap();
 const copy = (value) => JSON.parse(JSON.stringify(value));
+const CHANGED_SINCE_REVIEW = 'Your save changed. Review it before confirming another overwrite.';
+const LEAVE_MINE_TO_REVIEW = 'Return to the village to review your preserved save.';
+const WRONG_TOWN = 'The server returned a different town.';
+// A rejected upload waits for new progress, except a format the server will never accept.
+export const uploadBlocked = (meta) =>
+  !!meta?.uploadError &&
+  (meta.uploadError.code === 'save_format_unsupported' ||
+    meta.uploadError.sequence === meta.sequence);
+// Recovery copies used to live inline in the town record; they move to the recovery store.
+export const legacyRecovery = (recovery, owner, townId) => ({
+  ...recovery,
+  owner,
+  townId,
+  createdAt: recovery.updatedAt ?? 0,
+});
+// Server-owned town details that every accepted reply refreshes.
+const cloudMeta = (result) => ({
+  baseRevision: result.revision,
+  cloudAt: result.updatedAt,
+  name: result.name,
+  publicId: result.publicId,
+  isPublic: result.isPublic,
+});
 const recoveryCopy = (record, reason) => ({
   id: crypto.randomUUID(),
   profile: record.profile,
@@ -34,6 +57,17 @@ export function createSyncService({
 }) {
   let running;
   const current = (owner) => account()?.id === owner;
+  // A failed browser backup pauses uploads for this sequence and is reported to the player.
+  const backupFailed = (townId, owner, error) => {
+    if (current(owner))
+      storage.mutate(townId, owner, (r) => {
+        r.meta.uploadError = {
+          message: error.message,
+          code: 'local_backup_failed',
+          sequence: r.meta.sequence,
+        };
+      });
+  };
   const entry = (id, owner) =>
     storage.get?.(id, owner) ?? storage.records(owner).find((r) => r.meta.id === id);
   async function preserve(record, reason) {
@@ -41,12 +75,7 @@ export function createSyncService({
       townId = record.meta.id;
     // Upgrade the old inline backup before anything can replace its pointer.
     if (record.meta.recovery?.profile)
-      await recoveries.put({
-        ...record.meta.recovery,
-        owner,
-        townId,
-        createdAt: record.meta.recovery.updatedAt ?? 0,
-      });
+      await recoveries.put(legacyRecovery(record.meta.recovery, owner, townId));
     if (!current(owner)) throw new Error('The account changed while preserving this save.');
     const saved = {
       ...recoveryCopy(record, reason),
@@ -57,14 +86,7 @@ export function createSyncService({
     try {
       await recoveries.put(saved);
     } catch (error) {
-      if (current(owner))
-        storage.mutate(townId, owner, (r) => {
-          r.meta.uploadError = {
-            message: error.message,
-            code: 'local_backup_failed',
-            sequence: r.meta.sequence,
-          };
-        });
+      backupFailed(townId, owner, error);
       throw error;
     }
     const { profile, ...descriptor } = saved;
@@ -72,7 +94,7 @@ export function createSyncService({
   }
   async function accept(id, owner, result, sequence, downloaded = false, pending = null) {
     if (!current(owner)) return;
-    if (result.townId !== id) throw new Error('The server returned a different town.');
+    if (result.townId !== id) throw new Error(WRONG_TOWN);
     let replaced = false,
       recovery;
     const before = entry(id, owner);
@@ -102,11 +124,7 @@ export function createSyncService({
       }
       r.meta = {
         ...r.meta,
-        baseRevision: result.revision,
-        cloudAt: result.updatedAt,
-        name: result.name,
-        publicId: result.publicId,
-        isPublic: result.isPublic,
+        ...cloudMeta(result),
         dirty: r.meta.sequence !== sequence,
         pending: null,
         conflict: null,
@@ -117,7 +135,7 @@ export function createSyncService({
     if (replaced) applied(id);
   }
   async function conflict(id, owner, cloud, pending = null) {
-    if (cloud.townId !== id) throw new Error('The server returned a different town.');
+    if (cloud.townId !== id) throw new Error(WRONG_TOWN);
     let replaced = false,
       recovery;
     const before = entry(id, owner);
@@ -139,11 +157,7 @@ export function createSyncService({
         r.profile = cloud.profile;
         r.meta = {
           ...r.meta,
-          baseRevision: cloud.revision,
-          cloudAt: cloud.updatedAt,
-          name: cloud.name,
-          publicId: cloud.publicId,
-          isPublic: cloud.isPublic,
+          ...cloudMeta(cloud),
           dirty: false,
           conflict: null,
           sequence: r.meta.sequence + 1,
@@ -162,14 +176,7 @@ export function createSyncService({
         profile: pending.body.profile,
       });
     } catch (error) {
-      if (current(owner))
-        storage.mutate(id, owner, (r) => {
-          r.meta.uploadError = {
-            message: error.message,
-            code: 'local_backup_failed',
-            sequence: r.meta.sequence,
-          };
-        });
+      backupFailed(id, owner, error);
       throw error;
     }
     if (!current(owner) || !eligible(id, owner)) return null;
@@ -178,7 +185,7 @@ export function createSyncService({
       (!canApply(id) || entry(id, owner)?.meta.sequence !== pending.sequence)
     ) {
       await recoveries.removeUpload(pending.body.uploadId, owner, id);
-      throw new Error('Your save changed. Review it before confirming another overwrite.');
+      throw new Error(CHANGED_SINCE_REVIEW);
     }
     const { profile, ...body } = pending.body;
     const durable = { ...pending, body, snapshot: true };
@@ -218,6 +225,7 @@ export function createSyncService({
         if (pending.recoveryOverride)
           throw new Error(
             'The cloud save changed again. Review it before confirming another overwrite.',
+            { cause: error },
           );
       } else if (error.status === 404 && current(owner))
         storage.mutate(id, owner, (r) => {
@@ -250,12 +258,7 @@ export function createSyncService({
   async function syncTown(id, owner, pull) {
     let local = entry(id, owner);
     if (!local || local.meta.missing || !current(owner) || !eligible(id, owner)) return;
-    if (
-      local.meta.uploadError &&
-      (local.meta.uploadError.code === 'save_format_unsupported' ||
-        local.meta.uploadError.sequence === local.meta.sequence)
-    )
-      return;
+    if (uploadBlocked(local.meta)) return;
     if (local.meta.pending)
       return upload(id, owner, local.meta.pending, local.meta.pending.resolve);
     if (local.meta.conflict && !canApply(id)) return;
@@ -279,7 +282,7 @@ export function createSyncService({
     // A separate worker may have staged a durable retry while the GET waited.
     if (local.meta.pending)
       return upload(id, owner, local.meta.pending, local.meta.pending.resolve);
-    if (remote.townId !== id) throw new Error('The server returned a different town.');
+    if (remote.townId !== id) throw new Error(WRONG_TOWN);
     if (remote.revision < Math.max(local.meta.baseRevision, local.meta.conflict?.revision ?? 0))
       throw new Error('The cloud reply is older than this device. Your local save has been kept.');
     if (
@@ -327,11 +330,11 @@ export function createSyncService({
       const owner = account()?.id;
       return run(id, owner, async () => {
         if (!current(owner) || !eligible(id, owner)) throw new Error('Review this town again.');
-        if (!canApply(id)) throw new Error('Return to the village to review your preserved save.');
+        if (!canApply(id)) throw new Error(LEAVE_MINE_TO_REVIEW);
         await syncTown(id, owner, true);
         const local = entry(id, owner);
         if (!current(owner) || !eligible(id, owner) || !canApply(id))
-          throw new Error('Return to the village to review your preserved save.');
+          throw new Error(LEAVE_MINE_TO_REVIEW);
         if (
           !local?.meta.recovery?.id ||
           local.meta.pending ||
@@ -365,7 +368,7 @@ export function createSyncService({
           review?.townId !== id
         )
           throw new Error('Review this town again.');
-        if (!canApply(id)) throw new Error('Return to the village to review your preserved save.');
+        if (!canApply(id)) throw new Error(LEAVE_MINE_TO_REVIEW);
         if (
           !local?.meta.recovery ||
           local.meta.sequence !== review.sequence ||
@@ -373,7 +376,7 @@ export function createSyncService({
           local.meta.pending ||
           local.meta.conflict
         )
-          throw new Error('Your save changed. Review it before confirming another overwrite.');
+          throw new Error(CHANGED_SINCE_REVIEW);
         const recovery =
           local.meta.recovery?.profile && local.meta.recovery.id === review.recovery.id
             ? local.meta.recovery
@@ -384,7 +387,7 @@ export function createSyncService({
           !current(owner) ||
           !canApply(id)
         )
-          throw new Error('Your save changed. Review it before confirming another overwrite.');
+          throw new Error(CHANGED_SINCE_REVIEW);
         const pending = {
           resolve: true,
           replace: true,

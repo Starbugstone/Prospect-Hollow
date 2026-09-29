@@ -39,7 +39,7 @@ function fixture(era = 'motor-age') {
     town.buildings[id] = 1;
   const d = { town, elapsed: 0, navigation: new TownNavigation(), onVipSpend: vi.fn(), actors: [] };
   const root = new Group();
-  root.userData.villager = { name: 'Guest' };
+  root.userData.villager = { name: 'VIP', vip: true };
   root.position.set(-7, 0.07, 6.3);
   const actor = {
     root,
@@ -179,9 +179,11 @@ it('does not pay ordinary guests, zero-stop VIPs, unfinished trips or a paused i
   beginItinerary(d, actor);
   expect(actor.itinerary.stops).toEqual([]);
   actor.root.userData.villager.name = null;
+  actor.root.userData.villager.vip = false;
   beginItinerary(d, actor);
   expect(actor.itinerary.stops).toEqual([]);
   actor.root.userData.villager.name = 'Guest';
+  actor.root.userData.villager.vip = true;
   actor.itinerary.stops = [{ building: 'saloon', distance: 1 }];
   actor.itinerary.phase = 'indoors';
   actor.itinerary.since = 0;
@@ -197,6 +199,42 @@ it('keeps two-building visits very rare', () => {
   expect(counts[2]).toBeGreaterThan(100);
   expect(counts[2]).toBeLessThan(300);
 });
+it.each([
+  { name: null },
+  { name: 'Town visitor' },
+  { name: 'From Silver Creek', guest: true },
+  { name: 'Mayor of Silver Creek', guest: true, live: true },
+  { name: 'Town visitor', vip: true, guest: true },
+  { name: 'Town visitor', vip: true, live: true },
+])('never schedules or pays VIP shopping for $name ($guest, $live)', (identity) => {
+  const { d, actor } = fixture();
+  actor.seed = Array.from({ length: 1000 }, (_, i) => i).find(
+    (i) => vipVisitCount(i + 31337) === 2,
+  );
+  actor.itinerary.plans = actor.itinerary.plans.filter((p) => p.stops.length === 2);
+  actor.root.userData.villager = identity;
+  beginItinerary(d, actor);
+  expect(actor.itinerary.stops).toEqual([]);
+
+  // A retained trip or changed identity must also be checked at the payment step.
+  actor.itinerary.stops = [{ building: 'saloon', distance: 1 }];
+  actor.itinerary.phase = 'indoors';
+  actor.itinerary.since = 0;
+  updateItinerary(d, actor, 2);
+  expect(actor.itinerary.phase).toBe('leaving');
+  expect(d.onVipSpend).not.toHaveBeenCalled();
+
+  vi.stubGlobal('localStorage', { getItem: () => null, setItem: vi.fn() });
+  setActivePinia(createPinia());
+  const c = useCampaignStore();
+  c.town.buildings.saloon = 1;
+  const coins = c.town.coins;
+  expect(
+    c.collectVipSpending({ tour: 'non-vip', stop: 0, building: 'saloon', visitor: identity }),
+  ).toBe(0);
+  expect(c.town.coins).toBe(coins);
+  expect(c.vipReceipts).toEqual([]);
+});
 it('persists automatic coins and receipts, rejects replay/invalid stops, rolls back failed saves', () => {
   const saved = new Map();
   vi.stubGlobal('localStorage', {
@@ -207,7 +245,12 @@ it('persists automatic coins and receipts, rejects replay/invalid stops, rolls b
   let c = useCampaignStore();
   c.town.buildings.saloon = 1;
   const coins = c.town.coins;
-  const receipt = { tour: 'unique-arrival', stop: 0, building: 'saloon' };
+  const receipt = {
+    tour: 'unique-arrival',
+    stop: 0,
+    building: 'saloon',
+    visitor: { name: 'VIP', vip: true },
+  };
   expect(c.collectVipSpending(receipt)).toBe(5);
   expect(c.town.coins).toBe(coins + 5);
   expect(c.collectVipSpending(receipt)).toBe(0);

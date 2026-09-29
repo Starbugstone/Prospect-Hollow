@@ -1,3 +1,6 @@
+// Bonus gems a player can swap or double-tap on the board.
+export const BOARD_BONUSES = Object.freeze(['bomb', 'cross', 'rainbow']);
+
 export const isAnchored = (tile) =>
   tile?.state === 'FROZEN' ||
   (tile?.chainHealth ?? 0) > 0 ||
@@ -15,3 +18,7 @@ export const neighborsOf = (index, cols, rows) =>
     index - cols,
     index + cols,
   ].filter((neighbor) => neighbor >= 0 && neighbor < cols * rows);
+
+// Orthogonal neighbours on a board `cols` wide.
+export const isAdjacent = (a, b, cols) =>
+  Math.abs((a % cols) - (b % cols)) + Math.abs(Math.floor(a / cols) - Math.floor(b / cols)) === 1;

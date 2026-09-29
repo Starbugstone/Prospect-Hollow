@@ -9,7 +9,6 @@ import { BoardInput } from '../src/game/phaser/BoardInput';
 import { createGem } from '../src/game/engine/GemFactory';
 import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
 import { OBSTACLES, obstaclesInLevel } from '../src/data/obstacles';
-import { CHEST_DROPS } from '../src/data/rewards';
 import { SHOP_ITEMS, rollShopStock } from '../src/data/shop';
 import { createTown, BANDIT_EVENT } from '../src/data/town';
 import { banditEncounter, raidProtection, miningPayout } from '../src/game/town/TownRules';

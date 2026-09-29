@@ -1,4 +1,5 @@
 import { GEM_TYPES } from './GemFactory.js';
+import { isAdjacent } from './TileRules.js';
 
 export const FUSION_STYLES = {
   'bomb+bomb': {
@@ -57,11 +58,7 @@ export function getBonusFusion(board, cols, rows, swap) {
   const indices = [swap.aIndex, swap.bIndex];
   if (indices.some((i) => !Number.isInteger(i) || i < 0 || i >= board.length)) return null;
   const [a, b] = indices;
-  if (
-    Math.abs((a % cols) - (b % cols)) + Math.abs(Math.floor(a / cols) - Math.floor(b / cols)) !==
-    1
-  )
-    return null;
+  if (!isAdjacent(a, b, cols)) return null;
   const pair = indices.map((index) => ({ index, type: board[index]?.type }));
   const key = pair
     .map(({ type }) => type)

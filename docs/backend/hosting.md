@@ -13,7 +13,7 @@ docker compose exec app php bin/migrate.php
 
 Open http://localhost:8094; development email arrives at http://localhost:8095. Choose **Protect my progress**, request a link, then explicitly confirm it. Links expire after 15 minutes. Add the device town to an available account slot or open an existing town. A full account leaves the device town playable and exportable.
 
-This replacement uses schema version **10** and a fresh database. Earlier backend versions were undeployed prototypes. The migration deliberately refuses to overwrite their tables. Point this version at a new database/Compose volume; remove an old development database only if you intend to discard it. Existing browser saves and JSON backups remain supported.
+This replacement starts at schema version **10** on a fresh database; `backend/bin/migrate.php` applies each later version in order, and `/api/health` reports ready only once the latest one is in place. Earlier backend versions were undeployed prototypes. The migration deliberately refuses to overwrite their tables. Point this version at a new database/Compose volume; remove an old development database only if you intend to discard it. Existing browser saves and JSON backups remain supported.
 
 `npm run dev` always runs the local-first game. For account features, route `/api/v1` to PHP or use the packaged Compose application. The former `VITE_CLOUD` flag and demo query mode are gone.
 
@@ -37,11 +37,15 @@ The account screen accepts a pasted email link so native login does not depend o
 
 Normal saves are atomic local snapshots. Uploads carry a durable upload ID and base revision. A lost response retries the same snapshot. Divergence stops sync for that town and asks the player to compare device/cloud copies; there is no automatic field merge. The five previous cloud revisions remain recoverable. Choosing the cloud version also retains the losing device copy for download. Export/import works signed in or signed out; backups include the town UUID and no credentials.
 
-Run `php bin/cleanup.php` daily to remove expired sessions, links, rate buckets and town deletion tombstones older than 30 days. Town deletion immediately frees the account slot and removes its listing. Account deletion cascades through live account data. Provider backups expire according to the operator's policy.
+Run `php bin/cleanup.php` daily to remove expired sessions (player and admin), links, rate buckets, active-day marks older than 90 days and town deletion tombstones older than 30 days. Town deletion immediately frees the account slot and removes its listing. Account deletion cascades through live account data. Provider backups expire according to the operator's policy.
 
 Use `./scripts/backup-database.sh` for local PostgreSQL dumps. Protect backups as account data; restore into a separate database and verify account recovery and revisions before switching traffic. Hosting backup schedules, SMTP delivery and disaster recovery remain operator responsibilities. The previous benchmark measured the removed authoritative prototype and is historical evidence only.
 
 Quality CI tests both databases, the packaged application and the hosting hooks. Independent o2switch pollers deploy the exact `preprod` commit to preprod and the exact `main` commit to production, each only after successful push CI for its configured branch. GitHub uploads no deployment artifact. This branch removes the Azure workflow and disables Vercel Git deployments; these files must reach `main` as part of the production migration.
+
+## Admin panel
+
+Schema version 13 adds the admin and player-activity tables; `php bin/migrate.php` (run by the release preparation) installs them. Create the first admin on each environment with `php bin/admin.php create USERNAME` from its `current` release, then finish at `https://HOST/admin`. See the [admin guide](admin.md) for recovery commands and what is recorded.
 
 ## Hosted environments
 

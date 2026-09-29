@@ -285,7 +285,7 @@ describe('simultaneous alignment detection and celebration', () => {
       simultaneousMatchCount(
         step(0, [
           { type: 'bonus-activation', indices: [0, 1, 2, 4, 5, 6] },
-          { type: 'clear_row', indices: [0, 1, 2] },
+          { type: 'clear-row', indices: [0, 1, 2] },
         ]),
       ),
     ).toBe(0);

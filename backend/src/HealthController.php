@@ -19,7 +19,7 @@ final class HealthController {
         try {
             $this->auth->guardHost($request);
             $db = $this->database->get();
-            if ((int) $db->fetchOne('SELECT COUNT(*) FROM schema_versions WHERE version=10') !== 1) {
+            if ((int) $db->fetchOne('SELECT MAX(version) FROM schema_versions') !== Database::latestVersion()) {
                 throw new \RuntimeException('Schema not ready.');
             }
             $db->fetchOne('SELECT id FROM towns LIMIT 1');

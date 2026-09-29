@@ -144,7 +144,6 @@ export const ERAS = [
       farmCapacity: [20, 20, 20],
       tallCity: true,
       digitalCity: true,
-      motorMine: true,
       overheadPower: false,
       incident: 'storm-cleanup',
       cityDescription:
@@ -177,7 +176,6 @@ export const ERAS = [
       farmCapacity: [20, 20, 20],
       tallCity: true,
       digitalCity: true,
-      motorMine: true,
       overheadPower: false,
       incident: 'storm-cleanup',
       upgradeTitle: 'Tomorrow level {level}: {name}',
@@ -207,8 +205,6 @@ export const createEraState = (plotIds) => ({
   era: FRONTIER_ERA,
   buildingEras: Object.fromEntries(plotIds.map((id) => [id, FRONTIER_ERA])),
   buildingEraLevels: Object.fromEntries(plotIds.map((id) => [id, 0])),
-  eraTransitionSeen: {},
   firstLightsSeen: false,
-  infrastructure: { bridge: 0, rail: 0, riverPort: 0 },
   forge: { progress: 0, charge: 0 },
 });

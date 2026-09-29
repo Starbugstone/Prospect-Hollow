@@ -89,7 +89,7 @@ describe('Industrial follows every River & Rail upgrade', () => {
     expect(c.town.transition.pending).toBe(true);
     save.mockRestore();
     expect(c.acknowledgeEra()).toBe(true);
-    expect(c.town.eraTransitionSeen.industrial).toBe(true);
+    expect(c.town.transition.pending).toBe(false);
     expect(c.advanceEra('river-rail')).toBe(false);
   });
   it('unlocks electricity only after finishing, and persists its celebration once', () => {
@@ -137,8 +137,6 @@ describe('Industrial follows every River & Rail upgrade', () => {
       expect(town.buildings[id]).toBe(base);
     if (id === 'well') expect(waterCapacity(town)).toBe(120);
     if (id === 'rowHouses') expect(housingCapacity(town)).toBe(housingCapacity(industrial()) + 16);
-    if (id === 'bridge') expect(town.infrastructure.bridge).toBe(3);
-    if (id === 'railDepot') expect(town.infrastructure.rail).toBe(3);
   });
   it('unlocks Post-war Rebuilding and blocks completion for any unfinished Industrial plot', () => {
     let town = industrial();

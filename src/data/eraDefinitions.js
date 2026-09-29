@@ -35,7 +35,6 @@ import { resolveRoadStyle } from './roadStyles';
  * @property {readonly string[]} upgradeDescriptions Second and third modernization descriptions.
  * @property {boolean} requiresPower
  * @property {string} waterUpgradeBenefit
- * @property {boolean} motorMine Trim on the accessible mine drawing.
  */
 
 /** Registered city building forms; renderers and SVG drawings exist for each. */
@@ -85,7 +84,6 @@ const STYLES = {
     modernTransport: true,
     motorTrafficLevel: 1,
     busService: true,
-    motorMine: true,
     roadStyle: 'early-asphalt',
     incident: 'workshop-fire',
   },
@@ -149,7 +147,6 @@ export function defineEra(definition) {
     upgradeTitle: '',
     upgradeDescriptions: [],
     requiresPower: false,
-    motorMine: false,
     ...STYLES[style],
     ...definition.evolution,
   };

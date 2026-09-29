@@ -3,6 +3,8 @@
     class="town-scene"
     :class="{ 'is-raiding': raid && !reducedMotion, 'is-read-only': readOnly }"
     :aria-label="t(readOnly ? 'Village visit · view only' : 'Interactive 3D town')"
+    @mousedown.middle.prevent
+    @auxclick.middle.prevent
     @pointerdown="rememberPointer"
     @pointermove="movePointer"
     @pointerleave="leavePointer"
@@ -35,8 +37,12 @@
       v-if="eventInset && !reducedMotion"
       class="town-event-inset"
       :class="{ 'passive-arrival-inset': eventInset.passive }"
-      role="img"
-      :aria-label="t(eventInset.label)"
+      :role="eventInset.passive ? 'button' : 'img'"
+      :tabindex="eventInset.passive ? 0 : undefined"
+      :aria-label="eventInset.passive ? t('Show visitor nametag') : t(eventInset.label)"
+      @click.stop="eventInset.passive && scene?.selectInsetVisitor()"
+      @keydown.enter.prevent.stop="eventInset.passive && scene?.selectInsetVisitor()"
+      @keydown.space.prevent.stop="eventInset.passive && scene?.selectInsetVisitor()"
       :style="{
         left: `${eventInset.x}px`,
         bottom: `${eventInset.y}px`,
@@ -60,7 +66,7 @@
       class="villager-name"
       role="status"
       :style="{ left: `${villagerLabel.x}%`, top: `${villagerLabel.y}%` }"
-      >{{ t('VIP visitor') }} · {{ villagerLabel.name }}</span
+      >{{ t(villagerLabel.live ? 'Town visitor' : 'VIP visitor') }} · {{ villagerLabel.name }}</span
     >
     <div class="town-action-icons">
       <button
@@ -121,7 +127,6 @@
     >
       <button
         v-for="anchor in anchors"
-        :disabled="readOnly && !visitorTaps.includes(anchor.id)"
         :key="anchor.id"
         :ref="(element) => trackElement(labelElements, anchor.id, element)"
         :data-town-plot="anchor.id"
@@ -263,7 +268,8 @@ const props = defineProps({
   readOnly: Boolean,
   // Buildings a read-only visitor may still tap, for example to collect the saloon.
   visitorTaps: { type: Array, default: () => [] },
-  fullscreen: Boolean,
+  liveVisitors: { type: Array, default: () => [] },
+  liveVisitorTownId: String,
   cinematic: Boolean,
   presentation: Object,
   active: { type: Boolean, default: true },
@@ -272,7 +278,6 @@ const props = defineProps({
   forgeCollectible: Boolean,
   now: { type: Number, default: Date.now },
   selected: String,
-  population: Number,
   reducedMotion: Boolean,
   paused: Boolean,
   nextLevel: Number,
@@ -283,6 +288,7 @@ const props = defineProps({
 const emit = defineEmits([
   'select',
   'visit',
+  'inspect',
   'mine',
   'raid-phase',
   'raid-cue',
@@ -343,6 +349,7 @@ function collectionOrigin(id) {
 let presentationTime = 0;
 let cinematicProgress = 0;
 defineExpose({
+  findVisitor: (id) => scene?.findVisitor(id) ?? false,
   collectionOrigin,
   cinematicFrame: (progress) => {
     cinematicProgress = progress;
@@ -369,7 +376,8 @@ const pointers = new Map();
 const villagerLabel = ref(null);
 const choose = (id) => {
   if (!props.readOnly) id === 'mine' ? emit('mine') : emit('select', id);
-  else if (props.visitorTaps.includes(id)) emit('visit', id);
+  // A visitor may collect what visitorTaps allows; any other tap only looks at the building.
+  else emit(props.visitorTaps.includes(id) ? 'visit' : 'inspect', id);
 };
 const chooseLabel = (id, event) => {
   // Pointer taps are settled on pointerup; keep native keyboard/AT activation.
@@ -400,7 +408,7 @@ const pick = (event) => {
   const start = pointers.get(event.pointerId);
   const tap = start && !dragged;
   pointers.delete(event.pointerId);
-  if (tap && (!props.readOnly || props.visitorTaps.length)) {
+  if (tap) {
     if (start[2]) choose(start[2]);
     else scene?.pick(event.clientX, event.clientY);
   }
@@ -582,6 +590,7 @@ async function initialize() {
     );
     // A shared town is only a view: VIP guests visit the owner's own game.
     scene.vipsHidden = props.readOnly;
+    scene.setLiveVisitors(props.liveVisitors, props.reducedMotion, props.liveVisitorTownId);
     scene.onVipSpend = (receipt) => emit('vip-spend', receipt);
     scene.onGuestVip = (at) => emit('guest-vip', at);
     scene.onVillagerLabel = (label) => {
@@ -623,6 +632,12 @@ async function initialize() {
 const visibilityChanged = () => {
   scene?.setMotion(props.active && !document.hidden && !props.paused);
 };
+watch(
+  () => [props.liveVisitors, props.liveVisitorTownId, props.reducedMotion, locale.value],
+  () => {
+    scene?.setLiveVisitors(props.liveVisitors, props.reducedMotion, props.liveVisitorTownId);
+  },
+);
 onMounted(() => {
   document.addEventListener('visibilitychange', visibilityChanged);
   initialize();
@@ -750,6 +765,30 @@ onBeforeUnmount(() => {
 });
 </script>
 <style scoped>
+/* Keep camera controls with the renderer so standalone admin views have them too. */
+details.town-camera-bar {
+  display: block;
+  width: fit-content;
+  right: auto;
+  pointer-events: auto;
+}
+.town-camera-bar > summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  width: fit-content;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid #a99b76;
+  border-radius: 10px;
+  background: #fff8e9;
+  color: #405448;
+  font-size: 12px;
+}
+.town-camera-bar .town-camera-controls {
+  margin-top: 6px;
+}
 .town-graphics-unavailable {
   position: absolute;
   inset: 0;

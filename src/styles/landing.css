@@ -246,11 +246,6 @@
 .landing-cloud[data-state='signed-in'] .town-secondary:hover:not(:disabled) {
   background: #3f6e51;
 }
-.landing-promise {
-  font-size: 12px;
-  color: #8a886d;
-  margin-top: 15px;
-}
 .landing-vista {
   position: relative;
   min-width: 0;
@@ -295,70 +290,6 @@
   top: 12%;
   transform: rotate(-12deg);
   filter: drop-shadow(0 12px 12px #8366a236);
-}
-.landing-steps {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 40px;
-  padding: 42px 0;
-  border-block: 1px solid #ddd9c9;
-}
-.landing-steps article {
-  position: relative;
-}
-.landing-steps .step-number {
-  float: right;
-  font:
-    italic 38px Georgia,
-    serif;
-  color: #d4c8ab;
-}
-.landing-steps svg {
-  width: 29px;
-  height: 29px;
-  color: #809278;
-  margin-bottom: 15px;
-}
-.landing-steps h2 {
-  font:
-    400 25px Georgia,
-    serif;
-  color: #4b6351;
-  margin-bottom: 12px;
-}
-.landing-steps p,
-.landing-invitation p {
-  font-size: 13px;
-  line-height: 1.85;
-  color: #7e806c;
-}
-.landing-invitation {
-  display: flex;
-  align-items: center;
-  gap: 50px;
-  padding: 50px 0;
-}
-.landing-invitation h2 {
-  font:
-    400 31px/1.25 Georgia,
-    serif;
-  margin: 12px 0 16px;
-}
-.landing-invitation > div:first-child {
-  max-width: 690px;
-}
-.landing-treasures {
-  display: flex;
-  flex: 1;
-  justify-content: center;
-  align-items: center;
-}
-.landing-treasures img {
-  width: clamp(55px, 7vw, 100px);
-  filter: drop-shadow(0 6px 6px #9a89592b);
-}
-.landing-treasures img:nth-child(2) {
-  transform: translateY(-10px) rotate(12deg);
 }
 .landing-updates {
   padding: 36px 0 40px;
@@ -467,12 +398,6 @@
   .landing-intro {
     font-size: 14px;
   }
-  .landing-steps {
-    gap: 22px;
-  }
-  .landing-invitation {
-    gap: 20px;
-  }
 }
 @media (max-width: 600px) {
   .frontier-landing {
@@ -506,29 +431,6 @@
   }
   .landing-crystal {
     width: 60px;
-  }
-  .landing-steps {
-    grid-template-columns: 1fr;
-    gap: 28px;
-    padding: 30px 0;
-  }
-  .landing-steps h2 {
-    font-size: 25px;
-  }
-  .landing-steps p {
-    max-width: 400px;
-  }
-  .landing-invitation {
-    flex-direction: column;
-    align-items: start;
-    gap: 28px;
-    padding: 32px 0;
-  }
-  .landing-treasures {
-    align-self: center;
-  }
-  .landing-treasures img {
-    width: 70px;
   }
   .landing-footer {
     flex-direction: column;

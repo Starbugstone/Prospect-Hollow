@@ -5,6 +5,8 @@ use Symfony\Component\HttpFoundation\Request;
 
 /** Account-owned snapshots. Gameplay rules deliberately live only in the client. */
 final class SaveService {
+    /** Cloud towns one account may keep. */
+    public const TOWN_SLOTS=3;
     public function __construct(private Database $database, private Auth $auth, private PublicTown $public) {}
     public static function keys(array $data,array $allowed): void {
         if(array_diff(array_keys($data),$allowed)) throw new ApiError(422,'Unexpected field.');
@@ -21,20 +23,23 @@ final class SaveService {
         if(strlen($json)>1048576) throw new ApiError(413,'A town save must be smaller than 1 MB.');
         return $json;
     }
+    public static function summary(mixed $save): array {
+        $town=is_object($save->town??null)?$save->town:new \stdClass();
+        $coins=$town->coins??0;
+        $buildings=is_object($town->buildings??null)?get_object_vars($town->buildings):[];
+        return [
+            'era'=>is_string($town->era??null)?$town->era:'',
+            'coins'=>(is_int($coins)||is_float($coins))?max(0,min(9007199254740991,$coins)):0,
+            'buildings'=>count(array_filter($buildings,fn($level)=>(is_int($level)||is_float($level))&&$level>0)),
+        ];
+    }
     public function view(array $row,bool $profile=true): array {
         $result=['townId'=>$row['id'],'name'=>$row['name'],'revision'=>(int)$row['revision'],'updatedAt'=>(int)$row['saved_at'],'isPublic'=>(bool)$row['listed'],'publicId'=>$row['public_id']];
         $save=json_decode($row['profile'],false,64,JSON_THROW_ON_ERROR);
         if($profile) $result['profile']=$save;
         else {
             // Owner-only card data; never send full saves in the town list.
-            $town=$save->town??new \stdClass();
-            $coins=$town->coins??0;
-            $buildings=is_object($town->buildings??null)?get_object_vars($town->buildings):[];
-            $result['summary']=[
-                'era'=>is_string($town->era??null)?$town->era:'',
-                'coins'=>(is_int($coins)||is_float($coins))?max(0,min(9007199254740991,$coins)):0,
-                'buildings'=>count(array_filter($buildings,fn($level)=>(is_int($level)||is_float($level))&&$level>0)),
-            ];
+            $result['summary']=self::summary($save);
             // Share-link events for the owner's own game to apply when it reconnects (milliseconds).
             if(array_key_exists('saloon_collected_at',$row)) {
                 $result['saloonCollectedAt']=$row['saloon_collected_at']===null?0:(int)$row['saloon_collected_at']*1000;
@@ -56,7 +61,7 @@ final class SaveService {
     public function account(Request $r): array {
         return $this->transaction($r,false,function($db,$account,$session) {
             $towns=$db->fetchAllAssociative('SELECT t.id,t.name,t.revision,t.saved_at,t.listed,t.public_id,t.profile,s.collected_at AS saloon_collected_at,g.name AS guest_name,g.visited_at AS guest_at FROM towns t LEFT JOIN saloon_collections s ON s.town_id=t.id LEFT JOIN town_guests g ON g.town_id=t.id WHERE t.player_id=? AND t.deleted_at IS NULL ORDER BY t.name,t.id',[$account['id']]);
-            return ['account'=>['id'=>$account['id'],'email'=>$account['email']],'csrf'=>$session['csrf'],'towns'=>array_map(fn($row)=>$this->view($row,false),$towns),'limit'=>3];
+            return ['account'=>['id'=>$account['id'],'email'=>$account['email']],'csrf'=>$session['csrf'],'towns'=>array_map(fn($row)=>$this->view($row,false),$towns),'limit'=>self::TOWN_SLOTS];
         });
     }
     private function owned($db,string $owner,string $id): array {
@@ -68,7 +73,7 @@ final class SaveService {
         self::uuid($id);
         return $this->transaction($r,false,fn($db,$a)=>$this->view($this->owned($db,$a['id'],$id)));
     }
-    private function nameAvailable($db,string $owner,string $id,string $name): array {
+    public function nameAvailable($db,string $owner,string $id,string $name): array {
         [$name,$normalized]=$this->public->name($name);
         if($db->fetchOne('SELECT id FROM towns WHERE player_id=? AND normalized_name=? AND id<>?',[$owner,$normalized,$id])) throw new ApiError(409,'You already have a town with that name. Choose another name.',['code'=>'name_taken']);
         return [$name,$normalized];
@@ -89,7 +94,7 @@ final class SaveService {
                 if($existing['player_id']===$a['id']&&!$existing['deleted_at']&&$existing['upload_id']===$body['uploadId']&&hash_equals($existing['upload_hash'],$hash))return $this->view($existing);
                 throw new ApiError(409,'This town ID is already attached or was deleted. Keep your local copy.',['code'=>'town_exists']);
             }
-            if((int)$db->fetchOne('SELECT COUNT(*) FROM towns WHERE player_id=? AND deleted_at IS NULL',[$a['id']])>=3)throw new ApiError(409,'Your account already has 3 towns. Keep playing locally or manage your cloud towns.',['code'=>'slots_full']);
+            if((int)$db->fetchOne('SELECT COUNT(*) FROM towns WHERE player_id=? AND deleted_at IS NULL',[$a['id']])>=self::TOWN_SLOTS)throw new ApiError(409,'Your account already has '.self::TOWN_SLOTS.' towns. Keep playing locally or manage your cloud towns.',['code'=>'slots_full']);
             [$name,$normalized]=$this->nameAvailable($db,$a['id'],$id,$body['name']);
             $row=['id'=>$id,'player_id'=>$a['id'],'name'=>$name,'normalized_name'=>$normalized,'revision'=>1,'profile'=>$json,'saved_at'=>time(),'public_id'=>bin2hex(random_bytes(16)),'listed'=>0,'upload_id'=>$body['uploadId'],'upload_hash'=>$hash];
             try { $db->insert('towns',$row); }
@@ -97,7 +102,7 @@ final class SaveService {
             return $this->view($row);
         });
     }
-    private function archive($db,array $row): void {
+    public static function archive($db,array $row): void {
         $db->insert('town_history',['town_id'=>$row['id'],'revision'=>$row['revision'],'profile'=>$row['profile'],'saved_at'=>$row['saved_at']]);
         $db->executeStatement('DELETE FROM town_history WHERE town_id=? AND revision<?',[$row['id'],max(0,(int)$row['revision']-4)]);
     }
@@ -110,7 +115,7 @@ final class SaveService {
                 return $this->view($row);
             }
             if((int)$row['revision']!==$body['baseRevision']) throw new ApiError(409,'This town changed on another device. Choose which save to keep.',['code'=>'save_conflict','cloud'=>$this->view($row)]);
-            $this->archive($db,$row);
+            self::archive($db,$row);
             $changes=['profile'=>$json,'revision'=>(int)$row['revision']+1,'saved_at'=>time(),'upload_id'=>$body['uploadId'],'upload_hash'=>$hash];
             if($row['listed'])$changes['appearance']=$this->public->projection(json_decode($json),$row['name'],$row['public_id']);
             $db->update('towns',$changes,['id'=>$id,'player_id'=>$a['id']]);return $this->view(array_merge($row,$changes));
@@ -154,9 +159,13 @@ final class SaveService {
             $row=$this->owned($db,$a['id'],$id);
             if(($body['confirmation']??null)!==$row['name'])throw new ApiError(422,'Type the town name to confirm deletion.');
             if(($body['baseRevision']??null)!==(int)$row['revision'])throw new ApiError(409,'This town changed. Review it again before deleting.');
-            $db->update('towns',['deleted_at'=>time(),'listed'=>0,'appearance'=>null,'normalized_name'=>null],['id'=>$id,'player_id'=>$a['id']]);
+            self::tombstone($db,$id);
             return ['ok'=>true];
         });
+    }
+    // Frees the slot and name and removes the listing; cleanup purges it after 30 days.
+    public static function tombstone($db,string $id): void {
+        $db->update('towns',['deleted_at'=>time(),'listed'=>0,'appearance'=>null,'normalized_name'=>null],['id'=>$id]);
     }
     public function deleteAccount(Request $r,array $body): array {
         self::keys($body,['confirmation']);

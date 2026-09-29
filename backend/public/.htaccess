@@ -3,6 +3,8 @@ Options -Indexes
 RewriteEngine On
 RewriteCond %{REQUEST_URI} ^/api/
 RewriteRule ^ index.php [END]
+# The admin panel is its own page, never the game's fallback.
+RewriteRule ^admin/?$ admin.html [END]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.html [END]
@@ -17,7 +19,10 @@ Header always set Content-Security-Policy "default-src 'self'; script-src 'self'
 </IfModule>
 
 <IfModule mod_headers.c>
-<Files "index.html">
+<FilesMatch "^(index|admin)\.html$">
 Header always set Cache-Control "no-store"
+</FilesMatch>
+<Files "admin.html">
+Header always set X-Robots-Tag "noindex, nofollow"
 </Files>
 </IfModule>

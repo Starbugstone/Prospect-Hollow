@@ -1,7 +1,7 @@
 <template>
   <dialog
     ref="dialog"
-    class="town-presentation"
+    class="town-cinematic town-presentation"
     :aria-label="t(definition.title)"
     @cancel.prevent="finish"
   >
@@ -17,8 +17,9 @@
   </dialog>
 </template>
 <script setup>
-import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { t } from '../../i18n';
+import { useCinematic } from '../../composables/useCinematic';
 const props = defineProps({
   definition: Object,
   reducedMotion: Boolean,
@@ -26,45 +27,34 @@ const props = defineProps({
   ready: Boolean,
 });
 const emit = defineEmits(['frame', 'complete']);
-const dialog = ref(null),
-  skipButton = ref(null),
-  continueButton = ref(null),
-  elapsed = ref(0);
-const finished = computed(() => elapsed.value >= props.definition.duration);
+const skipButton = ref(null),
+  continueButton = ref(null);
+// Definitions are authored in seconds; the shared clock counts milliseconds.
+const { dialog, elapsed, finished, start, complete } = useCinematic({
+  duration: () => props.definition.duration * 1000,
+  running: () => props.ready && !props.paused,
+  maxStep: 250,
+  onOpen() {
+    if (props.reducedMotion) still();
+    else skipButton.value?.focus();
+    start();
+  },
+  onTick: (advanced) => advanced && emit('frame', seconds.value),
+  onFinish: () => nextTick(() => continueButton.value?.focus()),
+});
+const seconds = computed(() => elapsed.value / 1000);
 const chapter = computed(() =>
-  props.definition.chapters.filter((c) => c.at <= elapsed.value).at(-1),
+  props.definition.chapters.filter((c) => c.at <= seconds.value).at(-1),
 );
-let frame, previous, previousFocus;
 function finish() {
   emit('frame', props.definition.duration);
   emit('complete');
 }
 function still() {
-  elapsed.value = props.definition.duration;
-  emit('frame', elapsed.value);
+  complete();
+  emit('frame', seconds.value);
   nextTick(() => continueButton.value?.focus());
 }
-function tick(now) {
-  if (
-    previous !== undefined &&
-    !document.hidden &&
-    !props.paused &&
-    props.ready &&
-    !finished.value
-  ) {
-    elapsed.value = Math.min(
-      props.definition.duration,
-      elapsed.value + Math.min(0.25, (now - previous) / 1000),
-    );
-    emit('frame', elapsed.value);
-    if (finished.value) nextTick(() => continueButton.value?.focus());
-  }
-  previous = now;
-  frame = requestAnimationFrame(tick);
-}
-const visibility = () => {
-  previous = undefined;
-};
 watch(
   () => props.reducedMotion,
   (reduced) => {
@@ -74,42 +64,13 @@ watch(
 watch(
   () => props.ready,
   (ready) => {
-    if (ready) emit('frame', elapsed.value);
+    if (ready) emit('frame', seconds.value);
   },
 );
-onMounted(() => {
-  previousFocus = document.activeElement;
-  dialog.value.showModal();
-  document.addEventListener('visibilitychange', visibility);
-  if (props.reducedMotion) still();
-  else skipButton.value?.focus();
-  frame = requestAnimationFrame(tick);
-});
-onBeforeUnmount(() => {
-  cancelAnimationFrame(frame);
-  document.removeEventListener('visibilitychange', visibility);
-  dialog.value?.close();
-  if (previousFocus?.isConnected) previousFocus.focus();
-});
 </script>
 <style scoped>
 .town-presentation {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  max-height: none;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
   color: #fff2d4;
-  text-align: center;
-  overflow: hidden;
-}
-.town-presentation::backdrop {
-  background: transparent;
 }
 .presentation-shade {
   position: absolute;

@@ -13,7 +13,7 @@ export default defineConfig({
       transformIndexHtml: {
         order: 'post',
         handler(html, context) {
-          if (!context.bundle) return html;
+          if (!context.bundle || !context.path.endsWith('/index.html')) return html;
           return {
             html,
             tags: Object.values(context.bundle)
@@ -31,14 +31,26 @@ export default defineConfig({
         },
       },
     },
+    {
+      // The admin panel is its own page; serve it at /admin in development too.
+      name: 'admin-page',
+      configureServer(server) {
+        server.middlewares.use((request, _response, next) => {
+          if (/^\/admin\/?(?:[?#]|$)/.test(request.url)) request.url = '/admin.html';
+          next();
+        });
+      },
+    },
   ],
   resolve: {
     alias: {
-      '@': '/src',
       phaser3spectorjs: path.resolve(__dirname, 'testing/mocks/phaser3spectorjs.js'),
     },
   },
-  build: { manifest: true },
+  build: {
+    manifest: true,
+    rollupOptions: { input: { main: 'index.html', admin: 'admin.html' } },
+  },
   server: {
     port: 5173,
     host: true,

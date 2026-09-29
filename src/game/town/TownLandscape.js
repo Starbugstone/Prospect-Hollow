@@ -1,27 +1,20 @@
-import { horizonMaterial } from './TownAtmosphere';
+import { terrainMaterial } from './TownAtmosphere';
 import { addMineExcavation } from './TownMineShaft';
 import * as THREE from 'three';
 import { MINE_FACE_COLUMNS, MINE_HILLSIDE, mineHillsideHeight } from './TownMineHillside';
 import { MILLRACE, millraceDistance, millraceHeight, landscapeGeometry } from './TownMillrace';
 import { TOWN_TRACKS, PLOTS, RAIL_EDGE, segmentDistance } from './TownLayout';
 import { RIVER, riverDistance, wetBank, buildRiver } from './TownRiver';
+import { hash01, smoothBetween } from './TownMath';
 
-const smooth = (a, b, value) => {
-  const t = THREE.MathUtils.clamp((value - a) / (b - a), 0, 1);
-  return t * t * (3 - 2 * t);
-};
-const random = (n) => {
-  const value = Math.sin(n * 127.1 + 311.7) * 43758.5453;
-  return value - Math.floor(value);
-};
 function noise(x, z) {
   const ix = Math.floor(x),
     iz = Math.floor(z);
-  const tx = smooth(0, 1, x - ix),
-    tz = smooth(0, 1, z - iz);
+  const tx = smoothBetween(0, 1, x - ix),
+    tz = smoothBetween(0, 1, z - iz);
   return THREE.MathUtils.lerp(
-    THREE.MathUtils.lerp(random(ix + iz * 157), random(ix + 1 + iz * 157), tx),
-    THREE.MathUtils.lerp(random(ix + (iz + 1) * 157), random(ix + 1 + (iz + 1) * 157), tx),
+    THREE.MathUtils.lerp(hash01(ix + iz * 157), hash01(ix + 1 + iz * 157), tx),
+    THREE.MathUtils.lerp(hash01(ix + (iz + 1) * 157), hash01(ix + 1 + (iz + 1) * 157), tx),
     tz,
   );
 }
@@ -47,32 +40,33 @@ export function groundHeight(x, z) {
   const eastClearing = Math.hypot(Math.max(37 - x, 0, x - 70), Math.max(-17 - z, 0, z - 33));
   const westClearing = Math.hypot(Math.max(-59 - x, 0, x + 28), Math.max(-18 - z, 0, z - 26));
   // Low rolling hills leave room for orbiting and a north/south flight corridor.
-  const flightCorridor = smooth(4, 13, Math.abs(x + 53));
+  const flightCorridor = smoothBetween(4, 13, Math.abs(x + 53));
   const prairie =
-    smooth(34, 49, distance) *
-    smooth(0, 7, eastClearing) *
-    smooth(0, 7, westClearing) *
+    smoothBetween(34, 49, distance) *
+    smoothBetween(0, 7, eastClearing) *
+    smoothBetween(0, 7, westClearing) *
     (hills + ridges) *
     0.24 *
     flightCorridor;
   // A local mountain shoulder rises north of the mine. The existing railway
   // cutting below keeps the full train corridor open in every era.
   const mineRidge =
-    (1 - smooth(8, 23, Math.abs(x + 1))) *
-    smooth(25, 30, -z) *
-    (1 - smooth(37, 52, -z)) *
+    (1 - smoothBetween(8, 23, Math.abs(x + 1))) *
+    smoothBetween(25, 30, -z) *
+    (1 - smoothBetween(37, 52, -z)) *
     (8 + noise(x * 0.19, z * 0.18) * 5);
   const bank = riverDistance(x, z);
   // Lower the surrounding hills gradually so the shallow bank never becomes a cliff.
-  const valley = Math.max(prairie, mineRidge) * smooth(RIVER.bankWidth, RIVER.bankWidth + 18, bank);
+  const valley =
+    Math.max(prairie, mineRidge) * smoothBetween(RIVER.bankWidth, RIVER.bankWidth + 18, bank);
   const surface = THREE.MathUtils.lerp(
     -1.25,
     valley,
-    smooth(RIVER.halfWidth - 0.4, RIVER.bankWidth, bank),
+    smoothBetween(RIVER.halfWidth - 0.4, RIVER.bankWidth, bank),
   );
   // A graded railway cutting clears the entire train, not just the engine's center.
   // Preserve the river bed below the bridge instead of filling the water with an embankment.
-  const cutting = 1 - smooth(1.6, 6, Math.abs(z - RAIL_EDGE.from[1]));
+  const cutting = 1 - smoothBetween(1.6, 6, Math.abs(z - RAIL_EDGE.from[1]));
   return Math.min(
     THREE.MathUtils.lerp(surface, Math.min(surface, 0), cutting),
     millraceHeight(x, z, RIVER.waterHeight),
@@ -90,7 +84,10 @@ export function landscapeGroundHeight(x, z) {
   )
     return base;
   const edge = 20 - Math.abs(x);
-  const inset = smooth(-0.25, 0.6, depth) * smooth(0, 0.6, 11.4 - depth) * smooth(0, 0.6, edge);
+  const inset =
+    smoothBetween(-0.25, 0.6, depth) *
+    smoothBetween(0, 0.6, 11.4 - depth) *
+    smoothBetween(0, 0.6, edge);
   return base - inset * 0.8;
 }
 
@@ -109,7 +106,7 @@ function trackDistance(x, z) {
       ({ from, to, width }) => segmentDistance(x, z, from, to) - width / 2,
     ),
   );
-  const bend = smooth(28, 50, Math.abs(z)) * Math.sin(z * 0.045) * 8;
+  const bend = smoothBetween(28, 50, Math.abs(z)) * Math.sin(z * 0.045) * 8;
   const trail = Math.min(Math.abs(x - 3.5 - bend), Math.abs(x + 3.5 - bend));
   return Math.min(streets, Math.abs(z) > 27 ? trail : Infinity);
 }
@@ -169,21 +166,21 @@ const SAND = new THREE.Color('#cdbb8b'),
 // The prairie tint at any point. Surfaces laid over the plain reuse it so they
 // cannot show as a differently colored patch.
 export function landscapeColor(x, z, color = new THREE.Color()) {
-  const meadow = smooth(0.32, 0.78, noise(x * 0.095 + 18, z * 0.095));
+  const meadow = smoothBetween(0.32, 0.78, noise(x * 0.095 + 18, z * 0.095));
   color.copy(SAND).lerp(SAGE, meadow * 0.64);
   if (Math.abs(x + 1) < 24 && z < -25 && z > -53) {
     const slope = Math.hypot(
       groundHeight(x + 0.65, z) - groundHeight(x - 0.65, z),
       groundHeight(x, z + 0.65) - groundHeight(x, z - 0.65),
     );
-    color.lerp(SCREE, smooth(0.6, 2.5, slope) * 0.78);
+    color.lerp(SCREE, smoothBetween(0.6, 2.5, slope) * 0.78);
   }
   color.multiplyScalar(0.96 + noise(x * 0.35, z * 0.35) * 0.09);
-  color.lerp(TRACK, (1 - smooth(0.05, 0.35, trackDistance(x, z))) * 0.5);
-  color.lerp(RIVER_BANK, 1 - smooth(RIVER.halfWidth, RIVER.bankWidth, riverDistance(x, z)));
+  color.lerp(TRACK, (1 - smoothBetween(0.05, 0.35, trackDistance(x, z))) * 0.5);
+  color.lerp(RIVER_BANK, 1 - smoothBetween(RIVER.halfWidth, RIVER.bankWidth, riverDistance(x, z)));
   return color.lerp(
     MILLRACE_BANK,
-    1 - smooth(0.45, MILLRACE.bankWidth + 0.1, millraceDistance(x, z)),
+    1 - smoothBetween(0.45, MILLRACE.bankWidth + 0.1, millraceDistance(x, z)),
   );
 }
 
@@ -203,10 +200,7 @@ export function buildLandscape(town) {
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
   geometry.computeVertexNormals();
   geometry.userData.owned = true;
-  const material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 });
-  horizonMaterial(material);
-  material.userData.transient = true;
-  const ground = new THREE.Mesh(geometry, material);
+  const ground = new THREE.Mesh(geometry, terrainMaterial({ vertexColors: true }));
   ground.receiveShadow = true;
   landscape.add(ground);
   buildRiver(town, landscape);
@@ -227,15 +221,15 @@ export function buildLandscape(town) {
   ])
     tree(town, plants, x, z, scale, seed);
   for (let i = 0; i < 48; i++) {
-    const angle = random(i + 32) * Math.PI * 2;
-    const radius = 36 + random(i + 190) * 48;
+    const angle = hash01(i + 32) * Math.PI * 2;
+    const radius = 36 + hash01(i + 190) * 48;
     const x = Math.cos(angle) * radius,
       z = Math.sin(angle) * radius;
-    if (trackDistance(x, z) > 3) tree(town, plants, x, z, 0.7 + random(i + 4) * 0.8, i + 12);
+    if (trackDistance(x, z) > 3) tree(town, plants, x, z, 0.7 + hash01(i + 4) * 0.8, i + 12);
   }
   for (let i = 0; i < 620; i++) {
-    const x = (random(i * 3 + 5) - 0.5) * 105;
-    const z = (random(i * 3 + 6) - 0.5) * 105;
+    const x = (hash01(i * 3 + 5) - 0.5) * 105;
+    const z = (hash01(i * 3 + 6) - 0.5) * 105;
     if (
       Math.hypot(x, z) < 25 ||
       trackDistance(x, z) < 2 ||
@@ -244,7 +238,7 @@ export function buildLandscape(town) {
     )
       continue;
     const y = groundHeight(x, z),
-      size = 0.15 + random(i + 91) * 0.25;
+      size = 0.15 + hash01(i + 91) * 0.25;
     if (i % 5 === 0) {
       town.ball(plants, x, y + size * 0.35, z, [size * 1.6, size * 0.7, size], '#b9aa86', 'rock');
     } else {
@@ -286,7 +280,7 @@ function tree(town, parent, x, z, scale, seed) {
   if (reservedGround(x, z)) return;
   const tree = town.group(parent, x, groundHeight(x, z), z);
   tree.scale.setScalar(scale);
-  tree.rotation.y = random(seed) * Math.PI * 2;
+  tree.rotation.y = hash01(seed) * Math.PI * 2;
   const tall = seed % 3 !== 0,
     height = tall ? 3.5 : 2.5;
   const bark = '#8b7858',
@@ -294,18 +288,18 @@ function tree(town, parent, x, z, scale, seed) {
   town.rod(tree, [0, 0, 0], [0.12, height * 0.48, 0.05], 0.14, bark);
   town.rod(tree, [0.12, height * 0.48, 0.05], [-0.16, height * 0.83, 0], 0.095, bark);
   for (let i = 0; i < 6; i++) {
-    const angle = i * 2.4 + random(seed + i) * 0.8;
-    const reach = 0.8 + random(seed * 7 + i) * 0.55;
+    const angle = i * 2.4 + hash01(seed + i) * 0.8;
+    const reach = 0.8 + hash01(seed * 7 + i) * 0.55;
     const tip = [
       Math.cos(angle) * reach,
-      height * (0.66 + random(seed + i * 11) * 0.34),
+      height * (0.66 + hash01(seed + i * 11) * 0.34),
       Math.sin(angle) * reach,
     ];
     const fork = [tip[0] * 0.55, height * 0.61, tip[2] * 0.55];
     town.rod(tree, [0.1, height * 0.38, 0], fork, 0.065, bark);
     town.rod(tree, fork, tip, 0.038, branchColor);
     for (let cluster = 0; cluster < 3; cluster++) {
-      const radius = 0.48 + random(seed * 17 + i * 3 + cluster) * 0.28;
+      const radius = 0.48 + hash01(seed * 17 + i * 3 + cluster) * 0.28;
       town.ball(
         tree,
         tip[0] + Math.cos(cluster * 2.4 + i) * 0.36,
@@ -359,14 +353,10 @@ export function addMineCliff(town, parent) {
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
   geometry.computeVertexNormals();
   geometry.userData.owned = true;
-  const material = new THREE.MeshStandardMaterial({
-    vertexColors: true,
-    roughness: 1,
-    side: THREE.DoubleSide,
-  });
-  horizonMaterial(material);
-  material.userData.transient = true;
-  const face = new THREE.Mesh(geometry, material);
+  const face = new THREE.Mesh(
+    geometry,
+    terrainMaterial({ vertexColors: true, side: THREE.DoubleSide }),
+  );
   face.castShadow = true;
   face.receiveShadow = true;
   cliff.add(face);

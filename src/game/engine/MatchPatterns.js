@@ -122,3 +122,9 @@ export const detectBonusFromMatches = (matches, { swap } = {}) => {
 
   return bonuses;
 };
+
+// Each earned bonus replaces its anchor gem's type; the gem keeps its id.
+export const applyBonuses = (board, bonuses) => {
+  for (const { index, type } of bonuses) board[index] = { ...board[index], type };
+  return bonuses;
+};

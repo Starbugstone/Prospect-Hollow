@@ -26,11 +26,11 @@ describe('bonus visual accuracy', () => {
   it('animates the row power and every board bonus it chains', () => {
     const step = {
       cleared: [3, 4, 5],
-      bonusEffect: { type: 'clear_row', originIndex: 3 },
-      matches: [{ type: 'clear_row', indices: [3, 4, 5] }],
+      bonusEffect: { type: 'clear-row', originIndex: 3 },
+      matches: [{ type: 'clear-row', indices: [3, 4, 5] }],
     };
     expect(describeBonusEffects(step, (index) => (index === 4 ? 'bomb' : 'ruby'))).toEqual([
-      { type: 'clear_row', index: 3, targets: [3, 4, 5] },
+      { type: 'clear-row', index: 3, targets: [3, 4, 5] },
       { type: 'bomb', index: 4, targets: [3, 4, 5] },
     ]);
     const cross = vi.fn();

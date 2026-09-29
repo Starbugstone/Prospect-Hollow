@@ -1,4 +1,4 @@
-import { walkPose, placeSafely, RouteWarmup } from './TownNavigation';
+import { walkPose, placeSafely, RouteWarmup, standingPose } from './TownNavigation';
 import { Box3 } from 'three';
 import { prepareRoute, routePose } from './TownRoutes';
 import { responseVehicle, animateVehicle } from './TownVehicles';
@@ -14,6 +14,8 @@ import {
 import { streetHeight } from './TownItineraries';
 import { BRIDGE, RIVER, riverDistance } from './TownRiver';
 import { PLOTS, plotStreet, routeGraph, routeOnGraph } from './TownLayout';
+import { clamp01, smooth01 } from './TownMath';
+import { smokePuff } from './TownAtmosphere';
 
 export const INCIDENT_DURATION = 18;
 export const INCIDENT_SPEED = INCIDENT_BEATS / INCIDENT_DURATION;
@@ -21,11 +23,6 @@ export const INCIDENT_SPEED = INCIDENT_BEATS / INCIDENT_DURATION;
 const RUN = 1.6,
   WALK = 0.9,
   DRIVE = 2.6;
-const clamp01 = (value) => Math.max(0, Math.min(1, value));
-const ease = (value) => {
-  const t = clamp01(value);
-  return t * t * (3 - 2 * t);
-};
 const NAMES = {
   'storm-cleanup': 'City storm response',
   'workshop-fire': 'Workshop fire response',
@@ -99,11 +96,7 @@ export class TownEraIncident {
       ? walkPose(
           detour,
           (detour.total - span + clamp01(progress) * span) / (detour.total || 1),
-          (actor.travelPose ??= {
-            x: actor.root.position.x,
-            y: actor.root.position.y,
-            z: actor.root.position.z,
-          }),
+          (actor.travelPose ??= standingPose(actor)),
         )
       : routePose(path, distance);
     actor.root.position.set(pose.x, 0.07, pose.z);
@@ -345,7 +338,7 @@ export class TownEraIncident {
       this.stand(actor, actor.spot, confronted ? this.facing(actor.spot, lookout) : Math.PI);
       if (confronted) {
         // Hands raised in surrender, facing the patrol.
-        const up = ease((time - arrive + 1) / 0.8);
+        const up = smooth01((time - arrive + 1) / 0.8);
         actor.arms.forEach((arm, i) => {
           arm.upper.rotation.z = (i ? -2.4 : 2.4) * up;
           arm.lower.rotation.x = -0.2 * up;
@@ -386,7 +379,7 @@ export class TownEraIncident {
       const suspect = this.thieves.find((thief, k) => k < caught) ?? this.thieves[0];
       this.stand(actor, actor.spot, this.facing(actor.spot, suspect.spot));
       // The leading officer points at the cornered thieves.
-      if (n === 0) actor.arms[1].upper.rotation.x = -1.45 * ease((time - route.reach) / 0.5);
+      if (n === 0) actor.arms[1].upper.rotation.x = -1.45 * smooth01((time - route.reach) / 0.5);
     });
     // The front officer sets the pace; everyone else waits for their place in the
     // file, then steps onto the road and keeps a steady gap.
@@ -428,14 +421,9 @@ export class TownEraIncident {
           'sphere',
         ),
       );
-      this.smoke = Array.from({ length: 4 }, () => {
-        const puff = d.ball(this.props, 0, 1, 0, 0.4, '#69716e');
-        puff.material = puff.material.clone();
-        puff.material.transparent = true;
-        puff.material.depthWrite = false;
-        puff.material.userData.transient = true;
-        return puff;
-      });
+      this.smoke = Array.from({ length: 4 }, () =>
+        smokePuff(d, this.props, 0, 1, 0, 0.4, '#69716e'),
+      );
       // Soot left on the facade when the fire outpaced the town's protection.
       this.scorch = [
         [-0.45, 0.35, 0.7, 0.5],
@@ -570,7 +558,7 @@ export class TownEraIncident {
           route.path,
         );
         // Turn around at the scene once the crew is back on board.
-        vehicle.root.rotation.y += Math.PI * ease((time - leave) / 0.8);
+        vehicle.root.rotation.y += Math.PI * smooth01((time - leave) / 0.8);
       } else
         this.travel(
           vehicle,
@@ -584,7 +572,7 @@ export class TownEraIncident {
       const door = vehicle.root.position;
       team.people.forEach((actor, n) => {
         // The crew steps down, works at the site, then climbs aboard again.
-        const out = ease((time - arrive) / 1.6) * (1 - ease((time - leave + 1.6) / 1.6));
+        const out = smooth01((time - arrive) / 1.6) * (1 - smooth01((time - leave + 1.6) / 1.6));
         actor.root.visible = time >= arrive && time < leave;
         if (!actor.root.visible) return;
         actor.root.position.set(
@@ -635,9 +623,9 @@ export class TownEraIncident {
   updateHazard(time) {
     const { arrive, resolved, intensity, damage } = this.script;
     const site = this.props.position;
-    const put = ease((time - arrive) / (resolved - arrive));
+    const put = smooth01((time - arrive) / (resolved - arrive));
     // The fire keeps growing until help arrives; weaker protection means a bigger blaze.
-    const blaze = (0.45 + 0.55 * ease(time / arrive)) * (0.6 + 0.8 * intensity) * (1 - put);
+    const blaze = (0.45 + 0.55 * smooth01(time / arrive)) * (0.6 + 0.8 * intensity) * (1 - put);
     const lit = 3 + Math.round(4 * intensity);
     this.flames.forEach((flame, n) => {
       flame.visible = blaze > 0.01 && n < lit;
@@ -652,7 +640,7 @@ export class TownEraIncident {
       puff.material.opacity = Math.sin(drift * Math.PI) * Math.max(0.4 * blaze, linger);
       puff.visible = puff.material.opacity > 0.005;
     });
-    const char = damage ? ease((time - arrive * 0.5) / (arrive * 0.6)) : 0;
+    const char = damage ? smooth01((time - arrive * 0.5) / (arrive * 0.6)) : 0;
     this.scorch.forEach((patch) => {
       patch.visible = char > 0.02;
       const [w, h] = patch.userData.size,
@@ -728,7 +716,7 @@ export class TownEraIncident {
   }
 }
 
-export function tailRoute(path, maximum) {
+function tailRoute(path, maximum) {
   if (path.total <= maximum) return path;
   const start = routePose(path, path.total - maximum);
   let covered = 0;
@@ -739,7 +727,7 @@ export function tailRoute(path, maximum) {
   }
   return prepareRoute(points);
 }
-export function headRoute(path, maximum) {
+function headRoute(path, maximum) {
   if (path.total <= maximum) return path;
   const points = [path.points[0]];
   let covered = 0;
@@ -755,7 +743,7 @@ export function headRoute(path, maximum) {
   return prepareRoute(points);
 }
 // Closest point of a prepared route: its segment, distance along it and the gap.
-export function nearestOnRoute(route, [x, z]) {
+function nearestOnRoute(route, [x, z]) {
   let best = { gap: Infinity, index: 0, along: 0, point: route.points[0] };
   let covered = 0;
   for (let i = 0; i < route.lengths.length; i++) {

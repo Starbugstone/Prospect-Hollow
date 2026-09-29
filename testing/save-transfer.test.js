@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useCampaignStore, SAVE_KEY } from '../src/stores/campaignStore';
-import { MAX_SAVE_FILE_BYTES, parseSaveFile } from '../src/services/saveTransfer';
+import { MAX_SAVE_FILE_BYTES, parseSaveFile, saveFileName } from '../src/services/saveTransfer';
+import { OTHER_TOWN_BACKUP, townStorage } from '../src/services/townStorage';
 import { LEVEL_COUNT } from '../src/data/campaign';
 import { CHEST_DROPS, chestReward } from '../src/data/rewards';
 import { useSaveImport } from '../src/composables/useSaveImport';
@@ -230,4 +231,36 @@ it('offers the old-game backup for confirmation before replacing the village', a
   );
   expect(importer.saveError.value).toBe('Choose a backup file smaller than 5 MB.');
   expect(imported).toHaveBeenCalledOnce();
+});
+
+it('names backup files after their town with only file-safe characters', () => {
+  const at = new Date('2026-09-29T10:20:30.456Z');
+  expect(saveFileName('Ruée vers l’or', at)).toBe(
+    'prospect-hollow-Ruée-vers-l’or-2026-09-29T10-20-30-456Z.json',
+  );
+  expect(saveFileName('  ../Gold: Creek?  ', at)).toBe(
+    'prospect-hollow-Gold-Creek-2026-09-29T10-20-30-456Z.json',
+  );
+  expect(saveFileName(undefined, at)).toBe('prospect-hollow-2026-09-29T10-20-30-456Z.json');
+  expect(saveFileName('x'.repeat(100), at)).toBe(
+    `prospect-hollow-${'x'.repeat(40)}-2026-09-29T10-20-30-456Z.json`,
+  );
+});
+
+it('explains when an account town is offered another town’s backup', async () => {
+  const campaign = useCampaignStore();
+  const text = campaign.exportSave();
+  campaign.town.coins = 7;
+  vi.spyOn(townStorage, 'import').mockImplementation(() => {
+    throw new Error(OTHER_TOWN_BACKUP);
+  });
+  const imported = vi.fn();
+  const importer = useSaveImport(imported);
+  await importer.selectSave({
+    target: { files: [{ name: 'other.json', size: text.length, text: async () => text }] },
+  });
+  importer.importProgress();
+  expect(importer.saveError.value).toBe(OTHER_TOWN_BACKUP);
+  expect(imported).not.toHaveBeenCalled();
+  expect(campaign.town.coins).toBe(7);
 });

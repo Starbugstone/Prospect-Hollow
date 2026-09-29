@@ -61,9 +61,11 @@
           <i></i>
           <span
             ><strong>{{ t('Kept from this device') }}</strong
-            ><small
-              >{{ when(meta.recovery.updatedAt) }} · {{ townSummary(meta.recovery.profile) }}</small
-            ></span
+            ><small>{{
+              [when(meta.recovery.updatedAt), townSummary(meta.recovery.profile)]
+                .filter(Boolean)
+                .join(' · ')
+            }}</small></span
           >
           <span class="account-row">
             <button
@@ -107,14 +109,60 @@
             ><button @click="choice = null">{{ t('Cancel') }}</button>
           </div>
         </li>
-        <li v-if="!historyLoaded && !loadingHistory">
-          <button :disabled="busy" @click="act(loadHistory)">{{ t('Load earlier saves') }}</button>
-        </li>
-        <li v-if="loadingHistory" class="account-hint">{{ t('Loading saves…') }}</li>
       </ul>
+      <p v-if="loadingHistory" class="account-hint">{{ t('Loading saves…') }}</p>
+      <p v-else-if="!historyLoaded">
+        <button :disabled="busy" @click="act(loadHistory)">{{ t('Load earlier saves') }}</button>
+      </p>
+      <p v-else-if="!history.length" class="account-hint">{{ t('No earlier saves yet.') }}</p>
       <p class="account-hint">
         {{ t('Your current save is preserved on this device before replacement.') }}
       </p>
+    </section>
+    <section class="account-section">
+      <h2>{{ t('Backup file') }}</h2>
+      <p class="account-hint">
+        {{
+          t('Keep a copy of {town} on your device, or load one of its backups.', {
+            town: meta.name,
+          })
+        }}
+      </p>
+      <div class="account-row">
+        <button :disabled="busy || game.sessionActive" @click="exportBackup">
+          <GameIcon name="download" />{{ t('Save a backup file') }}
+        </button>
+        <button :disabled="busy || game.sessionActive || readingFile" @click="backupInput.click()">
+          {{ t('Load a backup file') }}
+        </button>
+      </div>
+      <input
+        ref="backupInput"
+        type="file"
+        accept=".json,application/json"
+        hidden
+        :aria-label="t('Load a backup file')"
+        @change="selectSave"
+      />
+      <div v-if="pendingSave" class="account-confirm">
+        <p>
+          <strong>{{ pendingSave.name }}</strong
+          ><br />{{
+            t(
+              'Replace your current village with this backup? Save a backup first if you want to keep it.',
+            )
+          }}
+        </p>
+        <button
+          class="account-primary"
+          :disabled="busy || game.sessionActive"
+          @click="importProgress"
+        >
+          {{ t('Replace and continue') }}</button
+        ><button @click="cancel">{{ t('Cancel') }}</button>
+      </div>
+      <p v-if="saveError" role="alert" class="account-hint">{{ t(saveError) }}</p>
+      <p v-if="saveStatus" role="status" class="account-hint">{{ t(saveStatus) }}</p>
     </section>
     <details ref="deleteSection" class="account-danger" :open="focus === 'delete'">
       <summary>
@@ -149,14 +197,17 @@ import {
 } from '../../services/cloudProfile';
 import { townStorage } from '../../services/townStorage';
 import { visitUrl } from '../../services/appRoute';
-import { createSaveFile, downloadSaveFile } from '../../services/saveTransfer';
+import { createSaveFile, downloadSaveFile, saveFileName } from '../../services/saveTransfer';
+import { useSaveImport } from '../../composables/useSaveImport';
+import { useCampaignStore } from '../../stores/campaignStore';
 import { useGameStore } from '../../stores/gameStore';
 import { useAccountContext, townSummary } from './accountContext';
 import GameIcon from '../GameIcon.vue';
-import { t } from '../../i18n';
+import { t, locale } from '../../i18n';
 const props = defineProps({ active: { type: Object, required: true }, focus: String });
-const { busy, act, recovery } = useAccountContext();
-const game = useGameStore(),
+const { busy, act, recovery, changed } = useAccountContext();
+const campaign = useCampaignStore(),
+  game = useGameStore(),
   editName = ref(''),
   deleteName = ref(''),
   history = ref([]),
@@ -166,13 +217,14 @@ const game = useGameStore(),
   copied = ref(false),
   details = ref(null),
   historySection = ref(null),
-  deleteSection = ref(null);
+  deleteSection = ref(null),
+  backupInput = ref(null);
 const meta = computed(() => props.active.meta);
 const locked = computed(() => !!(meta.value.dirty || meta.value.conflict || meta.value.pending));
 const shareUrl = computed(() => visitUrl(meta.value.publicId));
 const when = (at) =>
   at
-    ? new Date(at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
+    ? new Date(at).toLocaleString(locale.value, { dateStyle: 'medium', timeStyle: 'short' })
     : t('Not synced yet');
 watch(
   () => [meta.value.id, meta.value.baseRevision, meta.value.name, meta.value.isPublic].join(':'),
@@ -237,16 +289,37 @@ async function copyShareLink() {
   copied.value = true;
   setTimeout(() => (copied.value = false), 2000);
 }
+// The panel only manages the town being played, so its live progress is this town's backup.
+const { pendingSave, readingFile, saveError, saveStatus, selectSave, importProgress, cancel } =
+  useSaveImport(changed);
+function exportBackup() {
+  saveError.value = '';
+  saveStatus.value = '';
+  try {
+    downloadSaveFile(campaign.exportSave(), saveFileName(meta.value.name));
+    saveStatus.value = 'Save file download started.';
+  } catch {
+    saveError.value = 'Your save could not be exported. Please try again.';
+  }
+}
 async function downloadRecovery() {
   await act(async () => {
     const saved = await getRecovery(meta.value.id, meta.value.recovery.id);
     const profile = saved?.profile ?? meta.value.recovery.profile;
     if (!profile) throw new Error('This preserved save is unavailable.');
-    downloadSaveFile(createSaveFile(profile), 'prospect-hollow-recovery.json');
+    downloadSaveFile(createSaveFile(profile), saveFileName(`${meta.value.name} recovery`));
   });
 }
+// History keeps only a few snapshots, so it is shown as soon as the page opens
+// and refreshed whenever this town gets a new cloud revision.
+watch(
+  () => meta.value.baseRevision,
+  () => {
+    if (historyLoaded.value && !loadingHistory.value) loadHistory().catch(() => {});
+  },
+);
 onMounted(() => {
-  if (props.focus === 'history') act(loadHistory);
+  act(loadHistory);
   const target = { history: historySection, delete: deleteSection }[props.focus] ?? details;
   target.value?.scrollIntoView({ block: 'nearest' });
 });

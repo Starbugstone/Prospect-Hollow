@@ -8,15 +8,6 @@ const AMBIENT_SOURCES = ['/sound/mining/lanterns-below.ogg', '/sound/mining/lant
 // Match the village's restrained music mix, leaving room for crystal effects.
 const AMBIENT_VOLUME = 0.45;
 
-const SFX_VOLUME = Object.freeze({
-  MATCH: 0.55,
-  COMBO: 0.75,
-  BONUS_APPEAR: 0.7,
-  CROSS_FIRE: 0.8,
-  BOMB: 0.85,
-  RAINBOW_LASER: 0.65,
-});
-
 const SFX_KEYS = Object.freeze({
   MATCH: 'match-basic',
   COMBO: 'match-combo',
@@ -27,31 +18,39 @@ const SFX_KEYS = Object.freeze({
 });
 
 const SFX_DEFINITIONS = {
-  [SFX_KEYS.MATCH]: {
-    src: ['/sound/gem1.mp3'],
-    baseVolume: SFX_VOLUME.MATCH,
-  },
-  [SFX_KEYS.COMBO]: {
-    src: ['/sound/gem-combo.mp3'],
-    baseVolume: SFX_VOLUME.COMBO,
-  },
-  [SFX_KEYS.BONUS_APPEAR]: {
-    src: ['/sound/bonus-appears.mp3'],
-    baseVolume: SFX_VOLUME.BONUS_APPEAR,
-  },
-  [SFX_KEYS.CROSS_FIRE]: {
-    src: ['/sound/boom-fire.mp3'],
-    baseVolume: SFX_VOLUME.CROSS_FIRE,
-  },
-  [SFX_KEYS.BOMB]: {
-    src: ['/sound/explosion.mp3'],
-    baseVolume: SFX_VOLUME.BOMB,
-  },
-  [SFX_KEYS.RAINBOW_LASER]: {
-    src: ['/sound/laser.ogg'],
-    baseVolume: SFX_VOLUME.RAINBOW_LASER,
-  },
+  [SFX_KEYS.MATCH]: { src: ['/sound/gem1.mp3'], baseVolume: 0.55 },
+  [SFX_KEYS.COMBO]: { src: ['/sound/gem-combo.mp3'], baseVolume: 0.75 },
+  [SFX_KEYS.BONUS_APPEAR]: { src: ['/sound/bonus-appears.mp3'], baseVolume: 0.7 },
+  [SFX_KEYS.CROSS_FIRE]: { src: ['/sound/boom-fire.mp3'], baseVolume: 0.8 },
+  [SFX_KEYS.BOMB]: { src: ['/sound/explosion.mp3'], baseVolume: 0.85 },
+  [SFX_KEYS.RAINBOW_LASER]: { src: ['/sound/laser.ogg'], baseVolume: 0.65 },
 };
+
+// Synthesized arcade cues: note frequencies (Hz), or a function of the cue index.
+const ARCADE_NOTES = {
+  'era-departure': [196, 246.94, 293.66, 392],
+  'era-reveal': [261.63, 329.63, 392, 523.25, 659.25, 783.99],
+  'town-bell': [523.25, 1046.5, 1569.75],
+  coin: (index) => [784 + index * 88],
+  'chest-charge': [392, 493.88, 587.33],
+  'chest-open': [523.25, 659.25, 783.99, 1046.5, 1318.5, 1567.98],
+  'fusion-charge': [130.81, 196, 261.63, 392, 523.25, 784],
+  'fusion-aftershock': [98, 196, 392],
+  'fusion-impact': [65.41, 130.81, 261.63, 523.25],
+  charge: [196, 294, 392, 588, 784],
+  jackpot: [523, 659, 784, 1046, 1568],
+  'reel-tick': (index) => [420 + (index % 5) * 65],
+};
+const defaultNotes = (index) => [660 + index * 110, 990 + index * 110];
+const notesFor = (kind, index) => {
+  const notes = ARCADE_NOTES[kind] ?? defaultNotes;
+  return typeof notes === 'function' ? notes(index) : notes;
+};
+// Seconds each note rings; era cues are slow swells.
+const noteDuration = (kind) =>
+  kind.startsWith('era-')
+    ? 2.4
+    : ({ 'town-bell': 0.9, 'reel-tick': 0.055, 'fusion-impact': 0.5 }[kind] ?? 0.22);
 
 let ambientHowl;
 let ambientSoundId = null;
@@ -155,34 +154,9 @@ export const useAudio = () => {
   const playArcadeCue = (kind, index = 0) => {
     const ctx = Howler.ctx;
     if (!ctx || ctx.state !== 'running' || settingsStore.sfxVolume <= 0) return;
-    const notes =
-      kind === 'era-departure'
-        ? [196, 246.94, 293.66, 392]
-        : kind === 'era-reveal'
-          ? [261.63, 329.63, 392, 523.25, 659.25, 783.99]
-          : kind === 'town-bell'
-            ? [523.25, 1046.5, 1569.75]
-            : kind === 'coin'
-              ? [784 + index * 88]
-              : kind === 'chest-charge'
-                ? [392, 493.88, 587.33]
-                : kind === 'chest-open'
-                  ? [523.25, 659.25, 783.99, 1046.5, 1318.5, 1567.98]
-                  : kind === 'fusion-charge'
-                    ? [130.81, 196, 261.63, 392, 523.25, 784]
-                    : kind === 'fusion-aftershock'
-                      ? [98, 196, 392]
-                      : kind === 'fusion-impact'
-                        ? [65.41, 130.81, 261.63, 523.25]
-                        : kind === 'charge'
-                          ? [196, 294, 392, 588, 784]
-                          : kind === 'jackpot'
-                            ? [523, 659, 784, 1046, 1568]
-                            : kind === 'reel-tick'
-                              ? [420 + (index % 5) * 65]
-                              : [660 + index * 110, 990 + index * 110];
+    const duration = noteDuration(kind);
     const voices = [];
-    notes.forEach((frequency, i) => {
+    notesFor(kind, index).forEach((frequency, i) => {
       const oscillator = ctx.createOscillator(),
         gain = ctx.createGain();
       const start = ctx.currentTime + i * (kind.startsWith('era-') ? 0.32 : 0.09);
@@ -193,15 +167,6 @@ export const useAudio = () => {
       }
       gain.gain.setValueAtTime(0, start);
       gain.gain.linearRampToValueAtTime(settingsStore.sfxVolume * 0.09, start + 0.012);
-      const duration = kind.startsWith('era-')
-        ? 2.4
-        : kind === 'town-bell'
-          ? 0.9
-          : kind === 'reel-tick'
-            ? 0.055
-            : kind === 'fusion-impact'
-              ? 0.5
-              : 0.22;
       gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
       oscillator.connect(gain);
       gain.connect(Howler.masterGain ?? ctx.destination);

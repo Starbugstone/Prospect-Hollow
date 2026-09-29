@@ -1,3 +1,4 @@
+/* global prospectDebug */
 // Playwright callback for a fresh, isolated browser page against local Vite.
 // Checks rendered geometry: tips, celebrations and targeting must never move the
 // board, cover gems, or change the document's scroll position.

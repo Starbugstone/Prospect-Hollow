@@ -34,15 +34,6 @@ export const riverPath = (from = -130, to = 130, step = 1) =>
     const z = Math.min(to, from + i * step);
     return [riverCenterX(z), z];
   });
-export function riverOutline(project, width = RIVER.halfWidth, from = -25, to = 32) {
-  const path = riverPath(from, to);
-  return `M${[
-    ...path.map(([x, z]) => project([x - width, z])),
-    ...path.toReversed().map(([x, z]) => project([x + width, z])),
-  ]
-    .map((p) => p.join(' '))
-    .join(' L')} Z`;
-}
 
 // One narrow mesh on the moving layer. Terrain and buildings stay in the frame cache.
 export function buildRiver(town, parent) {

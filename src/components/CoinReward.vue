@@ -32,39 +32,26 @@
           <span>{{ t('Bonuses left on the board') }}</span
           ><b>{{ bonusGems }} × {{ BONUS_GEM_COINS }}</b>
         </div>
-        <template v-if="comboRewards.length">
-          <h3>{{ t('COMBO BONUSES') }}</h3>
-          <div v-for="reward in comboRewards" :key="`combo-${reward.tier}`">
-            <span
-              >{{ t('Combo ×{tier}', { tier: number(reward.tier) }) }}
-              <small>{{
-                t('{count} × {coins} coins', {
-                  count: number(reward.count),
-                  coins: number(reward.coinsEach),
-                })
-              }}</small>
-            </span>
-            <b>+{{ number(reward.coins) }}</b>
-          </div>
-        </template>
-        <template v-if="multiMatchRewards.length">
-          <h3 class="multi-match-heading">{{ t('SIMULTANEOUS MATCH BONUSES') }}</h3>
-          <div
-            v-for="reward in multiMatchRewards"
-            :key="`multi-${reward.tier}`"
-            class="multi-match-reward"
-          >
-            <span
-              >{{ t('{count} lines at once', { count: number(reward.tier) }) }}
-              <small>{{
-                t('{count} × {coins} coins', {
-                  count: number(reward.count),
-                  coins: number(reward.coinsEach),
-                })
-              }}</small>
-            </span>
-            <b>+{{ number(reward.coins) }}</b>
-          </div>
+        <template v-for="group in rewardGroups" :key="group.id">
+          <template v-if="group.rewards.length">
+            <h3 :class="group.headingClass">{{ t(group.heading) }}</h3>
+            <div
+              v-for="reward in group.rewards"
+              :key="`${group.id}-${reward.tier}`"
+              :class="group.rowClass"
+            >
+              <span
+                >{{ group.label(reward.tier) }}
+                <small>{{
+                  t('{count} × {coins} coins', {
+                    count: number(reward.count),
+                    coins: number(reward.coinsEach),
+                  })
+                }}</small>
+              </span>
+              <b>+{{ number(reward.coins) }}</b>
+            </div>
+          </template>
         </template>
         <div v-if="depthPercent" class="coin-depth-bonus">
           <span>{{ t('Depth bonus · +{percent}%', { percent: depthPercent }) }}</span>
@@ -106,10 +93,23 @@ const depthCoins = computed(() =>
     props.levelId,
   ),
 );
-const comboRewards = computed(() => matchRewardBreakdown(props.comboCounts, COMBO_COIN_STEP));
-const multiMatchRewards = computed(() =>
-  matchRewardBreakdown(props.multiMatchCounts, MULTI_MATCH_COIN_STEP),
-);
+// Cascade tiers and simultaneous lines share one breakdown layout.
+const rewardGroups = computed(() => [
+  {
+    id: 'combo',
+    heading: 'COMBO BONUSES',
+    rewards: matchRewardBreakdown(props.comboCounts, COMBO_COIN_STEP),
+    label: (tier) => t('Combo ×{tier}', { tier: number(tier) }),
+  },
+  {
+    id: 'multi',
+    heading: 'SIMULTANEOUS MATCH BONUSES',
+    headingClass: 'multi-match-heading',
+    rowClass: 'multi-match-reward',
+    rewards: matchRewardBreakdown(props.multiMatchCounts, MULTI_MATCH_COIN_STEP),
+    label: (tier) => t('{count} lines at once', { count: number(tier) }),
+  },
+]);
 const settings = useSettingsStore(),
   game = useGameStore();
 const displayedCoins = ref(settings.reducedMotion ? props.coins : 0),

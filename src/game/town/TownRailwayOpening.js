@@ -4,8 +4,8 @@ import { addRailroad } from './TownEraActivity';
 import { buildMineHillside } from './TownMineHillside';
 import { groundHeight, landscapeColor } from './TownLandscape';
 import { PLOTS, RAIL_EDGE } from './TownLayout';
+import { clamp01, smooth01 } from './TownMath';
 
-const clamp = (t) => Math.max(0, Math.min(1, t));
 export class TownRailwayOpening {
   constructor(d) {
     this.d = d;
@@ -41,7 +41,7 @@ export class TownRailwayOpening {
       if (part.isMesh) {
         part.updateWorldMatrix(true, false);
         const x = part.getWorldPosition(new Vector3()).x;
-        this.railParts.push({ part, y: part.position.y, delay: clamp((x + 45) / 95) * 3 });
+        this.railParts.push({ part, y: part.position.y, delay: clamp01((x + 45) / 95) * 3 });
       }
     });
     this.dust = Array.from({ length: 24 }, (_, i) =>
@@ -83,17 +83,17 @@ export class TownRailwayOpening {
     this.solid.userData.activation = time < 7 ? 'temporary-reveal' : 'removed';
     this.tunnel.userData.activation = time >= 7 ? 'temporary-reveal' : 'pending';
     for (const { part, y, delay } of this.railParts) {
-      const t = clamp((time - 2 - delay) / 0.65);
+      const t = clamp01((time - 2 - delay) / 0.65);
       part.visible = t > 0;
       part.position.y = y + (1 - t) ** 2 * 0.8;
     }
     for (const { part, y, order } of this.stones) {
-      const t = clamp((time - 7 - order * 0.8) / 0.7);
+      const t = clamp01((time - 7 - order * 0.8) / 0.7);
       part.visible = t > 0;
       part.position.y = y + (1 - t) ** 2 * 1.4;
     }
     this.dust.forEach((part, i) => {
-      const t = clamp((time - 6.3 - (i % 4) * 0.13) / 2);
+      const t = clamp01((time - 6.3 - (i % 4) * 0.13) / 2);
       part.visible = t > 0 && t < 1;
       part.position.set(
         (i % 2 ? -1 : 1) * (6.3 + t * 1.5),
@@ -104,10 +104,10 @@ export class TownRailwayOpening {
     });
     const x =
       time < 12
-        ? -36 + clamp((time - 10) / 2) * 20
+        ? -36 + clamp01((time - 10) / 2) * 20
         : time < 13
           ? -16
-          : -16 + clamp((time - 13) / 3) * 34;
+          : -16 + clamp01((time - 13) / 3) * 34;
     this.journey = { x, visible: time >= 10, distance: x + 36, moving: time < 12 || time >= 13 };
     // Three continuous shots: station, line construction, masonry, first departure.
     const shots = [
@@ -123,8 +123,7 @@ export class TownRailwayOpening {
     if (index < 0) index = shots.length - 1;
     const a = shots[Math.max(0, index - 1)],
       b = shots[index];
-    const t = clamp((time - a.at) / Math.max(0.001, b.at - a.at));
-    const smooth = t * t * (3 - 2 * t);
+    const smooth = smooth01((time - a.at) / Math.max(0.001, b.at - a.at));
     const focus = new Vector3().fromArray(a.focus).lerp(new Vector3().fromArray(b.focus), smooth);
     const eye = new Vector3().fromArray(a.eye).lerp(new Vector3().fromArray(b.eye), smooth);
     if (d.camera.aspect < 0.8) eye.sub(focus).multiplyScalar(1.45).add(focus);

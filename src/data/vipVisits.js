@@ -2,7 +2,10 @@ import { villagerRandom } from './villagers';
 
 export const VIP_SPEND = 5;
 export const VIP_RECEIPT_LIMIT = 64;
-export const VIP_VISIT_BUILDINGS = Object.freeze([
+// A name alone also identifies visiting players and legacy share-link guests.
+export const canVipSpend = (identity) =>
+  identity?.vip === true && !identity.guest && !identity.live;
+const VIP_VISIT_BUILDINGS = Object.freeze([
   'saloon',
   'shop',
   'bank',
@@ -34,6 +37,7 @@ export function normalizeVipReceipts(value) {
 }
 export function vipReceipt(receipt) {
   return receipt &&
+    canVipSpend(receipt.visitor) &&
     typeof receipt.tour === 'string' &&
     receipt.tour.length > 0 &&
     receipt.tour.length < 150 &&

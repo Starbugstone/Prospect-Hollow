@@ -37,7 +37,7 @@ it('queues one saved opening only after the ready station and its rails are comp
   expect(railEdges(store.town)).toEqual([]);
   expect(pendingPresentation(store.town)).toBeUndefined();
   expect(store.finishConstruction('railDepot', 1)).toBe(true);
-  expect(store.town.infrastructure.rail).toBe(1);
+  expect(store.town.buildings.railDepot).toBe(1);
   expect(railEdges(store.town)).toHaveLength(1);
   expect(pendingPresentation(store.town)?.id).toBe('railway-opening');
   expect(store.finishConstruction('railDepot', 1)).toBe(false);
@@ -67,7 +67,7 @@ it('queues the same opening when a builder hammer completes the first station', 
   delete store.town.projects.railDepot;
   store.builderHammers = 1;
   expect(store.useBuilderHammer('railDepot', 0)).toBe(true);
-  expect(store.town.infrastructure.rail).toBe(1);
+  expect(store.town.buildings.railDepot).toBe(1);
   expect(pendingPresentation(store.town)?.id).toBe('railway-opening');
 });
 it('never retroactively opens a cinematic for an old save or an invalid receipt', () => {

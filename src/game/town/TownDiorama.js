@@ -7,7 +7,7 @@ import { navigationScene, drawNavigation, releaseNavigation } from './Navigation
 import { hasElectricity } from '../../data/industrial';
 import { mineGrowth } from '../../data/mineGrowth';
 import { updateMineGrowth } from './mine/addMineSite';
-import { afterPaint, performanceMark, scheduleWork } from '../PresentationWork';
+import { afterPaint, finishWork, performanceMark, scheduleWork } from '../PresentationWork';
 import { geometryFootprints, registerFootprints, footprintDistance } from './BuildingFootprints';
 import { townTracks, railEdges } from './TownLayout';
 import {
@@ -30,12 +30,13 @@ import {
 import { addWorkBreak, updateWorkPaths, updateWorkRoutine } from './TownWorkRoutine';
 import { buildingWalk } from './TownPedestrians';
 import { TownVipArrivals } from './TownVipArrivals';
+import { TownLiveVisitors } from './TownLiveVisitors';
 import { hasVisitorTransport } from '../../data/visitorArrivals';
 import { villagerIdentity, vipVisitor } from '../../data/villagers';
 import { SIDEWALK_OFFSET } from './TownTraffic';
 import { updateTownLocomotion } from './TownLocomotion';
-import { townWardrobe, vipOutfit, guestOutfit } from '../../data/townWardrobes';
-import { MINE_SHAFT, addMineShaft, mineTrackHeight, mineTrackPitch } from './TownMineShaft';
+import { townWardrobe, vipOutfit, guestOutfit, liveVisitorOutfit } from '../../data/townWardrobes';
+import { MINE_SHAFT, addMineShaft } from './TownMineShaft';
 import { TownPresentation } from './TownPresentation';
 import { ERA_CONSTRUCTION } from '../../data/mineEvolution';
 import { eraEvolution } from '../../data/eras';
@@ -83,10 +84,9 @@ import { buildLandscape, keepCameraAboveTerrain } from './TownLandscape';
 import { addMotorActivity } from './TownMotorActivity';
 import { addServiceDrops, motorTraffic } from './TownEvolution';
 import { TownScenery } from './TownScenery';
-import { addMineEra } from './TownMineEvolution';
 import { overlapsEventInset } from './TownInset';
 
-import { PLOTS, LANE_X, atPlot, plotStreet, SHERIFF_PATROL, visiblePlots } from './TownLayout';
+import { PLOTS, LANE_X, atPlot, SHERIFF_PATROL, visiblePlots } from './TownLayout';
 import { riverCenterX } from './TownRiver';
 export { PLOTS } from './TownLayout';
 // Village seconds a finished building waits for villagers to walk off its site.
@@ -342,8 +342,7 @@ export class TownDiorama {
     sign.material = material;
   }
   batch(group) {
-    const work = this.batchWork(group);
-    while (!work.next().done) {}
+    finishWork(this.batchWork(group));
   }
   // Clone one mesh or merge one material per step. The group changes only in the
   // final step, so cancelled or interleaved frames still draw the original meshes.
@@ -696,6 +695,7 @@ export class TownDiorama {
       ...(this.actors ?? []),
       ...(this.animals ?? []),
       ...(this.vipArrivals?.actors ?? []),
+      ...(this.liveVisitors?.actors ?? []),
     ].filter(
       (a) =>
         a.root.visible &&
@@ -831,6 +831,7 @@ export class TownDiorama {
       ...(this.actors ?? []),
       ...(this.animals ?? []),
       ...(this.vipArrivals?.actors ?? []),
+      ...(this.liveVisitors?.actors ?? []),
     ];
     const view = this,
       generation = this.generation;
@@ -1001,6 +1002,7 @@ export class TownDiorama {
     this.plotCache = new Map();
     this.retainedVipActors = new Map((this.vipArrivals?.actors ?? []).map((a) => [a.source, a]));
     for (const a of this.retainedVipActors.values()) a.root.removeFromParent();
+    this.liveVisitors?.detach();
     this.retainedAnimals = new Map((this.animals ?? []).map((a) => [animalKey(a), a]));
     for (const a of this.retainedAnimals.values()) a.root.removeFromParent();
     this.retainedActors = new Map(
@@ -1124,7 +1126,7 @@ export class TownDiorama {
           budget: 8,
           isCurrent: () => generation === this.generation && !this.disposed,
         });
-      else while (!work.next().done) {}
+      else finishWork(work);
     };
     if (!this.deferLife) populate();
     afterPaint(() => {
@@ -1255,6 +1257,7 @@ export class TownDiorama {
     for (const actor of this.retainedActors?.values() ?? []) this.clearGroup(actor.root);
     this.retainedActors?.clear();
     this.lifeReady = true;
+    this.liveVisitors?.attach();
     this.rebuildActors();
     this.renderer.shadowMap.needsUpdate = true;
     this.render();
@@ -1406,6 +1409,7 @@ export class TownDiorama {
     parent = this.world,
     manual = false,
     visitor = false,
+    liveVisitor = false,
     sheriff = false,
     loop = false,
     linear = false,
@@ -1508,8 +1512,9 @@ export class TownDiorama {
     vip.visible = !!root.userData.villager.name;
     const accents = [];
     const scarf = this.group(vip),
-      satchel = this.group(vip);
-    scarf.visible = satchel.visible = false;
+      satchel = this.group(vip),
+      sash = this.group(vip);
+    scarf.visible = satchel.visible = sash.visible = false;
     if (visitor) {
       for (const x of [-0.065, 0.065])
         accents.push(this.box(vip, 0.035, wardrobe.coat * 0.62, 0.025, x, 0.15, 0.105, '#e9c878'));
@@ -1521,6 +1526,11 @@ export class TownDiorama {
       this.rod(satchel, [-0.1, 0.29, 0.11], [0.23, -0.14, 0.11], 0.015, '#8b674a');
       this.box(satchel, 0.15, 0.22, 0.15, 0.24, -0.15, 0.025, '#8b674a', true);
       this.box(satchel, 0.13, 0.06, 0.16, 0.24, -0.06, 0.03, '#ad8961', true);
+      const ribbon = this.box(sash, 0.075, wardrobe.coat + 0.12, 0.035, 0, 0.13, 0.145, '#e9c878');
+      ribbon.rotation.z = -0.58;
+      ribbon.name = 'Live visitor diagonal sash';
+      const rosette = this.box(sash, 0.105, 0.105, 0.04, 0.11, -0.035, 0.15, '#e9c878');
+      rosette.rotation.z = Math.PI / 4;
     }
     const arms = [],
       legs = [],
@@ -1575,6 +1585,7 @@ export class TownDiorama {
       seed,
       work,
       visitor,
+      liveVisitor,
       manual,
       vip,
       shirt,
@@ -1586,7 +1597,7 @@ export class TownDiorama {
         hat: headwear.children,
         accent: accents,
         headwear,
-        accessories: { scarf, satchel },
+        accessories: { scarf, satchel, sash },
       },
       shirtColor: color,
       distance: 0,
@@ -1638,7 +1649,11 @@ export class TownDiorama {
     actor.vip.visible = !!identity.name;
     if (identity.name) {
       const profile = eraEvolution(a.era);
-      const outfit = identity.guest ? guestOutfit(profile) : vipOutfit(profile, outfitSeed);
+      const outfit = identity.live
+        ? liveVisitorOutfit(profile)
+        : identity.guest
+          ? guestOutfit(profile)
+          : vipOutfit(profile, outfitSeed);
       actor.root.userData.outfit = outfit;
       for (const part of ['shirt', 'trousers', 'boots', 'hat', 'accent'])
         for (const mesh of actor.clothing[part]) mesh.material = this.material(outfit[part]);
@@ -1653,6 +1668,9 @@ export class TownDiorama {
         mesh.visible = outfit.accessory === 'lapels';
       });
       actor.clothing.accessories.scarf.children.forEach((mesh) => {
+        mesh.material = this.material(outfit.accent);
+      });
+      actor.clothing.accessories.sash.children.forEach((mesh) => {
         mesh.material = this.material(outfit.accent);
       });
     } else {
@@ -1678,7 +1696,7 @@ export class TownDiorama {
     const placedWorker = work && (actor.motion || actor.workRoutine);
     if (!actor.walkPath && !placedWorker) root.position.copy(curve.getPointAt(progress));
     let routeProgress = actor.itinerary ? (actor.routeProgress ?? 0) : progress;
-    if (actor.visitor && !actor.transportVisitor && !actor.itinerary) {
+    if (actor.visitor && !actor.liveVisitor && !actor.transportVisitor && !actor.itinerary) {
       const phase = (time + seed) % (duration + 7);
       actor.routeResting = phase >= duration;
       const visit = Math.floor((time + seed) / (duration + 7));
@@ -1698,7 +1716,11 @@ export class TownDiorama {
       walking = phase < duration;
     }
 
-    if (actor.motion && actor.walkPath?.total && (!actor.manual || actor.transportVisitor))
+    if (
+      actor.motion &&
+      actor.walkPath?.total &&
+      (!actor.manual || actor.transportVisitor || actor.liveVisitor)
+    )
       routeProgress =
         actor.itinerary && actor.itinerary.phase !== 'finishing'
           ? Math.min(1, actor.motion.routeDistance / actor.walkPath.total)
@@ -1837,11 +1859,18 @@ export class TownDiorama {
     this.world.add(this.selection);
     this.render();
   }
-  showVillager(clientX, clientY) {
+  showVillager(clientX, clientY, pin = false) {
+    // Only clicking the selected visitor again dismisses a pinned name.
+    // Hovering, empty-ground clicks and leaving the canvas preserve it.
+    if (!pin && this.villagerLabelPinned && this.namedVillager) return true;
     const rect = this.canvas.getBoundingClientRect();
     let nearest = null,
       distance = 24;
-    for (const actor of [...(this.actors ?? []), ...(this.vipArrivals?.actors ?? [])]) {
+    for (const actor of [
+      ...(this.actors ?? []),
+      ...(this.vipArrivals?.actors ?? []),
+      ...(this.liveVisitors?.actors ?? []),
+    ]) {
       if (!actor.root.userData.villager?.name || !actor.root.visible || actor.root.scale.x < 0.5)
         continue;
       const p = actor.root.position
@@ -1858,20 +1887,72 @@ export class TownDiorama {
         distance = delta;
       }
     }
-    this.namedVillager = nearest;
+    if (pin && nearest) {
+      this.selectVillager(nearest);
+    } else if (!this.villagerLabelPinned || !this.namedVillager) {
+      // A second click stays dismissed until the pointer leaves this visitor.
+      if (nearest !== this.dismissedVillager) this.dismissedVillager = null;
+      this.namedVillager = nearest === this.dismissedVillager ? null : nearest;
+      this.villagerLabelPinned = false;
+    }
     this.projectVillager();
     return !!nearest;
+  }
+  selectVillager(actor, toggle = true) {
+    const dismiss = toggle && this.villagerLabelPinned && this.namedVillager === actor;
+    this.namedVillager = dismiss ? null : actor;
+    this.villagerLabelPinned = !dismiss;
+    this.dismissedVillager = dismiss ? actor : null;
+    this.projectVillager();
+  }
+  selectInsetVisitor() {
+    const actor = this.vipArrivals?.active?.actor;
+    if (
+      !this.eventInsetVisible ||
+      !actor ||
+      this.raid ||
+      this.cinematic ||
+      this.presentation ||
+      this.eventCamera
+    )
+      return;
+    this.selectVillager(actor);
+    this.render();
+  }
+  findVisitor(id) {
+    if (this.raid || this.cinematic || this.presentation || this.eventCamera) return false;
+    const actor = this.liveVisitors?.actors.find(
+      (entry) => entry.liveId === String(id) && entry.leavingAt === undefined,
+    );
+    if (!actor?.root.visible || !this.world.children.includes(actor.root)) return false;
+    const target = actor.root.position.clone().add(point(0, 1, 0));
+    const offset = this.camera.position
+      .clone()
+      .sub(this.controls.target)
+      .normalize()
+      .multiplyScalar(16);
+    this.controls.target.copy(target);
+    this.camera.position.copy(target).add(offset);
+    keepCameraAboveTerrain(this.camera.position, target);
+    this.overview = false;
+    this.controls.update();
+    this.selectVillager(actor, false);
+    this.render();
+    return true;
   }
   projectVillager() {
     const actor = this.namedVillager;
     if (
       !actor?.root.visible ||
       !actor.root.userData.villager?.name ||
-      actor.root.scale.x < 0.5 ||
-      !this.world?.children.includes(actor.root) ||
-      this.raid ||
-      this.cinematic
+      !this.world?.children.includes(actor.root)
     ) {
+      this.namedVillager = null;
+      this.villagerLabelPinned = false;
+      this.onVillagerLabel?.(null);
+      return;
+    }
+    if (actor.root.scale.x < 0.5 || this.raid || this.cinematic) {
       this.onVillagerLabel?.(null);
       return;
     }
@@ -1890,12 +1971,17 @@ export class TownDiorama {
           ((1 - p.y) * this.canvas.clientHeight) / 2,
           180,
         )
-        ? { name: actor.root.userData.villager.name, x: (p.x + 1) * 50, y: (1 - p.y) * 50 }
+        ? {
+            name: actor.root.userData.villager.name,
+            live: !!actor.root.userData.villager.live,
+            x: (p.x + 1) * 50,
+            y: (1 - p.y) * 50,
+          }
         : null,
     );
   }
   pick(clientX, clientY) {
-    if (this.showVillager(clientX, clientY)) return;
+    if (this.showVillager(clientX, clientY, true)) return;
     const rect = this.canvas.getBoundingClientRect();
     this.raycaster.setFromCamera(
       new THREE.Vector2(
@@ -2020,7 +2106,7 @@ export class TownDiorama {
     const traffic = new Set(this.trafficActors ?? []);
     this.scene.traverse((root) => {
       const actor = root.userData.locomotionActor;
-      if (!actor?.manual || actor.transportVisitor) return;
+      if (!actor?.manual || actor.transportVisitor || actor.liveVisitor) return;
       // A mounted rider shares the carrier's traffic footprint. Registering a
       // second pedestrian footprint makes the horse yield to its own rider.
       for (let parent = root.parent; parent; parent = parent.parent)
@@ -2178,6 +2264,7 @@ export class TownDiorama {
         this.actors?.forEach((actor) => this.animatePerson(actor, this.elapsed));
         this.motions?.forEach((motion) => motion(this.elapsed));
         this.vipArrivals?.update();
+        this.liveVisitors?.update();
         updateTownLocomotion(this, movementDelta);
       }
       if (this.waterMaterial) this.waterMaterial.uniforms.time.value = this.elapsed;
@@ -2247,8 +2334,7 @@ export class TownDiorama {
     }
     this.cancelFinishWork?.();
     if (typeof requestAnimationFrame === 'undefined') {
-      const work = settle();
-      while (!work.next().done) {}
+      finishWork(settle());
       return;
     }
     this.cancelFinishWork = scheduleWork(settle(), {
@@ -2345,6 +2431,20 @@ export class TownDiorama {
     if (action === 'down') this.controls.rotateUp(-Math.PI / 18);
     if (action === 'reset') this.frameTown();
   }
+  setLiveVisitors(visitors, reducedMotion = false, townKey = null) {
+    this.livePresenceEnabled = true;
+    this.liveVisitorsReducedMotion = reducedMotion;
+    // Existing saves may still contain the obsolete queued guest. Presence owns
+    // only that guest slot; ordinary transport and random VIPs remain intact.
+    if (this.vipArrivals?.guest) {
+      const actor = this.vipArrivals.guest.actor;
+      this.vipArrivals.actors = this.vipArrivals.actors.filter((item) => item !== actor);
+      this.clearGroup(actor.root);
+      this.vipArrivals.guest = null;
+    }
+    this.liveVisitors ??= new TownLiveVisitors(this);
+    this.liveVisitors.sync(visitors, townKey);
+  }
   setPaused(paused) {
     if (this.paused !== paused) {
       this.lastFrame = 0;
@@ -2394,6 +2494,7 @@ export class TownDiorama {
       this.selection.material.dispose();
     }
     this.staticScenery?.dispose(this);
+    this.liveVisitors?.dispose();
     this.discardPendingUpdate();
     this.clearGroup(this.world);
     this.clearGroup(this.landscape);

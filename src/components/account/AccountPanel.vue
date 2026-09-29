@@ -49,6 +49,7 @@
       </template>
       <TownManage v-else-if="view === 'manage'" :active="active" :focus="focus" />
       <template v-else-if="view === 'account'">
+        <PublicProfile />
         <section class="account-section">
           <div class="account-identity">
             <span class="account-avatar"><GameIcon name="user" /></span>
@@ -99,6 +100,7 @@ import { cloud, logout, deleteAccount as removeAccount } from '../../services/cl
 import { townStorage } from '../../services/townStorage';
 import { provideAccountContext } from './accountContext';
 import AccountSignIn from './AccountSignIn.vue';
+import PublicProfile from './PublicProfile.vue';
 import TownSlots from './TownSlots.vue';
 import TownManage from './TownManage.vue';
 import DeviceCopies from './DeviceCopies.vue';

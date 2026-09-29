@@ -1,16 +1,16 @@
-import { horizonMaterial } from './TownAtmosphere';
+import { terrainMaterial } from './TownAtmosphere';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import * as THREE from 'three';
 import { MINE_POSITION, MINE_SHAFT } from '../../data/mineSite';
+import { clamp01 } from './TownMath';
 export { MINE_SHAFT } from '../../data/mineSite';
 
-const clamp = (n) => THREE.MathUtils.clamp(n, 0, 1);
 export function mineTrackHeight(z) {
   const { rampStartZ, portalZ, portalFloor, undergroundGrade } = MINE_SHAFT;
   if (z >= rampStartZ) return 0;
   if (z < portalZ) return portalFloor + (z - portalZ) * undergroundGrade;
   // Ease into the decline from the working yard, then maintain a constant grade.
-  const t = clamp((rampStartZ - z) / (rampStartZ - portalZ));
+  const t = clamp01((rampStartZ - z) / (rampStartZ - portalZ));
   return (
     portalFloor * (-2 * t * t * t + 3 * t * t) -
     (rampStartZ - portalZ) * undergroundGrade * (t * t * t - t * t)
@@ -27,7 +27,7 @@ export function mineTrackPitch(z) {
   return Math.atan(derivative / length);
 }
 export function mineExcavationHeight(x, z) {
-  const side = clamp(
+  const side = clamp01(
     (Math.abs(x) - MINE_SHAFT.halfWidth) / (MINE_SHAFT.bankWidth - MINE_SHAFT.halfWidth),
   );
   return mineTrackHeight(z) * (1 - side);
@@ -39,10 +39,7 @@ function ownedMesh(parent, positions, color) {
   source.dispose();
   geometry.computeVertexNormals();
   geometry.userData.owned = true;
-  const material = new THREE.MeshStandardMaterial({ color, roughness: 1, side: THREE.DoubleSide });
-  horizonMaterial(material);
-  material.userData.transient = true;
-  const mesh = new THREE.Mesh(geometry, material);
+  const mesh = new THREE.Mesh(geometry, terrainMaterial({ color, side: THREE.DoubleSide }));
   mesh.receiveShadow = true;
   parent.add(mesh);
   return mesh;

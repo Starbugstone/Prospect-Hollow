@@ -6,7 +6,6 @@ const CHAPTER_PLANS = [
     id: 'freight-crossings',
     mechanic: 'ore',
     name: 'Freight crossings',
-    description: 'Open staggered shelves and choose a route for the freight.',
     style: 'rail',
     stones: [
       [2, 2],
@@ -20,7 +19,6 @@ const CHAPTER_PLANS = [
     id: 'foundry-arches',
     mechanic: 'lantern',
     name: 'Foundry arches',
-    description: 'Work around the arches before opening the central forge.',
     style: 'copper',
     stones: [
       [2, 3],
@@ -35,7 +33,6 @@ const CHAPTER_PLANS = [
     id: 'reservoir-links',
     mechanic: 'ore',
     name: 'Reservoir links',
-    description: 'Clear the channels between the reservoir chambers.',
     style: 'water',
     stones: [
       [2, 2],
@@ -49,7 +46,6 @@ const CHAPTER_PLANS = [
     id: 'courtyard-passages',
     mechanic: 'survey',
     name: 'Courtyard passages',
-    description: 'Connect sheltered courtyards through their open sides.',
     style: 'garden',
     stones: [
       [2, 3],
@@ -64,7 +60,6 @@ const CHAPTER_PLANS = [
     mechanic: 'lantern',
     mixedOrders: true,
     name: 'Switchyard seams',
-    description: 'Choose which junction to open before sending relics home.',
     style: 'rail',
     stones: [
       [2, 2],
@@ -78,7 +73,6 @@ const CHAPTER_PLANS = [
     id: 'terminal-galleries',
     mechanic: 'ore',
     name: 'Terminal galleries',
-    description: 'Open broad approaches beneath the terminal.',
     style: 'water',
     stones: [
       [2, 2],
@@ -93,7 +87,6 @@ const CHAPTER_PLANS = [
     id: 'airfield-vaults',
     mechanic: 'survey',
     name: 'Airfield vaults',
-    description: 'Keep the delivery lanes clear beside the airfield vaults.',
     style: 'copper',
     stones: [
       [2, 3],
@@ -107,7 +100,6 @@ const CHAPTER_PLANS = [
     id: 'radio-relays',
     mechanic: 'lantern',
     name: 'Radio relays',
-    description: 'Follow colored seals through the relay galleries.',
     style: 'signal',
     stones: [
       [3, 2],
@@ -122,7 +114,6 @@ const CHAPTER_PLANS = [
     mechanic: 'survey',
     mixedOrders: true,
     name: 'Studio crossroads',
-    description: 'Find a clear approach to each linked studio chamber.',
     style: 'signal',
     stones: [
       [2, 2],
@@ -136,7 +127,6 @@ const CHAPTER_PLANS = [
     id: 'skyline-foundations',
     mechanic: 'lantern',
     name: 'Skyline foundations',
-    description: 'Open the foundations from both sides of the central seam.',
     style: 'copper',
     stones: [
       [3, 2],
@@ -151,7 +141,6 @@ const CHAPTER_PLANS = [
     id: 'promenade-routes',
     mechanic: 'survey',
     name: 'Promenade routes',
-    description: 'Follow the river lanes and bring the discoveries home.',
     style: 'water',
     stones: [
       [2, 2],
@@ -166,7 +155,6 @@ const CHAPTER_PLANS = [
     mechanic: 'lantern',
     mixedOrders: true,
     name: 'Network vaults',
-    description: 'Reconnect colored junctions without closing the delivery routes.',
     style: 'signal',
     stones: [
       [2, 2],
@@ -182,7 +170,6 @@ const CHAPTER_PLANS = [
     mechanic: 'lantern',
     alternatingSurvey: true,
     name: 'Heritage loop',
-    description: 'Revisit familiar obstacles in a new connected layout.',
     style: 'garden',
     stones: [
       [2, 2],
@@ -198,7 +185,6 @@ const CHAPTER_PLANS = [
     mechanic: 'survey',
     mixedOrders: true,
     name: 'Hollow homecoming',
-    description: 'Bring the final discoveries back to the town you built.',
     style: 'garden',
     stones: [
       [3, 2],
@@ -210,10 +196,9 @@ const CHAPTER_PLANS = [
     motif: 'twins',
   },
 ];
-export const LATE_CHAPTERS = CHAPTER_PLANS.map(({ id, name, description, style }) => ({
+export const LATE_CHAPTERS = CHAPTER_PLANS.map(({ id, name, style }) => ({
   id,
   name,
-  description,
   theme: id,
   style,
   cols: 7,

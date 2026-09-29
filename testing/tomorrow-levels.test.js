@@ -58,7 +58,8 @@ afterEach(() => {
 
 describe('append-only Tomorrow City campaign', () => {
   it('keeps the existing 324 levels, names, chapters and star targets byte-for-byte stable', () => {
-    // Captured from feat/future-era before the Tomorrow chapters were appended.
+    // Captured from feat/future-era before the Tomorrow chapters were appended, then
+    // re-captured when the unused chapter descriptions were deleted (nothing else changed).
     const original = generateLevelConfigs(324).map(({ board, ...level }) => ({
       ...level,
       board: board.map((gem) => (gem ? gem.type : null)),
@@ -70,7 +71,7 @@ describe('append-only Tomorrow City campaign', () => {
       chapters: CHAPTERS.slice(0, 54),
     });
     expect(createHash('sha256').update(payload).digest('hex')).toBe(
-      'e977093ee0e53024ad215aa254106256164d470728b66d840c74f4167baa9987',
+      '6120d58cb172d53849dd7887096755d41ddba0ed3020d53da692f967377eb97d',
     );
   });
 
@@ -221,7 +222,7 @@ describe('charge core resolution', () => {
     }
   });
 
-  it.each(['tnt', 'tile_breaker', 'clear_row', 'color_wand', 'bonus-activation'])(
+  it.each(['tnt', 'tile-breaker', 'clear-row', 'color-wand', 'bonus-activation'])(
     'is charged by %s',
     (type) => {
       const state = makeBoard();
@@ -268,7 +269,7 @@ describe('charge core resolution', () => {
       tiles,
       cols: 3,
       rows: 1,
-      matches: [{ type: 'tile_breaker', indices: [0] }],
+      matches: [{ type: 'tile-breaker', indices: [0] }],
     });
     expect(tiles[0].signalHealth).toBe(0);
     expect(result.layersCleared).toBe(1);
@@ -280,7 +281,7 @@ describe('charge core resolution', () => {
     for (const index of [7, 12, 17]) state.tiles[index] = core();
     expect(canSwapGem(state.board[12], state.tiles[12])).toBe(true);
     const above = state.board[2];
-    const result = hit(state, [12, 17, 22], 'clear_row');
+    const result = hit(state, [12, 17, 22], 'clear-row');
     expect(result.steps[0].drops).toContainEqual({ from: 2, to: 17, gem: above });
     expect(result.board.every(Boolean)).toBe(true);
     expect([7, 12, 17].map((index) => state.tiles[index].signal)).toEqual(['core', 'core', 'core']);

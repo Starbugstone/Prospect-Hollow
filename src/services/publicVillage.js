@@ -1,4 +1,33 @@
 import { createTown } from '../data/town';
+import { LEVEL_COUNT } from '../data/campaign';
+
+// Public completion awards only; never fall back to this visitor's campaign store.
+export function villageLevels(village) {
+  const appearance = village.appearance ?? {};
+  const records = {};
+  for (const [key, record] of Object.entries(appearance.levelRecords ?? {})) {
+    const id = Number(key);
+    if (
+      Number.isInteger(id) &&
+      id >= 1 &&
+      id <= LEVEL_COUNT &&
+      Number.isInteger(record?.stars) &&
+      record.stars >= 1 &&
+      record.stars <= 3
+    )
+      records[id] = { stars: record.stars };
+  }
+  const mineLevel = Number.isInteger(appearance.mineLevel)
+    ? Math.max(0, Math.min(LEVEL_COUNT, appearance.mineLevel))
+    : 0;
+  return {
+    records,
+    levelIds: Array.from({ length: LEVEL_COUNT }, (_, index) => index + 1).filter(
+      (id) => id <= mineLevel || records[id],
+    ),
+    available: appearance.levelRecords != null,
+  };
+}
 
 // Build an isolated render model. Never patch campaign/game stores from a visit.
 export function villageAppearance(village) {
@@ -20,10 +49,5 @@ export function villageAppearance(village) {
       wins: project.visualStage,
     };
   }
-  town.infrastructure = {
-    bridge: town.buildings.bridge,
-    rail: town.buildings.railDepot,
-    riverPort: town.buildings.riverPort,
-  };
   return town;
 }

@@ -1,28 +1,27 @@
 import { BonusActivator } from './BonusActivator.js';
-import { detectBonusFromMatches } from './MatchPatterns.js';
-import { canSwapGem } from './TileRules.js';
+import { applyBonuses, detectBonusFromMatches } from './MatchPatterns.js';
+import { BOARD_BONUSES, canSwapGem, isAdjacent } from './TileRules.js';
 import { getBonusFusion } from './BonusFusion.js';
 
 const bonusActivator = new BonusActivator();
+const noMatch = (board, cols, rows) => ({
+  matches: [],
+  board,
+  cols,
+  rows,
+  swap: null,
+  bonuses: [],
+});
 export class MatchEngine {
   evaluateActivation(board, cols, rows, index, tiles = []) {
-    const empty = {
-      matches: [],
-      board,
-      cols,
-      rows,
-      swap: null,
-      bonusesCreated: [],
-      bonusIndices: [],
-    };
     if (
       !Number.isInteger(index) ||
       index < 0 ||
       index >= board.length ||
-      !['bomb', 'cross', 'rainbow'].includes(board[index]?.type) ||
+      !BOARD_BONUSES.includes(board[index]?.type) ||
       !canSwapGem(board[index], tiles[index])
     )
-      return empty;
+      return noMatch(board, cols, rows);
     const indices = bonusActivator.activate(
       board,
       cols,
@@ -32,7 +31,7 @@ export class MatchEngine {
       null,
       tiles,
     );
-    return { ...empty, matches: [{ type: 'bonus-activation', indices }] };
+    return { ...noMatch(board, cols, rows), matches: [{ type: 'bonus-activation', indices }] };
   }
 
   evaluateSwap(board, cols, rows, aIndex, bIndex, tiles = []) {
@@ -45,14 +44,10 @@ export class MatchEngine {
       bIndex >= board.length ||
       !canSwapGem(board[aIndex], tiles[aIndex]) ||
       !canSwapGem(board[bIndex], tiles[bIndex]) ||
-      aIndex === bIndex
-    ) {
-      return { matches: [], board, cols, rows, swap: null, bonusesCreated: [], bonusIndices: [] };
-    }
-
-    if (!this.areAdjacent(aIndex, bIndex, cols)) {
-      return { matches: [], board, cols, rows, swap: null, bonusesCreated: [], bonusIndices: [] };
-    }
+      aIndex === bIndex ||
+      !isAdjacent(aIndex, bIndex, cols)
+    )
+      return noMatch(board, cols, rows);
 
     const nextBoard = [...board];
     [nextBoard[aIndex], nextBoard[bIndex]] = [nextBoard[bIndex], nextBoard[aIndex]];
@@ -81,26 +76,11 @@ export class MatchEngine {
         rows,
         swap,
         bonusSwap,
-        bonusesCreated: [],
-        bonusIndices: [],
+        bonuses: [],
       };
     }
 
-    if (!matches.length) {
-      return { matches: [], board, cols, rows, swap: null, bonusesCreated: [], bonusIndices: [] };
-    }
-
-    const bonuses = detectBonusFromMatches(matches, { swap });
-    const bonusesCreated = [];
-    const bonusIndices = [];
-
-    if (bonuses.length > 0) {
-      bonuses.forEach((bonus) => {
-        nextBoard[bonus.index] = { ...nextBoard[bonus.index], type: bonus.type };
-        bonusesCreated.push(bonus.type);
-        bonusIndices.push(bonus.index);
-      });
-    }
+    if (!matches.length) return noMatch(board, cols, rows);
 
     return {
       matches,
@@ -108,8 +88,7 @@ export class MatchEngine {
       cols,
       rows,
       swap,
-      bonusesCreated,
-      bonusIndices,
+      bonuses: applyBonuses(nextBoard, detectBonusFromMatches(matches, { swap })),
       ...(pendingBonus ? { pendingBonus, bonusSwap } : {}),
     };
   }
@@ -165,15 +144,5 @@ export class MatchEngine {
     }
 
     return matches;
-  }
-
-  areAdjacent(aIndex, bIndex, cols) {
-    const ax = aIndex % cols;
-    const ay = Math.floor(aIndex / cols);
-    const bx = bIndex % cols;
-    const by = Math.floor(bIndex / cols);
-    const dx = Math.abs(ax - bx);
-    const dy = Math.abs(ay - by);
-    return (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
   }
 }

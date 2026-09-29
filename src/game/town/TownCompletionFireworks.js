@@ -14,8 +14,8 @@ import {
   Vector3,
 } from 'three';
 import { PLOTS } from './TownLayout';
+import { clamp01 } from './TownMath';
 
-const clamp = (v) => Math.max(0, Math.min(1, v));
 const COLORS = ['#ffd878', '#6fe8dc', '#f49fc3', '#b4acff', '#fff0bb'];
 const SPARKS = 96;
 const TRAIL = 6;
@@ -98,7 +98,7 @@ export class TownCompletionFireworks {
   }
 
   frame(time, still = false) {
-    const dusk = still ? 0.7 : clamp(time / 2);
+    const dusk = still ? 0.7 : clamp01(time / 2);
     this.sky.copy(this.background?.isColor ? this.background : this.night).lerp(this.night, dusk);
     if (this.fog) this.d.scene.fog.color.copy(this.fog).lerp(this.night, dusk);
     for (const [light, intensity] of this.lights) light.intensity = intensity * (1 - dusk * 0.9);
@@ -120,7 +120,7 @@ export class TownCompletionFireworks {
           const slot = i * TRAIL + tail;
           const t = Math.max(0, age - 0.85 - tail * 0.035);
           if (age < 0.85) {
-            const rise = clamp((age - tail * 0.035) / 0.85);
+            const rise = clamp01((age - tail * 0.035) / 0.85);
             positions.setXYZ(
               slot,
               burst.center.x * rise,
@@ -136,7 +136,7 @@ export class TownCompletionFireworks {
               burst.center.y + vertical * travel - t * t * 0.8,
               burst.center.z + Math.sin(angle) * radius * travel,
             );
-            const fade = clamp((3.8 - age) / 1.3);
+            const fade = clamp01((3.8 - age) / 1.3);
             alpha.setX(
               slot,
               fade * (1 - tail / TRAIL) * (0.75 + 0.25 * Math.sin(i * 7 + time * 11)),
@@ -148,13 +148,13 @@ export class TownCompletionFireworks {
       alpha.needsUpdate = true;
     }
     this.stars.forEach((star, i) => {
-      const reveal = still ? 1 : clamp((time - 9.5 - i * 0.55) / 0.8);
+      const reveal = still ? 1 : clamp01((time - 9.5 - i * 0.55) / 0.8);
       star.visible = reveal > 0;
       star.scale.setScalar(reveal * (i === 1 ? 1.15 : 0.9));
       star.quaternion.copy(this.d.camera.quaternion);
     });
     const focus = this.origin.clone().add(new Vector3(0, 6.5, -1));
-    const eye = this.origin.clone().add(new Vector3(4 - clamp(time / 18) * 3, 16, 33));
+    const eye = this.origin.clone().add(new Vector3(4 - clamp01(time / 18) * 3, 16, 33));
     if (this.d.camera.aspect < 1)
       eye
         .sub(focus)

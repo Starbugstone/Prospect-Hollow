@@ -1,10 +1,26 @@
 import { mkdir, readFile, writeFile, readdir, unlink } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { build } from 'esbuild';
 
 // The Blender exports remain authoring sources. Only bounded, lazy chunks enter Vite.
 const directory = new URL('../src/assets/meshes/', import.meta.url);
 await mkdir(directory, { recursive: true });
 const groups = new Map();
-const eras = ['post-war', 'aviation', 'broadcast', 'contemporary'];
+// City meshes load per era asset family, read from the era catalog so a new era needs no edit.
+const { outputFiles } = await build({
+  stdin: {
+    contents:
+      "import { ERAS } from './src/data/eras.js'; export default [...new Set(ERAS.map((era) => era.evolution.cityAssets).filter(Boolean))];",
+    resolveDir: fileURLToPath(new URL('..', import.meta.url)),
+  },
+  bundle: true,
+  platform: 'node',
+  format: 'esm',
+  write: false,
+});
+const { default: eras } = await import(
+  `data:text/javascript;base64,${Buffer.from(outputFiles[0].text).toString('base64')}`
+);
 for (const source of ['city', 'future', 'leisure']) {
   const catalog = JSON.parse(
     await readFile(new URL(`../src/assets/${source}-meshes.json`, import.meta.url)),

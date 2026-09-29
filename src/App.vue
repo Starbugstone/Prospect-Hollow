@@ -240,7 +240,7 @@
       :score-target="scoreTarget"
       :star-score-target="game.starScoreTarget"
       :can-replay="campaign.canReplay"
-      :can-continue="campaign.completedCount < LEVEL_NAMES.length"
+      :can-continue="campaign.completedCount < LEVEL_COUNT"
       @next="startLevel(campaign.nextLevel)"
       @claimed="game.levelRewards[$event.index].items = [$event.reward]"
       @menu="showTown"
@@ -290,12 +290,13 @@ import PowerUpBar from './components/PowerUpBar.vue';
 import LandingView from './components/LandingView.vue';
 import './styles/town.css';
 import { CONTINUOUS_COIN_CAP } from './data/rewards';
+import { LEVEL_COUNT, POWERS } from './data/campaign';
 import VictoryModal from './components/VictoryModal.vue';
 import SettingsDrawer from './components/SettingsDrawer.vue';
 import GameIcon from './components/GameIcon.vue';
 import { useGameStore } from './stores/gameStore';
 import { useCampaignStore } from './stores/campaignStore';
-import { useSettingsStore } from './stores/settingsStore';
+import { useSettingsStore, DEFAULT_AUDIO_LEVELS } from './stores/settingsStore';
 import { useAudio } from './composables/useAudio';
 import { LEVEL_NAMES } from './data/levelNames';
 import { obstaclesInLevel } from './data/obstacles';
@@ -343,19 +344,11 @@ const showMuseum = () => {
 };
 const goToMine = () => {
   if (game.sessionActive) return;
-  if (campaign.completedCount >= LEVEL_NAMES.length) {
+  if (campaign.completedCount >= LEVEL_COUNT) {
     showMuseum();
   } else startLevel(campaign.nextLevel);
 };
-const resetProgress = () => {
-  game.exitLevel();
-  campaign.resetProgress();
-  returnToMuseum.value = false;
-  townVisit.value++;
-  townVisited.value = true;
-  view.value = 'town';
-};
-const settings = useSettingsStore();
+// Remount the village on a replaced or restarted save.
 const resumeImportedVillage = () => {
   game.exitLevel();
   returnToMuseum.value = false;
@@ -363,6 +356,11 @@ const resumeImportedVillage = () => {
   townVisited.value = true;
   view.value = 'town';
 };
+const resetProgress = () => {
+  game.exitLevel();
+  if (campaign.resetProgress()) resumeImportedVillage();
+};
+const settings = useSettingsStore();
 const audio = useAudio();
 const mobileDetailsOpen = ref(false);
 const mineHeaderHeight = ref(64);
@@ -399,7 +397,7 @@ watch(
 );
 let clockInterval, incomeInterval;
 const muted = computed(() => settings.musicVolume === 0 && settings.sfxVolume === 0);
-let previousVolumes = [0.6, 0.8];
+let previousVolumes = [DEFAULT_AUDIO_LEVELS.music, DEFAULT_AUDIO_LEVELS.sfx];
 const toggleMute = () => {
   if (muted.value) {
     settings.setMusicVolume(previousVolumes[0]);
@@ -410,11 +408,11 @@ const toggleMute = () => {
     settings.setSfxVolume(0);
   }
 };
-const currentConfig = computed(
-  () => game.availableLevels.find((level) => level.id === game.currentLevelId)?.config,
-);
+const currentConfig = computed(() => game.currentLevel?.config);
 const levelName = computed(() => LEVEL_NAMES[game.currentLevelId - 1]);
-const powerName = computed(() => game.activeBonusMode?.replaceAll('_', ' '));
+const powerName = computed(
+  () => POWERS.find((power) => power.id === game.activeBonusMode)?.label ?? '',
+);
 const scoreTarget = computed(() => game.objectives.find((o) => o.type === 'score')?.target ?? 0);
 const startLevel = (id, mode = 'normal') => {
   if (!campaign.canPlay(id, mode)) return;

@@ -1,4 +1,4 @@
-import { updateTownLocomotion, vehicleDistance } from '../src/game/town/TownLocomotion';
+import { updateTownLocomotion } from '../src/game/town/TownLocomotion';
 import { afterEach, expect, it } from 'vitest';
 import { Box3, Group, MeshBasicMaterial, Scene } from 'three';
 import { TownDiorama } from '../src/game/town/TownDiorama';

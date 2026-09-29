@@ -431,10 +431,9 @@ describe('Jewels come from real removals', () => {
       rows: 3,
       matches: [
         { type: 'tnt', indices: [0, 1, 2, 3, 4, 5, 6, 7, 8] },
-        { type: 'clear_row', indices: [0, 1, 2] },
+        { type: 'clear-row', indices: [0, 1, 2] },
       ],
-      bonusesCreated: ['bomb'],
-      bonusIndices: [7],
+      bonuses: [{ type: 'bomb', index: 7 }],
     });
     expect(result.steps[0].collectedJewels).toEqual(
       [board[0], board[1], board[8]].map(({ id, type }) => ({ id, type })),
