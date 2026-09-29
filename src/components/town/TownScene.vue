@@ -262,6 +262,8 @@ const props = defineProps({
   readOnly: Boolean,
   // Buildings a read-only visitor may still tap, for example to collect the saloon.
   visitorTaps: { type: Array, default: () => [] },
+  liveVisitors: { type: Array, default: () => [] },
+  liveVisitorTownId: String,
   cinematic: Boolean,
   presentation: Object,
   active: { type: Boolean, default: true },
@@ -581,6 +583,11 @@ async function initialize() {
     );
     // A shared town is only a view: VIP guests visit the owner's own game.
     scene.vipsHidden = props.readOnly;
+    scene.setLiveVisitors(
+      props.readOnly ? [] : props.liveVisitors,
+      props.reducedMotion,
+      props.liveVisitorTownId,
+    );
     scene.onVipSpend = (receipt) => emit('vip-spend', receipt);
     scene.onGuestVip = (at) => emit('guest-vip', at);
     scene.onVillagerLabel = (label) => {
@@ -622,6 +629,16 @@ async function initialize() {
 const visibilityChanged = () => {
   scene?.setMotion(props.active && !document.hidden && !props.paused);
 };
+watch(
+  () => [props.liveVisitors, props.liveVisitorTownId, props.reducedMotion, locale.value],
+  () => {
+    scene?.setLiveVisitors(
+      props.readOnly ? [] : props.liveVisitors,
+      props.reducedMotion,
+      props.liveVisitorTownId,
+    );
+  },
+);
 onMounted(() => {
   document.addEventListener('visibilitychange', visibilityChanged);
   initialize();

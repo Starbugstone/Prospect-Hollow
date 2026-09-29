@@ -75,6 +75,7 @@ jobs:
           php backend/tests/moderation.php
           php backend/bin/migrate.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/saves.php
+          TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/visitors.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/concurrency.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/release-health.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/admin.php

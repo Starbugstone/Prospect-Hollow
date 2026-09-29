@@ -196,3 +196,11 @@ export function guestOutfit(profile) {
     hatVisible: wardrobe.hat !== 'none',
   };
 }
+
+// Live players retain the period's suit, with a diagonal gold visitor sash that
+// distinguishes their silhouette from honorary/random VIPs and legacy guests.
+export const liveVisitorOutfit = (profile) => ({
+  ...guestOutfit(profile),
+  variant: 'live-visitor',
+  accessory: 'sash',
+});

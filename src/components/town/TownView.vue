@@ -172,6 +172,8 @@
           ref="townScene"
           :active="active"
           :town="sceneTown"
+          :live-visitors="liveVisitors"
+          :live-visitor-town-id="visitorTownId"
           :cinematic="!!town.transition?.pending"
           @cinematic-ready="eraReady = true"
           @cinematic-unavailable="eraFallback = true"
@@ -359,6 +361,12 @@
     >
       <TownProjects v-if="dialogMode === 'projects'" :town="town" @inspect="inspectBuilding" />
       <template v-else-if="dialogMode === 'story'">
+        <TownGuestbook
+          :town-id="visitorTownId"
+          :snapshot="visitorSnapshot"
+          :error="visitorError"
+          :era="town.era"
+        />
         <section class="town-story-stats" :aria-label="t('Village overview')">
           <h2>{{ t('Village overview') }}</h2>
           <dl>
@@ -661,6 +669,8 @@
 import { performanceMark } from '../../game/PresentationWork';
 import { isCityEra } from '../../data/city';
 import TownProjects from './TownProjects.vue';
+import TownGuestbook from './TownGuestbook.vue';
+import { useTownVisitors } from '../../composables/useTownVisitors';
 import TownPresentationCinematic from './TownPresentationCinematic.vue';
 import { pendingPresentation } from '../../data/townPresentations';
 
@@ -732,6 +742,12 @@ const campaign = useCampaignStore(),
 const cloudAccount = inject('cloudAccount', null);
 const game = useGameStore();
 const town = computed(() => campaign.town);
+const {
+  townId: visitorTownId,
+  snapshot: visitorSnapshot,
+  error: visitorError,
+  present: liveVisitors,
+} = useTownVisitors(() => props.active);
 const progressOpen = computed({
   get: () => villageProgressOpen(settings.villageProgressOpen, town.value),
   set: (open) => settings.setVillageProgress(open),

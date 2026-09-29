@@ -578,7 +578,12 @@ export function walkPose(path, progress, out = {}) {
   return out;
 }
 export function prepareActorWalk(d, actor, offset = 0.9) {
-  if (!d.navigation?.obstacles.length || actor.work || (actor.manual && !actor.transportVisitor))
+  if (
+    !d.navigation ||
+    (!d.navigation.obstacles.length && !actor.liveVisitor) ||
+    actor.work ||
+    (actor.manual && !actor.transportVisitor && !actor.liveVisitor)
+  )
     return;
   if (actor.navigation === d.navigation && !actor.walkPath?.invalidated) return;
   const count = Math.max(8, Math.ceil(actor.curve.getLength() / 0.35));

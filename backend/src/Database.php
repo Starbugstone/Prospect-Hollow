@@ -6,7 +6,7 @@ use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Tools\DsnParser;
 final class Database {
     /** Schema files by version; a ready release has applied the last one. */
-    private const MIGRATIONS=[10=>'/schema',11=>'/schema-visits',12=>'/schema-saloon-guests',13=>'/schema-admin'];
+    private const MIGRATIONS=[10=>'/schema',11=>'/schema-visits',12=>'/schema-saloon-guests',13=>'/schema-admin',14=>'/schema-live-visitors'];
     private ?Connection $connection = null;
     public static function latestVersion(): int { return array_key_last(self::MIGRATIONS); }
     public function isMySql(): bool { return $this->get()->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform; }

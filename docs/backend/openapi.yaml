@@ -3,8 +3,8 @@
   'info':
     {
       'title': 'Prospect Hollow account saves',
-      'version': '10.0.0',
-      'description': 'Local-first single-player snapshots. All town operations require an account. No guest or gameplay action API.',
+      'version': '14.0.0',
+      'description': 'Local-first single-player snapshots, public town appearances and live visitor presence. Private town operations require ownership. No gameplay action API.',
     },
   'servers': [{ 'url': '/api/v1' }],
   'security': [{ 'sessionCookie': [] }, { 'nativeBearer': [] }],
@@ -588,8 +588,9 @@
         {
           'delete':
             {
-              'summary': 'Delete the latest share-link guest once the owner game has saved it as a VIP',
-              'description': 'Deletes the guest only when guestAt still matches, so a newer visitor who replaced it stays for the next reconnect.',
+              'summary': 'Legacy delayed-guest acknowledgement retained for older clients',
+              'deprecated': true,
+              'description': 'Migration 14 clears the delayed queue and public appearances no longer enqueue guests. Retained only for older clients; current clients use live presence and the guestbook.',
               'responses':
                 {
                   '200': { 'description': 'cleared is true when that guest was deleted' },
@@ -726,6 +727,188 @@
                 ],
             },
         },
+      '/account/profile':
+        {
+          'get':
+            {
+              'summary': 'Read the current public identity and owned town choices',
+              'security': [{}, { 'sessionCookie': [] }, { 'nativeBearer': [] }],
+              'description': 'Signed out returns profile:null and towns:[]; signed in also returns the session CSRF token.',
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'Success',
+                      'content':
+                        {
+                          'application/json':
+                            { 'schema': { '$ref': '#/components/schemas/VisitorProfileResponse' } },
+                        },
+                    },
+                },
+            },
+          'patch':
+            {
+              'summary': 'Set a moderated public display name and default visiting town',
+              'parameters':
+                [
+                  {
+                    'name': 'X-CSRF-Token',
+                    'in': 'header',
+                    'required': false,
+                    'description': 'Required for signed-in cookie mutations.',
+                    'schema': { 'type': 'string' },
+                  },
+                ],
+              'requestBody':
+                {
+                  'required': true,
+                  'content':
+                    {
+                      'application/json':
+                        { 'schema': { '$ref': '#/components/schemas/VisitorProfile' } },
+                    },
+                },
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'Success',
+                      'content':
+                        {
+                          'application/json':
+                            { 'schema': { '$ref': '#/components/schemas/VisitorProfileResponse' } },
+                        },
+                    },
+                  '401': { 'description': 'Sign in again' },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '422': { 'description': 'Invalid fields or selected town' },
+                },
+            },
+        },
+      '/villages/{publicId}/presence':
+        {
+          'parameters':
+            [
+              {
+                'name': 'publicId',
+                'in': 'path',
+                'required': true,
+                'schema': { 'type': 'string', 'pattern': '^[a-f0-9]{32}$' },
+              },
+            ],
+          'post':
+            {
+              'summary': 'Start or renew a per-tab presence lease',
+              'security': [{}, { 'sessionCookie': [] }, { 'nativeBearer': [] }],
+              'description': '45-second renewable lease. Signed-in tabs deduplicate by account and anonymous tabs by browserToken. An optional owned townId chooses the visiting identity at arrival. Opening your own town returns active:false. Reuse a token only for its original host and account; ended tokens cannot restart a visit. Times are Unix milliseconds.',
+              'parameters':
+                [
+                  {
+                    'name': 'X-CSRF-Token',
+                    'in': 'header',
+                    'required': false,
+                    'description': 'Required for signed-in cookie mutations.',
+                    'schema': { 'type': 'string' },
+                  },
+                ],
+              'requestBody':
+                {
+                  'required': true,
+                  'content':
+                    {
+                      'application/json':
+                        { 'schema': { '$ref': '#/components/schemas/VisitorHeartbeat' } },
+                    },
+                },
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'Success',
+                      'content':
+                        {
+                          'application/json':
+                            { 'schema': { '$ref': '#/components/schemas/VisitorPresence' } },
+                        },
+                    },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '404': { 'description': 'Town unavailable' },
+                  '409': { 'description': 'Start a new visit after changing town or identity' },
+                  '422': { 'description': 'Invalid fields or selected town' },
+                  '429': { 'description': 'Rate limited' },
+                },
+            },
+          'delete':
+            {
+              'summary': 'End this tab lease using its unguessable token',
+              'security': [],
+              'description': 'Origin checked. Token possession authorizes departure, including after logout. The visitor stays present while another tab lease is active. A sequence older than the latest heartbeat has no effect.',
+              'requestBody':
+                {
+                  'required': true,
+                  'content':
+                    {
+                      'application/json':
+                        { 'schema': { '$ref': '#/components/schemas/VisitorDeparture' } },
+                    },
+                },
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'Success',
+                      'content':
+                        {
+                          'application/json':
+                            { 'schema': { '$ref': '#/components/schemas/VisitorPresence' } },
+                        },
+                    },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '404': { 'description': 'Town unavailable' },
+                  '409': { 'description': 'Start a new visit after changing town or identity' },
+                  '422': { 'description': 'Invalid fields or selected town' },
+                  '429': { 'description': 'Rate limited' },
+                },
+            },
+        },
+      '/towns/{townId}/visitors':
+        {
+          'get':
+            {
+              'summary': 'Owner-only current visitors and paginated guestbook',
+              'description': 'Newest first, 20 history entries per page. Current visitors are returned on every page. Identity snapshots remain stable after profile changes; publicId is null when the origin town is private/deleted. Present era:null means use the host current era. All timestamps are Unix milliseconds.',
+              'parameters':
+                [
+                  {
+                    'name': 'townId',
+                    'in': 'path',
+                    'required': true,
+                    'schema': { 'type': 'string', 'format': 'uuid' },
+                  },
+                  {
+                    'name': 'page',
+                    'in': 'query',
+                    'schema': { 'type': 'integer', 'minimum': 1, 'maximum': 1000000, 'default': 1 },
+                  },
+                ],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'Success',
+                      'content':
+                        {
+                          'application/json':
+                            { 'schema': { '$ref': '#/components/schemas/VisitorGuestbook' } },
+                        },
+                    },
+                  '401': { 'description': 'Sign in again' },
+                  '404': { 'description': 'Town unavailable' },
+                  '422': { 'description': 'Invalid fields or selected town' },
+                },
+            },
+        },
       '/villages':
         {
           'get':
@@ -753,7 +936,7 @@
         {
           'get':
             {
-              'summary': 'Read-only public appearance and saloonReadyAt for a share link, no account needed; a signed-in visitor becomes the latest guest; 404 when private or deleted',
+              'summary': 'Read-only public appearance and saloonReadyAt for a share link, no account needed; no arrival side effect; 404 when private or deleted',
               'security': [],
               'responses':
                 {
@@ -840,6 +1023,125 @@
         },
       'schemas':
         {
+          'VisitorProfile':
+            {
+              'type': 'object',
+              'additionalProperties': false,
+              'required': ['displayName'],
+              'properties':
+                {
+                  'displayName':
+                    {
+                      'type': 'string',
+                      'maxLength': 24,
+                      'description': 'Empty clears the optional name; otherwise 3–24 moderated letters, numbers, spaces, apostrophes or hyphens.',
+                    },
+                  'visitingTownId':
+                    {
+                      'type': ['string', 'null'],
+                      'format': 'uuid',
+                      'description': 'Must belong to the current account; null enables the town fallback.',
+                    },
+                },
+            },
+          'VisitorProfileResponse':
+            {
+              'type': 'object',
+              'properties':
+                {
+                  'profile':
+                    {
+                      'anyOf':
+                        [{ '$ref': '#/components/schemas/VisitorProfile' }, { 'type': 'null' }],
+                    },
+                  'towns':
+                    {
+                      'type': 'array',
+                      'items':
+                        {
+                          'type': 'object',
+                          'properties':
+                            {
+                              'townId': { 'type': 'string', 'format': 'uuid' },
+                              'name': { 'type': 'string' },
+                              'era': { 'type': 'string' },
+                              'isPublic': { 'type': 'boolean' },
+                              'publicId': { 'type': ['string', 'null'] },
+                            },
+                        },
+                    },
+                  'csrf': { 'type': 'string' },
+                },
+            },
+          'VisitorDeparture':
+            {
+              'type': 'object',
+              'additionalProperties': false,
+              'required': ['token'],
+              'properties':
+                {
+                  'token': { 'type': 'string', 'pattern': '^[a-f0-9]{64}$' },
+                  'sequence':
+                    { 'type': 'integer', 'minimum': 0, 'maximum': 2147483647, 'default': 0 },
+                },
+            },
+          'VisitorHeartbeat':
+            {
+              'type': 'object',
+              'additionalProperties': false,
+              'required': ['token'],
+              'properties':
+                {
+                  'token': { 'type': 'string', 'pattern': '^[a-f0-9]{64}$' },
+                  'sequence':
+                    { 'type': 'integer', 'minimum': 0, 'maximum': 2147483647, 'default': 0 },
+                  'browserToken': { 'type': 'string', 'pattern': '^[a-f0-9]{64}$' },
+                  'townId': { 'type': ['string', 'null'], 'format': 'uuid' },
+                },
+            },
+          'VisitorPresence':
+            {
+              'type': 'object',
+              'properties':
+                {
+                  'active': { 'type': 'boolean' },
+                  'expiresAt': { 'type': ['integer', 'null'] },
+                  'serverNow': { 'type': 'integer', 'description': 'Unix milliseconds' },
+                },
+            },
+          'VisitorEntry':
+            {
+              'type': 'object',
+              'properties':
+                {
+                  'id': { 'type': 'string' },
+                  'name':
+                    {
+                      'type': 'string',
+                      'description': 'Empty uses Mayor of town, or Visitor when no town.',
+                    },
+                  'townName': { 'type': ['string', 'null'] },
+                  'era': { 'type': ['string', 'null'] },
+                  'publicId': { 'type': ['string', 'null'] },
+                  'arrivedAt': { 'type': 'integer', 'description': 'Unix milliseconds' },
+                  'lastSeenAt': { 'type': 'integer', 'description': 'Unix milliseconds' },
+                  'departedAt': { 'type': ['integer', 'null'] },
+                },
+            },
+          'VisitorGuestbook':
+            {
+              'type': 'object',
+              'properties':
+                {
+                  'present':
+                    { 'type': 'array', 'items': { '$ref': '#/components/schemas/VisitorEntry' } },
+                  'history':
+                    { 'type': 'array', 'items': { '$ref': '#/components/schemas/VisitorEntry' } },
+                  'page': { 'type': 'integer' },
+                  'hasNext': { 'type': 'boolean' },
+                  'serverNow': { 'type': 'integer', 'description': 'Unix milliseconds' },
+                },
+            },
           'Profile':
             {
               'type': 'object',

@@ -63,7 +63,7 @@ try {
  $settings=['baseRevision'=>10,'name'=>'New Austin','isPublic'=>true];$renamed=status(200,callApi('PATCH','towns/'.$id.'/settings',$settings,$a),'rename');check($renamed['publicId']===$publicId,'stable share id');check(status(200,callApi('PUT','towns/'.$id,$lastUpload,$a),'retry receipt after rename')['revision']===10,'metadata preserves upload receipt');
  status(200,callApi('PATCH','towns/'.$town2['townId'].'/settings',['baseRevision'=>1,'name'=>'Other Details','isPublic'=>false],$a),'other device changes metadata');
  check(status(200,callApi('PUT','towns/'.$town2['townId'],['baseRevision'=>1,'uploadId'=>uuid(),'profile'=>profile(777)],$a),'offline progress after metadata')['profile']['town']['coins']===777,'metadata does not conflict with offline progress');
- // Share-link visits: an anonymous saloon tap and the latest signed-in guest reach only the owner.
+ // Share-link visits: saloon collection remains independent of live visitor presence.
  $shared=status(200,callApi('PATCH','towns/'.$town2['townId'].'/settings',['baseRevision'=>2,'name'=>'Other Details','isPublic'=>true],$a),'publish second town')['publicId'];
  $sharedVisit=status(200,callApi('GET','villages/'.$shared),'anonymous visit');check($sharedVisit['saloonReadyAt']===0&&!isset($sharedVisit['guest'],$sharedVisit['visits']),'visit shows only saloon readiness');
  check(status(409,callApi('POST','villages/'.$shared.'/saloon',(object)[]),'no saloon to collect')['code']==='no_saloon','saloon must be built');
@@ -81,21 +81,8 @@ try {
  check(status(200,callApi('GET','villages/'.$shared.'/latest'),'poll after tap')['saloonReadyAt']===$tap['readyAt'],'a watching visitor sees another visitor collect');
  $visits=function() use($a,$town2){foreach(status(200,callApi('GET','account',null,$a),'owner visits')['towns'] as $t)if($t['townId']===$town2['townId'])return ['saloonAt'=>$t['saloonCollectedAt'],'guest'=>$t['guest']];};
  status(200,callApi('GET','villages/'.$shared,null,$a),'owner visits own town');check($visits()===['saloonAt'=>($tap['readyAt']-3600)*1000,'guest'=>null],'owner receives the tap but is not their own guest');
- status(200,callApi('GET','villages/'.$shared,null,$b),'signed-in visit');$guest=$visits()['guest'];check($guest['name']==='DUSTWATER'&&$guest['at']>=(time()-5)*1000,'guest named after their town');
- status(200,callApi('POST','towns',townBody('merde town'),$b),'newer private unmoderated town');$db->get()->executeStatement("UPDATE towns SET saved_at=saved_at-100 WHERE name='DUSTWATER'");
- status(200,callApi('GET','villages/'.$shared,null,$b),'visit after new town');check($visits()['guest']['name']==='DUSTWATER','unmoderated private names are never shown to another player');
- $silver=status(200,callApi('POST','towns',townBody('Silver Creek'),$b),'visitor public town');status(200,callApi('PATCH','towns/'.$silver['townId'].'/settings',['baseRevision'=>1,'name'=>'Silver Creek','isPublic'=>true],$b),'visitor shares town');
- status(200,callApi('GET','villages/'.$shared,null,$b),'later visit');check($visits()['guest']['name']==='Silver Creek','only the latest guest, preferring a shared town');
- $seen=$visits()['guest']['at'];status(404,callApi('DELETE','towns/'.$town2['townId'].'/guest',['guestAt'=>$seen],$b),'only the owner clears a guest');
- status(422,callApi('DELETE','towns/'.$town2['townId'].'/guest',['guestAt'=>'soon'],$a),'guest visit time validated');
- check(status(200,callApi('DELETE','towns/'.$town2['townId'].'/guest',['guestAt'=>$seen-1000],$a),'stale guest clear')['cleared']===false&&$visits()['guest']!==null,'a newer visitor survives an older clear');
- check(status(200,callApi('DELETE','towns/'.$town2['townId'].'/guest',['guestAt'=>$seen],$a),'owner saw guest')['cleared']===true,'seen guest cleared');
- check($visits()===['saloonAt'=>($tap['readyAt']-3600)*1000,'guest'=>null],'guest deleted once seen; saloon limit kept');
- status(200,callApi('GET','villages/'.$shared.'/latest',null,$b),'signed-in visitor keeps watching');check($visits()['guest']===null,'polling an open visit never makes a new guest');
- status(200,callApi('GET','villages/'.$shared,null,$b),'new visit after clear');check($visits()['guest']['name']==='Silver Creek','the next visitor replaces the empty slot');
- $lone=status(200,callApi('PATCH','towns/'.$silver['townId'].'/settings',['baseRevision'=>1,'name'=>'Silver Creek','isPublic'=>true],$b),'visitor town stays shared')['publicId'];
- status(200,callApi('GET','villages/'.$lone,null,$a),'guest without a saloon tap');$guestRow=fn()=>$db->get()->fetchAssociative('SELECT * FROM town_guests WHERE town_id=?',[$silver['townId']]);
- $at=(int)$guestRow()['visited_at']*1000;status(200,callApi('DELETE','towns/'.$silver['townId'].'/guest',['guestAt'=>$at],$b),'owner sees lone guest');check($guestRow()===false,'a seen guest is deleted');
+ status(200,callApi('GET','villages/'.$shared,null,$b),'signed-in visit');check($visits()['guest']===null,'opening a public view does not queue an ordinary VIP');
+ status(200,callApi('GET','villages/'.$shared.'/latest',null,$b),'signed-in visitor keeps watching');check($visits()['guest']===null,'polling never queues an ordinary VIP');
  foreach(['Silver-Creek'=>'SilverCreek',"O’Hara  Town"=>'OHara Town','Élan Vital'=>'Élan Vital','www example'=>null,'visit example.com'=>null,'a@b.fr'=>null,'http town'=>null,'merde town'=>null,'a-b'=>null,'--'=>null] as $raw=>$clean)check($public->guestName($raw)===$clean,'guest name sanitised: '.$raw);
  foreach(['fuck town','p u t a i n','M3RDE','ＦＵＣＫ'] as $badName)status(422,callApi('PATCH','towns/'.$id.'/settings',['baseRevision'=>10,'name'=>$badName,'isPublic'=>true],$a),'public moderation');
  $private=status(200,callApi('PATCH','towns/'.$id.'/settings',['baseRevision'=>10,'name'=>'merde town','isPublic'=>false],$a),'private name playable');status(404,callApi('GET','villages/'.$publicId,null,$b),'unpublish');status(404,callApi('GET','villages/'.$publicId.'/latest',null,$b),'unpublished poll');status(404,callApi('GET','villages/'.$publicId),'unpublished share link');

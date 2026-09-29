@@ -311,6 +311,7 @@ export function updateTownLocomotion(d, h = LOCOMOTION_STEP) {
   const add = (a) => {
     const root = a.root;
     if (!root || a.species === 'pigeon') return;
+    if (a.liveVisitor && !root.visible) return;
     // Indoor/fading visitors still advance their own lifecycle; hiding a mesh
     // must not disconnect its clock from its route.
     if ((!root.visible || root.scale.x < 0.5) && !a.visitor) return;
@@ -338,11 +339,13 @@ export function updateTownLocomotion(d, h = LOCOMOTION_STEP) {
     a.routeDirection = a.direction ?? 1;
     a.y = root.position.y;
     a.hold =
+      (a.liveVisitor && d.liveVisitorsReducedMotion) ||
       (!!a.work && !a.workRoutine) ||
       a.routeResting ||
       (a.species && !['walking', 'fleeing', 'retreating'].includes(a.state));
     a.noPath = !!path && path.points.length < 2;
-    a.followRoute = !!path?.total && (!a.manual || a.transportVisitor) && !m.exitTarget;
+    a.followRoute =
+      !!path?.total && (!a.manual || a.transportVisitor || a.liveVisitor) && !m.exitTarget;
     a.targetX = root.position.x;
     a.targetZ = root.position.z;
     if (m.exitTarget) {
@@ -363,6 +366,7 @@ export function updateTownLocomotion(d, h = LOCOMOTION_STEP) {
   };
   for (const a of d.actors ?? []) add(a);
   for (const a of d.vipArrivals?.actors ?? []) add(a);
+  for (const a of d.liveVisitors?.actors ?? []) add(a);
   for (const a of d.animals ?? []) add(a);
   for (const actor of d.manualBlockers ?? []) {
     let visible = true;

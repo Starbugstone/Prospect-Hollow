@@ -38,12 +38,11 @@ final class PublicTown {
     }
     public const SALOON_REST=3600;
     // A share link needs no account: anyone holding the unguessable public ID may see the
-    // appearance projection. Browsing the full list still needs one. Opening the town is a
-    // visit; an open visit polling for the owner's progress is not a new guest.
+    // appearance projection. Browsing the full list still needs one. Live presence is
+    // handled separately by VisitorService; viewing never queues an ordinary VIP.
     public function visit(Request $r,string $id,bool $arrival=true): object {
         $row=$this->database->get()->fetchAssociative('SELECT t.id,t.player_id,t.appearance,s.collected_at FROM towns t LEFT JOIN saloon_collections s ON s.town_id=t.id WHERE t.public_id=? AND t.listed=1 AND t.deleted_at IS NULL',[$id]);
         if(!$row)throw new ApiError(404,'Town unavailable.');
-        if($arrival)$this->welcomeGuest($r,$row);
         $village=json_decode($row['appearance']);
         $village->saloonReadyAt=$this->saloonReadyAt($row['collected_at']);
         return $village;
@@ -66,17 +65,6 @@ final class PublicTown {
     }
     private function saloonReadyAt(mixed $at): int {return $at===null||$at===false?0:(int)$at+self::SALOON_REST;}
 
-    // Guest: a signed-in viewer becomes the town's only guest, replacing any earlier one,
-    // until the owner's game has saved them as a VIP. Owners are never their own guest.
-    private function welcomeGuest(Request $r,array $town): void {
-        try {$visitor=$this->auth->session($r)['player_id'];}catch(ApiError){return;}
-        if($visitor===$town['player_id'])return;
-        $names=$this->database->get()->fetchFirstColumn('SELECT name FROM towns WHERE player_id=? AND deleted_at IS NULL ORDER BY listed DESC,saved_at DESC',[$visitor]);
-        foreach($names as $name)if($label=$this->guestName($name)) {
-            $this->upsert('town_guests',$town['id'],['name'=>$label,'visited_at'=>time()]);
-            return;
-        }
-    }
     // Guest names appear in another player's village: never a link or an email, only
     // letters, digits and single spaces, and they must pass the public-name moderation.
     public function guestName(string $name): ?string {

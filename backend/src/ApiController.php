@@ -4,7 +4,8 @@ namespace App;
 use Symfony\Component\HttpFoundation\{Request,JsonResponse};
 use Symfony\Component\Routing\Attribute\Route;
 final class ApiController {
-    public function __construct(private Auth $auth,private SaveService $saves,private PublicTown $public,private Database $database) {}
+    private VisitorService $visitors;
+    public function __construct(private Auth $auth,private SaveService $saves,private PublicTown $public,private Database $database,?VisitorService $visitors=null) {$this->visitors=$visitors??new VisitorService($database,$auth,$public);}
     #[Route('/api/v1/{path}',name:'api',requirements:['path'=>'.*'])]
     public function __invoke(Request $r,string $path): JsonResponse {
         $native=false;
@@ -23,7 +24,7 @@ final class ApiController {
                     if(!$object instanceof \stdClass)throw new ApiError(422,'Request must be a JSON object.');
                     $body=(array)$object;
                 }
-                if($r->query->count() && !($method==='GET'&&$path==='villages'&&array_keys($r->query->all())===['page']))throw new ApiError(422,'Unsupported query parameters.');
+                if($r->query->count() && !($method==='GET'&&($path==='villages'||preg_match('~^towns/[a-f0-9-]{36}/visitors$~D',$path))&&array_keys($r->query->all())===['page']))throw new ApiError(422,'Unsupported query parameters.');
                 $ip=$r->getClientIp()??'unknown';$this->auth->limit('http:'.$ip,600,60);
                 if(in_array($path,['auth/login-link','auth/confirm'],true))$this->auth->limit('auth:'.$ip,30,900);
                 $result=match($method.' '.$path) {
@@ -33,6 +34,8 @@ final class ApiController {
                     'POST auth/logout'=>$this->logout($r,$body,false),
                     'POST auth/revoke-all'=>$this->logout($r,$body,true),
                     'GET account'=>$this->saves->account($r),
+                    'GET account/profile'=>$this->visitors->profile($r),
+                    'PATCH account/profile'=>$this->visitors->updateProfile($r,$body),
                     'DELETE account'=>$this->deleteAccount($r,$body),
                     'POST towns'=>$this->saves->create($r,$body),
                     'GET villages'=>$this->public->browse($r),
@@ -51,6 +54,8 @@ final class ApiController {
     private function logout(Request $r,array $b,bool $all): JsonResponse {SaveService::keys($b,[]);return $this->auth->logout($r,$all);}
     private function deleteAccount(Request $r,array $b): JsonResponse {$this->saves->deleteAccount($r,$b);return $this->auth->clearCookie();}
     private function townRoute(Request $r,string $path,array $b): mixed {
+        if(in_array($r->getMethod(),['POST','DELETE'],true)&&preg_match('~^villages/([a-f0-9]{32})/presence$~D',$path,$m))return $this->visitors->presence($r,$m[1],$b);
+        if($r->isMethod('GET')&&preg_match('~^towns/([a-f0-9-]{36})/visitors$~D',$path,$m))return $this->visitors->visitors($r,$m[1]);
         if($r->isMethod('GET')&&preg_match('~^villages/([a-f0-9]{32})(/latest)?$~D',$path,$m))return $this->public->visit($r,$m[1],($m[2]??'')==='');
         if($r->isMethod('POST')&&preg_match('~^villages/([a-f0-9]{32})/saloon$~D',$path,$m)){SaveService::keys($b,[]);return $this->public->tapSaloon($r,$m[1]);}
         if(!preg_match('~^towns/([a-f0-9-]{36})(?:/(resolve|history|settings|guest))?$~D',$path,$m))throw new ApiError(404,'Endpoint not found.');

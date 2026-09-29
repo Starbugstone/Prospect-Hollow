@@ -89,7 +89,14 @@ export class TownVipArrivals {
   // as a dedicated VIP whatever the town's visitors or transport, then follows VIP rules.
   syncGuest(town, rebuild = false) {
     const visit = town?.guestVip;
-    if (this.d.vipsHidden || !visit || visit.seen || this.guest?.at === visit.at) return;
+    if (
+      this.d.livePresenceEnabled ||
+      this.d.vipsHidden ||
+      !visit ||
+      visit.seen ||
+      this.guest?.at === visit.at
+    )
+      return;
     if (this.guest && !this.guest.shown) {
       this.actors.splice(this.actors.indexOf(this.guest.actor), 1);
       this.d.clearGroup(this.guest.actor.root);

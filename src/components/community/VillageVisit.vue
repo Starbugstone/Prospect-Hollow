@@ -3,6 +3,7 @@
   <p>{{ t('View only') }} · {{ t(ERA_BY_ID[current.era]?.label ?? current.era) }}</p>
   <p v-if="unshared" role="alert">{{ t('This town is no longer shared.') }}</p>
   <template v-else>
+    <VisitPresence :key="current.villageId" :village-id="current.villageId" />
     <p v-if="saloonMessage" class="village-saloon" role="status">{{ saloonMessage }}</p>
     <div class="community-world town-map-frame" :class="{ 'town-fullscreen': fullscreen }">
       <button
@@ -67,6 +68,7 @@
 </template>
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
+import VisitPresence from './VisitPresence.vue';
 import { villageAppearance } from '../../services/publicVillage';
 import { latestVillage, tapSaloon } from '../../services/cloudProfile';
 import { createVillagePoller } from '../../services/villagePolling';
