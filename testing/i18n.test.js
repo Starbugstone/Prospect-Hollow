@@ -62,7 +62,7 @@ describe('One browser language across the game and town', () => {
   it('translates game, settings, construction, and variable messages consistently', () => {
     setLocale('fr-FR');
     expect(locale.value).toBe('fr');
-    expect(t('NEXT LEVEL')).toBe('NIVEAU SUIVANT');
+    expect(t('Exit mine')).toBe('Quitter la mine');
     expect(t('Start building')).toBe('Lancer la construction');
     expect(t('Reset all progress')).toBe('Tout réinitialiser');
     expect(t('Enter the mine: play level {level}', { level: 3 })).toBe(
