@@ -56,7 +56,7 @@ export class BoardAnimator {
     this.pending = new Set();
     this.generation = 0;
     this.cellSize = 0;
-    this.boardSize = 0;
+    this.boardCols = 0;
     this.boardRows = 0;
   }
 
@@ -108,15 +108,15 @@ export class BoardAnimator {
 
   position(index) {
     return {
-      x: ((index % this.boardSize) + 0.5) * this.cellSize,
-      y: (Math.floor(index / this.boardSize) + 0.5) * this.cellSize,
+      x: ((index % this.boardCols) + 0.5) * this.cellSize,
+      y: (Math.floor(index / this.boardCols) + 0.5) * this.cellSize,
     };
   }
 
   setLayout({ boardCols, boardRows, cellSize }) {
     const changed =
-      boardCols !== this.boardSize || boardRows !== this.boardRows || cellSize !== this.cellSize;
-    Object.assign(this, { boardSize: boardCols, boardRows, cellSize });
+      boardCols !== this.boardCols || boardRows !== this.boardRows || cellSize !== this.cellSize;
+    Object.assign(this, { boardCols, boardRows, cellSize });
     if (!changed || !this.scene?.add) return;
     this.drawCells();
     this.indexToGemId.forEach((id, index) => {
@@ -133,7 +133,7 @@ export class BoardAnimator {
   reset(board, layout) {
     this.clear();
     Object.assign(this, {
-      boardSize: layout.boardCols,
+      boardCols: layout.boardCols,
       boardRows: layout.boardRows,
       cellSize: layout.cellSize,
     });
@@ -210,7 +210,7 @@ export class BoardAnimator {
           alpha: 1,
           delay: Math.min(
             90,
-            (index % this.boardSize) * 7 + Math.floor(index / this.boardSize) * 4,
+            (index % this.boardCols) * 7 + Math.floor(index / this.boardCols) * 4,
           ),
           duration: MOTION.intro,
           ease: 'Back.easeOut',
@@ -348,17 +348,17 @@ export class BoardAnimator {
       for (const { from, to, gem } of step.drops) {
         const sprite = this.gemSprites.get(gem.id);
         this.indexToGemId[to] = gem.id;
-        if (sprite) falls.push(this.fall(sprite, to, Math.ceil((to - from) / this.boardSize)));
+        if (sprite) falls.push(this.fall(sprite, to, Math.ceil((to - from) / this.boardCols)));
       }
       const columnCounts = new Map();
       for (const { index } of step.spawns)
         columnCounts.set(
-          index % this.boardSize,
-          (columnCounts.get(index % this.boardSize) ?? 0) + 1,
+          index % this.boardCols,
+          (columnCounts.get(index % this.boardCols) ?? 0) + 1,
         );
       for (const { index, gem } of step.spawns) {
         const sprite = this.createGem(gem, index);
-        const distance = columnCounts.get(index % this.boardSize);
+        const distance = columnCounts.get(index % this.boardCols);
         sprite.y -= distance * this.cellSize;
         this.indexToGemId[index] = gem.id;
         falls.push(this.fall(sprite, index, distance));
@@ -448,7 +448,7 @@ export class BoardAnimator {
 
   celebrate(combo) {
     if (this.reducedMotion) return;
-    const p = { x: (this.boardSize * this.cellSize) / 2, y: this.boardRows * this.cellSize * 0.4 };
+    const p = { x: (this.boardCols * this.cellSize) / 2, y: this.boardRows * this.cellSize * 0.4 };
     const label =
       combo >= 7
         ? 'UNSTOPPABLE!'
@@ -470,7 +470,7 @@ export class BoardAnimator {
 
   drawCells() {
     if (!this.scene?.add || !this.cellSize) return;
-    const count = this.boardSize * this.boardRows;
+    const count = this.boardCols * this.boardRows;
     for (let index = 0; index < count; index++) {
       const p = this.position(index);
       const health = this.tiles[index]?.health ?? 0;

@@ -167,7 +167,7 @@ export class BonusEffects {
 
   boardBurst(color) {
     const a = this.a;
-    const width = a.boardSize * a.cellSize,
+    const width = a.boardCols * a.cellSize,
       height = a.boardRows * a.cellSize;
     const wash = a.scene.add
       .rectangle(width / 2, height / 2, width, height, color, 0.17)
@@ -238,7 +238,7 @@ export class BonusEffects {
     const a = this.a;
     const edges = [
       { x: 0, y: p.y },
-      { x: a.boardSize * a.cellSize, y: p.y },
+      { x: a.boardCols * a.cellSize, y: p.y },
     ];
     if (!rowOnly) edges.push({ x: p.x, y: 0 }, { x: p.x, y: a.boardRows * a.cellSize });
     edges.forEach((end, i) => {
@@ -360,7 +360,7 @@ export class BonusEffects {
   shuffle() {
     const a = this.a;
     if (a.reducedMotion) return;
-    const p = { x: (a.boardSize * a.cellSize) / 2, y: (a.boardRows * a.cellSize) / 2 };
+    const p = { x: (a.boardCols * a.cellSize) / 2, y: (a.boardRows * a.cellSize) / 2 };
     const swirl = a.scene.add.graphics({ x: p.x, y: p.y }).setBlendMode('ADD');
     for (let i = 0; i < 5; i++)
       swirl

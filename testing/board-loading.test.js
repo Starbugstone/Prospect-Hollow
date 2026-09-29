@@ -94,7 +94,7 @@ function tileRenderer(mode) {
     scene: { textures, add: { image, container: object, text: object, circle } },
     tileLayer: { add: vi.fn() },
   });
-  animator.boardSize = animator.boardRows = 6;
+  animator.boardCols = animator.boardRows = 6;
   animator.cellSize = 48;
   return { animator, image, circle };
 }

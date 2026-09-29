@@ -52,7 +52,7 @@ export function mineCart(d, parent, model) {
   CART_GEMS.forEach((gem, i) => {
     matrix.makeScale(0.12, 0.12, 0.12).setPosition(gem.x, gem.y, gem.z);
     cargo.setMatrixAt(i, matrix);
-    cargo.setColorAt(i, colorValue.set(gem.colour));
+    cargo.setColorAt(i, colorValue.set(gem.color));
   });
   load.add(cargo);
   root.userData.envelope = { halfWidth: 0.43, halfLength: 0.36, height: 1 };

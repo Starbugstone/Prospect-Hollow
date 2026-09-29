@@ -89,7 +89,7 @@ export class BonusComboEffects {
   charge(combo, center, points) {
     const a = this.a,
       size = a.cellSize;
-    const width = a.boardSize * size,
+    const width = a.boardCols * size,
       height = a.boardRows * size;
     const shade = a.scene.add
       .rectangle(width / 2, height / 2, width, height, 0x08051c, 0.72)
@@ -181,7 +181,7 @@ export class BonusComboEffects {
   release(combo, center) {
     const a = this.a,
       size = a.cellSize;
-    const width = a.boardSize * size,
+    const width = a.boardCols * size,
       height = a.boardRows * size;
     const rainbow = combo.key.includes('rainbow');
     const colors = rainbow ? SPECTRUM : [combo.color, combo.accent, 0xfff4d4];

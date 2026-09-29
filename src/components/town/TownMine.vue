@@ -111,7 +111,7 @@
           :key="index"
           :transform="`translate(${gem.x * 60} ${35 - (gem.y - 0.6) * 65 + gem.z * 14})`"
           d="M-6 0-2-6 5-4 7 1 0 4Z"
-          :fill="gem.colour" /><circle cx="-8" cy="61" r="5" fill="#394543" /><circle
+          :fill="gem.color" /><circle cx="-8" cy="61" r="5" fill="#394543" /><circle
           cx="10"
           cy="63"
           r="5"

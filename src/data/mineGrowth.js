@@ -2,13 +2,13 @@ import { LEVEL_COUNT } from './campaign';
 
 // A fixed, small cargo mesh grows with completed levels. It is decoration, never
 // a move allowance, reward multiplier or limit on campaign progress.
-const GEM_COLOURS = ['#b889ca', '#6dace5', '#6bcbae', '#e8c879', '#e495b3'];
+const GEM_COLORS = ['#b889ca', '#6dace5', '#6bcbae', '#e8c879', '#e495b3'];
 export const CART_GEMS = Object.freeze(
   Array.from({ length: 12 }, (_, i) => ({
     x: i < 9 ? ((i % 3) - 1) * 0.21 : (i - 10) * 0.14,
     y: i < 9 ? 0.66 : 0.83,
     z: i < 9 ? (Math.floor(i / 3) - 1) * 0.16 : 0,
-    colour: GEM_COLOURS[i % GEM_COLOURS.length],
+    color: GEM_COLORS[i % GEM_COLORS.length],
   })),
 );
 export function mineGrowth(completedLevels, levelCount = LEVEL_COUNT) {
