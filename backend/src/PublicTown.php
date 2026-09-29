@@ -3,25 +3,15 @@ declare(strict_types=1);
 namespace App;
 use Symfony\Component\HttpFoundation\Request;
 final class PublicTown {
-    public function __construct(private Database $database,private Auth $auth) {}
+    public function __construct(private Database $database,private Auth $auth,private NameModeration $names=new NameModeration()) {}
     public function name(string $name): array {
         $name=\Normalizer::normalize(trim($name),\Normalizer::FORM_KC);
         $name=preg_replace('/ +/u',' ',$name);
         if(!preg_match("/^[\\p{L}\\p{N}][\\p{L}\\p{M}\\p{N} '\x{2019}-]{2,23}$/uD",$name))throw new ApiError(422,'Use 3–24 letters, numbers, spaces, apostrophes or hyphens for the town name.');
         return [$name,transliterator_transliterate('Any-Lower',$name)];
     }
-    private function normalized(string $text): string {
-        $text=transliterator_transliterate('Any-Latin; Latin-ASCII; Lower',\Normalizer::normalize($text,\Normalizer::FORM_KC));
-        return preg_replace('/[^a-z]/','',strtr($text,['0'=>'o','1'=>'i','3'=>'e','4'=>'a','5'=>'s','7'=>'t','8'=>'b']));
-    }
     public function moderate(string $name): void {
-        $compact=$this->normalized($name);
-        $tokens=array_map(fn($s)=>$this->normalized($s),preg_split('/[\s\x{2019}\'-]+/u',$name));
-        foreach(['en','fr'] as $lang)foreach(file(dirname(__DIR__).'/content/moderation/'.$lang.'.txt',FILE_IGNORE_NEW_LINES|FILE_SKIP_EMPTY_LINES) as $word) {
-            $bad=$this->normalized($word);
-            // Short words require a full token to avoid blocking ordinary names such as Scunthorpe.
-            if($bad!=='' && ($compact===$bad||in_array($bad,$tokens,true)||(strlen($bad)>=5&&str_contains($compact,$bad))))throw new ApiError(422,'This town name cannot be used publicly. Rename it before sharing.');
-        }
+        if(!$this->names->allows($name))throw new ApiError(422,'This town name cannot be used publicly. Rename it before sharing.');
     }
     public function projection(object $profile,string $name,string $publicId): string {
         $schema=json_decode(file_get_contents(dirname(__DIR__).'/content/public-schema.json'),true,32,JSON_THROW_ON_ERROR);
