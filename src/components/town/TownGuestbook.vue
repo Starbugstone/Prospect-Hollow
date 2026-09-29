@@ -24,41 +24,49 @@
           >
         </li>
       </ul>
-      <h3>{{ t('Visit history') }}</h3>
-      <p v-if="!entries.length && snapshot">
-        {{ t('Your guestbook is waiting for its first visitor.') }}
-      </p>
-      <ol class="guestbook-history">
-        <li v-for="visit in entries" :key="visit.id">
-          <div>
-            <a v-if="visit.publicId" :href="visitUrl(visit.publicId)" target="_blank" rel="noopener"
-              ><strong>{{ visitorName(visit) }}</strong></a
-            >
-            <strong v-else>{{ visitorName(visit) }}</strong>
-            <small v-if="visitorTitle(visit)">{{ visitorTitle(visit) }}</small>
-          </div>
-          <div class="guestbook-time">
-            <time :datetime="iso(visit.arrivedAt)">{{ when(visit.arrivedAt) }}</time
-            ><small v-if="visit.departedAt">{{
-              t('Left {time}', { time: when(visit.departedAt) })
-            }}</small
-            ><small>{{
-              visit.departedAt
-                ? t('Stayed {minutes} min', {
-                    minutes: number(
-                      Math.max(1, Math.ceil((visit.departedAt - visit.arrivedAt) / 60000)),
-                    ),
-                  })
-                : t('Visiting now')
-            }}</small>
-          </div>
-        </li>
-      </ol>
-      <nav v-if="page > 1 || hasNext" :aria-label="t('Visit history pages')">
-        <button :disabled="page === 1 || busy" @click="load(page - 1)">{{ t('Previous') }}</button>
-        <span>{{ t('Page {page}', { page }) }}</span>
-        <button :disabled="!hasNext || busy" @click="load(page + 1)">{{ t('Next') }}</button>
-      </nav>
+      <details :key="townId" class="guestbook-past">
+        <summary>{{ t('Visit history') }}</summary>
+        <p v-if="!entries.length && snapshot">
+          {{ t('Your guestbook is waiting for its first visitor.') }}
+        </p>
+        <ol class="guestbook-history">
+          <li v-for="visit in entries" :key="visit.id">
+            <div>
+              <a
+                v-if="visit.publicId"
+                :href="visitUrl(visit.publicId)"
+                target="_blank"
+                rel="noopener"
+                ><strong>{{ visitorName(visit) }}</strong></a
+              >
+              <strong v-else>{{ visitorName(visit) }}</strong>
+              <small v-if="visitorTitle(visit)">{{ visitorTitle(visit) }}</small>
+            </div>
+            <div class="guestbook-time">
+              <time :datetime="iso(visit.arrivedAt)">{{ when(visit.arrivedAt) }}</time
+              ><small v-if="visit.departedAt">{{
+                t('Left {time}', { time: when(visit.departedAt) })
+              }}</small
+              ><small>{{
+                visit.departedAt
+                  ? t('Stayed {minutes} min', {
+                      minutes: number(
+                        Math.max(1, Math.ceil((visit.departedAt - visit.arrivedAt) / 60000)),
+                      ),
+                    })
+                  : t('Visiting now')
+              }}</small>
+            </div>
+          </li>
+        </ol>
+        <nav v-if="page > 1 || hasNext" :aria-label="t('Visit history pages')">
+          <button :disabled="page === 1 || busy" @click="load(page - 1)">
+            {{ t('Previous') }}
+          </button>
+          <span>{{ t('Page {page}', { page }) }}</span>
+          <button :disabled="!hasNext || busy" @click="load(page + 1)">{{ t('Next') }}</button>
+        </nav>
+      </details>
     </template>
   </section>
 </template>
@@ -132,6 +140,20 @@ onBeforeUnmount(() => {
 .town-guestbook h3 {
   font-size: 1rem;
   margin: 1.2rem 0 0.65rem;
+}
+.guestbook-past {
+  margin-top: 1.2rem;
+}
+.guestbook-past summary {
+  padding: 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.guestbook-past summary:focus-visible {
+  outline: 2px solid #82518b;
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 .town-guestbook p {
   line-height: 1.5;
