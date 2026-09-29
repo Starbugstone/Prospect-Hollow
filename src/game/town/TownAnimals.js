@@ -5,7 +5,7 @@ import { Group, Vector3 } from 'three';
 import { ANIMAL_HABITATS, TOWN_ANIMALS } from '../../data/townAnimals';
 import { eraEvolution } from '../../data/eras';
 import { atPlot, PLOTS, plotStreet, routeGraph, routeOnGraph } from './TownLayout';
-import { TownNavigation, walkPose } from './TownNavigation';
+import { TownNavigation, walkPose, standingPose } from './TownNavigation';
 import { groundHeight } from './TownLandscape';
 import { population } from './TownRules';
 import { animalModel, animateAnimal } from './TownAnimalModels';
@@ -14,6 +14,7 @@ import { setWorkRoutine } from './TownWorkRoutine';
 import { buildingWalk } from './TownPedestrians';
 import { prepareBirdApproaches, createBirdFlight, birdFlightPose } from './TownBirdFlight';
 import { clamp01, hash01, smooth01 } from './TownMath';
+import { finishWork } from '../PresentationWork';
 
 const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 
@@ -238,7 +239,7 @@ function addFeeder(d, habitat, nav, era) {
     toss: { visit: -1, index: -1, from: 0, turn: 0 },
     hand: new Vector3(),
     active: false,
-    pose: { x: actor.root.position.x, y: actor.root.position.y, z: actor.root.position.z },
+    pose: standingPose(actor),
   });
 }
 
@@ -585,8 +586,7 @@ export function addTownAnimals(d, town, preparedSpace) {
     });
     return;
   }
-  const work = populateAnimals(d, town, preparedSpace);
-  while (!work.next().done) {}
+  finishWork(populateAnimals(d, town, preparedSpace));
 }
 function* populateAnimals(d, town, preparedSpace) {
   const oldFeeder = d.animalFeeder;

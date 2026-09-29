@@ -534,6 +534,11 @@ export function routeDistanceAt(path, x, z) {
   }
   return distance;
 }
+// A reusable walkPose target that starts where the actor stands.
+export const standingPose = (actor) => {
+  const { x, y, z } = actor.root.position;
+  return { x, y, z };
+};
 export function walkPose(path, progress, out = {}) {
   const { points, ends, headings, total } = path;
   if (points.length < 2) {
@@ -604,7 +609,7 @@ export function prepareActorWalk(d, actor, offset = 0.9) {
   actor.walkSpeed ??= actor.curve.getLength() / actor.duration;
   actor.duration = actor.walkPath.total / (actor.walkSpeed || 0.55);
   actor.duration = Math.max(0.1, actor.duration);
-  actor.walkPose = { x: actor.root.position.x, y: actor.root.position.y, z: actor.root.position.z };
+  actor.walkPose = standingPose(actor);
 }
 
 // Manual scene actors use the same index, including translated construction roots.

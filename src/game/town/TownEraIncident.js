@@ -1,4 +1,4 @@
-import { walkPose, placeSafely, RouteWarmup } from './TownNavigation';
+import { walkPose, placeSafely, RouteWarmup, standingPose } from './TownNavigation';
 import { Box3 } from 'three';
 import { prepareRoute, routePose } from './TownRoutes';
 import { responseVehicle, animateVehicle } from './TownVehicles';
@@ -96,11 +96,7 @@ export class TownEraIncident {
       ? walkPose(
           detour,
           (detour.total - span + clamp01(progress) * span) / (detour.total || 1),
-          (actor.travelPose ??= {
-            x: actor.root.position.x,
-            y: actor.root.position.y,
-            z: actor.root.position.z,
-          }),
+          (actor.travelPose ??= standingPose(actor)),
         )
       : routePose(path, distance);
     actor.root.position.set(pose.x, 0.07, pose.z);
@@ -720,7 +716,7 @@ export class TownEraIncident {
   }
 }
 
-export function tailRoute(path, maximum) {
+function tailRoute(path, maximum) {
   if (path.total <= maximum) return path;
   const start = routePose(path, path.total - maximum);
   let covered = 0;
@@ -731,7 +727,7 @@ export function tailRoute(path, maximum) {
   }
   return prepareRoute(points);
 }
-export function headRoute(path, maximum) {
+function headRoute(path, maximum) {
   if (path.total <= maximum) return path;
   const points = [path.points[0]];
   let covered = 0;
@@ -747,7 +743,7 @@ export function headRoute(path, maximum) {
   return prepareRoute(points);
 }
 // Closest point of a prepared route: its segment, distance along it and the gap.
-export function nearestOnRoute(route, [x, z]) {
+function nearestOnRoute(route, [x, z]) {
   let best = { gap: Infinity, index: 0, along: 0, point: route.points[0] };
   let covered = 0;
   for (let i = 0; i < route.lengths.length; i++) {

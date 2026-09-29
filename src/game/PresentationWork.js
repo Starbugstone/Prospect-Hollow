@@ -14,6 +14,10 @@ export function afterPaint(callback) {
     cancelled = true;
   };
 }
+// Run resumable work to the end now, for callers that cannot wait for idle frames.
+export function finishWork(iterator) {
+  while (!iterator.next().done);
+}
 export function scheduleWork(
   iterator,
   { budget = 4, isCurrent = () => true, complete = () => {} } = {},

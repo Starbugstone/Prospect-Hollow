@@ -1,6 +1,6 @@
 import { localWalk, walkPath, walkPose } from './TownNavigation';
 import { TownActors } from './TownActors';
-import { clamp01, smooth01 } from './TownMath';
+import { smooth01 } from './TownMath';
 
 // Reusable, deterministic construction staging. It owns temporary workers and
 // assembly transforms; the caller supplies the real building and work positions.

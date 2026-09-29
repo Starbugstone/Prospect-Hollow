@@ -7,7 +7,7 @@ import { navigationScene, drawNavigation, releaseNavigation } from './Navigation
 import { hasElectricity } from '../../data/industrial';
 import { mineGrowth } from '../../data/mineGrowth';
 import { updateMineGrowth } from './mine/addMineSite';
-import { afterPaint, performanceMark, scheduleWork } from '../PresentationWork';
+import { afterPaint, finishWork, performanceMark, scheduleWork } from '../PresentationWork';
 import { geometryFootprints, registerFootprints, footprintDistance } from './BuildingFootprints';
 import { townTracks, railEdges } from './TownLayout';
 import {
@@ -341,8 +341,7 @@ export class TownDiorama {
     sign.material = material;
   }
   batch(group) {
-    const work = this.batchWork(group);
-    while (!work.next().done) {}
+    finishWork(this.batchWork(group));
   }
   // Clone one mesh or merge one material per step. The group changes only in the
   // final step, so cancelled or interleaved frames still draw the original meshes.
@@ -1123,7 +1122,7 @@ export class TownDiorama {
           budget: 8,
           isCurrent: () => generation === this.generation && !this.disposed,
         });
-      else while (!work.next().done) {}
+      else finishWork(work);
     };
     if (!this.deferLife) populate();
     afterPaint(() => {
@@ -2246,8 +2245,7 @@ export class TownDiorama {
     }
     this.cancelFinishWork?.();
     if (typeof requestAnimationFrame === 'undefined') {
-      const work = settle();
-      while (!work.next().done) {}
+      finishWork(settle());
       return;
     }
     this.cancelFinishWork = scheduleWork(settle(), {

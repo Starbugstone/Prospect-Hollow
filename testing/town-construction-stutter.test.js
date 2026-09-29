@@ -7,6 +7,7 @@ import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { TownActors } from '../src/game/town/TownActors';
 import { TownStatics } from '../src/game/town/TownStatics';
+import { finishWork } from '../src/game/PresentationWork';
 import { TownUpgradeGlow } from '../src/game/town/TownUpgradeGlow';
 import { TownFrameCache } from '../src/game/town/TownFrameCache';
 import { TownRenderQuality } from '../src/game/town/TownRenderQuality';
@@ -153,7 +154,7 @@ it('prepares static batches without moving source meshes until the batch is plac
   cancelled.next();
   cancelled.return();
   expect(statics.meshes).toHaveLength(0);
-  while (!work.next().done) {}
+  finishWork(work);
   expect(root.children.every((mesh) => mesh.layers.mask === 2)).toBe(true);
   expect(statics.batches.get(root).parent).toBe(view.scene);
   expect(statics.meshes).toHaveLength(1);

@@ -1,4 +1,5 @@
-import { horizonMaterial } from './TownAtmosphere';
+import { terrainMaterial } from './TownAtmosphere';
+import { smoothBetween } from './TownMath';
 import {
   addTunnelPortals,
   RAIL_TUNNEL,
@@ -27,10 +28,6 @@ export const MINE_HILLSIDE = Object.freeze({
   tunnelHalfWidth: RAIL_TUNNEL.halfWidth,
   tunnelCeiling: RAIL_TUNNEL.spring + RAIL_TUNNEL.radius,
 });
-const smooth = (a, b, value) => {
-  const t = THREE.MathUtils.clamp((value - a) / (b - a), 0, 1);
-  return t * t * (3 - 2 * t);
-};
 
 export function mineHillsideHeight(x, z, mineZ, baseHeight) {
   const depth = mineZ + MINE_HILLSIDE.frontOffset - z;
@@ -43,14 +40,20 @@ export function mineHillsideHeight(x, z, mineZ, baseHeight) {
     if (localX >= ax && localX <= bx)
       face = THREE.MathUtils.lerp(ay, by, (localX - ax) / (bx - ax));
   }
-  if (depth < 0) return Math.max(baseHeight, face * smooth(-0.98, 0, depth));
+  if (depth < 0) return Math.max(baseHeight, face * smoothBetween(-0.98, 0, depth));
   // Rock above the future bore remains a normal solid shoulder until completion.
   const tunnelCover =
     (tunnelOuterHeightAt(z, mineZ - 3) + 0.6) *
-    (1 - smooth(6.8, 9, Math.abs(x))) *
-    (1 - smooth(1.5, 2.25, Math.abs(z - (mineZ - 3))));
-  const shoulder = Math.max(tunnelCover, face + depth * 0.4 * (1 - smooth(3, 6, Math.abs(localX))));
-  return Math.max(baseHeight, THREE.MathUtils.lerp(shoulder, baseHeight, smooth(6, 11.4, depth)));
+    (1 - smoothBetween(6.8, 9, Math.abs(x))) *
+    (1 - smoothBetween(1.5, 2.25, Math.abs(z - (mineZ - 3))));
+  const shoulder = Math.max(
+    tunnelCover,
+    face + depth * 0.4 * (1 - smoothBetween(3, 6, Math.abs(localX))),
+  );
+  return Math.max(
+    baseHeight,
+    THREE.MathUtils.lerp(shoulder, baseHeight, smoothBetween(6, 11.4, depth)),
+  );
 }
 
 // The exposed surface and portal retaining faces share an exact world-space grid.
@@ -101,7 +104,7 @@ export function buildMineHillside(
   const tint = ([x, y, z], hex) => {
     const key = `${x}|${z}`;
     if (!plain.has(key)) plain.set(key, groundColor(x, z));
-    return tone.set(hex).lerp(plain.get(key), 1 - smooth(0.05, 0.6, y - groundHeight(x, z)));
+    return tone.set(hex).lerp(plain.get(key), 1 - smoothBetween(0.05, 0.6, y - groundHeight(x, z)));
   };
   // Retaining walls and the bore stay bare rock right down to the rails.
   const triangle = (a, b, c, hex, blend) => {
@@ -197,10 +200,7 @@ export function buildMineHillside(
   source.dispose();
   geometry.computeVertexNormals();
   geometry.userData.owned = true;
-  const material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 });
-  horizonMaterial(material);
-  material.userData.transient = true;
-  const mesh = new THREE.Mesh(geometry, material);
+  const mesh = new THREE.Mesh(geometry, terrainMaterial({ vertexColors: true }));
   mesh.name = 'Mine shoulder and tunnel';
   mesh.castShadow = mesh.receiveShadow = true;
   root.add(mesh);
