@@ -14,7 +14,7 @@ import {
 import { MILLRACE, landscapeGeometry } from '../src/game/town/TownMillrace';
 import { MINE_SHAFT } from '../src/data/mineSite';
 import { TownNavigation } from '../src/game/town/TownNavigation';
-import { TownStatics, freezeStatic } from '../src/game/town/TownStatics';
+import { TownStatics } from '../src/game/town/TownStatics';
 import { labelLayout, placeLabels, trackElement, updateLabels } from '../src/game/town/TownLabels';
 import { drawCameraInset } from '../src/game/town/TownInset';
 import { frameEnd, frameStart, frameValue, townFrameStats } from '../src/game/town/TownProfiler';

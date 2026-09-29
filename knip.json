@@ -1,0 +1,12 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "src/admin/main.js",
+    "scripts/**/*.{js,mjs}",
+    "testing/**/*.test.js",
+    "testing/browser/*.cjs",
+    "testing/mocks/*.js"
+  ],
+  "project": ["src/**/*.{js,vue}", "scripts/**/*.{js,mjs}", "testing/**/*.{js,cjs}"],
+  "ignoreUnresolved": ["^/src/"]
+}

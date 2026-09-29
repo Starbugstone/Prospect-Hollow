@@ -2,7 +2,7 @@ import { villagerRandom } from './villagers';
 
 export const VIP_SPEND = 5;
 export const VIP_RECEIPT_LIMIT = 64;
-export const VIP_VISIT_BUILDINGS = Object.freeze([
+const VIP_VISIT_BUILDINGS = Object.freeze([
   'saloon',
   'shop',
   'bank',

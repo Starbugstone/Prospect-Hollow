@@ -10,7 +10,7 @@ import { MINE_FEATURES } from './MineFeatures';
 import { addMineHaul } from './MineRollingStock';
 import { ROUNDED_PALETTE } from '../../../data/roundedArchitecture';
 
-export function addMinePortal(d, root, profile, appearance) {
+function addMinePortal(d, root, profile, appearance) {
   const entry = d.group(
     root,
     0,

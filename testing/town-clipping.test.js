@@ -13,7 +13,6 @@ import { addEraStreetscape, powerGrid, STREET_FURNITURE } from '../src/game/town
 import { PLOTS, segmentDistance, townTracks } from '../src/game/town/TownLayout';
 import { SIDEWALK_OFFSET, NPC_BODY_MARGIN } from '../src/data/townClearances';
 import { BUILDINGS, createTown } from '../src/data/town';
-import { ERAS } from '../src/data/eras';
 
 const views = [];
 function diorama() {

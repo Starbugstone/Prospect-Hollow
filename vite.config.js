@@ -44,7 +44,6 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': '/src',
       phaser3spectorjs: path.resolve(__dirname, 'testing/mocks/phaser3spectorjs.js'),
     },
   },

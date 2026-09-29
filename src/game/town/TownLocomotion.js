@@ -3,10 +3,10 @@ const blockerPosition = new Vector3();
 import { sweptClear } from './BuildingFootprints';
 import { routeStepPose, routeDistanceAt } from './TownNavigation';
 
-export const LOCOMOTION_STEP = 1 / 60;
+const LOCOMOTION_STEP = 1 / 60;
 const GAP = 0.04;
 const CELL = 3;
-export const DYNAMIC_AVOIDANCE_ATTEMPTS = 3;
+const DYNAMIC_AVOIDANCE_ATTEMPTS = 3;
 
 // Yield briefly to other actors, then keep the authored route through a crowd.
 // A clear step starts a fresh budget. Static scenery never uses this exception.

@@ -16,7 +16,7 @@ export const railHeight = (x) => {
   return RAIL_HEIGHT + 2.5 * p * p * (3 - 2 * p);
 };
 // Sample both bogies so a complete carriage follows the rail grade as one body.
-export function railCarriagePose(x, wheelbase = 2.4) {
+function railCarriagePose(x, wheelbase = 2.4) {
   const rear = railHeight(x - wheelbase / 2),
     front = railHeight(x + wheelbase / 2);
   return { y: (rear + front) / 2, pitch: Math.atan2(front - rear, wheelbase) };

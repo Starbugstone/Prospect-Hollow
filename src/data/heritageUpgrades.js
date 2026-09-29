@@ -28,7 +28,7 @@ export function heritageUpgrade(kind) {
   return HERITAGE_UPGRADES[kind] ?? null;
 }
 
-export const HERITAGE_DESCRIPTIONS = {
+const HERITAGE_DESCRIPTIONS = {
   veranda: 'Add a veranda.',
   hayloft: 'Add a hayloft.',
   carriage: 'Add a carriage shelter.',

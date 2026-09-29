@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { useCampaignStore } from '../src/stores/campaignStore';
 import { useGameStore } from '../src/stores/gameStore';
 import { SAVE_KEY } from '../src/services/localProfile';
-import { BUILDINGS, createTown } from '../src/data/town';
+import { BUILDINGS } from '../src/data/town';
 import {
   availableChestDrops,
   rewardUse,
@@ -15,7 +15,7 @@ import {
   rollChestReward,
   shuffleChestDrops,
 } from '../src/data/rewards';
-import { advanceConstruction, purchase } from '../src/game/town/TownRules';
+import { advanceConstruction } from '../src/game/town/TownRules';
 let saved;
 beforeEach(() => {
   saved = new Map();

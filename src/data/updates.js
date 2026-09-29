@@ -1,6 +1,6 @@
 // Player-facing release notes shown on the home page, newest first. Titles and
 // text are English keys for t(); add the French text to src/i18n/fr.json.
-export const UPDATES = [
+const UPDATES = [
   {
     date: '2026-09-28',
     title: 'Your own home page',

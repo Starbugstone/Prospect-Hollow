@@ -119,7 +119,7 @@ Phaser loads when a chapter opens. Vue never wraps the renderer's internal objec
 
 See [the era architecture guide](docs/era-architecture.md) for loading, presentation and navigation contracts. Capacitor configuration is retained; native platforms need their usual platform setup before using the `cap:*` commands.
 
-Run `npm run verify` for formatting, generated-footprint drift, the complete regression suite, and production chunk budgets. GitHub Quality checks runs the same command for pull requests and pushes to main, develop and preprod; verify it before merging a release. `vercel.json` only keeps Vercel Git deployments switched off.
+Run `npm run verify` for formatting, lint (ESLint and knip for unused files and exports), generated-footprint drift, the complete regression suite, and production chunk budgets. GitHub Quality checks runs the same command for pull requests and pushes to main, develop and preprod; verify it before merging a release. `vercel.json` only keeps Vercel Git deployments switched off.
 
 Mine teardown explicitly releases its WebGL context. If the village loses its graphics context, it rebuilds the 3D scene on a fresh canvas while preserving the camera. Repeated recovery failures show a notice with a Try again button; the village needs 3D graphics. Interrupted frame-cache renders restore renderer state before another draw.
 

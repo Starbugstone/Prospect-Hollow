@@ -38,6 +38,8 @@ export function createSaveFile(profile) {
 export function saveFileName(townName, now = new Date()) {
   const town = String(townName ?? '')
     .normalize('NFC')
+    // Control characters are unsafe in file names on every platform.
+    // eslint-disable-next-line no-control-regex
     .replace(/[\\/:*?"<>|\u0000-\u001f\u007f.]+/g, ' ')
     .trim()
     .replace(/\s+/g, '-')

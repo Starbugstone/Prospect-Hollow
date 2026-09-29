@@ -225,6 +225,7 @@ export function createSyncService({
         if (pending.recoveryOverride)
           throw new Error(
             'The cloud save changed again. Review it before confirming another overwrite.',
+            { cause: error },
           );
       } else if (error.status === 404 && current(owner))
         storage.mutate(id, owner, (r) => {

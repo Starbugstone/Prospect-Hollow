@@ -1,5 +1,5 @@
 import { eraEvolution } from './eras';
-export const MINE_FEATURE_KEYS = [
+const MINE_FEATURE_KEYS = [
   'cribbing',
   'sluice',
   'tipple',

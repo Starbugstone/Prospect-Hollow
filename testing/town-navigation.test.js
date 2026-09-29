@@ -5,7 +5,6 @@ import {
   TownNavigation,
   NPC_MARGIN,
   walkPose,
-  walkPath,
   walkObstacle,
   townNavigation,
   RouteWarmup,

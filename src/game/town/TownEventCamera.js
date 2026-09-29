@@ -8,7 +8,7 @@ import { keepCameraAboveTerrain } from './TownLandscape';
 const direction = new Vector3(0.28, 0.72, 0.64).normalize();
 const smooth = (t) => t * t * (3 - 2 * t);
 // Content selects subjects; framing, rendering and cleanup stay shared across eras.
-export const INCIDENT_SHOTS = {
+const INCIDENT_SHOTS = {
   bandits: { main: 'bandits', inset: 'patrol', label: 'Sheriff patrol' },
   'cargo-theft': { main: 'thieves', inset: 'responders', label: 'Town patrol' },
   'workshop-fire': { main: 'responders', inset: 'site', label: 'Workshop fire' },

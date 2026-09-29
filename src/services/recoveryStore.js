@@ -1,6 +1,6 @@
 // Immutable recovery and pending-upload snapshots live outside the synchronous town record.
 // A transaction must commit before sync is allowed to replace local progress.
-export function createRecoveryStore(indexedDB = () => globalThis.indexedDB) {
+function createRecoveryStore(indexedDB = () => globalThis.indexedDB) {
   let opening;
   function open() {
     if (!opening)

@@ -30,7 +30,7 @@ export const VILLAGE_AUDIO = Object.freeze({
 // Incident cues are only valid while their own kind of incident plays.
 const INCIDENT_CUES = new Set(Object.values(INCIDENT_AUDIO).flat());
 const raidKind = (state) => state.raidKind ?? 'bandits';
-export const incidentCues = (state) => (state.raid ? (INCIDENT_AUDIO[raidKind(state)] ?? []) : []);
+const incidentCues = (state) => (state.raid ? (INCIDENT_AUDIO[raidKind(state)] ?? []) : []);
 
 export const villageSounds = (state) =>
   state.raid

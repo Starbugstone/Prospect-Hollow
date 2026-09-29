@@ -2,7 +2,7 @@ import { Color, Fog, MeshStandardMaterial } from 'three';
 
 // Keep every current plot clear, then dissolve the prairie before its 130-unit
 // boundary. World-space fog stays consistent when the mobile overview zooms out.
-export const TOWN_HORIZON = Object.freeze({ color: '#e9e8da', near: 72, far: 124 });
+const TOWN_HORIZON = Object.freeze({ color: '#e9e8da', near: 72, far: 124 });
 export function setTownAtmosphere(scene) {
   scene.background = new Color(TOWN_HORIZON.color);
   scene.fog = new Fog(TOWN_HORIZON.color, TOWN_HORIZON.near, TOWN_HORIZON.far);

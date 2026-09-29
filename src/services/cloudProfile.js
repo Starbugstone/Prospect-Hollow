@@ -202,7 +202,7 @@ const rejectedCreation = (error) =>
   (error.status === 409 && ['name_taken', 'slots_full'].includes(error.data?.code));
 function townName(name) {
   name = name.normalize('NFKC').trim().replace(/ +/g, ' ');
-  if (!/^[\p{L}\p{N}][\p{L}\p{M}\p{N} '’\-]{2,23}$/u.test(name))
+  if (!/^[\p{L}\p{N}][\p{L}\p{M}\p{N} '’-]{2,23}$/u.test(name))
     throw new Error('Use 3–24 letters, numbers, spaces, apostrophes or hyphens for the town name.');
   return name;
 }

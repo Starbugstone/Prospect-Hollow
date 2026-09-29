@@ -2,7 +2,7 @@ import { LEVEL_COUNT } from './campaign';
 
 // A fixed, small cargo mesh grows with completed levels. It is decoration, never
 // a move allowance, reward multiplier or limit on campaign progress.
-export const GEM_COLOURS = ['#b889ca', '#6dace5', '#6bcbae', '#e8c879', '#e495b3'];
+const GEM_COLOURS = ['#b889ca', '#6dace5', '#6bcbae', '#e8c879', '#e495b3'];
 export const CART_GEMS = Object.freeze(
   Array.from({ length: 12 }, (_, i) => ({
     x: i < 9 ? ((i % 3) - 1) * 0.21 : (i - 10) * 0.14,

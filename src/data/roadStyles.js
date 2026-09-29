@@ -1,5 +1,5 @@
 // Surface treatments are visual only: the street graph and traffic rules stay shared.
-export const ROAD_STYLES = Object.freeze(
+const ROAD_STYLES = Object.freeze(
   Object.fromEntries(
     Object.entries({
       dirt: { color: '#c3a477', pattern: 'ruts', detail: '#b29368' },

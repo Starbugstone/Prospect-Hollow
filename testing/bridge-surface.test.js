@@ -64,7 +64,7 @@ it.each(['post-war', 'aviation', 'broadcast', 'contemporary'])(
 it.each(ERAS.map(({ id }) => id))(
   'keeps the %s bridge navigable with the appropriate surface',
   (era) => {
-    const { d, bridge } = bridgeView(era);
+    const { bridge } = bridgeView(era);
     const road = bridge.getObjectByName('Bridge road deck');
     expect(!!road).toBe(eraEvolution(era).roadBridge);
     registerFootprints(bridge, geometryFootprints(bridge), { owner: 'plot:bridge' });

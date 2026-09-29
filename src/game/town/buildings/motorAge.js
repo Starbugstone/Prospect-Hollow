@@ -9,7 +9,6 @@ const cream = '#e1cfab',
   teal = '#648d89',
   glass = '#9cbbb5';
 import { motorVehicle } from '../TownVehicles';
-export { motorVehicle } from '../TownVehicles';
 export function renderMotorBuilding(d, parent, kind, label, level = 1) {
   if (!['garage', 'busDepot', 'gardenCourt', 'diner'].includes(kind)) return false;
   const root = d.group(parent);

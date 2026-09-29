@@ -3,9 +3,9 @@ import { townStorage } from './townStorage';
 // The home page lives at the site root and the game at /play, so a reload keeps
 // the player where they were and the home page stays one tap away.
 export const HOME_PATH = import.meta.env.BASE_URL ?? '/';
-export const PLAY_PATH = `${HOME_PATH}play`;
+const PLAY_PATH = `${HOME_PATH}play`;
 // Shared towns open at their own view-only address, never inside the game.
-export const VISIT_PATH = `${HOME_PATH}visit`;
+const VISIT_PATH = `${HOME_PATH}visit`;
 
 const routePath = (url) => url.pathname.replace(/\/+$/, '');
 export const isPlayRoute = (url = location) => routePath(url) === PLAY_PATH;

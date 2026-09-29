@@ -17,7 +17,7 @@ export const dateTime = (seconds) =>
         timeStyle: 'short',
       })
     : '—';
-export const ONLINE_SECONDS = 300;
+const ONLINE_SECONDS = 300;
 export const isOnline = (seconds, now = Date.now() / 1000) =>
   Boolean(seconds) && now - seconds < ONLINE_SECONDS;
 
