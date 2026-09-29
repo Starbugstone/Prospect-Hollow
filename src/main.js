@@ -1,7 +1,7 @@
 import { createApp, defineAsyncComponent, watch } from 'vue';
 import { locale, browserLocale, t } from './i18n';
 import { createPinia } from 'pinia';
-import { createTestingTools } from './services/testingTools';
+import { createTestingTools, debugToolsAllowed } from './services/testingTools';
 import { townStorage } from './services/townStorage';
 import CloudRoot from './components/CloudRoot.vue';
 import { useCampaignStore } from './stores/campaignStore';
@@ -22,7 +22,7 @@ const pinia = createPinia();
 
 app.use(pinia);
 
-window.prospectDebug = createTestingTools(pinia);
+if (debugToolsAllowed()) window.prospectDebug = createTestingTools(pinia);
 const languageChanged = () => {
   locale.value = browserLocale();
 };

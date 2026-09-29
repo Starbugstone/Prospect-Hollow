@@ -50,7 +50,7 @@ Open the running game's browser developer console and run:
 prospectDebug.grant({ coins: 100000, hammers: 5 });
 ```
 
-This adds 100,000 coins, tops up builder hammers to their normal cap of 5, saves immediately, and returns the new balances. Run it again whenever you need more resources. Change `coins` or `hammers` to choose the amounts; `prospectDebug.grant()` uses the same defaults. The console tools are installed in every build, including production.
+This adds 100,000 coins, tops up builder hammers to their normal cap of 5, saves immediately, and returns the new balances. Run it again whenever you need more resources. Change `coins` or `hammers` to choose the amounts; `prospectDebug.grant()` uses the same defaults. The console tools exist in development (`npm run dev`) and on the preprod site; production builds leave them out. To test a production build locally with them, build with `VITE_DEBUG_TOOLS=true`.
 
 Two more console cheats save immediately:
 

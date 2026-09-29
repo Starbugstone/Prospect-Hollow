@@ -12,12 +12,19 @@ import { townFrameStats, townTimings } from '../game/town/TownProfiler';
 
 export const TESTING_TOWN_CHANGED = 'prospect-debug-town-changed';
 
+// Console cheats exist for development, the preprod site and explicitly flagged local
+// builds (VITE_DEBUG_TOOLS=true npm run build). The public game never installs them.
+export const debugToolsAllowed = (
+  env = import.meta.env,
+  hostname = globalThis.location?.hostname ?? '',
+) => !!env.DEV || env.VITE_DEBUG_TOOLS === 'true' || hostname.startsWith('preprod.');
+
 function saveChanges(campaign, changes) {
   if (!campaign.commit(changes))
     throw new Error('Test changes could not be saved. Previous progress was restored.');
 }
 
-// Console-only tools for this device-local game, also available in preview builds.
+// Console-only tools for this device-local game; see debugToolsAllowed.
 export function createTestingTools(pinia) {
   return Object.freeze({
     async showNavigation(value = true) {
