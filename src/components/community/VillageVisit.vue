@@ -1,22 +1,26 @@
 <template>
-  <h2>{{ village.name }}</h2>
-  <p>{{ t('View only') }} · {{ t(ERA_BY_ID[village.era]?.label ?? village.era) }}</p>
-  <p v-if="saloonMessage" class="village-saloon" role="status">{{ saloonMessage }}</p>
-  <div class="community-world town-map-frame">
-    <TownScene
-      :key="village.villageId"
-      :town="town"
-      :read-only="true"
-      :visitor-taps="collectable ? ['saloon'] : []"
-      :reduced-motion="settings.reducedMotion"
-      @visit="collectSaloon"
-    />
-  </div>
+  <h2>{{ current.name }}</h2>
+  <p>{{ t('View only') }} · {{ t(ERA_BY_ID[current.era]?.label ?? current.era) }}</p>
+  <p v-if="unshared" role="alert">{{ t('This town is no longer shared.') }}</p>
+  <template v-else>
+    <p v-if="saloonMessage" class="village-saloon" role="status">{{ saloonMessage }}</p>
+    <div class="community-world town-map-frame">
+      <TownScene
+        :key="current.villageId"
+        :town="town"
+        :read-only="true"
+        :visitor-taps="collectable ? ['saloon'] : []"
+        :reduced-motion="settings.reducedMotion"
+        @visit="collectSaloon"
+      />
+    </div>
+  </template>
 </template>
 <script setup>
-import { computed, onBeforeUnmount, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
 import { villageAppearance } from '../../services/publicVillage';
-import { tapSaloon } from '../../services/cloudProfile';
+import { latestVillage, tapSaloon } from '../../services/cloudProfile';
+import { createVillagePoller } from '../../services/villagePolling';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { ERA_BY_ID } from '../../data/eras';
 import { t } from '../../i18n';
@@ -26,25 +30,48 @@ import '../../styles/town.css';
 // The only thing a visitor can do is collect the saloon's takings for the owner.
 const props = defineProps({ village: { type: Object, required: true } });
 const settings = useSettingsStore();
-const town = computed(() => villageAppearance(props.village));
-const hasSaloon = computed(() => props.village.appearance?.buildings?.saloon > 0);
+// The owner may still be playing: `current` follows their latest synced appearance.
+const current = shallowRef(props.village),
+  unshared = ref(false);
+const town = computed(() => villageAppearance(current.value));
+const hasSaloon = computed(() => current.value.appearance?.buildings?.saloon > 0);
 const readyAt = ref((props.village.saloonReadyAt ?? 0) * 1000),
   now = ref(Date.now()),
-  collected = ref(false),
+  // When this visitor's own collection lets the saloon reopen; the page may stay open.
+  mine = ref(0),
   busy = ref(false),
   error = ref('');
 const clock = setInterval(() => (now.value = Date.now()), 30_000);
-onBeforeUnmount(() => clearInterval(clock));
+const visual = (village) => JSON.stringify([village.name, village.era, village.appearance]);
+const poller = createVillagePoller({
+  load: () => latestVillage(props.village.villageId),
+  apply(village) {
+    // Unchanged towns keep the same model, so the scene does no work between advancements.
+    if (visual(village) !== visual(current.value)) current.value = village;
+    // Another visitor may have collected meanwhile; the saloon's rest only ever moves later.
+    readyAt.value = Math.max(readyAt.value, (village.saloonReadyAt ?? 0) * 1000);
+  },
+  gone: () => (unshared.value = true),
+});
+const resume = () => poller.resume();
+onMounted(() => {
+  document.addEventListener('visibilitychange', resume);
+  poller.start();
+});
+onBeforeUnmount(() => {
+  clearInterval(clock);
+  poller.stop();
+  document.removeEventListener('visibilitychange', resume);
+});
 // The server decides when the saloon is collectable again; this only mirrors it.
-const collectable = computed(
-  () => hasSaloon.value && !collected.value && !busy.value && readyAt.value <= now.value,
-);
+const collectable = computed(() => hasSaloon.value && !busy.value && readyAt.value <= now.value);
+const collected = computed(() => mine.value > now.value);
 const saloonMessage = computed(() => {
   if (!hasSaloon.value) return '';
   if (error.value) return t(error.value);
   if (collected.value)
     return t('You collected the saloon takings for the mayor of {town}. Thank you!', {
-      town: props.village.name,
+      town: current.value.name,
     });
   if (readyAt.value > now.value)
     return t('A visitor collected the saloon recently. Come back in {minutes} min.', {
@@ -58,8 +85,7 @@ async function collectSaloon() {
   busy.value = true;
   error.value = '';
   try {
-    readyAt.value = (await tapSaloon(props.village.villageId)).readyAt * 1000;
-    collected.value = true;
+    readyAt.value = mine.value = (await tapSaloon(props.village.villageId)).readyAt * 1000;
   } catch (e) {
     if (e.data?.readyAt) readyAt.value = e.data.readyAt * 1000;
     else error.value = e.message;

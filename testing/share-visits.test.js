@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useCampaignStore } from '../src/stores/campaignStore';
 import { createTown } from '../src/data/town';
-import { normalizeTown } from '../src/game/town/TownRules';
+import { HOUR_MS, normalizeTown, settleSaloonIncome } from '../src/game/town/TownRules';
 import { newerGuest, normalizeGuestVip } from '../src/data/guestVip';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { TownVipArrivals } from '../src/game/town/TownVipArrivals';
@@ -55,6 +55,30 @@ describe('visitor saloon collection reaching the owner', () => {
     expect(c.collectSaloonForVisitor(5_000, 1_000)).toBe(0);
     expect(c.town.coins).toBe(100);
     expect(c.town.saloonVisitAt).toBe(5_000);
+  });
+
+  // The server only records when a visitor collected; the coins live in one place, the
+  // owner's save, so an owner tap and a visitor collection drain the same takings.
+  it('pays the takings once when the owner and a visitor collect at the same time', () => {
+    const hour = settleSaloonIncome(
+      { ...saloonTown(0).town, income: { at: 1_000, stored: 0, remainder: 0 } },
+      1_000 + HOUR_MS,
+    ).earned;
+    expect(hour).toBeGreaterThan(0);
+    for (const ownerFirst of [true, false]) {
+      setActivePinia(createPinia());
+      const c = saloonTown(40);
+      const taps = ownerFirst
+        ? [c.collectSaloonIncome(1_000), c.collectSaloonForVisitor(2_000, 1_000)]
+        : [c.collectSaloonForVisitor(2_000, 1_000), c.collectSaloonIncome(1_000)];
+      expect(taps.sort()).toEqual([0, 40]);
+      expect(c.town.coins).toBe(140);
+      // Takings earned afterwards are the owner's next collection, not a second payout.
+      expect(c.collectSaloonIncome(1_000 + HOUR_MS)).toBe(hour);
+      expect(c.collectSaloonForVisitor(2_000, 1_000 + HOUR_MS)).toBeNull();
+      expect(c.town.coins).toBe(140 + hour);
+      expect(c.town.income.stored).toBe(0);
+    }
   });
 });
 

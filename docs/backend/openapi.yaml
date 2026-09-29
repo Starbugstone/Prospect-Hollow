@@ -772,6 +772,29 @@
                 ],
             },
         },
+      '/villages/{publicId}/latest':
+        {
+          'get':
+            {
+              'summary': 'The same public appearance and saloonReadyAt, polled by an open visit to follow the owner progress; never records a guest; 404 once private or deleted',
+              'security': [],
+              'responses':
+                {
+                  '200': { 'description': 'Success' },
+                  '404': { 'description': 'Town unavailable' },
+                  '429': { 'description': 'Rate limited' },
+                },
+              'parameters':
+                [
+                  {
+                    'name': 'publicId',
+                    'in': 'path',
+                    'required': true,
+                    'schema': { 'type': 'string', 'pattern': '^[a-f0-9]{32}$' },
+                  },
+                ],
+            },
+        },
       '/villages/{publicId}/saloon':
         {
           'post':

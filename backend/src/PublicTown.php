@@ -44,11 +44,12 @@ final class PublicTown {
     }
     public const SALOON_REST=3600;
     // A share link needs no account: anyone holding the unguessable public ID may see the
-    // appearance projection. Browsing the full list still needs one.
-    public function visit(Request $r,string $id): object {
+    // appearance projection. Browsing the full list still needs one. Opening the town is a
+    // visit; an open visit polling for the owner's progress is not a new guest.
+    public function visit(Request $r,string $id,bool $arrival=true): object {
         $row=$this->database->get()->fetchAssociative('SELECT t.id,t.player_id,t.appearance,s.collected_at FROM towns t LEFT JOIN saloon_collections s ON s.town_id=t.id WHERE t.public_id=? AND t.listed=1 AND t.deleted_at IS NULL',[$id]);
         if(!$row)throw new ApiError(404,'Town unavailable.');
-        $this->welcomeGuest($r,$row);
+        if($arrival)$this->welcomeGuest($r,$row);
         $village=json_decode($row['appearance']);
         $village->saloonReadyAt=$this->saloonReadyAt($row['collected_at']);
         return $village;
