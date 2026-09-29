@@ -57,3 +57,32 @@ pipelines for each building. Keep feature-specific content in definitions and
 reuse the shared implementation where behavior is the same. See
 [the era architecture guide](docs/era-architecture.md) for the current contracts,
 renderer registries and extension checks.
+
+## Local checks run in Docker
+
+The user requires every local check to run in Docker, never with the host's PHP
+or Node. This covers tests, formatting, builds, Composer and PHP scripts. The
+host PHP lacks required extensions (`intl`, `pcntl`, `pdo_*`), and these images
+match CI and production. Run the commands from the repository root. `--user`
+keeps generated files owned by you rather than root.
+
+- Frontend, on Node 24 as in the Dockerfile's frontend stage. Use the same
+  prefix for `npm run verify`, `npm run build`, `npm run format:check` or a
+  single `npx vitest run <file>`:
+  `docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD":/app -w /app node:24-bookworm-slim npm test`
+- Backend image, built from this repository's Dockerfile. Rebuild it after
+  changing the Dockerfile or PHP extensions:
+  `docker build --target runtime -t prospect-hollow-check .`
+- Backend checks without a database, e.g. name moderation. For Composer, use
+  `-e HOME=/tmp -w /src/backend --entrypoint composer`:
+  `docker run --rm --user "$(id -u):$(id -g)" -v "$PWD":/src -w /src --entrypoint php prospect-hollow-check backend/tests/moderation.php`
+- Backend checks with a database run against a throwaway PostgreSQL. Pick
+  another container name and port if a parallel session already uses these:
+
+  ```bash
+  docker run -d --rm --name hollow-test-pg -e POSTGRES_USER=cascade -e POSTGRES_PASSWORD=test -e POSTGRES_DB=cascade -p 127.0.0.1:55433:5432 postgres:17-bookworm
+  docker run --rm --user "$(id -u):$(id -g)" --network host -v "$PWD":/src -w /src -e TEST_DATABASE_URL=postgresql://cascade:test@127.0.0.1:55433/cascade --entrypoint php prospect-hollow-check backend/tests/saves.php
+  docker stop hollow-test-pg
+  ```
+
+  The same applies to `concurrency.php` and `release-health.php`.
