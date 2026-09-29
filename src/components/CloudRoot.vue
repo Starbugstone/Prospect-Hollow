@@ -13,7 +13,7 @@
     </button>
   </aside>
   <aside
-    v-else-if="ready && !handingOver && !game.sessionActive && uploadBlocked"
+    v-else-if="ready && !handingOver && !game.sessionActive && blockedUpload"
     class="save-recovery-toast"
     role="alert"
   >
@@ -210,6 +210,7 @@ import { townCoordinator } from '../services/townCoordinator';
 import { createTownHandoff } from '../services/townHandoff';
 import { createSyncScheduler } from '../services/syncScheduler';
 import { describeSaveState } from '../services/saveStatus';
+import { uploadBlocked } from '../services/syncService';
 import { syncTownParam } from '../services/appRoute';
 import GameIcon from './GameIcon.vue';
 const AccountPanel = defineAsyncComponent(() => import('./account/AccountPanel.vue'));
@@ -235,14 +236,7 @@ const activeTown = computed(() => {
   void cloud.storageVersion;
   return townStorage.active();
 });
-const uploadBlocked = computed(() => {
-  const meta = activeTown.value?.meta;
-  return (
-    meta?.uploadError &&
-    (meta.uploadError.code === 'save_format_unsupported' ||
-      meta.uploadError.sequence === meta.sequence)
-  );
-});
+const blockedUpload = computed(() => uploadBlocked(activeTown.value?.meta));
 const accountTown = computed(
   () => !!cloud.account && activeTown.value?.meta.owner === cloud.account.id,
 );
@@ -332,7 +326,7 @@ const scheduler = createSyncScheduler({
       handingOver.value ||
       !cloud.account ||
       cloud.sessionExpired ||
-      uploadBlocked.value ||
+      blockedUpload.value ||
       !townStorage.canWrite()
     )
       return false;
@@ -378,7 +372,7 @@ function activate({ takeOver = false } = {}) {
         }
         release();
         campaign.reloadLocal();
-        if (!campaign.readOnly) townStorage.ensure(JSON.parse(campaign.exportSave()).profile);
+        if (!campaign.readOnly) townStorage.ensure(campaign.profile());
         const puzzle = townStorage.handoff();
         if (puzzle) {
           game.restoreHandoff(puzzle);
@@ -568,7 +562,7 @@ function start() {
     refreshAccount().catch((error) => {
       cloud.error = error.message;
       if (cloud.sessionExpired) updateSaveStatus();
-      else cloud.status = 'Offline — cloud backup pending';
+      else cloud.status = 'offline';
     });
 }
 function readLink() {

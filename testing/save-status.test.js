@@ -14,18 +14,18 @@ describe('Player-facing save state', () => {
       action: 'sign-in',
     });
     expect(
-      describeSaveState({ signedIn: true, accountTown: false, status: 'Saved locally' }),
+      describeSaveState({ signedIn: true, accountTown: false, status: 'local' }),
     ).toMatchObject({ tone: 'local', action: 'my-towns' });
   });
 
   it('maps every cloud sync status to a calm label and a retry only when useful', () => {
-    expect(account('Cloud saved')).toMatchObject({ tone: 'saved', label: 'Saved', action: null });
-    expect(account('Syncing…')).toMatchObject({ tone: 'busy', action: null });
-    expect(account('Saved locally — cloud backup pending')).toMatchObject({
+    expect(account('saved')).toMatchObject({ tone: 'saved', label: 'Saved', action: null });
+    expect(account('syncing')).toMatchObject({ tone: 'busy', action: null });
+    expect(account('pending')).toMatchObject({
       tone: 'pending',
       action: 'retry',
     });
-    expect(account('Offline — cloud backup pending')).toMatchObject({
+    expect(account('offline')).toMatchObject({
       tone: 'pending',
       label: 'Offline',
       action: 'retry',
@@ -33,16 +33,16 @@ describe('Player-facing save state', () => {
   });
 
   it('puts save choices ahead of sync progress', () => {
-    expect(account('Syncing…', { desyncNotice: true })).toMatchObject({
+    expect(account('syncing', { desyncNotice: true })).toMatchObject({
       tone: 'alert',
       action: 'compare',
     });
     // A conflict resolves on return to the village; it never offers an action mid-puzzle.
-    expect(account('Cloud saved', { conflict: { revision: 4 } })).toMatchObject({
+    expect(account('saved', { conflict: { revision: 4 } })).toMatchObject({
       tone: 'alert',
       action: null,
     });
-    expect(account('Cloud town unavailable — local copy kept', { missing: true })).toMatchObject({
+    expect(account('missing', { missing: true })).toMatchObject({
       tone: 'alert',
       action: 'my-towns',
     });
@@ -57,19 +57,19 @@ describe('Player-facing save state', () => {
       describeSaveState({
         signedIn: true,
         accountTown: true,
-        status: 'Cloud saved',
+        status: 'saved',
         sessionExpired: true,
       }),
     ).toMatchObject({ tone: 'alert', action: 'sign-in' });
-    expect(account('Cloud saved', { sequence: 2, uploadError: { sequence: 2 } })).toMatchObject({
+    expect(account('saved', { sequence: 2, uploadError: { sequence: 2 } })).toMatchObject({
       tone: 'alert',
       label: 'Backup paused',
     });
-    expect(account('Cloud saved', { sequence: 3, uploadError: { sequence: 2 } })).toMatchObject({
+    expect(account('saved', { sequence: 3, uploadError: { sequence: 2 } })).toMatchObject({
       tone: 'saved',
     });
     expect(
-      account('Cloud saved', {
+      account('saved', {
         sequence: 3,
         uploadError: { sequence: 2, code: 'save_format_unsupported' },
       }),
@@ -80,13 +80,13 @@ describe('Player-facing save state', () => {
     const states = [
       describeSaveState({ signedIn: false }),
       describeSaveState({ signedIn: true, accountTown: false }),
-      account('Cloud saved'),
-      account('Syncing…'),
-      account('Sign in again — playing offline'),
+      account('saved'),
+      account('syncing'),
+      account('expired'),
       account('', { sequence: 2, uploadError: { sequence: 2 } }),
       account('Unknown'),
-      account('Saved locally — cloud backup pending'),
-      account('Offline — cloud backup pending'),
+      account('pending'),
+      account('offline'),
       account('', { desyncNotice: true }),
       account('', { conflict: {} }),
       account('', { missing: true }),

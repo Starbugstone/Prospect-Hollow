@@ -1,21 +1,23 @@
 import { locale, t } from '../i18n';
+import { uploadBlocked } from './syncService';
 
 // One player-facing description of the save state, shared by the village pill,
 // the settings drawer and My towns. Messages are English keys for t().
+// Keyed by the cloud.status codes from cloudProfile.
 const SYNC_STATES = {
-  'Cloud saved': {
+  saved: {
     tone: 'saved',
     label: 'Saved',
     detail: 'Saved on this device and in your account.',
   },
-  'Syncing…': { tone: 'busy', label: 'Saving…', detail: 'Backing up to your account…' },
-  'Saved locally — cloud backup pending': {
+  syncing: { tone: 'busy', label: 'Saving…', detail: 'Backing up to your account…' },
+  pending: {
     tone: 'pending',
     label: 'Backing up',
     detail: 'Saved on this device. The backup to your account will follow shortly.',
     action: 'retry',
   },
-  'Offline — cloud backup pending': {
+  offline: {
     tone: 'pending',
     label: 'Offline',
     detail: 'Saved on this device. The backup will retry automatically.',
@@ -28,7 +30,7 @@ const SYNC_STATES = {
  * @param {boolean} [state.sessionExpired] Saved account needs authentication again.
  * @param {boolean} state.signedIn
  * @param {boolean} state.accountTown The open town belongs to the signed-in account.
- * @param {string} state.status cloud.status from cloudProfile.
+ * @param {string} state.status cloud.status code from cloudProfile.
  * @param {object} [state.meta] Active town metadata.
  * @returns {{tone: string, label: string, detail: string, action: string|null}}
  */
@@ -47,18 +49,14 @@ export function describeSaveState({ signedIn, accountTown, status, meta, session
       detail: 'This town is only on this device. Add it to your account from My towns.',
       action: 'my-towns',
     };
-  if (sessionExpired || status === 'Sign in again — playing offline')
+  if (sessionExpired || status === 'expired')
     return {
       tone: 'alert',
       label: 'Playing offline',
       detail: 'Your session expired. Keep playing offline; sign in again to resume cloud saving.',
       action: 'sign-in',
     };
-  if (
-    meta?.uploadError &&
-    (meta.uploadError.code === 'save_format_unsupported' ||
-      meta.uploadError.sequence === meta.sequence)
-  )
+  if (uploadBlocked(meta))
     return {
       tone: 'alert',
       label: 'Backup paused',
