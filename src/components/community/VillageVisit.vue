@@ -61,7 +61,7 @@
       <TownGuestbook
         v-if="inspected === 'guestbook'"
         :village-id="current.villageId"
-        :snapshot="visitorSnapshot"
+        :snapshot="guestbookSnapshot"
         :error="visitorError"
         :era="town.era"
         can-find
@@ -147,6 +147,9 @@ const liveVisitors = computed(() =>
     ...visitor,
     self: visitor.id === ownVisitId.value,
   })),
+);
+const guestbookSnapshot = computed(() =>
+  visitorSnapshot.value ? { ...visitorSnapshot.value, present: liveVisitors.value } : null,
 );
 async function findVisitor(id) {
   inspected.value = '';

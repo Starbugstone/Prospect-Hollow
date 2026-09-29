@@ -244,7 +244,7 @@ it('finds and pins a named live guest independently of ordinary town actors', ()
     expect.objectContaining({ name: expect.stringContaining('Matt'), live: true }),
   );
   expect(d.findVisitor('self')).toBe(true);
-  expect(d.namedVillager.root.userData.villager.name).toContain('You ·');
+  expect(d.namedVillager.root.userData.villager.name).toContain('Camille (you)');
   expect(d.findVisitor('missing')).toBe(false);
   d.raid = {};
   expect(d.findVisitor('matt')).toBe(false);

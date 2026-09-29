@@ -2,10 +2,10 @@ import { t } from '../i18n';
 
 // Names are public profile snapshots, never account identifiers or email addresses.
 export function visitorName(visitor) {
-  return (
+  const name =
     visitor.name ||
-    (visitor.townName ? t('Mayor of {town}', { town: visitor.townName }) : t('Visitor'))
-  );
+    (visitor.townName ? t('Mayor of {town}', { town: visitor.townName }) : t('Visitor'));
+  return visitor.self ? t('{name} (you)', { name }) : name;
 }
 
 export function visitorTitle(visitor) {
@@ -13,8 +13,7 @@ export function visitorTitle(visitor) {
 }
 
 export function visitorLabel(visitor) {
-  const name = [visitorName(visitor), visitorTitle(visitor)].filter(Boolean).join(' · ');
-  return visitor.self ? t('You · {name}', { name }) : name;
+  return [visitorName(visitor), visitorTitle(visitor)].filter(Boolean).join(' · ');
 }
 
 // Compare confirmed server snapshots by stay ID, not by name or heartbeat time.
