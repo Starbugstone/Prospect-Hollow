@@ -70,6 +70,10 @@ try {
  $saloon=profile(40);$saloon->town->buildings->saloon=1;status(200,callApi('PUT','towns/'.$town2['townId'],['baseRevision'=>2,'uploadId'=>uuid(),'profile'=>$saloon],$a),'build saloon');
  // An open visit polls for the owner's progress: the same public view, never a new guest.
  $live=status(200,callApi('GET','villages/'.$shared.'/latest'),'anonymous poll');check($live['appearance']['buildings']['saloon']===1&&$live['saloonReadyAt']===0&&array_keys($live)===array_keys($sharedVisit),'a watching visitor sees the owner\'s latest save');
+ // A visit shows the owner's mine level and a level-5 landmark as it is, not capped at 3.
+ check($live['appearance']['mineLevel']===1,'a new town is on mine level 1');
+ $progress=profile();$progress->town->buildings->saloon=5;$progress->town->buildingEraLevels->saloon=9;$progress->records=(object)['1'=>(object)['stars'=>3],'2'=>(object)['stars'=>1],'4'=>(object)['stars'=>2]];
+ $view=json_decode($public->projection($progress,'Progress','0'),true)['appearance'];check($view['mineLevel']===3&&$view['buildings']['saloon']===5&&$view['buildingEraLevels']['saloon']===3,'visit shows the next mine level and true building levels');
  status(422,callApi('POST','villages/'.$shared.'/saloon',['coins'=>999]),'visitors cannot name an amount');
  $tap=status(200,callApi('POST','villages/'.$shared.'/saloon',(object)[]),'anonymous saloon tap');check($tap['readyAt']>time(),'saloon rests after a tap');
  $rest=status(409,callApi('POST','villages/'.$shared.'/saloon',(object)[],$b),'second visitor within the hour');check($rest['code']==='saloon_resting'&&$rest['readyAt']===$tap['readyAt'],'one saloon tap per town per hour');

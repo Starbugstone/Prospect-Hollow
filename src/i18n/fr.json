@@ -2820,5 +2820,7 @@
   "Backup file": "Fichier de sauvegarde",
   "Keep a copy of {town} on your device, or load one of its backups.": "Conservez une copie de {town} sur votre appareil, ou chargez l’une de ses sauvegardes.",
   "This backup belongs to another town. Sign out to load it into the local slot, then attach it to an available account slot.": "Cette sauvegarde appartient à une autre ville. Déconnectez-vous pour la charger dans l’emplacement local, puis rattachez-la à un emplacement libre de votre compte.",
-  "No earlier saves yet.": "Pas encore de sauvegardes précédentes."
+  "No earlier saves yet.": "Pas encore de sauvegardes précédentes.",
+  "Tap a building or the mine to see its details.": "Touchez un bâtiment ou la mine pour voir ses détails.",
+  "The mayor of {town} plays level {level} next.": "Le maire de {town} jouera ensuite le niveau {level}."
 }

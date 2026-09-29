@@ -3,7 +3,7 @@ import { writeFileSync } from 'node:fs';
 const result = await build({
   stdin: {
     contents:
-      "import { BUILDINGS } from './src/data/town.js'; import { ERAS } from './src/data/eras.js'; export default {buildings:BUILDINGS.map(b=>b.id),eras:ERAS.map(e=>e.id)}",
+      "import { BUILDINGS } from './src/data/town.js'; import { ERAS } from './src/data/eras.js'; import { LEVEL_COUNT } from './src/data/campaign.js'; export default {buildings:BUILDINGS.map(b=>b.id),eras:ERAS.map(e=>e.id),buildingLevels:Object.fromEntries(BUILDINGS.map(b=>[b.id,b.upgrades.length])),levels:LEVEL_COUNT}",
     resolveDir: process.cwd(),
   },
   bundle: true,

@@ -18,11 +18,15 @@ final class PublicTown {
         $town=$profile->town;$era=in_array($town->era,$schema['eras'],true)?$town->era:$schema['eras'][0];
         $appearance=['era'=>$era,'buildings'=>new \stdClass(),'buildingEras'=>new \stdClass(),'buildingEraLevels'=>new \stdClass(),'projects'=>new \stdClass()];
         foreach($schema['buildings'] as $id) {
-            foreach(['buildings','buildingEraLevels'] as $key) {
-                $value=$town->$key->$id??0;$appearance[$key]->$id=is_int($value)?max(0,min(3,$value)):0;
+            // Frontier landmarks such as the saloon reach level 5; levels within a later era stop at 3.
+            foreach(['buildings'=>$schema['buildingLevels'][$id]??3,'buildingEraLevels'=>3] as $key=>$max) {
+                $value=$town->$key->$id??0;$appearance[$key]->$id=is_int($value)?max(0,min($max,$value)):0;
             }
             $value=$town->buildingEras->$id??$era;$appearance['buildingEras']->$id=in_array($value,$schema['eras'],true)?$value:$era;
         }
+        // Like the owner's own mine sign: the first puzzle without a completion record.
+        $records=(array)($profile->records??[]);$appearance['mineLevel']=1;
+        while($appearance['mineLevel']<($schema['levels']??1)&&isset($records[$appearance['mineLevel']]))$appearance['mineLevel']++;
         return json_encode(['villageId'=>$publicId,'name'=>$name,'era'=>$era,'appearance'=>$appearance],JSON_THROW_ON_ERROR);
     }
     public function browse(Request $r): array {

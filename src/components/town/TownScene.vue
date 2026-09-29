@@ -121,7 +121,6 @@
     >
       <button
         v-for="anchor in anchors"
-        :disabled="readOnly && !visitorTaps.includes(anchor.id)"
         :key="anchor.id"
         :ref="(element) => trackElement(labelElements, anchor.id, element)"
         :data-town-plot="anchor.id"
@@ -281,6 +280,7 @@ const props = defineProps({
 const emit = defineEmits([
   'select',
   'visit',
+  'inspect',
   'mine',
   'raid-phase',
   'raid-cue',
@@ -367,7 +367,8 @@ const pointers = new Map();
 const villagerLabel = ref(null);
 const choose = (id) => {
   if (!props.readOnly) id === 'mine' ? emit('mine') : emit('select', id);
-  else if (props.visitorTaps.includes(id)) emit('visit', id);
+  // A visitor may collect what visitorTaps allows; any other tap only looks at the building.
+  else emit(props.visitorTaps.includes(id) ? 'visit' : 'inspect', id);
 };
 const chooseLabel = (id, event) => {
   // Pointer taps are settled on pointerup; keep native keyboard/AT activation.
@@ -398,7 +399,7 @@ const pick = (event) => {
   const start = pointers.get(event.pointerId);
   const tap = start && !dragged;
   pointers.delete(event.pointerId);
-  if (tap && (!props.readOnly || props.visitorTaps.length)) {
+  if (tap) {
     if (start[2]) choose(start[2]);
     else scene?.pick(event.clientX, event.clientY);
   }

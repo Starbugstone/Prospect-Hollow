@@ -12,8 +12,42 @@
         :visitor-taps="collectable ? ['saloon'] : []"
         :reduced-motion="settings.reducedMotion"
         @visit="collectSaloon"
+        @inspect="inspect"
       />
     </div>
+    <p class="village-hint">{{ t('Tap a building or the mine to see its details.') }}</p>
+    <TownDialog
+      v-if="inspected"
+      :title="current.name"
+      close-label="Close building details"
+      @close="inspected = ''"
+    >
+      <section v-if="inspected === 'mine'" class="town-building-details">
+        <div class="town-detail-title">
+          <div>
+            <p class="town-kicker">{{ t('Mine level') }}</p>
+            <h2>{{ t('Mine') }}</h2>
+          </div>
+          <span class="town-level-badge">{{ t('Level {level}', { level: mineLevel }) }}</span>
+        </div>
+        <p>
+          {{
+            t('The mayor of {town} plays level {level} next.', {
+              town: current.name,
+              level: mineLevel,
+            })
+          }}
+        </p>
+      </section>
+      <TownBuildingDetails
+        v-else
+        :key="inspected"
+        :id="inspected"
+        :town="town"
+        read-only
+        @select="inspect"
+      />
+    </TownDialog>
   </template>
 </template>
 <script setup>
@@ -25,15 +59,25 @@ import { useSettingsStore } from '../../stores/settingsStore';
 import { ERA_BY_ID } from '../../data/eras';
 import { t } from '../../i18n';
 import TownScene from '../town/TownScene.vue';
+import TownDialog from '../town/TownDialog.vue';
+import TownBuildingDetails from '../town/TownBuildingDetails.vue';
+import { BUILDING_BY_ID } from '../../data/town';
 import '../../styles/town.css';
 // One read-only renderer for shared towns, whether opened from the list or a share link.
-// The only thing a visitor can do is collect the saloon's takings for the owner.
+// A visitor can open any building's card, or the mine's level, but not build or upgrade.
+// The only action is collecting the saloon's takings for the owner.
 const props = defineProps({ village: { type: Object, required: true } });
 const settings = useSettingsStore();
 // The owner may still be playing: `current` follows their latest synced appearance.
 const current = shallowRef(props.village),
   unshared = ref(false);
 const town = computed(() => villageAppearance(current.value));
+// Towns shared before the mine level was published have none until the owner saves again.
+const mineLevel = computed(() => current.value.appearance?.mineLevel ?? 0);
+const inspected = ref('');
+function inspect(id) {
+  if (id === 'mine' ? mineLevel.value > 0 : Object.hasOwn(BUILDING_BY_ID, id)) inspected.value = id;
+}
 const hasSaloon = computed(() => current.value.appearance?.buildings?.saloon > 0);
 const readyAt = ref((props.village.saloonReadyAt ?? 0) * 1000),
   now = ref(Date.now()),
@@ -101,6 +145,11 @@ async function collectSaloon() {
   border-radius: 10px;
   background: #f4e7c2;
   color: #5b4520;
+}
+.village-hint {
+  margin: 0.6rem 0 0;
+  font-size: 0.9rem;
+  opacity: 0.8;
 }
 .community-world {
   height: min(62dvh, 600px);

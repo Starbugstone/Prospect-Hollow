@@ -57,27 +57,29 @@
           })
         }}
       </p>
-      <button v-if="constructionReady(project)" class="town-primary" @click="$emit('finish')">
-        <img src="/art/rewards/builder-hammer.svg" width="24" height="24" alt="" />
-        {{ t('Finish construction') }}
-      </button>
-      <button v-else class="town-primary town-project-mine" @click="$emit('mine')">
-        <TownIcon name="mine" />{{ t('Go mining') }} · {{ project.wins }}/{{
-          constructionRuns(project)
-        }}
-        <TownIcon name="arrow" /><img
-          src="/art/rewards/builder-hammer.svg"
-          width="24"
-          height="24"
-          alt=""
-        />
-      </button>
+      <template v-if="!readOnly">
+        <button v-if="constructionReady(project)" class="town-primary" @click="$emit('finish')">
+          <img src="/art/rewards/builder-hammer.svg" width="24" height="24" alt="" />
+          {{ t('Finish construction') }}
+        </button>
+        <button v-else class="town-primary town-project-mine" @click="$emit('mine')">
+          <TownIcon name="mine" />{{ t('Go mining') }} · {{ project.wins }}/{{
+            constructionRuns(project)
+          }}
+          <TownIcon name="arrow" /><img
+            src="/art/rewards/builder-hammer.svg"
+            width="24"
+            height="24"
+            alt=""
+          />
+        </button>
+      </template>
       <progress
         :value="project.wins"
         :max="constructionRuns(project)"
         :aria-label="t('Construction progress')"
       />
-      <details>
+      <details v-if="!readOnly">
         <summary>{{ t('How construction works') }}</summary>
         <p>
           {{
@@ -151,8 +153,13 @@
         {{ t('Go to {building}', { building: t(BUILDING_BY_ID[requirement.id].shortName) }) }} →
       </button>
     </div>
-    <p v-else class="town-restored-note">
+    <p v-else-if="!readOnly" class="town-restored-note">
       <TownIcon name="check" />{{ t(building.upgrades.at(-1).benefit) }}
+    </p>
+    <p v-else-if="stage" class="town-restored-note">
+      <TownIcon name="check" />{{
+        t(building.upgrades[Math.min(stage, building.upgrades.length) - 1].benefit)
+      }}
     </p>
     <p
       v-if="
@@ -164,7 +171,7 @@
     >
       {{ t('Municipal waterworks complete: twenty additional water places for the town.') }}
     </p>
-    <p v-if="stage && ['saloon', 'blacksmith'].includes(id)" class="town-service">
+    <p v-if="stage && !readOnly && ['saloon', 'blacksmith'].includes(id)" class="town-service">
       {{
         cooldownSeconds
           ? t('Collect again in {seconds}s. Production and accumulation continue.', {
@@ -175,7 +182,7 @@
             )
       }}
     </p>
-    <section v-if="id === 'blacksmith' && stage" class="town-service">
+    <section v-if="id === 'blacksmith' && stage && !readOnly" class="town-service">
       <h3>{{ t('Forge Charge: {count}/1', { count: town.forge.charge }) }}</h3>
       <p>
         {{
@@ -194,14 +201,16 @@
       </p>
     </section>
     <section v-if="id === 'saloon' && stage" class="town-service">
-      <h3>{{ t('Stored earnings: {coins} coins', { coins: town.income.stored }) }}</h3>
-      <p>
-        {{
-          t(
-            'Tap the saloon or its coin icon in the town to collect stored earnings. Opening this card does not collect them. Storage holds up to eight hours of income.',
-          )
-        }}
-      </p>
+      <template v-if="!readOnly">
+        <h3>{{ t('Stored earnings: {coins} coins', { coins: town.income.stored }) }}</h3>
+        <p>
+          {{
+            t(
+              'Tap the saloon or its coin icon in the town to collect stored earnings. Opening this card does not collect them. Storage holds up to eight hours of income.',
+            )
+          }}
+        </p>
+      </template>
       <h3>{{ t('Saloon · {rate} coins/hour', { rate: saloonIncomeRate(town) }) }}</h3>
       <p>
         {{
@@ -229,7 +238,7 @@
       <small>{{ t('Visitor capacity: {count}', { count: visitorCapacity(town) }) }}</small>
     </section>
     <section v-if="id === 'square'" class="town-service">
-      <div class="town-era-service">
+      <div v-if="!readOnly" class="town-era-service">
         <h3>{{ t('The next era begins here') }}</h3>
         <p>
           {{
@@ -264,7 +273,11 @@
           )
         }}
       </p>
-      <button v-if="canRingTownBell(town)" class="town-primary" @click="$emit('ring-bell')">
+      <button
+        v-if="!readOnly && canRingTownBell(town)"
+        class="town-primary"
+        @click="$emit('ring-bell')"
+      >
         <TownIcon name="bell" />{{ t('Ring town bell · halve the loss') }}
       </button>
     </section>
@@ -292,13 +305,13 @@
         )
       }}</small>
     </section>
-    <TownShop v-if="id === 'shop' && stage" />
-    <section v-if="id === 'museum' && stage" class="town-service">
+    <TownShop v-if="id === 'shop' && stage && !readOnly" />
+    <section v-if="id === 'museum' && stage && !readOnly" class="town-service">
       <button class="town-primary" @click="$emit('museum')">
         {{ t('Visit the museum') }} <TownIcon name="arrow" />
       </button>
     </section>
-    <details v-if="id === 'armory'" class="town-service" open>
+    <details v-if="id === 'armory' && !readOnly" class="town-service" open>
       <summary>{{ t('Capacity: {count} of each puzzle bonus', { count: bonusLimit }) }}</summary>
       <ul class="armory-inventory">
         <li v-for="power in powers" :key="power.id">
@@ -355,6 +368,9 @@ const props = defineProps({
   powers: Array,
   lastIncome: Number,
   now: { type: Number, default: Date.now },
+  // A shared town's card: what the building is and its level, without the owner's
+  // actions or private state such as stored earnings, the forge or the armory.
+  readOnly: Boolean,
 });
 defineEmits(['build', 'hammer', 'finish', 'ring-bell', 'advance-era', 'select', 'museum', 'mine']);
 const cooldownSeconds = computed(() =>
@@ -364,7 +380,7 @@ const building = computed(() => BUILDING_BY_ID[props.id]);
 const requirement = computed(() => plotRequirement(props.town, props.id));
 const stage = computed(() => props.town.buildings[props.id]);
 const project = computed(() => props.town.projects[props.id]);
-const offer = computed(() => upgradeOffer(props.town, props.id));
+const offer = computed(() => (props.readOnly ? null : upgradeOffer(props.town, props.id)));
 const benefit = computed(() =>
   buildingBenefit(
     props.town,
