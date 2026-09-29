@@ -1,41 +1,36 @@
 import { defineStore } from 'pinia';
 
-// Keep this visual preference independent of progress resets.
-const VILLAGE_LABELS_KEY = 'crystal-cascade-village-labels';
-const savedVillageLabels = () => {
+// Device-only preferences: kept apart from the synced save and from progress resets.
+// Storage restrictions keep each choice for this session only.
+const readPreference = (key, parse, fallback) => {
   try {
-    return globalThis.localStorage?.getItem(VILLAGE_LABELS_KEY) !== 'false';
+    const saved = globalThis.localStorage?.getItem(key);
+    return saved == null ? fallback : parse(saved);
   } catch {
-    return true;
+    return fallback;
+  }
+};
+const writePreference = (key, value) => {
+  try {
+    globalThis.localStorage?.setItem(key, value);
+  } catch {
+    // The choice still applies until the page closes.
   }
 };
 
+const VILLAGE_LABELS_KEY = 'crystal-cascade-village-labels';
 // null until the player first opens or hides village progress themselves.
 const VILLAGE_PROGRESS_KEY = 'crystal-cascade-village-progress';
-const savedVillageProgress = () => {
-  try {
-    const saved = globalThis.localStorage?.getItem(VILLAGE_PROGRESS_KEY);
-    return saved === null || saved === undefined ? null : saved === 'true';
-  } catch {
-    return null;
-  }
-};
-
-// Audio levels stay on this device only; they are not part of the synced save.
 const AUDIO_LEVELS_KEY = 'crystal-cascade-audio-levels';
-const DEFAULT_AUDIO_LEVELS = Object.freeze({ music: 0.6, sfx: 0.8 });
+export const DEFAULT_AUDIO_LEVELS = Object.freeze({ music: 0.6, sfx: 0.8 });
 const audioLevel = (value, fallback) =>
   typeof value === 'number' && Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : fallback;
 const savedAudioLevels = () => {
-  try {
-    const saved = JSON.parse(globalThis.localStorage?.getItem(AUDIO_LEVELS_KEY) ?? 'null');
-    return {
-      music: audioLevel(saved?.music, DEFAULT_AUDIO_LEVELS.music),
-      sfx: audioLevel(saved?.sfx, DEFAULT_AUDIO_LEVELS.sfx),
-    };
-  } catch {
-    return { ...DEFAULT_AUDIO_LEVELS };
-  }
+  const saved = readPreference(AUDIO_LEVELS_KEY, JSON.parse, null);
+  return {
+    music: audioLevel(saved?.music, DEFAULT_AUDIO_LEVELS.music),
+    sfx: audioLevel(saved?.sfx, DEFAULT_AUDIO_LEVELS.sfx),
+  };
 };
 
 export const useSettingsStore = defineStore('settings', {
@@ -51,26 +46,18 @@ export const useSettingsStore = defineStore('settings', {
         typeof window !== 'undefined' &&
         (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false),
       highContrastMode: false,
-      showVillageLabels: savedVillageLabels(),
-      villageProgressOpen: savedVillageProgress(),
+      showVillageLabels: readPreference(VILLAGE_LABELS_KEY, (saved) => saved !== 'false', true),
+      villageProgressOpen: readPreference(VILLAGE_PROGRESS_KEY, (saved) => saved === 'true', null),
     };
   },
   actions: {
     setVillageLabels(visible) {
       this.showVillageLabels = visible !== false;
-      try {
-        globalThis.localStorage?.setItem(VILLAGE_LABELS_KEY, String(this.showVillageLabels));
-      } catch {
-        // Storage restrictions still allow the choice for this session.
-      }
+      writePreference(VILLAGE_LABELS_KEY, String(this.showVillageLabels));
     },
     setVillageProgress(open) {
       this.villageProgressOpen = open === true;
-      try {
-        globalThis.localStorage?.setItem(VILLAGE_PROGRESS_KEY, String(this.villageProgressOpen));
-      } catch {
-        // Storage restrictions still allow the choice for this session.
-      }
+      writePreference(VILLAGE_PROGRESS_KEY, String(this.villageProgressOpen));
     },
     toggleSettings(explicit) {
       if (typeof explicit === 'boolean') {
@@ -88,14 +75,10 @@ export const useSettingsStore = defineStore('settings', {
       this.saveAudioLevels();
     },
     saveAudioLevels() {
-      try {
-        globalThis.localStorage?.setItem(
-          AUDIO_LEVELS_KEY,
-          JSON.stringify({ music: this.musicVolume, sfx: this.sfxVolume }),
-        );
-      } catch {
-        // Storage restrictions still allow the levels for this session.
-      }
+      writePreference(
+        AUDIO_LEVELS_KEY,
+        JSON.stringify({ music: this.musicVolume, sfx: this.sfxVolume }),
+      );
     },
     setHighContrast(value) {
       this.highContrastMode = value;

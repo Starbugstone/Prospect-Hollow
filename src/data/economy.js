@@ -1,14 +1,15 @@
 import { eraEvolution } from './eras';
-import { CHAPTERS, LEVEL_COUNT } from './campaign';
+import { LEVEL_COUNT } from './campaign';
+import { chapterIndexOf } from './chapters';
 
 // Coin prices share one multiplier so buildings and supplies stay in step.
 export const purchasePrice = (basePrice) => Math.ceil(basePrice * 1.5);
 
 export const miningChapter = (levelId) =>
   Number.isInteger(levelId) && levelId >= 1 && levelId <= LEVEL_COUNT
-    ? 1 + Math.floor((levelId - 1) / (LEVEL_COUNT / CHAPTERS.length))
+    ? 1 + chapterIndexOf(levelId)
     : 1;
-// Each chapter adds another full mining subtotal: 1x, 2x, 3x, ... 12x.
+// Each chapter adds another full mining subtotal: 1× in chapter 1, 2× in chapter 2, and so on.
 export const depthBonusPercent = (levelId) => (miningChapter(levelId) - 1) * 100;
 export const miningDepthBonus = (baseCoins, levelId) =>
   Math.min(

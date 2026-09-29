@@ -1,3 +1,4 @@
+import { LEVELS_PER_CHAPTER, chapterIndexOf, chapterSlotOf } from './chapters.js';
 // Six puzzles per chapter: introduce, practice, explore, stretch, rest, finale.
 // Ice is arranged along readable seams; stone never closes the side columns.
 const chapterIce = [
@@ -8,6 +9,8 @@ const chapterIce = [
   [40, 44, 48, 52, 40, 54],
   [42, 46, 50, 54, 42, 56],
 ];
+// The authored early campaign; later levels come from the expansion catalog.
+export const EARLY_LEVEL_COUNT = chapterIce.length * LEVELS_PER_CHAPTER;
 // Authored openings are measured across 30 refill seeds, not chosen from one lucky run.
 const openingSeeds = { 2: 12007, 7: 8017, 8: 12007, 9: 8017, 10: 28001, 11: 12007, 12: 12007 };
 const motifs = ['pocket', 'ribbon', 'twins', 'steps', 'pool', 'arch'];
@@ -21,8 +24,8 @@ const tips = {
 };
 
 export const getEarlyLevelSpec = (id) => {
-  const chapter = Math.floor((id - 1) / 6);
-  const slot = (id - 1) % 6;
+  const chapter = chapterIndexOf(id);
+  const slot = chapterSlotOf(id);
   const motif = motifs[(slot + (chapter === 4 ? 2 : 0)) % motifs.length];
   return {
     motif,

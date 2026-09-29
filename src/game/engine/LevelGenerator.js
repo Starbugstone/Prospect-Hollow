@@ -2,7 +2,13 @@ import { createGem } from './GemFactory.js';
 import { MatchEngine } from './MatchEngine.js';
 import { LEVEL_COUNT, CHAPTERS, getLevelGemTypes } from '../../data/campaign.js';
 import { EXPANSION_LEVELS } from '../../data/expansion.js';
-import { getEarlyLevelSpec, stonePositions, iceRank } from '../../data/earlyLevels.js';
+import {
+  EARLY_LEVEL_COUNT,
+  getEarlyLevelSpec,
+  stonePositions,
+  iceRank,
+} from '../../data/earlyLevels.js';
+import { chapterIndexOf, chapterSlotOf } from '../../data/chapters.js';
 import { layerCount } from './TileRules.js';
 import { CORE_BONUSES, CORE_CHARGES } from './ChapterMechanics.js';
 import { getLevelStarTarget } from '../../data/starRating.js';
@@ -29,6 +35,9 @@ class BoardLayout {
 }
 
 const DEFAULT_MIN_STARTING_MOVES = 3;
+// Each chapter's fifth puzzle is a lighter breather and its sixth the finale.
+const levelPace = (id) =>
+  ['explore', 'explore', 'explore', 'explore', 'rest', 'finale'][chapterSlotOf(id)];
 const MAX_BOARD_GENERATION_ATTEMPTS = 60;
 const matchEngine = new MatchEngine();
 
@@ -146,9 +155,60 @@ const createPlayableBoard = (layout, rng, { minMoves = 1, tiles = [] } = {}) => 
   return lastBoard ?? createBoard(layout, rng);
 };
 
+// A seeded shuffle breaks ties inside each authored shape, then ice fills the
+// ranked seam. Open exit rows cap the stack at two layers per cell.
+function layIce(tiles, iceCells, rng, rank, cellCount, spec) {
+  for (let i = iceCells.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [iceCells[i], iceCells[j]] = [iceCells[j], iceCells[i]];
+  }
+  iceCells.sort((a, b) => rank(a) - rank(b));
+  const layers = spec.openExitRows ? Math.min(spec.ice, cellCount * 2) : spec.ice;
+  for (let layer = 0; layer < layers; layer++) {
+    const tile = tiles[iceCells[layer % cellCount]];
+    tile.health++;
+    tile.maxHealth++;
+  }
+}
+const clearObjective = (id, label, target) => ({
+  id: `clear-${id}`,
+  type: 'clear-layers',
+  label,
+  target,
+  progress: 0,
+});
+const scoreObjective = (id, target) => ({
+  id: `score-${id}`,
+  type: 'score',
+  label: 'Earn a chest',
+  target,
+  progress: 0,
+});
+// Field order is part of the saved and hashed level contract.
+const levelConfig = ({ id, chapter, tip, oreOrders, chestTarget, speedTargetMs, ...board }) => ({
+  id,
+  chapter,
+  chapterName: CHAPTERS[chapter].name,
+  theme: CHAPTERS[chapter].theme,
+  pace: levelPace(id),
+  tip,
+  ...(oreOrders ? { oreOrders } : {}),
+  chestTarget,
+  starScoreTarget: getLevelStarTarget(id, chestTarget),
+  speedTargetMs,
+  boardCols: board.cols,
+  boardRows: board.rows,
+  boardSize: board.cols,
+  board: board.board,
+  tiles: board.tiles,
+  boardLayout: board.layout,
+  objectives: board.objectives,
+  summary: board.summary,
+});
+
 const createExpansionLevel = (id) => {
-  const spec = EXPANSION_LEVELS[id - 37];
-  const chapter = Math.floor((id - 1) / 6);
+  const spec = EXPANSION_LEVELS[id - EARLY_LEVEL_COUNT - 1];
+  const chapter = chapterIndexOf(id);
   const { cols, rows } = CHAPTERS[chapter];
   const rng = createSeededRng(id * 1337);
   const layout = new BoardLayout(`level_${id}`, 'RECTANGLE', { cols, rows }, getLevelGemTypes(id));
@@ -198,20 +258,11 @@ const createExpansionLevel = (id) => {
       ? [index]
       : [],
   );
-  for (let i = iceCells.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [iceCells[i], iceCells[j]] = [iceCells[j], iceCells[i]];
-  }
-  const motif = spec.motif ?? ['pocket', 'steps', 'twins', 'ribbon', 'pool', 'arch'][(id - 1) % 6];
-  iceCells.sort((a, b) => iceRank(a, cols, rows, motif) - iceRank(b, cols, rows, motif));
+  const motif =
+    spec.motif ?? ['pocket', 'steps', 'twins', 'ribbon', 'pool', 'arch'][chapterSlotOf(id)];
   // Add depth to the seam before pushing targets into hard-to-reach corners.
   const iceCellCount = Math.min(iceCells.length, Math.ceil(spec.ice * 0.75));
-  const iceLayers = spec.openExitRows ? Math.min(spec.ice, iceCellCount * 2) : spec.ice;
-  for (let layer = 0; layer < iceLayers; layer++) {
-    const tile = tiles[iceCells[layer % iceCellCount]];
-    tile.health++;
-    tile.maxHealth++;
-  }
+  layIce(tiles, iceCells, rng, (cell) => iceRank(cell, cols, rows, motif), iceCellCount, spec);
   const totalLayers = tiles.reduce((sum, tile) => sum + layerCount(tile), 0);
   const relicCount = layout.initialTilePlacements.length;
   const board = createPlayableBoard(layout, rng, { minMoves: DEFAULT_MIN_STARTING_MOVES, tiles });
@@ -226,31 +277,20 @@ const createExpansionLevel = (id) => {
         : tiles.some((tile) => tile.chainHealth)
           ? 'Ice, stone & chains'
           : 'Ice & stone';
-  return {
+  return levelConfig({
     id,
     chapter,
-    chapterName: CHAPTERS[chapter].name,
-    theme: CHAPTERS[chapter].theme,
-    pace: (id - 1) % 6 === 4 ? 'rest' : (id - 1) % 6 === 5 ? 'finale' : 'explore',
     tip: spec.tip,
     oreOrders: (spec.orders ?? []).map(([color, target]) => ({ color, target, progress: 0 })),
     chestTarget,
-    starScoreTarget: getLevelStarTarget(id, chestTarget),
     speedTargetMs: (75 + totalLayers + relicCount * 20) * 1000,
-    boardCols: cols,
-    boardRows: rows,
-    boardSize: cols,
+    cols,
+    rows,
     board,
     tiles,
-    boardLayout: layout,
+    layout,
     objectives: [
-      {
-        id: `clear-${id}`,
-        type: 'clear-layers',
-        label: layerLabel,
-        target: totalLayers,
-        progress: 0,
-      },
+      clearObjective(id, layerLabel, totalLayers),
       ...(relicCount
         ? [
             {
@@ -262,10 +302,10 @@ const createExpansionLevel = (id) => {
             },
           ]
         : []),
-      { id: `score-${id}`, type: 'score', label: 'Earn a chest', target: chestTarget, progress: 0 },
+      scoreObjective(id, chestTarget),
     ],
     summary: `Clear ${totalLayers} obstacle layers${relicCount ? ` and collect ${relicCount} relics` : ''}. Earn a chest at ${chestTarget.toLocaleString()} points.`,
-  };
+  });
 };
 
 // Chapter boundaries own size and palette count; individual puzzles vary
@@ -274,12 +314,12 @@ export const generateLevelConfigs = (count = LEVEL_COUNT) => {
   const levels = [];
   for (let index = 0; index < count; index++) {
     const id = index + 1;
-    if (id > 36) {
+    if (id > EARLY_LEVEL_COUNT) {
       if (id > LEVEL_COUNT) break;
       levels.push(createExpansionLevel(id));
       continue;
     }
-    const chapter = Math.floor(index / 6);
+    const chapter = chapterIndexOf(id);
     const { cols, rows } = CHAPTERS[chapter];
     const spec = getEarlyLevelSpec(id);
     const rng = createSeededRng(spec.seed);
@@ -304,60 +344,38 @@ export const generateLevelConfigs = (count = LEVEL_COUNT) => {
         ? [i]
         : [],
     );
-    // Seed breaks ties within each authored shape, preserving deterministic replays.
-    for (let i = iceCells.length - 1; i > 0; i--) {
-      const j = Math.floor(rng() * (i + 1));
-      [iceCells[i], iceCells[j]] = [iceCells[j], iceCells[i]];
-    }
-    iceCells.sort(
-      (a, b) => iceRank(a, cols, rows, spec.motif) - iceRank(b, cols, rows, spec.motif),
-    );
     const iceCellCount = Math.min(iceCells.length, spec.ice - spec.doubleIce);
-    const iceLayers = spec.openExitRows ? Math.min(spec.ice, iceCellCount * 2) : spec.ice;
-    for (let layer = 0; layer < iceLayers; layer++) {
-      const tile = tiles[iceCells[layer % iceCellCount]];
-      tile.health++;
-      tile.maxHealth++;
-    }
+    layIce(
+      tiles,
+      iceCells,
+      rng,
+      (cell) => iceRank(cell, cols, rows, spec.motif),
+      iceCellCount,
+      spec,
+    );
     for (const cell of iceCells.slice(0, spec.frozenCount)) tiles[cell].state = 'FROZEN';
     const board = createPlayableBoard(layout, rng, { minMoves: chapter < 2 ? 6 : 4, tiles });
     const totalLayers = tiles.reduce((sum, tile) => sum + tile.health, 0);
     const chestTarget = Math.ceil((totalLayers * 220) / 500) * 500;
-    const tip = spec.tip;
-    levels.push({
-      id,
-      chapter,
-      chapterName: CHAPTERS[chapter].name,
-      theme: CHAPTERS[chapter].theme,
-      pace: (id - 1) % 6 === 4 ? 'rest' : (id - 1) % 6 === 5 ? 'finale' : 'explore',
-      tip,
-      chestTarget,
-      starScoreTarget: getLevelStarTarget(id, chestTarget),
-      speedTargetMs: (90 + totalLayers * 2) * 1000,
-      boardCols: cols,
-      boardRows: rows,
-      boardSize: cols,
-      board,
-      tiles,
-      boardLayout: layout,
-      objectives: [
-        {
-          id: `clear-${id}`,
-          type: 'clear-layers',
-          label: 'Clear ice & stone',
-          target: totalLayers,
-          progress: 0,
-        },
-        {
-          id: `score-${id}`,
-          type: 'score',
-          label: 'Earn a chest',
-          target: chestTarget,
-          progress: 0,
-        },
-      ],
-      summary: `Clear ${spec.ice} ice layers${layout.blockedCells.length ? ` and ${layout.blockedCells.length} stone blocks` : ''}. Earn a chest at ${chestTarget.toLocaleString()} points.`,
-    });
+    levels.push(
+      levelConfig({
+        id,
+        chapter,
+        tip: spec.tip,
+        chestTarget,
+        speedTargetMs: (90 + totalLayers * 2) * 1000,
+        cols,
+        rows,
+        board,
+        tiles,
+        layout,
+        objectives: [
+          clearObjective(id, 'Clear ice & stone', totalLayers),
+          scoreObjective(id, chestTarget),
+        ],
+        summary: `Clear ${spec.ice} ice layers${layout.blockedCells.length ? ` and ${layout.blockedCells.length} stone blocks` : ''}. Earn a chest at ${chestTarget.toLocaleString()} points.`,
+      }),
+    );
   }
   return levels;
 };

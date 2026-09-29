@@ -1,41 +1,32 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useInventoryStore } from '../src/stores/inventoryStore';
 import { useCampaignStore } from '../src/stores/campaignStore';
 import { createPinia, setActivePinia } from 'pinia';
 
-describe('InventoryStore awardPower', () => {
-  let inventoryStore;
+describe('Power rewards', () => {
+  let campaign;
+  const slot = (id) => campaign.powers.find((power) => power.id === id);
 
   beforeEach(() => {
     setActivePinia(createPinia());
-    useCampaignStore().town.buildings.armory = 3;
-    inventoryStore = useInventoryStore();
+    campaign = useCampaignStore();
+    campaign.town.buildings.armory = 3;
   });
 
-  it('should increase power quantity when awarding known power', () => {
-    const initialQty = inventoryStore.quickAccessSlots.find((s) => s.id === 'tnt').quantity;
-
-    const result = inventoryStore.awardPower('tnt');
-
-    expect(result).toBe(true);
-    expect(inventoryStore.quickAccessSlots.find((s) => s.id === 'tnt').quantity).toBe(
-      initialQty + 1,
-    );
+  it('adds a known power to its inventory slot', () => {
+    const initial = slot('tnt').quantity;
+    expect(
+      campaign.awardReward({ id: 'tnt', label: 'TNT', kind: 'power', quantity: 1 }),
+    ).toBeTruthy();
+    expect(slot('tnt').quantity).toBe(initial + 1);
   });
 
-  it('should award multiple quantities at once', () => {
-    const initialQty = inventoryStore.quickAccessSlots.find((s) => s.id === 'shuffle').quantity;
-
-    inventoryStore.awardPower('shuffle', 5);
-
-    expect(inventoryStore.quickAccessSlots.find((s) => s.id === 'shuffle').quantity).toBe(
-      initialQty + 5,
-    );
+  it('awards several at once', () => {
+    const initial = slot('shuffle').quantity;
+    campaign.awardReward({ id: 'shuffle', label: 'Shuffle', kind: 'power', quantity: 5 });
+    expect(slot('shuffle').quantity).toBe(initial + 5);
   });
 
-  it('should return false for unknown power', () => {
-    const result = inventoryStore.awardPower('unknown-power');
-
-    expect(result).toBe(false);
+  it('ignores an unknown power', () => {
+    expect(campaign.awardReward({ id: 'unknown-power', kind: 'power', quantity: 1 })).toBeNull();
   });
 });

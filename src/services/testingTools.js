@@ -2,6 +2,7 @@ import { useCampaignStore } from '../stores/campaignStore';
 import { useGameStore } from '../stores/gameStore';
 import { HAMMER_CAPACITY } from '../data/rewards';
 import { CHAPTERS, LEVEL_COUNT } from '../data/campaign';
+import { chapterLevelIds } from '../data/chapters';
 import { queueCampaignPresentations } from '../data/townPresentations';
 import { ERAS, FRONTIER_ERA } from '../data/eras';
 import { BUILDINGS, BANDIT_EVENT } from '../data/town';
@@ -12,12 +13,8 @@ import { townFrameStats, townTimings } from '../game/town/TownProfiler';
 export const TESTING_TOWN_CHANGED = 'prospect-debug-town-changed';
 
 function saveChanges(campaign, changes) {
-  const previous = Object.fromEntries(Object.keys(changes).map((key) => [key, campaign[key]]));
-  Object.assign(campaign, changes);
-  if (!campaign.save()) {
-    Object.assign(campaign, previous);
+  if (!campaign.commit(changes))
     throw new Error('Test changes could not be saved. Previous progress was restored.');
-  }
 }
 
 // Console-only tools for this device-local game, also available in preview builds.
@@ -78,7 +75,7 @@ export function createTestingTools(pinia) {
         throw new TypeError(`Mine chapter must be an integer from 1 to ${CHAPTERS.length}.`);
       const campaign = useCampaignStore(pinia);
       if (campaign.readOnly) throw new Error(campaign.saveWarning);
-      const firstLevel = (chapter - 1) * 6 + 1;
+      const [firstLevel] = chapterLevelIds(chapter - 1);
       const records = { ...campaign.records };
       for (let id = 1; id < firstLevel; id++) records[id] ??= { score: 0, stars: 1 };
       saveChanges(campaign, { records });
@@ -111,15 +108,14 @@ export function createTestingTools(pinia) {
         throw new TypeError('Coins and hammers must be non-negative safe integers.');
       const campaign = useCampaignStore(pinia);
       if (campaign.readOnly) throw new Error(campaign.saveWarning);
-      const previousCoins = campaign.town.coins;
-      const previousHammers = campaign.builderHammers;
-      campaign.town.coins = Math.min(Number.MAX_SAFE_INTEGER, previousCoins + coins);
-      campaign.builderHammers = Math.min(HAMMER_CAPACITY, previousHammers + hammers);
-      if (!campaign.save()) {
-        campaign.town.coins = previousCoins;
-        campaign.builderHammers = previousHammers;
-        throw new Error('Test resources could not be saved. Balances were restored.');
-      }
+      const granted = campaign.commit({
+        town: {
+          ...campaign.town,
+          coins: Math.min(Number.MAX_SAFE_INTEGER, campaign.town.coins + coins),
+        },
+        builderHammers: Math.min(HAMMER_CAPACITY, campaign.builderHammers + hammers),
+      });
+      if (!granted) throw new Error('Test resources could not be saved. Balances were restored.');
       return { coins: campaign.town.coins, builderHammers: campaign.builderHammers };
     },
   });

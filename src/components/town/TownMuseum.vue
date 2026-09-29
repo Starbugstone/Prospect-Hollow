@@ -153,6 +153,7 @@ import { useNativeDialog } from '../../composables/useNativeDialog';
 import { t, number } from '../../i18n';
 import { useCampaignStore } from '../../stores/campaignStore';
 import { CHAPTERS, LEVEL_COUNT, formatTime } from '../../data/campaign';
+import { chapterLevelIds } from '../../data/chapters';
 import { LEVEL_NAMES } from '../../data/levelNames';
 import { CONTINUOUS_COIN_CAP } from '../../data/rewards';
 const emit = defineEmits(['close', 'replay', 'continuous']);
@@ -161,7 +162,7 @@ const { dialog, closeButton, dismissBackdrop } = useNativeDialog(() => emit('clo
 const mode = ref('normal');
 const needsStars = ref(false);
 const chapterLevels = (index) =>
-  Array.from({ length: 6 }, (_, i) => index * 6 + i + 1).filter(
+  chapterLevelIds(index).filter(
     (id) =>
       id <= LEVEL_COUNT &&
       (mode.value === 'continuous'

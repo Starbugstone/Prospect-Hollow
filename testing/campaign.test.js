@@ -120,7 +120,7 @@ it('keeps the best score and stars on replay, and saves used powers', () => {
   campaign.recordVictory({ id: 1, score: 100, target: 6000, combo: 1 });
   expect(campaign.records[1]).toEqual({ score: 12000, stars: 3 });
   const inventory = useInventoryStore();
-  inventory.awardPower('tnt');
+  campaign.awardReward({ id: 'tnt', label: 'TNT', kind: 'power', quantity: 1 });
   const before = inventory.quickAccessSlots.find((power) => power.id === 'tnt').quantity;
   inventory.consumeItem('tnt');
   setActivePinia(createPinia());

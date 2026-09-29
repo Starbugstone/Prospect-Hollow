@@ -1,4 +1,5 @@
 import { CHAPTERS } from './campaign';
+import { chapterLevelIds } from './chapters';
 import { bonusCapacity, chestReward, grantReward } from './rewards';
 
 const GIFTS = ['tnt', 'color-wand', 'clear-row', 'tile-breaker'];
@@ -6,13 +7,10 @@ export const chapterGift = (chapter) => chestReward(GIFTS[(chapter - 1) % GIFTS.
 
 export function journeyProgress(records) {
   const chapterIndex = CHAPTERS.findIndex((_, index) =>
-    Array.from({ length: 6 }, (_, i) => index * 6 + i + 1).some((id) => !records[id]),
+    chapterLevelIds(index).some((id) => !records[id]),
   );
   if (chapterIndex < 0) return null;
-  const levels = Array.from({ length: 6 }, (_, i) => ({
-    id: chapterIndex * 6 + i + 1,
-    complete: !!records[chapterIndex * 6 + i + 1],
-  }));
+  const levels = chapterLevelIds(chapterIndex).map((id) => ({ id, complete: !!records[id] }));
   return {
     chapter: chapterIndex + 1,
     name: CHAPTERS[chapterIndex].name,

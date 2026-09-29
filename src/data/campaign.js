@@ -3,6 +3,7 @@ import { TOMORROW_CHAPTERS } from './tomorrowLevels.js';
 // A chapter owns its board dimensions and active jewel count. Two-level seams
 // rotate identities only; larger boards introduce the fifth color at level 13.
 import { CITY_CHAPTERS } from './cityLevels.js';
+import { LEVELS_PER_CHAPTER, chapterIndexOf, chapterSlotOf } from './chapters.js';
 export const CHAPTERS = [
   {
     name: 'First light',
@@ -224,7 +225,7 @@ export const CHAPTERS = [
   ...LATE_CHAPTERS,
   ...TOMORROW_CHAPTERS,
 ];
-export const LEVEL_COUNT = CHAPTERS.length * 6;
+export const LEVEL_COUNT = CHAPTERS.length * LEVELS_PER_CHAPTER;
 
 const FIVE_COLOR_SEAMS = [
   ['ruby', 'sapphire', 'emerald', 'topaz', 'amethyst'],
@@ -232,9 +233,9 @@ const FIVE_COLOR_SEAMS = [
   ['ruby', 'sapphire', 'emerald', 'topaz', 'moonstone'],
 ];
 export const getLevelGemTypes = (id) => {
-  const chapterIndex = Math.floor((id - 1) / 6);
+  const chapterIndex = chapterIndexOf(id);
   const chapter = CHAPTERS[chapterIndex];
-  const seam = Math.floor(((id - 1) % 6) / 2);
+  const seam = Math.floor(chapterSlotOf(id) / 2);
   const palettes = chapter.palettes ?? FIVE_COLOR_SEAMS;
   return [...palettes[(seam + (chapter.palettes ? 0 : chapterIndex)) % palettes.length]];
 };

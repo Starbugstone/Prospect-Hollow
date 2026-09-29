@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useCampaignStore } from '../src/stores/campaignStore';
 import { useGameStore } from '../src/stores/gameStore';
-import { useInventoryStore } from '../src/stores/inventoryStore';
 import { SAVE_KEY } from '../src/services/localProfile';
 import { BUILDINGS, createTown } from '../src/data/town';
 import {
@@ -209,7 +208,7 @@ describe('Bounded, saved chest rewards', () => {
       const campaign = useCampaignStore(),
         slot = campaign.powers.find((p) => p.id === id);
       slot.quantity = 2;
-      useInventoryStore().awardPower(id, 3);
+      campaign.awardReward({ id, label: slot.label, kind: 'power', quantity: 3 });
       expect(slot.quantity).toBe(3);
       expect(campaign.town.coins).toBe(20);
       const result = award(id);
