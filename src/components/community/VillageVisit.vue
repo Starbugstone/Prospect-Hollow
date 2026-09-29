@@ -4,7 +4,22 @@
   <p v-if="unshared" role="alert">{{ t('This town is no longer shared.') }}</p>
   <template v-else>
     <p v-if="saloonMessage" class="village-saloon" role="status">{{ saloonMessage }}</p>
-    <div class="community-world town-map-frame">
+    <div class="community-world town-map-frame" :class="{ 'town-fullscreen': fullscreen }">
+      <button
+        ref="fullscreenButton"
+        class="town-fullscreen-button"
+        :aria-label="t(fullscreen ? 'Exit full screen village' : 'Full screen village')"
+        :title="t(fullscreen ? 'Exit full screen village' : 'Full screen village')"
+        :aria-pressed="fullscreen"
+        @click="fullscreen = !fullscreen"
+      >
+        <GameIcon name="expand" />
+      </button>
+      <!-- Full screen covers the page, so the town name and saloon news move onto the map. -->
+      <p v-if="fullscreen" class="village-fullscreen-caption">
+        <strong>{{ current.name }}</strong
+        ><template v-if="saloonMessage"> · {{ saloonMessage }}</template>
+      </p>
       <TownScene
         :key="current.villageId"
         :town="town"
@@ -51,7 +66,7 @@
   </template>
 </template>
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import { villageAppearance } from '../../services/publicVillage';
 import { latestVillage, tapSaloon } from '../../services/cloudProfile';
 import { createVillagePoller } from '../../services/villagePolling';
@@ -59,6 +74,7 @@ import { useSettingsStore } from '../../stores/settingsStore';
 import { ERA_BY_ID } from '../../data/eras';
 import { t } from '../../i18n';
 import TownScene from '../town/TownScene.vue';
+import GameIcon from '../GameIcon.vue';
 import TownDialog from '../town/TownDialog.vue';
 import TownBuildingDetails from '../town/TownBuildingDetails.vue';
 import { BUILDING_BY_ID } from '../../data/town';
@@ -97,15 +113,35 @@ const poller = createVillagePoller({
   },
   gone: () => (unshared.value = true),
 });
+// Full screen works like the game's village: the map fills the viewport without the
+// Fullscreen API, the page stops scrolling, and Escape leaves unless a card is open.
+const fullscreen = ref(false),
+  fullscreenButton = ref(null);
+let previousOverflow;
+watch(fullscreen, (open) => {
+  if (open) {
+    previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = previousOverflow ?? '';
+    fullscreenButton.value?.focus({ preventScroll: true });
+  }
+});
+function leaveFullscreen(event) {
+  if (event.key === 'Escape' && !inspected.value) fullscreen.value = false;
+}
 const resume = () => poller.resume();
 onMounted(() => {
   document.addEventListener('visibilitychange', resume);
+  document.addEventListener('keydown', leaveFullscreen);
   poller.start();
 });
 onBeforeUnmount(() => {
   clearInterval(clock);
   poller.stop();
   document.removeEventListener('visibilitychange', resume);
+  document.removeEventListener('keydown', leaveFullscreen);
+  if (fullscreen.value) document.body.style.overflow = previousOverflow ?? '';
 });
 // The server decides when the saloon is collectable again; this only mirrors it.
 const collectable = computed(() => hasSaloon.value && !busy.value && readyAt.value <= now.value);
@@ -145,6 +181,24 @@ async function collectSaloon() {
   border-radius: 10px;
   background: #f4e7c2;
   color: #5b4520;
+}
+.village-fullscreen-caption {
+  position: absolute;
+  z-index: 6;
+  /* Beside the full screen button. */
+  top: max(12px, calc(env(safe-area-inset-top) + 12px));
+  left: 72px;
+  min-height: 44px;
+  box-sizing: border-box;
+  right: 16px;
+  width: fit-content;
+  max-width: calc(100% - 88px);
+  margin: 0;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid #9c997d;
+  border-radius: 10px;
+  background: #fff9e9ee;
+  color: #405b4c;
 }
 .village-hint {
   margin: 0.6rem 0 0;
