@@ -44,10 +44,7 @@ export function createTestingTools(pinia) {
       town.era = era;
       town.projects = {};
       town.transition = null;
-      town.eraTransitionSeen = Object.fromEntries(
-        ERAS.slice(0, index + 1).map(({ id }) => [id, true]),
-      );
-      town.tourSeen = town.constructionTipSeen = true;
+      town.tourSeen = true;
       for (const building of BUILDINGS) {
         const visible = plotInEra(town, building.id);
         town.buildings[building.id] = visible ? building.upgrades.length : 0;

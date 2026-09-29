@@ -87,7 +87,6 @@ describe('Frontier additions preserve bounded services and saves', () => {
     delete town.era;
     delete town.buildingEras;
     delete town.forge;
-    delete town.infrastructure;
     for (const id of ['fisherman', 'blacksmith', 'school', 'doctor']) delete town.buildings[id];
     town.buildings.saloon = 2;
     town.projects.saloon = { id: 'saloon', stage: 3, wins: 1, required: 1 };
@@ -390,7 +389,7 @@ describe('Two eras and explicit modernization', () => {
     expect(reloaded.town.era).toBe('river-rail');
     expect(reloaded.town.transition.pending).toBe(true);
     reloaded.acknowledgeEra();
-    expect(reloaded.town.eraTransitionSeen['river-rail']).toBe(true);
+    expect(reloaded.town.transition.pending).toBe(false);
     expect(reloaded.advanceEra('frontier')).toBe(false);
   });
   it('retains services until modernization finishes and rejects duplicate purchases and finishes', () => {
@@ -426,12 +425,11 @@ describe('Two eras and explicit modernization', () => {
     town = purchase(town, 'railDepot', 0);
     const cost = coins - town.coins;
     expect(cost).toBeGreaterThan(0);
-    expect(town.infrastructure.rail).toBe(0);
     town = advanceConstruction(advanceConstruction(town));
     expect(railEdges(town)).toEqual([]);
     expect(town.buildings.railDepot).toBe(0);
     town = finishConstruction(normalizeTown(town), 'railDepot', 1);
-    expect(town.infrastructure.rail).toBe(1);
+    expect(town.buildings.railDepot).toBe(1);
     expect(railEdges(town)).toHaveLength(1);
     expect(town.coins).toBe(coins - cost);
     expect(purchase(town, 'railDepot', 0)).toBeNull();

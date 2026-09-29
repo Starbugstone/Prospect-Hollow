@@ -31,7 +31,6 @@ it('stages the saved railway visually, then cleans up and restores the camera on
   const town = createTown();
   town.era = 'river-rail';
   town.buildings.railDepot = 1;
-  town.infrastructure.rail = 1;
   d.update(town, Object.fromEntries(BUILDINGS.map((b) => [b.id, b.shortName])));
   const saved = JSON.stringify(town),
     pose = d.camera.position.clone();

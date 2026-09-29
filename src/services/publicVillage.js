@@ -20,10 +20,5 @@ export function villageAppearance(village) {
       wins: project.visualStage,
     };
   }
-  town.infrastructure = {
-    bridge: town.buildings.bridge,
-    rail: town.buildings.railDepot,
-    riverPort: town.buildings.riverPort,
-  };
   return town;
 }

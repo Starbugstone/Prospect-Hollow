@@ -325,7 +325,6 @@ export const useCampaignStore = defineStore('campaign', {
         town: {
           ...town,
           transition: { ...town.transition, pending: false },
-          eraTransitionSeen: { ...town.eraTransitionSeen, [town.era]: true },
         },
       });
     },
@@ -367,6 +366,7 @@ export const useCampaignStore = defineStore('campaign', {
       } catch (error) {
         throw new Error(
           `${error.message || 'The save could not be stored.'} Your current progress has not changed.`,
+          { cause: error },
         );
       }
       localProfile.load();

@@ -36,16 +36,13 @@ it('keeps funded scaffolding through wins and reloads, until each building is op
   town = advanceConstruction(town);
   expect(constructionReady(town.projects.museum)).toBe(true);
   expect(town.buildings.museum).toBe(0);
-  expect(town.constructionTipSeen).toBe(false);
   town = normalizeTown(JSON.parse(JSON.stringify(advanceConstruction(town))));
   expect(town.projects.museum.wins).toBe(1);
   expect(finishConstruction(town, 'museum', 2)).toBeNull();
   town = finishConstruction(town, 'museum', 1);
   expect(town.buildings.museum).toBe(1);
   expect(town.projects).toEqual({});
-  expect(town.constructionTipSeen).toBe(true);
   expect(finishConstruction(town, 'museum', 1)).toBeNull();
-  expect(normalizeTown(town).constructionTipSeen).toBe(true);
 });
 
 it('settles old saloon income before opening an upgrade and persists the new benefit', () => {
@@ -70,7 +67,6 @@ it('settles old saloon income before opening an upgrade and persists the new ben
   setActivePinia(createPinia());
   campaign = useCampaignStore();
   expect(campaign.town.buildings.saloon).toBe(2);
-  expect(campaign.town.constructionTipSeen).toBe(true);
   expect(campaign.collectSaloonIncome(HOUR_MS * 3)).toBe(oldRate + newRate);
 });
 

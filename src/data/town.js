@@ -632,7 +632,6 @@ export const createTown = () => ({
   ...createEraState(BUILDINGS.map(({ id }) => id)),
   coins: 0,
   tourSeen: false,
-  constructionTipSeen: false,
   buildings: Object.fromEntries(BUILDINGS.map(({ id }) => [id, 0])),
   events: {},
   presentations: {},

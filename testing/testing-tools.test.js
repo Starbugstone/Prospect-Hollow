@@ -92,8 +92,6 @@ it.each(ERAS.filter((era) => era.enabled).map((era) => era.id))(
         expect(upgradeOffer(town, building.id)).toBeNull();
         if (era !== 'frontier') expect(eraBuildingLevel(town, building.id)).toBe(3);
       }
-      expect(town.infrastructure.rail).toBe(town.buildings.railDepot);
-      expect(town.infrastructure.bridge).toBe(town.buildings.bridge);
     }
     expect(JSON.stringify(campaign.records)).toBe(records);
     expect(JSON.stringify(campaign.powers)).toBe(powers);

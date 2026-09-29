@@ -90,8 +90,6 @@ export function normalizeEraState(town, saved) {
       pending: receipt.pending === true,
     };
   }
-  for (const era of ERAS.filter((era) => era.enabled && eraIndex(era.id) <= eraIndex(town.era)))
-    if (saved?.eraTransitionSeen?.[era.id] === true) town.eraTransitionSeen[era.id] = true;
   town.firstLightsSeen = saved?.firstLightsSeen === true && town.buildings.powerHouse > 0;
   return town;
 }

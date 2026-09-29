@@ -3,6 +3,19 @@ import { eraEvolution } from './eras';
 export const eventKind = (event) => event?.kind ?? 'bandits';
 export const eraEventKind = (era) => eraEvolution(era).incident;
 export const civicIncident = (kind) => ['workshop-fire', 'storm-cleanup'].includes(kind);
+// Buildings each incident strikes, in order of preference; bandits also visit the mine.
+export const INCIDENT_TARGETS = Object.freeze({
+  bandits: Object.freeze(['saloon', 'armory', 'farm', 'home']),
+  'cargo-theft': Object.freeze(['warehouse', 'railDepot', 'riverPort']),
+  'workshop-fire': Object.freeze(['mill', 'blacksmith', 'powerHouse']),
+  'storm-cleanup': Object.freeze(['riverPark', 'riverPort', 'square']),
+});
+// Receipts saved before incidents recorded a target replay at their classic location.
+export const LEGACY_INCIDENT_TARGET = Object.freeze({
+  'cargo-theft': 'railDepot',
+  'workshop-fire': 'blacksmith',
+  'storm-cleanup': 'riverPark',
+});
 export const fireProtection = (level = 0) => [0, 2 / 3, 5 / 6, 1][Math.min(3, Math.max(0, level))];
 export const eventHeading = (event) =>
   ({
@@ -197,11 +210,48 @@ export const phaseAt = (script, time) =>
   );
 export const incidentPhase = (event, time) => phaseAt(incidentScript(event), time);
 
+export const CARETAKER = 'Ada · the caretaker';
+const SHERIFF = 'Sam · the sheriff';
+// The closing story for a finished incident. `text` is a message key; `params` fill it.
 export const incidentStory = (event) => {
   const script = incidentScript(event);
+  const params = { coins: event.loss };
+  if (eventKind(event) === 'bandits') {
+    if (event.outcome === 'protected')
+      return event.bounty
+        ? {
+            speaker: SHERIFF,
+            title: 'The town stood its ground.',
+            text: 'The sheriff captured {count} bandits. Every coin is safe, and the town earned a {coins}-coin bounty.',
+            params: {
+              count: Math.min(event.gangSize, event.sheriffLevel * 2),
+              coins: event.bounty,
+            },
+          }
+        : {
+            speaker: SHERIFF,
+            title: 'The town stood its ground.',
+            text: 'The sheriff stopped the gang. Every coin is safe. A capture bounty is awarded when the raid ends.',
+            params,
+          };
+    return event.outcome === 'stolen'
+      ? {
+          speaker: CARETAKER,
+          title: 'Trouble rode through town.',
+          text: 'The gang took {coins} coins. Upgrade both bank and sheriff to protect against {gang} riders.',
+          params: { coins: event.loss, gang: event.gangSize },
+        }
+      : {
+          speaker: CARETAKER,
+          title: 'The riders moved on.',
+          text: 'The gang found no spare coins. Your last savings are safe.',
+          params,
+        };
+  }
   if (eventKind(event) === 'storm-cleanup')
     return {
-      speaker: 'Ada · the caretaker',
+      speaker: CARETAKER,
+      params,
       title: event.loss ? 'After the river storm' : 'The city crew kept everyone safe',
       text: event.loss
         ? 'Storm cleanup cost {coins} coins. All buildings remain intact. The fire station coordinates the response.'
@@ -211,7 +261,8 @@ export const incidentStory = (event) => {
     };
   if (eventKind(event) === 'workshop-fire')
     return {
-      speaker: 'Ada · the caretaker',
+      speaker: CARETAKER,
+      params,
       title: event.loss
         ? 'A small workshop fire'
         : script.brigade
@@ -226,7 +277,8 @@ export const incidentStory = (event) => {
           : 'A bucket line saved the workshop. No coins were lost and every building stays open.',
     };
   return {
-    speaker: 'Sam · the sheriff',
+    speaker: SHERIFF,
+    params,
     title: event.loss
       ? 'Trouble at the freight yard'
       : event.outcome === 'protected'

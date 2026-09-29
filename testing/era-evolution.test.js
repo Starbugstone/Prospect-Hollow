@@ -49,7 +49,7 @@ it('offers the town-center compass at zero mine progress and advances without ch
   const reloaded = useCampaignStore();
   expect(reloaded.town.transition.pending).toBe(true);
   expect(reloaded.acknowledgeEra()).toBe(true);
-  expect(reloaded.town.eraTransitionSeen['river-rail']).toBe(true);
+  expect(reloaded.town.transition.pending).toBe(false);
 });
 it('does not offer evolution while a final construction is waiting for its finishing tap', () => {
   const town = completeTown();
@@ -109,7 +109,6 @@ it('retains the pending cinematic if its completion cannot save', () => {
   vi.spyOn(c, 'save').mockReturnValue(false);
   expect(c.acknowledgeEra()).toBe(false);
   expect(c.town.transition.pending).toBe(true);
-  expect(c.town.eraTransitionSeen['river-rail']).not.toBe(true);
 });
 function raid(defended = true, coins = 600) {
   const town = createTown();
