@@ -1859,7 +1859,10 @@ export class TownDiorama {
     this.world.add(this.selection);
     this.render();
   }
-  showVillager(clientX, clientY) {
+  showVillager(clientX, clientY, pin = false) {
+    // Only clicking the selected visitor again dismisses a pinned name.
+    // Hovering, empty-ground clicks and leaving the canvas preserve it.
+    if (!pin && this.villagerLabelPinned && this.namedVillager) return true;
     const rect = this.canvas.getBoundingClientRect();
     let nearest = null,
       distance = 24;
@@ -1884,7 +1887,17 @@ export class TownDiorama {
         distance = delta;
       }
     }
-    this.namedVillager = nearest;
+    if (pin && nearest) {
+      const dismiss = this.villagerLabelPinned && this.namedVillager === nearest;
+      this.namedVillager = dismiss ? null : nearest;
+      this.villagerLabelPinned = !dismiss;
+      this.dismissedVillager = dismiss ? nearest : null;
+    } else if (!this.villagerLabelPinned || !this.namedVillager) {
+      // A second click stays dismissed until the pointer leaves this visitor.
+      if (nearest !== this.dismissedVillager) this.dismissedVillager = null;
+      this.namedVillager = nearest === this.dismissedVillager ? null : nearest;
+      this.villagerLabelPinned = false;
+    }
     this.projectVillager();
     return !!nearest;
   }
@@ -1893,11 +1906,14 @@ export class TownDiorama {
     if (
       !actor?.root.visible ||
       !actor.root.userData.villager?.name ||
-      actor.root.scale.x < 0.5 ||
-      !this.world?.children.includes(actor.root) ||
-      this.raid ||
-      this.cinematic
+      !this.world?.children.includes(actor.root)
     ) {
+      this.namedVillager = null;
+      this.villagerLabelPinned = false;
+      this.onVillagerLabel?.(null);
+      return;
+    }
+    if (actor.root.scale.x < 0.5 || this.raid || this.cinematic) {
       this.onVillagerLabel?.(null);
       return;
     }
@@ -1921,7 +1937,7 @@ export class TownDiorama {
     );
   }
   pick(clientX, clientY) {
-    if (this.showVillager(clientX, clientY)) return;
+    if (this.showVillager(clientX, clientY, true)) return;
     const rect = this.canvas.getBoundingClientRect();
     this.raycaster.setFromCamera(
       new THREE.Vector2(
