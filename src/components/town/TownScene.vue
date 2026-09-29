@@ -3,6 +3,8 @@
     class="town-scene"
     :class="{ 'is-raiding': raid && !reducedMotion, 'is-read-only': readOnly }"
     :aria-label="t(readOnly ? 'Village visit · view only' : 'Interactive 3D town')"
+    @mousedown.middle.prevent
+    @auxclick.middle.prevent
     @pointerdown="rememberPointer"
     @pointermove="movePointer"
     @pointerleave="leavePointer"

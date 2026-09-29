@@ -105,6 +105,44 @@ const fs = require('node:fs');
     await page.waitForFunction((count) => window.townDraws > count, draws);
     await page.screenshot({ path: 'output/playwright/admin-town-connected.png' });
     const canvas = page.locator('canvas');
+    // Middle dragging belongs to the town, not the browser's page autoscroll.
+    await page.evaluate(() => {
+      window.middleEvents = [];
+      for (const type of ['mousedown', 'auxclick'])
+        document.addEventListener(type, (event) => {
+          if (event.button === 1)
+            window.middleEvents.push({ type, prevented: event.defaultPrevented });
+        });
+    });
+    const labels = page.locator('.town-scene-labels');
+    const beforePan = await labels.evaluate((el) => el.innerHTML);
+    const scrollBeforePan = await page.evaluate(() => [scrollX, scrollY]);
+    const bounds = await canvas.boundingBox();
+    await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+    await page.mouse.down({ button: 'middle' });
+    await page.mouse.move(bounds.x + bounds.width / 2 + 80, bounds.y + bounds.height / 2 + 50, {
+      steps: 8,
+    });
+    await page.mouse.up({ button: 'middle' });
+    await page.waitForFunction(
+      (before) => document.querySelector('.town-scene-labels').innerHTML !== before,
+      beforePan,
+    );
+    assert.deepEqual(await page.evaluate(() => [scrollX, scrollY]), scrollBeforePan);
+    assert.deepEqual(await page.evaluate(() => window.middleEvents), [
+      { type: 'mousedown', prevented: true },
+      { type: 'auxclick', prevented: true },
+    ]);
+    // Middle-button defaults elsewhere on the page are left alone.
+    assert(
+      await page
+        .locator('.admin-heading')
+        .evaluate((el) =>
+          ['mousedown', 'auxclick'].every((type) =>
+            el.dispatchEvent(new MouseEvent(type, { button: 1, bubbles: true, cancelable: true })),
+          ),
+        ),
+    );
     await canvas.click({ position: { x: 150, y: 200 } });
     await canvas.press('ArrowLeft');
     await page.locator('.town-camera-bar > summary').click();
