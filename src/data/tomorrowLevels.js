@@ -18,7 +18,6 @@ const CHAPTER_PLANS = [
     id: 'dome-gardens',
     coreBonuses: ['bomb'],
     name: 'Dome gardens',
-    description: 'Charge the solar cores beneath the glass domes of Tomorrow City.',
     motif: 'dome',
     stops: ['First core', 'Glasshouse rows', 'Seed pods', 'Terrace domes', 'Quiet canopy', 'Bloom'],
     levels: [
@@ -114,7 +113,6 @@ const CHAPTER_PLANS = [
     coreCharges: 4,
     coreBonuses: ['bomb'],
     name: 'Maglev loops',
-    description: 'Release the chained capsules along the silent maglev loops.',
     motif: 'orbit',
     stops: ['Platform', 'Switch loop', 'Express pods', 'Crossover', 'Night service', 'Grand loop'],
     levels: [
@@ -209,7 +207,6 @@ const CHAPTER_PLANS = [
     coreCharges: 4,
     coreBonuses: ['bomb'],
     name: 'Solar terraces',
-    description: 'Collect sun-bright ore across the stepped solar terraces.',
     motif: 'steps',
     stops: ['Sunrise', 'Panel rows', 'Harvest lift', 'High terrace', 'Shade garden', 'Solar noon'],
     levels: [
@@ -313,7 +310,6 @@ const CHAPTER_PLANS = [
     coreCharges: 4,
     coreBonuses: ['bomb'],
     name: 'Hover lanes',
-    description: 'Clear the hover lanes and guide the cargo pods to their docks.',
     motif: 'ribbon',
     stops: ['On-ramp', 'Lane markers', 'Cargo run', 'Rush hour', 'Scenic route', 'Skyway'],
     levels: [
@@ -409,7 +405,6 @@ const CHAPTER_PLANS = [
     coreCharges: 4,
     coreBonuses: ['bomb'],
     name: 'Orbital observatory',
-    description: 'Align the numbered survey lights around the orbital observatory.',
     motif: 'orbit',
     stops: [
       'Launch window',
@@ -514,7 +509,6 @@ const CHAPTER_PLANS = [
     coreCharges: 4,
     coreBonuses: ['bomb'],
     name: 'Capsule commons',
-    description: 'Open the colored capsule seals around the shared commons.',
     motif: 'pool',
     stops: [
       'Welcome pod',
@@ -620,7 +614,6 @@ const CHAPTER_PLANS = [
     coreCharges: 5,
     coreBonuses: ['bomb'],
     name: 'Fusion sphere',
-    description: 'Wake the fusion sphere at the heart of Tomorrow City.',
     motif: 'pocket',
     stops: ['Ignition', 'Magnet ring', 'Plasma lift', 'Containment', 'Cooling loop', 'Full power'],
     levels: [
@@ -722,7 +715,6 @@ const CHAPTER_PLANS = [
     coreCharges: 5,
     coreBonuses: ['bomb'],
     name: 'Skyline of tomorrow',
-    description: 'Bring every discovery home to the bright skyline of Tomorrow City.',
     motif: 'arch',
     stops: ['Sky bridge', 'Beacon lights', 'Rooftop parcels', 'Spire', 'Garden deck', 'Tomorrow'],
     levels: [
@@ -849,10 +841,9 @@ export const parseTomorrowBoard = (board) => {
   };
 };
 
-export const TOMORROW_CHAPTERS = CHAPTER_PLANS.map(({ id, name, description }) => ({
+export const TOMORROW_CHAPTERS = CHAPTER_PLANS.map(({ id, name }) => ({
   id,
   name,
-  description,
   theme: id,
   style: 'tomorrow',
   cols: COLS,

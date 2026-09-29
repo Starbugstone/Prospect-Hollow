@@ -78,7 +78,7 @@ describe('One browser language across the game and town', () => {
       ...Object.values(CITY_DESCRIPTIONS).flat(),
       ...generateLevelConfigs().map((level) => level.tip),
       ...OBSTACLES.flatMap((item) => [item.name, item.instruction]),
-      ...CHAPTERS.flatMap((c) => [c.name, c.description]),
+      ...CHAPTERS.map((c) => c.name),
       ...POWERS.map((p) => p.label),
       ...Object.values(CHEST_LABELS),
       ...Object.values(INITIAL_STORY),

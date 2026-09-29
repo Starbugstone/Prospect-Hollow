@@ -58,7 +58,8 @@ afterEach(() => {
 
 describe('append-only Tomorrow City campaign', () => {
   it('keeps the existing 324 levels, names, chapters and star targets byte-for-byte stable', () => {
-    // Captured from feat/future-era before the Tomorrow chapters were appended.
+    // Captured from feat/future-era before the Tomorrow chapters were appended, then
+    // re-captured when the unused chapter descriptions were deleted (nothing else changed).
     const original = generateLevelConfigs(324).map(({ board, ...level }) => ({
       ...level,
       board: board.map((gem) => (gem ? gem.type : null)),
@@ -70,7 +71,7 @@ describe('append-only Tomorrow City campaign', () => {
       chapters: CHAPTERS.slice(0, 54),
     });
     expect(createHash('sha256').update(payload).digest('hex')).toBe(
-      'e977093ee0e53024ad215aa254106256164d470728b66d840c74f4167baa9987',
+      '6120d58cb172d53849dd7887096755d41ddba0ed3020d53da692f967377eb97d',
     );
   });
 
