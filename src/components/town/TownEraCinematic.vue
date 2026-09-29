@@ -1,7 +1,7 @@
 <template>
   <dialog
     ref="dialog"
-    class="era-cinematic"
+    class="town-cinematic era-cinematic"
     :class="{ 'era-still': reducedMotion, 'era-revealed': revealed, 'era-working': chapter === 1 }"
     :aria-label="t('A new era for Prospect Hollow')"
     @cancel.prevent="skip"
@@ -49,10 +49,11 @@
   </dialog>
 </template>
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { t } from '../../i18n';
 import { ERA_BY_ID } from '../../data/eras';
 import { ERA_CONSTRUCTION } from '../../data/mineEvolution';
+import { useCinematic } from '../../composables/useCinematic';
 const props = defineProps({
   eraId: String,
   reducedMotion: Boolean,
@@ -60,23 +61,34 @@ const props = defineProps({
   paused: Boolean,
 });
 const emit = defineEmits(['reveal', 'frame', 'complete', 'sound', 'silence']);
-const dialog = ref(null),
-  skipButton = ref(null),
-  explore = ref(null);
-const elapsed = ref(0),
+const skipButton = ref(null),
+  explore = ref(null),
   revealed = ref(false);
 const era = computed(() => ERA_BY_ID[props.eraId]);
 const duration = ERA_CONSTRUCTION.duration * 1000;
-const finished = computed(() => elapsed.value >= duration);
+const { dialog, elapsed, finished, start, complete } = useCinematic({
+  duration: () => duration,
+  running: () => props.ready && !props.paused,
+  onOpen() {
+    if (props.reducedMotion) still();
+    else {
+      skipButton.value?.focus();
+      emit('sound', 'era-departure');
+      start();
+    }
+  },
+  onTick() {
+    if (elapsed.value >= ERA_CONSTRUCTION.reveal * 1000) reveal();
+    if (props.ready && !props.paused) emit('frame', elapsed.value / duration);
+  },
+  onFinish: () => nextTick(() => explore.value?.focus()),
+  onHidden: () => emit('silence'),
+  onClose: () => emit('silence'),
+});
 const chapter = computed(() => (elapsed.value < 3000 ? 0 : elapsed.value < 18000 ? 1 : 2));
 const dawn = computed(() =>
   props.reducedMotion ? 0 : Math.max(0, 1 - Math.abs(elapsed.value - duration + 4000) / 550) * 0.25,
 );
-let frame, previous, previousFocus;
-const visibilityChanged = () => {
-  previous = undefined;
-  if (document.hidden) emit('silence');
-};
 function reveal() {
   if (revealed.value) return;
   revealed.value = true;
@@ -88,20 +100,11 @@ function skip() {
   emit('complete');
 }
 async function still() {
-  elapsed.value = duration;
+  complete();
   reveal();
   await nextTick();
   emit('frame', 1);
   explore.value?.focus();
-}
-function tick(now) {
-  if (previous && props.ready && !props.paused && !document.hidden)
-    elapsed.value = Math.min(duration, elapsed.value + now - previous);
-  previous = now;
-  if (elapsed.value >= ERA_CONSTRUCTION.reveal * 1000) reveal();
-  if (props.ready && !props.paused) emit('frame', elapsed.value / duration);
-  if (!finished.value) frame = requestAnimationFrame(tick);
-  else nextTick(() => explore.value?.focus());
 }
 watch(
   () => props.ready,
@@ -114,48 +117,14 @@ watch(
   (value) => {
     if (value) {
       emit('silence');
-      cancelAnimationFrame(frame);
       still();
     }
   },
 );
-onMounted(() => {
-  previousFocus = document.activeElement;
-  document.addEventListener('visibilitychange', visibilityChanged);
-  dialog.value.showModal();
-  if (props.reducedMotion) still();
-  else {
-    skipButton.value?.focus();
-    emit('sound', 'era-departure');
-    frame = requestAnimationFrame(tick);
-  }
-});
-onBeforeUnmount(() => {
-  emit('silence');
-  cancelAnimationFrame(frame);
-  document.removeEventListener('visibilitychange', visibilityChanged);
-  dialog.value?.close();
-  if (previousFocus?.isConnected) previousFocus.focus();
-});
 </script>
 <style scoped>
 .era-cinematic {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  max-height: none;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
   color: #fff5d9;
-  overflow: hidden;
-  text-align: center;
-}
-.era-cinematic::backdrop {
-  background: transparent;
 }
 .era-vignette {
   position: absolute;

@@ -1951,3 +1951,21 @@ html:has(.town-museum[open]) {
   white-space: nowrap;
   pointer-events: none;
 }
+/* Full-screen cinematic dialogs draw over the live village (era change, presentations). */
+.town-cinematic {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: hidden;
+  text-align: center;
+}
+.town-cinematic::backdrop {
+  background: transparent;
+}
