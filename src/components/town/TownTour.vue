@@ -62,7 +62,7 @@ const steps = [
   {
     id: 'saloon',
     title: 'Keep the village growing',
-    text: 'The saloon stores up to eight hours of earnings. Tap it to collect your coins. Visit the museum to replay old puzzles. Rare builder hammers come only from mine bonus chests and build or improve an unlocked building instantly for free.',
+    text: 'The saloon stores up to five hours of earnings. Tap it to collect your coins. Visit the museum to replay old puzzles. Rare builder hammers come only from mine bonus chests and build or improve an unlocked building instantly for free.',
   },
   {
     id: 'bank',

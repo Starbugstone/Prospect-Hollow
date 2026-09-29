@@ -4,7 +4,7 @@ import { walkPath } from './TownNavigation';
 import { BRIDGE, streetHeight } from './TownRiver';
 import { villagerRandom, villagerIdentity } from '../../data/villagers';
 import { hasVisitorTransport } from '../../data/visitorArrivals';
-import { vipVisitBuildings, vipVisitCount } from '../../data/vipVisits';
+import { canVipSpend, vipVisitBuildings, vipVisitCount } from '../../data/vipVisits';
 
 export { streetHeight } from './TownRiver';
 const gap = (a, b) => Math.hypot(a[0] - b[0], a[2] - b[2]);
@@ -277,7 +277,7 @@ export function beginItinerary(d, actor) {
     const guest = hasVisitorTransport(d.town) ? null : d.drawVip(actor.seed, r.visit);
     d.setVillagerIdentity(actor, guest ?? villagerIdentity(actor.seed), seed);
   }
-  const count = actor.root.userData.villager?.name ? vipVisitCount(seed) : 0;
+  const count = canVipSpend(actor.root.userData.villager) ? vipVisitCount(seed) : 0;
   r.stops = plan.stops.slice(0, count);
   actor.routeProgress = 0;
   actor.routeResting = false;
@@ -315,10 +315,15 @@ export function updateItinerary(d, actor, time) {
   } else if (r.phase === 'indoors' && age >= 1.2) {
     // Advance before notifying Vue: reentrant rendering cannot pay twice.
     const stop = r.stops[r.stop];
-    const receipt = { tour: r.tour, stop: r.stop++, building: stop.building };
+    const receipt = {
+      tour: r.tour,
+      stop: r.stop++,
+      building: stop.building,
+      visitor: actor.root.userData.villager,
+    };
     r.phase = 'leaving';
     r.since = time;
-    if (actor.root.userData.villager?.name) d.onVipSpend?.(receipt);
+    if (canVipSpend(receipt.visitor)) d.onVipSpend?.(receipt);
   } else if (r.phase === 'leaving') {
     actor.root.scale.setScalar(Math.min(1, age / 0.35));
     if (age >= 0.35) {

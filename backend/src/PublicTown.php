@@ -27,6 +27,13 @@ final class PublicTown {
         // Like the owner's own mine sign: the first puzzle without a completion record.
         $records=(array)($profile->records??[]);$appearance['mineLevel']=1;
         while($appearance['mineLevel']<($schema['levels']??1)&&isset($records[$appearance['mineLevel']]))$appearance['mineLevel']++;
+        // Share only authored level IDs and their earned stars, never the full save records.
+        $appearance['levelRecords']=new \stdClass();
+        foreach($records as $id=>$record) {
+            if(!ctype_digit((string)$id)||(int)$id<1||(int)$id>($schema['levels']??1))continue;
+            $stars=is_object($record)?($record->stars??null):null;
+            if(is_int($stars)&&$stars>=1&&$stars<=3)$appearance['levelRecords']->{(string)(int)$id}=(object)['stars'=>$stars];
+        }
         return json_encode(['villageId'=>$publicId,'name'=>$name,'era'=>$era,'appearance'=>$appearance],JSON_THROW_ON_ERROR);
     }
     public function browse(Request $r): array {
@@ -44,6 +51,13 @@ final class PublicTown {
         $row=$this->database->get()->fetchAssociative('SELECT t.id,t.player_id,t.appearance,s.collected_at FROM towns t LEFT JOIN saloon_collections s ON s.town_id=t.id WHERE t.public_id=? AND t.listed=1 AND t.deleted_at IS NULL',[$id]);
         if(!$row)throw new ApiError(404,'Town unavailable.');
         $village=json_decode($row['appearance']);
+        // Older shared appearances predate level awards. Project their saved progress
+        // on read so visitors need not wait for the owner to connect and save again.
+        if(!isset($village->appearance->levelRecords)) {
+            $saved=$this->database->get()->fetchAssociative('SELECT profile,name,public_id FROM towns WHERE id=? AND listed=1 AND deleted_at IS NULL',[$row['id']]);
+            if(!$saved)throw new ApiError(404,'Town unavailable.');
+            $village=json_decode($this->projection(json_decode($saved['profile']),$saved['name'],$saved['public_id']));
+        }
         $village->saloonReadyAt=$this->saloonReadyAt($row['collected_at']);
         return $village;
     }

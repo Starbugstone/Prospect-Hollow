@@ -27,5 +27,5 @@ export function vipVisitor(seed, visit = 0, pools = names) {
   const key = Math.trunc(seed) * 65537 + Math.trunc(visit) * 31337;
   const chosen = entries[Math.floor(villagerRandom(key) * entries.length)];
   // Most visits remain ordinary, independently of the selected name.
-  return villagerRandom(key + 7919) < 0.25 ? chosen : null;
+  return villagerRandom(key + 7919) < 0.25 ? { ...chosen, vip: true } : null;
 }

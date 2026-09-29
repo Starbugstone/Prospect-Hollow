@@ -341,7 +341,7 @@ export function plotUnlocked(town, id) {
   return plotInEra(town, id) && !plotRequirement(town, id);
 }
 export const HOUR_MS = 3_600_000;
-const INCOME_HOURS_CAP = 8;
+const INCOME_HOURS_CAP = 5;
 const COLLECTION_COOLDOWN_MS = 30_000;
 export function collectionCooldownRemaining(town, id, now = Date.now()) {
   const collectedAt = town.lastCollections?.[id];

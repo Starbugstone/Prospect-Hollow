@@ -206,7 +206,7 @@
         <p>
           {{
             t(
-              'Tap the saloon or its coin icon in the town to collect stored earnings. Opening this card does not collect them. Storage holds up to eight hours of income.',
+              'Tap the saloon or its coin icon in the town to collect stored earnings. Opening this card does not collect them. Storage holds up to five hours of income.',
             )
           }}
         </p>
@@ -221,7 +221,7 @@
           })
         }}
       </p>
-      <small>{{ t('Up to 8 hours of income saved while away.') }}</small>
+      <small>{{ t('Up to 5 hours of income saved while away.') }}</small>
       <small v-if="lastIncome">{{
         t('Last earnings: +{coins} coins', { coins: lastIncome })
       }}</small>

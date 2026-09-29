@@ -180,28 +180,28 @@ describe('Stored saloon earnings and explicit collection', () => {
     expect(town.income.remainder).toBe(0);
     expect(settleSaloonIncome(town, HOUR_MS * 2).earned).toBe(0);
   });
-  it('stores online earnings at the eight-hour cap and only a player collection credits the wallet', () => {
+  it('stores online earnings at the five-hour cap and only a player collection credits the wallet', () => {
     const campaign = useCampaignStore();
     campaign.town = village({ saloon: 1 });
     campaign.accrueSaloonIncome(HOUR_MS);
     campaign.save();
     const checkpoint = saves.get(SAVE_KEY);
     for (let hour = 2; hour <= 20; hour++) campaign.accrueSaloonIncome(HOUR_MS * hour);
-    expect(campaign.town.income.stored).toBe(48);
+    expect(campaign.town.income.stored).toBe(30);
     expect(campaign.town.coins).toBe(600);
     expect(saves.get(SAVE_KEY)).toBe(checkpoint);
     setActivePinia(createPinia());
     const reloaded = useCampaignStore();
     reloaded.accrueSaloonIncome(HOUR_MS * 20);
-    expect(reloaded.town.income.stored).toBe(48);
+    expect(reloaded.town.income.stored).toBe(30);
     expect(reloaded.town.coins).toBe(600);
-    expect(reloaded.collectSaloonIncome(HOUR_MS * 20)).toBe(48);
-    expect(reloaded.town.coins).toBe(648);
+    expect(reloaded.collectSaloonIncome(HOUR_MS * 20)).toBe(30);
+    expect(reloaded.town.coins).toBe(630);
     setActivePinia(createPinia());
     const collected = useCampaignStore();
     expect(collected.collectSaloonIncome(HOUR_MS * 20)).toBe(0);
     expect(collected.collectSaloonIncome(HOUR_MS * 21)).toBe(6);
-    expect(collected.town.coins).toBe(654);
+    expect(collected.town.coins).toBe(636);
   });
   it.each([0, 1])('does not write idle checkpoints with saloon level %i', (saloon) => {
     const campaign = useCampaignStore();
@@ -244,13 +244,13 @@ describe('Stored saloon earnings and explicit collection', () => {
     expect(collected.town.income.remainder).toBe(180000);
     expect(collected.town.coins).toBe(601);
   });
-  it('scales with completed saloon levels and houses; needs customers and stops at eight away hours', () => {
+  it('scales with completed saloon levels and houses; needs customers and stops at five away hours', () => {
     const town = village({ saloon: 3, home: 2, home2: 1, home3: 1, home4: 1 });
     town.projects.home4 = { id: 'home4', stage: 2, wins: 0, required: 4 };
     expect(saloonIncomeRate(town)).toBe(55);
     const start = settleSaloonIncome(town, HOUR_MS).town;
     const collected = settleSaloonIncome(start, HOUR_MS * 101);
-    expect(collected.earned).toBe(440);
+    expect(collected.earned).toBe(275);
     expect(settleSaloonIncome(collected.town, HOUR_MS * 101).earned).toBe(0);
     expect(settleSaloonIncome(collected.town, HOUR_MS * 102).earned).toBe(0);
     expect(saloonIncomeRate(village({ farm: 0, saloon: 3 }))).toBe(0);
@@ -259,11 +259,11 @@ describe('Stored saloon earnings and explicit collection', () => {
   it('preserves already stored coins if a population change lowers the current storage cap', () => {
     let town = settleSaloonIncome(village({ saloon: 1, stable: 1 }), HOUR_MS).town;
     town = settleSaloonIncome(town, HOUR_MS * 9).town;
-    expect(town.income.stored).toBe(104);
+    expect(town.income.stored).toBe(65);
     town.buildings.farm = 0;
-    expect(saloonIncomeRate(town) * 8).toBeLessThan(104);
+    expect(saloonIncomeRate(town) * 5).toBeLessThan(65);
     town = normalizeTown(town);
-    expect(settleSaloonIncome(town, HOUR_MS * 10).town.income.stored).toBe(104);
+    expect(settleSaloonIncome(town, HOUR_MS * 10).town.income.stored).toBe(65);
   });
   it('does not double-credit clock rollback and rejects invalid clock/checkpoint values', () => {
     const town = settleSaloonIncome(village({ saloon: 1 }), HOUR_MS * 2).town;

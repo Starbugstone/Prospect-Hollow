@@ -84,90 +84,54 @@
         t('Your first display is waiting. Complete a puzzle at the mine, then return to replay it.')
       }}
     </p>
-    <section
-      v-for="(chapter, index) in CHAPTERS"
-      :key="chapter.name"
-      v-show="chapterLevels(index).length"
-      class="museum-chapter"
+    <MuseumLevelGrid
+      :level-ids="visibleLevels"
+      :records="campaign.records"
+      :continuous="mode === 'continuous'"
+      @play="mode === 'normal' ? $emit('replay', $event) : $emit('continuous', $event)"
     >
-      <h3>
-        <span>{{ String(index + 1).padStart(2, '0') }}</span
-        >{{ t(chapter.name) }}
-      </h3>
-      <div class="museum-grid">
-        <button
-          v-for="id in chapterLevels(index)"
-          :key="id"
-          :aria-label="
-            t(
-              mode === 'normal'
-                ? 'Replay level {level}: {name}'
-                : 'Continuous play, level {level}: {name}',
-              { level: id, name: t(LEVEL_NAMES[id - 1]) },
-            )
-          "
-          @click="mode === 'normal' ? $emit('replay', id) : $emit('continuous', id)"
-        >
-          <span class="museum-level-number">{{ String(id).padStart(2, '0') }}</span
-          ><img :src="`/art/${gems[index % gems.length]}.svg`" alt="" /><strong>{{
-            t(LEVEL_NAMES[id - 1])
-          }}</strong>
-          <template v-if="mode === 'normal'"
-            ><span
-              class="museum-stars"
-              :aria-label="t('{value0} of 3 stars', { value0: campaign.records[id].stars })"
-              >{{ '✦'.repeat(campaign.records[id].stars)
-              }}{{ '✧'.repeat(3 - campaign.records[id].stars) }}</span
-            ><small>{{
-              t('Best score: {score}', { score: number(campaign.records[id].score) })
-            }}</small
-            ><small v-if="campaign.records[id].bestTimeMs">{{
-              t('Best time: {time}', { time: formatTime(campaign.records[id].bestTimeMs) })
-            }}</small></template
-          >
-          <template v-else
-            ><span class="museum-stars">∞</span
-            ><small>{{
-              t('Best score: {score}', {
-                score: number(campaign.continuousRecords[id]?.score ?? 0),
-              })
-            }}</small
-            ><small>{{
-              t('{earned}/{cap} coins collected', {
-                earned: campaign.continuousRecords[id]?.coins ?? 0,
-                cap: CONTINUOUS_COIN_CAP,
-              })
-            }}</small></template
-          >
-          <span class="museum-play"
-            >{{ t(mode === 'normal' ? 'Play again' : 'Keep matching') }} →</span
-          >
-        </button>
-      </div>
-    </section>
+      <template #default="{ id }">
+        <template v-if="mode === 'normal'">
+          <small>{{
+            t('Best score: {score}', { score: number(campaign.records[id].score) })
+          }}</small>
+          <small v-if="campaign.records[id].bestTimeMs">{{
+            t('Best time: {time}', { time: formatTime(campaign.records[id].bestTimeMs) })
+          }}</small>
+        </template>
+        <template v-else>
+          <small>{{
+            t('Best score: {score}', { score: number(campaign.continuousRecords[id]?.score ?? 0) })
+          }}</small>
+          <small>{{
+            t('{earned}/{cap} coins collected', {
+              earned: campaign.continuousRecords[id]?.coins ?? 0,
+              cap: CONTINUOUS_COIN_CAP,
+            })
+          }}</small>
+        </template>
+      </template>
+    </MuseumLevelGrid>
   </dialog>
 </template>
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+import MuseumLevelGrid from './MuseumLevelGrid.vue';
 import { useNativeDialog } from '../../composables/useNativeDialog';
 import { t, number } from '../../i18n';
 import { useCampaignStore } from '../../stores/campaignStore';
-import { CHAPTERS, LEVEL_COUNT, formatTime } from '../../data/campaign';
-import { chapterLevelIds } from '../../data/chapters';
-import { LEVEL_NAMES } from '../../data/levelNames';
+import { LEVEL_COUNT, formatTime } from '../../data/campaign';
 import { CONTINUOUS_COIN_CAP } from '../../data/rewards';
 const emit = defineEmits(['close', 'replay', 'continuous']);
 const campaign = useCampaignStore();
 const { dialog, closeButton, dismissBackdrop } = useNativeDialog(() => emit('close'));
 const mode = ref('normal');
 const needsStars = ref(false);
-const chapterLevels = (index) =>
-  chapterLevelIds(index).filter(
-    (id) =>
-      id <= LEVEL_COUNT &&
-      (mode.value === 'continuous'
-        ? campaign.isUnlocked(id)
-        : campaign.records[id] && (!needsStars.value || campaign.records[id].stars < 3)),
-  );
-const gems = ['emerald', 'sapphire', 'topaz', 'amethyst', 'ruby', 'moonstone'];
+const visibleLevels = computed(() =>
+  Array.from({ length: LEVEL_COUNT }, (_, index) => index + 1).filter((id) =>
+    mode.value === 'continuous'
+      ? campaign.isUnlocked(id)
+      : campaign.records[id] && (!needsStars.value || campaign.records[id].stars < 3),
+  ),
+);
 </script>

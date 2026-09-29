@@ -1,6 +1,10 @@
 import { it, expect } from 'vitest';
-import { villageAppearance } from '../src/services/publicVillage';
+import { villageAppearance, villageLevels } from '../src/services/publicVillage';
 import { createTown } from '../src/data/town';
+import { LEVEL_COUNT } from '../src/data/campaign';
+import { createSSRApp } from 'vue';
+import { renderToString } from 'vue/server-renderer';
+import MuseumLevelGrid from '../src/components/town/MuseumLevelGrid.vue';
 
 it('builds an isolated visit model without importing private balances or actions', () => {
   const own = createTown();
@@ -37,4 +41,95 @@ it('builds an isolated visit model without importing private balances or actions
   expect(appearance.projects.well.wins).toBe(100);
   expect(own.coins).toBe(700);
   expect(own.buildings.well).toBe(0);
+});
+
+it('shows unlocked levels and all earned awards using only the visited town', () => {
+  const village = {
+    appearance: {
+      mineLevel: 3,
+      levelRecords: {
+        1: { stars: 3, score: 900 },
+        2: { stars: 1 },
+        4: { stars: 2 },
+      },
+    },
+  };
+  const levels = villageLevels(village);
+  expect(levels).toEqual({
+    available: true,
+    levelIds: [1, 2, 3, 4],
+    records: {
+      1: { stars: 3 },
+      2: { stars: 1 },
+      4: { stars: 2 },
+    },
+  });
+  levels.records[1].stars = 1;
+  expect(village.appearance.levelRecords[1].stars).toBe(3);
+});
+
+it('handles new, legacy, invalid and fully completed public collections', () => {
+  expect(villageLevels({ appearance: { mineLevel: 1, levelRecords: {} } })).toEqual({
+    available: true,
+    levelIds: [1],
+    records: {},
+  });
+  expect(villageLevels({ appearance: { mineLevel: 3 }, records: { 1: { stars: 3 } } })).toEqual({
+    available: false,
+    levelIds: [1, 2, 3],
+    records: {},
+  });
+  expect(
+    villageLevels({
+      appearance: {
+        mineLevel: '3',
+        levelRecords: {
+          0: { stars: 2 },
+          [LEVEL_COUNT + 1]: { stars: 3 },
+          1: { stars: 4 },
+          2: null,
+          3: { stars: '2' },
+          4: { stars: -1 },
+        },
+      },
+    }),
+  ).toEqual({ available: true, levelIds: [], records: {} });
+  const records = Object.fromEntries(
+    Array.from({ length: LEVEL_COUNT }, (_, i) => [i + 1, { stars: 3 }]),
+  );
+  const complete = villageLevels({ appearance: { mineLevel: LEVEL_COUNT, levelRecords: records } });
+  expect(complete.levelIds).toHaveLength(LEVEL_COUNT);
+  expect(complete.records).toEqual(records);
+});
+
+it('renders visitor chapter cards and star awards without replay controls or locked levels', async () => {
+  const html = await renderToString(
+    createSSRApp(MuseumLevelGrid, {
+      levelIds: [1, 2, 3, 7],
+      records: { 1: { stars: 3 }, 2: { stars: 1 }, 7: { stars: 2 } },
+      readOnly: true,
+    }),
+  );
+  expect(html.match(/<article/g)).toHaveLength(4);
+  expect(html.match(/class="museum-chapter"/g)).toHaveLength(2);
+  for (const stars of [1, 2, 3]) expect(html).toContain(`aria-label="${stars} of 3 stars"`);
+  expect(html).toContain('Not completed yet');
+  expect(html).not.toContain('<button');
+  expect(html).not.toContain('Play again');
+  expect(html).not.toContain('Level 4:');
+});
+
+it('keeps replay and continuous controls in the player museum grid', async () => {
+  for (const continuous of [false, true]) {
+    const html = await renderToString(
+      createSSRApp(MuseumLevelGrid, {
+        levelIds: [1],
+        records: { 1: { stars: 2 } },
+        continuous,
+      }),
+    );
+    expect(html).toContain('<button');
+    expect(html).toContain(continuous ? 'Keep matching' : 'Play again');
+    expect(html).toContain(continuous ? 'Continuous play, level 1:' : 'Replay level 1:');
+  }
 });

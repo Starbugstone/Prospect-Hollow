@@ -67,13 +67,26 @@ try {
  $shared=status(200,callApi('PATCH','towns/'.$town2['townId'].'/settings',['baseRevision'=>2,'name'=>'Other Details','isPublic'=>true],$a),'publish second town')['publicId'];
  $sharedVisit=status(200,callApi('GET','villages/'.$shared),'anonymous visit');check($sharedVisit['saloonReadyAt']===0&&!isset($sharedVisit['guest'],$sharedVisit['visits']),'visit shows only saloon readiness');
  check(status(409,callApi('POST','villages/'.$shared.'/saloon',(object)[]),'no saloon to collect')['code']==='no_saloon','saloon must be built');
- $saloon=profile(40);$saloon->town->buildings->saloon=1;status(200,callApi('PUT','towns/'.$town2['townId'],['baseRevision'=>2,'uploadId'=>uuid(),'profile'=>$saloon],$a),'build saloon');
+ $saloon=profile(40);$saloon->town->buildings->saloon=1;$saloon->records=(object)['1'=>(object)['stars'=>3,'score'=>4000,'bestTimeMs'=>1200,'private'=>'hidden']];status(200,callApi('PUT','towns/'.$town2['townId'],['baseRevision'=>2,'uploadId'=>uuid(),'profile'=>$saloon],$a),'build saloon');
  // An open visit polls for the owner's progress: the same public view, never a new guest.
  $live=status(200,callApi('GET','villages/'.$shared.'/latest'),'anonymous poll');check($live['appearance']['buildings']['saloon']===1&&$live['saloonReadyAt']===0&&array_keys($live)===array_keys($sharedVisit),'a watching visitor sees the owner\'s latest save');
  // A visit shows the owner's mine level and a level-5 landmark as it is, not capped at 3.
- check($live['appearance']['mineLevel']===1,'a new town is on mine level 1');
+ check($sharedVisit['appearance']['mineLevel']===1&&$sharedVisit['appearance']['levelRecords']===[],'a new town has no awards and unlocks level 1');
+ check($live['appearance']['mineLevel']===2&&$live['appearance']['levelRecords']===[1=>['stars'=>3]],'poll publishes only completed level stars from the latest owner save');
+ // Existing shares gain awards immediately without requiring another owner save.
+ $legacy=$live;unset($legacy['appearance']['levelRecords'],$legacy['saloonReadyAt']);
+ $db->get()->update('towns',['appearance'=>json_encode($legacy)],['id'=>$town2['townId']]);
+ foreach(['','/latest'] as $suffix) {
+  $upgraded=status(200,callApi('GET','villages/'.$shared.$suffix),'legacy shared collection');
+  check($upgraded['appearance']['levelRecords']===[1=>['stars'=>3]]&&!isset($upgraded['profile']),'legacy view projects only public awards');
+ }
+
  $progress=profile();$progress->town->buildings->saloon=5;$progress->town->buildingEraLevels->saloon=9;$progress->records=(object)['1'=>(object)['stars'=>3],'2'=>(object)['stars'=>1],'4'=>(object)['stars'=>2]];
  $view=json_decode($public->projection($progress,'Progress','0'),true)['appearance'];check($view['mineLevel']===3&&$view['buildings']['saloon']===5&&$view['buildingEraLevels']['saloon']===3,'visit shows the next mine level and true building levels');
+ check($view['levelRecords']===[1=>['stars'=>3],2=>['stars'=>1],4=>['stars'=>2]],'public collection retains every completion including a gap');
+ $progress->records=(object)['0'=>(object)['stars'=>3],'999999'=>(object)['stars'=>3],'bad'=>(object)['stars'=>3],'1'=>(object)['stars'=>4],'2'=>(object)['stars'=>0],'3'=>(object)['stars'=>'2'],'4'=>(object)['stars'=>2,'score'=>100,'secret'=>'private']];
+ $awards=json_decode($public->projection($progress,'Progress','0'),true)['appearance']['levelRecords'];
+ check($awards===[4=>['stars'=>2]],'awards omit unknown levels, invalid stars and private record fields');
  status(422,callApi('POST','villages/'.$shared.'/saloon',['coins'=>999]),'visitors cannot name an amount');
  $tap=status(200,callApi('POST','villages/'.$shared.'/saloon',(object)[]),'anonymous saloon tap');check($tap['readyAt']>time(),'saloon rests after a tap');
  $rest=status(409,callApi('POST','villages/'.$shared.'/saloon',(object)[],$b),'second visitor within the hour');check($rest['code']==='saloon_resting'&&$rest['readyAt']===$tap['readyAt'],'one saloon tap per town per hour');

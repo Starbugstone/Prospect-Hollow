@@ -86,7 +86,7 @@ export class TownVipArrivals {
     this.syncGuest(town);
   }
   // The latest signed-in viewer of the owner's shared town, applied on reconnect, walks in
-  // as a dedicated VIP whatever the town's visitors or transport, then follows VIP rules.
+  // as a dedicated guest whatever the town's visitors or transport, without VIP spending.
   syncGuest(town, rebuild = false) {
     const visit = town?.guestVip;
     if (

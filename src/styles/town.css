@@ -1004,7 +1004,7 @@
   gap: 14px;
   margin-bottom: 30px;
 }
-.museum-grid > button {
+.museum-grid > .museum-level {
   position: relative;
   display: flex;
   flex-direction: column;

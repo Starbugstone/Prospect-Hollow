@@ -493,8 +493,8 @@ export const useCampaignStore = defineStore('campaign', {
       });
       return saved ? coins : 0;
     },
-    // A share-link visitor collected the saloon: move its reserved coins as if the owner
-    // had tapped it, once per collection, so nothing is minted. Returns coins moved.
+    // A share-link visitor collects up to one hour of income from the reserved coins,
+    // once per collection, leaving the rest for the owner. Returns coins moved.
     collectSaloonForVisitor(at, now = Date.now()) {
       if (!Number.isSafeInteger(at) || at <= this.town.saloonVisitAt || !Number.isSafeInteger(now))
         return null;
@@ -502,7 +502,11 @@ export const useCampaignStore = defineStore('campaign', {
         coins = 0;
       if (town.buildings.saloon) {
         town = settleSaloonIncome(town, now).town;
-        coins = Math.min(town.income.stored ?? 0, Number.MAX_SAFE_INTEGER - town.coins);
+        coins = Math.min(
+          town.income.stored ?? 0,
+          saloonIncomeRate(town),
+          Number.MAX_SAFE_INTEGER - town.coins,
+        );
         town = {
           ...town,
           coins: town.coins + coins,

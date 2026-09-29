@@ -22,7 +22,12 @@ transport arrival. They have a distinct visitor accessory and do not consume
 ordinary visitor capacity. The guestbook lists people here now and visit
 history, with arrival/departure times and duration. History includes visits made
 while the host was offline. Returning from a puzzle shows whoever is still
-present; visits never interrupt a puzzle.
+present; visits never interrupt a puzzle. While the town view is active, small
+notices announce each new arrival and departure by public visitor name. Notices
+queue for six seconds each and can be dismissed. Opening or returning to a town
+establishes a fresh baseline without replaying earlier arrivals; entering the
+mine or switching towns clears the queue. Failed requests never generate
+departure notices or duplicate arrivals on reconnect.
 
 ## Presence lifecycle
 

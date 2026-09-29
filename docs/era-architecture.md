@@ -313,6 +313,11 @@ and gender silhouettes are shared by ordinary villagers and visitors. VIPs retai
 coordinated period outfits per visit, including coat length, hat, skirt and accessory.
 The outfit draw is independent of the name/gender draw and stable during the visit. Their names appear on tap/hover in the main view.
 
+Only identities explicitly marked `vip: true` by the random VIP draw may make
+occasional 5-coin purchases. `canVipSpend` excludes live visitors and legacy
+share-link guests, even when named. The same check gates shopping stops, spending
+notifications and wallet receipts, so ordinary visitors produce no coin animation.
+
 `TownVipArrivals` owns transient visits, never campaign events or rewards.
 Train, boat and airplane motion publish their actual arrival cycle and stopped
 vehicle through `visitorTransports`; there is no independent arrival timer.

@@ -34,6 +34,7 @@
     <p class="village-hint">{{ t('Tap a building or the mine to see its details.') }}</p>
     <TownDialog
       v-if="inspected"
+      :class="{ 'village-level-dialog': showsLevels }"
       :title="current.name"
       close-label="Close building details"
       @close="inspected = ''"
@@ -44,9 +45,11 @@
             <p class="town-kicker">{{ t('Mine level') }}</p>
             <h2>{{ t('Mine') }}</h2>
           </div>
-          <span class="town-level-badge">{{ t('Level {level}', { level: mineLevel }) }}</span>
+          <span v-if="mineLevel" class="town-level-badge">{{
+            t('Level {level}', { level: mineLevel })
+          }}</span>
         </div>
-        <p>
+        <p v-if="mineLevel">
           {{
             t('The mayor of {town} plays level {level} next.', {
               town: current.name,
@@ -55,8 +58,20 @@
           }}
         </p>
       </section>
+      <section v-if="showsLevels" :aria-label="t('Unlocked levels and stars')">
+        <p v-if="inspected === 'museum'" class="town-kicker">{{ t('The Frontier Museum') }}</p>
+        <h2>{{ t('Unlocked levels and stars') }}</h2>
+        <p>{{ t('View only') }}</p>
+        <MuseumLevelGrid
+          v-if="levels.available"
+          :level-ids="levels.levelIds"
+          :records="levels.records"
+          read-only
+        />
+        <p v-else class="museum-empty">{{ t('Level awards are not available yet.') }}</p>
+      </section>
       <TownBuildingDetails
-        v-else
+        v-if="inspected !== 'mine'"
         :key="inspected"
         :id="inspected"
         :town="town"
@@ -69,7 +84,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import VisitPresence from './VisitPresence.vue';
-import { villageAppearance } from '../../services/publicVillage';
+import { villageAppearance, villageLevels } from '../../services/publicVillage';
 import { latestVillage, tapSaloon } from '../../services/cloudProfile';
 import { createVillagePoller } from '../../services/villagePolling';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -79,10 +94,11 @@ import TownScene from '../town/TownScene.vue';
 import GameIcon from '../GameIcon.vue';
 import TownDialog from '../town/TownDialog.vue';
 import TownBuildingDetails from '../town/TownBuildingDetails.vue';
+import MuseumLevelGrid from '../town/MuseumLevelGrid.vue';
 import { BUILDING_BY_ID } from '../../data/town';
 import '../../styles/town.css';
 // One read-only renderer for shared towns, whether opened from the list or a share link.
-// A visitor can open any building's card, or the mine's level, but not build or upgrade.
+// Mine and museum cards share the owner's public collection, without replay actions.
 // The only action is collecting the saloon's takings for the owner.
 const props = defineProps({ village: { type: Object, required: true } });
 const settings = useSettingsStore();
@@ -90,11 +106,13 @@ const settings = useSettingsStore();
 const current = shallowRef(props.village),
   unshared = ref(false);
 const town = computed(() => villageAppearance(current.value));
-// Towns shared before the mine level was published have none until the owner saves again.
+// Tolerate older public responses while client and server versions roll forward.
 const mineLevel = computed(() => current.value.appearance?.mineLevel ?? 0);
 const inspected = ref('');
+const showsLevels = computed(() => ['mine', 'museum'].includes(inspected.value));
+const levels = computed(() => villageLevels(current.value));
 function inspect(id) {
-  if (id === 'mine' ? mineLevel.value > 0 : Object.hasOwn(BUILDING_BY_ID, id)) inspected.value = id;
+  if (id === 'mine' || Object.hasOwn(BUILDING_BY_ID, id)) inspected.value = id;
 }
 const hasSaloon = computed(() => current.value.appearance?.buildings?.saloon > 0);
 const readyAt = ref((props.village.saloonReadyAt ?? 0) * 1000),
@@ -177,6 +195,17 @@ async function collectSaloon() {
 }
 </script>
 <style>
+.town-dialog.village-level-dialog {
+  width: min(920px, calc(100vw - 32px));
+}
+.village-level-dialog .museum-level {
+  text-align: center;
+}
+@media (max-width: 550px) {
+  .town-dialog.village-level-dialog {
+    width: 100%;
+  }
+}
 .village-saloon {
   margin: 0 0 0.6rem;
   padding: 0.45rem 0.8rem;
