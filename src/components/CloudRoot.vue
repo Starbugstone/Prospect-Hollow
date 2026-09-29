@@ -422,7 +422,7 @@ async function prepareHandoff(key, checkDeadline) {
     await townCoordinator.drain(key);
     check();
     game.syncContinuous();
-    campaign.accrueSaloonIncome(Date.now(), false);
+    campaign.accrueSaloonIncome();
     const puzzle = game.captureHandoff();
     if (!campaign.save())
       throw new Error('Your progress could not be saved. Keep playing in the original window.');

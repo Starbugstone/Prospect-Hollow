@@ -184,11 +184,15 @@ describe('Stored saloon earnings and explicit collection', () => {
     const campaign = useCampaignStore();
     campaign.town = village({ saloon: 1 });
     campaign.accrueSaloonIncome(HOUR_MS);
+    campaign.save();
+    const checkpoint = saves.get(SAVE_KEY);
     for (let hour = 2; hour <= 20; hour++) campaign.accrueSaloonIncome(HOUR_MS * hour);
     expect(campaign.town.income.stored).toBe(48);
     expect(campaign.town.coins).toBe(600);
+    expect(saves.get(SAVE_KEY)).toBe(checkpoint);
     setActivePinia(createPinia());
     const reloaded = useCampaignStore();
+    reloaded.accrueSaloonIncome(HOUR_MS * 20);
     expect(reloaded.town.income.stored).toBe(48);
     expect(reloaded.town.coins).toBe(600);
     expect(reloaded.collectSaloonIncome(HOUR_MS * 20)).toBe(48);
@@ -198,6 +202,47 @@ describe('Stored saloon earnings and explicit collection', () => {
     expect(collected.collectSaloonIncome(HOUR_MS * 20)).toBe(0);
     expect(collected.collectSaloonIncome(HOUR_MS * 21)).toBe(6);
     expect(collected.town.coins).toBe(654);
+  });
+  it.each([0, 1])('does not write idle checkpoints with saloon level %i', (saloon) => {
+    const campaign = useCampaignStore();
+    campaign.town = village({ saloon });
+    campaign.accrueSaloonIncome(HOUR_MS);
+    campaign.save();
+    const write = vi.spyOn(localStorage, 'setItem');
+    for (let tick = 1; tick <= 120; tick++) campaign.accrueSaloonIncome(HOUR_MS + tick * 30000);
+    expect(campaign.town.income.stored).toBe(saloon ? 6 : 0);
+    expect(write).not.toHaveBeenCalled();
+  });
+  it('persists a missing legacy income checkpoint once so idle earnings survive reload', () => {
+    const campaign = useCampaignStore();
+    campaign.town = village({ saloon: 1 });
+    campaign.save();
+    expect(campaign.town.income.at).toBeNull();
+    campaign.accrueSaloonIncome(HOUR_MS);
+    const checkpoint = saves.get(SAVE_KEY);
+    expect(JSON.parse(checkpoint).town.income.at).toBe(HOUR_MS);
+    campaign.accrueSaloonIncome(HOUR_MS * 2);
+    expect(saves.get(SAVE_KEY)).toBe(checkpoint);
+    setActivePinia(createPinia());
+    expect(useCampaignStore().collectSaloonIncome(HOUR_MS * 2)).toBe(6);
+  });
+  it('recalculates fractional idle earnings after reload and persists collection exactly once', () => {
+    const campaign = useCampaignStore();
+    campaign.town = village({ saloon: 1 });
+    campaign.accrueSaloonIncome(HOUR_MS);
+    campaign.save();
+    campaign.accrueSaloonIncome(HOUR_MS + 30000);
+    expect(campaign.town.income.remainder).toBe(180000);
+    setActivePinia(createPinia());
+    const reloaded = useCampaignStore();
+    expect(reloaded.collectSaloonIncome(HOUR_MS + 630000)).toBe(1);
+    expect(reloaded.town.income.remainder).toBe(180000);
+    expect(reloaded.town.coins).toBe(601);
+    setActivePinia(createPinia());
+    const collected = useCampaignStore();
+    expect(collected.collectSaloonIncome(HOUR_MS + 630000)).toBe(0);
+    expect(collected.town.income.remainder).toBe(180000);
+    expect(collected.town.coins).toBe(601);
   });
   it('scales with completed saloon levels and houses; needs customers and stops at eight away hours', () => {
     const town = village({ saloon: 3, home: 2, home2: 1, home3: 1, home4: 1 });

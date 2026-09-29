@@ -39,6 +39,7 @@ import { newerGuest } from '../data/guestVip';
 import { advanceEra } from '../game/town/TownEras';
 import {
   normalizeTown,
+  saloonIncomeRate,
   settleSaloonIncome,
   collectionCooldownRemaining,
   raidBounty,
@@ -438,11 +439,16 @@ export const useCampaignStore = defineStore('campaign', {
       this.$patch((state) => Object.assign(state, defaults()));
       return true;
     },
-    accrueSaloonIncome(now = Date.now(), persist = true) {
+    // Refresh the displayed reserve without creating an idle save. Collections and
+    // other lasting changes persist it; reloads recalculate from the saved checkpoint.
+    accrueSaloonIncome(now = Date.now()) {
+      const initialize = this.town.income.at === null && saloonIncomeRate(this.town) > 0;
       const result = settleSaloonIncome(this.town, now);
       if (result.town === this.town) return 0;
       this.town = result.town;
-      if (persist) this.save();
+      // Older imports may have no starting timestamp. Establish it once so their
+      // earnings survive a reload even before the first collection or town change.
+      if (initialize) this.save();
       return result.earned;
     },
     collectVipSpending(receipt) {
@@ -462,7 +468,7 @@ export const useCampaignStore = defineStore('campaign', {
     },
     collectSaloonIncome(now = Date.now()) {
       if (!Number.isSafeInteger(now) || now < 0 || !this.town.buildings.saloon) return 0;
-      this.accrueSaloonIncome(now, false);
+      this.accrueSaloonIncome(now);
       if (collectionCooldownRemaining(this.town, 'saloon', now)) {
         this.save();
         return 0;
@@ -520,7 +526,7 @@ export const useCampaignStore = defineStore('campaign', {
       return this.commit({ town: { ...this.town, guestVip: { ...guest, seen: true } } });
     },
     upgradeBuilding(id, expectedStage) {
-      this.accrueSaloonIncome(Date.now(), false);
+      this.accrueSaloonIncome();
       const next = purchase(this.town, id, expectedStage);
       if (!next) return false;
       // A purchase stays usable in memory when storage fails; save() reports the warning.
@@ -541,7 +547,7 @@ export const useCampaignStore = defineStore('campaign', {
     // A finished building opens its services, refunds prevented raid losses and restocks
     // the shop; the settled balance and income checkpoint carry over unchanged.
     completeProject(next, extra = {}) {
-      this.accrueSaloonIncome(Date.now(), false);
+      this.accrueSaloonIncome();
       next.coins = this.town.coins;
       next.income = this.town.income;
       return this.transaction(['town', 'shopStock', 'shopVisit', ...Object.keys(extra)], () => {
@@ -559,7 +565,7 @@ export const useCampaignStore = defineStore('campaign', {
       return granted;
     },
     resolveBandits() {
-      this.accrueSaloonIncome(Date.now(), false);
+      this.accrueSaloonIncome();
       const previous = this.town;
       const scheduled = scheduleRaid(previous);
       const next = banditEncounter(scheduled);
@@ -672,7 +678,7 @@ export const useCampaignStore = defineStore('campaign', {
         validTime ? elapsedMs : Infinity,
       );
       if (Number.isFinite(bestTimeMs)) this.records[id].bestTimeMs = bestTimeMs;
-      this.accrueSaloonIncome(Date.now(), false);
+      this.accrueSaloonIncome();
       this.town.completedRuns = Math.min(Number.MAX_SAFE_INTEGER, this.town.completedRuns + 1);
       const projects = Object.values(this.town.projects).filter(
         (project) => !constructionReady(project),
