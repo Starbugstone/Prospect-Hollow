@@ -8,7 +8,7 @@ final class Kernel extends BaseKernel {
     use MicroKernelTrait;
     public function boot(): void {
         // Optional exact proxy IPs/CIDRs. Never trust forwarded Host or client IP.
-        $configured=$_ENV['TRUSTED_PROXIES'] ?? getenv('TRUSTED_PROXIES') ?: '';
+        $configured=Env::get('TRUSTED_PROXIES') ?: '';
         $proxies=$configured==='' ? [] : array_map('trim',explode(',',$configured));
         foreach($proxies as $proxy) {
             $parts=explode('/',$proxy);

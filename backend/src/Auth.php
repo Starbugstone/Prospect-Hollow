@@ -7,7 +7,7 @@ use Symfony\Component\Mime\Email;
 final class Auth {
     public function __construct(private Database $database) {}
     public function origin(): string {
-        $origin=$_ENV['APP_ORIGIN'] ?? getenv('APP_ORIGIN');
+        $origin=Env::get('APP_ORIGIN');
         if (!is_string($origin) || !preg_match('~^https?://[a-zA-Z0-9.-]+(?::[0-9]{1,5})?$~D',$origin)) throw new \RuntimeException('APP_ORIGIN must be an exact origin.');
         if (!str_starts_with($origin,'https://') && !preg_match('~^http://(localhost|127\.0\.0\.1)(:\d+)?$~D',$origin)) throw new \RuntimeException('HTTPS is required.');
         $port=parse_url($origin,PHP_URL_PORT);
@@ -15,7 +15,7 @@ final class Auth {
         return $origin;
     }
     private function secret(): string {
-        $secret=$_ENV['APP_SECRET'] ?? getenv('APP_SECRET');
+        $secret=Env::get('APP_SECRET');
         if (!is_string($secret) || strlen($secret)<32) throw new \RuntimeException('APP_SECRET must be at least 32 bytes.');
         return $secret;
     }
@@ -27,7 +27,7 @@ final class Auth {
         if (str_starts_with($origin,'https:') && !$r->isSecure()) throw new ApiError(400,'HTTPS is required.');
     }
     public function nativeOrigin(Request $r): bool {
-        $allowed=array_filter(explode(',',$_ENV['NATIVE_ORIGINS']??getenv('NATIVE_ORIGINS')?:''));
+        $allowed=array_filter(explode(',',Env::get('NATIVE_ORIGINS')?:''));
         return in_array($r->headers->get('Origin'),$allowed,true);
     }
     public function guardOrigin(Request $r): void {
@@ -52,7 +52,7 @@ final class Auth {
         $db=$this->database->get();
         if($db->isTransactionActive())return;
         try {
-            $mysql=$db->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
+            $mysql=$this->database->isMySql();
             $agent=substr(preg_replace('/[^\x20-\x7E]/','',(string)$r->headers->get('User-Agent','')),0,255);
             $now=time();
             $row=[$player,$signIn?$now:intdiv($now,60)*60,substr($r->getClientIp()??'',0,45)?:null,$agent?:null,$native?'app':'web',$signIn?$now:null,$signIn?1:0];
@@ -84,8 +84,8 @@ final class Auth {
         $db->insert('login_intents',['token_hash'=>$this->hash($token),'email'=>$email,'expires_at'=>time()+900]);
         $link=$this->origin().'/#login='.$token;
         try {
-            $mailer=new Mailer(Transport::fromDsn($_ENV['MAILER_DSN'] ?? getenv('MAILER_DSN')));
-            $mailer->send((new Email())->from($_ENV['MAIL_FROM'] ?? getenv('MAIL_FROM'))->to($email)->subject('Your Prospect Hollow sign-in link')->text("Confirm your sign-in within 15 minutes:\n\n".$link."\n\nOn mobile, paste this link into the game's account screen. If you did not request it, ignore this email."));
+            $mailer=new Mailer(Transport::fromDsn(Env::get('MAILER_DSN')));
+            $mailer->send((new Email())->from(Env::get('MAIL_FROM'))->to($email)->subject('Your Prospect Hollow sign-in link')->text("Confirm your sign-in within 15 minutes:\n\n".$link."\n\nOn mobile, paste this link into the game's account screen. If you did not request it, ignore this email."));
         } catch (\Throwable) { $db->delete('login_intents',['token_hash'=>$this->hash($token)]); error_log('mail_delivery_failed'); }
         return ['message'=>'If delivery is possible, a sign-in link is on its way.'];
     }
@@ -99,7 +99,7 @@ final class Auth {
         $id=null;
         $response=$db->transactional(function() use($db,$r,$body,$hash,$intent,&$id) {
             $emailHash=$this->hash('identity:'.$intent['email']);
-            $mysql=$db->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
+            $mysql=$this->database->isMySql();
             $db->executeStatement($mysql?'INSERT INTO identities(email_hash) VALUES (?) ON DUPLICATE KEY UPDATE email_hash=VALUES(email_hash)':'INSERT INTO identities(email_hash) VALUES (?) ON CONFLICT(email_hash) DO NOTHING',[$emailHash]);
             $db->fetchOne('SELECT email_hash FROM identities WHERE email_hash=? FOR UPDATE',[$emailHash]);
             $live=$db->fetchAssociative('SELECT * FROM login_intents WHERE token_hash=? FOR UPDATE',[$hash]);
@@ -131,7 +131,7 @@ final class Auth {
     }
     public function limit(string $key,int $max,int $seconds): void {
         $db=$this->database->get(); $bucket=$this->hash($key.':'.intdiv(time(),$seconds));
-        $sql=$db->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform
+        $sql=$this->database->isMySql()
             ? 'INSERT INTO limits(bucket,hits,until_at) VALUES (?,1,?) ON DUPLICATE KEY UPDATE hits=hits+1'
             : 'INSERT INTO limits(bucket,hits,until_at) VALUES (?,1,?) ON CONFLICT(bucket) DO UPDATE SET hits=limits.hits+1';
         $db->executeStatement($sql,[$bucket,time()+$seconds]);

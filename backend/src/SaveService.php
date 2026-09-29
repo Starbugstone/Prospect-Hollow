@@ -5,6 +5,8 @@ use Symfony\Component\HttpFoundation\Request;
 
 /** Account-owned snapshots. Gameplay rules deliberately live only in the client. */
 final class SaveService {
+    /** Cloud towns one account may keep. */
+    public const TOWN_SLOTS=3;
     public function __construct(private Database $database, private Auth $auth, private PublicTown $public) {}
     public static function keys(array $data,array $allowed): void {
         if(array_diff(array_keys($data),$allowed)) throw new ApiError(422,'Unexpected field.');
@@ -59,7 +61,7 @@ final class SaveService {
     public function account(Request $r): array {
         return $this->transaction($r,false,function($db,$account,$session) {
             $towns=$db->fetchAllAssociative('SELECT t.id,t.name,t.revision,t.saved_at,t.listed,t.public_id,t.profile,s.collected_at AS saloon_collected_at,g.name AS guest_name,g.visited_at AS guest_at FROM towns t LEFT JOIN saloon_collections s ON s.town_id=t.id LEFT JOIN town_guests g ON g.town_id=t.id WHERE t.player_id=? AND t.deleted_at IS NULL ORDER BY t.name,t.id',[$account['id']]);
-            return ['account'=>['id'=>$account['id'],'email'=>$account['email']],'csrf'=>$session['csrf'],'towns'=>array_map(fn($row)=>$this->view($row,false),$towns),'limit'=>3];
+            return ['account'=>['id'=>$account['id'],'email'=>$account['email']],'csrf'=>$session['csrf'],'towns'=>array_map(fn($row)=>$this->view($row,false),$towns),'limit'=>self::TOWN_SLOTS];
         });
     }
     private function owned($db,string $owner,string $id): array {
@@ -92,7 +94,7 @@ final class SaveService {
                 if($existing['player_id']===$a['id']&&!$existing['deleted_at']&&$existing['upload_id']===$body['uploadId']&&hash_equals($existing['upload_hash'],$hash))return $this->view($existing);
                 throw new ApiError(409,'This town ID is already attached or was deleted. Keep your local copy.',['code'=>'town_exists']);
             }
-            if((int)$db->fetchOne('SELECT COUNT(*) FROM towns WHERE player_id=? AND deleted_at IS NULL',[$a['id']])>=3)throw new ApiError(409,'Your account already has 3 towns. Keep playing locally or manage your cloud towns.',['code'=>'slots_full']);
+            if((int)$db->fetchOne('SELECT COUNT(*) FROM towns WHERE player_id=? AND deleted_at IS NULL',[$a['id']])>=self::TOWN_SLOTS)throw new ApiError(409,'Your account already has '.self::TOWN_SLOTS.' towns. Keep playing locally or manage your cloud towns.',['code'=>'slots_full']);
             [$name,$normalized]=$this->nameAvailable($db,$a['id'],$id,$body['name']);
             $row=['id'=>$id,'player_id'=>$a['id'],'name'=>$name,'normalized_name'=>$normalized,'revision'=>1,'profile'=>$json,'saved_at'=>time(),'public_id'=>bin2hex(random_bytes(16)),'listed'=>0,'upload_id'=>$body['uploadId'],'upload_hash'=>$hash];
             try { $db->insert('towns',$row); }

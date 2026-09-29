@@ -13,7 +13,7 @@ docker compose exec app php bin/migrate.php
 
 Open http://localhost:8094; development email arrives at http://localhost:8095. Choose **Protect my progress**, request a link, then explicitly confirm it. Links expire after 15 minutes. Add the device town to an available account slot or open an existing town. A full account leaves the device town playable and exportable.
 
-This replacement uses schema version **10** and a fresh database. Earlier backend versions were undeployed prototypes. The migration deliberately refuses to overwrite their tables. Point this version at a new database/Compose volume; remove an old development database only if you intend to discard it. Existing browser saves and JSON backups remain supported.
+This replacement starts at schema version **10** on a fresh database; `backend/bin/migrate.php` applies each later version in order, and `/api/health` reports ready only once the latest one is in place. Earlier backend versions were undeployed prototypes. The migration deliberately refuses to overwrite their tables. Point this version at a new database/Compose volume; remove an old development database only if you intend to discard it. Existing browser saves and JSON backups remain supported.
 
 `npm run dev` always runs the local-first game. For account features, route `/api/v1` to PHP or use the packaged Compose application. The former `VITE_CLOUD` flag and demo query mode are gone.
 
