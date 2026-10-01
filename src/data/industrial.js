@@ -1,5 +1,10 @@
 import { eraEvolution } from './eras';
-import { squareLampCorners } from './townSquare';
+import {
+  SQUARE_CORNERS,
+  SQUARE_PAVING_HEIGHT,
+  SQUARE_POSITION,
+  squareLampCorners,
+} from './townSquare';
 // First Lights adds civic milestones, not a second resource economy.
 export const INDUSTRIAL_BUILDINGS = [
   [
@@ -136,18 +141,19 @@ export const INDUSTRIAL_VARIANTS = {
 export const INDUSTRIAL_LEVEL_PRICES = eraEvolution('industrial').prices;
 export const hasElectricity = (town) =>
   eraEvolution(town.era).electricity && town.buildings.powerHouse > 0;
-// The first four lamps stand beside the square's corners (SQUARE_CORNERS order) and
-// give way wherever the square already lights that corner itself.
-const SQUARE_ELECTRIC_LAMPS = [
-  [-3, -7.5],
-  [3, -7.5],
-  [-3, -2.5],
-  [3, -2.5],
-];
+// Lamps are [x, z, base height]. The first four stand on the square's own corners
+// (SQUARE_CORNERS order), inside its curb, and give way wherever the square already
+// lights that corner itself. Paved main lanes reach 0.74 m from their centre line,
+// so the street lamps stand on the verges, clear of every road and crossing.
+const SQUARE_ELECTRIC_LAMPS = SQUARE_CORNERS.map(([x, z]) => [
+  SQUARE_POSITION[0] + x,
+  SQUARE_POSITION[1] + z,
+  SQUARE_PAVING_HEIGHT,
+]);
 const STREET_ELECTRIC_LAMPS = [
-  [-3, 7],
-  [3, 15],
-  [-14, -16.5],
+  [-2, 6, 0],
+  [2, 14, 0],
+  [-14, -15.5, 0],
 ];
 export function electricLamps(town) {
   if (!hasElectricity(town)) return [];

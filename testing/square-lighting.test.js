@@ -80,15 +80,16 @@ describe('Town square corner lighting', () => {
     const town = electrifiedTown('tomorrow', 'tomorrow', 5, 3);
     expect(squareLampCorners(town)).toEqual([0, 1, 2, 3]);
     expect(electricLamps(town)).toEqual([
-      [-3, 7],
-      [3, 15],
-      [-14, -16.5],
+      [-2, 6, 0],
+      [2, 14, 0],
+      [-14, -15.5, 0],
     ]);
-    // A level-one square lights only its back corners, so the front lamps remain.
+    // A level-one square lights only its back corners, so the front lamps remain,
+    // standing on the square's raised paving.
     town.buildingEraLevels.square = 1;
     expect(electricLamps(town).slice(0, 2)).toEqual([
-      [-3, -2.5],
-      [3, -2.5],
+      [-2.35, -2.7, 0.16],
+      [2.35, -2.7, 0.16],
     ]);
     town.buildings.powerHouse = 0;
     expect(electricLamps(town)).toEqual([]);

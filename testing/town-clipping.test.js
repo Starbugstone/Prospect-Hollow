@@ -13,6 +13,8 @@ import { addEraStreetscape, powerGrid, STREET_FURNITURE } from '../src/game/town
 import { PLOTS, segmentDistance, townTracks } from '../src/game/town/TownLayout';
 import { SIDEWALK_OFFSET, NPC_BODY_MARGIN } from '../src/data/townClearances';
 import { BUILDINGS, createTown } from '../src/data/town';
+import { ERAS } from '../src/data/eras';
+import { geometryFootprints } from '../src/game/town/BuildingFootprints';
 
 const views = [];
 function diorama() {
@@ -153,6 +155,42 @@ describe('Town models do not clip into each other', () => {
               ).toBeGreaterThan(width < 0.85 ? width / 2 : reach);
         }
       });
+    },
+  );
+
+  it.each(ERAS.slice(eraIndex('post-war')).map((era) => era.id))(
+    'parks every %s depot vehicle clear of canopy columns and forecourt lamps',
+    (era) => {
+      const d = diorama();
+      let parked = 0;
+      for (const id of ['stable', 'garage', 'busDepot'])
+        for (const level of [1, 2, 3]) {
+          const town = completeTown(era);
+          if (!town.buildings[id]) continue;
+          town.buildingEraLevels[id] = level;
+          const group = d.group(d.world, 0, 0, 0);
+          d.buildPlot(id, group, town, labels);
+          let vehicle = null;
+          group.traverse((node) => (vehicle ??= node.userData.vehicleBox ? node : null));
+          if (!vehicle) continue;
+          parked++;
+          group.updateMatrixWorld(true);
+          const car = new Box3().setFromObject(vehicle, true);
+          vehicle.removeFromParent();
+          // Ground slabs and plinths sit beneath the wheels; anything taller is solid.
+          for (const s of geometryFootprints(group))
+            expect(
+              s.yMax > car.min.y + 0.25 &&
+                s.yMin < car.max.y &&
+                Math.abs(s.cx - (car.min.x + car.max.x) / 2) <
+                  s.halfW + (car.max.x - car.min.x) / 2 &&
+                Math.abs(s.cz - (car.min.z + car.max.z) / 2) <
+                  s.halfD + (car.max.z - car.min.z) / 2,
+              `${id} L${level} solid at ${s.cx.toFixed(2)},${s.cz.toFixed(2)}`,
+            ).toBe(false);
+          d.clearGroup(group);
+        }
+      expect(parked).toBeGreaterThan(0);
     },
   );
 

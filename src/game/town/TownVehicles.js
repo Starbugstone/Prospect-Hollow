@@ -36,6 +36,55 @@ export function motorVehicle(d, parent, bus = false, appearanceEra) {
   return root;
 }
 
+// A Citroën 2CV parked at the stables: domed cabin with a roll-top canvas roof,
+// ribbed bonnet, separate round front wings and headlamps on stalks. Charleston
+// two-tone, faces +z like the other procedural cars.
+export function deuxChevaux(d, parent) {
+  const root = d.group(parent);
+  root.name = 'Deux chevaux';
+  root.userData.vehicleBox = { halfWidth: 0.39, halfLength: 0.8 };
+  root.userData.wheels = [];
+  const body = '#8c4a4f',
+    dark = '#3d3a3b',
+    trim = '#d9d4c7';
+  for (const side of [-1, 1])
+    for (const z of [-0.5, 0.5]) {
+      const pivot = d.group(root, side * 0.29, 0.17, z);
+      root.userData.wheels.push(pivot);
+      d.mesh(pivot, 'cylinder', [0.17, 0.08, 0.17], [0, 0, 0], '#3f4542').rotation.z = Math.PI / 2;
+      d.ball(pivot, side * 0.045, 0, 0, [0.02, 0.08, 0.08], trim);
+    }
+  // A low tub under one long arched roofline that falls to a short tail.
+  d.box(root, 0.6, 0.24, 1.22, 0, 0.38, -0.1, body, true);
+  d.ball(root, 0, 0.48, -0.12, [0.3, 0.4, 0.6], body);
+  d.ball(root, 0, 0.84, -0.2, [0.2, 0.07, 0.36], dark).name = 'Roll-top canvas roof';
+  // Glazing lies on the dome: the windscreen leans back with its slope.
+  d.box(root, 0.38, 0.16, 0.02, 0, 0.69, 0.35, glass).rotation.x = -0.8;
+  d.box(root, 0.3, 0.12, 0.02, 0, 0.62, -0.68, glass).rotation.x = 0.85;
+  for (const side of [-1, 1]) {
+    d.box(root, 0.02, 0.13, 0.42, side * 0.265, 0.68, -0.15, glass);
+    d.box(root, 0.02, 0.025, 0.08, side * 0.305, 0.46, 0.02, trim);
+    d.ball(root, side * 0.28, 0.32, 0.48, [0.11, 0.13, 0.26], dark).name = 'Front wing';
+    d.ball(root, side * 0.29, 0.31, -0.48, [0.05, 0.12, 0.24], body);
+    d.rod(root, [side * 0.19, 0.46, 0.62], [side * 0.19, 0.56, 0.65], 0.018, dark);
+    d.ball(root, side * 0.19, 0.58, 0.66, 0.06, trim);
+    d.ball(root, side * 0.19, 0.58, 0.71, [0.045, 0.045, 0.02], '#f7df9b');
+    d.ball(root, side * 0.2, 0.42, -0.71, 0.035, '#c86455');
+  }
+  // The ribbed bonnet slopes from the windscreen down to the grille.
+  d.ball(root, 0, 0.44, 0.46, [0.25, 0.16, 0.33], dark).name = 'Ribbed bonnet';
+  const bonnetTop = (x, z) =>
+    0.445 + 0.16 * Math.sqrt(Math.max(0, 1 - (x / 0.25) ** 2 - ((z - 0.46) / 0.33) ** 2));
+  for (const x of [-0.08, 0, 0.08])
+    d.rod(root, [x, bonnetTop(x, 0.36), 0.36], [x, bonnetTop(x, 0.68), 0.68], 0.012, '#4c4848');
+  d.box(root, 0.28, 0.13, 0.03, 0, 0.41, 0.77, trim).name = 'Grille';
+  for (const y of [0.4, 0.44])
+    for (const side of [-1, 1])
+      d.rod(root, [side * 0.06, y, 0.79], [0, y + 0.03, 0.79], 0.008, '#c9a24f');
+  for (const z of [-0.78, 0.8]) d.rod(root, [-0.3, 0.26, z], [0.3, 0.26, z], 0.022, trim);
+  return root;
+}
+
 // Wheel-less hover cars and shuttles from shared primitives. The body floats in its own
 // group so traffic can bob it gently; parts stay few because vehicles move every frame.
 function hoverPod(d, parent, bus) {

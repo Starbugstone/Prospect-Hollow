@@ -63,6 +63,14 @@ it.each([...ERAS.map(({ id }) => id), 'future-fishing-era'])(
         actor.arms[1].lower.children.filter((o) => o.name === 'Hand-held fishing rod'),
       ).toHaveLength(1);
     }
+    // A neighbouring plot swap re-validates every work route at the actor's radius.
+    // The mooring posts flank the deck; they must not trigger a detour over water.
+    const route = actor.workRoutine.paths[0];
+    expect(
+      route.points.every(
+        (p, i) => !i || d.navigation.segment(route.points[i - 1], p, actor.radius ?? 0.45),
+      ),
+    ).toBe(true);
     const station = actor.root.position.clone();
     expect(station.x).toBeGreaterThan(riverCenterX(z) - RIVER.halfWidth);
     expect(station.x).toBeLessThan(riverCenterX(z) - 1.5);

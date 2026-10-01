@@ -97,7 +97,7 @@ def author_city_identity(art, styles):
                 if cue in ['freight','warehouse']:
                     box('Freight loading deck',(w,.4,1.5),(0,.3,2.1),brick)
                     for x in [-1.2,.9]:box('Freight crate',(.8,.95,.8),(x,.97,2.1),'#a3825f')
-                if cue=='stable':canopy(1.1,2.4,2.2,2.2)
+                if cue=='stable':canopy(c['parking'][0],2.4,2.2,2.2) # The parked car stands beneath it.
             if family=='water':
                 count=2 if cue=='tanks' else 1
                 for i in range(count):

@@ -1,4 +1,4 @@
-import { TownItineraries, updateItinerary, streetHeight } from './TownItineraries';
+import { TownItineraries, finishItinerary, updateItinerary, streetHeight } from './TownItineraries';
 import { setTownAtmosphere, horizonMaterial } from './TownAtmosphere';
 import { applyRoadSetbacks } from './BuildingSetbacks';
 import { addTownAnimals, animalKey } from './TownAnimals';
@@ -863,11 +863,8 @@ export class TownDiorama {
         else actor.path = next;
         if (actor.motion) actor.motion.path = null;
         if (actor.itinerary) {
-          actor.itinerary.path = next;
           actor.itinerary.anchor = next.points[0];
-          actor.itinerary.stops = [];
-          actor.itinerary.phase = 'finishing';
-          actor.routeLimit = next.total;
+          finishItinerary(actor, next, next.total);
           yield* view.itineraries.prepare(actor);
         }
         yield;

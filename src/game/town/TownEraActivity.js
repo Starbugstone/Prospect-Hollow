@@ -82,6 +82,10 @@ export function addEraActivity(d, town) {
     });
     fisher.root.name = 'Neighbor fishing';
     fisher.activityBuilding = 'fisherman';
+    // The one-metre deck is flanked by mooring posts. Route repairs after a plot
+    // swap check at the actor radius; the generic NPC margin would detour around
+    // the posts and over the water.
+    fisher.radius = 0.29;
     // Keep the work end on the actual pier, beyond the mooring posts. Generic
     // frontage walks can relocate a station beside the hut or onto a road.
     setWorkRoutine(fisher, walkPath([shore, station]), { work: 26, rest: 5, atWork: true });

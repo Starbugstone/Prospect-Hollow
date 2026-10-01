@@ -1,5 +1,5 @@
 import { cityAppearance } from '../../../data/cityAppearance';
-import { motorVehicle } from '../TownVehicles';
+import { deuxChevaux, motorVehicle } from '../TownVehicles';
 import { addSquareModernization } from '../TownSquare';
 import { ERAS, eraEvolution } from '../../../data/eras';
 import { resolveCityAsset } from '../../../data/eraDefinitions';
@@ -119,7 +119,12 @@ export function renderCityBuilding(
     if (level >= 3)
       cityModel(d, root, appearance.asset ? `${appearance.asset}-finish` : `${era}-finish`);
     if (['garage', 'stable', 'busDepot'].includes(kind)) {
-      const vehicle = motorVehicle(d, d.group(root, 0, 0, 2.5), kind === 'busDepot', era);
+      // A shell with a drive-in canopy parks its car beneath it, clear of the columns
+      // and the forecourt lamp.
+      const [x, z] = (asset === appearance.asset && appearance.parking) || [0, 2.5];
+      const spot = d.group(root, x, 0, z);
+      const vehicle =
+        kind === 'stable' ? deuxChevaux(d, spot) : motorVehicle(d, spot, kind === 'busDepot', era);
       vehicle.rotation.y = Math.PI / 2;
     }
   }

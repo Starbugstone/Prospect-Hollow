@@ -1,6 +1,7 @@
 import { MAIN_LANE_X, POWER_HOUSE_POSITION, PLOT_STREET_OFFSET } from '../../data/townClearances';
 import { MINE_POSITION } from '../../data/mineSite';
 import { WATERMILL_SITE } from '../../data/watermill';
+import { SQUARE_POSITION } from '../../data/townSquare';
 import { BUILDING_BY_ID } from '../../data/town';
 import { plotUnlocked } from './TownRules';
 import { BRIDGE, riverPath } from './TownRiver';
@@ -14,7 +15,7 @@ export const PLOTS = {
   home: [-7, -4],
   farm: [7, -4],
   well: [0, 2.4],
-  square: [0, -5],
+  square: SQUARE_POSITION,
   saloon: [-7, 4],
   stable: [7, 4],
   sheriff: [0, 11],

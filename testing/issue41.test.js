@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
 import { Box3, Group, MeshBasicMaterial, PerspectiveCamera, Scene, Vector3 } from 'three';
 import { BUILDINGS, createTown } from '../src/data/town';
-import { ERAS } from '../src/data/eras';
+import { ERAS, eraEvolution } from '../src/data/eras';
 import { eraIndex, modernization, plotInEra } from '../src/game/town/TownEras';
 import {
   normalizeTown,
@@ -19,7 +19,9 @@ import {
   townTracks,
   segmentDistance,
 } from '../src/game/town/TownLayout';
-import { powerGrid, motorTraffic } from '../src/game/town/TownEvolution';
+import { powerGrid, motorTraffic, pavedTown } from '../src/game/town/TownEvolution';
+import { roadHalfWidth } from '../src/game/town/RoadDetails';
+import { electricLamps } from '../src/data/industrial';
 import { groundHeight } from '../src/game/town/TownLandscape';
 import { airplanePose, AIRPORT_FLIGHT_CYCLE } from '../src/game/town/TownAviation';
 import { TownDiorama } from '../src/game/town/TownDiorama';
@@ -78,6 +80,28 @@ it.each(ERAS.slice(2).map((e) => e.id))(
           segmentDistance(x, z, edge.from, edge.to) - edge.width / 2,
           `${x},${z}`,
         ).toBeGreaterThan(0.2);
+  },
+);
+it.each(ERAS.filter((e) => eraEvolution(e.id).electricity).map((e) => e.id))(
+  'keeps every electric lamp off the paved roads in %s',
+  (era) => {
+    const town = complete(era);
+    // A level-one square leaves every front corner to the electric lamps.
+    for (const level of [3, 1]) {
+      town.buildingEraLevels.square = level;
+      const lamps = electricLamps(town);
+      expect(lamps.length).toBeGreaterThan(2);
+      // The square's own access path runs beneath its raised paving.
+      const roads = townTracks(town).filter(
+        (t) => !t.crossing && !t.approach && t.plot !== 'square',
+      );
+      for (const [x, z] of lamps)
+        for (const edge of roads)
+          expect(
+            segmentDistance(x, z, edge.from, edge.to) - roadHalfWidth(edge, pavedTown(town)),
+            `lamp ${x},${z} on ${edge.from}–${edge.to}`,
+          ).toBeGreaterThan(0.2);
+    }
   },
 );
 it.each([...ERAS.map((e) => e.id), 'future-street-era'])(
