@@ -163,7 +163,12 @@ describe('Bounded, saved chest rewards', () => {
     expect(eligible.map((p) => p.id)).not.toContain('builder-hammer');
     expect(shuffleChestDrops(() => 0, eligible)).toHaveLength(CHEST_DROPS.length - 2);
     campaign.powers.forEach((p) => (p.quantity = campaign.bonusLimit));
-    expect(availableChestDrops(campaign).map((p) => p.id)).toEqual(['coins']);
+    // Only coins remain, so the reel still spins across three purse sizes.
+    expect(availableChestDrops(campaign).map((p) => p.id)).toEqual([
+      'coins-small',
+      'coins',
+      'coins-big',
+    ]);
     campaign.town.buildings.armory = 1;
     expect(availableChestDrops(campaign).some((p) => p.id === 'tnt')).toBe(true);
   });

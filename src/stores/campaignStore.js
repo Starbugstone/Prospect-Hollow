@@ -33,6 +33,8 @@ import {
   CHEST_DROPS,
   chestReward,
   chestRewardFits,
+  availableChestDrops,
+  COIN_TIERS,
 } from '../data/rewards';
 import { createTown, BANDIT_EVENT } from '../data/town';
 import { newerGuest } from '../data/guestVip';
@@ -634,7 +636,13 @@ export const useCampaignStore = defineStore('campaign', {
     claimChest(id, selection) {
       const chest = this.pendingChests.find((entry) => entry.id === id);
       if (!chest) return null;
-      const chosen = chestReward(selection, chest.levelId, chest.economyVersion ?? 1);
+      // Purse tiers are only on the reel once every bonus is stored at capacity.
+      const offered =
+        !COIN_TIERS.some((tier) => tier.id === selection && tier.scale !== 1) ||
+        availableChestDrops(this).some((drop) => drop.id === selection);
+      const chosen = offered
+        ? chestReward(selection, chest.levelId, chest.economyVersion ?? 1)
+        : null;
       const fallback = chestReward(chest.items[0].id, chest.levelId, chest.economyVersion ?? 1);
       const granted = grantReward(this, chosen ?? fallback);
       this.pendingChests = this.pendingChests.filter((entry) => entry.id !== id);
