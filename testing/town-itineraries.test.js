@@ -4,7 +4,12 @@ import { createPinia, setActivePinia } from 'pinia';
 import { createTown } from '../src/data/town';
 import { ERAS, ERA_BY_ID } from '../src/data/eras';
 import { vipVisitCount } from '../src/data/vipVisits';
-import { TownItineraries, beginItinerary, updateItinerary } from '../src/game/town/TownItineraries';
+import {
+  TownItineraries,
+  beginItinerary,
+  finishItinerary,
+  updateItinerary,
+} from '../src/game/town/TownItineraries';
 import { TownNavigation, walkPath, townNavigation } from '../src/game/town/TownNavigation';
 import { trafficRoutes, trafficTour, placeTraffic } from '../src/game/town/TownTrafficRoutes';
 import { prepareRoute } from '../src/game/town/TownRoutes';
@@ -172,6 +177,37 @@ it('visits two actual doorways, pays once after each indoor pause, returns witho
   expect(
     actor.root.position.distanceTo(new Group().position.fromArray(actor.walkPath.points[0])),
   ).toBeLessThan(0.001);
+});
+it('restores full size when a route repair interrupts a doorway fade', () => {
+  const { d, actor } = fixture();
+  actor.itinerary.plans = actor.itinerary.plans.filter((p) => p.stops.length);
+  actor.seed = Array.from({ length: 1000 }, (_, i) => i).find((i) => vipVisitCount(i + 31337) > 0);
+  beginItinerary(d, actor);
+  actor.root.position.fromArray(actor.walkPath.points[0]);
+  let frame = 0;
+  for (; frame < 18000 && actor.itinerary.phase !== 'entering'; frame++) {
+    d.elapsed = frame / 10;
+    updateItinerary(d, actor, d.elapsed);
+    updateTownLocomotion(d, 0.1);
+  }
+  d.elapsed = frame / 10 + 0.1;
+  updateItinerary(d, actor, d.elapsed);
+  expect(actor.root.scale.x).toBeGreaterThan(0);
+  expect(actor.root.scale.x).toBeLessThan(1);
+  // A finished construction replans the remaining walk mid-fade.
+  const path = actor.itinerary.path;
+  finishItinerary(actor, path, path.total);
+  let walked = 0;
+  for (let step = 0; step < 6000 && actor.itinerary.phase === 'finishing'; step++) {
+    d.elapsed += 0.1;
+    updateItinerary(d, actor, d.elapsed);
+    updateTownLocomotion(d, 0.1);
+    if (actor.itinerary.phase !== 'finishing') break;
+    walked++;
+    expect(actor.root.scale.x).toBe(1);
+    expect(actor.root.visible).toBe(true);
+  }
+  expect(walked).toBeGreaterThan(10);
 });
 it('does not pay ordinary guests, zero-stop VIPs, unfinished trips or a paused indoor guest', () => {
   const { d, actor } = fixture();

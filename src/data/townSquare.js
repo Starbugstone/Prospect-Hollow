@@ -1,5 +1,9 @@
 import { eraEvolution } from './eras';
 
+export const SQUARE_POSITION = Object.freeze([0, -5]);
+// Top of the square's raised paving, relative to its plot.
+export const SQUARE_PAVING_HEIGHT = 0.16;
+
 // Square-relative lamp corners. Street lamps that stand beside a corner refer to it
 // by index, so the square and the town's lamps never light the same corner twice.
 export const SQUARE_CORNERS = Object.freeze([

@@ -23,21 +23,31 @@ export const CHEST_DROPS = [
     weight: 10,
   },
 ];
+// With every bonus stored at capacity, the reel still spins across three coin purses.
+export const COIN_TIERS = [
+  { id: 'coins-small', label: 'Small purse', kind: 'coins', scale: 0.75 },
+  { id: 'coins', label: 'Coins', kind: 'coins', scale: 1 },
+  { id: 'coins-big', label: 'Big purse', kind: 'coins', scale: 1.5 },
+];
 // Resolve from the catalog, never from a saved or client-supplied quantity.
 export function chestReward(id, levelId = 1, economyVersion) {
-  const drop = CHEST_DROPS.find((entry) => entry.id === id);
+  const drop =
+    CHEST_DROPS.find((entry) => entry.id === id) ?? COIN_TIERS.find((tier) => tier.id === id);
   return drop
     ? {
         id: drop.id,
         label: drop.label,
         kind: drop.kind,
-        quantity: drop.kind === 'coins' ? chestCoinReward(levelId, economyVersion) : drop.quantity,
+        quantity:
+          drop.kind === 'coins'
+            ? Math.round(chestCoinReward(levelId, economyVersion) * (drop.scale ?? 1))
+            : drop.quantity,
       }
     : null;
 }
 // Shuffle the visual reel without changing the catalog used by weighted awards.
-export const availableChestDrops = (state) =>
-  CHEST_DROPS.filter((drop) =>
+export const availableChestDrops = (state) => {
+  const drops = CHEST_DROPS.filter((drop) =>
     drop.kind === 'coins'
       ? true
       : drop.kind === 'builder-hammer'
@@ -46,6 +56,8 @@ export const availableChestDrops = (state) =>
             (power) => power.id === drop.id && power.quantity < bonusCapacity(state.town),
           ),
   );
+  return drops.length === 1 ? COIN_TIERS : drops;
+};
 export const rewardUse = (item) =>
   item.kind === 'coins' || item.kind === 'builder-hammer' ? 'Village' : 'Mine';
 

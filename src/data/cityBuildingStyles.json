@@ -158,7 +158,8 @@
     "identity": "stable",
     "width": 3.4,
     "height": 2.4,
-    "detail": null
+    "detail": null,
+    "parking": [1.1, 2.35]
   },
   "garage": {
     "family": "depot",

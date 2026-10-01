@@ -11,6 +11,12 @@ import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
 import { OBSTACLES, obstaclesInLevel } from '../src/data/obstacles';
 import { SHOP_ITEMS, rollShopStock } from '../src/data/shop';
 import { createTown, BANDIT_EVENT } from '../src/data/town';
+import {
+  availableChestDrops,
+  bonusCapacity,
+  chestReward,
+  HAMMER_CAPACITY,
+} from '../src/data/rewards';
 import { banditEncounter, raidProtection, miningPayout } from '../src/game/town/TownRules';
 
 let saves;
@@ -212,6 +218,26 @@ describe('Roulette receipts', () => {
     expect(campaign.settlePendingChests()).toHaveLength(1);
     expect(campaign.settlePendingChests()).toEqual([]);
     expect(campaign.town.coins).toBe(510);
+  });
+  it('spins three coin purses once every bonus is stored at capacity', () => {
+    const campaign = useCampaignStore();
+    vi.spyOn(Math, 'random').mockReturnValue(0.8);
+    const rewards = win(campaign);
+    expect(availableChestDrops(campaign).map((drop) => drop.id)).not.toContain('coins-big');
+    expect(campaign.claimChest(rewards[0].id, 'coins-big')).toMatchObject({ quantity: 500 });
+    campaign.powers.forEach((power) => (power.quantity = bonusCapacity(campaign.town)));
+    campaign.builderHammers = HAMMER_CAPACITY;
+    expect(availableChestDrops(campaign).map((drop) => [drop.id, drop.kind])).toEqual([
+      ['coins-small', 'coins'],
+      ['coins', 'coins'],
+      ['coins-big', 'coins'],
+    ]);
+    expect(campaign.claimChest(rewards[1].id, 'coins-big')).toMatchObject({
+      label: 'Big purse',
+      quantity: 750,
+    });
+    expect(chestReward('coins-small', 1).quantity).toBe(375);
+    expect(campaign.town.coins).toBe(1250);
   });
   it('guarantees an automatic builder hammer within ten chests and persists the countdown', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.8);

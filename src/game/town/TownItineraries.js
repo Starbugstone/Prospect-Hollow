@@ -231,13 +231,12 @@ export class TownItineraries {
     if (actor.itinerary) {
       actor.itinerary.plans = plans;
       if (actor.itinerary.path !== actor.walkPath) {
-        actor.itinerary.path = actor.walkPath;
-        actor.itinerary.stops = [];
-        actor.itinerary.phase = 'finishing';
         const distance = actor.motion?.routeDistance ?? 0;
-        actor.routeLimit =
-          Math.max(1, Math.ceil(distance / actor.walkPath.total)) * actor.walkPath.total;
-        actor.root.scale.setScalar(1);
+        finishItinerary(
+          actor,
+          actor.walkPath,
+          Math.max(1, Math.ceil(distance / actor.walkPath.total)) * actor.walkPath.total,
+        );
       }
       return;
     }
@@ -251,13 +250,22 @@ export class TownItineraries {
       stops: [],
     };
     // Existing actors finish their current route before adopting a new journey.
-    if (actor.motion) {
-      actor.itinerary.path = actor.walkPath;
-      actor.itinerary.phase = 'finishing';
-      actor.routeLimit =
-        Math.ceil(actor.motion.routeDistance / (actor.walkPath.total || 1)) * actor.walkPath.total;
-    } else if (!actor.transportVisitor) beginItinerary(this.d, actor);
+    if (actor.motion)
+      finishItinerary(
+        actor,
+        actor.walkPath,
+        Math.ceil(actor.motion.routeDistance / (actor.walkPath.total || 1)) * actor.walkPath.total,
+      );
+    else if (!actor.transportVisitor) beginItinerary(this.d, actor);
   }
+}
+
+// End the current journey on `path` with no further stops. A guest interrupted
+// while fading through a doorway walks on at full size, never shrunken.
+export function finishItinerary(actor, path, routeLimit) {
+  Object.assign(actor.itinerary, { path, stops: [], phase: 'finishing' });
+  actor.routeLimit = routeLimit;
+  actor.root.scale.setScalar(1);
 }
 
 export function beginItinerary(d, actor) {

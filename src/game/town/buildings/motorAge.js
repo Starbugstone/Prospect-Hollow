@@ -30,7 +30,7 @@ export function renderMotorBuilding(d, parent, kind, label, level = 1) {
       d.box(root, 1.75, 1.6, 0.14, -0.4, 0.9, 1.42, '#526b65');
       for (let n = 0; n < 5; n++)
         d.box(root, 1.65, 0.045, 0.04, -0.4, 0.35 + n * 0.28, 1.51, '#a3b8a8');
-      motorVehicle(d, d.group(root, -0.45, 0, 2.05));
+      motorVehicle(d, d.group(root, -0.45, 0, 2.15));
       d.window(root, 1.17, 1.4, 1.42);
     } else {
       for (const x of [-1.2, -0.4, 0.4, 1.2]) d.window(root, x, 1.5, 1.42);
