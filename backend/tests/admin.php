@@ -93,8 +93,13 @@ try {
 
  // Player activity: last connection, IP, browser and platform.
  $player=account();
- $body=townBody('Admin Viewed');$body['profile']->records=(object)['1'=>(object)['score'=>1200,'stars'=>3],'2'=>(object)['score'=>800,'stars'=>2],'3'=>(object)['score'=>10,'stars'=>0]];
+ $body=townBody('Admin Viewed');$body['profile']->records=(object)['1'=>(object)['score'=>1200,'stars'=>3],'2'=>(object)['score'=>800,'stars'=>2]];$body['profile']->powers=[(object)['id'=>'tnt','quantity'=>2]];
  $town=status(200,callApi('POST','towns',$body,$player),'player town');
+ // A kept pre-integrity save can contain an old diagnostic zero-star record.
+ // Current uploads reject it, while admin statistics and historical recovery must
+ // still handle a known legacy row without counting it as completed gameplay.
+ $body['profile']->records->{'3'}=(object)['score'=>10,'stars'=>0];
+ $db->get()->update('towns',['profile'=>json_encode($body['profile'],JSON_THROW_ON_ERROR)],['id'=>$town['townId']]);
  $detail=status(200,adminCall('GET','players/'.$player['id'],null,$s),'player detail');$p=$detail['player'];
  check(str_ends_with($p['email'],'@example.test')&&$p['signIns']===1&&$p['platform']==='web'&&$p['ip']==='127.0.0.1'&&$p['agent']==='Symfony','sign-in recorded');
  check($p['lastSeenAt']>=time()-120&&$p['lastSignInAt']>=time()-5&&$p['activeDays']===1&&count($detail['sessions'])===1,'last connection recorded');
@@ -142,6 +147,67 @@ try {
  check($restored['town']['revision']===4&&$restored['town']['stats']['coins']===25&&array_column($restored['history'],'revision')===[3,2,1],'restored as a new revision; replaced save kept');
  check(status(200,callApi('GET','towns/'.$town['townId'],null,$player),'owner reads restore')['profile']['town']['coins']===25,'owner receives restored save');
  check(status(409,callApi('PUT','towns/'.$town['townId'],['baseRevision'=>3,'uploadId'=>uuid(),'profile'=>profile(999)],$player),'stale device')['code']==='save_conflict','a device with unsynced progress is asked which save to keep');
+
+ // Once enrolled, recovering old diagnostic records must agree with the client:
+ // zero stars are not a completion, while earned records/resources are preserved.
+ $diagnosticEnrollment=json_decode(json_encode($body['profile'],JSON_THROW_ON_ERROR));
+ unset($diagnosticEnrollment->records->{'3'});
+ $diagnosticEnrollment->integrity=(object)['version'=>1,'epoch'=>uuid(),'baseSequence'=>0,'actions'=>[],'clientAt'=>(int)floor(microtime(true)*1000)];
+ status(200,callApi('PUT','towns/'.$town['townId'],['baseRevision'=>4,'uploadId'=>uuid(),'profile'=>$diagnosticEnrollment],$player),'enroll legacy town after frontend record normalization');
+ $diagnosticRestore=status(200,adminCall('POST','towns/'.$town['townId'].'/restore',['revision'=>1],$s),'restore pre-integrity diagnostics into tracked town');
+ check(!isset($diagnosticRestore['profile']['records']['3'])&&$diagnosticRestore['profile']['records']['1']['stars']===3&&$diagnosticRestore['profile']['records']['2']['stars']===2,'tracked history recovery drops only unearned diagnostic records');
+ check($diagnosticRestore['profile']['town']['coins']===25&&$diagnosticRestore['profile']['powers']===[['id'=>'tnt','quantity'=>2]],'diagnostic normalization preserves coins and inventory');
+ $diagnosticDownload=callApi('GET','towns/'.$town['townId'],null,$player);status(200,$diagnosticDownload,'download cleaned historical checkpoint');
+ $rawDiagnostic=json_decode($diagnosticDownload['response']->getContent())->profile;
+ $diagnosticRoundtrip=callApi('PUT','towns/'.$town['townId'],['baseRevision'=>6,'uploadId'=>uuid(),'profile'=>$rawDiagnostic],$player);status(200,$diagnosticRoundtrip,'raw cleaned historical checkpoint roundtrip');
+ // Rehydrate the canonical defaults like a normal frontend load of this minimal
+ // legacy row, including its five inventory slots and missing town maps.
+ $canonical=json_decode(file_get_contents(dirname(__DIR__).'/content/save-rules.json'))->defaultProfile;
+ $canonical->records=$rawDiagnostic->records;$canonical->town->coins=$rawDiagnostic->town->coins;
+ $canonical->town->buildings->well=$rawDiagnostic->town->buildings->well;
+ foreach($canonical->powers as $power)if($power->id==='tnt')$power->quantity=2;
+ $canonical->integrity=json_decode($diagnosticRoundtrip['response']->getContent())->profile->integrity;
+ $normalizedRoundtrip=status(200,callApi('PUT','towns/'.$town['townId'],['baseRevision'=>7,'uploadId'=>uuid(),'profile'=>$canonical],$player),'normalized frontend checkpoint roundtrip');
+ check($normalizedRoundtrip['profile']['town']['coins']===25&&$normalizedRoundtrip['profile']['powers'][1]['quantity']===2,'frontend defaults preserve recovered resources and remain syncable');
+
+ // Admin recovery must retain the latest earning ledger and review evidence,
+ // while replacing gameplay with the known historical branch and resealing it.
+ $fixture=json_decode(file_get_contents(__DIR__.'/fixtures/integrity-flows.json'))->fixtures[0];
+ $before=$fixture->before;$after=$fixture->after;$now=(int)floor(microtime(true)*1000);$epoch=uuid();
+ foreach([$before,$after] as $moneyProfile) {
+  $moneyProfile->integrity->epoch=$epoch;$moneyProfile->integrity->clientAt=$now;
+  if($moneyProfile->town->income->at!==null)$moneyProfile->town->income->at=$now;
+ }
+ foreach($after->integrity->actions as $action) {
+  $action->id=uuid();if(isset($action->data->at))$action->data->at=$now;
+  if($action->kind==='victory'){$action->data->jewels+=1000000000;$after->town->coins+=1000000000;}
+ }
+ $_ENV['SAVE_MONEY_GUARD_MODE']='observe';
+ $trackedBody=townBody('Audited Restore');$trackedBody['profile']=$before;
+ $tracked=status(200,callApi('POST','towns',$trackedBody,$player),'attach tracked admin recovery fixture');$trackedId=$tracked['townId'];
+ $audited=status(200,callApi('PUT','towns/'.$trackedId,['baseRevision'=>1,'uploadId'=>uuid(),'profile'=>$after],$player),'save flagged tracked earnings');
+ $latestLedger=$audited['profile']['integrity']['context']['moneyBudget'];
+ check($latestLedger['debt']>0&&$latestLedger['reviewCount']===1&&$latestLedger['lastReview']['status']==='review','tracked fixture earns a durable observation flag');
+ $oldToken=$tracked['integrity']['checkpoint'];
+ // Even an operator's optional hold policy must not block authorized restoration
+ // of an already accepted snapshot because of a previously recorded debt.
+ $_ENV['SAVE_MONEY_GUARD_MODE']='hold';
+ $adminRestored=status(200,adminCall('POST','towns/'.$trackedId.'/restore',['revision'=>1],$s),'admin restores tracked history under optional hold');
+ $ledger=$adminRestored['profile']['integrity']['context']['moneyBudget'];
+ check($adminRestored['town']['revision']===3&&$adminRestored['profile']['town']['coins']===$before->town->coins&&array_column($adminRestored['history'],'revision')===[2,1],'admin restore replaces known gameplay as a new revision and archives the flagged branch');
+ check($ledger['highWater']===$latestLedger['highWater']&&$ledger['reviewCount']===$latestLedger['reviewCount']&&$ledger['lastReview']===$latestLedger['lastReview'],'admin restore cannot rewind gross high-water or erase durable review');
+ $expectedRemaining=$latestLedger['credit']-$latestLedger['debt']+max(0,$ledger['serverAt']-$latestLedger['serverAt']);
+ check($ledger['serverAt']>=$latestLedger['serverAt']&&abs(($ledger['credit']-$ledger['debt'])-$expectedRemaining)<0.000001,'admin restore accrues only genuine elapsed time without renewed burst');
+ check($adminRestored['profile']['integrity']['checkpoint']!==$oldToken,'restored gameplay is resealed with the retained latest ledger');
+ $ownerRestored=callApi('GET','towns/'.$trackedId,null,$player);status(200,$ownerRestored,'owner downloads admin restore');
+ $rawRestored=json_decode($ownerRestored['response']->getContent())->profile;
+ $_ENV['SAVE_MONEY_GUARD_MODE']='observe';
+ $roundtrip=status(200,callApi('PUT','towns/'.$trackedId,['baseRevision'=>3,'uploadId'=>uuid(),'profile'=>$rawRestored],$player),'untouched admin-restored backup ordinary roundtrip');
+ check($roundtrip['integrity']['moneyBudget']['newGrossCharge']==0&&$roundtrip['profile']['integrity']['context']['moneyBudget']['reviewCount']===1,'restored raw cloud backup roundtrips without charging prior earnings again');
+ $resealed=json_decode($ownerRestored['response']->getContent())->profile;
+ $recovered=status(200,callApi('PUT','towns/'.$trackedId.'/resolve',['baseRevision'=>4,'uploadId'=>uuid(),'profile'=>$resealed],$player),'resealed admin-restored signed backup recovery');
+ check($recovered['profile']['integrity']['context']['moneyBudget']['highWater']===$latestLedger['highWater']&&$recovered['profile']['integrity']['context']['moneyBudget']['reviewCount']===1,'resealed signed checkpoint verifies during later owner recovery without reset');
+ unset($_ENV['SAVE_MONEY_GUARD_MODE']);
 
  // Deletion, sign-out and account removal.
  status(422,adminCall('DELETE','towns/'.$town['townId'],['confirmation'=>'wrong'],$s),'town confirmation');

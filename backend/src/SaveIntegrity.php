@@ -5,8 +5,8 @@ namespace App;
 /**
  * Replays the economy journal when a cloud town has an authoritative checkpoint.
  * Puzzle measurements are claims, not proof that a puzzle was played. Historical
- * saves are accepted once as migration baselines; no earning-rate or move limits
- * are inferred from those measurements.
+ * saves are accepted once as migration baselines. Money plausibility is observed
+ * separately by default; it is an estimate, not an earnings or move allowance.
  */
 final class SaveIntegrity {
     private array $rules;
@@ -194,6 +194,8 @@ final class SaveIntegrity {
         if(!$journal instanceof \stdClass||($journal->version??null)!==1)return null;
         $receipt=['version'=>1,'epoch'=>$journal->epoch,'ackSequence'=>$journal->baseSequence,'status'=>$journal->status??'tracked'];
         if(is_string($journal->checkpoint??null))$receipt['checkpoint']=$journal->checkpoint;
+        $check=$journal->context->moneyBudget->lastCheck??null;
+        if($check instanceof \stdClass)$receipt['moneyBudget']=get_object_vars($check);
         return $receipt;
     }
     private function signedCheckpoint(array $state,array $context,string $epoch,int $sequence,string $townId): string {
@@ -216,12 +218,16 @@ final class SaveIntegrity {
     private function seal(array $incoming,array $context,string $epoch,int $ack,string $status,string $townId): object {
         $incoming['integrity']=['version'=>1,'epoch'=>$epoch,'baseSequence'=>$ack,'actions'=>[],'status'=>$status,'context'=>$context];
         $incoming['integrity']['checkpoint']=$this->signedCheckpoint($this->normalized($incoming),$context,$epoch,$ack,$townId);
+        // PHP's associative decode loses the distinction between {} and []. Keep
+        // the wire schema explicit so an untouched cloud backup can upload again.
+        foreach(['records','continuousRecords'] as $key)$incoming[$key]=(object)$incoming[$key];
+        foreach(['buildings','buildingEras','buildingEraLevels','projects','events','lastCollections'] as $key)if(isset($incoming['town'][$key]))$incoming['town'][$key]=(object)$incoming['town'][$key];
         $json=json_encode($incoming,JSON_THROW_ON_ERROR);
         if(strlen($json)>1048576)throw new ApiError(413,'A town save including its recovery checkpoint must be smaller than 1 MB. Your local copy is safe.');
         return json_decode($json,false,64,JSON_THROW_ON_ERROR);
     }
     /** The caller holds the account transaction lock before comparing checkpoints. */
-    public function accept(object $profile,?object $previous,int $now,bool $resolve=false,array $history=[],string $townId=''): object {
+    public function accept(object $profile,?object $previous,int $now,bool $resolve=false,array $history=[],string $townId='',?int $previousServerAt=null): object {
         $this->validate($profile);$incoming=self::arrayOf($profile);$journal=$this->journal($incoming['integrity']??null);$old=$previous?self::arrayOf($previous):null;$anchor=$old?$this->journal($old['integrity']??null):null;
         if(!$anchor) {
             if(!$journal)return $profile;
@@ -238,10 +244,11 @@ final class SaveIntegrity {
                 elseif($action['kind']==='victory'&&isset($context['run'])&&$context['run']['runId']===($data['runId']??null))unset($context['run']);
             }
             if(isset($context['run'])&&($context['run']['runId']!==($incoming['issuedRun']??0)||$context['run']['runId']<=($incoming['settledRun']??0)))unset($context['run']);
+            $context=$this->moneyContext($context,null,$now,null,[]);
             return $this->seal($incoming,$context,$journal['epoch'],$ack,'baseline',$townId);
         }
         if(!$journal) {
-            if($resolve)foreach($history as $entry)if(self::same($this->protected($this->normalized(self::arrayOf($entry))),$this->protected($this->normalized($incoming))))return $this->seal($incoming,$anchor['context']??[],$anchor['epoch'],$anchor['baseSequence'],'baseline',$townId);
+            if($resolve)foreach($history as $entry)if(self::same($this->protected($this->normalized(self::arrayOf($entry))),$this->protected($this->normalized($incoming))))return $this->seal($incoming,$this->moneyContext($anchor['context']??[],$anchor['context']??[],$now,$previousServerAt,[]),$anchor['epoch'],$anchor['baseSequence'],'baseline',$townId);
             self::mismatch('integrity');
         }
         $candidate=$old;$checkpoint=$anchor;$historical=false;$signedState=null;
@@ -260,7 +267,7 @@ final class SaveIntegrity {
             foreach([$previous,...$history] as $entry)if(self::same($this->protected($this->normalized(self::arrayOf($entry))),$this->protected($this->normalized($incoming)))) {$candidate=self::arrayOf($entry);break;}
             if(!$candidate)self::mismatch('recovery');
             // An exact known snapshot may rotate the journal; invented epochs cannot.
-            if($signedState===null)return $this->seal($incoming,$candidate['integrity']['context']??$anchor['context']??[],$journal['epoch'],$journal['baseSequence']+count($journal['actions']),'tracked',$townId);
+            if($signedState===null)return $this->seal($incoming,$this->moneyContext($candidate['integrity']['context']??$anchor['context']??[],$anchor['context']??[],$now,$previousServerAt,[]),$journal['epoch'],$journal['baseSequence']+count($journal['actions']),'tracked',$townId);
         }
         if($signedState===null&&$journal['baseSequence']<$anchor['baseSequence']&&$resolve) {
             foreach($history as $entry) {
@@ -269,10 +276,14 @@ final class SaveIntegrity {
             }
         }
         $state=$signedState??$this->normalized($candidate);$context=$checkpoint['context']??[];$ack=$checkpoint['baseSequence'];
+        // An older pre-guard signature retains the latest allowance. Its historical
+        // money is unverified; only its newly replayed sources are charged here.
+        $context['moneyGross']??=$anchor['context']['moneyBudget']['highWater']??0;
+        $sources=['mintedCoins'=>0,'reservedCoins'=>0,'maxMultiplier'=>1];
         foreach($journal['actions'] as $action) {
             if($action['sequence']<=$ack)continue;
             if($action['sequence']!==$ack+1)self::mismatch('integrity.sequence');
-            $this->apply($state,$context,$action['kind'],$action['data'],$now);$ack=$action['sequence'];
+            $this->applyAccounted($state,$context,$action['kind'],$action['data'],$now,$sources);$ack=$action['sequence'];
         }
         if(!$historical&&$journal['baseSequence']+count($journal['actions'])<$anchor['baseSequence'])self::mismatch('integrity.sequence');
         $target=$this->normalized($incoming);
@@ -288,7 +299,76 @@ final class SaveIntegrity {
         if($at!==null&&$at!==($state['town']['income']['at']??null))$this->accrue($state,$context,$at,$now);
         $actual=$this->protected($target);$expected=$this->protected($state);
         foreach($expected as $field=>$value)if(!self::same($actual[$field],$value))self::mismatch(self::difference($value,$actual[$field],$field));
+        $context=$this->moneyContext($context,$anchor['context']??[],$now,$previousServerAt,$sources);
         return $this->seal($incoming,$context,$journal['epoch'],$historical?$ack:max($anchor['baseSequence'],$ack),'tracked',$townId);
+    }
+    /** Only for a historical row selected by an authorized server-side operation. */
+    public function restoreKnownCheckpoint(object $historical,object $latest,int $now,string $townId,?int $previousServerAt=null): object {
+        $incoming=self::arrayOf($historical);$current=self::arrayOf($latest);
+        $anchor=$this->journal($current['integrity']??null);
+        // Preserve pre-integrity admin recovery, including old diagnostic records
+        // which were never enrolled under the current gameplay validation rules.
+        if(!$anchor)return $historical;
+        $this->ready();$journal=$this->journal($incoming['integrity']??null);
+        if(!$journal) {
+            // Pre-integrity diagnostics are not earned completions. Use the same
+            // record normalization as the frontend before sealing this old branch,
+            // so loading it cannot leave an unplayable or unsyncable checkpoint.
+            $records=[];
+            foreach($this->rules['levels'] as $id=>$definition) {
+                $record=$incoming['records'][$id]??null;$stars=$record['stars']??null;
+                if(!is_array($record)||!self::number($record['score']??null,-PHP_FLOAT_MAX)||!self::number($stars,1)||$stars>3||floor($stars)!=(float)$stars)continue;
+                $records[$id]=['score'=>max(0,$record['score']),'stars'=>(int)$stars];
+                if(self::number($record['bestTimeMs']??null,0.000001))$records[$id]['bestTimeMs']=$record['bestTimeMs'];
+            }
+            $incoming['records']=$records;
+        }
+        $context=$journal['context']??['clockOffset'=>$anchor['context']['clockOffset']??0];
+        $context=$this->moneyContext($context,$anchor['context']??[],$now,$previousServerAt,[],new MoneyBudget('observe'));
+        return $this->seal($incoming,$context,$journal['epoch']??$anchor['epoch'],$journal['baseSequence']??$anchor['baseSequence'],$journal?'tracked':'baseline',$townId);
+    }
+    private function moneyContext(array $branch,?array $latest,int $now,?int $previousServerAt,array $sources,?MoneyBudget $budget=null): array {
+        $branch['moneyGross']??=$latest['moneyBudget']['highWater']??0;
+        $branch['moneyBudget']=($budget??new MoneyBudget())->reconcile($latest['moneyBudget']??null,(float)$branch['moneyGross'],$now,$previousServerAt,$sources);
+        return $branch;
+    }
+    private function bountyEntitlement(?array $event): int {
+        if(!$event||$event['seen']||in_array($event['kind']??'bandits',['workshop-fire','storm-cleanup'],true)||$event['outcome']!=='protected'||$event['loss']!==0)return 0;
+        return min($event['gangSize'],$event['sheriffLevel']*2)*$this->rules['economy']['bountyPerCaptured'];
+    }
+    private function chestEntitlement(array $chest): int {
+        // A later choice can differ from the rolled drop. Reserve the largest legal
+        // catalog cash choice, with the chest's original economy version preserved.
+        $maximum=0;
+        foreach([...$this->rules['rewards']['chestDrops'],...$this->rules['rewards']['coinTiers']] as $entry) {
+            $reward=$this->reward($entry['id'],$chest['levelId'],$chest['economyVersion']??1);
+            $cash=$reward['kind']==='coins'?$reward['quantity']:$reward['quantity']*$this->rules['rewards']['overflowCoins'];
+            $maximum=max($maximum,$cash);
+        }
+        return $maximum;
+    }
+    private function applyAccounted(array &$state,array &$context,string $kind,array $data,int $now,array &$sources): void {
+        $coins=$state['town']['coins'];$pending=array_column($state['pendingChests'],'id');
+        $bounty=$this->bountyEntitlement($state['town']['events']['dusty-trail-visitors']??null);
+        $this->apply($state,$context,$kind,$data,$now);
+        $minted=0;$reserved=0;$cost=0.0;$multiplier=1;
+        if(in_array($kind,['victory','continuous','vip-spend'],true)) {
+            if($kind!=='vip-spend')$multiplier=max(1,$this->rules['levels'][$data['levelId']]['miningMultiplier']);
+            // These actions only add wallet money. Unlike a batch wallet delta,
+            // this source delta cannot be hidden by later purchases or losses.
+            $minted=max(0,$state['town']['coins']-$coins);$cost=$minted/$multiplier;
+        }
+        foreach($state['pendingChests'] as $chest)if(!in_array($chest['id'],$pending,true)) {
+            $cash=$this->chestEntitlement($chest);$factor=max(1,$this->rules['levels'][$chest['levelId']]['miningMultiplier']);
+            $reserved+=$cash;$cost+=$cash/$factor;$multiplier=max($multiplier,$factor);
+        }
+        // Newly protected encounters and later protection upgrades create bounty
+        // entitlements. Seeing an accepted encounter merely transfers that value.
+        $newBounty=max(0,$this->bountyEntitlement($state['town']['events']['dusty-trail-visitors']??null)-$bounty);
+        $reserved+=$newBounty;$cost+=$newBounty;
+        $context['moneyGross']+=$cost;
+        $sources['mintedCoins']+=$minted;$sources['reservedCoins']+=$reserved;
+        if($cost>0)$sources['maxMultiplier']=max($sources['maxMultiplier'],$multiplier);
     }
     private function powerCapacity(array $town): int { $r=$this->rules['rewards'];return $r['bonusCapacities'][min(3,$town['buildings']['armory']??0)]+($town['buildings']['garage']??0)*$r['garageCapacityPerLevel']; }
     private function reward(string $id,int $level=1,int $version=2): ?array {

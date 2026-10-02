@@ -27,6 +27,8 @@ Import `backend/schema.sql` (MySQL) or `backend/schema-postgresql.sql` into a **
 
 `APP_ORIGIN` checks scheme, host and port. Configure `TRUSTED_PROXIES` only for known proxies when TLS terminates upstream. Do not weaken the origin check. Verify `/api/v1/health`, email sign-in, attachment, offline play/reconnect and account recovery on the host before release. No deployment has been performed by this change.
 
+The server-time money estimate defaults to `SAVE_MONEY_GUARD_MODE=observe`: unusually large batches are marked for review without stopping cloud saves. The server-only `hold` mode refuses batches above the carried allowance while preserving local progress and the last cloud save. This is a generous heuristic, not proof of cheating; see [save integrity](save-integrity.md#server-time-money-estimate) before enabling enforcement. Budget checks use server milliseconds and run only during existing synchronization.
+
 ## Capacitor
 
 Capacitor continues to package `dist`; it does not load a hosted game page. Build with `VITE_API_BASE=https://your-host/api/v1` and `VITE_PUBLIC_ORIGIN=https://your-host`, then run `npm run cap:sync` on a machine with the desired native platform installed. Configure the API's `NATIVE_ORIGINS` with only the exact app origins required by those builds (`capacitor://localhost` on iOS, typically `https://localhost` on Android). Keep production API transport HTTPS.

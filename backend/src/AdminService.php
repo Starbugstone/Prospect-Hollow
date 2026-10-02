@@ -195,9 +195,12 @@ final class AdminService {
         $this->locked($id,function($db,$row) use($actor,$body) {
             $old=$db->fetchAssociative('SELECT revision,profile FROM town_history WHERE town_id=? AND revision=?',[$row['id'],$body['revision']]);
             if(!$old)throw new ApiError(404,'That revision is no longer kept.');
+            $now=(int)floor(microtime(true)*1000);
+            $restored=(new SaveIntegrity())->restoreKnownCheckpoint(json_decode($old['profile'],false,64,JSON_THROW_ON_ERROR),json_decode($row['profile'],false,64,JSON_THROW_ON_ERROR),$now,$row['id'],(int)$row['saved_at']*1000);
+            $profile=json_encode($restored,JSON_THROW_ON_ERROR);
             SaveService::archive($db,$row);
-            $changes=['profile'=>$old['profile'],'revision'=>(int)$row['revision']+1,'saved_at'=>time(),'upload_id'=>'admin-restore-'.bin2hex(random_bytes(12)),'upload_hash'=>hash('sha256',$old['profile'])];
-            if($row['listed'])$changes['appearance']=$this->public->projection(json_decode($old['profile']),$row['name'],$row['public_id']);
+            $changes=['profile'=>$profile,'revision'=>(int)$row['revision']+1,'saved_at'=>intdiv($now,1000),'upload_id'=>'admin-restore-'.bin2hex(random_bytes(12)),'upload_hash'=>hash('sha256',$profile)];
+            if($row['listed'])$changes['appearance']=$this->public->projection($restored,$row['name'],$row['public_id']);
             $db->update('towns',$changes,['id'=>$row['id']]);
             $this->admins->audit($actor,'town_restored',$row['id'],'revision '.$old['revision'].' saved as revision '.$changes['revision']);
             return [];

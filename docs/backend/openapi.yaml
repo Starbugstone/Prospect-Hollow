@@ -1255,7 +1255,7 @@
                     {
                       'type': 'object',
                       'readOnly': true,
-                      'description': 'Server-owned run and clock context. Incoming client context cannot override the cloud checkpoint.',
+                      'description': 'Server-owned run, clock and money budget context. Incoming client context cannot override the cloud checkpoint.',
                     },
                   'checkpoint':
                     {
@@ -1275,6 +1275,31 @@
                   'ackSequence': { 'type': 'integer', 'minimum': 0 },
                   'status': { 'type': 'string', 'enum': ['baseline', 'tracked'] },
                   'checkpoint': { 'type': 'string' },
+                  'moneyBudget': { '$ref': '#/components/schemas/MoneyBudgetCheck' },
+                },
+            },
+          'MoneyBudgetCheck':
+            {
+              'type': 'object',
+              'readOnly': true,
+              'description': 'Owner-only server-time plausibility estimate, not proof of cheating. Base coin allowance carries across syncs. Observe mode preserves flagged progress; optional hold mode returns save_money_review and this metadata without changing the cloud save.',
+              'properties':
+                {
+                  'version': { 'const': 1 },
+                  'mode': { 'type': 'string', 'enum': ['observe', 'hold'] },
+                  'status': { 'type': 'string', 'enum': ['within_estimate', 'review'] },
+                  'previousServerAt': { 'type': 'integer', 'minimum': 0 },
+                  'serverAt': { 'type': 'integer', 'minimum': 0 },
+                  'elapsedMs': { 'type': 'integer', 'minimum': 0 },
+                  'carriedCredit': { 'type': 'number', 'minimum': 0 },
+                  'carriedDebt': { 'type': 'number', 'minimum': 0 },
+                  'replenished': { 'type': 'number', 'minimum': 0 },
+                  'newGrossCharge': { 'type': 'number', 'minimum': 0 },
+                  'estimatedAllowance': { 'type': 'number' },
+                  'debt': { 'type': 'number', 'minimum': 0 },
+                  'newMintedCoins': { 'type': 'number', 'minimum': 0 },
+                  'newReservedCoins': { 'type': 'number', 'minimum': 0 },
+                  'maxMultiplier': { 'type': 'number', 'minimum': 1 },
                 },
             },
           'Upload':
@@ -1333,6 +1358,7 @@
                       'description': 'Optional field that could not be reconciled; never indicates a ban.',
                     },
                   'cloud': { '$ref': '#/components/schemas/Town' },
+                  'moneyBudget': { '$ref': '#/components/schemas/MoneyBudgetCheck' },
                 },
             },
         },

@@ -24,8 +24,8 @@ Validation failure preserves the device copy and the last accepted cloud save.
 The existing save status explains the synchronization problem. A rejected immutable
 upload is released, while the current profile and queued actions remain intact;
 the unchanged rejected snapshot is not repeatedly sent. There are no bans, save
-wipes, automatic deductions, earning-rate thresholds, move budgets or puzzle time
-limits. Optional score and speed rewards retain their existing rules, and a player
+wipes, automatic deductions, move budgets or puzzle time limits. Optional score
+and speed rewards retain their existing rules, and a player
 can keep matching after the speed target and beyond 100 moves.
 
 Transient failures retain the exact upload, including its timestamp and action IDs,
@@ -41,6 +41,78 @@ expand that trusted envelope by changing the device clock. Cloud collection
 checks preserve genuine offline elapsed time and the existing reserve capacity.
 Clock discrepancies are recoverable save problems, never evidence for banning a
 player, and never stop an active puzzle.
+
+## Server-time money estimate
+
+Tracked towns also carry a server-owned allowance for new money. The server
+captures real Unix milliseconds inside the save transaction. The estimate uses
+the elapsed server time since its last accepted budget checkpoint, independently
+of client timestamps, puzzle elapsed time or the device clock offset.
+
+The initial allowance is **10,000 base coins**, issued once. Each real server
+second adds **1,000 base coins**, and unused allowance carries across saves without
+a short storage cap. New earnings are converted to base coins using their
+authoritative mining depth multiplier. For example, before any allowance has
+been used, a town with 60 seconds since its last checkpoint has 70,000 base coins
+available. At depth multiplier 67 that is at most 4,690,000 new coins from that
+depth. These deliberately generous figures are a plausibility estimate, not a
+mathematical proof of possible play.
+
+The check counts gross new earnings before spending: mining rewards, chest money,
+chapter gifts, continuous credits, simulated VIP spending and newly earned
+bounties. It reserves the maximum permitted cash value when a new selectable
+chest is issued, so delaying the claim cannot avoid the check. Previously accepted
+chests, stored saloon income and exact refunds are existing entitlements; collecting
+them does not spend a second earning allowance. Their own accounting rules still
+apply.
+
+A long puzzle keeps its accumulated allowance through intermediate syncs. Offline
+time replenishes the allowance in full. Successful upload retries do not charge
+again. Signed recovery and authorized admin history restores keep the latest
+town's server budget. Signed recovery compares its
+cumulative source accounting with the accepted high-water mark, rather than
+renewing credit from an old checkpoint. Older checkpoints without a budget use
+the last trusted database save time when available; first enrollment remains an
+unverified historical baseline.
+
+`SAVE_MONEY_GUARD_MODE=observe` is the default. A batch above the estimate is marked
+for review in owner-only integrity metadata and still synchronizes; its debt
+carries forward instead of disappearing on the next upload. The latest town
+ledger retains `lastReview` and `reviewCount` even after enough time has elapsed
+to cover the debt; harmless syncs and backup restores cannot erase that evidence.
+These fields are available in the owner/admin save data and are not published in
+the shared town appearance. Set the server-only
+mode to `hold` to refuse an excessive batch with `save_money_review`. That refusal
+preserves the device copy and the last accepted cloud save and does not interrupt
+play, clip earnings or ban anyone. Hold mode can delay legitimate cloud saving:
+unlimited moves and client-generated reward measurements have no proven finite
+earnings-per-second ceiling. Only deterministic gameplay verification could prove
+that a claimed reward was earned.
+
+## Frontend mutation checks
+
+The browser installs a campaign-store guard before creating its stores. Protected
+money, inventory and progression fields accept changes only inside the normal
+game actions. Direct assignments, nested edits, deletions and `$patch` attempts
+cannot grant coins or completion records. Generic `commit`, transaction and
+receipt helpers cannot open that permission scope themselves. Normal actions
+still calculate rewards, purchases and unlocks with their existing rules.
+
+The guard checks mutations at action boundaries; it adds no animation-frame
+checks, puzzle limits, requests or persisted-save hashing. Reloading, importing a
+valid backup and receiving cloud updates use the existing recovery paths. Local
+save formats and historical migration remain compatible.
+
+Registered `prospectDebug` commands retain their explicit local exception in
+development, preprod and builds with `VITE_DEBUG_TOOLS=true`. Enabling those tools
+does not exempt arbitrary direct mutations. Their local exception grants no
+server permission: tracked account saves still require valid resource accounting.
+
+These JavaScript checks deter straightforward console changes, not a player who
+modifies browser code. Local-only saves and first-enrollment history remain
+editable, and calling normal reward actions with invented gameplay measurements
+is still a claim rather than proof of play. The server remains authoritative for
+tracked cloud snapshots and the time-based money review.
 
 ## Journal contract
 
@@ -103,6 +175,11 @@ catalog and frontend accounting fixtures so queued rewards survive updates.
 Frontend tests cover receipt persistence, acknowledgment races, retries, interrupted
 chest recovery, continuous-play journal growth and unlimited moves. Backend tests
 cover accounting, tampered snapshots, malformed nested values and migration
-compatibility. Real frontend snapshots provide cross-language accounting fixtures
+compatibility. Money-budget tests cover exact boundaries, debt, server clock
+changes, long active/offline play, gross earnings hidden by spending, pending
+rewards, recovery and persistent review evidence. Real API transaction tests on
+both databases also cover observe/hold behavior, untouched cloud state on refusal,
+exact retry responses and old-checkpoint timestamp migration. Real frontend
+snapshots provide cross-language accounting fixtures
 so rule changes cannot silently reject normal rewards. Run all local checks in the
 Docker images documented in `AGENTS.md`.

@@ -312,6 +312,15 @@ export const useCampaignStore = defineStore('campaign', {
     recordAction(kind, data) {
       this.integrity = appendIntegrityAction(this.integrity, kind, data);
     },
+    consumePowerItem(id) {
+      const slot = this.powers.find((entry) => entry.id === id);
+      if (!slot || slot.quantity <= 0) return false;
+      const at = Date.now();
+      slot.quantity--;
+      this.recordAction('power-spend', { itemId: id, at });
+      this.save();
+      return true;
+    },
     visitVillage() {
       if (this.hasVisitedVillage) return;
       this.hasVisitedVillage = true;

@@ -103,8 +103,9 @@ final class SaveService {
             }
             if((int)$db->fetchOne('SELECT COUNT(*) FROM towns WHERE player_id=? AND deleted_at IS NULL',[$a['id']])>=self::TOWN_SLOTS)throw new ApiError(409,'Your account already has '.self::TOWN_SLOTS.' towns. Keep playing locally or manage your cloud towns.',['code'=>'slots_full']);
             [$name,$normalized]=$this->nameAvailable($db,$a['id'],$id,$body['name']);
-            $json=json_encode((new SaveIntegrity())->accept(json_decode($json,false,64,JSON_THROW_ON_ERROR),null,time()*1000,false,[],$id),JSON_THROW_ON_ERROR);
-            $row=['id'=>$id,'player_id'=>$a['id'],'name'=>$name,'normalized_name'=>$normalized,'revision'=>1,'profile'=>$json,'saved_at'=>time(),'public_id'=>bin2hex(random_bytes(16)),'listed'=>0,'upload_id'=>$body['uploadId'],'upload_hash'=>$hash];
+            $now=(int)floor(microtime(true)*1000);
+            $json=json_encode((new SaveIntegrity())->accept(json_decode($json,false,64,JSON_THROW_ON_ERROR),null,$now,false,[],$id),JSON_THROW_ON_ERROR);
+            $row=['id'=>$id,'player_id'=>$a['id'],'name'=>$name,'normalized_name'=>$normalized,'revision'=>1,'profile'=>$json,'saved_at'=>intdiv($now,1000),'public_id'=>bin2hex(random_bytes(16)),'listed'=>0,'upload_id'=>$body['uploadId'],'upload_hash'=>$hash];
             try { $db->insert('towns',$row); }
             catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException) { throw new ApiError(409,'This town ID is already attached. Keep your local copy.',['code'=>'town_exists']); }
             return $this->view($row);
@@ -124,9 +125,10 @@ final class SaveService {
             }
             if((int)$row['revision']!==$body['baseRevision']) throw new ApiError(409,'This town changed on another device. Choose which save to keep.',['code'=>'save_conflict','cloud'=>$this->view($row)]);
             $history=$resolve?array_map(fn($entry)=>json_decode($entry['profile'],false,64,JSON_THROW_ON_ERROR),$db->fetchAllAssociative('SELECT profile FROM town_history WHERE town_id=? ORDER BY revision DESC',[$id])):[];
-            $json=json_encode((new SaveIntegrity())->accept(json_decode($json,false,64,JSON_THROW_ON_ERROR),json_decode($row['profile'],false,64,JSON_THROW_ON_ERROR),time()*1000,$resolve,$history,$id),JSON_THROW_ON_ERROR);
+            $now=(int)floor(microtime(true)*1000);
+            $json=json_encode((new SaveIntegrity())->accept(json_decode($json,false,64,JSON_THROW_ON_ERROR),json_decode($row['profile'],false,64,JSON_THROW_ON_ERROR),$now,$resolve,$history,$id,(int)$row['saved_at']*1000),JSON_THROW_ON_ERROR);
             self::archive($db,$row);
-            $changes=['profile'=>$json,'revision'=>(int)$row['revision']+1,'saved_at'=>time(),'upload_id'=>$body['uploadId'],'upload_hash'=>$hash];
+            $changes=['profile'=>$json,'revision'=>(int)$row['revision']+1,'saved_at'=>intdiv($now,1000),'upload_id'=>$body['uploadId'],'upload_hash'=>$hash];
             if($row['listed'])$changes['appearance']=$this->public->projection(json_decode($json),$row['name'],$row['public_id']);
             $db->update('towns',$changes,['id'=>$id,'player_id'=>$a['id']]);return $this->view(array_merge($row,$changes));
         });
