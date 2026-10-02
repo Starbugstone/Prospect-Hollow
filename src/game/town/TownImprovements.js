@@ -1,3 +1,4 @@
+import { addWindow } from './buildings/frontierParts';
 import { eraEvolution } from '../../data/eras';
 
 // Improvements are additions to the original buildings, keeping their identity.
@@ -61,7 +62,7 @@ function balcony(d, parent, y, width = 3.0) {
 function upperRoom(d, parent, color) {
   d.box(parent, 2.65, 1.12, 2.35, 0, 3.08, 0, color);
   for (const y of [2.56, 3.62]) d.box(parent, 2.85, 0.12, 2.5, 0, y, 0, '#e0c89c');
-  for (const x of [-0.85, 0.85]) d.window(parent, x, 3.12, 1.21);
+  for (const x of [-0.85, 0.85]) addWindow(d, parent, x, 3.12, 1.21);
   for (const side of [-1, 1]) {
     const roof = d.box(parent, 1.65, 0.12, 2.7, side * 0.72, 3.99, 0, '#648880');
     roof.rotation.z = -side * 0.38;

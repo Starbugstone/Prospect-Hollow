@@ -1,8 +1,9 @@
-const colors = { trim: '#e8d3a7' };
+import { addHomeWing, addWindow, TRIM } from './frontierParts';
+
 const DETAILS = {
   museum(d, parent, stage) {
     for (const x of [-1.1, 1.1]) {
-      d.box(parent, 0.18, 1.8, 0.18, x, 1.05, 1.8, colors.trim);
+      d.box(parent, 0.18, 1.8, 0.18, x, 1.05, 1.8, TRIM);
       d.box(parent, 0.65, 0.55, 0.55, x, 0.4, 2.05, '#aa9877');
       d.ball(parent, x, 0.96, 2.05, [0.24, 0.4, 0.24], x < 0 ? '#9b80af' : '#79ab98', 'rock');
     }
@@ -44,7 +45,7 @@ const DETAILS = {
     d.box(parent, 0.3, 0.8, 0.35, 0.65, chimneyY, -0.6, '#a76c53');
     d.group(parent, 0.65, chimneyY + 0.4, -0.6).name = 'chimney';
     d.box(parent, 3.1, 0.15, 0.9, 0, 0.14, 1.75, '#bca06d');
-    for (const x of [-1.4, 1.4]) d.box(parent, 0.1, 1.5, 0.1, x, 0.92, 2.13, colors.trim);
+    for (const x of [-1.4, 1.4]) d.box(parent, 0.1, 1.5, 0.1, x, 0.92, 2.13, TRIM);
     for (let n = 0; n < 8; n++) {
       const awning = d.box(
         parent,
@@ -74,7 +75,7 @@ const DETAILS = {
   home(d, parent, stage) {
     d.box(parent, 0.3, 0.8, 0.35, -0.65, stage >= 3 ? 4.3 : 2.9, -0.6, '#a76c53');
     d.group(parent, -0.65, stage >= 3 ? 4.7 : 3.3, -0.6).name = 'chimney';
-    if (stage > 1) d.homeWing(parent, 4);
+    if (stage > 1) addHomeWing(d, parent, 4);
   },
 };
 export function renderFrontierBuilding(
@@ -109,7 +110,7 @@ export function renderFrontierBuilding(
   d.box(parent, w, 0.08, depth, 0, 0.26, 0, '#816b49');
   for (const x of [-w / 2, w / 2])
     for (const z of [-depth / 2, depth / 2])
-      d.box(parent, 0.12, h, 0.12, x, h / 2 + 0.25, z, framing ? '#a98a5e' : colors.trim);
+      d.box(parent, 0.12, h, 0.12, x, h / 2 + 0.25, z, framing ? '#a98a5e' : TRIM);
   for (let row = 0; row < 9; row++) {
     const y = 0.38 + row * 0.19;
     for (const x of [-w / 2, w / 2]) {
@@ -152,13 +153,13 @@ export function renderFrontierBuilding(
   }
   d.box(parent, 0.64, 1.28, 0.09, 0, 0.89, 1.225, '#65533b', true);
   d.ball(parent, 0.2, 0.83, 1.29, 0.035, '#e3c687');
-  for (const x of [-0.91, 0.91]) d.window(parent, x, 1.25, 1.27);
+  for (const x of [-0.91, 0.91]) addWindow(d, parent, x, 1.25, 1.27);
   const sidewindow = d.group(parent, 1.38, 0, 0);
   sidewindow.rotation.y = Math.PI / 2;
-  d.window(sidewindow, 0, 1.25, 0);
+  addWindow(d, sidewindow, 0, 1.25, 0);
   if (['saloon', 'sheriff', 'museum', 'armory', 'bank', 'shop'].includes(id)) {
     d.box(parent, w + 0.1, 0.88, 0.15, 0, 2.45, 1.28, timber);
-    d.box(parent, w + 0.3, 0.12, 0.2, 0, 2.91, 1.3, colors.trim);
+    d.box(parent, w + 0.3, 0.12, 0.2, 0, 2.91, 1.3, TRIM);
     d.sign(parent, label, 2.05, 0, 2.45, 1.39);
   } else d.sign(parent, label, 1.4, 0, 1.98, 1.3);
   if (details) DETAILS[id]?.(d, parent, stage);
