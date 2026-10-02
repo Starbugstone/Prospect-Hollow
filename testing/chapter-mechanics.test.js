@@ -349,7 +349,7 @@ describe('append-only campaign and replay', () => {
   );
 
   it('gives every appended puzzle a reachable chapter mechanic and available ore colors', () => {
-    const levels = generateLevelConfigs().slice(240);
+    const levels = generateLevelConfigs().slice(240, 372);
     // 84 late levels plus the 48 Tomorrow City levels with charge cores.
     expect(levels).toHaveLength(132);
     for (const level of levels) {

@@ -12,6 +12,7 @@ import { chapterIndexOf, chapterSlotOf } from '../../data/chapters.js';
 import { layerCount } from './TileRules.js';
 import { CORE_BONUSES, CORE_CHARGES } from './ChapterMechanics.js';
 import { getLevelStarTarget } from '../../data/starRating.js';
+import { applyDeepMineSpec } from './DeepMineMechanics.js';
 
 const createSeededRng = (seed) => {
   let current = seed % 2147483647;
@@ -248,9 +249,18 @@ const createExpansionLevel = (id) => {
         order % (spec.coreBonuses ?? CORE_BONUSES).length
       ],
     });
+  // Root knots are solid targets; their cardinal vines pin ordinary gems.
+  // Reserve their cells before allocating ice so no authored layers are lost.
+  for (const root of spec.roots ?? []) {
+    if (!Number.isInteger(root.knot) || !tiles[root.knot]) continue;
+    tiles[root.knot].type = 'blocker';
+    layout.blockedCells.push({ x: root.knot % cols, y: Math.floor(root.knot / cols) });
+  }
+  const fossilCells = new Set((spec.fossils ?? []).flatMap((fossil) => fossil.cells ?? []));
   if (spec.orders?.length) tiles[0].oreOrderGuide = true;
   const iceCells = tiles.flatMap((tile, index) =>
     tile.type === 'standard' &&
+    !fossilCells.has(index) &&
     (!spec.openExitRows || index < cols * (rows - spec.openExitRows)) &&
     ![0, cols - 1, cols * (rows - 1), cols * rows - 1].includes(index) &&
     !tile.exit &&
@@ -263,20 +273,25 @@ const createExpansionLevel = (id) => {
   // Add depth to the seam before pushing targets into hard-to-reach corners.
   const iceCellCount = Math.min(iceCells.length, Math.ceil(spec.ice * 0.75));
   layIce(tiles, iceCells, rng, (cell) => iceRank(cell, cols, rows, motif), iceCellCount, spec);
+  applyDeepMineSpec(tiles, spec);
   const totalLayers = tiles.reduce((sum, tile) => sum + layerCount(tile), 0);
   const relicCount = layout.initialTilePlacements.length;
   const board = createPlayableBoard(layout, rng, { minMoves: DEFAULT_MIN_STARTING_MOVES, tiles });
   // Reward targets follow each puzzle's workload, including the chapter breathers.
   const chestTarget = Math.ceil((totalLayers * 380 + relicCount * 1500) / 500) * 500;
-  const layerLabel = spec.cores?.length
-    ? 'Tiles and charge cores'
-    : spec.signals?.length
-      ? 'Tiles and light markers'
-      : tiles.some((tile) => tile.sealColor)
-        ? 'Ice, stone & seals'
-        : tiles.some((tile) => tile.chainHealth)
-          ? 'Ice, stone & chains'
-          : 'Ice & stone';
+  const layerLabel = spec.fossils?.length
+    ? 'Tiles and buried fossils'
+    : spec.roots?.length
+      ? 'Tiles and linked roots'
+      : spec.cores?.length
+        ? 'Tiles and charge cores'
+        : spec.signals?.length
+          ? 'Tiles and light markers'
+          : tiles.some((tile) => tile.sealColor)
+            ? 'Ice, stone & seals'
+            : tiles.some((tile) => tile.chainHealth)
+              ? 'Ice, stone & chains'
+              : 'Ice & stone';
   return levelConfig({
     id,
     chapter,

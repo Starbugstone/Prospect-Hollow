@@ -221,7 +221,7 @@ it('continues existing 144-level saves at 145 without resetting records and comp
   setActivePinia(createPinia());
   const c = useCampaignStore();
   expect(c.nextLevel).toBe(145);
-  expect(LEVEL_COUNT).toBe(372);
+  expect(LEVEL_COUNT).toBeGreaterThanOrEqual(372);
   for (let id = 145; id <= LEVEL_COUNT; id++) {
     const runId = c.beginRun('normal', id);
     expect(runId).toBeTruthy();
@@ -232,7 +232,7 @@ it('continues existing 144-level saves at 145 without resetting records and comp
   expect(c.completedCount).toBe(LEVEL_COUNT);
   expect(c.isUnlocked(LEVEL_COUNT + 1)).toBe(false);
   expect(c.records[144]).toEqual(records[144]);
-});
+}, 20000);
 it('opens Tomorrow City only after the complete Connected City', () => {
   const town = complete('contemporary');
   expect(eraGate(town)).toMatchObject({ available: true, next: { id: 'tomorrow' } });

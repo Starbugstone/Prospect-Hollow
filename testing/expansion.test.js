@@ -36,11 +36,13 @@ afterEach(() => {
 describe('Expansion campaign', () => {
   it('provides 336 authored 7 × 9 puzzles, matching chapter metadata and reachable relic exits', () => {
     const levels = generateLevelConfigs();
-    expect(levels).toHaveLength(372);
+    expect(levels).toHaveLength(LEVEL_COUNT);
     expect(LEVEL_COUNT).toBe(LEVEL_NAMES.length);
-    expect(CHAPTERS).toHaveLength(62);
+    expect(CHAPTERS).toHaveLength(LEVEL_COUNT / 6);
     const repeat = generateLevelConfigs();
-    for (const [offset, spec] of EXPANSION_LEVELS.entries()) {
+    // Preserve the original expansion's contract; deeper chapters have their
+    // own authored-board coverage in deep-mine-levels.test.js.
+    for (const [offset, spec] of EXPANSION_LEVELS.slice(0, 336).entries()) {
       expect(spec.map.split('/')).toHaveLength(9);
       expect(spec.map.split('/').every((row) => row.length === 7)).toBe(true);
       const level = levels[offset + 36];

@@ -1,5 +1,6 @@
 import sharp from 'sharp';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { DEEP_MINE_SPRITES } from '../src/data/mineThemes.js';
 
 const output = new URL('../src/assets/board/', import.meta.url);
 await mkdir(output, { recursive: true });
@@ -25,6 +26,7 @@ const groups = {
     ]),
     ...['stone', 'reinforced', 'cracked'].map((t) => [`block-${t}`, `blocks/${t}.svg`, 160]),
     ...['frost', 'cracked'].map((t) => [`ice-${t}`, `ice/${t}.svg`, 160]),
+    ...DEEP_MINE_SPRITES.map(([id, file]) => [id, file, 160]),
   ],
 };
 for (const finish of ['classic', 'cut', 'geode'])

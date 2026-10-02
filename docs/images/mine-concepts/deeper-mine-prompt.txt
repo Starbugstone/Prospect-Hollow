@@ -1,0 +1,28 @@
+Use case: ui-mockup
+Asset type: a single landscape game-design concept sheet with THREE equal-width vertical panels for brainstorming future mine chapters in Prospect Hollow.
+Primary request: Show how three new mine stages could look and how the player interacts with their key objectives. These are proposed concepts, not shipped screenshots or playable puzzle fixtures.
+Style/medium: polished hand-painted 2D casual puzzle game mockups, grounded subterranean atmosphere, readable faceted gemstones and restrained stylized cave scenery. Match the established game's visual language: nearly black navy square board cells, thin bevels, luminous flat-faceted gemstones, a thin pale metallic rounded board frame, unobtrusive cave environment. Each large front-facing board has exactly 7 columns and 9 rows. Keep all boards flat and upright rather than perspective-tilted. Every ordinary cell contains one clearly separated, consistent gem: red hexagonal ruby, blue diamond sapphire, green beveled-square emerald, yellow triangular topaz, or violet angular prism amethyst. Colored gems remain crisp and the brightest objects. Use five colors, no color-identical shape variants.
+Composition: wide landscape art sheet; three aligned panels separated by slim margins. Small overall header, one short stage title at top of each panel, one large 7x9 puzzle board in each, small in-board action highlights, and one readable sentence below each. Include atmospheric cave scenery only around board edges. Add one small before-to-after inset per panel beneath its main board to explain the mechanic with a white arrow. Plenty of dark negative space, readable at phone scale. No branding logos, no fake menu controls, no play/pause buttons. Exact minimal text only as specified below; no extra paragraphs.
+
+Panel 1 title: "FOSSIL BEDS"
+Scenery: earthy ochre sandstone cave, delicate embedded ammonite shells and bone silhouettes along outer edges.
+Board objective: two large fossil plaques integrated as 2x2 floor regions near the central area, visibly dusty. This is sediment UNDER the normal swappable gems, not solid stone replacing gems. Some cells have cleared transparent sediment and reveal parts of a pale ammonite spiral beneath gems; other cells retain brown dust. A subtle continuous outline makes each 2x2 fossil's footprint unmistakable. Normal neighboring gems and open perimeter remain visible. Show one local gem match highlighted over the dusty fossil floor.
+Before-to-after inset: a 2x2 dusty gem-covered plaque -> same plaque with exposed pale fossil under the gems. Keep normal matching readable.
+Caption exact: "Match on the dust to uncover the fossil."
+
+Panel 2 title: "ROOT-BOUND VAULT"
+Scenery: dark old stone vault, thick roots at cave edges, a little moss, warm amber lantern glow.
+Board objective: two large recognizable braided ROOT KNOTS occupying two separate central board cells. Each knot connects to three or four vine-bound gem cells via a continuous woody vine drawn along cell edges; show each connected group clearly. Vines wrap around gems like existing chains, not around the whole board. One ordinary row of three matching blue diamond gems directly above a knot is highlighted, demonstrating an orthogonally adjacent match. No matching through the knot itself. Each group visibly leads to its one knot, no crossing links, no tiny labels.
+Before-to-after inset: root knot + visibly linked bound gems -> knot gone and the same gems free of vines. A small falling leaf accent communicates release.
+Caption exact: "Match beside the knot to free its vines."
+
+Panel 3 title: "GEOTHERMAL FORGE"
+Scenery: charcoal basalt cave, copper pipes and warm orange geothermal light beyond the board. No lava inside or spreading on the board.
+Board objective: two copper BRAZIERS as thin floor rings under ordinary swappable gems. They reuse the familiar charge-core idea, never occupy blocked cells. Each ring has exactly FOUR large charge pips; one ring shows two orange lit pips and two dim pips, the other shows three lit and one dim. Small stone shelves flank the inner area but the outermost columns and two bottom rows remain open. Highlight a normal gem match orthogonally next to one ring. A copper-and-orange round blast-bomb gem can be shown at the completed example only.
+Before-to-after inset: floor ring with four pips filling -> one free bomb gem at its location, dim completed ring underneath.
+Caption exact: "Match near a brazier to charge a free bomb."
+
+Overall header exact: "DEEPER MINE CONCEPTS"
+Small footer exact: "Unlimited moves. Familiar matching. New discoveries."
+
+Constraints: faithfully preserve simple swap-to-match controls and a highly legible 7x9 board in each panel. All 3 concepts must have obvious visually distinct targets. These are planning illustrations; don't claim tested solvability. Use clear white arrows only for the small explanatory insets and highlight only one action per board. Use sediment floor overlays in Panel 1, root blockers in Panel 2, charge floor rings in Panel 3. No move budgets, countdowns, timers, failure meters, flooding, spreading hazards, new swiping gestures, tiny text walls, overlapping gems, watermark, photorealistic look, or tilted 3D boards.

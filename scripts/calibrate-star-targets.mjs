@@ -1,13 +1,24 @@
 // node scripts/measure-campaign.mjs . 30 > /tmp/campaign-scores.json
 // node scripts/calibrate-star-targets.mjs /tmp/campaign-scores.json
+// Optional inclusive range: ... /tmp/deep-mine-scores.json 373 402
 // Outputs a reviewable candidate table; does not overwrite authored targets.
 import { readFile } from 'node:fs/promises';
 import { LEVEL_COUNT } from '../src/data/campaign.js';
 import { STAR_CASCADE_TARGET, STAR_SCORE_MULTIPLIER } from '../src/data/starRating.js';
 
 const { results } = JSON.parse(await readFile(process.argv[2], 'utf8'));
-const targets = Array.from({ length: LEVEL_COUNT }, (_, index) => {
-  const id = index + 1;
+const first = process.argv[3] ? Number(process.argv[3]) : 1;
+const last = process.argv[4] ? Number(process.argv[4]) : LEVEL_COUNT;
+if (
+  !Number.isInteger(first) ||
+  !Number.isInteger(last) ||
+  first < 1 ||
+  last < first ||
+  last > LEVEL_COUNT
+)
+  throw new Error(`Calibration range must be within levels 1–${LEVEL_COUNT}`);
+const targets = Array.from({ length: last - first + 1 }, (_, index) => {
+  const id = index + first;
   const runs = results.filter((run) => run.id === id);
   if (
     runs.length < 30 ||
@@ -34,7 +45,11 @@ const targets = Array.from({ length: LEVEL_COUNT }, (_, index) => {
 console.log('// Per-level star score targets, one chapter per row (six puzzles).');
 console.log('// Calibrated from 30 hint-led refill seeds per level; see docs/star-ratings.md.');
 console.log('// Independent of chest rewards. Three stars use 150% or target + a ×4 cascade.');
+if (first !== 1 || last !== LEVEL_COUNT)
+  console.log(`// Candidate for levels ${first}–${last}; preserve targets outside this range.`);
 console.log('// prettier-ignore');
-console.log('export const STAR_SCORE_TARGETS = Object.freeze([');
+console.log(
+  `export const STAR_SCORE_TARGETS${first !== 1 || last !== LEVEL_COUNT ? `_${first}_${last}` : ''} = Object.freeze([`,
+);
 for (let i = 0; i < targets.length; i += 6) console.log(`  ${targets.slice(i, i + 6).join(', ')},`);
 console.log(']);');

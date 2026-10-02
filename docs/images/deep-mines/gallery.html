@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Five deeper mine groups · Prospect Hollow</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+        color: #f4eedf;
+        background: #12131c;
+        font-family: system-ui, sans-serif;
+      }
+      main {
+        max-width: 1280px;
+        margin: auto;
+      }
+      h1 {
+        margin: 0 0 5px;
+        font-size: 25px;
+      }
+      .intro {
+        margin: 0 0 22px;
+        color: #b8b5c6;
+        font-size: 14px;
+      }
+      .boards {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 16px;
+      }
+      figure {
+        margin: 0;
+        overflow: hidden;
+        border: 1px solid #41404c;
+        border-radius: 14px;
+        background: #1d1e29;
+      }
+      figure a {
+        display: block;
+        line-height: 0;
+      }
+      img {
+        width: 100%;
+        height: auto;
+      }
+      figcaption {
+        padding: 12px;
+      }
+      h2 {
+        margin: 0 0 4px;
+        font-size: 15px;
+      }
+      .range {
+        margin: 0 0 7px;
+        color: #c9af83;
+        font-size: 12px;
+      }
+      .rule {
+        margin: 0;
+        min-height: 38px;
+        color: #c9c6d3;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+      .note {
+        margin: 17px 0;
+        color: #b8b5c6;
+        font-size: 13px;
+      }
+      .video {
+        margin-top: 40px;
+        max-width: 1000px;
+      }
+      video {
+        width: 100%;
+        border-radius: 12px;
+        background: #080910;
+      }
+      a {
+        color: #edd09b;
+      }
+      @media (max-width: 900px) {
+        .boards {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 480px) {
+        body {
+          padding: 16px;
+        }
+        .boards {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Five deeper mine groups</h1>
+      <p class="intro">30 finished puzzles · Levels 373–402 · Actual in-game screenshots</p>
+      <section class="boards" aria-label="The five implemented mine themes">
+        <figure>
+          <a href="fossil-mobile.png"
+            ><img
+              src="fossil-mobile.png"
+              alt="Fossil bed puzzle with four dusty patches outlining an ammonite."
+          /></a>
+          <figcaption>
+            <h2>Fossil beds</h2>
+            <p class="range">373–378</p>
+            <p class="rule">Match over dust.<br />Uncover the whole fossil.</p>
+          </figcaption>
+        </figure>
+        <figure>
+          <a href="grotto-mobile.png"
+            ><img
+              src="grotto-mobile.png"
+              alt="Teal cavern with mushrooms alongside gems and stone shelves."
+          /></a>
+          <figcaption>
+            <h2>Glowshroom grotto</h2>
+            <p class="range">379–384</p>
+            <p class="rule">Match beside mushrooms.<br />Their glow stays lit.</p>
+          </figcaption>
+        </figure>
+        <figure>
+          <a href="roots-mobile.png"
+            ><img
+              src="roots-mobile.png"
+              alt="Root knot at the center of four visibly connected vine-bound gems."
+          /></a>
+          <figcaption>
+            <h2>Root-bound vault</h2>
+            <p class="range">385–390</p>
+            <p class="rule">Cut a visible knot.<br />Release its linked vines.</p>
+          </figcaption>
+        </figure>
+        <figure>
+          <a href="reservoir-mobile.png"
+            ><img
+              src="reservoir-mobile.png"
+              alt="Pearl over a staggered shaft leading to a basket at the bottom."
+          /></a>
+          <figcaption>
+            <h2>Underground reservoir</h2>
+            <p class="range">391–396</p>
+            <p class="rule">Clear below pearls.<br />Drop them into baskets.</p>
+          </figcaption>
+        </figure>
+        <figure>
+          <a href="forge-fr-mobile.png"
+            ><img
+              src="forge-fr-mobile.png"
+              alt="Warm forge puzzle with two braziers, charge pips and reinforced shelves."
+          /></a>
+          <figcaption>
+            <h2>Geothermal forge</h2>
+            <p class="range">397–402</p>
+            <p class="rule">Charge the brazier pips.<br />Earn free bombs.</p>
+          </figcaption>
+        </figure>
+      </section>
+      <p class="note">
+        Familiar swaps and bonuses · Unlimited moves · Clear introductions, then harder combinations
+      </p>
+      <section class="video" aria-label="Recorded gameplay tour">
+        <h2>Recorded gameplay tour</h2>
+        <p class="intro">
+          All five groups in the running game, with matching, reveals and the mobile layout. Labels
+          identify each chapter.
+        </p>
+        <video controls preload="metadata" src="deep-mine-tour.mp4"></video>
+        <p><a href="deep-mine-tour.mp4" download>Download the MP4</a></p>
+      </section>
+    </main>
+  </body>
+</html>

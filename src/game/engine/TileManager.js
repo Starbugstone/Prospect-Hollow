@@ -4,6 +4,7 @@ import { detectBonusFromMatches } from './MatchPatterns.js';
 import { isAnchored, neighborsOf } from './TileRules.js';
 import { BonusActivator } from './BonusActivator.js';
 import { signalTargets, isChargeCore, coreReleaseTarget } from './ChapterMechanics.js';
+import { collectFinishedFossils, releaseCutRoots } from './DeepMineMechanics.js';
 
 const matchEngine = new MatchEngine();
 const bonusActivator = new BonusActivator();
@@ -33,6 +34,8 @@ export class TileManager {
 
     const workingBoard = [...board];
     const hasSignals = tiles.some((tile) => tile.signalHealth > 0);
+    const hasFossils = tiles.some((tile) => tile.fossilGroup != null);
+    const hasRoots = tiles.some((tile) => tile.rootKnot);
     const steps = [];
 
     let iteration = 0;
@@ -199,6 +202,8 @@ export class TileManager {
           workingBoard[index] = null;
         }
       });
+      if (hasRoots) totalLayersCleared += releaseCutRoots(tiles, step);
+      if (hasFossils) collectFinishedFossils(tiles, step);
       // A fusion can break through an anchor and remove its gem in the same step.
       step.cleared = [...cleared].sort((a, b) => a - b);
 

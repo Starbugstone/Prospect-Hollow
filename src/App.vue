@@ -1,7 +1,10 @@
 <template>
   <div
     class="app-shell"
-    :style="{ '--mine-header-height': `${mineHeaderHeight}px` }"
+    :style="{
+      ...(game.sessionActive ? mineThemeAppearance(currentConfig?.theme).style : {}),
+      '--mine-header-height': `${mineHeaderHeight}px`,
+    }"
     :data-mine-theme="game.sessionActive ? currentConfig?.theme : undefined"
     :class="{
       'is-playing': game.sessionActive,
@@ -300,6 +303,7 @@ import { useSettingsStore, DEFAULT_AUDIO_LEVELS } from './stores/settingsStore';
 import { useAudio } from './composables/useAudio';
 import { LEVEL_NAMES } from './data/levelNames';
 import { obstaclesInLevel } from './data/obstacles';
+import { mineThemeAppearance } from './data/mineThemes';
 import ObstacleGuide from './components/ObstacleGuide.vue';
 import { TESTING_TOWN_CHANGED } from './services/testingTools';
 import { isPlayRoute, navigate, syncTownParam } from './services/appRoute';
@@ -382,7 +386,7 @@ watch(
   () => {
     guideOpen.value = false;
     if (!game.sessionActive) return;
-    levelObstacles.value = obstaclesInLevel(game.tiles);
+    levelObstacles.value = obstaclesInLevel(game.tiles, currentConfig.value?.theme);
     const unseen = levelObstacles.value.filter(
       (item) =>
         !campaign.seenObstacles.includes(item.id) &&
