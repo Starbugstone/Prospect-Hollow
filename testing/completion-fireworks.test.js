@@ -13,6 +13,7 @@ it('keeps the final cinematic image intact while waiting for Continue', () => {
     renderQuality: { sample: () => 0.6 },
     renderer: { setPixelRatio },
     frameCache: { valid: true },
+    tryActivatePlot: () => true,
   };
   // Resizing a WebGL drawing buffer clears it. The presentation owns rendering
   // and stops emitting frames at its end, so background quality tuning must wait.
