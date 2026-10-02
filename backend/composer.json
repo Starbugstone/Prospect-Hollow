@@ -6,8 +6,6 @@
     "php": ">=8.3",
     "ext-pdo": "*",
     "symfony/framework-bundle": "7.4.*",
-    "symfony/security-bundle": "7.4.*",
-    "symfony/validator": "7.4.*",
     "symfony/mailer": "7.4.*",
     "symfony/dotenv": "7.4.*",
     "symfony/yaml": "7.4.*",
@@ -25,5 +23,11 @@
       "php": "8.3.0"
     },
     "platform-check": true
+  },
+  "require-dev": {
+    "phpstan/phpstan": "^2.1"
+  },
+  "scripts": {
+    "analyse": "phpstan analyse --no-progress --memory-limit=1G"
   }
 }

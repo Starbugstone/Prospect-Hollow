@@ -86,3 +86,7 @@ keeps generated files owned by you rather than root.
   ```
 
   The same applies to `concurrency.php` and `release-health.php`.
+
+- PHP formatting is part of Prettier (`@prettier/plugin-php`), so `npm run format:check`
+  covers the backend too. Static analysis runs PHPStan (level 6, `backend/phpstan.neon`):
+  `docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD":/src -w /src/backend --entrypoint composer prospect-hollow-check analyse`

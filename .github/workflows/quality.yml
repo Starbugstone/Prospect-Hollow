@@ -71,6 +71,9 @@ jobs:
       - run: node scripts/export-public-content.mjs
       - run: node scripts/export-save-rules.mjs
       - run: composer install --working-dir=backend --no-interaction --prefer-dist
+      - name: Static analysis (PHPStan)
+        if: matrix.database == 'postgres'
+        run: composer analyse --working-dir=backend
       - name: Account and per-town save tests
         env:
           DATABASE_URL: ${{ matrix.database == 'postgres' && 'postgresql://cascade:local-ci-only@127.0.0.1:5432/cascade_test' || 'mysql://cascade:local-ci-only@127.0.0.1:3306/cascade_test?charset=utf8mb4' }}
