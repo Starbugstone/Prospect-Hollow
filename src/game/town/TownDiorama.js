@@ -1,4 +1,3 @@
-import { TownItineraries } from './TownItineraries';
 import { setTownAtmosphere, horizonMaterial } from './TownAtmosphere';
 
 import { navigationScene, releaseNavigation } from './NavigationDebug';
@@ -10,9 +9,7 @@ import {
   setFrameContext,
   watchLongTasks,
 } from './TownProfiler';
-import { addWorkBreak } from './TownWorkRoutine';
 
-import { TownVipArrivals } from './TownVipArrivals';
 import { TownLiveVisitors } from './TownLiveVisitors';
 import { vipVisitor } from '../../data/villagers';
 import { updateTownLocomotion } from './TownLocomotion';
@@ -24,7 +21,7 @@ import { TownRenderQuality } from './TownRenderQuality';
 import { updateTownShadowCoverage } from './TownShadows';
 import { TownUpgradeGlow } from './TownUpgradeGlow';
 import * as THREE from 'three';
-import { addAviationActivity } from './TownAviation';
+
 import {
   updateEventCamera,
   beginEventCamera,
@@ -33,6 +30,14 @@ import {
 } from './TownEventCamera';
 import { TownPrimitives } from './TownPrimitives';
 import * as plots from './TownPlots';
+import { populateLife } from './TownPopulation';
+import { cameraAction, findVisitor, frameTown } from './TownCamera';
+import {
+  projectLabelPositions,
+  projectVillager,
+  selectVillager,
+  showVillager,
+} from './TownLabelProjection';
 import { addCactus, addHomeWing, addWell, addWindow } from './buildings/frontierParts';
 import { addHorse, addPerson, animatePerson, setVillagerIdentity } from './TownPeople';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -40,25 +45,17 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TownFrameCache } from './TownFrameCache';
 import { TownStatics } from './TownStatics';
 import { TownActors } from './TownActors';
-import { addTownLife } from './TownLife';
-import { addLeisureActivity } from './TownLeisure';
 
 import { renderBuilding } from './buildings/BuildingRenderer';
-import { addEraActivity, trackTransport } from './TownEraActivity';
 
-import { addTownVisitors, TownRaid } from './TownActivity';
+import { TownRaid } from './TownActivity';
 import { TownEraIncident } from './TownEraIncident';
 import { eventKind } from '../../data/townEvents';
-import { constructionReady, plotUnlocked, population, nextGoal } from './TownRules';
+import { plotUnlocked } from './TownRules';
 import { buildLandscape, keepCameraAboveTerrain } from './TownLandscape';
-import { addMotorActivity } from './TownMotorActivity';
-import { motorTraffic } from './TownEvolution';
 
-import { overlapsEventInset } from './TownInset';
+import { PLOTS } from './TownLayout';
 
-import { GARDEN_PARCELS } from '../../data/townGardenDistrict';
-import { PLOTS, LANE_X, atPlot, SHERIFF_PATROL } from './TownLayout';
-import { riverCenterX } from './TownRiver';
 export { PLOTS } from './TownLayout';
 const point = (x, y, z) => new THREE.Vector3(x, y, z);
 
@@ -261,130 +258,39 @@ export class TownDiorama extends TownPrimitives {
   finishConstruction(...args) {
     return plots.finishConstruction(this, ...args);
   }
+  // Labels, the named-villager tag and camera framing live in TownLabelProjection and
+  // TownCamera; the life population in TownPopulation.
   *populateLife(town) {
-    this.itineraries = new TownItineraries(this);
-    this.transports = new Map();
-    const household = population(town);
-    addEraActivity(this, town);
-    yield;
-    addMotorActivity(this, town);
-    yield;
-    addTownVisitors(this, town);
-    yield;
-    addTownLife(this, town);
-    yield;
-    addLeisureActivity(this, town);
-    yield;
-    trackTransport(this, 'airport', town, addAviationActivity(this, town));
-    yield;
-    this.person({
-      color: '#738a83',
-      skin: '#d5ad88',
-      hat: '#b38d59',
-      route: [
-        [-LANE_X, -8.5],
-        [-LANE_X, -0.5],
-        [-LANE_X, 7.5],
-        [-LANE_X, 15.5],
-      ],
-      seed: 1,
+    yield* populateLife(this, town);
+  }
+  showVillager(clientX, clientY, pin) {
+    return showVillager(this, clientX, clientY, pin);
+  }
+  // Pointer hover can fire many times per frame: evaluate only the latest position.
+  hoverVillager(clientX, clientY) {
+    this.hoverPoint = [clientX, clientY];
+    this.hoverFrame ||= requestAnimationFrame(() => {
+      this.hoverFrame = 0;
+      if (!this.disposed) showVillager(this, ...this.hoverPoint);
     });
-    if (household) {
-      this.person({
-        color: '#aa6959',
-        skin: '#d7b291',
-        hat: '#846642',
-        route: [
-          [-7, -0.5],
-          [-LANE_X, -0.5],
-          [LANE_X, -0.5],
-          [7, -0.5],
-        ],
-        seed: 4,
-      });
-      this.person({
-        color: '#d2a56a',
-        skin: '#8d6045',
-        hat: '#d7bf8b',
-        route: [
-          [LANE_X, 15.5],
-          [LANE_X, 7.5],
-          [LANE_X, -0.5],
-          [LANE_X, -8.5],
-        ],
-        seed: 9,
-        dress: true,
-      });
-    }
-    if (household > 2)
-      this.person({
-        color: '#879460',
-        skin: '#b07c59',
-        hat: '#ae814d',
-        route: [
-          [-15, 7.5],
-          [-11, 7.5],
-          [-11, -0.5],
-          [-7, -0.5],
-        ],
-        seed: 13,
-      });
-    if (town.buildings.farm) {
-      const farmer = this.person({
-        color: '#809267',
-        skin: '#af7b56',
-        hat: '#d7b671',
-        route: [atPlot('farm', 1.35, 2.1), atPlot('farm', 1.15, 1.6)],
-        seed: 2,
-        work: 'farm',
-      });
-      farmer.root.name = 'Farmer tending crops';
-      addWorkBreak(this, farmer, 'farm', { work: 18, rest: 4 });
-    }
-    if (town.buildings.saloon) {
-      const host = this.person({
-        color: '#a47d91',
-        skin: '#edc7a4',
-        hat: '#b89869',
-        route: [atPlot('saloon', 0.65, 1.7), atPlot('saloon', 0.95, 1.5)],
-        seed: 6,
-        work: 'greet',
-        dress: true,
-      });
-      host.root.name = 'Saloon host';
-      addWorkBreak(this, host, 'saloon', { work: 14, rest: 4 });
-    }
-    if (town.buildings.sheriff)
-      this.person({
-        color: '#315d83',
-        skin: '#c99d74',
-        hat: '#f0d390',
-        route: SHERIFF_PATROL,
-        seed: 0,
-        sheriff: true,
-        loop: true,
-      });
-    if (town.buildings.stable && !motorTraffic(town)) {
-      this.horse(...atPlot('stable', 2.25, 0.9), 0.5);
-      this.horse(...atPlot('stable', 2.65, -0.9), -0.9, 0.85);
-    }
-    this.vipArrivals ??= new TownVipArrivals(this);
-    this.vipArrivals.attach(town);
-    for (const actor of [...this.actors, ...this.vipArrivals.actors])
-      yield* this.itineraries.prepare(actor);
-
-    this.actors.forEach((actor) => {
-      if (!actor.motion) this.animatePerson(actor, this.elapsed);
-    });
-    this.motions.forEach((motion) => motion(this.elapsed));
-    this.vipArrivals.update();
-    for (const actor of this.retainedActors?.values() ?? []) this.clearGroup(actor.root);
-    this.retainedActors?.clear();
-    this.lifeReady = true;
-    this.liveVisitors?.attach();
-    this.rebuildActors();
-    this.renderer.shadowMap.needsUpdate = true;
-    this.render();
+  }
+  selectVillager(actor, toggle) {
+    selectVillager(this, actor, toggle);
+  }
+  projectVillager() {
+    projectVillager(this);
+  }
+  projectLabelPositions() {
+    projectLabelPositions(this);
+  }
+  frameTown() {
+    frameTown(this);
+  }
+  cameraAction(action) {
+    cameraAction(this, action);
+  }
+  findVisitor(id) {
+    return findVisitor(this, id);
   }
   building(parent, id, stage, label, framing = false) {
     renderBuilding({ town: this, parent, kind: id, level: stage, label, construction: framing });
@@ -463,52 +369,6 @@ export class TownDiorama extends TownPrimitives {
     this.world.add(this.selection);
     this.render();
   }
-  showVillager(clientX, clientY, pin = false) {
-    // Only clicking the selected visitor again dismisses a pinned name.
-    // Hovering, empty-ground clicks and leaving the canvas preserve it.
-    if (!pin && this.villagerLabelPinned && this.namedVillager) return true;
-    const rect = this.canvas.getBoundingClientRect();
-    let nearest = null,
-      distance = 24;
-    for (const actor of [
-      ...(this.actors ?? []),
-      ...(this.vipArrivals?.actors ?? []),
-      ...(this.liveVisitors?.actors ?? []),
-    ]) {
-      if (!actor.root.userData.villager?.name || !actor.root.visible || actor.root.scale.x < 0.5)
-        continue;
-      const p = actor.root.position
-        .clone()
-        .add(point(0, 1, 0))
-        .project(this.camera);
-      if (p.z < -1 || p.z > 1) continue;
-      const delta = Math.hypot(
-        rect.left + ((p.x + 1) * rect.width) / 2 - clientX,
-        rect.top + ((1 - p.y) * rect.height) / 2 - clientY,
-      );
-      if (delta < distance) {
-        nearest = actor;
-        distance = delta;
-      }
-    }
-    if (pin && nearest) {
-      this.selectVillager(nearest);
-    } else if (!this.villagerLabelPinned || !this.namedVillager) {
-      // A second click stays dismissed until the pointer leaves this visitor.
-      if (nearest !== this.dismissedVillager) this.dismissedVillager = null;
-      this.namedVillager = nearest === this.dismissedVillager ? null : nearest;
-      this.villagerLabelPinned = false;
-    }
-    this.projectVillager();
-    return !!nearest;
-  }
-  selectVillager(actor, toggle = true) {
-    const dismiss = toggle && this.villagerLabelPinned && this.namedVillager === actor;
-    this.namedVillager = dismiss ? null : actor;
-    this.villagerLabelPinned = !dismiss;
-    this.dismissedVillager = dismiss ? actor : null;
-    this.projectVillager();
-  }
   selectInsetVisitor() {
     const actor = this.vipArrivals?.active?.actor;
     if (
@@ -522,67 +382,6 @@ export class TownDiorama extends TownPrimitives {
       return;
     this.selectVillager(actor);
     this.render();
-  }
-  findVisitor(id) {
-    if (this.raid || this.cinematic || this.presentation || this.eventCamera) return false;
-    const actor = this.liveVisitors?.actors.find(
-      (entry) => entry.liveId === String(id) && entry.leavingAt === undefined,
-    );
-    if (!actor?.root.visible || !this.world.children.includes(actor.root)) return false;
-    const target = actor.root.position.clone().add(point(0, 1, 0));
-    const offset = this.camera.position
-      .clone()
-      .sub(this.controls.target)
-      .normalize()
-      .multiplyScalar(16);
-    this.controls.target.copy(target);
-    this.camera.position.copy(target).add(offset);
-    keepCameraAboveTerrain(this.camera.position, target);
-    this.overview = false;
-    this.controls.update();
-    this.selectVillager(actor, false);
-    this.render();
-    return true;
-  }
-  projectVillager() {
-    const actor = this.namedVillager;
-    if (
-      !actor?.root.visible ||
-      !actor.root.userData.villager?.name ||
-      !this.world?.children.includes(actor.root)
-    ) {
-      this.namedVillager = null;
-      this.villagerLabelPinned = false;
-      this.onVillagerLabel?.(null);
-      return;
-    }
-    if (actor.root.scale.x < 0.5 || this.raid || this.cinematic) {
-      this.onVillagerLabel?.(null);
-      return;
-    }
-    const p = actor.root.position
-      .clone()
-      .add(point(0, 1.5, 0))
-      .project(this.camera);
-    this.onVillagerLabel?.(
-      Math.abs(p.x) <= 1 &&
-        Math.abs(p.y) <= 1 &&
-        p.z >= -1 &&
-        p.z <= 1 &&
-        !overlapsEventInset(
-          this,
-          ((p.x + 1) * this.canvas.clientWidth) / 2,
-          ((1 - p.y) * this.canvas.clientHeight) / 2,
-          180,
-        )
-        ? {
-            name: actor.root.userData.villager.name,
-            live: !!actor.root.userData.villager.live,
-            x: (p.x + 1) * 50,
-            y: (1 - p.y) * 50,
-          }
-        : null,
-    );
   }
   pick(clientX, clientY) {
     if (this.showVillager(clientX, clientY, true)) return;
@@ -615,75 +414,6 @@ export class TownDiorama extends TownPrimitives {
           break;
         }
       }
-    }
-  }
-  frameTown() {
-    if (this.eventCamera) return;
-    if (!this.anchors?.length) return;
-    const bounds = new THREE.Box3();
-    const corners = [];
-    const intimate =
-      this.camera.aspect < 0.8 &&
-      this.town?.era === 'frontier' &&
-      Object.values(this.town.buildings).filter(Boolean).length < 6;
-    const goal = intimate ? nextGoal(this.town)?.id : null;
-    const framing = intimate
-      ? this.anchors.filter(
-          ({ id }) =>
-            id === 'mine' || id === goal || this.town.buildings[id] || this.town.projects[id],
-        )
-      : this.anchors;
-    for (const { id } of framing) {
-      const [x, z] = PLOTS[id];
-      if (id === 'airport') {
-        for (const dx of [-10, 10])
-          for (const dz of [-20, 20]) {
-            const corner = point(x + dx, 8, z + dz);
-            bounds.expandByPoint(corner);
-            corners.push(corner);
-          }
-      }
-      const parcel = GARDEN_PARCELS[id],
-        halfWidth = parcel ? parcel.halfWidth + 0.8 : 3,
-        halfDepth = parcel ? parcel.halfDepth + 0.8 : 3,
-        height = parcel ? 8 : 5;
-      bounds.expandByPoint(point(x - halfWidth, 0, z - halfDepth));
-      bounds.expandByPoint(point(x + halfWidth, height, z + halfDepth));
-      for (const dx of [-halfWidth, halfWidth])
-        for (const y of [0, height])
-          for (const dz of [-halfDepth, halfDepth]) corners.push(point(x + dx, y, z + dz));
-    }
-    // Include a glimpse of the near river from the first visit, without framing future land.
-    if (this.town && !this.raid && !intimate) {
-      const river = point(riverCenterX(2) + 1, 0, 2);
-      bounds.expandByPoint(river);
-      corners.push(river);
-    }
-    const target = bounds.getCenter(new THREE.Vector3());
-    const direction = point(0.28, 0.72, 0.64).normalize();
-    const right = point(0, 1, 0).cross(direction).normalize();
-    const up = direction.clone().cross(right).normalize();
-    const vertical = Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * 0.92;
-    const horizontal = vertical * this.camera.aspect;
-    let distance = this.controls.minDistance;
-    for (const corner of corners) {
-      const offset = corner.sub(target),
-        depth = offset.dot(direction);
-      distance = Math.max(
-        distance,
-        depth + Math.abs(offset.dot(right)) / horizontal,
-        depth + Math.abs(offset.dot(up)) / vertical,
-      );
-    }
-    this.controls.target.copy(target);
-    this.camera.position
-      .copy(target)
-      .addScaledVector(direction, Math.min(distance, this.controls.maxDistance));
-    this.framingTown = true;
-    try {
-      this.controls.update();
-    } finally {
-      this.framingTown = false;
     }
   }
   resize() {
@@ -744,96 +474,6 @@ export class TownDiorama extends TownPrimitives {
     const started = frameStart();
     this.projectLabelPositions();
     frameEnd('labels', started);
-  }
-  projectLabelPositions() {
-    const cameraDistance = this.camera.position.distanceTo(this.controls.target);
-    if (Math.abs(cameraDistance - (this.lastAudioDistance ?? 0)) > 0.05) {
-      this.lastAudioDistance = cameraDistance;
-      this.onCameraDistance?.(cameraDistance);
-    }
-    const distant = cameraDistance > 66;
-    const width = this.canvas.clientWidth,
-      height = this.canvas.clientHeight;
-    const projected = this.anchors.map(({ id, position, width: labelWidth, collection }) => {
-      const p = position.clone().project(this.camera);
-      const reward = collection.clone().project(this.camera);
-      return {
-        id,
-        x: (p.x + 1) * 50,
-        y: (1 - p.y) * 50,
-        collection: {
-          x: (reward.x + 1) * 50,
-          y: (1 - reward.y) * 50,
-          visible:
-            reward.z > -1 &&
-            reward.z < 1 &&
-            Math.abs(reward.x) < 0.95 &&
-            Math.abs(reward.y) < 0.9 &&
-            !overlapsEventInset(
-              this,
-              ((reward.x + 1) * width) / 2,
-              ((1 - reward.y) * height) / 2,
-              48,
-            ),
-        },
-        depth: p.z,
-        inView: p.z > -1 && p.z < 1 && Math.abs(p.x) < 0.95 && Math.abs(p.y) < 0.9,
-        width: labelWidth,
-        visible:
-          !overlapsEventInset(
-            this,
-            ((p.x + 1) * width) / 2,
-            ((1 - p.y) * height) / 2,
-            labelWidth,
-          ) &&
-          this.plotCache?.get(id)?.group.visible !== false &&
-          (id === 'mine' ||
-            this.town.buildings[id] > 0 ||
-            !!this.town.projects[id] ||
-            this.availablePlots?.has(id)) &&
-          p.z > -1 &&
-          p.z < 1 &&
-          (Math.abs(p.x) * width) / 2 + labelWidth / 2 + 8 < width / 2 &&
-          p.y < 0.84 &&
-          p.y > (width < 600 ? -0.42 : -0.78) &&
-          (!distant ||
-            id === 'mine' ||
-            id === this.selected ||
-            id === this.guidedPlot ||
-            !!this.town.projects[id] ||
-            (!this.town.buildings[id] && this.availablePlots?.has(id))),
-      };
-    });
-    const shown = [];
-    const priority = (id) =>
-      id === 'mine'
-        ? 0
-        : id === this.selected
-          ? 1
-          : constructionReady(this.town.projects[id])
-            ? 2
-            : id === this.guidedPlot
-              ? 3
-              : this.availablePlots?.has(id)
-                ? 4
-                : 5;
-    for (const anchor of [...projected].sort(
-      (a, b) => priority(a.id) - priority(b.id) || a.depth - b.depth,
-    )) {
-      if (!anchor.visible) continue;
-      if (
-        shown.some(
-          (other) =>
-            (Math.abs(anchor.x - other.x) * width) / 100 < (anchor.width + other.width) / 2 + 4 &&
-            (Math.abs(anchor.y - other.y) * height) / 100 <
-              (anchor.id === 'mine' || other.id === 'mine' ? 72 : 42),
-        )
-      )
-        anchor.visible = false;
-      else shown.push(anchor);
-    }
-    this.onLabels(projected);
-    this.projectVillager?.();
   }
 
   tick(now) {
@@ -973,17 +613,6 @@ export class TownDiorama extends TownPrimitives {
     this.cinematic.finished = progress >= 1;
     this.cinematic.presentation.frame(progress * ERA_CONSTRUCTION.duration, still);
   }
-  cameraAction(action) {
-    if (!this.controls.enabled) return;
-    this.overview = action === 'reset';
-    if (action === 'in') this.controls.dollyIn(1 / 1.18);
-    if (action === 'out') this.controls.dollyOut(1 / 1.18);
-    if (action === 'left') this.controls.rotateLeft(Math.PI / 8);
-    if (action === 'right') this.controls.rotateLeft(-Math.PI / 8);
-    if (action === 'up') this.controls.rotateUp(Math.PI / 18);
-    if (action === 'down') this.controls.rotateUp(-Math.PI / 18);
-    if (action === 'reset') this.frameTown();
-  }
   setLiveVisitors(visitors, reducedMotion = false, townKey = null) {
     this.livePresenceEnabled = true;
     this.liveVisitorsReducedMotion = reducedMotion;
@@ -1030,6 +659,7 @@ export class TownDiorama extends TownPrimitives {
     this.presentation?.dispose(false);
     this.canvas.removeEventListener('webglcontextlost', this.contextLost);
     cancelAnimationFrame(this.cameraFrame);
+    cancelAnimationFrame(this.hoverFrame);
     this.frameCache.dispose();
     this.upgradeGlow.dispose();
     this.actorRenderer.dispose();

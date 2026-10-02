@@ -423,12 +423,12 @@ const rememberPointer = (event) => {
 };
 const movePointer = (event) => {
   if (!pointers.size && event.pointerType === 'mouse')
-    scene?.showVillager(event.clientX, event.clientY);
+    scene?.hoverVillager(event.clientX, event.clientY);
   const start = pointers.get(event.pointerId);
   if (start && Math.hypot(event.clientX - start[0], event.clientY - start[1]) > 6) dragged = true;
 };
 const leavePointer = (event) => {
-  if (!pointers.size && event.pointerType === 'mouse') scene?.showVillager(-Infinity, -Infinity);
+  if (!pointers.size && event.pointerType === 'mouse') scene?.hoverVillager(-Infinity, -Infinity);
 };
 const pick = (event) => {
   movePointer(event);
