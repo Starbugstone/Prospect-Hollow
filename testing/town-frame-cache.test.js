@@ -39,6 +39,8 @@ it('keeps villagers and raid time moving while the camera owns the next draw', (
       actorRenderer: { update: vi.fn() },
       frameCache: { render: vi.fn() },
       drawFrame: TownDiorama.prototype.drawFrame,
+      tryActivatePlot: vi.fn(),
+      projectVillager: vi.fn(),
     };
   TownDiorama.prototype.tick.call(scene, 1017);
   expect(scene.elapsed).toBeCloseTo(1 / 60);

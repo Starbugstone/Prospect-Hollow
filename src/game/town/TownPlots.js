@@ -152,6 +152,7 @@ export function plotSignatures(d, town, labels) {
   );
 }
 
+// Named parts show which layout change forced a full rebuild in town timings.
 function topologyParts(d, town, labels) {
   return Object.fromEntries(
     Object.entries({
@@ -425,6 +426,8 @@ export function plotVacant(d, pending) {
   return true;
 }
 
+// Nearest point clear of the new footprint. A swept exit is reachable in a
+// straight walk; otherwise any point open in the navigation grid will do.
 function siteExit(d, actor, entries, swept) {
   const p = actor.root.position,
     radius = actor.radius ?? 0.45;
@@ -752,7 +755,10 @@ export function rebuildTown(
   }
   if (prepared && prepared !== adopted) d.clearGroup(prepared.group);
   // Model preparation can be expensive. Start the reveal clock on its first visible frame.
-  if (d.construction) d.lastFrame = 0;
+  if (d.construction) {
+    d.lastFrame = 0;
+    d.pacer?.reset();
+  }
   d.refreshServiceDrops();
   d.navigation = townNavigation(d.world);
   d.buildingRenderer.sync(d.world.children.filter((child) => child.userData.static));

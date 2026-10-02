@@ -68,6 +68,14 @@ function insetCache(d) {
   }
   return cache;
 }
+export function disposeInsetCache(d) {
+  const cache = insetCaches.get(d);
+  if (!cache) return;
+  cache.target.dispose();
+  cache.material.dispose();
+  cache.scene.children[0].geometry.dispose();
+  insetCaches.delete(d);
+}
 export function drawCameraInset(d, shot, rect, label, passive = false, details = {}) {
   // A following name tag re-renders the overlay only when it moves visibly (0.5%).
   const tag = details.nameTag;

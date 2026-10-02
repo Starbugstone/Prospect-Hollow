@@ -29,6 +29,8 @@ import {
   renderEventInset,
 } from './TownEventCamera';
 import { TownPrimitives } from './TownPrimitives';
+import { TownFramePacer } from './TownFramePacer';
+import { disposeInsetCache } from './TownInset';
 import * as plots from './TownPlots';
 import { populateLife } from './TownPopulation';
 import { cameraAction, findVisitor, frameTown } from './TownCamera';
@@ -61,16 +63,16 @@ const point = (x, y, z) => new THREE.Vector3(x, y, z);
 
 // Original geometry shares static scenery batches and animated actor instances.
 export class TownDiorama extends TownPrimitives {
-  constructor(canvas, onSelect, onLabels, onCameraDistance, onUnavailable) {
+  // `options` holds the owner's callbacks (onSelect, onLabels, onCameraDistance,
+  // onUnavailable, onVillagerLabel, onEventInset, onVipSpend, onGuestVip, onFirstFrame)
+  // and `vipsHidden` for a read-only shared town.
+  constructor(canvas, options = {}) {
     super();
     this.deferLife = true;
     this.generation = 0;
     navigationScene(this);
     this.canvas = canvas;
-    this.onSelect = onSelect;
-    this.onLabels = onLabels;
-    this.onCameraDistance = onCameraDistance;
-    this.onUnavailable = onUnavailable;
+    Object.assign(this, options);
     this.scene = new THREE.Scene();
     // drawFrame() updates world matrices once for all of a frame's render calls.
     this.scene.matrixWorldAutoUpdate = false;
@@ -197,7 +199,11 @@ export class TownDiorama extends TownPrimitives {
   drawFrame(refresh = false) {
     try {
       this.scene?.updateMatrixWorld();
-      this.actorRenderer?.update(this.scene);
+      // Villagers outside the view are left out of the instances. The event inset
+      // shows another part of the town, so it keeps everyone.
+      const cull = this.camera && !this.eventInsetVisible;
+      if (cull) this.camera.updateMatrixWorld();
+      this.actorRenderer?.update(this.scene, cull ? [this.camera] : null);
       this.frameCache.render(this.scene, this.camera, refresh);
       renderEventInset(this);
       return true;
@@ -208,9 +214,6 @@ export class TownDiorama extends TownPrimitives {
       return false;
     }
   }
-  // Named parts show which layout change forced a full rebuild in town timings.
-  // Nearest point clear of the new footprint. A swept exit is reachable in a
-  // straight walk; otherwise any point open in the navigation grid will do.
   // The plot lifecycle (building, swapping, construction reveals and full rebuilds)
   // lives in TownPlots; these methods keep the diorama's API for callers and tests.
   buildPlot(...args) {
@@ -480,15 +483,17 @@ export class TownDiorama extends TownPrimitives {
     const started = frameStart();
     try {
       if (this.contextUnavailable) return;
-      if (this.lastFrame && now - this.lastFrame < 1000 / 60 - 1) return;
+      const pacer = (this.pacer ??= new TownFramePacer());
+      if (!pacer.due(now)) return;
+      const frameTime = pacer.frameTime;
       if (
-        this.lastFrame &&
+        frameTime !== null &&
         !this.cameraGesture &&
         !this.presentation &&
         (!this.cinematic || this.cinematic.finished) &&
         !this.construction
       ) {
-        const ratio = this.renderQuality?.sample(now - this.lastFrame);
+        const ratio = this.renderQuality?.sample(frameTime);
         if (ratio !== null && ratio !== undefined) {
           this.renderer.setPixelRatio(ratio);
           const size = this.renderQuality.shadowSize;
@@ -517,7 +522,7 @@ export class TownDiorama extends TownPrimitives {
         updateTownLocomotion(this, movementDelta);
       }
       if (this.waterMaterial) this.waterMaterial.uniforms.time.value = this.elapsed;
-      this.tryActivatePlot?.();
+      this.tryActivatePlot();
       if (this.construction?.update(this.activeElapsed)) this.finishConstruction();
       if (this.raid?.update(this.elapsed)) {
         this.raid = null;
@@ -530,7 +535,7 @@ export class TownDiorama extends TownPrimitives {
         return;
       if (this.drawFrame()) {
         if (eventCameraMoved) this.projectLabels();
-        else this.projectVillager?.();
+        else this.projectVillager();
       }
     } finally {
       frameEnd('tick', started);
@@ -630,6 +635,7 @@ export class TownDiorama extends TownPrimitives {
   setPaused(paused) {
     if (this.paused !== paused) {
       this.lastFrame = 0;
+      this.pacer?.reset();
       if (paused) this.construction?.pause();
       else this.construction?.resume();
     }
@@ -643,6 +649,7 @@ export class TownDiorama extends TownPrimitives {
     if (enabled) this.construction?.resume();
     else this.construction?.pause();
     this.lastFrame = 0;
+    this.pacer?.reset();
     this.renderQuality?.resetWindow();
     this.renderer.setAnimationLoop(enabled && !this.contextUnavailable ? this.tick : null);
   }
@@ -661,6 +668,7 @@ export class TownDiorama extends TownPrimitives {
     cancelAnimationFrame(this.cameraFrame);
     cancelAnimationFrame(this.hoverFrame);
     this.frameCache.dispose();
+    disposeInsetCache(this);
     this.upgradeGlow.dispose();
     this.actorRenderer.dispose();
     this.buildingRenderer.dispose();

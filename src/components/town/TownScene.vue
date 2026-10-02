@@ -601,10 +601,9 @@ async function initialize() {
     await loadFootprints(props.town);
     performanceMark('assets-ready');
     if (disposed || !props.active) return;
-    scene = new TownDiorama(
-      canvas.value,
-      choose,
-      (positions) => {
+    scene = new TownDiorama(canvas.value, {
+      onSelect: choose,
+      onLabels: (positions) => {
         const layout = updateLabels(anchors.value, positions, anchorLayout);
         if (layout === null) placeLabels(anchors.value, labelElements, actionElements, box);
         else {
@@ -612,30 +611,30 @@ async function initialize() {
           anchors.value = positions;
         }
       },
-      (distance) => emit('camera-distance', distance),
-      recoverGraphics,
-    );
-    // A shared town is only a view: VIP guests visit the owner's own game.
-    scene.vipsHidden = props.readOnly;
+      onCameraDistance: (distance) => emit('camera-distance', distance),
+      onUnavailable: recoverGraphics,
+      onVipSpend: (receipt) => emit('vip-spend', receipt),
+      onGuestVip: (at) => emit('guest-vip', at),
+      onVillagerLabel: showVillagerLabel,
+      onEventInset: (view) => {
+        eventInset.value = view;
+      },
+      // Once the village is on screen, warm up what the player is likely to open next.
+      onFirstFrame: () =>
+        scheduleWork(
+          (function* () {
+            yield;
+            prefetchBoard();
+            const next = ERAS[ERAS.findIndex((era) => era.id === props.town.era) + 1];
+            if (next?.enabled) loadFamilies(requiredFamilies({ ...props.town, era: next.id }));
+            if (navigator.userActivation?.hasBeenActive) prepareAudio(settings);
+            else document.addEventListener('pointerdown', warmAudio, { once: true, passive: true });
+          })(),
+        ),
+      // A shared town is only a view: VIP guests visit the owner's own game.
+      vipsHidden: props.readOnly,
+    });
     scene.setLiveVisitors(props.liveVisitors, props.reducedMotion, props.liveVisitorTownId);
-    scene.onVipSpend = (receipt) => emit('vip-spend', receipt);
-    scene.onGuestVip = (at) => emit('guest-vip', at);
-    scene.onVillagerLabel = showVillagerLabel;
-    scene.onEventInset = (view) => {
-      eventInset.value = view;
-    };
-    scene.onFirstFrame = () => {
-      scheduleWork(
-        (function* () {
-          yield;
-          prefetchBoard();
-          const next = ERAS[ERAS.findIndex((era) => era.id === props.town.era) + 1];
-          if (next?.enabled) loadFamilies(requiredFamilies({ ...props.town, era: next.id }));
-          if (navigator.userActivation?.hasBeenActive) prepareAudio(settings);
-          else document.addEventListener('pointerdown', warmAudio, { once: true, passive: true });
-        })(),
-      );
-    };
     await update();
     scene.vipArrivals?.reset(true);
     if (recoveryPose) {
