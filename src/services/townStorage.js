@@ -1,5 +1,6 @@
 // Each town is an atomic save + outbox record. Selection belongs to this tab;
 // account identity is shared, but gameplay never rewrites another town's record.
+import { acknowledgeIntegrity, mergeIntegrity } from './saveIntegrity';
 export const SAVE_KEY = 'crystal-cascade-profile-v3';
 export const TOWN_CHANGED = 'prospect-town-save-changed';
 const copy = (value) => JSON.parse(JSON.stringify(value));
@@ -10,6 +11,8 @@ export const progressKey = (profile) =>
   JSON.stringify(
     {
       ...profile,
+      // Acknowledging receipts is transport bookkeeping, not new gameplay.
+      integrity: undefined,
       town: profile.town
         ? {
             ...profile.town,
@@ -215,15 +218,19 @@ export function createTownStorage({
       }
       return result;
     },
-    save(profile, expectedId = null) {
+    save(profile, expectedId = null, onStoredIntegrity = null) {
       const key = selected(),
         store = storage(),
         raw = store?.getItem(key);
       const root = raw ? JSON.parse(raw) : null;
       const entry = entryOf(root) ?? { profile: {}, meta: freshMeta() };
       if (expectedId && entry.meta.id !== expectedId) throw new Error('The selected town changed.');
-      // Snapshot the live store once; comparing plain data avoids walking it again.
-      const next = copy(profile);
+      // Snapshot mutable gameplay once. persist() serializes the immutable journal
+      // synchronously, so another copy needlessly walks every offline receipt.
+      const { integrity, ...gameplay } = profile;
+      const next = copy(gameplay);
+      if (integrity !== undefined)
+        next.integrity = mergeIntegrity(integrity, entry.profile.integrity);
       const previousKey =
         progressCache?.store === store && progressCache.key === key && progressCache.raw === raw
           ? progressCache.progress
@@ -241,6 +248,7 @@ export function createTownStorage({
       const serialized = persist(entry, key);
       // Exact serialized-record matching invalidates this cache after any other writer.
       progressCache = { store, key, raw: serialized, progress: nextKey };
+      onStoredIntegrity?.(next.integrity);
       return entry.meta;
     },
     account(account, newSession = false) {
@@ -322,9 +330,15 @@ export function createTownStorage({
       if (current?.meta.id !== cloud.townId || this.auth().account?.id !== owner)
         throw new Error('The selected town changed. Sign in again to recover the attached copy.');
       assertWrite();
+      const attachedProfile = current.profile.integrity
+        ? {
+            ...current.profile,
+            integrity: acknowledgeIntegrity(current.profile.integrity, cloud.integrity),
+          }
+        : current.profile;
       persist(
         {
-          profile: current.profile,
+          profile: attachedProfile,
           meta: {
             ...current.meta,
             owner,
@@ -387,6 +401,9 @@ export function createTownStorage({
         conflict: null,
         attachment: null,
         uploadError: null,
+        // The import confirmation authorizes restoring this selected snapshot.
+        // Keep that intent separate from receipts so normal offline play can continue.
+        restoreIntent: current.meta.owner ? crypto.randomUUID() : null,
         updatedAt: Date.now(),
       };
       current.profile = profile;

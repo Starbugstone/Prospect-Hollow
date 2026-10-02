@@ -16,4 +16,5 @@ chmod 600 "$test_root/shared/.env.local"
 bash scripts/o2switch/prepare-prospect.sh "$test_root/release" "$test_root/shared" "$php_bin"
 [[ -f "$test_root/release/public/index.html" && -f "$test_root/release/public/index.php" && -f "$test_root/release/public/.htaccess" && -f "$test_root/release/content/public-schema.json" && -L "$test_root/release/.env.local" ]]
 [[ ! -e "$test_root/release/public/.env.local" && ! -e "$test_root/release/public/vendor" ]]
+[[ -f "$test_root/release/content/save-rules.json" ]]
 printf 'Prospect hosting hooks: locked build, public output, private configuration, migrations and cache warmup passed.\n'

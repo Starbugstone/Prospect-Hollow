@@ -29,5 +29,24 @@ try {
  }
  $codes=[];foreach($children as $pid){pcntl_waitpid($pid,$exit);$codes[]=pcntl_wexitstatus($exit);}sort($codes);check($codes===[0,10],'concurrent saloon taps collect once');
  check((int)$db->get()->fetchOne('SELECT COUNT(*) FROM saloon_collections WHERE town_id=?',[$bar['townId']])===1,'one saloon collection recorded');
+ // The journal and resource calculator share the same revision transaction: two
+ // devices purchasing the same offer cannot both charge or grant it.
+ $trackedOwner=account();$rules=json_decode(file_get_contents(dirname(__DIR__).'/content/save-rules.json'));
+ $trackedProfile=$rules->defaultProfile;$trackedProfile->town->coins=200;$trackedProfile->town->buildings->shop=1;$trackedProfile->shopVisit=1;$trackedProfile->shopStock=[(object)['id'=>'clear-row','sold'=>false]];
+ $trackedProfile->integrity=(object)['version'=>1,'epoch'=>uuid(),'baseSequence'=>0,'clientAt'=>time()*1000,'actions'=>[]];
+ $trackedBody=townBody('Concurrent Journal');$trackedBody['profile']=$trackedProfile;
+ $trackedTown=status(200,callApi('POST','towns',$trackedBody,$trackedOwner),'attach tracked concurrent town');
+ $purchaseProfile=json_decode(json_encode($trackedProfile));$purchaseProfile->town->coins=140;$purchaseProfile->powers[0]->quantity=1;$purchaseProfile->shopStock[0]->sold=true;
+ $purchaseProfile->integrity->checkpoint=$trackedTown['integrity']['checkpoint'];$purchaseProfile->integrity->actions=[(object)['sequence'=>1,'id'=>uuid(),'kind'=>'shop-buy','data'=>(object)['itemId'=>'clear-row','visit'=>1]]];
+ $uploads=[];$db->get()->close();$children=[];
+ foreach([1,2] as $device) {
+  $upload=['baseRevision'=>1,'uploadId'=>uuid(),'profile'=>$purchaseProfile];$uploads[$upload['uploadId']]=$upload;
+  $pid=pcntl_fork();if($pid===0){$database=new App\Database();$auth2=new App\Auth($database);$pub=new App\PublicTown($database,$auth2);$api=new App\ApiController($auth2,new App\SaveService($database,$auth2,$pub),$pub,$database);$result=callApi('PUT','towns/'.$trackedTown['townId'],$upload,$trackedOwner);exit($result['status']===200?0:($result['status']===409?10:20));}$children[]=$pid;
+ }
+ $codes=[];foreach($children as $pid){pcntl_waitpid($pid,$exit);$codes[]=pcntl_wexitstatus($exit);}sort($codes);check($codes===[0,10],'concurrent tracked purchase accepts one revision');
+ $result=status(200,callApi('GET','towns/'.$trackedTown['townId'],null,$trackedOwner),'tracked result');
+ check($result['revision']===2&&$result['integrity']['ackSequence']===1&&$result['profile']['town']['coins']===140&&$result['profile']['powers'][0]['quantity']===1,'tracked offer is charged and granted once');
+ $winner=$db->get()->fetchOne('SELECT upload_id FROM towns WHERE id=?',[$trackedTown['townId']]);
+ check(status(200,callApi('PUT','towns/'.$trackedTown['townId'],$uploads[$winner],$trackedOwner),'retry concurrent winner')===$result,'winning receipt retries without a second charge or grant');
  echo "Concurrent town-slot and revision checks passed.\n";
 }finally{cleanup();}

@@ -11,7 +11,9 @@ final class ApiController {
         $native=false;
         try {
             $this->auth->guardHost($r);$native=$this->auth->nativeOrigin($r);
-            if((int)$r->headers->get('Content-Length','0')>1100000||strlen($r->getContent())>1100000)throw new ApiError(413,'Request is too large.');
+            $townUpload=($r->isMethod('POST')&&$path==='towns')||($r->isMethod('PUT')&&preg_match('~^towns/[a-f0-9-]{36}(?:/resolve)?$~D',$path));
+            $requestLimit=$townUpload?SaveService::MAX_UPLOAD_BYTES+65536:1100000;
+            if((int)$r->headers->get('Content-Length','0')>$requestLimit||strlen($r->getContent())>$requestLimit)throw new ApiError(413,'Request is too large.');
             $method=$r->getMethod();$body=[];
             if($method==='OPTIONS') {
                 $this->auth->guardOrigin($r);$response=new JsonResponse(null,204);
@@ -63,7 +65,7 @@ final class ApiController {
         $id=$m[1];$suffix=$m[2]??'';
         return match($r->getMethod().' '.$suffix) {
             'GET '=>$this->saves->get($r,$id), 'PUT '=>$this->saves->save($r,$id,$b),
-            'PUT resolve'=>$this->saves->save($r,$id,$b), 'GET history'=>$this->saves->history($r,$id),
+            'PUT resolve'=>$this->saves->save($r,$id,$b,true), 'GET history'=>$this->saves->history($r,$id),
             'PATCH settings'=>$this->saves->metadata($r,$id,$b), 'DELETE '=>$this->saves->delete($r,$id,$b),
             'DELETE guest'=>$this->saves->clearGuest($r,$id,$b),
             default=>throw new ApiError(405,'Method is not allowed.'),

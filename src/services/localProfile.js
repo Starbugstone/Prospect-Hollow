@@ -43,12 +43,13 @@ export const localProfile = {
       released = true;
     };
   },
-  save(data) {
+  save(data, onStoredIntegrity = null) {
     try {
       if (paused) return false;
       loadedId = townStorage.save(
         data,
         loadedStorage === globalThis.localStorage ? loadedId : null,
+        onStoredIntegrity,
       ).id;
       loadedStorage = globalThis.localStorage;
       return true;

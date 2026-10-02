@@ -370,7 +370,10 @@
                             { 'schema': { '$ref': '#/components/schemas/Error' } },
                         },
                     },
-                  '413': { 'description': 'Body exceeds 1,100,000 bytes or profile exceeds 1 MiB' },
+                  '413':
+                    {
+                      'description': 'Body exceeds 8 MiB plus 64 KiB, uploaded profile exceeds 8 MiB, or non-journal/stored snapshot exceeds 1 MiB',
+                    },
                 },
               'requestBody':
                 {
@@ -448,7 +451,10 @@
                             { 'schema': { '$ref': '#/components/schemas/Error' } },
                         },
                     },
-                  '413': { 'description': 'Body exceeds 1,100,000 bytes or profile exceeds 1 MiB' },
+                  '413':
+                    {
+                      'description': 'Body exceeds 8 MiB plus 64 KiB, uploaded profile exceeds 8 MiB, or non-journal/stored snapshot exceeds 1 MiB',
+                    },
                 },
               'parameters':
                 [
@@ -559,7 +565,10 @@
                             { 'schema': { '$ref': '#/components/schemas/Error' } },
                         },
                     },
-                  '413': { 'description': 'Body exceeds 1,100,000 bytes or profile exceeds 1 MiB' },
+                  '413':
+                    {
+                      'description': 'Body exceeds 8 MiB plus 64 KiB, uploaded profile exceeds 8 MiB, or non-journal/stored snapshot exceeds 1 MiB',
+                    },
                 },
               'parameters':
                 [
@@ -1207,8 +1216,66 @@
                   'records': { 'type': 'object' },
                   'continuousRecords': { 'type': 'object' },
                   'powers': { 'type': 'array' },
+                  'integrity': { '$ref': '#/components/schemas/IntegrityJournal' },
                 },
-              'description': 'Opaque gameplay snapshot, at most 1 MiB. Server validates envelope, never recalculates rewards.',
+              'description': 'Gameplay snapshot, at most 1 MiB excluding queued integrity actions. Town profile uploads allow up to 8 MiB including those actions. Tracked snapshots include semantic resource actions recalculated against the cloud checkpoint. Legacy snapshots establish an unverified migration baseline; puzzle-engine results are not replayed. Validation errors preserve the device copy and last cloud save.',
+            },
+          'IntegrityJournal':
+            {
+              'type': 'object',
+              'required': ['version', 'epoch', 'baseSequence', 'actions'],
+              'properties':
+                {
+                  'version': { 'const': 1 },
+                  'epoch': { 'type': 'string', 'format': 'uuid' },
+                  'baseSequence': { 'type': 'integer', 'minimum': 0 },
+                  'clientAt':
+                    {
+                      'type': 'integer',
+                      'minimum': 0,
+                      'description': 'Device Unix milliseconds captured once when the upload enters its immutable retry queue. Only the first baseline establishes a clock offset.',
+                    },
+                  'actions':
+                    {
+                      'type': 'array',
+                      'items':
+                        {
+                          'type': 'object',
+                          'required': ['id', 'sequence', 'kind', 'data'],
+                          'properties':
+                            {
+                              'id': { 'type': 'string', 'format': 'uuid' },
+                              'sequence': { 'type': 'integer', 'minimum': 1 },
+                              'kind': { 'type': 'string' },
+                              'data': { 'type': 'object' },
+                            },
+                        },
+                    },
+                  'context':
+                    {
+                      'type': 'object',
+                      'readOnly': true,
+                      'description': 'Server-owned run and clock context. Incoming client context cannot override the cloud checkpoint.',
+                    },
+                  'checkpoint':
+                    {
+                      'type': 'string',
+                      'description': 'Opaque server-signed checkpoint retained by the client for historical recovery.',
+                    },
+                },
+            },
+          'IntegrityReceipt':
+            {
+              'type': 'object',
+              'required': ['version', 'epoch', 'ackSequence', 'status'],
+              'properties':
+                {
+                  'version': { 'const': 1 },
+                  'epoch': { 'type': 'string', 'format': 'uuid' },
+                  'ackSequence': { 'type': 'integer', 'minimum': 0 },
+                  'status': { 'type': 'string', 'enum': ['baseline', 'tracked'] },
+                  'checkpoint': { 'type': 'string' },
+                },
             },
           'Upload':
             {
@@ -1250,6 +1317,7 @@
                   'isPublic': { 'type': 'boolean' },
                   'publicId': { 'type': 'string', 'pattern': '^[a-f0-9]{32}$' },
                   'profile': { '$ref': '#/components/schemas/Profile' },
+                  'integrity': { '$ref': '#/components/schemas/IntegrityReceipt' },
                 },
             },
           'Error':
@@ -1259,6 +1327,11 @@
                 {
                   'error': { 'type': 'string' },
                   'code': { 'type': 'string' },
+                  'field':
+                    {
+                      'type': 'string',
+                      'description': 'Optional field that could not be reconciled; never indicates a ban.',
+                    },
                   'cloud': { '$ref': '#/components/schemas/Town' },
                 },
             },

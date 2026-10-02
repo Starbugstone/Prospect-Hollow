@@ -3,10 +3,12 @@ declare(strict_types=1);
 namespace App;
 use Symfony\Component\HttpFoundation\Request;
 
-/** Account-owned snapshots. Gameplay rules deliberately live only in the client. */
+/** Account-owned snapshots with background economy journal validation. */
 final class SaveService {
     /** Cloud towns one account may keep. */
     public const TOWN_SLOTS=3;
+    /** An offline receipt batch can be larger than the retained gameplay snapshot. */
+    public const MAX_UPLOAD_BYTES=8388608;
     public function __construct(private Database $database, private Auth $auth, private PublicTown $public) {}
     public static function keys(array $data,array $allowed): void {
         if(array_diff(array_keys($data),$allowed)) throw new ApiError(422,'Unexpected field.');
@@ -20,7 +22,10 @@ final class SaveService {
         foreach(['town','records','continuousRecords'] as $key) if(!($profile->$key??null) instanceof \stdClass) throw new ApiError(422,'Invalid save structure.');
         if(!is_array($profile->powers??null) || !($profile->town->buildings??null) instanceof \stdClass || !is_string($profile->town->era??null)) throw new ApiError(422,'Invalid save structure.');
         $json=json_encode($profile,JSON_THROW_ON_ERROR);
-        if(strlen($json)>1048576) throw new ApiError(413,'A town save must be smaller than 1 MB.');
+        if(strlen($json)>self::MAX_UPLOAD_BYTES) throw new ApiError(413,'A town upload must be smaller than 8 MB. Your local copy is safe.');
+        $snapshot=clone $profile;
+        if(($snapshot->integrity??null) instanceof \stdClass) {$snapshot->integrity=clone $snapshot->integrity;unset($snapshot->integrity->actions);}
+        if(strlen(json_encode($snapshot,JSON_THROW_ON_ERROR))>1048576) throw new ApiError(413,'A town save must be smaller than 1 MB. Your local copy is safe.');
         return $json;
     }
     public static function summary(mixed $save): array {
@@ -36,6 +41,8 @@ final class SaveService {
     public function view(array $row,bool $profile=true): array {
         $result=['townId'=>$row['id'],'name'=>$row['name'],'revision'=>(int)$row['revision'],'updatedAt'=>(int)$row['saved_at'],'isPublic'=>(bool)$row['listed'],'publicId'=>$row['public_id']];
         $save=json_decode($row['profile'],false,64,JSON_THROW_ON_ERROR);
+        $integrity=SaveIntegrity::receipt($save);
+        if($profile&&$integrity!==null)$result['integrity']=$integrity;
         if($profile) $result['profile']=$save;
         else {
             // Owner-only card data; never send full saves in the town list.
@@ -96,6 +103,7 @@ final class SaveService {
             }
             if((int)$db->fetchOne('SELECT COUNT(*) FROM towns WHERE player_id=? AND deleted_at IS NULL',[$a['id']])>=self::TOWN_SLOTS)throw new ApiError(409,'Your account already has '.self::TOWN_SLOTS.' towns. Keep playing locally or manage your cloud towns.',['code'=>'slots_full']);
             [$name,$normalized]=$this->nameAvailable($db,$a['id'],$id,$body['name']);
+            $json=json_encode((new SaveIntegrity())->accept(json_decode($json,false,64,JSON_THROW_ON_ERROR),null,time()*1000,false,[],$id),JSON_THROW_ON_ERROR);
             $row=['id'=>$id,'player_id'=>$a['id'],'name'=>$name,'normalized_name'=>$normalized,'revision'=>1,'profile'=>$json,'saved_at'=>time(),'public_id'=>bin2hex(random_bytes(16)),'listed'=>0,'upload_id'=>$body['uploadId'],'upload_hash'=>$hash];
             try { $db->insert('towns',$row); }
             catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException) { throw new ApiError(409,'This town ID is already attached. Keep your local copy.',['code'=>'town_exists']); }
@@ -106,15 +114,17 @@ final class SaveService {
         $db->insert('town_history',['town_id'=>$row['id'],'revision'=>$row['revision'],'profile'=>$row['profile'],'saved_at'=>$row['saved_at']]);
         $db->executeStatement('DELETE FROM town_history WHERE town_id=? AND revision<?',[$row['id'],max(0,(int)$row['revision']-4)]);
     }
-    public function save(Request $r,string $id,array $body): array {
+    public function save(Request $r,string $id,array $body,bool $resolve=false): array {
         self::uuid($id);self::keys($body,['baseRevision','uploadId','profile']);[$json,$hash]=$this->upload($body);
-        return $this->transaction($r,true,function($db,$a)use($id,$body,$json,$hash) {
+        return $this->transaction($r,true,function($db,$a)use($id,$body,$json,$hash,$resolve) {
             $row=$this->owned($db,$a['id'],$id);
             if($row['upload_id']===$body['uploadId']) {
                 if(!hash_equals($row['upload_hash'],$hash))throw new ApiError(409,'That upload ID belongs to a different save.');
                 return $this->view($row);
             }
             if((int)$row['revision']!==$body['baseRevision']) throw new ApiError(409,'This town changed on another device. Choose which save to keep.',['code'=>'save_conflict','cloud'=>$this->view($row)]);
+            $history=$resolve?array_map(fn($entry)=>json_decode($entry['profile'],false,64,JSON_THROW_ON_ERROR),$db->fetchAllAssociative('SELECT profile FROM town_history WHERE town_id=? ORDER BY revision DESC',[$id])):[];
+            $json=json_encode((new SaveIntegrity())->accept(json_decode($json,false,64,JSON_THROW_ON_ERROR),json_decode($row['profile'],false,64,JSON_THROW_ON_ERROR),time()*1000,$resolve,$history,$id),JSON_THROW_ON_ERROR);
             self::archive($db,$row);
             $changes=['profile'=>$json,'revision'=>(int)$row['revision']+1,'saved_at'=>time(),'upload_id'=>$body['uploadId'],'upload_hash'=>$hash];
             if($row['listed'])$changes['appearance']=$this->public->projection(json_decode($json),$row['name'],$row['public_id']);

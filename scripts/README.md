@@ -6,13 +6,15 @@ scripts run with `blender --background --python <script>`.
 
 ## Build and checks (run by npm scripts)
 
-| Script                                              | Purpose                                                                              |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `split-mesh-catalogs.mjs`                           | Splits the Blender mesh exports into bounded lazy chunks before dev/test/build.      |
-| `generate-footprints.mjs`, `footprint-generator.js` | Builds building footprints; `--check` fails on drift (`npm run check:footprints`).   |
-| `check-bundle-budget.mjs`                           | Fails the build when a JavaScript chunk exceeds its budget.                          |
-| `create-era-demo.mjs`                               | Writes disposable demo saves for each era (`npm run demo:eras`).                     |
-| `export-public-content.mjs`                         | Writes the building, era and level ids the backend's public-town projection accepts. |
+| Script                                                   | Purpose                                                                                                   |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `split-mesh-catalogs.mjs`                                | Splits the Blender mesh exports into bounded lazy chunks before dev/test/build.                           |
+| `generate-footprints.mjs`, `footprint-generator.js`      | Builds building footprints; `--check` fails on drift (`npm run check:footprints`).                        |
+| `check-bundle-budget.mjs`                                | Fails the build when a JavaScript chunk exceeds its budget.                                               |
+| `create-era-demo.mjs`                                    | Writes disposable demo saves for each era (`npm run demo:eras`).                                          |
+| `export-public-content.mjs`                              | Writes the building, era and level ids the backend's public-town projection accepts.                      |
+| `export-save-rules.mjs`, `save-rules.js`                 | Exports shared accounting rules for cloud save integrity; `--check` detects stale definitions.            |
+| `create-integrity-fixtures.mjs`, `integrity-fixtures.js` | Generates actual frontend action snapshots for PHP accounting regression checks; `--check` detects drift. |
 
 ## Game art and audio
 

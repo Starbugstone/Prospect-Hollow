@@ -56,6 +56,49 @@ try {
  check(status(200,callApi('GET','towns/'.$town2['townId'],null,$a),'other town')['revision']===1,'independent revisions');
  for($revision=3;$revision<10;$revision++) { $lastUpload=['baseRevision'=>$revision,'uploadId'=>uuid(),'profile'=>profile($revision)]; status(200,callApi('PUT','towns/'.$id,$lastUpload,$a),'save history'); }
  $history=status(200,callApi('GET','towns/'.$id.'/history',null,$a),'history');check(count($history['revisions'])===5,'bounded five previous saves');status(404,callApi('GET','towns/'.$id.'/history',null,$b),'history ownership');
+ // Versioned journals are checked while holding the same account transaction as
+ // revisions and upload receipts. Failures preserve both the authoritative town
+ // and its history; older towns above retain their unverified migration baseline.
+ $trackedAccount=account();
+ $saveRules=json_decode(file_get_contents(dirname(__DIR__).'/content/save-rules.json'),false,64,JSON_THROW_ON_ERROR);
+ $trackedProfile=$saveRules->defaultProfile;
+ $trackedProfile->integrity=(object)['version'=>1,'epoch'=>uuid(),'baseSequence'=>0,'clientAt'=>time()*1000,'actions'=>[]];
+ $trackedBody=townBody('Tracked Hollow');$trackedBody['profile']=$trackedProfile;
+ $tracked=status(200,callApi('POST','towns',$trackedBody,$trackedAccount),'tracked migration baseline');
+ check($tracked['integrity']['status']==='baseline'&&is_string($tracked['integrity']['checkpoint']),'migration exposes trusted recovery checkpoint');
+ $trackedId=$tracked['townId'];
+ $trackedCards=status(200,callApi('GET','account',null,$trackedAccount),'tracked summary')['towns'];
+ check(!isset($trackedCards[0]['integrity'],$trackedCards[0]['profile']),'card list does not carry compressed private recovery state');
+ $forgedProfile=json_decode(json_encode($trackedProfile));$forgedProfile->integrity=json_decode(json_encode($tracked['profile']['integrity']));$forgedProfile->town->coins=50000;
+ $forgedUpload=['baseRevision'=>1,'uploadId'=>uuid(),'profile'=>$forgedProfile];
+ $trackedDenied=status(422,callApi('PUT','towns/'.$trackedId,$forgedUpload,$trackedAccount),'tracked money injection');check(($trackedDenied['code']??null)==='save_integrity_mismatch','tracked totals need replayed actions '.json_encode($trackedDenied));
+ check(status(200,callApi('GET','towns/'.$trackedId,null,$trackedAccount),'tracked after failed injection')===$tracked,'rejected upload leaves last accepted town unchanged');
+ check(status(200,callApi('GET','towns/'.$trackedId.'/history',null,$trackedAccount),'tracked history after failed injection')['revisions']===[],'rejected upload does not archive or revise town');
+ $forgedProfile->integrity->epoch=uuid();
+ check(status(422,callApi('PUT','towns/'.$trackedId.'/resolve',['baseRevision'=>1,'uploadId'=>uuid(),'profile'=>$forgedProfile],$trackedAccount),'resolve cannot baseline injected progress')['code']==='save_integrity_mismatch','resolve is not an epoch reset bypass');
+ $validProfile=json_decode(json_encode($trackedProfile));$validProfile->integrity=json_decode(json_encode($tracked['profile']['integrity']));$stamp=time()*1000;
+ $validProfile->town->buildings->well=1;$validProfile->town->income->at=$stamp;
+ $validProfile->integrity->actions=[(object)['sequence'=>1,'id'=>uuid(),'kind'=>'building-buy','data'=>(object)['buildingId'=>'well','expectedStage'=>0,'at'=>$stamp,'shopStock'=>[],'shopVisit'=>0]]];
+ $validUpload=['baseRevision'=>1,'uploadId'=>uuid(),'profile'=>$validProfile];
+ $trackedSaved=status(200,callApi('PUT','towns/'.$trackedId,$validUpload,$trackedAccount),'tracked server calculated free purchase');
+ check($trackedSaved['revision']===2&&$trackedSaved['integrity']['ackSequence']===1&&$trackedSaved['profile']['town']['coins']===0,'tracked save atomically advances revision and receipt');
+ check(status(200,callApi('PUT','towns/'.$trackedId,$validUpload,$trackedAccount),'tracked lost response retry')===$trackedSaved,'same tracked upload retries without granting twice');
+ $restoreProfile=json_decode(json_encode($trackedProfile));$restoreProfile->integrity=json_decode(json_encode($tracked['profile']['integrity']));
+ $restored=status(200,callApi('PUT','towns/'.$trackedId.'/resolve',['baseRevision'=>2,'uploadId'=>uuid(),'profile'=>$restoreProfile],$trackedAccount),'signed checkpoint backup restoration');
+ check($restored['revision']===3&&$restored['profile']['town']['buildings']['well']===0,'verified backup replaces progress without merging or adding rewards');
+ // A long offline journal may exceed the snapshot limit. It is replayed and pruned
+ // in one upload, rather than imposing a puzzle/move allowance on normal players.
+ $batch=json_decode(json_encode($restoreProfile));$batch->integrity->checkpoint=$restored['integrity']['checkpoint'];$batch->integrity->actions=[];
+ for($run=1;$run<=8000;$run++)$batch->integrity->actions[]=(object)['sequence'=>$run,'id'=>uuid(),'kind'=>'run-start','data'=>(object)['runId'=>$run,'mode'=>'normal','levelId'=>1]];
+ $batch->issuedRun=8000;
+ check(strlen(json_encode($batch))>1048576&&strlen(json_encode($batch))<App\SaveService::MAX_UPLOAD_BYTES,'large canonical receipt batch exceeds snapshot bound but fits upload envelope');
+ $injectedBatch=json_decode(json_encode($batch));$injectedBatch->town->coins=1;
+ check(status(422,callApi('PUT','towns/'.$trackedId,['baseRevision'=>3,'uploadId'=>uuid(),'profile'=>$injectedBatch],$trackedAccount),'large journal extra money')['code']==='save_integrity_mismatch','large valid journal cannot conceal an injected balance');
+ $batchUpload=['baseRevision'=>3,'uploadId'=>uuid(),'profile'=>$batch];
+ $batchSaved=status(200,callApi('PUT','towns/'.$trackedId,$batchUpload,$trackedAccount),'large offline receipt batch');
+ check($batchSaved['revision']===4&&$batchSaved['integrity']['ackSequence']===8000&&$batchSaved['profile']['issuedRun']===8000&&$batchSaved['profile']['integrity']['actions']===[],'large journal prunes acknowledged actions and retains small authoritative snapshot');
+ check(strlen(json_encode($batchSaved['profile']))<1048576,'post replay cloud profile stays below existing snapshot limit');
+ check(status(200,callApi('PUT','towns/'.$trackedId,$batchUpload,$trackedAccount),'large journal lost response retry')===$batchSaved,'large journal retries keep one receipt and revision');
  $bad=profile();$bad->schemaVersion=99;status(422,callApi('PUT','towns/'.$id,['baseRevision'=>10,'uploadId'=>uuid(),'profile'=>$bad],$a),'future schema preserved');
  $bad=profile();$bad->extra=str_repeat('x',1048576);status(413,callApi('PUT','towns/'.$id,['baseRevision'=>10,'uploadId'=>uuid(),'profile'=>$bad],$a),'size bound');
  $settings=['baseRevision'=>10,'name'=>'Dustwater','isPublic'=>true];$published=status(200,callApi('PATCH','towns/'.$id.'/settings',$settings,$a),'publish');$publicId=$published['publicId'];check($published['revision']===10,'metadata leaves gameplay revision unchanged');check(count(status(200,callApi('GET','towns/'.$id.'/history',null,$a),'history after metadata')['revisions'])===5,'metadata does not archive gameplay');

@@ -1,9 +1,12 @@
 # Replacement backend validation
 
-The September 2026 replacement removes the PHP gameplay engine and tests the account-save contract directly. Historical review screenshots and benchmarks describe the retired prototype.
+The September 2026 replacement removes the PHP puzzle engine and tests the account-save contract directly. Save integrity now adds resource-action accounting without puzzle-engine replay. Historical review screenshots and benchmarks describe the retired prototype.
 
 - `npm run verify`: formatting, frontend regression suite (including unlimited puzzle moves) and production build.
 - `node scripts/export-public-content.mjs`: generates only the era/building appearance allowlist from the shared frontend definitions.
+- `node scripts/export-save-rules.mjs --check`: checks the generated accounting catalog against shared eras, buildings, levels and reward definitions.
+- `php backend/tests/save-integrity.php`: resource-action replay, legitimate frontend accounting fixtures, malformed values, snapshot injection, migration baselines and recovery.
+- `testing/save-integrity.test.js` and `testing/integrity-sync.test.js`: durable action recording, interrupted rewards, acknowledgment races, exact retries, preserved rejected saves and bounded continuous-play economic receipts.
 - `TEST_DATABASE_URL=... php backend/tests/saves.php`: account authentication, ownership, three slots, per-account names, snapshot validation, revisions, conflicts, idempotent retries, five-save history, moderation, safe public projection, deletion, native transport and revocation.
 - `TEST_DATABASE_URL=... php backend/tests/concurrency.php`: real concurrent connections race for the final account slot and for the same town revision. Both PostgreSQL and MySQL are required.
 - `TEST_HTTP_ORIGIN=http://localhost:8094 php backend/tests/api-http.php`: real packaged HTTP routing, authentication and body limits.
@@ -51,3 +54,11 @@ The integration includes PR #47 through `develop`, the account-controls redesign
 Repeated Chromium checks against the combined production build passed both the independent-device recovery scenario above and same-browser handoff in both directions. A live puzzle continued at move 106 with its existing run; another town retained its balance, the former owner could not save, and quota failure kept the original game playable. A local-only handoff made zero API requests. Account controls were exercised through Settings. The local transfer took 524 ms in the Canvas/SVG test environment; this is not a hosted latency guarantee.
 
 With the account response deliberately held, a cached village was playable in 454 ms before the response arrived. While a subsequent sync response was held beyond the normal debounce, 100 local checkpoints completed in 84 ms total and coalesced into one upload; maximum concurrent account/town HTTP requests was one. Two minutes of simulated clean idle time made zero additional requests. The scheduler regression tests separately verify backoff through repeated failures up to five minutes before jitter, without visibility/checkpoint events bypassing it. These measurements exercise the client against controlled slow HTTP, not a load benchmark of the hosting database. Normal flows produced no browser page errors.
+
+## Save accounting verification, 2 October 2026
+
+Docker checks passed 124 calculator assertions, save API checks and concurrent purchase/retry checks on PostgreSQL 17 and MySQL 8.4. The isolated release using the published 402 levels and nine eras passed 194 PostgreSQL save API assertions; the shared workspace checks also covered the forthcoming eras. Canonical frontend fixtures cover 20 resource flows. Coverage includes direct balance/item edits, signed checkpoint tampering and town isolation, old inventory overflow/refund migration, interrupted chest recovery, clock offsets, and a legitimate 8,000-action offline batch larger than 1 MiB that is acknowledged and pruned. Known historical target tuples also preserve legitimate offline victories after an update without accepting invented or mixed thresholds.
+
+Focused receipt, sync, transport, recovery and accounting tests passed. The unlimited-move and full-campaign reward regressions passed unchanged. Formatting, lint and unused-code checks passed in the isolated release. A full shared-workspace run also reported unfinished era presentation failures and test timeouts under concurrent load; those foreign changes are excluded from this release.
+
+The Docker production build passed JavaScript bundle budgets. The hosting hook exported the same rules and passed release preparation, migrations and cache warmup. Packaged HTTP checks verified readiness, authentication and separate town-upload/ordinary-request size limits. The production browser at `http://localhost:8232` preserved a free well and its journal through reload, opened the first mine with unlimited moves, and allowed hint use. Signed-out gameplay made zero API requests. These checks validate accounting and normal save flows; they do not prove client-generated puzzle completions, chest rolls or NPC visits.
