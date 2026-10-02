@@ -130,8 +130,11 @@ function windpump(d, parent) {
     },
   };
 }
+// Buildings whose own models carry every stage's details take no generic additions.
+const OWN_STAGE_DETAILS = new Set(['fisherman', 'blacksmith', 'school', 'doctor']);
+
 export function addImprovements(d, parent, kind, stage, era = 'frontier') {
-  if (stage < 2 || kind === 'square') return null;
+  if (stage < 2 || kind === 'square' || OWN_STAGE_DETAILS.has(kind)) return null;
   if (kind === 'well' && eraEvolution(era).style !== 'frontier') return null;
   if (stage >= 4 && ['saloon', 'bank', 'sheriff'].includes(kind)) {
     for (const x of [-1.15, 1.15]) {

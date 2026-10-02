@@ -111,8 +111,7 @@ export function buildPlot(d, id, group, town, labels) {
         else if (kind === 'well') addWell(d, group);
         else d.building(group, kind, stage, labels[id]);
       }
-      if (!industrial && !['fisherman', 'blacksmith', 'school', 'doctor'].includes(kind))
-        movingPart = addImprovements(d, group, kind, stage, town.buildingEras[id]);
+      if (!industrial) movingPart = addImprovements(d, group, kind, stage, town.buildingEras[id]);
       if (!industrial)
         renderModernization(
           d,
