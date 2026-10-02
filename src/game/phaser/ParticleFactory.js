@@ -67,6 +67,9 @@ export function createParticleFactory(scene, fxLayer) {
     emitIce(position, count = 8) {
       if (!reducedMotion) ice.explode(Math.min(12, count), position.x, position.y);
     },
+    alive() {
+      return emitter.getAliveParticleCount() + ice.getAliveParticleCount() > 0;
+    },
     clear() {
       emitter.killAll();
       ice.killAll();

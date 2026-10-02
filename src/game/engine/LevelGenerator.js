@@ -188,7 +188,15 @@ const scoreObjective = (id, target) => ({
   progress: 0,
 });
 // Field order is part of the saved and hashed level contract.
-const levelConfig = ({ id, chapter, tip, oreOrders, chestTarget, speedTargetMs, ...board }) => ({
+const assembleLevelConfig = ({
+  id,
+  chapter,
+  tip,
+  oreOrders,
+  chestTarget,
+  speedTargetMs,
+  ...board
+}) => ({
   id,
   chapter,
   chapterName: CHAPTERS[chapter].name,
@@ -324,7 +332,7 @@ const createExpansionLevel = (id) => {
               : tiles.some((tile) => tile.chainHealth)
                 ? 'Ice, stone & chains'
                 : 'Ice & stone';
-  return levelConfig({
+  return assembleLevelConfig({
     id,
     chapter,
     tip: spec.tip,
@@ -357,72 +365,67 @@ const createExpansionLevel = (id) => {
 
 // Chapter boundaries own size and palette count; individual puzzles vary
 // workload and geometry without adding more colors mid-chapter.
-export const generateLevelConfigs = (count = LEVEL_COUNT) => {
-  const levels = [];
-  for (let index = 0; index < count; index++) {
-    const id = index + 1;
-    if (id > EARLY_LEVEL_COUNT) {
-      if (id > LEVEL_COUNT) break;
-      levels.push(createExpansionLevel(id));
-      continue;
-    }
-    const chapter = chapterIndexOf(id);
-    const { cols, rows } = CHAPTERS[chapter];
-    const spec = getEarlyLevelSpec(id);
-    const rng = createSeededRng(spec.seed);
-    const layout = new BoardLayout(
-      `level_${id}`,
-      'RECTANGLE',
-      { cols, rows },
-      getLevelGemTypes(id),
-    );
-    const tiles = Array.from({ length: cols * rows }, () => ({
-      type: 'standard',
-      health: 0,
-      maxHealth: 0,
-    }));
-    layout.blockedCells = stonePositions(cols, rows, spec.motif).slice(0, spec.stoneCount);
-    layout.blockedCells.forEach(({ x, y }, i) => {
-      const health = i < spec.reinforcedCount ? 2 : 1;
-      tiles[y * cols + x] = { type: 'blocker', health, maxHealth: health };
-    });
-    const iceCells = tiles.flatMap((tile, i) =>
-      tile.type === 'standard' && (!spec.openExitRows || i < cols * (rows - spec.openExitRows))
-        ? [i]
-        : [],
-    );
-    const iceCellCount = Math.min(iceCells.length, spec.ice - spec.doubleIce);
-    layIce(
-      tiles,
-      iceCells,
-      rng,
-      (cell) => iceRank(cell, cols, rows, spec.motif),
-      iceCellCount,
-      spec,
-    );
-    for (const cell of iceCells.slice(0, spec.frozenCount)) tiles[cell].state = 'FROZEN';
-    const board = createPlayableBoard(layout, rng, { minMoves: chapter < 2 ? 6 : 4, tiles });
-    const totalLayers = tiles.reduce((sum, tile) => sum + tile.health, 0);
-    const chestTarget = Math.ceil((totalLayers * 220) / 500) * 500;
-    levels.push(
-      levelConfig({
-        id,
-        chapter,
-        tip: spec.tip,
-        chestTarget,
-        speedTargetMs: (90 + totalLayers * 2) * 1000,
-        cols,
-        rows,
-        board,
-        tiles,
-        layout,
-        objectives: [
-          clearObjective(id, 'Clear ice & stone', totalLayers),
-          scoreObjective(id, chestTarget),
-        ],
-        summary: `Clear ${spec.ice} ice layers${layout.blockedCells.length ? ` and ${layout.blockedCells.length} stone blocks` : ''}. Earn a chest at ${chestTarget.toLocaleString()} points.`,
-      }),
-    );
-  }
-  return levels;
+const createEarlyLevel = (id) => {
+  const chapter = chapterIndexOf(id);
+  const { cols, rows } = CHAPTERS[chapter];
+  const spec = getEarlyLevelSpec(id);
+  const rng = createSeededRng(spec.seed);
+  const layout = new BoardLayout(`level_${id}`, 'RECTANGLE', { cols, rows }, getLevelGemTypes(id));
+  const tiles = Array.from({ length: cols * rows }, () => ({
+    type: 'standard',
+    health: 0,
+    maxHealth: 0,
+  }));
+  layout.blockedCells = stonePositions(cols, rows, spec.motif).slice(0, spec.stoneCount);
+  layout.blockedCells.forEach(({ x, y }, i) => {
+    const health = i < spec.reinforcedCount ? 2 : 1;
+    tiles[y * cols + x] = { type: 'blocker', health, maxHealth: health };
+  });
+  const iceCells = tiles.flatMap((tile, i) =>
+    tile.type === 'standard' && (!spec.openExitRows || i < cols * (rows - spec.openExitRows))
+      ? [i]
+      : [],
+  );
+  const iceCellCount = Math.min(iceCells.length, spec.ice - spec.doubleIce);
+  layIce(tiles, iceCells, rng, (cell) => iceRank(cell, cols, rows, spec.motif), iceCellCount, spec);
+  for (const cell of iceCells.slice(0, spec.frozenCount)) tiles[cell].state = 'FROZEN';
+  const board = createPlayableBoard(layout, rng, { minMoves: chapter < 2 ? 6 : 4, tiles });
+  const totalLayers = tiles.reduce((sum, tile) => sum + tile.health, 0);
+  const chestTarget = Math.ceil((totalLayers * 220) / 500) * 500;
+  return assembleLevelConfig({
+    id,
+    chapter,
+    tip: spec.tip,
+    chestTarget,
+    speedTargetMs: (90 + totalLayers * 2) * 1000,
+    cols,
+    rows,
+    board,
+    tiles,
+    layout,
+    objectives: [
+      clearObjective(id, 'Clear ice & stone', totalLayers),
+      scoreObjective(id, chestTarget),
+    ],
+    summary: `Clear ${spec.ice} ice layers${layout.blockedCells.length ? ` and ${layout.blockedCells.length} stone blocks` : ''}. Earn a chest at ${chestTarget.toLocaleString()} points.`,
+  });
 };
+
+// Every level is seeded on its own, so generating one alone matches its entry in the
+// full list. Only gem ids differ, and they only need to be unique within a session.
+const createLevel = (id) =>
+  id > EARLY_LEVEL_COUNT ? createExpansionLevel(id) : createEarlyLevel(id);
+const generated = new Map();
+
+/** The configuration of one level, generated on first use; null for unknown ids. */
+export function levelConfig(id) {
+  if (!Number.isInteger(id) || id < 1 || id > LEVEL_COUNT) return null;
+  if (!generated.has(id)) generated.set(id, createLevel(id));
+  return generated.get(id);
+}
+
+/** Fresh configurations for levels 1..count, for tests and authoring scripts. */
+export const generateLevelConfigs = (count = LEVEL_COUNT) =>
+  Array.from({ length: Math.max(0, Math.min(count, LEVEL_COUNT)) }, (_, index) =>
+    createLevel(index + 1),
+  );

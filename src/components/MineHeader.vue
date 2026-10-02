@@ -68,9 +68,7 @@ defineProps({ open: Boolean, muted: Boolean, levelName: String });
 const emit = defineEmits(['update:open', 'height', 'toggle-mute', 'town', 'guide']);
 const game = useGameStore();
 const settings = useSettingsStore();
-const initialTiles = computed(
-  () => game.availableLevels.find((level) => level.id === game.currentLevelId)?.config.tiles,
-);
+const initialTiles = computed(() => game.currentLevel?.config.tiles);
 const drawer = ref(null),
   handle = ref(null);
 const header = ref(null);

@@ -4,7 +4,7 @@ import { MatchEngine } from '../src/game/engine/MatchEngine';
 import { TileManager } from '../src/game/engine/TileManager';
 import { HintEngine } from '../src/game/engine/HintEngine';
 import { createGem } from '../src/game/engine/GemFactory';
-import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
+import { generateLevelConfigs, levelConfig } from '../src/game/engine/LevelGenerator';
 import { layerCount } from '../src/game/engine/TileRules';
 import { EXPANSION_LEVELS } from '../src/data/expansion';
 import { LEVEL_NAMES } from '../src/data/levelNames';
@@ -298,7 +298,7 @@ it('shuffles only movable gems and restores chains, seals and relics on replay',
   for (const id of [48, 54, 60]) {
     game.startLevel(id);
     game.animationInProgress = false;
-    const original = JSON.stringify(game.availableLevels[id - 1].config);
+    const original = JSON.stringify(levelConfig(id));
     const anchored = game.board.flatMap((gem, index) =>
       game.tiles[index].chainHealth || gem?.type === 'relic' ? [{ index, id: gem.id }] : [],
     );
@@ -310,7 +310,7 @@ it('shuffles only movable gems and restores chains, seals and relics on replay',
     });
     game.board = game.board.map((gem) => (gem?.type === 'relic' ? createGem('ruby') : gem));
     game.startLevel(id);
-    expect(JSON.stringify(game.availableLevels[id - 1].config)).toBe(original);
+    expect(JSON.stringify(levelConfig(id))).toBe(original);
     expect(game.tiles.reduce((sum, tile) => sum + layerCount(tile), 0)).toBe(game.totalLayers);
     expect(game.remainingRelics).toBe(id === 60 ? 3 : 0);
     expect(game.objectives.every((objective) => objective.progress === 0)).toBe(true);

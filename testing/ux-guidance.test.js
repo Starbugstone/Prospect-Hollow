@@ -2,6 +2,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useCampaignStore, SAVE_KEY } from '../src/stores/campaignStore';
 import { useGameStore } from '../src/stores/gameStore';
+import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
 import { mineTip, townTip } from '../src/data/guidance';
 import fr from '../src/i18n/fr.json';
 
@@ -92,11 +93,11 @@ it('keeps objective labels tied to the initial board after obstacles are cleared
     tile.health = 0;
   });
   expect(game.layerLabel).toBe('Ice');
-  const mixed = game.availableLevels.find((level) =>
-    level.config.tiles.some((tile) => tile.type === 'blocker'),
+  const mixed = generateLevelConfigs().find((config) =>
+    config.tiles.some((tile) => tile.type === 'blocker'),
   );
   game.currentLevelId = mixed.id;
-  game.objectives = mixed.config.objectives;
+  game.objectives = mixed.objectives;
   expect(game.layerLabel).toBe('Ice & stone');
   game.currentLevelId = -1;
   game.objectives = [];

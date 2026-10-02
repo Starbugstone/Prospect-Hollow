@@ -1,3 +1,4 @@
+import { toRaw } from 'vue';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { TileManager } from '../src/game/engine/TileManager';
@@ -179,7 +180,7 @@ describe('Stone barriers', () => {
     await game.shuffleBoard();
     expect(game.board[12]).toBeNull();
     expect(game.board[17]).toBeNull();
-    expect(game.board[0]).toBe(frozen);
+    expect(toRaw(game.board[0])).toBe(toRaw(frozen));
     expect(game.tiles[12].health).toBe(2);
   });
 });

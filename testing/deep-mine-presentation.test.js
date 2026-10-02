@@ -44,6 +44,14 @@ const textureManager = (mode) => ({
 
 function renderer(mode = 'atlas', levelId = firstLevelId('fossil-beds')) {
   const textures = textureManager(mode);
+  // Tile badge glyphs are rendered once into their own canvas textures.
+  const glyphs = new Set();
+  const atlas = textures.exists;
+  textures.exists = (key) => glyphs.has(key) || atlas(key);
+  textures.createCanvas = (key) => {
+    glyphs.add(key);
+    return { draw: vi.fn() };
+  };
   const objects = [];
   const node = (x = 0, y = 0, key, frame) => {
     const object = {
@@ -121,7 +129,8 @@ function renderer(mode = 'atlas', levelId = firstLevelId('fossil-beds')) {
   const animator = new BoardAnimator({
     scene: {
       textures,
-      add: { image, graphics, rectangle: node, container: node, text: node, circle: node },
+      add: { image, graphics, rectangle: node, container: node, circle: node },
+      make: { text: () => ({ width: 20, height: 16, canvas: {}, destroy: vi.fn() }) },
     },
     backgroundLayer: node(),
     tileLayer: node(),
@@ -239,7 +248,9 @@ describe('fossil and linked root presentation', () => {
         { rootGroup: 'a', chainHealth: 1 },
       ];
       for (let index = 0; index < animator.tiles.length; index++) animator.drawTileOverlay(index);
-      expect(image.mock.calls.map((args) => args.slice(2))).toEqual(
+      expect(
+        image.mock.calls.map((args) => args.slice(2)).filter(([key]) => !key.startsWith('glyph:')),
+      ).toEqual(
         ['tile-mushroom', 'tile-brazier', 'tile-pearl-exit', 'tile-vine'].map((id) =>
           mode === 'atlas' ? ['board-core', id] : [id, undefined],
         ),
@@ -466,9 +477,6 @@ describe('intuitive goal and guide labels', () => {
       { exit: true },
     ];
     Object.assign(game, {
-      availableLevels: [
-        { id: firstLevelId('underground-reservoir'), config: { theme: 'underground-reservoir' } },
-      ],
       currentLevelId: firstLevelId('underground-reservoir'),
       tiles: initialTiles,
       board: [{ type: 'relic' }],

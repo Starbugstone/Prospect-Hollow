@@ -10,6 +10,7 @@ import { mineSignalAppearance, mineRelicAppearance } from '../../data/mineThemes
 import { BonusEffects } from './BonusEffects';
 import { isPlayableCell, gravityDestination } from '../engine/BoardTopology';
 import { boardEdges, fallWaypoints } from './BoardGeometry';
+import { glyphImage } from './TextGlyphs';
 import {
   cascadeTier,
   simultaneousMatchCount,
@@ -19,6 +20,22 @@ import {
 } from '../engine/MatchRewards';
 
 const MOTION = Object.freeze({ swap: 115, reject: 75, clear: 90, fall: 190, intro: 160 });
+
+// Obstacle art: special casings first, then stone or ice by damage.
+export function tileTexture(tile, { damaged = false, frozen = false } = {}) {
+  if (tile?.rootKnot) return 'tile-root-knot';
+  if (tile?.fossilGroup != null) return tile.bonusOnly ? 'tile-fossil-casing' : 'tile-dust';
+  if (tile?.bonusOnly) return 'tile-blast-gate';
+  if (tile?.type === 'blocker')
+    return damaged ? 'block-cracked' : tile.health > 1 ? 'block-reinforced' : 'block-stone';
+  return damaged && !frozen ? 'ice-cracked' : 'ice-frost';
+}
+const sameTile = (a, b) => {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  const keys = Object.keys(a);
+  return keys.length === Object.keys(b).length && keys.every((key) => a[key] === b[key]);
+};
 
 export class BoardAnimator {
   constructor({
@@ -34,6 +51,7 @@ export class BoardAnimator {
     settings,
     onImpact,
     onBanner,
+    onActivity,
   }) {
     Object.assign(this, {
       scene,
@@ -48,6 +66,7 @@ export class BoardAnimator {
       settings,
       onImpact,
       onBanner,
+      onActivity,
     });
     this.bonuses = new BonusEffects(this);
     this.iceSprites = new Map();
@@ -60,6 +79,8 @@ export class BoardAnimator {
     this.markers = new Map();
     this.effects = new Set();
     this.pending = new Set();
+    // Cleared gems return here and are reused by refills instead of being recreated.
+    this.gemPool = [];
     this.generation = 0;
     this.cellSize = 0;
     this.boardCols = 0;
@@ -70,19 +91,40 @@ export class BoardAnimator {
     return this.settings?.reducedMotion ?? false;
   }
   get theme() {
-    return CHAPTERS[chapterIndexOf(this.levelId ?? 1)]?.theme;
+    const level = this.levelId ?? 1;
+    if (this.themeLevel !== level) {
+      this.themeLevel = level;
+      this.themeId = CHAPTERS[chapterIndexOf(level)]?.theme;
+    }
+    return this.themeId;
   }
   setAudioManager(audio) {
     this.audio = audio;
   }
 
+  // Something on the board is about to change; a sleeping game loop must draw it.
+  touch() {
+    this.onActivity?.();
+  }
+
+  // Whether any motion still needs frames (see BoardLoop).
+  isAnimating() {
+    if (this.pending.size || this.scene?.tweens?.getTweens?.().length) return true;
+    if (this.particles?.alive?.() || this.scene?.cameras?.main?.shakeEffect?.isRunning) return true;
+    for (const sprite of this.gemSprites.values()) if (sprite.anims?.isPlaying) return true;
+    return false;
+  }
+
   // Cancellation settles all pending promises, including when a level is exited mid-fall.
   clear() {
+    this.touch();
     this.generation++;
     for (const cancel of [...this.pending]) cancel();
     this.clearMarkers();
     this.gemSprites.forEach((sprite) => sprite.destroy());
     this.gemSprites.clear();
+    this.gemPool.forEach((sprite) => sprite.destroy());
+    this.gemPool = [];
     this.indexToGemId = [];
     this.backgroundLayer?.removeAll?.(true);
     this.tileLayer?.removeAll?.(true);
@@ -105,6 +147,7 @@ export class BoardAnimator {
 
   tween(targets, config) {
     if (!this.scene?.tweens) return Promise.resolve();
+    this.touch();
     return new Promise((resolve) => {
       let tween;
       const finish = () => {
@@ -128,6 +171,7 @@ export class BoardAnimator {
   }
 
   setLayout({ boardCols, boardRows, cellSize }) {
+    this.touch();
     const changed =
       boardCols !== this.boardCols || boardRows !== this.boardRows || cellSize !== this.cellSize;
     Object.assign(this, { boardCols, boardRows, cellSize });
@@ -158,15 +202,36 @@ export class BoardAnimator {
 
   createGem(gem, index) {
     const p = this.position(index);
-    const texture = this.textures[gem.type] ?? this.textures.ruby;
-    const sprite = this.scene.add.sprite(p.x, p.y, texture.key, texture.frame);
+    let sprite = this.gemPool.pop();
+    if (sprite) {
+      sprite.setActive(true).setVisible(true).setPosition(p.x, p.y).setAlpha(1).setAngle(0);
+    } else {
+      const texture = this.textures[gem.type] ?? this.textures.ruby;
+      sprite = this.scene.add.sprite(p.x, p.y, texture.key, texture.frame);
+      this.gemLayer.add(sprite);
+    }
     this.configureGem(sprite, gem.type);
-    this.gemLayer.add(sprite);
     this.gemSprites.set(gem.id, sprite);
     return sprite;
   }
 
+  // A cleared gem keeps its place in the gem layer, hidden, until a refill needs it.
+  releaseGem(id) {
+    const sprite = this.gemSprites.get(id);
+    if (!sprite) return;
+    this.gemSprites.delete(id);
+    if (!sprite.setActive || this.gemPool.length >= this.boardCols * this.boardRows) {
+      sprite.destroy();
+      return;
+    }
+    this.scene?.tweens?.killTweensOf?.(sprite);
+    sprite.anims?.stop();
+    sprite.setActive(false).setVisible(false);
+    this.gemPool.push(sprite);
+  }
+
   configureGem(sprite, type) {
+    this.touch();
     const texture = GEM_TYPES.includes(type)
       ? spriteRef(gemTexture(type, this.levelId), this.scene?.textures)
       : type === 'relic' && mineRelicAppearance(this.theme).texture !== 'gem-relic'
@@ -189,6 +254,7 @@ export class BoardAnimator {
 
   syncToBoard(board) {
     if (!this.scene?.add) return;
+    this.touch();
     const seen = new Set();
     this.indexToGemId = board.map((gem, index) => {
       if (!gem) return null;
@@ -204,12 +270,7 @@ export class BoardAnimator {
       }
       return gem.id;
     });
-    this.gemSprites.forEach((sprite, id) => {
-      if (!seen.has(id)) {
-        sprite.destroy();
-        this.gemSprites.delete(id);
-      }
-    });
+    for (const id of [...this.gemSprites.keys()]) if (!seen.has(id)) this.releaseGem(id);
   }
 
   async playIntroCascade() {
@@ -327,17 +388,7 @@ export class BoardAnimator {
               this.particles?.emitIce?.(p, update.health === 0 ? 8 : 4);
             if (update.health === 0 && !this.reducedMotion) {
               const ref = spriteRef(
-                tile.rootKnot
-                  ? 'tile-root-knot'
-                  : tile.fossilGroup != null
-                    ? tile.bonusOnly
-                      ? 'tile-fossil-casing'
-                      : 'tile-dust'
-                    : tile.bonusOnly
-                      ? 'tile-blast-gate'
-                      : tile.type === 'blocker'
-                        ? 'block-cracked'
-                        : 'ice-cracked',
+                tileTexture(tile, { damaged: true, frozen: false }),
                 this.scene.textures,
               );
               const chip = this.scene.add
@@ -355,14 +406,12 @@ export class BoardAnimator {
           Object.assign(tile, update);
         }
       }
-      this.drawCells();
+      this.drawCells((step.tileUpdates ?? []).map(({ index }) => index));
       for (const fossil of step.collectedFossils ?? [])
         this.bonuses.callout(t('FOSSIL FOUND!'), this.position(fossil.indices[0]), 0xecd39b);
       const reveals = [];
       for (const { index, gem } of step.bonuses ?? []) {
-        const oldId = this.indexToGemId[index];
-        this.gemSprites.get(oldId)?.destroy();
-        this.gemSprites.delete(oldId);
+        this.releaseGem(this.indexToGemId[index]);
         this.createGem(gem, index);
         this.indexToGemId[index] = gem.id;
         reveals.push(this.bonuses.created(gem, index));
@@ -495,9 +544,8 @@ export class BoardAnimator {
       }),
     );
     if (generation !== this.generation) return;
-    entries.forEach(({ sprite, id, index }) => {
-      sprite?.destroy();
-      this.gemSprites.delete(id);
+    entries.forEach(({ id, index }) => {
+      this.releaseGem(id);
       this.indexToGemId[index] = null;
     });
   }
@@ -544,109 +592,107 @@ export class BoardAnimator {
     this.ring(p, 0xffdc91, this.cellSize * 3);
   }
 
+  // Redraw only cells whose tile changed. A different board size redraws all cells.
   updateTiles(tiles) {
+    const previous = this.tiles;
     this.tiles = tiles.map((tile) => (tile ? { ...tile } : null));
-    this.drawCells();
+    const changed = this.tiles.flatMap((tile, index) =>
+      sameTile(tile, previous[index]) ? [] : [index],
+    );
+    // A new board shape or gravity flow also changes the outline.
+    const reshaped =
+      previous.length !== this.tiles.length ||
+      changed.some(
+        (index) =>
+          isPlayableCell(this.tiles[index]) !== isPlayableCell(previous[index]) ||
+          this.tiles[index]?.flowTo !== previous[index]?.flowTo,
+      );
+    this.drawCells(reshaped ? undefined : changed);
   }
 
-  drawCells() {
+  // `indices` limits the pass to changed cells during a move. Omit it after a layout,
+  // level or display-setting change to redraw the whole board and its outline.
+  drawCells(indices) {
     if (!this.scene?.add || !this.cellSize) return;
+    this.touch();
     const count = this.boardCols * this.boardRows;
-    for (let index = 0; index < count; index++) {
-      if (!isPlayableCell(this.tiles[index])) {
-        for (const map of [
-          this.cellHighlights,
-          this.iceSprites,
-          this.tileOverlays,
-          this.fossilSprites,
-        ]) {
-          map.get(index)?.destroy();
-          map.delete(index);
-        }
-        continue;
-      }
-      const p = this.position(index);
-      const health = this.tiles[index]?.health ?? 0;
-      const tile = this.tiles[index];
-      const frozen = this.tiles[index]?.state === 'FROZEN';
-      const contrast = this.settings?.highContrastMode;
-      const fill =
-        tile?.fossilGroup != null ? 0x3e3024 : health > 0 || frozen ? 0x1b2130 : 0x141324;
-      const stroke =
-        tile?.fossilGroup != null
-          ? 0xd3b87c
-          : tile?.rootKnot
-            ? 0xc6ae76
-            : frozen
-              ? 0xb0c7d4
-              : health
-                ? 0x718797
-                : 0x272538;
-      let cell = this.cellHighlights.get(index);
-      if (!cell) {
-        cell = this.scene.add.rectangle(p.x, p.y, 1, 1);
-        this.backgroundLayer.add(cell);
-        this.cellHighlights.set(index, cell);
-      }
-      let ice = this.iceSprites.get(index);
-      if ((health > 0 && !this.tiles[index]?.sealColor) || frozen) {
-        const damaged = health < (this.tiles[index]?.maxHealth ?? health);
-        const blocker = this.tiles[index]?.type === 'blocker';
-        const texture = tile?.rootKnot
-          ? 'tile-root-knot'
-          : tile?.fossilGroup != null
-            ? tile.bonusOnly
-              ? 'tile-fossil-casing'
-              : 'tile-dust'
-            : tile?.bonusOnly
-              ? 'tile-blast-gate'
-              : blocker
-                ? damaged
-                  ? 'block-cracked'
-                  : health > 1
-                    ? 'block-reinforced'
-                    : 'block-stone'
-                : damaged && !frozen
-                  ? 'ice-cracked'
-                  : 'ice-frost';
-        const ref = spriteRef(texture, this.scene.textures);
-        if (!ice) {
-          ice = this.scene.add.image(p.x, p.y, ref.key, ref.frame);
-          this.backgroundLayer.add(ice);
-          this.iceSprites.set(index, ice);
-        }
-        ice
-          .setTexture(ref.key, ref.frame)
-          .setPosition(p.x, p.y)
-          .setDisplaySize(this.cellSize - 3, this.cellSize - 3);
-      } else if (ice) {
-        ice.destroy();
-        this.iceSprites.delete(index);
-      }
-      cell
-        .setPosition(p.x, p.y)
-        .setSize(this.cellSize - 3, this.cellSize - 3)
-        .setFillStyle(fill, 0.92)
-        .setStrokeStyle(contrast ? 2 : 1, stroke, contrast ? 1 : frozen ? 0.5 : 0.22);
-      this.drawFossilFloor(index);
-      this.drawTileOverlay(index);
+    if (indices) {
+      for (const index of indices) if (index < count) this.drawCell(index);
+    } else {
+      for (let index = 0; index < count; index++) this.drawCell(index);
+      for (const index of [...this.cellHighlights.keys()])
+        if (index >= count) this.removeCell(index);
+      this.drawBoardOutline();
     }
-    this.cellHighlights.forEach((cell, index) => {
-      if (index >= count) {
-        cell.destroy();
-        this.cellHighlights.delete(index);
-        this.iceSprites.get(index)?.destroy();
-        this.iceSprites.delete(index);
-        this.tileOverlays.get(index)?.destroy();
-        this.tileOverlays.delete(index);
-        this.fossilSprites.get(index)?.destroy();
-        this.fossilSprites.delete(index);
-      }
-    });
     this.drawRootLinks();
-    this.drawBoardOutline();
   }
 
+  removeCell(index) {
+    for (const map of [
+      this.cellHighlights,
+      this.iceSprites,
+      this.tileOverlays,
+      this.fossilSprites,
+    ]) {
+      map.get(index)?.destroy();
+      map.delete(index);
+    }
+  }
+
+  drawCell(index) {
+    const tile = this.tiles[index];
+    if (!isPlayableCell(tile)) {
+      this.removeCell(index);
+      return;
+    }
+    const p = this.position(index);
+    const health = tile?.health ?? 0;
+    const frozen = tile?.state === 'FROZEN';
+    const contrast = this.settings?.highContrastMode;
+    const fill = tile?.fossilGroup != null ? 0x3e3024 : health > 0 || frozen ? 0x1b2130 : 0x141324;
+    const stroke =
+      tile?.fossilGroup != null
+        ? 0xd3b87c
+        : tile?.rootKnot
+          ? 0xc6ae76
+          : frozen
+            ? 0xb0c7d4
+            : health
+              ? 0x718797
+              : 0x272538;
+    let cell = this.cellHighlights.get(index);
+    if (!cell) {
+      cell = this.scene.add.rectangle(p.x, p.y, 1, 1);
+      this.backgroundLayer.add(cell);
+      this.cellHighlights.set(index, cell);
+    }
+    let ice = this.iceSprites.get(index);
+    if ((health > 0 && !tile?.sealColor) || frozen) {
+      const damaged = health < (tile?.maxHealth ?? health);
+      const ref = spriteRef(tileTexture(tile, { damaged, frozen }), this.scene.textures);
+      if (!ice) {
+        ice = this.scene.add.image(p.x, p.y, ref.key, ref.frame);
+        this.backgroundLayer.add(ice);
+        this.iceSprites.set(index, ice);
+      }
+      ice
+        .setTexture(ref.key, ref.frame)
+        .setPosition(p.x, p.y)
+        .setDisplaySize(this.cellSize - 3, this.cellSize - 3);
+    } else if (ice) {
+      ice.destroy();
+      this.iceSprites.delete(index);
+    }
+    cell
+      .setPosition(p.x, p.y)
+      .setSize(this.cellSize - 3, this.cellSize - 3)
+      .setFillStyle(fill, 0.92)
+      .setStrokeStyle(contrast ? 2 : 1, stroke, contrast ? 1 : frozen ? 0.5 : 0.22);
+    this.drawFossilFloor(index);
+    this.drawTileOverlay(index);
+  }
+
+  // Board shape and gravity flow are fixed for a level; redraw only when they change.
   drawBoardOutline() {
     const shaped = this.tiles.some((tile) => !isPlayableCell(tile));
     const key = `${this.cellSize}-${this.boardCols}-${this.boardRows}-${this.tiles.map((tile) => `${tile?.type === 'void' ? 'x' : '.'}:${tile?.flowTo ?? ''}`).join(',')}`;
@@ -715,16 +761,19 @@ export class BoardAnimator {
       .setAlpha(tile.fossilCollected ? 0.45 : tile.health > 0 ? 0.12 : 0.82);
   }
 
+  // Each living root knot binds the chained cells of its group.
   drawRootLinks() {
-    const knots = this.tiles.flatMap((tile, index) =>
-      tile?.rootKnot && tile.rootGroup != null && tile.health > 0 ? [index] : [],
-    );
+    const knots = [],
+      bindings = new Map();
+    this.tiles.forEach((tile, index) => {
+      if (tile?.rootKnot && tile.rootGroup != null && tile.health > 0) knots.push(index);
+      if (tile?.chainHealth > 0) {
+        if (!bindings.has(tile.rootGroup)) bindings.set(tile.rootGroup, []);
+        bindings.get(tile.rootGroup).push(index);
+      }
+    });
     const links = knots.flatMap((knot) =>
-      this.tiles.flatMap((tile, index) =>
-        tile?.chainHealth > 0 && tile.rootGroup === this.tiles[knot].rootGroup
-          ? [[knot, index]]
-          : [],
-      ),
+      (bindings.get(this.tiles[knot].rootGroup) ?? []).map((binding) => [knot, binding]),
     );
     const key = `${this.cellSize}-${this.boardCols}-${links.map((link) => link.join(':')).join(',')}`;
     if (key === this.rootLinksKey) return;
@@ -775,21 +824,24 @@ export class BoardAnimator {
       overlay.add(sprite);
       return sprite;
     };
-    if (tile.exit) addImage(mineRelicAppearance(this.theme).exitTexture.slice(5));
-    if (sealColor) {
-      addImage(`seal-${sealColor}`);
-    }
-    if (layers || frozen) {
-      const badge = this.scene.add.text(size * 0.23, -size * 0.46, frozen ? '❄' : String(layers), {
+    const addLabel = (x, y, text, style) => {
+      const label = glyphImage(this.scene, x, y, text, {
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold',
+        ...style,
+      });
+      overlay.add(label);
+      return label;
+    };
+    if (tile.exit) addImage(mineRelicAppearance(this.theme).exitTexture.slice(5));
+    if (sealColor) addImage(`seal-${sealColor}`);
+    if (layers || frozen)
+      addLabel(size * 0.23, -size * 0.46, frozen ? '❄' : String(layers), {
         fontSize: `${Math.max(12, size * 0.23)}px`,
         color: '#ffffff',
         backgroundColor: tile.rootKnot || tile.fossilGroup != null ? '#5b4129' : '#24384f',
         padding: { x: 3, y: 1 },
-      });
-      overlay.add(badge);
-    }
+      }).setOrigin(0);
     if (chained) addImage(tile.rootGroup != null ? 'vine' : 'chain');
     if (tile.bonusOnly && tile.fossilGroup != null && tile.health > 0)
       addImage('blast-mark')
@@ -805,19 +857,13 @@ export class BoardAnimator {
         .setAlpha(lit ? 0.35 : 1);
       overlay.add(marker);
       if (tile.signal === 'spore')
-        overlay.add(
-          this.scene.add
-            .text(size * 0.16, size * 0.32, lit ? '✓' : tile.sporeAxis === 'column' ? '↕' : '↔', {
-              fontFamily: 'Arial, sans-serif',
-              fontStyle: 'bold',
-              fontSize: `${Math.max(17, size * 0.34)}px`,
-              color: lit ? '#abdfc7' : '#ffffff',
-              stroke: '#153a38',
-              strokeThickness: 3,
-              backgroundColor: '#153a38',
-            })
-            .setOrigin(0.5),
-        );
+        addLabel(size * 0.16, size * 0.32, lit ? '✓' : tile.sporeAxis === 'column' ? '↕' : '↔', {
+          fontSize: `${Math.max(17, size * 0.34)}px`,
+          color: lit ? '#abdfc7' : '#ffffff',
+          stroke: '#153a38',
+          strokeThickness: 3,
+          backgroundColor: '#153a38',
+        });
       // Charge pips: one small static dot per charge, rebuilt only when the charge changes.
       if (tile.signal === 'core')
         for (let pip = 0, pips = tile.coreCharges ?? CORE_CHARGES; pip < pips; pip++)
@@ -833,22 +879,17 @@ export class BoardAnimator {
               .setStrokeStyle(1.5, 0xbff6ff, 0.95),
           );
       if (tile.surveyOrder)
-        overlay.add(
-          this.scene.add
-            .text(-size * 0.3, size * 0.29, lit ? '✓' : String(tile.surveyOrder), {
-              fontFamily: 'Arial, sans-serif',
-              fontStyle: 'bold',
-              fontSize: `${Math.max(11, size * 0.21)}px`,
-              color: lit ? '#315932' : '#fff7d5',
-            })
-            .setOrigin(0.5),
-        );
+        addLabel(-size * 0.3, size * 0.29, lit ? '✓' : String(tile.surveyOrder), {
+          fontSize: `${Math.max(11, size * 0.21)}px`,
+          color: lit ? '#315932' : '#fff7d5',
+        });
     }
     this.tileLayer.add(overlay);
     this.tileOverlays.set(index, overlay);
   }
 
   showMarkers(key, indices, color) {
+    this.touch();
     this.clearMarkers(key);
     if (!this.scene?.add) return;
     indices = indices.filter((index) => isPlayableCell(this.tiles[index]));
@@ -863,6 +904,7 @@ export class BoardAnimator {
     this.markers.set(key, { indices, color, objects });
   }
   clearMarkers(key) {
+    this.touch();
     if (key === undefined) {
       [...this.markers.keys()].forEach((k) => this.clearMarkers(k));
       return;
@@ -919,6 +961,7 @@ export class BoardAnimator {
     this.clearMarkers('preview');
   }
   fadeBonusPreview() {
+    this.touch();
     const preview = this.markers.get('preview');
     this.markers.delete('preview');
     for (const marker of preview?.objects ?? []) {

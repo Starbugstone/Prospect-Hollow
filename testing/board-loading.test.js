@@ -61,9 +61,11 @@ it('loads just the active finish and recovers atlas errors with SVG assets', () 
 });
 function tileRenderer(mode) {
   const core = frames['board-core'].frames;
+  const glyphs = new Set();
   const textures = {
-    exists: (key) => (mode === 'atlas' ? key === 'board-core' : !!core[key]),
+    exists: (key) => glyphs.has(key) || (mode === 'atlas' ? key === 'board-core' : !!core[key]),
     get: (key) => ({ has: (frame) => key === 'board-core' && !!core[frame] }),
+    createCanvas: (key) => glyphs.add(key) && { draw() {} },
   };
   const object = () => ({
     scaleX: 1,
@@ -91,7 +93,11 @@ function tileRenderer(mode) {
   });
   const circle = vi.fn(object);
   const animator = new BoardAnimator({
-    scene: { textures, add: { image, container: object, text: object, circle } },
+    scene: {
+      textures,
+      add: { image, container: object, circle },
+      make: { text: () => ({ width: 20, height: 16, canvas: {}, destroy() {} }) },
+    },
     tileLayer: { add: vi.fn() },
   });
   animator.boardCols = animator.boardRows = 6;
@@ -136,7 +142,9 @@ it.each(['atlas', 'svg'])('renders lantern and survey markers from %s textures',
     { signal: 'survey', signalHealth: 0, surveyOrder: 2 },
   ];
   animator.tiles.forEach((_, index) => animator.drawTileOverlay(index));
-  expect(image.mock.calls.map((args) => args.slice(2))).toEqual(
+  expect(
+    image.mock.calls.map((args) => args.slice(2)).filter(([key]) => !key.startsWith('glyph:')),
+  ).toEqual(
     ['tile-lantern', 'tile-survey'].map((id) =>
       mode === 'atlas' ? ['board-core', id] : [id, undefined],
     ),
