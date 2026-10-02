@@ -3,6 +3,7 @@ import { footprintDistance, sweptClear } from './BuildingFootprints';
 import { Vector3 } from 'three';
 import { prepareRoute, routePose } from './TownRoutes';
 import { finishWork } from '../PresentationWork';
+import { cellKey } from './TownMath';
 
 // Physical footprint plus a visible gap. No mesh intersections or physics bodies.
 import { NPC_BODY_MARGIN } from '../../data/townClearances';
@@ -10,8 +11,6 @@ export const NPC_MARGIN = NPC_BODY_MARGIN;
 const CELL = 4,
   SIDES = 12,
   EPS = 1e-6;
-// Numeric keys avoid building a string for every cell lookup.
-const cellKey = (x, z) => (x + 32768) * 65536 + (z + 32768);
 function obstacleBounds(o) {
   return o.polygon
     ? {

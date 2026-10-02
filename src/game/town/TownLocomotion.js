@@ -3,11 +3,15 @@ import { flyingAnimal } from '../../data/townAnimals';
 const blockerPosition = new Vector3();
 import { sweptClear } from './BuildingFootprints';
 import { routeStepPose, routeDistanceAt } from './TownNavigation';
+import { cellKey } from './TownMath';
+import { forEachWalker } from './TownWalkers';
 
 const LOCOMOTION_STEP = 1 / 60;
 const GAP = 0.04;
 const CELL = 3;
 const DYNAMIC_AVOIDANCE_ATTEMPTS = 3;
+// Animal states that follow their route; any other state holds the animal in place.
+const MOVING_ANIMALS = new Set(['walking', 'chasing', 'fleeing', 'retreating']);
 
 // Yield briefly to other actors, then keep the authored route through a crowd.
 // A clear step starts a fresh budget. Static scenery never uses this exception.
@@ -24,23 +28,24 @@ function yieldToCrowd(state, blocked) {
   state.passingThrough = true;
   return false;
 }
+// Agents and vehicles bucketed by cell for crowd checks. Rebuilt every frame from
+// reused buckets and numeric keys, and queried without collecting results.
 export class LocomotionGrid {
   constructor() {
     this.cells = new Map();
     this.agents = [];
+    this.stamp = 0;
   }
   bucket(x, z) {
-    const key = `${x},${z}`;
-    if (!this.cells.has(key)) this.cells.set(key, { agents: [], vehicles: [] });
-    return this.cells.get(key);
+    const key = cellKey(x, z);
+    let bucket = this.cells.get(key);
+    if (!bucket) this.cells.set(key, (bucket = { agents: [], vehicles: [] }));
+    return bucket;
   }
   rebuild(agents, vehicles = []) {
     this.agents.length = 0;
     this.maxRadius = 0;
-    for (const bucket of this.cells.values()) {
-      bucket.agents.length = 0;
-      bucket.vehicles.length = 0;
-    }
+    for (const bucket of this.cells.values()) bucket.agents.length = 0;
     for (const a of agents) {
       this.agents.push(a);
       const m = a.motion;
@@ -49,6 +54,11 @@ export class LocomotionGrid {
       this.maxRadius = Math.max(this.maxRadius, m.radius);
       this.bucket(Math.floor(m.x / CELL), Math.floor(m.z / CELL)).agents.push(a);
     }
+    this.indexVehicles(vehicles);
+  }
+  // Vehicles alone, e.g. after waiting ones returned to their previous positions.
+  indexVehicles(vehicles) {
+    for (const bucket of this.cells.values()) bucket.vehicles.length = 0;
     for (const vehicle of vehicles) {
       const bounds = vehicleBounds(vehicle);
       for (let x = Math.floor(bounds.minX / CELL); x <= Math.floor(bounds.maxX / CELL); x++)
@@ -56,22 +66,25 @@ export class LocomotionGrid {
           this.bucket(x, z).vehicles.push(vehicle);
     }
   }
-  *candidates(kind, bounds) {
-    const seen = new Set();
+  // Whether any agent or vehicle (by `kind`) in the area satisfies `test`. Each
+  // candidate is tested once, however many cells it spans.
+  some(kind, bounds, test) {
+    const stamp = ++this.stamp;
     for (let x = Math.floor(bounds.minX / CELL); x <= Math.floor(bounds.maxX / CELL); x++)
       for (let z = Math.floor(bounds.minZ / CELL); z <= Math.floor(bounds.maxZ / CELL); z++)
-        for (const candidate of this.cells.get(`${x},${z}`)?.[kind] ?? [])
-          if (!seen.has(candidate)) {
-            seen.add(candidate);
-            yield candidate;
-          }
+        for (const candidate of this.cells.get(cellKey(x, z))?.[kind] ?? []) {
+          if (candidate.gridStamp === stamp) continue;
+          candidate.gridStamp = stamp;
+          if (test(candidate)) return true;
+        }
+    return false;
   }
   neighbours(a, visit) {
     const x = Math.floor(a.motion.sx / CELL),
       z = Math.floor(a.motion.sz / CELL);
     for (let dx = -1; dx <= 1; dx++)
       for (let dz = -1; dz <= 1; dz++) {
-        const bucket = this.cells.get(`${x + dx},${z + dz}`);
+        const bucket = this.cells.get(cellKey(x + dx, z + dz));
         if (bucket)
           for (const b of bucket.agents)
             if (a !== b && Math.abs((a.y ?? 0) - (b.y ?? 0)) < 1) visit(b);
@@ -202,8 +215,16 @@ function prepareRouteStep(a, navigation, h) {
   return true;
 }
 
-export function stepLocomotion(agents, statics, vehicles, grid, h = LOCOMOTION_STEP) {
-  grid.rebuild(agents, vehicles);
+// `indexed` means the caller has already rebuilt the grid for these agents and vehicles.
+export function stepLocomotion(
+  agents,
+  statics,
+  vehicles,
+  grid,
+  h = LOCOMOTION_STEP,
+  { indexed = false } = {},
+) {
+  if (!indexed) grid.rebuild(agents, vehicles);
   // Compute every preferred step from the same snapshot before checking crowds.
   for (const a of grid.agents) {
     const m = a.motion,
@@ -246,17 +267,20 @@ export function stepLocomotion(agents, statics, vehicles, grid, h = LOCOMOTION_S
       }
     });
     const margin = a.motion.radius + GAP;
-    for (const v of grid.candidates('vehicles', {
-      minX: Math.min(a.from[0], a.to[0]) - margin,
-      maxX: Math.max(a.from[0], a.to[0]) + margin,
-      minZ: Math.min(a.from[2], a.to[2]) - margin,
-      maxZ: Math.max(a.from[2], a.to[2]) + margin,
-    })) {
-      if (Math.abs((v.y ?? a.y) - a.y) < 1 && vehicleBlocksStep(v, a.from, a.to, a.motion.radius)) {
-        a.proposal.blocked = true;
-        break;
-      }
-    }
+    const area = (a.stepArea ??= {});
+    area.minX = Math.min(a.from[0], a.to[0]) - margin;
+    area.maxX = Math.max(a.from[0], a.to[0]) + margin;
+    area.minZ = Math.min(a.from[2], a.to[2]) - margin;
+    area.maxZ = Math.max(a.from[2], a.to[2]) + margin;
+    if (
+      grid.some(
+        'vehicles',
+        area,
+        (v) =>
+          Math.abs((v.y ?? a.y) - a.y) < 1 && vehicleBlocksStep(v, a.from, a.to, a.motion.radius),
+      )
+    )
+      a.proposal.blocked = true;
   }
   for (const a of grid.agents) {
     const m = a.motion,
@@ -351,7 +375,7 @@ export function updateTownLocomotion(d, h = LOCOMOTION_STEP) {
       (a.liveVisitor && d.liveVisitorsReducedMotion) ||
       (!!a.work && !a.workRoutine) ||
       a.routeResting ||
-      (a.species && !['walking', 'chasing', 'fleeing', 'retreating'].includes(a.state));
+      (a.species && !MOVING_ANIMALS.has(a.state));
     a.noPath = !!path && path.points.length < 2;
     a.followRoute =
       !!path?.total && (!a.manual || a.transportVisitor || a.liveVisitor) && !m.exitTarget;
@@ -373,10 +397,7 @@ export function updateTownLocomotion(d, h = LOCOMOTION_STEP) {
     }
     agents.push(a);
   };
-  for (const a of d.actors ?? []) add(a);
-  for (const a of d.vipArrivals?.actors ?? []) add(a);
-  for (const a of d.liveVisitors?.actors ?? []) add(a);
-  for (const a of d.animals ?? []) add(a);
+  forEachWalker(d, add);
   for (const actor of d.manualBlockers ?? []) {
     let visible = true;
     for (let node = actor.root; node; node = node.parent) if (!node.visible) visible = false;
@@ -423,12 +444,16 @@ export function updateTownLocomotion(d, h = LOCOMOTION_STEP) {
   for (const v of vehicles) {
     const bounds = vehicleBounds(v, grid.maxRadius + GAP);
     v.blocked =
-      [...grid.candidates('agents', bounds)].some(
+      grid.some(
+        'agents',
+        bounds,
         (a) =>
           Math.abs(a.y - v.y) < 1 &&
           vehicleDistance(v, a.motion.x, a.motion.z) < a.motion.radius + GAP,
       ) ||
-      [...grid.candidates('vehicles', bounds)].some(
+      grid.some(
+        'vehicles',
+        bounds,
         (other) => other !== v && Math.abs(other.y - v.y) < 1 && vehiclesOverlap(v, other),
       );
   }
@@ -446,7 +471,8 @@ export function updateTownLocomotion(d, h = LOCOMOTION_STEP) {
       v.root.userData.trafficDelay = (v.root.userData.trafficDelay ?? 0) + h;
     }
   }
-  stepLocomotion(agents, d.navigation, vehicles, grid, h);
+  grid.indexVehicles(vehicles);
+  stepLocomotion(agents, d.navigation, vehicles, grid, h, { indexed: true });
   for (const a of agents) {
     if (a.staticProxy) continue;
     const m = a.motion;
