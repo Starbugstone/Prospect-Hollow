@@ -59,12 +59,8 @@ export class TownMineEraConstruction {
   }
   frame(time, still = false) {
     const permanent = this.d.staticScenery.entries.get('mine-works')?.group;
-    const batch = this.d.buildingRenderer.batches.get(permanent);
-    if (batch) batch.visible = false;
-    if (permanent) {
-      permanent.visible = false;
-      permanent.userData.activation = 'removed';
-    }
+    this.d.buildingRenderer.setVisible(permanent, false);
+    if (permanent) permanent.userData.activation = 'removed';
     this.previous.userData.activation = 'removed';
     this.next.userData.activation = 'temporary-reveal';
     if (!this.ownerInstalled) {
@@ -105,10 +101,8 @@ export class TownMineEraConstruction {
   }
   dispose() {
     const permanent = this.d.staticScenery.entries.get('mine-works')?.group;
-    const batch = this.d.buildingRenderer.batches.get(permanent);
-    if (batch) batch.visible = true;
     if (permanent) {
-      permanent.visible = true;
+      this.d.buildingRenderer.setVisible(permanent, true);
       permanent.userData.activation = 'completed';
       this.d.navigation?.replaceOwner(
         'mine-site',

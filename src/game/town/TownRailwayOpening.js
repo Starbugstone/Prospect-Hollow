@@ -71,12 +71,8 @@ export class TownRailwayOpening {
     const d = this.d;
     for (const id of ['railroad', 'mine-hillside']) {
       const group = d.staticScenery.entries.get(id)?.group;
-      const batch = d.buildingRenderer.batches.get(group);
-      if (batch) batch.visible = false;
-      if (group) {
-        group.visible = false;
-        group.userData.activation = 'removed';
-      }
+      d.buildingRenderer.setVisible(group, false);
+      if (group) group.userData.activation = 'removed';
     }
     this.solid.visible = time < 7;
     this.tunnel.visible = time >= 7;
@@ -134,12 +130,8 @@ export class TownRailwayOpening {
     const d = this.d;
     for (const id of ['railroad', 'mine-hillside']) {
       const group = d.staticScenery.entries.get(id)?.group;
-      const batch = d.buildingRenderer.batches.get(group);
-      if (batch) batch.visible = true;
-      if (group) {
-        group.visible = true;
-        group.userData.activation = 'completed';
-      }
+      d.buildingRenderer.setVisible(group, true);
+      if (group) group.userData.activation = 'completed';
     }
     const start = RAIL_EDGE.from[0] - 7;
     d.trainTimeOffset =

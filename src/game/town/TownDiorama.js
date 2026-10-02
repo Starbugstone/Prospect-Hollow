@@ -57,8 +57,7 @@ import {
   restoreEventCamera,
   renderEventInset,
 } from './TownEventCamera';
-import { createTownGeometries } from './TownGeometries';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { TownPrimitives } from './TownPrimitives';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { BUILDING_BY_ID } from '../../data/town';
 import { TownFrameCache } from './TownFrameCache';
@@ -109,8 +108,9 @@ const colors = {
 const point = (x, y, z) => new THREE.Vector3(x, y, z);
 
 // Original geometry shares static scenery batches and animated actor instances.
-export class TownDiorama {
+export class TownDiorama extends TownPrimitives {
   constructor(canvas, onSelect, onLabels, onCameraDistance, onUnavailable) {
+    super();
     this.deferLife = true;
     this.generation = 0;
     navigationScene(this);
@@ -119,8 +119,6 @@ export class TownDiorama {
     this.onLabels = onLabels;
     this.onCameraDistance = onCameraDistance;
     this.onUnavailable = onUnavailable;
-    this.materials = new Map();
-    this.geometries = createTownGeometries();
     this.scene = new THREE.Scene();
     // drawFrame() updates world matrices once for all of a frame's render calls.
     this.scene.matrixWorldAutoUpdate = false;
@@ -133,13 +131,6 @@ export class TownDiorama {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.shadowMap.autoUpdate = false;
-    this.contactShadowMaterial = new THREE.MeshBasicMaterial({
-      color: '#51432d',
-      transparent: true,
-      opacity: 0.16,
-      depthWrite: false,
-    });
-    horizonMaterial(this.contactShadowMaterial);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.25;
@@ -264,145 +255,6 @@ export class TownDiorama {
       this.onUnavailable?.(error);
       return false;
     }
-  }
-  material(color) {
-    if (!this.materials.has(color))
-      this.materials.set(
-        color,
-        horizonMaterial(new THREE.MeshStandardMaterial({ color, roughness: 0.88 })),
-      );
-    return this.materials.get(color);
-  }
-  mesh(parent, shape, size, position, color) {
-    const mesh = new THREE.Mesh(this.geometries[shape], this.material(color));
-    mesh.scale.set(...size);
-    mesh.position.set(...position);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    parent.add(mesh);
-    return mesh;
-  }
-  box(parent, w, h, d, x, y, z, color, round = false) {
-    return this.mesh(parent, round ? 'rounded' : 'box', [w, h, d], [x, y, z], color);
-  }
-  ball(parent, x, y, z, size, color, shape = 'sphere') {
-    return this.mesh(
-      parent,
-      shape,
-      Array.isArray(size) ? size : [size, size, size],
-      [x, y, z],
-      color,
-    );
-  }
-  rod(parent, a, b, radius, color) {
-    const start = point(...a),
-      end = point(...b),
-      delta = end.clone().sub(start);
-    const mesh = this.mesh(
-      parent,
-      'cylinder',
-      [radius, delta.length(), radius],
-      start.clone().add(end).multiplyScalar(0.5).toArray(),
-      color,
-    );
-    mesh.quaternion.setFromUnitVectors(point(0, 1, 0), delta.normalize());
-    return mesh;
-  }
-  group(parent, x = 0, y = 0, z = 0) {
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-    parent.add(group);
-    return group;
-  }
-  sign(parent, text, width, x, y, z) {
-    this.box(parent, width + 0.1, 0.43, 0.1, x, y, z, '#8c6947', true);
-    if (typeof document === 'undefined') return;
-    this.signMaterials ??= new Map();
-    let material = this.signMaterials.get(text);
-    if (!material) {
-      const canvas = document.createElement('canvas');
-      canvas.width = 512;
-      canvas.height = 128;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#ecddbb';
-      ctx.fillRect(0, 0, 512, 128);
-      ctx.fillStyle = '#56472e';
-      ctx.font = 'bold 48px Georgia';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(text, 256, 68, 480);
-      const texture = new THREE.CanvasTexture(canvas);
-      texture.colorSpace = THREE.SRGBColorSpace;
-      material = horizonMaterial(new THREE.MeshStandardMaterial({ map: texture, roughness: 1 }));
-      this.signMaterials.set(text, material);
-    }
-    const sign = this.box(parent, width, 0.35, 0.012, x, y, z + 0.058, '#ffffff');
-    sign.geometry = this.geometries.sign ??= new THREE.PlaneGeometry(1, 1);
-    sign.scale.set(width, 0.35, 1);
-    sign.material = material;
-  }
-  batch(group) {
-    finishWork(this.batchWork(group));
-  }
-  // Clone one mesh or merge one material per step. The group changes only in the
-  // final step, so cancelled or interleaved frames still draw the original meshes.
-  *batchWork(group) {
-    group.updateMatrixWorld(true);
-    const inverse = group.matrixWorld.clone().invert(),
-      buckets = new Map(),
-      meshes = [],
-      merged = [];
-    group.traverse((object) => {
-      if (!object.isMesh || object.isInstancedMesh) return;
-      for (let node = object; node && node !== group; node = node.parent)
-        if (node.userData.animated) return;
-      meshes.push(object);
-    });
-    let committed = false;
-    try {
-      for (const object of meshes) {
-        const geometry = object.geometry
-          .clone()
-          .applyMatrix4(inverse.clone().multiply(object.matrixWorld));
-        if (!buckets.has(object.material)) buckets.set(object.material, []);
-        buckets.get(object.material).push(geometry);
-        yield;
-      }
-      for (const [material, geometries] of buckets) {
-        const geometry = mergeGeometries(geometries);
-        geometries.forEach((item) => item.dispose());
-        buckets.delete(material);
-        geometry.userData.owned = true;
-        merged.push([geometry, material]);
-        yield;
-      }
-      meshes.forEach((mesh) => mesh.removeFromParent());
-      for (const [geometry, material] of merged) {
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-        group.add(mesh);
-      }
-      committed = true;
-    } finally {
-      for (const geometries of buckets.values()) geometries.forEach((item) => item.dispose());
-      if (!committed) merged.forEach(([geometry]) => geometry.dispose());
-    }
-  }
-  clearGroup(group) {
-    if (!group) return;
-    const geometries = new Set(),
-      materials = new Set();
-    group.traverse((object) => {
-      if (object.geometry?.userData.owned) geometries.add(object.geometry);
-      if (object.material?.userData.transient) materials.add(object.material);
-    });
-    geometries.forEach((geometry) => geometry.dispose());
-    materials.forEach((material) => {
-      material.map?.dispose();
-      material.dispose();
-    });
-    group.removeFromParent();
   }
   buildPlot(id, group, town, labels) {
     let movingPart;
@@ -1102,7 +954,6 @@ export class TownDiorama {
           previousParts,
           partKeys,
         );
-      else if (!cached) this.batch(group);
       if (movingPart) this.motions.push(movingPart.update);
       this.plotCache.set(id, { signature: signatures.get(id), group, movingPart, parts });
     }
@@ -1895,13 +1746,6 @@ export class TownDiorama {
     });
     this.contactShadow(root, 0.3, 0.63);
   }
-  contactShadow(parent, width, depth) {
-    const shadow = new THREE.Mesh(this.geometries.shadow, this.contactShadowMaterial);
-    shadow.rotation.x = -Math.PI / 2;
-    shadow.scale.set(width, depth, 1);
-    shadow.position.y = -0.04;
-    parent.add(shadow);
-  }
   setUpgradeable(ids) {
     if (this.upgradeGlow.setAvailable(ids)) this.render();
   }
@@ -2395,8 +2239,6 @@ export class TownDiorama {
     // pieces still draw as instances, so the partial batches are never visible alone.
     function* settle() {
       if (group.parent !== view.world) return;
-      yield* timedSteps('settle-batch', view.batchWork(group));
-      yield;
       yield* timedSteps(
         'settle-statics',
         view.buildingRenderer.syncWork(
@@ -2488,9 +2330,7 @@ export class TownDiorama {
           delete group.userData.revealAfterCinematic;
         }
       }
-      for (const [group, batch] of this.buildingRenderer?.batches ?? []) {
-        if (batch) batch.visible = group.visible;
-      }
+      this.buildingRenderer?.refreshVisibility();
       if (this.frameCache) this.frameCache.valid = false;
       presentation?.dispose();
       this.render();
@@ -2581,13 +2421,7 @@ export class TownDiorama {
     this.clearGroup(this.world);
     this.clearGroup(this.landscape);
     this.plotCache?.clear();
-    Object.values(this.geometries).forEach((geometry) => geometry.dispose());
-    this.signMaterials?.forEach((material) => {
-      material.map.dispose();
-      material.dispose();
-    });
-    this.materials.forEach((material) => material.dispose());
-    this.contactShadowMaterial.dispose();
+    this.disposePrimitives();
     this.sun.shadow.map?.dispose();
     this.renderer.dispose();
     if (!this.renderer.getContext().isContextLost()) this.renderer.forceContextLoss();

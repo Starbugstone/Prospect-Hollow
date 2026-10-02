@@ -33,7 +33,18 @@ function fixture(from = 'motor-age', to = 'aviation') {
   d.motions = [];
   const permanent = addMineSite(d, d.world, from);
   d.staticScenery = { entries: new Map([['mine-works', { group: permanent }]]) };
-  d.buildingRenderer = { batches: new Map([[permanent, { visible: true }]]) };
+  // The static renderer's visibility contract: batches follow their root.
+  d.buildingRenderer = {
+    batches: new Map([[permanent, { visible: true }]]),
+    refreshVisibility() {
+      for (const [root, batch] of this.batches) batch.visible = root.visible;
+    },
+    setVisible(root, visible) {
+      if (!root) return;
+      root.visible = visible;
+      this.refreshVisibility();
+    },
+  };
   views.push(d);
   return d;
 }

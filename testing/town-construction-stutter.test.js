@@ -155,7 +155,11 @@ it('prepares static batches without moving source meshes until the batch is plac
   cancelled.return();
   expect(statics.meshes).toHaveLength(0);
   finishWork(work);
-  expect(root.children.every((mesh) => mesh.layers.mask === 2)).toBe(true);
+  // Placed sources move to the picking layer inside one hidden group the renderer skips.
+  const hidden = root.userData.batchedSources;
+  expect(root.children).toEqual([hidden]);
+  expect(hidden.visible).toBe(false);
+  expect(hidden.children.every((mesh) => mesh.layers.mask === 2)).toBe(true);
   expect(statics.batches.get(root).parent).toBe(view.scene);
   expect(statics.meshes).toHaveLength(1);
 });
