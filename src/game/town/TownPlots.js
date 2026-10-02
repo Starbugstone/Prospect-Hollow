@@ -23,6 +23,7 @@ import { addConstructionPlot, addWell } from './buildings/frontierParts';
 
 import { BUILDING_BY_ID } from '../../data/town';
 
+import { walkers } from './TownWalkers';
 import { TownConstruction, constructionParts } from './TownConstruction';
 import { buildTownSquare } from './TownSquare';
 import {
@@ -371,12 +372,7 @@ function showConstructionGate(d, id) {
 
 export function plotVacant(d, pending) {
   const { entries } = pending;
-  const occupants = [
-    ...(d.actors ?? []),
-    ...(d.animals ?? []),
-    ...(d.vipArrivals?.actors ?? []),
-    ...(d.liveVisitors?.actors ?? []),
-  ].filter(
+  const occupants = walkers(d).filter(
     (a) =>
       a.root.visible &&
       a.species !== 'pigeon' &&
@@ -506,12 +502,7 @@ export function tryActivatePlot(d) {
   // A first opening can extend frontage paving or overhead service wires. Refresh
   // only those scenery roots here instead of leaving them stale until a full rebuild.
   const scenery = refreshScenery(d);
-  const actors = [
-    ...(d.actors ?? []),
-    ...(d.animals ?? []),
-    ...(d.vipArrivals?.actors ?? []),
-    ...(d.liveVisitors?.actors ?? []),
-  ];
+  const actors = walkers(d);
   const view = d,
     generation = d.generation;
   function* repairRoutes() {
