@@ -16,6 +16,10 @@ const { TileManager } = await moduleAt('game/engine/TileManager.js');
 const { canSwapGem, layerCount } = await moduleAt('game/engine/TileRules.js');
 const { GEM_TYPES } = await moduleAt('game/engine/GemFactory.js');
 const { detectBonusFromMatches } = await moduleAt('game/engine/MatchPatterns.js');
+const { recoverBoard } = await moduleAt('game/engine/BoardRecovery.js').catch((error) => {
+  if (error.code !== 'ERR_MODULE_NOT_FOUND') throw error;
+  return { recoverBoard: () => null };
+});
 // Older comparison checkouts predate ore orders. Keep those runs comparable.
 const mechanics = await moduleAt('game/engine/ChapterMechanics.js').catch((error) => {
   if (error.code !== 'ERR_MODULE_NOT_FOUND') throw error;
@@ -59,6 +63,14 @@ try {
         level.boardLayout.gemTypes ?? GEM_TYPES.slice(0, level.boardLayout.gemTypeCount);
       let turns = 0,
         shuffles = 0;
+      let deadShuffles = 0,
+        boardBonusMoves = 0,
+        craftedBonuses = 0,
+        coreBonuses = 0,
+        sporeBursts = 0,
+        blastOnlyHits = 0,
+        diagonalPearlDrops = 0;
+      const blastHealth = tiles.map((tile) => (tile.bonusOnly ? tile.health : 0));
       let jewels = 0,
         score = 0,
         maxCombo = 1;
@@ -72,15 +84,12 @@ try {
         const move = hints.findBestMove(board, tiles, cols, rows, { oreOrders });
         let evaluation;
         if (move) {
-          evaluation = engine.evaluateSwap(
-            board,
-            cols,
-            rows,
-            move.swap.aIndex,
-            move.swap.bIndex,
-            tiles,
-          );
+          evaluation = move.activateInPlace
+            ? engine.evaluateActivation(board, cols, rows, move.swap.aIndex, tiles)
+            : engine.evaluateSwap(board, cols, rows, move.swap.aIndex, move.swap.bIndex, tiles);
           turns++;
+          deadShuffles = 0;
+          if (move.usesBonus || move.activateInPlace) boardBonusMoves++;
         } else {
           const indices = board.flatMap((gem, index) =>
             canSwapGem(gem, tiles[index]) ? [index] : [],
@@ -93,6 +102,9 @@ try {
           const bonuses = detectBonusFromMatches(matches);
           for (const bonus of bonuses)
             board[bonus.index] = { ...board[bonus.index], type: bonus.type };
+          deadShuffles++;
+          if (!matches.length && deadShuffles >= 3)
+            board = recoverBoard(board, tiles, cols, rows) ?? board;
           evaluation = {
             board,
             matches,
@@ -102,8 +114,21 @@ try {
         }
         const resolution = manager.getResolution({ ...evaluation, tiles, cols, rows, gemTypes });
         board = resolution.board;
+        if (tiles.some((tile, index) => tile.type === 'void' && board[index] !== null))
+          throw new Error('Resolution filled a permanent void');
         mechanics.advanceOreOrders(oreOrders, resolution.steps);
         resolution.steps.forEach((step, index) => {
+          craftedBonuses += (step.bonuses ?? []).filter((bonus) => bonus.core === undefined).length;
+          coreBonuses += (step.bonuses ?? []).filter((bonus) => bonus.core !== undefined).length;
+          sporeBursts += step.sporeBursts?.length ?? 0;
+          diagonalPearlDrops += (step.drops ?? []).filter(
+            (drop) => drop.gem?.type === 'relic' && drop.from % cols !== drop.to % cols,
+          ).length;
+          for (const update of step.tileUpdates ?? []) {
+            if (update.health === undefined || !tiles[update.index].bonusOnly) continue;
+            blastOnlyHits += Math.max(0, blastHealth[update.index] - update.health);
+            blastHealth[update.index] = update.health;
+          }
           // Keep comparisons with checkouts predating the shared score helper usable.
           score += clearScore
             ? clearScore(step, index)
@@ -130,6 +155,12 @@ try {
         starScoreTarget: level.starScoreTarget ?? level.chestTarget,
         stars: getStars(score, level.starScoreTarget ?? level.chestTarget, maxCombo),
         remainingOre: mechanics.remainingOre(oreOrders),
+        boardBonusMoves,
+        craftedBonuses,
+        coreBonuses,
+        sporeBursts,
+        blastOnlyHits,
+        diagonalPearlDrops,
         coins: rules.miningPayout(jewels, bonuses, comboCounts, multiMatchCounts, level.id),
       });
     }

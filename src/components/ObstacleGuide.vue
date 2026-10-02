@@ -50,6 +50,30 @@
                 alt=""
               />
             </template>
+            <template v-else-if="['encased-fossil', 'blast-gate'].includes(obstacle.id)">
+              <img src="/art/bonuses/bomb.svg" alt="" /><b>→</b
+              ><img
+                :src="
+                  obstacle.id === 'encased-fossil'
+                    ? '/art/obstacles/fossil-casing.svg'
+                    : obstacle.art
+                "
+                alt=""
+              /><b>→</b
+              ><img
+                :src="obstacle.id === 'encased-fossil' ? obstacle.art : '/art/emerald.svg'"
+                alt=""
+              /><b class="demo-check">✓</b>
+            </template>
+            <template v-else-if="obstacle.id === 'spore'">
+              <span class="demo-matches"
+                ><img src="/art/ruby.svg" alt="" /><img src="/art/ruby.svg" alt="" /><img
+                  src="/art/ruby.svg"
+                  alt=""
+              /></span>
+              <img :src="obstacle.art" alt="" /><b>↔</b
+              ><img src="/art/obstacles/blast-gate.svg" alt="" /><b class="demo-check">✓</b>
+            </template>
             <template v-else-if="obstacle.id === 'fossil'">
               <span class="demo-matches demo-dust"
                 ><img src="/art/ruby.svg" alt="" /><img src="/art/ruby.svg" alt="" /><img

@@ -12,7 +12,9 @@ import {
 } from '../src/data/deepMineLevels';
 import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
 import { deepMineProgress } from '../src/game/engine/DeepMineMechanics';
+import { gravityDestination, isPlayableCell } from '../src/game/engine/BoardTopology';
 import { HintEngine } from '../src/game/engine/HintEngine';
+import { MatchEngine } from '../src/game/engine/MatchEngine';
 import { PlayClock } from '../src/game/engine/PlayClock';
 import { layerCount, neighborsOf } from '../src/game/engine/TileRules';
 import { useGameStore } from '../src/stores/gameStore';
@@ -75,22 +77,37 @@ describe('append-only deep mine campaign', () => {
     }
   });
 
-  it('keeps every target reachable on familiar five-color boards without move or time caps', () => {
+  it('retains the published accounting thresholds for every redesigned level', () => {
+    // Captured from the immutable first-expansion snapshot, not the working tree.
+    const payload = JSON.stringify(
+      deep.map(({ id, chestTarget, speedTargetMs, starScoreTarget }) => ({
+        id,
+        chestTarget,
+        speedTargetMs,
+        starScoreTarget,
+      })),
+    );
+    expect(createHash('sha256').update(payload).digest('hex')).toBe(
+      'af6ea754de5c2b341fdd2213763d55926ac4628335c6c846201c8faf1490933d',
+    );
+  });
+
+  it('keeps open crafting space above permanent shaped walls without move or time caps', () => {
     for (const level of deep) {
       const { tiles, boardCols: cols, boardRows: rows } = level;
       expect([cols, rows, level.boardLayout.gemTypes.length]).toEqual([7, 9, 5]);
-      for (const index of [0, cols - 1, cols * (rows - 1), cols * rows - 1])
-        expect(layerCount(tiles[index]), `level ${level.id} clear corner`).toBe(0);
-      for (let y = 0; y < rows; y++)
-        for (const x of [0, cols - 1]) expect(tiles[y * cols + x].type).toBe('standard');
+      expect(tiles.slice(0, 4 * cols).every((tile) => tile.type === 'standard')).toBe(true);
+      expect(tiles.some((tile) => !isPlayableCell(tile))).toBe(true);
       for (const tile of tiles) expect(tile.health).toBeLessThanOrEqual(2);
-      expect(tiles.slice(-2 * cols).every((tile) => layerCount(tile) === 0)).toBe(true);
       expect(level.objectives[0].target).toBe(
         tiles.reduce((sum, tile) => sum + layerCount(tile), 0),
       );
       level.board.forEach((gem, index) => {
-        if (gem?.type === 'relic')
-          expect(tiles[(rows - 1) * cols + (index % cols)].exit).toBe(true);
+        const tile = tiles[index];
+        if (!isPlayableCell(tile) || tile.type === 'blocker') expect(gem).toBeNull();
+        else expect(gem).not.toBeNull();
+        if (!isPlayableCell(tile)) expect(layerCount(tile)).toBe(0);
+        expect(['bomb', 'cross', 'rainbow']).not.toContain(gem?.type);
       });
       for (const tile of tiles) {
         if (tile.signal === 'core') {
@@ -107,6 +124,74 @@ describe('append-only deep mine campaign', () => {
     }
   });
 
+  it('funnels every pearl through one mandatory blast gate to one bottom exit', () => {
+    const reservoirs = deep.filter(({ theme }) => theme === 'underground-reservoir');
+    expect(reservoirs).toHaveLength(6);
+    for (const level of reservoirs) {
+      const { tiles, board, boardCols: cols, boardRows: rows } = level;
+      expect(
+        Array.from(
+          { length: rows },
+          (_, row) => tiles.slice(row * cols, (row + 1) * cols).filter(isPlayableCell).length,
+        ),
+      ).toEqual([7, 7, 7, 7, 7, 5, 3, 1, 1]);
+      expect(tiles.flatMap((tile, index) => (tile.exit ? [index] : []))).toEqual([59]);
+      expect(tiles[52]).toMatchObject({ type: 'blocker', bonusOnly: true });
+      expect(tiles[52].health).toBeGreaterThan(0);
+      for (let origin = 0; origin < board.length; origin++) {
+        if (board[origin]?.type !== 'relic') continue;
+        const route = [origin];
+        for (let index = origin; ;) {
+          const target = gravityDestination(tiles, index, cols, rows);
+          if (target < 0) break;
+          expect(Math.floor(target / cols)).toBe(Math.floor(index / cols) + 1);
+          expect(Math.abs((target % cols) - (index % cols))).toBeLessThanOrEqual(1);
+          route.push(target);
+          index = target;
+        }
+        expect(route).toContain(52);
+        expect(route.at(-1)).toBe(59);
+      }
+    }
+  });
+
+  it('requires earned board bonuses even after every one-shot spore relay fires', () => {
+    for (const level of deep) {
+      const relays = level.tiles.flatMap((tile, index) =>
+        tile.signal === 'spore' ? [{ tile, index }] : [],
+      );
+      expect(
+        level.tiles.some((tile, index) => {
+          if (!tile.bonusOnly || !tile.health) return false;
+          const freeHits = relays.filter(({ tile: relay, index: source }) =>
+            relay.sporeAxis === 'row'
+              ? Math.floor(source / 7) === Math.floor(index / 7)
+              : source % 7 === index % 7,
+          ).length;
+          return tile.health > freeHits;
+        }),
+        `level ${level.id} needs a direct special hit`,
+      ).toBe(true);
+    }
+  });
+
+  it('can craft a four-match bonus in every upper field without inventory powers', () => {
+    const engine = new MatchEngine();
+    for (const level of deep) {
+      const colors = level.boardLayout.gemTypes;
+      const board = level.board.map((gem, index) =>
+        gem && gem.type !== 'relic'
+          ? { ...gem, type: colors[((index % 7) + Math.floor(index / 7)) % colors.length] }
+          : gem,
+      );
+      for (const index of [10, 15, 16, 18]) board[index] = { ...board[index], type: colors[0] };
+      for (const index of [14, 19]) board[index] = { ...board[index], type: colors[2] };
+      board[17] = { ...board[17], type: colors[1] };
+      const result = engine.evaluateSwap(board, 7, 9, 10, 17, level.tiles);
+      expect(result.bonuses).toContainEqual(expect.objectContaining({ index: 17, type: 'bomb' }));
+    }
+  });
+
   it('teaches each new rule alone and keeps later combinations to two featured mechanics', () => {
     for (const id of [373, 385]) {
       const level = levels[id - 1];
@@ -114,7 +199,9 @@ describe('append-only deep mine campaign', () => {
       expect(progress.fossils.total + progress.roots.total).toBe(1);
       expect(level.tiles.some((tile) => tile.signal || tile.sealColor)).toBe(false);
       expect(level.board.some((gem) => gem?.type === 'relic')).toBe(false);
-      expect(level.tiles.filter((tile) => tile.type === 'blocker' && !tile.rootKnot)).toEqual([]);
+      expect(
+        level.tiles.every((tile) => tile.type !== 'blocker' || tile.rootKnot || tile.bonusOnly),
+      ).toBe(true);
     }
     expect(
       levels[372].tiles.filter((tile) => tile.fossilGroup).every((tile) => tile.health === 1),
@@ -138,12 +225,19 @@ describe('append-only deep mine campaign', () => {
     for (const [index, spec] of DEEP_MINE_LEVELS.entries()) {
       const level = deep[index];
       for (const fossil of spec.fossils) {
+        expect(fossil.encased).toBe(true);
         expect(fossil.cells).toHaveLength(4);
         expect(fossil.cells.map((cell) => level.tiles[cell].fossilPart)).toEqual([0, 1, 2, 3]);
         expect(new Set(fossil.cells.map((cell) => level.tiles[cell].fossilGroup)).size).toBe(1);
         expect(fossil.cells.every((cell) => level.tiles[cell].maxHealth === fossil.layers)).toBe(
           true,
         );
+        expect(
+          fossil.cells.every(
+            (cell) => level.tiles[cell].bonusOnly && level.tiles[cell].type === 'blocker',
+          ),
+        ).toBe(true);
+        expect(fossil.cells.every((cell) => level.board[cell] === null)).toBe(true);
       }
       for (const root of spec.roots) {
         expect(level.board[root.knot]).toBeNull();
@@ -170,6 +264,7 @@ describe('append-only deep mine campaign', () => {
       roots: [],
       cores: [],
       signals: [],
+      spores: [],
     });
     expect(() => parseDeepMineBoard('.......')).toThrow('7 × 9');
     expect(() => parseDeepMineBoard(authored([[12, '?']]))).toThrow('Unknown');
@@ -205,7 +300,7 @@ describe('append-only deep mine campaign', () => {
 });
 
 describe('deep mine completion and pacing', () => {
-  // Held-out refill seeds; the authored star calibration uses seeds 1–30.
+  // Held-out refill seeds independent of the ten-seed shape measurements.
   // All finite budgets below are diagnostics, never rules imposed on a player.
   const runs = new Map(
     deep.map((level) => [
@@ -221,8 +316,16 @@ describe('deep mine completion and pacing', () => {
   it.each(deep.map(({ id }) => [id]))('finishes level %i on every held-out seed', (id) => {
     for (const run of runs.get(id)) {
       expect(run).toMatchObject({ remaining: false, layers: 0, relics: 0, ore: 0 });
-      expect(run.turns).toBeLessThanOrEqual(100);
-      expect(run.shuffles).toBeLessThanOrEqual(4);
+      const level = levels[id - 1];
+      expect(run.blastOnlyHits).toBe(
+        level.tiles.reduce((sum, tile) => sum + (tile.bonusOnly ? tile.health : 0), 0),
+      );
+      expect(run.boardBonusMoves).toBeGreaterThan(0);
+      expect(run.craftedBonuses + run.coreBonuses).toBeGreaterThan(0);
+      if (level.theme === 'underground-reservoir')
+        expect(run.diagonalPearlDrops).toBeGreaterThan(0);
+      expect(run.turns).toBeLessThanOrEqual(180);
+      expect(run.shuffles).toBeLessThanOrEqual(8);
     }
   });
 
@@ -232,11 +335,11 @@ describe('deep mine completion and pacing', () => {
       .map(({ id }) => id);
     const ordinaryTurns = ordinaryIds.flatMap((id) => runs.get(id).map(({ turns }) => turns));
     expect(median(ordinaryTurns)).toBeGreaterThan(median(priorRuns.map(({ turns }) => turns)));
-    expect(median(ordinaryTurns)).toBeLessThanOrEqual(35);
+    expect(median(ordinaryTurns)).toBeLessThanOrEqual(55);
     const all = sorted([...runs.values()].flat().map(({ turns }) => turns));
-    expect(all[Math.ceil(all.length * 0.9) - 1]).toBeLessThanOrEqual(55);
+    expect(all[Math.ceil(all.length * 0.9) - 1]).toBeLessThanOrEqual(90);
     for (const id of [373, 385])
-      expect(median(runs.get(id).map(({ turns }) => turns))).toBeLessThanOrEqual(18);
+      expect(median(runs.get(id).map(({ turns }) => turns))).toBeLessThanOrEqual(30);
     for (let chapter = 0; chapter < 5; chapter++) {
       const rest = deep[chapter * 6 + 4],
         finale = deep[chapter * 6 + 5];

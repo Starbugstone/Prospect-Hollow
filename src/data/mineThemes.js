@@ -60,14 +60,14 @@ const themes = {
   'glowshroom-grotto': {
     style: palette('#112329', '#224e50', '#25433f', '#5c9291', '#466455', '#92eadc'),
     signals: {
-      lantern: {
-        id: 'mushroom',
-        name: 'Glowshrooms',
-        goalLabel: 'Glowshrooms',
+      spore: {
+        id: 'spore',
+        name: 'Spore relays',
+        goalLabel: 'Spore relays',
         texture: 'tile-mushroom',
         art: '/art/obstacles/mushroom.svg',
         instruction:
-          'Match on or beside a mushroom to light it. It stays lit, and gems pass freely. Bonuses light mushrooms too.',
+          'Match on or beside a mushroom to fire its spore burst along the arrows. The burst clears that row or column, cracks blast gates and triggers mushrooms it hits. Each mushroom fires once.',
       },
     },
     decorations: [
@@ -111,7 +111,7 @@ const themes = {
       exitTexture: 'tile-pearl-exit',
       art: '/art/obstacles/pearl.svg',
       instruction:
-        'Clear gems below each pearl to drop it into its basket. Pearls cannot be swapped or destroyed. The water is scenery; take your time.',
+        'Clear below the pearls. They roll inward along the marked slopes to one basket. Make bonus gems in the wide upper chamber and blast the gate at the narrow bottom to open the exit.',
     },
     decorations: [
       decoration(
@@ -149,7 +149,7 @@ const themes = {
 // Every deeper chapter uses the same names and pictures when a familiar goal
 // returns in another cavern. Scenery changes; the player's learned rule does not.
 const deepSignals = {
-  lantern: themes['glowshroom-grotto'].signals.lantern,
+  spore: themes['glowshroom-grotto'].signals.spore,
   core: themes['geothermal-forge'].signals.core,
 };
 for (const definition of Object.values(themes))
@@ -170,4 +170,7 @@ export const DEEP_MINE_SPRITES = [
   ['tile-brazier', 'obstacles/brazier.svg'],
   ['gem-pearl', 'obstacles/pearl.svg'],
   ['tile-pearl-exit', 'obstacles/pearl-exit.svg'],
+  ['tile-fossil-casing', 'obstacles/fossil-casing.svg'],
+  ['tile-blast-gate', 'obstacles/blast-gate.svg'],
+  ['tile-blast-mark', 'obstacles/blast-mark.svg'],
 ];

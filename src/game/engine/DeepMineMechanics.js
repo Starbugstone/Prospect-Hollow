@@ -1,4 +1,7 @@
-const validCell = (tiles, index) => Number.isInteger(index) && index >= 0 && !!tiles[index];
+import { isPlayableCell } from './BoardTopology.js';
+
+const validCell = (tiles, index) =>
+  Number.isInteger(index) && index >= 0 && !!tiles[index] && isPlayableCell(tiles[index]);
 const layersOf = (value) => (value === 2 ? 2 : 1);
 const definitions = (value) => (Array.isArray(value) ? value : []);
 
@@ -17,6 +20,7 @@ export function applyDeepMineSpec(tiles, spec = {}) {
         fossilCollected: false,
         health: layersOf(fossil.layers),
         maxHealth: layersOf(fossil.layers),
+        ...(fossil.encased ? { type: 'blocker', bonusOnly: true } : {}),
       });
   }
   for (const [order, root] of definitions(spec?.roots).entries()) {
@@ -37,6 +41,14 @@ export function applyDeepMineSpec(tiles, spec = {}) {
         maxChainHealth: layersOf(root.bindingHealth),
       });
     }
+  }
+  for (const spore of definitions(spec?.spores)) {
+    if (!validCell(tiles, spore?.index) || tiles[spore.index].type !== 'standard') continue;
+    Object.assign(tiles[spore.index], {
+      signal: 'spore',
+      signalHealth: 1,
+      sporeAxis: spore.axis === 'column' ? 'column' : 'row',
+    });
   }
   return tiles;
 }

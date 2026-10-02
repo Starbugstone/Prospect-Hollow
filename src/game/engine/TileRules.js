@@ -1,7 +1,10 @@
+import { isPlayableCell } from './BoardTopology.js';
+
 // Bonus gems a player can swap or double-tap on the board.
 export const BOARD_BONUSES = Object.freeze(['bomb', 'cross', 'rainbow']);
 
 export const isAnchored = (tile) =>
+  !isPlayableCell(tile) ||
   tile?.state === 'FROZEN' ||
   (tile?.chainHealth ?? 0) > 0 ||
   (tile?.type === 'blocker' && tile.health > 0);
@@ -9,7 +12,9 @@ export const isAnchored = (tile) =>
 export const canSwapGem = (gem, tile) => !!gem && gem.type !== 'relic' && !isAnchored(tile);
 
 export const layerCount = (tile) =>
-  (tile?.health ?? 0) + (tile?.chainHealth ?? 0) + (tile?.signalHealth ?? 0);
+  isPlayableCell(tile)
+    ? (tile?.health ?? 0) + (tile?.chainHealth ?? 0) + (tile?.signalHealth ?? 0)
+    : 0;
 
 export const neighborsOf = (index, cols, rows) =>
   [

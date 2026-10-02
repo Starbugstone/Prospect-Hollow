@@ -4,10 +4,12 @@ The approved implementation adds five groups, levels 373–402: Fossil beds,
 Glowshroom grotto, Root-bound vault, Underground reservoir and Geothermal forge.
 Crystal heart remains a future idea. See [the implemented chapters](deep-mine-levels.md).
 
-Brainstorming only: these concepts are not implemented or approved level designs.
-The current campaign ends at level 372. A possible next expansion is six
-six-puzzle chapters, levels 373–408, themed around discoveries deeper underground.
-This does not require deciding the next town era yet.
+This document preserves the initial brainstorming, which predates the endgame
+redesign. Its dust fossils, lantern-style mushrooms and open pearl shafts were
+superseded by blast-only encased fossils, directional spore relays and genuine
+V-shaped pearl funnels. The current campaign has 402 levels. Treat the rules
+and concept images below as historical proposals; the implementation document
+above describes the current game.
 
 ![Fossil beds, root-bound vault and geothermal forge concept sheet](images/mine-concepts/deeper-mine-concepts.png)
 

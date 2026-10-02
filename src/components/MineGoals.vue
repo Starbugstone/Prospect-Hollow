@@ -23,6 +23,18 @@ const game = useGameStore();
 const props = defineProps({ initialTiles: Array });
 const groups = [
   {
+    id: 'spore',
+    label: 'Spore relays',
+    art: '/art/obstacles/mushroom.svg',
+    value: (tile) => (tile.signal === 'spore' ? tile.signalHealth : 0),
+  },
+  {
+    id: 'blast-gate',
+    label: 'Blast gates',
+    art: '/art/obstacles/blast-gate.svg',
+    value: (tile) => (tile.bonusOnly && tile.fossilGroup == null ? tile.health : 0),
+  },
+  {
     id: 'lantern',
     label: 'Lanterns',
     art: '/art/obstacles/lantern.svg',
@@ -53,7 +65,8 @@ const groups = [
     id: 'stone',
     label: 'Stone',
     art: '/art/blocks/stone.svg',
-    value: (tile) => (tile.type === 'blocker' && !tile.rootKnot ? tile.health : 0),
+    value: (tile) =>
+      tile.type === 'blocker' && !tile.rootKnot && !tile.bonusOnly ? tile.health : 0,
   },
   {
     id: 'chain',

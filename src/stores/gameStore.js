@@ -10,6 +10,7 @@ import { defineStore } from 'pinia';
 import { generateLevelConfigs } from '../game/engine/LevelGenerator';
 import { GEM_TYPES } from '../game/engine/GemFactory';
 import { recoverBoard } from '../game/engine/BoardRecovery';
+import { isPlayableCell } from '../game/engine/BoardTopology';
 import { MatchEngine } from '../game/engine/MatchEngine';
 import { cascadeTier, clearScore, simultaneousMatchCount } from '../game/engine/MatchRewards';
 import { TileManager } from '../game/engine/TileManager';
@@ -357,7 +358,13 @@ export const useGameStore = defineStore('game', {
       return true;
     },
     async resolveBonusClick(index) {
-      if (!this.sessionActive || this.inputPaused || !this.activeBonusMode || this.levelCleared) {
+      if (
+        !this.sessionActive ||
+        this.inputPaused ||
+        !this.activeBonusMode ||
+        this.levelCleared ||
+        !isPlayableCell(this.tiles[index])
+      ) {
         return false;
       }
 
@@ -380,6 +387,7 @@ export const useGameStore = defineStore('game', {
     async _activatePower(bonusName, index, consume = false) {
       if (!this.sessionActive || this.inputPaused || this.animationInProgress || this.levelCleared)
         return false;
+      if (bonusName !== 'recovery_sweep' && !isPlayableCell(this.tiles[index])) return false;
       const inventory = useInventoryStore();
       if (consume && inventory.availableQuantity(bonusName) <= 0) {
         this.clearBonusPreview(true);
@@ -484,7 +492,8 @@ export const useGameStore = defineStore('game', {
         !board.length ||
         index == null ||
         index < 0 ||
-        index >= board.length
+        index >= board.length ||
+        !isPlayableCell(this.tiles[index])
       ) {
         this.clearBonusPreview();
         return;

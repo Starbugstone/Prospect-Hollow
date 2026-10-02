@@ -8,6 +8,8 @@ import { CHAPTERS } from '../../data/campaign';
 import { chapterIndexOf } from '../../data/chapters';
 import { mineSignalAppearance, mineRelicAppearance } from '../../data/mineThemes';
 import { BonusEffects } from './BonusEffects';
+import { isPlayableCell, gravityDestination } from '../engine/BoardTopology';
+import { boardEdges, fallWaypoints } from './BoardGeometry';
 import {
   cascadeTier,
   simultaneousMatchCount,
@@ -90,6 +92,8 @@ export class BoardAnimator {
     this.fossilSprites.clear();
     this.rootLinks = null;
     this.rootLinksKey = '';
+    this.boardOutline = null;
+    this.boardOutlineKey = '';
     this.effects.forEach((effect) => effect.destroy());
     this.effects.clear();
     this.particles?.clear?.();
@@ -301,6 +305,7 @@ export class BoardAnimator {
         }
       }
       await this.bonuses.play(step);
+      await this.playSporeBursts(step.sporeBursts ?? []);
       if (generation !== this.generation) return;
       await this.clearGems(step.cleared, step.bonusFusion);
       if (generation !== this.generation) return;
@@ -318,17 +323,21 @@ export class BoardAnimator {
         if (tile) {
           if (tile.health > (update.health ?? tile.health)) {
             const p = this.position(update.index);
-            if (!tile.rootKnot && tile.fossilGroup == null)
+            if (!tile.rootKnot && tile.fossilGroup == null && !tile.bonusOnly)
               this.particles?.emitIce?.(p, update.health === 0 ? 8 : 4);
             if (update.health === 0 && !this.reducedMotion) {
               const ref = spriteRef(
                 tile.rootKnot
                   ? 'tile-root-knot'
                   : tile.fossilGroup != null
-                    ? 'tile-dust'
-                    : tile.type === 'blocker'
-                      ? 'block-cracked'
-                      : 'ice-cracked',
+                    ? tile.bonusOnly
+                      ? 'tile-fossil-casing'
+                      : 'tile-dust'
+                    : tile.bonusOnly
+                      ? 'tile-blast-gate'
+                      : tile.type === 'blocker'
+                        ? 'block-cracked'
+                        : 'ice-cracked',
                 this.scene.textures,
               );
               const chip = this.scene.add
@@ -366,23 +375,33 @@ export class BoardAnimator {
       const falls = [];
       for (const { from, gem } of step.drops)
         if (this.indexToGemId[from] === gem.id) this.indexToGemId[from] = null;
-      for (const { from, to, gem } of step.drops) {
+      for (const { from, to, gem, path } of step.drops) {
         const sprite = this.gemSprites.get(gem.id);
         this.indexToGemId[to] = gem.id;
-        if (sprite) falls.push(this.fall(sprite, to, Math.ceil((to - from) / this.boardCols)));
+        if (sprite)
+          falls.push(
+            path
+              ? this.fallAlong(sprite, path)
+              : this.fall(sprite, to, Math.ceil((to - from) / this.boardCols)),
+          );
       }
       const columnCounts = new Map();
-      for (const { index } of step.spawns)
+      for (const { index, path } of step.spawns)
         columnCounts.set(
-          index % this.boardCols,
-          (columnCounts.get(index % this.boardCols) ?? 0) + 1,
+          (path?.[0] ?? index) % this.boardCols,
+          (columnCounts.get((path?.[0] ?? index) % this.boardCols) ?? 0) + 1,
         );
-      for (const { index, gem } of step.spawns) {
+      for (const { index, gem, path } of step.spawns) {
         const sprite = this.createGem(gem, index);
-        const distance = columnCounts.get(index % this.boardCols);
+        const entry = path?.[0] ?? index;
+        const distance = columnCounts.get(entry % this.boardCols);
+        if (path) {
+          const p = this.position(entry);
+          sprite.setPosition(p.x, p.y);
+        }
         sprite.y -= distance * this.cellSize;
         this.indexToGemId[index] = gem.id;
-        falls.push(this.fall(sprite, index, distance));
+        falls.push(path ? this.fallAlong(sprite, path, true) : this.fall(sprite, index, distance));
       }
       await Promise.all(falls);
     }
@@ -394,6 +413,47 @@ export class BoardAnimator {
       duration: this.reducedMotion ? 90 : MOTION.fall + Math.min(5, distance) * 12,
       ease: 'Bounce.easeOut',
     });
+  }
+
+  async fallAlong(sprite, path, entering = false) {
+    const generation = this.generation;
+    if (this.reducedMotion) return this.fall(sprite, path.at(-1), path.length);
+    const stops = fallWaypoints(path, this.boardCols);
+    for (const index of entering ? stops : stops.slice(1)) {
+      if (generation !== this.generation) return;
+      const p = this.position(index);
+      const distance = Math.hypot(p.x - sprite.x, p.y - sprite.y) / this.cellSize;
+      await this.tween(sprite, {
+        ...p,
+        duration: Math.min(220, 90 + distance * 22),
+        ease: 'Quad.easeInOut',
+      });
+    }
+  }
+
+  async playSporeBursts(bursts) {
+    await Promise.all(
+      bursts.map(({ index, axis, targets }) => {
+        const p = this.position(index);
+        const points = (targets?.length ? targets : [index]).map((target) => this.position(target));
+        const horizontal = axis === 'row';
+        const low = Math.min(...points.map((point) => (horizontal ? point.x : point.y)));
+        const high = Math.max(...points.map((point) => (horizontal ? point.x : point.y)));
+        const beam = this.scene.add.rectangle(
+          horizontal ? (low + high) / 2 : p.x,
+          horizontal ? p.y : (low + high) / 2,
+          horizontal ? high - low + this.cellSize * 0.7 : this.cellSize * 0.16,
+          horizontal ? this.cellSize * 0.16 : high - low + this.cellSize * 0.7,
+          0x9cffe0,
+          0.85,
+        );
+        return this.effect(beam, {
+          alpha: 0,
+          duration: this.reducedMotion ? 90 : 240,
+          ease: 'Quad.easeOut',
+        });
+      }),
+    );
   }
 
   async clearGems(indices, fusion) {
@@ -493,6 +553,18 @@ export class BoardAnimator {
     if (!this.scene?.add || !this.cellSize) return;
     const count = this.boardCols * this.boardRows;
     for (let index = 0; index < count; index++) {
+      if (!isPlayableCell(this.tiles[index])) {
+        for (const map of [
+          this.cellHighlights,
+          this.iceSprites,
+          this.tileOverlays,
+          this.fossilSprites,
+        ]) {
+          map.get(index)?.destroy();
+          map.delete(index);
+        }
+        continue;
+      }
       const p = this.position(index);
       const health = this.tiles[index]?.health ?? 0;
       const tile = this.tiles[index];
@@ -523,16 +595,20 @@ export class BoardAnimator {
         const texture = tile?.rootKnot
           ? 'tile-root-knot'
           : tile?.fossilGroup != null
-            ? 'tile-dust'
-            : blocker
-              ? damaged
-                ? 'block-cracked'
-                : health > 1
-                  ? 'block-reinforced'
-                  : 'block-stone'
-              : damaged && !frozen
-                ? 'ice-cracked'
-                : 'ice-frost';
+            ? tile.bonusOnly
+              ? 'tile-fossil-casing'
+              : 'tile-dust'
+            : tile?.bonusOnly
+              ? 'tile-blast-gate'
+              : blocker
+                ? damaged
+                  ? 'block-cracked'
+                  : health > 1
+                    ? 'block-reinforced'
+                    : 'block-stone'
+                : damaged && !frozen
+                  ? 'ice-cracked'
+                  : 'ice-frost';
         const ref = spriteRef(texture, this.scene.textures);
         if (!ice) {
           ice = this.scene.add.image(p.x, p.y, ref.key, ref.frame);
@@ -568,6 +644,48 @@ export class BoardAnimator {
       }
     });
     this.drawRootLinks();
+    this.drawBoardOutline();
+  }
+
+  drawBoardOutline() {
+    const shaped = this.tiles.some((tile) => !isPlayableCell(tile));
+    const key = `${this.cellSize}-${this.boardCols}-${this.boardRows}-${this.tiles.map((tile) => `${tile?.type === 'void' ? 'x' : '.'}:${tile?.flowTo ?? ''}`).join(',')}`;
+    if (key === this.boardOutlineKey) return;
+    this.boardOutlineKey = key;
+    this.boardOutline?.destroy();
+    this.boardOutline = null;
+    if (!shaped) return;
+    const graphic = this.scene.add.graphics();
+    graphic.lineStyle(Math.max(2, this.cellSize * 0.045), 0xd6bd88, 0.85);
+    for (const [x1, y1, x2, y2] of boardEdges(this.tiles, this.boardCols, this.boardRows))
+      graphic
+        .beginPath()
+        .moveTo(x1 * this.cellSize, y1 * this.cellSize)
+        .lineTo(x2 * this.cellSize, y2 * this.cellSize)
+        .strokePath();
+    graphic.lineStyle(Math.max(2, this.cellSize * 0.045), 0xade5d9, 0.9);
+    for (let index = 0; index < this.tiles.length; index++) {
+      const next = gravityDestination(this.tiles, index, this.boardCols, this.boardRows);
+      if (next < 0 || next % this.boardCols === index % this.boardCols) continue;
+      const p = this.position(index),
+        direction = Math.sign((next % this.boardCols) - (index % this.boardCols)),
+        s = this.cellSize;
+      const x = p.x + direction * s * 0.32,
+        y = p.y + s * 0.32;
+      graphic
+        .beginPath()
+        .moveTo(x - direction * s * 0.14, y - s * 0.14)
+        .lineTo(x, y)
+        .lineTo(x - direction * s * 0.13, y)
+        .strokePath();
+      graphic
+        .beginPath()
+        .moveTo(x, y)
+        .lineTo(x, y - s * 0.13)
+        .strokePath();
+    }
+    this.tileLayer.add(graphic);
+    this.boardOutline = graphic;
   }
 
   drawFossilFloor(index) {
@@ -632,12 +750,21 @@ export class BoardAnimator {
     const chained = tile?.chainHealth > 0;
     const layers = tile?.health > 1 ? tile.health : 0;
     const frozen = tile?.state === 'FROZEN';
-    const key = `${layers}-${frozen}-${sealColor ?? ''}-${chained}-${!!tile?.exit}-${tile?.signal ?? ''}-${tile?.signalHealth}-${tile?.surveyOrder}-${tile?.rootGroup ?? ''}-${this.theme}-${this.cellSize}`;
+    const key = `${layers}-${frozen}-${sealColor ?? ''}-${chained}-${!!tile?.exit}-${tile?.signal ?? ''}-${tile?.signalHealth}-${tile?.surveyOrder}-${tile?.rootGroup ?? ''}-${tile?.bonusOnly}-${tile?.sporeAxis}-${tile?.health}-${this.theme}-${this.cellSize}`;
     let overlay = this.tileOverlays.get(index);
     if (overlay?.__tileKey === key) return;
     overlay?.destroy();
     this.tileOverlays.delete(index);
-    if (!sealColor && !chained && !tile?.exit && !layers && !frozen && !tile?.signal) return;
+    if (
+      !sealColor &&
+      !chained &&
+      !tile?.exit &&
+      !layers &&
+      !frozen &&
+      !tile?.signal &&
+      !(tile?.bonusOnly && tile.health > 0)
+    )
+      return;
     const p = this.position(index);
     const size = this.cellSize - 3;
     overlay = this.scene.add.container(p.x, p.y);
@@ -664,6 +791,10 @@ export class BoardAnimator {
       overlay.add(badge);
     }
     if (chained) addImage(tile.rootGroup != null ? 'vine' : 'chain');
+    if (tile.bonusOnly && tile.fossilGroup != null && tile.health > 0)
+      addImage('blast-mark')
+        .setPosition(-size * 0.28, size * 0.28)
+        .setDisplaySize(size * 0.39, size * 0.39);
     if (tile.signal) {
       const lit = tile.signalHealth === 0;
       const skin = mineSignalAppearance(this.theme, tile.signal);
@@ -671,8 +802,22 @@ export class BoardAnimator {
       const marker = this.scene.add
         .image(-size * 0.3, size * 0.29, ref.key, ref.frame)
         .setDisplaySize(size * 0.43, size * 0.43)
-        .setAlpha(lit ? (skin?.id === 'mushroom' ? 1 : 0.5) : skin?.id === 'mushroom' ? 0.55 : 1);
+        .setAlpha(lit ? 0.35 : 1);
       overlay.add(marker);
+      if (tile.signal === 'spore')
+        overlay.add(
+          this.scene.add
+            .text(size * 0.16, size * 0.32, lit ? '✓' : tile.sporeAxis === 'column' ? '↕' : '↔', {
+              fontFamily: 'Arial, sans-serif',
+              fontStyle: 'bold',
+              fontSize: `${Math.max(17, size * 0.34)}px`,
+              color: lit ? '#abdfc7' : '#ffffff',
+              stroke: '#153a38',
+              strokeThickness: 3,
+              backgroundColor: '#153a38',
+            })
+            .setOrigin(0.5),
+        );
       // Charge pips: one small static dot per charge, rebuilt only when the charge changes.
       if (tile.signal === 'core')
         for (let pip = 0, pips = tile.coreCharges ?? CORE_CHARGES; pip < pips; pip++)
@@ -706,6 +851,7 @@ export class BoardAnimator {
   showMarkers(key, indices, color) {
     this.clearMarkers(key);
     if (!this.scene?.add) return;
+    indices = indices.filter((index) => isPlayableCell(this.tiles[index]));
     const objects = indices.map((index) => {
       const p = this.position(index);
       const marker = this.scene.add

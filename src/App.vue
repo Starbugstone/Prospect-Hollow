@@ -208,6 +208,7 @@
           :class="{
             'power-active': game.activeBonusMode,
             'fusion-impact': game.arcadeImpact?.type === 'bonus-fusion',
+            'shaped-board': game.tiles.some((tile) => tile.type === 'void'),
           }"
         >
           <div class="frame-corner corner-tl"></div>

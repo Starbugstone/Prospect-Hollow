@@ -1,6 +1,7 @@
 import { isAnchored } from './TileRules.js';
 import { GEM_TYPES } from './GemFactory.js';
 import { dominantGemType, getBonusFusion } from './BonusFusion.js';
+import { isPlayableCell } from './BoardTopology.js';
 
 // Board bonuses plus the toolbar powers that share their reaction rules.
 const ACTIVATABLE = new Set([
@@ -79,7 +80,13 @@ export class BonusActivator {
 
   // Toolbar powers and board bonuses share the same reaction and anchor rules.
   activatePower(type, board, cols, rows, index, tiles = []) {
-    if (!Number.isInteger(index) || index < 0 || index >= board.length) return [];
+    if (
+      !Number.isInteger(index) ||
+      index < 0 ||
+      index >= board.length ||
+      !isPlayableCell(tiles[index])
+    )
+      return [];
     const targets = this.activateBonus(type, board, cols, rows, index);
     return this.resolveChain(board, cols, rows, { targets, tiles });
   }
@@ -104,7 +111,13 @@ export class BonusActivator {
       );
     };
     const touch = (index) => {
-      if (index < 0 || index >= board.length || affected.has(index)) return;
+      if (
+        index < 0 ||
+        index >= board.length ||
+        affected.has(index) ||
+        !isPlayableCell(tiles[index])
+      )
+        return;
       affected.add(index);
       const gem = board[index];
       if (this.isBonus(gem?.type) && !visited.has(index)) {

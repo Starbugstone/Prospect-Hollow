@@ -132,7 +132,7 @@ describe('theme and asset contracts', () => {
     for (const { theme } of DEEP_MINE_CHAPTERS) {
       expect(Object.keys(mineThemeAppearance(theme).style)).toHaveLength(6);
       expect(mineThemeAppearance(theme).decorations.length).toBeGreaterThan(0);
-      expect(mineSignalAppearance(theme, 'lantern').id).toBe('mushroom');
+      expect(mineSignalAppearance(theme, 'spore').id).toBe('spore');
       expect(mineSignalAppearance(theme, 'core').id).toBe('brazier');
       expect(mineSignalAppearance(theme, 'survey')).toBeUndefined();
     }
@@ -207,12 +207,29 @@ describe('theme and asset contracts', () => {
 });
 
 describe('fossil and linked root presentation', () => {
+  it('removes backgrounds from missing sockets and shows blast-only rock in the live board', () => {
+    const { animator } = renderer();
+    animator.tiles = Array.from({ length: 25 }, () => ({ type: 'standard', health: 0 }));
+    animator.drawCells();
+    const old = animator.cellHighlights.get(24);
+    animator.tiles[24] = { type: 'void' };
+    animator.tiles[6] = { type: 'blocker', health: 2, maxHealth: 2, bonusOnly: true };
+    animator.drawCells();
+    expect(old.destroy).toHaveBeenCalledOnce();
+    expect(animator.cellHighlights.has(24)).toBe(false);
+    expect(animator.iceSprites.get(6).frame).toBe('tile-blast-gate');
+    expect(animator.boardOutline).not.toBeNull();
+    const outline = animator.boardOutline;
+    animator.drawCells();
+    expect(animator.boardOutline).toBe(outline);
+  });
+
   it.each(['atlas', 'svg'])(
     'draws thematic floor signals, vine bindings and pearl exits from %s textures',
     (mode) => {
       const { animator, image } = renderer(mode, 391);
       animator.tiles = [
-        { signal: 'lantern', signalHealth: 1 },
+        { signal: 'spore', signalHealth: 1, sporeAxis: 'row' },
         { signal: 'core', signalHealth: 3, coreCharges: 4 },
         { exit: true },
         { rootGroup: 'a', chainHealth: 1 },
@@ -307,6 +324,21 @@ describe('fossil and linked root presentation', () => {
 });
 
 describe('intuitive goal and guide labels', () => {
+  it('keeps a selected inventory power when a missing corner is targeted', async () => {
+    const game = useGameStore();
+    Object.assign(game, {
+      sessionActive: true,
+      activeBonusMode: 'tnt',
+      tiles: [{ type: 'void' }],
+      board: [null],
+    });
+    expect(await game.resolveBonusClick(0)).toBe(false);
+    expect(game.activeBonusMode).toBe('tnt');
+    expect(game.animationInProgress).toBe(false);
+    game.previewPowerEffect(0);
+    expect(game.bonusPreview.indices).toEqual([]);
+  });
+
   it('teaches fossils and root knots without misidentifying them as ice, stone or ordinary chains', () => {
     const tiles = applyDeepMineSpec(
       Array.from({ length: 25 }, () => ({ type: 'standard', health: 0, maxHealth: 0 })),
@@ -331,19 +363,19 @@ describe('intuitive goal and guide labels', () => {
 
   it('keeps skinned guide art and labels consistent with the actual signals and delivery goal', () => {
     const tiles = [
-      { signal: 'lantern', signalHealth: 1 },
+      { signal: 'spore', signalHealth: 1, sporeAxis: 'row' },
       { signal: 'core', signalHealth: 4 },
       { exit: true },
     ];
     const guide = obstaclesInLevel(tiles, 'underground-reservoir');
-    expect(guide.map(({ id }) => id)).toEqual(['mushroom', 'brazier', 'pearl']);
+    expect(guide.map(({ id }) => id)).toEqual(['spore', 'brazier', 'pearl']);
     expect(guide.map(({ art }) => art)).toEqual([
       '/art/obstacles/mushroom.svg',
       '/art/obstacles/brazier.svg',
       '/art/obstacles/pearl.svg',
     ]);
     expect(obstaclesInLevel(tiles, 'older-unregistered').map(({ id }) => id)).toEqual([
-      'lantern',
+      'spore',
       'charge-core',
       'relic',
     ]);
@@ -353,13 +385,13 @@ describe('intuitive goal and guide labels', () => {
     const levels = generateLevelConfigs();
     const campaign = useCampaignStore();
     campaign.seenObstacles = OBSTACLES.filter(
-      (item) => !['fossil', 'root-knot'].includes(item.id),
+      (item) => !['encased-fossil', 'root-knot'].includes(item.id),
     ).map(({ id }) => id);
     const firstFossil = obstaclesInLevel(levels[372].tiles, levels[372].theme);
     expect(
       firstFossil.filter(({ id }) => !campaign.seenObstacles.includes(id)).map(({ id }) => id),
-    ).toEqual(['fossil']);
-    campaign.markObstaclesSeen(['fossil']);
+    ).toEqual(['encased-fossil']);
+    campaign.markObstaclesSeen(['encased-fossil']);
     expect(
       obstaclesInLevel(levels[373].tiles, levels[373].theme).filter(
         ({ id }) => !campaign.seenObstacles.includes(id),
@@ -416,7 +448,7 @@ describe('intuitive goal and guide labels', () => {
   it('uses the same mushroom, brazier and pearl pictures for counters and guide entries', async () => {
     const game = useGameStore();
     const initialTiles = [
-      { signal: 'lantern', signalHealth: 1 },
+      { signal: 'spore', signalHealth: 1, sporeAxis: 'row' },
       { signal: 'core', signalHealth: 4 },
       { exit: true },
     ];
@@ -430,7 +462,7 @@ describe('intuitive goal and guide labels', () => {
     const html = await renderToString(
       createSSRApp({ render: () => h(MineGoals, { initialTiles }) }).use(pinia),
     );
-    expect(html).toContain('Glowshrooms: 0 / 1');
+    expect(html).toContain('Spore relays: 0 / 1');
     expect(html).toContain('Brazier charges: 0 / 4');
     expect(html).toContain('Pearls to deliver: 0 / 1');
     for (const { art } of obstaclesInLevel(initialTiles, 'underground-reservoir'))

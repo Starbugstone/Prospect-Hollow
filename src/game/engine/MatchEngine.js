@@ -2,6 +2,7 @@ import { BonusActivator } from './BonusActivator.js';
 import { applyBonuses, detectBonusFromMatches } from './MatchPatterns.js';
 import { BOARD_BONUSES, canSwapGem, isAdjacent } from './TileRules.js';
 import { getBonusFusion } from './BonusFusion.js';
+import { isPlayableCell } from './BoardTopology.js';
 
 const bonusActivator = new BonusActivator();
 const noMatch = (board, cols, rows) => ({
@@ -99,7 +100,9 @@ export class MatchEngine {
 
     // Bonuses survive passive alignments; only activation can consume them.
     const typeAt = (index) =>
-      board[index]?.type !== 'relic' && !bonusActivator.isBonus(board[index]?.type)
+      isPlayableCell(tiles[index]) &&
+      board[index]?.type !== 'relic' &&
+      !bonusActivator.isBonus(board[index]?.type)
         ? board[index]?.type
         : null;
 

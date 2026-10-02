@@ -1,7 +1,7 @@
-// Append-only groups 63–67, levels 373–402. These caverns introduce sediment
-// fossils and linked roots, then combine familiar goals in more demanding routes.
-// Five colors, open side columns and the bottom two rows remain campaign rules.
-// A chapter's fifth puzzle is a breather; its sixth brings the theme together.
+// Endgame groups 63–67, levels 373–402. Broad upper crafting rooms feed
+// shaped chambers, blast-only fossil beds and constrained treasure routes.
+// Each fifth puzzle eases the workload while retaining a bonus-placement goal.
+// Published reward/star thresholds remain compatible with queued victories.
 const COLS = 7;
 const ROWS = 9;
 const PLANS = [
@@ -10,7 +10,7 @@ const PLANS = [
     name: 'Fossil beds',
     style: 'fossil',
     motif: 'pocket',
-    fossilLayers: 2,
+    fossilLayers: 1,
     stops: [
       'First ammonite',
       'Twin discoveries',
@@ -21,37 +21,36 @@ const PLANS = [
     ],
     levels: [
       {
-        board: '......./......./......./..11.../..11.../......./......./......./.......',
-        ice: 42,
+        board: '......./......./......./......./..11.../..11.../......./_....._/_....._',
+        ice: 54,
         fossilLayers: 1,
-        tip: 'Match over the dusty fossil pieces to brush them clean. Reveal every piece and the fossil collects itself.',
+        tip: 'These fossil beds need direct bonus hits. Match four gems for a bomb, or make a T or L for a cross. Crack all four pieces to collect the fossil.',
       },
       {
-        board: '......./......./.11..../.11..../......./....22./....22./......./.......',
-        ice: 72,
-        tip: 'Two fossils hide under deeper dust. Match on each dusty piece twice; the exposed pieces stay clean.',
+        board: '......./......./......./......./BD...../11_..../11_..../___..../___....',
+        ice: 64,
+        tip: 'A fossil fills the side alcove. Use a cross along its row or drop a bomb above it. Dark banded rock needs two direct bonus hits.',
       },
       {
-        board: '......./......./.11..#./.11..../...22../.3322../.33..#./......./.......',
-        ice: 66,
-        tip: 'Choose a fossil to uncover first. Open the stone shelves from the clear side lanes.',
-      },
-      {
-        board: '......./......./.11.22./.11.22./...X.../..33.../.X33.X./......./.......',
-        ice: 66,
-        tip: 'Brush into the three fossil pockets. A bonus can clean several pieces and break a reinforced shelf together.',
-      },
-      {
-        board: '......./......./......./..11.../..11.../......./......./......./.......',
+        board: '......./......./......./......./BD...DB/11...22/11...22/___D___/___.___',
         ice: 56,
-        fossilLayers: 1,
-        tip: 'A soft sand bed. One little fossil and room to enjoy long cascades.',
+        tip: 'Two deep alcoves need carefully placed bonuses. A cross can reach fossil pieces across the gap; ordinary matches cannot crack their casing.',
       },
       {
-        board: '......./.11.22./.11.22./..#.#../...o.../.33.44./.33.44./......./.......',
+        board: '......./......./......./......./DD...DD/11.B.22/11...22/___.___/___.___',
+        ice: 58,
+        tip: 'Craft bonuses in the wide chamber, then aim them into the narrow excavation shafts. Open the central gate and both fossil beds.',
+      },
+      {
+        board: '......./......./......./......./...B.../..11.../..11.../_....._/_....._',
+        ice: 44,
+        fossilLayers: 1,
+        tip: 'A shorter excavation. Make a bonus to crack the little fossil and its dark rock gate; there is plenty of room to prepare it.',
+      },
+      {
+        board: '......./......./......./......./DD.33DD/11.3322/11...22/___..__/___..__',
         ice: 60,
-        coreCharges: 4,
-        tip: 'Reveal the four fossils. Nearby matches charge the brazier, whose free bomb can brush a whole pocket clean.',
+        tip: 'Three encased fossils guard the deep galleries. Build crosses for the long rows and bombs for the joins; every discovery needs direct bonus hits.',
       },
     ],
   },
@@ -64,43 +63,41 @@ const PLANS = [
     stops: [
       'First glow',
       'Mushroom trails',
-      'Spore fossils',
+      'Hanging chambers',
       'Deep bloom',
       'Quiet glade',
       'Forest of light',
     ],
     levels: [
       {
-        board: '......./......./..#.#../.l...l./...#.../..l.l../...#.../......./.......',
-        ice: 86,
-        tip: 'Match on or beside each mushroom to make it glow. Lit mushrooms stay lit and gems move freely over them.',
+        board: '......./......./......./...v.../......./_..D.._/__DhD__/__...__/__...__',
+        ice: 52,
+        tip: 'Match beside an arrow mushroom to send spores along its whole row or column. The beam can wake another mushroom. Finish thick rock with a direct bonus hit.',
       },
       {
-        board: '......./......./.##..../.l...l./....##./.l...l./...l.../......./.......',
-        ice: 88,
-        tip: 'Light the mushroom trail from either side. Open the staggered shelves to reach the inner glow.',
+        board: '......./.h...v./......./......./.D.D.h./_....._/__D.D__/__v.h__/__...__',
+        ice: 70,
+        tip: 'Follow the arrow trail: a row beam can wake a column beam. Choose where to start the chain, then craft bonuses for rock outside the beams.',
       },
       {
-        board: '......./......./.11.22./.11.22./.l...l./..#.#../.l...l./......./.......',
-        ice: 74,
-        tip: 'Light the four mushrooms and brush both fossils clean. Each finished discovery stays complete.',
+        board: '......./......./......./......./D.h.Dv./..._.../.v._.h./D.._..D/..._...',
+        ice: 76,
+        tip: 'The forest splits into two hanging chambers. Send spores through their rows and columns, then aim bombs into the remaining dark gates.',
       },
       {
-        board: '......./......./.X...X./.l...l./...o.../.X...X./...X.../......./.......',
-        ice: 86,
-        coreCharges: 5,
-        tip: 'Match beside the brazier to fill its five pips. Use the free bomb to open a shelf and light nearby mushrooms.',
-      },
-      {
-        board: '......./......./......./.l...l./......./......./......./......./.......',
+        board: '......./......./......./......./_.v.v._/__DhD__/__.B.__/__D.D__/__h.v__',
         ice: 62,
-        tip: 'A quiet glade. Two friendly mushrooms leave plenty of room for combinations.',
+        tip: 'Column beams reach deep into the mushroom stem. A bonus must open the central gate that lies between the beam paths.',
       },
       {
-        board: '......./......./.X.l.X./.l...l./..o.o../.l...l./.X.l.X./......./.......',
-        ice: 88,
-        coreCharges: 5,
-        tip: 'Wake the whole forest. Charge both braziers and use their bombs to reach the remaining mushrooms.',
+        board: '......./......./......./......./_.h..D_/_....._/__...__/__.v.__/__...__',
+        ice: 48,
+        tip: 'A quiet glade with two arrow mushrooms. Let their spores help, then place one more bonus against the thick gate.',
+      },
+      {
+        board: '......./......./......./......./Dv.D.vD/..._.../.h._.h./D.._..D/.v._.v.',
+        ice: 78,
+        tip: 'Wake the spore network in both chambers. Its beams clear long paths, but the dark corner gates need your own well-placed bonuses.',
       },
     ],
   },
@@ -120,36 +117,36 @@ const PLANS = [
     ],
     levels: [
       {
-        board: '......./......./......./...K.../..KkK../...K.../......./......./.......',
-        ice: 42,
-        tip: 'Match beside the root knot to cut it. Every connected vine releases together; matching a vine also frees that gem.',
+        board: '......./......./......./......./_..B.._/_..K.._/_.KkK._/__.K.__/__...__',
+        ice: 54,
+        tip: 'Cut the knot with a nearby match to release its connected vines. The dark gate above it needs a direct bomb or cross hit.',
       },
       {
-        board: '......./......./..K..../.KkK.../..K.M../...MmM./....M../......./.......',
-        ice: 86,
-        tip: 'Follow the visible vines to their knots. Choose which knot frees the most useful passage first.',
+        board: '......./......./......./......./D.....D/.K._.M./KkK_MmM/.K._.M./..._...',
+        ice: 72,
+        tip: 'Two roots divide the hanging vaults. Cut the useful knot first, then send bonuses into the rock gates at the two entrances.',
       },
       {
-        board: '......./......./.11.22./.11.22./..K..../.KkK.../..K..../......./.......',
-        ice: 76,
-        tip: 'Cut the knot to release the lower gallery, then brush the two fossils clean.',
+        board: '......./.R...R./......./......./.D...D./.K._.M./KkK_MmM/.K._.M./.E._.E.',
+        ice: 70,
+        tip: 'A relic waits over each vault. Blast the entrance gates, cut the roots and clear beneath the treasures to reach their exits.',
       },
       {
-        board: '......./......./..K.X../.KkK.../..K.M../.X.MmM./....M../......./.......',
-        ice: 86,
-        knotHealth: 2,
-        tip: 'Thick knots take two nearby matches. Their vines release together when the second hit cuts through.',
-      },
-      {
-        board: '......./......./......./..K..../.KkK.../..K..../......./......./.......',
+        board: '......./......./......./......./DD...DD/.K._.M./KkK_MmM/.K._.M./..._...',
         ice: 60,
-        tip: 'A garden clearing. Cut the little knot and enjoy the open gallery.',
+        knotHealth: 2,
+        tip: 'The twin shafts have thick entrance gates. Aim bonuses into each entrance, then cut each knot twice to release the hanging vines.',
       },
       {
-        board: '......./..R.R../..K..../.KkK.../..K.M../...MmM./....M../......./..E.E..',
-        ice: 84,
+        board: '......./......./......./......./...D.../_..K.._/_.KkK._/_..K.._/_....._',
+        ice: 42,
+        tip: 'A sheltered garden vault. Cut one knot and craft a bonus for the thick gate above it.',
+      },
+      {
+        board: '......./.R...R./......./......./BD...DB/.K._.M./KkK_MmM/.K._.M./.E._.E.',
+        ice: 58,
         knotHealth: 2,
-        tip: 'Cut both thick knots to free the treasure shafts. Clear beneath each relic to drop it into its glowing exit.',
+        tip: 'Free both narrow treasure shafts. Bonuses crack the four entrance gates; cutting each thick knot releases its whole root group.',
       },
     ],
   },
@@ -158,6 +155,7 @@ const PLANS = [
     name: 'Underground reservoir',
     style: 'reservoir',
     motif: 'steps',
+    gravity: 'funnel',
     stops: [
       'First pearl',
       'Twin pools',
@@ -168,36 +166,34 @@ const PLANS = [
     ],
     levels: [
       {
-        board: '......./...R.../..#..../....#../..#..../....#../......./......./...E...',
-        ice: 88,
-        tip: 'Clear beneath the pearl to drop it into its glowing basket. Pearls cannot swap or be blasted away.',
+        board: '......./......./......./......./R.....R/_....._/__...__/___B___/___E___',
+        ice: 64,
+        tip: 'Both pearls flow down the V into one basket. Craft a bomb or cross to break the dark throat gate, then clear the gems beneath the pearls.',
       },
       {
-        board: '......./..R.R../..X..../....#../..#..../....X../......./......./..E.E..',
-        ice: 86,
-        tip: 'Two pearl pools. Open each staggered shelf and keep clearing beneath the pearls.',
+        board: '......./......./......./......./.R...R./_....._/__.B.__/___D___/___E___',
+        ice: 70,
+        tip: 'One basket, two rock bottlenecks. A bomb beside the neck can hit both gates; the thick lower gate needs two hits.',
       },
       {
-        board: '......./.R.R.R./..#.#../.l...l./...X.../.l...l./..#.#../......./.E.E.E.',
-        ice: 84,
-        tip: 'Light the mushrooms beside the channels. Bring all three pearls down to their matching baskets.',
+        board: '......./......./......./......./R..R..R/_.B.B._/__...__/___D___/___E___',
+        ice: 72,
+        tip: 'Three pearls share the narrowing bowl. Plan a bonus that opens the side gates and the single throat together.',
       },
       {
-        board: '......./..R.R../..K..../.KkK.../..K.M../...MmM./....M../......./..E.E..',
-        ice: 88,
-        knotHealth: 2,
-        tip: 'Cut the root knots guarding the channels. The released vines give both pearls a clear route down.',
+        board: '......./......./...R.../......./.R.R.R./_B...B_/__.D.__/___D___/___E___',
+        ice: 68,
+        tip: 'Four pearls queue for one exit. Open the side mouths with bonuses, then break both thick gates in the neck.',
       },
       {
-        board: '......./..R.R../......./......./......./......./......./......./..E.E..',
-        ice: 60,
-        tip: 'Still water and open channels. Bring both pearls home with flowing cascades.',
+        board: '......./......./......./......./.R...R./_....._/__...__/___B___/___E___',
+        ice: 46,
+        tip: 'A quieter pearl pool. One well-placed bonus opens the V-shaped channel to its single basket.',
       },
       {
-        board: '......./.R.R.R./.X...X./..#.#../.o...o./..X.X../...#.../......./.E.E.E.',
-        ice: 82,
-        coreCharges: 5,
-        tip: 'Charge both braziers to open the reinforced channels. Collect all three pearls and clear the remaining ice.',
+        board: '......./......./R.....R/......./.R.R.R./_D...D_/__.D.__/___D___/___E___',
+        ice: 70,
+        tip: 'Five pearls, four thick gates and one basket. Craft crosses and bombs in the wide bowl; aim them into the neck to bring every pearl home.',
       },
     ],
   },
@@ -217,49 +213,51 @@ const PLANS = [
     ],
     levels: [
       {
-        board: '......./......./.X...X./..o.o../...#.../..#.#../......./......./.......',
-        ice: 78,
+        board: '......./......./......./......./_.o.o._/__...__/__.B.__/___.___/___.___',
+        ice: 54,
+        gravity: 'funnel',
         coreCharges: 4,
-        tip: 'Match on or beside each brazier to fill its four pips. A full brazier gives you a free bomb.',
+        tip: 'Charge both braziers for free bombs. Guide a bonus down the chute and use it to break the dark gate; nearby ordinary matches cannot damage that rock.',
       },
       {
-        board: '......./......./.XX..../...o.../....XX./.o...o./...#.../......./.......',
-        ice: 86,
+        board: '......./......./......./......./_o.D.o_/__...__/__D.D__/___D___/___.___',
+        ice: 64,
+        gravity: 'funnel',
         coreCharges: 5,
-        tip: 'Charge the braziers near the copper shelves. Place their bombs where they can break several stones together.',
+        tip: 'The copper chute has several thick gates. Charge the side braziers, then craft extra bonuses and aim them where one blast can hit several gates.',
       },
       {
-        board: '......./......./.11.22./.11.22./..o.o../.X...X./...#.../......./.......',
+        board: '......./......./......./......./_.o11._/__.11__/__D.o__/___D___/___.___',
+        ice: 56,
+        gravity: 'funnel',
+        coreCharges: 5,
+        tip: 'An encased fossil blocks the hot chute. Use direct bonus hits to open its pieces and the lower gates; the braziers can help you prepare more bombs.',
+      },
+      {
+        board: '......./......./......./......./D.....D/..._.../.D._.D./..o_o../..._...',
         ice: 72,
         coreCharges: 5,
-        tip: 'Brush the heat-baked fossils clean. Charged braziers give you bombs to reach the deepest pieces.',
+        tip: 'Two foundry wells demand different blast positions. Charge their braziers and open every thick basalt gate with direct bonus hits.',
       },
       {
-        board: '......./......./.X...X./..K.o../.KkK.../..K.X../.o..#../......./.......',
-        ice: 88,
-        coreCharges: 5,
-        knotHealth: 2,
-        tip: 'Cut the thick root knot and charge both braziers. A well-placed bomb can open basalt and release the vines together.',
-      },
-      {
-        board: '......./......./......./..o..../......./......./......./......./.......',
-        ice: 62,
+        board: '......./......./......./......./_.o.o._/_....._/__.D.__/__...__/__...__',
+        ice: 42,
         coreCharges: 4,
-        tip: 'A warm hearth. Charge one brazier and enjoy a generous open board.',
+        tip: 'A warm hearth with one thick gate. Charge the two braziers and place their bombs where they will open the lower chamber.',
       },
       {
-        board: '......./.R.R.R./.X...X./..o.o../...X.../.X.o.X./..#.#../......./.E.E.E.',
-        ice: 82,
+        board: '......./......./......./......./D.....D/..._.../.DD_DD./..o_o../..._...',
+        ice: 76,
         coreCharges: 5,
-        tip: 'Bring all three relics out of the forge. Charge the three braziers and use their bombs to open the final basalt shelves.',
+        tip: 'Open the twin basalt vaults. Two braziers help, but careful bonus placement and combinations are needed to break all six thick gates.',
       },
     ],
   },
 ];
 
-// 1–4 mark four-piece fossils. k/m/n are root knots; K/M/N are
-// their visibly connected vines. l is a mushroom/lantern, o a brazier/core.
-// Everything else uses the established expansion map alphabet.
+// 1–4 mark solid four-piece fossils. k/m/n are root knots; K/M/N are
+// their connected vines. h/v are row/column spore relays, o is a brazier.
+// _ is permanent void; B/D are one/two-hit blast-only rock gates.
 export function parseDeepMineBoard(board, { fossilLayers = 2, knotHealth = 1 } = {}) {
   const rows = board.trim().split(/[\s/]+/);
   if (rows.length !== ROWS || rows.some((row) => row.length !== COLS))
@@ -267,6 +265,7 @@ export function parseDeepMineBoard(board, { fossilLayers = 2, knotHealth = 1 } =
   const cells = [...rows.join('')];
   const cores = [];
   const signals = [];
+  const spores = [];
   const fossilGroups = new Map();
   const rootGroups = new Map();
   const map = cells.map((symbol, index) => {
@@ -283,7 +282,9 @@ export function parseDeepMineBoard(board, { fossilLayers = 2, knotHealth = 1 } =
       } else root.bindings.push(index);
     } else if (symbol === 'o') cores.push(index);
     else if (symbol === 'l') signals.push(index);
-    else if (/[.#XcrbgRE]/.test(symbol)) return symbol;
+    else if (symbol === 'h' || symbol === 'v')
+      spores.push({ index, axis: symbol === 'h' ? 'row' : 'column' });
+    else if (/[.#XcrbgRE_BD]/.test(symbol)) return symbol;
     else throw new Error(`Unknown deep mine board symbol: ${symbol}`);
     return '.';
   });
@@ -295,7 +296,7 @@ export function parseDeepMineBoard(board, { fossilLayers = 2, knotHealth = 1 } =
       footprint.some((cell, part) => cell !== start + (part % 2) + Math.floor(part / 2) * COLS)
     )
       throw new Error('Fossil footprints must be connected 2 × 2 squares');
-    return { id: `fossil-${id}`, cells: footprint, layers: fossilLayers };
+    return { id: `fossil-${id}`, cells: footprint, layers: fossilLayers, encased: true };
   });
   const roots = [...rootGroups.values()].map((root) => {
     if (
@@ -317,10 +318,46 @@ export function parseDeepMineBoard(board, { fossilLayers = 2, knotHealth = 1 } =
     ).join('/'),
     cores,
     signals,
+    spores,
     fossils,
     roots,
   };
 }
+
+// Preserve the first published accounting rules for queued/offline victories.
+// Layout difficulty is independent of these chest and optional speed targets.
+const PUBLISHED_REWARD_TARGETS = [
+  [17500, 121000],
+  [33500, 163000],
+  [35000, 167000],
+  [36000, 169000],
+  [23000, 135000],
+  [36500, 171000],
+  [36000, 169000],
+  [36500, 170000],
+  [36500, 171000],
+  [38500, 176000],
+  [24500, 139000],
+  [42000, 185000],
+  [18000, 122000],
+  [36500, 171000],
+  [37000, 172000],
+  [39000, 177000],
+  [25000, 140000],
+  [39500, 211000],
+  [35000, 183000],
+  [36500, 203000],
+  [38000, 223000],
+  [40500, 213000],
+  [26000, 175000],
+  [41000, 230000],
+  [35500, 168000],
+  [41500, 183000],
+  [39500, 178000],
+  [41000, 182000],
+  [25500, 141000],
+  [43000, 236000],
+];
 
 export const DEEP_MINE_CHAPTERS = PLANS.map(({ id, name, style }) => ({
   id,
@@ -334,11 +371,15 @@ export const DEEP_MINE_CHAPTERS = PLANS.map(({ id, name, style }) => ({
 export const DEEP_MINE_LEVEL_NAMES = PLANS.flatMap(({ name, stops }) =>
   stops.map((stop) => `${name}: ${stop}`),
 );
-export const DEEP_MINE_LEVELS = PLANS.flatMap((plan) =>
-  plan.levels.map(({ board, fossilLayers = plan.fossilLayers, knotHealth, ...level }) => ({
+export const DEEP_MINE_LEVELS = PLANS.flatMap((plan, chapter) =>
+  plan.levels.map(({ board, fossilLayers = plan.fossilLayers, knotHealth, ...level }, phase) => ({
     ...parseDeepMineBoard(board, { fossilLayers, knotHealth }),
     ...level,
-    openExitRows: 2,
+    openExitRows: 0,
+    maxIceLayers: 2,
+    chestTarget: PUBLISHED_REWARD_TARGETS[chapter * 6 + phase][0],
+    speedTargetMs: PUBLISHED_REWARD_TARGETS[chapter * 6 + phase][1],
+    ...((level.gravity ?? plan.gravity) ? { gravity: level.gravity ?? plan.gravity } : {}),
     coreBonuses: ['bomb'],
     motif: plan.motif,
   })),

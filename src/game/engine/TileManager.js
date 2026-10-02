@@ -3,8 +3,14 @@ import { createGem, randomGemType, GEM_TYPES } from './GemFactory.js';
 import { detectBonusFromMatches } from './MatchPatterns.js';
 import { isAnchored, neighborsOf } from './TileRules.js';
 import { BonusActivator } from './BonusActivator.js';
-import { signalTargets, isChargeCore, coreReleaseTarget } from './ChapterMechanics.js';
+import {
+  signalTargets,
+  sporeTargets,
+  isChargeCore,
+  coreReleaseTarget,
+} from './ChapterMechanics.js';
 import { collectFinishedFossils, releaseCutRoots } from './DeepMineMechanics.js';
+import { incomingGravity, isPlayableCell } from './BoardTopology.js';
 
 const matchEngine = new MatchEngine();
 const bonusActivator = new BonusActivator();
@@ -44,11 +50,13 @@ export class TileManager {
       indices: [...match.indices],
       orientation: match.orientation,
       fusion: match.fusion,
+      sporeBursts: match.sporeBursts,
     }));
     let totalLayersCleared = 0;
     // A charge core gains at most one charge per move, however long the cascade.
     const chargedCores = new Set();
     let relicsCollected = 0;
+    let queuedSpores = [];
 
     while (pendingMatches.length) {
       if (iteration >= 128) throw new Error('Cascade did not settle after 128 steps');
@@ -62,6 +70,7 @@ export class TileManager {
       pendingMatches.forEach((match) => {
         match.indices.forEach((index) => {
           const tile = tiles[index];
+          if (!isPlayableCell(tile)) return;
           if (!tile || tile.state !== 'FROZEN' || fusionTargets.has(index)) {
             if (index < 0 || index >= workingBoard.length) return;
             impacted.add(index);
@@ -124,10 +133,15 @@ export class TileManager {
         tileUpdates: [],
         collectedJewels: [],
         ...(fusion ? { bonusFusion: { ...fusion, targets: [...impacted] } } : {}),
+        ...(pendingMatches.some((match) => match.sporeBursts)
+          ? { sporeBursts: pendingMatches.flatMap((match) => match.sporeBursts ?? []) }
+          : {}),
       };
 
       for (const index of hasSignals
-        ? signalTargets(tiles, [...impacted, ...protectedIndices], totalCols, totalRows)
+        ? signalTargets(tiles, [...impacted, ...protectedIndices], totalCols, totalRows, [
+            ...matchedIndices,
+          ])
         : []) {
         const core = isChargeCore(tiles[index]);
         if (core && chargedCores.has(index)) continue;
@@ -136,6 +150,14 @@ export class TileManager {
         tiles[index].signalHealth = core ? tiles[index].signalHealth - 1 : 0;
         totalLayersCleared++;
         step.tileUpdates.push({ index, signalHealth: tiles[index].signalHealth });
+        if (tiles[index].signal === 'spore') {
+          const axis = tiles[index].sporeAxis === 'column' ? 'column' : 'row';
+          queuedSpores.push({
+            index,
+            axis,
+            targets: sporeTargets(tiles, index, axis, totalCols, totalRows),
+          });
+        }
         if (!core || tiles[index].signalHealth) continue;
         const target = coreReleaseTarget(
           workingBoard,
@@ -181,7 +203,12 @@ export class TileManager {
               match.indices.includes(index) &&
               (match.type === tile.sealColor || !GEM_TYPES.includes(match.type)),
           );
-        if (tile && tile.health > 0 && sealHit) {
+        const specialHit =
+          !tile?.bonusOnly ||
+          pendingMatches.some(
+            (match) => !GEM_TYPES.includes(match.type) && match.indices.includes(index),
+          );
+        if (tile && tile.health > 0 && sealHit && specialHit) {
           const before = tile.health;
           tile.health = Math.max(0, tile.health - 1);
           if (tile.maxHealth == null) {
@@ -245,6 +272,20 @@ export class TileManager {
         );
         pendingMatches = [{ type: 'bonus-activation', indices, ...(fusion ? { fusion } : {}) }];
         pendingBonus = null;
+        continue;
+      }
+
+      if (queuedSpores.length) {
+        // Resolve every one-shot relay and its bonus reactions before gravity.
+        // A bonus already fired by the preceding phase is absent from this board.
+        steps.push(step);
+        const bursts = queuedSpores;
+        queuedSpores = [];
+        const indices = bonusActivator.resolveChain(workingBoard, totalCols, totalRows, {
+          tiles,
+          targets: bursts.flatMap((burst) => burst.targets),
+        });
+        pendingMatches = [{ type: 'spore-burst', indices, sporeBursts: bursts }];
         continue;
       }
 
@@ -351,6 +392,10 @@ export class TileManager {
   }
 
   applyGravity(workingBoard, tiles, totalCols, totalRows, gemTypes, iteration, step) {
+    if (tiles.some((tile) => !isPlayableCell(tile) || Number.isInteger(tile?.flowTo))) {
+      this.applyShapedGravity(workingBoard, tiles, totalCols, totalRows, gemTypes, iteration, step);
+      return;
+    }
     for (let col = 0; col < totalCols; col += 1) {
       let writeRow = totalRows - 1;
       for (let row = totalRows - 1; row >= 0; row -= 1) {
@@ -385,26 +430,87 @@ export class TileManager {
       for (let spawnRow = writeRow; spawnRow >= 0; spawnRow -= 1) {
         const index = spawnRow * totalCols + col;
         if (isAnchored(tiles[index])) continue;
-        let type = randomGemType(gemTypes);
-        // A pathological RNG (or deterministic test) must not create an endless cascade.
-        if (iteration >= 24) {
-          type =
-            gemTypes.find(
-              (candidate) =>
-                ![1, totalCols].some((stride) =>
-                  [-2, -1, 0].some((offset) => {
-                    const run = [0, 1, 2].map((n) => index + (offset + n) * stride);
-                    if (run.some((i) => i < 0 || i >= workingBoard.length)) return false;
-                    if (stride === 1 && run.some((i) => Math.floor(i / totalCols) !== spawnRow))
-                      return false;
-                    return run.every((i) => i === index || workingBoard[i]?.type === candidate);
-                  }),
-                ),
-            ) ?? type;
-        }
-        const newGem = createGem(type);
+        const newGem = createGem(
+          this.refillType(workingBoard, index, totalCols, gemTypes, iteration),
+        );
         workingBoard[index] = newGem;
         step.spawns.push({ index, gem: newGem });
+      }
+    }
+  }
+
+  refillType(board, index, cols, gemTypes, iteration) {
+    const type = randomGemType(gemTypes);
+    if (iteration < 24) return type;
+    // A technical cascade guard, never a player allowance. Keep the original
+    // rectangular refill order and RNG calls while sharing the shaped fallback.
+    return (
+      gemTypes.find(
+        (candidate) =>
+          ![1, cols].some((stride) =>
+            [-2, -1, 0].some((offset) => {
+              const run = [0, 1, 2].map((n) => index + (offset + n) * stride);
+              if (run.some((cell) => cell < 0 || cell >= board.length)) return false;
+              if (
+                stride === 1 &&
+                run.some((cell) => Math.floor(cell / cols) !== Math.floor(index / cols))
+              )
+                return false;
+              return run.every((cell) => cell === index || board[cell]?.type === candidate);
+            }),
+          ),
+      ) ?? type
+    );
+  }
+
+  applyShapedGravity(board, tiles, cols, rows, gemTypes, iteration, step) {
+    const incoming = incomingGravity(tiles, cols, rows);
+    for (let index = 0; index < board.length; index++)
+      if (!isPlayableCell(tiles[index])) board[index] = null;
+
+    const candidatesAbove = (index, suffix = [], choices = []) => {
+      const tile = tiles[index];
+      if (
+        !isPlayableCell(tile) ||
+        tile?.state === 'FROZEN' ||
+        (tile?.type === 'blocker' && tile.health > 0)
+      )
+        return [];
+      const path = [index, ...suffix];
+      if (board[index] && !(tile?.chainHealth > 0)) return [{ from: index, path, choices }];
+      const parents = incoming[index];
+      if (!parents.length) return [{ entry: index, path, choices }];
+      const cursor =
+        Number.isInteger(tile?.flowCursor) && tile.flowCursor >= 0
+          ? tile.flowCursor % parents.length
+          : 0;
+      return parents.flatMap((_, offset) => {
+        const branch = (cursor + offset) % parents.length;
+        return candidatesAbove(parents[branch], path, [
+          ...choices,
+          { index, cursor: (branch + 1) % parents.length },
+        ]);
+      });
+    };
+
+    // Lower rows only: each original gem can move once, with one final receipt.
+    // Existing upstream pieces take precedence over refill. Rotating merge
+    // choices prevents perpetual center refill from starving either pearl arm.
+    for (let index = board.length - 1; index >= 0; index--) {
+      if (board[index] || isAnchored(tiles[index])) continue;
+      const candidates = candidatesAbove(index);
+      const chosen = candidates.find((candidate) => candidate.from != null) ?? candidates[0];
+      if (!chosen) continue;
+      for (const choice of chosen.choices) tiles[choice.index].flowCursor = choice.cursor;
+      if (chosen.from != null) {
+        const gem = board[chosen.from];
+        board[chosen.from] = null;
+        board[index] = gem;
+        step.drops.push({ from: chosen.from, to: index, gem, path: chosen.path });
+      } else {
+        const gem = createGem(this.refillType(board, index, cols, gemTypes, iteration));
+        board[index] = gem;
+        step.spawns.push({ index, gem, path: chosen.path });
       }
     }
   }

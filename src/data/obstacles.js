@@ -1,12 +1,36 @@
 import { mineSignalAppearance, mineRelicAppearance } from './mineThemes';
 export const OBSTACLES = [
   {
+    id: 'encased-fossil',
+    name: 'Encased fossils',
+    art: '/art/obstacles/fossil.svg',
+    instruction:
+      'Fossil rock blocks falling gems. Ordinary matches cannot crack it: make a bonus gem and blast the marked pieces. Open all four pieces to uncover the fossil and free its tunnels. Pieces marked 2 need two blast hits.',
+    present: (tile) => tile.fossilGroup != null && tile.bonusOnly === true,
+  },
+  {
+    id: 'blast-gate',
+    name: 'Blast gates',
+    art: '/art/obstacles/blast-gate.svg',
+    instruction:
+      'The bomb mark needs a direct blast. Make a bomb near it or a cross in its row or column. Clear below a bonus to let it fall into range; swipe or double-tap it to fire. Ordinary matches do no damage. A gate marked 2 takes two hits; a bonus fusion breaks it at once.',
+    present: (tile) => tile.bonusOnly === true && tile.fossilGroup == null,
+  },
+  {
+    id: 'spore',
+    name: 'Spore relays',
+    art: '/art/obstacles/mushroom.svg',
+    instruction:
+      'Match on or beside a mushroom to fire its spore burst along the arrows. The burst clears that row or column, cracks blast gates and triggers mushrooms it hits. Each mushroom fires once.',
+    present: (tile) => tile.signal === 'spore',
+  },
+  {
     id: 'fossil',
     name: 'Buried fossils',
     art: '/art/obstacles/fossil.svg',
     instruction:
       'Match on the dust to uncover the fossil beneath the gems. Clear every patch in its outline and it collects automatically. Two dust layers take two hits; bonuses clear dust too.',
-    present: (tile) => tile.fossilGroup != null,
+    present: (tile) => tile.fossilGroup != null && !tile.bonusOnly,
   },
   {
     id: 'root-knot',
@@ -62,7 +86,8 @@ export const OBSTACLES = [
     art: '/art/blocks/stone.svg',
     instruction:
       'Match directly beside stone, or hit it with a bonus. Diagonal matches do not count. Breaking stone lets the column refill.',
-    present: (tile) => tile.type === 'blocker' && !tile.rootKnot && tile.maxHealth < 2,
+    present: (tile) =>
+      tile.type === 'blocker' && !tile.rootKnot && !tile.bonusOnly && tile.maxHealth < 2,
   },
   {
     id: 'double-ice',
@@ -78,7 +103,8 @@ export const OBSTACLES = [
     art: '/art/blocks/reinforced.svg',
     instruction:
       'Gold-banded stone needs two hits from adjacent matches or bonuses. A fusion can deal both hits at once.',
-    present: (tile) => tile.type === 'blocker' && !tile.rootKnot && tile.maxHealth >= 2,
+    present: (tile) =>
+      tile.type === 'blocker' && !tile.rootKnot && !tile.bonusOnly && tile.maxHealth >= 2,
   },
   {
     id: 'frozen',
