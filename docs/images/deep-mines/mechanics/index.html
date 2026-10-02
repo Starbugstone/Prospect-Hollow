@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <title>Endgame mechanic demos · Prospect Hollow</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #10141e;
+        color: #f6f0e6;
+        font-family: system-ui, sans-serif;
+        line-height: 1.55;
+      }
+      main {
+        max-width: 1400px;
+        margin: auto;
+        padding: 42px 28px 60px;
+      }
+      .back {
+        font-size: 14px;
+        color: #b7c6d6;
+      }
+      .eyebrow {
+        color: #dfbe7e;
+        font-size: 12px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin: 34px 0 12px;
+      }
+      h1 {
+        font-size: clamp(28px, 4vw, 48px);
+        line-height: 1.1;
+        letter-spacing: -1px;
+        margin: 0 0 16px;
+      }
+      .intro {
+        color: #bdc6d4;
+        max-width: 760px;
+        font-size: 17px;
+        margin-bottom: 30px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 24px;
+      }
+      article {
+        min-width: 0;
+        border: 1px solid #3c4353;
+        border-radius: 18px;
+        background: #181e2c;
+        padding: 22px;
+        scroll-margin-top: 24px;
+      }
+      .card-heading {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .number {
+        color: #e3c083;
+        font-size: 13px;
+        font-weight: 700;
+        border: 1px solid #6b5f49;
+        padding: 5px 9px;
+        border-radius: 8px;
+      }
+      h2 {
+        font-size: 21px;
+        margin: 0;
+      }
+      article p {
+        color: #bcc7d6;
+        font-size: 15px;
+        min-height: 48px;
+        margin: 15px 0 20px;
+      }
+      video {
+        width: 100%;
+        aspect-ratio: 8/5;
+        display: block;
+        background: #090c13;
+        border-radius: 10px;
+      }
+      .download {
+        display: inline-flex;
+        gap: 12px;
+        align-items: center;
+        color: #ecd19f;
+        text-decoration: none;
+        font-size: 14px;
+        margin-top: 15px;
+        padding: 5px 0;
+      }
+      .download:hover {
+        text-decoration: underline;
+      }
+      a:focus-visible,
+      video:focus-visible {
+        outline: 3px solid #9fe0ff;
+        outline-offset: 5px;
+      }
+      .note {
+        font-size: 13px;
+        color: #9cabc0;
+        margin: 28px 0 0;
+      }
+      footer {
+        margin-top: 30px;
+        border-top: 1px solid #343c4e;
+        padding-top: 20px;
+        color: #a7b4c8;
+        font-size: 13px;
+      }
+      @media (max-width: 850px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        main {
+          padding: 24px 16px;
+        }
+        article {
+          padding: 16px;
+        }
+        article p {
+          min-height: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <a class="back" href="../gallery.html">← All five mine groups</a>
+      <p class="eyebrow">Prospect Hollow · Levels 373–402</p>
+      <h1>See each mechanic in action</h1>
+      <p class="intro">
+        Six focused gameplay demos. Watch the highlighted move, then see what changes. Captions
+        explain the trigger and the result.
+      </p>
+      <section class="grid" aria-label="Six mechanic demonstration videos">
+        <article id="fossil-casings">
+          <div class="card-heading">
+            <span class="number">01</span>
+            <h2>Fossil casings</h2>
+          </div>
+          <p>
+            Ordinary matches leave the rock intact. Position earned bombs to open all four pieces
+            and collect the fossil.
+          </p>
+          <video
+            controls
+            playsinline
+            preload="metadata"
+            poster="fossil-casings.png"
+            aria-label="Fossil casings gameplay demonstration"
+          >
+            <source src="fossil-casings.webm" type="video/webm" />
+            <source src="fossil-casings.mp4" type="video/mp4" />
+            Your browser cannot play this video. Use the download link below.</video
+          ><a class="download" href="fossil-casings.mp4" download
+            >Download MP4 <span aria-hidden="true">↓</span></a
+          >
+        </article>
+        <article id="mushroom-relays">
+          <div class="card-heading">
+            <span class="number">02</span>
+            <h2>Mushroom relays</h2>
+          </div>
+          <p>
+            A vertical spore beam wakes a horizontal mushroom, chaining across the board and
+            cracking gates.
+          </p>
+          <video
+            controls
+            playsinline
+            preload="metadata"
+            poster="mushroom-relays.png"
+            aria-label="Mushroom relays gameplay demonstration"
+          >
+            <source src="mushroom-relays.webm" type="video/webm" />
+            <source src="mushroom-relays.mp4" type="video/mp4" />
+            Your browser cannot play this video. Use the download link below.</video
+          ><a class="download" href="mushroom-relays.mp4" download
+            >Download MP4 <span aria-hidden="true">↓</span></a
+          >
+        </article>
+        <article id="linked-roots">
+          <div class="card-heading">
+            <span class="number">03</span>
+            <h2>Linked roots</h2>
+          </div>
+          <p>A match beside one knot releases all four linked vines at once.</p>
+          <video
+            controls
+            playsinline
+            preload="metadata"
+            poster="linked-roots.png"
+            aria-label="Linked roots gameplay demonstration"
+          >
+            <source src="linked-roots.webm" type="video/webm" />
+            <source src="linked-roots.mp4" type="video/mp4" />
+            Your browser cannot play this video. Use the download link below.</video
+          ><a class="download" href="linked-roots.mp4" download
+            >Download MP4 <span aria-hidden="true">↓</span></a
+          >
+        </article>
+        <article id="pearl-funnel">
+          <div class="card-heading">
+            <span class="number">04</span>
+            <h2>The V-shaped pearl funnel</h2>
+          </div>
+          <p>
+            Open the throat with a cross, then clear below the pearls so they roll inward to one
+            basket.
+          </p>
+          <video
+            controls
+            playsinline
+            preload="metadata"
+            poster="pearl-funnel.png"
+            aria-label="The V-shaped pearl funnel gameplay demonstration"
+          >
+            <source src="pearl-funnel.webm" type="video/webm" />
+            <source src="pearl-funnel.mp4" type="video/mp4" />
+            Your browser cannot play this video. Use the download link below.</video
+          ><a class="download" href="pearl-funnel.mp4" download
+            >Download MP4 <span aria-hidden="true">↓</span></a
+          >
+        </article>
+        <article id="forge-braziers">
+          <div class="card-heading">
+            <span class="number">05</span>
+            <h2>Forge braziers</h2>
+          </div>
+          <p>
+            Nearby matches add charge. A full brazier supplies a free bomb, which is then detonated.
+          </p>
+          <video
+            controls
+            playsinline
+            preload="metadata"
+            poster="forge-braziers.png"
+            aria-label="Forge braziers gameplay demonstration"
+          >
+            <source src="forge-braziers.webm" type="video/webm" />
+            <source src="forge-braziers.mp4" type="video/mp4" />
+            Your browser cannot play this video. Use the download link below.</video
+          ><a class="download" href="forge-braziers.mp4" download
+            >Download MP4 <span aria-hidden="true">↓</span></a
+          >
+        </article>
+        <article id="blast-only-gates">
+          <div class="card-heading">
+            <span class="number">06</span>
+            <h2>Blast-only gates</h2>
+          </div>
+          <p>
+            An ordinary match leaves reinforced rock intact. Two direct bonus hits open its two
+            layers.
+          </p>
+          <video
+            controls
+            playsinline
+            preload="metadata"
+            poster="blast-only-gates.png"
+            aria-label="Blast-only gates gameplay demonstration"
+          >
+            <source src="blast-only-gates.webm" type="video/webm" />
+            <source src="blast-only-gates.mp4" type="video/mp4" />
+            Your browser cannot play this video. Use the download link below.</video
+          ><a class="download" href="blast-only-gates.mp4" download
+            >Download MP4 <span aria-hidden="true">↓</span></a
+          >
+        </article>
+      </section>
+      <p class="note">
+        Recorded from the running game. Setup moves are omitted between labeled positions. Every
+        position comes from legal matches; no inventory powers are supplied or spent. Captions and
+        highlights are recording annotations.
+      </p>
+      <footer>
+        Unlimited moves. No puzzle time limit. The on-screen clock only measures an optional bonus
+        chest.
+      </footer>
+    </main>
+    <script>
+      for (const video of document.querySelectorAll('video'))
+        video.addEventListener('play', () => {
+          for (const other of document.querySelectorAll('video'))
+            if (other !== video) other.pause();
+        });
+    </script>
+  </body>
+</html>

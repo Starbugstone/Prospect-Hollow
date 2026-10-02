@@ -174,3 +174,22 @@ in the recording. No new application console errors or failed game assets were
 observed. The tab retained older Electron-preview startup errors and a failed
 request from an earlier stopped dev server; those predate the tested session.
 The fixtures use a local test profile with no signed-in cloud account.
+
+## Individual mechanic demos
+
+[Open the six-video mechanic gallery](images/deep-mines/mechanics/index.html).
+
+- [Fossil casings](images/deep-mines/mechanics/fossil-casings.mp4): ordinary matches leave the solid casing intact; positioned bombs uncover all four pieces and collect the fossil.
+- [Mushroom relays](images/deep-mines/mechanics/mushroom-relays.mp4): a column beam wakes a row mushroom and both damage gates.
+- [Linked roots](images/deep-mines/mechanics/linked-roots.mp4): cutting the knot releases its four connected vines.
+- [Pearl funnel](images/deep-mines/mechanics/pearl-funnel.mp4): a cross opens the throat, pearls move diagonally inward, and both arrive at one basket.
+- [Forge braziers](images/deep-mines/mechanics/forge-braziers.mp4): nearby matches add charge, a completed brazier releases a free bomb, and that earned bomb is activated.
+- [Blast-only gates](images/deep-mines/mechanics/blast-only-gates.mp4): an ordinary match leaves reinforced gates intact, and two positioned bonus hits open them.
+
+These annotated 1280 × 800 clips use the actual game renderer and resolution
+engine. Each prepared position comes from deterministic legal, hint-led moves on
+the published levels. Labeled transitions omit setup moves; the demonstrated
+actions run through the normal game store with no inventory powers. Each action's
+resulting tiles and gem types are checked against its legal simulation checkpoint.
+The final forge action activates the actual bomb supplied by its brazier.
+MP4 downloads and WebM browser playback are provided for all six clips.
