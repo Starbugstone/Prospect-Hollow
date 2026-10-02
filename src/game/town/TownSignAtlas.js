@@ -28,6 +28,10 @@ export class TownSignAtlas {
     context.fillRect(0, 0, PAGE, PAGE);
     const texture = new CanvasTexture(canvas);
     texture.colorSpace = SRGBColorSpace;
+    // Signs face the camera at a steep angle. Anisotropic filtering keeps their
+    // lettering as crisp as the former one-texture-per-sign boards (three clamps
+    // this to what the device supports).
+    texture.anisotropy = 8;
     const material = horizonMaterial(new MeshStandardMaterial({ map: texture, roughness: 1 }));
     material.userData.signAtlas = true;
     const page = { canvas, context, texture, material, used: 0 };

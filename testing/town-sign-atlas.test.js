@@ -28,6 +28,8 @@ it('paints each sign once into a shared page with its own texture area', () => {
   expect(saloon.material).toBe(bank.material);
   expect(again.geometry).toBe(saloon.geometry);
   expect(d.signAtlas.pages[0].used).toBe(2);
+  // Steeply viewed lettering stays crisp on the shared page.
+  expect(saloon.material.map.anisotropy).toBeGreaterThan(1);
   const u = (face) => face.geometry.getAttribute('uv').getX(0);
   expect(u(bank)).not.toBe(u(saloon));
   for (const face of [saloon, bank])
