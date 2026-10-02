@@ -1,7 +1,7 @@
 import { recoveryStore } from './recoveryStore';
 import { acknowledgeIntegrity, prepareIntegritySnapshot } from './saveIntegrity';
+import { jsonCopy } from './jsonCopy';
 const queues = new WeakMap();
-const copy = (value) => JSON.parse(JSON.stringify(value));
 const CHANGED_SINCE_REVIEW = 'Your save changed. Review it before confirming another overwrite.';
 const LEAVE_MINE_TO_REVIEW = 'Return to the village to review your preserved save.';
 const WRONG_TOWN = 'The server returned a different town.';
@@ -384,7 +384,7 @@ export function createSyncService({
             ? local.meta.recovery
             : await recoveries.get(recoveryId ?? local.meta.recovery.id, owner, id);
         if (!recovery) throw new Error('This preserved save is unavailable.');
-        return copy({
+        return jsonCopy({
           townId: id,
           owner,
           revision: local.meta.baseRevision,
@@ -432,7 +432,7 @@ export function createSyncService({
           sequence: local.meta.sequence,
           body: {
             baseRevision: review.revision,
-            profile: copy(recovery.profile),
+            profile: jsonCopy(recovery.profile),
             uploadId: crypto.randomUUID(),
           },
         };

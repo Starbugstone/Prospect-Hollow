@@ -16,7 +16,7 @@ export const visitId = (url = location) => new URLSearchParams(url.hash.slice(1)
 // A cloud town carries ?play=<id> so a reload or copied link reopens that town.
 // Only the game address carries it; the home page never opens a town by itself.
 function withTown(url, play) {
-  const meta = townStorage.active()?.meta;
+  const meta = townStorage.activeMeta();
   if (play && meta?.owner) url.searchParams.set('play', meta.id);
   else url.searchParams.delete('play');
   return url;

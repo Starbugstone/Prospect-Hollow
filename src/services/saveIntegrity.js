@@ -1,7 +1,7 @@
 // This is a durable command outbox, not a client-side proof of honest play. The
 // server anchors its sequence against the last accepted save and checks the rules.
 import { markRaw, toRaw } from 'vue';
-const copy = (value) => JSON.parse(JSON.stringify(value));
+import { jsonCopy } from './jsonCopy';
 // Replacing a journal is reactive, but historical receipts never change. Keeping
 // their tree raw avoids proxying every old command during existing local saves.
 const plain = (value) => (value && typeof value === 'object' ? markRaw(toRaw(value)) : value);
@@ -31,7 +31,7 @@ export const createIntegrity = () =>
 // A missing journal is a pre-integrity save. A present damaged or newer journal
 // stays in the backup so cloud review can preserve it instead of inventing trust.
 export const loadIntegrity = (saved) =>
-  saved === undefined ? createIntegrity() : plain(copy(toRaw(saved)));
+  saved === undefined ? createIntegrity() : plain(jsonCopy(toRaw(saved)));
 
 export function appendIntegrityAction(integrity, kind, data) {
   integrity = plain(integrity);
@@ -42,7 +42,7 @@ export function appendIntegrityAction(integrity, kind, data) {
     ...integrity,
     actions: [
       ...integrity.actions,
-      { sequence: next, id: crypto.randomUUID(), kind, data: copy(data) },
+      { sequence: next, id: crypto.randomUUID(), kind, data: jsonCopy(data) },
     ],
   });
 }

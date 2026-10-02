@@ -185,8 +185,7 @@
           :presentation="openingPresentation"
           @presentation-ready="presentationReady = true"
           @presentation-unavailable="presentationFallback = true"
-          :forge-collectible="campaign.canCollectForge(collectionNow)"
-          :now="collectionNow"
+          :forge-collectible="forgeCollectible"
           :builder-hammers="campaign.builderHammers"
           :selected="selected"
           :reduced-motion="settings.reducedMotion"
@@ -589,7 +588,6 @@
         :bonus-limit="campaign.bonusLimit"
         :powers="campaign.powers"
         :last-income="campaign.lastSaloonIncome"
-        :now="collectionNow"
         @build="startWork"
         @hammer="useHammer"
         @finish="finishBuilding(selected)"
@@ -684,7 +682,7 @@ import { pendingPresentation } from '../../data/townPresentations';
 
 import { motorTraffic, modernTransport } from '../../game/town/TownEvolution';
 import { civicIncident } from '../../data/townEvents';
-import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, inject, nextTick, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue';
 import { t, number } from '../../i18n';
 import { BUILDINGS, BUILDING_BY_ID, BANDIT_EVENT, INITIAL_STORY } from '../../data/town';
 import {
@@ -857,7 +855,11 @@ function completeEraCinematic() {
   if (campaign.acknowledgeEra())
     nextTick(() => mapFrame.value?.querySelector('canvas')?.focus({ preventScroll: true }));
 }
+// The one-second collection clock. Only its readers (cooldown checks in the scene and
+// building card) re-render each second; this view sees derived values that rarely change.
 const collectionNow = ref(Date.now());
+provide('townClock', collectionNow);
+const forgeCollectible = computed(() => campaign.canCollectForge(collectionNow.value));
 let collectionClock;
 const currentEraPlots = computed(() => BUILDINGS.filter(({ id }) => plotInEra(town.value, id)));
 const built = computed(

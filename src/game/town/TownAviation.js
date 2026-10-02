@@ -5,6 +5,7 @@ import { futureModel, cityModel } from './buildings/city';
 import { AIRPORT } from './TownLayout';
 import airportLayout from '../../data/airportLayout.json';
 import { Box3, Vector3 } from 'three';
+import { lerp, smooth01 } from './TownMath';
 
 // One aircraft owns the whole sequence. Arrivals and departures cannot overlap;
 // town rebuilds sample the same clock instead of starting another flight.
@@ -24,8 +25,6 @@ const standX = AIRPORT.center[0] + (airportLayout.hangar.frontX + airportLayout.
 const taxiZ = AIRPORT.center[1] + airportLayout.hangar.centerZ;
 const startZ = AIRPORT.startZ + 2;
 const touchdownZ = AIRPORT.startZ + 7;
-const lerp = (a, b, t) => a + (b - a) * t;
-const smooth = (t) => t * t * (3 - 2 * t);
 
 export function airplanePose(time) {
   const phase = ((time % AIRPORT_FLIGHT_CYCLE) + AIRPORT_FLIGHT_CYCLE) % AIRPORT_FLIGHT_CYCLE;
@@ -44,14 +43,14 @@ export function airplanePose(time) {
   if (phase < 28)
     return {
       ...pose,
-      x: lerp(standX, AIRPORT.runwayX, smooth((phase - 18) / 10)),
+      x: lerp(standX, AIRPORT.runwayX, smooth01((phase - 18) / 10)),
       phase: 'pushback',
     };
   if (phase < 32)
     return {
       ...pose,
       x: AIRPORT.runwayX,
-      yaw: lerp(Math.PI / 2, Math.PI, smooth((phase - 28) / 4)),
+      yaw: lerp(Math.PI / 2, Math.PI, smooth01((phase - 28) / 4)),
       propellers: true,
       phase: 'taxi-out',
     };
@@ -59,7 +58,7 @@ export function airplanePose(time) {
     return {
       ...pose,
       x: AIRPORT.runwayX,
-      z: lerp(taxiZ, startZ, smooth((phase - 32) / 12)),
+      z: lerp(taxiZ, startZ, smooth01((phase - 32) / 12)),
       yaw: Math.PI,
       propellers: true,
       phase: 'taxi-out',
@@ -69,7 +68,7 @@ export function airplanePose(time) {
       ...pose,
       x: AIRPORT.runwayX,
       z: startZ,
-      yaw: lerp(Math.PI, Math.PI * 2, smooth((phase - 44) / 4)),
+      yaw: lerp(Math.PI, Math.PI * 2, smooth01((phase - 44) / 4)),
       propellers: true,
       phase: 'line-up',
     };
@@ -85,7 +84,7 @@ export function airplanePose(time) {
       pitch: -Math.min(0.16, Math.max(0, distance - 18) * 0.016),
       propellers: true,
       phase: 'takeoff',
-      opacity: 1 - smooth(Math.max(0, Math.min(1, (phase - 62) / 8))),
+      opacity: 1 - smooth01(Math.max(0, Math.min(1, (phase - 62) / 8))),
     };
   }
   if (phase < 135) return { ...pose, visible: false, phase: 'away' };
@@ -98,10 +97,10 @@ export function airplanePose(time) {
       z,
       y: 0.2 + (touchdownZ - z) * 0.38,
       yaw: 0,
-      pitch: 0.045 * (1 - smooth(approach)),
+      pitch: 0.045 * (1 - smooth01(approach)),
       propellers: true,
       phase: 'landing',
-      opacity: smooth(Math.min(1, (phase - 135) / 6)),
+      opacity: smooth01(Math.min(1, (phase - 135) / 6)),
     };
   }
   if (phase < 160) {
@@ -119,13 +118,13 @@ export function airplanePose(time) {
     return {
       ...pose,
       x: AIRPORT.runwayX,
-      yaw: (Math.PI / 2) * smooth((phase - 160) / 4),
+      yaw: (Math.PI / 2) * smooth01((phase - 160) / 4),
       propellers: true,
       phase: 'taxi-in',
     };
   return {
     ...pose,
-    x: lerp(AIRPORT.runwayX, standX, smooth((phase - 164) / 12)),
+    x: lerp(AIRPORT.runwayX, standX, smooth01((phase - 164) / 12)),
     propellers: true,
     phase: 'taxi-in',
   };

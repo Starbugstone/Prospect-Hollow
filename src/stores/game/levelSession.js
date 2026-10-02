@@ -7,6 +7,7 @@ import { cloneBoard, freshTiles, plain } from './boardData';
 import { boardReadiness } from './rendererBinding';
 import { clearReshuffleNotice } from './moveResolution';
 import { storeTimers } from './storeTimers';
+import { jsonCopy } from '../../services/jsonCopy';
 
 // Logical mine state only. Renderer objects, timers and input queues belong to
 // their original window and must never cross a town handoff.
@@ -39,14 +40,13 @@ const HANDOFF_FIELDS = [
   'currentBoardLayout',
   'currentLevelId',
 ];
-const copy = (value) => JSON.parse(JSON.stringify(value));
 
 export function captureHandoff(store) {
   if (!store.sessionActive) return null;
   if (store.animationInProgress || store.pendingBoardState)
     throw new Error('The current move is still finishing. Try again shortly.');
   store.syncRunClock(false);
-  return copy({
+  return jsonCopy({
     version: 1,
     state: Object.fromEntries(HANDOFF_FIELDS.map((key) => [key, store[key]])),
     elapsedMs: store.elapsedMs,
@@ -72,7 +72,7 @@ export function restoreHandoff(store, snapshot) {
   store.bootstrap();
   boardReadiness(store).cancel();
   const session = store.sessionVersion + 1;
-  const restored = copy(Object.fromEntries(HANDOFF_FIELDS.map((key) => [key, state[key]])));
+  const restored = jsonCopy(Object.fromEntries(HANDOFF_FIELDS.map((key) => [key, state[key]])));
   store.$patch((target) =>
     Object.assign(target, {
       ...restored,
@@ -100,7 +100,7 @@ export function restoreHandoff(store, snapshot) {
   store.playClock.started = !!snapshot.clockStarted;
   store.elapsedMs = store.playClock.elapsed;
   campaign.activeRun = state.levelCleared ? null : state.runId;
-  campaign.continuousRun = snapshot.continuousRun ? copy(snapshot.continuousRun) : null;
+  campaign.continuousRun = snapshot.continuousRun ? jsonCopy(snapshot.continuousRun) : null;
   store.audioManager?.playAmbientLoop?.();
 }
 

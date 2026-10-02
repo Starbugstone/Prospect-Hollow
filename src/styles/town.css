@@ -628,6 +628,9 @@
 }
 .town-scene-labels button {
   position: absolute;
+  /* Placed with the per-frame `translate` property (see TownLabels.js). */
+  left: 0;
+  top: 0;
   transform: translate(-50%, -30%);
   pointer-events: auto;
   display: flex;
@@ -1852,6 +1855,8 @@ html:has(.town-museum[open]) {
 }
 .town-action-icon {
   position: absolute;
+  left: 0;
+  top: 0;
   display: grid;
   place-items: center;
   width: calc(44px * var(--action-scale, 1));

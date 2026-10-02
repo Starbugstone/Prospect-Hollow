@@ -20,7 +20,7 @@
     <GameIcon name="cloud" />
     <p>
       {{ t('Cloud saving is paused. Your progress is saved on this device.') }}
-      {{ t(activeTown.meta.uploadError.message) }}
+      {{ t(activeMeta.uploadError.message) }}
     </p>
     <button
       class="save-recovery-compare"
@@ -39,22 +39,18 @@
     <p>
       {{
         t(
-          activeTown.meta.conflict
+          activeMeta.conflict
             ? 'You played {town} on another device. That save will load when you return to the village.'
             : 'You played {town} on another device, so we loaded that save.',
           { town: townName },
         )
       }}
     </p>
-    <button
-      v-if="!activeTown.meta.conflict"
-      class="save-recovery-compare"
-      @click="recoveryOpen = true"
-    >
+    <button v-if="!activeMeta.conflict" class="save-recovery-compare" @click="recoveryOpen = true">
       {{ t('Compare saves') }}
     </button>
     <button
-      v-if="!activeTown.meta.conflict"
+      v-if="!activeMeta.conflict"
       class="save-recovery-dismiss"
       :aria-label="t('Dismiss')"
       :title="t('Dismiss')"
@@ -206,22 +202,21 @@ const accountOpen = ref(false),
   handingOver = ref(false),
   transferError = ref(''),
   notice = ref('This town is open in another tab.');
-const activeTown = computed(() => {
+// Metadata only, parsed once per stored save (see townStorage.activeMeta).
+const activeMeta = computed(() => {
   void cloud.storageVersion;
-  return townStorage.active();
+  return townStorage.activeMeta();
 });
-const blockedUpload = computed(() => uploadBlocked(activeTown.value?.meta));
-const accountTown = computed(
-  () => !!cloud.account && activeTown.value?.meta.owner === cloud.account.id,
-);
-const townName = computed(() => activeTown.value?.meta.name || t('Your town'));
+const blockedUpload = computed(() => uploadBlocked(activeMeta.value));
+const accountTown = computed(() => !!cloud.account && activeMeta.value?.owner === cloud.account.id);
+const townName = computed(() => activeMeta.value?.name || t('Your town'));
 const saveState = computed(() =>
   describeSaveState({
     signedIn: !!cloud.account,
     sessionExpired: cloud.sessionExpired,
     accountTown: accountTown.value,
     status: cloud.status,
-    meta: activeTown.value?.meta,
+    meta: activeMeta.value,
   }),
 );
 // Never cover an active puzzle; the notice waits for the village.
@@ -229,7 +224,7 @@ const recoveryToast = computed(
   () =>
     accountTown.value &&
     !game.sessionActive &&
-    (activeTown.value.meta.conflict || activeTown.value.meta.desyncNotice) &&
+    (activeMeta.value.conflict || activeMeta.value.desyncNotice) &&
     !recoveryOpen.value,
 );
 // Account controls live in the village save pill and the settings drawer.
@@ -237,7 +232,7 @@ provide('cloudAccount', {
   townName,
   accountTown,
   saveState,
-  cloudAt: computed(() => (activeTown.value?.meta.cloudAt ?? 0) * 1000),
+  cloudAt: computed(() => (activeMeta.value?.cloudAt ?? 0) * 1000),
   signedIn: computed(() => !!cloud.account),
   canSync: computed(
     () =>
@@ -423,7 +418,7 @@ function reload() {
   }
 }
 function dismissRecovery() {
-  const meta = activeTown.value?.meta;
+  const meta = activeMeta.value;
   if (meta?.owner && ready.value)
     townStorage.mutate(meta.id, meta.owner, (entry) => {
       entry.meta.desyncNotice = false;

@@ -1,4 +1,4 @@
-import { BufferGeometry, Float32BufferAttribute, Mesh } from 'three';
+import { BufferAttribute, BufferGeometry, Float32BufferAttribute, Mesh } from 'three';
 import { resolveModel } from './assets/MeshCatalog';
 
 // Authored in Blender. Geometry belongs to the diorama's existing cache and is
@@ -21,13 +21,17 @@ export function blenderModel(d, parent, catalog, name, namespace) {
     const key = `${namespace}:${name}:${index}`;
     if (!d.geometries[key]) {
       const geometry = new BufferGeometry();
+      // Catalog chunks decode to typed arrays; authoring catalogs (tests) hold plain arrays.
       geometry.setAttribute('position', new Float32BufferAttribute(part.positions, 3));
       geometry.setAttribute('normal', new Float32BufferAttribute(part.normals, 3));
+      // Untextured, but merged with primitives that carry UVs.
       geometry.setAttribute(
         'uv',
         new Float32BufferAttribute(new Float32Array((part.positions.length / 3) * 2), 2),
       );
-      geometry.setIndex(part.indices);
+      geometry.setIndex(
+        Array.isArray(part.indices) ? part.indices : new BufferAttribute(part.indices, 1),
+      );
       d.geometries[key] = geometry;
     }
     if (!joints.has(part.joint)) {

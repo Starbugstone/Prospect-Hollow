@@ -15,7 +15,14 @@ import { MILLRACE, landscapeGeometry } from '../src/game/town/TownMillrace';
 import { MINE_SHAFT } from '../src/data/mineSite';
 import { TownNavigation } from '../src/game/town/TownNavigation';
 import { TownStatics } from '../src/game/town/TownStatics';
-import { labelLayout, placeLabels, trackElement, updateLabels } from '../src/game/town/TownLabels';
+import {
+  labelBox,
+  labelLayout,
+  placeLabels,
+  sameIndicators,
+  trackElement,
+  updateLabels,
+} from '../src/game/town/TownLabels';
 import { drawCameraInset } from '../src/game/town/TownInset';
 import { frameEnd, frameStart, frameValue, townFrameStats } from '../src/game/town/TownProfiler';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
@@ -196,13 +203,24 @@ it('moves labels in place and re-renders only when their layout changes', () => 
   trackElement(actions, 'home', style());
   expect(updateLabels(current, [anchor('home', 30), anchor('mine', 40)], layout)).toBeNull();
   expect(current[0].x).toBe(30);
-  placeLabels(current, labels, actions);
-  expect(labels.get('home').style).toEqual({ left: '30%', top: '10%' });
-  expect(actions.get('home').style).toEqual({ left: '31%', top: '12%' });
+  const box = labelBox();
+  box.measure({ clientWidth: 200, clientHeight: 100 });
+  placeLabels(current, labels, actions, box);
+  // Composited pixel offsets: moving a label never lays out the page.
+  expect(labels.get('home').style).toEqual({ translate: '60px 10px' });
+  expect(actions.get('home').style).toEqual({ translate: '62px 12px' });
   const hidden = [anchor('home', 30, false), anchor('mine', 40)];
   expect(updateLabels(current, hidden, layout)).toBe(labelLayout(hidden));
   trackElement(labels, 'home', null);
   expect(labels.has('home')).toBe(false);
+});
+
+it('keeps unchanged building indicators as the same object', () => {
+  expect(
+    sameIndicators({ home: 'upgrade', saloon: 'coins' }, { saloon: 'coins', home: 'upgrade' }),
+  ).toBe(true);
+  expect(sameIndicators({ home: 'upgrade' }, { home: 'ready' })).toBe(false);
+  expect(sameIndicators({ home: 'upgrade' }, { home: 'upgrade', mine: 'era' })).toBe(false);
 });
 
 it('updates a following VIP name tag only when it visibly moves', () => {
@@ -228,6 +246,41 @@ it('updates a following VIP name tag only when it visibly moves', () => {
   expect(d.onEventInset).toHaveBeenCalledOnce();
   draw(51);
   expect(d.onEventInset).toHaveBeenCalledTimes(2);
+});
+
+it('redraws the inset scene at 30 Hz below the high render tier and every frame on it', () => {
+  const renders = [];
+  const renderer = {
+    getViewport: () => {},
+    getScissor: () => {},
+    getScissorTest: () => false,
+    setViewport: () => {},
+    setScissor: () => {},
+    setScissorTest: () => {},
+    getPixelRatio: () => 1,
+    getRenderTarget: () => null,
+    setRenderTarget: () => {},
+    render: (scene) => renders.push(scene),
+  };
+  const scene = new Scene();
+  const d = { renderer, scene, onEventInset: vi.fn(), renderQuality: { tier: 'medium' } };
+  const shot = { insetCamera: {}, viewport: {}, scissor: {} };
+  const rect = { x: 0, y: 0, width: 100, height: 80 };
+  let now = 1000;
+  vi.spyOn(performance, 'now').mockImplementation(() => now);
+  for (let frame = 0; frame < 4; frame++, now += 1000 / 60)
+    drawCameraInset(d, shot, rect, 'Incident site');
+  // Two scene renders (frames 0 and 2), and the cached image shown on all four frames.
+  expect(renders.filter((drawn) => drawn === scene)).toHaveLength(2);
+  expect(renders.filter((drawn) => drawn !== scene)).toHaveLength(4);
+  const other = { insetCamera: {}, viewport: {}, scissor: {} };
+  drawCameraInset(d, other, rect, 'VIP visitor arriving', true);
+  expect(renders.filter((drawn) => drawn === scene)).toHaveLength(3);
+  d.renderQuality.tier = 'high';
+  renders.length = 0;
+  drawCameraInset(d, shot, rect, 'Incident site');
+  drawCameraInset(d, shot, rect, 'Incident site');
+  expect(renders).toEqual([scene, scene]);
 });
 
 it('reports per-frame phases, values and context only while collecting', async () => {

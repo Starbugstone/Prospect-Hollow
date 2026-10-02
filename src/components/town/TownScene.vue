@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="sceneElement"
     class="town-scene"
     :class="{ 'is-raiding': raid && !reducedMotion, 'is-read-only': readOnly }"
     :aria-label="t(readOnly ? 'Village visit · view only' : 'Interactive 3D town')"
@@ -63,6 +64,7 @@
     </div>
     <span
       v-if="villagerLabel"
+      ref="villagerElement"
       class="villager-name"
       role="status"
       :style="{ left: `${villagerLabel.x}%`, top: `${villagerLabel.y}%` }"
@@ -74,50 +76,22 @@
         :key="anchor.id"
         :ref="(element) => trackElement(actionElements, anchor.id, element)"
         class="town-action-icon"
-        :class="{
-          'town-era-icon': indicators[anchor.id] === 'era',
-          'town-completion-icon': indicators[anchor.id] === 'ready',
-          'raid-defense-ready': raidDefenseIds.includes(anchor.id),
-          'raid-bell-ready': indicators[anchor.id] === 'bell',
-        }"
+        :class="[
+          TOWN_ACTIONS[indicators[anchor.id]].class,
+          { 'raid-defense-ready': raidDefenseIds.includes(anchor.id) },
+        ]"
         :data-town-plot="anchor.id"
         :style="{
-          left: `${anchor.collection.x}%`,
-          top: `${anchor.collection.y}%`,
-          '--action-scale': townIndicatorScale(indicators[anchor.id]),
+          translate: labelTranslate(anchor.collection),
+          '--action-scale': TOWN_ACTIONS[indicators[anchor.id]].scale,
         }"
-        :aria-label="
-          readOnly
-            ? t('Collect the saloon takings for the mayor')
-            : indicators[anchor.id] === 'ready'
-              ? t('Finish {building}', { building: t(BUILDING_BY_ID[anchor.id].shortName) })
-              : anchor.id === 'saloon'
-                ? t('Collect {coins} coins', { coins: town.income.stored })
-                : indicators[anchor.id] === 'bell'
-                  ? t('Ring town bell · halve the loss')
-                  : indicators[anchor.id] === 'era'
-                    ? t('Advance to the next era')
-                    : t('Collect 1 TNT')
-        "
+        :aria-label="actionLabel(anchor.id)"
         @focus="anchor.id === 'mine' && prefetchBoard()"
         @pointerenter="anchor.id === 'mine' && prefetchBoard()"
         @pointerdown="anchor.id === 'mine' && prefetchBoard()"
         @click="chooseLabel(anchor.id, $event)"
       >
-        <img
-          :src="
-            indicators[anchor.id] === 'ready'
-              ? '/art/rewards/builder-hammer.svg'
-              : anchor.id === 'saloon'
-                ? '/art/rewards/coins.svg'
-                : indicators[anchor.id] === 'bell'
-                  ? '/art/rewards/town-bell.svg'
-                  : indicators[anchor.id] === 'era'
-                    ? '/art/rewards/era-compass.svg'
-                    : '/art/powers/tnt.svg'
-          "
-          alt=""
-        />
+        <img :src="TOWN_ACTIONS[indicators[anchor.id]].icon" alt="" />
       </button>
     </div>
     <div
@@ -131,7 +105,7 @@
         :ref="(element) => trackElement(labelElements, anchor.id, element)"
         :data-town-plot="anchor.id"
         v-show="anchor.visible"
-        :style="{ left: `${anchor.x}%`, top: `${anchor.y}%` }"
+        :style="{ translate: labelTranslate(anchor) }"
         :class="{
           'scene-mine-button': anchor.id === 'mine',
           'quiet-plot': quietPlot(anchor.id),
@@ -141,19 +115,9 @@
           'raid-defense-ready': raidDefenseIds.includes(anchor.id),
           'can-build': availableIds.includes(anchor.id),
           'has-income': indicators[anchor.id] === 'coins',
-          'has-action-icon': ['ready', 'coins', 'tnt', 'bell', 'era'].includes(
-            indicators[anchor.id],
-          ),
+          'has-action-icon': !!TOWN_ACTIONS[indicators[anchor.id]],
         }"
-        :aria-label="
-          t(
-            readOnly
-              ? t(anchor.id === 'mine' ? 'Mine' : BUILDING_BY_ID[anchor.id].name)
-              : anchor.id === 'mine'
-                ? t('Enter the mine: play level {level}', { level: nextLevel })
-                : t('Choose {building}', { building: t(BUILDING_BY_ID[anchor.id].name) }),
-          )
-        "
+        :aria-label="plotLabel(anchor.id)"
         :title="t(anchor.id === 'mine' ? 'Mine' : BUILDING_BY_ID[anchor.id].shortName)"
         :aria-pressed="anchor.id === 'mine' ? undefined : anchor.id === selected"
         @focus="anchor.id === 'mine' && prefetchBoard()"
@@ -250,16 +214,32 @@ import { prepareAudio } from '../../composables/useAudio';
 import { useSettingsStore } from '../../stores/settingsStore';
 import GameIcon from '../GameIcon.vue';
 import GameViewStatus from '../GameViewStatus.vue';
-import { townIndicatorScale } from '../../data/townIndicators';
+import { TOWN_ACTIONS } from '../../data/townIndicators';
 import { eraBuildingLevel } from '../../game/town/TownEras';
-import { computed, nextTick, onMounted, onBeforeUnmount, ref, shallowRef, watch } from 'vue';
-import { placeLabels, trackElement, updateLabels } from '../../game/town/TownLabels';
+import {
+  computed,
+  inject,
+  nextTick,
+  onMounted,
+  onBeforeUnmount,
+  ref,
+  shallowRef,
+  watch,
+} from 'vue';
+import {
+  labelBox,
+  placeLabels,
+  sameIndicators,
+  trackElement,
+  updateLabels,
+} from '../../game/town/TownLabels';
 import { BUILDING_BY_ID, BUILDINGS } from '../../data/town';
 import {
   constructionRuns,
   constructionVisual,
   constructionReady,
   availablePurchases,
+  openOffers,
   nextGoal,
   buildingIndicators,
 } from '../../game/town/TownRules';
@@ -317,27 +297,59 @@ const quietPlot = (id) =>
   id !== suggestedId.value &&
   !props.town.buildings[id] &&
   !props.town.projects[id];
-// Purchases depend on the town only; the one-second clock just re-checks cooldowns.
-const townPurchases = computed(() => availablePurchases(props.town));
-// A visitor sees only the coins of buildings they may collect for the owner.
-const indicators = computed(() =>
-  props.readOnly
+// Purchases depend on the town only; the village's one-second clock (provided by
+// TownView) just re-checks cooldowns. Unchanged indicators keep the same object, so
+// the labels re-render only when an action actually appears or disappears.
+const offers = computed(() => openOffers(props.town));
+const townPurchases = computed(() => availablePurchases(props.town, 0, offers.value));
+const townClock = inject('townClock', null);
+const indicators = computed((previous) => {
+  // A visitor sees only the coins of buildings they may collect for the owner.
+  const next = props.readOnly
     ? Object.fromEntries(props.visitorTaps.map((id) => [id, 'coins']))
-    : buildingIndicators(props.town, props.forgeCollectible, props.now, townPurchases.value),
-);
+    : buildingIndicators(
+        props.town,
+        props.forgeCollectible,
+        townClock?.value ?? props.now,
+        townPurchases.value,
+      );
+  return previous && sameIndicators(previous, next) ? previous : next;
+});
 const availableIds = computed(() =>
-  props.readOnly ? [] : availablePurchases(props.town, props.builderHammers).map(({ id }) => id),
+  props.readOnly
+    ? []
+    : availablePurchases(props.town, props.builderHammers, offers.value).map(({ id }) => id),
 );
 const upgradeIds = computed(() =>
   Object.keys(indicators.value).filter((id) => indicators.value[id] === 'upgrade'),
 );
 const actionAnchors = computed(() =>
   anchors.value.filter(
-    (anchor) =>
-      ['ready', 'coins', 'tnt', 'bell', 'era'].includes(indicators.value[anchor.id]) &&
-      anchor.collection.visible,
+    (anchor) => TOWN_ACTIONS[indicators.value[anchor.id]] && anchor.collection.visible,
   ),
 );
+const buildingName = (id) => t(BUILDING_BY_ID[id].shortName);
+const ACTION_LABELS = {
+  ready: (id) => t('Finish {building}', { building: buildingName(id) }),
+  coins: () => t('Collect {coins} coins', { coins: props.town.income.stored }),
+  tnt: () => t('Collect 1 TNT'),
+  bell: () => t('Ring town bell · halve the loss'),
+  era: () => t('Advance to the next era'),
+};
+const actionLabel = (id) =>
+  props.readOnly
+    ? t('Collect the saloon takings for the mayor')
+    : ACTION_LABELS[indicators.value[id]](id);
+const plotLabel = (id) => {
+  if (props.readOnly) return t(id === 'mine' ? 'Mine' : BUILDING_BY_ID[id].name);
+  return id === 'mine'
+    ? t('Enter the mine: play level {level}', { level: props.nextLevel })
+    : t('Choose {building}', { building: t(BUILDING_BY_ID[id].name) });
+};
+// Labels sit at the scene's top-left corner and move with `translate`, which the
+// browser composites without laying out the page on every camera frame.
+const box = labelBox();
+const labelTranslate = (point) => box.translate(point);
 function collectionOrigin(id) {
   const anchor = anchors.value.find((anchor) => anchor.id === id);
   const origin = anchor?.collection?.visible ? anchor.collection : anchor;
@@ -373,7 +385,22 @@ let scene,
   disposed = false,
   dragged = false;
 const pointers = new Map();
-const villagerLabel = ref(null);
+// A named villager moves every frame; Vue re-renders only when the name changes.
+const villagerLabel = shallowRef(null),
+  villagerElement = ref(null);
+function showVillagerLabel(label) {
+  const current = villagerLabel.value;
+  if (!label || !current || label.name !== current.name || label.live !== current.live) {
+    villagerLabel.value = label;
+    return;
+  }
+  Object.assign(current, label);
+  const element = villagerElement.value;
+  if (element) {
+    element.style.left = `${label.x}%`;
+    element.style.top = `${label.y}%`;
+  }
+}
 const choose = (id) => {
   if (!props.readOnly) id === 'mine' ? emit('mine') : emit('select', id);
   // A visitor may collect what visitorTaps allows; any other tap only looks at the building.
@@ -579,7 +606,7 @@ async function initialize() {
       choose,
       (positions) => {
         const layout = updateLabels(anchors.value, positions, anchorLayout);
-        if (layout === null) placeLabels(anchors.value, labelElements, actionElements);
+        if (layout === null) placeLabels(anchors.value, labelElements, actionElements, box);
         else {
           anchorLayout = layout;
           anchors.value = positions;
@@ -593,9 +620,7 @@ async function initialize() {
     scene.setLiveVisitors(props.liveVisitors, props.reducedMotion, props.liveVisitorTownId);
     scene.onVipSpend = (receipt) => emit('vip-spend', receipt);
     scene.onGuestVip = (at) => emit('guest-vip', at);
-    scene.onVillagerLabel = (label) => {
-      villagerLabel.value = label;
-    };
+    scene.onVillagerLabel = showVillagerLabel;
     scene.onEventInset = (view) => {
       eventInset.value = view;
     };
@@ -638,7 +663,9 @@ watch(
     scene?.setLiveVisitors(props.liveVisitors, props.reducedMotion, props.liveVisitorTownId);
   },
 );
+const sceneElement = ref(null);
 onMounted(() => {
+  box.observe(sceneElement.value);
   document.addEventListener('visibilitychange', visibilityChanged);
   initialize();
 });
@@ -746,16 +773,14 @@ watch(
 );
 watch(
   () => props.paused,
-  () => visibilityChanged(),
-);
-watch(
-  () => props.paused,
   (paused) => {
+    visibilityChanged();
     scene?.setPaused(paused);
     if (!paused) scene?.select(props.selected);
   },
 );
 onBeforeUnmount(() => {
+  box.disconnect();
   disposed = true;
   updateGeneration++;
   document.removeEventListener('visibilitychange', visibilityChanged);

@@ -7,7 +7,7 @@ import { roadLevel } from './TownRules';
 import { PLOTS, townTracks, railEdges } from './TownLayout';
 import { addTownRoads } from './TownActivity';
 import { addMineForecourt } from './TownMineForecourt';
-import { addMineWorks } from './TownMineWorks';
+import { addMineSite } from './mine/addMineSite';
 import { addElectricLighting } from './buildings/industrial';
 import { addEraStreetscape, addPowerGrid, pavedTown } from './TownEvolution';
 import { addRailroad } from './TownEraActivity';
@@ -54,7 +54,7 @@ export class TownScenery {
       [
         'mine-works',
         JSON.stringify([town.era, !!railEdges(town).length]),
-        () => addMineWorks(view, view.world, town.era),
+        () => addMineSite(view, view.world, town.era),
       ],
       ['lights', JSON.stringify(electricLamps(town)), () => addElectricLighting(view, town)],
       [

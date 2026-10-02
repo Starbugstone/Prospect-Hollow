@@ -53,7 +53,7 @@ export class TownStatics {
     }
     for (const root of roots) {
       if (this.batches.has(root)) continue;
-      const batch = prepared.get(root) ?? this.run(this.prepare([root]));
+      const batch = prepared.get(root) ?? finishWork(this.prepare([root]));
       prepared.delete(root);
       this.batches.set(root, this.place(batch));
     }
@@ -72,13 +72,7 @@ export class TownStatics {
       }
   }
   add(roots) {
-    return this.place(this.run(this.prepare(roots)));
-  }
-  run(work) {
-    let next;
-    do next = work.next();
-    while (!next.done);
-    return next.value;
+    return this.place(finishWork(this.prepare(roots)));
   }
   // Read-only preparation: source meshes move to the picking layer only when placed.
   *prepare(roots) {

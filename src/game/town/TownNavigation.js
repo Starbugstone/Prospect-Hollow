@@ -2,6 +2,7 @@ import { BRIDGE, bridgeDeckHeight, streetHeight } from './TownRiver';
 import { footprintDistance, sweptClear } from './BuildingFootprints';
 import { Vector3 } from 'three';
 import { prepareRoute, routePose } from './TownRoutes';
+import { finishWork } from '../PresentationWork';
 
 // Physical footprint plus a visible gap. No mesh intersections or physics bodies.
 import { NPC_BODY_MARGIN } from '../../data/townClearances';
@@ -164,8 +165,9 @@ export class TownNavigation {
     });
     this.bounds.delete(o);
   }
+  // Called for every walker step: checks candidates in place, without collecting them.
   segment(a, b, margin = NPC_MARGIN) {
-    return this.nearbySegment(a, b, margin).every((o) => sweptClear(o, a, b, margin));
+    return this.eachNearSegment(a, b, margin, (o) => sweptClear(o, a, b, margin));
   }
   // Re-index only this owner's cells. Detours and prepared routes are dropped only
   // where the changed footprints could affect them.
@@ -227,6 +229,12 @@ export class TownNavigation {
   }
   nearbySegment(a, b, margin = NPC_MARGIN) {
     const found = new Set();
+    this.eachNearSegment(a, b, margin, (o) => found.add(o));
+    return [...found];
+  }
+  // Visits footprints near the swept segment at the walker's height until `visit`
+  // returns false. A footprint spanning several cells may be visited more than once.
+  eachNearSegment(a, b, margin, visit) {
     const minX = Math.min(a[0], b[0]) - margin - EPS,
       maxX = Math.max(a[0], b[0]) + margin + EPS,
       minZ = Math.min(a[2], b[2]) - margin - EPS,
@@ -245,9 +253,9 @@ export class TownNavigation {
           const bounds = this.bounds.get(o);
           if (bounds.maxX < minX || bounds.minX > maxX || bounds.maxZ < minZ || bounds.minZ > maxZ)
             continue;
-          if (sameHeight(o, a) || sameHeight(o, b)) found.add(o);
+          if ((sameHeight(o, a) || sameHeight(o, b)) && !visit(o)) return false;
         }
-    return [...found];
+    return true;
   }
   clear(p, margin = NPC_MARGIN) {
     return this.near(p[0], p[2]).every(
@@ -265,7 +273,7 @@ export class TownNavigation {
     return candidates.find((a) => this.clear(a, margin)) ?? null;
   }
   detour(a, b, margin) {
-    return finish(this.detourSteps(a, b, margin));
+    return finishWork(this.detourSteps(a, b, margin));
   }
   // The detour search in resumable steps (one yield per settled node).
   *detourSteps(a, b, margin) {
@@ -381,7 +389,7 @@ export class TownNavigation {
     return path;
   }
   plan(points, margin = NPC_MARGIN) {
-    return finish(this.planSteps(points, margin));
+    return finishWork(this.planSteps(points, margin));
   }
   // The same plan in resumable steps: one yield after each detour search, so a
   // cutscene can prepare its routes within a per-frame time budget.
@@ -416,7 +424,7 @@ export class TownNavigation {
     return this.track(walkPath(route), margin);
   }
   route(route, offset = 0, margin = NPC_MARGIN) {
-    return finish(this.routeSteps(route, offset, margin));
+    return finishWork(this.routeSteps(route, offset, margin));
   }
   // Resumable route(); both share one cache, so a warmed route is reused as is.
   *routeSteps(route, offset = 0, margin = NPC_MARGIN) {
@@ -453,11 +461,6 @@ export class TownNavigation {
     return path;
   }
 }
-const finish = (steps) => {
-  let step = steps.next();
-  while (!step.done) step = steps.next();
-  return step.value;
-};
 
 // Plans cutscene routes ahead of need within a small per-frame budget, measured in
 // real time so slower devices take more frames instead of dropping one.
@@ -567,15 +570,15 @@ export function walkPose(path, progress, out = {}) {
   const length = ends[lo] - before,
     along = distance - before;
   const radius = Math.min(0.25, length / 3);
-  const turn = (from, to, amount) => {
-    const delta = Math.atan2(Math.sin(to - from), Math.cos(to - from));
-    return from + delta * amount * amount * (3 - 2 * amount);
-  };
   if (radius && lo > 0 && along < radius)
-    out.heading = turn(headings[lo - 1], out.heading, 0.5 + along / (2 * radius));
+    out.heading = easeHeading(headings[lo - 1], out.heading, 0.5 + along / (2 * radius));
   else if (radius && lo < headings.length - 1 && along > length - radius)
-    out.heading = turn(out.heading, headings[lo + 1], 0.5 - (length - along) / (2 * radius));
+    out.heading = easeHeading(out.heading, headings[lo + 1], 0.5 - (length - along) / (2 * radius));
   return out;
+}
+function easeHeading(from, to, amount) {
+  const delta = Math.atan2(Math.sin(to - from), Math.cos(to - from));
+  return from + delta * amount * amount * (3 - 2 * amount);
 }
 export function prepareActorWalk(d, actor, offset = 0.9) {
   if (

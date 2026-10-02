@@ -1,3 +1,12 @@
+import {
+  HalfFloatType,
+  Mesh,
+  OrthographicCamera,
+  PlaneGeometry,
+  Scene,
+  ShaderMaterial,
+  WebGLRenderTarget,
+} from 'three';
 import { frameEnd, frameStart } from './TownProfiler';
 // Shared secondary view for fixed incidents and passive visitor arrivals.
 export function eventInsetRect(width, height) {
@@ -22,6 +31,43 @@ export function hideEventInset(d) {
   d.eventInsetVisible = false;
   d.onEventInset?.(null);
 }
+// On the high render tier the inset draws every frame. Lower tiers redraw the scene
+// into a small offscreen image at 30 Hz and show that image on the frames between,
+// so the main view keeps its full frame rate on slower devices.
+const INSET_INTERVAL = 1000 / 30;
+const insetCaches = new WeakMap();
+function insetCache(d) {
+  let cache = insetCaches.get(d);
+  if (!cache) {
+    const target = new WebGLRenderTarget(1, 1, { type: HalfFloatType, samples: 2 });
+    const material = new ShaderMaterial({
+      uniforms: { inset: { value: target.texture } },
+      vertexShader: `varying vec2 vUv;
+        void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+      fragmentShader: `uniform sampler2D inset;
+        varying vec2 vUv;
+        void main() {
+          gl_FragColor = texture2D(inset, vUv);
+          #include <tonemapping_fragment>
+          #include <colorspace_fragment>
+        }`,
+      depthTest: false,
+      depthWrite: false,
+    });
+    const scene = new Scene();
+    scene.add(new Mesh(new PlaneGeometry(2, 2), material));
+    cache = {
+      target,
+      material,
+      scene,
+      camera: new OrthographicCamera(),
+      renderedAt: -Infinity,
+      shot: null,
+    };
+    insetCaches.set(d, cache);
+  }
+  return cache;
+}
 export function drawCameraInset(d, shot, rect, label, passive = false, details = {}) {
   // A following name tag re-renders the overlay only when it moves visibly (0.5%).
   const tag = details.nameTag;
@@ -38,13 +84,40 @@ export function drawCameraInset(d, shot, rect, label, passive = false, details =
   renderer.getScissor(shot.scissor);
   const scissorTest = renderer.getScissorTest();
   const autoClear = renderer.autoClear;
+  const cached = d.renderQuality?.tier !== undefined && d.renderQuality.tier !== 'high';
   try {
-    renderer.setViewport(rect.x, rect.y, rect.width, rect.height);
-    renderer.setScissor(rect.x, rect.y, rect.width, rect.height);
-    renderer.setScissorTest(true);
-    renderer.autoClear = true;
     const started = frameStart();
-    renderer.render(d.scene, shot.insetCamera);
+    if (cached) {
+      const cache = insetCache(d);
+      const ratio = renderer.getPixelRatio();
+      const width = Math.max(1, Math.round(rect.width * ratio)),
+        height = Math.max(1, Math.round(rect.height * ratio));
+      const now = performance.now();
+      if (cache.target.width !== width || cache.target.height !== height) {
+        cache.target.setSize(width, height);
+        cache.renderedAt = -Infinity;
+      }
+      if (now - cache.renderedAt >= INSET_INTERVAL || cache.shot !== shot) {
+        const previous = renderer.getRenderTarget();
+        renderer.setRenderTarget(cache.target);
+        renderer.autoClear = true;
+        renderer.render(d.scene, shot.insetCamera);
+        renderer.setRenderTarget(previous);
+        cache.renderedAt = now;
+        cache.shot = shot;
+      }
+      renderer.setViewport(rect.x, rect.y, rect.width, rect.height);
+      renderer.setScissor(rect.x, rect.y, rect.width, rect.height);
+      renderer.setScissorTest(true);
+      renderer.autoClear = false;
+      renderer.render(cache.scene, cache.camera);
+    } else {
+      renderer.setViewport(rect.x, rect.y, rect.width, rect.height);
+      renderer.setScissor(rect.x, rect.y, rect.width, rect.height);
+      renderer.setScissorTest(true);
+      renderer.autoClear = true;
+      renderer.render(d.scene, shot.insetCamera);
+    }
     frameEnd('inset', started);
   } finally {
     renderer.setViewport(shot.viewport);

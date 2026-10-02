@@ -1,5 +1,5 @@
 import { Vector3 } from 'three';
-import { addMineWorks } from './TownMineWorks';
+import { addMineSite } from './mine/addMineSite';
 import { TownBuildSequence } from './TownBuildSequence';
 import { ERA_CONSTRUCTION } from '../../data/mineEvolution';
 import { TownNavigation } from './TownNavigation';
@@ -10,8 +10,8 @@ export class TownMineEraConstruction {
     this.d = d;
     this.root = d.group(d.scene);
     this.root.name = 'Mine era construction';
-    this.previous = addMineWorks(d, this.root, definition.from);
-    this.next = addMineWorks(d, this.root, definition.to);
+    this.previous = addMineSite(d, this.root, definition.from);
+    this.next = addMineSite(d, this.root, definition.to);
     const navigation =
       d.navigation &&
       new TownNavigation([

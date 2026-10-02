@@ -387,7 +387,11 @@ export function settleSaloonIncome(town, now) {
   };
 }
 
-export function upgradeOffer(town, id) {
+// The very first project of a new town is free.
+const isFirstProject = (town) =>
+  !Object.keys(town.projects).length && BUILDINGS.every(({ id }) => !town.buildings[id]);
+
+export function upgradeOffer(town, id, firstProject = isFirstProject(town)) {
   if (!Object.hasOwn(BUILDING_BY_ID, id)) return null;
   const building = BUILDING_BY_ID[id];
   const stage = town.buildings[id];
@@ -395,8 +399,6 @@ export function upgradeOffer(town, id) {
   const upgrade = building.upgrades[stage] ?? modernization(town, id);
   if (!upgrade) return null;
   const needsPower = upgrade.requiresPower && !hasElectricity(town);
-  const firstProject =
-    !Object.keys(town.projects).length && BUILDINGS.every(({ id }) => !town.buildings[id]);
   const eraCost =
     town.era === 'river-rail'
       ? upgrade.type === 'modernization'
@@ -461,10 +463,18 @@ export function buildingIndicators(
   return indicators;
 }
 
-export const availablePurchases = (town, builderHammers = 0) =>
-  BUILDINGS.map((place) => ({ ...place, offer: upgradeOffer(town, place.id) }))
-    .filter(({ offer }) => offer?.available && (town.coins >= offer.cost || builderHammers > 0))
+// Every building whose next offer could start now, cheapest first.
+export function openOffers(town) {
+  const firstProject = isFirstProject(town);
+  return BUILDINGS.map((place) => ({ ...place, offer: upgradeOffer(town, place.id, firstProject) }))
+    .filter(({ offer }) => offer?.available)
     .sort((a, b) => a.offer.cost - b.offer.cost);
+}
+
+// Offers the town can pay for now, in coins or with a builder hammer. Callers showing
+// both views of one town can share `offers` from openOffers().
+export const availablePurchases = (town, builderHammers = 0, offers = openOffers(town)) =>
+  offers.filter(({ offer }) => town.coins >= offer.cost || builderHammers > 0);
 
 export const availableParcels = (town, builderHammers = 0) => [
   ...BUILDINGS.filter(({ id }) => plotInEra(town, id) && constructionReady(town.projects[id])).map(

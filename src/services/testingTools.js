@@ -10,6 +10,7 @@ import { ERA_BUILDING_LEVELS, eraGate, plotInEra } from '../game/town/TownEras';
 import { normalizeTown, settleSaloonIncome } from '../game/town/TownRules';
 import { townFrameStats, townTimings } from '../game/town/TownProfiler';
 import { runRegisteredTestingMutation } from './localIntegrity';
+import { jsonCopy } from './jsonCopy';
 
 export const TESTING_TOWN_CHANGED = 'prospect-debug-town-changed';
 
@@ -53,7 +54,7 @@ export function createTestingTools(pinia) {
       if (campaign.readOnly) throw new Error(campaign.saveWarning);
       if (campaign.activeRun || useGameStore(pinia).sessionActive)
         throw new Error('Exit the mine before preparing an era.');
-      const town = JSON.parse(JSON.stringify(settleSaloonIncome(campaign.town, Date.now()).town));
+      const town = jsonCopy(settleSaloonIncome(campaign.town, Date.now()).town);
       town.era = era;
       town.projects = {};
       town.transition = null;

@@ -160,7 +160,7 @@ export async function syncNow({ pull = true, retryRejected = false } = {}) {
     return true;
   } catch (error) {
     updateSaveStatus();
-    if (cloud.account && !cloud.sessionExpired && !townStorage.active()?.meta.uploadError)
+    if (cloud.account && !cloud.sessionExpired && !townStorage.activeMeta()?.uploadError)
       cloud.status = 'offline';
     cloud.error = error.message;
     return false;
@@ -389,5 +389,5 @@ function saveStatusOf(meta) {
   return meta.dirty || meta.pending ? 'pending' : 'saved';
 }
 export function updateSaveStatus() {
-  cloud.status = saveStatusOf(townStorage.active()?.meta);
+  cloud.status = saveStatusOf(townStorage.activeMeta());
 }

@@ -15,8 +15,12 @@ export function afterPaint(callback) {
   };
 }
 // Run resumable work to the end now, for callers that cannot wait for idle frames.
+// Returns the generator's result.
 export function finishWork(iterator) {
-  while (!iterator.next().done);
+  let step;
+  do step = iterator.next();
+  while (!step.done);
+  return step.value;
 }
 export function scheduleWork(
   iterator,

@@ -331,7 +331,7 @@
 </template>
 <script setup>
 import { ERA_BY_ID } from '../../data/eras';
-import { computed } from 'vue';
+import { computed, inject } from 'vue';
 import { t } from '../../i18n';
 import { BUILDING_BY_ID } from '../../data/town';
 import { eraGate, eraBuildingLevel } from '../../game/town/TownEras';
@@ -373,8 +373,12 @@ const props = defineProps({
   readOnly: Boolean,
 });
 defineEmits(['build', 'hammer', 'finish', 'ring-bell', 'advance-era', 'select', 'museum', 'mine']);
+// The village's one-second clock, when shown inside it (see TownView).
+const townClock = inject('townClock', null);
 const cooldownSeconds = computed(() =>
-  Math.ceil(collectionCooldownRemaining(props.town, props.id, props.now) / 1000),
+  Math.ceil(
+    collectionCooldownRemaining(props.town, props.id, townClock?.value ?? props.now) / 1000,
+  ),
 );
 const building = computed(() => BUILDING_BY_ID[props.id]);
 const requirement = computed(() => plotRequirement(props.town, props.id));
