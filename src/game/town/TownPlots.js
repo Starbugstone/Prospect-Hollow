@@ -52,6 +52,12 @@ import { GARDEN_PARCELS } from '../../data/townGardenDistrict';
 const SITE_CLEAR_SECONDS = 2;
 const point = (x, y, z) => new THREE.Vector3(x, y, z);
 
+// Plot changes wait in one queue. The active job is prepared (its new model built
+// and its footprints known) and applies once its site is clear of walkers: a
+// 'swap' replaces one plot in place, a 'rebuild' adopts a prepared building into a
+// full rebuild when the town's layout changes.
+const plotWork = (d) => (d.plotWork ??= { queue: [], active: null });
+
 // A rotor (windmill sails, watermill wheel) keeps turning while the rest of its plot
 // is batched: it moves into the world as an animated actor with its motion, and
 // animals treat its swept sphere as solid.
@@ -209,7 +215,8 @@ export function changeTown(d, town, labels, mineProgress, constructionId, reduce
       topology: Object.keys(parts).filter((key) => parts[key] !== d.topologyState?.[key]),
     });
   // A newer town supersedes plots still waiting from an earlier change.
-  d.plotQueue = [];
+  const work = plotWork(d);
+  work.queue = [];
   if (!changed.length && sameTopology) {
     d.town = town;
     // No plot will activate to retire a construction cue shown for this change.
@@ -246,12 +253,12 @@ export function changeTown(d, town, labels, mineProgress, constructionId, reduce
       ...ids.filter((id) => id === constructionId),
     ].map((id) => ({ id, town, labels, construction: id === constructionId && !reducedMotion }));
     try {
-      if (queue.length > 1) d.plotQueue = queue;
+      if (queue.length > 1) work.queue = queue;
       else swapPlot(d, queue[0].id, town, labels, { construction: queue[0].construction });
       record('swap');
       return;
     } catch (error) {
-      d.plotQueue = [];
+      work.queue = [];
       console.warn('Incremental plot preparation failed; rebuilding town.', error);
     }
   }
@@ -280,8 +287,9 @@ export function changeTown(d, town, labels, mineProgress, constructionId, reduce
     const entries = registerFootprints(probe, footprint.solids, {
       provisional: footprint.provisional,
     });
-    d.discardPendingUpdate();
-    d.pendingUpdate = {
+    d.discardPlotWork();
+    work.active = {
+      kind: 'rebuild',
       id: constructionId,
       entries,
       town,
@@ -305,18 +313,18 @@ export function plotFootprints(d, id, town, group, provisionalMine = true) {
     : footprintsFor(plotFootprintKey(id, town), group);
 }
 
-export function discardPendingUpdate(d) {
-  // The prepared building (and any rotor inside it) never joined the world.
-  d.clearGroup(d.pendingUpdate?.prepared?.group);
-  d.pendingUpdate = null;
+// Drops the active job: a prepared rebuild's building (and any rotor in it) never
+// joined the world, and a waiting swap's hidden group leaves it.
+export function discardPlotWork(d) {
+  const { active } = plotWork(d);
+  d.clearGroup(active?.kind === 'rebuild' ? active.prepared?.group : active?.group);
+  plotWork(d).active = null;
 }
 
 function swapPlot(d, id, town, labels, { construction = false } = {}) {
   d.finishConstruction();
   invalidatePresentationWork(d);
-  if (d.pendingPlot) d.clearGroup(d.pendingPlot.group);
-  d.pendingPlot = null;
-  d.discardPendingUpdate();
+  d.discardPlotWork();
   const previous = d.plotCache.get(id);
   const [x, z] = PLOTS[id];
   const group = d.group(d.world, x, 0.08, z);
@@ -331,6 +339,7 @@ function swapPlot(d, id, town, labels, { construction = false } = {}) {
   const signature = d.plotSignatures(town, labels).get(id);
   const partKeys = new Map();
   const pending = {
+    kind: 'swap',
     id,
     group,
     previous,
@@ -343,7 +352,7 @@ function swapPlot(d, id, town, labels, { construction = false } = {}) {
   };
   group.visible = false;
   group.userData.activation = 'pending';
-  d.pendingPlot = pending;
+  plotWork(d).active = pending;
   d.tryActivatePlot();
 }
 
@@ -443,11 +452,14 @@ function siteExit(d, actor, entries, swept) {
   return null;
 }
 
+// Advances the plot queue by at most one step per call (one per frame from tick):
+// prepare the next swap, or apply the active job once its site is clear.
 export function tryActivatePlot(d) {
-  if (d.pendingUpdate) {
-    const pending = d.pendingUpdate;
+  const work = plotWork(d);
+  if (work.active?.kind === 'rebuild') {
+    const pending = work.active;
     if (!d.plotVacant(pending)) return false;
-    d.pendingUpdate = null;
+    work.active = null;
     timeTown('full-update', () =>
       d.update(
         pending.town,
@@ -460,15 +472,15 @@ export function tryActivatePlot(d) {
     if (d.cue) d.cue.visible = false;
     return true;
   }
-  const pending = d.pendingPlot;
+  const pending = work.active;
   if (!pending) {
-    const next = d.plotQueue?.shift();
+    const next = work.queue.shift();
     if (next) {
       try {
         swapPlot(d, next.id, next.town, next.labels, { construction: next.construction });
       } catch (error) {
         console.warn('Incremental plot preparation failed; rebuilding town.', error);
-        d.plotQueue = [];
+        work.queue = [];
         d.update(next.town, next.labels, d.mineProgress);
       }
     }
@@ -478,7 +490,7 @@ export function tryActivatePlot(d) {
     pending;
   if (!d.plotVacant(pending)) return false;
   const started = performance.now();
-  d.pendingPlot = null;
+  work.active = null;
   previous.group.userData.activation = 'removed';
   previous.group.removeFromParent();
   if (previous.movingPart) {
@@ -566,7 +578,8 @@ export function tryActivatePlot(d) {
 }
 
 export function plotsPending(d) {
-  return !!d.pendingPlot || !!d.pendingUpdate || !!d.plotQueue?.length;
+  const work = plotWork(d);
+  return !!work.active || work.queue.length > 0;
 }
 
 function refreshScenery(d) {
@@ -634,11 +647,9 @@ export function rebuildTown(
   }
   d.lifeEra = town.era;
   d.lifeReady = false;
-  d.plotQueue = [];
-  if (d.pendingPlot) d.clearGroup(d.pendingPlot.group);
-  d.pendingPlot = null;
-  // Activation clears its own pending update first; any other one is superseded.
-  d.discardPendingUpdate();
+  // Activation clears its own job first; anything still waiting is superseded.
+  plotWork(d).queue = [];
+  d.discardPlotWork();
   let adopted = null;
   d.presentation?.dispose(false);
   d.presentation = null;

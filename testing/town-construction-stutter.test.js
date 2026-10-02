@@ -52,7 +52,7 @@ function fixture() {
 afterEach(() => {
   vi.restoreAllMocks();
   for (const view of views.splice(0)) {
-    view.discardPendingUpdate();
+    view.discardPlotWork();
     view.actorRenderer.dispose();
     view.buildingRenderer.dispose();
     view.upgradeGlow.dispose();
@@ -83,7 +83,7 @@ it('builds a topology-changing reveal once and adopts it in the full rebuild', (
   expect(prepared.parent).toBe(view.world);
   expect(view.construction.group).toBe(prepared);
   expect(footprints.mock.calls.filter(([id]) => id === 'home')).toHaveLength(1);
-  expect(view.pendingUpdate).toBeNull();
+  expect(view.plotWork.active).toBeNull();
   expect(view.plotCache.has('home2')).toBe(true);
   const change = townTimings().entries.findLast(({ name }) => name === 'town-change');
   expect(change.detail).toMatchObject({ path: 'prepared-update', building: 'home' });
@@ -97,13 +97,13 @@ it('releases a prepared building when another rebuild supersedes its occupied si
   view.update(town, labels);
   vi.spyOn(view, 'plotVacant').mockReturnValue(false);
   view.changeTown(built(town, { home: 2 }), labels, 0, 'home');
-  const probe = view.pendingUpdate.prepared.group;
+  const probe = view.plotWork.active.prepared.group;
   const geometry = new BufferGeometry();
   geometry.userData.owned = true;
   probe.children[0].geometry = geometry;
   const dispose = vi.spyOn(geometry, 'dispose');
   view.update(town, labels);
-  expect(view.pendingUpdate).toBeNull();
+  expect(view.plotWork.active).toBeNull();
   expect(dispose).toHaveBeenCalledOnce();
   expect(probe.parent).toBeNull();
 });
@@ -177,7 +177,7 @@ it('moves a villager who cannot leave a finished building site so the reveal sti
   view.drawFrame = () => true;
   view.beginConstructionCue('home');
   view.changeTown(built(town, { home: 3 }), labels, 0, 'home');
-  expect(view.pendingPlot?.id).toBe('home');
+  expect(view.plotWork.active?.id).toBe('home');
   expect(view.cue.visible).toBe(true);
   // Locomotion never runs here, so the villager stays put, as when blocked.
   view.elapsed = 1;
@@ -185,7 +185,7 @@ it('moves a villager who cannot leave a finished building site so the reveal sti
   expect(view.construction).toBeFalsy();
   view.elapsed = 2.5;
   expect(view.tryActivatePlot()).toBe(true);
-  expect(view.pendingPlot).toBeNull();
+  expect(view.plotWork.active).toBeNull();
   expect(view.construction.group.userData.plot).toBe('home');
   expect(view.cue.visible).toBe(false);
   expect(view.constructionGate.visible).toBe(false);
@@ -335,7 +335,7 @@ it('swaps every advancing project one per frame instead of rebuilding the town',
   expect(changed.length).toBeGreaterThan(1);
   view.changeTown(returned, labels, 0);
   // Nothing is rebuilt during the return itself; the current town stays on screen.
-  expect(view.plotQueue.map(({ id }) => id)).toEqual(changed);
+  expect(view.plotWork.queue.map(({ id }) => id)).toEqual(changed);
   expect(view.plotsPending()).toBe(true);
   for (let frame = 0; frame < changed.length; frame++) view.tryActivatePlot();
   expect(view.plotsPending()).toBe(false);
@@ -372,8 +372,8 @@ it('reveals the finished building after the other changed plots swap silently', 
   const changed = changedPlots(view, both, labels);
   expect(changed).toEqual(expect.arrayContaining([readyId, other]));
   view.changeTown(both, labels, 0, readyId);
-  expect(view.plotQueue.at(-1)).toMatchObject({ id: readyId, construction: true });
-  expect(view.plotQueue.slice(0, -1).every(({ construction }) => !construction)).toBe(true);
+  expect(view.plotWork.queue.at(-1)).toMatchObject({ id: readyId, construction: true });
+  expect(view.plotWork.queue.slice(0, -1).every(({ construction }) => !construction)).toBe(true);
   for (let frame = 0; frame < changed.length; frame++) view.tryActivatePlot();
   expect(view.construction.group).toBe(view.plotCache.get(readyId).group);
   view.finishConstruction();
@@ -385,7 +385,7 @@ it('lets a newer town change replace plots still waiting from the previous one',
   view.update(started, labels);
   vi.spyOn(view, 'plotVacant').mockReturnValue(true);
   view.changeTown(advanceConstruction(started), labels, 0);
-  expect(view.plotQueue.length).toBeGreaterThan(1);
+  expect(view.plotWork.queue.length).toBeGreaterThan(1);
   view.update(started, labels);
   expect(view.plotsPending()).toBe(false);
 });

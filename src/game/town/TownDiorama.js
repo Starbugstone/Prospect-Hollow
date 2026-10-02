@@ -237,8 +237,8 @@ export class TownDiorama extends TownPrimitives {
   plotFootprints(...args) {
     return plots.plotFootprints(this, ...args);
   }
-  discardPendingUpdate(...args) {
-    return plots.discardPendingUpdate(this, ...args);
+  discardPlotWork(...args) {
+    return plots.discardPlotWork(this, ...args);
   }
   plotVacant(...args) {
     return plots.plotVacant(this, ...args);
@@ -686,7 +686,7 @@ export class TownDiorama extends TownPrimitives {
     }
     this.staticScenery?.dispose(this);
     this.liveVisitors?.dispose();
-    this.discardPendingUpdate();
+    this.discardPlotWork();
     this.clearGroup(this.world);
     this.clearGroup(this.landscape);
     this.plotCache?.clear();
