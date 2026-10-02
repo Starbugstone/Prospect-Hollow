@@ -300,9 +300,10 @@ it('refreshes the acknowledged journal using the existing storage parse during a
   const read = vi.spyOn(localStorage, 'getItem');
   const parse = vi.spyOn(JSON, 'parse');
   expect(campaign.save()).toBe(true);
-  // Read the durable town once and compare it before writing. Accounting must not
-  // add another read/parse; unrelated profile/asset JSON is outside this assertion.
-  expect(read.mock.calls.filter(([key]) => key === SAVE_KEY)).toHaveLength(2);
+  // Read the durable town once and compare the new record with that same read before
+  // writing. Accounting must not add another read/parse; unrelated profile/asset JSON
+  // is outside this assertion.
+  expect(read.mock.calls.filter(([key]) => key === SAVE_KEY)).toHaveLength(1);
   expect(parse.mock.calls.filter(([text]) => text === durable)).toHaveLength(1);
 });
 

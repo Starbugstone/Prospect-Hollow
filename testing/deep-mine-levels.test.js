@@ -414,6 +414,7 @@ describe('deep mine completion and pacing', () => {
     }
   });
 
+  // A diagnostic simulation of 300+ runs: the default 5 s is too tight in a parallel suite.
   it('raises late-campaign difficulty while preserving short introductions and chapter breathers', () => {
     const ordinaryIds = deep
       .filter(({ id }) => !introductions.some((level) => level.id === id) && (id - 1) % 6 !== 4)
@@ -433,7 +434,7 @@ describe('deep mine completion and pacing', () => {
         median(measure(finale.id).map(({ turns }) => turns)),
       );
     }
-  });
+  }, 30_000);
 
   it.each([
     firstOfTheme('fossil-beds').id,
