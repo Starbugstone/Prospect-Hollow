@@ -1,28 +1,17 @@
-import { TownItineraries, finishItinerary } from './TownItineraries';
+import { TownItineraries } from './TownItineraries';
 import { setTownAtmosphere, horizonMaterial } from './TownAtmosphere';
-import { applyRoadSetbacks } from './BuildingSetbacks';
-import { addTownAnimals, animalKey } from './TownAnimals';
-import { footprintsFor, plotFootprintKey } from './FootprintCatalog';
-import { navigationScene, drawNavigation, releaseNavigation } from './NavigationDebug';
-import { hasElectricity } from '../../data/industrial';
-import { mineGrowth } from '../../data/mineGrowth';
-import { updateMineGrowth } from './mine/addMineSite';
-import { afterPaint, finishWork, performanceMark, scheduleWork } from '../PresentationWork';
-import { geometryFootprints, registerFootprints, footprintDistance } from './BuildingFootprints';
-import { townTracks, railEdges } from './TownLayout';
-import { townNavigation, sceneryObstacles } from './TownNavigation';
+
+import { navigationScene, releaseNavigation } from './NavigationDebug';
+
 import {
   clearFrameContext,
   frameEnd,
   frameStart,
-  recordTownTiming,
   setFrameContext,
-  timeTown,
-  timedSteps,
   watchLongTasks,
 } from './TownProfiler';
-import { addWorkBreak, updateWorkPaths } from './TownWorkRoutine';
-import { buildingWalk } from './TownPedestrians';
+import { addWorkBreak } from './TownWorkRoutine';
+
 import { TownVipArrivals } from './TownVipArrivals';
 import { TownLiveVisitors } from './TownLiveVisitors';
 import { vipVisitor } from '../../data/villagers';
@@ -30,7 +19,7 @@ import { updateTownLocomotion } from './TownLocomotion';
 import { MINE_SHAFT, addMineShaft } from './TownMineShaft';
 import { TownPresentation } from './TownPresentation';
 import { ERA_CONSTRUCTION } from '../../data/mineEvolution';
-import { eraEvolution } from '../../data/eras';
+
 import { TownRenderQuality } from './TownRenderQuality';
 import { updateTownShadowCoverage } from './TownShadows';
 import { TownUpgradeGlow } from './TownUpgradeGlow';
@@ -43,54 +32,34 @@ import {
   renderEventInset,
 } from './TownEventCamera';
 import { TownPrimitives } from './TownPrimitives';
-import {
-  addCactus,
-  addConstructionPlot,
-  addHomeWing,
-  addWell,
-  addWindow,
-} from './buildings/frontierParts';
+import * as plots from './TownPlots';
+import { addCactus, addHomeWing, addWell, addWindow } from './buildings/frontierParts';
 import { addHorse, addPerson, animatePerson, setVillagerIdentity } from './TownPeople';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { BUILDING_BY_ID } from '../../data/town';
+
 import { TownFrameCache } from './TownFrameCache';
 import { TownStatics } from './TownStatics';
 import { TownActors } from './TownActors';
 import { addTownLife } from './TownLife';
 import { addLeisureActivity } from './TownLeisure';
-import { TownConstruction, constructionParts } from './TownConstruction';
-import { buildTownSquare } from './TownSquare';
-import {
-  renderBuilding,
-  renderModernization,
-  renderEraLandmark,
-} from './buildings/BuildingRenderer';
+
+import { renderBuilding } from './buildings/BuildingRenderer';
 import { addEraActivity, trackTransport } from './TownEraActivity';
-import { refreshTransport } from './TownTransports';
-import { addScaffolding, addImprovements } from './TownImprovements';
+
 import { addTownVisitors, TownRaid } from './TownActivity';
 import { TownEraIncident } from './TownEraIncident';
 import { eventKind } from '../../data/townEvents';
-import {
-  constructionVisual,
-  constructionReady,
-  plotUnlocked,
-  population,
-  nextGoal,
-  roadLevel,
-} from './TownRules';
+import { constructionReady, plotUnlocked, population, nextGoal } from './TownRules';
 import { buildLandscape, keepCameraAboveTerrain } from './TownLandscape';
 import { addMotorActivity } from './TownMotorActivity';
-import { addServiceDrops, motorTraffic } from './TownEvolution';
-import { TownScenery } from './TownScenery';
+import { motorTraffic } from './TownEvolution';
+
 import { overlapsEventInset } from './TownInset';
 
 import { GARDEN_PARCELS } from '../../data/townGardenDistrict';
-import { PLOTS, LANE_X, atPlot, SHERIFF_PATROL, visiblePlots } from './TownLayout';
+import { PLOTS, LANE_X, atPlot, SHERIFF_PATROL } from './TownLayout';
 import { riverCenterX } from './TownRiver';
 export { PLOTS } from './TownLayout';
-// Village seconds a finished building waits for villagers to walk off its site.
-const SITE_CLEAR_SECONDS = 2;
 const point = (x, y, z) => new THREE.Vector3(x, y, z);
 
 // Original geometry shares static scenery batches and animated actor instances.
@@ -242,738 +211,55 @@ export class TownDiorama extends TownPrimitives {
       return false;
     }
   }
-  buildPlot(id, group, town, labels) {
-    let movingPart;
-    if (id === 'mine') this.mine(group, labels.mine);
-    else {
-      const stage = town.buildings[id],
-        project = town.projects[id],
-        kind = BUILDING_BY_ID[id].kind;
-      if (kind === 'bridge') {
-        renderBuilding({ town: this, parent: group, kind, level: stage, label: labels[id] });
-        if (stage)
-          renderModernization(
-            this,
-            group,
-            kind,
-            town.buildingEras[id],
-            town.buildingEraLevels[id] || stage,
-          );
-        if (project) addScaffolding(this, group, kind, stage, constructionVisual(project));
-      } else if (!stage) addConstructionPlot(this, group, kind, project ? 2 : -1, labels[id]);
-      else {
-        const industrial = renderEraLandmark(
-          this,
-          group,
-          kind,
-          labels[id],
-          town.buildingEraLevels[id] || 1,
-          town.buildingEras[id],
-          stage,
-        );
-        if (!industrial) {
-          if (kind === 'square')
-            buildTownSquare(
-              this,
-              group,
-              stage,
-              town.buildingEras[id] === 'frontier',
-              town.buildingEras[id],
-            );
-          else if (kind === 'well') addWell(this, group);
-          else this.building(group, kind, stage, labels[id]);
-        }
-        if (!industrial && !['fisherman', 'blacksmith', 'school', 'doctor'].includes(kind))
-          movingPart = addImprovements(this, group, kind, stage, town.buildingEras[id]);
-        if (!industrial)
-          renderModernization(
-            this,
-            group,
-            kind,
-            town.buildingEras[id],
-            town.buildingEraLevels[id] || stage,
-          );
-        const wheel = group.getObjectByName('Watermill wheel');
-        if (wheel)
-          movingPart = {
-            rotor: wheel,
-            update: (time) => {
-              wheel.rotation.x = time * 0.45;
-            },
-          };
-        if (project) addScaffolding(this, group, kind, stage, constructionVisual(project));
-      }
-    }
-    applyRoadSetbacks(group, id, town);
-    return movingPart;
-  }
-  plotSignatures(town, labels) {
-    return new Map(
-      visiblePlots(town).map(({ id }) => [
-        id,
-        JSON.stringify([
-          labels[id],
-          town.era,
-          town.buildings[id],
-          constructionVisual(town.projects[id]),
-          town.buildingEras[id],
-          town.buildingEraLevels[id],
-        ]),
-      ]),
-    );
-  }
   // Named parts show which layout change forced a full rebuild in town timings.
-  topologyParts(town, labels) {
-    return Object.fromEntries(
-      Object.entries({
-        era: town.era,
-        plots: visiblePlots(town).map(({ id }) => id),
-        tracks: townTracks(town),
-        rails: railEdges(town),
-        roads: roadLevel(town),
-        electricity: hasElectricity(town),
-        labels,
-      }).map(([key, value]) => [key, JSON.stringify(value ?? null)]),
-    );
-  }
-  topologySignature(town, labels) {
-    return JSON.stringify(this.topologyParts(town, labels));
-  }
-  prepareConstructionCue() {
-    if (!this.cue) {
-      this.cue = this.group(this.scene);
-      this.cue.userData.animated = true;
-      this.box(this.cue, 0.15, 1.2, 0.15, 0, 0.6, 0, '#b88952');
-      this.box(this.cue, 0.7, 0.3, 0.35, 0, 1.15, 0, '#667a7b', true);
-      this.cue.traverse((o) => o.layers.set(2));
-    }
-    this.cue.visible = false;
-  }
-  beginConstructionCue(id) {
-    this.prepareConstructionCue();
-    const [x, z] = PLOTS[id] ?? [0, 0];
-    this.cue.position.set(x + 1.4, 0.4, z + 1.8);
-    this.cue.rotation.z = -0.65;
-    this.cue.visible = true;
-    this.drawFrame();
-  }
-  changeTown(town, labels, mineProgress, constructionId, reducedMotion = false) {
-    const started = performance.now();
-    this.mineProgress = mineProgress;
-    const works = this.staticScenery?.entries.get('mine-works')?.group;
-    if (works) updateMineGrowth(works, mineGrowth(mineProgress));
-    const signatures = this.plotSignatures(town, labels);
-    const changed = [...signatures].filter(
-      ([id, signature]) => this.plotCache?.get(id)?.signature !== signature,
-    );
-    const parts = this.topologyParts(town, labels);
-    const sameTopology = this.topology === JSON.stringify(parts);
-    const record = (path) =>
-      recordTownTiming('town-change', started, {
-        path,
-        building: constructionId ?? null,
-        plots: changed.map(([id]) => id),
-        topology: Object.keys(parts).filter((key) => parts[key] !== this.topologyState?.[key]),
-      });
-    // A newer town supersedes plots still waiting from an earlier change.
-    this.plotQueue = [];
-    if (!changed.length && sameTopology) {
-      this.town = town;
-      // No plot will activate to retire a construction cue shown for this change.
-      if (this.cue) this.cue.visible = false;
-      this.render();
-      return;
-    }
-    if (
-      changed.length === 1 &&
-      this.lifeReady !== false &&
-      changed[0][0] === 'mine' &&
-      sameTopology
-    ) {
-      this.invalidatePresentationWork();
-      this.town = town;
-      this.staticScenery.update(this, town);
-      const works = this.staticScenery.entries.get('mine-works').group;
-      this.navigation.replaceOwner('mine-site', works.userData.footprints);
-      this.plotCache.get('mine').signature = signatures.get('mine');
-      this.buildingRenderer.sync(this.world.children.filter((child) => child.userData.static));
-      this.repairAnimalLife();
-      this.render();
-      record('mine');
-      return;
-    }
-    if (
-      changed.length &&
-      this.lifeReady !== false &&
-      changed.every(([id]) => id !== 'mine') &&
-      sameTopology
-    ) {
-      // Several plots can change at once, e.g. every project advancing after a mine
-      // run. Swap them one per frame instead of rebuilding the town and all its life,
-      // starting after the current town is back on screen. The player's finished
-      // building goes last so no later swap cuts its reveal short.
-      const ids = changed.map(([id]) => id);
-      const queue = [
-        ...ids.filter((id) => id !== constructionId),
-        ...ids.filter((id) => id === constructionId),
-      ].map((id) => ({ id, town, labels, construction: id === constructionId && !reducedMotion }));
-      try {
-        if (queue.length > 1) this.plotQueue = queue;
-        else this.swapPlot(queue[0].id, town, labels, { construction: queue[0].construction });
-        record('swap');
-        return;
-      } catch (error) {
-        this.plotQueue = [];
-        console.warn('Incremental plot preparation failed; rebuilding town.', error);
-      }
-    }
-    if (constructionId && this.navigation && this.plotCache?.has(constructionId)) {
-      // Prepare the finished building once: its footprints decide when the site is
-      // clear, then the full rebuild adopts this group instead of building it again.
-      const [x, z] = PLOTS[constructionId],
-        probe = this.group(new THREE.Group(), x, 0.08, z);
-      probe.userData.plot = constructionId;
-      const oldTown = this.town;
-      this.town = town;
-      let movingPart;
-      try {
-        movingPart = timeTown('prepare-build', () =>
-          this.buildPlot(constructionId, probe, town, labels),
-        );
-      } catch (error) {
-        this.clearGroup(probe);
-        throw error;
-      } finally {
-        this.town = oldTown;
-      }
-      const footprint = timeTown('prepare-footprints', () =>
-        this.plotFootprints(constructionId, town, probe, false),
-      );
-      const entries = registerFootprints(probe, footprint.solids, {
-        provisional: footprint.provisional,
-      });
-      this.discardPendingUpdate();
-      this.pendingUpdate = {
-        id: constructionId,
-        entries,
-        town,
-        labels,
-        mineProgress,
-        constructionId: reducedMotion ? null : constructionId,
-        prepared: { id: constructionId, group: probe, movingPart, footprint },
-      };
-      record('prepared-update');
-      if (!this.tryActivatePlot()) return;
-    } else {
-      this.update(town, labels, mineProgress, reducedMotion ? null : constructionId);
-      record('update');
-    }
-    if (this.cue) this.cue.visible = false;
-  }
-  plotFootprints(id, town, group, provisionalMine = true) {
-    return id === 'mine'
-      ? { solids: geometryFootprints(group), provisional: provisionalMine }
-      : footprintsFor(plotFootprintKey(id, town), group);
-  }
-  discardPendingUpdate() {
-    // The prepared building (and any rotor inside it) never joined the world.
-    this.clearGroup(this.pendingUpdate?.prepared?.group);
-    this.pendingUpdate = null;
-  }
-  swapPlot(id, town, labels, { construction = false } = {}) {
-    this.finishConstruction();
-    this.invalidatePresentationWork();
-    if (this.pendingPlot) this.clearGroup(this.pendingPlot.group);
-    this.pendingPlot = null;
-    this.discardPendingUpdate();
-    const previous = this.plotCache.get(id);
-    const [x, z] = PLOTS[id];
-    const group = this.group(this.world, x, 0.08, z);
-    group.userData.plot = id;
-    group.userData.static = true;
-    this.town = town;
-    const movingPart = timeTown('prepare-build', () => this.buildPlot(id, group, town, labels));
-    const footprint = timeTown('prepare-footprints', () => this.plotFootprints(id, town, group));
-    const entries = registerFootprints(group, footprint.solids, {
-      provisional: footprint.provisional,
-    });
-    const signature = this.plotSignatures(town, labels).get(id);
-    const partKeys = new Map();
-    const pending = {
-      id,
-      group,
-      previous,
-      movingPart,
-      entries,
-      signature,
-      construction,
-      parts: timeTown('construction-parts', () => constructionParts(group, partKeys)),
-      partKeys,
-    };
-    group.visible = false;
-    group.userData.activation = 'pending';
-    this.pendingPlot = pending;
-    this.tryActivatePlot();
-  }
-  showConstructionGate(id) {
-    if (!this.constructionGate) {
-      const gate = (this.constructionGate = this.group(this.scene));
-      gate.name = 'Building waiting for a clear work site';
-      for (const x of [-1.5, 1.5]) this.box(gate, 0.08, 0.9, 0.08, x, 0.45, 0, '#b99464');
-      this.box(gate, 3, 0.14, 0.05, 0, 0.75, 0, '#dba744');
-      gate.traverse((o) => o.layers.set(2));
-    }
-    const [x, z] = PLOTS[id];
-    this.constructionGate.position.set(x, 0.08, z + 2.5);
-    this.constructionGate.visible = true;
-  }
-  plotVacant(pending) {
-    const { entries } = pending;
-    const occupants = [
-      ...(this.actors ?? []),
-      ...(this.animals ?? []),
-      ...(this.vipArrivals?.actors ?? []),
-      ...(this.liveVisitors?.actors ?? []),
-    ].filter(
-      (a) =>
-        a.root.visible &&
-        a.species !== 'pigeon' &&
-        entries.some(
-          (o) =>
-            a.root.position.y + 1.65 > o.y &&
-            a.root.position.y + 0.08 < o.y + o.height &&
-            footprintDistance(o, a.root.position.x, a.root.position.z) < (a.radius ?? 0.45),
-        ),
-    );
-    const now = this.elapsed ?? 0;
-    if (occupants.length) pending.waitStarted ??= now;
-    // Anyone still on the site after the grace period, boxed in or held by a
-    // crowd, steps off it. The build must not wait on them, or every later
-    // build queued behind it keeps its scaffolding and never plays its reveal.
-    if (occupants.length && now - pending.waitStarted < SITE_CLEAR_SECONDS) {
-      this.showConstructionGate(pending.id);
-      for (const actor of occupants) {
-        if (actor.motion?.exitTarget) continue;
-        if (pending.retryAt && now < pending.retryAt) continue;
-        const exit = this.siteExit(actor, entries, true);
-        if (exit) {
-          const p = actor.root.position;
-          actor.motion ??= {
-            x: p.x,
-            z: p.z,
-            vx: 0,
-            vz: 0,
-            routeDistance: 0,
-            radius: actor.radius ?? 0.45,
-            maxSpeed: actor.walkSpeed ?? 0.55,
-          };
-          actor.motion.exitTarget = exit;
-        } else pending.deferredReason = 'No swept-clear exit from pending structure';
-      }
-      pending.retryAt = now + 0.5;
-      return false;
-    }
-    for (const actor of occupants) {
-      const exit =
-        actor.motion?.exitTarget ??
-        this.siteExit(actor, entries, true) ??
-        this.siteExit(actor, entries, false);
-      if (!exit) continue;
-      actor.root.position.set(exit[0], actor.root.position.y, exit[2]);
-      if (actor.motion) {
-        actor.motion.x = exit[0];
-        actor.motion.z = exit[2];
-        actor.motion.vx = actor.motion.vz = 0;
-        actor.motion.exitTarget = null;
-        actor.motion.path = null;
-      }
-    }
-    if (this.constructionGate) this.constructionGate.visible = false;
-    return true;
-  }
   // Nearest point clear of the new footprint. A swept exit is reachable in a
   // straight walk; otherwise any point open in the navigation grid will do.
-  siteExit(actor, entries, swept) {
-    const p = actor.root.position,
-      radius = actor.radius ?? 0.45;
-    for (let ring = 1; ring <= 12; ring++)
-      for (let i = 0; i < 16; i++) {
-        const angle = (i * Math.PI) / 8,
-          q = [p.x + Math.cos(angle) * ring * 0.5, p.y, p.z + Math.sin(angle) * ring * 0.5];
-        if (
-          entries.every((o) => footprintDistance(o, q[0], q[2]) >= radius) &&
-          (swept
-            ? this.navigation.segment(p.toArray(), q, radius)
-            : this.navigation.clear(q, radius))
-        )
-          return q;
-      }
-    return null;
+  // The plot lifecycle (building, swapping, construction reveals and full rebuilds)
+  // lives in TownPlots; these methods keep the diorama's API for callers and tests.
+  buildPlot(...args) {
+    return plots.buildPlot(this, ...args);
   }
-  tryActivatePlot() {
-    if (this.pendingUpdate) {
-      const pending = this.pendingUpdate;
-      if (!this.plotVacant(pending)) return false;
-      this.pendingUpdate = null;
-      timeTown('full-update', () =>
-        this.update(
-          pending.town,
-          pending.labels,
-          pending.mineProgress,
-          pending.constructionId,
-          pending.prepared,
-        ),
-      );
-      if (this.cue) this.cue.visible = false;
-      return true;
-    }
-    const pending = this.pendingPlot;
-    if (!pending) {
-      const next = this.plotQueue?.shift();
-      if (next) {
-        try {
-          this.swapPlot(next.id, next.town, next.labels, { construction: next.construction });
-        } catch (error) {
-          console.warn('Incremental plot preparation failed; rebuilding town.', error);
-          this.plotQueue = [];
-          this.update(next.town, next.labels, this.mineProgress);
-        }
-      }
-      return true;
-    }
-    const { id, group, previous, movingPart, entries, signature, construction, parts, partKeys } =
-      pending;
-    if (!this.plotVacant(pending)) return false;
-    const started = performance.now();
-    this.pendingPlot = null;
-    previous.group.userData.activation = 'removed';
-    previous.group.removeFromParent();
-    if (previous.movingPart) {
-      previous.movingPart.rotor.removeFromParent();
-      this.motions = this.motions.filter((m) => m !== previous.movingPart.update);
-    }
-    group.visible = true;
-    group.userData.activation = construction ? 'temporary-reveal' : 'completed';
-    if (this.cue) this.cue.visible = false;
-    this.targets = this.targets.map((target) => (target === previous.group ? group : target));
-    this.plotCache.set(id, { signature, group, movingPart, parts });
-    this.navigation.replaceOwner(
-      `plot:${id}`,
-      entries,
-      construction ? 'temporary-reveal' : 'completed',
-    );
-    // A first opening can extend frontage paving or overhead service wires. Refresh
-    // only those scenery roots here instead of leaving them stale until a full rebuild.
-    const scenery = this.refreshScenery();
-    const actors = [
-      ...(this.actors ?? []),
-      ...(this.animals ?? []),
-      ...(this.vipArrivals?.actors ?? []),
-      ...(this.liveVisitors?.actors ?? []),
-    ];
-    const view = this,
-      generation = this.generation;
-    function* repairRoutes() {
-      view.itineraries = new TownItineraries(view);
-      for (const actor of actors) {
-        // The active break may be a short variant. Repair the full work route
-        // so later visits cannot restore a path through the changed footprint.
-        const path = actor.workRoutine?.paths[0] ?? actor.walkPath ?? actor.path;
-        if (!path?.points.length) continue;
-        const intersects = path.points.some(
-          (p, i) => i && !view.navigation.segment(path.points[i - 1], p, actor.radius ?? 0.45),
-        );
-        if (!intersects) {
-          if (actor.itinerary) yield* view.itineraries.prepare(actor);
-          continue;
-        }
-        const position = actor.root.position.toArray();
-        const next = path.building
-          ? buildingWalk(view, path.building, path.frontage)
-          : view.navigation.plan(
-              actor.workRoutine ? path.points : [position, ...path.points.slice(1), position],
-              actor.radius ?? 0.45,
-            );
-        if (actor.workRoutine) {
-          updateWorkPaths(actor, next);
-          actor.routeLimit = actor.direction < 0 ? 0 : next.total;
-        } else if (actor.walkPath) actor.walkPath = next;
-        else actor.path = next;
-        if (actor.motion) actor.motion.path = null;
-        if (actor.itinerary) {
-          actor.itinerary.anchor = next.points[0];
-          finishItinerary(actor, next, next.total);
-          yield* view.itineraries.prepare(actor);
-        }
-        yield;
-      }
-    }
-    this.cancelRouteWork?.();
-    this.cancelRouteWork = scheduleWork(repairRoutes(), {
-      isCurrent: () => generation === this.generation,
-    });
-    if (movingPart) {
-      this.world.attach(movingPart.rotor);
-      movingPart.rotor.userData.animated = true;
-      this.motions.push(movingPart.update);
-    }
-    if (construction)
-      this.construction = new TownConstruction(
-        this,
-        group,
-        movingPart?.rotor,
-        previous.parts,
-        partKeys,
-      );
-    // New overhead wires replace every plot's service drop, not just this one.
-    this.refreshServiceDrops(scenery.includes('power') ? undefined : id);
-    // A finished airport, port or station modernization restyles its vehicle too.
-    refreshTransport(this, id, this.town);
-    timeTown('activate-statics', () =>
-      this.buildingRenderer.sync(this.world.children.filter((child) => child.userData.static)),
-    );
-    this.clearGroup(previous.group);
-    this.frameCache.valid = false;
-    timeTown('activate-actors', () => this.rebuildActors());
-    this.render();
-    recordTownTiming('activate', started, { building: id, construction: !!construction, scenery });
-    const reveal = this.construction;
-    if (reveal)
-      afterPaint(() => {
-        if (this.construction === reveal) reveal.presentFirstStrike();
-      });
-    else this.repairAnimalLife();
-    return true;
+  plotSignatures(...args) {
+    return plots.plotSignatures(this, ...args);
   }
-  plotsPending() {
-    return !!this.pendingPlot || !!this.pendingUpdate || !!this.plotQueue?.length;
+  topologySignature(...args) {
+    return plots.topologySignature(this, ...args);
   }
-  refreshScenery() {
-    if (!this.staticScenery) return [];
-    const changed = this.staticScenery.update(this, this.town);
-    for (const id of changed) {
-      const group = this.staticScenery.entries.get(id).group;
-      this.navigation?.replaceOwner(`scenery:${id}`, group ? sceneryObstacles(group) : []);
-    }
-    return changed;
+  prepareConstructionCue(...args) {
+    return plots.prepareConstructionCue(this, ...args);
   }
-  refreshServiceDrops(changedId) {
-    const previous = this.serviceDrops;
-    this.serviceDrops = addServiceDrops(
-      this,
-      this.staticScenery?.entries.get('power')?.group,
-      new Map(
-        [...this.plotCache]
-          .filter(([id]) => changedId === undefined || id === changedId)
-          .map(([id, { group }]) => [id, group]),
-      ),
-      changedId === undefined ? null : previous,
-    );
-    if (previous?.parent) this.clearGroup(previous);
+  beginConstructionCue(...args) {
+    return plots.beginConstructionCue(this, ...args);
   }
-  invalidatePresentationWork() {
-    this.generation = (this.generation ?? 0) + 1;
-    this.cancelAnimalWork?.();
-    this.cancelLifeWork?.();
-    this.cancelFinishWork?.();
-    this.cancelRouteWork?.();
+  changeTown(...args) {
+    return plots.changeTown(this, ...args);
   }
-  update(town, labels, mineProgress = 0, constructionId = null, prepared = null) {
-    this.mineProgress = mineProgress;
-    this.invalidatePresentationWork();
-    // Store the rendered era separately: the campaign may mutate the same town
-    // object before this update. Routes and work positions only survive rebuilds
-    // within that era; a new layout gets a fresh ambient population.
-    if (this.lifeEra !== undefined && this.lifeEra !== town.era) {
-      this.vipArrivals?.reset();
-      this.vipArrivals = null;
-      this.actors = [];
-      this.animals = [];
-      this.animalFeeder = null;
-      this.animalMotion = null;
-      this.animalBehavior = null;
-      this.animalSpace = null;
-      this.animalNavigation = null;
-      this.animalRoutes = null;
-      this.animalHabitats = [];
-      this.locomotionGrid = null;
-      this.locomotionAgents = [];
-      this.locomotionVehicles = [];
-      this.manualBlockers = [];
-    }
-    this.lifeEra = town.era;
-    this.lifeReady = false;
-    this.plotQueue = [];
-    if (this.pendingPlot) this.clearGroup(this.pendingPlot.group);
-    this.pendingPlot = null;
-    // Activation clears its own pending update first; any other one is superseded.
-    this.discardPendingUpdate();
-    let adopted = null;
-    this.presentation?.dispose(false);
-    this.presentation = null;
-    const interruptedGroup = this.construction?.group;
-    this.construction?.finish();
-    this.construction = null;
-    const previousParts = this.plotCache?.get(constructionId)?.parts;
-    const plots = visiblePlots(town);
-    updateTownShadowCoverage(this, plots);
-    const previousPlotIds = this.cinematic?.plotIds;
-    const reusable = new Map();
-    const signatures = this.plotSignatures(town, labels);
-    this.topologyState = this.topologyParts(town, labels);
-    this.topology = JSON.stringify(this.topologyState);
-    this.labels = labels;
-    // Keep unchanged plot meshes (and their sign textures) out of world disposal.
-    // A reveal needs fresh articulated pieces, including when interrupted by a tap.
-    for (const [id, cached] of this.plotCache ?? []) {
-      if (
-        id === constructionId ||
-        cached.group === interruptedGroup ||
-        cached.signature !== signatures.get(id)
-      )
-        continue;
-      cached.group.removeFromParent();
-      cached.movingPart?.rotor.removeFromParent();
-      reusable.set(id, cached);
-    }
-    this.plotCache = new Map();
-    this.retainedVipActors = new Map((this.vipArrivals?.actors ?? []).map((a) => [a.source, a]));
-    for (const a of this.retainedVipActors.values()) a.root.removeFromParent();
-    this.liveVisitors?.detach();
-    this.retainedAnimals = new Map((this.animals ?? []).map((a) => [animalKey(a), a]));
-    for (const a of this.retainedAnimals.values()) a.root.removeFromParent();
-    this.retainedActors = new Map(
-      (this.actors ?? []).filter((a) => a.persistentKey).map((a) => [a.persistentKey, a]),
-    );
-    for (const actor of this.retainedActors.values()) actor.root.removeFromParent();
-    this.actorRenderer.clear();
-    this.staticScenery ??= new TownScenery();
-    this.staticScenery.detach();
-    this.upgradeGlow.clear();
-    this.clearGroup(this.world);
-    this.world = new THREE.Group();
-    this.scene.add(this.world);
-    this.actors = [];
-    for (const a of this.retainedActors.values()) this.world.add(a.root);
-    for (const a of this.retainedAnimals.values()) this.world.add(a.root);
-    this.trafficActors = [];
-    this.motions = [];
-    this.visitorTransports = new Map();
-    this.targets = [];
-    this.anchors = [];
-    this.town = town;
-    this.guidedPlot = nextGoal(town)?.id;
-    this.staticScenery.update(this, town);
-    const mineWorks = this.staticScenery.entries.get('mine-works')?.group;
-    if (mineWorks) updateMineGrowth(mineWorks, mineGrowth(mineProgress));
-    // City-scale eras (and Motor Age, built on a city shell) need the wider orbit.
-    this.controls.maxDistance = plots.some(({ id }) => GARDEN_PARCELS[id])
-      ? 360
-      : ['city', 'motor-age'].includes(eraEvolution(town.era).style)
-        ? 270
-        : town.era !== 'frontier'
-          ? 160
-          : 110;
-    for (const {
-      id,
-      position: [x, z],
-    } of plots) {
-      const cached = reusable.get(id);
-      // A topology-changing reveal already built this plot to check its site.
-      const ready = !cached && prepared?.id === id ? prepared : null;
-      if (ready) adopted = ready;
-      const group = cached?.group ?? ready?.group ?? this.group(this.world, x, 0.08, z);
-      if (cached || ready) this.world.add(group);
-      group.userData.plot = id;
-      if (previousPlotIds && !previousPlotIds.has(id)) {
-        group.visible = false;
-        group.userData.revealAfterCinematic = true;
-      }
-      group.userData.static = true;
-      this.targets.push(group);
-      this.anchors.push({
-        id,
-        width: id === 'mine' ? 160 : Math.max(76, labels[id].length * 7 + 35),
-        position: point(x, 0.2, z + (id === 'mine' ? 1.65 : 1.85)),
-      });
-      let movingPart = cached?.movingPart ?? ready?.movingPart;
-      if (!cached && !ready) movingPart = this.buildPlot(id, group, town, labels);
-      const bounds = new THREE.Box3().setFromObject(group);
-      if (!cached) {
-        const footprint = ready?.footprint ?? this.plotFootprints(id, town, group, false);
-        registerFootprints(group, footprint.solids, {
-          provisional: footprint.provisional,
-          activation: town.projects[id]
-            ? 'construction'
-            : town.buildings[id] || id === 'mine'
-              ? 'completed'
-              : 'unbuilt',
-        });
-      }
-      if (id !== 'mine') this.upgradeGlow.add(id, bounds);
-      // Keep action icons at the front porch, below the roofline.
-      this.anchors.at(-1).collection = point(x, 1, z + 2.2);
-      // Keep the windmill rotor articulated while batching the rest of its building.
-      if (movingPart) {
-        group.updateMatrixWorld(true);
-        movingPart.rotor.updateWorldMatrix(true, false);
-        this.world.attach(movingPart.rotor);
-        movingPart.rotor.userData.animated = true;
-        const center = movingPart.rotor.getWorldPosition(new THREE.Vector3());
-        const rotorBounds = new THREE.Box3().setFromObject(movingPart.rotor);
-        const radius = Math.max(
-          center.distanceTo(rotorBounds.min),
-          center.distanceTo(rotorBounds.max),
-        );
-        movingPart.rotor.userData.animalSolid = new THREE.Box3().setFromCenterAndSize(
-          center,
-          new THREE.Vector3().setScalar(radius * 2),
-        );
-      }
-      const partKeys = new Map();
-      const parts = cached?.parts ?? constructionParts(group, partKeys);
-      if (id === constructionId)
-        this.construction = new TownConstruction(
-          this,
-          group,
-          movingPart?.rotor,
-          previousParts,
-          partKeys,
-        );
-      if (movingPart) this.motions.push(movingPart.update);
-      this.plotCache.set(id, { signature: signatures.get(id), group, movingPart, parts });
-    }
-    if (prepared && prepared !== adopted) this.clearGroup(prepared.group);
-    // Model preparation can be expensive. Start the reveal clock on its first visible frame.
-    if (this.construction) this.lastFrame = 0;
-    this.refreshServiceDrops();
-    this.navigation = townNavigation(this.world);
-    this.buildingRenderer.sync(this.world.children.filter((child) => child.userData.static));
-    this.renderer.shadowMap.needsUpdate = true;
-    if (this.overview) this.frameTown();
-    drawNavigation(this);
-    performanceMark('geometry-ready');
-    performanceMark('navigation-ready');
-    this.render();
-    const generation = this.generation;
-    const populate = () => {
-      if (this.disposed || generation !== this.generation) return;
-      const work = this.populateLife(town);
-      if (this.deferLife)
-        this.cancelLifeWork = scheduleWork(work, {
-          budget: 8,
-          isCurrent: () => generation === this.generation && !this.disposed,
-        });
-      else finishWork(work);
-    };
-    if (!this.deferLife) populate();
-    afterPaint(() => {
-      if (this.disposed || generation !== this.generation) return;
-      performanceMark('first-town-frame');
-      if (this.deferLife) populate();
-      this.construction?.presentFirstStrike();
-      this.onFirstFrame?.();
-    });
+  plotFootprints(...args) {
+    return plots.plotFootprints(this, ...args);
+  }
+  discardPendingUpdate(...args) {
+    return plots.discardPendingUpdate(this, ...args);
+  }
+  plotVacant(...args) {
+    return plots.plotVacant(this, ...args);
+  }
+  tryActivatePlot(...args) {
+    return plots.tryActivatePlot(this, ...args);
+  }
+  plotsPending(...args) {
+    return plots.plotsPending(this, ...args);
+  }
+  refreshServiceDrops(...args) {
+    return plots.refreshServiceDrops(this, ...args);
+  }
+  update(...args) {
+    return plots.rebuildTown(this, ...args);
+  }
+  repairAnimalLife(...args) {
+    return plots.repairAnimalLife(this, ...args);
+  }
+  finishConstruction(...args) {
+    return plots.finishConstruction(this, ...args);
   }
   *populateLife(town) {
     this.itineraries = new TownItineraries(this);
@@ -1609,58 +895,6 @@ export class TownDiorama extends TownPrimitives {
     } finally {
       frameEnd('tick', started);
     }
-  }
-  repairAnimalLife() {
-    this.retainedAnimals = new Map((this.animals ?? []).map((a) => [animalKey(a), a]));
-    if (this.animalMotion) this.motions = this.motions.filter((m) => m !== this.animalMotion);
-    addTownAnimals(this, this.town);
-  }
-  finishConstruction() {
-    if (!this.construction) return;
-    const { group } = this.construction;
-    this.construction.finish();
-    this.construction = null;
-    delete group.userData.animalSolid;
-    this.navigation?.replaceOwner(
-      `plot:${group.userData.plot}`,
-      group.userData.footprints ?? [],
-      'completed',
-    );
-    group.userData.activation = 'completed';
-    this.frameCache.valid = false;
-    // A pending camera frame already redraws the town this frame; do not render twice.
-    if (!this.cameraFrame) timeTown('finish-render', () => this.render());
-    const generation = this.generation;
-    const view = this;
-    // Each yield lets input and frames through. Until the actor rebuild, the finished
-    // pieces still draw as instances, so the partial batches are never visible alone.
-    function* settle() {
-      if (group.parent !== view.world) return;
-      yield* timedSteps(
-        'settle-statics',
-        view.buildingRenderer.syncWork(
-          view.world.children.filter((child) => child.userData.static),
-        ),
-      );
-      yield;
-      timeTown('settle-animals', () => view.repairAnimalLife());
-      yield;
-      timeTown('settle-actors', () => view.rebuildActors());
-      view.frameCache.valid = false;
-      afterPaint(() => {
-        if (generation !== view.generation) return;
-        view.renderer.shadowMap.needsUpdate = true;
-        timeTown('settle-shadow-render', () => view.render());
-      });
-    }
-    this.cancelFinishWork?.();
-    if (typeof requestAnimationFrame === 'undefined') {
-      finishWork(settle());
-      return;
-    }
-    this.cancelFinishWork = scheduleWork(settle(), {
-      isCurrent: () => generation === this.generation,
-    });
   }
   playRaid(event, onPhase, onComplete, onCue) {
     this.raid?.dispose();

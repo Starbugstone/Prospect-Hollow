@@ -398,3 +398,28 @@ it('checks building purchases once per town, not on every collection-clock tick'
   );
   expect(buildingIndicators(town, true, 0, undefined)).toEqual(indicators);
 });
+
+// The full rebuild and the in-place swap share one rotor attachment. The swap used to
+// skip the rotor's animal bounds, so birds could fly through windmill sails after an
+// upgrade until the next full rebuild.
+it('gives a swapped plot the same rotor attachment as a full rebuild', () => {
+  const { view, town, labels } = fixture();
+  town.coins = 1e6;
+  view.update(town, labels);
+  const original = view.plotCache.get('farm').movingPart.rotor;
+  expect(original.userData.animalSolid).toBeTruthy();
+  vi.spyOn(view, 'plotVacant').mockReturnValue(true);
+  const update = vi.spyOn(view, 'update');
+  // Same layout, different farm model: the farm alone swaps in place.
+  const modernized = { ...town, buildingEraLevels: { ...town.buildingEraLevels, farm: 2 } };
+  view.changeTown(modernized, labels, 0);
+  view.tryActivatePlot();
+  expect(update).not.toHaveBeenCalled();
+  const { movingPart } = view.plotCache.get('farm');
+  expect(movingPart.rotor).not.toBe(original);
+  expect(movingPart.rotor.parent).toBe(view.world);
+  expect(movingPart.rotor.userData.animated).toBe(true);
+  expect(movingPart.rotor.userData.animalSolid?.isBox3).toBe(true);
+  expect(view.motions).toContain(movingPart.update);
+  expect(view.motions.filter((motion) => motion === movingPart.update)).toHaveLength(1);
+});
