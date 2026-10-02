@@ -5,8 +5,6 @@ import { markRaw, toRaw } from 'vue';
 // full speed instead of going through a reactive proxy for every cell.
 export const plain = (value) => (Array.isArray(value) ? markRaw(toRaw(value)) : value);
 
-export const plainBoard = (board) => plain(Array.isArray(board) ? toRaw(board) : []);
-
 export const cloneBoard = (board = []) =>
   plain(Array.isArray(board) ? toRaw(board).map((gem) => (gem ? { ...gem } : null)) : []);
 

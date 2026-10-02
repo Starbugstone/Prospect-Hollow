@@ -10,7 +10,7 @@ import { storeTimers } from './storeTimers';
 
 // Logical mine state only. Renderer objects, timers and input queues belong to
 // their original window and must never cross a town handoff.
-export const HANDOFF_FIELDS = [
+const HANDOFF_FIELDS = [
   'board',
   'tiles',
   'boardSize',

@@ -18,7 +18,7 @@ const matchEngine = new MatchEngine();
 const tileManager = new TileManager();
 const bonusActivator = new BonusActivator();
 const hintEngine = new HintEngine();
-export const HINT_DELAY_MS = 15000;
+const HINT_DELAY_MS = 15000;
 
 const boardOf = (store) => toRaw(store.board);
 const tilesOf = (store) => toRaw(store.tiles ?? []);
