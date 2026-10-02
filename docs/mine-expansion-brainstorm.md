@@ -1,7 +1,8 @@
 # Deeper mine: proposed next chapters
 
-The approved implementation adds five groups, levels 373–402: Fossil beds,
-Glowshroom grotto, Root-bound vault, Underground reservoir and Geothermal forge.
+The approved implementation adds five groups, levels 373–402: Geothermal forge,
+Fossil beds, Glowshroom grotto, Root-bound vault and Underground reservoir.
+The forge now precedes fossils, whose first board reuses a brazier above the casing.
 Crystal heart remains a future idea. See [the implemented chapters](deep-mine-levels.md).
 
 This document preserves the initial brainstorming, which predates the endgame

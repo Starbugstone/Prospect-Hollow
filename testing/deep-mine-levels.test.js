@@ -15,8 +15,9 @@ import { deepMineProgress } from '../src/game/engine/DeepMineMechanics';
 import { gravityDestination, isPlayableCell } from '../src/game/engine/BoardTopology';
 import { HintEngine } from '../src/game/engine/HintEngine';
 import { MatchEngine } from '../src/game/engine/MatchEngine';
+import { TileManager } from '../src/game/engine/TileManager';
 import { PlayClock } from '../src/game/engine/PlayClock';
-import { layerCount, neighborsOf } from '../src/game/engine/TileRules';
+import { BOARD_BONUSES, layerCount, neighborsOf } from '../src/game/engine/TileRules';
 import { useGameStore } from '../src/stores/gameStore';
 import { useCampaignStore } from '../src/stores/campaignStore';
 import { simulateCampaignLevel } from './helpers/campaignSimulation';
@@ -24,6 +25,9 @@ import { simulateCampaignLevel } from './helpers/campaignSimulation';
 const FIRST = 373;
 const levels = generateLevelConfigs();
 const deep = levels.slice(FIRST - 1);
+const themed = (theme) => deep.filter((level) => level.theme === theme);
+const firstOfTheme = (theme) => themed(theme)[0];
+const introductions = ['fossil-beds', 'root-bound-vault'].map(firstOfTheme);
 const hints = new HintEngine();
 const sorted = (values) => [...values].sort((a, b) => a - b);
 const median = (values) => sorted(values)[Math.floor(values.length / 2)];
@@ -56,11 +60,11 @@ describe('append-only deep mine campaign', () => {
     expect(LEVEL_COUNT).toBe(402);
     expect(CHAPTERS.slice(62)).toEqual(DEEP_MINE_CHAPTERS);
     expect(DEEP_MINE_CHAPTERS.map(({ id }) => id)).toEqual([
+      'geothermal-forge',
       'fossil-beds',
       'glowshroom-grotto',
       'root-bound-vault',
       'underground-reservoir',
-      'geothermal-forge',
     ]);
     expect(DEEP_MINE_LEVELS).toHaveLength(30);
     expect(deep.map(({ id }) => id)).toEqual(Array.from({ length: 30 }, (_, i) => FIRST + i));
@@ -75,6 +79,78 @@ describe('append-only deep mine campaign', () => {
         ['explore', 'explore', 'explore', 'explore', 'rest', 'finale'][(level.id - 1) % 6],
       );
     }
+  });
+
+  it('teaches braziers before introducing fossils and gives the first bed a familiar bomb source', () => {
+    const forge = themed('geothermal-forge');
+    const fossil = firstOfTheme('fossil-beds');
+    expect(forge.map(({ id }) => id)).toEqual([373, 374, 375, 376, 377, 378]);
+    expect(fossil.id).toBe(379);
+    for (const level of deep.filter(({ id }) => id < fossil.id)) {
+      expect(level.tiles.some((tile) => tile.signal === 'core')).toBe(true);
+      expect(deepMineProgress(level.tiles).fossils.total).toBe(0);
+    }
+    expect(fossil.tiles.flatMap((tile, index) => (tile.signal === 'core' ? [index] : []))).toEqual([
+      23,
+    ]);
+    expect(fossil.tiles[23]).toMatchObject({ coreCharges: 4, signalHealth: 4, coreBonus: 'bomb' });
+    expect(DEEP_MINE_LEVELS[fossil.id - FIRST].fossils[0]).toMatchObject({
+      cells: [30, 31, 37, 38],
+      layers: 1,
+      encased: true,
+    });
+    expect(fossil.tip).toContain('familiar brazier');
+  });
+
+  it('earns and uses the supported first-fossil brazier bomb through four natural legal matches', () => {
+    const level = firstOfTheme('fossil-beds');
+    const tiles = level.tiles.map((tile) => ({ ...tile }));
+    let board = level.board.map((gem) => (gem ? { ...gem } : null));
+    const engine = new MatchEngine();
+    const manager = new TileManager();
+    let random = 379373;
+    vi.spyOn(Math, 'random').mockImplementation(() => {
+      random = (random * 16807) % 2147483647;
+      return (random - 1) / 2147483646;
+    });
+    const resolve = (evaluation) =>
+      manager.getResolution({
+        ...evaluation,
+        tiles,
+        cols: 7,
+        rows: 9,
+        gemTypes: level.boardLayout.gemTypes,
+      });
+    // The authored starting board and natural refills are used unchanged.
+    // No palette replacement, inventory power, free stock bonus or reshuffle.
+    const swaps = [
+      [16, 17],
+      [9, 16],
+      [21, 22],
+      [10, 11],
+    ];
+    for (const [turn, [a, b]] of swaps.entries()) {
+      expect(BOARD_BONUSES).not.toContain(board[a]?.type);
+      expect(BOARD_BONUSES).not.toContain(board[b]?.type);
+      const evaluation = engine.evaluateSwap(board, 7, 9, a, b, tiles);
+      expect(evaluation.matches.length).toBeGreaterThan(0);
+      const result = resolve(evaluation);
+      board = result.board;
+      expect(tiles[23].signalHealth).toBe(3 - turn);
+      expect([30, 31, 37, 38].map((index) => tiles[index].health)).toEqual([1, 1, 1, 1]);
+      if (turn === 3) {
+        expect(result.steps.flatMap((step) => step.bonuses)).toContainEqual(
+          expect.objectContaining({ type: 'bomb', index: 23, core: 23 }),
+        );
+        expect(board[23]?.type).toBe('bomb');
+        expect(tiles[30]).toMatchObject({ type: 'blocker', health: 1, bonusOnly: true });
+      }
+    }
+    const activation = engine.evaluateActivation(board, 7, 9, 23, tiles);
+    expect(activation.matches[0].indices).toEqual(expect.arrayContaining([30, 31]));
+    resolve(activation);
+    expect([30, 31, 37, 38].map((index) => tiles[index].health)).toEqual([0, 0, 1, 1]);
+    expect(deepMineProgress(tiles).fossils).toEqual({ total: 1, completed: 0 });
   });
 
   it('retains the published accounting thresholds for every redesigned level', () => {
@@ -192,21 +268,26 @@ describe('append-only deep mine campaign', () => {
     }
   });
 
-  it('teaches each new rule alone and keeps later combinations to two featured mechanics', () => {
-    for (const id of [373, 385]) {
-      const level = levels[id - 1];
+  it('introduces new rules with familiar support and keeps combinations to two featured mechanics', () => {
+    for (const level of introductions) {
       const progress = deepMineProgress(level.tiles);
       expect(progress.fossils.total + progress.roots.total).toBe(1);
-      expect(level.tiles.some((tile) => tile.signal || tile.sealColor)).toBe(false);
+      expect(
+        level.tiles.some((tile) => tile.sealColor || (tile.signal && tile.signal !== 'core')),
+      ).toBe(false);
+      if (level.theme === 'root-bound-vault')
+        expect(level.tiles.some((tile) => tile.signal)).toBe(false);
       expect(level.board.some((gem) => gem?.type === 'relic')).toBe(false);
       expect(
         level.tiles.every((tile) => tile.type !== 'blocker' || tile.rootKnot || tile.bonusOnly),
       ).toBe(true);
     }
     expect(
-      levels[372].tiles.filter((tile) => tile.fossilGroup).every((tile) => tile.health === 1),
+      firstOfTheme('fossil-beds')
+        .tiles.filter((tile) => tile.fossilGroup)
+        .every((tile) => tile.health === 1),
     ).toBe(true);
-    expect(levels[384].tiles.find((tile) => tile.rootKnot).health).toBe(1);
+    expect(firstOfTheme('root-bound-vault').tiles.find((tile) => tile.rootKnot).health).toBe(1);
     for (const level of deep) {
       const featured = new Set();
       for (const tile of level.tiles) {
@@ -302,19 +383,23 @@ describe('append-only deep mine campaign', () => {
 describe('deep mine completion and pacing', () => {
   // Held-out refill seeds independent of the ten-seed shape measurements.
   // All finite budgets below are diagnostics, never rules imposed on a player.
-  const runs = new Map(
-    deep.map((level) => [
-      level.id,
-      Array.from({ length: 10 }, (_, i) => simulateCampaignLevel(level, 101 + i)),
-    ]),
-  );
-  const priorRuns = levels
-    .slice(360, 372)
-    .flatMap((level) =>
-      Array.from({ length: 10 }, (_, i) => simulateCampaignLevel(level, 101 + i)),
-    );
+  const runs = new Map();
+  const measure = (id) => {
+    if (!runs.has(id))
+      runs.set(
+        id,
+        Array.from({ length: 10 }, (_, i) => simulateCampaignLevel(levels[id - 1], 101 + i)),
+      );
+    return runs.get(id);
+  };
+  const priorRuns = () =>
+    levels
+      .slice(360, 372)
+      .flatMap((level) =>
+        Array.from({ length: 10 }, (_, i) => simulateCampaignLevel(level, 101 + i)),
+      );
   it.each(deep.map(({ id }) => [id]))('finishes level %i on every held-out seed', (id) => {
-    for (const run of runs.get(id)) {
+    for (const run of measure(id)) {
       expect(run).toMatchObject({ remaining: false, layers: 0, relics: 0, ore: 0 });
       const level = levels[id - 1];
       expect(run.blastOnlyHits).toBe(
@@ -331,26 +416,34 @@ describe('deep mine completion and pacing', () => {
 
   it('raises late-campaign difficulty while preserving short introductions and chapter breathers', () => {
     const ordinaryIds = deep
-      .filter(({ id }) => ![373, 385].includes(id) && (id - 1) % 6 !== 4)
+      .filter(({ id }) => !introductions.some((level) => level.id === id) && (id - 1) % 6 !== 4)
       .map(({ id }) => id);
-    const ordinaryTurns = ordinaryIds.flatMap((id) => runs.get(id).map(({ turns }) => turns));
-    expect(median(ordinaryTurns)).toBeGreaterThan(median(priorRuns.map(({ turns }) => turns)));
+    const ordinaryTurns = ordinaryIds.flatMap((id) => measure(id).map(({ turns }) => turns));
+    expect(median(ordinaryTurns)).toBeGreaterThan(median(priorRuns().map(({ turns }) => turns)));
     expect(median(ordinaryTurns)).toBeLessThanOrEqual(55);
-    const all = sorted([...runs.values()].flat().map(({ turns }) => turns));
+    const all = sorted(deep.flatMap(({ id }) => measure(id).map(({ turns }) => turns)));
     expect(all[Math.ceil(all.length * 0.9) - 1]).toBeLessThanOrEqual(90);
-    for (const id of [373, 385])
-      expect(median(runs.get(id).map(({ turns }) => turns))).toBeLessThanOrEqual(30);
+    for (const { id } of introductions)
+      expect(median(measure(id).map(({ turns }) => turns))).toBeLessThanOrEqual(30);
     for (let chapter = 0; chapter < 5; chapter++) {
       const rest = deep[chapter * 6 + 4],
         finale = deep[chapter * 6 + 5];
       expect(rest.objectives[0].target).toBeLessThan(finale.objectives[0].target);
-      expect(median(runs.get(rest.id).map(({ turns }) => turns))).toBeLessThan(
-        median(runs.get(finale.id).map(({ turns }) => turns)),
+      expect(median(measure(rest.id).map(({ turns }) => turns))).toBeLessThan(
+        median(measure(finale.id).map(({ turns }) => turns)),
       );
     }
   });
 
-  it.each([373, 378, 385, 390, 394, 400, 402])(
+  it.each([
+    firstOfTheme('fossil-beds').id,
+    themed('fossil-beds').at(-1).id,
+    firstOfTheme('root-bound-vault').id,
+    themed('root-bound-vault').at(-1).id,
+    themed('underground-reservoir')[3].id,
+    themed('geothermal-forge')[3].id,
+    themed('geothermal-forge').at(-1).id,
+  ])(
     'completes level %i through normal play beyond 100 moves after its speed target elapsed',
     async (id) => {
       let random = id * 7919;

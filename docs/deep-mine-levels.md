@@ -7,11 +7,19 @@ sockets. Players still use the familiar swaps and earned bonus gems.
 
 | Group | Levels  | Main challenge                                                                                                                                      |
 | ----- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 63    | 373–378 | **Fossil beds:** blast solid 2 × 2 fossil casings in side alcoves to uncover discoveries and open blocked tunnels.                                  |
-| 64    | 379–384 | **Glowshroom grotto:** ignite directional spore relays to blast along the marked row or column and chain through other mushrooms.                   |
-| 65    | 385–390 | **Root-bound vault:** open linked root knots across divided wells, then reach gates and discoveries in the separate branches.                       |
-| 66    | 391–396 | **Underground reservoir:** guide off-center pearls down a genuine V-shaped funnel, blast its narrow gate and deliver everything through one basket. |
-| 67    | 397–402 | **Geothermal forge:** craft and position bonuses through constricted chutes; use charged braziers to help break basalt gates.                       |
+| 63    | 373–378 | **Geothermal forge:** learn to charge braziers and position earned bombs through constricted chutes and basalt gates.                               |
+| 64    | 379–384 | **Fossil beds:** reuse a familiar brazier to blast solid fossil casings, then uncover discoveries in harder side alcoves.                           |
+| 65    | 385–390 | **Glowshroom grotto:** ignite directional spore relays to blast along the marked row or column and chain through other mushrooms.                   |
+| 66    | 391–396 | **Root-bound vault:** open linked root knots across divided wells, then reach gates and discoveries in the separate branches.                       |
+| 67    | 397–402 | **Underground reservoir:** guide off-center pearls down a genuine V-shaped funnel, blast its narrow gate and deliver everything through one basket. |
+
+The forge comes first so its familiar reward teaches the fossil introduction.
+Level 379 places one four-charge brazier immediately above the first fossil.
+The intact casing holds its earned bomb above the two upper pieces, putting the
+blast in a useful position. Nearby matches charge the brazier; using its bomb
+shows how solid fossil rock opens. Later fossil boards ask the player to craft
+and position more bonuses independently. No forge board introduces fossils
+before this lesson.
 
 ## Rules the player can see
 
@@ -96,26 +104,31 @@ the immutable first-expansion source. The redesign changes geometry and strategy
 no star recalibration was performed. The existing calibration script still
 supports an optional inclusive level range for a future separately reviewed change.
 
-Ten refill seeds per puzzle produced 300 complete runs. Affected cases were
-rerun after the final access and workload changes. The median was 29 actions and
-the 90th percentile was 65. Excluding the two introductory fossil/root lessons
-and chapter breathers, the median was 34. Every run crafted at least one bonus
-and used at least two board bonus actions. Every reservoir run recorded at least
-three diagonal pearl drops. Six free reshuffles occurred across the sample; the
-longest run took 120 actions. Players remain free to take as many as they need.
+After the forge-first reorder, ten refill seeds per puzzle produced 300 complete
+runs. The median was 31 actions and the 90th percentile was 73. Excluding the
+introductory fossil/root lessons and chapter breathers, the median was 37.
+Every run crafted at least two bonuses and used at least two board bonus actions.
+Every reservoir run recorded at least two diagonal pearl drops. Eighteen free
+reshuffles occurred across the sample; the longest run took 143 actions. Players
+remain free to take as many moves as they need.
 
 | Group                 | Median actions | 90th percentile | Rest median | Finale median |
 | --------------------- | -------------: | --------------: | ----------: | ------------: |
-| Fossil beds           |             27 |              54 |          14 |            39 |
-| Glowshroom grotto     |             28 |              49 |          21 |            49 |
-| Root-bound vault      |             34 |              83 |          17 |            83 |
-| Underground reservoir |             38 |              78 |          24 |            61 |
-| Geothermal forge      |             22 |              54 |          10 |            54 |
+| Geothermal forge      |             27 |              62 |          18 |            57 |
+| Fossil beds           |             35 |              61 |          17 |            43 |
+| Glowshroom grotto     |             28 |              83 |          21 |            67 |
+| Root-bound vault      |             27 |              76 |          12 |            76 |
+| Underground reservoir |             41 |              78 |          24 |            65 |
 
-The first fossil puzzle took a median of 24 actions; the first root puzzle took 16. Root and pearl finales require the most sustained positioning. Forge cores
-provide earned bombs, while the later forked boards require additional crafted
-bonuses to reach gates away from those cores. The difficulty evidence is the
-required special hits and constrained routes, alongside action counts.
+The first fossil puzzle took a median of 19 actions and the first root puzzle 21.
+A separate natural first-fossil replay verifies the teaching setup: swaps
+16↔17, 9↔16, 21↔22 and 10↔11 charge the brazier; the third uses a cascade.
+Its actual earned bomb remains at cell 23 above the solid casing. Activating it
+opens the upper pieces 30/31 while lower pieces 37/38 remain. This regression
+uses generated starting gems and real refills, without replacing the board or
+supplying a bonus. The recipe is deterministic verification, not a required
+player move sequence.
+
 The independent regression samples ten held-out refill seeds (101–110) per
 new puzzle and requires every sampled puzzle to finish with all blast-only
 layers cleared. Chapter rests remain lighter than their finales, and ordinary
@@ -140,8 +153,11 @@ move or time limits.
 
 ![All five implemented groups](images/deep-mines/final-overview.png)
 
-[Open the review gallery](images/deep-mines/gallery.html) or
-[watch the 72-second gameplay tour](images/deep-mines/deep-mine-tour.mp4).
+[Open the current review gallery](images/deep-mines/gallery.html),
+[watch the new brazier-to-fossil lesson](images/deep-mines/mechanics/brazier-fossil-intro.mp4), or
+[watch the earlier 72-second gameplay tour](images/deep-mines/deep-mine-tour.mp4).
+The earlier tour and original screenshots below retain the level numbers from
+before the forge-first reorder; the rules they demonstrate are unchanged.
 The H.264 MP4 records the running game at 1280 × 800. It shows fossil casing
 opened by an earned bonus, directional mushrooms firing, roots being cut,
 pearls moving inward through the funnel and forge bonuses charging and firing.
@@ -177,7 +193,7 @@ The fixtures use a local test profile with no signed-in cloud account.
 
 ## Individual mechanic demos
 
-[Open the six-video mechanic gallery](images/deep-mines/mechanics/index.html).
+[Open the mechanic video gallery](images/deep-mines/mechanics/index.html).
 
 - [Fossil casings](images/deep-mines/mechanics/fossil-casings.mp4): ordinary matches leave the solid casing intact; positioned bombs uncover all four pieces and collect the fossil.
 - [Mushroom relays](images/deep-mines/mechanics/mushroom-relays.mp4): a column beam wakes a row mushroom and both damage gates.
@@ -186,10 +202,19 @@ The fixtures use a local test profile with no signed-in cloud account.
 - [Forge braziers](images/deep-mines/mechanics/forge-braziers.mp4): nearby matches add charge, a completed brazier releases a free bomb, and that earned bomb is activated.
 - [Blast-only gates](images/deep-mines/mechanics/blast-only-gates.mp4): an ordinary match leaves reinforced gates intact, and two positioned bonus hits open them.
 
+The six original clips retain their earlier chapter numbers. The new
+[brazier-to-fossil introduction](images/deep-mines/mechanics/brazier-fossil-intro.mp4)
+shows the current level 379.
+
+The new introduction records all four charging moves continuously at 3× playback,
+followed by activation of the earned bomb. It starts from a naturally generated board and
+uses no supplied bonus. The fossil holds the brazier's bomb above its upper
+pieces, making the placement useful and visible.
+
 These annotated 1280 × 800 clips use the actual game renderer and resolution
 engine. Each prepared position comes from deterministic legal, hint-led moves on
 the published levels. Labeled transitions omit setup moves; the demonstrated
 actions run through the normal game store with no inventory powers. Each action's
 resulting tiles and gem types are checked against its legal simulation checkpoint.
 The final forge action activates the actual bomb supplied by its brazier.
-MP4 downloads and WebM browser playback are provided for all six clips.
+MP4 downloads and WebM browser playback are provided for all seven clips.

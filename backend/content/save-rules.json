@@ -26806,7 +26806,7 @@
     },
     {
       "index": 62,
-      "id": "fossil-beds",
+      "id": "geothermal-forge",
       "gift": {
         "id": "clear-row",
         "kind": "power",
@@ -26816,7 +26816,7 @@
     },
     {
       "index": 63,
-      "id": "glowshroom-grotto",
+      "id": "fossil-beds",
       "gift": {
         "id": "tile-breaker",
         "kind": "power",
@@ -26826,7 +26826,7 @@
     },
     {
       "index": 64,
-      "id": "root-bound-vault",
+      "id": "glowshroom-grotto",
       "gift": {
         "id": "tnt",
         "kind": "power",
@@ -26836,7 +26836,7 @@
     },
     {
       "index": 65,
-      "id": "underground-reservoir",
+      "id": "root-bound-vault",
       "gift": {
         "id": "color-wand",
         "kind": "power",
@@ -26846,7 +26846,7 @@
     },
     {
       "index": 66,
-      "id": "geothermal-forge",
+      "id": "underground-reservoir",
       "gift": {
         "id": "clear-row",
         "kind": "power",
@@ -27418,5 +27418,5 @@
     "issuedRun": 0,
     "settledRun": 0
   },
-  "contentDigest": "bd85c9931f3f714357a618c1bbc24f56d3e16e0682572233be9ca7994dac6e1f"
+  "contentDigest": "f06e4d088e885c8a631fe7162c7460bfd66864baadab7149494fd85dc2581136"
 }

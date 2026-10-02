@@ -22,6 +22,10 @@ import { setLocale } from '../src/i18n';
 import { useCampaignStore } from '../src/stores/campaignStore';
 import { useGameStore } from '../src/stores/gameStore';
 
+const levels = generateLevelConfigs();
+const themedLevels = (theme) => levels.filter((level) => level.theme === theme);
+const firstLevelId = (theme) => themedLevels(theme)[0].id;
+
 let pinia;
 beforeEach(() => {
   pinia = createPinia();
@@ -38,7 +42,7 @@ const textureManager = (mode) => ({
   get: (key) => ({ has: (frame) => key === 'board-core' && !!frames[key].frames[frame] }),
 });
 
-function renderer(mode = 'atlas', levelId = 373) {
+function renderer(mode = 'atlas', levelId = firstLevelId('fossil-beds')) {
   const textures = textureManager(mode);
   const objects = [];
   const node = (x = 0, y = 0, key, frame) => {
@@ -175,7 +179,7 @@ describe('theme and asset contracts', () => {
         off: vi.fn(),
       },
     };
-    preloadSpriteAssets(scene, { levelId: 391 });
+    preloadSpriteAssets(scene, { levelId: firstLevelId('underground-reservoir') });
     expect(scene.load.svg).not.toHaveBeenCalled();
     listeners.get('loaderror')({ key: 'board-core' });
     for (const [id, file] of DEEP_MINE_SPRITES)
@@ -190,7 +194,7 @@ describe('theme and asset contracts', () => {
   it.each(['atlas', 'svg'])(
     'shows pearls through the same logical relic gem in %s mode',
     (mode) => {
-      const { animator, objects } = renderer(mode, 391);
+      const { animator, objects } = renderer(mode, firstLevelId('underground-reservoir'));
       const sprite = objects[0];
       animator.configureGem(sprite, 'relic');
       expect([sprite.key, sprite.frame]).toEqual(
@@ -227,7 +231,7 @@ describe('fossil and linked root presentation', () => {
   it.each(['atlas', 'svg'])(
     'draws thematic floor signals, vine bindings and pearl exits from %s textures',
     (mode) => {
-      const { animator, image } = renderer(mode, 391);
+      const { animator, image } = renderer(mode, firstLevelId('underground-reservoir'));
       animator.tiles = [
         { signal: 'spore', signalHealth: 1, sporeAxis: 'row' },
         { signal: 'core', signalHealth: 3, coreCharges: 4 },
@@ -282,7 +286,7 @@ describe('fossil and linked root presentation', () => {
   it.each(['atlas', 'svg'])(
     'removes only cut root links and bindings without redrawing unchanged %s links',
     (mode) => {
-      const { animator, graphics } = renderer(mode, 385);
+      const { animator, graphics } = renderer(mode, firstLevelId('root-bound-vault'));
       animator.tiles = applyDeepMineSpec(
         Array.from({ length: 25 }, () => ({ type: 'standard', health: 0, maxHealth: 0 })),
         { roots: [{ id: 'a', knot: 12, bindings: [7, 11, 13, 17] }] },
@@ -381,29 +385,38 @@ describe('intuitive goal and guide labels', () => {
     ]);
   });
 
-  it('remembers the first fossil and root introductions across later chapters', () => {
-    const levels = generateLevelConfigs();
+  it('remembers the forge brazier when teaching fossils, then remembers later fossil and root introductions', () => {
     const campaign = useCampaignStore();
     campaign.seenObstacles = OBSTACLES.filter(
       (item) => !['encased-fossil', 'root-knot'].includes(item.id),
     ).map(({ id }) => id);
-    const firstFossil = obstaclesInLevel(levels[372].tiles, levels[372].theme);
+    const [forge] = themedLevels('geothermal-forge');
+    const forgeGuide = obstaclesInLevel(forge.tiles, forge.theme);
+    expect(
+      forgeGuide.filter(({ id }) => !campaign.seenObstacles.includes(id)).map(({ id }) => id),
+    ).toEqual(['brazier']);
+    expect(forgeGuide.some(({ id }) => id === 'encased-fossil')).toBe(false);
+    campaign.markObstaclesSeen(forgeGuide.map(({ id }) => id));
+    const [fossil, nextFossil] = themedLevels('fossil-beds');
+    const firstFossil = obstaclesInLevel(fossil.tiles, fossil.theme);
+    expect(firstFossil.some(({ id }) => id === 'brazier')).toBe(true);
     expect(
       firstFossil.filter(({ id }) => !campaign.seenObstacles.includes(id)).map(({ id }) => id),
     ).toEqual(['encased-fossil']);
     campaign.markObstaclesSeen(['encased-fossil']);
     expect(
-      obstaclesInLevel(levels[373].tiles, levels[373].theme).filter(
+      obstaclesInLevel(nextFossil.tiles, nextFossil.theme).filter(
         ({ id }) => !campaign.seenObstacles.includes(id),
       ),
     ).toEqual([]);
-    const firstRoots = obstaclesInLevel(levels[384].tiles, levels[384].theme);
+    const [roots, , laterRoots] = themedLevels('root-bound-vault');
+    const firstRoots = obstaclesInLevel(roots.tiles, roots.theme);
     expect(
       firstRoots.filter(({ id }) => !campaign.seenObstacles.includes(id)).map(({ id }) => id),
     ).toEqual(['root-knot']);
     campaign.markObstaclesSeen(['root-knot']);
     expect(
-      obstaclesInLevel(levels[386].tiles, levels[386].theme).filter(
+      obstaclesInLevel(laterRoots.tiles, laterRoots.theme).filter(
         ({ id }) => !campaign.seenObstacles.includes(id),
       ),
     ).toEqual([]);
@@ -453,8 +466,10 @@ describe('intuitive goal and guide labels', () => {
       { exit: true },
     ];
     Object.assign(game, {
-      availableLevels: [{ id: 391, config: { theme: 'underground-reservoir' } }],
-      currentLevelId: 391,
+      availableLevels: [
+        { id: firstLevelId('underground-reservoir'), config: { theme: 'underground-reservoir' } },
+      ],
+      currentLevelId: firstLevelId('underground-reservoir'),
       tiles: initialTiles,
       board: [{ type: 'relic' }],
       totalRelics: 1,
