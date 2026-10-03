@@ -1,5 +1,6 @@
 import { resolveRoadStyle } from './roadStyles';
 import { TOWN_FAUNA } from './townAnimals';
+import { ERA_SUPPLY_STEP } from './townNeeds';
 
 /**
  * @typedef {'frontier'|'river-rail'|'industrial'|'motor-age'|'city'} BuildingStyle
@@ -38,7 +39,6 @@ import { TOWN_FAUNA } from './townAnimals';
  * @property {string} upgradeTitle
  * @property {readonly string[]} upgradeDescriptions Second and third modernization descriptions.
  * @property {boolean} requiresPower
- * @property {string} waterUpgradeBenefit
  */
 
 /** Registered city building forms; renderers and SVG drawings exist for each. */
@@ -136,8 +136,6 @@ export function defineEra(definition) {
     roadStyle: 'dirt',
     roadBridge: false,
     incident: 'bandits',
-    waterUpgradeBenefit:
-      'Adds water for twenty people when finished. All existing water stays available during work.',
     prices: null,
     cityAssets: null,
     detailAsset: null,
@@ -148,8 +146,8 @@ export function defineEra(definition) {
     cityDescription: null,
     newBuildingPrices: null,
     cityBoat: false,
-    waterworks: [0, 0, 0],
-    farmCapacity: [0, 0, 0],
+    waterworks: null,
+    farmCapacity: null,
     upgradeTitle: '',
     upgradeDescriptions: [],
     requiresPower: false,
@@ -192,6 +190,22 @@ export function defineEra(definition) {
 }
 
 /** Resolve only an era prefix; marker assets without an era keep their names. */
+// Modernizing the waterworks or the farm must never lower their capacity. An era
+// without its own tiers continues from the previous era's best tier.
+export function continueSupplyTiers(eras) {
+  const best = { waterworks: 0, farmCapacity: 0 };
+  return eras.map((era) => {
+    const tiers = {};
+    for (const field of Object.keys(best)) {
+      tiers[field] =
+        era.evolution[field] ??
+        Object.freeze([1, 2, 3].map((tier) => best[field] + tier * ERA_SUPPLY_STEP));
+      best[field] = Math.max(best[field], ...tiers[field]);
+    }
+    return Object.freeze({ ...era, evolution: Object.freeze({ ...era.evolution, ...tiers }) });
+  });
+}
+
 export function resolveCityAsset(name, eras) {
   const era = eras.reduce(
     (best, entry) =>

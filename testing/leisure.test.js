@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { townSupply } from '../src/game/town/TownNeeds';
 import { createPinia, setActivePinia } from 'pinia';
 import { Box3, BoxGeometry, Group, Scene, Vector3 } from 'three';
 import { createTown } from '../src/data/town';
@@ -35,7 +36,7 @@ it.each([
   ['horseField', 'industrial', 2],
   ['park', 'motor-age', 3],
 ])(
-  '%s unlocks in its era and adds happiness only when each paid stage finishes',
+  '%s unlocks in its era and adds comfort only when each paid stage finishes',
   (id, era, increment) => {
     let town = createTown();
     town.coins = 100000;
@@ -46,23 +47,20 @@ it.each([
     town.era = era;
     expect(plotUnlocked(town, id)).toBe(true);
     expect(routeBetween(town, plotStreet(id), plotStreet('school')).length).toBeGreaterThan(1);
-    const baseline = happiness(town);
+    const comfort = (value) => townSupply(value).comfort;
+    const baseline = comfort(town);
     for (let stage = 1; stage <= 3; stage++) {
       const offer = upgradeOffer(town, id),
-        before = happiness(town);
-      expect(buildingBenefit(town, id, stage)).toMatchObject({
-        label: 'Happiness',
-        before,
-        after: before + increment,
-      });
+        before = comfort(town);
+      expect(buildingBenefit(town, id, stage).label).toBe('Happiness');
       town = purchase(town, id, offer.stage);
-      expect(happiness(town)).toBe(before);
+      expect(comfort(town)).toBe(before);
       expect(purchase(town, id, offer.stage)).toBeNull();
       town = normalizeTown(town);
       for (let i = 0; i < offer.runs; i++) town = advanceConstruction(town);
-      expect(happiness(town)).toBe(before);
+      expect(comfort(town)).toBe(before);
       town = finishConstruction(town, id, stage);
-      expect(happiness(town)).toBe(baseline + increment * stage);
+      expect(comfort(town)).toBe(baseline + increment * stage);
       expect(finishConstruction(town, id, stage)).toBeNull();
     }
     const campaign = useCampaignStore();
@@ -70,7 +68,7 @@ it.each([
     const exported = campaign.exportSave();
     campaign.importSave(exported);
     expect(campaign.town.buildings[id]).toBe(3);
-    expect(happiness(campaign.town)).toBe(baseline + increment * 3);
+    expect(comfort(campaign.town)).toBe(baseline + increment * 3);
   },
 );
 it('adds new empty plots to an existing modern save without moving its era, wallet or paid work', () => {

@@ -106,7 +106,14 @@ it.each(CITY_ERAS)(
         expect(reads.map((f) => f(town))).toEqual(services);
         town = finishConstruction(town, b.id, town.projects[b.id].stage);
         expect(town.buildings[b.id]).toBe(functional);
-        expect(reads.map((f) => f(town))).toEqual(services);
+        // A finished tier of the waterworks or the farm adds supply; nothing else changes.
+        const supply = { well: 0, farm: 1 }[b.id];
+        const after = reads.map((f) => f(town));
+        if (supply !== undefined) {
+          expect(after[supply], b.id).toBeGreaterThan(services[supply]);
+          services[supply] = after[supply];
+        }
+        expect(after).toEqual(services);
         expect(buildWithHammer(town, b.id, offer.stage)).toBeNull();
       }
       expect(hasElectricity(town)).toBe(true);
@@ -116,7 +123,7 @@ it.each(CITY_ERAS)(
   },
 );
 it.each(CITY_BUILDINGS.map((b) => [b.id, b]))(
-  '%s grants bounded capacity and happiness once on finishing, and stays on dry connected ground',
+  '%s grants bounded capacity and comfort once on finishing, and stays on dry connected ground',
   (id, b) => {
     let town = complete(b.introducedEra);
     town.buildings[id] = 0;
@@ -148,7 +155,9 @@ it.each(CITY_BUILDINGS.map((b) => [b.id, b]))(
       expect(waterCapacity(town) - before[1]).toBe(b.effects.water ?? 0);
       expect(housingCapacity(town) - before[2]).toBe(b.effects.housing ?? 0);
       expect(visitorCapacity(town) - before[3]).toBe(b.effects.visitors ?? 0);
-      expect(happiness(town)).toBeGreaterThanOrEqual(before[4]);
+      // More residents or visitors need more comfort and supplies; nothing else lowers it.
+      if (!b.effects.housing && !b.effects.visitors)
+        expect(happiness(town)).toBeGreaterThanOrEqual(before[4]);
       expect(benefit.after).toBeGreaterThanOrEqual(benefit.before);
     }
     const plot = visiblePlots(town).find((p) => p.id === id);

@@ -775,14 +775,14 @@
       "electricity": false,
       "incident": "cargo-theft",
       "waterworks": [
-        0,
-        20,
-        40
+        15,
+        30,
+        45
       ],
       "farmCapacity": [
-        0,
-        0,
-        0
+        5,
+        10,
+        15
       ],
       "buildingOffers": {
         "well": {
@@ -2226,14 +2226,14 @@
       "electricity": true,
       "incident": "workshop-fire",
       "waterworks": [
-        40,
-        40,
+        50,
+        55,
         60
       ],
       "farmCapacity": [
-        0,
-        0,
-        0
+        20,
+        25,
+        30
       ],
       "buildingOffers": {
         "well": {
@@ -3995,14 +3995,14 @@
       "electricity": true,
       "incident": "workshop-fire",
       "waterworks": [
-        60,
-        60,
-        60
+        63,
+        66,
+        69
       ],
       "farmCapacity": [
-        0,
-        0,
-        0
+        33,
+        36,
+        39
       ],
       "buildingOffers": {
         "well": {
@@ -5989,14 +5989,14 @@
       "electricity": true,
       "incident": "workshop-fire",
       "waterworks": [
-        60,
-        60,
-        80
+        77,
+        85,
+        93
       ],
       "farmCapacity": [
-        0,
-        0,
-        20
+        47,
+        55,
+        63
       ],
       "buildingOffers": {
         "well": {
@@ -8217,14 +8217,14 @@
       "electricity": true,
       "incident": "workshop-fire",
       "waterworks": [
-        80,
-        80,
-        80
+        99,
+        105,
+        111
       ],
       "farmCapacity": [
-        20,
-        20,
-        20
+        69,
+        75,
+        81
       ],
       "buildingOffers": {
         "well": {
@@ -10610,14 +10610,14 @@
       "electricity": true,
       "incident": "workshop-fire",
       "waterworks": [
-        80,
-        80,
-        80
+        117,
+        123,
+        129
       ],
       "farmCapacity": [
-        20,
-        20,
-        20
+        87,
+        93,
+        99
       ],
       "buildingOffers": {
         "well": {
@@ -13135,14 +13135,14 @@
       "electricity": true,
       "incident": "storm-cleanup",
       "waterworks": [
-        80,
-        80,
-        80
+        137,
+        145,
+        153
       ],
       "farmCapacity": [
-        20,
-        20,
-        20
+        107,
+        115,
+        123
       ],
       "buildingOffers": {
         "well": {
@@ -15873,14 +15873,14 @@
       "electricity": true,
       "incident": "storm-cleanup",
       "waterworks": [
-        80,
-        80,
-        80
+        161,
+        169,
+        177
       ],
       "farmCapacity": [
-        20,
-        20,
-        20
+        126,
+        129,
+        132
       ],
       "buildingOffers": {
         "well": {
@@ -18806,14 +18806,14 @@
       "electricity": true,
       "incident": "storm-cleanup",
       "waterworks": [
-        80,
-        80,
-        80
+        179,
+        181,
+        183
       ],
       "farmCapacity": [
-        20,
-        20,
-        20
+        134,
+        136,
+        138
       ],
       "buildingOffers": {
         "well": {
@@ -21892,14 +21892,14 @@
       "electricity": true,
       "incident": "storm-cleanup",
       "waterworks": [
-        80,
-        80,
-        80
+        185,
+        187,
+        189
       ],
       "farmCapacity": [
-        20,
-        20,
-        20
+        144,
+        150,
+        156
       ],
       "buildingOffers": {
         "well": {
@@ -25146,7 +25146,6 @@
         2,
         5
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 75,
@@ -25188,7 +25187,6 @@
         2,
         5
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 75,
@@ -25230,7 +25228,6 @@
         2,
         5
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 75,
@@ -25268,7 +25265,6 @@
         4,
         5
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 150,
@@ -25322,7 +25318,6 @@
         2,
         5
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 150,
@@ -25360,7 +25355,6 @@
         4,
         5
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 150,
@@ -25414,7 +25408,6 @@
         2,
         5
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 180,
@@ -25456,7 +25449,6 @@
         2,
         5
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 180,
@@ -25494,7 +25486,6 @@
         4,
         5
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 150,
@@ -25548,7 +25539,6 @@
         2,
         5
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 150,
@@ -25586,7 +25576,6 @@
         4,
         5
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 120,
@@ -25639,7 +25628,6 @@
         2,
         3
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 150,
@@ -25686,7 +25674,6 @@
         2,
         5
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 150,
@@ -25729,7 +25716,6 @@
         4,
         5
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 180,
@@ -25788,7 +25774,6 @@
         2,
         5
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 180,
@@ -25835,7 +25820,6 @@
         2,
         5
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 180,
@@ -25871,7 +25855,6 @@
         2,
         3
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 800,
@@ -25907,7 +25890,6 @@
         2,
         3
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 800,
@@ -25943,7 +25925,6 @@
         2,
         3
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 800,
@@ -25979,7 +25960,6 @@
         2,
         3
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 800,
@@ -26020,7 +26000,6 @@
         2,
         3
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 800,
@@ -26061,7 +26040,6 @@
         2,
         3
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 800,
@@ -26102,7 +26080,6 @@
         2,
         3
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 800,
@@ -26143,7 +26120,6 @@
         2,
         3
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 800,
@@ -26179,7 +26155,6 @@
         2,
         3
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 1400,
@@ -26215,7 +26190,6 @@
         2,
         3
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 1400,
@@ -26256,7 +26230,6 @@
         2,
         3
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 1400,
@@ -26301,7 +26274,6 @@
         2,
         3
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 1400,
@@ -26337,7 +26309,6 @@
         2,
         3
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 6480,
@@ -26378,7 +26349,6 @@
         2,
         3
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 6480,
@@ -26414,7 +26384,6 @@
         2,
         3
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 6480,
@@ -26455,7 +26424,6 @@
         2,
         3
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 6480,
@@ -26496,9 +26464,6 @@
         2,
         3
       ],
-      "effects": {
-        "happiness": 2
-      },
       "upgrades": [
         {
           "cost": 17250,
@@ -26539,11 +26504,6 @@
         2,
         3
       ],
-      "effects": {
-        "food": 12,
-        "water": 12,
-        "happiness": 1
-      },
       "upgrades": [
         {
           "cost": 17250,
@@ -26584,10 +26544,6 @@
         2,
         3
       ],
-      "effects": {
-        "housing": 4,
-        "happiness": 1
-      },
       "upgrades": [
         {
           "cost": 17250,
@@ -26628,9 +26584,6 @@
         2,
         3
       ],
-      "effects": {
-        "happiness": 2
-      },
       "upgrades": [
         {
           "cost": 20250,
@@ -26671,10 +26624,6 @@
         2,
         3
       ],
-      "effects": {
-        "water": 12,
-        "happiness": 1
-      },
       "upgrades": [
         {
           "cost": 20250,
@@ -26715,9 +26664,6 @@
         2,
         3
       ],
-      "effects": {
-        "happiness": 3
-      },
       "upgrades": [
         {
           "cost": 20250,
@@ -26753,9 +26699,6 @@
         2,
         3
       ],
-      "effects": {
-        "happiness": 1
-      },
       "upgrades": [
         {
           "cost": 15000,
@@ -26791,9 +26734,6 @@
         2,
         3
       ],
-      "effects": {
-        "happiness": 1
-      },
       "upgrades": [
         {
           "cost": 12000,
@@ -26829,9 +26769,6 @@
         2,
         3
       ],
-      "effects": {
-        "happiness": 1
-      },
       "upgrades": [
         {
           "cost": 12000,
@@ -26867,9 +26804,6 @@
         2,
         3
       ],
-      "effects": {
-        "happiness": 1
-      },
       "upgrades": [
         {
           "cost": 12000,
@@ -26905,9 +26839,6 @@
         2,
         3
       ],
-      "effects": {
-        "happiness": 1
-      },
       "upgrades": [
         {
           "cost": 15000,
@@ -26948,9 +26879,6 @@
         2,
         3
       ],
-      "effects": {
-        "happiness": 2
-      },
       "upgrades": [
         {
           "cost": 4500,
@@ -26991,10 +26919,6 @@
         2,
         3
       ],
-      "effects": {
-        "housing": 8,
-        "happiness": 1
-      },
       "upgrades": [
         {
           "cost": 4500,
@@ -27035,10 +26959,6 @@
         2,
         3
       ],
-      "effects": {
-        "food": 18,
-        "happiness": 1
-      },
       "upgrades": [
         {
           "cost": 4500,
@@ -27079,10 +26999,6 @@
         2,
         3
       ],
-      "effects": {
-        "water": 18,
-        "happiness": 1
-      },
       "upgrades": [
         {
           "cost": 4500,
@@ -27123,10 +27039,6 @@
         2,
         3
       ],
-      "effects": {
-        "visitors": 2,
-        "happiness": 1
-      },
       "upgrades": [
         {
           "cost": 12000,
@@ -27167,9 +27079,6 @@
         2,
         3
       ],
-      "effects": {
-        "happiness": 2
-      },
       "upgrades": [
         {
           "cost": 12000,
@@ -27210,9 +27119,6 @@
         2,
         3
       ],
-      "effects": {
-        "happiness": 1
-      },
       "upgrades": [
         {
           "cost": 12000,
@@ -27253,10 +27159,6 @@
         2,
         3
       ],
-      "effects": {
-        "housing": 6,
-        "happiness": 1
-      },
       "upgrades": [
         {
           "cost": 15000,
@@ -27297,9 +27199,6 @@
         2,
         3
       ],
-      "effects": {
-        "happiness": 2
-      },
       "upgrades": [
         {
           "cost": 12000,
@@ -27340,10 +27239,6 @@
         2,
         3
       ],
-      "effects": {
-        "housing": 6,
-        "happiness": 1
-      },
       "upgrades": [
         {
           "cost": 18750,
@@ -27384,10 +27279,6 @@
         2,
         3
       ],
-      "effects": {
-        "food": 18,
-        "happiness": 1
-      },
       "upgrades": [
         {
           "cost": 15000,
@@ -27428,10 +27319,6 @@
         2,
         3
       ],
-      "effects": {
-        "visitors": 2,
-        "happiness": 1
-      },
       "upgrades": [
         {
           "cost": 15000,
@@ -27472,7 +27359,6 @@
         2,
         3
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 1400,
@@ -27508,7 +27394,6 @@
         2,
         3
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 6480,
@@ -27555,7 +27440,6 @@
         2,
         5
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 113,
@@ -27606,7 +27490,6 @@
         2,
         5
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 150,
@@ -27657,7 +27540,6 @@
         2,
         5
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 188,
@@ -27704,7 +27586,6 @@
         2,
         5
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 113,
@@ -27751,7 +27632,6 @@
         2,
         5
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 113,
@@ -27802,7 +27682,6 @@
         2,
         5
       ],
-      "effects": {},
       "upgrades": [
         {
           "cost": 150,
@@ -27823,6 +27702,481 @@
           "stage": 2
         }
       ]
+    }
+  },
+  "needs": {
+    "terms": [
+      {
+        "stat": "water",
+        "per": 6,
+        "service": true,
+        "ids": [
+          "well",
+          "well2"
+        ]
+      },
+      {
+        "stat": "water",
+        "eraTiers": "waterworks",
+        "ids": [
+          "well"
+        ]
+      },
+      {
+        "stat": "food",
+        "per": 4,
+        "service": true,
+        "ids": [
+          "farm",
+          "farm2",
+          "farm3"
+        ]
+      },
+      {
+        "stat": "food",
+        "eraTiers": "farmCapacity",
+        "ids": [
+          "farm"
+        ]
+      },
+      {
+        "stat": "food",
+        "per": 1,
+        "service": true,
+        "max": 5,
+        "ids": [
+          "fisherman"
+        ]
+      },
+      {
+        "stat": "food",
+        "per": 10,
+        "ids": [
+          "market"
+        ]
+      },
+      {
+        "stat": "housing",
+        "per": 2,
+        "service": true,
+        "ids": [
+          "home",
+          "home5",
+          "home2",
+          "home3",
+          "home4"
+        ]
+      },
+      {
+        "stat": "housing",
+        "per": 8,
+        "ids": [
+          "home5"
+        ]
+      },
+      {
+        "stat": "housing",
+        "table": [
+          0,
+          6,
+          12,
+          16
+        ],
+        "ids": [
+          "rowHouses"
+        ]
+      },
+      {
+        "stat": "housing",
+        "per": 6,
+        "ids": [
+          "gardenCourt"
+        ]
+      },
+      {
+        "stat": "visitors",
+        "per": 2,
+        "service": true,
+        "ids": [
+          "stable"
+        ]
+      },
+      {
+        "stat": "visitors",
+        "per": 2,
+        "service": true,
+        "offset": -1,
+        "ids": [
+          "museum"
+        ]
+      },
+      {
+        "stat": "visitors",
+        "per": 2,
+        "ids": [
+          "railDepot"
+        ]
+      },
+      {
+        "stat": "visitors",
+        "per": 2,
+        "ids": [
+          "hotel"
+        ]
+      },
+      {
+        "stat": "visitors",
+        "per": 2,
+        "ids": [
+          "busDepot"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 8,
+        "ids": [
+          "square"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 2,
+        "service": true,
+        "ids": [
+          "museum"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 2,
+        "ids": [
+          "saloon"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "service": true,
+        "max": 5,
+        "ids": [
+          "school"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 2,
+        "ids": [
+          "horseField"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 3,
+        "ids": [
+          "park"
+        ]
+      },
+      {
+        "stat": "visitors",
+        "per": 2,
+        "ids": [
+          "teaHouse"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 2,
+        "ids": [
+          "teaHouse"
+        ]
+      },
+      {
+        "stat": "food",
+        "per": 4,
+        "ids": [
+          "blossomAtelier"
+        ]
+      },
+      {
+        "stat": "water",
+        "per": 4,
+        "ids": [
+          "blossomAtelier"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "blossomAtelier"
+        ]
+      },
+      {
+        "stat": "housing",
+        "per": 4,
+        "ids": [
+          "orchardCottages"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "orchardCottages"
+        ]
+      },
+      {
+        "stat": "visitors",
+        "per": 2,
+        "ids": [
+          "glassworks"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 2,
+        "ids": [
+          "glassworks"
+        ]
+      },
+      {
+        "stat": "water",
+        "per": 4,
+        "ids": [
+          "springsRetreat"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "springsRetreat"
+        ]
+      },
+      {
+        "stat": "visitors",
+        "per": 4,
+        "ids": [
+          "riverlightPavilion"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 3,
+        "ids": [
+          "riverlightPavilion"
+        ]
+      },
+      {
+        "stat": "visitors",
+        "per": 4,
+        "ids": [
+          "airport"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "airport"
+        ]
+      },
+      {
+        "stat": "visitors",
+        "per": 2,
+        "ids": [
+          "radioTower"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "radioTower"
+        ]
+      },
+      {
+        "stat": "visitors",
+        "per": 4,
+        "ids": [
+          "concertHall"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "concertHall"
+        ]
+      },
+      {
+        "stat": "visitors",
+        "per": 2,
+        "ids": [
+          "television"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "television"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "skyline"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 2,
+        "ids": [
+          "cityHall"
+        ]
+      },
+      {
+        "stat": "housing",
+        "per": 8,
+        "ids": [
+          "apartments"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "apartments"
+        ]
+      },
+      {
+        "stat": "food",
+        "per": 5,
+        "ids": [
+          "supermarket"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "supermarket"
+        ]
+      },
+      {
+        "stat": "water",
+        "per": 5,
+        "ids": [
+          "waterPlant"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "waterPlant"
+        ]
+      },
+      {
+        "stat": "visitors",
+        "per": 2,
+        "ids": [
+          "transitHub"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "transitHub"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 2,
+        "ids": [
+          "library"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "crystalLab"
+        ]
+      },
+      {
+        "stat": "housing",
+        "per": 6,
+        "ids": [
+          "cityHomes"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "cityHomes"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 2,
+        "ids": [
+          "riverPark"
+        ]
+      },
+      {
+        "stat": "housing",
+        "per": 6,
+        "ids": [
+          "skyPods"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "skyPods"
+        ]
+      },
+      {
+        "stat": "food",
+        "per": 5,
+        "ids": [
+          "biodome"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "biodome"
+        ]
+      },
+      {
+        "stat": "visitors",
+        "per": 2,
+        "ids": [
+          "maglevStation"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "maglevStation"
+        ]
+      }
+    ],
+    "happiness": {
+      "needs": 40,
+      "comfort": 60,
+      "comfortPerPerson": 0.6,
+      "visitorsFrom": 30,
+      "visitorsFull": 90
     }
   },
   "powers": [
@@ -34051,5 +34405,5 @@
     "issuedRun": 0,
     "settledRun": 0
   },
-  "contentDigest": "209ddbd35e3a9a441b22829c952a5e6ccf31120f5b191f93c083278b1a869364"
+  "contentDigest": "b8321c8374896c791620385a59f1a9a6be8d02ac2a59443801eebeb9dd5ffd18"
 }

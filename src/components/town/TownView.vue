@@ -203,7 +203,9 @@
           :raid="activeRaid"
           :raid-defense-ids="readyRaidDefenses"
           :construction="construction"
+          :need-chips="needs.demand && !activeRaid ? needChips : []"
           @select="selectBuilding"
+          @inspect="inspectBuilding"
           @mine="goMining"
           @raid-phase="raidPhase = $event"
           @raid-cue="playRaidCue"
@@ -293,21 +295,23 @@
         <span class="town-sr-only" role="status">{{ t(announcement) }}</span>
       </div>
       <div class="town-needs" :aria-label="t('Basic town needs')">
-        <button @click="inspectBuilding('well')">
+        <button
+          :class="{ short: needs.short.water }"
+          @click="inspectBuilding(needs.fixes.water ?? 'well')"
+        >
           <TownIcon name="water" /><span
-            >{{ t('Water')
-            }}<small>{{
-              t('Water for {count} people', { count: waterCapacity(town) })
-            }}</small></span
+            >{{ t('Water') }}<small>{{ supplyNote(needs.water) }}</small></span
           >
         </button>
-        <button @click="inspectBuilding('farm')">
+        <button
+          :class="{ short: needs.short.food }"
+          @click="inspectBuilding(needs.fixes.food ?? 'farm')"
+        >
           <TownIcon name="food" /><span
-            >{{ t('Food')
-            }}<small>{{ t('Food for {count} people', { count: foodCapacity(town) }) }}</small></span
+            >{{ t('Food') }}<small>{{ supplyNote(needs.food) }}</small></span
           >
         </button>
-        <button @click="inspectBuilding('home')">
+        <button @click="inspectBuilding(needs.fixes.housing ?? 'home')">
           <TownIcon name="people" /><span
             >{{ t('{count} people', { count: people })
             }}<small>{{
@@ -316,15 +320,26 @@
           >
         </button>
       </div>
-      <button class="town-happiness" @click="inspectBuilding('square')">
+      <button
+        class="town-happiness"
+        :class="{ short: needs.short.comfort }"
+        @click="inspectBuilding(needs.fixes.comfort ?? 'square')"
+      >
         <TownIcon name="happiness" />
         <span
-          >{{ t('Happiness') }} <strong>{{ happiness(town) }}%</strong>
-          <meter :value="happiness(town)" min="0" max="100" :aria-label="t('Village happiness')" />
+          >{{ t('Happiness') }} <strong>{{ needs.happiness }}%</strong>
+          <meter :value="needs.happiness" min="0" max="100" :aria-label="t('Village happiness')" />
           <small>{{
-            t('Saloon income +{bonus}% · Improve the town square', {
-              bonus: saloonHappinessBonus(town),
-            })
+            t(
+              supplyLimitsVisitors
+                ? 'Saloon income +{bonus}% · {visitors} of {places} visitors come · not enough spare water or food'
+                : 'Saloon income +{bonus}% · {visitors} of {places} visitors come',
+              {
+                bonus: number(saloonHappinessBonus(town)),
+                visitors: needs.visitors,
+                places: needs.visitorPlaces,
+              },
+            )
           }}</small>
         </span>
         <TownIcon name="arrow" />
@@ -389,7 +404,7 @@
                 ><small v-if="stat.detail">{{ stat.detail }}</small>
                 <meter
                   v-if="stat.id === 'happiness'"
-                  :value="happiness(town)"
+                  :value="needs.happiness"
                   min="0"
                   max="100"
                   :aria-label="t('Village happiness')"
@@ -696,11 +711,7 @@ import {
 import { ERA_BY_ID } from '../../data/eras';
 import { eraGate, plotInEra, eraBuildingLevel } from '../../game/town/TownEras';
 import {
-  population,
-  residentPopulation,
-  visitorPopulation,
-  visitorCapacity,
-  happiness,
+  needsReport,
   nextGoal,
   upgradeOffer,
   availableParcels,
@@ -708,13 +719,11 @@ import {
   saloonIncomeRate,
   saloonHappinessBonus,
   canRingTownBell,
-  waterCapacity,
-  foodCapacity,
-  housingCapacity,
   gangSize,
   raidProtection,
   raidIntervalRange,
 } from '../../game/town/TownRules';
+import { visitorShare } from '../../game/town/TownNeeds';
 import { useGameStore } from '../../stores/gameStore';
 import { useCampaignStore } from '../../stores/campaignStore';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -811,9 +820,41 @@ function leaveFullscreen(event) {
     fullscreen.value = false;
 }
 
-const residents = computed(() => residentPopulation(town.value));
-const visitors = computed(() => visitorPopulation(town.value));
-const people = computed(() => population(town.value));
+const needs = computed(() => needsReport(town.value));
+// Happy visitors still stay away while the town has no spare water or food.
+const supplyLimitsVisitors = computed(
+  () =>
+    needs.value.visitors <
+    Math.floor(needs.value.visitorPlaces * visitorShare(needs.value.happiness)),
+);
+const residents = computed(() => needs.value.residents);
+const visitors = computed(() => needs.value.visitors);
+const people = computed(() => needs.value.population);
+// Supplies against everyone the town can hold; a shortage names how many go without.
+const supplyNote = (supply) =>
+  supply < needs.value.demand
+    ? t('{supply}/{demand} people · short by {missing}', {
+        supply,
+        demand: needs.value.demand,
+        missing: needs.value.demand - supply,
+      })
+    : t('{supply}/{demand} people', { supply, demand: needs.value.demand });
+const needChips = computed(() => {
+  const n = needs.value;
+  return [
+    ['water', 'water', 'Water: {capacity}/{demand}', `${n.water}/${n.demand}`, n.water],
+    ['food', 'food', 'Food: {capacity}/{demand}', `${n.food}/${n.demand}`, n.food],
+    ['comfort', 'happiness', 'Happiness: {value}%', `${n.happiness}%`, n.happiness],
+  ].map(([stat, icon, label, value, capacity]) => ({
+    stat,
+    icon,
+    value,
+    short: n.short[stat],
+    fixable: !!n.fixes[stat],
+    id: n.fixes[stat] ?? { water: 'well', food: 'farm', comfort: 'square' }[stat],
+    label: t(label, { capacity, demand: n.demand, value: capacity }),
+  }));
+});
 const incomeRate = computed(() => saloonIncomeRate(town.value));
 const activeProjects = computed(() => Object.values(town.value.projects));
 const goal = computed(() => nextGoal(town.value));
@@ -866,7 +907,7 @@ const built = computed(
   () => currentEraPlots.value.filter(({ id }) => town.value.buildings[id]).length,
 );
 const villageStats = computed(() => {
-  const demand = housingCapacity(town.value) + visitorCapacity(town.value);
+  const { demand, water, food, happiness: happy, comfort } = needs.value;
   return [
     {
       id: 'era',
@@ -891,21 +932,22 @@ const villageStats = computed(() => {
       id: 'water',
       icon: 'water',
       label: t('Water'),
-      value: number(waterCapacity(town.value)),
+      value: number(water),
       detail: t('Capacity in people · Demand: {count}', { count: demand }),
     },
     {
       id: 'food',
       icon: 'food',
       label: t('Food'),
-      value: number(foodCapacity(town.value)),
+      value: number(food),
       detail: t('Capacity in people · Demand: {count}', { count: demand }),
     },
     {
       id: 'happiness',
       icon: 'happiness',
       label: t('Happiness'),
-      value: `${happiness(town.value)}%`,
+      value: `${happy}%`,
+      detail: t('Comfort {comfort} for {count} people', { comfort, count: demand }),
     },
     {
       id: 'saloon',

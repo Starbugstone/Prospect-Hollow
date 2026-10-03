@@ -40,6 +40,31 @@ stage progression and capacity-benefit text. Eligibility remains in `TownEras.js
 building-specific exceptions, including landmark construction duration, remain
 explicit. Mining income and bonus formulas are outside this contract.
 
+### Water, food, comfort and happiness
+
+`src/data/townNeeds.js` is the one definition of what buildings give the town:
+water, food, homes, visitor places and comfort, plus the happiness settings.
+City buildings declare the same values as per-level `effects`. `TownNeeds.js`
+turns both into explicit terms, rebuilt when a plot is registered, and the save
+export ships those terms so the server evaluates exactly the same model. Never
+copy a capacity or happiness number into the backend or a component.
+
+- Residents are limited by homes, water and food; visitors fill the visitor
+  places that spare water and food allow, scaled by happiness (none at 30%, all
+  from 90%).
+- Happiness is how well water and food cover everyone the town can hold, times
+  the comfort it offers for its size. Each happiness point raises saloon income.
+- Each era's `waterworks` and `farmCapacity` tiers are the capacity of the main
+  waterworks and farm once modernized to that tier. They must rise at every tier,
+  and an era without its own tiers continues from the previous era's best tier.
+- An era should grow its town (new homes or landmarks that draw visitors) and
+  supply that growth through its tiers and water or food buildings, so a finished
+  era houses everyone. `testing/town-needs.test.js` checks this for every era.
+
+Guidance (`nextGoal`, `needsReport`) suggests the available building that adds the
+missing water, food or comfort for the fewest coins per person. The village map
+shows water, food and happiness, and the label of that building says what it fixes.
+
 The rendering registry in `buildings/BuildingRenderer.js` selects the style's
 landmark and modernization renderers. City asset aliases resolve the longest
 matching era prefix, allowing names such as `aviation-next` without accidentally

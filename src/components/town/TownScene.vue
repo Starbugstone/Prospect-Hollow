@@ -159,6 +159,9 @@
           <small v-else-if="anchor.id === 'blacksmith' && forgeCollectible">{{
             t('Collect 1 TNT')
           }}</small>
+          <small v-else-if="needHints[anchor.id]" class="need-hint">{{
+            t(NEED_HINTS[needHints[anchor.id]])
+          }}</small>
           <small v-else-if="availableIds.includes(anchor.id)">{{
             t(town.buildings[anchor.id] ? 'Upgrade' : 'Build')
           }}</small>
@@ -167,6 +170,25 @@
           }}</small>
           <span v-else aria-hidden="true">+</span>
         </template>
+      </button>
+    </div>
+    <div
+      v-if="needChips.length"
+      class="town-map-needs"
+      role="group"
+      :aria-label="t('Basic town needs')"
+      @pointerdown.stop
+      @pointerup.stop
+    >
+      <button
+        v-for="chip in needChips"
+        :key="chip.stat"
+        :class="{ short: chip.short }"
+        :aria-label="chip.label"
+        :title="chip.label"
+        @click="emit('inspect', chip.id)"
+      >
+        <TownIcon :name="chip.icon" /><span>{{ chip.value }}</span>
       </button>
     </div>
     <details class="town-camera-bar" @pointerdown.stop @pointerup.stop @pointermove.stop>
@@ -213,6 +235,7 @@ import { prefetchBoard } from '../../game/phaser/loadBoard';
 import { prepareAudio } from '../../composables/useAudio';
 import { useSettingsStore } from '../../stores/settingsStore';
 import GameIcon from '../GameIcon.vue';
+import TownIcon from './TownIcon.vue';
 import GameViewStatus from '../GameViewStatus.vue';
 import { TOWN_ACTIONS } from '../../data/townIndicators';
 import { eraBuildingLevel } from '../../game/town/TownEras';
@@ -264,7 +287,18 @@ const props = defineProps({
   raid: Object,
   raidDefenseIds: { type: Array, default: () => [] },
   construction: Object,
+  // Water, food and happiness against the town's size, always visible on the map.
+  needChips: { type: Array, default: () => [] },
 });
+// The building that would fix a shortage says so on its label.
+const NEED_HINTS = { water: 'Water needed', food: 'Food needed', comfort: 'Comfort needed' };
+const needHints = computed(() =>
+  Object.fromEntries(
+    props.needChips
+      .filter((chip) => chip.short && chip.fixable)
+      .map((chip) => [chip.id, chip.stat]),
+  ),
+);
 const emit = defineEmits([
   'select',
   'visit',

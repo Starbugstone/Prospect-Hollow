@@ -9,9 +9,17 @@ import {
 } from 'three';
 import { frameEnd, frameStart } from './TownProfiler';
 // Shared secondary view for fixed incidents and passive visitor arrivals.
+// It sits above the bottom row of map controls (camera view and town needs), as far
+// as the lower half of a short landscape screen allows.
 export function eventInsetRect(width, height) {
   const w = Math.floor(Math.min(320, Math.max(156, width * 0.4), width * 0.46, height * 0.45));
-  return { x: width - w - 12, y: 16, width: w, height: Math.floor(w / 1.5) };
+  const h = Math.floor(w / 1.5);
+  return {
+    x: width - w - 12,
+    y: Math.max(16, Math.min(60, Math.floor(height / 2) - h - 31)),
+    width: w,
+    height: h,
+  };
 }
 // Main-view DOM labels must not paint over the secondary WebGL viewport.
 // Coordinates are CSS pixels from the top-left; the renderer's inset Y is bottom-up.

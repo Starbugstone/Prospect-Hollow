@@ -105,7 +105,7 @@
           t(offer.title, { building: t(building.name), name: t(offer.name), level: offer.eraLevel })
         }}
       </h3>
-      <p>{{ t(offer.benefit) }}</p>
+      <p>{{ t(offer.benefit, offer.benefitValues) }}</p>
       <p v-if="offer.description">{{ t(offer.description) }}</p>
       <button
         class="town-primary town-purchase"
@@ -258,12 +258,23 @@
           {{ t('This era is complete. More chapters of Prospect Hollow are still to come.') }}
         </p>
       </div>
-      <h3>{{ t('Happiness: {value}%', { value: happiness(town) }) }}</h3>
+      <h3>{{ t('Happiness: {value}%', { value: needs.happiness }) }}</h3>
       <p>
         {{
           t(
-            'Food and water contribute up to 40 happiness points. Each square level adds 8 and each saloon level adds 2. The museum adds up to 10 and the school up to 5. Each happiness point boosts saloon income by 1.25%.',
+            'Happiness grows with comfort for the size of the town and falls when water or food run short. The square, saloon, museum, school, horse field, park and many city buildings add comfort. Visitors start coming at 30% happiness and all of them come from 90%. Each happiness point also boosts saloon income by 1.25%.',
           )
+        }}
+      </p>
+      <p>
+        {{
+          t('Comfort {comfort} of {target} for {count} people · Visitors: {visitors}/{places}', {
+            comfort: needs.comfort,
+            target: Math.ceil(needs.demand * HAPPINESS.comfortPerPerson),
+            count: needs.demand,
+            visitors: needs.visitors,
+            places: needs.visitorPlaces,
+          })
         }}
       </p>
       <p>
@@ -348,7 +359,6 @@ import {
   residentPopulation,
   visitorPopulation,
   visitorCapacity,
-  happiness,
   gangSize,
   raidProtection,
   canRingTownBell,
@@ -360,6 +370,8 @@ import TownSite from './TownSite.vue';
 import TownIcon from './TownIcon.vue';
 import TownDefenseStatus from './TownDefenseStatus.vue';
 import { buildingBenefit } from '../../game/town/TownBenefits';
+import { townNeeds } from '../../game/town/TownNeeds';
+import { HAPPINESS } from '../../data/townNeeds';
 const props = defineProps({
   id: String,
   town: Object,
@@ -382,6 +394,7 @@ const cooldownSeconds = computed(() =>
 );
 const building = computed(() => BUILDING_BY_ID[props.id]);
 const requirement = computed(() => plotRequirement(props.town, props.id));
+const needs = computed(() => townNeeds(props.town));
 const stage = computed(() => props.town.buildings[props.id]);
 const project = computed(() => props.town.projects[props.id]);
 const offer = computed(() => (props.readOnly ? null : upgradeOffer(props.town, props.id)));

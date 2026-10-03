@@ -1863,69 +1863,61 @@ final class SaveIntegrity
     {
         return $this->rules['buildings'][$id]['serviceLevels'][$town['buildings'][$id] ?? 0] ?? 0;
     }
+    /**
+     * Mirrors townNeeds() in src/game/town/TownNeeds.js from the exported needs terms.
+     *
+     * @return array{population: int, happiness: int}
+     */
     private function populationStats(array $town): array
     {
-        $levels = ['farm' => 0, 'well' => 0, 'home' => 0];
-        foreach ($this->rules['buildings'] as $id => $definition) {
-            if (isset($levels[$definition['kind']])) {
-                $levels[$definition['kind']] += $this->service($town, $id);
+        $supply = ['water' => 0, 'food' => 0, 'housing' => 0, 'visitors' => 0, 'comfort' => 0];
+        foreach ($this->rules['needs']['terms'] as $term) {
+            foreach ($term['ids'] as $id) {
+                $supply[$term['stat']] += $this->needValue($town, $term, $id);
             }
         }
-        $waterEra = $this->rules['eras'][$town['buildingEras']['well']];
-        $farmEra = $this->rules['eras'][$town['buildingEras']['farm']];
-        $waterLevel = min(2, max(0, ($town['buildingEraLevels']['well'] ?: 1) - 1));
-        $farmLevel = min(2, max(0, ($town['buildingEraLevels']['farm'] ?: 1) - 1));
-        $built = $town['buildings'];
-        $city = ['food' => 0, 'water' => 0, 'housing' => 0, 'visitors' => 0, 'happiness' => 0];
-        foreach ($this->rules['buildings'] as $id => $definition) {
-            foreach ($definition['effects'] as $key => $effect) {
-                if (isset($city[$key])) {
-                    $city[$key] += $effect * ($built[$id] ?? 0);
-                }
-            }
-        }
-        $food =
-            $levels['farm'] * 6 +
-            min(5, max(0, $this->service($town, 'fisherman'))) +
-            ($built['market'] ?? 0) * 10 +
-            $farmEra['farmCapacity'][$farmLevel] +
-            $city['food'];
-        $water =
-            $levels['well'] * 6 +
-            ($built['well'] ?? 0 ? $waterEra['waterworks'][$waterLevel] : 0) +
-            $city['water'];
-        $housing =
-            $levels['home'] * 2 +
-            ($built['home5'] ?? 0) * 8 +
-            ([0, 6, 12, 16][$built['rowHouses'] ?? 0] ?? 0) +
-            ($built['gardenCourt'] ?? 0) * 6 +
-            $city['housing'];
-        $visitors =
-            $this->service($town, 'stable') * 2 +
-            max(0, $this->service($town, 'museum') - 1) * 2 +
-            ($built['railDepot'] ?? 0) * 2 +
-            ($built['hotel'] ?? 0) * 2 +
-            ($built['busDepot'] ?? 0) * 2 +
-            $city['visitors'];
-        $resident = min($housing, $water, $food);
-        $visitor = min($visitors, max(0, $water - $resident), max(0, $food - $resident));
-        $demand = $housing + $visitors;
-        $needs = $demand ? min(1, $water / $demand, $food / $demand) : 0;
-        $happiness = min(
-            100,
-            floor(
-                $needs * 40 +
-                    ($built['square'] ?? 0) * 8 +
-                    $this->service($town, 'museum') * 2 +
-                    ($built['saloon'] ?? 0) * 2 +
-                    min(5, max(0, $this->service($town, 'school'))) +
-                    ($built['horseField'] ?? 0) * 2 +
-                    ($built['park'] ?? 0) * 3 +
-                    $city['happiness'] +
-                    0.5,
+        $rules = $this->rules['needs']['happiness'];
+        $demand = $supply['housing'] + $supply['visitors'];
+        $supplied = $demand ? min(1, $supply['water'] / $demand, $supply['food'] / $demand) : 0;
+        $comfort = $demand
+            ? min(1, $supply['comfort'] / ($demand * $rules['comfortPerPerson']))
+            : 0;
+        $happiness = (int) floor(
+            $supplied * ($rules['needs'] + $rules['comfort'] * $comfort) + 0.5,
+        );
+        $resident = min($supply['housing'], $supply['water'], $supply['food']);
+        $welcome = min(
+            1,
+            max(
+                0,
+                ($happiness - $rules['visitorsFrom']) /
+                    ($rules['visitorsFull'] - $rules['visitorsFrom']),
             ),
         );
+        $visitor = min(
+            (int) floor($supply['visitors'] * $welcome),
+            max(0, $supply['water'] - $resident),
+            max(0, $supply['food'] - $resident),
+        );
         return ['population' => $resident + $visitor, 'happiness' => $happiness];
+    }
+    private function needValue(array $town, array $term, string $id): int
+    {
+        $built = $town['buildings'][$id] ?? 0;
+        if (isset($term['eraTiers'])) {
+            if (!$built) {
+                return 0;
+            }
+            $tier = min(2, max(0, ($town['buildingEraLevels'][$id] ?: 1) - 1));
+            $era = $town['buildingEras'][$id] ?? null;
+            return (int) ($this->rules['eras'][$era][$term['eraTiers']][$tier] ?? 0);
+        }
+        if (isset($term['table'])) {
+            return (int) ($term['table'][$built] ?? 0);
+        }
+        $level = !empty($term['service']) ? $this->service($town, $id) : $built;
+        return $term['per'] *
+            min($term['max'] ?? PHP_INT_MAX, max(0, $level + ($term['offset'] ?? 0)));
     }
     private function incomeRate(array $town): int
     {

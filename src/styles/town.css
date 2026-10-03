@@ -666,6 +666,11 @@
 .town-scene-labels button small {
   font: 9px var(--font-body);
 }
+/* A shortage names the building that would fix it. */
+.town-scene-labels button small.need-hint {
+  color: #8a4f0f;
+  font-weight: 700;
+}
 .high-contrast .town-view .scene-mine-button small {
   color: inherit;
 }
@@ -1749,6 +1754,67 @@ html:has(.town-museum[open]) {
 }
 .town-map-wallet strong {
   overflow-wrap: anywhere;
+}
+
+.town-map-needs {
+  position: absolute;
+  right: 16px;
+  bottom: 14px;
+  z-index: 3;
+  display: flex;
+  gap: 6px;
+}
+.town-map-needs button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 38px;
+  padding: 4px 10px;
+  border: 1px solid #b9c2a4;
+  border-radius: 10px;
+  background: #fbf8eaee;
+  box-shadow: 0 3px 14px #54452d1c;
+  color: #3f5547;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.town-map-needs svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+/* A shortage stands out on the map and in the needs panel until it is fixed. */
+.town-map-needs button.short,
+.town-needs > button.short,
+.town-happiness.short {
+  border-color: #d39a45;
+  background: #fbe6bf;
+  color: #7c4d12;
+}
+.town-map-needs button.short svg {
+  color: #b5671c;
+}
+@media (max-width: 600px) {
+  .town-map-needs {
+    right: 10px;
+    bottom: 10px;
+    gap: 4px;
+  }
+  .town-map-needs button {
+    min-height: 34px;
+    padding: 3px 7px;
+    font-size: 11px;
+  }
+  .town-map-needs svg {
+    width: 15px;
+    height: 15px;
+  }
+}
+.town-in-cinematic .town-map-needs,
+.town-scene.is-raiding .town-map-needs {
+  visibility: hidden;
 }
 
 .town-map-corner {

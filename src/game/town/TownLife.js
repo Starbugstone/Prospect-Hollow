@@ -1,7 +1,7 @@
 import { addTownAnimals } from './TownAnimals';
 import { Vector3 } from 'three';
 import { atPlot, plotStreet, routeBetween } from './TownLayout';
-import { population } from './TownRules';
+import { CONTENT_HAPPINESS, happiness, population } from './TownRules';
 import { addWorkBreak } from './TownWorkRoutine';
 import { smokePuff } from './TownAtmosphere';
 
@@ -33,7 +33,8 @@ export function addTownLife(d, town) {
     }
   }
 
-  if (town.buildings.square && population(town) >= 6) {
+  // Neighbors only linger and chat on the square of a content town.
+  if (town.buildings.square && population(town) >= 6 && happiness(town) >= CONTENT_HAPPINESS) {
     for (let n = 0; n < 2; n++) {
       const point = atPlot('square', n ? 0.7 : -0.7, 3);
       const neighbor = d.person({

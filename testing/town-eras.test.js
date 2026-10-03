@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { townSupply } from '../src/game/town/TownNeeds';
 import { createPinia, setActivePinia } from 'pinia';
 import { BUILDINGS, createTown, BANDIT_EVENT } from '../src/data/town';
 import { CHAPTERS } from '../src/data/campaign';
@@ -11,7 +12,6 @@ import {
   foodCapacity,
   residentPopulation,
   visitorPopulation,
-  happiness,
   saloonIncomeRate,
   plotUnlocked,
   upgradeOffer,
@@ -141,23 +141,23 @@ describe('Frontier additions preserve bounded services and saves', () => {
     town.buildings.fisherman = 0;
     town.buildings.farm = 1;
     town.buildings.farm2 = town.buildings.farm3 = 0;
-    expect(foodCapacity(town)).toBe(6);
+    expect(foodCapacity(town)).toBe(4);
     for (let stage = 0; stage < 3; stage++) {
       town = purchase(town, 'fisherman', stage);
       expect(purchase(town, 'fisherman', stage)).toBeNull();
       town = advanceConstruction(town);
-      expect(foodCapacity(town)).toBe(6 + stage);
+      expect(foodCapacity(town)).toBe(4 + stage);
       town = finishConstruction(normalizeTown(town), 'fisherman', stage + 1);
-      expect(foodCapacity(town)).toBe(6 + [1, 2, 5][stage]);
+      expect(foodCapacity(town)).toBe(4 + [1, 2, 5][stage]);
       expect(finishConstruction(town, 'fisherman', stage + 1)).toBeNull();
     }
-    expect(residentPopulation(town)).toBe(11);
+    expect(residentPopulation(town)).toBe(9);
     expect(visitorPopulation(town)).toBe(0);
     const empty = createTown();
     empty.buildings.school = 5;
-    expect(happiness(empty)).toBe(5);
+    expect(townSupply(empty).comfort).toBe(5);
     empty.buildings.doctor = 5;
-    expect(happiness(empty)).toBe(5);
+    expect(townSupply(empty).comfort).toBe(5);
   });
 });
 

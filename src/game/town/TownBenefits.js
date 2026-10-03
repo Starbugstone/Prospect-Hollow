@@ -1,4 +1,3 @@
-import { BUILDING_BY_ID } from '../../data/town';
 import { bonusCapacity } from '../../data/rewards';
 import { forgeProductionRuns } from '../../data/eras';
 import { eraBuildingLevel, modernization as modernizationOffer } from './TownEras';
@@ -12,6 +11,16 @@ import {
   raidProtection,
   gangSize,
 } from './TownRules';
+import { needProviders } from './TownNeeds';
+
+const NEED_ORDER = ['water', 'food', 'housing', 'visitors', 'comfort'];
+const NEED_READS = {
+  water: { icon: 'water', label: 'Water capacity', read: waterCapacity },
+  food: { icon: 'food', label: 'Food capacity', read: foodCapacity },
+  housing: { icon: 'people', label: 'Resident capacity', read: housingCapacity },
+  visitors: { icon: 'people', label: 'Visitor capacity', read: visitorCapacity },
+  comfort: { icon: 'happiness', label: 'Happiness', read: happiness, suffix: '%' },
+};
 
 // Preview real service values against the current town, without changing the save.
 export function buildingBenefit(town, id, stage, modernization = false) {
@@ -26,20 +35,15 @@ export function buildingBenefit(town, id, stage, modernization = false) {
     buildingEras: { ...town.buildingEras, [id]: offer?.targetEra ?? town.era },
     buildingEraLevels: { ...town.buildingEraLevels, [id]: offer?.eraLevel ?? stage },
   };
-  const kind = BUILDING_BY_ID[id].kind;
-  // City buildings declare their service; later eras need no new id lists here.
-  const effects = BUILDING_BY_ID[id].effects ?? {};
-  let icon = 'home',
-    label = 'Building level',
-    read = (value) => value.buildings[id],
-    suffix = '';
-  if (
-    offer &&
-    !(
-      (id === 'well' && waterCapacity(after) > waterCapacity(town)) ||
-      (id === 'farm' && foodCapacity(after) > foodCapacity(town))
-    )
-  )
+  // Water, food, homes, visitors and comfort follow the shared needs model, so
+  // modernizing the waterworks or a farm previews its real capacity.
+  // The saloon and diner preview their income; others the first need they change.
+  const changes = (read) => read(after) !== read(town);
+  const stats = ['saloon', 'diner'].includes(id)
+    ? []
+    : NEED_ORDER.filter((need) => needProviders(need).has(id));
+  const stat = stats.find((need) => changes(NEED_READS[need].read)) ?? stats[0];
+  if (offer && !(stat && stat !== 'comfort' && changes(NEED_READS[stat].read)))
     return {
       icon: 'home',
       label: 'Era improvement',
@@ -47,41 +51,12 @@ export function buildingBenefit(town, id, stage, modernization = false) {
       after: offer.eraLevel,
       suffix: '/3',
     };
-  if (kind === 'well' || effects.water) {
-    icon = 'water';
-    label = 'Water capacity';
-    read = waterCapacity;
-  } else if (kind === 'farm' || id === 'fisherman' || id === 'market' || effects.food) {
-    icon = 'food';
-    label = 'Food capacity';
-    read = foodCapacity;
-  } else if (kind === 'home' || effects.housing || ['gardenCourt', 'rowHouses'].includes(id)) {
-    icon = 'people';
-    label = 'Resident capacity';
-    read = housingCapacity;
-  } else if (effects.visitors || ['stable', 'hotel', 'railDepot', 'busDepot'].includes(id)) {
-    icon = 'people';
-    label = 'Visitor capacity';
-    read = visitorCapacity;
-  } else if (
-    effects.happiness ||
-    [
-      'square',
-      'museum',
-      'school',
-      'horseField',
-      'park',
-      'cityHall',
-      'library',
-      'crystalLab',
-      'riverPark',
-    ].includes(id)
-  ) {
-    icon = 'happiness';
-    label = 'Happiness';
-    read = happiness;
-    suffix = '%';
-  } else if (['saloon', 'diner'].includes(id)) {
+  let icon = 'home',
+    label = 'Building level',
+    read = (value) => value.buildings[id],
+    suffix = '';
+  if (stat) ({ icon, label, read, suffix = '' } = NEED_READS[stat]);
+  else if (['saloon', 'diner'].includes(id)) {
     icon = 'coin';
     label = 'Coins per hour';
     read = saloonIncomeRate;

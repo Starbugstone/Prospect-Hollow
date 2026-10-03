@@ -34,6 +34,8 @@ import {
   upgradeOffer,
 } from '../src/game/town/TownRules.js';
 import { ERA_BUILDING_LEVELS, eraIndex } from '../src/game/town/TownEras.js';
+import { needTerms } from '../src/game/town/TownNeeds.js';
+import { HAPPINESS } from '../src/data/townNeeds.js';
 import { freshProfile } from '../src/stores/campaignStore.js';
 
 // Object keys are canonicalized so the digest survives formatting and irrelevant
@@ -243,7 +245,6 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
           serviceLevels: Array.from({ length: building.upgrades.length + 1 }, (_, stage) =>
             buildingServiceLevel(building.id, stage),
           ),
-          effects: building.effects ?? {},
           upgrades: building.upgrades.map((upgrade, stage) => ({
             cost: upgrade.cost,
             runs: Math.min(2, upgrade.runs ?? 1),
@@ -253,6 +254,8 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
         },
       ]),
     ),
+    // Water, food, homes, visitors and comfort: the server evaluates the same terms.
+    needs: { terms: needTerms(), happiness: HAPPINESS },
     powers: POWERS.map((power) => power.id),
     rewards: {
       bonusCapacities: BONUS_CAPACITIES,

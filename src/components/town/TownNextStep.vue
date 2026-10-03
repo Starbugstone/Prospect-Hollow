@@ -11,7 +11,7 @@
         :title="need.label"
       >
         <TownIcon :name="need.icon" /><span>{{ t(need.name) }} {{ need.value }}</span
-        ><b v-if="need.shortage" aria-hidden="true">↑</b>
+        ><b v-if="need.fixable" aria-hidden="true">↑</b>
       </button>
       <span
         v-if="showEraProgress"
@@ -111,16 +111,7 @@ import { t, number } from '../../i18n';
 import { BUILDINGS, BUILDING_BY_ID } from '../../data/town';
 import { plotInEra, eraBuildingLevel } from '../../game/town/TownEras';
 import { useNextStepAction } from '../../composables/useNextStepAction';
-import {
-  constructionRuns,
-  population,
-  housingCapacity,
-  visitorCapacity,
-  waterCapacity,
-  foodCapacity,
-  happiness,
-  upgradeOffer,
-} from '../../game/town/TownRules';
+import { constructionRuns, population, needsReport } from '../../game/town/TownRules';
 import TownIcon from './TownIcon.vue';
 import TownBuilding from './TownBuilding.vue';
 import TownDefenseStatus from './TownDefenseStatus.vue';
@@ -160,61 +151,37 @@ const eraProgress = computed(() =>
   ),
 );
 const needs = computed(() => {
-  const town = props.town,
-    demand = housingCapacity(town) + visitorCapacity(town);
-  const serviceChoices = (kind) =>
-    BUILDINGS.filter((b) => {
-      const offer = upgradeOffer(town, b.id);
-      return (
-        (b.kind === kind ||
-          b.effects?.[{ well: 'water', farm: 'food', home: 'housing' }[kind]] > 0) &&
-        offer?.available &&
-        (offer.type !== 'modernization' ||
-          (b.id === 'well' && ['industrial', 'motor-age'].includes(town.era)) ||
-          (b.id === 'farm' && town.era === 'motor-age'))
-      );
-    });
-  const service = (kind) => {
-    const choices = serviceChoices(kind);
-    return (
-      choices.sort((a, b) => upgradeOffer(town, a.id).cost - upgradeOffer(town, b.id).cost)[0]
-        ?.id ?? kind
-    );
-  };
+  const report = needsReport(props.town);
+  const supply = (stat, icon, name, fallback, label) => ({
+    id: report.fixes[stat] ?? fallback,
+    icon,
+    name,
+    relevant: report[stat] > 0 || report.demand > 0,
+    value: report.demand ? `${report[stat]}/${report.demand}` : report[stat],
+    shortage: report.short[stat],
+    fixable: report.short[stat] && !!report.fixes[stat],
+    label: t(label, { capacity: report[stat], demand: report.demand }),
+  });
   return [
+    supply('water', 'water', 'Water', 'well', 'Water: {capacity}/{demand}'),
+    supply('food', 'food', 'Food', 'farm', 'Food: {capacity}/{demand}'),
     {
-      id: service('well'),
-      icon: 'water',
-      name: 'Water',
-      relevant: waterCapacity(town) > 0 || demand > 0,
-      value: demand ? `${waterCapacity(town)}/${demand}` : waterCapacity(town),
-      shortage: waterCapacity(town) < demand && serviceChoices('well').length > 0,
-      label: t('Water: {capacity}/{demand}', { capacity: waterCapacity(town), demand }),
-    },
-    {
-      id: service('farm'),
-      icon: 'food',
-      name: 'Food',
-      relevant: foodCapacity(town) > 0 || demand > 0,
-      value: demand ? `${foodCapacity(town)}/${demand}` : foodCapacity(town),
-      shortage: foodCapacity(town) < demand && serviceChoices('farm').length > 0,
-      label: t('Food: {capacity}/{demand}', { capacity: foodCapacity(town), demand }),
-    },
-    {
-      id: service('home'),
+      id: report.fixes.housing ?? 'home',
       icon: 'people',
       name: 'People',
-      relevant: demand > 0,
-      value: population(town),
-      label: t('{count} people', { count: population(town) }),
+      relevant: report.demand > 0,
+      value: report.population,
+      label: t('{count} people', { count: report.population }),
     },
     {
-      id: 'square',
+      id: report.fixes.comfort ?? 'square',
       icon: 'happiness',
       name: 'Happiness',
-      relevant: demand > 0,
-      value: `${happiness(town)}%`,
-      label: t('Happiness: {value}%', { value: happiness(town) }),
+      relevant: report.demand > 0,
+      value: `${report.happiness}%`,
+      shortage: report.short.comfort,
+      fixable: report.short.comfort && !!report.fixes.comfort,
+      label: t('Happiness: {value}%', { value: report.happiness }),
     },
   ].filter((need) => need.relevant);
 });

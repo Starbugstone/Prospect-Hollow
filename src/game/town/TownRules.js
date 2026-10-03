@@ -1,11 +1,10 @@
 import { normalizePresentations } from '../../data/townPresentations';
 import { normalizeGuestVip } from '../../data/guestVip';
-import { eraEvolution } from '../../data/eras';
 import { RIVER_RAIL_LEVEL_PRICES } from '../../data/economy';
-import { buildingServiceLevel, hasShortProgression } from '../../data/buildingProgression';
+import { hasShortProgression } from '../../data/buildingProgression';
 import { t } from '../../i18n';
 import { miningDepthBonus } from '../../data/economy';
-import { cityCapacity, isMajorCityBuilding } from '../../data/city';
+import { isMajorCityBuilding } from '../../data/city';
 import { hasElectricity } from '../../data/industrial';
 import {
   eventKind,
@@ -16,6 +15,7 @@ import {
   LEGACY_INCIDENT_TARGET,
 } from '../../data/townEvents';
 import { forgeProductionRuns } from '../../data/eras';
+import { needProviders, townNeeds, townSupply } from './TownNeeds';
 import { plotInEra, modernization, normalizeEraState, eraGate } from './TownEras';
 import { BUILDINGS, BUILDING_BY_ID, INTRO_ORDER, BANDIT_EVENT, createTown } from '../../data/town';
 import {
@@ -233,16 +233,23 @@ export function finishConstruction(town, id, expectedStage) {
     return null;
   const projects = { ...town.projects };
   delete projects[id];
-  const modernizing = project.type === 'modernization';
-  return {
-    ...completeStage(town, id, {
-      stage: modernizing ? town.buildings[id] : project.stage,
-      era: project.targetEra ?? town.era,
-      eraLevel: modernizing ? (project.eraLevel ?? 1) : town.era !== 'frontier' ? project.stage : 0,
-    }),
-    projects,
-  };
+  return { ...withProject(town, id, project), projects };
 }
+// The building as its finished project leaves it.
+function withProject(town, id, project) {
+  const modernizing = project.type === 'modernization';
+  return completeStage(town, id, {
+    stage: modernizing ? town.buildings[id] : project.stage,
+    era: project.targetEra ?? town.era,
+    eraLevel: modernizing ? (project.eraLevel ?? 1) : town.era !== 'frontier' ? project.stage : 0,
+  });
+}
+// The town once every project under construction has finished.
+const townWithProjects = (town) =>
+  Object.entries(town.projects).reduce(
+    (next, [id, project]) => withProject(next, id, project),
+    town,
+  );
 // A modernization keeps the building's level and records its new era appearance.
 function completeStage(town, id, { stage, era, eraLevel }) {
   return {
@@ -253,33 +260,20 @@ function completeStage(town, id, { stage, era, eraLevel }) {
   };
 }
 
-const totalLevels = (town, kind) =>
-  BUILDINGS.filter((b) => b.kind === kind).reduce(
-    (sum, b) => sum + buildingServiceLevel(b.id, town.buildings[b.id] ?? 0),
-    0,
-  );
-export const foodCapacity = (town) =>
-  totalLevels(town, 'farm') * 6 +
-  Math.min(5, Math.max(0, buildingServiceLevel('fisherman', town.buildings.fisherman ?? 0))) +
-  (town.buildings.market ?? 0) * 10 +
-  eraEvolution(town.buildingEras.farm).farmCapacity[
-    Math.min(2, Math.max(0, (town.buildingEraLevels.farm || 1) - 1))
-  ] +
-  cityCapacity(town, 'food');
-export const waterCapacity = (town) => {
-  const era = town.buildingEras.well,
-    level = town.buildingEraLevels.well || 1;
-  const waterworks = town.buildings.well
-    ? eraEvolution(era).waterworks[Math.min(2, Math.max(0, level - 1))]
-    : 0;
-  return totalLevels(town, 'well') * 6 + waterworks + cityCapacity(town, 'water');
-};
-export const housingCapacity = (town) =>
-  totalLevels(town, 'home') * 2 +
-  (town.buildings.home5 ?? 0) * 8 +
-  [0, 6, 12, 16][town.buildings.rowHouses ?? 0] +
-  (town.buildings.gardenCourt ?? 0) * 6 +
-  cityCapacity(town, 'housing');
+// The town as it will be once an offer is finished, for previews and guidance.
+function townAfterOffer(town, id, offer) {
+  const modernizing = offer.type === 'modernization';
+  return completeStage(town, id, {
+    stage: modernizing ? town.buildings[id] : offer.stage + 1,
+    era: offer.targetEra ?? town.era,
+    eraLevel: modernizing ? offer.eraLevel : town.era !== 'frontier' ? offer.stage + 1 : 0,
+  });
+}
+
+// Water, food, homes, visitors and happiness come from the shared needs model.
+export const foodCapacity = (town) => townSupply(town).food;
+export const waterCapacity = (town) => townSupply(town).water;
+export const housingCapacity = (town) => townSupply(town).housing;
 export function settleForgeProduction(town) {
   if (
     !town.buildings.blacksmith ||
@@ -296,39 +290,11 @@ export function advanceForge(town) {
     forge: { progress: town.forge.progress + 1, charge: 0 },
   });
 }
-export const residentPopulation = (town) =>
-  Math.min(housingCapacity(town), waterCapacity(town), foodCapacity(town));
-export const visitorCapacity = (town) =>
-  buildingServiceLevel('stable', town.buildings.stable) * 2 +
-  Math.max(0, buildingServiceLevel('museum', town.buildings.museum) - 1) * 2 +
-  (town.buildings.railDepot ?? 0) * 2 +
-  (town.buildings.hotel ?? 0) * 2 +
-  (town.buildings.busDepot ?? 0) * 2 +
-  cityCapacity(town, 'visitors');
-export const visitorPopulation = (town) =>
-  Math.min(
-    visitorCapacity(town),
-    Math.max(0, waterCapacity(town) - residentPopulation(town)),
-    Math.max(0, foodCapacity(town) - residentPopulation(town)),
-  );
-export const population = (town) => residentPopulation(town) + visitorPopulation(town);
-export const happiness = (town) => {
-  const demand = housingCapacity(town) + visitorCapacity(town);
-  const needs = demand ? Math.min(1, waterCapacity(town) / demand, foodCapacity(town) / demand) : 0;
-  return Math.min(
-    100,
-    Math.round(
-      needs * 40 +
-        (town.buildings.square ?? 0) * 8 +
-        buildingServiceLevel('museum', town.buildings.museum) * 2 +
-        town.buildings.saloon * 2 +
-        Math.min(5, Math.max(0, buildingServiceLevel('school', town.buildings.school ?? 0))) +
-        (town.buildings.horseField ?? 0) * 2 +
-        (town.buildings.park ?? 0) * 3 +
-        cityCapacity(town, 'happiness'),
-    ),
-  );
-};
+export const residentPopulation = (town) => townNeeds(town).residents;
+export const visitorCapacity = (town) => townSupply(town).visitors;
+export const visitorPopulation = (town) => townNeeds(town).visitors;
+export const population = (town) => townNeeds(town).population;
+export const happiness = (town) => townNeeds(town).happiness;
 const development = (town) => Object.values(town.buildings).reduce((sum, level) => sum + level, 0);
 export const roadLevel = (town) =>
   development(town) >= 24 ? 3 : development(town) >= 12 ? 2 : development(town) >= 3 ? 1 : 0;
@@ -483,13 +449,61 @@ export const availableParcels = (town, builderHammers = 0) => [
   ...availablePurchases(town, builderHammers),
 ];
 
+// Available offers that raise a need (water, food, housing, visitors or comfort),
+// fewest coins per person supplied first, so small tweaks do not crowd out real
+// fixes. Modernizing the waterworks or the farm counts like any building.
+export function needFixes(town, stat, offers = new Map()) {
+  const before = townSupply(town)[stat];
+  const providers = needProviders(stat);
+  return BUILDINGS.filter(({ id }) => providers.has(id))
+    .map((place) => {
+      const offer = offers.get(place.id) ?? upgradeOffer(town, place.id);
+      const gain = offer?.available
+        ? townSupply(townAfterOffer(town, place.id, offer))[stat] - before
+        : 0;
+      return { ...place, offer, gain };
+    })
+    .filter(({ gain }) => gain > 0)
+    .sort((a, b) => a.offer.cost / a.gain - b.offer.cost / b.gain || a.offer.cost - b.offer.cost);
+}
+// Below this, guidance suggests comfort before optional expansion.
+export const CONTENT_HAPPINESS = 70;
+
+// What the village shows for its needs: supplies against demand, whether each runs
+// short, and the cheapest available building that would raise it.
+export function needsReport(town) {
+  const needs = townNeeds(town);
+  const offers = new Map(BUILDINGS.map(({ id }) => [id, upgradeOffer(town, id)]));
+  const fix = (stat) => needFixes(town, stat, offers)[0]?.id ?? null;
+  return {
+    ...needs,
+    short: {
+      water: needs.water < needs.demand,
+      food: needs.food < needs.demand,
+      comfort: needs.demand > 0 && needs.happiness < CONTENT_HAPPINESS,
+    },
+    fixes: {
+      water: fix('water'),
+      food: fix('food'),
+      housing: fix('housing'),
+      comfort: fix('comfort'),
+    },
+  };
+}
+
 export function nextGoal(town) {
   const offers = new Map(BUILDINGS.map(({ id }) => [id, upgradeOffer(town, id)]));
   const available = BUILDINGS.filter((b) => offers.get(b.id)?.available);
   const cheapest = (choices) =>
     choices.toSorted((a, b) => offers.get(a.id).cost - offers.get(b.id).cost)[0]?.id;
-  const demand = housingCapacity(town) + visitorCapacity(town);
-  const need = waterCapacity(town) < demand ? 'well' : foodCapacity(town) < demand ? 'farm' : null;
+  // Shortages the projects under construction will cover need no new suggestion.
+  const needs = townNeeds(townWithProjects(town));
+  const need = needs.water < needs.demand ? 'water' : needs.food < needs.demand ? 'food' : null;
+  const unhappy = !need && needs.demand > 0 && needs.happiness < CONTENT_HAPPINESS;
+  // A frontier town opens its first saloon, museum and forge before more comfort.
+  const essential = ['saloon', 'museum', 'home', 'blacksmith'].find(
+    (id) => available.some((b) => b.id === id) && !town.buildings[id],
+  );
   // Put essential services and balanced defenses ahead of optional expansion.
   // An active project already covers its need; suggest another useful project.
   const defense = ['sheriff', 'bank']
@@ -497,18 +511,7 @@ export function nextGoal(town) {
     .sort((a, b) => town.buildings[a] - town.buildings[b])[0];
   const id =
     INTRO_ORDER.find((key) => available.some((b) => b.id === key) && !town.buildings[key]) ??
-    (need && !BUILDINGS.some((b) => b.kind === need && town.projects[b.id])
-      ? cheapest(
-          available.filter((b) => b.kind === need && offers.get(b.id).type !== 'modernization'),
-        )
-      : null) ??
-    (need && !town.projects[need === 'well' ? 'waterPlant' : 'supermarket']
-      ? available.find(
-          (b) =>
-            b.id === (need === 'well' ? 'waterPlant' : 'supermarket') &&
-            offers.get(b.id).type !== 'modernization',
-        )?.id
-      : null) ??
+    (need ? needFixes(town, need, offers)[0]?.id : null) ??
     (town.era === 'industrial' &&
     available.some((b) => b.id === 'powerHouse') &&
     !town.buildings.powerHouse
@@ -520,16 +523,13 @@ export function nextGoal(town) {
     available.some((b) => b.id === 'fireStation')
       ? 'fireStation'
       : null) ??
-    (need && ['industrial', 'motor-age'].includes(town.era)
-      ? available.find((b) => b.id === need)?.id
-      : null) ??
+    (town.era === 'frontier' ? essential : null) ??
+    (unhappy ? needFixes(town, 'comfort', offers)[0]?.id : null) ??
     (town.era !== 'frontier'
       ? (available.find((b) => b.id === 'bridge' && b.introducedEra === town.era)?.id ??
         cheapest(available.filter((b) => b.introducedEra === town.era)))
       : null) ??
-    ['saloon', 'museum', 'home', 'blacksmith'].find(
-      (id) => available.some((b) => b.id === id) && !town.buildings[id],
-    ) ??
+    essential ??
     cheapest(available);
   return id ? { id, ...offers.get(id) } : null;
 }

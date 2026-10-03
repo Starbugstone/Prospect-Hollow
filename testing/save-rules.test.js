@@ -230,11 +230,12 @@ describe('shared save accounting catalog', () => {
     additions.push(['building', building.id]);
     const rules = buildSaveRules();
     expect(rules.eraOrder.at(-1)).toBe(era.id);
-    expect(rules.buildings[building.id]).toMatchObject({
-      maxLevel: 3,
-      introducedEra: era.id,
-      effects: { housing: 7 },
-    });
+    expect(rules.buildings[building.id]).toMatchObject({ maxLevel: 3, introducedEra: era.id });
+    // The new plot joins the shared needs model the server evaluates.
+    expect(rules.needs.terms).toContainEqual({ stat: 'housing', per: 7, ids: [building.id] });
+    expect(rules.needs.terms.find((term) => term.stat === 'housing' && term.service).ids).toContain(
+      building.id,
+    );
     expect(
       rules.eras[era.id].buildingOffers[building.id].normal.map((offer) => offer.cost),
     ).toEqual([80, 120, 160]);

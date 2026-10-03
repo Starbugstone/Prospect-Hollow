@@ -104,7 +104,9 @@ it.each(Object.keys(GARDEN_PARCELS))(
             ? 'Food capacity'
             : building.effects.housing
               ? 'Resident capacity'
-              : 'Happiness',
+              : building.effects.visitors
+                ? 'Visitor capacity'
+                : 'Happiness',
       );
       town = purchase(town, id, offer.stage);
       expect(reads.map((read) => read(town))).toEqual(before);

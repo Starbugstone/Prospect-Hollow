@@ -6085,7 +6085,7 @@
           },
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
-          "coins": 424,
+          "coins": 604,
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -6586,7 +6586,7 @@
           },
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
-          "coins": 111,
+          "coins": 156,
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -6658,7 +6658,7 @@
           "projects": {},
           "completedRuns": 0,
           "nextRaidRun": null,
-          "income": { "at": 1780000000000, "stored": 318, "remainder": 0 },
+          "income": { "at": 1780000000000, "stored": 453, "remainder": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 1779999999000,
           "guestVip": null,
