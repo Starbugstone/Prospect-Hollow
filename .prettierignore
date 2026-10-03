@@ -28,6 +28,3 @@ scripts/o2switch/config.example.json
 src/assets/meshes/
 src/assets/board/frames.json
 src/data/generated/
-
-# Uncommitted cozy-era work in the shared checkout; format it when it is published.
-backend/tests/saves.php
