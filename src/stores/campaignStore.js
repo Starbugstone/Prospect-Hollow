@@ -294,6 +294,13 @@ export const useCampaignStore = defineStore('campaign', {
       for (let id = 1; id <= LEVEL_COUNT; id++) if (!state.records[id]) return id;
       return LEVEL_COUNT;
     },
+    nextMiningLevel(state) {
+      if (!state.records[this.nextLevel]) return this.nextLevel;
+      if (this.canReplay) {
+        for (let id = 1; id <= LEVEL_COUNT; id++) if (state.records[id].stars < 3) return id;
+      }
+      return null;
+    },
     completedCount: (state) => Object.keys(state.records).length,
     completion: (state) => campaignCompletion(state.records),
     totalStars: (state) =>
