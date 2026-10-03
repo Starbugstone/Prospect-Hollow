@@ -20,6 +20,9 @@ import {
 } from '../engine/MatchRewards';
 
 const MOTION = Object.freeze({ swap: 115, reject: 75, clear: 90, fall: 190, intro: 160 });
+// Lit lanterns and spent charge cores leave the board; lit survey markers and
+// fired spore relays keep their check mark.
+const VANISHING_SIGNALS = new Set(['lantern', 'core']);
 const CRACKS = [
   [
     [88, 10],
@@ -837,6 +840,8 @@ export class BoardAnimator {
     const chained = tile?.chainHealth > 0;
     const layers = tile?.health > 1 ? tile.health : 0;
     const frozen = tile?.state === 'FROZEN';
+    const signal =
+      tile?.signalHealth === 0 && VANISHING_SIGNALS.has(tile.signal) ? null : tile?.signal;
     const key = `${layers}-${frozen}-${sealColor ?? ''}-${chained}-${!!tile?.exit}-${tile?.signal ?? ''}-${tile?.signalHealth}-${tile?.surveyOrder}-${tile?.rootGroup ?? ''}-${tile?.bonusOnly}-${tile?.sporeAxis}-${tile?.health}-${tile?.maxHealth}-${this.theme}-${this.cellSize}`;
     let overlay = this.tileOverlays.get(index);
     if (overlay?.__tileKey === key) return;
@@ -848,7 +853,7 @@ export class BoardAnimator {
       !tile?.exit &&
       !layers &&
       !frozen &&
-      !tile?.signal &&
+      !signal &&
       !(tile?.bonusOnly && tile.health > 0)
     )
       return;
@@ -888,7 +893,7 @@ export class BoardAnimator {
     // A blast-only obstacle that has taken a hit shows cracks until its last one.
     if (tile.bonusOnly && tile.health > 0 && tile.health < (tile.maxHealth ?? tile.health))
       overlay.add(this.drawCracks(size));
-    if (tile.signal) {
+    if (signal) {
       const lit = tile.signalHealth === 0;
       const skin = mineSignalAppearance(this.theme, tile.signal);
       const ref = spriteRef(skin?.texture ?? `tile-${tile.signal}`, this.scene.textures);

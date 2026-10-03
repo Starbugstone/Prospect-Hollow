@@ -162,13 +162,36 @@ it.each(['atlas', 'svg'])(
     expect(circle.mock.calls.map((args) => args[3])).toEqual([0xffd36e, 0x1d3f55, 0x1d3f55]);
     animator.drawTileOverlay(0);
     expect(circle).toHaveBeenCalledTimes(3);
-    animator.tiles[0].signalHealth = 0;
+    animator.tiles[0].signalHealth = 1;
     animator.drawTileOverlay(0);
     expect(circle.mock.calls.slice(3).map((args) => args[3])).toEqual([
-      0xffd36e, 0xffd36e, 0xffd36e,
+      0xffd36e, 0xffd36e, 0x1d3f55,
     ]);
+    // Once full, the core has released its bonus and leaves the board.
+    animator.tiles[0].signalHealth = 0;
+    animator.drawTileOverlay(0);
+    expect(circle).toHaveBeenCalledTimes(6);
+    expect(image).toHaveBeenCalledTimes(2);
+    expect(animator.tileOverlays.has(0)).toBe(false);
   },
 );
+it.each(['atlas', 'svg'])('removes a lantern marker once it is lit (%s)', (mode) => {
+  const { animator, image } = tileRenderer(mode);
+  animator.tiles = [{ signal: 'lantern', signalHealth: 1 }];
+  animator.drawTileOverlay(0);
+  const marker = animator.tileOverlays.get(0);
+  vi.spyOn(marker, 'destroy');
+  animator.tiles[0].signalHealth = 0;
+  animator.drawTileOverlay(0);
+  expect(marker.destroy).toHaveBeenCalledOnce();
+  expect(animator.tileOverlays.has(0)).toBe(false);
+  // A lit lantern on an exit keeps the exit art but not the lantern.
+  animator.tiles[0].exit = true;
+  animator.drawTileOverlay(0);
+  expect(image.mock.calls.at(-1).slice(2)).toEqual(
+    mode === 'atlas' ? ['board-core', 'tile-exit'] : ['tile-exit', undefined],
+  );
+});
 function attach() {
   game.attachRenderer({ scene: {}, boardContainer: {} });
 }
