@@ -33,7 +33,13 @@ import { TownFramePacer } from './TownFramePacer';
 import { disposeInsetCache } from './TownInset';
 import * as plots from './TownPlots';
 import { populateLife } from './TownPopulation';
-import { cameraAction, findVisitor, frameTown } from './TownCamera';
+import {
+  CAMERA_FOCUS_HEIGHT,
+  CAMERA_MIN_DISTANCE,
+  cameraAction,
+  findVisitor,
+  frameTown,
+} from './TownCamera';
 import {
   projectLabelPositions,
   projectVillager,
@@ -133,12 +139,12 @@ export class TownDiorama extends TownPrimitives {
     this.buildingRenderer = new TownStatics(this.scene);
     this.controls = new OrbitControls(this.camera, canvas.parentElement);
     this.controls.cursorStyle = 'grab';
-    this.controls.target.set(0, 0.7, 0);
+    this.controls.target.set(0, CAMERA_FOCUS_HEIGHT, 0);
     this.controls.enablePan = true;
     this.controls.screenSpacePanning = false;
     this.controls.mouseButtons.MIDDLE = THREE.MOUSE.PAN;
     this.controls.enableDamping = false;
-    this.controls.minDistance = 13;
+    this.controls.minDistance = CAMERA_MIN_DISTANCE;
     this.controls.maxDistance = 110;
     this.controls.minPolarAngle = 0.25;
     this.controls.maxPolarAngle = Math.PI / 2 - 0.02;

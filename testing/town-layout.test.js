@@ -12,6 +12,7 @@ import { GARDEN_PARCELS } from '../src/data/townGardenDistrict';
 import { buildTownSquare } from '../src/game/town/TownSquare';
 import { PLOTS, TOWN_TRACKS, segmentDistance } from '../src/game/town/TownLayout';
 import { TownDiorama } from '../src/game/town/TownDiorama';
+import { CAMERA_FOCUS_HEIGHT, CAMERA_MIN_DISTANCE } from '../src/game/town/TownCamera';
 import { groundHeight } from '../src/game/town/TownLandscape';
 
 describe('Open village lots and usable paths', () => {
@@ -60,11 +61,7 @@ describe('Open village lots and usable paths', () => {
         for (const dz of [-3, 3]) expect(groundHeight(x + dx, z + dz), id).toBe(0);
     }
   });
-  it.each([
-    [1440, 1028],
-    [390, 400],
-    [390, 844],
-  ])('frames every lot at %s × %s without exceeding zoom limits', (width, height) => {
+  const framedTown = (ids, width, height) => {
     const d = Object.create(TownDiorama.prototype);
     d.camera = new PerspectiveCamera(
       width / height < 0.7 ? 62 : width / height < 1.1 ? 48 : 40,
@@ -72,9 +69,9 @@ describe('Open village lots and usable paths', () => {
       0.1,
       400,
     );
-    d.anchors = Object.keys(PLOTS).map((id) => ({ id }));
+    d.anchors = ids.map((id) => ({ id }));
     d.controls = {
-      minDistance: 13,
+      minDistance: CAMERA_MIN_DISTANCE,
       maxDistance: 360,
       target: new Vector3(),
       update() {
@@ -83,6 +80,14 @@ describe('Open village lots and usable paths', () => {
       },
     };
     d.frameTown();
+    return d;
+  };
+  it.each([
+    [1440, 1028],
+    [390, 400],
+    [390, 844],
+  ])('frames every lot at %s × %s without exceeding zoom limits', (width, height) => {
+    const d = framedTown(Object.keys(PLOTS), width, height);
     for (const [id, [x, z]] of Object.entries(PLOTS)) {
       const parcel = GARDEN_PARCELS[id];
       for (const dx of parcel ? [-parcel.halfWidth, parcel.halfWidth] : [0])
@@ -94,5 +99,16 @@ describe('Open village lots and usable paths', () => {
           }
     }
     expect(d.camera.position.distanceTo(d.controls.target)).toBeLessThanOrEqual(360.000001);
+  });
+  it('orbits the ground so a garden town zooms in as close as a frontier camp', () => {
+    // Garden parcels and the airport frame a taller box than the first lots. The
+    // orbit point must not float up with it, or the closest zoom stays farther away.
+    const frontier = framedTown(['mine', 'home', 'farm', 'saloon', 'square'], 390, 844);
+    const garden = framedTown(Object.keys(PLOTS), 390, 844);
+    expect(Object.keys(PLOTS).some((id) => GARDEN_PARCELS[id])).toBe(true);
+    for (const d of [frontier, garden]) {
+      expect(d.controls.target.y).toBeCloseTo(CAMERA_FOCUS_HEIGHT);
+      expect(d.camera.position.distanceTo(d.controls.target)).toBeGreaterThan(CAMERA_MIN_DISTANCE);
+    }
   });
 });

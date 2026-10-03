@@ -10,6 +10,11 @@ import { selectVillager } from './TownLabelProjection';
 // phone), stepped camera controls and jumping to a live visitor.
 const point = (x, y, z) => new THREE.Vector3(x, y, z);
 
+// The orbit point stays this high above the ground, so the closest zoom brings
+// the street equally near in every era.
+export const CAMERA_FOCUS_HEIGHT = 0.7;
+export const CAMERA_MIN_DISTANCE = 7;
+
 export function frameTown(d) {
   if (d.eventCamera) return;
   if (!d.anchors?.length) return;
@@ -67,10 +72,15 @@ export function frameTown(d) {
       depth + Math.abs(offset.dot(up)) / vertical,
     );
   }
+  // Taller garden parcels and the airport lift the framed box's centre off the
+  // ground, and zoom stopped short of that floating point. Orbit the ground point
+  // on the same sight line instead: the framed view is unchanged.
+  const lift = (target.y - CAMERA_FOCUS_HEIGHT) / direction.y;
+  target.addScaledVector(direction, -lift);
   d.controls.target.copy(target);
   d.camera.position
     .copy(target)
-    .addScaledVector(direction, Math.min(distance, d.controls.maxDistance));
+    .addScaledVector(direction, Math.min(distance + lift, d.controls.maxDistance));
   d.framingTown = true;
   try {
     d.controls.update();
