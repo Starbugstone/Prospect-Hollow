@@ -33,8 +33,8 @@ alcoves make the blast's position and reach matter; exposed pieces stay open.
 
 A mushroom has a horizontal or vertical arrow. A match on or beside it fires
 one spore burst in that direction. A burst can crack blast gates, activate other
-mushrooms and trigger bonus gems it actually hits. Spent mushrooms stay dimmed
-and checked. This makes mushrooms usable parts of a chain reaction, rather
+mushrooms and trigger bonus gems it actually hits. A spent mushroom leaves the
+board. This makes mushrooms usable parts of a chain reaction, rather
 than another lantern skin. Special blasts must directly hit a mushroom to ignite
 it; ordinary matches retain the intuitive adjacent activation.
 

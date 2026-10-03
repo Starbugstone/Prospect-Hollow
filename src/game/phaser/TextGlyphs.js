@@ -1,4 +1,4 @@
-// Tile badges show a handful of short labels (layer counts, ❄, arrows, ✓). Render
+// Tile badges show a handful of short labels (layer counts, ❄, arrows, survey numbers). Render
 // each distinct label and style once into a shared texture, instead of creating a
 // Text object, with its own canvas and texture upload, every time a tile changes.
 const styleKey = (style) =>

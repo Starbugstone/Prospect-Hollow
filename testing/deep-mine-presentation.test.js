@@ -314,8 +314,9 @@ describe('fossil and linked root presentation', () => {
         animator.tiles[index].fossilCollected = true;
       }
       animator.drawCells();
-      expect(cells.map((index) => animator.fossilSprites.get(index))).toEqual(sprites);
-      expect(sprites.every((sprite) => sprite.alpha < 0.5)).toBe(true);
+      // A collected fossil leaves the board.
+      expect(cells.some((index) => animator.fossilSprites.has(index))).toBe(false);
+      expect(sprites.every((sprite) => sprite.destroy.mock.calls.length === 1)).toBe(true);
     },
   );
 

@@ -139,7 +139,7 @@ it.each(['atlas', 'svg'])('renders lantern and survey markers from %s textures',
   const { animator, image } = tileRenderer(mode);
   animator.tiles = [
     { signal: 'lantern', signalHealth: 1 },
-    { signal: 'survey', signalHealth: 0, surveyOrder: 2 },
+    { signal: 'survey', signalHealth: 1, surveyOrder: 2 },
   ];
   animator.tiles.forEach((_, index) => animator.drawTileOverlay(index));
   expect(
@@ -192,6 +192,29 @@ it.each(['atlas', 'svg'])('removes a lantern marker once it is lit (%s)', (mode)
     mode === 'atlas' ? ['board-core', 'tile-exit'] : ['tile-exit', undefined],
   );
 });
+it.each(['atlas', 'svg'])(
+  'removes every completed signal and its badge from the board (%s)',
+  (mode) => {
+    const { animator, image } = tileRenderer(mode);
+    animator.levelId = 385; // Glowshroom grotto: spore relays use the mushroom art.
+    animator.tiles = [
+      { signal: 'spore', signalHealth: 1, sporeAxis: 'column' },
+      { signal: 'survey', signalHealth: 1, surveyOrder: 1 },
+      { signal: 'lantern', signalHealth: 1 },
+      { signal: 'core', signalHealth: 1, coreCharges: 3 },
+    ];
+    animator.tiles.forEach((_, index) => animator.drawTileOverlay(index));
+    expect(animator.tileOverlays.size).toBe(4);
+    const drawn = image.mock.calls.length;
+    animator.tiles.forEach((tile, index) => {
+      tile.signalHealth = 0;
+      animator.drawTileOverlay(index);
+    });
+    expect(animator.tileOverlays.size).toBe(0);
+    // No dimmed icon or check mark is drawn in its place.
+    expect(image).toHaveBeenCalledTimes(drawn);
+  },
+);
 function attach() {
   game.attachRenderer({ scene: {}, boardContainer: {} });
 }
