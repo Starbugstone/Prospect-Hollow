@@ -1,6 +1,6 @@
 <?php
 require __DIR__ . '/support.php';
-use App\{PublicTown, VisitorService};
+use App\{TownDirectory, VisitorService};
 $visitorTestIp = '127.' . random_int(1, 254) . '.' . random_int(1, 254) . '.' . random_int(1, 254);
 function visitorApi(
     string $method,
@@ -227,7 +227,7 @@ try {
     $staleId = array_key_last($dealt);
     $db->get()->update(
         'towns',
-        ['saved_at' => time() - PublicTown::ACTIVE_SECONDS - 60],
+        ['saved_at' => time() - TownDirectory::ACTIVE_SECONDS - 60],
         ['id' => $staleId],
     );
     $draw = fn(array $session, string $query = 'page=1') => status(
@@ -239,7 +239,7 @@ try {
         $cards = [];
         for ($page = 1; ; $page++) {
             $result = $draw($session, "page=$page&seed=$seed");
-            check(count($result['entries']) <= PublicTown::DRAW_SIZE, 'at most seven per draw');
+            check(count($result['entries']) <= TownDirectory::DRAW_SIZE, 'at most seven per draw');
             foreach ($result['entries'] as $card) {
                 check(!isset($cards[$card['villageId']]), 'a deck never repeats a town');
                 $cards[$card['villageId']] = $card;
@@ -274,6 +274,9 @@ try {
             'mineLevel',
             'saloonReady',
             'visitors',
+            'visited',
+            'favourite',
+            'honours',
         ],
         'cards omit level records and the full appearance',
     );
@@ -289,6 +292,183 @@ try {
     );
     status(422, visitorApi('GET', 'villages?seed=XYZ', null, $other), 'invalid seed');
     status(422, visitorApi('GET', 'villages?sort=name', null, $other), 'unknown browse query');
+    // Towns visited before the deck was shuffled come after unseen ones, on any device, and a
+    // visit made while drawing never reorders the deck.
+    $db->get()->executeStatement('UPDATE visitor_visits SET arrived_at=arrived_at-60 WHERE id=?', [
+        $visitId,
+    ]);
+    $guestDeck = $deck($guest, $draw($guest)['seed']);
+    $guestOrder = array_flip(array_keys($guestDeck));
+    check(
+        $guestDeck[$publicId]['visited'] &&
+            !$cards[$publicId]['visited'] &&
+            max(array_map(fn($id) => $guestOrder[$id], array_slice($dealt, 0, -1))) <
+                $guestOrder[$publicId] &&
+            $guestOrder[$publicId] < $guestOrder[$dealt[$staleId]],
+        'visited towns are dealt after unseen ones',
+    );
+    $seed = $draw($other)['seed'];
+    $before = array_keys($deck($other, $seed));
+    $firstDealt = reset($dealt);
+    $otherToken = bin2hex(random_bytes(32));
+    status(
+        200,
+        visitorApi(
+            'POST',
+            'villages/' . $firstDealt . '/presence',
+            ['token' => $otherToken, 'sequence' => 1],
+            $other,
+        ),
+        'visit while drawing',
+    );
+    $after = $deck($other, $seed);
+    check(
+        array_keys($after) === $before && $after[$firstDealt]['visited'],
+        'a visit marks the card without reordering the deck',
+    );
+    status(
+        200,
+        visitorApi('DELETE', 'villages/' . $firstDealt . '/presence', [
+            'token' => $otherToken,
+            'sequence' => 2,
+        ]),
+        'leave while drawing',
+    );
+    // Town Honours appear on cards once the shared appearance publishes them.
+    $honoured = $db
+        ->get()
+        ->fetchAssociative('SELECT id,appearance FROM towns WHERE public_id=?', [$firstDealt]);
+    $appearance = json_decode($honoured['appearance']);
+    $appearance->appearance->honours = (object) [
+        'version' => 1,
+        'earned' => (object) ['first-perfect' => (object) ['at' => 1], 'Bad Id' => (object) []],
+        'showcase' => ['first-perfect', 7],
+    ];
+    $db->get()->update(
+        'towns',
+        ['appearance' => json_encode($appearance)],
+        ['id' => $honoured['id']],
+    );
+    $cards = $deck($other, $first['seed']);
+    check(
+        $cards[$firstDealt]['honours'] === [
+            'earned' => ['first-perfect'],
+            'showcase' => ['first-perfect'],
+        ] && $cards[$publicId]['honours'] === null,
+        'cards carry published honours and nothing for towns without them',
+    );
+    // Name search: case-insensitive, names that start with the search first, never one's own.
+    $search = fn(array $session, string $q) => status(
+        200,
+        visitorApi('GET', 'villages?q=' . rawurlencode($q), null, $session),
+        'search ' . $q,
+    );
+    check(
+        array_column($search($other, 'HOST')['entries'], 'name') === ['Host Harbor'],
+        'search ignores case',
+    );
+    check(
+        array_column($search($other, 'deck town 2')['entries'], 'name') === [
+            'Deck Town 21',
+            'Deck Town 22',
+            'Deck Town 23',
+        ],
+        'search matches part of a name',
+    );
+    $starts = array_column($search($other, 'ar')['entries'], 'name');
+    check($starts === ['Host Harbor'], 'search finds a word inside a name');
+    check($search($owner, 'harbor')['entries'] === [], 'search never lists own towns');
+    check($search($other, '%%')['entries'] === [], 'search wildcards are literal');
+    check(
+        array_keys($search($other, 'deck')['entries'][0]) === array_keys($cards[$publicId]),
+        'search returns the same cards',
+    );
+    status(422, visitorApi('GET', 'villages?q=a', null, $other), 'search too short');
+    status(422, visitorApi('GET', 'villages?q=host&page=2', null, $other), 'search has no pages');
+    status(401, visitorApi('GET', 'villages?q=host'), 'search needs an account');
+    // Favourites follow the account; a town its owner stops sharing is hidden, not lost.
+    $favourite = 'villages/' . $publicId . '/favourite';
+    $favourites = fn() => array_column(
+        status(200, visitorApi('GET', 'villages/favourites', null, $other), 'favourites')[
+            'entries'
+        ],
+        'favourite',
+        'villageId',
+    );
+    status(
+        403,
+        visitorApi('PUT', $favourite, (object) [], $other, ['HTTP_X_CSRF_TOKEN' => 'bad']),
+        'favourite needs csrf',
+    );
+    status(422, visitorApi('PUT', $favourite, ['extra' => 1], $other), 'favourite takes no fields');
+    status(
+        422,
+        visitorApi('PUT', $favourite, (object) [], $owner),
+        'own town cannot be a favourite',
+    );
+    status(
+        404,
+        visitorApi('PUT', 'villages/' . str_repeat('0', 32) . '/favourite', (object) [], $other),
+        'unknown town cannot be a favourite',
+    );
+    foreach ([$publicId, $publicId, $firstDealt] as $id) {
+        check(
+            status(200, visitorApi('PUT', "villages/$id/favourite", (object) [], $other), 'star')[
+                'favourite'
+            ] === true,
+            'starring is idempotent',
+        );
+    }
+    $db->get()->update(
+        'town_favourites',
+        ['created_at' => time() - 10],
+        ['player_id' => $other['id'], 'town_id' => $hostId],
+    );
+    check($favourites() === [$firstDealt => true, $publicId => true], 'newest favourite first');
+    check($deck($other, $first['seed'])[$publicId]['favourite'], 'cards show favourites');
+    $db->get()->update('towns', ['listed' => 0], ['public_id' => $firstDealt]);
+    check($favourites() === [$publicId => true], 'unshared favourites are hidden');
+    $db->get()->update('towns', ['listed' => 1], ['public_id' => $firstDealt]);
+    check(count($favourites()) === 2, 'favourites return when shared again');
+    check(
+        status(200, visitorApi('DELETE', $favourite, (object) [], $other), 'unstar')[
+            'favourite'
+        ] === false && $favourites() === [$firstDealt => true],
+        'unstarring removes a favourite',
+    );
+    $filler = account();
+    $fillerIds = [];
+    for ($i = 0; $i < TownDirectory::FAVOURITE_LIMIT; $i++) {
+        $fillerIds[] = $id = uuid();
+        $db->get()->insert('towns', [
+            'id' => $id,
+            'player_id' => $filler['id'],
+            'name' => "Filler $i",
+            'normalized_name' => "filler $i",
+            'revision' => 1,
+            'profile' => '{}',
+            'saved_at' => time(),
+            'public_id' => bin2hex(random_bytes(16)),
+            'listed' => 1,
+            'appearance' => '{"appearance":{"era":"frontier","buildings":{}}}',
+        ]);
+        if ($i < TownDirectory::FAVOURITE_LIMIT - 1) {
+            $db->get()->insert('town_favourites', [
+                'player_id' => $other['id'],
+                'town_id' => $id,
+                'created_at' => time() - 100,
+            ]);
+        }
+    }
+    status(422, visitorApi('PUT', $favourite, (object) [], $other), 'favourites stop at the limit');
+    check(
+        count($favourites()) === TownDirectory::FAVOURITE_LIMIT,
+        'the limit counts shared favourites',
+    );
+    foreach ($fillerIds as $id) {
+        $db->get()->delete('towns', ['id' => $id]);
+    }
+    check($favourites() === [$firstDealt => true], 'deleted towns leave favourites');
     $collection = status(
         200,
         visitorApi('POST', 'villages/' . $publicId . '/saloon', (object) []),

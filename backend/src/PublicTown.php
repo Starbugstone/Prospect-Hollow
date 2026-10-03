@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 namespace App;
-use Doctrine\DBAL\ArrayParameterType;
 use Symfony\Component\HttpFoundation\Request;
 final class PublicTown
 {
@@ -94,74 +93,6 @@ final class PublicTown
             JSON_THROW_ON_ERROR,
         );
     }
-    public const DRAW_SIZE = 7;
-    public const ACTIVE_SECONDS = 14 * 86400;
-    // Shared towns are dealt like a shuffled deck: the seed fixes one random order, and each
-    // page is the next draw of seven, so refreshing never repeats a town until the deck runs
-    // out. Every visitor gets their own seed, which spreads visits across all shared towns.
-    // Towns saved in the last two weeks are dealt first; the visitor's own towns never are.
-    public function browse(Request $r): array
-    {
-        $session = $this->auth->session($r);
-        $page = filter_var($r->query->get('page', '1'), FILTER_VALIDATE_INT, [
-            'options' => ['min_range' => 1, 'max_range' => 10000],
-        ]);
-        if (!$page) {
-            throw new ApiError(422, 'Invalid page.');
-        }
-        $seed = $r->query->get('seed') ?? bin2hex(random_bytes(8));
-        if (!preg_match('/^[a-f0-9]{16}$/D', $seed)) {
-            throw new ApiError(422, 'Invalid seed.');
-        }
-        $db = $this->database->get();
-        $now = time();
-        $rows = $db->fetchAllAssociative(
-            'SELECT t.id,t.public_id,t.name,t.appearance,s.collected_at FROM towns t LEFT JOIN saloon_collections s ON s.town_id=t.id WHERE t.listed=1 AND t.deleted_at IS NULL AND t.player_id<>? ORDER BY CASE WHEN t.saved_at>=? THEN 0 ELSE 1 END,MD5(CONCAT(t.public_id,CAST(? AS CHAR(16)))),t.public_id LIMIT ' .
-                (self::DRAW_SIZE + 1) .
-                ' OFFSET ' .
-                ($page - 1) * self::DRAW_SIZE,
-            [$session['player_id'], $now - self::ACTIVE_SECONDS, $seed],
-        );
-        $drawn = array_slice($rows, 0, self::DRAW_SIZE);
-        // People walking around each town now, as the guestbook counts them.
-        $present = $drawn
-            ? array_column(
-                $db->fetchAllAssociative(
-                    'SELECT v.town_id,COUNT(DISTINCT v.id) AS present FROM visitor_visits v JOIN visitor_leases l ON l.visit_id=v.id WHERE v.town_id IN (?) AND v.departed_at IS NULL AND l.expires_at>? GROUP BY v.town_id',
-                    [array_column($drawn, 'id'), $now],
-                    [ArrayParameterType::STRING],
-                ),
-                'present',
-                'town_id',
-            )
-            : [];
-        return [
-            'entries' => array_map(
-                fn($row) => $this->card($row, (int) ($present[$row['id']] ?? 0), $now),
-                $drawn,
-            ),
-            'seed' => $seed,
-            'page' => $page,
-            'hasNext' => count($rows) > self::DRAW_SIZE,
-        ];
-    }
-    // A list card carries what helps choose a town, never the level records of a full visit.
-    private function card(array $row, int $visitors, int $now): array
-    {
-        $appearance = json_decode($row['appearance'])->appearance ?? new \stdClass();
-        $buildings = (array) ($appearance->buildings ?? []);
-        return [
-            'villageId' => $row['public_id'],
-            'name' => $row['name'],
-            'era' => $appearance->era ?? null,
-            'buildings' => count(array_filter($buildings, fn($level) => $level > 0)),
-            'mineLevel' => $appearance->mineLevel ?? null,
-            'saloonReady' =>
-                ($buildings['saloon'] ?? 0) > 0 &&
-                $this->saloonReadyAt($row['collected_at']) <= $now,
-            'visitors' => $visitors,
-        ];
-    }
     public const SALOON_REST = 3600;
     // A share link needs no account: anyone holding the unguessable public ID may see the
     // appearance projection. Browsing the full list still needs one. Live presence is
@@ -239,7 +170,7 @@ final class PublicTown
             return ['readyAt' => $now + self::SALOON_REST];
         });
     }
-    private function saloonReadyAt(mixed $at): int
+    public static function saloonReadyAt(mixed $at): int
     {
         return $at === null || $at === false ? 0 : (int) $at + self::SALOON_REST;
     }
