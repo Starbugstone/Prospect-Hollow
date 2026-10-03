@@ -155,6 +155,33 @@ snapshot retain the existing 1 MiB bound. Successful synchronization prunes the
 acknowledged journal. These are storage and request safeguards, not puzzle or
 action allowances; a failed upload preserves the local game.
 
+## Town Honours
+
+`profile.honours` ([Town Honours](../honours.md)) is presentation and history, not
+money. It stays outside the replayed fields and the signed checkpoint, so an
+honours-only change replays nothing and never causes a mismatch. Like puzzle scores,
+honours are untracked client history: an earned achievement, a gem, mine, forge or
+fusion count, or a defence medal is a claim, not proof of play. The public projection
+recomputes the few honours the saved records and town can prove (see
+[visitors](visitors.md#town-honours)).
+
+The server never revokes an earned honour. Every accepted upload (attach, save,
+signed recovery and history restore) and every admin history restore merges the
+replaced cloud save's honours into the stored copy: earned entries are unioned with
+the earliest known date and either copy's seen and announced flags, each count takes
+the larger value and never the sum, fusions are unioned, and the incoming copy chooses
+the showcase. An upload without an honours block, from an older client, keeps the
+cloud honours. The merge is idempotent; upload IDs, exact-retry responses, revisions
+and the integrity seal are unchanged. A restored older snapshot therefore returns to
+the device with the honours earned since.
+
+The block is sanitized like the client's `normalizeHonours`, never rejected: malformed
+values are dropped, unknown future honour IDs are kept in storage (up to 32 beyond the
+catalog) without being displayed, and evidence, counts and fusions are capped. A
+malformed block never prevents saving. `backend/src/Honours.php` implements the
+merge and bounds from the catalog that `scripts/export-public-content.mjs` exports to
+`backend/content/public-schema.json`.
+
 ## Shared definitions and release checks
 
 `scripts/export-save-rules.mjs` generates `backend/content/save-rules.json` from the

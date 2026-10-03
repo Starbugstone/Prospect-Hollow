@@ -987,7 +987,15 @@
               'security': [],
               'responses':
                 {
-                  '200': { 'description': 'Success' },
+                  '200':
+                    {
+                      'description': 'Success',
+                      'content':
+                        {
+                          'application/json':
+                            { 'schema': { '$ref': '#/components/schemas/PublicVillage' } },
+                        },
+                    },
                   '404': { 'description': 'Town unavailable' },
                   '429': { 'description': 'Rate limited' },
                 },
@@ -1010,7 +1018,15 @@
               'security': [],
               'responses':
                 {
-                  '200': { 'description': 'Success' },
+                  '200':
+                    {
+                      'description': 'Success',
+                      'content':
+                        {
+                          'application/json':
+                            { 'schema': { '$ref': '#/components/schemas/PublicVillage' } },
+                        },
+                    },
                   '404': { 'description': 'Town unavailable' },
                   '429': { 'description': 'Rate limited' },
                 },
@@ -1197,6 +1213,78 @@
                   'page': { 'type': 'integer' },
                   'hasNext': { 'type': 'boolean' },
                   'serverNow': { 'type': 'integer', 'description': 'Unix milliseconds' },
+                },
+            },
+          'PublicVillage':
+            {
+              'type': 'object',
+              'required': ['villageId', 'name', 'era', 'appearance'],
+              'description': 'A shared town for visitors. Browse entries use the same shape without saloonReadyAt.',
+              'properties':
+                {
+                  'villageId': { 'type': 'string', 'pattern': '^[a-f0-9]{32}$' },
+                  'name': { 'type': 'string' },
+                  'era': { 'type': 'string' },
+                  'saloonReadyAt':
+                    { 'type': 'integer', 'description': 'Unix seconds; 0 when ready to collect.' },
+                  'appearance':
+                    {
+                      'type': 'object',
+                      'description': 'Public render model; the share-link endpoint describes its other fields.',
+                      'properties': { 'honours': { '$ref': '#/components/schemas/PublicHonours' } },
+                    },
+                },
+            },
+          'PublicHonours':
+            {
+              'type': 'object',
+              'additionalProperties': false,
+              'required': ['version', 'earned', 'showcase'],
+              'description': 'Town Honours shared with visitors, the publicHonours() shape. Absent means unknown (an older owner client or server), never an empty or revoked collection. First Perfect, the score ranks, Perfect Prospector and Prospect Hollow Complete are published only when the saved records and town prove them; other honours are the owner claims. Never counts, progress, flags, inventory or account data.',
+              'properties':
+                {
+                  'version': { 'type': 'integer', 'minimum': 1 },
+                  'earned':
+                    {
+                      'type': 'object',
+                      'description': 'Catalog honour IDs only; unknown or future IDs are never published.',
+                      'propertyNames': { 'pattern': '^[a-z][a-z0-9-]{0,47}$' },
+                      'additionalProperties':
+                        {
+                          'type': 'object',
+                          'additionalProperties': false,
+                          'required': ['at'],
+                          'properties':
+                            {
+                              'at':
+                                {
+                                  'type': ['integer', 'null'],
+                                  'description': 'Unix milliseconds; null when unknown (earned before honours were recorded).',
+                                },
+                              'evidence':
+                                {
+                                  'type': 'object',
+                                  'additionalProperties': false,
+                                  'required': ['levelId', 'score', 'target'],
+                                  'description': 'Score family only: the best verified completed puzzle from the floor level and its current star score target.',
+                                  'properties':
+                                    {
+                                      'levelId': { 'type': 'integer', 'minimum': 1 },
+                                      'score': { 'type': 'number' },
+                                      'target': { 'type': 'number', 'exclusiveMinimum': 0 },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                  'showcase':
+                    {
+                      'type': 'array',
+                      'maxItems': 3,
+                      'uniqueItems': true,
+                      'items': { 'type': 'string' },
+                      'description': 'Family IDs in the owner order, each with a published rank.',
+                    },
                 },
             },
           'Profile':
