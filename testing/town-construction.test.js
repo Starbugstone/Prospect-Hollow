@@ -1,8 +1,9 @@
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { expect, it } from 'vitest';
-import { BoxGeometry, Group, Mesh, MeshStandardMaterial } from 'three';
+import { BoxGeometry, Group, Mesh, MeshStandardMaterial, Scene } from 'three';
 import { TownConstruction } from '../src/game/town/TownConstruction';
+import { TownActors } from '../src/game/town/TownActors';
 
 it('assembles from the ground up over 1.8 seconds and restores meshes for static rendering', () => {
   const geometry = new BoxGeometry(),
@@ -88,6 +89,29 @@ it('caps stalled reveal frames and freezes while hidden', () => {
   expect(construction.hammer.visible).toBe(true);
   for (let frame = 1; frame <= 110; frame++) construction.update(903 + frame / 60);
   expect(construction.elapsed).toBeGreaterThanOrEqual(1.8);
+  Object.values(view.geometries).forEach((g) => g.dispose());
+  view.materials.forEach((m) => m.dispose());
+});
+
+it('keeps drawing villagers after a finished reveal removes its hammer and dust', () => {
+  const view = Object.create(TownDiorama.prototype),
+    scene = new Scene(),
+    group = new Group();
+  Object.assign(view, { geometries: createTownGeometries(), materials: new Map(), elapsed: 0 });
+  scene.add(group);
+  view.box(group, 1, 1, 1, 0, 0.5, 0, '#aabbcc');
+  const construction = new TownConstruction(view, group);
+  // The diorama instances the animated construction group with its effects.
+  const actors = new TownActors(scene);
+  actors.rebuild([group]);
+  construction.presentFirstStrike();
+  for (let frame = 0; frame <= 120; frame++) construction.update(frame / 60);
+  construction.finish();
+  // The finish frame draws before the settle step rebuilds the instances.
+  scene.updateMatrixWorld();
+  expect(() => actors.update(scene)).not.toThrow();
+  expect(actors.buckets.reduce((sum, { mesh }) => sum + mesh.count, 0)).toBe(1);
+  actors.dispose();
   Object.values(view.geometries).forEach((g) => g.dispose());
   view.materials.forEach((m) => m.dispose());
 });

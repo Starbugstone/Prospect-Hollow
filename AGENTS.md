@@ -58,6 +58,42 @@ reuse the shared implementation where behavior is the same. See
 [the era architecture guide](docs/era-architecture.md) for the current contracts,
 renderer registries and extension checks.
 
+## Permanent board rule: completed obstacles leave no icon
+
+The user requires that once the player completes a board obstacle, its icon
+leaves the board. This is a hard rule for every current and future mechanic.
+
+- A lit lantern or survey marker, a fired spore relay, a spent charge core, a
+  collected fossil, a cut root knot, a broken seal, gate or stone, melted ice,
+  a released chain and a thawed gem all render as an ordinary cell. Relic exits
+  disappear once the last relic is delivered.
+- Never keep a dimmed icon, a check mark, a tint or a coloured border on a
+  completed cell. A short break or collection effect is fine, as long as it
+  goes away.
+- Every obstacle in `src/data/obstacles.js` needs a sample in
+  `testing/completed-board-markers.test.js`; the test fails until a new obstacle
+  has one, then checks that its completed cell matches a plain one.
+
+## Town Honours follow the content
+
+Town Honours goals come from the shared content definitions in `src/data/honours.js`. Never copy
+counts such as 402 levels, six gems or 26 storage into honours code.
+
+- When a change adds or alters levels, chapters, gem types, eras, incident kinds, powers, storage
+  buildings, bonus fusions or mine elements, update the honours registry in the same change: a
+  new gem gets its laureate and goal, a new era its defence medal, a new mine element a mastery
+  badge or an explicit opt-out. Regenerate the level element index with
+  `node scripts/export-honour-levels.mjs` after changing levels.
+- Changing a goal bumps its requirement version. Earned honours are permanent: never revoke,
+  reset or re-evaluate them away, and keep the version they were earned under. Never reuse or
+  rename an honour ID.
+- Recalibrate affected goals with the campaign simulator and record the evidence in
+  [the honours guide](docs/honours.md).
+- Honours never gate progression, rewards or puzzle completion, and never add move or time
+  limits.
+- Keep `testing/honours.test.js` passing; its coverage checks fail when a gem, era or mine
+  element has no honours decision.
+
 ## Local checks run in Docker
 
 The user requires every local check to run in Docker, never with the host's PHP
@@ -86,3 +122,7 @@ keeps generated files owned by you rather than root.
   ```
 
   The same applies to `concurrency.php` and `release-health.php`.
+
+- PHP formatting is part of Prettier (`@prettier/plugin-php`), so `npm run format:check`
+  covers the backend too. Static analysis runs PHPStan (level 6, `backend/phpstan.neon`):
+  `docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD":/src -w /src/backend --entrypoint composer prospect-hollow-check analyse`

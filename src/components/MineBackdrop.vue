@@ -202,13 +202,27 @@
         <path d="M360 1000 630 785M1090 1000 810 785" stroke-width="9" />
         <path d="M394 971H1052M450 925H993M508 881H935M564 837H876" stroke-width="12" />
       </g>
+      <g class="mine-discoveries" stroke="var(--mine-accent)">
+        <path
+          v-for="(piece, index) in appearance.decorations"
+          :key="index"
+          :d="piece.d"
+          :fill="piece.fill"
+          :opacity="piece.opacity"
+          :stroke-width="piece.width"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </g>
     </svg>
   </div>
 </template>
 <script setup>
 import { computed } from 'vue';
 import { TOMORROW_CHAPTERS } from '../data/tomorrowLevels';
+import { mineThemeAppearance } from '../data/mineThemes';
 const props = defineProps({ theme: String, era: { type: String, default: 'frontier' } });
+const appearance = computed(() => mineThemeAppearance(props.theme));
 // Tomorrow City chambers share one lightweight vector layer: domes, a hover lane and an orbit.
 const futuristic = computed(() =>
   TOMORROW_CHAPTERS.some((chapter) => chapter.theme === props.theme),

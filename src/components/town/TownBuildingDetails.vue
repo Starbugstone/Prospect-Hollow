@@ -13,37 +13,41 @@
         })
       }}</span>
     </div>
-    <div class="town-building-preview" :style="{ '--building-tint': building.color }">
-      <svg viewBox="-160 -230 320 275" aria-hidden="true">
-        <ellipse cy="9" rx="133" ry="26" fill="#a79d7040" />
-        <TownSite
-          v-if="project"
-          :id="id"
-          :stage="stage"
-          :wins="constructionVisual(project)"
-          :era="town.buildingEras[id]"
-          :era-level="town.buildingEraLevels[id] || stage"
-        />
-        <TownBuilding
-          v-else
-          :id="id"
-          :stage="offer && offer.type !== 'modernization' ? stage + 1 : stage"
-          :era="offer?.targetEra ?? town.buildingEras[id]"
-          :era-level="offer?.eraLevel ?? (offer ? stage + 1 : town.buildingEraLevels[id] || stage)"
-        />
-      </svg>
-      <small>{{
-        t(project ? 'Under construction' : offer ? 'After building' : building.stages[stage])
-      }}</small>
-    </div>
-    <div v-if="offer || project" class="town-benefit-preview">
-      <TownIcon :name="benefit.icon" /><span
-        ><small>{{ t(benefit.label) }}</small
-        ><strong
-          >{{ benefit.before }}{{ benefit.suffix }} <TownIcon name="arrow" />
-          <b>{{ benefit.after }}{{ benefit.suffix }}</b></strong
-        ></span
-      >
+    <div class="town-detail-hero">
+      <div class="town-building-preview" :style="{ '--building-tint': building.color }">
+        <svg viewBox="-160 -230 320 275" aria-hidden="true">
+          <ellipse cy="9" rx="133" ry="26" fill="#a79d7040" />
+          <TownSite
+            v-if="project"
+            :id="id"
+            :stage="stage"
+            :wins="constructionVisual(project)"
+            :era="town.buildingEras[id]"
+            :era-level="town.buildingEraLevels[id] || stage"
+          />
+          <TownBuilding
+            v-else
+            :id="id"
+            :stage="offer && offer.type !== 'modernization' ? stage + 1 : stage"
+            :era="offer?.targetEra ?? town.buildingEras[id]"
+            :era-level="
+              offer?.eraLevel ?? (offer ? stage + 1 : town.buildingEraLevels[id] || stage)
+            "
+          />
+        </svg>
+        <small>{{
+          t(project ? 'Under construction' : offer ? 'After building' : building.stages[stage])
+        }}</small>
+      </div>
+      <div v-if="offer || project" class="town-benefit-preview">
+        <TownIcon :name="benefit.icon" /><span
+          ><small>{{ t(benefit.label) }}</small
+          ><strong
+            >{{ benefit.before }}{{ benefit.suffix }} <TownIcon name="arrow" />
+            <b>{{ benefit.after }}{{ benefit.suffix }}</b></strong
+          ></span
+        >
+      </div>
     </div>
     <div v-if="project" class="town-project-progress">
       <h3>
@@ -105,8 +109,6 @@
           t(offer.title, { building: t(building.name), name: t(offer.name), level: offer.eraLevel })
         }}
       </h3>
-      <p>{{ t(offer.benefit) }}</p>
-      <p v-if="offer.description">{{ t(offer.description) }}</p>
       <button
         class="town-primary town-purchase"
         :disabled="!!offer.reason"
@@ -152,6 +154,15 @@
       <button v-if="requirement" class="town-secondary" @click="$emit('select', requirement.id)">
         {{ t('Go to {building}', { building: t(BUILDING_BY_ID[requirement.id].shortName) }) }} →
       </button>
+      <button
+        v-if="offer.reason && plotUnlocked(town, id)"
+        class="town-secondary town-detail-mine"
+        @click="$emit('mine')"
+      >
+        <TownIcon name="mine" />{{ t('Go mining') }} →
+      </button>
+      <p class="town-offer-text">{{ t(offer.benefit, offer.benefitValues) }}</p>
+      <p v-if="offer.description">{{ t(offer.description) }}</p>
     </div>
     <p v-else-if="!readOnly" class="town-restored-note">
       <TownIcon name="check" />{{ t(building.upgrades.at(-1).benefit) }}
@@ -258,12 +269,23 @@
           {{ t('This era is complete. More chapters of Prospect Hollow are still to come.') }}
         </p>
       </div>
-      <h3>{{ t('Happiness: {value}%', { value: happiness(town) }) }}</h3>
+      <h3>{{ t('Happiness: {value}%', { value: needs.happiness }) }}</h3>
       <p>
         {{
           t(
-            'Food and water contribute up to 40 happiness points. Each square level adds 8 and each saloon level adds 2. The museum adds up to 10 and the school up to 5. Each happiness point boosts saloon income by 1.25%.',
+            'Happiness grows with comfort for the size of the town and falls when water or food run short. The square, saloon, museum, school, horse field, park and many city buildings add comfort. Visitors start coming at 30% happiness and all of them come from 90%. Each happiness point also boosts saloon income by 1.25%.',
           )
+        }}
+      </p>
+      <p>
+        {{
+          t('Comfort {comfort} of {target} for {count} people · Visitors: {visitors}/{places}', {
+            comfort: needs.comfort,
+            target: Math.ceil(needs.demand * HAPPINESS.comfortPerPerson),
+            count: needs.demand,
+            visitors: needs.visitors,
+            places: needs.visitorPlaces,
+          })
         }}
       </p>
       <p>
@@ -320,18 +342,11 @@
         </li>
       </ul>
     </details>
-    <button
-      v-if="!project && offer?.reason && plotUnlocked(town, id)"
-      class="town-secondary town-detail-mine"
-      @click="$emit('mine')"
-    >
-      <TownIcon name="mine" />{{ t('Go mining') }} →
-    </button>
   </section>
 </template>
 <script setup>
 import { ERA_BY_ID } from '../../data/eras';
-import { computed } from 'vue';
+import { computed, inject } from 'vue';
 import { t } from '../../i18n';
 import { BUILDING_BY_ID } from '../../data/town';
 import { eraGate, eraBuildingLevel } from '../../game/town/TownEras';
@@ -348,7 +363,6 @@ import {
   residentPopulation,
   visitorPopulation,
   visitorCapacity,
-  happiness,
   gangSize,
   raidProtection,
   canRingTownBell,
@@ -360,6 +374,8 @@ import TownSite from './TownSite.vue';
 import TownIcon from './TownIcon.vue';
 import TownDefenseStatus from './TownDefenseStatus.vue';
 import { buildingBenefit } from '../../game/town/TownBenefits';
+import { townNeeds } from '../../game/town/TownNeeds';
+import { HAPPINESS } from '../../data/townNeeds';
 const props = defineProps({
   id: String,
   town: Object,
@@ -373,11 +389,16 @@ const props = defineProps({
   readOnly: Boolean,
 });
 defineEmits(['build', 'hammer', 'finish', 'ring-bell', 'advance-era', 'select', 'museum', 'mine']);
+// The village's one-second clock, when shown inside it (see TownView).
+const townClock = inject('townClock', null);
 const cooldownSeconds = computed(() =>
-  Math.ceil(collectionCooldownRemaining(props.town, props.id, props.now) / 1000),
+  Math.ceil(
+    collectionCooldownRemaining(props.town, props.id, townClock?.value ?? props.now) / 1000,
+  ),
 );
 const building = computed(() => BUILDING_BY_ID[props.id]);
 const requirement = computed(() => plotRequirement(props.town, props.id));
+const needs = computed(() => townNeeds(props.town));
 const stage = computed(() => props.town.buildings[props.id]);
 const project = computed(() => props.town.projects[props.id]);
 const offer = computed(() => (props.readOnly ? null : upgradeOffer(props.town, props.id)));
@@ -408,6 +429,7 @@ const benefit = computed(() =>
 .town-benefit-preview > svg {
   width: 34px;
   height: 34px;
+  flex-shrink: 0;
 }
 .town-benefit-preview small {
   display: block;
@@ -426,6 +448,9 @@ const benefit = computed(() =>
 }
 .town-benefit-preview b {
   color: #2f7248;
+}
+.town-offer-text {
+  margin-top: 16px;
 }
 .town-project-mine,
 .town-purchase-hint,
@@ -450,5 +475,21 @@ const benefit = computed(() =>
   cursor: pointer;
   min-height: 44px;
   padding-block: 12px;
+}
+/* On short screens the preview sits beside its benefit so the build and hammer actions stay
+   visible without scrolling. */
+@media (max-height: 760px) {
+  .town-detail-hero:has(> .town-benefit-preview) {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    align-items: center;
+    gap: 12px;
+    margin: 8px 0 14px;
+  }
+  .town-detail-hero .town-building-preview,
+  .town-detail-hero .town-benefit-preview {
+    grid-area: auto;
+    margin: 0;
+  }
 }
 </style>

@@ -1,4 +1,5 @@
 import { heritageUpgrade } from '../../../data/heritageUpgrades';
+import { addWindow } from './frontierParts';
 
 export function addHeritageUpgrade(d, parent, kind, industrial = false) {
   const feature = heritageUpgrade(kind);
@@ -24,7 +25,7 @@ export function addHeritageUpgrade(d, parent, kind, industrial = false) {
   function room(color = wall) {
     d.box(root, 1.1, 1.05, 2, x, base + 0.52, 0, color);
     d.box(root, 1.4, 0.15, 2.3, x, base + 1.1, 0, roof);
-    d.window(root, x, base + 0.55, 1.04);
+    addWindow(d, root, x, base + 0.55, 1.04);
   }
   if (feature === 'veranda') {
     room();

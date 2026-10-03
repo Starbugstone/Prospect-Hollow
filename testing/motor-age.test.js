@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { needProviders } from '../src/game/town/TownNeeds';
+import { ERA_BY_ID } from '../src/data/eras';
 import { createPinia, setActivePinia } from 'pinia';
 import { BUILDINGS, BANDIT_EVENT, createTown } from '../src/data/town';
 import { bonusCapacity } from '../src/data/rewards';
@@ -159,8 +161,15 @@ describe('Motor Age follows the complete Post-war Rebuilding era', () => {
         expect(buildWithHammer(town, id, offer.stage)).toBeNull();
         expect(waterCapacity(town)).toBeGreaterThanOrEqual(beforeWater);
         expect(foodCapacity(town)).toBeGreaterThanOrEqual(beforeFood);
-        if (id === 'well' && level === 3)
-          expect(preview).toMatchObject({ before: 174, after: 194 });
+        if (id === 'well')
+          expect(preview).toMatchObject({
+            label: 'Water capacity',
+            after:
+              preview.before +
+              ERA_BY_ID['motor-age'].evolution.waterworks[level - 1] -
+              (ERA_BY_ID['motor-age'].evolution.waterworks[level - 2] ??
+                ERA_BY_ID['post-war'].evolution.waterworks[2]),
+          });
         if (id === 'garage') expect(bonusCapacity(town)).toBe(20 + level * 2);
         if (id === 'busDepot')
           expect(visitorCapacity(town)).toBe(visitorCapacity(motorTown()) + level * 2);
@@ -253,8 +262,13 @@ it('guides a growing Motor Age town toward water and new services before cosmeti
   town.buildings.waterPlant = 0;
   town.buildings.busDepot = 3;
   town.buildings.gardenCourt = 3;
-  expect(nextGoal(town).id).toBe('waterPlant');
-  const waterProject = purchase(town, 'waterPlant', upgradeOffer(town, 'waterPlant').stage);
-  expect(nextGoal(waterProject).id).toBe('well');
+  // The cheapest water per person comes first; while it is built, the next fix
+  // follows if the town would still be short.
+  const first = nextGoal(town).id;
+  expect(needProviders('water').has(first)).toBe(true);
+  const waterProject = purchase(town, first, upgradeOffer(town, first).stage);
+  const second = nextGoal(waterProject).id;
+  expect(second).not.toBe(first);
+  expect(needProviders('water').has(second)).toBe(true);
   expect(nextGoal(finishEra(town))).toBeNull();
 });

@@ -40,6 +40,31 @@ stage progression and capacity-benefit text. Eligibility remains in `TownEras.js
 building-specific exceptions, including landmark construction duration, remain
 explicit. Mining income and bonus formulas are outside this contract.
 
+### Water, food, comfort and happiness
+
+`src/data/townNeeds.js` is the one definition of what buildings give the town:
+water, food, homes, visitor places and comfort, plus the happiness settings.
+City buildings declare the same values as per-level `effects`. `TownNeeds.js`
+turns both into explicit terms, rebuilt when a plot is registered, and the save
+export ships those terms so the server evaluates exactly the same model. Never
+copy a capacity or happiness number into the backend or a component.
+
+- Residents are limited by homes, water and food; visitors fill the visitor
+  places that spare water and food allow, scaled by happiness (none at 30%, all
+  from 90%).
+- Happiness is how well water and food cover everyone the town can hold, times
+  the comfort it offers for its size. Each happiness point raises saloon income.
+- Each era's `waterworks` and `farmCapacity` tiers are the capacity of the main
+  waterworks and farm once modernized to that tier. They must rise at every tier,
+  and an era without its own tiers continues from the previous era's best tier.
+- An era should grow its town (new homes or landmarks that draw visitors) and
+  supply that growth through its tiers and water or food buildings, so a finished
+  era houses everyone. `testing/town-needs.test.js` checks this for every era.
+
+Guidance (`nextGoal`, `needsReport`) suggests the available building that adds the
+missing water, food or comfort for the fewest coins per person. The village map
+shows water, food and happiness, and the label of that building says what it fixes.
+
 The rendering registry in `buildings/BuildingRenderer.js` selects the style's
 landmark and modernization renderers. City asset aliases resolve the longest
 matching era prefix, allowing names such as `aviation-next` without accidentally
@@ -132,11 +157,15 @@ family.
 - `TownRoundedBuilding.vue` draws the same forms and palette for the SVG building
   illustrations (building cards, tour and landing page), and
   `TownBuilding.vue` routes rounded eras to it before the standard city drawing.
-- Traffic in rounded eras uses wheel-less hover cars, a hover shuttle bus and rounded
-  incident response pods that bob via `userData.hoverBody` (`TownVehicles.js`). Villagers wear
-  the `tomorrow` wardrobe (`hat: 'visor'` and a `trim` collar ring) built from existing shapes. The
-  airport, station and port switch to a sky saucer, a solar express train on the rails and a
-  hover ferry (`RoundedTransports.js`) once that building itself is rounded.
+- Vehicles follow the separate `transportStyle` capability (`standard` or `rounded`,
+  registered in `TRANSPORT_STYLES`), not `architecture`, so a later era can change its
+  buildings and keep its vehicles. `hasRoundedTransport()` selects wheel-less hover cars, a
+  hover shuttle bus and rounded incident response pods that bob via `userData.hoverBody`
+  (`TownVehicles.js`). The airport, station and port switch to a sky saucer, a solar express
+  train on the rails and a hover ferry (`RoundedTransports.js`) once that building itself has
+  been modernized into a rounded-transport era. Only city eras may change it, and unknown
+  eras fall back to `standard`. Villagers wear the `tomorrow` wardrobe (`hat: 'visor'` and a
+  `trim` collar ring) built from existing shapes.
 - The mine gains a `rounded-arch` portal hood and a geodesic `sorting-dome`. A site entry
   may declare `replaces: [...]` to supersede features it encloses; the dome replaces the
   sorting plant and solar canopy, keeping the mine under its 6,000-triangle budget.
@@ -277,7 +306,7 @@ and period. Housing never borrows the business-tower landmark. Future eras can
 reuse an existing family; incomplete appearance lookups safely fall back.
 
 `mineAppearance()` derives permanent surface equipment from the same era art
-family. `addMineWorks()` builds the permanent site and the cinematic model, so
+family. `addMineSite()` builds the permanent site and the cinematic model, so
 finishing or skipping cannot leave different versions behind. Its cached scenery
 batch is separate from the underground shaft and the chapter equipment.
 
@@ -552,3 +581,133 @@ and equipment depend on the era, never on puzzle level. The SVG mine illustratio
 (landing page and tour) uses the same era profile and level-based cart cargo. The shared haul clock controls
 load/travel/unload/return and freezes with the town. Display capacity never limits
 puzzle moves, rewards or campaign progress.
+
+### Canopy and Riverlight garden district
+
+Canopy (2100) and Riverlight (2140) follow Tomorrow City using the existing city
+construction, modernization and service lifecycle. Their `architecture: 'cozy'`
+and `cozyStyle` select the shared procedural forms and palettes in
+`cozyArchitecture.js`. The city asset family remains an explicit fallback;
+wardrobes, wildlife and fountains use their registered capabilities. Both keep
+Tomorrow's `transportStyle: 'rounded'`, so the airport's sky saucer, the solar
+express, the hover ferry and hover traffic continue through the garden eras. A successor
+can reuse either cozy style without adding chronological renderer branches.
+
+Canopy introduces the Tea House, Blossom Atelier and Orchard Cottages; Riverlight
+adds the Crystal Glassworks, Warm Springs Retreat and Riverlight Pavilion. The
+shared `cozyArchitecture` appearance table drives both Three.js models and SVG
+building illustrations, including the watermill, airport lounge and fountains.
+Canopy uses layered leaf roofs, cream walls and sage planting; Riverlight adds
+pearl and lavender glazing, scalloped roofs and amber accents. Modernization
+remains a paid, staged action, so entering a new era does not replace completed
+building appearances before their upgrades are finished.
+
+`townWardrobes.residentOutfit()` selects deterministic linen, apron and scarf
+variants with several hair colors. The new wardrobes remove Tomorrow's visors
+and collar rings while retaining the shared articulated people, visitor identity
+and movement system. `townFauna()` selects an additive cast and a shared companion
+lifestyle from `TOWN_FAUNA`. Each era selects its profile in `eras.js`: Frontier
+adds deer (`meadow`); River & Rail adds the otter (`riverside`); Motor Age adds the
+hedgehog (`neighborhood`); Aviation adds two bluebirds alongside the three pigeons
+(`songbirds`). Intermediate and later eras keep these additions. Ground visitors
+have stable species seeds, and each bird group has its own seed and bounded count,
+so new arrivals do not replace an existing animal or reset its identity. Deer,
+otters and hedgehogs make intermittent visits once the town is inhabited; they
+do not all have to be visible at once. Unsupported or missing profiles fall back
+to the standard cast with no companions.
+
+`TownAnimalRoaming` prepares small, bounded waypoint graphs while animal life is
+built. Dogs and cats choose branches around the old town; wild visitors choose
+outskirts branches, with a separate riverbank habitat for the otter. Cached finite
+legs, including reverse directions, certify both building footprints and rendered
+scenery for the animal's body size. The animation loop chooses among these legs;
+it never searches for a new route or projects a visible animal onto a new point.
+The normal crowd and traffic solver still accepts every movement step. Scenery
+changes revalidate the prepared geometry before it can be reused.
+
+`TownAnimalBehavior` builds only the permitted proximity pairs from
+`ANIMAL_CHASES`: dog/cat, fox/deer and cat/grounded bird. It checks at most one pair
+every 250 ms, without catch-up work after a stall. A nearby pair must have clear
+line of sight before starting. One encounter runs at a time for 1.6–2.6 seconds,
+then both animals have a 20–32-second cooldown. `TownAnimalChase` checks a bounded
+set of escape corridors once at the start, capped at 32 mesh probes. These can cross roads and the
+usual roaming boundary, but still clear buildings, scenery and the riverbank.
+The prey runs at least 60% faster than the hunter. A bounded look-ahead over the
+existing roaming graph reserves enough distance for the run plus three more
+metres, ending at a different roaming waypoint. Encounters without enough escape
+space wait for another opportunity. The hunter follows briefly, then turns away;
+the prey continues ahead and eases down to walking speed. Through its cooldown
+(and at least ten seconds after rejoining its graph), it chooses outward branches
+or pauses rather than doubling back toward the encounter. Certified paths need no further geometry queries
+while the scenery remains unchanged. Only the hunter returns to its departure
+point. The existing moving
+vehicle/crowd solver still applies. Birds use their normal safe flight lifecycle.
+The cat aims at the bird's last ground position. Encounters
+never remove wildlife, change save data or use timers outside the town clock.
+
+Canopy's `garden` profile brings
+three Willowkin saplings to the park, river garden and atelier (with a biodome
+fallback before the atelier opens). Their pale wood bodies, sideways willow
+canopies, twig arms and splayed roots evolve into taller, compact Riverlight
+neighbors with linen scarves and satchels. Riverlight's `garden-town` profile
+keeps all three neighborhood identities and sends them along local streets.
+`townCompanions.js` owns their stable seeds, garden loops and street destinations;
+successor eras inherit either lifestyle without era-name branches.
+
+All companions share the existing animal model, route retention and crowd
+locomotion lifecycle. Street neighbors use sidewalks and normal traffic yielding;
+they do not flee pedestrians or eat bird seed. The whole model's height and radius
+are checked during route planning, closure, retention and spawn adjustment.
+Neighborhood routes stay on their own riverbank. Bluebirds reuse the bird flight
+and feeding lifecycle; deer and hedgehogs visit the flat southern verge and the
+otter visits the riverbank.
+
+Cozy models use cached primitives plus two cached faceted roof surfaces. Ordinary
+buildings stay below 4,000 triangles, larger landmarks below 6,000 and each plot
+uses at most eight art materials. Decorations are static and add no light or
+particle pools. Garden wildlife and companions add at most six ground actors; route planning
+stays outside the animation loop and accepted routes survive unchanged scenery.
+`testing/cozy-architecture.test.js` checks all building families, three visible
+tiers, shared successor/fallback behavior, parcel access, geometry and material
+budgets, and SVG coverage. `testing/garden-residents.test.js` checks visor removal,
+stable variants, animal envelopes and allocation-free model animation. Actual
+landscape clearance tests require every unlocked species to have a usable habitat
+in every era, keep Canopy saplings outside roads and certify Riverlight street
+loops. `testing/town-animals.test.js` checks the staggered unlocks, persistence into
+later eras and animal retention as the cast grows. The flying cast stays bounded
+at five birds, using the same flight and feeding lifecycle.
+
+`townGardenDistrict.js` owns the six larger eastern parcels: position, reserved
+width/depth, street offset, entrance anchor and pedestrian approach points. The
+first approach point positions both the front paving and the resident door anchor;
+the remaining points join the driveway while clearing trees, pools and signs.
+These private approach segments are pedestrian-only. The historical lots and roads
+remain fixed. `gardenTracks()` adds an eastern spine and connected front streets
+only when those parcels unlock. `gardenConnections()` extends every unlocked
+east-bank street row to that spine, deriving endpoints from the existing grid.
+The same connections reserve a three-unit vegetation clearance. Landscaping reserves the full future
+plot and sidewalk envelopes before construction, and the eastern clearing stays
+level. Road setbacks fit the new buildings at every height to their parcel bounds,
+so roofs and terraces cannot extend into the new streets. The camera frames the
+larger parcels and permits a wider overview once the garden district is visible.
+
+The Blossom Atelier collects rainwater as well as growing food. Its declared
+capacity supports the extra Orchard Cottage residents without changing older
+building services. Both eras retain three native and modernization tiers;
+service benefits activate only when construction is finished. Saved Tomorrow
+towns receive empty locked garden parcels and keep their coins, established
+services, building appearances and progression. No campaign records, puzzle
+objectives, earnings or unlimited-move rules depend on the new town eras.
+
+`testing/garden-eras.test.js` covers transitions, migration, shared construction,
+new service balance, future-profile reuse, dry level parcels and connected
+approaches. The existing road, camera, navigation, station and construction suites
+also cover the expanded era catalog. Regenerate footprints after changing cozy
+geometry or parcel extents, using the repository's Docker check workflow.
+
+For a small art correction, append `-- --era=canopy --era=riverlight` to the
+Docker `npm run assets:footprints` command to update those existing families.
+Scoped updates preserve the complete manifest, unrelated families and the
+all-era mine clearance union. Run the unfiltered `npm run check:footprints`
+command afterward to verify the complete catalog. A new era first requires a
+complete generation so its lazy loaders and manifest are registered.

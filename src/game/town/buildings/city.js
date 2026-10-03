@@ -1,5 +1,5 @@
 import { cityAppearance } from '../../../data/cityAppearance';
-import { deuxChevaux, motorVehicle } from '../TownVehicles';
+import { parkedVehicle } from '../TownVehicles';
 import { addSquareModernization } from '../TownSquare';
 import { ERAS, eraEvolution } from '../../../data/eras';
 import { resolveCityAsset } from '../../../data/eraDefinitions';
@@ -12,10 +12,11 @@ import { blenderModel, leisureModel } from '../LeisureAssets';
 import { buildTownSquare } from '../TownSquare';
 import { cityFamily, resolveModel } from '../assets/MeshCatalog';
 import { addRoundedLounge, renderRoundedBuilding } from './rounded';
+import { addCozyAirportDetails, addCozyBridge, addCozyLounge, renderCozyBuilding } from './cozy';
 
 /** Procedural city architectures by the era's `architecture` capability. A renderer
  * returning false leaves that kind to the shared Blender shells (e.g. the airport). */
-const ARCHITECTURES = { rounded: renderRoundedBuilding };
+const ARCHITECTURES = { rounded: renderRoundedBuilding, cozy: renderCozyBuilding };
 
 export const futureModel = (d, parent, name) => blenderModel(d, parent, null, name, 'future');
 export const cityModel = (d, parent, name) => {
@@ -84,6 +85,7 @@ export function renderCityBuilding(
         lounge.name = 'Airport rooftop observation lounge';
         d.box(lounge, 4.8, 0.18, 3.2, 4.5, floor, -2.8, a.roof);
         if (profile.architecture === 'rounded') addRoundedLounge(d, lounge, 4.5, floor, -2.8);
+        else if (profile.architecture === 'cozy') addCozyLounge(d, lounge, 4.5, floor, -2.8, era);
         else {
           d.box(lounge, 4.4, 1.6, 2.8, 4.5, floor + 0.85, -2.8, '#85b8c8');
           d.box(lounge, 4.9, 0.18, 3.3, 4.5, floor + 1.75, -2.8, a.roof);
@@ -91,6 +93,7 @@ export function renderCityBuilding(
             d.box(lounge, 0.1, 1.6, 0.15, x, floor + 0.85, -1.35, a.frame);
         }
       }
+      if (profile.architecture === 'cozy') addCozyAirportDetails(d, root, era, level);
     } else addCityLandmarkDetails(d, root, family, era, level);
     if (family === 'airport') d.sign(root, label, 4.2, 4.5, 2.7, 1.22);
     else d.sign(root, label, 3, 0, 3.2, 2);
@@ -123,8 +126,7 @@ export function renderCityBuilding(
       // and the forecourt lamp.
       const [x, z] = (asset === appearance.asset && appearance.parking) || [0, 2.5];
       const spot = d.group(root, x, 0, z);
-      const vehicle =
-        kind === 'stable' ? deuxChevaux(d, spot) : motorVehicle(d, spot, kind === 'busDepot', era);
+      const vehicle = parkedVehicle(d, spot, kind, era);
       vehicle.rotation.y = Math.PI / 2;
     }
   }
@@ -133,70 +135,9 @@ export function renderCityBuilding(
 }
 export function addCityModernization(d, parent, kind, era, level) {
   if (kind !== 'bridge' || !isCityEra(era)) return;
+  if (eraEvolution(era).architecture === 'cozy') return addCozyBridge(d, parent, era, level);
   const root = cityModel(d, parent, `${era}-bridge`);
   root.name = `${era} bridge approaches ${level}`;
-  // Canopies must clear the rising deck. Stretch their upper supports while
-  // keeping planters and post feet at ground level; reuse the adapted geometry.
-  const joints = [];
-  root.traverse((part) => {
-    if (part.userData.exportFootprints) joints.push(part);
-  });
-  let covered = joints.some((joint) =>
-    joint.userData.exportFootprints.some(
-      ({ min, max }) => min[1] > 1.7 && min[2] < 0.6 && max[2] > -0.6 && max[0] - min[0] > 0.8,
-    ),
-  );
-  if (!covered)
-    root.traverse((part) => {
-      const p = part.geometry?.attributes.position;
-      for (let i = 0; p && i < p.count && !covered; i++)
-        if (p.getY(i) > 1.7 && Math.abs(p.getZ(i)) < 0.65 && Math.abs(p.getX(i)) > 4)
-          covered = true;
-    });
-  const place = (x, y, z, support = false) => {
-    // The older exported planter crosses the road at x=±6.2. Turn it lengthwise
-    // onto the bank beside the rail, and put its bottom on the ground.
-    if (y < 0.65 && Math.abs(x) > 5.8 && Math.abs(x) < 6.6 && Math.abs(z) < 1.3)
-      return [Math.sign(x) * 6.2 + z, y - 0.2, -2.25 + Math.abs(x) - 6.2];
-    // Lamp feet originally started 15 cm above their plot; keep heads connected.
-    const base = Math.abs(z) > 1.4 ? 0.15 : 0.1;
-    // Later canopies span the whole deck with their posts on the verge.
-    const across = covered && Math.abs(z) < 1.4 ? (support ? z + 1.1 : z * 2.6) : z;
-    return [x, y - base + (covered && y > 1.7 ? 1.6 : 0), across];
-  };
-  root.traverse((part) => {
-    if (!part.isMesh) return;
-    const key = `bridge-approaches:${covered}:${part.geometry.uuid}`;
-    if (!d.geometries[key]) {
-      const geometry = part.geometry.clone(),
-        positions = geometry.attributes.position;
-      for (let i = 0; i < positions.count; i++)
-        positions.setXYZ(
-          i,
-          ...place(
-            positions.getX(i),
-            positions.getY(i),
-            positions.getZ(i),
-            part.name.startsWith('Slender canopy support'),
-          ),
-        );
-      geometry.computeVertexNormals();
-      geometry.computeBoundingBox();
-      geometry.computeBoundingSphere();
-      d.geometries[key] = geometry;
-    }
-    part.geometry = d.geometries[key];
-  });
-  for (const joint of joints)
-    for (const bounds of joint.userData.exportFootprints) {
-      const corners = [];
-      const support = bounds.max[0] - bounds.min[0] < 0.2 && bounds.max[2] - bounds.min[2] < 0.2;
-      for (const x of [bounds.min[0], bounds.max[0]])
-        for (const y of [bounds.min[1], bounds.max[1]])
-          for (const z of [bounds.min[2], bounds.max[2]]) corners.push(place(x, y, z, support));
-      bounds.min = [0, 1, 2].map((n) => Math.min(...corners.map((p) => p[n])));
-      bounds.max = [0, 1, 2].map((n) => Math.max(...corners.map((p) => p[n])));
-    }
   const profile = eraEvolution(era);
   if (profile.detailAsset) {
     const cue = futureModel(d, parent, profile.detailAsset);

@@ -1,9 +1,9 @@
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, onTestFinished, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { getStars, getLevelStarTarget, starGoals } from '../src/data/starRating';
 import { STAR_SCORE_TARGETS } from '../src/data/starScoreTargets';
 import { LEVEL_COUNT, scoreChestEarned } from '../src/data/campaign';
-import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
+import { generateLevelConfigs, levelConfig } from '../src/game/engine/LevelGenerator';
 import { useGameStore } from '../src/stores/gameStore';
 import { useCampaignStore } from '../src/stores/campaignStore';
 import { simulateCampaignLevel } from './helpers/campaignSimulation';
@@ -71,7 +71,12 @@ it('uses the level star target at victory without changing chest targets or exis
     campaign = useCampaignStore();
   game.bootstrap();
   // Use distinct thresholds to catch accidental reuse of the chest target.
-  game.availableLevels[0].config.starScoreTarget = 2000;
+  const config = levelConfig(1),
+    authored = config.starScoreTarget;
+  config.starScoreTarget = 2000;
+  onTestFinished(() => {
+    config.starScoreTarget = authored;
+  });
   game.startLevel(1);
   expect(game.starScoreTarget).toBe(2000);
   game.score = 3000;

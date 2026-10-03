@@ -96,7 +96,7 @@ const ORIGINAL_BUILDINGS = [
         runs: 1,
         title: 'Bring back the good times',
         benefit:
-          'Store 2.25 coins per person each hour, plus the happiness bonus. Adds 2 happiness points.',
+          'Store 2.25 coins per person each hour, plus the happiness bonus. Adds 2 comfort points.',
         story: 'First round of lemonade is on the house. Someone dust off that piano!',
         speaker: 'Nell · the saloon keeper',
       },
@@ -157,7 +157,7 @@ const ORIGINAL_BUILDINGS = [
         cost: 120,
         runs: 1,
         title: 'Open the museum',
-        benefit: 'Replay completed levels and add 2 happiness points.',
+        benefit: 'Replay completed levels and add 2 comfort points.',
         story:
           'Your first discoveries belong here. Come back to an old adventure and see how far you’ve come.',
         speaker: 'Ellis · the curator',
@@ -285,16 +285,12 @@ ORIGINAL_BUILDINGS.push({
   color: '#b3a878',
   stages: ['Empty plot', 'A meeting place', 'Benches in the sunshine', 'A welcoming town square'],
   upgrades: [
-    [80, 'Lay out the town square', 'A paved square with a fountain adds 8 happiness points.'],
-    [
-      160,
-      'Set out the benches',
-      'Benches and flower beds raise the square to 16 happiness points.',
-    ],
+    [80, 'Lay out the town square', 'A paved square with a fountain adds 8 comfort points.'],
+    [160, 'Set out the benches', 'Benches and flower beds raise the square to 16 comfort points.'],
     [
       320,
       'Finish the gathering place',
-      'A tiered fountain raises the square to 24 happiness points.',
+      'A tiered fountain raises the square to 24 comfort points.',
     ],
   ].map(([cost, title, benefit], index) => ({
     cost,
@@ -330,14 +326,14 @@ const IMPROVEMENTS = {
       1,
       'A barn full of promise',
       'Expand the barn',
-      'Food for twelve neighbors. Unlock Farm II; upgrade it to level 2 to reveal Farm III.',
+      'Food for eight neighbors. Unlock Farm II; upgrade it to level 2 to reveal Farm III.',
     ],
     [
       300,
       1,
       'Fields of plenty',
       'Build the farm windmill',
-      'Food for eighteen neighbors and a working windmill.',
+      'Food for twelve neighbors and a working windmill.',
     ],
   ],
   home: [
@@ -355,14 +351,14 @@ const IMPROVEMENTS = {
       1,
       'Room for the evening crowd',
       'Open the upstairs lounge',
-      'Store 4.5 coins per person each hour, plus the happiness bonus. Adds 4 happiness points.',
+      'Store 4.5 coins per person each hour, plus the happiness bonus. Adds 4 comfort points.',
     ],
     [
       350,
       1,
       'The heart of the frontier',
       'Complete the grand saloon',
-      'Store 6.75 coins per person each hour, plus the happiness bonus. Adds 6 happiness points.',
+      'Store 6.75 coins per person each hour, plus the happiness bonus. Adds 6 comfort points.',
     ],
   ],
   stable: [
@@ -403,14 +399,14 @@ const IMPROVEMENTS = {
       1,
       'The discovery gallery',
       'Add the discovery gallery',
-      'Attract two visitors and add 4 happiness points.',
+      'Attract two visitors and add 4 comfort points.',
     ],
     [
       330,
       1,
       'A frontier landmark',
       'Complete the museum tower',
-      'Attract four visitors and add 6 happiness points.',
+      'Attract four visitors and add 6 comfort points.',
     ],
   ],
 };
@@ -439,8 +435,8 @@ const LATE_IMPROVEMENTS = {
     ['Water for the frontier', 'Complete the waterworks', 'Water for thirty people.'],
   ],
   farm: [
-    ['An abundant harvest', 'Expand the irrigated fields', 'Food for twenty-four people.'],
-    ['A thriving farmstead', 'Complete the farmstead', 'Food for thirty people.'],
+    ['An abundant harvest', 'Expand the irrigated fields', 'Food for sixteen people.'],
+    ['A thriving farmstead', 'Complete the farmstead', 'Food for twenty people.'],
   ],
   home: [
     ['A welcoming household', 'Furnish the guest rooms', 'Room for eight residents.'],
@@ -486,12 +482,12 @@ const LATE_IMPROVEMENTS = {
     [
       'The traveling exhibition',
       'Welcome the traveling exhibition',
-      'Attract six visitors and add 8 happiness points.',
+      'Attract six visitors and add 8 comfort points.',
     ],
     [
       'A celebrated collection',
       'Complete the frontier collection',
-      'Attract eight visitors and add 10 happiness points.',
+      'Attract eight visitors and add 10 comfort points.',
     ],
   ],
   armory: [
@@ -534,12 +530,12 @@ const LATE_IMPROVEMENTS = {
     [
       'Flowers around the square',
       'Plant the border gardens',
-      'Low flower beds raise the square to 32 happiness points. A warning bell halves the remaining coin loss once per raid.',
+      'Low flower beds raise the square to 32 comfort points. A warning bell halves the remaining coin loss once per raid.',
     ],
     [
       'The pride of Prospect Hollow',
       'Complete the town square',
-      'An open gathering place with 40 happiness points and a warning bell that halves the remaining coin loss once per raid.',
+      'An open gathering place with 40 comfort points and a warning bell that halves the remaining coin loss once per raid.',
     ],
   ],
 };

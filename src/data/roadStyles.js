@@ -51,6 +51,22 @@ const ROAD_STYLES = Object.freeze(
         crossing: 'pavers',
         crossingColor: '#b8977d',
       },
+      'garden-lane': {
+        color: '#aab3a0',
+        edge: '#e1d6b8',
+        line: 'dash',
+        paint: '#e9e4c9',
+        crossing: 'pavers',
+        crossingColor: '#c4b397',
+      },
+      'lantern-lane': {
+        color: '#b4b0ac',
+        edge: '#e6dac4',
+        line: 'dash',
+        paint: '#ead0a0',
+        crossing: 'pavers',
+        crossingColor: '#c8bbca',
+      },
       'glow-lane': {
         color: '#a2aba6',
         edge: '#dcd6c4',

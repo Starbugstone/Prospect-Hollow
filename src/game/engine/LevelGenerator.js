@@ -12,6 +12,8 @@ import { chapterIndexOf, chapterSlotOf } from '../../data/chapters.js';
 import { layerCount } from './TileRules.js';
 import { CORE_BONUSES, CORE_CHARGES } from './ChapterMechanics.js';
 import { getLevelStarTarget } from '../../data/starRating.js';
+import { applyDeepMineSpec } from './DeepMineMechanics.js';
+import { isPlayableCell } from './BoardTopology.js';
 
 const createSeededRng = (seed) => {
   let current = seed % 2147483647;
@@ -163,7 +165,8 @@ function layIce(tiles, iceCells, rng, rank, cellCount, spec) {
     [iceCells[i], iceCells[j]] = [iceCells[j], iceCells[i]];
   }
   iceCells.sort((a, b) => rank(a) - rank(b));
-  const layers = spec.openExitRows ? Math.min(spec.ice, cellCount * 2) : spec.ice;
+  const maxLayers = spec.maxIceLayers ?? (spec.openExitRows ? 2 : null);
+  const layers = maxLayers ? Math.min(spec.ice, cellCount * maxLayers) : spec.ice;
   for (let layer = 0; layer < layers; layer++) {
     const tile = tiles[iceCells[layer % cellCount]];
     tile.health++;
@@ -185,7 +188,15 @@ const scoreObjective = (id, target) => ({
   progress: 0,
 });
 // Field order is part of the saved and hashed level contract.
-const levelConfig = ({ id, chapter, tip, oreOrders, chestTarget, speedTargetMs, ...board }) => ({
+const assembleLevelConfig = ({
+  id,
+  chapter,
+  tip,
+  oreOrders,
+  chestTarget,
+  speedTargetMs,
+  ...board
+}) => ({
   id,
   chapter,
   chapterName: CHAPTERS[chapter].name,
@@ -216,9 +227,13 @@ const createExpansionLevel = (id) => {
   const tiles = [...spec.map.replaceAll('/', '')].map((symbol, index) => {
     const tile = { type: 'standard', health: 0, maxHealth: 0 };
     const cell = { x: index % cols, y: Math.floor(index / cols) };
-    if (symbol === '#' || symbol === 'X') {
+    if (symbol === '_') {
+      tile.type = 'void';
+      layout.blockedCells.push(cell);
+    } else if (['#', 'X', 'B', 'D'].includes(symbol)) {
       tile.type = 'blocker';
-      tile.health = tile.maxHealth = symbol === 'X' ? 2 : 1;
+      tile.health = tile.maxHealth = symbol === 'X' || symbol === 'D' ? 2 : 1;
+      if (symbol === 'B' || symbol === 'D') tile.bonusOnly = true;
       layout.blockedCells.push(cell);
     } else if (symbol === 'c') {
       tile.chainHealth = tile.maxChainHealth = 1;
@@ -248,9 +263,26 @@ const createExpansionLevel = (id) => {
         order % (spec.coreBonuses ?? CORE_BONUSES).length
       ],
     });
+  // Root knots are solid targets; their cardinal vines pin ordinary gems.
+  // Reserve their cells before allocating ice so no authored layers are lost.
+  for (const root of spec.roots ?? []) {
+    if (!Number.isInteger(root.knot) || !tiles[root.knot]) continue;
+    tiles[root.knot].type = 'blocker';
+    layout.blockedCells.push({ x: root.knot % cols, y: Math.floor(root.knot / cols) });
+  }
+  const fossilCells = new Set((spec.fossils ?? []).flatMap((fossil) => fossil.cells ?? []));
+  for (const fossil of spec.fossils ?? []) {
+    if (!fossil.encased) continue;
+    for (const index of fossil.cells ?? [])
+      if (tiles[index] && isPlayableCell(tiles[index]))
+        layout.blockedCells.push({ x: index % cols, y: Math.floor(index / cols) });
+  }
+  const sporeCells = new Set((spec.spores ?? []).map((spore) => spore.index));
   if (spec.orders?.length) tiles[0].oreOrderGuide = true;
   const iceCells = tiles.flatMap((tile, index) =>
     tile.type === 'standard' &&
+    !fossilCells.has(index) &&
+    !sporeCells.has(index) &&
     (!spec.openExitRows || index < cols * (rows - spec.openExitRows)) &&
     ![0, cols - 1, cols * (rows - 1), cols * rows - 1].includes(index) &&
     !tile.exit &&
@@ -263,27 +295,50 @@ const createExpansionLevel = (id) => {
   // Add depth to the seam before pushing targets into hard-to-reach corners.
   const iceCellCount = Math.min(iceCells.length, Math.ceil(spec.ice * 0.75));
   layIce(tiles, iceCells, rng, (cell) => iceRank(cell, cols, rows, motif), iceCellCount, spec);
+  applyDeepMineSpec(tiles, spec);
+  if (spec.gravity === 'funnel') {
+    for (let row = 0; row < rows - 1; row++) {
+      const nextCols = Array.from({ length: cols }, (_, col) => col).filter((col) =>
+        isPlayableCell(tiles[(row + 1) * cols + col]),
+      );
+      if (!nextCols.length) continue;
+      for (let col = 0; col < cols; col++) {
+        const index = row * cols + col;
+        if (!isPlayableCell(tiles[index])) continue;
+        const destinationCol = Math.max(nextCols[0], Math.min(col, nextCols.at(-1)));
+        if (Math.abs(destinationCol - col) <= 1 && nextCols.includes(destinationCol))
+          tiles[index].flowTo = (row + 1) * cols + destinationCol;
+      }
+    }
+  }
   const totalLayers = tiles.reduce((sum, tile) => sum + layerCount(tile), 0);
   const relicCount = layout.initialTilePlacements.length;
   const board = createPlayableBoard(layout, rng, { minMoves: DEFAULT_MIN_STARTING_MOVES, tiles });
   // Reward targets follow each puzzle's workload, including the chapter breathers.
-  const chestTarget = Math.ceil((totalLayers * 380 + relicCount * 1500) / 500) * 500;
-  const layerLabel = spec.cores?.length
-    ? 'Tiles and charge cores'
-    : spec.signals?.length
-      ? 'Tiles and light markers'
-      : tiles.some((tile) => tile.sealColor)
-        ? 'Ice, stone & seals'
-        : tiles.some((tile) => tile.chainHealth)
-          ? 'Ice, stone & chains'
-          : 'Ice & stone';
-  return levelConfig({
+  const chestTarget =
+    spec.chestTarget ?? Math.ceil((totalLayers * 380 + relicCount * 1500) / 500) * 500;
+  const layerLabel = spec.fossils?.length
+    ? 'Tiles and buried fossils'
+    : spec.roots?.length
+      ? 'Tiles and linked roots'
+      : spec.spores?.length
+        ? 'Tiles and spore relays'
+        : spec.cores?.length
+          ? 'Tiles and charge cores'
+          : spec.signals?.length
+            ? 'Tiles and light markers'
+            : tiles.some((tile) => tile.sealColor)
+              ? 'Ice, stone & seals'
+              : tiles.some((tile) => tile.chainHealth)
+                ? 'Ice, stone & chains'
+                : 'Ice & stone';
+  return assembleLevelConfig({
     id,
     chapter,
     tip: spec.tip,
     oreOrders: (spec.orders ?? []).map(([color, target]) => ({ color, target, progress: 0 })),
     chestTarget,
-    speedTargetMs: (75 + totalLayers + relicCount * 20) * 1000,
+    speedTargetMs: spec.speedTargetMs ?? (75 + totalLayers + relicCount * 20) * 1000,
     cols,
     rows,
     board,
@@ -310,72 +365,67 @@ const createExpansionLevel = (id) => {
 
 // Chapter boundaries own size and palette count; individual puzzles vary
 // workload and geometry without adding more colors mid-chapter.
-export const generateLevelConfigs = (count = LEVEL_COUNT) => {
-  const levels = [];
-  for (let index = 0; index < count; index++) {
-    const id = index + 1;
-    if (id > EARLY_LEVEL_COUNT) {
-      if (id > LEVEL_COUNT) break;
-      levels.push(createExpansionLevel(id));
-      continue;
-    }
-    const chapter = chapterIndexOf(id);
-    const { cols, rows } = CHAPTERS[chapter];
-    const spec = getEarlyLevelSpec(id);
-    const rng = createSeededRng(spec.seed);
-    const layout = new BoardLayout(
-      `level_${id}`,
-      'RECTANGLE',
-      { cols, rows },
-      getLevelGemTypes(id),
-    );
-    const tiles = Array.from({ length: cols * rows }, () => ({
-      type: 'standard',
-      health: 0,
-      maxHealth: 0,
-    }));
-    layout.blockedCells = stonePositions(cols, rows, spec.motif).slice(0, spec.stoneCount);
-    layout.blockedCells.forEach(({ x, y }, i) => {
-      const health = i < spec.reinforcedCount ? 2 : 1;
-      tiles[y * cols + x] = { type: 'blocker', health, maxHealth: health };
-    });
-    const iceCells = tiles.flatMap((tile, i) =>
-      tile.type === 'standard' && (!spec.openExitRows || i < cols * (rows - spec.openExitRows))
-        ? [i]
-        : [],
-    );
-    const iceCellCount = Math.min(iceCells.length, spec.ice - spec.doubleIce);
-    layIce(
-      tiles,
-      iceCells,
-      rng,
-      (cell) => iceRank(cell, cols, rows, spec.motif),
-      iceCellCount,
-      spec,
-    );
-    for (const cell of iceCells.slice(0, spec.frozenCount)) tiles[cell].state = 'FROZEN';
-    const board = createPlayableBoard(layout, rng, { minMoves: chapter < 2 ? 6 : 4, tiles });
-    const totalLayers = tiles.reduce((sum, tile) => sum + tile.health, 0);
-    const chestTarget = Math.ceil((totalLayers * 220) / 500) * 500;
-    levels.push(
-      levelConfig({
-        id,
-        chapter,
-        tip: spec.tip,
-        chestTarget,
-        speedTargetMs: (90 + totalLayers * 2) * 1000,
-        cols,
-        rows,
-        board,
-        tiles,
-        layout,
-        objectives: [
-          clearObjective(id, 'Clear ice & stone', totalLayers),
-          scoreObjective(id, chestTarget),
-        ],
-        summary: `Clear ${spec.ice} ice layers${layout.blockedCells.length ? ` and ${layout.blockedCells.length} stone blocks` : ''}. Earn a chest at ${chestTarget.toLocaleString()} points.`,
-      }),
-    );
-  }
-  return levels;
+const createEarlyLevel = (id) => {
+  const chapter = chapterIndexOf(id);
+  const { cols, rows } = CHAPTERS[chapter];
+  const spec = getEarlyLevelSpec(id);
+  const rng = createSeededRng(spec.seed);
+  const layout = new BoardLayout(`level_${id}`, 'RECTANGLE', { cols, rows }, getLevelGemTypes(id));
+  const tiles = Array.from({ length: cols * rows }, () => ({
+    type: 'standard',
+    health: 0,
+    maxHealth: 0,
+  }));
+  layout.blockedCells = stonePositions(cols, rows, spec.motif).slice(0, spec.stoneCount);
+  layout.blockedCells.forEach(({ x, y }, i) => {
+    const health = i < spec.reinforcedCount ? 2 : 1;
+    tiles[y * cols + x] = { type: 'blocker', health, maxHealth: health };
+  });
+  const iceCells = tiles.flatMap((tile, i) =>
+    tile.type === 'standard' && (!spec.openExitRows || i < cols * (rows - spec.openExitRows))
+      ? [i]
+      : [],
+  );
+  const iceCellCount = Math.min(iceCells.length, spec.ice - spec.doubleIce);
+  layIce(tiles, iceCells, rng, (cell) => iceRank(cell, cols, rows, spec.motif), iceCellCount, spec);
+  for (const cell of iceCells.slice(0, spec.frozenCount)) tiles[cell].state = 'FROZEN';
+  const board = createPlayableBoard(layout, rng, { minMoves: chapter < 2 ? 6 : 4, tiles });
+  const totalLayers = tiles.reduce((sum, tile) => sum + tile.health, 0);
+  const chestTarget = Math.ceil((totalLayers * 220) / 500) * 500;
+  return assembleLevelConfig({
+    id,
+    chapter,
+    tip: spec.tip,
+    chestTarget,
+    speedTargetMs: (90 + totalLayers * 2) * 1000,
+    cols,
+    rows,
+    board,
+    tiles,
+    layout,
+    objectives: [
+      clearObjective(id, 'Clear ice & stone', totalLayers),
+      scoreObjective(id, chestTarget),
+    ],
+    summary: `Clear ${spec.ice} ice layers${layout.blockedCells.length ? ` and ${layout.blockedCells.length} stone blocks` : ''}. Earn a chest at ${chestTarget.toLocaleString()} points.`,
+  });
 };
+
+// Every level is seeded on its own, so generating one alone matches its entry in the
+// full list. Only gem ids differ, and they only need to be unique within a session.
+const createLevel = (id) =>
+  id > EARLY_LEVEL_COUNT ? createExpansionLevel(id) : createEarlyLevel(id);
+const generated = new Map();
+
+/** The configuration of one level, generated on first use; null for unknown ids. */
+export function levelConfig(id) {
+  if (!Number.isInteger(id) || id < 1 || id > LEVEL_COUNT) return null;
+  if (!generated.has(id)) generated.set(id, createLevel(id));
+  return generated.get(id);
+}
+
+/** Fresh configurations for levels 1..count, for tests and authoring scripts. */
+export const generateLevelConfigs = (count = LEVEL_COUNT) =>
+  Array.from({ length: Math.max(0, Math.min(count, LEVEL_COUNT)) }, (_, index) =>
+    createLevel(index + 1),
+  );

@@ -1,4 +1,5 @@
 import { walkObstacle } from '../TownNavigation';
+import { addWindow } from './frontierParts';
 import { addSquareModernization } from '../TownSquare';
 import { BRIDGE, bridgeDeckHeight } from '../TownRiver';
 import { addHeritageUpgrade } from './HeritageDetails';
@@ -23,13 +24,13 @@ export function renderIndustrialBuilding(d, parent, kind, label, level = 1) {
       const house = d.group(parent, x, 0, 0);
       masonry(d, house, 1.4, 3.3, 2.4, x === 0 ? '#b59478' : brick);
       d.box(house, 0.42, 1.05, 0.1, 0, 0.6, 1.25, iron);
-      d.window(house, 0, 2.3, 1.25);
+      addWindow(d, house, 0, 2.3, 1.25);
       d.box(house, 0.35, 0.55, 0.35, 0.35, 3.65, -0.6, brick);
       d.box(house, 1.3, 0.12, 0.55, 0, 0.12, 1.4, trim);
     }
   } else {
     masonry(d, parent, 3.2, 2.8, 2.6, kind === 'fireStation' ? '#b57560' : brick);
-    for (const x of [-1.05, 1.05]) d.window(parent, x, 1.9, 1.35);
+    for (const x of [-1.05, 1.05]) addWindow(d, parent, x, 1.9, 1.35);
     d.box(parent, 1.3, 1.25, 0.12, 0, 0.7, 1.35, iron);
     if (kind === 'fireStation') {
       const tower = d.group(parent, -1.9, 0, -0.35);
@@ -91,7 +92,7 @@ export function addIndustrialModernization(d, parent, kind, level = 1) {
     for (const x of [-2.8, 2.8]) d.rod(parent, [x, 0.2, -2.3], [x, 2.7, -2.3], 0.07, iron);
     const cabin = d.group(parent, 2.65, 0, 0);
     masonry(d, cabin, 1.1, 2.1, 1.2);
-    d.window(cabin, 0, 1.5, 0.63);
+    addWindow(d, cabin, 0, 1.5, 0.63);
     d.rod(cabin, [0, 2.2, 0], [0, 3.2, 0], 0.06, iron);
     d.box(cabin, 0.85, 0.15, 0.1, 0.35, 3.1, 0, '#b77560');
   }
@@ -153,7 +154,7 @@ export function renderIndustrialLandmark(d, parent, kind, label, level = 1) {
     const color = ['school', 'doctor', 'museum', 'bank'].includes(kind) ? '#b6a38b' : brick;
     masonry(d, parent, 3.6, height, 2.9, color);
     for (const y of tall ? [1.5, 3.1] : [1.7])
-      for (const x of [-1.15, 1.15]) d.window(parent, x, y, 1.5);
+      for (const x of [-1.15, 1.15]) addWindow(d, parent, x, y, 1.5);
     d.box(parent, 0.8, 1.3, 0.12, 0, 0.7, 1.5, iron);
     d.box(parent, 3.9, 0.15, 1, 0, 2.2, 1.8, iron);
     if (kind === 'home') {
@@ -249,6 +250,6 @@ function addIndustrialTier(d, parent, kind, level) {
   }
   const wing = d.group(tier, -2.45, 0, 0.15);
   masonry(d, wing, 1.25, 2.5, 2.5, '#bd9678');
-  d.window(wing, 0, 1.65, 1.3);
+  addWindow(d, wing, 0, 1.65, 1.3);
   if (level >= 3) addHeritageUpgrade(d, tier, kind, true);
 }

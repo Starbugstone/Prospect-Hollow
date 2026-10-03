@@ -188,7 +188,7 @@ const townHue = computed(() => {
   const hue = eraHue(campaign.town?.era);
   return hue === null ? {} : { '--town-hue': hue };
 });
-const updates = latestUpdates();
+const updates = latestUpdates(6);
 const updateDate = (date) =>
   new Intl.DateTimeFormat(locale.value, { day: 'numeric', month: 'long', timeZone: 'UTC' }).format(
     new Date(date),

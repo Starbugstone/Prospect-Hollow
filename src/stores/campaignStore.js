@@ -11,8 +11,22 @@ import {
   acknowledgePresentation,
 } from '../data/townPresentations';
 import { campaignCompletion } from '../data/campaignCompletion';
+import {
+  awardHonour,
+  backfillHonours,
+  createHonours,
+  creditForge,
+  creditRun,
+  defenceMedal,
+  evaluateHonours,
+  mergeHonours,
+  normalizeHonours,
+  recordVisitors,
+  validShowcase,
+} from '../data/honours';
 import { miningDepthBonus, CHEST_ECONOMY_VERSION } from '../data/economy';
 import { defineStore } from 'pinia';
+import { markRaw, toRaw } from 'vue';
 import { SHOP_ITEMS, rollShopStock, shopSlots, shopSpace } from '../data/shop';
 import { CHAPTERS, LEVEL_COUNT, POWERS, runChests, getStars } from '../data/campaign';
 import { chapterLevelIds } from '../data/chapters';
@@ -22,6 +36,7 @@ import { TOWN_PROJECTS } from '../data/townProjects';
 
 import { townStorage } from '../services/townStorage';
 import { localProfile, SAVE_KEY } from '../services/localProfile';
+import { createIntegrity, loadIntegrity, appendIntegrityAction } from '../services/saveIntegrity';
 import { createSaveFile, parseSaveFile } from '../services/saveTransfer';
 import {
   bonusCapacity,
@@ -62,7 +77,12 @@ import {
 export { SAVE_KEY };
 export const freshProfile = () => profileData(defaults());
 
+// Receipts are immutable transport data. Track replacement of the journal, while
+// avoiding a reactive proxy for every historical command during local saves.
+const plainIntegrity = (value) => (value && typeof value === 'object' ? markRaw(value) : value);
+
 const defaults = () => ({
+  integrity: plainIntegrity(createIntegrity()),
   hasVisitedVillage: false,
   seenTips: [],
   townProjectFocus: '',
@@ -87,11 +107,21 @@ const defaults = () => ({
   lastSaloonIncome: 0,
   vipReceipts: [],
   powers: POWERS.map((power) => ({ ...power, quantity: 0 })),
+  honours: createHonours(),
+});
+// What honours are evaluated against. Spreading the store itself would run every getter.
+const honourState = (state) => ({
+  records: toRaw(state.records),
+  town: toRaw(state.town),
+  powers: toRaw(state.powers),
+  honours: state.honours,
 });
 const load = (loaded = localProfile.load(), persistRecovered = true) => {
   const state = defaults();
   try {
     const saved = loaded.data;
+    if (saved?.integrity !== undefined)
+      state.integrity = plainIntegrity(loadIntegrity(saved.integrity));
     state.hasVisitedVillage =
       !!saved?.town && typeof saved.town === 'object' && !Array.isArray(saved.town);
     state.seenTips = Array.isArray(saved?.seenTips)
@@ -101,6 +131,7 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
     state.readOnly = !!loaded.readOnly;
     state.town = normalizeTown(saved?.town);
     state.vipReceipts = normalizeVipReceipts(saved?.vipReceipts);
+    state.honours = normalizeHonours(saved?.honours);
     if (
       TOWN_PROJECTS.some(
         (project) => project.id === saved?.townProjectFocus && project.era === state.town.era,
@@ -195,7 +226,20 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
         chest.levelId,
         chest.economyVersion ?? 1,
       );
-      if (drop) grantReward(state, drop);
+      if (drop) {
+        grantReward(state, drop);
+        state.integrity = plainIntegrity(
+          appendIntegrityAction(state.integrity, 'chest-claim', {
+            chestId: chest.id ?? `${chest.runId}-${chest.source}`,
+            runId: chest.runId,
+            source: chest.source,
+            levelId: chest.levelId,
+            economyVersion: chest.economyVersion ?? 1,
+            selection: drop.id,
+            at: Date.now(),
+          }),
+        );
+      }
     }
     if (overflow) {
       state.town.coins = Math.min(
@@ -205,6 +249,9 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
       state.inventoryNotice =
         'Bonus storage now has a limit. Extra saved bonuses were exchanged for 10 coins each.';
     }
+    // Older saves earn what their state already proves, with an unknown date. Nothing is
+    // written here: the next save stores it, so repeated loads give the same result.
+    state.honours = backfillHonours(honourState(state));
     if (
       persistRecovered &&
       recovered.length &&
@@ -216,6 +263,7 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
         townProjectFocus: state.townProjectFocus,
         builderHammers: state.builderHammers,
         pendingChests: [],
+        integrity: state.integrity,
       })
     )
       state.saveWarning = 'Your progress is not saving. Keep this page open to continue.';
@@ -228,6 +276,7 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
 
 const profileData = (state) => ({
   schemaVersion: 2,
+  integrity: state.integrity,
   records: state.records,
   continuousRecords: state.continuousRecords,
   powers: state.powers,
@@ -243,6 +292,7 @@ const profileData = (state) => ({
   townProjectFocus: state.townProjectFocus,
   issuedRun: state.issuedRun,
   settledRun: state.settledRun,
+  honours: state.honours,
 });
 
 export const useCampaignStore = defineStore('campaign', {
@@ -270,6 +320,13 @@ export const useCampaignStore = defineStore('campaign', {
       for (let id = 1; id <= LEVEL_COUNT; id++) if (!state.records[id]) return id;
       return LEVEL_COUNT;
     },
+    nextMiningLevel(state) {
+      if (!state.records[this.nextLevel]) return this.nextLevel;
+      if (this.canReplay) {
+        for (let id = 1; id <= LEVEL_COUNT; id++) if (state.records[id].stars < 3) return id;
+      }
+      return null;
+    },
     completedCount: (state) => Object.keys(state.records).length,
     completion: (state) => campaignCompletion(state.records),
     totalStars: (state) =>
@@ -279,14 +336,31 @@ export const useCampaignStore = defineStore('campaign', {
     // Persist a change atomically: apply it, save, and restore every listed field if the
     // save fails, so the village never shows progress that was not stored.
     transaction(fields, apply) {
-      const previous = Object.fromEntries(fields.map((key) => [key, this[key]]));
+      const previous = Object.fromEntries(
+        [...new Set([...fields, 'integrity'])].map((key) => [key, this[key]]),
+      );
       apply();
       if (this.save()) return true;
       Object.assign(this, previous);
       return false;
     },
-    commit(changes) {
-      return this.transaction(Object.keys(changes), () => Object.assign(this, changes));
+    commit(changes, receipt = null) {
+      return this.transaction(Object.keys(changes), () => {
+        Object.assign(this, changes);
+        if (receipt) this.recordAction(receipt.kind, receipt.data);
+      });
+    },
+    recordAction(kind, data) {
+      this.integrity = plainIntegrity(appendIntegrityAction(this.integrity, kind, data));
+    },
+    consumePowerItem(id) {
+      const slot = this.powers.find((entry) => entry.id === id);
+      if (!slot || slot.quantity <= 0) return false;
+      const at = Date.now();
+      slot.quantity--;
+      this.recordAction('power-spend', { itemId: id, at });
+      this.save();
+      return true;
     },
     visitVillage() {
       if (this.hasVisitedVillage) return;
@@ -314,8 +388,35 @@ export const useCampaignStore = defineStore('campaign', {
     },
     advanceEra(expectedEra) {
       if (this.activeRun) return false;
+      const at = Date.now();
       const next = advanceEra(this.town, expectedEra);
-      return !!next && this.commit({ town: next });
+      return (
+        !!next && this.commit({ town: next }, { kind: 'era-advance', data: { expectedEra, at } })
+      );
+    },
+    // Town Honours presentation choices. They never change buildings, rewards or progress.
+    // The owner's guestbook reports the server's count of different signed-in visitors.
+    recordTownVisitors(count) {
+      const honours = recordVisitors(this.honours, count);
+      return !!honours && this.commit({ honours });
+    },
+    setHonourShowcase(ids) {
+      const showcase = validShowcase(Array.isArray(ids) ? ids : [], this.honours);
+      return this.commit({ honours: { ...this.honours, showcase } });
+    },
+    markHonoursSeen(ids = Object.keys(this.honours.earned)) {
+      return this.updateEarnedHonours(ids, 'seen');
+    },
+    markHonoursAnnounced(ids) {
+      return this.updateEarnedHonours(ids, 'announced');
+    },
+    updateEarnedHonours(ids, flag) {
+      if (!['seen', 'announced'].includes(flag) || !Array.isArray(ids)) return false;
+      const changed = ids.filter((id) => this.honours.earned[id] && !this.honours.earned[id][flag]);
+      if (!changed.length) return false;
+      const earned = { ...this.honours.earned };
+      for (const id of changed) earned[id] = { ...earned[id], [flag]: true };
+      return this.commit({ honours: { ...this.honours, earned } });
     },
     acknowledgePresentation(id) {
       const next = acknowledgePresentation(this.town, id);
@@ -344,9 +445,17 @@ export const useCampaignStore = defineStore('campaign', {
     profile() {
       return profileData(this);
     },
+    // The one evaluation point for state-derived honours, so every action (chests, shop,
+    // forge, buildings, powers, victories) is covered. New honours are kept only once stored.
     save() {
       if (this.readOnly || localProfile.writesSuspended) return false;
-      const saved = localProfile.save(this.profile());
+      const { honours, added } = evaluateHonours(honourState(this), { at: Date.now() });
+      const profile = this.profile();
+      if (added.length) profile.honours = honours;
+      const saved = localProfile.save(profile, (integrity) => {
+        this.integrity = plainIntegrity(integrity);
+      });
+      if (saved && added.length) this.honours = honours;
       this.saveWarning = saved
         ? ''
         : 'Your progress is not saving. Keep this page open to continue.';
@@ -363,6 +472,10 @@ export const useCampaignStore = defineStore('campaign', {
     importSave(text) {
       const parsed = parseSaveFile(text);
       const next = load({ data: parsed }, false);
+      // A backup of this same town restores its progress, never fewer honours. Another
+      // town's backup replaces the slot's identity and its honours with it.
+      if (townStorage.keepsIdentity(parsed._backupTown))
+        next.honours = mergeHonours(next.honours, this.honours);
       // Commit the normalized profile before replacing any live progress.
       try {
         townStorage.import(profileData(next), parsed._backupTown);
@@ -378,24 +491,35 @@ export const useCampaignStore = defineStore('campaign', {
     collectForgeTNT(now = Date.now()) {
       if (!Number.isSafeInteger(now) || now < 0 || this.activeRun || !this.canCollectForge(now))
         return false;
-      return this.commit({
-        town: {
-          ...this.town,
-          forge: { progress: 0, charge: 0 },
-          lastCollections: { ...this.town.lastCollections, blacksmith: now },
+      return this.commit(
+        {
+          town: {
+            ...this.town,
+            forge: { progress: 0, charge: 0 },
+            lastCollections: { ...this.town.lastCollections, blacksmith: now },
+          },
+          powers: this.powers.map((power) =>
+            power.id === 'tnt' ? { ...power, quantity: power.quantity + 1 } : power,
+          ),
+          honours: creditForge(this.honours),
         },
-        powers: this.powers.map((power) =>
-          power.id === 'tnt' ? { ...power, quantity: power.quantity + 1 } : power,
-        ),
-      });
+        { kind: 'forge-collect', data: { at: now } },
+      );
     },
     beginRun(mode = 'normal', id = null) {
       this.settlePendingChests();
+      const at = Date.now();
       this.lastChapterReward = null;
       this.issuedRun += 1;
       this.activeRun = this.issuedRun;
       this.continuousRun =
         mode === 'continuous' ? { runId: this.issuedRun, id, credited: 0 } : null;
+      this.recordAction('run-start', {
+        runId: this.issuedRun,
+        mode,
+        levelId: id,
+        at,
+      });
       this.save();
       return this.issuedRun;
     },
@@ -403,6 +527,7 @@ export const useCampaignStore = defineStore('campaign', {
       if (this.activeRun === runId) this.activeRun = null;
     },
     recordContinuous({ id, runId, jewels, score }) {
+      const at = Date.now();
       const run = this.continuousRun;
       if (
         !this.canReplay ||
@@ -428,17 +553,21 @@ export const useCampaignStore = defineStore('campaign', {
       if (!delta && previous.score === best && this.continuousRecords[id]) return true;
       this.continuousRecords[id] = { coins: previous.coins + delta, score: best };
       this.town.coins = Math.min(Number.MAX_SAFE_INTEGER, this.town.coins + delta);
+      // After the existing continuous coin allowance is earned, score remains a
+      // statistic. Unlimited play must not create a command for every later match.
+      if (delta) this.recordAction('continuous', { runId, levelId: id, jewels, score, at });
       this.save();
       return true;
     },
     resetProgress() {
+      const next = defaults();
       try {
-        townStorage.reset(profileData(defaults()));
+        townStorage.reset(profileData(next));
       } catch {
         return false;
       }
       localProfile.load();
-      this.$patch((state) => Object.assign(state, defaults()));
+      this.$patch((state) => Object.assign(state, next));
       return true;
     },
     // Refresh the displayed reserve without creating an idle save. Collections and
@@ -450,10 +579,15 @@ export const useCampaignStore = defineStore('campaign', {
       this.town = result.town;
       // Older imports may have no starting timestamp. Establish it once so their
       // earnings survive a reload even before the first collection or town change.
-      if (initialize) this.save();
+      // The server never sees silent refreshes, so its replay starts income here too.
+      if (initialize) {
+        this.recordAction('income-start', { at: now });
+        this.save();
+      }
       return result.earned;
     },
     collectVipSpending(receipt) {
+      const at = Date.now();
       const key = vipReceipt(receipt);
       if (
         !key ||
@@ -462,10 +596,13 @@ export const useCampaignStore = defineStore('campaign', {
         this.town.coins > Number.MAX_SAFE_INTEGER - VIP_SPEND
       )
         return 0;
-      const saved = this.commit({
-        town: { ...this.town, coins: this.town.coins + VIP_SPEND },
-        vipReceipts: [...this.vipReceipts, key].slice(-VIP_RECEIPT_LIMIT),
-      });
+      const saved = this.commit(
+        {
+          town: { ...this.town, coins: this.town.coins + VIP_SPEND },
+          vipReceipts: [...this.vipReceipts, key].slice(-VIP_RECEIPT_LIMIT),
+        },
+        { kind: 'vip-spend', data: { key, buildingId: receipt.building, at } },
+      );
       return saved ? VIP_SPEND : 0;
     },
     collectSaloonIncome(now = Date.now()) {
@@ -484,15 +621,18 @@ export const useCampaignStore = defineStore('campaign', {
         return 0;
       }
       const town = this.town;
-      const saved = this.commit({
-        town: {
-          ...town,
-          income: { ...town.income, stored: town.income.stored - coins },
-          coins: town.coins + coins,
-          lastCollections: { ...town.lastCollections, saloon: now },
+      const saved = this.commit(
+        {
+          town: {
+            ...town,
+            income: { ...town.income, stored: town.income.stored - coins },
+            coins: town.coins + coins,
+            lastCollections: { ...town.lastCollections, saloon: now },
+          },
+          lastSaloonIncome: coins,
         },
-        lastSaloonIncome: coins,
-      });
+        { kind: 'saloon-collect', data: { at: now } },
+      );
       return saved ? coins : 0;
     },
     // A share-link visitor collects up to one hour of income from the reserved coins,
@@ -517,7 +657,12 @@ export const useCampaignStore = defineStore('campaign', {
       }
       const changes = { town: { ...town, saloonVisitAt: at } };
       if (coins) changes.lastSaloonIncome = coins;
-      return this.commit(changes) ? coins : null;
+      return this.commit(changes, {
+        kind: 'saloon-visitor',
+        data: { at: now, visitAt: at },
+      })
+        ? coins
+        : null;
     },
     // A signed-in visitor viewed the shared town: only the latest becomes the guest VIP.
     welcomeGuest(remote) {
@@ -532,28 +677,55 @@ export const useCampaignStore = defineStore('campaign', {
       return this.commit({ town: { ...this.town, guestVip: { ...guest, seen: true } } });
     },
     upgradeBuilding(id, expectedStage) {
-      this.accrueSaloonIncome();
+      const at = Date.now();
+      this.accrueSaloonIncome(at);
       const next = purchase(this.town, id, expectedStage);
       if (!next) return false;
       // A purchase stays usable in memory when storage fails; save() reports the warning.
       this.town = queueBuildingPresentations(this.town, next);
-      this.ensureShopStock();
+      this.ensureShopStock(false, false);
+      this.recordAction('building-buy', {
+        buildingId: id,
+        expectedStage,
+        shopStock: this.shopStock,
+        shopVisit: this.shopVisit,
+        at,
+      });
       this.save();
       return true;
     },
     finishConstruction(id, expectedStage) {
+      const at = Date.now();
       const next = finishConstruction(this.town, id, expectedStage);
-      return !!next && this.completeProject(next);
+      return (
+        !!next &&
+        this.completeProject(
+          next,
+          {},
+          {
+            kind: 'building-finish',
+            data: { buildingId: id, expectedStage, at },
+          },
+        )
+      );
     },
     useBuilderHammer(id, expectedStage) {
       if (this.builderHammers < 1) return false;
+      const at = Date.now();
       const next = buildWithHammer(this.town, id, expectedStage);
-      return !!next && this.completeProject(next, { builderHammers: this.builderHammers - 1 });
+      return (
+        !!next &&
+        this.completeProject(
+          next,
+          { builderHammers: this.builderHammers - 1 },
+          { kind: 'building-hammer', data: { buildingId: id, expectedStage, at } },
+        )
+      );
     },
     // A finished building opens its services, refunds prevented raid losses and restocks
     // the shop; the settled balance and income checkpoint carry over unchanged.
-    completeProject(next, extra = {}) {
-      this.accrueSaloonIncome();
+    completeProject(next, extra = {}, receipt = null) {
+      this.accrueSaloonIncome(receipt?.data.at ?? Date.now());
       next.coins = this.town.coins;
       next.income = this.town.income;
       return this.transaction(['town', 'shopStock', 'shopVisit', ...Object.keys(extra)], () => {
@@ -562,51 +734,93 @@ export const useCampaignStore = defineStore('campaign', {
           this.town,
           settleForgeProduction(reinforceRaid(next)),
         );
-        this.ensureShopStock();
+        this.ensureShopStock(false, false);
+        if (receipt)
+          this.recordAction(receipt.kind, {
+            ...receipt.data,
+            shopStock: this.shopStock,
+            shopVisit: this.shopVisit,
+          });
       });
     },
     awardReward(reward) {
+      const at = Date.now();
       const granted = grantReward(this, reward);
-      if (granted) this.save();
+      if (granted) {
+        this.recordAction('reward-grant', { reward, at });
+        this.save();
+      }
       return granted;
     },
     resolveBandits() {
-      this.accrueSaloonIncome();
+      const at = Date.now();
+      this.accrueSaloonIncome(at);
       const previous = this.town;
       const scheduled = scheduleRaid(previous);
       const next = banditEncounter(scheduled);
       if (!next && scheduled === previous) return false;
-      return this.commit({ town: next ?? scheduled }) && !!next;
+      return (
+        this.commit(
+          { town: next ?? scheduled },
+          {
+            kind: 'raid-encounter',
+            data: {
+              event: next?.events[BANDIT_EVENT] ?? null,
+              nextRaidRun: (next ?? scheduled).nextRaidRun,
+              at,
+            },
+          },
+        ) && !!next
+      );
     },
     ringTownBell(raidId) {
+      const at = Date.now();
       const next = ringTownBell(this.town, raidId);
-      return !!next && this.commit({ town: next });
+      return !!next && this.commit({ town: next }, { kind: 'raid-bell', data: { raidId, at } });
     },
     markRaidSeen(id) {
+      const at = Date.now();
       const event = this.town.events[BANDIT_EVENT];
       if (!event || event.id !== id || event.seen) return false;
       const town = this.town;
       const bounty = Math.min(raidBounty(event), Number.MAX_SAFE_INTEGER - town.coins);
-      return this.commit({
-        town: {
-          ...town,
-          coins: town.coins + bounty,
-          events: { ...town.events, [BANDIT_EVENT]: { ...event, seen: true, bounty } },
+      // The era gate keeps an unseen incident from crossing an era change, so the current
+      // era is the one it happened in. The medal is quiet and earned once per era.
+      const medal = defenceMedal(event, town.era);
+      return this.commit(
+        {
+          town: {
+            ...town,
+            coins: town.coins + bounty,
+            events: { ...town.events, [BANDIT_EVENT]: { ...event, seen: true, bounty } },
+          },
+          ...(medal && !this.honours.earned[medal]
+            ? { honours: awardHonour(this.honours, medal, { at, evidence: { eventId: id } }) }
+            : {}),
         },
-      });
+        { kind: 'raid-seen', data: { raidId: id, at } },
+      );
     },
-    ensureShopStock(refresh = false) {
+    ensureShopStock(refresh = false, track = true) {
       if (!this.town.buildings.shop) return;
       if (refresh || this.shopStock.length < shopSlots(this.town.buildings.shop)) {
+        const at = Date.now();
         this.shopStock = rollShopStock(
           this.town.buildings.shop,
           Math.random,
           refresh ? [] : this.shopStock,
         );
         this.shopVisit++;
+        if (track)
+          this.recordAction('shop-stock', {
+            stock: this.shopStock,
+            visit: this.shopVisit,
+            at,
+          });
       }
     },
     buyShopItem(id, visit) {
+      const at = Date.now();
       const offer = this.shopStock.find((entry) => entry.id === id);
       const item = SHOP_ITEMS.find((entry) => entry.id === id);
       if (
@@ -622,6 +836,7 @@ export const useCampaignStore = defineStore('campaign', {
       this.town.coins -= item.price;
       grantReward(this, item);
       offer.sold = true;
+      this.recordAction('shop-buy', { itemId: id, visit, at });
       this.save();
       return true;
     },
@@ -634,6 +849,7 @@ export const useCampaignStore = defineStore('campaign', {
       this.save();
     },
     claimChest(id, selection) {
+      const at = Date.now();
       const chest = this.pendingChests.find((entry) => entry.id === id);
       if (!chest) return null;
       // Purse tiers are only on the reel once every bonus is stored at capacity.
@@ -644,8 +860,18 @@ export const useCampaignStore = defineStore('campaign', {
         ? chestReward(selection, chest.levelId, chest.economyVersion ?? 1)
         : null;
       const fallback = chestReward(chest.items[0].id, chest.levelId, chest.economyVersion ?? 1);
-      const granted = grantReward(this, chosen ?? fallback);
+      const selected = chosen ?? fallback;
+      const granted = grantReward(this, selected);
       this.pendingChests = this.pendingChests.filter((entry) => entry.id !== id);
+      this.recordAction('chest-claim', {
+        chestId: chest.id,
+        runId: chest.runId,
+        source: chest.source,
+        levelId: chest.levelId,
+        economyVersion: chest.economyVersion ?? 1,
+        selection: selected.id,
+        at,
+      });
       this.save();
       return granted;
     },
@@ -669,7 +895,9 @@ export const useCampaignStore = defineStore('campaign', {
       comboCounts = {},
       multiMatchCounts = {},
       chooseRewards = false,
+      tally = null,
     }) {
+      const at = Date.now();
       if (
         !this.isUnlocked(id) ||
         (this.continuousRun && (runId == null || this.continuousRun.runId === runId))
@@ -690,7 +918,7 @@ export const useCampaignStore = defineStore('campaign', {
         validTime ? elapsedMs : Infinity,
       );
       if (Number.isFinite(bestTimeMs)) this.records[id].bestTimeMs = bestTimeMs;
-      this.accrueSaloonIncome();
+      this.accrueSaloonIncome(at);
       this.town.completedRuns = Math.min(Number.MAX_SAFE_INTEGER, this.town.completedRuns + 1);
       const projects = Object.values(this.town.projects).filter(
         (project) => !constructionReady(project),
@@ -698,7 +926,7 @@ export const useCampaignStore = defineStore('campaign', {
       this.town = advanceConstruction(this.town);
       this.town = advanceForge(this.town);
       this.endRun(runId);
-      this.ensureShopStock(true);
+      this.ensureShopStock(true, false);
       this.lastConstruction = projects.map((project) => ({
         id: project.id,
         stage: project.stage,
@@ -711,6 +939,7 @@ export const useCampaignStore = defineStore('campaign', {
           ? { chapter: this.mineStage, gift: grantChapterGift(this, this.mineStage) }
           : null;
       const rewards = [];
+      const receiptChests = [];
       for (const { source, label } of runChests(score, target, elapsedMs, speedTargetMs)) {
         const rolled =
           this.chestsWithoutBuilderHammer >= 9
@@ -723,8 +952,9 @@ export const useCampaignStore = defineStore('campaign', {
               )
             : rollChestReward(Math.random, this);
         this.chestsWithoutBuilderHammer =
-          rolled.kind === 'builder-hammer' ? 0 : this.chestsWithoutBuilderHammer + 1;
+          rolled.kind === 'builder-hammer' ? 0 : Math.min(9, this.chestsWithoutBuilderHammer + 1);
         const reward = chestReward(rolled.id, id);
+        receiptChests.push({ source, rewardId: reward.id });
         const drop = chooseRewards
           ? { id: reward.id, kind: reward.kind, label: reward.label, quantity: reward.quantity }
           : grantReward(this, reward);
@@ -746,7 +976,29 @@ export const useCampaignStore = defineStore('campaign', {
         this.town.coins + miningPayout(jewels, bonusGems, comboCounts, multiMatchCounts, id),
       );
       this.settledRun = runId;
+      // Gems, fusions and mine elements count once, with this settled normal victory.
+      // They stay outside the integrity receipt: honours are presentation, not money.
+      if (tally) this.honours = creditRun(this.honours, tally);
       this.town = queueCampaignPresentations(this.town, this.records);
+      this.recordAction('victory', {
+        runId,
+        levelId: id,
+        score,
+        target,
+        starTarget,
+        combo,
+        elapsedMs,
+        speedTargetMs,
+        jewels,
+        bonusGems,
+        comboCounts,
+        multiMatchCounts,
+        chooseRewards,
+        chests: receiptChests,
+        shopStock: this.shopStock,
+        shopVisit: this.shopVisit,
+        at,
+      });
       // Campaign, chest rewards, and town income move together before any reveal.
       this.save();
       return rewards;

@@ -194,6 +194,29 @@ describe('Town models do not clip into each other', () => {
     },
   );
 
+  it('keeps the 2CV at the stables through every later era', () => {
+    const d = diorama();
+    const parkedAt = (era, id, level) => {
+      const town = completeTown(era);
+      town.buildingEraLevels[id] = level;
+      const group = d.group(d.world, 0, 0, 0);
+      d.buildPlot(id, group, town, labels);
+      let vehicle = null;
+      group.traverse((node) => (vehicle ??= node.userData.vehicleBox ? node : null));
+      const name = vehicle?.name ?? null;
+      d.clearGroup(group);
+      return name;
+    };
+    const eras = ERAS.map((era) => era.id);
+    const first = eras.findIndex((era) => parkedAt(era, 'stable', 1) === 'Deux chevaux');
+    expect(first).toBeGreaterThanOrEqual(0);
+    for (const era of eras.slice(first))
+      for (const level of [1, 2, 3])
+        expect(parkedAt(era, 'stable', level), `${era} L${level}`).toBe('Deux chevaux');
+    // Other depots keep their own era's vehicles.
+    expect(parkedAt('tomorrow', 'garage', 1)).not.toBe('Deux chevaux');
+  });
+
   it.each(['industrial', 'post-war', 'motor-age'])(
     'ends every %s service drop on its building without passing through walls',
     (era) => {

@@ -71,7 +71,7 @@ it('keeps all old level-five service benefits at the new shorter caps', () => {
   expect(town.buildings.square).toBe(5);
   expect(housingCapacity(town)).toBe(40);
   expect(visitorCapacity(town)).toBe(18);
-  expect(foodCapacity(town)).toBe(95);
+  expect(foodCapacity(town)).toBe(65);
   expect(happiness(town)).toBe(100);
   expect(bonusCapacity(town)).toBe(20);
   expect(shopSlots(town.buildings.shop)).toBe(5);

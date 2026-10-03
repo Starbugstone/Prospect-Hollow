@@ -1,11 +1,11 @@
 import { isCityEra } from '../../data/city';
-import { isRoundedEra, ROUNDED_PALETTE } from '../../data/roundedArchitecture';
+import { hasRoundedTransport, ROUNDED_PALETTE } from '../../data/roundedArchitecture';
 import { cityModel } from './buildings/city';
 const cream = '#e1cfab',
   glass = '#9cbbb5';
 export function motorVehicle(d, parent, bus = false, appearanceEra) {
   const era = appearanceEra ?? d.town?.era ?? d.town?.buildingEras?.[bus ? 'busDepot' : 'stable'];
-  if (isRoundedEra(era)) return hoverPod(d, parent, bus);
+  if (hasRoundedTransport(era)) return hoverPod(d, parent, bus);
   if (isCityEra(era)) {
     const root = cityModel(d, parent, `${era}-${bus ? 'bus' : 'car'}`);
     root.userData.vehicleBox = { halfWidth: 0.36, halfLength: bus ? 1.2 : 0.85 };
@@ -36,10 +36,17 @@ export function motorVehicle(d, parent, bus = false, appearanceEra) {
   return root;
 }
 
+/** The vehicle parked at a depot plot. The stables keep their 2CV in every era. */
+export function parkedVehicle(d, parent, kind, era) {
+  return kind === 'stable'
+    ? deuxChevaux(d, parent)
+    : motorVehicle(d, parent, kind === 'busDepot', era);
+}
+
 // A Citroën 2CV parked at the stables: domed cabin with a roll-top canvas roof,
 // ribbed bonnet, separate round front wings and headlamps on stalks. Charleston
 // two-tone, faces +z like the other procedural cars.
-export function deuxChevaux(d, parent) {
+function deuxChevaux(d, parent) {
   const root = d.group(parent);
   root.name = 'Deux chevaux';
   root.userData.vehicleBox = { halfWidth: 0.39, halfLength: 0.8 };
@@ -110,7 +117,7 @@ export function animateVehicle(root, distance) {
 
 // Purpose-built response bodies share wheels and period palettes, never bus shells.
 export function responseVehicle(d, parent, service = false, era = d.town?.era) {
-  if (isRoundedEra(era)) return roundedResponsePod(d, parent, service);
+  if (hasRoundedTransport(era)) return roundedResponsePod(d, parent, service);
   const root = d.group(parent);
   root.userData.vehicleBox = { halfWidth: 0.62, halfLength: 1.3 };
   root.userData.wheels = [];

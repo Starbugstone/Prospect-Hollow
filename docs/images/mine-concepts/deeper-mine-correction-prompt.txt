@@ -1,0 +1,15 @@
+Use case: precise-object-edit
+Asset type: corrected mine-chapter brainstorming sheet.
+Input image 1 is the EDIT TARGET: preserve its three-panel composition, all cave scenery, lighting, illustration style, overall header, panel headings, three captions, footer, and the before/after teaching insets. Change only the main boards to make their interactions accurate.
+
+The crucial correction is that floor targets never replace ordinary gems.
+
+FOSSIL BEDS main board: each dusty 2x2 fossil floor MUST have four ordinary colored gems drawn ON TOP OF its four cells, just like the panel's teaching inset already does. Each cell in this panel must have a gem. Show fossil fragments UNDER gems with subtle dusty amber floor tint and a continuous 2x2 plaque outline. The currently bare fossil squares are wrong. The highlighted row of three yellow gems must overlap the TOP ROW of one dusty 2x2 fossil, so matching those gems visibly clears sediment ON THE MATCHED CELLS. A fossil has no solidity and does not interrupt gravity. Show some partly exposed floor fragments without emptying cells of gems.
+
+ROOT-BOUND VAULT main board: the knot occupies exactly ONE cell, not a multi-cell object. Move the first knot to row 3, column 4 (counting from 1), immediately BELOW the highlighted row-2 blue diamond match. This must be orthogonally adjacent with no intervening red gem. Remove the large existing knot below that location. The second knot also occupies exactly one cell in the lower central area. The vines connect each knot to three or four clearly identifiable other gem cells, without crossing between clusters. Gems retain their full silhouettes. The highlighted match is the match BESIDE the knot, never through a knot.
+
+GEOTHERMAL FORGE main board: each two-by-two-sized empty circular mechanism is wrong. Instead draw each brazier as a thin small copper circular FLOOR RING inside exactly ONE ordinary board cell, UNDER a clearly visible full colored gem. The ring has FOUR small but distinct pips around its outer edge, with two or three lit. The swappable gem sits clearly in front. Gem cells containing rings are not occupied by an obstacle. Place one small floor ring directly BELOW one highlighted red gem of the red triple, making the match adjacent to the ring. Only the grey stones occupy gem-free blocked cells. Outer side columns and the bottom two rows must be ordinary gem cells, without stones.
+
+All three main grids should be exactly SEVEN columns by NINE rows, with uniform cell sizes and one object per cell: normal gem, or a one-cell root knot, or a one-cell grey stone. In fossil and brazier floor cells the object is always a normal gem, with the floor art underneath. Remove one ordinary row if needed to reduce the current ten rows to nine, maintaining same overall board frame size. Use five existing gem shapes and colors consistently. Keep the original captions VERBATIM, and the matching headers and footer unchanged. No new labels, UI counters, time limits or move budgets.
+
+Prioritize faithful teaching and readable targets while preserving all non-board artwork and the teaching insets.

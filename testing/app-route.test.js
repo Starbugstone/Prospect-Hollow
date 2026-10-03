@@ -2,7 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 let activeMeta = null;
 vi.mock('../src/services/townStorage', () => ({
-  townStorage: { active: () => (activeMeta ? { meta: activeMeta } : null) },
+  townStorage: {
+    active: () => (activeMeta ? { meta: activeMeta } : null),
+    activeMeta: () => activeMeta ?? null,
+  },
 }));
 const {
   isPlayRoute,

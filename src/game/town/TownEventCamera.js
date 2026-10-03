@@ -4,9 +4,9 @@ import { PerspectiveCamera, Vector3, Vector4 } from 'three';
 import { eventKind } from '../../data/townEvents';
 import { PLOTS } from './TownLayout';
 import { keepCameraAboveTerrain } from './TownLandscape';
+import { smooth01 } from './TownMath';
 
 const direction = new Vector3(0.28, 0.72, 0.64).normalize();
-const smooth = (t) => t * t * (3 - 2 * t);
 // Content selects subjects; framing, rendering and cleanup stay shared across eras.
 const INCIDENT_SHOTS = {
   bandits: { main: 'bandits', inset: 'patrol', label: 'Sheriff patrol' },
@@ -138,7 +138,7 @@ export function updateEventCamera(d) {
   if (!shot) return false;
   const elapsed = d.elapsed - shot.started;
   if (shot.returning) {
-    const t = smooth(Math.min(1, elapsed / 1.2));
+    const t = smooth01(Math.min(1, elapsed / 1.2));
     d.camera.position.lerpVectors(shot.fromPosition, shot.position, t);
     d.controls.target.lerpVectors(shot.fromTarget, shot.target, t);
     if (t === 1) {
@@ -165,7 +165,7 @@ export function updateEventCamera(d) {
     }
     const position = shot.destination;
     if (elapsed < 1.4) {
-      const t = smooth(Math.min(1, elapsed / 1.4));
+      const t = smooth01(Math.min(1, elapsed / 1.4));
       d.camera.position.lerpVectors(shot.position, position, t);
       d.controls.target.lerpVectors(shot.target, focus, t);
     } else {

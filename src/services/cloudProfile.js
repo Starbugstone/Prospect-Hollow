@@ -4,6 +4,7 @@ import { townStorage, townKey } from './townStorage';
 import { townCoordinator } from './townCoordinator';
 import { createSyncService, legacyRecovery, uploadBlocked } from './syncService';
 import { recoveryStore } from './recoveryStore';
+import { prepareIntegritySnapshot } from './saveIntegrity';
 const native = Capacitor.isNativePlatform();
 const base = (import.meta.env.VITE_API_BASE ?? '/api/v1').replace(/\/$/, '');
 let bearer = '',
@@ -159,7 +160,7 @@ export async function syncNow({ pull = true, retryRejected = false } = {}) {
     return true;
   } catch (error) {
     updateSaveStatus();
-    if (cloud.account && !cloud.sessionExpired && !townStorage.active()?.meta.uploadError)
+    if (cloud.account && !cloud.sessionExpired && !townStorage.activeMeta()?.uploadError)
       cloud.status = 'offline';
     cloud.error = error.message;
     return false;
@@ -220,7 +221,7 @@ export async function createAccountTown(name, profile) {
             name: townName(name),
             baseRevision: 0,
             uploadId: crypto.randomUUID(),
-            profile,
+            profile: prepareIntegritySnapshot(profile),
           };
     townStorage.creation({ owner, body });
     let result;
@@ -269,7 +270,7 @@ export async function attachLocal(name) {
             name: townName(name),
             baseRevision: 0,
             uploadId: crypto.randomUUID(),
-            profile: local.profile,
+            profile: prepareIntegritySnapshot(local.profile),
           };
       const sequence = saved?.body === body ? saved.sequence : local.meta.sequence;
       townStorage.attachment(body, sequence);
@@ -388,5 +389,5 @@ function saveStatusOf(meta) {
   return meta.dirty || meta.pending ? 'pending' : 'saved';
 }
 export function updateSaveStatus() {
-  cloud.status = saveStatusOf(townStorage.active()?.meta);
+  cloud.status = saveStatusOf(townStorage.activeMeta());
 }

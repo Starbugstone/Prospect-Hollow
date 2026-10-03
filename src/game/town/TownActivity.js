@@ -4,10 +4,18 @@ import { prepareRoute, routePose } from './TownRoutes';
 import * as THREE from 'three';
 import { roadLevel, visitorPopulation } from './TownRules';
 import { LANE_X, atPlot, plotStreet } from './TownLayout';
+import { GARDEN_PARCELS } from '../../data/townGardenDistrict';
 import { pavedTown, motorTraffic } from './TownEvolution';
 import { addRoadSurfaces } from './TownRoads';
 import { motorVehicle, animateVehicle } from './TownVehicles';
 import { incidentScript, phaseAt } from '../../data/townEvents';
+
+// Scratch vectors for the raid's per-frame rope pose.
+const ropeHand = new THREE.Vector3(),
+  ropeTarget = new THREE.Vector3();
+const HAND_OFFSET = new THREE.Vector3(0.2, 1.65, 0),
+  NECK_OFFSET = new THREE.Vector3(0, 1.6, 0),
+  UP = new THREE.Vector3(0, 1, 0);
 
 // Actors share the town's geometry cache; only their joints move each frame.
 export function mountedRider(
@@ -130,16 +138,18 @@ export function addTownRoads(d, town, plots) {
   const surfaces = addRoadSurfaces(d, roads, town);
   for (const [id, [x, z]] of Object.entries(plots)) {
     if (id === 'mine' || id === 'bridge' || !town.buildings[id]) continue;
-    if (level >= 2 && id !== 'well' && id !== 'well2') {
+    const parcel = GARDEN_PARCELS[id];
+    if ((parcel || level >= 2) && id !== 'well' && id !== 'well2') {
+      const [frontX, frontZ] = parcel?.approach[0] ?? [0, 1.65];
       for (let i = 0; i < 16; i++)
         d.box(
           roads,
           0.17,
           0.07,
-          0.75,
-          x - 1.35 + i * 0.18,
+          parcel ? 1.25 : 0.75,
+          x + frontX - 1.35 + i * 0.18,
           0.07,
-          z + 1.65,
+          z + frontZ,
           paved ? '#c2bca5' : i % 3 ? '#ad9065' : '#b79d73',
         );
     }
@@ -428,31 +438,26 @@ export class TownRaid {
       actor.rope.visible =
         actor.root.visible && caught && time >= captureAt - 0.65 && this.patrol[col].root.visible;
       if (actor.rope.visible) {
-        const hand = this.patrol[col].root.position.clone().add(new THREE.Vector3(0.2, 1.65, 0));
-        const target = actor.root.position.clone().add(new THREE.Vector3(0, 1.6, 0));
+        const hand = ropeHand.copy(this.patrol[col].root.position).add(HAND_OFFSET);
+        const target = ropeTarget.copy(actor.root.position).add(NECK_OFFSET);
         target.lerpVectors(
           hand,
           target,
           THREE.MathUtils.clamp((time - captureAt + 0.65) / 0.65, 0, 1),
         );
-        const delta = target.clone().sub(hand);
+        const delta = target.sub(hand);
         actor.rope.position.copy(hand).addScaledVector(delta, 0.5);
         actor.rope.scale.set(0.018, delta.length(), 0.018);
-        actor.rope.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), delta.normalize());
+        actor.rope.quaternion.setFromUnitVectors(UP, delta.normalize());
       }
       for (let k = 0; k < 3; k++) {
         const dust = this.dust[n * 3 + k],
           drift = (time * 1.8 + k / 3) % 1;
         dust.visible = actor.root.visible && (moving || actor.flash.visible);
-        dust.position
-          .copy(actor.root.position)
-          .add(
-            new THREE.Vector3(
-              Math.sin(n + k) * drift * 0.5,
-              0.1 + drift * 0.3,
-              -Math.cos(actor.root.rotation.y) * (0.5 + drift),
-            ),
-          );
+        dust.position.copy(actor.root.position);
+        dust.position.x += Math.sin(n + k) * drift * 0.5;
+        dust.position.y += 0.1 + drift * 0.3;
+        dust.position.z -= Math.cos(actor.root.rotation.y) * (0.5 + drift);
         dust.scale.setScalar(0.12 + drift * 0.3);
       }
     });

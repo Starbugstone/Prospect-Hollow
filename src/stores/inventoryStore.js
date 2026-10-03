@@ -26,11 +26,7 @@ export const useInventoryStore = defineStore('inventory', {
       return this.consumeItem(id);
     },
     consumeItem(id) {
-      const slot = this.quickAccessSlots.find((entry) => entry.id === id);
-      if (!slot || slot.quantity <= 0) return false;
-      slot.quantity -= 1;
-      useCampaignStore().save();
-      return true;
+      return useCampaignStore().consumePowerItem(id);
     },
   },
 });

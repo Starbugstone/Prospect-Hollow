@@ -4,15 +4,20 @@ import { TownActors } from '../src/game/town/TownActors';
 import { updateTownLocomotion } from '../src/game/town/TownLocomotion';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
-import { addTownAnimals, animalHabitats } from '../src/game/town/TownAnimals';
+import { addTownAnimals, animalHabitats, animalKey } from '../src/game/town/TownAnimals';
+import { dressSpaceHelmet, spaceHelmetWearer } from '../src/game/town/TownSpaceHelmet';
 import { addPowerGrid, addEraStreetscape } from '../src/game/town/TownEvolution';
-import { townNavigation, walkPose } from '../src/game/town/TownNavigation';
+import { townNavigation, walkPose, walkPath } from '../src/game/town/TownNavigation';
+import { createAnimalBehavior } from '../src/game/town/TownAnimalBehavior';
+import { prepareAnimalRoaming } from '../src/game/town/TownAnimalRoaming';
 import { buildTownSquare } from '../src/game/town/TownSquare';
 import { placeTownSpawns } from '../src/game/town/TownTraffic';
-import { createTown } from '../src/data/town';
+import { BUILDINGS, createTown } from '../src/data/town';
 import { ERAS, ERA_BY_ID, eraEvolution } from '../src/data/eras';
 import { defineEra } from '../src/data/eraDefinitions';
 import { PLOTS } from '../src/game/town/TownLayout';
+import { COMPANION_NEIGHBORHOODS } from '../src/data/townCompanions';
+import { SPACE_HELMET, townFauna } from '../src/data/townAnimals';
 
 const views = [];
 function fixture(
@@ -83,13 +88,92 @@ it('introduces animals only with inhabited buildings and uses completed outdoor 
     'pigeon',
     'fox',
     'raccoon',
+    'deer',
   ]);
   expect(d.animalHabitats.map((h) => h.building)).toEqual(['square', 'farm', 'home']);
   expect(d.animals.every((a) => a.root.userData.animated)).toBe(true);
 });
 
+it.each(['canopy', 'riverlight'])(
+  'adds a bounded garden cast with shared bird flight in %s',
+  (era) => {
+    const d = fixture(era, Object.fromEntries(BUILDINGS.map((b) => [b.id, b.upgrades.length])));
+    const before = JSON.stringify(d.town);
+    addTownAnimals(d, d.town);
+    for (const species of ['otter', 'deer', 'hedgehog'])
+      expect(
+        d.animals.filter((a) => a.species === species),
+        species,
+      ).toHaveLength(1);
+    expect(d.animals.filter((a) => a.species === 'bluebird')).toHaveLength(2);
+    expect(d.animals.filter((a) => a.species === 'pigeon')).toHaveLength(3);
+    expect(d.animals.find((a) => a.species === 'dog').costume).toBeUndefined();
+    const companions = d.animals.filter((a) => a.companion);
+    expect(companions).toHaveLength(3);
+    expect(companions.map((a) => a.neighborhood)).toEqual(COMPANION_NEIGHBORHOODS.map((n) => n.id));
+    expect(
+      companions.every((a) => a.species === townFauna(eraEvolution(era)).companions.species),
+    ).toBe(true);
+    expect(new Set(companions.map((a) => a.seed)).size).toBe(3);
+    expect(d.animals).toHaveLength(18);
+    const roots = d.animals.map((a) => a.root),
+      plans = d.navigation.plans;
+    advance(d, 40);
+    expect(d.animals.map((a) => a.root)).toEqual(roots);
+    expect(d.navigation.plans).toBe(plans);
+    expect(JSON.stringify(d.town)).toBe(before);
+    expect(companions.every((a) => a.root.visible)).toBe(true);
+    if (era === 'riverlight') {
+      expect(companions.every((a) => a.acceptedDistance > 4)).toBe(true);
+      expect(companions.every((a) => a.path.total > 20)).toBe(true);
+    }
+  },
+);
+
+it('adds wildlife without replacing existing animals or duplicating them on refresh', () => {
+  const d = fixture();
+  addTownAnimals(d, d.town);
+  for (const era of ['river-rail', 'motor-age', 'aviation', 'broadcast']) {
+    const previous = new Map(d.animals.map((a) => [animalKey(a), a]));
+    d.town.era = era;
+    d.repairAnimalLife();
+    const current = new Map(d.animals.map((a) => [animalKey(a), a]));
+    expect(current.size).toBe(d.animals.length);
+    for (const [key, animal] of previous) expect(current.get(key), `${era}: ${key}`).toBe(animal);
+    const retained = [...d.animals];
+    d.repairAnimalLife();
+    expect(d.animals).toEqual(retained);
+  }
+  expect(d.animals).toHaveLength(15);
+});
+
+it('evolves all three companions into neighbors and retains their accepted street routes on refresh', () => {
+  const d = fixture('canopy', Object.fromEntries(BUILDINGS.map((b) => [b.id, b.upgrades.length])));
+  addTownAnimals(d, d.town);
+  const saplings = d.animals.filter((a) => a.companion);
+  d.town.era = 'riverlight';
+  d.repairAnimalLife();
+  const neighbors = d.animals.filter((a) => a.companion);
+  expect(neighbors).toHaveLength(3);
+  expect(neighbors.map((a) => a.seed)).toEqual(saplings.map((a) => a.seed));
+  expect(neighbors.every((a) => a.resident && a.species === 'willowkinResident')).toBe(true);
+  expect(saplings.every((a) => a.root.parent === null)).toBe(true);
+  advance(d, 10);
+  const paths = neighbors.map((a) => a.path),
+    positions = neighbors.map((a) => a.root.position.clone());
+  d.repairAnimalLife();
+  expect(d.animals.filter((a) => a.companion)).toEqual(neighbors);
+  neighbors.forEach((a, i) => {
+    expect(a.path).toBe(paths[i]);
+    expect(a.root.position.distanceTo(positions[i])).toBeLessThan(1e-6);
+  });
+  expect(d.world.children.filter((o) => o.userData.species === 'willowkinResident')).toHaveLength(
+    3,
+  );
+});
+
 it.each([...ERAS.map((era) => era.id), 'unknown-animal-era'])(
-  'uses actual power perches and navigable routes in %s',
+  'keeps the unlocked wildlife, actual power perches and navigable routes in %s',
   (era) => {
     const d = fixture(era, {
       home: 3,
@@ -101,6 +185,25 @@ it.each([...ERAS.map((era) => era.id), 'unknown-animal-era'])(
       powerHouse: 3,
     });
     addTownAnimals(d, d.town);
+    const eraIndex = Math.max(
+      0,
+      ERAS.findIndex((e) => e.id === era),
+    );
+    for (const [species, firstEra, count] of [
+      ['deer', 'frontier', 1],
+      ['otter', 'river-rail', 1],
+      ['hedgehog', 'motor-age', 1],
+      ['bluebird', 'aviation', 2],
+    ]) {
+      const unlocked = eraIndex >= ERAS.findIndex((e) => e.id === firstEra);
+      expect(
+        d.animals.filter((a) => a.species === species),
+        species,
+      ).toHaveLength(unlocked ? count : 0);
+    }
+    expect(d.animals.filter((a) => a.species === 'pigeon')).toHaveLength(3);
+    if (eraIndex < ERAS.findIndex((e) => e.id === 'canopy'))
+      expect(d.animals.some((a) => a.companion)).toBe(false);
     const perches = d.animalHabitats.filter((h) => h.kind === 'perch');
     expect(perches.length > 0).toBe(
       eraEvolution(era).electricity && eraEvolution(era).overheadPower,
@@ -111,7 +214,7 @@ it.each([...ERAS.map((era) => era.id), 'unknown-animal-era'])(
         const p = walkPose(animal.path, n / 500);
         expect(d.navigation.clear([p.x, p.y, p.z], animal.radius)).toBe(true);
         // Domestic routes use old-town streets and stay away from the river.
-        expect(p.x).toBeLessThan(20);
+        if (['dog', 'cat'].includes(animal.species)) expect(p.x).toBeLessThan(20);
       }
     }
     expect(d.animalFeeder.appearance.era).toBe(era);
@@ -125,7 +228,7 @@ it('inherits capabilities for a future era and drops removed power perches', () 
   });
   const future = fixture('animal-future', { home: 3, farm: 3, square: 3, powerHouse: 3 });
   addTownAnimals(future, future.town);
-  expect(future.animals).toHaveLength(10);
+  expect(future.animals).toHaveLength(15);
   expect(future.animalHabitats.every((h) => h.kind !== 'perch')).toBe(true);
   const d = fixture('industrial', { home: 3, square: 3, powerHouse: 3 });
   expect(animalHabitats(d, d.town).some((h) => h.kind === 'perch')).toBe(true);
@@ -150,7 +253,14 @@ it('roams beyond the old tiny orbits, idles, flies and lands without growing or 
   const seen = new Map(
     d.animals.map((a) => [
       a,
-      { positions: [], states: new Set(), habitats: new Set(), visible: 0, hidden: 0 },
+      {
+        positions: [],
+        zPositions: [],
+        states: new Set(),
+        habitats: new Set(),
+        visible: 0,
+        hidden: 0,
+      },
     ]),
   );
   const previous = new Map();
@@ -162,6 +272,7 @@ it('roams beyond the old tiny orbits, idles, flies and lands without growing or 
       if (a.root.visible) {
         sample.visible++;
         sample.positions.push(a.root.position.x);
+        sample.zPositions.push(a.root.position.z);
         if (previous.has(a)) expect(a.root.position.distanceTo(previous.get(a))).toBeLessThan(1.8);
         previous.set(a, a.root.position.clone());
         if (!a.flight && a.habitat) sample.habitats.add(a.habitat.kind);
@@ -173,7 +284,11 @@ it('roams beyond the old tiny orbits, idles, flies and lands without growing or 
   }
   for (const a of d.animals.filter((a) => a.path && !a.wild)) {
     const s = seen.get(a);
-    expect(Math.max(...s.positions) - Math.min(...s.positions)).toBeGreaterThan(
+    const spread = Math.max(
+      Math.max(...s.positions) - Math.min(...s.positions),
+      Math.max(...s.zPositions) - Math.min(...s.zPositions),
+    );
+    expect(spread, `${a.species} explores the town along either street axis`).toBeGreaterThan(
       a.species === 'hen' ? 2 : 8,
     );
     expect(s.states.has(a.idle)).toBe(true);
@@ -184,7 +299,8 @@ it('roams beyond the old tiny orbits, idles, flies and lands without growing or 
   for (const a of d.animals.filter((a) => a.wild)) {
     expect(seen.get(a).visible).toBeGreaterThan(0);
     expect(seen.get(a).hidden).toBeGreaterThan(0);
-    expect(a.path.points.every((p) => p[2] >= 29)).toBe(true);
+    if (['fox', 'raccoon'].includes(a.species))
+      expect(a.path.points.every((p) => p[2] >= 29)).toBe(true);
   }
   expect(d.navigation.plans).toBe(plans);
   expect(d.world.children).toHaveLength(count);
@@ -318,6 +434,108 @@ it('startles grounded pigeons and makes street animals give traffic space', () =
   expect(dog.root.position.distanceTo(car.position)).toBeGreaterThanOrEqual(1.15 - 1e-6);
 });
 
+it.each([
+  ['dog', 'cat', -7],
+  ['fox', 'deer', 30],
+])('briefly animates %s chasing %s with continuous, bounded movement', (hunter, target, z) => {
+  const d = fixture('frontier', { home: 3, farm: 3 });
+  addTownAnimals(d, d.town);
+  const predator = d.animals.find((a) => a.species === hunter);
+  const prey = d.animals.find((a) => a.species === target);
+  d.animals = [predator, prey];
+  d.actors = [];
+  d.animalFeeder = null;
+  d.elapsed = 49;
+  d.animalMotion(d.elapsed);
+  const path = walkPath([
+    [-12, 0.07, z],
+    [12, 0.07, z],
+    [-12, 0.07, z],
+  ]);
+  for (const [i, a] of d.animals.entries()) {
+    a.path = path;
+    a.progress = 1 + i * 3;
+    a.root.position.set(-11 + i * 3, 0.07, z);
+    a.root.visible = true;
+    a.root.scale.setScalar(1);
+    a.motion = null;
+    a.roaming = null;
+    a.walkPath = null;
+    a.chaseRoute = null;
+    a.escapeUntil = 0;
+    a.roamingHold = false;
+    a.rest = 1;
+    a.untilStop = 20;
+  }
+  const prepare = prepareAnimalRoaming(d);
+  while (!prepare.next().done) {
+    /* Prepare before the animation loop. */
+  }
+  d.animalBehavior = createAnimalBehavior(d.animals, d.navigation, d.animalSpace, d.elapsed);
+  const plans = d.navigation.plans;
+  const states = new Set();
+  let fleeingDistance = 0;
+  for (let frame = 0; frame < 150; frame++) {
+    const before = d.animals.map((a) => a.root.position.clone());
+    advance(d, d.elapsed + 1 / 30, 1 / 30);
+    states.add(`${predator.state}:${prey.state}`);
+    for (const [i, a] of d.animals.entries()) {
+      const travel = a.root.position.distanceTo(before[i]);
+      expect(travel).toBeLessThanOrEqual(a.movementSpeed / 30 + 0.001);
+      expect(d.animalSpace.clear(a.root.position.toArray(), a.radius, a.height ?? 1)).toBe(true);
+      if (a === prey && a.state === 'fleeing') fleeingDistance += travel;
+    }
+  }
+  expect(states.has('chasing:fleeing')).toBe(true);
+  expect(fleeingDistance).toBeGreaterThan(6);
+  expect(d.animalBehavior.starts).toBe(1);
+  expect(predator.encounter).toBeNull();
+  expect(prey.encounter).toBeNull();
+  expect(d.navigation.plans).toBe(plans);
+});
+
+it('lets a nearby cat briefly chase a grounded bird as it takes its normal safe flight', () => {
+  const d = fixture();
+  addTownAnimals(d, d.town);
+  const cat = d.animals.find((a) => a.species === 'cat');
+  const bird = d.animals.find((a) => a.species === 'pigeon');
+  d.animals = [cat, bird];
+  d.actors = [];
+  d.animalFeeder = null;
+  bird.habitat = bird.habitats.find((h) => h.building === 'farm');
+  bird.root.position.fromArray(bird.habitat.point);
+  bird.flight = null;
+  bird.rest = 100;
+  const [x, y, z] = bird.habitat.point;
+  cat.path = walkPath([
+    [x - 2.5, y, z],
+    [x - 0.8, y, z],
+    [x - 2.5, y, z],
+  ]);
+  cat.progress = 0;
+  cat.root.position.set(x - 2.5, y, z);
+  cat.motion = null;
+  cat.walkPath = null;
+  cat.roaming = null;
+  cat.rest = 0;
+  cat.untilStop = 20;
+  const prepare = prepareAnimalRoaming(d);
+  while (!prepare.next().done) {
+    /* Prepared before the animation loop. */
+  }
+  d.animalBehavior = createAnimalBehavior(d.animals, d.navigation, d.animalSpace);
+  advance(d, 0.6, 1 / 60);
+  expect(d.animalBehavior.starts).toBe(1);
+  expect(cat.state).toBe('chasing');
+  expect(bird.state).toBe('startled');
+  expect(bird.flight).not.toBeNull();
+  expect(cat.encounter.goal.y).toBe(y);
+  advance(d, 2.4, 1 / 60);
+  expect(cat.encounter).toBeNull();
+  expect(cat.root.position.y).toBeLessThan(0.5);
+  expect(bird.root.position.y).toBeGreaterThan(1);
+});
+
 it('lands a bounded pool of grain, consumes it on actual pecks and expires uneaten grain', () => {
   const d = fixture();
   addTownAnimals(d, d.town);
@@ -418,25 +636,162 @@ it('keeps animal routes that the changed town still allows', () => {
   expect(d.navigation.plans - plans).toBeLessThanOrEqual(1);
 });
 
-// The reuse key includes an era costume, so Tomorrow City's space dog is kept, not rebuilt,
-// on both the immediate path and the deferred path the live village uses (C5).
-it('keeps the costumed space dog when the Tomorrow town re-settles', async () => {
+const helmeted = (d) => d.animals.filter((a) => a.root.getObjectByName('Space helmet'));
+const castOf = (d) => new Set(d.animals.map((a) => a.species));
+
+it('picks a present wearer for each completed puzzle, never twice in a row', () => {
+  expect(new Set(SPACE_HELMET.wearers).size).toBe(SPACE_HELMET.wearers.length);
+  const town = { era: 'tomorrow', completedRuns: 0 };
+  for (const cast of [
+    SPACE_HELMET.wearers,
+    ['dog', 'fox', 'raccoon', 'pigeon'],
+    ['fox', 'raccoon'],
+    ['hen'],
+  ]) {
+    const present = new Set(cast);
+    const candidates = SPACE_HELMET.wearers.filter((species) => present.has(species));
+    const picks = [];
+    for (let runs = 0; runs < 400; runs++)
+      picks.push(spaceHelmetWearer({ ...town, completedRuns: runs }, present));
+    for (const pick of picks) expect(candidates).toContain(pick);
+    for (let n = 1; n < picks.length && candidates.length > 1; n++)
+      expect(picks[n], `${cast} run ${n}`).not.toBe(picks[n - 1]);
+    // Every round lets each present animal wear the helmet once.
+    if (candidates.length > 2)
+      for (let round = 0; round < 400 / candidates.length - 1; round++)
+        expect(
+          new Set(picks.slice(round * candidates.length, (round + 1) * candidates.length)).size,
+        ).toBe(candidates.length);
+  }
+  const all = new Set(SPACE_HELMET.wearers);
+  expect(spaceHelmetWearer({ era: 'contemporary', completedRuns: 3 }, all)).toBeNull();
+  expect(spaceHelmetWearer({ era: 'unknown-era', completedRuns: 3 }, all)).toBeNull();
+  expect(spaceHelmetWearer({ era: 'tomorrow', completedRuns: 3 }, new Set(['pigeon']))).toBeNull();
+  // Corrupt counts fall back to the first pick instead of failing.
+  for (const completedRuns of [-4, 1.5, '3', undefined])
+    expect(spaceHelmetWearer({ era: 'tomorrow', completedRuns }, all)).toBe(
+      spaceHelmetWearer({ era: 'tomorrow', completedRuns: 0 }, all),
+    );
+});
+
+it.each(ERAS.map((era) => era.id))('dresses at most one %s animal as a space animal', (era) => {
+  const d = fixture(era);
+  d.town.completedRuns = 11;
+  addTownAnimals(d, d.town);
+  const wearer = spaceHelmetWearer(d.town, castOf(d));
+  expect(helmeted(d).map((a) => a.species)).toEqual(wearer ? [wearer] : []);
+  expect(helmeted(d).every((a) => a.costume === 'space-helmet')).toBe(true);
+  if (ERAS.findIndex(({ id }) => id === era) >= ERAS.findIndex(({ id }) => id === 'tomorrow'))
+    expect(wearer).toBeTruthy();
+});
+
+// Later eras keep the latest cast, so every wearer can be picked there.
+it('casts every space-helmet wearer in the latest era town', () => {
+  const d = fixture(ERAS.at(-1).id);
+  addTownAnimals(d, d.town);
+  for (const species of SPACE_HELMET.wearers) expect(castOf(d).has(species), species).toBe(true);
+});
+
+it('moves the helmet in place after a puzzle, without re-planning any walk', () => {
+  const d = fixture('riverlight');
+  let rebuilt = 0;
+  Object.assign(d, { rebuildActors: () => rebuilt++, render() {} });
+  addTownAnimals(d, d.town);
+  const [first] = helmeted(d);
+  const paths = new Map(d.animals.map((a) => [a, a.path]));
+  const plans = d.navigation.plans;
+  const { position } = first.root;
+  const at = position.clone();
+  d.town.completedRuns += 1;
+  dressSpaceHelmet(d, d.town);
+  const [next] = helmeted(d);
+  expect(next).not.toBe(first);
+  expect(next.species).toBe(spaceHelmetWearer(d.town, castOf(d)));
+  // The former wearer is the same animal on the same spot, now in its own coat.
+  expect(first.costume).toBeNull();
+  expect(first.root.position.toArray()).toEqual(at.toArray());
+  expect(first.root.parent).toBe(d.world);
+  expect(position).not.toBe(first.root.position);
+  for (const animal of d.animals) expect(animal.path).toBe(paths.get(animal));
+  expect(d.navigation.plans).toBe(plans);
+  expect(rebuilt).toBe(1);
+});
+
+it('shrinks the old wearer away and grows the new one for a watching visitor', () => {
+  const d = fixture('canopy');
+  let rebuilt = 0;
+  Object.assign(d, { rebuildActors: () => rebuilt++, render() {} });
+  addTownAnimals(d, d.town);
+  for (const animal of d.animals) animal.root.visible = true;
+  const [first] = helmeted(d);
+  d.town.completedRuns += 1;
+  dressSpaceHelmet(d, d.town, { animate: true });
+  const next = d.animals.find((a) => a.dressing?.costume === 'space-helmet');
+  expect(next.species).toBe(spaceHelmetWearer(d.town, castOf(d)));
+  expect(first.dressing.costume).toBeNull();
+  // Nothing changes outfit until each animal has shrunk out of sight.
+  expect(helmeted(d)).toEqual([first]);
+  const start = d.elapsed ?? 0,
+    sizes = [],
+    shadows = [];
+  const shadowWidth = first.shadow.scale.x;
+  for (let t = 0; t <= 1; t += 0.05) {
+    d.animalMotion(start + 0.01 + t);
+    sizes.push(first.body.scale.x);
+    shadows.push(first.shadow.scale.x / shadowWidth);
+  }
+  expect(Math.min(...sizes)).toBeLessThan(0.05);
+  expect(sizes.at(-1)).toBe(1);
+  // The contact shadow shrinks with the body and returns to its own size.
+  expect(Math.min(...shadows)).toBeLessThan(0.05);
+  expect(shadows.at(-1)).toBeCloseTo(1, 10);
+  expect(next.shadow.scale.x).toBe(next.shadow.userData.baseScale?.x ?? next.shadow.scale.x);
+  expect(first.dressing).toBeNull();
+  expect(next.dressing).toBeNull();
+  expect(helmeted(d)).toEqual([next]);
+  expect(next.body.scale.x).toBe(1);
+  expect(rebuilt).toBe(2);
+});
+
+// A finished puzzle changes no building, so the scene keeps its older town object;
+// a later animal refresh (construction, mine works) must not bring the old wearer back.
+it('keeps the latest wearer when animals refresh from an older town object', async () => {
+  const d = fixture('riverlight');
+  Object.assign(d, { rebuildActors() {}, render() {} });
+  addTownAnimals(d, d.town);
+  const stale = d.town;
+  const latest = { ...stale, completedRuns: stale.completedRuns + 1 };
+  dressSpaceHelmet(d, latest);
+  const species = spaceHelmetWearer(latest, castOf(d));
+  expect(species).not.toBe(spaceHelmetWearer(stale, castOf(d)));
+  d.retainedAnimals = new Map(d.animals.map((a) => [animalKey(a), a]));
+  addTownAnimals(d, stale);
+  expect(helmeted(d).map((a) => a.species)).toEqual([species]);
+  Object.assign(d, { deferLife: true, generation: 1 });
+  const before = d.animals;
+  addTownAnimals(d, stale);
+  for (let n = 0; n < 400 && d.animals === before; n++)
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  expect(helmeted(d).map((a) => a.species)).toEqual([species]);
+});
+
+// The deferred path the live village uses keeps the dressed animal object (C5).
+it('keeps the helmeted animal when the town re-settles', async () => {
   const d = fixture('tomorrow');
   addTownAnimals(d, d.town);
-  const dog = d.animals.find((a) => a.species === 'dog');
-  expect(dog.root.userData.costume).toBe('space-helmet');
+  const [first] = helmeted(d);
+  expect(first.root.userData.costume).toBe('space-helmet');
   addTownAnimals(d, d.town);
-  expect(d.animals.find((a) => a.species === 'dog').path).toBe(dog.path);
-  const settled = d.animals.find((a) => a.species === 'dog');
+  const [settled] = helmeted(d);
+  expect(animalKey(settled)).toBe(animalKey(first));
+  expect(settled.path).toBe(first.path);
   Object.assign(d, { deferLife: true, generation: 1, rebuildActors() {}, render() {} });
   const before = d.animals;
   addTownAnimals(d, d.town);
   for (let n = 0; n < 400 && d.animals === before; n++)
     await new Promise((resolve) => setTimeout(resolve, 5));
   expect(d.animals).not.toBe(before);
-  const kept = d.animals.find((a) => a.species === 'dog');
-  expect(kept).toBe(settled);
-  expect(kept.root.getObjectByName('Space dog helmet')).toBeTruthy();
+  expect(helmeted(d)).toEqual([settled]);
 });
 
 it('plans again only the animal route that a new building now blocks', () => {

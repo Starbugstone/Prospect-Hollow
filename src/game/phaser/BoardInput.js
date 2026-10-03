@@ -1,4 +1,5 @@
 import { BOARD_BONUSES, isAdjacent } from '../engine/TileRules';
+import { isPlayableCell } from '../engine/BoardTopology';
 export class BoardInput {
   constructor({ scene, boardContainer, gameStore }) {
     Object.assign(this, { scene, boardContainer, gameStore });
@@ -36,6 +37,8 @@ export class BoardInput {
       this.focusIndex,
       Math.max(0, layout.boardCols * layout.boardRows - 1),
     );
+    if (!isPlayableCell(this.gameStore.tiles?.[this.focusIndex]))
+      this.focusIndex = Math.max(0, this.gameStore.tiles.findIndex(isPlayableCell));
   }
   reset() {
     this.lastTap = null;
@@ -104,7 +107,7 @@ export class BoardInput {
     this.activateCell(index);
   }
   activateCell(index) {
-    if (!this.enabled) return;
+    if (!this.enabled || !isPlayableCell(this.gameStore.tiles?.[index])) return;
     const now = Date.now();
     const gem = this.gameStore.board?.[index];
     const doubleTap =
@@ -150,8 +153,24 @@ export class BoardInput {
     if (event.key in offsets) {
       this.lastTap = null;
       event.preventDefault();
-      const next = this.focusIndex + offsets[event.key];
-      if (next >= 0 && next < cols * rows && isAdjacent(this.focusIndex, next, cols)) {
+      let previous = this.focusIndex;
+      let next = previous + offsets[event.key];
+      while (
+        !event.shiftKey &&
+        next >= 0 &&
+        next < cols * rows &&
+        isAdjacent(previous, next, cols) &&
+        !isPlayableCell(this.gameStore.tiles?.[next])
+      ) {
+        previous = next;
+        next += offsets[event.key];
+      }
+      if (
+        next >= 0 &&
+        next < cols * rows &&
+        isAdjacent(previous, next, cols) &&
+        isPlayableCell(this.gameStore.tiles?.[next])
+      ) {
         if (event.shiftKey) this.gameStore.resolveSwap(this.focusIndex, next);
         this.focusIndex = next;
         this.highlightCell(next);
@@ -170,7 +189,8 @@ export class BoardInput {
     const x = (pointer.worldX ?? pointer.x) - this.boardContainer.x;
     const y = (pointer.worldY ?? pointer.y) - this.boardContainer.y;
     if (x < 0 || y < 0 || x >= boardCols * cellSize || y >= boardRows * cellSize) return null;
-    return Math.floor(y / cellSize) * boardCols + Math.floor(x / cellSize);
+    const index = Math.floor(y / cellSize) * boardCols + Math.floor(x / cellSize);
+    return isPlayableCell(this.gameStore.tiles?.[index]) ? index : null;
   }
   highlightCell(index) {
     this.gameStore.renderer?.animator?.highlightCell(index);

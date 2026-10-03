@@ -39,6 +39,28 @@
           stroke="#8fb07a"
           stroke-width="4"
         />
+        <template v-else-if="['garden-sorting', 'lantern-sorting'].includes(building.feature)">
+          <path d="M-23 9V-16Q0-27 23-16V9Z" :fill="appearance.wall" />
+          <path d="M-21-10H21V0H-21Z" :fill="appearance.palette.glass" stroke="none" />
+          <path d="M-16-13V8M0-15V9M16-13V8" :stroke="appearance.palette.timber" />
+          <path
+            d="M-29-15Q-22-34 0-28Q22-34 29-15Q16-9 0-17Q-16-9-29-15Z"
+            :fill="appearance.roof"
+            :stroke="appearance.wall"
+          />
+          <path
+            d="M-12-16Q-6-35 0-31Q6-35 12-16Q0-10-12-16Z"
+            :fill="
+              appearance.cozyStyle === 'riverlight' ? appearance.palette.glass : appearance.roof
+            "
+          />
+          <path d="M-5 9V-4H5V9Z" :fill="appearance.palette.deep" />
+          <path
+            v-if="appearance.cozyStyle === 'riverlight'"
+            d="M0-47 5-39 0-31-5-39Z"
+            :fill="appearance.palette.light"
+          />
+        </template>
         <template v-else>
           <path d="M-19 9V-13H19V9Z" /><path
             d="M-23-13H23"
@@ -93,6 +115,27 @@
       />
       <g v-if="profile.portal === 'rounded-arch'">
         <path d="M-60-16a60 34 0 0 1 120 0Z" fill="#a6d3d4" stroke="#6d9f98" stroke-width="5" />
+      </g>
+      <g v-if="appearance.cozyStyle" :stroke="appearance.palette.timber" stroke-width="3">
+        <path d="M-61-16Q-46-46 0-36Q46-46 61-16Q35-9 0-21Q-35-9-61-16Z" :fill="appearance.roof" />
+        <path
+          d="M-25-20Q-12-49 0-40Q12-49 25-20Q0-8-25-20Z"
+          :fill="appearance.cozyStyle === 'riverlight' ? appearance.palette.glass : appearance.roof"
+        />
+        <path d="M-46-14V49M46-14V49" />
+        <path
+          v-if="appearance.cozyStyle === 'riverlight'"
+          d="M0-66 7-55 0-42-7-55Z"
+          :fill="appearance.palette.light"
+        />
+        <circle
+          v-for="x in [-47, 47]"
+          :key="x"
+          :cx="x"
+          cy="5"
+          r="4"
+          :fill="appearance.palette.light"
+        />
       </g>
       <path
         v-if="features.has('solar-canopy')"
@@ -176,6 +219,8 @@ const hillsideBuildings = computed(() =>
     { feature: 'upper-terrace', x: -27, y: -63 },
     { feature: 'sorting-plant', x: 32, y: -80 },
     { feature: 'sorting-dome', x: 32, y: -80 },
+    { feature: 'garden-sorting', x: 32, y: -80 },
+    { feature: 'lantern-sorting', x: 32, y: -80 },
   ].filter(({ feature }) => features.value.has(feature)),
 );
 defineEmits(['enter']);

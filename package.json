@@ -15,6 +15,10 @@
     "test:watch": "vitest",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "export:save-rules": "node scripts/export-save-rules.mjs",
+    "check:save-rules": "node scripts/export-save-rules.mjs --check",
+    "export:integrity-fixtures": "node scripts/create-integrity-fixtures.mjs",
+    "check:integrity-fixtures": "node scripts/create-integrity-fixtures.mjs --check",
     "assets": "node scripts/generate-gems.mjs && node scripts/generate-bonus-art.mjs",
     "lint": "eslint . && knip",
     "verify": "npm run format:check && npm run lint && npm run check:footprints && npm test && npm run build",
@@ -56,6 +60,7 @@
   "devDependencies": {
     "@capacitor/cli": "^7.4.4",
     "@eslint/js": "^10.0.1",
+    "@prettier/plugin-php": "^0.25.0",
     "@vitejs/plugin-vue": "^6.0.1",
     "esbuild": "^0.28.2",
     "eslint": "^10.11.0",

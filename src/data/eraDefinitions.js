@@ -1,12 +1,22 @@
 import { resolveRoadStyle } from './roadStyles';
+import { TOWN_FAUNA } from './townAnimals';
+import { ERA_SUPPLY_STEP } from './townNeeds';
 
 /**
  * @typedef {'frontier'|'river-rail'|'industrial'|'motor-age'|'city'} BuildingStyle
- * @typedef {'standard'|'rounded'} CityArchitecture
+ * @typedef {'standard'|'rounded'|'cozy'} CityArchitecture
+ * @typedef {'standard'|'rounded'} TransportStyle
  * @typedef {Object} EraEvolution
  * @property {BuildingStyle} style Shared building/modernization renderer family.
  * @property {CityArchitecture} architecture City building forms: Blender period shells
- *   (`standard`) or the procedural rounded domes, pods and vaults of `rounded`.
+ *   (`standard`), procedural domes/pods (`rounded`) or planted timber/glass
+ *   architecture selected by the shared `cozyStyle` profile (`cozy`).
+ * @property {'canopy'|'riverlight'|null} cozyStyle Shared cozy architecture palette and forms.
+ * @property {TransportStyle} transportStyle Airport, station, port and street vehicles:
+ *   period and city models (`standard`) or the sky saucer, solar express, hover ferry
+ *   and hover traffic (`rounded`). Independent of `architecture`, so a later era can
+ *   change its buildings and keep its vehicles.
+ * @property {string} wildlife Shared ambient cast and companion lifestyle profile.
  * @property {string} wardrobe Wardrobe catalog key for this era.
  * @property {string|null} baseCityEra Retained city shell for an intermediate style.
  * @property {boolean} paved
@@ -34,11 +44,12 @@ import { resolveRoadStyle } from './roadStyles';
  * @property {string} upgradeTitle
  * @property {readonly string[]} upgradeDescriptions Second and third modernization descriptions.
  * @property {boolean} requiresPower
- * @property {string} waterUpgradeBenefit
  */
 
 /** Registered city building forms; renderers and SVG drawings exist for each. */
-export const CITY_ARCHITECTURES = Object.freeze(['standard', 'rounded']);
+export const CITY_ARCHITECTURES = Object.freeze(['standard', 'rounded', 'cozy']);
+/** Registered vehicle families; each has airport, rail, ferry and traffic models. */
+export const TRANSPORT_STYLES = Object.freeze(['standard', 'rounded']);
 
 const STYLES = {
   frontier: {},
@@ -120,6 +131,9 @@ export function defineEra(definition) {
   const evolution = {
     wardrobe: 'frontier',
     architecture: 'standard',
+    cozyStyle: null,
+    transportStyle: 'standard',
+    wildlife: 'standard',
     baseCityEra: null,
     paved: false,
     electricity: false,
@@ -130,8 +144,6 @@ export function defineEra(definition) {
     roadStyle: 'dirt',
     roadBridge: false,
     incident: 'bandits',
-    waterUpgradeBenefit:
-      'Adds water for twenty people when finished. All existing water stays available during work.',
     prices: null,
     cityAssets: null,
     detailAsset: null,
@@ -142,8 +154,8 @@ export function defineEra(definition) {
     cityDescription: null,
     newBuildingPrices: null,
     cityBoat: false,
-    waterworks: [0, 0, 0],
-    farmCapacity: [0, 0, 0],
+    waterworks: null,
+    farmCapacity: null,
     upgradeTitle: '',
     upgradeDescriptions: [],
     requiresPower: false,
@@ -172,8 +184,16 @@ export function defineEra(definition) {
     throw new Error(`Missing modernization prices for era ${definition.id}`);
   if (!CITY_ARCHITECTURES.includes(evolution.architecture))
     throw new Error(`Unsupported architecture for era ${definition.id}`);
+  if (!Object.hasOwn(TOWN_FAUNA, evolution.wildlife))
+    throw new Error(`Unsupported wildlife for era ${definition.id}`);
+  if (evolution.architecture === 'cozy' && !['canopy', 'riverlight'].includes(evolution.cozyStyle))
+    throw new Error(`Missing cozy style for era ${definition.id}`);
   if (evolution.architecture !== 'standard' && style !== 'city')
     throw new Error(`Only city eras can change their architecture: ${definition.id}`);
+  if (!TRANSPORT_STYLES.includes(evolution.transportStyle))
+    throw new Error(`Unsupported transport style for era ${definition.id}`);
+  if (evolution.transportStyle !== 'standard' && style !== 'city')
+    throw new Error(`Only city eras can change their transport style: ${definition.id}`);
   if (style === 'city' && (!evolution.cityAssets || !evolution.newBuildingPrices))
     throw new Error(`Missing city assets or prices for era ${definition.id}`);
   for (const [key, value] of Object.entries(evolution))
@@ -182,6 +202,22 @@ export function defineEra(definition) {
 }
 
 /** Resolve only an era prefix; marker assets without an era keep their names. */
+// Modernizing the waterworks or the farm must never lower their capacity. An era
+// without its own tiers continues from the previous era's best tier.
+export function continueSupplyTiers(eras) {
+  const best = { waterworks: 0, farmCapacity: 0 };
+  return eras.map((era) => {
+    const tiers = {};
+    for (const field of Object.keys(best)) {
+      tiers[field] =
+        era.evolution[field] ??
+        Object.freeze([1, 2, 3].map((tier) => best[field] + tier * ERA_SUPPLY_STEP));
+      best[field] = Math.max(best[field], ...tiers[field]);
+    }
+    return Object.freeze({ ...era, evolution: Object.freeze({ ...era.evolution, ...tiers }) });
+  });
+}
+
 export function resolveCityAsset(name, eras) {
   const era = eras.reduce(
     (best, entry) =>

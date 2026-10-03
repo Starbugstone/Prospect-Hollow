@@ -3,20 +3,24 @@ import { Box3, Group, MeshBasicMaterial, Scene, Vector3 } from 'three';
 import { createSSRApp, h } from 'vue';
 import { renderToString } from 'vue/server-renderer';
 import { TownDiorama } from '../src/game/town/TownDiorama';
-import { createTownGeometries } from '../src/game/town/TownGeometries';
+import { createTownGeometries, RING_TUBE } from '../src/game/town/TownGeometries';
 import { renderCityBuilding } from '../src/game/town/buildings/city';
 import { animateVehicle, motorVehicle, responseVehicle } from '../src/game/town/TownVehicles';
 import { addAviationActivity } from '../src/game/town/TownAviation';
 import { roundedAircraft } from '../src/game/town/RoundedTransports';
 import { animalModel } from '../src/game/town/TownAnimalModels';
-import { animalKey } from '../src/game/town/TownAnimals';
-import { townWardrobe } from '../src/data/townWardrobes';
+import { SPACE_HELMET } from '../src/data/townAnimals';
 import { addEraActivity } from '../src/game/town/TownEraActivity';
 import { ALL_MESH_FAMILIES, loadFamilies } from '../src/game/town/assets/MeshCatalog';
-import { CITY_ARCHITECTURES, defineEra } from '../src/data/eraDefinitions';
+import { CITY_ARCHITECTURES, TRANSPORT_STYLES, defineEra } from '../src/data/eraDefinitions';
 import { ERAS, ERA_BY_ID, eraEvolution } from '../src/data/eras';
 import { CITY_BUILDINGS, CITY_FAMILIES } from '../src/data/city';
-import { ROUNDED_FORMS, isRoundedEra, roundedForm } from '../src/data/roundedArchitecture';
+import {
+  ROUNDED_FORMS,
+  hasRoundedTransport,
+  isRoundedEra,
+  roundedForm,
+} from '../src/data/roundedArchitecture';
 import { BUILDINGS, BUILDING_BY_ID, createTown } from '../src/data/town';
 import { purchasePrice } from '../src/data/economy';
 import { advanceEra, eraGate, plotInEra } from '../src/game/town/TownEras';
@@ -82,22 +86,29 @@ afterEach(() => {
 
 describe('Tomorrow City era contract', () => {
   it('follows Connected City as a rounded city era with its own capabilities', () => {
-    expect(ERAS.at(-1).id).toBe('tomorrow');
-    expect(ERAS.at(-2).id).toBe('contemporary');
+    const tomorrowIndex = ERAS.findIndex(({ id }) => id === 'tomorrow');
+    expect(ERAS[tomorrowIndex - 1].id).toBe('contemporary');
+    expect(ERAS[tomorrowIndex + 1].id).toBe('canopy');
     const profile = eraEvolution('tomorrow');
     expect(profile).toMatchObject({
       style: 'city',
       architecture: 'rounded',
+      transportStyle: 'rounded',
       fountain: 'orbital-rings',
       roadStyle: 'glow-lane',
       wardrobe: 'tomorrow',
     });
     expect(isRoundedEra('tomorrow')).toBe(true);
-    for (const era of ERAS.slice(0, -1)) {
+    for (const era of ERAS.slice(0, tomorrowIndex)) {
       expect(era.evolution.architecture, era.id).toBe('standard');
       expect(isRoundedEra(era.id), era.id).toBe(false);
+      expect(hasRoundedTransport(era.id), era.id).toBe(false);
     }
+    // Later eras may change their buildings, but never trade the saucer back for a jet.
+    for (const era of ERAS.slice(tomorrowIndex))
+      expect(hasRoundedTransport(era.id), era.id).toBe(true);
     expect(isRoundedEra('unknown-save-era')).toBe(false);
+    expect(hasRoundedTransport('unknown-save-era')).toBe(false);
     // Modernization and new buildings cost more than the previous era; mining is unchanged.
     const before = eraEvolution('contemporary');
     profile.prices.forEach((price, i) => expect(price).toBeGreaterThan(before.prices[i]));
@@ -107,7 +118,7 @@ describe('Tomorrow City era contract', () => {
   });
 
   it('rejects unsupported or misplaced architectures when the catalog loads', () => {
-    expect(CITY_ARCHITECTURES).toEqual(['standard', 'rounded']);
+    expect(CITY_ARCHITECTURES).toEqual(['standard', 'rounded', 'cozy']);
     const base = { ...ERA_BY_ID.contemporary, id: 'invalid-architecture' };
     expect(() =>
       defineEra({ ...base, evolution: { ...base.evolution, architecture: 'blobby' } }),
@@ -121,7 +132,32 @@ describe('Tomorrow City era contract', () => {
     ).toThrow('Only city eras');
     expect(
       defineEra({ ...base, evolution: { style: 'city', ...pick(base) } }).evolution,
-    ).toMatchObject({ architecture: 'standard' });
+    ).toMatchObject({ architecture: 'standard', transportStyle: 'standard' });
+  });
+
+  it('rejects unsupported or misplaced transport styles when the catalog loads', () => {
+    expect(TRANSPORT_STYLES).toEqual(['standard', 'rounded']);
+    const base = { ...ERA_BY_ID.contemporary, id: 'invalid-transport' };
+    expect(() =>
+      defineEra({ ...base, evolution: { ...base.evolution, transportStyle: 'teleport' } }),
+    ).toThrow('Unsupported transport style');
+    expect(() =>
+      defineEra({
+        ...ERA_BY_ID['motor-age'],
+        id: 'rounded-motor',
+        evolution: { ...ERA_BY_ID['motor-age'].evolution, transportStyle: 'rounded' },
+      }),
+    ).toThrow('Only city eras');
+    // Transport is independent of architecture in both directions.
+    expect(
+      defineEra({
+        ...base,
+        evolution: { ...base.evolution, architecture: 'rounded', transportStyle: 'standard' },
+      }).evolution,
+    ).toMatchObject({ architecture: 'rounded', transportStyle: 'standard' });
+    expect(
+      defineEra({ ...base, evolution: { ...base.evolution, transportStyle: 'rounded' } }).evolution,
+    ).toMatchObject({ architecture: 'standard', transportStyle: 'rounded' });
   });
 
   it('opens after a complete Connected City and keeps every existing facade', () => {
@@ -162,10 +198,11 @@ describe('Rounded architecture rendering', () => {
         if (o.userData.substitute) blender = true;
       });
       expect(blender, kind).toBe(false);
-      // Measure the building itself; shared docks and signs keep their own budgets.
-      const { triangles, materials } = cost(
-        root.getObjectByName(`tomorrow rounded ${kind} level 3`),
-      );
+      // Measure the building itself; shared docks, signs and the stables' 2CV keep
+      // their own budgets.
+      const building = root.getObjectByName(`tomorrow rounded ${kind} level 3`);
+      building.getObjectByName('Deux chevaux')?.removeFromParent();
+      const { triangles, materials } = cost(building);
       // Gardens wrap the shared leisure model; the whole-town comparison covers them.
       if (roundedForm(kind) === 'garden') continue;
       expect(triangles, kind).toBeLessThan(4000);
@@ -256,41 +293,74 @@ describe('Rounded architecture rendering', () => {
     for (const uuid of tomorrow.geometries) expect(contemporary.geometries.has(uuid)).toBe(true);
   });
 
-  it('dresses the village dog as a Cosmo-style space dog in Tomorrow City only', () => {
+  it('fits the see-through space helmet over the whole head of every wearer', () => {
+    expect(SPACE_HELMET.suits.hen).toBe('#e5873a');
     const d = diorama('tomorrow');
     Object.assign(d, { world: new Group() });
-    const space = animalModel(d, 'dog', 4, townWardrobe(eraEvolution('tomorrow')).petCostume);
-    const plain = animalModel(d, 'dog', 4, townWardrobe(eraEvolution('contemporary')).petCostume);
-    expect(space.root.userData.costume).toBe('space-helmet');
-    expect(space.root.getObjectByName('Space dog helmet')).toBeTruthy();
-    expect(plain.root.getObjectByName('Space dog helmet')).toBeFalsy();
-    // The bubble is see-through so the dog's face stays visible, and it encloses the head.
-    const bubble = space.root.getObjectByName('Space dog helmet').children[0];
-    expect(bubble.material.transparent).toBe(true);
-    space.root.updateMatrixWorld(true);
-    const head = new Box3().setFromObject(space.head.children[0]);
-    expect(new Box3().setFromObject(bubble).containsBox(head)).toBe(true);
-    // A costume change must not reuse the plain dog across an era rebuild.
-    expect(animalKey({ species: 'dog', seed: 4, costume: 'space-helmet' })).not.toBe(
-      animalKey({ species: 'dog', seed: 4 }),
-    );
+    for (const species of SPACE_HELMET.wearers) {
+      const space = animalModel(d, species, 4, 'space-helmet');
+      const plain = animalModel(d, species, 4);
+      expect(space.root.userData.costume, species).toBe('space-helmet');
+      expect(plain.root.getObjectByName('Space helmet'), species).toBeFalsy();
+      const helmet = space.root.getObjectByName('Space helmet');
+      const bubble = helmet.children[0];
+      expect(bubble.material.transparent, species).toBe(true);
+      // The trunk wears the suit: white, or the species' own suit color.
+      const trunk = space.body.children.find(
+        (o) =>
+          o.isMesh &&
+          o.material.color.getHexString() === (SPACE_HELMET.suits[species] ?? '#ece5d3').slice(1),
+      );
+      expect(trunk, species).toBeTruthy();
+      // Ears, snout and whiskers all stay inside the bubble, which may be flattened
+      // from below so it stays out of the ground.
+      space.root.updateMatrixWorld(true);
+      const toBubble = bubble.matrixWorld.clone().invert(),
+        collar = helmet.getObjectByName('Space helmet collar'),
+        toCollar = collar.matrixWorld.clone().invert();
+      const point = new Vector3(),
+        local = new Vector3();
+      const vertices = (object, visit) =>
+        object.traverse((o) => {
+          if (!o.isMesh || o.parent === helmet) return;
+          const position = o.geometry.attributes.position;
+          for (let n = 0; n < position.count; n++)
+            visit(point.fromBufferAttribute(position, n).applyMatrix4(o.matrixWorld));
+        });
+      vertices(space.head, (p) => {
+        expect(local.copy(p).applyMatrix4(toBubble).length(), species).toBeLessThanOrEqual(1);
+        // The collar ring never cuts into the face, ears or snout.
+        local.copy(p).applyMatrix4(toCollar);
+        expect(
+          Math.hypot(Math.hypot(local.x, local.y) - 1, local.z),
+          `${species} collar`,
+        ).toBeGreaterThan(RING_TUBE);
+      });
+      // Ring and bubble stay above the ground the animal stands on.
+      expect(new Box3().setFromObject(collar).min.y, `${species} collar`).toBeGreaterThan(0);
+      expect(new Box3().setFromObject(bubble).min.y, `${species} bubble`).toBeGreaterThan(0);
+    }
   });
 
-  it('floats hover cars and response pods on a gentle bob', () => {
-    const d = diorama('tomorrow');
-    for (const vehicle of [
-      motorVehicle(d, new Group(), false, 'tomorrow'),
-      responseVehicle(d, new Group(), true, 'tomorrow'),
-    ]) {
-      const body = vehicle.userData.hoverBody;
-      expect(body).toBeTruthy();
-      animateVehicle(vehicle, 1);
-      expect(Math.abs(body.position.y)).toBeGreaterThan(0);
-      expect(Math.abs(body.position.y)).toBeLessThanOrEqual(0.04);
-    }
-    const truck = responseVehicle(d, new Group(), true, 'contemporary');
-    expect(truck.userData.wheels.length).toBeGreaterThan(0);
-  });
+  it.each(['tomorrow', 'canopy', 'riverlight'])(
+    'floats %s hover cars and response pods on a gentle bob',
+    (era) => {
+      const d = diorama(era);
+      for (const vehicle of [
+        motorVehicle(d, new Group(), false, era),
+        motorVehicle(d, new Group(), true, era),
+        responseVehicle(d, new Group(), true, era),
+      ]) {
+        const body = vehicle.userData.hoverBody;
+        expect(body).toBeTruthy();
+        animateVehicle(vehicle, 1);
+        expect(Math.abs(body.position.y)).toBeGreaterThan(0);
+        expect(Math.abs(body.position.y)).toBeLessThanOrEqual(0.04);
+      }
+      const truck = responseVehicle(d, new Group(), true, 'contemporary');
+      expect(truck.userData.wheels.length).toBeGreaterThan(0);
+    },
+  );
 
   it('moves traffic in wheel-less hover pods with the usual clearance box', () => {
     const d = diorama('tomorrow');
@@ -316,25 +386,28 @@ describe('Tomorrow City transport', () => {
     const find = (name) => d.world.getObjectByName(name);
     return { d, find };
   }
-  it('flies, sails and glides rounded vehicles once their buildings are rounded', () => {
-    const { find } = transports('tomorrow');
-    // Moving vehicles are drawn per mesh; the train stays near the Blender railcars' 21 parts.
-    for (const [name, budget] of [
-      ['Sky saucer', 16],
-      ['Hover river ferry', 16],
-      ['Solar express train', 24],
-    ]) {
-      const vehicle = find(name);
-      expect(vehicle, name).toBeTruthy();
-      let meshes = 0;
-      vehicle.traverse((o) => {
-        if (o.isMesh) meshes++;
-      });
-      expect(meshes, name).toBeLessThanOrEqual(budget);
-      expect(cost(vehicle).triangles, name).toBeLessThan(2500);
-      expect(cost(vehicle).materials, name).toBeLessThanOrEqual(6);
-    }
-  });
+  it.each(['tomorrow', 'canopy', 'riverlight'])(
+    'flies, sails and glides rounded vehicles once %s buildings are modernized',
+    (era) => {
+      const { find } = transports(era);
+      // Moving vehicles are drawn per mesh; the train stays near the Blender railcars' 21 parts.
+      for (const [name, budget] of [
+        ['Sky saucer', 16],
+        ['Hover river ferry', 16],
+        ['Solar express train', 24],
+      ]) {
+        const vehicle = find(name);
+        expect(vehicle, name).toBeTruthy();
+        let meshes = 0;
+        vehicle.traverse((o) => {
+          if (o.isMesh) meshes++;
+        });
+        expect(meshes, name).toBeLessThanOrEqual(budget);
+        expect(cost(vehicle).triangles, name).toBeLessThan(2500);
+        expect(cost(vehicle).materials, name).toBeLessThanOrEqual(6);
+      }
+    },
+  );
   it('lands the saucer on legs that reach the ground and spins its rim lights', () => {
     const d = diorama('tomorrow');
     const saucer = roundedAircraft(d, new Group());

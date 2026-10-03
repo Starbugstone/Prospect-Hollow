@@ -22,9 +22,9 @@ export const MOTOR_AGE_BUILDINGS = [
     '#c4aa73',
     [{ id: 'garage', level: 1 }],
     [
-      'Room for two more visitors, with food and water.',
-      'Room for four more visitors, with food and water.',
-      'Room for six more visitors, with food and water.',
+      'Room for two more visitors, if there is food and water.',
+      'Room for four more visitors, if there is food and water.',
+      'Room for six more visitors, if there is food and water.',
     ],
   ],
   [
@@ -35,9 +35,9 @@ export const MOTOR_AGE_BUILDINGS = [
     '#b8907d',
     [],
     [
-      'Room for six more residents, with food and water.',
-      'Room for twelve more residents, with food and water.',
-      'Room for eighteen more residents, with food and water.',
+      'Room for six more residents, if there is food and water.',
+      'Room for twelve more residents, if there is food and water.',
+      'Room for eighteen more residents, if there is food and water.',
     ],
   ],
   [

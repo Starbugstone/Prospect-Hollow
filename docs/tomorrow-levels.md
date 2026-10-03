@@ -53,8 +53,9 @@ Rules:
   the normal "bonus ready" reveal. If a relic, an anchored tile or another bonus
   occupies the core, the release moves to the first ordinary neighbor. If no
   neighbor can hold it, the charge still counts and completion is unaffected.
-- A full core stays on the board, dimmed, with every pip gold. It does nothing
-  else.
+- A full core leaves the board once it has released its bonus (or, with no
+  neighbor to hold it, once its charge counts). It does nothing else. Lit
+  lanterns and survey markers leave the board the same way.
 - It never spreads, counts down, harms the board or fails a puzzle.
 
 Guardrails (checked by `testing/tomorrow-levels.test.js`):

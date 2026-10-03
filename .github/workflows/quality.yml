@@ -24,6 +24,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - run: node scripts/export-save-rules.mjs --check
+      - run: node scripts/create-integrity-fixtures.mjs --check
       - run: npm run verify
   backend:
     runs-on: ubuntu-latest
@@ -67,15 +69,23 @@ jobs:
           coverage: none
       - run: npm ci
       - run: node scripts/export-public-content.mjs
+      - run: node scripts/export-save-rules.mjs
       - run: composer install --working-dir=backend --no-interaction --prefer-dist
+      - name: Static analysis (PHPStan)
+        if: matrix.database == 'postgres'
+        run: composer analyse --working-dir=backend
       - name: Account and per-town save tests
         env:
           DATABASE_URL: ${{ matrix.database == 'postgres' && 'postgresql://cascade:local-ci-only@127.0.0.1:5432/cascade_test' || 'mysql://cascade:local-ci-only@127.0.0.1:3306/cascade_test?charset=utf8mb4' }}
         run: |
           php backend/tests/moderation.php
+          php backend/tests/money-budget.php
+          php backend/tests/save-integrity.php
           php backend/bin/migrate.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/saves.php
+          TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/money-sync.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/visitors.php
+          TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/honours.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/concurrency.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/release-health.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/admin.php

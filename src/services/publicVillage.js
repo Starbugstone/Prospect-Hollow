@@ -1,5 +1,6 @@
 import { createTown } from '../data/town';
 import { LEVEL_COUNT } from '../data/campaign';
+import { HONOURS, validShowcase } from '../data/honours';
 
 // Public completion awards only; never fall back to this visitor's campaign store.
 export function villageLevels(village) {
@@ -29,11 +30,43 @@ export function villageLevels(village) {
   };
 }
 
+// The owner's public Town Honours: null when the field is missing (an older owner or
+// server, so unknown), otherwise catalog honours with a valid date, the public score
+// evidence and a showcase of earned families. Never read from this visitor's save.
+export function villageHonours(village) {
+  const saved = village.appearance?.honours;
+  if (!saved || typeof saved !== 'object' || Array.isArray(saved)) return null;
+  const earned = {};
+  const entries = saved.earned && typeof saved.earned === 'object' ? saved.earned : {};
+  for (const [id, entry] of Object.entries(entries)) {
+    if (!Object.hasOwn(HONOURS.byId, id) || !entry || typeof entry !== 'object') continue;
+    earned[id] = { at: Number.isSafeInteger(entry.at) && entry.at > 0 ? entry.at : null };
+    const { levelId, score, target } = entry.evidence ?? {};
+    if (
+      HONOURS.byId[id].family === 'score' &&
+      Number.isInteger(levelId) &&
+      [score, target].every(Number.isFinite)
+    )
+      earned[id].evidence = { levelId, score, target };
+  }
+  const showcase = Array.isArray(saved.showcase)
+    ? saved.showcase.filter((id) => typeof id === 'string')
+    : [];
+  return {
+    version: Number.isSafeInteger(saved.version) && saved.version > 0 ? saved.version : 1,
+    earned,
+    showcase: validShowcase(showcase, { earned }),
+  };
+}
+
 // Build an isolated render model. Never patch campaign/game stores from a visit.
 export function villageAppearance(village) {
   const town = createTown();
   const appearance = village.appearance;
   town.era = appearance.era;
+  // Completed puzzles pick the same space-helmet wearer the owner sees.
+  if (Number.isSafeInteger(appearance.completedRuns) && appearance.completedRuns > 0)
+    town.completedRuns = appearance.completedRuns;
   for (const key of ['buildings', 'buildingEras', 'buildingEraLevels'])
     for (const id of Object.keys(town[key]))
       if (Object.hasOwn(appearance[key], id)) town[key][id] = appearance[key][id];

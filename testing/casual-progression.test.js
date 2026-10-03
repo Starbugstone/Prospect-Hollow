@@ -74,6 +74,18 @@ it(
       c = useCampaignStore();
     }
     expect(journeyProgress(c.records)).toBeNull();
+    expect(c.integrity.actions).toHaveLength(LEVEL_COUNT * 2);
+    expect(new Set(c.integrity.actions.map((action) => action.id)).size).toBe(LEVEL_COUNT * 2);
+    expect(c.integrity.actions[0]).toMatchObject({
+      sequence: 1,
+      kind: 'run-start',
+      data: { levelId: 1 },
+    });
+    expect(c.integrity.actions.at(-1)).toMatchObject({
+      sequence: LEVEL_COUNT * 2,
+      kind: 'victory',
+      data: { levelId: LEVEL_COUNT },
+    });
     c.town.buildings.museum = 1;
     finish(c, LEVEL_COUNT);
     expect(c.lastChapterReward).toBeNull();

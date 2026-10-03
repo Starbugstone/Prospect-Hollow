@@ -1,9 +1,10 @@
 import { neighborsOf, isAnchored } from './TileRules.js';
 import { GEM_TYPES } from './GemFactory.js';
+import { isPlayableCell } from './BoardTopology.js';
 
 // Floor markers never anchor gems or obstruct gravity. Survey markers light in
 // numbered order; ordinary lanterns can be lit in any order. Both accept blasts.
-export function signalTargets(tiles, impacted, cols, rows) {
+export function signalTargets(tiles, impacted, cols, rows, ordinaryIndices = impacted) {
   const survey = tiles.reduce(
     (next, tile) =>
       tile.signalHealth && tile.surveyOrder ? Math.min(next, tile.surveyOrder) : next,
@@ -12,11 +13,22 @@ export function signalTargets(tiles, impacted, cols, rows) {
   const touched = new Set(impacted);
   for (const index of impacted)
     for (const neighbor of neighborsOf(index, cols, rows)) touched.add(neighbor);
+  const sporeTouched = new Set(impacted);
+  for (const index of ordinaryIndices)
+    for (const neighbor of neighborsOf(index, cols, rows)) sporeTouched.add(neighbor);
   return [...touched].filter(
     (index) =>
+      isPlayableCell(tiles[index]) &&
       tiles[index]?.signalHealth > 0 &&
+      (tiles[index].signal !== 'spore' || sporeTouched.has(index)) &&
       (!tiles[index].surveyOrder || tiles[index].surveyOrder === survey),
   );
+}
+
+export function sporeTargets(tiles, index, axis, cols, rows) {
+  return Array.from({ length: axis === 'column' ? rows : cols }, (_, offset) =>
+    axis === 'column' ? offset * cols + (index % cols) : Math.floor(index / cols) * cols + offset,
+  ).filter((cell) => isPlayableCell(tiles[cell]));
 }
 
 export function advanceOreOrders(orders, steps) {

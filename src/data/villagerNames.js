@@ -7,5 +7,5 @@
 // Empty lists are allowed. Save and rebuild/redeploy the app to publish changes.
 export default {
   female: ['Evi', 'Emy', 'Alexandrine', 'Nathalie'],
-  male: ['Scott', 'Matt'],
+  male: ['Scott', 'Matt', 'Darian'],
 };

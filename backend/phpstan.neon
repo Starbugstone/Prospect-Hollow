@@ -1,0 +1,11 @@
+parameters:
+    level: 6
+    paths:
+        - src
+        - bin
+        - public
+        - config
+    tmpDir: var/phpstan
+    ignoreErrors:
+        # Decoded JSON saves and DBAL rows are dynamic arrays validated at runtime.
+        - identifier: missingType.iterableValue

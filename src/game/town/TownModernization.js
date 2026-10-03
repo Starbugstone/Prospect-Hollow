@@ -5,6 +5,7 @@ import { RIVER_RAIL_VARIANTS } from '../../data/riverRail';
 import { INDUSTRIAL_VARIANTS } from '../../data/industrial';
 import { MOTOR_AGE_VARIANTS } from '../../data/motorAge';
 import { cityVariant, cityBuildingPrice, isMajorCityBuilding } from '../../data/city';
+import { townSupply } from './TownNeeds';
 
 /** @typedef {{name: string, description: string}} ModernizationAppearance */
 /** @typedef {(building: Object, era: string) => ModernizationAppearance|null} AppearanceProvider */
@@ -23,20 +24,22 @@ const APPEARANCES = {
   },
 };
 
-const benefit = (profile, building, level) => {
-  if (
-    level > 0 &&
-    building.id === 'well' &&
-    profile.waterworks[level] - profile.waterworks[level - 1] === 20
-  )
-    return profile.waterUpgradeBenefit;
-  if (
-    level > 0 &&
-    building.id === 'farm' &&
-    profile.farmCapacity[level] - profile.farmCapacity[level - 1] === 20
-  )
-    return 'Adds food for twenty people when finished. Existing harvests stay available during work.';
-  return 'Visual modernization. Existing services stay unchanged.';
+// A modernized waterworks or farm states the supply it adds; others keep services.
+const SUPPLY_BENEFITS = {
+  water: 'Adds water for {count} people when finished. Existing water stays available during work.',
+  food: 'Adds food for {count} people when finished. Existing harvests stay available during work.',
+};
+const benefit = (town, building, level) => {
+  const before = townSupply(town);
+  const after = townSupply({
+    ...town,
+    buildingEras: { ...town.buildingEras, [building.id]: town.era },
+    buildingEraLevels: { ...town.buildingEraLevels, [building.id]: level + 1 },
+  });
+  const stat = Object.keys(SUPPLY_BENEFITS).find((need) => after[need] > before[need]);
+  return stat
+    ? { benefit: SUPPLY_BENEFITS[stat], benefitValues: { count: after[stat] - before[stat] } }
+    : { benefit: 'Visual modernization. Existing services stay unchanged.' };
 };
 
 /** One offer contract for every style. Eligibility is checked by TownEras;
@@ -66,6 +69,6 @@ export function createModernizationOffer(town, building, level) {
           : profile.upgradeDescriptions[level - 1],
     title: profile.upgradeTitle,
     ...(!city ? { requiresPower: profile.requiresPower && building.id !== 'railDepot' } : {}),
-    benefit: benefit(profile, building, level),
+    ...benefit(town, building, level),
   };
 }

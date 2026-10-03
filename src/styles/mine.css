@@ -119,6 +119,18 @@
 .is-playing .frame-corner {
   border-color: var(--mine-accent);
 }
+.app-shell.is-playing .board-frame.shaped-board {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+.shaped-board .board-canvas {
+  background: transparent;
+  border-radius: 0;
+}
+.shaped-board .frame-corner {
+  display: none;
+}
 .is-playing .board-caption {
   color: #ded9e6;
 }

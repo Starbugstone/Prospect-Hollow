@@ -1,4 +1,5 @@
 import { eraEvolution } from './eras';
+import { cozyAppearance } from './cozyArchitecture';
 const MINE_FEATURE_KEYS = [
   'cribbing',
   'sluice',
@@ -18,6 +19,8 @@ const MINE_FEATURE_KEYS = [
   'heritage-wheel',
   'solar-canopy',
   'sorting-dome',
+  'garden-sorting',
+  'lantern-sorting',
 ];
 export const MINE_PROFILES = {
   frontier: {
@@ -106,6 +109,28 @@ export const MINE_PROFILES = {
     portal: 'rounded-arch',
     site: [{ feature: 'sorting-dome', replaces: ['sorting-plant', 'solar-canopy'] }],
   },
+  canopy: {
+    inherits: 'tomorrow',
+    surfaceStyle: 'canopy',
+    portal: 'garden-arch',
+    site: [
+      {
+        feature: 'garden-sorting',
+        replaces: ['sorting-dome', 'sorting-plant', 'solar-canopy'],
+      },
+    ],
+  },
+  riverlight: {
+    inherits: 'canopy',
+    surfaceStyle: 'riverlight',
+    portal: 'lantern-arch',
+    site: [
+      {
+        feature: 'lantern-sorting',
+        replaces: ['garden-sorting', 'sorting-dome', 'sorting-plant', 'solar-canopy'],
+      },
+    ],
+  },
 };
 const portals = new Set(Object.values(MINE_PROFILES).map((p) => p.portal));
 const works = new Set(Object.values(MINE_PROFILES).map((p) => p.works));
@@ -113,7 +138,14 @@ const carts = new Set(Object.values(MINE_PROFILES).map((p) => p.cart));
 const motions = new Set(Object.values(MINE_PROFILES).flatMap((p) => p.motion));
 export function mineProfile(era, definitions = MINE_PROFILES) {
   const evolution = eraEvolution(era),
-    key = definitions[era] ? era : (evolution.cityAssets ?? evolution.style);
+    cozyStyle = evolution.architecture === 'cozy' ? cozyAppearance(era).style : null,
+    // A successor reuses the registered cozy surface through the same capability
+    // as its town buildings, rather than needing its id added to a second list.
+    inheritedStyle =
+      cozyStyle && Object.hasOwn(definitions, cozyStyle)
+        ? cozyStyle
+        : (evolution.cityAssets ?? evolution.style),
+    key = definitions[era] ? era : inheritedStyle;
   const visited = new Set();
   function resolve(id) {
     if (visited.has(id) || !definitions[id]) return { ...MINE_PROFILES.frontier };

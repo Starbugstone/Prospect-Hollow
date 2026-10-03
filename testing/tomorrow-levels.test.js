@@ -21,8 +21,9 @@ import { useCampaignStore } from '../src/stores/campaignStore';
 import { simulateCampaignLevel } from './helpers/campaignSimulation';
 
 const FIRST = 325;
+const LAST = 372;
 const levels = generateLevelConfigs();
-const tomorrow = levels.slice(FIRST - 1);
+const tomorrow = levels.slice(FIRST - 1, LAST);
 const manager = new TileManager();
 const hints = new HintEngine();
 
@@ -76,8 +77,8 @@ describe('append-only Tomorrow City campaign', () => {
   });
 
   it('appends eight six-level chapters as levels 325–372 with names, themes and star targets', () => {
-    expect(LEVEL_COUNT).toBe(372);
-    expect(CHAPTERS.slice(54)).toEqual(TOMORROW_CHAPTERS);
+    expect(LEVEL_COUNT).toBeGreaterThanOrEqual(LAST);
+    expect(CHAPTERS.slice(54, 62)).toEqual(TOMORROW_CHAPTERS);
     expect(TOMORROW_CHAPTERS).toHaveLength(8);
     expect(TOMORROW_LEVELS).toHaveLength(48);
     expect(tomorrow.map((level) => level.id)).toEqual(

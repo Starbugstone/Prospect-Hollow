@@ -75,6 +75,19 @@ it('restyles only the vehicle whose building finished a new-era modernization', 
   expect(d.visitorTransports.get('airport').root.name).toBe('Sky saucer');
 });
 
+// Later eras keep Tomorrow's vehicles even when their buildings take another architecture.
+it.each(['tomorrow', 'canopy', 'riverlight'])(
+  'keeps the sky saucer, hover ferry and solar express after modernizing into %s',
+  (era) => {
+    const { d, town } = scene(era);
+    for (const id of ['airport', 'riverPort', 'railDepot']) {
+      town.buildingEras[id] = era;
+      expect(refreshTransport(d, id, town), id).toBe(true);
+    }
+    expect(names(d)).toEqual(['Hover river ferry', 'Sky saucer', 'Solar express train']);
+  },
+);
+
 it('leaves vehicles alone when a swap does not change their building era', () => {
   const { d, town } = scene('contemporary');
   const plane = d.transports.get('airport').root;

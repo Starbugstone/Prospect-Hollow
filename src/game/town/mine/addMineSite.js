@@ -9,6 +9,7 @@ import { addMineWorksBase } from './MineWorksBase';
 import { MINE_FEATURES } from './MineFeatures';
 import { addMineHaul } from './MineRollingStock';
 import { ROUNDED_PALETTE } from '../../../data/roundedArchitecture';
+import { addCozyMinePortal } from './MineCozyArchitecture';
 
 function addMinePortal(d, root, profile, appearance) {
   const entry = d.group(
@@ -52,6 +53,7 @@ function addMinePortal(d, root, profile, appearance) {
     // A glazed half-dome hood shelters the entrance in rounded eras.
     d.ball(entry, 0, 2.5, 0.1, [1.9, 0.85, 0.75], ROUNDED_PALETTE.glass);
   }
+  if (appearance.cozyStyle) addCozyMinePortal(d, entry, appearance);
   return entry;
 }
 export function updateMineGrowth(root, growth) {

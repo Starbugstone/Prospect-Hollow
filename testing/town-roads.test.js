@@ -5,7 +5,16 @@ import { ERAS, ERA_BY_ID, eraEvolution } from '../src/data/eras';
 import { defineEra } from '../src/data/eraDefinitions';
 import { resolveRoadStyle } from '../src/data/roadStyles';
 import { roadAppearance } from '../src/game/town/TownEvolution';
-import { townTracks, routeGraph, segmentDistance } from '../src/game/town/TownLayout';
+import {
+  townTracks,
+  routeGraph,
+  segmentDistance,
+  PLOTS,
+  gardenTracks,
+  gardenConnections,
+  plotStreet,
+  routeBetween,
+} from '../src/game/town/TownLayout';
 import {
   roadDetails,
   roadDetailCorners,
@@ -18,6 +27,95 @@ import { TownStatics } from '../src/game/town/TownStatics';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { townNavigation } from '../src/game/town/TownNavigation';
 import { animalSpace } from '../src/game/town/TownAnimalSpace';
+import { GARDEN_PARCELS } from '../src/data/townGardenDistrict';
+import { plotInEra } from '../src/game/town/TownEras';
+import { renderEraLandmark } from '../src/game/town/buildings/BuildingRenderer';
+import { applyRoadSetbacks } from '../src/game/town/BuildingSetbacks';
+import { buildLandscape } from '../src/game/town/TownLandscape';
+
+it.each(['canopy', 'riverlight'].flatMap((era) => [1, 3].map((tier) => [era, tier])))(
+  'joins every %s garden forecourt to its rendered driveway at tier %i',
+  (era, tier) => {
+    const town = townFor(era),
+      d = Object.create(TownDiorama.prototype);
+    Object.assign(d, {
+      world: new Group(),
+      scene: new Scene(),
+      geometries: createTownGeometries(),
+      materials: new Map(),
+    });
+    const parcels = Object.entries(GARDEN_PARCELS).filter(([id]) => plotInEra(town, id));
+    d.landscape = buildLandscape(d);
+    for (const [id, [x, z]] of Object.entries(PLOTS).filter(
+      ([id, [x]]) => x >= 58 && plotInEra(town, id),
+    )) {
+      const root = d.group(d.world, x, 0.08, z);
+      const building = BUILDINGS.find((b) => b.id === id);
+      renderEraLandmark(d, root, building.kind, building.name, tier, era, tier);
+      applyRoadSetbacks(root, id, town);
+      d.batch(root);
+    }
+    const roads = addTownRoads(d, town, PLOTS),
+      statics = new TownStatics(d.scene);
+    statics.rebuild([roads]);
+    const ray = new Raycaster(new Vector3(), new Vector3(0, -1, 0));
+    // Check the rendered paving all the way from inside the old road to
+    // the new spine, so a connected graph cannot mask a visible grass gap.
+    for (const {
+      from: [x, z],
+      to: [endX],
+    } of gardenConnections(town))
+      for (const side of [-0.35, 0, 0.35])
+        for (let px = x - 0.25; px < endX; px += 0.1) {
+          ray.ray.origin.set(px, 1, z + side);
+          expect(
+            ray.intersectObjects(statics.meshes).length,
+            `street row ${z} at ${px}`,
+          ).toBeGreaterThan(0);
+        }
+    for (const [id, parcel] of parcels) {
+      const [x, z] = parcel.position;
+      const points = [...parcel.approach, [0, parcel.entranceZ], [0, parcel.streetOffset]];
+      // Trace the actual visible surface, including both sides of the joining
+      // seam. A connected route graph alone misses gaps before the driveway.
+      for (let i = 1; i < points.length; i++) {
+        const a = points[i - 1],
+          b = points[i];
+        const length = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        for (const side of [-0.35, 0, 0.35])
+          for (let step = 0; step <= Math.ceil(length / 0.1); step++) {
+            // Merged Float32 surfaces can round a shared endpoint by a few
+            // micrometres. Sample just inside each side of that seam.
+            const t = Math.max(0.0001, Math.min(0.9999, step / Math.ceil(length / 0.1)));
+            ray.ray.origin.set(
+              x + a[0] + (b[0] - a[0]) * t - ((b[1] - a[1]) / length) * side,
+              1,
+              z + a[1] + (b[1] - a[1]) * t + ((b[0] - a[0]) / length) * side,
+            );
+            expect(
+              ray.intersectObjects(statics.meshes).length,
+              `${id} segment ${i}, step ${step}`,
+            ).toBeGreaterThan(0);
+          }
+      }
+      const start = [x + points[0][0], z + points[0][1]];
+      expect(routeBetween(town, start, plotStreet(id)).length, id).toBeGreaterThan(1);
+      expect(routeBetween(town, start, plotStreet(id), 'car'), `${id} private path`).toEqual([]);
+    }
+    const space = animalSpace(d);
+    for (const { from, to } of gardenTracks(town))
+      expect(
+        space.segment([from[0], 0.15, from[1]], [to[0], 0.15, to[1]], 0.55, 1.8),
+        `${from} → ${to} stays clear of real buildings and landscaping`,
+      ).toBe(true);
+    statics.dispose();
+    d.clearGroup(d.world);
+    d.clearGroup(d.landscape);
+    Object.values(d.geometries).forEach((g) => g.dispose());
+    d.materials.forEach((m) => m.dispose());
+  },
+  20000,
+);
 
 function townFor(era) {
   const town = createTown();

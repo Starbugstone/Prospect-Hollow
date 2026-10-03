@@ -1,6 +1,7 @@
 import { createApp, defineAsyncComponent, watch } from 'vue';
 import { locale, browserLocale, t } from './i18n';
 import { createPinia } from 'pinia';
+import { createLocalIntegrityPlugin } from './services/localIntegrity';
 import { createTestingTools, debugToolsAllowed } from './services/testingTools';
 import { townStorage } from './services/townStorage';
 import CloudRoot from './components/CloudRoot.vue';
@@ -19,6 +20,7 @@ const app = createApp(
   visiting ? defineAsyncComponent(() => import('./components/community/VisitRoot.vue')) : CloudRoot,
 );
 const pinia = createPinia();
+pinia.use(createLocalIntegrityPlugin());
 
 app.use(pinia);
 

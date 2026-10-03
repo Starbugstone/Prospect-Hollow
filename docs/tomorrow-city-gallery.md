@@ -102,16 +102,39 @@ _The village hover shuttle bus by the blacksmith's hangar._
 
 _The storm-cleanup crew's hovering response pod at the river promenade._
 
-## The space dog
+## The space animal
 
-In Tomorrow City the village dog becomes a Cosmo-style space dog. The `tomorrow` wardrobe
-declares `petCostume: 'space-helmet'`, so a later era can reuse the costume without an
-era-name check. The dog wears a clear bubble helmet (the only extra material, and a
-transparent one) on a white collar ring, a white suit with red star patches, and red boots.
+From Tomorrow City onwards one village animal wears a Cosmo-style space suit: a clear
+bubble helmet (the only extra material, and a transparent one) on a white collar ring, a
+white suit with red star patches, and red boots. The suit fits itself to any head, so every
+species in `SPACE_HELMET.wearers` (`src/data/townAnimals.js`) can wear it. The collar ring
+lies just beyond the head, tilted between straight down and the neck, so it never cuts the
+face; ring and bubble stay above the ground, and a very low head gets a flattened bubble. `SPACE_HELMET.suits`
+gives a wearer whose coat would hide the white suit its own color: the hen's suit is orange.
 
-![Space dog, front](images/tomorrow-city/22-space-dog.png)
+The helmet moves to another animal after each completed puzzle. `spaceHelmetWearer()` in
+`TownSpaceHelmet.js` picks among the wearers present in the town from `town.completedRuns`:
+each round dresses every present animal once in a shuffled order, and no animal wears it
+twice in a row. Visitors get the same count in the shared appearance, so they see the same
+animal; while they watch, the old wearer shrinks away with its contact shadow and grows back
+in its own coat as the new one does in the suit. The owner's town changes while they are in the mine.
 
-![Space dog, side](images/tomorrow-city/23-space-dog-side.png)
+![Every animal that can wear the space helmet](images/tomorrow-city/22-space-helmet-wearers.png)
+
+_Every wearer in its fitted suit; the hedgehog's low head gets a flattened bubble._
+
+![Space helmets from three angles](images/tomorrow-city/23-space-helmet-angles.png)
+
+_Front three-quarter, side and back three-quarter: the collar never cuts a face or the ground._
+
+![The helmet after eight completed puzzles](images/tomorrow-city/24-space-helmet-rotation.png)
+
+_A Riverlight town opened after puzzles 20 to 27; [watch the wearers walk](images/tomorrow-city/space-helmet-rotation.mp4)._
+
+![A visitor watches the helmet change hands](images/tomorrow-city/25-space-helmet-visitor-swap.png)
+
+_The visit page's poll brings the owner's next puzzle: the dog shrinks out of the suit and the
+hen grows back in orange, at half speed. [Watch the swap](images/tomorrow-city/space-helmet-visitor-swap.mp4)._
 
 ## Phone
 

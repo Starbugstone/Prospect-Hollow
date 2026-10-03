@@ -46,6 +46,7 @@
         {{ t('Shared town names are checked in English and French.') }}
       </p>
     </section>
+    <HonourAccountSection :town="meta.name" :shared="meta.isPublic" />
     <section ref="historySection" class="account-section">
       <h2>{{ t('Save history') }}</h2>
       <ul class="account-timeline">
@@ -203,6 +204,7 @@ import { useCampaignStore } from '../../stores/campaignStore';
 import { useGameStore } from '../../stores/gameStore';
 import { useAccountContext, townSummary } from './accountContext';
 import GameIcon from '../GameIcon.vue';
+import HonourAccountSection from '../honours/HonourAccountSection.vue';
 import { t, locale } from '../../i18n';
 const props = defineProps({ active: { type: Object, required: true }, focus: String });
 const { busy, act, recovery, changed } = useAccountContext();

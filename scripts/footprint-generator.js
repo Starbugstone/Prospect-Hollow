@@ -6,10 +6,14 @@ import { BUILDINGS, createTown } from '../src/data/town';
 import { ERAS } from '../src/data/eras';
 import { plotInEra } from '../src/game/town/TownEras';
 import { PLOTS } from '../src/game/town/TownLayout';
+import { GARDEN_PARCELS } from '../src/data/townGardenDistrict';
 import { ALL_MESH_FAMILIES, loadFamilies } from '../src/game/town/assets/MeshCatalog';
 import { geometryFootprints, footprintKey } from '../src/game/town/BuildingFootprints';
 
-export async function generateFootprints() {
+export async function generateFootprints({ eras = null } = {}) {
+  const definitions = ERAS.filter((era) => era.enabled);
+  if (eras && eras.some((id) => !definitions.some((era) => era.id === id)))
+    throw new Error('Select a supported era for footprint generation');
   await loadFamilies(ALL_MESH_FAMILIES);
   const d = Object.create(TownDiorama.prototype);
   Object.assign(d, {
@@ -21,7 +25,7 @@ export async function generateFootprints() {
     shapes = [],
     known = new Map();
   const labels = Object.fromEntries(BUILDINGS.map((b) => [b.id, b.shortName]));
-  for (const era of ERAS.filter((e) => e.enabled)) {
+  for (const era of definitions.filter((era) => !eras || eras.includes(era.id))) {
     d.town = { ...createTown(), era: era.id };
     for (const b of BUILDINGS)
       if (plotInEra(d.town, b.id)) d.town.buildings[b.id] = b.upgrades.length;
@@ -57,7 +61,7 @@ export async function generateFootprints() {
             const limits = plotSetbacks(id, d.town);
             if (limits)
               for (const solid of solids) {
-                if (solid.yMin >= 1.7 || solid.yMax <= 0.08) continue;
+                if ((!GARDEN_PARCELS[id] && solid.yMin >= 1.7) || solid.yMax <= 0.08) continue;
                 if (
                   solid.cx - solid.halfW < limits.minX - 0.0001 ||
                   solid.cx + solid.halfW > limits.maxX + 0.0001 ||

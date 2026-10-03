@@ -14,20 +14,41 @@ export function updateLabels(current, positions, previousLayout) {
   return null;
 }
 
-export function placeLabels(anchors, labels, actions) {
+// The scene's size in CSS pixels. Labels are placed with the `translate` property in
+// pixels: unlike left/top it is composited, so camera frames never lay out the page.
+export function labelBox() {
+  let observer;
+  const box = {
+    width: 0,
+    height: 0,
+    measure(element) {
+      box.width = element?.clientWidth ?? 0;
+      box.height = element?.clientHeight ?? 0;
+    },
+    observe(element) {
+      box.measure(element);
+      observer = new ResizeObserver(() => box.measure(element));
+      observer.observe(element);
+    },
+    disconnect: () => observer?.disconnect(),
+    translate: (point) => `${(point.x * box.width) / 100}px ${(point.y * box.height) / 100}px`,
+  };
+  return box;
+}
+
+export function placeLabels(anchors, labels, actions, box) {
   for (const { id, x, y, collection } of anchors) {
     const label = labels.get(id);
-    if (label) {
-      label.style.left = `${x}%`;
-      label.style.top = `${y}%`;
-    }
+    if (label) label.style.translate = box.translate({ x, y });
     const action = actions.get(id);
-    if (action && collection) {
-      action.style.left = `${collection.x}%`;
-      action.style.top = `${collection.y}%`;
-    }
+    if (action && collection) action.style.translate = box.translate(collection);
   }
 }
+
+export const sameIndicators = (a, b) => {
+  const keys = Object.keys(a);
+  return keys.length === Object.keys(b).length && keys.every((key) => a[key] === b[key]);
+};
 
 export function trackElement(elements, id, element) {
   if (element) elements.set(id, element);

@@ -23,9 +23,11 @@ Run `./scripts/build-release.sh` on a machine with Docker. It creates `release/a
 
 The host needs PHP 8.3+, PDO with `pdo_mysql` or `pdo_pgsql`, **intl**, ctype, iconv and the extensions required by Composer; MySQL 8+/InnoDB or PostgreSQL; HTTPS; SMTP; Apache rewrite and headers modules. Only `app/public` may be web-accessible. Put code, credentials and `var` outside the web root. Give PHP write access to `var` only.
 
-Import `backend/schema.sql` (MySQL) or `backend/schema-postgresql.sql` into a **new** database, or run `php bin/migrate.php`. Configure `app/.env.local` using `backend/.env.example`: exact HTTPS `APP_ORIGIN`, random `APP_SECRET`, database connection, encrypted SMTP and verified sender. Require SMTP TLS and retain certificate verification. Configure PHP `post_max_size=2M`, `upload_max_filesize=2M` and the web-server request limit **1,100,000 bytes**. Each encoded town profile is limited to **1 MiB**. Keep error display disabled.
+Import `backend/schema.sql` (MySQL) or `backend/schema-postgresql.sql` into a **new** database, or run `php bin/migrate.php`. Configure `app/.env.local` using `backend/.env.example`: exact HTTPS `APP_ORIGIN`, random `APP_SECRET`, database connection, encrypted SMTP and verified sender. Require SMTP TLS and retain certificate verification. Configure PHP `post_max_size=16M`, `upload_max_filesize=2M` and the web-server request limit **9 MiB**. The API limits town uploads to **8 MiB plus 64 KiB** for the request wrapper, while other requests retain the **1,100,000-byte** limit. The gameplay snapshot excluding queued integrity actions, and the stored snapshot after acknowledgment, remain limited to **1 MiB**. Keep error display disabled.
 
 `APP_ORIGIN` checks scheme, host and port. Configure `TRUSTED_PROXIES` only for known proxies when TLS terminates upstream. Do not weaken the origin check. Verify `/api/v1/health`, email sign-in, attachment, offline play/reconnect and account recovery on the host before release. No deployment has been performed by this change.
+
+The server-time money estimate defaults to `SAVE_MONEY_GUARD_MODE=observe`: unusually large batches are marked for review without stopping cloud saves. The server-only `hold` mode refuses batches above the carried allowance while preserving local progress and the last cloud save. This is a generous heuristic, not proof of cheating; see [save integrity](save-integrity.md#server-time-money-estimate) before enabling enforcement. Budget checks use server milliseconds and run only during existing synchronization.
 
 ## Capacitor
 

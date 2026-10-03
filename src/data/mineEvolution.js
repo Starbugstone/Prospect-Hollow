@@ -1,4 +1,5 @@
 import { mineProfile, MINE_PROFILES } from './mineProfiles';
+import { COZY_PALETTES } from './cozyArchitecture';
 
 // Surface equipment is independent of puzzle progress and has no gameplay cost.
 // The era's existing art family also lets future eras inherit a supported mine.
@@ -48,8 +49,23 @@ const STYLES = {
     machine: 'digital',
   },
 };
+const COZY_STYLES = Object.fromEntries(
+  Object.entries(COZY_PALETTES).map(([cozyStyle, palette]) => [
+    cozyStyle,
+    {
+      height: 6.2,
+      frame: palette.timber,
+      wall: palette.shell,
+      roof: palette.roof,
+      machine: 'digital',
+      cozyStyle,
+      palette,
+    },
+  ]),
+);
 export function mineAppearance(era) {
   const profile = mineProfile(era);
+  if (Object.hasOwn(COZY_STYLES, profile.surfaceStyle)) return COZY_STYLES[profile.surfaceStyle];
   const key = Object.keys(STYLES).find((key) => MINE_PROFILES[key].works === profile.works);
   return Object.hasOwn(STYLES, key) ? STYLES[key] : STYLES.frontier;
 }

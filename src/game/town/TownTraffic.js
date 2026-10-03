@@ -1,4 +1,5 @@
 import { NPC_MARGIN } from './TownNavigation';
+import { flyingAnimal } from '../../data/townAnimals';
 // Vehicles use the carriageway and walkers use the right-hand sidewalk in each
 // direction. Placement below is only for unseen spawns and explicit recovery.
 // Frame movement belongs to TownLocomotion and never calls this projection.
@@ -63,7 +64,7 @@ export function placeTownSpawns(d) {
   const walkers = [
     ...(d.actors ?? []),
     ...(d.vipArrivals?.actors ?? []),
-    ...(d.animals ?? []).filter((animal) => animal.species !== 'pigeon'),
+    ...(d.animals ?? []).filter((animal) => !flyingAnimal(animal.species)),
   ].filter((a) => !a.work && a.root?.visible && a.root.scale.x > 0.5);
   const obstacles = (d.trafficActors ?? [])
     .filter((root) => root.visible)
@@ -74,7 +75,7 @@ export function placeTownSpawns(d) {
       radius: (root.userData.trafficRadius ?? 0.8) + 0.25,
       bodyRadius: root.userData.trafficRadius ?? 0.8,
     }));
-  for (const { root, species, radius = NPC_MARGIN } of walkers) {
+  for (const { root, species, radius = NPC_MARGIN, height = 1 } of walkers) {
     const before = species && d.animalSpace ? root.position.toArray() : null;
     clearPosition(
       root.position,
@@ -86,7 +87,9 @@ export function placeTownSpawns(d) {
           .filter((o) => root.position.y >= o.y - 0.5 && root.position.y <= o.y + o.height + 0.1)
           .map((o) => ({ ...o, radius: o.radius + radius })),
       ],
-      before ? (x, z) => d.animalSpace.segment(before, [x, root.position.y, z], radius) : undefined,
+      before
+        ? (x, z) => d.animalSpace.segment(before, [x, root.position.y, z], radius, height)
+        : undefined,
     );
     obstacles.push({
       x: root.position.x,

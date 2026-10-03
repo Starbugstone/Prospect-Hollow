@@ -20,11 +20,7 @@
       </button>
     </header>
     <p v-if="!introduction">
-      {{
-        t(
-          'Clear every ice layer and obstacle, and collect all relics. The score and clock earn extra chests.',
-        )
-      }}
+      {{ t('Complete every pictured goal. The score and clock earn extra chests.') }}
     </p>
     <ul>
       <li v-for="obstacle in obstacles" :key="obstacle.id">
@@ -34,13 +30,68 @@
         <div>
           <h3>{{ t(obstacle.name) }}</h3>
           <div class="obstacle-demo" aria-hidden="true">
-            <template v-if="obstacle.id === 'relic'">
-              <img src="/art/relic.svg" alt="" /><b>↓</b
-              ><img src="/art/obstacles/exit.svg" alt="" /><b class="demo-check">✓</b>
+            <template v-if="['relic', 'pearl'].includes(obstacle.id)">
+              <img :src="obstacle.art" alt="" /><b>↓</b
+              ><img
+                :src="
+                  obstacle.id === 'pearl'
+                    ? '/art/obstacles/pearl-exit.svg'
+                    : '/art/obstacles/exit.svg'
+                "
+                alt=""
+              /><b class="demo-check">✓</b>
             </template>
-            <template v-else-if="obstacle.id === 'charge-core'">
+            <template v-else-if="['charge-core', 'brazier'].includes(obstacle.id)">
               <img :src="obstacle.art" alt="" /><b>●●●</b><b>→</b
-              ><img src="/art/bonuses/cross.svg" alt="" />
+              ><img
+                :src="
+                  obstacle.id === 'brazier' ? '/art/bonuses/bomb.svg' : '/art/bonuses/cross.svg'
+                "
+                alt=""
+              />
+            </template>
+            <template v-else-if="['encased-fossil', 'blast-gate'].includes(obstacle.id)">
+              <img src="/art/bonuses/bomb.svg" alt="" /><b>→</b
+              ><img
+                :src="
+                  obstacle.id === 'encased-fossil'
+                    ? '/art/obstacles/fossil-casing.svg'
+                    : obstacle.art
+                "
+                alt=""
+              /><b>→</b
+              ><img
+                :src="obstacle.id === 'encased-fossil' ? obstacle.art : '/art/emerald.svg'"
+                alt=""
+              /><b class="demo-check">✓</b>
+            </template>
+            <template v-else-if="obstacle.id === 'spore'">
+              <span class="demo-matches"
+                ><img src="/art/ruby.svg" alt="" /><img src="/art/ruby.svg" alt="" /><img
+                  src="/art/ruby.svg"
+                  alt=""
+              /></span>
+              <img :src="obstacle.art" alt="" /><b>↔</b
+              ><img src="/art/obstacles/blast-gate.svg" alt="" /><b class="demo-check">✓</b>
+            </template>
+            <template v-else-if="obstacle.id === 'fossil'">
+              <span class="demo-matches demo-dust"
+                ><img src="/art/ruby.svg" alt="" /><img src="/art/ruby.svg" alt="" /><img
+                  src="/art/ruby.svg"
+                  alt=""
+              /></span>
+              <b>→</b><img :src="obstacle.art" alt="" /><b class="demo-check">✓</b>
+            </template>
+            <template v-else-if="obstacle.id === 'root-knot'">
+              <span class="demo-matches"
+                ><img src="/art/ruby.svg" alt="" /><img src="/art/ruby.svg" alt="" /><img
+                  src="/art/ruby.svg"
+                  alt=""
+              /></span>
+              <img :src="obstacle.art" alt="" /><b>→</b><img src="/art/emerald.svg" alt="" /><b
+                class="demo-check"
+                >✓</b
+              >
             </template>
             <template v-else>
               <span class="demo-matches"
@@ -121,6 +172,10 @@ const { dialog, closeButton, dismissBackdrop } = useNativeDialog(() => emit('clo
   position: relative;
   display: flex;
   border-radius: 4px;
+}
+.demo-matches.demo-dust {
+  background: #745235;
+  border-color: #dcc193;
 }
 .demo-chain {
   position: absolute;

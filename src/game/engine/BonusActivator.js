@@ -1,6 +1,7 @@
 import { isAnchored } from './TileRules.js';
 import { GEM_TYPES } from './GemFactory.js';
 import { dominantGemType, getBonusFusion } from './BonusFusion.js';
+import { isPlayableCell } from './BoardTopology.js';
 
 // Board bonuses plus the toolbar powers that share their reaction rules.
 const ACTIVATABLE = new Set([
@@ -46,6 +47,7 @@ export class BonusActivator {
     fusion = getBonusFusion(board, cols, rows, swap),
     swapGems = null,
     tiles = [],
+    blasts = null,
   ) {
     if (!swap) return [];
     const { a, b } = swapGems ?? { a: board[swap.aIndex], b: board[swap.bIndex] };
@@ -74,21 +76,30 @@ export class BonusActivator {
       seeds,
       targets: fusion?.targets ?? [],
       processed: fusion ? [swap.aIndex, swap.bIndex] : [],
+      blasts,
     });
   }
 
   // Toolbar powers and board bonuses share the same reaction and anchor rules.
-  activatePower(type, board, cols, rows, index, tiles = []) {
-    if (!Number.isInteger(index) || index < 0 || index >= board.length) return [];
+  activatePower(type, board, cols, rows, index, tiles = [], blasts = null) {
+    if (
+      !Number.isInteger(index) ||
+      index < 0 ||
+      index >= board.length ||
+      !isPlayableCell(tiles[index])
+    )
+      return [];
     const targets = this.activateBonus(type, board, cols, rows, index);
-    return this.resolveChain(board, cols, rows, { targets, tiles });
+    return this.resolveChain(board, cols, rows, { targets, tiles, blasts });
   }
 
+  // `blasts`, when given, is a Map that counts how many separate blasts reach each
+  // affected cell: the initial targets count as one, then one per bonus fired.
   resolveChain(
     board,
     cols,
     rows,
-    { targets = [], seeds = [], processed = [], tiles = [], fusion = null },
+    { targets = [], seeds = [], processed = [], tiles = [], fusion = null, blasts = null },
   ) {
     const affected = new Set();
     const visited = new Set(processed);
@@ -104,7 +115,13 @@ export class BonusActivator {
       );
     };
     const touch = (index) => {
-      if (index < 0 || index >= board.length || affected.has(index)) return;
+      if (
+        index < 0 ||
+        index >= board.length ||
+        affected.has(index) ||
+        !isPlayableCell(tiles[index])
+      )
+        return;
       affected.add(index);
       const gem = board[index];
       if (this.isBonus(gem?.type) && !visited.has(index)) {
@@ -115,12 +132,18 @@ export class BonusActivator {
         });
       }
     };
-    targets.forEach(touch);
+    const blast = (indices) => {
+      indices.forEach(touch);
+      if (blasts)
+        for (const index of new Set(indices))
+          if (affected.has(index)) blasts.set(index, (blasts.get(index) ?? 0) + 1);
+    };
+    blast(targets);
     for (let cursor = 0; cursor < queue.length; cursor++) {
       const { index, type, context } = queue[cursor];
       if (visited.has(index) || !canFire(index)) continue;
       visited.add(index);
-      this.activateBonus(type, board, cols, rows, index, context).forEach(touch);
+      blast(this.activateBonus(type, board, cols, rows, index, context));
     }
     return [...affected];
   }

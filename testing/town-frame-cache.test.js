@@ -12,15 +12,15 @@ it('keeps the village moving after pending plots settle', () => {
     actorRenderer: { update: vi.fn() },
     drawFrame: vi.fn(),
     tryActivatePlot() {
-      this.pendingPlot = null;
+      this.plotWork.active = null;
     },
   });
-  view.pendingPlot = {};
+  view.plotWork = { queue: [], active: {} };
   view.setMotion(true);
   expect(view.renderer.setAnimationLoop).toHaveBeenLastCalledWith(view.tick);
   view.tick(1000);
   view.tick(2000);
-  expect(view.pendingPlot).toBeNull();
+  expect(view.plotWork.active).toBeNull();
   expect(view.motionEnabled).toBe(true);
   expect(view.renderer.setAnimationLoop).toHaveBeenCalledTimes(1);
   view.setMotion(false);
@@ -39,6 +39,8 @@ it('keeps villagers and raid time moving while the camera owns the next draw', (
       actorRenderer: { update: vi.fn() },
       frameCache: { render: vi.fn() },
       drawFrame: TownDiorama.prototype.drawFrame,
+      tryActivatePlot: vi.fn(),
+      projectVillager: vi.fn(),
     };
   TownDiorama.prototype.tick.call(scene, 1017);
   expect(scene.elapsed).toBeCloseTo(1 / 60);
