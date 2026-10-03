@@ -305,6 +305,15 @@ Every level card shows its mine element icons, and honour mode adds tags such as
 "◆ Lamplighter · 2 lanterns" or "Score Ace at {target} · your best {score}". A museum request
 from an honour detail opens it pre-filtered.
 
+Release screenshots and an end-to-end recording (a real puzzle completed with the game's
+hints, then the popup and the collection): [video](images/honours/honours-end-to-end.mp4),
+[popup after a puzzle](images/honours/final-popup-after-puzzle.png),
+[collection](images/honours/final-collection-ranks.png),
+[town management](images/honours/final-town-manage.png),
+[visitor gallery](images/honours/final-visit-gallery.png),
+[museum](images/honours/final-museum-lamplighter.png),
+[French mobile](images/honours/final-mobile-fr.png).
+
 Mockups: [popups](images/honours/mockup-popups.png),
 [collection](images/honours/mockup-collection-achievements.png),
 [mine mastery](images/honours/mockup-collection-mine-mastery.png),
