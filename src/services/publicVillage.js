@@ -34,6 +34,9 @@ export function villageAppearance(village) {
   const town = createTown();
   const appearance = village.appearance;
   town.era = appearance.era;
+  // Completed puzzles pick the same space-helmet wearer the owner sees.
+  if (Number.isSafeInteger(appearance.completedRuns) && appearance.completedRuns > 0)
+    town.completedRuns = appearance.completedRuns;
   for (const key of ['buildings', 'buildingEras', 'buildingEraLevels'])
     for (const id of Object.keys(town[key]))
       if (Object.hasOwn(appearance[key], id)) town[key][id] = appearance[key][id];

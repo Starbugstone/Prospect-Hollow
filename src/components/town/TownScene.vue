@@ -224,6 +224,7 @@ import {
   updateLabels,
 } from '../../game/town/TownLabels';
 import { BUILDING_BY_ID, BUILDINGS } from '../../data/town';
+import { dressSpaceHelmet } from '../../game/town/TownSpaceHelmet';
 import {
   constructionRuns,
   constructionVisual,
@@ -511,6 +512,10 @@ async function update() {
     lastVisual = visual;
     lastConstruction = props.construction?.serial;
   }
+  // A visitor watches the helmet move after the owner's puzzles; the owner's own
+  // town only changes while they are in the mine.
+  scene.animateCostumes = props.readOnly && !props.reducedMotion;
+  dressSpaceHelmet(scene, props.town, { animate: scene.animateCostumes });
   scene.setPresentation(props.presentation);
   if (props.presentation) {
     scene.presentationFrame(presentationTime, props.reducedMotion);
@@ -754,6 +759,7 @@ watch(
     JSON.stringify(props.town.buildingEras),
     JSON.stringify(props.town.buildingEraLevels),
     props.town.era,
+    props.town.completedRuns,
     props.nextLevel,
     props.construction?.serial,
     locale.value,

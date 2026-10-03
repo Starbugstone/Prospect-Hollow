@@ -531,6 +531,26 @@ try {
         );
     }
 
+    // Shares saved before the space-helmet rotation gain the run count on read.
+    $legacy = $live;
+    unset($legacy['appearance']['completedRuns'], $legacy['saloonReadyAt']);
+    $db->get()->update('towns', ['appearance' => json_encode($legacy)], ['id' => $town2['townId']]);
+    $upgraded = status(200, callApi('GET', 'villages/' . $shared . '/latest'), 'legacy runs');
+    check(
+        is_int($upgraded['appearance']['completedRuns'] ?? null) &&
+            $upgraded['appearance']['completedRuns'] === $live['appearance']['completedRuns'],
+        'legacy view projects the completed run count',
+    );
+
+    $progress = profile();
+    $progress->town->completedRuns = 7;
+    $runs = json_decode($public->projection($progress, 'Progress', '0'), true)['appearance'];
+    check($runs['completedRuns'] === 7, 'visit shares the completed run count');
+    foreach ([-3, '7', 1.5, null] as $invalid) {
+        $progress->town->completedRuns = $invalid;
+        $runs = json_decode($public->projection($progress, 'Progress', '0'), true)['appearance'];
+        check($runs['completedRuns'] === 0, 'an invalid run count is shared as zero');
+    }
     $progress = profile();
     $progress->town->buildings->saloon = 5;
     $progress->town->buildingEraLevels->saloon = 9;

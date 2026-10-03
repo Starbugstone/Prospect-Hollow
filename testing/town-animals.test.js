@@ -4,12 +4,8 @@ import { TownActors } from '../src/game/town/TownActors';
 import { updateTownLocomotion } from '../src/game/town/TownLocomotion';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
-import {
-  addTownAnimals,
-  animalHabitats,
-  animalKey,
-  spaceHelmetWearer,
-} from '../src/game/town/TownAnimals';
+import { addTownAnimals, animalHabitats, animalKey } from '../src/game/town/TownAnimals';
+import { dressSpaceHelmet, spaceHelmetWearer } from '../src/game/town/TownSpaceHelmet';
 import { addPowerGrid, addEraStreetscape } from '../src/game/town/TownEvolution';
 import { townNavigation, walkPose, walkPath } from '../src/game/town/TownNavigation';
 import { createAnimalBehavior } from '../src/game/town/TownAnimalBehavior';
@@ -640,60 +636,133 @@ it('keeps animal routes that the changed town still allows', () => {
   expect(d.navigation.plans - plans).toBeLessThanOrEqual(1);
 });
 
-// The reuse key includes an era costume, so Tomorrow City's space dog is kept, not rebuilt,
-// on both the immediate path and the deferred path the live village uses (C5).
-it('moves the space helmet to the next animal in each era after Tomorrow City', () => {
-  const debut = ERAS.findIndex((era) => era.id === SPACE_HELMET.debut);
+const helmeted = (d) => d.animals.filter((a) => a.root.getObjectByName('Space helmet'));
+const castOf = (d) => new Set(d.animals.map((a) => a.species));
+
+it('picks a present wearer for each completed puzzle, never twice in a row', () => {
   expect(new Set(SPACE_HELMET.wearers).size).toBe(SPACE_HELMET.wearers.length);
-  for (const [index, { id }] of ERAS.entries())
-    expect(spaceHelmetWearer(id), id).toBe(
-      index < debut ? null : SPACE_HELMET.wearers[(index - debut) % SPACE_HELMET.wearers.length],
+  const town = { era: 'tomorrow', completedRuns: 0 };
+  for (const cast of [
+    SPACE_HELMET.wearers,
+    ['dog', 'fox', 'raccoon', 'pigeon'],
+    ['fox', 'raccoon'],
+    ['hen'],
+  ]) {
+    const present = new Set(cast);
+    const candidates = SPACE_HELMET.wearers.filter((species) => present.has(species));
+    const picks = [];
+    for (let runs = 0; runs < 400; runs++)
+      picks.push(spaceHelmetWearer({ ...town, completedRuns: runs }, present));
+    for (const pick of picks) expect(candidates).toContain(pick);
+    for (let n = 1; n < picks.length && candidates.length > 1; n++)
+      expect(picks[n], `${cast} run ${n}`).not.toBe(picks[n - 1]);
+    // Every round lets each present animal wear the helmet once.
+    if (candidates.length > 2)
+      for (let round = 0; round < 400 / candidates.length - 1; round++)
+        expect(
+          new Set(picks.slice(round * candidates.length, (round + 1) * candidates.length)).size,
+        ).toBe(candidates.length);
+  }
+  const all = new Set(SPACE_HELMET.wearers);
+  expect(spaceHelmetWearer({ era: 'contemporary', completedRuns: 3 }, all)).toBeNull();
+  expect(spaceHelmetWearer({ era: 'unknown-era', completedRuns: 3 }, all)).toBeNull();
+  expect(spaceHelmetWearer({ era: 'tomorrow', completedRuns: 3 }, new Set(['pigeon']))).toBeNull();
+  // Corrupt counts fall back to the first pick instead of failing.
+  for (const completedRuns of [-4, 1.5, '3', undefined])
+    expect(spaceHelmetWearer({ era: 'tomorrow', completedRuns }, all)).toBe(
+      spaceHelmetWearer({ era: 'tomorrow', completedRuns: 0 }, all),
     );
-  expect(['tomorrow', 'canopy', 'riverlight'].map(spaceHelmetWearer)).toEqual([
-    'dog',
-    'cat',
-    'fox',
-  ]);
-  expect(spaceHelmetWearer('unknown-era')).toBeNull();
 });
 
-it.each(ERAS.map((era) => era.id))(
-  'dresses one %s animal, the era wearer, as a space animal',
-  (era) => {
-    const d = fixture(era);
-    addTownAnimals(d, d.town);
-    const dressed = d.animals.filter((a) => a.root.getObjectByName('Space helmet'));
-    const wearer = spaceHelmetWearer(era);
-    expect(dressed.map((a) => a.species)).toEqual(wearer ? [wearer] : []);
-    expect(dressed.every((a) => a.costume === 'space-helmet')).toBe(true);
-  },
-);
+it.each(ERAS.map((era) => era.id))('dresses at most one %s animal as a space animal', (era) => {
+  const d = fixture(era);
+  d.town.completedRuns = 11;
+  addTownAnimals(d, d.town);
+  const wearer = spaceHelmetWearer(d.town, castOf(d));
+  expect(helmeted(d).map((a) => a.species)).toEqual(wearer ? [wearer] : []);
+  expect(helmeted(d).every((a) => a.costume === 'space-helmet')).toBe(true);
+  if (ERAS.findIndex(({ id }) => id === era) >= ERAS.findIndex(({ id }) => id === 'tomorrow'))
+    expect(wearer).toBeTruthy();
+});
 
-// Later eras keep the latest cast, so every future wearer has an animal to dress.
+// Later eras keep the latest cast, so every wearer can be picked there.
 it('casts every space-helmet wearer in the latest era town', () => {
   const d = fixture(ERAS.at(-1).id);
   addTownAnimals(d, d.town);
-  const cast = new Set(d.animals.map((a) => a.species));
-  for (const species of SPACE_HELMET.wearers) expect(cast.has(species), species).toBe(true);
+  for (const species of SPACE_HELMET.wearers) expect(castOf(d).has(species), species).toBe(true);
 });
 
-it('keeps the costumed space dog when the Tomorrow town re-settles', async () => {
+it('moves the helmet in place after a puzzle, without re-planning any walk', () => {
+  const d = fixture('riverlight');
+  let rebuilt = 0;
+  Object.assign(d, { rebuildActors: () => rebuilt++, render() {} });
+  addTownAnimals(d, d.town);
+  const [first] = helmeted(d);
+  const paths = new Map(d.animals.map((a) => [a, a.path]));
+  const plans = d.navigation.plans;
+  const { position } = first.root;
+  const at = position.clone();
+  d.town.completedRuns += 1;
+  dressSpaceHelmet(d, d.town);
+  const [next] = helmeted(d);
+  expect(next).not.toBe(first);
+  expect(next.species).toBe(spaceHelmetWearer(d.town, castOf(d)));
+  // The former wearer is the same animal on the same spot, now in its own coat.
+  expect(first.costume).toBeNull();
+  expect(first.root.position.toArray()).toEqual(at.toArray());
+  expect(first.root.parent).toBe(d.world);
+  expect(position).not.toBe(first.root.position);
+  for (const animal of d.animals) expect(animal.path).toBe(paths.get(animal));
+  expect(d.navigation.plans).toBe(plans);
+  expect(rebuilt).toBe(1);
+});
+
+it('shrinks the old wearer away and grows the new one for a watching visitor', () => {
+  const d = fixture('canopy');
+  let rebuilt = 0;
+  Object.assign(d, { rebuildActors: () => rebuilt++, render() {} });
+  addTownAnimals(d, d.town);
+  for (const animal of d.animals) animal.root.visible = true;
+  const [first] = helmeted(d);
+  d.town.completedRuns += 1;
+  dressSpaceHelmet(d, d.town, { animate: true });
+  const next = d.animals.find((a) => a.dressing?.costume === 'space-helmet');
+  expect(next.species).toBe(spaceHelmetWearer(d.town, castOf(d)));
+  expect(first.dressing.costume).toBeNull();
+  // Nothing changes outfit until each animal has shrunk out of sight.
+  expect(helmeted(d)).toEqual([first]);
+  const start = d.elapsed ?? 0,
+    sizes = [];
+  for (let t = 0; t <= 1; t += 0.05) {
+    d.animalMotion(start + 0.01 + t);
+    sizes.push(first.body.scale.x);
+  }
+  expect(Math.min(...sizes)).toBeLessThan(0.05);
+  expect(sizes.at(-1)).toBe(1);
+  expect(first.dressing).toBeNull();
+  expect(next.dressing).toBeNull();
+  expect(helmeted(d)).toEqual([next]);
+  expect(next.body.scale.x).toBe(1);
+  expect(rebuilt).toBe(2);
+});
+
+// The deferred path the live village uses keeps the dressed animal object (C5).
+it('keeps the helmeted animal when the town re-settles', async () => {
   const d = fixture('tomorrow');
   addTownAnimals(d, d.town);
-  const dog = d.animals.find((a) => a.species === 'dog');
-  expect(dog.root.userData.costume).toBe('space-helmet');
+  const [first] = helmeted(d);
+  expect(first.root.userData.costume).toBe('space-helmet');
   addTownAnimals(d, d.town);
-  expect(d.animals.find((a) => a.species === 'dog').path).toBe(dog.path);
-  const settled = d.animals.find((a) => a.species === 'dog');
+  const [settled] = helmeted(d);
+  expect(animalKey(settled)).toBe(animalKey(first));
+  expect(settled.path).toBe(first.path);
   Object.assign(d, { deferLife: true, generation: 1, rebuildActors() {}, render() {} });
   const before = d.animals;
   addTownAnimals(d, d.town);
   for (let n = 0; n < 400 && d.animals === before; n++)
     await new Promise((resolve) => setTimeout(resolve, 5));
   expect(d.animals).not.toBe(before);
-  const kept = d.animals.find((a) => a.species === 'dog');
-  expect(kept).toBe(settled);
-  expect(kept.root.getObjectByName('Space helmet')).toBeTruthy();
+  expect(helmeted(d)).toEqual([settled]);
 });
 
 it('plans again only the animal route that a new building now blocks', () => {

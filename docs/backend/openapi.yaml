@@ -983,7 +983,7 @@
           'get':
             {
               'summary': 'Read-only public appearance and saloonReadyAt for a share link, no account needed; no arrival side effect; 404 when private or deleted',
-              'description': 'Appearance includes mineLevel (the next unlocked puzzle) and levelRecords, a map of authored level IDs to {stars: 1–3}. Completed levels and earned stars are visible in the mine and museum. Private scores, times, inventory and rewards are omitted. Older projections are refreshed from the saved profile on visit.',
+              'description': 'Appearance includes mineLevel (the next unlocked puzzle), completedRuns (the completed puzzle count that picks the space-helmet animal) and levelRecords, a map of authored level IDs to {stars: 1–3}. Completed levels and earned stars are visible in the mine and museum. Private scores, times, inventory and rewards are omitted. Older projections are refreshed from the saved profile on visit.',
               'security': [],
               'responses':
                 {

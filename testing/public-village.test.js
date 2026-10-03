@@ -1,6 +1,8 @@
 import { it, expect } from 'vitest';
 import { villageAppearance, villageLevels } from '../src/services/publicVillage';
 import { createTown } from '../src/data/town';
+import { SPACE_HELMET } from '../src/data/townAnimals';
+import { spaceHelmetWearer } from '../src/game/town/TownSpaceHelmet';
 import { LEVEL_COUNT } from '../src/data/campaign';
 import { createSSRApp } from 'vue';
 import { renderToString } from 'vue/server-renderer';
@@ -132,4 +134,22 @@ it('keeps replay and continuous controls in the player museum grid', async () =>
     expect(html).toContain(continuous ? 'Keep matching' : 'Play again');
     expect(html).toContain(continuous ? 'Continuous play, level 1:' : 'Replay level 1:');
   }
+});
+
+it('shows visitors the space-helmet wearer the owner sees after each puzzle', () => {
+  const cast = new Set(SPACE_HELMET.wearers);
+  for (const completedRuns of [0, 1, 2, 17, 4096]) {
+    const owner = { ...createTown(), era: 'riverlight', completedRuns };
+    const appearance = { ...createTown(), era: 'riverlight', completedRuns };
+    expect(villageAppearance({ appearance }).completedRuns).toBe(completedRuns);
+    expect(spaceHelmetWearer(villageAppearance({ appearance }), cast)).toBe(
+      spaceHelmetWearer(owner, cast),
+    );
+  }
+  // A share saved before the run count existed, or a corrupt one, starts the rotation.
+  for (const completedRuns of [undefined, -1, 2.5, '9'])
+    expect(
+      villageAppearance({ appearance: { ...createTown(), era: 'riverlight', completedRuns } })
+        .completedRuns,
+    ).toBe(0);
 });

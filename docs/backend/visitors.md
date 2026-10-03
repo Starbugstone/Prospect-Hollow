@@ -40,6 +40,12 @@ persisted receipt timestamp. A credited collection queues a coin notification;
 account refreshes and later polls cannot credit or announce it twice. Puzzle play
 pauses these notifications and collection is applied on returning to town.
 
+The shared appearance includes the owner's completed puzzle count (`completedRuns`).
+From Tomorrow City onwards it picks the village animal wearing the space helmet, so
+visitors see the same wearer as the owner without any stored choice. When a poll brings a
+new count, the old wearer shrinks away and the new one grows back in its suit; reduced
+motion swaps them at once.
+
 ## Presence lifecycle
 
 The visit page sends a heartbeat immediately and every 12 seconds. Both visible town views check visitors every 3 seconds. Normal arrivals/departures therefore

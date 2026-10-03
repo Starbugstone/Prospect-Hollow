@@ -61,6 +61,9 @@ final class PublicTown
                 ? $value
                 : $era;
         }
+        // Completed puzzles pick the same space-helmet wearer for visitors as for the owner.
+        $runs = $town->completedRuns ?? 0;
+        $appearance['completedRuns'] = is_int($runs) ? max(0, $runs) : 0;
         // Like the owner's own mine sign: the first puzzle without a completion record.
         $records = (array) ($profile->records ?? []);
         $appearance['mineLevel'] = 1;
@@ -132,9 +135,12 @@ final class PublicTown
             throw new ApiError(404, 'Town unavailable.');
         }
         $village = json_decode($row['appearance']);
-        // Older shared appearances predate level awards. Project their saved progress
+        // Older shared appearances predate level awards or completed runs. Project their saved progress
         // on read so visitors need not wait for the owner to connect and save again.
-        if (!isset($village->appearance->levelRecords)) {
+        if (
+            !isset($village->appearance->levelRecords) ||
+            !isset($village->appearance->completedRuns)
+        ) {
             $saved = $this->database
                 ->get()
                 ->fetchAssociative(

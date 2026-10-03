@@ -102,12 +102,19 @@ _The village hover shuttle bus by the blacksmith's hangar._
 
 _The storm-cleanup crew's hovering response pod at the river promenade._
 
-## The space dog
+## The space animal
 
-In Tomorrow City the village dog becomes a Cosmo-style space dog. The `tomorrow` wardrobe
-declares `petCostume: 'space-helmet'`, so a later era can reuse the costume without an
-era-name check. The dog wears a clear bubble helmet (the only extra material, and a
-transparent one) on a white collar ring, a white suit with red star patches, and red boots.
+From Tomorrow City onwards one village animal wears a Cosmo-style space suit: a clear
+bubble helmet (the only extra material, and a transparent one) on a white collar ring, a
+white suit with red star patches, and red boots. The suit fits itself to any head, so every
+species in `SPACE_HELMET.wearers` (`src/data/townAnimals.js`) can wear it.
+
+The helmet moves to another animal after each completed puzzle. `spaceHelmetWearer()` in
+`TownSpaceHelmet.js` picks among the wearers present in the town from `town.completedRuns`:
+each round dresses every present animal once in a shuffled order, and no animal wears it
+twice in a row. Visitors get the same count in the shared appearance, so they see the same
+animal; while they watch, the old wearer shrinks away and grows back in its own coat as the
+new one does in the suit. The owner's town changes while they are in the mine.
 
 ![Space dog, front](images/tomorrow-city/22-space-dog.png)
 

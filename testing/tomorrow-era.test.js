@@ -9,7 +9,6 @@ import { animateVehicle, motorVehicle, responseVehicle } from '../src/game/town/
 import { addAviationActivity } from '../src/game/town/TownAviation';
 import { roundedAircraft } from '../src/game/town/RoundedTransports';
 import { animalModel } from '../src/game/town/TownAnimalModels';
-import { animalKey } from '../src/game/town/TownAnimals';
 import { SPACE_HELMET } from '../src/data/townAnimals';
 import { addEraActivity } from '../src/game/town/TownEraActivity';
 import { ALL_MESH_FAMILIES, loadFamilies } from '../src/game/town/assets/MeshCatalog';
@@ -321,10 +320,6 @@ describe('Rounded architecture rendering', () => {
           ).toBeLessThanOrEqual(radius);
       });
     }
-    // A costume change must not reuse the plain animal across an era rebuild.
-    expect(animalKey({ species: 'dog', seed: 4, costume: 'space-helmet' })).not.toBe(
-      animalKey({ species: 'dog', seed: 4 }),
-    );
   });
 
   it.each(['tomorrow', 'canopy', 'riverlight'])(
