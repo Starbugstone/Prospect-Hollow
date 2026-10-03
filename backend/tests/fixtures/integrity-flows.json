@@ -541,7 +541,15 @@
         "settledRun": 1,
         "honours": {
           "version": 1,
-          "earned": {},
+          "earned": {
+            "first-perfect": {
+              "at": 1780000000000,
+              "version": 1,
+              "evidence": { "levelId": 1 },
+              "seen": false,
+              "announced": false
+            }
+          },
           "counts": { "gems": {}, "forge": 0, "mine": {} },
           "fusions": [],
           "showcase": [],
@@ -1601,7 +1609,15 @@
         "settledRun": 1,
         "honours": {
           "version": 1,
-          "earned": {},
+          "earned": {
+            "first-perfect": {
+              "at": 1780000000000,
+              "version": 1,
+              "evidence": { "levelId": 1 },
+              "seen": false,
+              "announced": false
+            }
+          },
           "counts": { "gems": {}, "forge": 0, "mine": {} },
           "fusions": [],
           "showcase": [],
@@ -2150,11 +2166,19 @@
         "settledRun": 1,
         "honours": {
           "version": 1,
-          "earned": {},
+          "earned": {
+            "first-perfect": {
+              "at": 1780000000000,
+              "version": 1,
+              "evidence": { "levelId": 1 },
+              "seen": false,
+              "announced": false
+            }
+          },
           "counts": { "gems": {}, "forge": 0, "mine": {} },
           "fusions": [],
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 1
         }
       },
       "serverNow": 1780000000000
@@ -5853,8 +5877,15 @@
         "settledRun": 0,
         "honours": {
           "version": 1,
-          "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {} },
+          "earned": {
+            "forge-delivers": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            }
+          },
+          "counts": { "gems": {}, "forge": 1, "mine": {} },
           "fusions": [],
           "showcase": [],
           "backfilled": 0
@@ -7972,7 +8003,15 @@
         "settledRun": 0,
         "honours": {
           "version": 1,
-          "earned": {},
+          "earned": {
+            "defence-frontier": {
+              "at": 1780000000000,
+              "version": 1,
+              "evidence": { "eventId": 1 },
+              "seen": false,
+              "announced": false
+            }
+          },
           "counts": { "gems": {}, "forge": 0, "mine": {} },
           "fusions": [],
           "showcase": [],

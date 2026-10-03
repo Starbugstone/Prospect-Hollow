@@ -11,10 +11,21 @@ import {
   acknowledgePresentation,
 } from '../data/townPresentations';
 import { campaignCompletion } from '../data/campaignCompletion';
-import { createHonours, normalizeHonours, validShowcase } from '../data/honours';
+import {
+  awardHonour,
+  backfillHonours,
+  createHonours,
+  creditForge,
+  creditRun,
+  defenceMedal,
+  evaluateHonours,
+  mergeHonours,
+  normalizeHonours,
+  validShowcase,
+} from '../data/honours';
 import { miningDepthBonus, CHEST_ECONOMY_VERSION } from '../data/economy';
 import { defineStore } from 'pinia';
-import { markRaw } from 'vue';
+import { markRaw, toRaw } from 'vue';
 import { SHOP_ITEMS, rollShopStock, shopSlots, shopSpace } from '../data/shop';
 import { CHAPTERS, LEVEL_COUNT, POWERS, runChests, getStars } from '../data/campaign';
 import { chapterLevelIds } from '../data/chapters';
@@ -96,6 +107,13 @@ const defaults = () => ({
   vipReceipts: [],
   powers: POWERS.map((power) => ({ ...power, quantity: 0 })),
   honours: createHonours(),
+});
+// What honours are evaluated against. Spreading the store itself would run every getter.
+const honourState = (state) => ({
+  records: toRaw(state.records),
+  town: toRaw(state.town),
+  powers: toRaw(state.powers),
+  honours: state.honours,
 });
 const load = (loaded = localProfile.load(), persistRecovered = true) => {
   const state = defaults();
@@ -230,6 +248,9 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
       state.inventoryNotice =
         'Bonus storage now has a limit. Extra saved bonuses were exchanged for 10 coins each.';
     }
+    // Older saves earn what their state already proves, with an unknown date. Nothing is
+    // written here: the next save stores it, so repeated loads give the same result.
+    state.honours = backfillHonours(honourState(state));
     if (
       persistRecovered &&
       recovered.length &&
@@ -384,6 +405,7 @@ export const useCampaignStore = defineStore('campaign', {
       return this.updateEarnedHonours(ids, 'announced');
     },
     updateEarnedHonours(ids, flag) {
+      if (!['seen', 'announced'].includes(flag) || !Array.isArray(ids)) return false;
       const changed = ids.filter((id) => this.honours.earned[id] && !this.honours.earned[id][flag]);
       if (!changed.length) return false;
       const earned = { ...this.honours.earned };
@@ -417,11 +439,17 @@ export const useCampaignStore = defineStore('campaign', {
     profile() {
       return profileData(this);
     },
+    // The one evaluation point for state-derived honours, so every action (chests, shop,
+    // forge, buildings, powers, victories) is covered. New honours are kept only once stored.
     save() {
       if (this.readOnly || localProfile.writesSuspended) return false;
-      const saved = localProfile.save(this.profile(), (integrity) => {
+      const { honours, added } = evaluateHonours(honourState(this), { at: Date.now() });
+      const profile = this.profile();
+      if (added.length) profile.honours = honours;
+      const saved = localProfile.save(profile, (integrity) => {
         this.integrity = plainIntegrity(integrity);
       });
+      if (saved && added.length) this.honours = honours;
       this.saveWarning = saved
         ? ''
         : 'Your progress is not saving. Keep this page open to continue.';
@@ -438,6 +466,10 @@ export const useCampaignStore = defineStore('campaign', {
     importSave(text) {
       const parsed = parseSaveFile(text);
       const next = load({ data: parsed }, false);
+      // A backup of this same town restores its progress, never fewer honours. Another
+      // town's backup replaces the slot's identity and its honours with it.
+      if (townStorage.keepsIdentity(parsed._backupTown))
+        next.honours = mergeHonours(next.honours, this.honours);
       // Commit the normalized profile before replacing any live progress.
       try {
         townStorage.import(profileData(next), parsed._backupTown);
@@ -463,6 +495,7 @@ export const useCampaignStore = defineStore('campaign', {
           powers: this.powers.map((power) =>
             power.id === 'tnt' ? { ...power, quantity: power.quantity + 1 } : power,
           ),
+          honours: creditForge(this.honours),
         },
         { kind: 'forge-collect', data: { at: now } },
       );
@@ -745,6 +778,9 @@ export const useCampaignStore = defineStore('campaign', {
       if (!event || event.id !== id || event.seen) return false;
       const town = this.town;
       const bounty = Math.min(raidBounty(event), Number.MAX_SAFE_INTEGER - town.coins);
+      // The era gate keeps an unseen incident from crossing an era change, so the current
+      // era is the one it happened in. The medal is quiet and earned once per era.
+      const medal = defenceMedal(event, town.era);
       return this.commit(
         {
           town: {
@@ -752,6 +788,9 @@ export const useCampaignStore = defineStore('campaign', {
             coins: town.coins + bounty,
             events: { ...town.events, [BANDIT_EVENT]: { ...event, seen: true, bounty } },
           },
+          ...(medal && !this.honours.earned[medal]
+            ? { honours: awardHonour(this.honours, medal, { at, evidence: { eventId: id } }) }
+            : {}),
         },
         { kind: 'raid-seen', data: { raidId: id, at } },
       );
@@ -850,6 +889,7 @@ export const useCampaignStore = defineStore('campaign', {
       comboCounts = {},
       multiMatchCounts = {},
       chooseRewards = false,
+      tally = null,
     }) {
       const at = Date.now();
       if (
@@ -930,6 +970,9 @@ export const useCampaignStore = defineStore('campaign', {
         this.town.coins + miningPayout(jewels, bonusGems, comboCounts, multiMatchCounts, id),
       );
       this.settledRun = runId;
+      // Gems, fusions and mine elements count once, with this settled normal victory.
+      // They stay outside the integrity receipt: honours are presentation, not money.
+      if (tally) this.honours = creditRun(this.honours, tally);
       this.town = queueCampaignPresentations(this.town, this.records);
       this.recordAction('victory', {
         runId,

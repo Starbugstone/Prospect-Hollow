@@ -408,6 +408,12 @@ export function createTownStorage({
         throw new Error('Use account town management to create or delete a town.');
       persist({ profile, meta: freshMeta() });
     },
+    // Whether import() keeps the selected town's identity, making the backup a restore of
+    // the same town. A backup without an identity always does; another town's replaces it.
+    keepsIdentity(identity) {
+      const id = this.activeMeta()?.id;
+      return !!id && (!identity || identity.id === id);
+    },
     import(profile, identity) {
       const current = this.active() ?? { profile: {}, meta: freshMeta() };
       if (current.meta.owner && identity && identity.id !== current.meta.id)

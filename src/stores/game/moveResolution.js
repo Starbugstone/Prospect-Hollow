@@ -16,6 +16,7 @@ import {
   isAnchored,
   isAdjacent,
 } from '../../game/engine/TileRules';
+import { tallySteps } from '../../data/honours';
 import { useInventoryStore } from '../inventoryStore';
 import { plain, workingTiles } from './boardData';
 import { storeTimers } from './storeTimers';
@@ -179,6 +180,8 @@ export async function activatePower(store, bonusName, index, consume = false) {
           type: rescue ? 'rainbow' : bonusName,
           originIndex: index,
         };
+      // The free rescue sweep never counts towards honours.
+      resolution.recovery = rescue;
       if (!(await showResolution(store, resolution, session))) return false;
       // Consume before committing so victory rewards see the updated inventory.
       if (consume && !inventory.consumeItem(bonusName)) return false;
@@ -369,6 +372,9 @@ export function queueSwap(store, aIndex, bIndex) {
 }
 
 export function commitResolution(store, resolution) {
+  // Only moves that finished animating count; victory credits the tally to honours.
+  if (store.playMode === 'normal')
+    tallySteps(toRaw(store.honourTally), resolution.steps, { recovery: resolution.recovery });
   store.board = plain(resolution.board);
   store.pendingBoardState = null;
   store.boardVersion += 1;

@@ -1,6 +1,7 @@
 import { recoveryStore } from './recoveryStore';
 import { acknowledgeIntegrity, prepareIntegritySnapshot } from './saveIntegrity';
 import { jsonCopy } from './jsonCopy';
+import { keepHonours } from '../data/honours';
 const queues = new WeakMap();
 const CHANGED_SINCE_REVIEW = 'Your save changed. Review it before confirming another overwrite.';
 const LEAVE_MINE_TO_REVIEW = 'Return to the village to review your preserved save.';
@@ -139,13 +140,13 @@ export function createSyncService({
         }
         r.meta.recovery = recovery;
         r.meta.desyncNotice = false;
-        r.profile = result.profile;
+        r.profile = keepHonours(result.profile, r.profile);
         replaced = true;
       }
       if (downloaded && (r.meta.sequence !== sequence || r.meta.dirty || !canApply(id)))
         return false;
       if (downloaded) {
-        r.profile = result.profile;
+        r.profile = keepHonours(result.profile, r.profile);
         replaced = true;
       }
       if (ack && !replaced && r.profile.integrity)
@@ -155,7 +156,8 @@ export function createSyncService({
       r.meta = {
         ...r.meta,
         ...cloudMeta(result),
-        dirty: r.meta.sequence !== sequence,
+        // Honours kept from the replaced copy still need uploading.
+        dirty: r.meta.sequence !== sequence || (replaced && r.profile !== result.profile),
         pending: null,
         conflict: null,
         missing: false,
@@ -184,12 +186,13 @@ export function createSyncService({
         if (!eligible(id, owner) || !canApply(id) || r.meta.sequence !== before.meta.sequence)
           return;
         if (r.meta.dirty) r.meta.recovery = recovery;
-        r.profile = cloud.profile;
+        // The server copy wins, but the town never loses an earned honour.
+        r.profile = keepHonours(cloud.profile, r.profile);
         delete r.meta.restoreIntent;
         r.meta = {
           ...r.meta,
           ...cloudMeta(cloud),
-          dirty: false,
+          dirty: r.profile !== cloud.profile,
           conflict: null,
           sequence: r.meta.sequence + 1,
           desyncNotice: r.meta.recovery?.reason === 'desync',
@@ -432,7 +435,7 @@ export function createSyncService({
           sequence: local.meta.sequence,
           body: {
             baseRevision: review.revision,
-            profile: jsonCopy(recovery.profile),
+            profile: keepHonours(jsonCopy(recovery.profile), local.profile),
             uploadId: crypto.randomUUID(),
           },
         };
@@ -453,7 +456,11 @@ export function createSyncService({
           resolve: true,
           replace: true,
           sequence: local.meta.sequence,
-          body: { baseRevision: local.meta.baseRevision, profile, uploadId: crypto.randomUUID() },
+          body: {
+            baseRevision: local.meta.baseRevision,
+            profile: keepHonours(profile, local.profile),
+            uploadId: crypto.randomUUID(),
+          },
         };
         await upload(id, owner, await stage(id, owner, pending), true);
       });

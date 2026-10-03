@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import { remainingOre } from '../game/engine/ChapterMechanics';
 import { PlayClock } from '../game/engine/PlayClock';
 import { levelConfig } from '../game/engine/LevelGenerator';
+import { createRunTally } from '../data/honours';
 import { useSettingsStore } from './settingsStore';
 import { plain } from './game/boardData';
 import { storeTimers } from './game/storeTimers';
@@ -58,6 +59,8 @@ export const useGameStore = defineStore('game', {
     remainingBonusGems: 0,
     comboCounts: {},
     multiMatchCounts: {},
+    // Gems and fusions from committed moves, credited to honours only at victory.
+    honourTally: createRunTally(),
     playMode: 'normal',
     constructionReward: [],
     arcadeImpact: null,

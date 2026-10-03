@@ -12,7 +12,7 @@ import { ERAS } from './eras';
 import { OBSTACLES } from './obstacles';
 import { bonusCapacity } from './rewards';
 import { getLevelStarTarget } from './starRating';
-import { BUILDING_BY_ID } from './town';
+import { BANDIT_EVENT, BUILDING_BY_ID } from './town';
 import { eraEventKind, eventKind } from './townEvents';
 
 const HONOURS_VERSION = 1;
@@ -393,8 +393,10 @@ export function createHonourCatalog({
           stars += Math.min(3, Math.max(0, state.records?.[id]?.stars ?? 0));
         return { value: stars, goal: levelCount * 3 };
       },
+      // Evaluated on every save: the last level rules most campaigns out at once.
       qualifies: (state) =>
-        campaignCompletion(state.records ?? {}, levelCount).complete
+        state.records?.[levelCount]?.stars === 3 &&
+        campaignCompletion(state.records, levelCount).complete
           ? { levels: levelCount }
           : null,
     },
@@ -603,8 +605,33 @@ export function mergeHonours(local, incoming) {
   return merged;
 }
 
+// A copy of the same town replacing the live one (backup import, cloud pull, restore)
+// keeps every earned honour and the larger counts; the incoming showcase wins when set.
+// Returns `profile` itself when the live copy adds nothing.
+export function keepHonours(profile, live) {
+  if (!live?.honours || !profile || typeof profile !== 'object') return profile;
+  const honours = mergeHonours(profile.honours, live.honours);
+  return JSON.stringify(honours) === JSON.stringify(normalizeHonours(profile.honours))
+    ? profile
+    : { ...profile, honours };
+}
+
 // ---------- Crediting and evaluation (pure; the campaign store persists results) ----------
+// The run tally lives in the game store and travels with the town handoff. Mine
+// elements are added from the level configuration at completion.
 export const createRunTally = () => ({ gems: {}, fusions: [], mine: {} });
+// A tally restored from a handoff snapshot; snapshots older than honours have none.
+export const normalizeRunTally = (saved) => ({
+  gems: countMap(saved?.gems),
+  fusions: [
+    ...new Set(
+      (Array.isArray(saved?.fusions) ? saved.fusions : []).filter((key) =>
+        Object.hasOwn(FUSION_STYLES, key),
+      ),
+    ),
+  ],
+  mine: {},
+});
 // Committed resolution steps only: collectedJewels already counts each removed gem once
 // and excludes refills, previews, bonuses and relics. Real swap fusions carry a key;
 // the free recovery sweep's technical fusion does not, and the sweep is excluded.
@@ -694,6 +721,15 @@ export function evaluateHonours(
   }
   if (backfill) honours.backfilled = HONOURS_VERSION;
   return { honours, added };
+}
+// Saves from before this honours version earn what their state already proves, with
+// an unknown date, plus the one attributable defence medal. Counts are never inferred.
+export function backfillHonours(state, catalog = HONOURS) {
+  const current = normalizeHonours(state.honours);
+  if (current.backfilled >= HONOURS_VERSION) return current;
+  const { honours } = evaluateHonours({ ...state, honours: current }, { backfill: true, catalog });
+  const medal = backfillDefenceMedal(state.town?.events?.[BANDIT_EVENT], catalog);
+  return medal ? awardHonour(honours, medal, { backfilled: true }) : honours;
 }
 
 // ---------- Presentation helpers ----------
