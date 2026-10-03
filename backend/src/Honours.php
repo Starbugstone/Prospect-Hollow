@@ -20,6 +20,12 @@ final class Honours
     private const COUNT_KEYS = 64;
     private const FUSIONS = 64;
     private const MAX = 9007199254740991;
+    /**
+     * Different signed-in players who visited a town, each account once. The owner's own
+     * signed-in visits are never recorded; signed-out visits carry neither a display name
+     * nor a home town and stay in the guestbook only. `%s` is `id` or `public_id`.
+     */
+    public const VISITORS = "SELECT COUNT(DISTINCT v.visitor_key) FROM visitor_visits v JOIN towns t ON t.id=v.town_id WHERE t.%s=? AND (v.origin_town_id IS NOT NULL OR v.name <> '')";
 
     /** @param array<string, mixed> $catalog The `honours` block of public-schema.json. */
     public function __construct(private array $catalog = []) {}
@@ -89,6 +95,7 @@ final class Honours
                 'gems' => $max($a['counts']['gems'], $b['counts']['gems']),
                 'forge' => max($a['counts']['forge'], $b['counts']['forge']),
                 'mine' => $max($a['counts']['mine'], $b['counts']['mine']),
+                'visitors' => max($a['counts']['visitors'], $b['counts']['visitors']),
             ],
             'fusions' => array_slice(
                 array_values(array_unique([...$a['fusions'], ...$b['fusions']])),
@@ -149,6 +156,7 @@ final class Honours
                 'gems' => self::counts($value->counts->gems ?? null),
                 'forge' => self::count($value->counts->forge ?? null),
                 'mine' => self::counts($value->counts->mine ?? null),
+                'visitors' => self::count($value->counts->visitors ?? null),
             ],
             'fusions' => $fusions,
             'showcase' => $showcase,
@@ -166,8 +174,12 @@ final class Honours
      * @param \Closure(): SaveIntegrity $rules Loads the shared accounting catalog when needed.
      * @return array<string, mixed>|null
      */
-    public function publish(object $profile, int $levels, \Closure $rules): ?array
-    {
+    public function publish(
+        object $profile,
+        int $levels,
+        \Closure $rules,
+        ?\Closure $visitors = null,
+    ): ?array {
         $saved = $this->sanitize($profile->honours ?? null);
         if ($saved === null) {
             return null;
@@ -192,12 +204,21 @@ final class Honours
                     continue;
                 }
                 if (!array_key_exists($proof, $proven)) {
-                    $proven[$proof] = $this->prove($proof, $profile, $records, $levels, $rules);
+                    $proven[$proof] = $this->prove(
+                        $proof,
+                        $profile,
+                        $records,
+                        $levels,
+                        $rules,
+                        $visitors,
+                    );
                 }
                 $evidence = $proven[$proof];
                 $multiple = $definition['multiple'] ?? null;
+                $goal = self::positive($definition['goal'] ?? null);
                 if (
                     $evidence === null ||
+                    ($proof === 'visitors' && ($goal === null || $evidence['count'] < $goal)) ||
                     ($proof === 'score' &&
                         !(
                             self::number($multiple) &&
@@ -243,6 +264,7 @@ final class Honours
         array $records,
         int $levels,
         \Closure $rules,
+        ?\Closure $visitors,
     ): ?array {
         $stars = fn(int $id) => ($records[$id] ?? null) instanceof \stdClass
             ? $records[$id]->stars ?? null
@@ -271,6 +293,9 @@ final class Honours
                 $rules()->eraComplete($town)
                 ? []
                 : null;
+        }
+        if ($proof === 'visitors') {
+            return $visitors === null ? null : ['count' => (int) $visitors()];
         }
         if ($proof === 'score') {
             $from = self::positive($this->catalog['scoreFromLevel'] ?? null);
@@ -413,6 +438,7 @@ final class Honours
                 'gems' => (object) $honours['counts']['gems'],
                 'forge' => $honours['counts']['forge'],
                 'mine' => (object) $honours['counts']['mine'],
+                'visitors' => $honours['counts']['visitors'],
             ],
             'fusions' => $honours['fusions'],
             'showcase' => $honours['showcase'],

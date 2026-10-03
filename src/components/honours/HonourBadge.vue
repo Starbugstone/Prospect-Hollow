@@ -134,6 +134,12 @@
         />
         <path :d="STAR" transform="translate(38 38)" />
       </g>
+      <g v-else-if="art.glyph === 'guests'" stroke-width="1.4">
+        <circle cx="39" cy="42" r="7" fill="#7f9f83" stroke="#45604f" />
+        <path d="M27 70v-8a12 12 0 0 1 24 0v8Z" fill="#7f9f83" stroke="#45604f" />
+        <circle cx="61" cy="39" r="8" fill="#d8a73f" stroke="#7a561c" />
+        <path d="M48 70v-9a13 13 0 0 1 26 0v9Z" fill="#d8a73f" stroke="#7a561c" />
+      </g>
       <template v-else-if="art.image">
         <image v-if="art.second" :href="art.image" x="17" y="27" width="42" height="42" />
         <image v-if="art.second" :href="art.second" x="41" y="31" width="42" height="42" />

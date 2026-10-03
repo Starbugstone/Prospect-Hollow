@@ -84,6 +84,9 @@ The API contract is in [openapi.yaml](openapi.yaml):
 - `GET /api/v1/towns/{townId}/visitors?page=1`: owner-only current presence plus
   20 history entries per page, newest first, plus `saloonCollectedAt` for collection
   receipts. All timestamps use Unix milliseconds.
+  The owner reply also includes `uniqueVisitors`: different signed-in players who have
+  visited (each account once; signed-out visits never count), used by the Town Honours
+  visitor ranks. The public guestbook never includes it.
 - `GET /api/v1/villages/{publicId}/visitors?page=1`: the same public visitor
   entries and paginated history for a shared town, without the collection receipt.
   No account is required; private/deleted towns return 404.

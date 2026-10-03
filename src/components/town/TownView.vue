@@ -616,6 +616,7 @@ const {
   enqueue: enqueueVisitorNotice,
 } = useTownVisitors(() => props.active, {
   collectSaloon: (at) => (campaign.readOnly ? null : campaign.collectSaloonForVisitor(at)),
+  recordVisitors: (count) => !campaign.readOnly && campaign.recordTownVisitors(count),
 });
 async function findVisitor(id) {
   closeDialog();

@@ -93,7 +93,7 @@ try {
     $fresh = [
         'version' => 1,
         'earned' => (object) [],
-        'counts' => ['gems' => (object) [], 'forge' => 0, 'mine' => (object) []],
+        'counts' => ['gems' => (object) [], 'forge' => 0, 'mine' => (object) [], 'visitors' => 0],
         'fusions' => [],
         'showcase' => [],
         'backfilled' => 0,
@@ -123,7 +123,12 @@ try {
                 'backfilled' => true,
             ],
         ],
-        'counts' => ['gems' => ['ruby' => 120], 'forge' => 2, 'mine' => ['relics' => 3]],
+        'counts' => [
+            'gems' => ['ruby' => 120],
+            'forge' => 2,
+            'mine' => ['relics' => 3],
+            'visitors' => 2,
+        ],
         'fusions' => ['bomb+cross'],
         'showcase' => ['score', 'first-perfect'],
         'backfilled' => 1,
@@ -195,7 +200,7 @@ try {
                     'announced' => false,
                 ],
             ],
-            'counts' => ['gems' => ['topaz' => 9], 'forge' => 0, 'mine' => []],
+            'counts' => ['gems' => ['topaz' => 9], 'forge' => 0, 'mine' => [], 'visitors' => 0],
             'fusions' => ['bomb+cross', 'cross+rainbow'],
             'showcase' => ['score', 'first-perfect', 'forge-delivers'],
             'backfilled' => 0,
@@ -286,6 +291,7 @@ try {
             'gems' => ['ruby' => 50, 'topaz' => 4, 'sapphire' => 8],
             'forge' => 3,
             'mine' => ['relics' => 9],
+            'visitors' => 0,
         ],
         'fusions' => ['bomb+cross', 'cross+cross'],
         'showcase' => ['first-fusion'],
@@ -816,6 +822,90 @@ try {
             'an older share is projected from the saved honours on read',
         );
     }
+    // ---------- Visitor ranks: different signed-in players, counted by the server ----------
+    check(
+        $definitions['first-guest'] === [
+            'family' => 'visitors',
+            'rank' => 1,
+            'category' => 'achievement',
+            'proof' => 'visitors',
+            'goal' => 1,
+        ] && $definitions['welcoming-host']['goal'] === 5,
+        'visitor ranks share a family and are proven against their goal',
+    );
+    $visitNumber = 0;
+    $recordVisit = function (string $key, string $name, ?string $origin) use (
+        $db,
+        $id,
+        &$visitNumber,
+    ) {
+        $visitNumber++;
+        $db->get()->insert('visitor_visits', [
+            'id' => bin2hex(random_bytes(16)),
+            'town_id' => $id,
+            'visitor_key' => $key,
+            'name' => $name,
+            'origin_town_id' => $origin,
+            'town_name' => $origin === null ? null : 'Quiet Gulch',
+            'era' => 'frontier',
+            'arrived_at' => 1000 + $visitNumber,
+            'last_seen_at' => 1000 + $visitNumber,
+            'departed_at' => 1000 + $visitNumber,
+        ]);
+    };
+    // One account visiting three times counts once; a home town proves a signed-in visit;
+    // signed-out visits (no name, no home town) never count.
+    foreach ([1, 2, 3] as $repeat) {
+        $recordVisit(str_repeat('a', 64), 'Ada', null);
+    }
+    $recordVisit(str_repeat('b', 64), '', $plainTown['townId']);
+    $recordVisit(str_repeat('c', 64), '', null);
+    $recordVisit(str_repeat('d', 64), '', null);
+    $guestbook = status(
+        200,
+        callApi('GET', 'towns/' . $id . '/visitors', null, $owner),
+        'guestbook',
+    );
+    check(
+        $guestbook['uniqueVisitors'] === 2,
+        'the owner guestbook counts different signed-in visitors',
+    );
+    check(
+        !array_key_exists(
+            'uniqueVisitors',
+            status(200, callApi('GET', 'villages/' . $publicId . '/visitors'), 'public guestbook'),
+        ),
+        'the public guestbook does not publish the visitor count',
+    );
+    $host = profile();
+    $host->honours = asObject([
+        'earned' => ['first-guest' => ['at' => 5], 'welcoming-host' => ['at' => 6]],
+        'counts' => ['visitors' => 5],
+        'showcase' => ['visitors'],
+    ]);
+    $hosted = json_decode($public->projection($host, 'Honour Hall', $publicId), true)['appearance'];
+    check(
+        array_keys($hosted['honours']['earned']) === ['first-guest'] &&
+            $hosted['honours']['showcase'] === ['visitors'],
+        'visitors see only the visitor ranks the server can count',
+    );
+    foreach (['e', 'f', 'g'] as $key) {
+        $recordVisit(str_repeat($key, 64), 'Mayor', null);
+    }
+    $hosted = json_decode($public->projection($host, 'Honour Hall', $publicId), true)['appearance'];
+    check(
+        array_keys($hosted['honours']['earned']) === ['first-guest', 'welcoming-host'],
+        'five different signed-in visitors prove the second rank',
+    );
+    check(
+        kept(
+            ['honours' => ['counts' => ['visitors' => 7]]],
+            [
+                'honours' => ['counts' => ['visitors' => 3]],
+            ],
+        )['counts']['visitors'] === 7,
+        'a stored visitor count never decreases',
+    );
     $page = 1;
     do {
         $browse = status(200, callApi('GET', 'villages?page=' . $page, null, $owner), 'browse');

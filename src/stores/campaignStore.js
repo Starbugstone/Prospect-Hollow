@@ -21,6 +21,7 @@ import {
   evaluateHonours,
   mergeHonours,
   normalizeHonours,
+  recordVisitors,
   validShowcase,
 } from '../data/honours';
 import { miningDepthBonus, CHEST_ECONOMY_VERSION } from '../data/economy';
@@ -394,6 +395,11 @@ export const useCampaignStore = defineStore('campaign', {
       );
     },
     // Town Honours presentation choices. They never change buildings, rewards or progress.
+    // The owner's guestbook reports the server's count of different signed-in visitors.
+    recordTownVisitors(count) {
+      const honours = recordVisitors(this.honours, count);
+      return !!honours && this.commit({ honours });
+    },
     setHonourShowcase(ids) {
       const showcase = validShowcase(Array.isArray(ids) ? ids : [], this.honours);
       return this.commit({ honours: { ...this.honours, showcase } });

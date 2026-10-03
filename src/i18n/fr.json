@@ -2649,5 +2649,13 @@
   "workshop fire": "incendie d’atelier",
   "river storm": "tempête sur la rivière",
   "Survey trails": "Parcours de repérage",
-  "Charge cores": "Noyaux d’énergie"
+  "Charge cores": "Noyaux d’énergie",
+  "First Guest": "Premier invité",
+  "Welcoming Host": "Hôte accueillant",
+  "Popular Destination": "Destination prisée",
+  "Celebrated Town": "Ville célèbre",
+  "Have another player visit your shared town.": "Recevez la visite d’un autre joueur dans votre ville partagée.",
+  "Have {goal} different players visit your shared town.": "Recevez la visite de {goal} joueurs différents dans votre ville partagée.",
+  "Your first visitor came by": "Votre premier visiteur est passé",
+  "{goal} different players visited": "{goal} joueurs différents vous ont rendu visite"
 }

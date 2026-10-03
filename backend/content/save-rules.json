@@ -34410,12 +34410,13 @@
       "counts": {
         "gems": {},
         "forge": 0,
-        "mine": {}
+        "mine": {},
+        "visitors": 0
       },
       "fusions": [],
       "showcase": [],
       "backfilled": 0
     }
   },
-  "contentDigest": "98ae70b8633c735f529092f74d0a73372f494cdfead2709bd3ae5b5fcc865b5e"
+  "contentDigest": "af42cc1239948ead638a709e6dfe389339db37674273d6e876326638a106b19a"
 }

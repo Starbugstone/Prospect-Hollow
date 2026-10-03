@@ -13,19 +13,20 @@ coverage checks that keep it in step with the content (see [Extending content](#
 
 ### Achievements
 
-| Difficulty         | Honour                                 | Requirement                                                                          |
-| ------------------ | -------------------------------------- | ------------------------------------------------------------------------------------ |
-| Easy               | First Perfect                          | Three stars on any normal puzzle                                                     |
-| Easy               | First Fusion                           | Any bonus fusion in a completed puzzle                                               |
-| Easy               | The Forge Delivers                     | First TNT collected from the forge                                                   |
-| Medium → Very hard | Score Ace → Score Legend (one card)    | A completed puzzle from level 37 with 2× / 3× its star score target                  |
-| Medium             | Fusion Master                          | All six bonus fusions                                                                |
-| Medium             | Forge Veteran                          | 50 TNT collected from the forge                                                      |
-| Medium             | Ruby, Sapphire and Emerald Laureate    | 12,000 of that gem                                                                   |
-| Medium             | Topaz, Amethyst and Moonstone Laureate | 8,000 of that gem                                                                    |
-| Very hard          | Master Quartermaster                   | Armory and garage at maximum, all five powers full at the same time (26 each today)  |
-| Very hard          | Perfect Prospector                     | Three stars on every published normal puzzle (402 today)                             |
-| Very hard          | Prospect Hollow Complete               | Every required building and modernization through the final enabled era (Riverlight) |
+| Difficulty         | Honour                                   | Requirement                                                                          |
+| ------------------ | ---------------------------------------- | ------------------------------------------------------------------------------------ |
+| Easy               | First Perfect                            | Three stars on any normal puzzle                                                     |
+| Easy               | First Fusion                             | Any bonus fusion in a completed puzzle                                               |
+| Easy               | The Forge Delivers                       | First TNT collected from the forge                                                   |
+| Easy → Very hard   | First Guest → Celebrated Town (one card) | 1, 5, 15 and 30 different signed-in players visited the shared town                  |
+| Medium → Very hard | Score Ace → Score Legend (one card)      | A completed puzzle from level 37 with 2× / 3× its star score target                  |
+| Medium             | Fusion Master                            | All six bonus fusions                                                                |
+| Medium             | Forge Veteran                            | 50 TNT collected from the forge                                                      |
+| Medium             | Ruby, Sapphire and Emerald Laureate      | 12,000 of that gem                                                                   |
+| Medium             | Topaz, Amethyst and Moonstone Laureate   | 8,000 of that gem                                                                    |
+| Very hard          | Master Quartermaster                     | Armory and garage at maximum, all five powers full at the same time (26 each today)  |
+| Very hard          | Perfect Prospector                       | Three stars on every published normal puzzle (402 today)                             |
+| Very hard          | Prospect Hollow Complete                 | Every required building and modernization through the final enabled era (Riverlight) |
 
 ### Mine mastery
 
@@ -69,6 +70,14 @@ for the era's incident from its era contract. Medals never produce popups or sou
   signal layers, gates are health layers, and relics and ore orders are explicit objectives.
 - The forge counts only successful `collectForgeTNT` commits, never TNT from chests, the shop,
   gifts or rewards.
+- Visitor ranks (First Guest, Welcoming Host, Popular Destination, Celebrated Town) count
+  different players who visited the owner's shared town. The server counts each signed-in
+  account once (the owner's own visits are never recorded) and returns it as `uniqueVisitors`
+  in the owner's guestbook (`GET /towns/{townId}/visitors`). Signed-out visits stay in the
+  guestbook but never count, because a new private window is a new anonymous identity. The
+  game keeps the highest count it has seen (`recordTownVisitors`), so ranks never drop when a
+  visiting town is deleted. A saved signed-in guest (`town.guestVip`) also proves First Guest,
+  which backfills earlier visits.
 - Score ranks use the best single completed normal puzzle from level 37 (`records`), against
   the authored star target. Continuous records and levels without a usable target never count.
   Changing these thresholds never changes stars or chests.
@@ -151,7 +160,7 @@ one campaign from the level definitions (table above), so they need no measureme
 {
   version: 1,
   earned: { [id]: { at: ms | null, version, evidence?, seen, announced, backfilled? } },
-  counts: { gems: { [gem]: n }, forge: n, mine: { [element]: n } },
+  counts: { gems: { [gem]: n }, forge: n, mine: { [element]: n }, visitors: n },
   fusions: ['bomb+cross', ...],
   showcase: [familyId, ...], // at most 3, earned families only
   backfilled: 0 | version,   // legacy backfill already run
@@ -208,6 +217,7 @@ progress(state), qualifies(state), art, link?, quiet?`. Display strings are Engl
   `state` is `{ records, town, powers, honours }`, for example the campaign store.
 - `createRunTally()`, `normalizeRunTally(saved)`, `tallySteps(tally, steps, { recovery })`,
   `levelElements(config)`, `creditRun(honours, tally)`, `creditForge(honours)`,
+  `recordVisitors(honours, count)`,
   `defenceMedal(event, era)`, `backfillDefenceMedal(event)`, `backfillHonours(state)`,
   `awardHonour(honours, id, { at, evidence, backfilled })`, `keepHonours(profile, live)`.
 - `pendingAnnouncements(honours)`: one entry per family (highest new rank), quiet honours

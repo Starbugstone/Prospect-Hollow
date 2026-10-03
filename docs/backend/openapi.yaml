@@ -1210,6 +1210,11 @@
                       'type': 'integer',
                       'description': 'Owner endpoint only. Last visitor collection in Unix milliseconds, or zero.',
                     },
+                  'uniqueVisitors':
+                    {
+                      'type': 'integer',
+                      'description': 'Owner endpoint only. Different signed-in players who visited this town, each account once; signed-out visits never count. Drives the Town Honours visitor ranks.',
+                    },
                   'page': { 'type': 'integer' },
                   'hasNext': { 'type': 'boolean' },
                   'serverNow': { 'type': 'integer', 'description': 'Unix milliseconds' },

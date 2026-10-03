@@ -459,6 +459,9 @@ final class VisitorService
                 'serverNow' => $now * 1000,
             ];
             if ($owner !== null) {
+                $result['uniqueVisitors'] = (int) $db->fetchOne(sprintf(Honours::VISITORS, 'id'), [
+                    $town,
+                ]);
                 $result['saloonCollectedAt'] =
                     (int) $db->fetchOne(
                         'SELECT collected_at FROM saloon_collections WHERE town_id=?',

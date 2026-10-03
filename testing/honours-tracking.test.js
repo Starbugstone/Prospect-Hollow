@@ -279,7 +279,7 @@ describe('Crediting a victory', () => {
       campaign.recordVictory({ id: 1, runId, score: 100, target: 6000, combo: 1, tally });
     expect(finish()).not.toEqual([]);
     expect(finish()).toEqual([]);
-    expect(counts()).toEqual({ gems: { ruby: 5 }, forge: 0, mine: { relics: 2 } });
+    expect(counts()).toEqual({ gems: { ruby: 5 }, forge: 0, mine: { relics: 2 }, visitors: 0 });
     expect(campaign.honours.fusions).toEqual(['bomb+cross']);
     expect(JSON.stringify(campaign.integrity.actions.at(-1))).not.toMatch(/ruby|relics|tally/);
     expect(stored().counts.gems.ruby).toBe(5);

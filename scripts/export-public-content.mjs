@@ -27,6 +27,12 @@ const PROOFS = {
 for (const id of Object.keys(PROOFS))
   if (!HONOURS.byId[id]) throw new Error(`The provable honour ${id} left the registry.`);
 const proof = (definition) => {
+  // Visitor ranks are proven by the server's own count of different signed-in visitors.
+  if (definition.family === 'visitors') {
+    const { goal } = definition.params();
+    if (!(goal > 0)) throw new Error(`${definition.id} needs a positive visitor goal.`);
+    return { proof: 'visitors', goal };
+  }
   if (definition.family !== 'score')
     return PROOFS[definition.id] ? { proof: PROOFS[definition.id] } : {};
   const { multiple } = definition.params();

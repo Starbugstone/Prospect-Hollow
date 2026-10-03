@@ -72,6 +72,42 @@ const GEM_NAMES = Object.freeze({
   ],
 });
 export const FORGE_VETERAN_GOAL = 50;
+// Different signed-in players who visited the owner's shared town, counted by the server
+// (each account once, the owner never). Signed-out visits stay in the guestbook only.
+const VISITOR_RANKS = Object.freeze([
+  {
+    id: 'first-guest',
+    name: 'First Guest',
+    goal: 1,
+    difficulty: 'easy',
+    requirement: 'Have another player visit your shared town.',
+    popup: 'Your first visitor came by',
+  },
+  {
+    id: 'welcoming-host',
+    name: 'Welcoming Host',
+    goal: 5,
+    difficulty: 'medium',
+    requirement: 'Have {goal} different players visit your shared town.',
+    popup: '{goal} different players visited',
+  },
+  {
+    id: 'popular-destination',
+    name: 'Popular Destination',
+    goal: 15,
+    difficulty: 'medium',
+    requirement: 'Have {goal} different players visit your shared town.',
+    popup: '{goal} different players visited',
+  },
+  {
+    id: 'celebrated-town',
+    name: 'Celebrated Town',
+    goal: 30,
+    difficulty: 'hard',
+    requirement: 'Have {goal} different players visit your shared town.',
+    popup: '{goal} different players visited',
+  },
+]);
 
 // Signature mine elements. Completing a puzzle consumes every one of them (they are
 // objective layers, relics or ore orders), so a completed level credits its authored
@@ -191,6 +227,9 @@ const safeCount = (value) =>
   Number.isSafeInteger(value) && value >= 0 ? Math.min(MAX_COUNT, value) : 0;
 const quantity = (state, id) => state.powers?.find?.((power) => power.id === id)?.quantity ?? 0;
 const finalEra = (eras) => eras.filter((era) => era.enabled).at(-1);
+// The server's distinct-visitor count; a saved signed-in guest also proves the first.
+const townVisitors = (state) =>
+  Math.max(safeCount(state.honours?.counts?.visitors), state.town?.guestVip ? 1 : 0);
 
 // Highest-capacity storage, from the armory and garage definitions rather than a
 // copied number (26 today).
@@ -270,6 +309,25 @@ export function createHonourCatalog({
       link: 'blacksmith',
       qualifies: (state) => (state.honours?.counts?.forge >= 1 ? {} : null),
     },
+    ...VISITOR_RANKS.map((rank, index) => ({
+      id: rank.id,
+      family: 'visitors',
+      rank: index + 1,
+      category: 'achievement',
+      difficulty: rank.difficulty,
+      name: rank.name,
+      requirement: rank.requirement,
+      popup: rank.popup,
+      params: () => ({ goal: rank.goal }),
+      art: {
+        frame: rank.difficulty,
+        glyph: 'guests',
+        ...(index ? { ribbon: `${rank.goal}` } : {}),
+      },
+      link: 'sharing',
+      progress: (state) => ({ value: townVisitors(state), goal: rank.goal }),
+      qualifies: (state) => (townVisitors(state) >= rank.goal ? {} : null),
+    })),
     ...SCORE_RANKS.map((rank, index) => ({
       id: rank.id,
       family: 'score',
@@ -491,7 +549,7 @@ export const HONOURS = createHonourCatalog();
 // ---------- Saved state ----------
 // profile.honours = {
 //   version, earned: { [id]: { at: ms|null, version, evidence?, seen, announced, backfilled? } },
-//   counts: { gems: { [gem]: n }, forge: n, mine: { [element]: n } },
+//   counts: { gems: { [gem]: n }, forge: n, mine: { [element]: n }, visitors: n },
 //   fusions: [key], showcase: [familyId], backfilled: version
 // }
 // It is presentation and history, not money: integrity replay ignores it, the server
@@ -499,7 +557,7 @@ export const HONOURS = createHonourCatalog();
 export const createHonours = () => ({
   version: HONOURS_VERSION,
   earned: {},
-  counts: { gems: {}, forge: 0, mine: {} },
+  counts: { gems: {}, forge: 0, mine: {}, visitors: 0 },
   fusions: [],
   showcase: [],
   backfilled: 0,
@@ -547,6 +605,7 @@ export function normalizeHonours(saved) {
     gems: countMap(saved.counts?.gems),
     forge: safeCount(saved.counts?.forge),
     mine: countMap(saved.counts?.mine),
+    visitors: safeCount(saved.counts?.visitors),
   };
   honours.fusions = [
     ...new Set(
@@ -598,6 +657,7 @@ export function mergeHonours(local, incoming) {
     gems: maxMap(a.counts.gems, b.counts.gems),
     forge: Math.max(a.counts.forge, b.counts.forge),
     mine: maxMap(a.counts.mine, b.counts.mine),
+    visitors: Math.max(a.counts.visitors, b.counts.visitors),
   };
   merged.fusions = [...new Set([...a.fusions, ...b.fusions])];
   merged.showcase = a.showcase.length ? a.showcase : b.showcase;
@@ -669,6 +729,13 @@ export function creditRun(honours, { gems = {}, fusions = [], mine = {} } = {}) 
   for (const [element, count] of Object.entries(countMap(mine)))
     next.counts.mine[element] = Math.min(MAX_COUNT, (next.counts.mine[element] ?? 0) + count);
   next.fusions = [...new Set([...next.fusions, ...fusions.filter((key) => FUSION_STYLES[key])])];
+  return next;
+}
+// The owner's guestbook reports how many different players visited; keep the highest.
+export function recordVisitors(honours, count) {
+  const next = normalizeHonours(honours);
+  if (!(safeCount(count) > next.counts.visitors)) return null;
+  next.counts.visitors = safeCount(count);
   return next;
 }
 export function creditForge(honours) {

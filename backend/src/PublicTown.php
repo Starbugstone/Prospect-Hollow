@@ -90,7 +90,7 @@ final class PublicTown
             }
         }
         if (is_array($schema['honours'] ?? null)) {
-            $appearance['honours'] = $this->honoursProjection($profile, $schema);
+            $appearance['honours'] = $this->honoursProjection($profile, $schema, $publicId);
         }
         return json_encode(
             ['villageId' => $publicId, 'name' => $name, 'era' => $era, 'appearance' => $appearance],
@@ -99,12 +99,15 @@ final class PublicTown
     }
     // Town Honours: the publicHonours() shape with provable honours recomputed. A save
     // without honours is recorded as null, so visits know there is nothing to re-project.
-    private function honoursProjection(object $profile, array $schema): ?array
+    private function honoursProjection(object $profile, array $schema, string $publicId): ?array
     {
         return (new Honours($schema['honours']))->publish(
             $profile,
             is_int($schema['levels'] ?? null) ? $schema['levels'] : 0,
             fn() => ($this->rules ??= new SaveIntegrity()),
+            fn() => (int) $this->database
+                ->get()
+                ->fetchOne(sprintf(Honours::VISITORS, 'public_id'), [$publicId]),
         );
     }
     // Visitors never receive that null: an absent field means "unknown", not "none".

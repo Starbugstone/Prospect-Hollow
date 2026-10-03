@@ -23,6 +23,7 @@ import {
   honourCollection,
   levelElements,
   maxPowerCapacity,
+  recordVisitors,
   mergeHonours,
   normalizeHonours,
   pendingAnnouncements,
@@ -86,7 +87,7 @@ describe('The honours registry follows the content definitions', () => {
     const ids = HONOURS.definitions.map((definition) => definition.id);
     expect(new Set(ids).size).toBe(ids.length);
     expect(HONOURS.families.filter((family) => family.category === 'achievement')).toHaveLength(
-      9 + GEM_TYPES.length,
+      10 + GEM_TYPES.length,
     );
   });
 
@@ -291,7 +292,12 @@ describe('Saved honours', () => {
       showcase: ['a', 'b', 'c', 'd'],
     });
     expect(earnedIds(honours)).toEqual(['future-honour']);
-    expect(honours.counts).toEqual({ gems: { ruby: 4 }, forge: 0, mine: { lanterns: 3 } });
+    expect(honours.counts).toEqual({
+      gems: { ruby: 4 },
+      forge: 0,
+      mine: { lanterns: 3 },
+      visitors: 0,
+    });
     expect(honours.fusions).toEqual(['bomb+cross']);
     expect(honours.showcase).toHaveLength(SHOWCASE_SLOTS);
   });
@@ -443,5 +449,51 @@ describe('Honour badge artwork', () => {
     expect(html).toContain('honour-badge-locked');
     expect(html).toContain('honour-badge-lock');
     expect(html).toContain('3×');
+  });
+});
+
+describe('Visitor ranks', () => {
+  it('ranks the server count of different players and keeps the highest count', () => {
+    let honours = recordVisitors(createHonours(), 4);
+    expect(recordVisitors(honours, 3)).toBeNull();
+    expect(recordVisitors(honours, 'many')).toBeNull();
+    const four = evaluateHonours(state({ honours }));
+    expect(four.added).toContain('first-guest');
+    expect(four.added).not.toContain('welcoming-host');
+    honours = recordVisitors(four.honours, 15);
+    const fifteen = evaluateHonours(state({ honours }));
+    expect(fifteen.added).toEqual(['welcoming-host', 'popular-destination']);
+    const visitors = pendingAnnouncements(fifteen.honours).filter(
+      (entry) => entry.definition.family === 'visitors',
+    );
+    expect(visitors.map((entry) => entry.id)).toEqual(['popular-destination']);
+    expect(mergeHonours(recordVisitors(createHonours(), 9), honours).counts.visitors).toBe(15);
+  });
+
+  it('backfills the first rank from a saved signed-in guest', () => {
+    const town = { ...state().town, guestVip: { name: 'Dustwater', at: 5, seen: true } };
+    const { honours } = evaluateHonours(state({ town }), { backfill: true });
+    expect(honours.earned['first-guest']).toMatchObject({ at: null, backfilled: true });
+    expect(honours.earned['welcoming-host']).toBeUndefined();
+  });
+
+  it('records the guestbook count through the campaign store', () => {
+    const saved = new Map();
+    vi.stubGlobal('localStorage', {
+      getItem: (key) => saved.get(key) ?? null,
+      setItem: (key, value) => saved.set(key, value),
+    });
+    setActivePinia(createPinia());
+    try {
+      const campaign = useCampaignStore();
+      expect(campaign.recordTownVisitors(5)).toBe(true);
+      expect(campaign.recordTownVisitors(2)).toBe(false);
+      expect(campaign.honours.counts.visitors).toBe(5);
+      expect(Object.keys(campaign.honours.earned)).toEqual(
+        expect.arrayContaining(['first-guest', 'welcoming-host']),
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
