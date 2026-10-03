@@ -199,7 +199,7 @@ export const NON_MASTERY_ELEMENTS = Object.freeze([
 function obstacle(id) {
   return OBSTACLES.find((entry) => entry.id === id) ?? { present: () => false };
 }
-const elementArt = (element) =>
+export const elementArt = (element) =>
   element.art ?? obstacle(element.obstacle).art ?? '/art/obstacles/survey.svg';
 
 export const MEDAL_NAMES = Object.freeze({

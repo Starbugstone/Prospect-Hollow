@@ -597,29 +597,113 @@
 .museum-completion p {
   margin: 0 0 12px;
 }
-.museum-completion strong,
-.museum-completion span {
+.museum-progress strong,
+.museum-progress span {
   display: block;
 }
-.museum-completion span {
+.museum-progress span {
   margin-top: 5px;
   color: #6a765e;
 }
-.museum-filter {
+.museum-show {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: 10px 12px;
+}
+.museum-show-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #69715e;
+}
+.museum-show-options {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 10px;
+  background: #e3e4d4;
+}
+.museum-show-options button {
   min-height: 44px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #5f6a56;
+  font-size: 12.5px;
+}
+.museum-show-options b {
+  margin-left: 4px;
+  color: #755616;
+  font-variant-numeric: tabular-nums;
+}
+.museum-show-options button[aria-pressed='true'] {
+  color: #3f5745;
+  background: #fffdf6;
+  font-weight: 600;
+  box-shadow: 0 2px 6px #4b503c18;
+}
+.museum-honour-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  max-width: 100%;
+  padding: 0 4px 0 7px;
+  border: 1px solid #c9b77f;
+  border-radius: 9px;
+  background: #fffaf0;
   cursor: pointer;
 }
-.museum-filter input {
-  width: 20px;
-  height: 20px;
-  accent-color: #49674e;
+.museum-honour-picker:has(select:focus-visible) {
+  outline: 3px solid #496d60;
+  outline-offset: 2px;
+}
+.museum-honour-picker select {
+  min-width: 0;
+  min-height: 42px;
+  padding: 0 4px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #3f5745;
+  font: inherit;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  cursor: pointer;
 }
 .museum-completion .museum-unplayed {
   margin: 8px 0 0;
   line-height: 1.6;
+}
+.museum-completion .museum-honour-note {
+  margin: 12px 0 0;
+  padding: 8px 10px;
+  border: 1px solid #ead9a8;
+  border-radius: 8px;
+  background: #fbf3dc;
+  color: #6a5520;
+  line-height: 1.6;
+}
+.museum-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin: 0 0 8px;
+  font-size: 11.5px;
+  color: #69715e;
+}
+.museum-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.museum-legend img {
+  width: 20px;
+  height: 20px;
 }
 .museum-heading h2 {
   font:
@@ -702,6 +786,7 @@
   background: #f3f1e3;
   color: #536c56;
   min-height: 215px;
+  container-type: inline-size;
 }
 .museum-grid > button:hover {
   background: #e9eddd;
@@ -729,6 +814,45 @@
   left: 12px;
   font-size: 10px;
   color: #a79a77;
+}
+.museum-level-elements {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 3px;
+}
+.museum-grid .museum-level-elements img {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+}
+/* Narrow cards keep the gem clear of up to four element icons. */
+@container (max-width: 250px) {
+  .museum-level > img {
+    margin-top: 14px;
+  }
+}
+.museum-level-about {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.museum-tag {
+  margin-top: 7px;
+  padding: 2px 8px;
+  border: 1px solid #e3cd8f;
+  border-radius: 10px;
+  background: #fbf0d2;
+  color: #6e5419;
+  font-size: 10.5px;
+  line-height: 1.45;
+  text-align: center;
+}
+.museum-tag-secondary {
+  border-color: #d2d7c0;
+  background: #eef0e4;
+  color: #55624f;
 }
 .museum-stars {
   color: #b99549;
@@ -760,6 +884,50 @@
   .museum-modes button {
     font-size: 12px;
     padding: 12px 8px;
+  }
+  .museum-show-options,
+  .museum-honour-picker {
+    flex: 1 1 100%;
+  }
+  .museum-show-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .museum-show-options button {
+    padding: 6px;
+    font-size: 12px;
+  }
+  .museum-show-options button:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+  .museum-show-options b {
+    display: block;
+    margin: 0;
+  }
+  .museum-honour-picker select {
+    flex: 1;
+  }
+}
+.high-contrast .museum-show-options button,
+.high-contrast .museum-legend {
+  color: #34412f;
+}
+.high-contrast .museum-honour-note,
+.high-contrast .museum-tag {
+  color: #4a3a0f;
+  border-color: #8f7432;
+}
+.high-contrast .museum-tag-secondary {
+  color: #34412f;
+  border-color: #626b50;
+}
+@media (forced-colors: active) {
+  .museum-show-options button[aria-pressed='true'] {
+    outline: 2px solid CanvasText;
+  }
+  .museum-tag,
+  .museum-honour-note {
+    border-color: CanvasText;
   }
 }
 
