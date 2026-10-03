@@ -168,12 +168,20 @@ for era,style in styles.items():
     bench(-1.5,.1);bench(1.5,.1)
     tree(2.3,-1.65)
     model(f'{era}-bridge')
+    # Approach furniture stands on the plot floor beside the rising deck: canopies
+    # clear it and span the whole deck from posts on the verge, and planters lie
+    # lengthwise on the bank instead of crossing the road.
+    lamp_top = 3.7 if modern else 2.1
     for x in [-6.2,6.2]:
         for z in [-1.7,1.7]:
-            rod('Bridge approach lamp',(x,.15,z),(x,2.25,z),.055,teal)
-            box('Bridge lamp head',(.7,.12,.22),(x,2.3,z),'#eddda9')
-        if modern:canopy(x,2.5,0,1.5,True)
-        else:box('Approach planter',(.6,.4,2.5),(x,.4,0),cream)
+            rod('Bridge approach lamp',(x,0,z),(x,lamp_top,z),.055,teal)
+            box('Bridge lamp head',(.7,.12,.22),(x,lamp_top+.05,z),'#eddda9')
+        if modern:
+            box('Floating canopy',(1.5,.13,3.25),(x,4,0),teal)
+            for dx in [-.63,.63]:rod('Slender canopy support',(x+dx,0,1.48),(x+dx,4,1.48),.045,cream)
+            if style['solar']:
+                for z in [-1.092,-.052,.988]:box('Solar canopy strip',(1.35,.035,.624),(x,4.09,z),'#526f79',0)
+        else:box('Approach planter',(2.5,.4,.6),(x,.2,-2.25),cream)
     # Compact vehicles keep the village's stylized proportions; wheels are real cylinders.
     for vehicle in ['car','bus','railcar']:
         model(f'{era}-{vehicle}')
