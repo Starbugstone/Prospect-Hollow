@@ -270,6 +270,7 @@
       @reset-progress="resetProgress"
       @import-progress="resumeImportedVillage"
     />
+    <HonourToast :active="townActive && !props.suspended" />
   </div>
 </template>
 
@@ -298,6 +299,7 @@ import { CONTINUOUS_COIN_CAP } from './data/rewards';
 import { LEVEL_COUNT, POWERS } from './data/campaign';
 import VictoryModal from './components/VictoryModal.vue';
 import SettingsDrawer from './components/SettingsDrawer.vue';
+import HonourToast from './components/honours/HonourToast.vue';
 import GameIcon from './components/GameIcon.vue';
 import { useGameStore } from './stores/gameStore';
 import { useCampaignStore } from './stores/campaignStore';

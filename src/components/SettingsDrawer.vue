@@ -75,6 +75,21 @@
         :checked="settings.showVillageLabels"
         @change="settings.setVillageLabels($event.target.checked)"
     /></label>
+    <fieldset class="choice-row" aria-describedby="honour-notices-hint">
+      <legend>{{ t('Achievement notices') }}</legend>
+      <div class="choice-options">
+        <label v-for="mode in HONOUR_NOTICE_MODES" :key="mode"
+          ><input
+            type="radio"
+            name="honour-notices"
+            :value="mode"
+            :checked="settings.honourNotices === mode"
+            @change="settings.setHonourNotices(mode)"
+          /><span>{{ t(NOTICE_CHOICES[mode][0]) }}</span></label
+        >
+      </div>
+      <small id="honour-notices-hint">{{ t(NOTICE_CHOICES[settings.honourNotices][1]) }}</small>
+    </fieldset>
     <p class="audio-credits">
       <a :href="audioCreditsUrl" target="_blank" rel="noopener">{{ t('Audio credits') }}</a>
     </p>
@@ -154,7 +169,7 @@
 import { t } from '../i18n';
 import { townStorage } from '../services/townStorage';
 import { computed, inject, ref, watch } from 'vue';
-import { useSettingsStore } from '../stores/settingsStore';
+import { HONOUR_NOTICE_MODES, useSettingsStore } from '../stores/settingsStore';
 import { useCampaignStore } from '../stores/campaignStore';
 import { downloadSaveFile, saveFileName } from '../services/saveTransfer';
 import { useSaveImport } from '../composables/useSaveImport';
@@ -199,6 +214,12 @@ function resetProgress() {
 }
 const dialog = ref(null);
 const settings = useSettingsStore();
+// Town Honours notices are presentation only: achievements unlock in every mode.
+const NOTICE_CHOICES = {
+  full: ['Full', 'A popup and a short sound when you earn an achievement.'],
+  quiet: ['Quiet', 'No popup or sound. New achievements are marked in your collection.'],
+  off: ['Off', 'No popup, sound or New marker. Achievements still unlock.'],
+};
 const audioCreditsUrl = '/sound/village/credits.html';
 watch(
   () => props.open,
@@ -522,6 +543,67 @@ input[type='checkbox'] {
   width: 19px;
   height: 19px;
   flex-shrink: 0;
+}
+.choice-row {
+  min-width: 0;
+  margin: 0 0 30px;
+  padding: 24px 0 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+.choice-row legend {
+  float: left;
+  width: 100%;
+  margin-bottom: 15px;
+  padding: 0;
+  font-size: 13px;
+}
+.choice-options {
+  clear: both;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #84619e88;
+  border-radius: 10px;
+}
+.choice-options label {
+  position: relative;
+  margin: 0;
+}
+.choice-options input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.choice-options span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 6px;
+  border-radius: 7px;
+  color: #d6c4db;
+  font-size: 13px;
+  text-align: center;
+}
+.choice-options input:checked + span {
+  background: #6d527e;
+  color: #fff5e1;
+  font-weight: 600;
+}
+.choice-options input:focus-visible + span {
+  outline: 2px solid #e4c1ff;
+  outline-offset: 2px;
+}
+.choice-row small {
+  display: block;
+  margin-top: 10px;
+  line-height: 1.6;
 }
 .keyboard-guide {
   border-top: 1px solid var(--line);
