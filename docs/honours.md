@@ -54,9 +54,14 @@ for the era's incident from its era contract. Medals never produce popups or sou
 - **Run-based counts are credited only when a normal puzzle is completed**, including museum
   replays: gems, fusions and mine elements. Leaving a puzzle unfinished credits nothing and
   continuous play does not count. The per-run tally travels with the town handoff.
+- The game store's `honourTally` is filled by `commitResolution`, which runs only after a move
+  finished animating, in normal play only. It is reset with the run presentation (start and
+  exit) and credited once by `recordVictory`, after its settled-run checks. A duplicate, stale
+  or continuous victory credits nothing.
 - Gems come from committed resolution steps (`step.collectedJewels`, each removed gem once).
-  Refills, previews, bonuses, relics and the free recovery sweep never count. Matches after a
-  shuffle count normally.
+  Refills, previews, bonuses, relics and the free recovery sweep never count. Swaps, powers and
+  matches after a shuffle (including the seeded repair) count normally; the sweep's resolution
+  is flagged `recovery`.
 - Fusions come from `step.bonusFusion.key` on committed steps. Either swap order is the same key.
   The recovery sweep's technical fusion has no key and never counts.
 - Mine elements are credited from the completed level's authored configuration
@@ -72,6 +77,14 @@ for the era's incident from its era contract. Medals never produce popups or sou
 - A defence medal is awarded when an incident is marked seen with outcome `protected` and zero
   loss. The era gate keeps an unseen incident from crossing an era change, so the current era
   at that moment is the originating era. A harmless zero-loss raid (a poor town) never counts.
+- State-derived honours are evaluated at one point, `campaignStore.save()`, so every action is
+  covered without per-action code. New honours are written with that save and appear only once
+  it succeeded: a failed or read-only save earns nothing until a later save stores it. Forge
+  counts and medals join their action's own commit, so a failed save rolls them back.
+- Older saves are backfilled on load, once per honours version: the honours their state already
+  proves, plus the one attributable defence medal, with `at: null` and `backfilled: true`. Load
+  never writes; the next save stores the result, so repeated loads give the same honours.
+  Counts start at zero and are never inferred.
 
 ## Balancing evidence
 
@@ -145,10 +158,45 @@ one campaign from the level definitions (table above), so they need no measureme
 }
 ```
 
-It is presentation and history, not money: integrity replay ignores it. `normalizeHonours`
-bounds every value and preserves unknown future honour IDs without displaying them.
-`mergeHonours` unions earned entries (earliest date wins) and takes the larger of each count,
-never the sum, so retries, two tabs, restores and cloud pulls cannot double-count.
+It is presentation and history, not money: integrity replay ignores it, and it is never part
+of a journal action or receipt. `normalizeHonours` bounds every value and preserves unknown
+future honour IDs without displaying them. `mergeHonours(first, second)` unions earned entries
+(earliest date wins, `seen` and `announced` kept) and takes the larger of each count, never the
+sum, so retries, two tabs, restores and cloud pulls cannot double-count. The first copy's
+showcase wins when it has one.
+
+`honours` is a protected campaign field (`src/services/localIntegrity.js`): console edits are
+ignored, and it changes only through loading, `save()`, `recordVictory`, `collectForgeTNT`,
+`markRaidSeen` and the presentation actions below. `updateEarnedHonours` is internal and accepts
+only the `seen` and `announced` flags.
+
+### Run tally: `game.honourTally`
+
+```js
+{ gems: { [gem]: n }, fusions: ['bomb+cross', ...], mine: {} }
+```
+
+`completeLevel` passes `recordVictory({ ..., tally })` with `mine` replaced by
+`levelElements(store.currentLevel.config)`. The tally is a handoff field; a snapshot without it
+restores an empty tally (`normalizeRunTally`).
+
+### Town copies
+
+The same town replacing its live copy keeps the live honours (`keepHonours(incoming, live)`,
+the incoming showcase first):
+
+- A backup import keeps them when `townStorage.keepsIdentity(backup.town)`: the backup carries
+  the selected town's ID or no ID (older backups are restored into the selected town). Another
+  town's backup gives the local slot that town's identity and its own honours.
+- Cloud sync keeps them when a newer cloud copy is downloaded and when the server copy wins a
+  conflict (the local copy is also preserved for recovery). A history restore or recovery
+  overwrite uploads the restored copy with the kept honours. When the live copy added
+  anything, the town is marked unsynced so the kept honours upload.
+- A town handoff needs no merge: the sending window saves first and the receiving window loads
+  that save; the run tally travels in the puzzle snapshot.
+- `resetProgress` and new account towns start with fresh honours. Copying a missing account
+  town into a new slot copies its whole profile, honours included, as it continues that
+  town's progress.
 
 ### Registry API (`src/data/honours.js`)
 
@@ -158,9 +206,10 @@ progress(state), qualifies(state), art, link?, quiet?`. Display strings are Engl
   `t()`, with `params()` placeholders.
 - `evaluateHonours(state, { at, backfill })` → `{ honours, added }` for every non-quiet honour.
   `state` is `{ records, town, powers, honours }`, for example the campaign store.
-- `createRunTally()`, `tallySteps(tally, steps, { recovery })`, `levelElements(config)`,
-  `creditRun(honours, tally)`, `creditForge(honours)`, `defenceMedal(event, era)`,
-  `backfillDefenceMedal(event)`, `awardHonour(honours, id, { at, evidence, backfilled })`.
+- `createRunTally()`, `normalizeRunTally(saved)`, `tallySteps(tally, steps, { recovery })`,
+  `levelElements(config)`, `creditRun(honours, tally)`, `creditForge(honours)`,
+  `defenceMedal(event, era)`, `backfillDefenceMedal(event)`, `backfillHonours(state)`,
+  `awardHonour(honours, id, { at, evidence, backfilled })`, `keepHonours(profile, live)`.
 - `pendingAnnouncements(honours)`: one entry per family (highest new rank), quiet honours
   excluded.
 - `honourCollection(state)`: the three tabs with family views (`earned`, `next.progress`,
@@ -174,9 +223,11 @@ progress(state), qualifies(state), art, link?, quiet?`. Display strings are Engl
 
 ### Campaign store
 
-`campaign.honours` holds the normalized state and is saved with the profile.
+`campaign.honours` holds the normalized state and is saved with the profile. It is replaced
+(never mutated in place) whenever honours change, so watching it sees every new honour.
 `setHonourShowcase(familyIds)`, `markHonoursSeen(ids?)` and `markHonoursAnnounced(ids)` change
-presentation only.
+presentation only. A defence medal's `evidence` is `{ eventId }`; backfilled entries have
+`at: null` and `backfilled: true`.
 
 ### Shared presentation contracts
 

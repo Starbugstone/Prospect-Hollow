@@ -2,6 +2,7 @@ import { levelConfig } from '../../game/engine/LevelGenerator';
 import { miningPayout } from '../../game/town/TownRules';
 import { BOARD_BONUSES, layerCount } from '../../game/engine/TileRules';
 import { performanceMark } from '../../game/PresentationWork';
+import { createRunTally, levelElements, normalizeRunTally } from '../../data/honours';
 import { useCampaignStore } from '../campaignStore';
 import { cloneBoard, freshTiles, plain } from './boardData';
 import { boardReadiness } from './rendererBinding';
@@ -39,7 +40,10 @@ const HANDOFF_FIELDS = [
   'speedTargetMs',
   'currentBoardLayout',
   'currentLevelId',
+  'honourTally',
 ];
+// Added after the first snapshots: an older transfer restores an empty run tally.
+const OPTIONAL_HANDOFF_FIELDS = new Set(['honourTally']);
 
 export function captureHandoff(store) {
   if (!store.sessionActive) return null;
@@ -62,7 +66,7 @@ export function restoreHandoff(store, snapshot) {
   if (
     snapshot.version !== 1 ||
     !state ||
-    !HANDOFF_FIELDS.every((key) => Object.hasOwn(state, key)) ||
+    !HANDOFF_FIELDS.every((key) => OPTIONAL_HANDOFF_FIELDS.has(key) || Object.hasOwn(state, key)) ||
     state.runId !== campaign.issuedRun ||
     (!state.levelCleared && state.runId <= campaign.settledRun) ||
     !Array.isArray(state.board) ||
@@ -78,6 +82,7 @@ export function restoreHandoff(store, snapshot) {
       ...restored,
       board: plain(restored.board),
       tiles: plain(restored.tiles),
+      honourTally: normalizeRunTally(restored.honourTally),
       sessionActive: true,
       sessionVersion: session,
       // The transferred puzzle has already played its intro. Recreating its
@@ -125,6 +130,7 @@ export function resetRunPresentation(store) {
   store.remainingBonusGems = 0;
   store.comboCounts = {};
   store.multiMatchCounts = {};
+  store.honourTally = createRunTally();
   store.constructionReward = [];
   storeTimers(store).clear('impact');
   store.arcadeImpact = null;
@@ -274,6 +280,7 @@ export function completeLevel(store) {
     combo: store.maxCascade,
     starTarget: store.starScoreTarget,
     target: store.objectives.find((objective) => objective.type === 'score')?.target ?? 0,
+    tally: { ...store.honourTally, mine: levelElements(store.currentLevel?.config) },
   });
   store.constructionReward = campaign.lastConstruction;
   store.cancelHint(true);

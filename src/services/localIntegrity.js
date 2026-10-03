@@ -39,6 +39,9 @@ const NORMAL_ACTIONS = new Set([
   'settlePendingChests',
   'recordVictory',
   'consumePowerItem',
+  'setHonourShowcase',
+  'markHonoursSeen',
+  'markHonoursAnnounced',
 ]);
 const INTERNAL_ACTIONS = new Set([
   'transaction',
@@ -46,6 +49,7 @@ const INTERNAL_ACTIONS = new Set([
   'recordAction',
   'completeProject',
   'awardReward',
+  'updateEarnedHonours',
 ]);
 const PROTECTED_FIELDS = [
   'town',
@@ -62,6 +66,8 @@ const PROTECTED_FIELDS = [
   'chestsWithoutBuilderHammer',
   'integrity',
   'readOnly',
+  // Honours change only through the actions above, never through console edits.
+  'honours',
 ];
 const guards = new WeakMap();
 
