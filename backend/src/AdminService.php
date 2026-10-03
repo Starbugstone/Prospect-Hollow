@@ -518,12 +518,17 @@ final class AdminService
                 throw new ApiError(404, 'That revision is no longer kept.');
             }
             $now = (int) floor(microtime(true) * 1000);
-            $restored = (new SaveIntegrity())->restoreKnownCheckpoint(
-                json_decode($old['profile'], false, 64, JSON_THROW_ON_ERROR),
-                json_decode($row['profile'], false, 64, JSON_THROW_ON_ERROR),
-                $now,
-                $row['id'],
-                (int) $row['saved_at'] * 1000,
+            $latest = json_decode($row['profile'], false, 64, JSON_THROW_ON_ERROR);
+            // An older snapshot never revokes the honours earned since.
+            $restored = Honours::load()->keep(
+                (new SaveIntegrity())->restoreKnownCheckpoint(
+                    json_decode($old['profile'], false, 64, JSON_THROW_ON_ERROR),
+                    $latest,
+                    $now,
+                    $row['id'],
+                    (int) $row['saved_at'] * 1000,
+                ),
+                $latest,
             );
             $profile = json_encode($restored, JSON_THROW_ON_ERROR);
             SaveService::archive($db, $row);

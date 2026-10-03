@@ -4,6 +4,7 @@ namespace App;
 use Symfony\Component\HttpFoundation\Request;
 final class PublicTown
 {
+    private ?SaveIntegrity $rules = null;
     public function __construct(
         private Database $database,
         private Auth $auth,
@@ -88,10 +89,35 @@ final class PublicTown
                 $appearance['levelRecords']->{(string) (int) $id} = (object) ['stars' => $stars];
             }
         }
+        if (is_array($schema['honours'] ?? null)) {
+            $appearance['honours'] = $this->honoursProjection($profile, $schema);
+        }
         return json_encode(
             ['villageId' => $publicId, 'name' => $name, 'era' => $era, 'appearance' => $appearance],
             JSON_THROW_ON_ERROR,
         );
+    }
+    // Town Honours: the publicHonours() shape with provable honours recomputed. A save
+    // without honours is recorded as null, so visits know there is nothing to re-project.
+    private function honoursProjection(object $profile, array $schema): ?array
+    {
+        return (new Honours($schema['honours']))->publish(
+            $profile,
+            is_int($schema['levels'] ?? null) ? $schema['levels'] : 0,
+            fn() => ($this->rules ??= new SaveIntegrity()),
+        );
+    }
+    // Visitors never receive that null: an absent field means "unknown", not "none".
+    private static function published(object $village): object
+    {
+        if (
+            ($village->appearance ?? null) instanceof \stdClass &&
+            property_exists($village->appearance, 'honours') &&
+            $village->appearance->honours === null
+        ) {
+            unset($village->appearance->honours);
+        }
+        return $village;
     }
     public function browse(Request $r): array
     {
@@ -114,7 +140,10 @@ final class PublicTown
             ->executeQuery()
             ->fetchFirstColumn();
         return [
-            'entries' => array_map(fn($r) => json_decode($r), array_slice($rows, 0, 20)),
+            'entries' => array_map(
+                fn($r) => self::published(json_decode($r)),
+                array_slice($rows, 0, 20),
+            ),
             'page' => $page,
             'hasNext' => count($rows) > 20,
         ];
@@ -135,11 +164,12 @@ final class PublicTown
             throw new ApiError(404, 'Town unavailable.');
         }
         $village = json_decode($row['appearance']);
-        // Older shared appearances predate level awards or completed runs. Project their saved progress
-        // on read so visitors need not wait for the owner to connect and save again.
+        // Older shared appearances predate level awards, completed runs or honours. Project their saved
+        // progress on read so visitors need not wait for the owner to connect and save again.
         if (
             !isset($village->appearance->levelRecords) ||
-            !isset($village->appearance->completedRuns)
+            !isset($village->appearance->completedRuns) ||
+            !property_exists($village->appearance, 'honours')
         ) {
             $saved = $this->database
                 ->get()
@@ -159,7 +189,7 @@ final class PublicTown
             );
         }
         $village->saloonReadyAt = $this->saloonReadyAt($row['collected_at']);
-        return $village;
+        return self::published($village);
     }
 
     // Saloon: any visitor may collect it for the owner, at most once per hour per town.

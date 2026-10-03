@@ -2297,31 +2297,61 @@ final class SaveIntegrity
             !$next ||
             !$this->rules['eras'][$next]['enabled'] ||
             (!empty($town['events']['dusty-trail-visitors']) &&
-                !$town['events']['dusty-trail-visitors']['seen'])
+                !$town['events']['dusty-trail-visitors']['seen']) ||
+            !$this->eraComplete($town)
         ) {
             self::mismatch('era-advance');
         }
+        $town['era'] = $next;
+    }
+    /**
+     * Every required plot of the town's current era is fully built and modernized, as
+     * isEraComplete() in TownEras.js. Also reads a saved, unnormalized town (honours).
+     */
+    public function eraComplete(array $town): bool
+    {
+        if (
+            !is_string($town['era'] ?? null) ||
+            !is_array($this->rules['eraOrder'] ?? null) ||
+            !is_array($this->rules['buildings'] ?? null)
+        ) {
+            return false;
+        }
+        $index = $this->eraIndex($town['era']);
+        if ($index < 0) {
+            return false;
+        }
         foreach ($this->rules['buildings'] as $id => $definition) {
             if (
-                $definition['requiredForEraCompletion'] &&
-                $this->eraIndex($definition['introducedEra']) <= $index
+                !$definition['requiredForEraCompletion'] ||
+                $this->eraIndex($definition['introducedEra']) > $index
             ) {
-                $eraLevel =
-                    $town['era'] === 'frontier' || $definition['introducedEra'] === $town['era']
-                        ? $town['buildings'][$id]
-                        : ($town['buildingEras'][$id] === $town['era']
-                            ? ($town['buildingEraLevels'][$id] ?:
-                            1)
-                            : 0);
-                if (
-                    $town['buildings'][$id] !== $definition['maxLevel'] ||
-                    isset($town['projects'][$id]) ||
-                    ($town['era'] !== 'frontier' && $eraLevel !== $this->rules['eraBuildingLevels'])
-                ) {
-                    self::mismatch('era-advance');
-                }
+                continue;
+            }
+            // Normalized replay state is already clamped; older saves keep legacy levels.
+            $level = $town['buildings'][$id] ?? 0;
+            $level = is_int($level) ? min($definition['maxLevel'], $level) : 0;
+            $eraLevel =
+                $town['era'] === 'frontier' || $definition['introducedEra'] === $town['era']
+                    ? $level
+                    : (($town['buildingEras'][$id] ?? null) === $town['era']
+                        ? ($town['buildingEraLevels'][$id] ?? 0 ?:
+                        1)
+                        : 0);
+            if (
+                $level !== $definition['maxLevel'] ||
+                isset($town['projects'][$id]) ||
+                ($town['era'] !== 'frontier' && $eraLevel !== $this->rules['eraBuildingLevels'])
+            ) {
+                return false;
             }
         }
-        $town['era'] = $next;
+        return true;
+    }
+    /** The level's current star score target, or null without a usable one. */
+    public function starScoreTarget(int $level): int|float|null
+    {
+        $target = $this->rules['levels'][$level]['starScoreTarget'] ?? null;
+        return self::number($target) && $target > 0 ? $target : null;
     }
 }

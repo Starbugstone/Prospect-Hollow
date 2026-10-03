@@ -109,3 +109,54 @@ Origin validation, signed-in mutation CSRF checks and per-IP rate limits apply.
 Departure additionally uses the unguessable lease token, so logout does not
 prevent a tab from closing its own lease. Unpublishing stops new arrivals and
 closes active visits on the next presence/guestbook read.
+
+## Town Honours
+
+A shared appearance may carry `appearance.honours`, exactly the client's
+`publicHonours()` shape ([Town Honours](../honours.md)):
+
+```json
+{
+  "version": 1,
+  "earned": {
+    "score-ace": {
+      "at": 1790000000000,
+      "evidence": { "levelId": 52, "score": 31200, "target": 15000 }
+    },
+    "first-fusion": { "at": null }
+  },
+  "showcase": ["score", "first-fusion"]
+}
+```
+
+- `earned` maps catalog honour IDs to `at`, the earning time in Unix milliseconds, or
+  `null` when unknown (history recorded before honours existed). Unknown or future IDs
+  are never published.
+- Only the score family (`score-ace`, `score-legend`) has `evidence`, and only its
+  `levelId`, `score` and `target`.
+- `showcase` lists at most three family IDs in the owner's order, each with a
+  published rank.
+- Nothing else is shared: no counts, progress, fusions, seen or announced flags,
+  inventory, journal or account data.
+
+The server recomputes the honours it can prove from the saved records and town, and
+publishes them only when proven. First Perfect needs a three-star record within the
+published levels. Score Ace and Score Legend need a completed normal puzzle from
+level 37 with at least 2× or 3× that level's current star score target; their
+evidence is the best such run, not the client's. Perfect Prospector needs three stars
+on every published level. Prospect Hollow Complete needs the final enabled era with
+every required building built and modernized, the same check that gates the server's
+era advance. Raising a star target, or adding levels or an era, can therefore hide
+these honours from visitors until the town meets the new requirement; the owner's
+stored honours never change. Observation-based honours (fusions, gems, forge,
+supplies, mine mastery and defence medals) are published as the owner's claims, as
+described in [save integrity](save-integrity.md#town-honours).
+
+A missing `appearance.honours` means unknown (an older owner client or server), never
+an empty or revoked collection. `{ "earned": {}, "showcase": [] }` means the owner's
+save tracks honours and has none to publish. A projection stores a save without
+honours as `honours: null`, so visits trust that absence without reading the save;
+`GET /villages/{publicId}`, `/latest` and the browse list omit that null. Appearances
+projected before honours existed lack the field and are re-projected from the saved
+profile on each visit, like level awards, until the owner's next save or sharing
+change stores a new projection.

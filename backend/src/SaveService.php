@@ -254,13 +254,16 @@ final class SaveService
             [$name, $normalized] = $this->nameAvailable($db, $a['id'], $id, $body['name']);
             $now = (int) floor(microtime(true) * 1000);
             $json = json_encode(
-                (new SaveIntegrity())->accept(
-                    json_decode($json, false, 64, JSON_THROW_ON_ERROR),
+                Honours::load()->keep(
+                    (new SaveIntegrity())->accept(
+                        json_decode($json, false, 64, JSON_THROW_ON_ERROR),
+                        null,
+                        $now,
+                        false,
+                        [],
+                        $id,
+                    ),
                     null,
-                    $now,
-                    false,
-                    [],
-                    $id,
                 ),
                 JSON_THROW_ON_ERROR,
             );
@@ -336,15 +339,21 @@ final class SaveService
                 )
                 : [];
             $now = (int) floor(microtime(true) * 1000);
+            $previous = json_decode($row['profile'], false, 64, JSON_THROW_ON_ERROR);
+            // Earned honours are never revoked: every accepted upload, including signed
+            // recovery and history restores, keeps those of the replaced cloud save.
             $json = json_encode(
-                (new SaveIntegrity())->accept(
-                    json_decode($json, false, 64, JSON_THROW_ON_ERROR),
-                    json_decode($row['profile'], false, 64, JSON_THROW_ON_ERROR),
-                    $now,
-                    $resolve,
-                    $history,
-                    $id,
-                    (int) $row['saved_at'] * 1000,
+                Honours::load()->keep(
+                    (new SaveIntegrity())->accept(
+                        json_decode($json, false, 64, JSON_THROW_ON_ERROR),
+                        $previous,
+                        $now,
+                        $resolve,
+                        $history,
+                        $id,
+                        (int) $row['saved_at'] * 1000,
+                    ),
+                    $previous,
                 ),
                 JSON_THROW_ON_ERROR,
             );
