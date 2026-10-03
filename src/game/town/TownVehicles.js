@@ -36,6 +36,13 @@ export function motorVehicle(d, parent, bus = false, appearanceEra) {
   return root;
 }
 
+/** The vehicle parked at a depot plot. The stables keep their 2CV in every era. */
+export function parkedVehicle(d, parent, kind, era) {
+  return kind === 'stable'
+    ? deuxChevaux(d, parent)
+    : motorVehicle(d, parent, kind === 'busDepot', era);
+}
+
 // A Citroën 2CV parked at the stables: domed cabin with a roll-top canvas roof,
 // ribbed bonnet, separate round front wings and headlamps on stalks. Charleston
 // two-tone, faces +z like the other procedural cars.

@@ -199,10 +199,11 @@ describe('Rounded architecture rendering', () => {
         if (o.userData.substitute) blender = true;
       });
       expect(blender, kind).toBe(false);
-      // Measure the building itself; shared docks and signs keep their own budgets.
-      const { triangles, materials } = cost(
-        root.getObjectByName(`tomorrow rounded ${kind} level 3`),
-      );
+      // Measure the building itself; shared docks, signs and the stables' 2CV keep
+      // their own budgets.
+      const building = root.getObjectByName(`tomorrow rounded ${kind} level 3`);
+      building.getObjectByName('Deux chevaux')?.removeFromParent();
+      const { triangles, materials } = cost(building);
       // Gardens wrap the shared leisure model; the whole-town comparison covers them.
       if (roundedForm(kind) === 'garden') continue;
       expect(triangles, kind).toBeLessThan(4000);

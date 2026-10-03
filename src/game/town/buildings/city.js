@@ -1,5 +1,5 @@
 import { cityAppearance } from '../../../data/cityAppearance';
-import { deuxChevaux, motorVehicle } from '../TownVehicles';
+import { parkedVehicle } from '../TownVehicles';
 import { addSquareModernization } from '../TownSquare';
 import { ERAS, eraEvolution } from '../../../data/eras';
 import { resolveCityAsset } from '../../../data/eraDefinitions';
@@ -126,8 +126,7 @@ export function renderCityBuilding(
       // and the forecourt lamp.
       const [x, z] = (asset === appearance.asset && appearance.parking) || [0, 2.5];
       const spot = d.group(root, x, 0, z);
-      const vehicle =
-        kind === 'stable' ? deuxChevaux(d, spot) : motorVehicle(d, spot, kind === 'busDepot', era);
+      const vehicle = parkedVehicle(d, spot, kind, era);
       vehicle.rotation.y = Math.PI / 2;
     }
   }

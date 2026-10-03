@@ -4,7 +4,7 @@ import { addSquareModernization, buildTownSquare } from '../TownSquare';
 import { addFishingDock } from './river';
 import { leisureModel } from '../LeisureAssets';
 import { BRIDGE, bridgeDeckHeight } from '../TownRiver';
-import { motorVehicle } from '../TownVehicles';
+import { parkedVehicle } from '../TownVehicles';
 import { BufferGeometry, Float32BufferAttribute } from 'three';
 
 // Every part uses the diorama's cached primitives. Geometry is built once per
@@ -549,7 +549,7 @@ export function renderCozyBuilding(d, parent, kind, label, level, era, serviceLe
   if (['stable', 'garage', 'busDepot'].includes(kind)) {
     // Park sideways on the private forecourt, in front of the wall and beneath
     // the high roof. Even the bus leaves a clear gap to both garden planters.
-    const vehicle = motorVehicle(d, d.group(root, 0, 0, 1.4), kind === 'busDepot', era);
+    const vehicle = parkedVehicle(d, d.group(root, 0, 0, 1.4), kind, era);
     vehicle.rotation.y = Math.PI / 2;
   }
   if (!['square', 'garden'].includes(form)) {
