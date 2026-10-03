@@ -119,9 +119,22 @@ twice in a row. Visitors get the same count in the shared appearance, so they se
 animal; while they watch, the old wearer shrinks away with its contact shadow and grows back
 in its own coat as the new one does in the suit. The owner's town changes while they are in the mine.
 
-![Space dog, front](images/tomorrow-city/22-space-dog.png)
+![Every animal that can wear the space helmet](images/tomorrow-city/22-space-helmet-wearers.png)
 
-![Space dog, side](images/tomorrow-city/23-space-dog-side.png)
+_Every wearer in its fitted suit; the hedgehog's low head gets a flattened bubble._
+
+![Space helmets from three angles](images/tomorrow-city/23-space-helmet-angles.png)
+
+_Front three-quarter, side and back three-quarter: the collar never cuts a face or the ground._
+
+![The helmet after eight completed puzzles](images/tomorrow-city/24-space-helmet-rotation.png)
+
+_A Riverlight town opened after puzzles 20 to 27; [watch the wearers walk](images/tomorrow-city/space-helmet-rotation.mp4)._
+
+![A visitor watches the helmet change hands](images/tomorrow-city/25-space-helmet-visitor-swap.png)
+
+_The visit page's poll brings the owner's next puzzle: the dog shrinks out of the suit and the
+hen grows back in orange, at half speed. [Watch the swap](images/tomorrow-city/space-helmet-visitor-swap.mp4)._
 
 ## Phone
 
