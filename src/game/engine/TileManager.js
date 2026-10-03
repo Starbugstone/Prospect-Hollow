@@ -510,12 +510,16 @@ export class TileManager {
     };
 
     // Lower rows only: each original gem can move once, with one final receipt.
-    // Existing upstream pieces take precedence over refill. Rotating merge
-    // choices prevents perpetual center refill from starving either pearl arm.
+    // A relic that can reach the cell falls first, then other upstream pieces,
+    // then refill. Rotating merge choices prevents perpetual center refill from
+    // starving either pearl arm and keeps relics from several arms taking turns.
     for (let index = board.length - 1; index >= 0; index--) {
       if (board[index] || isAnchored(tiles[index])) continue;
       const candidates = candidatesAbove(index);
-      const chosen = candidates.find((candidate) => candidate.from != null) ?? candidates[0];
+      const chosen =
+        candidates.find((candidate) => board[candidate.from]?.type === 'relic') ??
+        candidates.find((candidate) => candidate.from != null) ??
+        candidates[0];
       if (!chosen) continue;
       for (const choice of chosen.choices) tiles[choice.index].flowCursor = choice.cursor;
       if (chosen.from != null) {

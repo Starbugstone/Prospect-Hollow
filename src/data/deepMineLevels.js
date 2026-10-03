@@ -186,7 +186,7 @@ const PLANS = [
       {
         board: '......./.R...R./......./......./.D...D./_K...M_/_kK.Mm_/__...__/___E___',
         gravity: 'funnel',
-        ice: 67,
+        ice: 64,
         tip: 'A relic waits above each root. Blast the entrance gates, cut the roots and clear beneath the treasures so they slide down the funnel to the basket.',
       },
       {

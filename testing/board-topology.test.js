@@ -142,6 +142,47 @@ describe('shared playable shape and directed gravity', () => {
     expect([...collected].sort()).toEqual(pearls.map(({ id }) => id).sort());
   });
 
+  it('lets a relic fall first through a merge, ahead of nearer gems and the refill', () => {
+    const state = makeFunnel();
+    state.tiles[state.gate].health = 0;
+    state.tiles[state.gate].type = 'standard';
+    const pearl = (state.board[0] = createGem('relic'));
+    for (const index of [5, 10, 16, state.gate, state.exit]) state.board[index] = null;
+    // The rotation points at the nearer center and inner-left gems.
+    state.tiles[state.gate].flowCursor = 1;
+    state.tiles[16].flowCursor = 1;
+    const receipt = step();
+    manager.applyGravity(state.board, state.tiles, 5, 6, GEM_TYPES, 0, receipt);
+    expect(state.board[state.exit]).toBe(pearl);
+    expect(receipt.drops[0]).toMatchObject({
+      from: 0,
+      to: state.exit,
+      path: [0, 5, 10, 16, 22, 27],
+    });
+    expect(receipt.spawns.every(({ index }) => index !== state.exit)).toBe(true);
+
+    // Through a full move, the pearl is delivered in the same resolution.
+    const move = makeFunnel();
+    move.tiles[move.gate].health = 0;
+    move.tiles[move.gate].type = 'standard';
+    move.board[0] = createGem('relic');
+    move.tiles[move.gate].flowCursor = 1;
+    move.tiles[16].flowCursor = 1;
+    vi.spyOn(MatchEngine.prototype, 'findMatches').mockReturnValue([]);
+    const result = resolve(move, [5, 10, 16, move.exit], 'tnt');
+    expect(result.relicsCollected).toBe(1);
+  });
+
+  it('lands a relic in a straight column before any refill enters it', () => {
+    const state = makeState();
+    const relic = (state.board[2] = createGem('relic'));
+    for (const index of [7, 12, 17, 22]) state.board[index] = null;
+    const receipt = step();
+    manager.applyGravity(state.board, state.tiles, 5, 5, GEM_TYPES, 0, receipt);
+    expect(state.board[22]).toBe(relic);
+    expect(receipt.spawns.map(({ index }) => index).sort((a, b) => a - b)).toEqual([2, 7, 12, 17]);
+  });
+
   it('preserves chain pinning and lets upstream pieces flow past a binding along its route', () => {
     const state = makeFunnel();
     state.tiles[state.gate].health = 0;

@@ -44,8 +44,10 @@ in the corners and no refill underneath a closed gate. The wide upper chamber
 provides space to make four-gem and T/L bonuses, then aim a blast down the throat.
 Pearls cannot be destroyed or matched. Swapping a bomb, cross or rainbow gem with
 a pearl trades their places and fires the bonus, as long as the pearl can still
-fall to the basket from its new cell. Multiple incoming branches take turns so
-outer pearls cannot remain stuck behind an endless central refill.
+fall to the basket from its new cell. When a cell empties, a pearl that can reach
+it always falls first, ahead of nearer gems from other branches and the refill.
+Multiple incoming branches otherwise take turns, so pearls from several arms
+alternate and none remains stuck behind an endless central refill.
 
 Root knots retain their familiar visible links: matching beside a knot or
 blasting it releases its connected vines. Their harder layouts split access
@@ -127,11 +129,15 @@ remain free to take as many moves as they need.
 | Root-bound vault      |             27 |              76 |          12 |            76 |
 | Underground reservoir |             41 |              78 |          24 |            65 |
 
-On 2026-10-03 the two vault treasure puzzles became funnels (the table above
-predates this). On the ten held-out test seeds, level 393 took a median of 50
-actions (90th percentile 88) and level 396, now with three treasures and a thick
-throat gate, a median of 55 (90th percentile 76). Both stay above the chapter
-breather; published chest, star and speed thresholds are unchanged.
+On 2026-10-03 the two vault treasure puzzles became funnels and relics gained
+priority at funnel merges (the table above predates both). On the ten held-out
+test seeds, level 393 took a median of 40 actions (90th percentile 63) and level
+396, now with three treasures and a thick throat gate, a median of 58 (90th
+percentile 77). With pearls no longer waiting behind gems from other branches,
+the reservoir puzzles became quicker: level 400 dropped from a median of 68 to 46
+and level 402 from 91 to 74. Rectangular relic levels are unchanged, since a relic
+already falls in column order ahead of the refill. Published chest, star and speed
+thresholds are unchanged.
 
 The first fossil puzzle took a median of 19 actions and the first root puzzle 21.
 A separate natural first-fossil replay verifies the teaching setup: swaps
