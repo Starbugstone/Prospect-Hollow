@@ -10,7 +10,7 @@ sockets. Players still use the familiar swaps and earned bonus gems.
 | 63    | 373–378 | **Geothermal forge:** learn to charge braziers and position earned bombs through constricted chutes and basalt gates.                               |
 | 64    | 379–384 | **Fossil beds:** reuse a familiar brazier to blast solid fossil casings, then uncover discoveries in harder side alcoves.                           |
 | 65    | 385–390 | **Glowshroom grotto:** ignite directional spore relays to blast along the marked row or column and chain through other mushrooms.                   |
-| 66    | 391–396 | **Root-bound vault:** open linked root knots across divided wells, then reach gates and discoveries in the separate branches.                       |
+| 66    | 391–396 | **Root-bound vault:** open linked root knots across divided wells; the two treasure puzzles drain through one funnel to a single basket.            |
 | 67    | 397–402 | **Underground reservoir:** guide off-center pearls down a genuine V-shaped funnel, blast its narrow gate and deliver everything through one basket. |
 
 The forge comes first so its familiar reward teaches the fossil introduction.
@@ -49,8 +49,12 @@ outer pearls cannot remain stuck behind an endless central refill.
 
 Root knots retain their familiar visible links: matching beside a knot or
 blasting it releases its connected vines. Their harder layouts split access
-between separate wells. Forge braziers retain visible charge pips and supply
-an earned bomb when filled; the new difficulty comes from the chutes and gates.
+between separate wells. The vault's treasure puzzles (393 and 396) use the same
+funnel gravity as the reservoir: each relic waits above a gate and a knot, and
+every playable cell drains to one basket. No relic can be left above a dead end,
+and a bonus beside a relic can always swap with it. Forge braziers retain visible
+charge pips and supply an earned bomb when filled; the new difficulty comes from
+the chutes and gates.
 
 Moves remain unlimited. There is no purchase or inventory-power requirement,
 no move-exhaustion failure and no hard timer. The optional score and speed
@@ -91,7 +95,7 @@ authored layouts, permanent voids, visible links and focused mechanic combinatio
 Every board retains a broad upper crafting field and can form a four-match bomb
 without inventory powers. All thirty require a board bonus even after every
 one-shot spore relay fires. Every pearl route passes the throat gate and ends at
-the same basket. Store-level playthroughs complete the new mechanics after more
+the same basket, and every playable cell of a treasure puzzle drains to an exit. Store-level playthroughs complete the new mechanics after more
 than 100 recorded moves and after the optional speed target has elapsed.
 
 All local checks run in Docker as required by `AGENTS.md`. The existing
@@ -122,6 +126,12 @@ remain free to take as many moves as they need.
 | Glowshroom grotto     |             28 |              83 |          21 |            67 |
 | Root-bound vault      |             27 |              76 |          12 |            76 |
 | Underground reservoir |             41 |              78 |          24 |            65 |
+
+On 2026-10-03 the two vault treasure puzzles became funnels (the table above
+predates this). On the ten held-out test seeds, level 393 took a median of 50
+actions (90th percentile 88) and level 396, now with three treasures and a thick
+throat gate, a median of 55 (90th percentile 76). Both stay above the chapter
+breather; published chest, star and speed thresholds are unchanged.
 
 The first fossil puzzle took a median of 19 actions and the first root puzzle 21.
 A separate natural first-fossil replay verifies the teaching setup: swaps

@@ -11,9 +11,10 @@ import { useCampaignStore } from '../src/stores/campaignStore';
 
 // Level 400 is the reservoir from the user's report: pearls above a 7-wide bowl,
 // one-hit crates at 36 and 40, two-hit crates at 45 and 52 and one basket at 59.
-// Level 393 is a rectangular relic level with exits only at 57 and 61.
+// Level 55 is a classic rectangular relic level: straight columns and an exit only
+// under the relic's column, so a sideways swap could leave a relic above no exit.
 const RESERVOIR = 400;
-const VAULT = 393;
+const CLASSIC = 55;
 const COLORS = ['ruby', 'sapphire', 'emerald', 'amethyst', 'moonstone'];
 const engine = new MatchEngine();
 const manager = new TileManager();
@@ -99,13 +100,13 @@ describe('swapping a board bonus with a relic', () => {
   });
 
   it('refuses a swap that would move a relic away from every exit', () => {
-    const { board, tiles, cols, rows } = setup(VAULT, { 8: 'relic', 9: 'bomb', 1: 'cross' });
+    const { board, tiles, cols, rows } = setup(CLASSIC, { 10: 'relic', 9: 'bomb', 3: 'cross' });
     expect(drainsToExit(tiles, 9, cols, rows)).toBe(false);
-    expect(drainsToExit(tiles, 1, cols, rows)).toBe(true);
-    expect(canSwapCells(board, tiles, 8, 9, cols, rows)).toBe(false);
-    expect(engine.evaluateSwap(board, cols, rows, 9, 8, tiles).matches).toEqual([]);
-    expect(canSwapCells(board, tiles, 8, 1, cols, rows)).toBe(true);
-    expect(engine.evaluateSwap(board, cols, rows, 1, 8, tiles).matches).toHaveLength(1);
+    expect(drainsToExit(tiles, 3, cols, rows)).toBe(true);
+    expect(canSwapCells(board, tiles, 10, 9, cols, rows)).toBe(false);
+    expect(engine.evaluateSwap(board, cols, rows, 9, 10, tiles).matches).toEqual([]);
+    expect(canSwapCells(board, tiles, 10, 3, cols, rows)).toBe(true);
+    expect(engine.evaluateSwap(board, cols, rows, 3, 10, tiles).matches).toHaveLength(1);
   });
 
   it('keeps relics fixed against ordinary gems, other relics and anchors', () => {
@@ -132,9 +133,9 @@ describe('swapping a board bonus with a relic', () => {
   });
 
   it('bounces a stranding swap in the store without spending a move', async () => {
-    const game = await playLevel(VAULT, { 8: 'relic', 9: 'bomb' });
+    const game = await playLevel(CLASSIC, { 10: 'relic', 9: 'bomb' });
     const before = game.board.map((gem) => gem?.id);
-    expect(await game.resolveSwap(9, 8)).toBe(false);
+    expect(await game.resolveSwap(9, 10)).toBe(false);
     expect(game.moves).toBe(0);
     expect(game.board.map((gem) => gem?.id)).toEqual(before);
   });

@@ -12,7 +12,7 @@ import {
 } from '../src/data/deepMineLevels';
 import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
 import { deepMineProgress } from '../src/game/engine/DeepMineMechanics';
-import { gravityDestination, isPlayableCell } from '../src/game/engine/BoardTopology';
+import { drainsToExit, gravityDestination, isPlayableCell } from '../src/game/engine/BoardTopology';
 import { HintEngine } from '../src/game/engine/HintEngine';
 import { MatchEngine } from '../src/game/engine/MatchEngine';
 import { TileManager } from '../src/game/engine/TileManager';
@@ -229,6 +229,18 @@ describe('append-only deep mine campaign', () => {
         expect(route.at(-1)).toBe(59);
       }
     }
+  });
+
+  it('drains every playable cell of a treasure puzzle to an exit', () => {
+    // A relic can never be left above a dead end, and any bonus beside it may swap in.
+    const treasures = deep.filter(({ board }) => board.some((gem) => gem?.type === 'relic'));
+    expect(treasures.map(({ id }) => id)).toEqual([393, 396, 397, 398, 399, 400, 401, 402]);
+    for (const { tiles, boardCols: cols, boardRows: rows } of treasures)
+      expect(
+        tiles.flatMap((tile, index) =>
+          isPlayableCell(tile) && !drainsToExit(tiles, index, cols, rows) ? [index] : [],
+        ),
+      ).toEqual([]);
   });
 
   it('requires earned board bonuses even after every one-shot spore relay fires', () => {

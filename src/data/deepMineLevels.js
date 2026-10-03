@@ -184,9 +184,10 @@ const PLANS = [
         tip: 'Two roots divide the hanging vaults. Cut the useful knot first, then send bonuses into the rock gates at the two entrances.',
       },
       {
-        board: '......./.R...R./......./......./.D...D./.K._.M./KkK_MmM/.K._.M./.E._.E.',
-        ice: 70,
-        tip: 'A relic waits over each vault. Blast the entrance gates, cut the roots and clear beneath the treasures to reach their exits.',
+        board: '......./.R...R./......./......./.D...D./_K...M_/_kK.Mm_/__...__/___E___',
+        gravity: 'funnel',
+        ice: 67,
+        tip: 'A relic waits above each root. Blast the entrance gates, cut the roots and clear beneath the treasures so they slide down the funnel to the basket.',
       },
       {
         board: '......./......./......./......./DD...DD/.K._.M./KkK_MmM/.K._.M./..._...',
@@ -200,10 +201,11 @@ const PLANS = [
         tip: 'A sheltered garden vault. Cut one knot and craft a bonus for the thick gate above it.',
       },
       {
-        board: '......./.R...R./......./......./BD...DB/.K._.M./KkK_MmM/.K._.M./.E._.E.',
+        board: '...R.../.R...R./......./......./BD...DB/_K...M_/_kK.Mm_/__.D.__/___E___',
+        gravity: 'funnel',
         ice: 58,
         knotHealth: 2,
-        tip: 'Free both narrow treasure shafts. Bonuses crack the four entrance gates; cutting each thick knot releases its whole root group.',
+        tip: 'Three treasures share one basket. Bonuses crack the four entrance gates and the thick throat gate; cutting each thick knot releases its whole root group.',
       },
     ],
   },
