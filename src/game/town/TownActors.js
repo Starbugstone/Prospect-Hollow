@@ -99,9 +99,11 @@ export class TownActors {
       for (const object of objects) {
         const root = this.rootOf.get(object);
         if (!shown.has(root)) continue;
+        // A part detached since the last rebuild, such as the hammer and dust of a
+        // finished construction, never reaches its root and is no longer drawn.
         let visible = true;
         for (let node = object; node !== root; node = node.parent) {
-          if (!node.visible) {
+          if (!node?.visible) {
             visible = false;
             break;
           }
