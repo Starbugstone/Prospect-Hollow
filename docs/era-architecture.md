@@ -277,7 +277,7 @@ and period. Housing never borrows the business-tower landmark. Future eras can
 reuse an existing family; incomplete appearance lookups safely fall back.
 
 `mineAppearance()` derives permanent surface equipment from the same era art
-family. `addMineWorks()` builds the permanent site and the cinematic model, so
+family. `addMineSite()` builds the permanent site and the cinematic model, so
 finishing or skipping cannot leave different versions behind. Its cached scenery
 batch is separate from the underground shaft and the chapter equipment.
 
