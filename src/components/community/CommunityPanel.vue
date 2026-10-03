@@ -8,28 +8,30 @@
   >
     <header class="community-heading">
       <h1>{{ t(village ? 'Village visit' : 'Shared towns') }}</h1>
-      <button ref="closeButton" :aria-label="t('Close town visits')" @click="$emit('close')">
-        ×
-      </button>
+      <div class="community-heading-actions">
+        <!-- Visiting a town: one tap keeps it among the favourites, full when it is one. -->
+        <button
+          v-if="village"
+          class="community-star"
+          :aria-pressed="favouriteIds.has(visiting.villageId)"
+          :aria-label="starLabel"
+          :title="starLabel"
+          :disabled="pendingStars.has(visiting.villageId)"
+          @click="star(visiting)"
+        >
+          <GameIcon name="star" />
+        </button>
+        <button ref="closeButton" :aria-label="t('Close town visits')" @click="$emit('close')">
+          ×
+        </button>
+      </div>
     </header>
     <div class="community-content">
       <p v-if="error" class="community-error" role="alert">{{ t(error) }}</p>
       <template v-if="village">
-        <div class="community-visit-bar">
-          <button class="community-back" @click="back">
-            <GameIcon name="back" />{{ t('Back to shared towns') }}
-          </button>
-          <button
-            class="community-star"
-            :aria-pressed="favouriteIds.has(visiting.villageId)"
-            :disabled="pendingStars.has(visiting.villageId)"
-            @click="star(visiting)"
-          >
-            <GameIcon name="star" />{{
-              t(favouriteIds.has(visiting.villageId) ? 'In your favourites' : 'Add to favourites')
-            }}
-          </button>
-        </div>
+        <button class="community-back" @click="back">
+          <GameIcon name="back" />{{ t('Back to shared towns') }}
+        </button>
         <VillageVisit :village="village" />
       </template>
       <template v-else>
@@ -163,6 +165,14 @@ const tab = ref('discover'),
   visiting = shallowRef(null),
   visited = reactive(new Set());
 const searching = computed(() => searchTerm(query.value) !== '');
+const starLabel = computed(() =>
+  t(
+    favouriteIds.has(visiting.value?.villageId)
+      ? 'Remove {town} from favourites'
+      : 'Add {town} to favourites',
+    { town: visiting.value?.name },
+  ),
+);
 const list = computed(() =>
   searching.value
     ? results.value?.entries
@@ -353,8 +363,50 @@ favouriteVillages()
   margin: 0 0 1rem;
   color: #4d6259;
 }
+.community-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.community-dialog .community-star {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #fff7df;
+}
+.community-dialog .community-star:not(:disabled):hover {
+  background: #ffffff1f;
+}
+.community-dialog .community-star:focus-visible {
+  outline: 2px solid #fff7df;
+  outline-offset: 2px;
+}
+.community-dialog .community-star[aria-pressed='true'] {
+  color: #f5c451;
+}
+.community-star svg {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+.community-star[aria-pressed='true'] svg {
+  animation: community-star-pop 0.3s ease-out;
+}
+@keyframes community-star-pop {
+  50% {
+    transform: scale(1.25);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .community-star[aria-pressed='true'] svg {
+    animation: none;
+  }
+}
 .community-back,
-.community-star,
 .community-draw-button {
   display: inline-flex;
   align-items: center;
@@ -365,17 +417,6 @@ favouriteVillages()
   border-radius: 10px;
   background: #f8e1d9;
   color: #7a2f1d;
-}
-.community-visit-bar {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-.community-dialog .community-star[aria-pressed='true'] {
-  border-color: #d9b25e;
-  background: #f8e3b5;
-  color: #6b4511;
 }
 .community-star[aria-pressed='true'] svg,
 .village-card-star[aria-pressed='true'] svg {
