@@ -1,4 +1,5 @@
 import { updateTownLocomotion } from '../src/game/town/TownLocomotion';
+import { addWell } from '../src/game/town/buildings/frontierParts';
 import { afterEach, expect, it } from 'vitest';
 import { Box3, Group, MeshBasicMaterial, Scene } from 'three';
 import { TownDiorama } from '../src/game/town/TownDiorama';
@@ -172,10 +173,9 @@ it.each(ERAS.flatMap((era, index) => [1, 3].map((tier) => [era.id, index, tier])
         renderModernization(d, root, kind, era, tier);
       } else if (!renderEraLandmark(d, root, kind, b.name, tier, era, stage)) {
         if (kind === 'square') buildTownSquare(d, root, stage, era === 'frontier');
-        else if (kind === 'well') d.well(root);
+        else if (kind === 'well') addWell(d, root);
         else d.building(root, kind, stage, b.name);
-        if (!['fisherman', 'blacksmith', 'school', 'doctor'].includes(kind))
-          addImprovements(d, root, kind, stage, era);
+        addImprovements(d, root, kind, stage, era);
         renderModernization(d, root, kind, era, tier);
       }
       d.batch(root);

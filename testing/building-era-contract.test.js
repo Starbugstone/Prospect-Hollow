@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest';
+import { addWell } from '../src/game/town/buildings/frontierParts';
 import { BoxGeometry, Group, MeshBasicMaterial, Scene } from 'three';
 import { BUILDINGS, createTown } from '../src/data/town';
 import { ERAS } from '../src/data/eras';
@@ -74,7 +75,7 @@ it('every plot begins in its own era, advances through every later playable era,
           renderModernization(d, root, kind, era.id, level);
         } else if (!renderEraLandmark(d, root, kind, b.name, level, era.id, service)) {
           if (kind === 'square') buildTownSquare(d, root, stage);
-          else if (kind === 'well') d.well(root);
+          else if (kind === 'well') addWell(d, root);
           else renderBuilding({ town: d, parent: root, kind, level: service, label: b.name });
           addImprovements(d, root, kind, stage, era.id);
           renderModernization(d, root, kind, era.id, level);

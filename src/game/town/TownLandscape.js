@@ -7,6 +7,7 @@ import { GARDEN_PARCELS, GARDEN_CLEARING, GARDEN_LANE_X } from '../../data/townG
 import { TOWN_TRACKS, PLOTS, RAIL_EDGE, segmentDistance, gardenConnections } from './TownLayout';
 import { RIVER, riverDistance, wetBank, buildRiver } from './TownRiver';
 import { hash01, smoothBetween } from './TownMath';
+import { addCactus } from './buildings/frontierParts';
 
 function noise(x, z) {
   const ix = Math.floor(x),
@@ -292,7 +293,7 @@ export function buildLandscape(town) {
   ]) {
     if (wetBank(x, z, 0.6) || reservedGround(x, z)) continue;
     const plant = town.group(plants, x, groundHeight(x, z), z);
-    town.cactus(plant, 0, 0);
+    addCactus(town, plant, 0, 0);
   }
   town.batch(plants);
   return landscape;

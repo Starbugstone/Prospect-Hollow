@@ -1,4 +1,5 @@
 import { ROUNDED_PALETTE } from '../../../data/roundedArchitecture';
+import { addWindow } from './frontierParts';
 import { WATERMILL_SITE, watermillAppearance } from '../../../data/watermill';
 import { addCozyRoof } from './cozy';
 
@@ -27,9 +28,9 @@ export function renderWatermill(d, parent, era, level, label) {
       roof.rotation.z = -side * 0.55;
     }
   d.box(root, 0.7, 1.3, 0.08, -0.35, 0.9, 1.3, '#574735');
-  d.window(root, -1.05, 1.4, 1.31);
+  addWindow(d, root, -1.05, 1.4, 1.31);
   if (level >= 2) {
-    d.window(root, -0.35, 2.4, 1.31);
+    addWindow(d, root, -0.35, 2.4, 1.31);
     d.box(root, 2.9, 0.14, 0.85, -0.35, 1.95, 1.6, style.roof);
     for (const x of [-1.65, 0.95]) d.rod(root, [x, 0.2, 1.9], [x, 1.95, 1.9], 0.055, timber);
   }

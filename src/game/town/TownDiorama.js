@@ -40,7 +40,6 @@ import {
   selectVillager,
   showVillager,
 } from './TownLabelProjection';
-import { addCactus, addHomeWing, addWell, addWindow } from './buildings/frontierParts';
 import { addHorse, addPerson, animatePerson, setVillagerIdentity } from './TownPeople';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -297,19 +296,6 @@ export class TownDiorama extends TownPrimitives {
   }
   building(parent, id, stage, label, framing = false) {
     renderBuilding({ town: this, parent, kind: id, level: stage, label, construction: framing });
-  }
-  // Frontier parts live in buildings/frontierParts; these keep the diorama's API.
-  cactus(parent, x, z) {
-    addCactus(this, parent, x, z);
-  }
-  window(parent, x, y, z) {
-    addWindow(this, parent, x, y, z);
-  }
-  well(parent, phase) {
-    addWell(this, parent, phase);
-  }
-  homeWing(parent, wins) {
-    addHomeWing(this, parent, wins);
   }
   mine(parent, label) {
     addMineShaft(this, parent);

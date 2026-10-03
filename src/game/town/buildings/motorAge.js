@@ -1,4 +1,5 @@
 import { eraEvolution } from '../../../data/eras';
+import { addWindow } from './frontierParts';
 import { cityAppearance } from '../../../data/cityAppearance';
 import { renderCityBuilding } from './city';
 import { MOTOR_AGE_VARIANTS } from '../../../data/motorAge';
@@ -20,7 +21,7 @@ export function renderMotorBuilding(d, parent, kind, label, level = 1) {
       d.box(house, 1.6, 1.9, 2.3, 0, 1.03, 0, '#c4a38b');
       d.box(house, 1.8, 0.17, 2.5, 0, 2.05, 0, teal);
       d.box(house, 0.45, 1.05, 0.1, 0, 0.65, 1.2, teal);
-      for (const x of [-0.5, 0.5]) d.window(house, x, 1.35, 1.22);
+      for (const x of [-0.5, 0.5]) addWindow(d, house, x, 1.35, 1.22);
       d.box(house, 1.65, 0.12, 0.6, 0, 0.16, 1.5, cream);
     }
   } else {
@@ -31,9 +32,9 @@ export function renderMotorBuilding(d, parent, kind, label, level = 1) {
       for (let n = 0; n < 5; n++)
         d.box(root, 1.65, 0.045, 0.04, -0.4, 0.35 + n * 0.28, 1.51, '#a3b8a8');
       motorVehicle(d, d.group(root, -0.45, 0, 2.15));
-      d.window(root, 1.17, 1.4, 1.42);
+      addWindow(d, root, 1.17, 1.4, 1.42);
     } else {
-      for (const x of [-1.2, -0.4, 0.4, 1.2]) d.window(root, x, 1.5, 1.42);
+      for (const x of [-1.2, -0.4, 0.4, 1.2]) addWindow(d, root, x, 1.5, 1.42);
       d.box(root, 4.1, 0.13, 1.1, 0, 1.95, 1.85, kind === 'diner' ? '#ead8af' : teal);
       for (const x of [-1.85, 1.85]) d.rod(root, [x, 0.15, 2.2], [x, 1.93, 2.2], 0.055, cream);
       if (kind === 'busDepot')
@@ -47,7 +48,7 @@ export function renderMotorBuilding(d, parent, kind, label, level = 1) {
     if (level >= 2) {
       d.box(root, 1.1, 2.55, 2.1, -2.2, 1.32, -0.1, cream);
       d.box(root, 1.3, 0.16, 2.3, -2.2, 2.68, -0.1, teal);
-      d.window(root, -2.2, 1.6, 1.02);
+      addWindow(d, root, -2.2, 1.6, 1.02);
     }
     if (level >= 3) {
       for (let n = 0; n < 3; n++)
@@ -105,7 +106,7 @@ export function addMotorModernization(d, parent, kind, level = 1) {
   if (level >= 2) {
     d.box(root, 1.1, 2.6, 1.7, -2.15, 1.38, 0, cream);
     d.box(root, 1.3, 0.18, 1.95, -2.15, 2.82, 0, teal);
-    d.window(root, -2.15, 1.6, 0.92);
+    addWindow(d, root, -2.15, 1.6, 0.92);
   }
   if (level >= 3)
     for (let n = 0; n < 3; n++)
