@@ -256,15 +256,54 @@ means "unknown" (older owner or server), not an empty or revoked collection.
 
 ## Presentation
 
-- A bottom-right popup (Steam-like layout in the Prospect Hollow palette) for first unlocks and
-  new score ranks only, after results, celebrations and the committed action. Several honours
-  from one action become one "N achievements earned" summary. Medals are quiet.
-- A device preference: Full (popup and sound, subject to volume and mute), Quiet (no popup or
-  sound, New indicator kept) and Off (no unsolicited popup, sound or New indicator).
-- The collection is available from town management and the More menu, without signing in.
-  Visitors see the showcase and an earned-only gallery beside the guestbook.
-- The museum shows element icons per level, a "For an honour" filter and tags naming the honour
-  a level advances.
+### Popup
+
+`HonourToast.vue` (mounted once in `App.vue`) shows a bottom-right card in a Steam-like layout
+with the Prospect Hollow palette, above the town tab bar; narrow screens get a compact card
+across the width. It lasts about five seconds, pauses while hovered, focused, hidden or blocked,
+never takes focus, announces once through a polite live region and plays the existing
+`chest-open` chime at the SFX volume. Reduced motion keeps only a fade.
+
+`useHonourAnnouncements.js` builds the queue from `pendingAnnouncements`: several honours from
+one batch become one "N achievements earned" card with the highest rank per family, and
+backfilled honours become one "N honours recorded" card. Shown or suppressed cards are marked
+with `markHonoursAnnounced`, so reloads and sync retries never repeat them. Medals are quiet.
+The card appears only at a safe point, when all of these hold:
+
+- the player's own active village (never the mine or its results, the home page, account or
+  community panels, another player's town or a read-only save);
+- settings closed, and no pending era transition, town presentation (the three-star
+  celebration comes first) or unseen incident;
+- the town tab bar on screen and no open dialog, sheet, raid or cinematic;
+- a short settle after the action that earned it.
+
+The device preference (`honourNotices`, in Settings) is Full (popup and sound, subject to volume
+and mute), Quiet (no popup or sound; the collection keeps its New marker) or Off (no unsolicited
+popup, sound or New marker). Honours unlock in every mode.
+
+### Collection and showcase
+
+- `HonourCollection.vue` (with `HonourCollectionList`, `HonourCard`, `HonourProgress`,
+  `HonourKicker` and `HonourDetail`) shows the three tabs from `honourCollection`, earned
+  families first, greyed locked cards with readable requirements and progress, and a detail
+  with links to the museum (`openMuseumFor`), supplies or the blacksmith. Families with several
+  ranks (score, visitors) show the highest rank earned and the next one.
+- The More menu entry and the town management section (`HonourAccountSection.vue`) open it;
+  both work without signing in. `TownView.vue` answers `requests.collection` in the village and
+  `HonourCollectionHost.vue` everywhere else.
+- `HonourShowcaseSlots.vue` and `HonourShowcaseEditor.vue` manage the three ordered slots with
+  accessible move and remove buttons; slots store family IDs, so a later rank upgrades them.
+- Visitors: `villageHonours()` in `src/services/publicVillage.js` normalizes
+  `appearance.honours` (missing means unknown and hides the UI). The showcase sits beside the
+  town name and "View town honours" opens the earned-only `HonourGallery.vue`.
+
+### Museum
+
+The Replay mode's Show control offers All completed, Below ✦✦✦ and For an honour, with a picker
+of unfinished level-linked honours (mine mastery, Perfect Prospector and the next score rank).
+Every level card shows its mine element icons, and honour mode adds tags such as
+"◆ Lamplighter · 2 lanterns" or "Score Ace at {target} · your best {score}". A museum request
+from an honour detail opens it pre-filtered.
 
 Mockups: [popups](images/honours/mockup-popups.png),
 [collection](images/honours/mockup-collection-achievements.png),
