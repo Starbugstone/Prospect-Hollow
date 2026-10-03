@@ -3,6 +3,9 @@ import { addWindow } from './frontierParts';
 import { WATERMILL_SITE, watermillAppearance } from '../../../data/watermill';
 import { addCozyRoof } from './cozy';
 
+// The plot builder finds the wheel by this name to turn it every frame.
+export const WATERMILL_WHEEL = 'Watermill wheel';
+
 export function renderWatermill(d, parent, era, level, label) {
   const style = watermillAppearance(era);
   const root = d.group(parent);
@@ -66,7 +69,7 @@ export function renderWatermill(d, parent, era, level, label) {
   d.box(root, 0.4, 0.7, 0.6, 3.3, 0.2, 0, '#a79b80');
   d.rod(root, [0.8, axleHeight, 0], [3.3, axleHeight, 0], 0.12, timber);
   const wheel = d.group(root, wheelX, axleHeight, 0);
-  wheel.name = 'Watermill wheel';
+  wheel.name = WATERMILL_WHEEL;
   const radius = wheelRadius;
   for (let i = 0; i < 16; i++) {
     const angle = (i * Math.PI) / 8;

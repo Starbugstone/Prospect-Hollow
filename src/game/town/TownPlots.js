@@ -20,6 +20,7 @@ import { eraEvolution } from '../../data/eras';
 import * as THREE from 'three';
 
 import { addConstructionPlot, addWell } from './buildings/frontierParts';
+import { WATERMILL_WHEEL } from './buildings/watermill';
 
 import { BUILDING_BY_ID } from '../../data/town';
 
@@ -127,7 +128,7 @@ export function buildPlot(d, id, group, town, labels) {
           town.buildingEras[id],
           town.buildingEraLevels[id] || stage,
         );
-      const wheel = group.getObjectByName('Watermill wheel');
+      const wheel = group.getObjectByName(WATERMILL_WHEEL);
       if (wheel)
         movingPart = {
           rotor: wheel,
