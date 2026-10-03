@@ -518,7 +518,11 @@ export const useCampaignStore = defineStore('campaign', {
       this.town = result.town;
       // Older imports may have no starting timestamp. Establish it once so their
       // earnings survive a reload even before the first collection or town change.
-      if (initialize) this.save();
+      // The server never sees silent refreshes, so its replay starts income here too.
+      if (initialize) {
+        this.recordAction('income-start', { at: now });
+        this.save();
+      }
       return result.earned;
     },
     collectVipSpending(receipt) {

@@ -1033,6 +1033,8 @@ final class SaveIntegrity
         $target = $this->normalized($incoming);
         // Continuous best scores are statistics. Once credited coins stop changing,
         // the frontend saves improvements without generating redundant coin actions.
+        // A first score that earned no coins has no command either, and a later run
+        // can reach the same upload, so it is accepted for any level open to replay.
         foreach ($target['continuousRecords'] as $level => $record) {
             if (
                 isset($state['continuousRecords'][$level]) &&
@@ -1043,8 +1045,8 @@ final class SaveIntegrity
             } elseif (
                 !isset($state['continuousRecords'][$level]) &&
                 $record['coins'] === 0 &&
-                ($context['run']['mode'] ?? null) === 'continuous' &&
-                ($context['run']['levelId'] ?? null) === $level
+                $state['town']['buildings']['museum'] &&
+                $this->unlocked($state, (int) $level)
             ) {
                 $state['continuousRecords'][$level] = $record;
             }
@@ -1651,6 +1653,13 @@ final class SaveIntegrity
                 break;
             case 'era-advance':
                 $this->advanceEra($s, $d);
+                break;
+            case 'income-start':
+                // An older town's earning saloon gets its first income checkpoint.
+                if ($s['town']['income']['at'] !== null || !$this->incomeRate($s['town'])) {
+                    self::mismatch('income-start');
+                }
+                $this->accrue($s, $context, $d['at'] ?? null, $now);
                 break;
             default:
                 self::incompatible();
@@ -2281,11 +2290,12 @@ final class SaveIntegrity
         $town = &$s['town'];
         $index = $this->eraIndex($town['era']);
         $next = $this->rules['eraOrder'][$index + 1] ?? null;
+        // Watching the era cinematic is not journaled, so a replayed checkpoint may
+        // still show the last transition pending; the game itself waits for it.
         if (
             ($d['expectedEra'] ?? null) !== $town['era'] ||
             !$next ||
             !$this->rules['eras'][$next]['enabled'] ||
-            !empty($town['transition']['pending']) ||
             (!empty($town['events']['dusty-trail-visitors']) &&
                 !$town['events']['dusty-trail-visitors']['seen'])
         ) {

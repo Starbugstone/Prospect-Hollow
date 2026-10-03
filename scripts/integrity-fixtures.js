@@ -6,7 +6,7 @@ import { generateLevelConfigs } from '../src/game/engine/LevelGenerator.js';
 import { BUILDINGS, BANDIT_EVENT } from '../src/data/town.js';
 import { ERAS } from '../src/data/eras.js';
 import { eraIndex } from '../src/game/town/TownEras.js';
-import { HOUR_MS } from '../src/game/town/TownRules.js';
+import { HOUR_MS, projectRuns } from '../src/game/town/TownRules.js';
 import { bonusCapacity, HAMMER_CAPACITY } from '../src/data/rewards.js';
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -344,6 +344,67 @@ export function createIntegrityFixtures() {
         profile.powers.find((power) => power.id === 'tnt').quantity = 1;
       },
       () => expectSuccess(useInventoryStore().consumeItem('tnt'), 'power spend'),
+    );
+    fixture(
+      'finishing the sheriff fully defends a waiting raid',
+      (profile) => {
+        incident(profile, false);
+        const event = profile.town.events[BANDIT_EVENT];
+        Object.assign(event, { sheriffLevel: 4, bankLevel: 5, outcome: 'stolen', loss: 5 });
+        profile.town.buildings.sheriff = 4;
+        profile.town.income.at = serverNow;
+        const required = projectRuns('sheriff', 5);
+        profile.town.projects.sheriff = { id: 'sheriff', stage: 5, wins: required, required };
+      },
+      (campaign) => {
+        expectSuccess(campaign.finishConstruction('sheriff', 5), 'sheriff');
+        if (campaign.town.events[BANDIT_EVENT].outcome !== 'protected')
+          throw new Error('Full cover did not protect the waiting raid.');
+      },
+    );
+    fixture(
+      'a continuous score without coins is followed by another run',
+      (profile) => {
+        profile.town.buildings.museum = 1;
+        profile.records[1] = { score: 1, stars: 1 };
+      },
+      (campaign) => {
+        const runId = campaign.beginRun('continuous', 1);
+        expectSuccess(
+          campaign.recordContinuous({ id: 1, runId, jewels: 3, score: 300 }),
+          'continuous score',
+        );
+        campaign.endRun(runId);
+        campaign.beginRun('normal', 2);
+      },
+    );
+    fixture(
+      'an older saloon starts its income once before collecting',
+      (profile) => {
+        saloon(profile);
+        profile.town.income = { at: null, stored: 0, remainder: 0 };
+      },
+      (campaign) => {
+        campaign.accrueSaloonIncome(serverNow - 2 * HOUR_MS);
+        if (campaign.collectSaloonIncome(serverNow) <= 0)
+          throw new Error('Income since the first checkpoint was not collected.');
+      },
+    );
+    fixture(
+      'an era advance after the cloud saw the last transition pending',
+      (profile) => {
+        develop(profile, 'river-rail');
+        profile.town.transition = {
+          id: 'frontier:river-rail',
+          from: 'frontier',
+          to: 'river-rail',
+          pending: true,
+        };
+      },
+      (campaign) => {
+        expectSuccess(campaign.acknowledgeEra(), 'era cinematic');
+        expectSuccess(campaign.advanceEra('river-rail'), 'era advance');
+      },
     );
     return { version: 1, fixtures };
   } finally {
