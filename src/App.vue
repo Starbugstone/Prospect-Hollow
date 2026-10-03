@@ -271,6 +271,7 @@
       @import-progress="resumeImportedVillage"
     />
     <HonourCollectionHost :village="townActive && !props.suspended" />
+    <HonourToast :active="townActive && !props.suspended" />
   </div>
 </template>
 
@@ -300,6 +301,7 @@ import { LEVEL_COUNT, POWERS } from './data/campaign';
 import VictoryModal from './components/VictoryModal.vue';
 import SettingsDrawer from './components/SettingsDrawer.vue';
 import HonourCollectionHost from './components/honours/HonourCollectionHost.vue';
+import HonourToast from './components/honours/HonourToast.vue';
 import GameIcon from './components/GameIcon.vue';
 import { useGameStore } from './stores/gameStore';
 import { useCampaignStore } from './stores/campaignStore';
