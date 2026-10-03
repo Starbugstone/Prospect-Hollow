@@ -34,17 +34,24 @@ it('keeps the toggle usable when preference storage is unavailable', () => {
   expect(() => settings.setVillageLabels(false)).not.toThrow();
   expect(settings.showVillageLabels).toBe(false);
 });
-it('remembers whether the player keeps village progress open or hidden', () => {
+it('mutes music and effects in one tap and restores the previous levels', () => {
   const saved = new Map();
   vi.stubGlobal('localStorage', {
     getItem: (key) => saved.get(key) ?? null,
     setItem: (key, value) => saved.set(key, value),
   });
-  expect(freshSettings().villageProgressOpen).toBeNull();
-  freshSettings().setVillageProgress(true);
-  expect(freshSettings().villageProgressOpen).toBe(true);
-  freshSettings().setVillageProgress(false);
-  expect(freshSettings().villageProgressOpen).toBe(false);
+  const settings = freshSettings();
+  settings.setMusicVolume(0.3);
+  settings.toggleMute();
+  expect([settings.musicVolume, settings.sfxVolume]).toEqual([0, 0]);
+  expect(JSON.parse(saved.get('crystal-cascade-audio-levels'))).toEqual({ music: 0, sfx: 0 });
+  settings.toggleMute();
+  expect([settings.musicVolume, settings.sfxVolume]).toEqual([0.3, 0.8]);
+  // A session that starts muted unmutes to the default levels.
+  settings.toggleMute();
+  const reopened = freshSettings();
+  reopened.toggleMute();
+  expect([reopened.musicVolume, reopened.sfxVolume]).toEqual([0.6, 0.8]);
 });
 it('remembers music and sound effect levels on this device in a new session', () => {
   const saved = new Map();

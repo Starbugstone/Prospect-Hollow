@@ -3,13 +3,7 @@ import { eraGate } from '../game/town/TownEras';
 import { nextGoal, constructionReady } from '../game/town/TownRules';
 import { useCampaignStore } from '../stores/campaignStore';
 
-// New players see the progress guidance until the tour and a first building are done;
-// after that the village gets the screen unless the player chose otherwise.
-export const villageProgressOpen = (saved, town) =>
-  saved ?? (!town.tourSeen || !Object.values(town.buildings).some(Boolean));
-
-// The village's single most useful next action, shared by the progress panel and
-// the compact button shown while that panel is collapsed.
+// The village's single most useful next action, shown at the top of the Build tab.
 export function useNextStepAction(town, hammers, emit) {
   const campaign = useCampaignStore();
   const goal = computed(() => nextGoal(toValue(town)));

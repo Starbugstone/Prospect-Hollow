@@ -104,6 +104,7 @@
       :key="townVisit"
       :open-museum="returnToMuseum"
       @museum-change="returnToMuseum = $event"
+      @home="showHome"
       @mine="startLevel(campaign.nextLevel)"
       @replay="startLevel"
       @continuous="startLevel($event, 'continuous')"
@@ -300,7 +301,7 @@ import SettingsDrawer from './components/SettingsDrawer.vue';
 import GameIcon from './components/GameIcon.vue';
 import { useGameStore } from './stores/gameStore';
 import { useCampaignStore } from './stores/campaignStore';
-import { useSettingsStore, DEFAULT_AUDIO_LEVELS } from './stores/settingsStore';
+import { useSettingsStore } from './stores/settingsStore';
 import { useAudio } from './composables/useAudio';
 import { LEVEL_NAMES } from './data/levelNames';
 import { obstaclesInLevel } from './data/obstacles';
@@ -402,17 +403,7 @@ watch(
 );
 let clockInterval, incomeInterval;
 const muted = computed(() => settings.musicVolume === 0 && settings.sfxVolume === 0);
-let previousVolumes = [DEFAULT_AUDIO_LEVELS.music, DEFAULT_AUDIO_LEVELS.sfx];
-const toggleMute = () => {
-  if (muted.value) {
-    settings.setMusicVolume(previousVolumes[0]);
-    settings.setSfxVolume(previousVolumes[1]);
-  } else {
-    previousVolumes = [settings.musicVolume, settings.sfxVolume];
-    settings.setMusicVolume(0);
-    settings.setSfxVolume(0);
-  }
-};
+const toggleMute = () => settings.toggleMute();
 const currentConfig = computed(() => game.currentLevel?.config);
 const levelName = computed(() => LEVEL_NAMES[game.currentLevelId - 1]);
 const powerName = computed(

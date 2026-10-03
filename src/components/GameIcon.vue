@@ -59,6 +59,8 @@ const paths = {
   download: 'M12 4v11m-5-5 5 5 5-5M5 20h14',
   phone: 'M7 2h10v20H7Zm4 16h2',
   plus: 'M12 5v14M5 12h14',
+  hammer: 'm14 3 7 7-3 3-7-7ZM11.5 8.5 3 17l4 4 8.5-8.5',
+  menu: 'M4 7h16M4 12h16M4 17h16',
 };
 </script>
 <style scoped>

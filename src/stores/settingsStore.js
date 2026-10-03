@@ -19,10 +19,8 @@ const writePreference = (key, value) => {
 };
 
 const VILLAGE_LABELS_KEY = 'crystal-cascade-village-labels';
-// null until the player first opens or hides village progress themselves.
-const VILLAGE_PROGRESS_KEY = 'crystal-cascade-village-progress';
 const AUDIO_LEVELS_KEY = 'crystal-cascade-audio-levels';
-export const DEFAULT_AUDIO_LEVELS = Object.freeze({ music: 0.6, sfx: 0.8 });
+const DEFAULT_AUDIO_LEVELS = Object.freeze({ music: 0.6, sfx: 0.8 });
 const audioLevel = (value, fallback) =>
   typeof value === 'number' && Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : fallback;
 const savedAudioLevels = () => {
@@ -46,18 +44,14 @@ export const useSettingsStore = defineStore('settings', {
         typeof window !== 'undefined' &&
         (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false),
       highContrastMode: false,
+      unmutedLevels: null,
       showVillageLabels: readPreference(VILLAGE_LABELS_KEY, (saved) => saved !== 'false', true),
-      villageProgressOpen: readPreference(VILLAGE_PROGRESS_KEY, (saved) => saved === 'true', null),
     };
   },
   actions: {
     setVillageLabels(visible) {
       this.showVillageLabels = visible !== false;
       writePreference(VILLAGE_LABELS_KEY, String(this.showVillageLabels));
-    },
-    setVillageProgress(open) {
-      this.villageProgressOpen = open === true;
-      writePreference(VILLAGE_PROGRESS_KEY, String(this.villageProgressOpen));
     },
     toggleSettings(explicit) {
       if (typeof explicit === 'boolean') {
@@ -72,6 +66,21 @@ export const useSettingsStore = defineStore('settings', {
     },
     setSfxVolume(value) {
       this.sfxVolume = audioLevel(Number(value), this.sfxVolume);
+      this.saveAudioLevels();
+    },
+    // One tap silences music and effects; the next restores the levels from before.
+    toggleMute() {
+      if (this.musicVolume === 0 && this.sfxVolume === 0) {
+        const [music, sfx] = this.unmutedLevels ?? [
+          DEFAULT_AUDIO_LEVELS.music,
+          DEFAULT_AUDIO_LEVELS.sfx,
+        ];
+        this.musicVolume = music;
+        this.sfxVolume = sfx;
+      } else {
+        this.unmutedLevels = [this.musicVolume, this.sfxVolume];
+        this.musicVolume = this.sfxVolume = 0;
+      }
       this.saveAudioLevels();
     },
     saveAudioLevels() {

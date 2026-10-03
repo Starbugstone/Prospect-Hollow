@@ -191,39 +191,6 @@
         <TownIcon :name="chip.icon" /><span>{{ chip.value }}</span>
       </button>
     </div>
-    <details class="town-camera-bar" @pointerdown.stop @pointerup.stop @pointermove.stop>
-      <summary :title="t('Camera controls')">
-        <GameIcon name="expand" /><span>{{ t('View') }}</span>
-      </summary>
-      <div
-        class="town-camera-controls"
-        role="group"
-        :aria-label="t('Camera controls')"
-        @pointerdown.stop
-        @pointerup.stop
-        @pointermove.stop
-      >
-        <button
-          v-for="action in cameraActions"
-          :key="action.id"
-          :aria-label="t(action.label)"
-          :title="t(action.label)"
-          @click="scene?.cameraAction(action.id)"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.6"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path :d="action.path" />
-          </svg>
-        </button>
-      </div>
-    </details>
   </div>
 </template>
 <script setup>
@@ -396,6 +363,8 @@ let presentationTime = 0;
 let cinematicProgress = 0;
 defineExpose({
   findVisitor: (id) => scene?.findVisitor(id) ?? false,
+  // Camera buttons are gone: drag, pinch, wheel and keys move the view; Village resets it.
+  resetView: () => scene?.cameraAction('reset'),
   collectionOrigin,
   cinematicFrame: (progress) => {
     cinematicProgress = progress;
@@ -406,13 +375,6 @@ defineExpose({
     scene?.presentationFrame(time, props.reducedMotion);
   },
 });
-const cameraActions = [
-  { id: 'out', label: 'Zoom out', path: 'M6 12h12' },
-  { id: 'in', label: 'Zoom in', path: 'M6 12h12M12 6v12' },
-  { id: 'left', label: 'Rotate left', path: 'm8 7-4 4 4 4M4 11h10a5 5 0 0 1 0 10' },
-  { id: 'right', label: 'Rotate right', path: 'm16 7 4 4-4 4m4-4H10a5 5 0 0 0 0 10' },
-  { id: 'reset', label: 'Reset view', path: 'M4 9a8 8 0 1 1 0 6M4 4v5h5M12 9v3l2 2' },
-];
 let lastVisual = '';
 let lastConstruction;
 let scene,
@@ -823,30 +785,6 @@ onBeforeUnmount(() => {
 });
 </script>
 <style scoped>
-/* Keep camera controls with the renderer so standalone admin views have them too. */
-details.town-camera-bar {
-  display: block;
-  width: fit-content;
-  right: auto;
-  pointer-events: auto;
-}
-.town-camera-bar > summary {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  width: fit-content;
-  min-height: 44px;
-  padding: 8px 12px;
-  border: 1px solid #a99b76;
-  border-radius: 10px;
-  background: #fff8e9;
-  color: #405448;
-  font-size: 12px;
-}
-.town-camera-bar .town-camera-controls {
-  margin-top: 6px;
-}
 .town-graphics-unavailable {
   position: absolute;
   inset: 0;

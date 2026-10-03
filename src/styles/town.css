@@ -75,66 +75,12 @@
   outline: 3px solid #496d60;
   outline-offset: 4px;
 }
-.town-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-  margin-bottom: 28px;
-}
 .town-kicker {
   font-size: 10px;
   letter-spacing: 1.6px;
   line-height: 1.7;
   font-weight: 600;
   color: #8a856a;
-}
-.town-heading .town-kicker {
-  color: #7d8b70;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-.town-heading .town-kicker > span {
-  width: 5px;
-  height: 5px;
-  background: #869568;
-  border-radius: 50%;
-}
-.town-heading h1 {
-  font-family: Georgia, serif;
-  font-weight: 400;
-  font-size: clamp(30px, 3.5vw, 45px);
-  letter-spacing: -1.5px;
-  margin-top: 6px;
-}
-.town-wallet {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  border: 1px solid #dfd7c2;
-  padding: 13px 24px;
-  border-radius: 12px;
-  background: #fbf7e9;
-}
-.town-wallet > svg {
-  width: 35px;
-  height: 35px;
-  color: #b79553;
-}
-.town-wallet strong {
-  font-size: 27px;
-  color: #806333;
-  font-weight: 600;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-}
-.town-wallet span {
-  display: block;
-  font-size: 8px;
-  letter-spacing: 1.5px;
-  color: #9b8865;
-  margin-top: 5px;
 }
 .town-world {
   min-width: 0;
@@ -146,76 +92,6 @@
   overflow: hidden;
   position: relative;
   box-shadow: 0 5px 22px #6e6b4410;
-}
-.town-map-caption {
-  position: absolute;
-  z-index: 1;
-  left: 23px;
-  right: 23px;
-  top: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  font-size: 9px;
-  letter-spacing: 1.2px;
-  color: #7c8565;
-  pointer-events: none;
-}
-.town-map-caption > span {
-  display: flex;
-  gap: 7px;
-  align-items: center;
-}
-.town-map-caption svg {
-  width: 17px;
-  height: 17px;
-}
-.town-map-caption > span {
-  padding: 6px 11px;
-  border: 1px solid #9caa7933;
-  background: #f9f7e580;
-  border-radius: 20px;
-  letter-spacing: 0;
-}
-.town-needs {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  padding: 22px 0;
-  border-bottom: 1px solid #dedbce;
-}
-.town-needs > button {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 2px 19px;
-  border-right: 1px solid #dedbce;
-}
-.town-needs > button:first-child {
-  padding-left: 6px;
-}
-.town-needs > button:last-child {
-  border: 0;
-}
-.town-needs svg {
-  width: 24px;
-  height: 24px;
-  flex: 0 0 24px;
-  color: #829177;
-}
-.town-needs > button:first-child > svg {
-  color: #7a9e9d;
-}
-.town-needs span {
-  font-size: 12px;
-  font-weight: 600;
-}
-.town-needs small {
-  display: block;
-  font-size: 10px;
-  color: #92917e;
-  font-weight: 400;
-  margin-top: 5px;
 }
 .town-building-preview {
   margin: 5px -5px 10px;
@@ -352,24 +228,7 @@
   border-radius: 50%;
   flex: 0 0 6px;
 }
-.town-save-warning {
-  color: #8d592e;
-  padding: 15px;
-  background: #f4e5cd;
-  border-radius: 8px;
-  margin-top: 20px;
-  font-size: 12px;
-}
-.town-bottom-note {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  color: #a39d84;
-  font-size: 9px;
-  margin-top: 25px;
-}
 .town-restored-note p,
-.town-needs small,
 .town-purchase-hint,
 .town-building-list small {
   color: #6b705f;
@@ -397,8 +256,7 @@
 }
 .high-contrast .town-view .town-kicker,
 .high-contrast .town-view p,
-.high-contrast .town-view small,
-.high-contrast .town-bottom-note {
+.high-contrast .town-view small {
   color: #4f5840;
 }
 .high-contrast .town-map-frame,
@@ -406,19 +264,6 @@
   border-color: #626b50;
 }
 @media (max-width: 1050px) {
-  .town-needs > button {
-    gap: 7px;
-    padding-inline: 8px;
-  }
-  .town-needs small {
-    font-size: 9px;
-  }
-  .town-map-caption {
-    left: 13px;
-    right: 13px;
-    top: 13px;
-    font-size: 7px;
-  }
   .town-building-list {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -445,12 +290,6 @@
   }
   .town-purchase-hint {
     grid-column: 2;
-  }
-  .town-map-caption {
-    font-size: 9px;
-    left: 20px;
-    top: 16px;
-    right: 20px;
   }
 }
 @media (max-width: 550px) {
@@ -490,70 +329,8 @@
   .town-view {
     padding: 24px 14px 105px;
   }
-  .town-heading {
-    gap: 8px;
-    margin-bottom: 21px;
-  }
-  .town-heading .town-kicker {
-    font-size: 7px;
-    letter-spacing: 1.15px;
-  }
-  .town-heading h1 {
-    font-size: 29px;
-    letter-spacing: -1px;
-  }
-  .town-wallet {
-    padding: 10px 12px;
-    gap: 7px;
-    border-radius: 8px;
-  }
-  .town-wallet strong {
-    font-size: 21px;
-  }
-  .town-wallet > svg {
-    width: 22px;
-    height: 22px;
-  }
-  .town-wallet span {
-    font-size: 6px;
-    letter-spacing: 0.6px;
-  }
   .town-map-frame {
     border-radius: 11px;
-  }
-  .town-map-caption {
-    font-size: 6px;
-    left: 12px;
-    right: 12px;
-    top: 10px;
-    letter-spacing: 0.8px;
-  }
-  .town-map-caption svg {
-    width: 12px;
-    height: 12px;
-  }
-  .town-map-caption span:first-child {
-    gap: 4px;
-  }
-  .town-needs {
-    padding: 18px 0;
-  }
-  .town-needs > button {
-    gap: 6px;
-    padding-inline: 8px;
-  }
-  .town-needs svg {
-    width: 20px;
-    height: 20px;
-    flex-basis: 20px;
-  }
-  .town-needs span {
-    font-size: 10px;
-  }
-  .town-needs small {
-    font-size: 7px;
-    line-height: 1.4;
-    margin-top: 4px;
   }
   .town-building-preview svg {
     height: 120px;
@@ -566,12 +343,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
     margin-top: 20px;
-  }
-  .town-bottom-note {
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    font-size: 8px;
   }
 }
 
@@ -732,104 +503,9 @@
   accent-color: #688b70;
 }
 
-.town-construction-summary {
-  color: #617b70;
-  font-size: 12px;
-  line-height: 1.8;
-  padding: 0 4px 12px;
-}
-.town-happiness {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
-  margin: 0 0 16px;
-  padding: 14px 18px;
-  border: 1px solid #d8ddcb;
-  border-radius: 12px;
-  background: #eef0e3;
-  color: #526951;
-  text-align: left;
-}
-.town-happiness > svg {
-  width: 24px;
-  flex: 0 0 24px;
-}
-.town-happiness > span {
-  flex: 1;
-  font-size: 13px;
-}
-.town-happiness strong {
-  float: right;
-}
-.town-happiness meter {
-  display: block;
-  width: 100%;
-  height: 16px;
-  accent-color: #81985f;
-}
-.town-happiness small {
-  font-size: 11px;
-}
-
-.town-camera-bar {
-  position: absolute;
-  z-index: 2;
-  bottom: 14px;
-  left: 18px;
-  right: 18px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 10px;
-  pointer-events: none;
-}
-.town-camera-controls {
-  display: flex;
-  border: 1px solid #a99b76;
-  border-radius: 12px;
-  background: #fff8e9ed;
-  box-shadow: 0 3px 14px #54452d1c;
-  pointer-events: auto;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-.town-camera-controls button {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border: 0;
-  border-right: 1px solid #d7cfb9;
-  background: transparent;
-  color: #4b6559;
-  cursor: pointer;
-}
-.town-camera-controls button:last-child {
-  border-right: 0;
-}
-.town-camera-controls button:hover {
-  background: #e0e6d0;
-}
-.town-camera-controls button:focus-visible {
-  outline: 2px solid #426654;
-  outline-offset: -4px;
-}
-.town-camera-controls svg {
-  width: 21px;
-  height: 21px;
-}
 @media (max-width: 600px) {
   .town-scene {
     aspect-ratio: 5 / 6;
-  }
-  .town-camera-bar {
-    left: 10px;
-    right: 10px;
-    bottom: 10px;
-    align-items: center;
-    flex-direction: column;
-    gap: 7px;
   }
 }
 .town-service {
@@ -1210,9 +886,6 @@
 .town-map-frame {
   scroll-margin-top: 90px;
 }
-.town-has-raid .town-map-caption {
-  visibility: hidden;
-}
 .town-has-raid .town-raid-banner {
   position: absolute;
   top: 0;
@@ -1269,99 +942,8 @@
   padding-top: 24px;
   padding-bottom: 24px;
 }
-.town-heading {
-  margin-bottom: 12px;
-}
-.town-heading h1 {
-  font-size: 36px;
-}
-.town-tools {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 14px;
-  font-size: 12px;
-}
-.town-tools button,
-.town-hammer-stock {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.town-tools button {
-  padding: 8px 12px;
-  color: #4b6b5b;
-  background: #e9eadf;
-  border: 1px solid #d7dccb;
-  border-radius: 9px;
-  min-height: 36px;
-}
-.town-tools button:last-child,
-.town-tools .town-tools-community {
-  margin-left: auto;
-}
-.town-tools .town-tools-community + button {
-  margin-left: 0;
-}
-.town-tools img {
-  width: 23px;
-  height: 23px;
-}
-.town-tools svg {
-  width: 18px;
-  height: 18px;
-}
 .town-map-frame {
   scroll-margin-top: 112px;
-}
-.town-map-caption {
-  right: auto;
-  justify-content: flex-start;
-  gap: 6px;
-}
-.town-map-hammers img {
-  width: 20px;
-  height: 20px;
-}
-.town-map-caption .town-map-hammers {
-  padding: 3px 8px;
-  font-size: 12px;
-  font-weight: 800;
-  color: #705c38;
-}
-.town-plots-button {
-  position: absolute;
-  top: 14px;
-  right: 16px;
-  z-index: 4;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border: 1px solid #d7c8a5;
-  border-radius: 10px;
-  padding: 9px 14px;
-  min-height: 44px;
-  background: #fbf5e3;
-  color: #536b55;
-  font-size: 12px;
-  box-shadow: 0 2px 8px #7c633218;
-}
-.town-plots-button svg {
-  width: 17px;
-  height: 17px;
-}
-.town-needs > button {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  background: transparent;
-  color: inherit;
-  border: 0;
-  text-align: left;
-  min-height: 54px;
-}
-.town-needs > button:hover {
-  background: #e9ebdf;
 }
 .town-journal-content {
   background: #eeedde;
@@ -1543,63 +1125,8 @@ html:has(.town-museum[open]) {
   .town-view {
     padding: 12px 12px 16px;
   }
-  .town-heading {
-    margin-bottom: 8px;
-  }
-  .town-heading .town-kicker {
-    display: none;
-  }
-  .town-heading h1 {
-    font-size: 25px;
-  }
-  .town-wallet {
-    padding: 8px 10px;
-    gap: 6px;
-  }
-  .town-wallet strong {
-    font-size: 20px;
-  }
-  .town-wallet > svg {
-    width: 23px;
-    height: 23px;
-  }
-  .town-wallet span {
-    font-size: 6px;
-    letter-spacing: 0.8px;
-  }
-  .town-tools {
-    gap: 7px;
-    font-size: 10px;
-    margin-bottom: 10px;
-  }
-  .town-tools button {
-    padding: 6px 8px;
-    font-size: 11px;
-  }
-  .town-tools img {
-    width: 20px;
-    height: 20px;
-  }
-  .town-tools svg {
-    display: none;
-  }
   .town-scene {
     height: clamp(350px, 55svh, 480px);
-  }
-  .town-needs {
-    margin-top: 6px;
-  }
-  .town-needs > button {
-    padding: 7px 4px;
-    gap: 5px;
-    font-size: 10px;
-  }
-  .town-needs small {
-    font-size: 8px;
-  }
-  .town-construction-summary {
-    margin: 6px 0;
-    font-size: 10px;
   }
   .town-dialog {
     inset: auto 0 0;
@@ -1691,10 +1218,6 @@ html:has(.town-museum[open]) {
 .town-fullscreen .town-fullscreen-button {
   top: max(60px, calc(env(safe-area-inset-top) + 60px));
 }
-.town-fullscreen > .village-next-inline {
-  max-height: 48%;
-  overflow-y: auto;
-}
 .town-plot-hammer {
   display: inline-flex;
   align-items: center;
@@ -1706,10 +1229,6 @@ html:has(.town-museum[open]) {
 .town-has-raid .town-fullscreen-button {
   top: auto;
   bottom: calc(96px + env(safe-area-inset-bottom));
-}
-
-.town-story-button {
-  left: 64px;
 }
 
 .town-plot-price img {
@@ -1761,8 +1280,8 @@ html:has(.town-museum[open]) {
 
 .town-map-needs {
   position: absolute;
-  right: 16px;
-  bottom: 14px;
+  left: 12px;
+  top: 64px;
   z-index: 3;
   display: flex;
   gap: 6px;
@@ -1788,10 +1307,8 @@ html:has(.town-museum[open]) {
   height: 18px;
   flex-shrink: 0;
 }
-/* A shortage stands out on the map and in the needs panel until it is fixed. */
-.town-map-needs button.short,
-.town-needs > button.short,
-.town-happiness.short {
+/* A shortage stands out on the map until it is fixed. */
+.town-map-needs button.short {
   border-color: #d39a45;
   background: #fbe6bf;
   color: #7c4d12;
@@ -1801,8 +1318,8 @@ html:has(.town-museum[open]) {
 }
 @media (max-width: 600px) {
   .town-map-needs {
-    right: 10px;
-    bottom: 10px;
+    left: 10px;
+    top: 62px;
     gap: 4px;
   }
   .town-map-needs button {
@@ -1813,10 +1330,6 @@ html:has(.town-museum[open]) {
   .town-map-needs svg {
     width: 15px;
     height: 15px;
-  }
-  /* Opened camera controls take the bottom row of a narrow map. */
-  .town-scene:has(.town-camera-bar[open]) .town-map-needs {
-    visibility: hidden;
   }
 }
 /* Touch screens get full-size targets at any width. */
@@ -1830,20 +1343,212 @@ html:has(.town-museum[open]) {
   visibility: hidden;
 }
 
+/* The top of the village: save status on the left, savings and hammers on the right. */
 .town-map-corner {
   position: absolute;
   top: max(12px, env(safe-area-inset-top));
-  right: 16px;
+  left: 12px;
   z-index: 7;
   display: flex;
   align-items: flex-start;
   gap: 8px;
+  max-width: calc(100% - 190px);
 }
-.town-map-corner .town-map-wallet {
-  position: static;
-  max-width: none;
+.town-map-status {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  right: 12px;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  gap: 7px;
   min-height: 44px;
   box-sizing: border-box;
+  padding: 6px 12px;
+  border: 1px solid #cfb772;
+  border-radius: 10px;
+  background: #fff5d2ee;
+  box-shadow: 0 3px 14px #54452d1c;
+  color: #5d4a1d;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.town-map-status svg,
+.town-map-status img {
+  width: 19px;
+  height: 19px;
+  flex-shrink: 0;
+}
+.town-map-status i {
+  width: 1px;
+  align-self: stretch;
+  margin-inline: 3px;
+  background: #dccb93;
+}
+.town-map-notice {
+  position: absolute;
+  top: 116px;
+  left: 50%;
+  z-index: 7;
+  max-width: min(420px, calc(100% - 24px));
+  margin: 0;
+  padding: 7px 12px;
+  border: 1px solid #d39a45;
+  border-radius: 10px;
+  background: #fbe6bf;
+  color: #7c4d12;
+  font-size: 12px;
+  text-align: center;
+  translate: -50% 0;
+}
+
+/* One bar for every village destination; the mine is the main action. */
+.town-tab-bar {
+  position: relative;
+  z-index: 5;
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+  padding: 6px 6px max(6px, env(safe-area-inset-bottom));
+  border-top: 1px solid #c6c3a6;
+  background: #f4efdf;
+}
+.town-tab-bar button {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 52px;
+  padding: 4px 2px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: #56705f;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.town-tab-bar button span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.town-tab-bar button.current {
+  background: #e3e8d2;
+  color: #2f4a3b;
+}
+.town-tab-bar .town-tab-mine {
+  background: #4f6b5a;
+  color: #fffbe7;
+  box-shadow: 0 2px #36503f;
+}
+.town-tab-bar button:focus-visible {
+  outline: 2px solid #426654;
+  outline-offset: 2px;
+}
+.town-tab-badge {
+  position: absolute;
+  top: 3px;
+  left: calc(50% + 6px);
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: #c9772e;
+  color: #fff;
+  font: 700 10px/17px system-ui;
+  font-style: normal;
+}
+.town-tab-bar .nudge svg {
+  animation: town-tab-nudge 1.6s ease-in-out infinite;
+}
+@keyframes town-tab-nudge {
+  50% {
+    transform: translateY(-3px);
+  }
+}
+.reduced-motion .town-tab-bar .nudge svg {
+  animation: none;
+}
+@media (max-width: 360px) {
+  .town-tab-bar button {
+    font-size: 10px;
+  }
+}
+@media (min-width: 900px) {
+  .town-tab-bar {
+    grid-template-columns: repeat(5, minmax(0, 150px));
+    justify-content: center;
+  }
+  .town-tab-bar button {
+    flex-direction: row;
+    gap: 8px;
+    min-height: 46px;
+    font-size: 13px;
+  }
+  .town-tab-badge {
+    position: static;
+  }
+}
+
+/* Tab destinations open as sheets that end at the tab bar, so it stays usable. */
+.town-sheet-scrim {
+  position: fixed;
+  inset: 0 0 var(--town-tab-height, 0);
+  z-index: 94;
+  background: #23362b66;
+}
+.town-dialog.town-sheet {
+  position: fixed;
+  inset: auto 0 var(--town-tab-height, 0);
+  z-index: 95;
+  margin: 0 auto;
+  width: min(560px, 100%);
+  max-width: 100%;
+  max-height: calc(100dvh - var(--town-tab-height, 0px) - max(56px, env(safe-area-inset-top)));
+  border-bottom: 0;
+  border-radius: 20px 20px 0 0;
+}
+
+/* The More tab: secondary destinations as one list. */
+.town-more-menu {
+  display: grid;
+}
+.town-more-menu button {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 52px;
+  padding: 0 6px;
+  border: 0;
+  border-bottom: 1px solid #e6dfcb;
+  background: none;
+  color: #34483d;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.town-more-menu button svg {
+  color: #56705f;
+}
+.town-more-menu button small {
+  margin-left: auto;
+  color: #7d806e;
+  font-size: 12px;
+  font-weight: 500;
+}
+/* The next step leads the Build tab, above the available plots. */
+.town-build-next.village-next {
+  margin: 0 0 14px;
+  padding: 0 0 12px;
+  border-top: 0;
+  border-bottom: 1px solid #e6dfcb;
+  background: none;
 }
 .town-raid-actions .town-map-wallet {
   position: static;
@@ -1918,10 +1623,8 @@ html:has(.town-museum[open]) {
 }
 .town-in-cinematic > button,
 .town-in-cinematic > .town-map-corner,
-.town-in-cinematic > .town-map-caption,
 .town-in-cinematic .town-scene-labels,
 .town-in-cinematic .town-action-icons,
-.town-in-cinematic .town-camera-bar,
 .town-in-cinematic .mine-label {
   visibility: hidden;
 }
@@ -2003,9 +1706,6 @@ html:has(.town-museum[open]) {
   background: #554633f2;
   font-size: 11px;
   line-height: 1.25;
-}
-.town-scene.is-raiding .town-camera-bar {
-  visibility: hidden;
 }
 
 /* The arrival window selects the passenger without moving the main camera. */
