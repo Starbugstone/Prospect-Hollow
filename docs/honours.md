@@ -75,20 +75,58 @@ for the era's incident from its era contract. Medals never produce popups or sou
 
 ## Balancing evidence
 
-Measured on 2026-10-03 with `scripts/measure-campaign.mjs` (hint-led, 3 seeds × 402 levels, no
-inventory powers) and the level definitions; to be re-checked with 30 seeds before release.
+Measured on 2026-10-03 with `scripts/measure-campaign.mjs` (hint-led, 30 seeds × 402 levels =
+12,060 completed runs, no inventory powers, no stalling) and the level definitions. The script
+now reports `jewels` and a per-type `gems` tally for every run. A bot that finishes each puzzle
+as soon as it can is likely a lower bound for a human, who can use powers and play on.
 
-| Levels | Runs reaching 2× star target | Runs reaching 4× | Best run |
-| ------ | ---------------------------- | ---------------- | -------- |
-| 1–12   | 81%                          | 19%              | 7.4×     |
-| 13–36  | 21%                          | 0%               | 3.8×     |
-| 37–402 | 1–6%                         | 0%               | 2.3–3.2× |
+Score multiple (score ÷ star target) by level band; the ≥ columns are shares of runs.
 
-- Opening star targets are deliberately low, hence the level-37 floor and 2× / 3× ranks. With
-  unlimited moves a player can stall before the final objective, so Score Legend partly rewards
-  patience; that is accepted and never limited by moves or time.
-- One campaign pass collects about 17.8k each of ruby, sapphire and emerald and 11.8k each of
-  topaz, amethyst and moonstone. The goals are about two-thirds of a pass.
+| Levels  | Median | p90  | Max  | ≥ 1.5× | ≥ 2×  | ≥ 3×  | ≥ 4×  |
+| ------- | ------ | ---- | ---- | ------ | ----- | ----- | ----- |
+| 1–12    | 2.66   | 4.25 | 7.89 | 92.8%  | 76.1% | 37.5% | 13.1% |
+| 13–36   | 1.52   | 2.58 | 4.94 | 52.4%  | 25.6% | 5.8%  | 0.7%  |
+| 37–120  | 1.10   | 1.68 | 4.76 | 17.6%  | 3.4%  | 0.3%  | 0.0%  |
+| 121–240 | 1.01   | 1.58 | 4.17 | 13.0%  | 2.7%  | 0.2%  | 0.0%  |
+| 241–324 | 1.00   | 1.49 | 3.33 | 9.6%   | 1.6%  | 0.0%  | 0.0%  |
+| 325–402 | 1.04   | 1.72 | 5.75 | 17.2%  | 5.4%  | 0.6%  | 0.0%  |
+| 37–402  | 1.03   | 1.62 | 5.75 | 14.2%  | 3.2%  | 0.3%  | 0.0%  |
+
+Opening star targets are deliberately low, hence the level-37 floor. Of the 366 levels from 37,
+200 have at least one run at 2× and 24 at 3×.
+
+- **Score Ace (2×)**: one qualifying puzzle per 31 played (the score route to three stars, 1.5×,
+  is one per 7). A single pass over levels 37–402 yields 11.7 on average (7–20 per seed). The first
+  one arrives at a median of level 62 (40–195), and about 75% of players would have one by level
+  75 and 99% by 200. It follows three-star play without being routine.
+- **Score Legend (3×)**: one per 366 puzzles. A pass yields 1.0 on average, and 19 of 30 seeds
+  (64%) had at least one, at a median of level 164 for those that did. The 24 levels that can
+  reach it are scattered, and the best (387, 390, 400) give 7–17% per attempt, so it is rare
+  but a player who aims for it can attain it. Stalling for patience, which the bot never does,
+  only raises this.
+- Raising Ace to 2.5× would give 3.1 per pass (first at about level 107) and Legend at 4× is
+  essentially unreachable (0.1 per pass, 3 of 30 seeds), so neither is recommended.
+
+Gems per campaign pass (all 402 levels, completed puzzles), and where the goal is reached in a
+straight campaign (mean level across seeds):
+
+| Gem       | Mean per pass | Min–max       | Goal   | Goal ÷ pass | Goal reached at level |
+| --------- | ------------- | ------------- | ------ | ----------- | --------------------- |
+| Ruby      | 17,901        | 17,414–18,479 | 12,000 | 67.0%       | 278 (270–290)         |
+| Sapphire  | 17,769        | 17,242–18,310 | 12,000 | 67.5%       | 281 (273–290)         |
+| Emerald   | 17,836        | 17,283–18,593 | 12,000 | 67.3%       | 280 (270–290)         |
+| Topaz     | 11,860        | 11,319–12,463 | 8,000  | 67.5%       | 280 (266–290)         |
+| Amethyst  | 11,827        | 11,410–12,250 | 8,000  | 67.6%       | 283 (271–296)         |
+| Moonstone | 11,684        | 11,320–12,263 | 8,000  | 68.5%       | 286 (274–297)         |
+
+Later levels yield more gems (65% of a pass by level 268), so the goals land about 70% of the
+way through the campaign by level number and two-thirds of it by gems. Mine goals are 1.46–1.54×
+one campaign from the level definitions (table above), so they need no measurement.
+
+- Conclusion: the approved thresholds hold; no change is recommended. Re-measure after any change
+  to scoring, levels or gem palettes.
+- Score Legend partly rewards patience: with unlimited moves a player can stall before the final
+  objective. That is accepted and never limited by moves or time.
 - The forge makes one TNT per 6 → 2 completed puzzles by blacksmith level, pauses while a TNT
   waits and refuses collection when TNT storage is full, so 50 collections is mid-to-late play.
 

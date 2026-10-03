@@ -74,6 +74,7 @@ try {
       let jewels = 0,
         score = 0,
         maxCombo = 1;
+      const gems = {};
       const comboCounts = {},
         multiMatchCounts = {};
       const remaining = () =>
@@ -134,6 +135,7 @@ try {
             ? clearScore(step, index)
             : (step.cleared?.length ?? 0) * 100 * cascadeTier(step, index);
           jewels += step.collectedJewels?.length ?? 0;
+          for (const { type } of step.collectedJewels ?? []) gems[type] = (gems[type] ?? 0) + 1;
           if (!step.cleared?.length) return;
           const tier = cascadeTier(step, index),
             matches = simultaneousMatchCount(step);
@@ -161,6 +163,8 @@ try {
         sporeBursts,
         blastOnlyHits,
         diagonalPearlDrops,
+        jewels,
+        gems,
         coins: rules.miningPayout(jewels, bonuses, comboCounts, multiMatchCounts, level.id),
       });
     }
