@@ -141,6 +141,21 @@ describe('swapping a board bonus with a relic', () => {
   });
 });
 
+describe('relic gravity', () => {
+  it.each([0, 1, 2])(
+    'delivers both vault relics when a bomb opens the basket (merge turn %i)',
+    (turn) => {
+      // The user's report on level 393: a bomb in the funnel neck between two relics.
+      // The live merge rotation pointed at the centre, whose gem took the basket first.
+      const state = setup(393, { 51: 'relic', 52: 'bomb', 53: 'relic' });
+      state.tiles[59].flowCursor = turn;
+      const result = resolve(state, engine.evaluateActivation(state.board, 7, 9, 52, state.tiles));
+      expect(result.relicsCollected).toBe(2);
+      expect(result.board.some((gem) => gem?.type === 'relic')).toBe(false);
+    },
+  );
+});
+
 describe('blast-only obstacles in chain reactions', () => {
   it('take one hit per bonus blast while ice keeps one hit per chain', () => {
     // The user's case: a cross fires down past two pearls into a bomb beside a crate.
