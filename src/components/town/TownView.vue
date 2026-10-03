@@ -664,6 +664,8 @@ const tabHeight = ref(0);
 const tabSheet = computed(() => tabHeight.value > 0);
 function openTab(tab) {
   if (tab === 'mine') goMining();
+  // Tapping the open tab again closes its panel.
+  else if (tab !== 'village' && currentTab.value === tab) closeDialog();
   else if (tab !== 'village') {
     museumOpen.value = false;
     dialogMode.value = tab;

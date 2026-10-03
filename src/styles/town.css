@@ -1354,6 +1354,11 @@ html:has(.town-museum[open]) {
   gap: 8px;
   max-width: calc(100% - 190px);
 }
+/* The save pill opens its details toward the screen from the left corner. */
+.town-map-frame .town-map-corner .save-pill-pop {
+  left: 0;
+  right: auto;
+}
 .town-map-status {
   position: absolute;
   top: max(12px, env(safe-area-inset-top));
