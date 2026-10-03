@@ -4,7 +4,12 @@ import { TownActors } from '../src/game/town/TownActors';
 import { updateTownLocomotion } from '../src/game/town/TownLocomotion';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
-import { addTownAnimals, animalHabitats, animalKey } from '../src/game/town/TownAnimals';
+import {
+  addTownAnimals,
+  animalHabitats,
+  animalKey,
+  spaceHelmetWearer,
+} from '../src/game/town/TownAnimals';
 import { addPowerGrid, addEraStreetscape } from '../src/game/town/TownEvolution';
 import { townNavigation, walkPose, walkPath } from '../src/game/town/TownNavigation';
 import { createAnimalBehavior } from '../src/game/town/TownAnimalBehavior';
@@ -16,7 +21,7 @@ import { ERAS, ERA_BY_ID, eraEvolution } from '../src/data/eras';
 import { defineEra } from '../src/data/eraDefinitions';
 import { PLOTS } from '../src/game/town/TownLayout';
 import { COMPANION_NEIGHBORHOODS } from '../src/data/townCompanions';
-import { townFauna } from '../src/data/townAnimals';
+import { SPACE_HELMET, townFauna } from '../src/data/townAnimals';
 
 const views = [];
 function fixture(
@@ -637,6 +642,41 @@ it('keeps animal routes that the changed town still allows', () => {
 
 // The reuse key includes an era costume, so Tomorrow City's space dog is kept, not rebuilt,
 // on both the immediate path and the deferred path the live village uses (C5).
+it('moves the space helmet to the next animal in each era after Tomorrow City', () => {
+  const debut = ERAS.findIndex((era) => era.id === SPACE_HELMET.debut);
+  expect(new Set(SPACE_HELMET.wearers).size).toBe(SPACE_HELMET.wearers.length);
+  for (const [index, { id }] of ERAS.entries())
+    expect(spaceHelmetWearer(id), id).toBe(
+      index < debut ? null : SPACE_HELMET.wearers[(index - debut) % SPACE_HELMET.wearers.length],
+    );
+  expect(['tomorrow', 'canopy', 'riverlight'].map(spaceHelmetWearer)).toEqual([
+    'dog',
+    'cat',
+    'fox',
+  ]);
+  expect(spaceHelmetWearer('unknown-era')).toBeNull();
+});
+
+it.each(ERAS.map((era) => era.id))(
+  'dresses one %s animal, the era wearer, as a space animal',
+  (era) => {
+    const d = fixture(era);
+    addTownAnimals(d, d.town);
+    const dressed = d.animals.filter((a) => a.root.getObjectByName('Space helmet'));
+    const wearer = spaceHelmetWearer(era);
+    expect(dressed.map((a) => a.species)).toEqual(wearer ? [wearer] : []);
+    expect(dressed.every((a) => a.costume === 'space-helmet')).toBe(true);
+  },
+);
+
+// Later eras keep the latest cast, so every future wearer has an animal to dress.
+it('casts every space-helmet wearer in the latest era town', () => {
+  const d = fixture(ERAS.at(-1).id);
+  addTownAnimals(d, d.town);
+  const cast = new Set(d.animals.map((a) => a.species));
+  for (const species of SPACE_HELMET.wearers) expect(cast.has(species), species).toBe(true);
+});
+
 it('keeps the costumed space dog when the Tomorrow town re-settles', async () => {
   const d = fixture('tomorrow');
   addTownAnimals(d, d.town);
@@ -653,7 +693,7 @@ it('keeps the costumed space dog when the Tomorrow town re-settles', async () =>
   expect(d.animals).not.toBe(before);
   const kept = d.animals.find((a) => a.species === 'dog');
   expect(kept).toBe(settled);
-  expect(kept.root.getObjectByName('Space dog helmet')).toBeTruthy();
+  expect(kept.root.getObjectByName('Space helmet')).toBeTruthy();
 });
 
 it('plans again only the animal route that a new building now blocks', () => {

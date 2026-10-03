@@ -1,8 +1,13 @@
-import { townWardrobe } from '../../data/townWardrobes';
 import { scheduleWork } from '../PresentationWork';
 import { AnimalSpaceBuilder } from './TownAnimalSpace';
 import { Group, Vector3 } from 'three';
-import { ANIMAL_HABITATS, TOWN_ANIMALS, townFauna, flyingAnimal } from '../../data/townAnimals';
+import {
+  ANIMAL_HABITATS,
+  SPACE_HELMET,
+  TOWN_ANIMALS,
+  townFauna,
+  flyingAnimal,
+} from '../../data/townAnimals';
 import { COMPANION_NEIGHBORHOODS, COMPANION_STREET_FALLBACK } from '../../data/townCompanions';
 import { riverCenterX, RIVER } from './TownRiver';
 import { eraEvolution } from '../../data/eras';
@@ -10,6 +15,7 @@ import { atPlot, PLOTS, plotStreet, routeGraph, routeOnGraph } from './TownLayou
 import { TownNavigation, walkPose, standingPose } from './TownNavigation';
 import { groundHeight } from './TownLandscape';
 import { population } from './TownRules';
+import { eraIndex } from './TownEras';
 import { animalModel, animateAnimal } from './TownAnimalModels';
 import { animalNavigation, animalSpace } from './TownAnimalSpace';
 import { setWorkRoutine } from './TownWorkRoutine';
@@ -183,6 +189,14 @@ function adoptRetainedAnimals(d, animals, retained, space) {
   });
   for (const old of retained.values()) d.clearGroup(old.root);
   return adopted;
+}
+
+/** The species wearing the space helmet in this era, or null before its debut. */
+export function spaceHelmetWearer(era) {
+  const index = eraIndex(era),
+    step = index - eraIndex(SPACE_HELMET.debut);
+  if (index < 0 || step < 0) return null;
+  return SPACE_HELMET.wearers[step % SPACE_HELMET.wearers.length];
 }
 
 function addGroundAnimal(d, species, path, seed, options = {}) {
@@ -697,6 +711,13 @@ function* populateAnimals(d, town, preparedSpace) {
   const graph = routeGraph(town);
   const habitats = yield* prepareHabitats(d, town);
   d.animalHabitats = habitats;
+  // Only the first animal of the era's wearer species gets the space helmet.
+  let wearer = spaceHelmetWearer(town.era);
+  const castAnimal = (species, path, seed, options = {}) => {
+    const costume = species === wearer && path?.total ? 'space-helmet' : undefined;
+    if (costume) wearer = null;
+    return addGroundAnimal(d, species, path, seed, costume ? { ...options, costume } : options);
+  };
   for (const species of ['dog', 'cat']) {
     if (!population(town)) continue;
     const ids = (
@@ -723,9 +744,7 @@ function* populateAnimals(d, town, preparedSpace) {
         );
       });
     }
-    // The era wardrobe may dress the village dog (Tomorrow City's space dog).
-    const costume = species === 'dog' ? (townWardrobe(profile).petCostume ?? null) : null;
-    addGroundAnimal(d, species, path, species === 'dog' ? 4 : 17, costume ? { costume } : {});
+    castAnimal(species, path, species === 'dog' ? 4 : 17);
     yield;
   }
   if (town.buildings.farm)
@@ -741,7 +760,7 @@ function* populateAnimals(d, town, preparedSpace) {
       const path = yield* route(`hen:${n}`, TOWN_ANIMALS.hen.radius, function* () {
         return groundRoute(nav, points, TOWN_ANIMALS.hen.radius);
       });
-      addGroundAnimal(d, 'hen', path, 30 + n * 11);
+      castAnimal('hen', path, 30 + n * 11);
       yield;
     }
   const ground = habitats.filter((h) => h.kind === 'ground');
@@ -823,7 +842,7 @@ function* populateAnimals(d, town, preparedSpace) {
     const path = yield* route(`wild:${species}:${z}`, TOWN_ANIMALS[species].radius, function* () {
       return groundRoute(nav, points, TOWN_ANIMALS[species].radius);
     });
-    addGroundAnimal(d, species, path, 91 + n * 43, { wild: true });
+    castAnimal(species, path, 91 + n * 43, { wild: true });
     yield;
   }
   // A fixed, small garden cast. Routes are planned with body height and real
@@ -858,7 +877,7 @@ function* populateAnimals(d, town, preparedSpace) {
       },
       height,
     );
-    addGroundAnimal(d, species, path, seed, { wild: true });
+    castAnimal(species, path, seed, { wild: true });
     yield;
   }
   if (fauna.companions) {
@@ -894,7 +913,7 @@ function* populateAnimals(d, town, preparedSpace) {
           if (path?.total) break;
         }
       }
-      addGroundAnimal(d, species, path, neighborhood.seed, { neighborhood: neighborhood.id });
+      castAnimal(species, path, neighborhood.seed, { neighborhood: neighborhood.id });
       yield;
     }
   }

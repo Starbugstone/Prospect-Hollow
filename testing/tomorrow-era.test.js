@@ -10,7 +10,7 @@ import { addAviationActivity } from '../src/game/town/TownAviation';
 import { roundedAircraft } from '../src/game/town/RoundedTransports';
 import { animalModel } from '../src/game/town/TownAnimalModels';
 import { animalKey } from '../src/game/town/TownAnimals';
-import { townWardrobe } from '../src/data/townWardrobes';
+import { SPACE_HELMET } from '../src/data/townAnimals';
 import { addEraActivity } from '../src/game/town/TownEraActivity';
 import { ALL_MESH_FAMILIES, loadFamilies } from '../src/game/town/assets/MeshCatalog';
 import { CITY_ARCHITECTURES, TRANSPORT_STYLES, defineEra } from '../src/data/eraDefinitions';
@@ -294,21 +294,34 @@ describe('Rounded architecture rendering', () => {
     for (const uuid of tomorrow.geometries) expect(contemporary.geometries.has(uuid)).toBe(true);
   });
 
-  it('dresses the village dog as a Cosmo-style space dog in Tomorrow City only', () => {
+  it('fits the see-through space helmet over the whole head of every wearer', () => {
     const d = diorama('tomorrow');
     Object.assign(d, { world: new Group() });
-    const space = animalModel(d, 'dog', 4, townWardrobe(eraEvolution('tomorrow')).petCostume);
-    const plain = animalModel(d, 'dog', 4, townWardrobe(eraEvolution('contemporary')).petCostume);
-    expect(space.root.userData.costume).toBe('space-helmet');
-    expect(space.root.getObjectByName('Space dog helmet')).toBeTruthy();
-    expect(plain.root.getObjectByName('Space dog helmet')).toBeFalsy();
-    // The bubble is see-through so the dog's face stays visible, and it encloses the head.
-    const bubble = space.root.getObjectByName('Space dog helmet').children[0];
-    expect(bubble.material.transparent).toBe(true);
-    space.root.updateMatrixWorld(true);
-    const head = new Box3().setFromObject(space.head.children[0]);
-    expect(new Box3().setFromObject(bubble).containsBox(head)).toBe(true);
-    // A costume change must not reuse the plain dog across an era rebuild.
+    for (const species of SPACE_HELMET.wearers) {
+      const space = animalModel(d, species, 4, 'space-helmet');
+      const plain = animalModel(d, species, 4);
+      expect(space.root.userData.costume, species).toBe('space-helmet');
+      expect(plain.root.getObjectByName('Space helmet'), species).toBeFalsy();
+      const helmet = space.root.getObjectByName('Space helmet');
+      const bubble = helmet.children[0];
+      expect(bubble.material.transparent, species).toBe(true);
+      // Ears, snout and whiskers all stay inside the bubble.
+      space.root.updateMatrixWorld(true);
+      bubble.geometry.boundingSphere ?? bubble.geometry.computeBoundingSphere();
+      const center = bubble.getWorldPosition(new Vector3()),
+        radius = bubble.geometry.boundingSphere.radius * bubble.getWorldScale(new Vector3()).x;
+      const point = new Vector3();
+      space.head.traverse((o) => {
+        if (!o.isMesh || o.parent === helmet) return;
+        const position = o.geometry.attributes.position;
+        for (let n = 0; n < position.count; n++)
+          expect(
+            point.fromBufferAttribute(position, n).applyMatrix4(o.matrixWorld).distanceTo(center),
+            species,
+          ).toBeLessThanOrEqual(radius);
+      });
+    }
+    // A costume change must not reuse the plain animal across an era rebuild.
     expect(animalKey({ species: 'dog', seed: 4, costume: 'space-helmet' })).not.toBe(
       animalKey({ species: 'dog', seed: 4 }),
     );

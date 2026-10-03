@@ -40,7 +40,6 @@ it.each(['canopy', 'riverlight'])(
     const d = fixture(era),
       profile = eraEvolution(era);
     expect(townWardrobe(profile).hat).toBe('none');
-    expect(townWardrobe(profile).petCostume).toBeUndefined();
     const colors = new Set(),
       accessories = new Set();
     for (let seed = 0; seed < 12; seed++) {

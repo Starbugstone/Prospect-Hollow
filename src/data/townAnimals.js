@@ -75,6 +75,14 @@ export const TOWN_ANIMALS = {
   },
 };
 
+// The space-helmet easter egg debuts on the village dog in Tomorrow City and moves
+// to the next wearer in each later era, so players have to find its new animal.
+// Every wearer is a ground species the era casts keep; the list wraps around.
+export const SPACE_HELMET = {
+  debut: 'tomorrow',
+  wearers: ['dog', 'cat', 'fox', 'raccoon', 'hedgehog', 'otter', 'deer', 'hen'],
+};
+
 // Each profile adds to the previous cast. Stable species seeds keep existing
 // visitors and birds when another era introduces a new neighbor.
 const standard = {

@@ -1,12 +1,13 @@
-import { MeshStandardMaterial } from 'three';
+import { Box3, Matrix4, MeshStandardMaterial, Vector3 } from 'three';
 import { TOWN_ANIMALS } from '../../data/townAnimals';
 import { horizonMaterial } from './TownAtmosphere';
 import { catGeometries, pigeonGeometries } from './TownAnimalGeometries';
 import { gardenAnimalModel } from './GardenAnimalModels';
 import { flyingAnimal } from '../../data/townAnimals';
 
-function finishModel(d, model) {
+function finishModel(d, model, costume = null) {
   const { root, head, species } = model;
+  if (costume === 'space-helmet') addSpaceSuit(d, model);
   root.traverse((object) => {
     if (object.isMesh) object.castShadow = false;
   });
@@ -20,7 +21,7 @@ function finishModel(d, model) {
   };
 }
 
-function catModel(d, root) {
+function catModel(d, root, costume) {
   catGeometries(d);
   const coat = '#b77e4e',
     light = '#f0e3cc',
@@ -56,7 +57,7 @@ function catModel(d, root) {
   d.mesh(tail, 'catTail', [1, 1, 1], [0, 0, 0], coat);
   d.mesh(tail, 'catTailTip', [1, 1, 1], [0, 0, 0], stripe);
   d.ball(tail, 0.12, 0.45, 0, 0.043, stripe);
-  return finishModel(d, { root, body, head, legs, wings: [], tail, species: 'cat' });
+  return finishModel(d, { root, body, head, legs, wings: [], tail, species: 'cat' }, costume);
 }
 
 // Small articulated meshes use the same geometry/material caches and instancing
@@ -66,9 +67,9 @@ export function animalModel(d, species, variant = 0, costume = null) {
   root.name = TOWN_ANIMALS[species].name;
   root.userData.animated = true;
   root.userData.species = species;
-  if (species === 'cat') return catModel(d, root);
+  if (species === 'cat') return catModel(d, root, costume);
   if (TOWN_ANIMALS[species].model === 'garden')
-    return finishModel(d, { ...gardenAnimalModel(d, species, root), species });
+    return finishModel(d, { ...gardenAnimalModel(d, species, root), species }, costume);
   if (flyingAnimal(species)) pigeonGeometries(d);
   const bird = species === 'hen' || flyingAnimal(species);
   const colors = {
@@ -80,17 +81,8 @@ export function animalModel(d, species, variant = 0, costume = null) {
     bluebird: ['#7296ad', '#e8dfc8'],
   };
   const [coat, light] = colors[species];
-  const space = species === 'dog' && costume === 'space-helmet';
   const body = d.group(root);
-  // A space dog's suit replaces the coat on the body only; head, ears and tail stay furry.
-  d.ball(
-    body,
-    0,
-    bird ? 0.22 : 0.3,
-    0,
-    bird ? [0.16, 0.2, 0.25] : [0.18, 0.21, 0.36],
-    space ? SUIT : coat,
-  );
+  d.ball(body, 0, bird ? 0.22 : 0.3, 0, bird ? [0.16, 0.2, 0.25] : [0.18, 0.21, 0.36], coat);
   const head = d.group(body, 0, bird ? 0.4 : 0.47, bird ? 0.16 : 0.28);
   d.ball(head, 0, 0, 0, bird ? 0.105 : [0.14, 0.15, 0.16], coat);
   const legs = [],
@@ -150,13 +142,12 @@ export function animalModel(d, species, variant = 0, costume = null) {
       for (const z of [-0.1, -0.25, -0.4])
         d.ball(tail, 0, -0.02, z, [0.143, 0.143, 0.045], '#535b54');
   }
-  if (space) addSpaceSuit(d, root, body, head, legs);
-  return finishModel(d, { root, body, head, legs, wings, tail, species });
+  return finishModel(d, { root, body, head, legs, wings, tail, species }, costume);
 }
 
 const SUIT = '#ece5d3',
   SUIT_RED = '#c9504a',
-  HELMET_KEY = 'space-dog-helmet';
+  HELMET_KEY = 'space-helmet-glass';
 function helmetGlass(d) {
   if (!d.materials.has(HELMET_KEY))
     d.materials.set(
@@ -173,19 +164,82 @@ function helmetGlass(d) {
     );
   return d.materials.get(HELMET_KEY);
 }
-// Cosmo-style space dog: a clear bubble helmet on a white collar ring, a white suit with
-// red star patches and red boots. Only shared primitives; one extra (transparent) material.
-function addSpaceSuit(d, root, body, head, legs) {
+const relative = new Matrix4(),
+  vertex = new Vector3();
+// Visits each vertex of the meshes below `group` in the group's own coordinates.
+function eachVertex(group, visit, meshes = []) {
+  if (!meshes.length) group.traverse((o) => o.isMesh && meshes.push(o));
+  group.updateWorldMatrix(true, true);
+  const inverse = group.matrixWorld.clone().invert();
+  for (const mesh of meshes) {
+    relative.multiplyMatrices(inverse, mesh.matrixWorld);
+    const position = mesh.geometry.attributes.position;
+    for (let n = 0; n < position.count; n++)
+      visit(vertex.fromBufferAttribute(position, n).applyMatrix4(relative));
+  }
+}
+function boundsOf(group, meshes) {
+  const box = new Box3();
+  eachVertex(group, (v) => box.expandByPoint(v), meshes);
+  return box;
+}
+
+// Cosmo-style space suit, fitted to whichever animal wears it this era: a clear bubble
+// enclosing the whole head on a white collar ring, a white suit with red star patches
+// and red boots. Only shared primitives; one extra (transparent) material.
+function addSpaceSuit(d, { root, body, head, legs }) {
   root.userData.costume = 'space-helmet';
+  const center = boundsOf(head).getCenter(new Vector3());
+  let reach = 0;
+  eachVertex(head, (v) => (reach = Math.max(reach, v.distanceTo(center))));
+  const r = reach * 1.06;
   const helmet = d.group(head);
-  helmet.name = 'Space dog helmet';
-  const bubble = d.ball(helmet, 0, 0.01, 0.03, [0.25, 0.25, 0.26], '#dff3f4');
+  helmet.name = 'Space helmet';
+  const bubble = d.ball(helmet, center.x, center.y, center.z, r, '#dff3f4');
   bubble.material = helmetGlass(d);
   // The collar ring sits under the bubble, behind the snout.
-  const collar = d.mesh(helmet, 'cylinder', [0.18, 0.06, 0.18], [0, -0.16, -0.06], SUIT);
+  const collar = d.mesh(
+    helmet,
+    'cylinder',
+    [r * 0.72, r * 0.24, r * 0.72],
+    [center.x, center.y - r * 0.64, center.z - r * 0.36],
+    SUIT,
+  );
   collar.rotation.x = -0.25;
-  for (const side of [-1, 1]) d.ball(body, side * 0.18, 0.33, -0.02, [0.02, 0.06, 0.06], SUIT_RED);
-  for (const leg of legs) d.ball(leg, 0, -0.2, 0.025, [0.058, 0.045, 0.085], SUIT_RED);
+  // The suit replaces the coat on the trunk only; head, ears, spines and tail stay furry.
+  const volume = (box) =>
+    box
+      .getSize(new Vector3())
+      .toArray()
+      .reduce((a, b) => a * b);
+  const [torso, trunk] = body.children
+    .filter((o) => o.isMesh)
+    .map((mesh) => [mesh, boundsOf(body, [mesh])])
+    .reduce((a, b) => (volume(b[1]) > volume(a[1]) ? b : a));
+  torso.material = d.material(SUIT);
+  const middle = trunk.getCenter(new Vector3()),
+    half = trunk.getSize(new Vector3()).multiplyScalar(0.5);
+  for (const side of [-1, 1])
+    d.ball(
+      body,
+      side * trunk.max.x,
+      middle.y + half.y * 0.15,
+      middle.z,
+      [0.02, 0.06, 0.06],
+      SUIT_RED,
+    );
+  for (const leg of legs) {
+    const foot = boundsOf(leg),
+      size = foot.getSize(new Vector3());
+    d.ball(
+      leg,
+      (foot.min.x + foot.max.x) / 2,
+      foot.min.y + Math.min(0.045, size.y * 0.2),
+      (foot.min.z + foot.max.z) / 2,
+      [size.x * 0.58, Math.min(0.045, size.y * 0.2), size.z * 0.58],
+      SUIT_RED,
+    );
+  }
 }
 
 export function animateAnimal(model, time, state, moving) {
