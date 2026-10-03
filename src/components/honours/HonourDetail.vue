@@ -1,0 +1,244 @@
+<template>
+  <section v-if="model" class="honour-detail" :data-honour="model.id">
+    <HonourBadge :definition="model.definition" :size="112" :locked="!model.earned" />
+    <HonourKicker
+      :shape="model.shape"
+      :text="`${model.kicker} · ${t(CATEGORY_LABELS[model.category])}`"
+    />
+    <h2>{{ model.name }}</h2>
+    <p v-if="family.ranks.length === 1" class="honour-detail-requirement">
+      {{ model.requirement }}
+    </p>
+    <ol v-if="family.ranks.length > 1" class="honour-detail-ranks" :aria-label="t('Ranks')">
+      <li v-for="rank in family.ranks" :key="rank.definition.id">
+        <HonourBadge :definition="rank.definition" :size="40" :locked="!rank.earned" />
+        <span>
+          <strong>{{ t(rank.definition.name) }}</strong>
+          <small>{{ requirementText(rank.definition) }}</small>
+          <small v-if="rank.earned" class="honour-earned"
+            >{{ earnedText(rank.earned)
+            }}<template v-if="rank.earned.evidence">
+              · {{ evidenceText(rank.earned.evidence) }}</template
+            ></small
+          >
+          <small v-else>{{ t('Not yet earned') }}</small>
+        </span>
+      </li>
+    </ol>
+    <HonourProgress
+      v-if="model.progress || model.chips || model.checks"
+      class="honour-detail-progress"
+      :model="model"
+    />
+    <p v-if="best" class="honour-detail-note">
+      {{ t('Best run so far: {run}', { run: evidenceText(best) }) }}
+    </p>
+    <p v-if="model.status" class="honour-detail-note">{{ model.status }}</p>
+    <p v-if="model.earned && family.ranks.length === 1" class="honour-earned">
+      <span v-if="model.earned.dated" aria-hidden="true">✓ </span>{{ model.earned.text }}
+    </p>
+    <div v-if="model.mine" class="honour-where-box">
+      <h3>{{ t('Where to make progress') }}</h3>
+      <ul>
+        <li>{{ model.mine.summary }}</li>
+        <li>
+          {{
+            model.mine.reached
+              ? model.mine.completed
+              : t('Not reached yet: these levels are further into the mine.')
+          }}
+        </li>
+        <li>{{ t('Completed puzzles count, including museum replays.') }}</li>
+      </ul>
+    </div>
+    <button
+      v-if="links && model.link"
+      class="town-primary"
+      type="button"
+      @click="$emit('link', model)"
+    >
+      {{ model.link.label }} <span aria-hidden="true">→</span>
+    </button>
+    <button
+      class="town-secondary"
+      type="button"
+      :disabled="!model.earned || (full && !showcased)"
+      @click="toggleShowcase"
+    >
+      {{ t(showcased ? 'Remove from showcase' : 'Add to showcase') }}
+    </button>
+    <p class="honour-detail-hint" role="status">{{ hint }}</p>
+  </section>
+</template>
+<script setup>
+import { computed, ref } from 'vue';
+import { t } from '../../i18n';
+import { useCampaignStore } from '../../stores/campaignStore';
+import { SHOWCASE_SLOTS, bestScoreRun, honourCollection, validShowcase } from '../../data/honours';
+import HonourBadge from './HonourBadge.vue';
+import HonourKicker from './HonourKicker.vue';
+import HonourProgress from './HonourProgress.vue';
+import {
+  CATEGORY_LABELS,
+  describeFamily,
+  earnedText,
+  evidenceText,
+  requirementText,
+} from './honourDisplay';
+// The player's own honour in detail: requirement (each rank's for ranked families),
+// progress toward the next rank, dates, score evidence, where to progress and the
+// showcase choice.
+const props = defineProps({ familyId: { type: String, required: true }, links: Boolean });
+defineEmits(['link']);
+const campaign = useCampaignStore();
+const family = computed(() =>
+  honourCollection(campaign)
+    .flatMap((tab) => tab.families)
+    .find((entry) => entry.id === props.familyId),
+);
+const model = computed(
+  () => family.value && describeFamily(family.value, campaign, { canReplay: campaign.canReplay }),
+);
+const best = computed(() =>
+  props.familyId === 'score' && family.value?.next ? bestScoreRun(campaign.records) : null,
+);
+const showcase = computed(() => validShowcase(campaign.honours.showcase, campaign.honours));
+const showcased = computed(() => showcase.value.includes(props.familyId));
+const full = computed(() => showcase.value.length >= SHOWCASE_SLOTS);
+const saved = ref('');
+const hint = computed(() => {
+  if (saved.value) return saved.value;
+  if (!model.value?.earned) return t('Earn this honour to show it to visitors.');
+  if (full.value && !showcased.value)
+    return t('Your showcase is full. Remove an honour from it to add this one.');
+  return t(
+    showcased.value
+      ? 'Visitors see this honour beside your town name.'
+      : 'Show this honour to visitors beside your town name.',
+  );
+});
+function toggleShowcase() {
+  const adding = !showcased.value;
+  const next = adding
+    ? [...showcase.value, props.familyId]
+    : showcase.value.filter((id) => id !== props.familyId);
+  saved.value = campaign.setHonourShowcase(next)
+    ? t(adding ? 'Added to your showcase.' : 'Removed from your showcase.')
+    : t('Your showcase could not be saved.');
+}
+</script>
+<style>
+.honour-detail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  color: #3f5545;
+}
+.honour-detail h2 {
+  margin: 0;
+  font:
+    400 28px/1.15 Georgia,
+    serif;
+}
+.honour-detail-requirement,
+.honour-detail-note {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #4a5346;
+}
+.honour-detail-progress {
+  align-self: stretch;
+  text-align: left;
+}
+.honour-detail-progress .honour-bar {
+  height: 10px;
+}
+.honour-detail-progress .honour-progress-text {
+  font-size: 13px;
+  text-align: center;
+}
+.honour-detail-ranks {
+  display: grid;
+  gap: 8px;
+  align-self: stretch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+.honour-detail-ranks li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid #e0d9c4;
+  border-radius: 10px;
+  background: #f6f4ea;
+}
+.honour-detail-ranks span {
+  display: grid;
+  gap: 1px;
+  font-size: 13px;
+}
+.honour-detail-ranks small {
+  font-size: 12px;
+  color: #4f5747;
+}
+.honour-detail-ranks small.honour-earned {
+  margin: 0;
+  padding: 0;
+  color: #6f5317;
+}
+.honour-where-box {
+  align-self: stretch;
+  padding: 12px 14px;
+  border: 1px solid #ded9c8;
+  border-radius: 10px;
+  background: #f3f1e3;
+  text-align: left;
+}
+.honour-where-box h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.honour-where-box ul {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #4a5346;
+}
+.honour-detail .town-primary,
+.honour-detail .town-secondary {
+  min-height: 47px;
+}
+.honour-detail .town-secondary {
+  color: #3f5c3d;
+}
+.honour-detail button:focus-visible {
+  outline: 3px solid #496d60;
+  outline-offset: 3px;
+}
+.honour-detail-hint {
+  min-height: 1.5em;
+  margin: 0;
+  font-size: 12px;
+  color: #555c4c;
+}
+.honour-contrast .honour-detail-requirement,
+.honour-contrast .honour-detail-note,
+.honour-contrast .honour-where-box ul,
+.honour-contrast .honour-detail-hint {
+  color: #253f2f;
+}
+.honour-contrast .honour-where-box,
+.honour-contrast .honour-detail-ranks li {
+  border-color: #626b50;
+}
+</style>
