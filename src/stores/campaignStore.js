@@ -13,6 +13,7 @@ import {
 import { campaignCompletion } from '../data/campaignCompletion';
 import { miningDepthBonus, CHEST_ECONOMY_VERSION } from '../data/economy';
 import { defineStore } from 'pinia';
+import { markRaw } from 'vue';
 import { SHOP_ITEMS, rollShopStock, shopSlots, shopSpace } from '../data/shop';
 import { CHAPTERS, LEVEL_COUNT, POWERS, runChests, getStars } from '../data/campaign';
 import { chapterLevelIds } from '../data/chapters';
@@ -63,8 +64,12 @@ import {
 export { SAVE_KEY };
 export const freshProfile = () => profileData(defaults());
 
+// Receipts are immutable transport data. Track replacement of the journal, while
+// avoiding a reactive proxy for every historical command during local saves.
+const plainIntegrity = (value) => (value && typeof value === 'object' ? markRaw(value) : value);
+
 const defaults = () => ({
-  integrity: createIntegrity(),
+  integrity: plainIntegrity(createIntegrity()),
   hasVisitedVillage: false,
   seenTips: [],
   townProjectFocus: '',
@@ -94,7 +99,8 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
   const state = defaults();
   try {
     const saved = loaded.data;
-    if (saved?.integrity !== undefined) state.integrity = loadIntegrity(saved.integrity);
+    if (saved?.integrity !== undefined)
+      state.integrity = plainIntegrity(loadIntegrity(saved.integrity));
     state.hasVisitedVillage =
       !!saved?.town && typeof saved.town === 'object' && !Array.isArray(saved.town);
     state.seenTips = Array.isArray(saved?.seenTips)
@@ -200,15 +206,17 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
       );
       if (drop) {
         grantReward(state, drop);
-        state.integrity = appendIntegrityAction(state.integrity, 'chest-claim', {
-          chestId: chest.id ?? `${chest.runId}-${chest.source}`,
-          runId: chest.runId,
-          source: chest.source,
-          levelId: chest.levelId,
-          economyVersion: chest.economyVersion ?? 1,
-          selection: drop.id,
-          at: Date.now(),
-        });
+        state.integrity = plainIntegrity(
+          appendIntegrityAction(state.integrity, 'chest-claim', {
+            chestId: chest.id ?? `${chest.runId}-${chest.source}`,
+            runId: chest.runId,
+            source: chest.source,
+            levelId: chest.levelId,
+            economyVersion: chest.economyVersion ?? 1,
+            selection: drop.id,
+            at: Date.now(),
+          }),
+        );
       }
     }
     if (overflow) {
@@ -310,7 +318,7 @@ export const useCampaignStore = defineStore('campaign', {
       });
     },
     recordAction(kind, data) {
-      this.integrity = appendIntegrityAction(this.integrity, kind, data);
+      this.integrity = plainIntegrity(appendIntegrityAction(this.integrity, kind, data));
     },
     consumePowerItem(id) {
       const slot = this.powers.find((entry) => entry.id === id);
@@ -383,7 +391,7 @@ export const useCampaignStore = defineStore('campaign', {
     save() {
       if (this.readOnly || localProfile.writesSuspended) return false;
       const saved = localProfile.save(this.profile(), (integrity) => {
-        this.integrity = integrity;
+        this.integrity = plainIntegrity(integrity);
       });
       this.saveWarning = saved
         ? ''

@@ -253,9 +253,9 @@ export function animalNavigation(base = new TownNavigation(), space) {
     }
     return walkPath(route);
   }
-  function* routeSteps(points, offset, radius) {
+  function* routeSteps(points, offset, radius, height = 1) {
     const routed = yield* base.routeSteps(points, offset, radius);
-    return yield* planSteps(routed.points, radius);
+    return yield* planSteps(routed.points, radius, height);
   }
   // Whether a prepared route still clears the current town, checked the way plans are
   // built: every point clear and every leg open in the animal space. Resumable, and far
@@ -278,6 +278,6 @@ export function animalNavigation(base = new TownNavigation(), space) {
     planSteps,
     routeSteps,
     plan: (points, radius, height) => finish(planSteps(points, radius, height)),
-    route: (points, offset, radius) => finish(routeSteps(points, offset, radius)),
+    route: (points, offset, radius, height) => finish(routeSteps(points, offset, radius, height)),
   };
 }

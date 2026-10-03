@@ -14,7 +14,9 @@
     "aviation",
     "broadcast",
     "contemporary",
-    "tomorrow"
+    "tomorrow",
+    "canopy",
+    "riverlight"
   ],
   "eras": {
     "frontier": {
@@ -18796,6 +18798,6331 @@
           ]
         }
       }
+    },
+    "canopy": {
+      "enabled": true,
+      "style": "city",
+      "requiresPower": false,
+      "electricity": true,
+      "incident": "storm-cleanup",
+      "waterworks": [
+        80,
+        80,
+        80
+      ],
+      "farmCapacity": [
+        20,
+        20,
+        20
+      ],
+      "buildingOffers": {
+        "well": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 75,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 210,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 390,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "farm": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 75,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 255,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 450,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "home": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 75,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 225,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 420,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "saloon": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 330,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 525,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 3,
+              "cost": 1050,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 2625,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 5,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 6,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 7,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "stable": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 315,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 495,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "sheriff": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 345,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 540,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 3,
+              "cost": 1080,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 2700,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 5,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 6,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 7,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "museum": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 180,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 315,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 495,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "armory": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 180,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 330,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 525,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "bank": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 345,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 540,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 3,
+              "cost": 1080,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 2700,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 5,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 6,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 7,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "shop": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 330,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 525,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "square": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 120,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 240,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 480,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 3,
+              "cost": 960,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 2400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 5,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 6,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 7,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "watermill": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 270,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 450,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "fisherman": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 270,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 435,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "blacksmith": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 180,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 330,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 525,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 3,
+              "cost": 1050,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 2625,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 5,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 6,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 7,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "school": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 180,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 315,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 495,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "doctor": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 180,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 315,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 495,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "bridge": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "riverPort": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "railDepot": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "post": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "warehouse": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "hotel": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "home5": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "market": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "powerHouse": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 1400,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 1850,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 2300,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "fireStation": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 1850,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 2300,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "rowHouses": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 1400,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 1850,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 2300,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "mill": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 1400,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 1850,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 2300,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "garage": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 6480,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 9000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 11880,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "busDepot": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 6480,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 9000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 11880,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "gardenCourt": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 6480,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 9000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 11880,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "diner": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 6480,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 9000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 11880,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "teaHouse": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 17250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 21000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 24750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "blossomAtelier": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 17250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 21000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 24750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "orchardCottages": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 17250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 21000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 24750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "airport": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 15000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 18750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 22500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 13000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 15250,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 17500,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "radioTower": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "concertHall": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "television": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "skyline": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 15000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 18750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 22500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 13000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 15250,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 17500,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "cityHall": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 4500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 6000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 7500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "apartments": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 4500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 6000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 7500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "supermarket": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 4500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 6000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 7500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "waterPlant": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 4500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 6000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 7500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "transitHub": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "library": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "crystalLab": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "cityHomes": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 15000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 18750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 22500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 13000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 15250,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 17500,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "riverPark": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "skyPods": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 18750,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 23438,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 28125,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 13000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 15250,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 17500,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "biodome": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 18750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 22500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "maglevStation": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 18750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 22500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "horseField": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 1850,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 2300,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "park": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 6480,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 9000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 11880,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "home2": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 113,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 338,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 630,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "home3": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 450,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 840,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "home4": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 188,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 563,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 1050,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "well2": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 113,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 315,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 585,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "farm2": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 113,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 383,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 675,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        },
+        "farm3": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 1,
+              "cost": 510,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 2,
+              "cost": 900,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "canopy"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 10400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 4,
+              "cost": 12200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "canopy"
+            },
+            {
+              "stage": 5,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "canopy"
+            }
+          ]
+        }
+      }
+    },
+    "riverlight": {
+      "enabled": true,
+      "style": "city",
+      "requiresPower": false,
+      "electricity": true,
+      "incident": "storm-cleanup",
+      "waterworks": [
+        80,
+        80,
+        80
+      ],
+      "farmCapacity": [
+        20,
+        20,
+        20
+      ],
+      "buildingOffers": {
+        "well": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 75,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 210,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 390,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "farm": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 75,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 255,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 450,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "home": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 75,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 225,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 420,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "saloon": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 330,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 525,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 3,
+              "cost": 1050,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 2625,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 5,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 6,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 7,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "stable": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 315,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 495,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "sheriff": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 345,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 540,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 3,
+              "cost": 1080,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 2700,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 5,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 6,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 7,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "museum": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 180,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 315,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 495,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "armory": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 180,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 330,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 525,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "bank": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 345,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 540,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 3,
+              "cost": 1080,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 2700,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 5,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 6,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 7,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "shop": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 330,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 525,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "square": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 120,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 240,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 480,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 3,
+              "cost": 960,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 2400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 5,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 6,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 7,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "watermill": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 270,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 450,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "fisherman": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 270,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 435,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "blacksmith": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 180,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 330,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 525,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 3,
+              "cost": 1050,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 2625,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 5,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 6,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 7,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "school": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 180,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 315,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 495,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "doctor": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 180,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 315,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 495,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "bridge": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "riverPort": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "railDepot": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "post": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "warehouse": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "hotel": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "home5": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "market": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "powerHouse": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 1400,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 1850,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 2300,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "fireStation": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 1850,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 2300,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "rowHouses": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 1400,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 1850,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 2300,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "mill": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 1400,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 1850,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 2300,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "garage": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 6480,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 9000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 11880,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "busDepot": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 6480,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 9000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 11880,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "gardenCourt": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 6480,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 9000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 11880,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "diner": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 6480,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 9000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 11880,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "teaHouse": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 17250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 21000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 24750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "blossomAtelier": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 17250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 21000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 24750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "orchardCottages": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 17250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 21000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 24750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "glassworks": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 20250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 24000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 27750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "springsRetreat": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 20250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 24000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 27750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "riverlightPavilion": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 20250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 24000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 27750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "airport": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 15000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 18750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 22500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 17500,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 20000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "radioTower": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "concertHall": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "television": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "skyline": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 15000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 18750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 22500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 17500,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 20000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "cityHall": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 4500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 6000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 7500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "apartments": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 4500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 6000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 7500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "supermarket": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 4500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 6000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 7500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "waterPlant": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 4500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 6000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 7500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "transitHub": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "library": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "crystalLab": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "cityHomes": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 15000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 18750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 22500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 17500,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 20000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "riverPark": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "skyPods": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 18750,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 23438,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 28125,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 17500,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 20000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "biodome": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 18750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 22500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "maglevStation": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 18750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 22500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "horseField": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 1850,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 2300,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "park": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 6480,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 9000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 11880,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "home2": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 113,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 338,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 630,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "home3": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 450,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 840,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "home4": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 188,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 563,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 1050,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "well2": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 113,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 315,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 585,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "farm2": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 113,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 383,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 675,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        },
+        "farm3": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 1,
+              "cost": 510,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 2,
+              "cost": 900,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "riverlight"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 12000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 4,
+              "cost": 14000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "riverlight"
+            },
+            {
+              "stage": 5,
+              "cost": 16000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "riverlight"
+            }
+          ]
+        }
+      }
     }
   },
   "buildings": {
@@ -20145,6 +26472,268 @@
         {
           "cost": 11880,
           "runs": 2,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "teaHouse": {
+      "kind": "teaHouse",
+      "introducedEra": "canopy",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "bridge",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "effects": {
+        "happiness": 2
+      },
+      "upgrades": [
+        {
+          "cost": 17250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 21000,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 24750,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "blossomAtelier": {
+      "kind": "blossomAtelier",
+      "introducedEra": "canopy",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "bridge",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "effects": {
+        "food": 12,
+        "water": 12,
+        "happiness": 1
+      },
+      "upgrades": [
+        {
+          "cost": 17250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 21000,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 24750,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "orchardCottages": {
+      "kind": "orchardCottages",
+      "introducedEra": "canopy",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "bridge",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "effects": {
+        "housing": 4,
+        "happiness": 1
+      },
+      "upgrades": [
+        {
+          "cost": 17250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 21000,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 24750,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "glassworks": {
+      "kind": "glassworks",
+      "introducedEra": "riverlight",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "bridge",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "effects": {
+        "happiness": 2
+      },
+      "upgrades": [
+        {
+          "cost": 20250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 24000,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 27750,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "springsRetreat": {
+      "kind": "springsRetreat",
+      "introducedEra": "riverlight",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "bridge",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "effects": {
+        "water": 12,
+        "happiness": 1
+      },
+      "upgrades": [
+        {
+          "cost": 20250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 24000,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 27750,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "riverlightPavilion": {
+      "kind": "riverlightPavilion",
+      "introducedEra": "riverlight",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "bridge",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "effects": {
+        "happiness": 3
+      },
+      "upgrades": [
+        {
+          "cost": 20250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 24000,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 27750,
+          "runs": 1,
           "requiresPower": false,
           "stage": 2
         }
@@ -26952,6 +33541,14 @@
       "tomorrow": [
         6,
         14
+      ],
+      "canopy": [
+        6,
+        14
+      ],
+      "riverlight": [
+        6,
+        14
       ]
     },
     "bountyPerCaptured": 10,
@@ -26997,6 +33594,12 @@
       "busDepot": "frontier",
       "gardenCourt": "frontier",
       "diner": "frontier",
+      "teaHouse": "frontier",
+      "blossomAtelier": "frontier",
+      "orchardCottages": "frontier",
+      "glassworks": "frontier",
+      "springsRetreat": "frontier",
+      "riverlightPavilion": "frontier",
       "airport": "frontier",
       "radioTower": "frontier",
       "concertHall": "frontier",
@@ -27056,6 +33659,12 @@
       "busDepot": 0,
       "gardenCourt": 0,
       "diner": 0,
+      "teaHouse": 0,
+      "blossomAtelier": 0,
+      "orchardCottages": 0,
+      "glassworks": 0,
+      "springsRetreat": 0,
+      "riverlightPavilion": 0,
       "airport": 0,
       "radioTower": 0,
       "concertHall": 0,
@@ -27122,6 +33731,12 @@
       "busDepot": 0,
       "gardenCourt": 0,
       "diner": 0,
+      "teaHouse": 0,
+      "blossomAtelier": 0,
+      "orchardCottages": 0,
+      "glassworks": 0,
+      "springsRetreat": 0,
+      "riverlightPavilion": 0,
       "airport": 0,
       "radioTower": 0,
       "concertHall": 0,
@@ -27245,6 +33860,12 @@
         "busDepot": "frontier",
         "gardenCourt": "frontier",
         "diner": "frontier",
+        "teaHouse": "frontier",
+        "blossomAtelier": "frontier",
+        "orchardCottages": "frontier",
+        "glassworks": "frontier",
+        "springsRetreat": "frontier",
+        "riverlightPavilion": "frontier",
         "airport": "frontier",
         "radioTower": "frontier",
         "concertHall": "frontier",
@@ -27304,6 +33925,12 @@
         "busDepot": 0,
         "gardenCourt": 0,
         "diner": 0,
+        "teaHouse": 0,
+        "blossomAtelier": 0,
+        "orchardCottages": 0,
+        "glassworks": 0,
+        "springsRetreat": 0,
+        "riverlightPavilion": 0,
         "airport": 0,
         "radioTower": 0,
         "concertHall": 0,
@@ -27370,6 +33997,12 @@
         "busDepot": 0,
         "gardenCourt": 0,
         "diner": 0,
+        "teaHouse": 0,
+        "blossomAtelier": 0,
+        "orchardCottages": 0,
+        "glassworks": 0,
+        "springsRetreat": 0,
+        "riverlightPavilion": 0,
         "airport": 0,
         "radioTower": 0,
         "concertHall": 0,
@@ -27418,5 +34051,5 @@
     "issuedRun": 0,
     "settledRun": 0
   },
-  "contentDigest": "f06e4d088e885c8a631fe7162c7460bfd66864baadab7149494fd85dc2581136"
+  "contentDigest": "209ddbd35e3a9a441b22829c952a5e6ccf31120f5b191f93c083278b1a869364"
 }

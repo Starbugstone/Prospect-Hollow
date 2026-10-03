@@ -2,13 +2,15 @@ import { MeshStandardMaterial } from 'three';
 import { TOWN_ANIMALS } from '../../data/townAnimals';
 import { horizonMaterial } from './TownAtmosphere';
 import { catGeometries, pigeonGeometries } from './TownAnimalGeometries';
+import { gardenAnimalModel } from './GardenAnimalModels';
+import { flyingAnimal } from '../../data/townAnimals';
 
 function finishModel(d, model) {
   const { root, head, species } = model;
   root.traverse((object) => {
     if (object.isMesh) object.castShadow = false;
   });
-  const bird = species === 'hen' || species === 'pigeon';
+  const bird = species === 'hen' || flyingAnimal(species);
   d.contactShadow(root, bird ? 0.2 : 0.25, bird ? 0.3 : 0.48);
   return {
     ...model,
@@ -65,14 +67,17 @@ export function animalModel(d, species, variant = 0, costume = null) {
   root.userData.animated = true;
   root.userData.species = species;
   if (species === 'cat') return catModel(d, root);
-  if (species === 'pigeon') pigeonGeometries(d);
-  const bird = species === 'hen' || species === 'pigeon';
+  if (TOWN_ANIMALS[species].model === 'garden')
+    return finishModel(d, { ...gardenAnimalModel(d, species, root), species });
+  if (flyingAnimal(species)) pigeonGeometries(d);
+  const bird = species === 'hen' || flyingAnimal(species);
   const colors = {
     dog: ['#c69b6b', '#e4c99e'],
     fox: ['#bd6f3c', '#f0dfbb'],
     raccoon: ['#908b7d', '#d8d2bc'],
     hen: [variant % 2 ? '#c89560' : '#efe2c3', '#efe2c3'],
     pigeon: ['#8497a7', '#b2bec4'],
+    bluebird: ['#7296ad', '#e8dfc8'],
   };
   const [coat, light] = colors[species];
   const space = species === 'dog' && costume === 'space-helmet';
@@ -97,9 +102,10 @@ export function animalModel(d, species, variant = 0, costume = null) {
       d.rod(leg, [0, 0, 0], [0, -0.14, 0.045], 0.016, '#ba8868');
       legs.push(leg);
       const wing = d.group(body, side * 0.13, 0.29, 0);
-      if (species === 'pigeon') {
+      if (flyingAnimal(species)) {
         d.mesh(wing, `pigeonWing${side}`, [1, 1, 1], [0, 0, 0], light);
-        d.mesh(wing, `pigeonWing${side}Bars`, [1, 1, 1], [0, 0, 0], '#526471');
+        if (species === 'pigeon')
+          d.mesh(wing, `pigeonWing${side}Bars`, [1, 1, 1], [0, 0, 0], '#526471');
       } else d.ball(wing, side * 0.055, -0.035, -0.03, [0.075, 0.13, 0.22], light);
       wings.push(wing);
     } else {
@@ -118,13 +124,13 @@ export function animalModel(d, species, variant = 0, costume = null) {
     }
   }
   if (bird) {
-    if (species === 'pigeon') {
+    if (flyingAnimal(species)) {
       const beak = d.mesh(head, 'pigeonBeak', [1, 1, 1], [0, -0.015, 0.126], '#575c60');
       beak.name = 'Pigeon beak';
       d.ball(head, 0, 0.002, 0.1, [0.026, 0.018, 0.023], '#d4d4c9');
     } else d.ball(head, 0, -0.025, 0.12, [0.04, 0.03, 0.09], '#d5a15b');
     if (species === 'hen') d.ball(head, 0, 0.1, 0, [0.04, 0.065, 0.07], '#b86c50');
-    else d.ball(head, 0, -0.1, -0.015, [0.1, 0.1, 0.1], '#649b91');
+    else d.ball(head, 0, -0.1, -0.015, [0.1, 0.1, 0.1], species === 'bluebird' ? light : '#649b91');
   } else {
     d.ball(head, 0, -0.045, 0.13, [0.1, 0.075, species === 'fox' ? 0.19 : 0.12], light);
     d.ball(head, 0, -0.025, species === 'fox' ? 0.3 : 0.24, 0.032, '#383b31');
@@ -184,10 +190,11 @@ function addSpaceSuit(d, root, body, head, legs) {
 
 export function animateAnimal(model, time, state, moving) {
   const { species, body, head, legs, wings, tail } = model;
-  const bird = species === 'hen' || species === 'pigeon';
+  const bird = species === 'hen' || flyingAnimal(species);
   const feeding = state === 'feeding' || state === 'pecking' || state === 'foraging';
   const flight = state === 'flying' || state === 'startled';
-  const step = time * (bird ? 10 : 7);
+  const running = state === 'chasing' || state === 'fleeing';
+  const step = time * (bird ? 10 : running ? 12 : 7);
   body.position.y =
     moving && !flight ? Math.abs(Math.sin(step)) * 0.025 : Math.sin(time * 2) * 0.006;
   head.rotation.x = feeding
@@ -197,7 +204,7 @@ export function animateAnimal(model, time, state, moving) {
       : 0;
   head.rotation.z = state === 'grooming' ? Math.sin(time * 3) * 0.3 : 0;
   head.rotation.y = moving ? Math.sin(time) * 0.08 : Math.sin(time * 0.8) * 0.3;
-  if (species === 'pigeon') {
+  if (flyingAnimal(species)) {
     // A brief peck with a still interval, instead of continuously swaying the
     // head and long beak. The neck lowers with the head so pecks reach the food.
     const phase = ((time % 1.65) + 1.65) % 1.65;
@@ -214,11 +221,15 @@ export function animateAnimal(model, time, state, moving) {
   }
   legs.forEach((leg, n) => {
     leg.rotation.x =
-      moving && !flight ? Math.sin(step + (n === 0 || n === 3 ? 0 : Math.PI)) * 0.4 : 0;
+      moving && !flight
+        ? Math.sin(step + (n === 0 || n === 3 ? 0 : Math.PI)) * (running ? 0.55 : 0.4)
+        : 0;
   });
   wings.forEach((wing, n) => {
     wing.rotation.z = flight ? (n ? -1 : 1) * (1.1 + Math.sin(time * 22) * 0.75) : 0;
     wing.scale.x = flight ? 2.4 : 1;
   });
   tail.rotation.z = Math.sin(time * (species === 'dog' ? 8 : 2)) * (species === 'dog' ? 0.4 : 0.16);
+  for (const [n, arm] of (model.arms ?? []).entries())
+    arm.rotation.x = moving ? Math.sin(step + n * Math.PI) * 0.2 : Math.sin(time * 0.8 + n) * 0.04;
 }

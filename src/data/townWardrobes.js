@@ -154,10 +154,54 @@ const WARDROBES = {
       ['#9cbf86', '#56676a', '#d8e4c4', '#f2efe4', '#e9b9c9'],
     ],
   },
+  canopy: {
+    skirtLength: 0.36,
+    crown: 'none',
+    hat: 'none',
+    trousers: '#52685b',
+    boots: '#eee2cb',
+    coat: 0.35,
+    patrol: true,
+    resident: 'garden',
+    guest: ['#856b96', '#575166', '#b7a4be', '#eee4d2', '#ead49a'],
+    palettes: [
+      ['#d89e86', '#52685b', '#8a9e79', '#eee2cb', '#83a478'],
+      ['#efe2c6', '#657460', '#a5b28b', '#d9c8b0', '#ad99bb'],
+      ['#c9ac74', '#526b64', '#a4b692', '#eee3ce', '#96ae82'],
+    ],
+  },
+  riverlight: {
+    skirtLength: 0.36,
+    crown: 'none',
+    hat: 'none',
+    trousers: '#566873',
+    boots: '#eee7d9',
+    coat: 0.35,
+    patrol: true,
+    resident: 'garden',
+    guest: ['#8c69a3', '#514763', '#bdabce', '#f0e6db', '#edc877'],
+    palettes: [
+      ['#658e91', '#546779', '#b2a0c2', '#eee7d9', '#ac9bc1'],
+      ['#d1b478', '#eee2cb', '#b3a1be', '#ded0bc', '#efe3c9'],
+      ['#ab98bd', '#596c69', '#baa9c9', '#eee7d9', '#e0bd77'],
+    ],
+  },
 };
 // Existing/future city profiles that omit a period wardrobe use the casual set.
 WARDROBES.casual = WARDROBES.broadcast;
 export const townWardrobe = (profile) => WARDROBES[profile?.wardrobe] ?? WARDROBES.frontier;
+// Stable ordinary neighbors share an era palette without borrowing VIP outfits.
+// Wardrobe capabilities let later garden eras inherit this visual contract.
+export function residentOutfit(profile, seed = 0) {
+  const wardrobe = townWardrobe(profile);
+  if (!wardrobe.resident) return null;
+  const variant = Math.floor(villagerRandom(seed + 5039) * wardrobe.palettes.length);
+  const [shirt, trousers, hat, boots, accent] = wardrobe.palettes[variant];
+  const hair = ['#63493b', '#977b57', '#423b36', '#ddd9ca'][
+    Math.floor(villagerRandom(seed + 811) * 4)
+  ];
+  return { shirt, trousers, hat, boots, accent, hair, variant, apron: variant === 0 };
+}
 export function vipOutfit(profile, seed = 0) {
   const wardrobe = townWardrobe(profile);
   const variant = Math.floor(villagerRandom(seed + 15427) * wardrobe.palettes.length);

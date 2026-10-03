@@ -4,15 +4,19 @@ import { TownActors } from '../src/game/town/TownActors';
 import { updateTownLocomotion } from '../src/game/town/TownLocomotion';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
-import { addTownAnimals, animalHabitats } from '../src/game/town/TownAnimals';
+import { addTownAnimals, animalHabitats, animalKey } from '../src/game/town/TownAnimals';
 import { addPowerGrid, addEraStreetscape } from '../src/game/town/TownEvolution';
-import { townNavigation, walkPose } from '../src/game/town/TownNavigation';
+import { townNavigation, walkPose, walkPath } from '../src/game/town/TownNavigation';
+import { createAnimalBehavior } from '../src/game/town/TownAnimalBehavior';
+import { prepareAnimalRoaming } from '../src/game/town/TownAnimalRoaming';
 import { buildTownSquare } from '../src/game/town/TownSquare';
 import { placeTownSpawns } from '../src/game/town/TownTraffic';
-import { createTown } from '../src/data/town';
+import { BUILDINGS, createTown } from '../src/data/town';
 import { ERAS, ERA_BY_ID, eraEvolution } from '../src/data/eras';
 import { defineEra } from '../src/data/eraDefinitions';
 import { PLOTS } from '../src/game/town/TownLayout';
+import { COMPANION_NEIGHBORHOODS } from '../src/data/townCompanions';
+import { townFauna } from '../src/data/townAnimals';
 
 const views = [];
 function fixture(
@@ -83,13 +87,92 @@ it('introduces animals only with inhabited buildings and uses completed outdoor 
     'pigeon',
     'fox',
     'raccoon',
+    'deer',
   ]);
   expect(d.animalHabitats.map((h) => h.building)).toEqual(['square', 'farm', 'home']);
   expect(d.animals.every((a) => a.root.userData.animated)).toBe(true);
 });
 
+it.each(['canopy', 'riverlight'])(
+  'adds a bounded garden cast with shared bird flight in %s',
+  (era) => {
+    const d = fixture(era, Object.fromEntries(BUILDINGS.map((b) => [b.id, b.upgrades.length])));
+    const before = JSON.stringify(d.town);
+    addTownAnimals(d, d.town);
+    for (const species of ['otter', 'deer', 'hedgehog'])
+      expect(
+        d.animals.filter((a) => a.species === species),
+        species,
+      ).toHaveLength(1);
+    expect(d.animals.filter((a) => a.species === 'bluebird')).toHaveLength(2);
+    expect(d.animals.filter((a) => a.species === 'pigeon')).toHaveLength(3);
+    expect(d.animals.find((a) => a.species === 'dog').costume).toBeUndefined();
+    const companions = d.animals.filter((a) => a.companion);
+    expect(companions).toHaveLength(3);
+    expect(companions.map((a) => a.neighborhood)).toEqual(COMPANION_NEIGHBORHOODS.map((n) => n.id));
+    expect(
+      companions.every((a) => a.species === townFauna(eraEvolution(era)).companions.species),
+    ).toBe(true);
+    expect(new Set(companions.map((a) => a.seed)).size).toBe(3);
+    expect(d.animals).toHaveLength(18);
+    const roots = d.animals.map((a) => a.root),
+      plans = d.navigation.plans;
+    advance(d, 40);
+    expect(d.animals.map((a) => a.root)).toEqual(roots);
+    expect(d.navigation.plans).toBe(plans);
+    expect(JSON.stringify(d.town)).toBe(before);
+    expect(companions.every((a) => a.root.visible)).toBe(true);
+    if (era === 'riverlight') {
+      expect(companions.every((a) => a.acceptedDistance > 4)).toBe(true);
+      expect(companions.every((a) => a.path.total > 20)).toBe(true);
+    }
+  },
+);
+
+it('adds wildlife without replacing existing animals or duplicating them on refresh', () => {
+  const d = fixture();
+  addTownAnimals(d, d.town);
+  for (const era of ['river-rail', 'motor-age', 'aviation', 'broadcast']) {
+    const previous = new Map(d.animals.map((a) => [animalKey(a), a]));
+    d.town.era = era;
+    d.repairAnimalLife();
+    const current = new Map(d.animals.map((a) => [animalKey(a), a]));
+    expect(current.size).toBe(d.animals.length);
+    for (const [key, animal] of previous) expect(current.get(key), `${era}: ${key}`).toBe(animal);
+    const retained = [...d.animals];
+    d.repairAnimalLife();
+    expect(d.animals).toEqual(retained);
+  }
+  expect(d.animals).toHaveLength(15);
+});
+
+it('evolves all three companions into neighbors and retains their accepted street routes on refresh', () => {
+  const d = fixture('canopy', Object.fromEntries(BUILDINGS.map((b) => [b.id, b.upgrades.length])));
+  addTownAnimals(d, d.town);
+  const saplings = d.animals.filter((a) => a.companion);
+  d.town.era = 'riverlight';
+  d.repairAnimalLife();
+  const neighbors = d.animals.filter((a) => a.companion);
+  expect(neighbors).toHaveLength(3);
+  expect(neighbors.map((a) => a.seed)).toEqual(saplings.map((a) => a.seed));
+  expect(neighbors.every((a) => a.resident && a.species === 'willowkinResident')).toBe(true);
+  expect(saplings.every((a) => a.root.parent === null)).toBe(true);
+  advance(d, 10);
+  const paths = neighbors.map((a) => a.path),
+    positions = neighbors.map((a) => a.root.position.clone());
+  d.repairAnimalLife();
+  expect(d.animals.filter((a) => a.companion)).toEqual(neighbors);
+  neighbors.forEach((a, i) => {
+    expect(a.path).toBe(paths[i]);
+    expect(a.root.position.distanceTo(positions[i])).toBeLessThan(1e-6);
+  });
+  expect(d.world.children.filter((o) => o.userData.species === 'willowkinResident')).toHaveLength(
+    3,
+  );
+});
+
 it.each([...ERAS.map((era) => era.id), 'unknown-animal-era'])(
-  'uses actual power perches and navigable routes in %s',
+  'keeps the unlocked wildlife, actual power perches and navigable routes in %s',
   (era) => {
     const d = fixture(era, {
       home: 3,
@@ -101,6 +184,25 @@ it.each([...ERAS.map((era) => era.id), 'unknown-animal-era'])(
       powerHouse: 3,
     });
     addTownAnimals(d, d.town);
+    const eraIndex = Math.max(
+      0,
+      ERAS.findIndex((e) => e.id === era),
+    );
+    for (const [species, firstEra, count] of [
+      ['deer', 'frontier', 1],
+      ['otter', 'river-rail', 1],
+      ['hedgehog', 'motor-age', 1],
+      ['bluebird', 'aviation', 2],
+    ]) {
+      const unlocked = eraIndex >= ERAS.findIndex((e) => e.id === firstEra);
+      expect(
+        d.animals.filter((a) => a.species === species),
+        species,
+      ).toHaveLength(unlocked ? count : 0);
+    }
+    expect(d.animals.filter((a) => a.species === 'pigeon')).toHaveLength(3);
+    if (eraIndex < ERAS.findIndex((e) => e.id === 'canopy'))
+      expect(d.animals.some((a) => a.companion)).toBe(false);
     const perches = d.animalHabitats.filter((h) => h.kind === 'perch');
     expect(perches.length > 0).toBe(
       eraEvolution(era).electricity && eraEvolution(era).overheadPower,
@@ -111,7 +213,7 @@ it.each([...ERAS.map((era) => era.id), 'unknown-animal-era'])(
         const p = walkPose(animal.path, n / 500);
         expect(d.navigation.clear([p.x, p.y, p.z], animal.radius)).toBe(true);
         // Domestic routes use old-town streets and stay away from the river.
-        expect(p.x).toBeLessThan(20);
+        if (['dog', 'cat'].includes(animal.species)) expect(p.x).toBeLessThan(20);
       }
     }
     expect(d.animalFeeder.appearance.era).toBe(era);
@@ -125,7 +227,7 @@ it('inherits capabilities for a future era and drops removed power perches', () 
   });
   const future = fixture('animal-future', { home: 3, farm: 3, square: 3, powerHouse: 3 });
   addTownAnimals(future, future.town);
-  expect(future.animals).toHaveLength(10);
+  expect(future.animals).toHaveLength(15);
   expect(future.animalHabitats.every((h) => h.kind !== 'perch')).toBe(true);
   const d = fixture('industrial', { home: 3, square: 3, powerHouse: 3 });
   expect(animalHabitats(d, d.town).some((h) => h.kind === 'perch')).toBe(true);
@@ -150,7 +252,14 @@ it('roams beyond the old tiny orbits, idles, flies and lands without growing or 
   const seen = new Map(
     d.animals.map((a) => [
       a,
-      { positions: [], states: new Set(), habitats: new Set(), visible: 0, hidden: 0 },
+      {
+        positions: [],
+        zPositions: [],
+        states: new Set(),
+        habitats: new Set(),
+        visible: 0,
+        hidden: 0,
+      },
     ]),
   );
   const previous = new Map();
@@ -162,6 +271,7 @@ it('roams beyond the old tiny orbits, idles, flies and lands without growing or 
       if (a.root.visible) {
         sample.visible++;
         sample.positions.push(a.root.position.x);
+        sample.zPositions.push(a.root.position.z);
         if (previous.has(a)) expect(a.root.position.distanceTo(previous.get(a))).toBeLessThan(1.8);
         previous.set(a, a.root.position.clone());
         if (!a.flight && a.habitat) sample.habitats.add(a.habitat.kind);
@@ -173,7 +283,11 @@ it('roams beyond the old tiny orbits, idles, flies and lands without growing or 
   }
   for (const a of d.animals.filter((a) => a.path && !a.wild)) {
     const s = seen.get(a);
-    expect(Math.max(...s.positions) - Math.min(...s.positions)).toBeGreaterThan(
+    const spread = Math.max(
+      Math.max(...s.positions) - Math.min(...s.positions),
+      Math.max(...s.zPositions) - Math.min(...s.zPositions),
+    );
+    expect(spread, `${a.species} explores the town along either street axis`).toBeGreaterThan(
       a.species === 'hen' ? 2 : 8,
     );
     expect(s.states.has(a.idle)).toBe(true);
@@ -184,7 +298,8 @@ it('roams beyond the old tiny orbits, idles, flies and lands without growing or 
   for (const a of d.animals.filter((a) => a.wild)) {
     expect(seen.get(a).visible).toBeGreaterThan(0);
     expect(seen.get(a).hidden).toBeGreaterThan(0);
-    expect(a.path.points.every((p) => p[2] >= 29)).toBe(true);
+    if (['fox', 'raccoon'].includes(a.species))
+      expect(a.path.points.every((p) => p[2] >= 29)).toBe(true);
   }
   expect(d.navigation.plans).toBe(plans);
   expect(d.world.children).toHaveLength(count);
@@ -316,6 +431,108 @@ it('startles grounded pigeons and makes street animals give traffic space', () =
   expect(dog.state).toBe('alert');
   placeTownSpawns(d);
   expect(dog.root.position.distanceTo(car.position)).toBeGreaterThanOrEqual(1.15 - 1e-6);
+});
+
+it.each([
+  ['dog', 'cat', -7],
+  ['fox', 'deer', 30],
+])('briefly animates %s chasing %s with continuous, bounded movement', (hunter, target, z) => {
+  const d = fixture('frontier', { home: 3, farm: 3 });
+  addTownAnimals(d, d.town);
+  const predator = d.animals.find((a) => a.species === hunter);
+  const prey = d.animals.find((a) => a.species === target);
+  d.animals = [predator, prey];
+  d.actors = [];
+  d.animalFeeder = null;
+  d.elapsed = 49;
+  d.animalMotion(d.elapsed);
+  const path = walkPath([
+    [-12, 0.07, z],
+    [12, 0.07, z],
+    [-12, 0.07, z],
+  ]);
+  for (const [i, a] of d.animals.entries()) {
+    a.path = path;
+    a.progress = 1 + i * 3;
+    a.root.position.set(-11 + i * 3, 0.07, z);
+    a.root.visible = true;
+    a.root.scale.setScalar(1);
+    a.motion = null;
+    a.roaming = null;
+    a.walkPath = null;
+    a.chaseRoute = null;
+    a.escapeUntil = 0;
+    a.roamingHold = false;
+    a.rest = 1;
+    a.untilStop = 20;
+  }
+  const prepare = prepareAnimalRoaming(d);
+  while (!prepare.next().done) {
+    /* Prepare before the animation loop. */
+  }
+  d.animalBehavior = createAnimalBehavior(d.animals, d.navigation, d.animalSpace, d.elapsed);
+  const plans = d.navigation.plans;
+  const states = new Set();
+  let fleeingDistance = 0;
+  for (let frame = 0; frame < 150; frame++) {
+    const before = d.animals.map((a) => a.root.position.clone());
+    advance(d, d.elapsed + 1 / 30, 1 / 30);
+    states.add(`${predator.state}:${prey.state}`);
+    for (const [i, a] of d.animals.entries()) {
+      const travel = a.root.position.distanceTo(before[i]);
+      expect(travel).toBeLessThanOrEqual(a.movementSpeed / 30 + 0.001);
+      expect(d.animalSpace.clear(a.root.position.toArray(), a.radius, a.height ?? 1)).toBe(true);
+      if (a === prey && a.state === 'fleeing') fleeingDistance += travel;
+    }
+  }
+  expect(states.has('chasing:fleeing')).toBe(true);
+  expect(fleeingDistance).toBeGreaterThan(6);
+  expect(d.animalBehavior.starts).toBe(1);
+  expect(predator.encounter).toBeNull();
+  expect(prey.encounter).toBeNull();
+  expect(d.navigation.plans).toBe(plans);
+});
+
+it('lets a nearby cat briefly chase a grounded bird as it takes its normal safe flight', () => {
+  const d = fixture();
+  addTownAnimals(d, d.town);
+  const cat = d.animals.find((a) => a.species === 'cat');
+  const bird = d.animals.find((a) => a.species === 'pigeon');
+  d.animals = [cat, bird];
+  d.actors = [];
+  d.animalFeeder = null;
+  bird.habitat = bird.habitats.find((h) => h.building === 'farm');
+  bird.root.position.fromArray(bird.habitat.point);
+  bird.flight = null;
+  bird.rest = 100;
+  const [x, y, z] = bird.habitat.point;
+  cat.path = walkPath([
+    [x - 2.5, y, z],
+    [x - 0.8, y, z],
+    [x - 2.5, y, z],
+  ]);
+  cat.progress = 0;
+  cat.root.position.set(x - 2.5, y, z);
+  cat.motion = null;
+  cat.walkPath = null;
+  cat.roaming = null;
+  cat.rest = 0;
+  cat.untilStop = 20;
+  const prepare = prepareAnimalRoaming(d);
+  while (!prepare.next().done) {
+    /* Prepared before the animation loop. */
+  }
+  d.animalBehavior = createAnimalBehavior(d.animals, d.navigation, d.animalSpace);
+  advance(d, 0.6, 1 / 60);
+  expect(d.animalBehavior.starts).toBe(1);
+  expect(cat.state).toBe('chasing');
+  expect(bird.state).toBe('startled');
+  expect(bird.flight).not.toBeNull();
+  expect(cat.encounter.goal.y).toBe(y);
+  advance(d, 2.4, 1 / 60);
+  expect(cat.encounter).toBeNull();
+  expect(cat.root.position.y).toBeLessThan(0.5);
+  expect(bird.root.position.y).toBeGreaterThan(1);
 });
 
 it('lands a bounded pool of grain, consumes it on actual pecks and expires uneaten grain', () => {

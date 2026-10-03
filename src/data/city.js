@@ -142,7 +142,109 @@ const newLandmarks = [
     'Adds 3 happiness in total.',
   ],
 }));
+
+// The garden district uses the same bounded service and construction lifecycle
+// as every city building. Content varies here; tier behavior stays shared.
+const gardenBuildings = [
+  {
+    id: 'teaHouse',
+    name: 'Clover riverside tea house',
+    shortName: 'Tea house',
+    purpose: 'A quiet cup and a garden veranda for neighbors',
+    introducedEra: 'canopy',
+    family: 'culture',
+    effects: { happiness: 2 },
+    color: '#89a587',
+    benefits: [
+      'Adds 2 happiness in total.',
+      'Adds 4 happiness in total.',
+      'Adds 6 happiness in total.',
+    ],
+  },
+  {
+    id: 'blossomAtelier',
+    name: 'Seed & Blossom atelier',
+    shortName: 'Blossom atelier',
+    purpose: 'Grow seeds, share harvests and make beautiful things',
+    introducedEra: 'canopy',
+    family: 'farm',
+    effects: { food: 12, water: 12, happiness: 1 },
+    color: '#89a587',
+    benefits: [
+      'Adds food and water for 12 people. Adds 1 happiness in total.',
+      'Adds food and water for 24 people. Adds 2 happiness in total.',
+      'Adds food and water for 36 people. Adds 3 happiness in total.',
+    ],
+  },
+  {
+    id: 'orchardCottages',
+    name: 'Cloudberry orchard cottages',
+    shortName: 'Orchard cottages',
+    purpose: 'Cozy homes around a shared fruit garden',
+    introducedEra: 'canopy',
+    family: 'residence',
+    effects: { housing: 4, happiness: 1 },
+    color: '#89a587',
+    benefits: [
+      'Room for 4 residents, with food and water. Adds 1 happiness in total.',
+      'Room for 8 residents, with food and water. Adds 2 happiness in total.',
+      'Room for 12 residents, with food and water. Adds 3 happiness in total.',
+    ],
+  },
+  {
+    id: 'glassworks',
+    name: 'Hollow crystal glassworks',
+    shortName: 'Glassworks',
+    purpose: 'Shape mine crystals into glass that gathers daylight',
+    introducedEra: 'riverlight',
+    family: 'research',
+    effects: { happiness: 2 },
+    color: '#aaa1bc',
+    benefits: [
+      'Adds 2 happiness in total.',
+      'Adds 4 happiness in total.',
+      'Adds 6 happiness in total.',
+    ],
+  },
+  {
+    id: 'springsRetreat',
+    name: 'Willow warm springs retreat',
+    shortName: 'Springs retreat',
+    purpose: 'Quiet pools, warm water and a sheltered lounge',
+    introducedEra: 'riverlight',
+    family: 'water',
+    effects: { water: 12, happiness: 1 },
+    color: '#aaa1bc',
+    benefits: [
+      'Adds water for 12 people. Adds 1 happiness in total.',
+      'Adds water for 24 people. Adds 2 happiness in total.',
+      'Adds water for 36 people. Adds 3 happiness in total.',
+    ],
+  },
+  {
+    id: 'riverlightPavilion',
+    name: 'Prospect Riverlight pavilion',
+    shortName: 'Riverlight pavilion',
+    purpose: 'A luminous gathering place for the whole valley',
+    introducedEra: 'riverlight',
+    family: 'culture',
+    effects: { happiness: 3 },
+    color: '#aaa1bc',
+    benefits: [
+      'Adds 3 happiness in total.',
+      'Adds 6 happiness in total.',
+      'Adds 9 happiness in total.',
+    ],
+  },
+].map((building) => ({
+  ...building,
+  kind: building.id,
+  unlock: [{ id: 'bridge', level: 1 }],
+}));
+for (const building of gardenBuildings) CITY_FAMILIES[building.kind] = building.family;
+
 export const CITY_BUILDINGS = [
+  ...gardenBuildings,
   ...newLandmarks,
   {
     id: 'cityHall',

@@ -82,8 +82,9 @@ afterEach(() => {
 
 describe('Tomorrow City era contract', () => {
   it('follows Connected City as a rounded city era with its own capabilities', () => {
-    expect(ERAS.at(-1).id).toBe('tomorrow');
-    expect(ERAS.at(-2).id).toBe('contemporary');
+    const tomorrowIndex = ERAS.findIndex(({ id }) => id === 'tomorrow');
+    expect(ERAS[tomorrowIndex - 1].id).toBe('contemporary');
+    expect(ERAS[tomorrowIndex + 1].id).toBe('canopy');
     const profile = eraEvolution('tomorrow');
     expect(profile).toMatchObject({
       style: 'city',
@@ -93,7 +94,7 @@ describe('Tomorrow City era contract', () => {
       wardrobe: 'tomorrow',
     });
     expect(isRoundedEra('tomorrow')).toBe(true);
-    for (const era of ERAS.slice(0, -1)) {
+    for (const era of ERAS.slice(0, tomorrowIndex)) {
       expect(era.evolution.architecture, era.id).toBe('standard');
       expect(isRoundedEra(era.id), era.id).toBe(false);
     }
@@ -107,7 +108,7 @@ describe('Tomorrow City era contract', () => {
   });
 
   it('rejects unsupported or misplaced architectures when the catalog loads', () => {
-    expect(CITY_ARCHITECTURES).toEqual(['standard', 'rounded']);
+    expect(CITY_ARCHITECTURES).toEqual(['standard', 'rounded', 'cozy']);
     const base = { ...ERA_BY_ID.contemporary, id: 'invalid-architecture' };
     expect(() =>
       defineEra({ ...base, evolution: { ...base.evolution, architecture: 'blobby' } }),

@@ -375,6 +375,8 @@ describe('Two eras and explicit modernization', () => {
       'broadcast',
       'contemporary',
       'tomorrow',
+      'canopy',
+      'riverlight',
     ]);
   });
   it('saves the transition before presenting it and cannot advance twice across reload', () => {

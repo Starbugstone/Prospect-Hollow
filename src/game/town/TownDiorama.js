@@ -35,12 +35,19 @@ import { hasVisitorTransport } from '../../data/visitorArrivals';
 import { villagerIdentity, vipVisitor } from '../../data/villagers';
 import { SIDEWALK_OFFSET } from './TownTraffic';
 import { updateTownLocomotion } from './TownLocomotion';
-import { townWardrobe, vipOutfit, guestOutfit, liveVisitorOutfit } from '../../data/townWardrobes';
+import {
+  townWardrobe,
+  residentOutfit,
+  vipOutfit,
+  guestOutfit,
+  liveVisitorOutfit,
+} from '../../data/townWardrobes';
 import { MINE_SHAFT, addMineShaft } from './TownMineShaft';
 import { TownPresentation } from './TownPresentation';
 import { ERA_CONSTRUCTION } from '../../data/mineEvolution';
 import { eraEvolution } from '../../data/eras';
 import { TownRenderQuality } from './TownRenderQuality';
+import { updateTownShadowCoverage } from './TownShadows';
 import { TownUpgradeGlow } from './TownUpgradeGlow';
 import * as THREE from 'three';
 import { addAviationActivity } from './TownAviation';
@@ -86,6 +93,7 @@ import { addServiceDrops, motorTraffic } from './TownEvolution';
 import { TownScenery } from './TownScenery';
 import { overlapsEventInset } from './TownInset';
 
+import { GARDEN_PARCELS } from '../../data/townGardenDistrict';
 import { PLOTS, LANE_X, atPlot, SHERIFF_PATROL, visiblePlots } from './TownLayout';
 import { riverCenterX } from './TownRiver';
 export { PLOTS } from './TownLayout';
@@ -137,21 +145,13 @@ export class TownDiorama {
     this.renderer.toneMappingExposure = 1.25;
     this.scene.add(new THREE.HemisphereLight('#e1eff7', '#ba9460', 2.1));
     const sun = new THREE.DirectionalLight('#ffe3ad', 3.5);
-    sun.position.set(-24, 38, 18);
     sun.castShadow = true;
     sun.shadow.mapSize.set(this.renderQuality.shadowSize, this.renderQuality.shadowSize);
-    Object.assign(sun.shadow.camera, {
-      left: -31,
-      right: 31,
-      top: 35,
-      bottom: -35,
-      near: 1,
-      far: 95,
-    });
     sun.shadow.normalBias = 0.025;
     sun.shadow.bias = -0.0001;
     this.scene.add(sun);
     this.sun = sun;
+    updateTownShadowCoverage(this, []);
     this.scene.add(new THREE.DirectionalLight('#cde5e7', 0.65));
     this.scene.children.forEach((object) => {
       if (object.isLight) object.layers.enable(2);
@@ -953,6 +953,7 @@ export class TownDiorama {
       this.animals = [];
       this.animalFeeder = null;
       this.animalMotion = null;
+      this.animalBehavior = null;
       this.animalSpace = null;
       this.animalNavigation = null;
       this.animalRoutes = null;
@@ -977,6 +978,7 @@ export class TownDiorama {
     this.construction = null;
     const previousParts = this.plotCache?.get(constructionId)?.parts;
     const plots = visiblePlots(town);
+    updateTownShadowCoverage(this, plots);
     const previousPlotIds = this.cinematic?.plotIds;
     const reusable = new Map();
     const signatures = this.plotSignatures(town, labels);
@@ -1027,11 +1029,13 @@ export class TownDiorama {
     const mineWorks = this.staticScenery.entries.get('mine-works')?.group;
     if (mineWorks) updateMineGrowth(mineWorks, mineGrowth(mineProgress));
     // City-scale eras (and Motor Age, built on a city shell) need the wider orbit.
-    this.controls.maxDistance = ['city', 'motor-age'].includes(eraEvolution(town.era).style)
-      ? 270
-      : town.era !== 'frontier'
-        ? 160
-        : 110;
+    this.controls.maxDistance = plots.some(({ id }) => GARDEN_PARCELS[id])
+      ? 360
+      : ['city', 'motor-age'].includes(eraEvolution(town.era).style)
+        ? 270
+        : town.era !== 'frontier'
+          ? 160
+          : 110;
     for (const {
       id,
       position: [x, z],
@@ -1424,7 +1428,14 @@ export class TownDiorama {
     const firstVIP = visitor && !manual ? this.drawVip(seed, 0) : null;
     const identity = firstVIP ?? villagerIdentity(seed, gender ?? (dress ? 'female' : undefined));
     const female = identity.gender === 'female';
-    const wardrobe = townWardrobe(eraEvolution(era));
+    const profile = eraEvolution(era);
+    const wardrobe = townWardrobe(profile);
+    const resident = !visitor && !sheriff ? residentOutfit(profile, seed) : null;
+    if (resident) {
+      color = resident.shirt;
+      dress ||= female && resident.variant === 1;
+      hat = resident.hat;
+    }
     if (sheriff && wardrobe.patrol) color = '#315d83';
     const root = this.group(parent);
     root.userData.villager = { ...identity, name: firstVIP?.name ?? null };
@@ -1470,14 +1481,56 @@ export class TownDiorama {
       const collar = this.mesh(torso, 'cylinder', [0.13, 0.035, 0.1], [0, 0.29, 0], wardrobe.trim);
       collar.name = 'Glowing collar ring';
     }
+    const residentDetails = this.group(torso);
+    residentDetails.name = 'Neighbor garden clothing';
+    if (resident) {
+      root.userData.residentOutfit = resident;
+      if (resident.apron) {
+        const apron = this.box(
+          residentDetails,
+          0.235,
+          0.34,
+          0.025,
+          0,
+          0.07,
+          0.112,
+          resident.accent,
+        );
+        apron.name = 'Gardener apron';
+        for (const x of [-0.075, 0.075])
+          this.box(residentDetails, 0.028, 0.19, 0.025, x, 0.24, 0.112, resident.accent);
+      } else if (resident.variant === 1) {
+        this.box(residentDetails, 0.205, 0.055, 0.215, 0, 0.29, 0, resident.accent, true);
+        const scarf = this.box(
+          residentDetails,
+          0.055,
+          0.16,
+          0.028,
+          0.065,
+          0.195,
+          0.117,
+          resident.accent,
+        );
+        scarf.name = 'Neighbor linen scarf';
+      }
+      const pin = this.mesh(
+        residentDetails,
+        'rock',
+        [0.025, 0.036, 0.012],
+        [-0.09, 0.245, 0.121],
+        resident.accent,
+      );
+      pin.name = 'Neighbor craft pin';
+    }
     const head = this.group(torso, 0, 0.46, 0);
     this.ball(head, 0, 0, 0, [0.12, 0.145, 0.115], skin);
-    this.ball(head, 0, 0.045, -0.03, [0.123, 0.12, 0.097], '#73563d');
+    const hairColor = resident?.hair ?? '#73563d';
+    this.ball(head, 0, 0.045, -0.03, [0.123, 0.12, 0.097], hairColor);
     const hair = this.group(head);
     hair.name = 'Villager swept hair and bun';
     for (const x of [-0.1, 0.1])
-      this.ball(hair, x, -0.015, -0.045, [0.045, 0.14, 0.085], '#73563d');
-    this.ball(hair, 0, 0.015, -0.135, [0.085, 0.085, 0.07], '#73563d');
+      this.ball(hair, x, -0.015, -0.045, [0.045, 0.14, 0.085], hairColor);
+    this.ball(hair, 0, 0.015, -0.135, [0.085, 0.085, 0.07], hairColor);
     const jaw = this.ball(head, 0, -0.06, 0.015, [0.105, 0.075, 0.095], skin);
     jaw.name = 'Villager broad jaw';
     hair.visible = female;
@@ -1542,15 +1595,41 @@ export class TownDiorama {
       this.ball(fore, 0, -0.19, 0, [0.045, 0.057, 0.04], skin);
       arms.push({ upper: arm, lower: fore });
       const thigh = this.group(body, side * 0.078, -0.065, 0);
-      trousers.push(this.rod(thigh, [0, 0, 0], [0, -0.22, 0], 0.065, wardrobe.trousers));
+      trousers.push(
+        this.rod(thigh, [0, 0, 0], [0, -0.22, 0], 0.065, resident?.trousers ?? wardrobe.trousers),
+      );
       const shin = this.group(thigh, 0, -0.22, 0);
-      trousers.push(this.rod(shin, [0, 0, 0], [0, -0.21, 0], 0.047, wardrobe.trousers));
-      boots.push(this.box(shin, 0.105, 0.08, 0.19, 0, -0.215, 0.035, wardrobe.boots, true));
+      trousers.push(
+        this.rod(shin, [0, 0, 0], [0, -0.21, 0], 0.047, resident?.trousers ?? wardrobe.trousers),
+      );
+      boots.push(
+        this.box(
+          shin,
+          0.105,
+          0.08,
+          0.19,
+          0,
+          -0.215,
+          0.035,
+          resident?.boots ?? wardrobe.boots,
+          true,
+        ),
+      );
       legs.push({ upper: thigh, lower: shin });
     }
     const skirt = this.mesh(body, 'cone', [0.2, 0.29, 0.17], [0, -0.085, 0], color);
     skirt.visible = !!dress || (female && !sheriff && eraEvolution(era).wardrobe === 'frontier');
-    const appearance = { hair, jaw, hips, skirt, dress, sheriff, era, gender: identity.gender };
+    const appearance = {
+      hair,
+      jaw,
+      hips,
+      skirt,
+      dress,
+      sheriff,
+      era,
+      residentDetails,
+      gender: identity.gender,
+    };
     const sampledRoute = [];
     route.forEach((p, i) => {
       const previous = route[i - 1];
@@ -1644,6 +1723,7 @@ export class TownDiorama {
     a.skirt.visible = female && (a.dress || eraEvolution(a.era).wardrobe === 'frontier');
     actor.shirt.scale.x = female ? 0.26 : 0.32;
     actor.vip.visible = !!identity.name;
+    a.residentDetails.visible = !identity.name;
     if (identity.name) {
       const profile = eraEvolution(a.era);
       const outfit = identity.live
@@ -2036,10 +2116,15 @@ export class TownDiorama {
             corners.push(corner);
           }
       }
-      bounds.expandByPoint(point(x - 3, 0, z - 3));
-      bounds.expandByPoint(point(x + 3, 5, z + 3));
-      for (const dx of [-3, 3])
-        for (const y of [0, 5]) for (const dz of [-3, 3]) corners.push(point(x + dx, y, z + dz));
+      const parcel = GARDEN_PARCELS[id],
+        halfWidth = parcel ? parcel.halfWidth + 0.8 : 3,
+        halfDepth = parcel ? parcel.halfDepth + 0.8 : 3,
+        height = parcel ? 8 : 5;
+      bounds.expandByPoint(point(x - halfWidth, 0, z - halfDepth));
+      bounds.expandByPoint(point(x + halfWidth, height, z + halfDepth));
+      for (const dx of [-halfWidth, halfWidth])
+        for (const y of [0, height])
+          for (const dz of [-halfDepth, halfDepth]) corners.push(point(x + dx, y, z + dz));
     }
     // Include a glimpse of the near river from the first visit, without framing future land.
     if (this.town && !this.raid && !intimate) {

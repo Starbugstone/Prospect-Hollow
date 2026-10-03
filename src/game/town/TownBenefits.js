@@ -64,6 +64,7 @@ export function buildingBenefit(town, id, stage, modernization = false) {
     label = 'Visitor capacity';
     read = visitorCapacity;
   } else if (
+    effects.happiness ||
     [
       'square',
       'museum',

@@ -1,4 +1,20 @@
 import { defineEra } from './eraDefinitions';
+// The two garden eras share city services and lifecycles. New cozy palettes can
+// reuse this profile while keeping their prices, content and appearance explicit.
+const COZY_CITY_EVOLUTION = {
+  style: 'city',
+  architecture: 'cozy',
+  wildlife: 'garden',
+  cityAssets: 'contemporary',
+  detailAsset: 'digital-detail',
+  airportStyle: 'connected',
+  waterworks: [80, 80, 80],
+  farmCapacity: [20, 20, 20],
+  tallCity: true,
+  digitalCity: true,
+  overheadPower: false,
+  incident: 'storm-cleanup',
+};
 // Content gates are independent of functional building levels and the alpha level count.
 // Reserved eras never create buttons or empty lots.
 export const ERAS = [
@@ -7,12 +23,13 @@ export const ERAS = [
     label: 'Frontier Settlement',
     yearLabel: 'c. 1865–1880',
     enabled: true,
-    evolution: { style: 'frontier' },
+    evolution: { style: 'frontier', wildlife: 'meadow' },
   },
   {
     id: 'river-rail',
     evolution: {
       style: 'river-rail',
+      wildlife: 'riverside',
       prices: [800, 1200, 1400],
       waterworks: [0, 20, 40],
     },
@@ -26,6 +43,7 @@ export const ERAS = [
     id: 'industrial',
     evolution: {
       style: 'industrial',
+      wildlife: 'riverside',
       waterUpgradeBenefit:
         'Adds water for twenty people when finished. Existing water stays available during work.',
       prices: [1400, 1850, 2300],
@@ -43,6 +61,7 @@ export const ERAS = [
     id: 'post-war',
     evolution: {
       style: 'city',
+      wildlife: 'riverside',
       prices: [2400, 2900, 3400],
       cityAssets: 'post-war',
       roadBridge: false,
@@ -63,6 +82,7 @@ export const ERAS = [
     id: 'motor-age',
     evolution: {
       style: 'motor-age',
+      wildlife: 'neighborhood',
       prices: [3500, 4400, 5300],
       waterworks: [60, 60, 80],
       farmCapacity: [0, 0, 20],
@@ -79,6 +99,7 @@ export const ERAS = [
     id: 'aviation',
     evolution: {
       style: 'city',
+      wildlife: 'songbirds',
       prices: [4800, 5600, 6400],
       cityAssets: 'aviation',
       wardrobe: 'aviation',
@@ -104,6 +125,7 @@ export const ERAS = [
     id: 'broadcast',
     evolution: {
       style: 'city',
+      wildlife: 'songbirds',
       prices: [6200, 7000, 7800],
       cityAssets: 'broadcast',
       wardrobe: 'broadcast',
@@ -132,6 +154,7 @@ export const ERAS = [
     id: 'contemporary',
     evolution: {
       style: 'city',
+      wildlife: 'songbirds',
       prices: [7600, 9000, 10400],
       cityAssets: 'contemporary',
       wardrobe: 'contemporary',
@@ -161,6 +184,7 @@ export const ERAS = [
     id: 'tomorrow',
     evolution: {
       style: 'city',
+      wildlife: 'songbirds',
       // Rounded forms are procedural; the Connected City family still supplies
       // shared vehicles, bridge approaches, garden finishes and fallbacks.
       architecture: 'rounded',
@@ -193,6 +217,60 @@ export const ERAS = [
       'Solar domes, quiet maglev pods and garden rings grow around the old streets. Prospect Hollow imagines its next century.',
     horizon: 'Tomorrow is taking shape in Prospect Hollow.',
     finale: 'Round roofs, green rings and the same warm neighbors. Tomorrow feels like home.',
+  },
+
+  {
+    id: 'canopy',
+    evolution: {
+      ...COZY_CITY_EVOLUTION,
+      cozyStyle: 'canopy',
+      prices: [10400, 12200, 14000],
+      wardrobe: 'canopy',
+      newBuildingPrices: [11500, 14000, 16500],
+      fountain: 'canopy-bloom',
+      roadStyle: 'garden-lane',
+      upgradeTitle: 'Canopy level {level}: {name}',
+      upgradeDescriptions: [
+        'Grow a sheltered garden wing with curved timber supports and planted balconies.',
+        'Complete the leaf roofs, flowering terraces and shared neighborhood porch.',
+      ],
+      cityDescription:
+        'Leaf roofs, garden verandas and warm timber bring the biodome gardens into everyday life.',
+    },
+    label: 'Canopy Age',
+    yearLabel: '2100',
+    enabled: true,
+    story:
+      'The gardens once sheltered under glass now grow through every neighborhood. Tea, blossoms and orchard homes make tomorrow feel peaceful.',
+    horizon: 'A garden is growing around every familiar doorway.',
+    finale: 'Leaf roofs, flowering courtyards and time together. Our future is taking root.',
+  },
+  {
+    id: 'riverlight',
+    evolution: {
+      ...COZY_CITY_EVOLUTION,
+      cozyStyle: 'riverlight',
+      wildlife: 'garden-town',
+      prices: [12000, 14000, 16000],
+      wardrobe: 'riverlight',
+      newBuildingPrices: [13500, 16000, 18500],
+      fountain: 'riverlight-crystal',
+      roadStyle: 'lantern-lane',
+      upgradeTitle: 'Riverlight level {level}: {name}',
+      upgradeDescriptions: [
+        'Add a scalloped glass sunroom and a sheltered gathering terrace.',
+        'Complete the pearl roofs, lavender glass and soft lantern courtyards.',
+      ],
+      cityDescription:
+        'Pearl roofs, lavender glass and amber lanterns bring the mine crystals into welcoming homes.',
+    },
+    label: 'Riverlight Age',
+    yearLabel: '2140',
+    enabled: true,
+    story:
+      'Our craftspeople turn familiar crystals into glass that gathers daylight. Warm springs, quiet workshops and a luminous pavilion welcome every neighbor.',
+    horizon: 'The valley is finding its gentle evening glow.',
+    finale: 'The crystals beneath our home now light the places we share.',
   },
 ].map(defineEra);
 export const ERA_BY_ID = Object.fromEntries(ERAS.map((era) => [era.id, era]));

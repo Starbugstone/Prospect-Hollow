@@ -4,6 +4,7 @@ import { prepareRoute, routePose } from './TownRoutes';
 import * as THREE from 'three';
 import { roadLevel, visitorPopulation } from './TownRules';
 import { LANE_X, atPlot, plotStreet } from './TownLayout';
+import { GARDEN_PARCELS } from '../../data/townGardenDistrict';
 import { pavedTown, motorTraffic } from './TownEvolution';
 import { addRoadSurfaces } from './TownRoads';
 import { motorVehicle, animateVehicle } from './TownVehicles';
@@ -130,16 +131,18 @@ export function addTownRoads(d, town, plots) {
   const surfaces = addRoadSurfaces(d, roads, town);
   for (const [id, [x, z]] of Object.entries(plots)) {
     if (id === 'mine' || id === 'bridge' || !town.buildings[id]) continue;
-    if (level >= 2 && id !== 'well' && id !== 'well2') {
+    const parcel = GARDEN_PARCELS[id];
+    if ((parcel || level >= 2) && id !== 'well' && id !== 'well2') {
+      const [frontX, frontZ] = parcel?.approach[0] ?? [0, 1.65];
       for (let i = 0; i < 16; i++)
         d.box(
           roads,
           0.17,
           0.07,
-          0.75,
-          x - 1.35 + i * 0.18,
+          parcel ? 1.25 : 0.75,
+          x + frontX - 1.35 + i * 0.18,
           0.07,
-          z + 1.65,
+          z + frontZ,
           paved ? '#c2bca5' : i % 3 ? '#ad9065' : '#b79d73',
         );
     }

@@ -130,6 +130,30 @@ try {
  $progress->records=(object)['0'=>(object)['stars'=>3],'999999'=>(object)['stars'=>3],'bad'=>(object)['stars'=>3],'1'=>(object)['stars'=>4],'2'=>(object)['stars'=>0],'3'=>(object)['stars'=>'2'],'4'=>(object)['stars'=>2,'score'=>100,'secret'=>'private']];
  $awards=json_decode($public->projection($progress,'Progress','0'),true)['appearance']['levelRecords'];
  check($awards===[4=>['stars'=>2]],'awards omit unknown levels, invalid stars and private record fields');
+ // Shared-town art follows the generated client catalog, including cozy eras.
+ foreach([
+  'canopy'=>['teaHouse','blossomAtelier','orchardCottages'],
+  'riverlight'=>['teaHouse','blossomAtelier','orchardCottages','glassworks','springsRetreat','riverlightPavilion'],
+ ] as $era=>$buildings) {
+  $cozy=profile(99999);$cozy->town->era=$era;
+  foreach($buildings as $building) {
+   $cozy->town->buildings->$building=8;
+   $cozy->town->buildingEras->$building=$era;
+   $cozy->town->buildingEraLevels->$building=8;
+  }
+  $cozy->town->buildings->saloon=5;$cozy->town->buildingEras->saloon='tomorrow';
+  $projection=json_decode($public->projection($cozy,'Garden Friends','cozy-view'),true);
+  check($projection['era']===$era&&$projection['appearance']['era']===$era,'shared town retains '.$era.' identity');
+  foreach($buildings as $building) {
+   check($projection['appearance']['buildings'][$building]===3,'shared '.$era.' keeps '.$building.' service level');
+   check($projection['appearance']['buildingEras'][$building]===$era&&$projection['appearance']['buildingEraLevels'][$building]===3,'shared '.$era.' keeps '.$building.' modernization');
+  }
+  check($projection['appearance']['buildings']['saloon']===5&&$projection['appearance']['buildingEras']['saloon']==='tomorrow','shared '.$era.' preserves unfinished older-era landmarks');
+  check(!isset($projection['appearance']['coins']),'shared '.$era.' keeps wallet private');
+ }
+ $cozy->town->era='unknown-garden-era';$cozy->town->buildingEras->teaHouse='unknown-garden-era';
+ $fallback=json_decode($public->projection($cozy,'Garden Friends','cozy-view'),true);
+ check($fallback['era']==='frontier'&&$fallback['appearance']['buildingEras']['teaHouse']==='frontier','unsupported shared eras retain the catalog fallback');
  status(422,callApi('POST','villages/'.$shared.'/saloon',['coins'=>999]),'visitors cannot name an amount');
  $tap=status(200,callApi('POST','villages/'.$shared.'/saloon',(object)[]),'anonymous saloon tap');check($tap['readyAt']>time(),'saloon rests after a tap');
  $rest=status(409,callApi('POST','villages/'.$shared.'/saloon',(object)[],$b),'second visitor within the hour');check($rest['code']==='saloon_resting'&&$rest['readyAt']===$tap['readyAt'],'one saloon tap per town per hour');

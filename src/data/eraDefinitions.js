@@ -1,12 +1,16 @@
 import { resolveRoadStyle } from './roadStyles';
+import { TOWN_FAUNA } from './townAnimals';
 
 /**
  * @typedef {'frontier'|'river-rail'|'industrial'|'motor-age'|'city'} BuildingStyle
- * @typedef {'standard'|'rounded'} CityArchitecture
+ * @typedef {'standard'|'rounded'|'cozy'} CityArchitecture
  * @typedef {Object} EraEvolution
  * @property {BuildingStyle} style Shared building/modernization renderer family.
  * @property {CityArchitecture} architecture City building forms: Blender period shells
- *   (`standard`) or the procedural rounded domes, pods and vaults of `rounded`.
+ *   (`standard`), procedural domes/pods (`rounded`) or planted timber/glass
+ *   architecture selected by the shared `cozyStyle` profile (`cozy`).
+ * @property {'canopy'|'riverlight'|null} cozyStyle Shared cozy architecture palette and forms.
+ * @property {string} wildlife Shared ambient cast and companion lifestyle profile.
  * @property {string} wardrobe Wardrobe catalog key for this era.
  * @property {string|null} baseCityEra Retained city shell for an intermediate style.
  * @property {boolean} paved
@@ -38,7 +42,7 @@ import { resolveRoadStyle } from './roadStyles';
  */
 
 /** Registered city building forms; renderers and SVG drawings exist for each. */
-export const CITY_ARCHITECTURES = Object.freeze(['standard', 'rounded']);
+export const CITY_ARCHITECTURES = Object.freeze(['standard', 'rounded', 'cozy']);
 
 const STYLES = {
   frontier: {},
@@ -120,6 +124,8 @@ export function defineEra(definition) {
   const evolution = {
     wardrobe: 'frontier',
     architecture: 'standard',
+    cozyStyle: null,
+    wildlife: 'standard',
     baseCityEra: null,
     paved: false,
     electricity: false,
@@ -172,6 +178,10 @@ export function defineEra(definition) {
     throw new Error(`Missing modernization prices for era ${definition.id}`);
   if (!CITY_ARCHITECTURES.includes(evolution.architecture))
     throw new Error(`Unsupported architecture for era ${definition.id}`);
+  if (!Object.hasOwn(TOWN_FAUNA, evolution.wildlife))
+    throw new Error(`Unsupported wildlife for era ${definition.id}`);
+  if (evolution.architecture === 'cozy' && !['canopy', 'riverlight'].includes(evolution.cozyStyle))
+    throw new Error(`Missing cozy style for era ${definition.id}`);
   if (evolution.architecture !== 'standard' && style !== 'city')
     throw new Error(`Only city eras can change their architecture: ${definition.id}`);
   if (style === 'city' && (!evolution.cityAssets || !evolution.newBuildingPrices))

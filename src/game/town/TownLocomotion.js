@@ -1,4 +1,5 @@
 import { Vector3 } from 'three';
+import { flyingAnimal } from '../../data/townAnimals';
 const blockerPosition = new Vector3();
 import { sweptClear } from './BuildingFootprints';
 import { routeStepPose, routeDistanceAt } from './TownNavigation';
@@ -154,11 +155,17 @@ function preparedRouteClear(a, navigation) {
     certificate?.navigation === navigation &&
     certificate?.revision === revision &&
     certificate?.margin >= margin;
+  const sceneryCertified =
+    a.species &&
+    certificate?.space &&
+    certificate.space === a.space &&
+    certificate.margin >= margin &&
+    certificate.height >= (a.height ?? 1);
   const clear = path.points.every(
     (point, i) =>
       !i ||
       ((certified || !navigation || navigation.segment(path.points[i - 1], point, margin)) &&
-        (!a.clearance || a.clearance(path.points[i - 1], point, margin))),
+        (!a.clearance || sceneryCertified || a.clearance(path.points[i - 1], point, margin))),
   );
   a.routeValidation = {
     path,
@@ -310,7 +317,7 @@ export function updateTownLocomotion(d, h = LOCOMOTION_STEP) {
   agents.length = 0;
   const add = (a) => {
     const root = a.root;
-    if (!root || a.species === 'pigeon') return;
+    if (!root || flyingAnimal(a.species)) return;
     if (a.liveVisitor && !root.visible) return;
     // Indoor/fading visitors still advance their own lifecycle; hiding a mesh
     // must not disconnect its clock from its route.
@@ -329,6 +336,7 @@ export function updateTownLocomotion(d, h = LOCOMOTION_STEP) {
       maxSpeed: a.speed ?? a.walkSpeed ?? 0.55,
       animationTime: path?.total && !a.workRoutine ? a.lastPoseTime : undefined,
     });
+    if (a.species) m.maxSpeed = a.movementSpeed ?? a.speed ?? m.maxSpeed;
     if (path && m.path !== path) {
       m.routeDistance =
         initial && Number.isFinite(a.routeProgress)
@@ -339,10 +347,11 @@ export function updateTownLocomotion(d, h = LOCOMOTION_STEP) {
     a.routeDirection = a.direction ?? 1;
     a.y = root.position.y;
     a.hold =
+      a.behaviorHold ||
       (a.liveVisitor && d.liveVisitorsReducedMotion) ||
       (!!a.work && !a.workRoutine) ||
       a.routeResting ||
-      (a.species && !['walking', 'fleeing', 'retreating'].includes(a.state));
+      (a.species && !['walking', 'chasing', 'fleeing', 'retreating'].includes(a.state));
     a.noPath = !!path && path.points.length < 2;
     a.followRoute =
       !!path?.total && (!a.manual || a.transportVisitor || a.liveVisitor) && !m.exitTarget;

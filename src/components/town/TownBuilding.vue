@@ -10,6 +10,12 @@
     :era="era"
     :level="eraLevel"
   />
+  <TownCozyBuilding
+    v-else-if="built && isCozyEra(era) && (cozyForm(kind) || ['bridge', 'airport'].includes(kind))"
+    :kind="kind"
+    :era="era"
+    :level="eraLevel"
+  />
   <TownCityBuilding
     v-else-if="built && isCityEra(era)"
     :kind="kind"
@@ -493,6 +499,8 @@ import { isCityEra } from '../../data/city';
 import { eraEvolution } from '../../data/eras';
 import TownCityBuilding from './TownCityBuilding.vue';
 import TownRoundedBuilding from './TownRoundedBuilding.vue';
+import TownCozyBuilding from './TownCozyBuilding.vue';
+import { isCozyEra, cozyForm } from '../../data/cozyArchitecture';
 import { isRoundedEra, roundedForm } from '../../data/roundedArchitecture';
 import { BUILDING_BY_ID } from '../../data/town';
 import TownSquare from './TownSquare.vue';

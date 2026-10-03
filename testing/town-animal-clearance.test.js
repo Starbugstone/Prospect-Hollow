@@ -19,7 +19,9 @@ import { buildTownSquare } from '../src/game/town/TownSquare';
 import { addPowerGrid, addEraStreetscape } from '../src/game/town/TownEvolution';
 import { BUILDINGS, createTown } from '../src/data/town';
 import { ERAS } from '../src/data/eras';
-import { PLOTS } from '../src/game/town/TownLayout';
+import { flyingAnimal, townFauna } from '../src/data/townAnimals';
+import { eraEvolution } from '../src/data/eras';
+import { PLOTS, townTracks, segmentDistance } from '../src/game/town/TownLayout';
 
 const views = [];
 function fixture() {
@@ -79,6 +81,24 @@ it('detects unmarked thin fences, solid interiors and covered landing columns af
   expect(animalSpace(d).segment([-2, 0.07, 0], [2, 0.07, 0], 0.5)).toBe(true);
 });
 
+it('routes tall street companions around a low canopy that smaller animals can walk beneath', () => {
+  const d = fixture(),
+    props = d.group(d.world);
+  d.box(props, 1.5, 0.15, 1.5, 0, 1.55, 0, '#777777');
+  const space = animalSpace(d),
+    nav = animalNavigation(new TownNavigation(), space),
+    points = [
+      [-3, 0],
+      [3, 0],
+    ];
+  const small = nav.route(points, 0, 0.65, 0.7),
+    tall = nav.route(points, 0, 0.65, 2.05);
+  expect(tall.total).toBeGreaterThan(small.total);
+  expect(tall.points.at(-1)).toEqual(small.points.at(-1));
+  for (let i = 1; i < tall.points.length; i++)
+    expect(space.segment(tall.points[i - 1], tall.points[i], 0.65, 2.05)).toBe(true);
+});
+
 it('reserves moving scenery and prevents traffic correction from pushing an animal through an unmarked wall', () => {
   const d = fixture(),
     rotor = d.group(d.world);
@@ -99,6 +119,34 @@ it('reserves moving scenery and prevents traffic correction from pushing an anim
   expect(d.animalSpace.clear(root.position.toArray(), 0.64)).toBe(true);
   expect(root.position.x).toBeGreaterThan(0.65);
   expect(root.position.distanceTo(car.position)).toBeGreaterThanOrEqual(0.8 + 0.64 + 0.05 - 1e-6);
+});
+
+it('keeps Willowkin in the rear park garden before the atelier is built', () => {
+  const d = fixture();
+  d.town.era = 'canopy';
+  d.landscape = buildLandscape(d);
+  d.scene.add(d.landscape);
+  for (const id of ['home', 'well', 'farm', 'park']) {
+    d.town.buildings[id] = 3;
+    d.town.buildingEras[id] = 'canopy';
+    d.town.buildingEraLevels[id] = 3;
+    const [x, z] = PLOTS[id];
+    const root = d.group(d.world, x, 0.08, z);
+    const building = BUILDINGS.find((b) => b.id === id);
+    renderEraLandmark(d, root, building.kind, building.name, 3, 'canopy', 3);
+  }
+  d.navigation = townNavigation(d.world);
+  addTownAnimals(d, d.town);
+  const companion = d.animals.find((a) => a.species === 'willowkin');
+  expect(companion).toBeDefined();
+  expect(companion.path.total).toBeGreaterThan(2);
+  for (const point of companion.path.points) {
+    expect(d.animalSpace.clear(point, companion.radius, companion.height)).toBe(true);
+    for (const track of townTracks(d.town))
+      expect(segmentDistance(point[0], point[2], track.from, track.to)).toBeGreaterThan(
+        track.width + companion.radius,
+      );
+  }
 });
 
 it.each(ERAS.flatMap((era, index) => [1, 3].map((tier) => [era.id, index, tier])))(
@@ -140,17 +188,35 @@ it.each(ERAS.flatMap((era, index) => [1, 3].map((tier) => [era.id, index, tier])
     addLeisureActivity(d, d.town);
     expect(d.animals.filter((a) => a.species === 'dog' || a.species === 'cat')).toHaveLength(2);
     expect(d.animals.filter((a) => a.species === 'hen')).toHaveLength(3);
-    expect(d.animals.filter((a) => a.species === 'pigeon').length).toBeGreaterThan(0);
+    expect(d.animals.filter((a) => flyingAnimal(a.species)).length).toBeGreaterThan(0);
+    for (const species of townFauna(eraEvolution(era)).garden) {
+      const animal = d.animals.find((a) => a.species === species);
+      expect(animal, `${species} has an actual ${era} habitat`).toBeDefined();
+      expect(animal.path.total).toBeGreaterThan(2);
+    }
+    const companionProfile = townFauna(eraEvolution(era)).companions;
+    const companions = d.animals.filter((a) => a.companion);
+    expect(companions).toHaveLength(companionProfile ? 3 : 0);
+    for (const companion of companions) {
+      expect(companion.path.total).toBeGreaterThan(companion.resident ? 20 : 2);
+      if (!companion.resident)
+        for (const point of companion.path.points)
+          for (const track of townTracks(d.town))
+            expect(
+              segmentDistance(point[0], point[2], track.from, track.to),
+              'companion stays off roads',
+            ).toBeGreaterThan(track.width + companion.radius);
+    }
     for (const a of d.animals.filter((a) => a.path)) {
       expect(a.path.total, a.species).toBeGreaterThan(1);
       for (let i = 1; i < a.path.points.length; i++) {
         expect(
-          d.animalSpace.segment(a.path.points[i - 1], a.path.points[i], a.radius),
+          d.animalSpace.segment(a.path.points[i - 1], a.path.points[i], a.radius, a.height ?? 1),
           a.species,
         ).toBe(true);
       }
     }
-    for (const a of d.animals.filter((a) => a.species === 'pigeon'))
+    for (const a of d.animals.filter((a) => flyingAnimal(a.species)))
       for (const h of a.habitats)
         expect(d.animalSpace.openSky(h.point), h.building ?? 'pole').toBe(true);
     const walk = d.world.getObjectByName('Park dog walk')?.userData.walkPath;
@@ -161,6 +227,7 @@ it.each(ERAS.flatMap((era, index) => [1, 3].map((tier) => [era.id, index, tier])
     }
     // Test the positions actually drawn, including changing bird altitude and
     // terrain-following wildlife, rather than only the route control points.
+    const roamed = new Set();
     for (let frame = 1; frame <= 360; frame++) {
       const time = frame / 4;
       d.actors.forEach((a) => d.animatePerson(a, time));
@@ -168,8 +235,9 @@ it.each(ERAS.flatMap((era, index) => [1, 3].map((tier) => [era.id, index, tier])
       updateTownLocomotion(d);
       for (const a of d.animals) {
         if (!a.root.visible) continue;
+        if (a.roaming?.activeLeg != null && a.walkPath) roamed.add(a.species);
         expect(
-          d.animalSpace.clear(a.root.position.toArray(), a.radius),
+          d.animalSpace.clear(a.root.position.toArray(), a.radius, a.height ?? 1),
           `${a.species} at ${time}: ${a.root.position.toArray()}`,
         ).toBe(true);
       }
@@ -179,6 +247,10 @@ it.each(ERAS.flatMap((era, index) => [1, 3].map((tier) => [era.id, index, tier])
           'feeder',
         ).toBe(true);
     }
+    for (const a of d.animals.filter((a) => a.wild || ['dog', 'cat'].includes(a.species)))
+      expect(roamed.has(a.species), `${a.species} actually uses the ${era} roaming graph`).toBe(
+        true,
+      );
   },
   60000,
 );

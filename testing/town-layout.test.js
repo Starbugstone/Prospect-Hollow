@@ -8,6 +8,7 @@ import {
   SphereGeometry,
   CylinderGeometry,
 } from 'three';
+import { GARDEN_PARCELS } from '../src/data/townGardenDistrict';
 import { buildTownSquare } from '../src/game/town/TownSquare';
 import { PLOTS, TOWN_TRACKS, segmentDistance } from '../src/game/town/TownLayout';
 import { TownDiorama } from '../src/game/town/TownDiorama';
@@ -74,7 +75,7 @@ describe('Open village lots and usable paths', () => {
     d.anchors = Object.keys(PLOTS).map((id) => ({ id }));
     d.controls = {
       minDistance: 13,
-      maxDistance: 270,
+      maxDistance: 360,
       target: new Vector3(),
       update() {
         d.camera.lookAt(this.target);
@@ -83,12 +84,15 @@ describe('Open village lots and usable paths', () => {
     };
     d.frameTown();
     for (const [id, [x, z]] of Object.entries(PLOTS)) {
-      for (const y of [0, 5]) {
-        const screen = new Vector3(x, y, z).project(d.camera);
-        expect(Math.abs(screen.x), `${id} horizontally`).toBeLessThan(0.92);
-        expect(Math.abs(screen.y), `${id} vertically`).toBeLessThan(0.92);
-      }
+      const parcel = GARDEN_PARCELS[id];
+      for (const dx of parcel ? [-parcel.halfWidth, parcel.halfWidth] : [0])
+        for (const dz of parcel ? [-parcel.halfDepth, parcel.halfDepth] : [0])
+          for (const y of [0, parcel ? 8 : 5]) {
+            const screen = new Vector3(x + dx, y, z + dz).project(d.camera);
+            expect(Math.abs(screen.x), `${id} horizontally`).toBeLessThan(0.92);
+            expect(Math.abs(screen.y), `${id} vertically`).toBeLessThan(0.92);
+          }
     }
-    expect(d.camera.position.distanceTo(d.controls.target)).toBeLessThanOrEqual(270.000001);
+    expect(d.camera.position.distanceTo(d.controls.target)).toBeLessThanOrEqual(360.000001);
   });
 });
