@@ -3,7 +3,7 @@ import { Box3, Group, MeshBasicMaterial, Scene, Vector3 } from 'three';
 import { createSSRApp, h } from 'vue';
 import { renderToString } from 'vue/server-renderer';
 import { TownDiorama } from '../src/game/town/TownDiorama';
-import { createTownGeometries } from '../src/game/town/TownGeometries';
+import { createTownGeometries, RING_TUBE } from '../src/game/town/TownGeometries';
 import { renderCityBuilding } from '../src/game/town/buildings/city';
 import { animateVehicle, motorVehicle, responseVehicle } from '../src/game/town/TownVehicles';
 import { addAviationActivity } from '../src/game/town/TownAviation';
@@ -294,6 +294,7 @@ describe('Rounded architecture rendering', () => {
   });
 
   it('fits the see-through space helmet over the whole head of every wearer', () => {
+    expect(SPACE_HELMET.suits.hen).toBe('#e5873a');
     const d = diorama('tomorrow');
     Object.assign(d, { world: new Group() });
     for (const species of SPACE_HELMET.wearers) {
@@ -304,21 +305,40 @@ describe('Rounded architecture rendering', () => {
       const helmet = space.root.getObjectByName('Space helmet');
       const bubble = helmet.children[0];
       expect(bubble.material.transparent, species).toBe(true);
-      // Ears, snout and whiskers all stay inside the bubble.
+      // The trunk wears the suit: white, or the species' own suit color.
+      const trunk = space.body.children.find(
+        (o) =>
+          o.isMesh &&
+          o.material.color.getHexString() === (SPACE_HELMET.suits[species] ?? '#ece5d3').slice(1),
+      );
+      expect(trunk, species).toBeTruthy();
+      // Ears, snout and whiskers all stay inside the bubble, which may be flattened
+      // from below so it stays out of the ground.
       space.root.updateMatrixWorld(true);
-      bubble.geometry.boundingSphere ?? bubble.geometry.computeBoundingSphere();
-      const center = bubble.getWorldPosition(new Vector3()),
-        radius = bubble.geometry.boundingSphere.radius * bubble.getWorldScale(new Vector3()).x;
-      const point = new Vector3();
-      space.head.traverse((o) => {
-        if (!o.isMesh || o.parent === helmet) return;
-        const position = o.geometry.attributes.position;
-        for (let n = 0; n < position.count; n++)
-          expect(
-            point.fromBufferAttribute(position, n).applyMatrix4(o.matrixWorld).distanceTo(center),
-            species,
-          ).toBeLessThanOrEqual(radius);
+      const toBubble = bubble.matrixWorld.clone().invert(),
+        collar = helmet.getObjectByName('Space helmet collar'),
+        toCollar = collar.matrixWorld.clone().invert();
+      const point = new Vector3(),
+        local = new Vector3();
+      const vertices = (object, visit) =>
+        object.traverse((o) => {
+          if (!o.isMesh || o.parent === helmet) return;
+          const position = o.geometry.attributes.position;
+          for (let n = 0; n < position.count; n++)
+            visit(point.fromBufferAttribute(position, n).applyMatrix4(o.matrixWorld));
+        });
+      vertices(space.head, (p) => {
+        expect(local.copy(p).applyMatrix4(toBubble).length(), species).toBeLessThanOrEqual(1);
+        // The collar ring never cuts into the face, ears or snout.
+        local.copy(p).applyMatrix4(toCollar);
+        expect(
+          Math.hypot(Math.hypot(local.x, local.y) - 1, local.z),
+          `${species} collar`,
+        ).toBeGreaterThan(RING_TUBE);
       });
+      // Ring and bubble stay above the ground the animal stands on.
+      expect(new Box3().setFromObject(collar).min.y, `${species} collar`).toBeGreaterThan(0);
+      expect(new Box3().setFromObject(bubble).min.y, `${species} bubble`).toBeGreaterThan(0);
     }
   });
 

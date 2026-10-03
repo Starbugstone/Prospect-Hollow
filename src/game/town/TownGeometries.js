@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 
+export const RING_TUBE = 0.13;
+
 export function createTownGeometries() {
   const geometries = {
     box: new THREE.BoxGeometry(1, 1, 1),
@@ -12,6 +14,8 @@ export function createTownGeometries() {
     cylinder: new THREE.CylinderGeometry(1, 1, 1, 12),
     cone: new THREE.CylinderGeometry(0.6, 1, 1, 10),
     shadow: new THREE.CircleGeometry(1, 24),
+    // Unit-radius ring around +Z, e.g. a space helmet's collar.
+    ring: new THREE.TorusGeometry(1, RING_TUBE, 6, 18),
   };
   const leaves = geometries.foliage.attributes.position;
   for (let i = 0; i < leaves.count; i++) {

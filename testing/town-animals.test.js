@@ -732,13 +732,20 @@ it('shrinks the old wearer away and grows the new one for a watching visitor', (
   // Nothing changes outfit until each animal has shrunk out of sight.
   expect(helmeted(d)).toEqual([first]);
   const start = d.elapsed ?? 0,
-    sizes = [];
+    sizes = [],
+    shadows = [];
+  const shadowWidth = first.shadow.scale.x;
   for (let t = 0; t <= 1; t += 0.05) {
     d.animalMotion(start + 0.01 + t);
     sizes.push(first.body.scale.x);
+    shadows.push(first.shadow.scale.x / shadowWidth);
   }
   expect(Math.min(...sizes)).toBeLessThan(0.05);
   expect(sizes.at(-1)).toBe(1);
+  // The contact shadow shrinks with the body and returns to its own size.
+  expect(Math.min(...shadows)).toBeLessThan(0.05);
+  expect(shadows.at(-1)).toBeCloseTo(1, 10);
+  expect(next.shadow.scale.x).toBe(next.shadow.userData.baseScale?.x ?? next.shadow.scale.x);
   expect(first.dressing).toBeNull();
   expect(next.dressing).toBeNull();
   expect(helmeted(d)).toEqual([next]);

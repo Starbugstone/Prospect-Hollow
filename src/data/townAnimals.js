@@ -81,6 +81,8 @@ export const TOWN_ANIMALS = {
 export const SPACE_HELMET = {
   debut: 'tomorrow',
   wearers: ['dog', 'cat', 'fox', 'raccoon', 'hedgehog', 'otter', 'deer', 'hen'],
+  // Suit colors for wearers whose own coat would hide the white suit.
+  suits: { hen: '#e5873a' },
 };
 
 // Each profile adds to the previous cast. Stable species seeds keep existing

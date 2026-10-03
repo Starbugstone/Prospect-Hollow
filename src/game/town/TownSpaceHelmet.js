@@ -81,7 +81,7 @@ export function dressSpaceHelmet(d, town, { animate = false, rebuild = true } = 
       animal.dressing = { costume, start: null, swapped: false };
       continue;
     }
-    if (animal.dressing) animal.body.scale.setScalar(1);
+    if (animal.dressing) resize(animal, 1);
     animal.dressing = null;
     if ((animal.costume ?? null) !== costume) {
       restyle(d, animal, costume);
@@ -93,6 +93,15 @@ export function dressSpaceHelmet(d, town, { animate = false, rebuild = true } = 
     d.rebuildActors?.();
     d.render?.();
   }
+}
+
+// The contact shadow shrinks with the body, so no empty shadow is left behind.
+function resize(animal, scale) {
+  animal.body.scale.setScalar(scale);
+  const { shadow } = animal;
+  if (!shadow) return;
+  const base = (shadow.userData.baseScale ??= shadow.scale.clone());
+  shadow.scale.set(base.x * scale, base.y * scale, base.z);
 }
 
 /** Advances a visitor-view outfit change on the diorama clock. */
@@ -110,9 +119,9 @@ export function updateDressing(d, animal, time) {
     dressing.start = time - SWAP;
   }
   const scale = dressing.swapped ? smooth01(t / SWAP - 1) : 1 - smooth01(t / SWAP);
-  animal.body.scale.setScalar(Math.max(0.001, scale));
+  resize(animal, Math.max(0.001, scale));
   if (dressing.swapped && t >= 2 * SWAP) {
-    animal.body.scale.setScalar(1);
+    resize(animal, 1);
     animal.dressing = null;
   }
 }
