@@ -5,12 +5,17 @@ import { ERA_SUPPLY_STEP } from './townNeeds';
 /**
  * @typedef {'frontier'|'river-rail'|'industrial'|'motor-age'|'city'} BuildingStyle
  * @typedef {'standard'|'rounded'|'cozy'} CityArchitecture
+ * @typedef {'standard'|'rounded'} TransportStyle
  * @typedef {Object} EraEvolution
  * @property {BuildingStyle} style Shared building/modernization renderer family.
  * @property {CityArchitecture} architecture City building forms: Blender period shells
  *   (`standard`), procedural domes/pods (`rounded`) or planted timber/glass
  *   architecture selected by the shared `cozyStyle` profile (`cozy`).
  * @property {'canopy'|'riverlight'|null} cozyStyle Shared cozy architecture palette and forms.
+ * @property {TransportStyle} transportStyle Airport, station, port and street vehicles:
+ *   period and city models (`standard`) or the sky saucer, solar express, hover ferry
+ *   and hover traffic (`rounded`). Independent of `architecture`, so a later era can
+ *   change its buildings and keep its vehicles.
  * @property {string} wildlife Shared ambient cast and companion lifestyle profile.
  * @property {string} wardrobe Wardrobe catalog key for this era.
  * @property {string|null} baseCityEra Retained city shell for an intermediate style.
@@ -43,6 +48,8 @@ import { ERA_SUPPLY_STEP } from './townNeeds';
 
 /** Registered city building forms; renderers and SVG drawings exist for each. */
 export const CITY_ARCHITECTURES = Object.freeze(['standard', 'rounded', 'cozy']);
+/** Registered vehicle families; each has airport, rail, ferry and traffic models. */
+export const TRANSPORT_STYLES = Object.freeze(['standard', 'rounded']);
 
 const STYLES = {
   frontier: {},
@@ -125,6 +132,7 @@ export function defineEra(definition) {
     wardrobe: 'frontier',
     architecture: 'standard',
     cozyStyle: null,
+    transportStyle: 'standard',
     wildlife: 'standard',
     baseCityEra: null,
     paved: false,
@@ -182,6 +190,10 @@ export function defineEra(definition) {
     throw new Error(`Missing cozy style for era ${definition.id}`);
   if (evolution.architecture !== 'standard' && style !== 'city')
     throw new Error(`Only city eras can change their architecture: ${definition.id}`);
+  if (!TRANSPORT_STYLES.includes(evolution.transportStyle))
+    throw new Error(`Unsupported transport style for era ${definition.id}`);
+  if (evolution.transportStyle !== 'standard' && style !== 'city')
+    throw new Error(`Only city eras can change their transport style: ${definition.id}`);
   if (style === 'city' && (!evolution.cityAssets || !evolution.newBuildingPrices))
     throw new Error(`Missing city assets or prices for era ${definition.id}`);
   for (const [key, value] of Object.entries(evolution))

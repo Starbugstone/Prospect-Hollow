@@ -1,4 +1,4 @@
-import { isRoundedEra } from '../../data/roundedArchitecture';
+import { hasRoundedTransport } from '../../data/roundedArchitecture';
 import { roundedAircraft } from './RoundedTransports';
 import { airportAppearance } from '../../data/airport';
 import { futureModel, cityModel } from './buildings/city';
@@ -133,7 +133,7 @@ export function airplanePose(time) {
 export function addAviationActivity(d, town) {
   if (!town.buildings.airport) return null;
   const aircraft = airportAppearance(town.buildingEras?.airport).aircraft ?? 'airplane';
-  const rounded = isRoundedEra(town.buildingEras?.airport);
+  const rounded = hasRoundedTransport(town.buildingEras?.airport);
   const plane = rounded
     ? roundedAircraft(d, d.world)
     : aircraft === 'airplane'

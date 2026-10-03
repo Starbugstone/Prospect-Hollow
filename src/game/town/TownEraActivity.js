@@ -1,4 +1,4 @@
-import { isRoundedEra } from '../../data/roundedArchitecture';
+import { hasRoundedTransport } from '../../data/roundedArchitecture';
 import { roundedFerry, roundedRailcar } from './RoundedTransports';
 import { eraEvolution } from '../../data/eras';
 import { isCityEra } from '../../data/city';
@@ -147,7 +147,7 @@ export function addRiverBoat(d, town) {
   const portEra = town.buildingEras.riverPort;
   if (eraEvolution(portEra).cityBoat) {
     for (const child of [...boat.children]) boat.remove(child);
-    if (isRoundedEra(portEra)) {
+    if (hasRoundedTransport(portEra)) {
       roundedFerry(d, boat);
       boat.name = 'Hover river ferry';
     } else {
@@ -186,7 +186,7 @@ export function addStationTrain(d, town) {
     carriages.push({ pivot, x, wheelbase });
     return pivot;
   };
-  if (isRoundedEra(town.buildingEras.railDepot)) {
+  if (hasRoundedTransport(town.buildingEras.railDepot)) {
     train.name = 'Solar express train';
     for (const x of [0, -4, -8])
       wheels.push(...roundedRailcar(d, carriage(x, 2.4), x === 0).userData.wheels);

@@ -1,9 +1,12 @@
 import { continueSupplyTiers, defineEra } from './eraDefinitions';
 // The two garden eras share city services and lifecycles. New cozy palettes can
 // reuse this profile while keeping their prices, content and appearance explicit.
+// Their buildings are cozy, but the airport, station, port and traffic keep
+// Tomorrow's sky saucer, solar express, hover ferry and hover pods.
 const COZY_CITY_EVOLUTION = {
   style: 'city',
   architecture: 'cozy',
+  transportStyle: 'rounded',
   wildlife: 'garden',
   cityAssets: 'contemporary',
   detailAsset: 'digital-detail',
@@ -195,6 +198,7 @@ export const ERAS = continueSupplyTiers(
         // Rounded forms are procedural; the Connected City family still supplies
         // shared vehicles, bridge approaches, garden finishes and fallbacks.
         architecture: 'rounded',
+        transportStyle: 'rounded',
         prices: [9000, 10600, 12200],
         cityAssets: 'contemporary',
         wardrobe: 'tomorrow',

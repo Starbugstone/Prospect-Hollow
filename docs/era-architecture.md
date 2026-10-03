@@ -157,11 +157,15 @@ family.
 - `TownRoundedBuilding.vue` draws the same forms and palette for the SVG building
   illustrations (building cards, tour and landing page), and
   `TownBuilding.vue` routes rounded eras to it before the standard city drawing.
-- Traffic in rounded eras uses wheel-less hover cars, a hover shuttle bus and rounded
-  incident response pods that bob via `userData.hoverBody` (`TownVehicles.js`). Villagers wear
-  the `tomorrow` wardrobe (`hat: 'visor'` and a `trim` collar ring) built from existing shapes. The
-  airport, station and port switch to a sky saucer, a solar express train on the rails and a
-  hover ferry (`RoundedTransports.js`) once that building itself is rounded.
+- Vehicles follow the separate `transportStyle` capability (`standard` or `rounded`,
+  registered in `TRANSPORT_STYLES`), not `architecture`, so a later era can change its
+  buildings and keep its vehicles. `hasRoundedTransport()` selects wheel-less hover cars, a
+  hover shuttle bus and rounded incident response pods that bob via `userData.hoverBody`
+  (`TownVehicles.js`). The airport, station and port switch to a sky saucer, a solar express
+  train on the rails and a hover ferry (`RoundedTransports.js`) once that building itself has
+  been modernized into a rounded-transport era. Only city eras may change it, and unknown
+  eras fall back to `standard`. Villagers wear the `tomorrow` wardrobe (`hat: 'visor'` and a
+  `trim` collar ring) built from existing shapes.
 - The mine gains a `rounded-arch` portal hood and a geodesic `sorting-dome`. A site entry
   may declare `replaces: [...]` to supersede features it encloses; the dome replaces the
   sorting plant and solar canopy, keeping the mine under its 6,000-triangle budget.
@@ -584,7 +588,9 @@ Canopy (2100) and Riverlight (2140) follow Tomorrow City using the existing city
 construction, modernization and service lifecycle. Their `architecture: 'cozy'`
 and `cozyStyle` select the shared procedural forms and palettes in
 `cozyArchitecture.js`. The city asset family remains an explicit fallback;
-wardrobes, wildlife and fountains use their registered capabilities. A successor
+wardrobes, wildlife and fountains use their registered capabilities. Both keep
+Tomorrow's `transportStyle: 'rounded'`, so the airport's sky saucer, the solar
+express, the hover ferry and hover traffic continue through the garden eras. A successor
 can reuse either cozy style without adding chronological renderer branches.
 
 Canopy introduces the Tea House, Blossom Atelier and Orchard Cottages; Riverlight
