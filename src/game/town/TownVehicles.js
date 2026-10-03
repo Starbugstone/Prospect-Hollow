@@ -46,7 +46,7 @@ export function parkedVehicle(d, parent, kind, era) {
 // A Citroën 2CV parked at the stables: domed cabin with a roll-top canvas roof,
 // ribbed bonnet, separate round front wings and headlamps on stalks. Charleston
 // two-tone, faces +z like the other procedural cars.
-export function deuxChevaux(d, parent) {
+function deuxChevaux(d, parent) {
   const root = d.group(parent);
   root.name = 'Deux chevaux';
   root.userData.vehicleBox = { halfWidth: 0.39, halfLength: 0.8 };
