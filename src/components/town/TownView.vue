@@ -109,6 +109,7 @@
             settings.isSettingsOpen ||
             mineEntryPending ||
             museumOpen ||
+            collectionOpen ||
             !!dialogMode ||
             firstLightsOpen ||
             tourOpen
@@ -434,8 +435,10 @@
         :can-replay="campaign.canReplay"
         :shared-towns="!!cloudAccount?.signedIn.value"
         :muted="muted"
+        :honours="honourMenu"
         @projects="dialogMode = 'projects'"
         @museum="visitMuseum"
+        @honours="openHonours"
         @supplies="inspectBuilding('armory')"
         @shared="openSharedTowns"
         @tour="openTour"
@@ -474,9 +477,16 @@
     />
     <TownMuseum
       v-if="active && museumOpen && campaign.canReplay"
-      @close="museumOpen = false"
+      @close="closeMuseum"
       @replay="$emit('replay', $event)"
       @continuous="$emit('continuous', $event)"
+    />
+    <HonourCollection
+      v-if="collectionOpen"
+      :family-id="honourRequests.collection.familyId"
+      links
+      @close="honours.closeCollection()"
+      @inspect="inspectFromHonour"
     />
     <TownDialog
       v-if="firstLightsOpen"
@@ -546,7 +556,17 @@ import { pendingPresentation } from '../../data/townPresentations';
 
 import { motorTraffic, modernTransport } from '../../game/town/TownEvolution';
 import { civicIncident } from '../../data/townEvents';
-import { computed, inject, nextTick, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue';
+import {
+  computed,
+  defineAsyncComponent,
+  inject,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  provide,
+  ref,
+  watch,
+} from 'vue';
 import { t, number } from '../../i18n';
 import { BUILDINGS, BUILDING_BY_ID, BANDIT_EVENT, INITIAL_STORY } from '../../data/town';
 import {
@@ -593,6 +613,9 @@ import TownNextStep from './TownNextStep.vue';
 import TownTabBar from './TownTabBar.vue';
 import TownMoreMenu from './TownMoreMenu.vue';
 import TownDefenseStatus from './TownDefenseStatus.vue';
+import { useHonourNavigation } from '../../composables/useHonourNavigation';
+import { honourSummary } from '../honours/honourDisplay';
+const HonourCollection = defineAsyncComponent(() => import('../honours/HonourCollection.vue'));
 
 const props = defineProps({
   mineEntryPending: Boolean,
@@ -857,6 +880,46 @@ const villageStats = computed(() => {
 const selected = ref(goal.value?.id ?? 'home');
 const museumOpen = ref(props.openMuseum && campaign.canReplay),
   dialogMode = ref('');
+// Town Honours open over the village once no cinematic needs the screen. Elsewhere
+// (town management, the home page) the app's honours host opens them without links.
+const honours = useHonourNavigation();
+const honourRequests = honours.requests;
+const collectionOpen = computed(
+  () =>
+    props.active &&
+    !!honourRequests.collection &&
+    !town.value.transition?.pending &&
+    !openingPresentation.value,
+);
+const honourMenu = computed(() => {
+  const summary = honourSummary(campaign.honours);
+  return { ...summary, fresh: settings.honourNotices === 'off' ? 0 : summary.fresh };
+});
+function openHonours() {
+  closeDialog();
+  honours.openCollection();
+}
+function inspectFromHonour(id) {
+  honours.closeCollection();
+  inspectBuilding(id);
+}
+// An honour's museum link closes the collection and opens the museum it filters.
+watch(
+  () => honourRequests.museum,
+  (request) => {
+    if (!request || !props.active) return;
+    honours.closeCollection();
+    if (campaign.canReplay) visitMuseum();
+    else {
+      honours.clearMuseumRequest();
+      selectBuilding('museum');
+    }
+  },
+);
+function closeMuseum() {
+  museumOpen.value = false;
+  honours.clearMuseumRequest();
+}
 const firstLightsOpen = computed(
   () =>
     props.active &&
@@ -866,6 +929,7 @@ const firstLightsOpen = computed(
     !town.value.transition?.pending &&
     !dialogMode.value &&
     !museumOpen.value &&
+    !collectionOpen.value &&
     !tourOpen.value &&
     !settings.isSettingsOpen &&
     !props.mineEntryPending,

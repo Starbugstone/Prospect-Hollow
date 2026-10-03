@@ -7,6 +7,15 @@
       <GameIcon name="star" /><span>{{ t('Museum') }}</span
       ><small>{{ t('Replay levels') }}</small>
     </button>
+    <button v-if="honours" @click="$emit('honours')">
+      <GameIcon name="spark" /><span>{{ t('Honours') }}</span
+      ><small
+        >{{ t('{earned}/{total} earned', honours)
+        }}<i v-if="honours.fresh" class="town-more-new"
+          ><span class="town-sr-only">{{ t('New honours') }}</span></i
+        ></small
+      >
+    </button>
     <button @click="$emit('supplies')">
       <GameIcon name="chest" /><span>{{ t('Supplies') }}</span>
     </button>
@@ -34,6 +43,28 @@ import { t } from '../../i18n';
 import GameIcon from '../GameIcon.vue';
 
 // Everything that is not a daily destination, one tap from the More tab.
-defineProps({ canReplay: Boolean, sharedTowns: Boolean, muted: Boolean });
-defineEmits(['projects', 'museum', 'supplies', 'shared', 'tour', 'settings', 'mute', 'home']);
+// `honours` is { earned, total, fresh }; fresh is 0 when New indicators are off.
+defineProps({ canReplay: Boolean, sharedTowns: Boolean, muted: Boolean, honours: Object });
+defineEmits([
+  'projects',
+  'museum',
+  'honours',
+  'supplies',
+  'shared',
+  'tour',
+  'settings',
+  'mute',
+  'home',
+]);
 </script>
+<style>
+.town-more-new {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: 7px;
+  border-radius: 50%;
+  background: #9b5a25;
+  vertical-align: 1px;
+}
+</style>
