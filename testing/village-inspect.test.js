@@ -58,3 +58,29 @@ describe('shared-town building cards', () => {
     expect(plot).not.toContain('town-restored-note');
   });
 });
+
+// Phones show little of a long card: the owner's build, hammer and mining actions come right
+// after the offer title, before the benefit and era description.
+describe('owner building card actions', () => {
+  const ownTown = (coins) => {
+    const town = createTown();
+    return { ...town, buildings: { ...town.buildings, well: 1, farm: 1, home: 1 }, coins };
+  };
+  const before = (html, first, second) => {
+    expect(html.indexOf(first), first).toBeGreaterThan(-1);
+    expect(html.indexOf(first), `${first} before ${second}`).toBeLessThan(html.indexOf(second));
+  };
+
+  it('puts the build and hammer actions above the offer text', async () => {
+    const html = await card({ id: 'home', town: ownTown(1_000_000), hammers: 1 });
+    before(html, 'town-purchase', 'town-offer-text');
+    before(html, 'builder-hammer-action', 'town-offer-text');
+    expect(html).not.toContain('town-detail-mine');
+  });
+
+  it('offers mining next to the unaffordable build, above the offer text', async () => {
+    const html = await card({ id: 'home', town: ownTown(0), hammers: 0 });
+    before(html, 'town-purchase', 'town-detail-mine');
+    before(html, 'town-detail-mine', 'town-offer-text');
+  });
+});

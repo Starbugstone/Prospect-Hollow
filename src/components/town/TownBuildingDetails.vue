@@ -13,37 +13,41 @@
         })
       }}</span>
     </div>
-    <div class="town-building-preview" :style="{ '--building-tint': building.color }">
-      <svg viewBox="-160 -230 320 275" aria-hidden="true">
-        <ellipse cy="9" rx="133" ry="26" fill="#a79d7040" />
-        <TownSite
-          v-if="project"
-          :id="id"
-          :stage="stage"
-          :wins="constructionVisual(project)"
-          :era="town.buildingEras[id]"
-          :era-level="town.buildingEraLevels[id] || stage"
-        />
-        <TownBuilding
-          v-else
-          :id="id"
-          :stage="offer && offer.type !== 'modernization' ? stage + 1 : stage"
-          :era="offer?.targetEra ?? town.buildingEras[id]"
-          :era-level="offer?.eraLevel ?? (offer ? stage + 1 : town.buildingEraLevels[id] || stage)"
-        />
-      </svg>
-      <small>{{
-        t(project ? 'Under construction' : offer ? 'After building' : building.stages[stage])
-      }}</small>
-    </div>
-    <div v-if="offer || project" class="town-benefit-preview">
-      <TownIcon :name="benefit.icon" /><span
-        ><small>{{ t(benefit.label) }}</small
-        ><strong
-          >{{ benefit.before }}{{ benefit.suffix }} <TownIcon name="arrow" />
-          <b>{{ benefit.after }}{{ benefit.suffix }}</b></strong
-        ></span
-      >
+    <div class="town-detail-hero">
+      <div class="town-building-preview" :style="{ '--building-tint': building.color }">
+        <svg viewBox="-160 -230 320 275" aria-hidden="true">
+          <ellipse cy="9" rx="133" ry="26" fill="#a79d7040" />
+          <TownSite
+            v-if="project"
+            :id="id"
+            :stage="stage"
+            :wins="constructionVisual(project)"
+            :era="town.buildingEras[id]"
+            :era-level="town.buildingEraLevels[id] || stage"
+          />
+          <TownBuilding
+            v-else
+            :id="id"
+            :stage="offer && offer.type !== 'modernization' ? stage + 1 : stage"
+            :era="offer?.targetEra ?? town.buildingEras[id]"
+            :era-level="
+              offer?.eraLevel ?? (offer ? stage + 1 : town.buildingEraLevels[id] || stage)
+            "
+          />
+        </svg>
+        <small>{{
+          t(project ? 'Under construction' : offer ? 'After building' : building.stages[stage])
+        }}</small>
+      </div>
+      <div v-if="offer || project" class="town-benefit-preview">
+        <TownIcon :name="benefit.icon" /><span
+          ><small>{{ t(benefit.label) }}</small
+          ><strong
+            >{{ benefit.before }}{{ benefit.suffix }} <TownIcon name="arrow" />
+            <b>{{ benefit.after }}{{ benefit.suffix }}</b></strong
+          ></span
+        >
+      </div>
     </div>
     <div v-if="project" class="town-project-progress">
       <h3>
@@ -105,8 +109,6 @@
           t(offer.title, { building: t(building.name), name: t(offer.name), level: offer.eraLevel })
         }}
       </h3>
-      <p>{{ t(offer.benefit, offer.benefitValues) }}</p>
-      <p v-if="offer.description">{{ t(offer.description) }}</p>
       <button
         class="town-primary town-purchase"
         :disabled="!!offer.reason"
@@ -152,6 +154,15 @@
       <button v-if="requirement" class="town-secondary" @click="$emit('select', requirement.id)">
         {{ t('Go to {building}', { building: t(BUILDING_BY_ID[requirement.id].shortName) }) }} →
       </button>
+      <button
+        v-if="offer.reason && plotUnlocked(town, id)"
+        class="town-secondary town-detail-mine"
+        @click="$emit('mine')"
+      >
+        <TownIcon name="mine" />{{ t('Go mining') }} →
+      </button>
+      <p class="town-offer-text">{{ t(offer.benefit, offer.benefitValues) }}</p>
+      <p v-if="offer.description">{{ t(offer.description) }}</p>
     </div>
     <p v-else-if="!readOnly" class="town-restored-note">
       <TownIcon name="check" />{{ t(building.upgrades.at(-1).benefit) }}
@@ -331,13 +342,6 @@
         </li>
       </ul>
     </details>
-    <button
-      v-if="!project && offer?.reason && plotUnlocked(town, id)"
-      class="town-secondary town-detail-mine"
-      @click="$emit('mine')"
-    >
-      <TownIcon name="mine" />{{ t('Go mining') }} →
-    </button>
   </section>
 </template>
 <script setup>
@@ -425,6 +429,7 @@ const benefit = computed(() =>
 .town-benefit-preview > svg {
   width: 34px;
   height: 34px;
+  flex-shrink: 0;
 }
 .town-benefit-preview small {
   display: block;
@@ -443,6 +448,9 @@ const benefit = computed(() =>
 }
 .town-benefit-preview b {
   color: #2f7248;
+}
+.town-offer-text {
+  margin-top: 16px;
 }
 .town-project-mine,
 .town-purchase-hint,
@@ -467,5 +475,21 @@ const benefit = computed(() =>
   cursor: pointer;
   min-height: 44px;
   padding-block: 12px;
+}
+/* On short screens the preview sits beside its benefit so the build and hammer actions stay
+   visible without scrolling. */
+@media (max-height: 760px) {
+  .town-detail-hero:has(> .town-benefit-preview) {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    align-items: center;
+    gap: 12px;
+    margin: 8px 0 14px;
+  }
+  .town-detail-hero .town-building-preview,
+  .town-detail-hero .town-benefit-preview {
+    grid-area: auto;
+    margin: 0;
+  }
 }
 </style>
