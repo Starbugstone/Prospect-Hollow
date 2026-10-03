@@ -753,6 +753,28 @@ it('shrinks the old wearer away and grows the new one for a watching visitor', (
   expect(rebuilt).toBe(2);
 });
 
+// A finished puzzle changes no building, so the scene keeps its older town object;
+// a later animal refresh (construction, mine works) must not bring the old wearer back.
+it('keeps the latest wearer when animals refresh from an older town object', async () => {
+  const d = fixture('riverlight');
+  Object.assign(d, { rebuildActors() {}, render() {} });
+  addTownAnimals(d, d.town);
+  const stale = d.town;
+  const latest = { ...stale, completedRuns: stale.completedRuns + 1 };
+  dressSpaceHelmet(d, latest);
+  const species = spaceHelmetWearer(latest, castOf(d));
+  expect(species).not.toBe(spaceHelmetWearer(stale, castOf(d)));
+  d.retainedAnimals = new Map(d.animals.map((a) => [animalKey(a), a]));
+  addTownAnimals(d, stale);
+  expect(helmeted(d).map((a) => a.species)).toEqual([species]);
+  Object.assign(d, { deferLife: true, generation: 1 });
+  const before = d.animals;
+  addTownAnimals(d, stale);
+  for (let n = 0; n < 400 && d.animals === before; n++)
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  expect(helmeted(d).map((a) => a.species)).toEqual([species]);
+});
+
 // The deferred path the live village uses keeps the dressed animal object (C5).
 it('keeps the helmeted animal when the town re-settles', async () => {
   const d = fixture('tomorrow');

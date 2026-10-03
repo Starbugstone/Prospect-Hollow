@@ -661,7 +661,7 @@ export function addTownAnimals(d, town, preparedSpace) {
         );
         commitAnimalStage(d, stage);
         committed = true;
-        dressSpaceHelmet(d, town, { animate: d.animateCostumes, rebuild: false });
+        dressSpaceHelmet(d, d.helmetTown ?? town, { animate: d.animateCostumes, rebuild: false });
       } finally {
         if (!committed) d.clearGroup(stage.world);
       }
@@ -675,7 +675,7 @@ export function addTownAnimals(d, town, preparedSpace) {
     return;
   }
   finishWork(populateAnimals(d, town, preparedSpace));
-  dressSpaceHelmet(d, town, { animate: d.animateCostumes, rebuild: false });
+  dressSpaceHelmet(d, d.helmetTown ?? town, { animate: d.animateCostumes, rebuild: false });
 }
 function* populateAnimals(d, town, preparedSpace) {
   const oldFeeder = d.animalFeeder;
