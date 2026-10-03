@@ -58,6 +58,26 @@ reuse the shared implementation where behavior is the same. See
 [the era architecture guide](docs/era-architecture.md) for the current contracts,
 renderer registries and extension checks.
 
+## Town Honours follow the content
+
+Town Honours goals come from the shared content definitions in `src/data/honours.js`. Never copy
+counts such as 402 levels, six gems or 26 storage into honours code.
+
+- When a change adds or alters levels, chapters, gem types, eras, incident kinds, powers, storage
+  buildings, bonus fusions or mine elements, update the honours registry in the same change: a
+  new gem gets its laureate and goal, a new era its defence medal, a new mine element a mastery
+  badge or an explicit opt-out. Regenerate the level element index with
+  `node scripts/export-honour-levels.mjs` after changing levels.
+- Changing a goal bumps its requirement version. Earned honours are permanent: never revoke,
+  reset or re-evaluate them away, and keep the version they were earned under. Never reuse or
+  rename an honour ID.
+- Recalibrate affected goals with the campaign simulator and record the evidence in
+  [the honours guide](docs/honours.md).
+- Honours never gate progression, rewards or puzzle completion, and never add move or time
+  limits.
+- Keep `testing/honours.test.js` passing; its coverage checks fail when a gem, era or mine
+  element has no honours decision.
+
 ## Local checks run in Docker
 
 The user requires every local check to run in Docker, never with the host's PHP

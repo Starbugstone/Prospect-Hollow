@@ -11,6 +11,7 @@ import {
   acknowledgePresentation,
 } from '../data/townPresentations';
 import { campaignCompletion } from '../data/campaignCompletion';
+import { createHonours, normalizeHonours, validShowcase } from '../data/honours';
 import { miningDepthBonus, CHEST_ECONOMY_VERSION } from '../data/economy';
 import { defineStore } from 'pinia';
 import { markRaw } from 'vue';
@@ -94,6 +95,7 @@ const defaults = () => ({
   lastSaloonIncome: 0,
   vipReceipts: [],
   powers: POWERS.map((power) => ({ ...power, quantity: 0 })),
+  honours: createHonours(),
 });
 const load = (loaded = localProfile.load(), persistRecovered = true) => {
   const state = defaults();
@@ -110,6 +112,7 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
     state.readOnly = !!loaded.readOnly;
     state.town = normalizeTown(saved?.town);
     state.vipReceipts = normalizeVipReceipts(saved?.vipReceipts);
+    state.honours = normalizeHonours(saved?.honours);
     if (
       TOWN_PROJECTS.some(
         (project) => project.id === saved?.townProjectFocus && project.era === state.town.era,
@@ -267,6 +270,7 @@ const profileData = (state) => ({
   townProjectFocus: state.townProjectFocus,
   issuedRun: state.issuedRun,
   settledRun: state.settledRun,
+  honours: state.honours,
 });
 
 export const useCampaignStore = defineStore('campaign', {
@@ -367,6 +371,24 @@ export const useCampaignStore = defineStore('campaign', {
       return (
         !!next && this.commit({ town: next }, { kind: 'era-advance', data: { expectedEra, at } })
       );
+    },
+    // Town Honours presentation choices. They never change buildings, rewards or progress.
+    setHonourShowcase(ids) {
+      const showcase = validShowcase(Array.isArray(ids) ? ids : [], this.honours);
+      return this.commit({ honours: { ...this.honours, showcase } });
+    },
+    markHonoursSeen(ids = Object.keys(this.honours.earned)) {
+      return this.updateEarnedHonours(ids, 'seen');
+    },
+    markHonoursAnnounced(ids) {
+      return this.updateEarnedHonours(ids, 'announced');
+    },
+    updateEarnedHonours(ids, flag) {
+      const changed = ids.filter((id) => this.honours.earned[id] && !this.honours.earned[id][flag]);
+      if (!changed.length) return false;
+      const earned = { ...this.honours.earned };
+      for (const id of changed) earned[id] = { ...earned[id], [flag]: true };
+      return this.commit({ honours: { ...this.honours, earned } });
     },
     acknowledgePresentation(id) {
       const next = acknowledgePresentation(this.town, id);

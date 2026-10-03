@@ -34403,7 +34403,19 @@
     },
     "townProjectFocus": "",
     "issuedRun": 0,
-    "settledRun": 0
+    "settledRun": 0,
+    "honours": {
+      "version": 1,
+      "earned": {},
+      "counts": {
+        "gems": {},
+        "forge": 0,
+        "mine": {}
+      },
+      "fusions": [],
+      "showcase": [],
+      "backfilled": 0
+    }
   },
-  "contentDigest": "b8321c8374896c791620385a59f1a9a6be8d02ac2a59443801eebeb9dd5ffd18"
+  "contentDigest": "98ae70b8633c735f529092f74d0a73372f494cdfead2709bd3ae5b5fcc865b5e"
 }

@@ -19,6 +19,10 @@ const writePreference = (key, value) => {
 };
 
 const VILLAGE_LABELS_KEY = 'crystal-cascade-village-labels';
+const HONOUR_NOTICES_KEY = 'crystal-cascade-honour-notices';
+// Town Honours notices: Full (popup and sound), Quiet (New indicator only) or Off.
+// Presentation only: honours still unlock and stay inspectable.
+export const HONOUR_NOTICE_MODES = Object.freeze(['full', 'quiet', 'off']);
 const AUDIO_LEVELS_KEY = 'crystal-cascade-audio-levels';
 const DEFAULT_AUDIO_LEVELS = Object.freeze({ music: 0.6, sfx: 0.8 });
 const audioLevel = (value, fallback) =>
@@ -46,12 +50,22 @@ export const useSettingsStore = defineStore('settings', {
       highContrastMode: false,
       unmutedLevels: null,
       showVillageLabels: readPreference(VILLAGE_LABELS_KEY, (saved) => saved !== 'false', true),
+      honourNotices: readPreference(
+        HONOUR_NOTICES_KEY,
+        (saved) => (HONOUR_NOTICE_MODES.includes(saved) ? saved : 'full'),
+        'full',
+      ),
     };
   },
   actions: {
     setVillageLabels(visible) {
       this.showVillageLabels = visible !== false;
       writePreference(VILLAGE_LABELS_KEY, String(this.showVillageLabels));
+    },
+    setHonourNotices(mode) {
+      if (!HONOUR_NOTICE_MODES.includes(mode)) return;
+      this.honourNotices = mode;
+      writePreference(HONOUR_NOTICES_KEY, mode);
     },
     toggleSettings(explicit) {
       if (typeof explicit === 'boolean') {
