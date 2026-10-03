@@ -168,6 +168,23 @@ function retainAnimalLife(old, fresh, space) {
   }
 }
 
+// Rebuilt animals that look the same as a retained one keep the retained object,
+// and with it their pose and motion; the fresh model and unmatched animals go.
+function adoptRetainedAnimals(d, animals, retained, space) {
+  const adopted = animals.map((fresh) => {
+    const key = animalKey(fresh),
+      old = retained.get(key);
+    if (!old) return fresh;
+    retained.delete(key);
+    d.clearGroup(fresh.root);
+    retainAnimalLife(old, fresh, space);
+    old.clearance = fresh.clearance;
+    return old;
+  });
+  for (const old of retained.values()) d.clearGroup(old.root);
+  return adopted;
+}
+
 function addGroundAnimal(d, species, path, seed, options = {}) {
   if (!path?.total) return null;
   const model = animalModel(d, species, seed, options.costume);
@@ -566,6 +583,49 @@ function updateBird(d, animal, time, dt, habitats, profile) {
   eatGrain(animal);
 }
 
+// A deferred rebuild fills the animal state on a stage: an object that reads
+// everything else (models, navigation, clock) from the live diorama but holds its
+// own world, cast and motions, so the village keeps its current animals until the
+// stage commits in one step. The motion closures keep reading the stage, so a
+// commit points its world and actors at the live ones.
+const ANIMAL_STATE = [
+  'animals',
+  'animalFeeder',
+  'animalHabitats',
+  'animalSpace',
+  'animalNavigation',
+  'animalRoutes',
+  'animalMotion',
+  'animalBehavior',
+];
+function animalStage(d) {
+  return Object.assign(Object.create(d), {
+    world: new Group(),
+    habitatWorld: d.world,
+    animals: [],
+    actors: [],
+    motions: [],
+    animalFeeder: null,
+    retainedActors: null,
+    retainedAnimals: null,
+  });
+}
+function commitAnimalStage(d, stage) {
+  if (d.animalFeeder) {
+    d.clearGroup(d.animalFeeder.root);
+    d.clearGroup(d.animalFeeder.grain);
+    d.actors = d.actors.filter((a) => a.root !== d.animalFeeder.root);
+  }
+  d.world.add(...stage.world.children);
+  stage.world = d.world;
+  for (const animal of stage.animals) d.world.add(animal.root);
+  d.actors.push(...stage.actors);
+  stage.actors = d.actors;
+  for (const key of ANIMAL_STATE) d[key] = stage[key];
+  d.retainedAnimals = null;
+  d.motions.push(stage.animalMotion);
+}
+
 // A bounded, disposable runtime on the diorama clock. Rebuilding the village
 // replaces the cast and prepared routes; no timers, persistence or rewards.
 export function addTownAnimals(d, town, preparedSpace) {
@@ -585,63 +645,21 @@ export function addTownAnimals(d, town, preparedSpace) {
         if (!next.done) yield;
       } while (!next.done);
       if (generation !== d.generation) return;
-      const stage = Object.create(d);
-      Object.assign(stage, {
-        world: new Group(),
-        habitatWorld: d.world,
-        animals: [],
-        actors: [],
-        motions: [],
-        animalFeeder: null,
-        retainedActors: null,
-        retainedAnimals: null,
-      });
+      const stage = animalStage(d);
       let committed = false;
       try {
         yield* populateAnimals(stage, town, next.value);
         if (generation !== d.generation) return;
         const retained =
           d.retainedAnimals ?? new Map((d.animals ?? []).map((a) => [animalKey(a), a]));
-        stage.animals = stage.animals.map((fresh) => {
-          const key = animalKey(fresh),
-            old = retained.get(key);
-          if (!old) return fresh;
-          retained.delete(key);
-          d.clearGroup(fresh.root);
-          retainAnimalLife(old, fresh, stage.animalSpace);
-          old.clearance = fresh.clearance;
-          return old;
-        });
-        for (const old of retained.values()) d.clearGroup(old.root);
+        stage.animals = adoptRetainedAnimals(d, stage.animals, retained, stage.animalSpace);
         stage.animalBehavior = createAnimalBehavior(
           stage.animals,
           stage.navigation,
           stage.animalSpace,
           stage.elapsed,
         );
-        if (d.animalFeeder) {
-          d.clearGroup(d.animalFeeder.root);
-          d.clearGroup(d.animalFeeder.grain);
-          d.actors = d.actors.filter((a) => a.root !== d.animalFeeder.root);
-        }
-        d.world.add(...stage.world.children);
-        stage.world = d.world;
-        for (const animal of stage.animals) d.world.add(animal.root);
-        d.actors.push(...stage.actors);
-        stage.actors = d.actors;
-        for (const key of [
-          'animals',
-          'animalFeeder',
-          'animalHabitats',
-          'animalSpace',
-          'animalNavigation',
-          'animalRoutes',
-          'animalMotion',
-          'animalBehavior',
-        ])
-          d[key] = stage[key];
-        d.retainedAnimals = null;
-        d.motions.push(stage.animalMotion);
+        commitAnimalStage(d, stage);
         committed = true;
       } finally {
         if (!committed) d.clearGroup(stage.world);
@@ -883,16 +901,8 @@ function* populateAnimals(d, town, preparedSpace) {
   yield* prepareAnimalRoaming(d);
   for (const animal of d.animals) animal.root.visible = true;
   if (d.retainedAnimals) {
-    d.animals = d.animals.map((fresh) => {
-      const old = d.retainedAnimals.get(animalKey(fresh));
-      if (!old) return fresh;
-      d.retainedAnimals.delete(animalKey(fresh));
-      d.clearGroup(fresh.root);
-      retainAnimalLife(old, fresh, fresh.space ?? d.animalSpace);
-      d.world.add(old.root);
-      return old;
-    });
-    for (const old of d.retainedAnimals.values()) d.clearGroup(old.root);
+    d.animals = adoptRetainedAnimals(d, d.animals, d.retainedAnimals, d.animalSpace);
+    for (const animal of d.animals) if (animal.root.parent !== d.world) d.world.add(animal.root);
     d.retainedAnimals = null;
   }
   for (const animal of d.animals) {

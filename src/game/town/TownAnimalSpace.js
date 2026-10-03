@@ -1,14 +1,10 @@
 import { Box3, Ray, Vector3 } from 'three';
 import { TownNavigation, walkPath } from './TownNavigation';
+import { finishWork } from '../PresentationWork';
 
 const STEP = 0.4;
 const snapshots = new WeakMap();
 const point = (p) => new Vector3(...p);
-const finish = (steps) => {
-  let step = steps.next();
-  while (!step.done) step = steps.next();
-  return step.value;
-};
 
 import { triangleIndex, queryTriangles as query } from './TriangleIndex';
 
@@ -277,7 +273,8 @@ export function animalNavigation(base = new TownNavigation(), space) {
     clear: (p, radius, height = 1) => clear(p, radius, height),
     planSteps,
     routeSteps,
-    plan: (points, radius, height) => finish(planSteps(points, radius, height)),
-    route: (points, offset, radius, height) => finish(routeSteps(points, offset, radius, height)),
+    plan: (points, radius, height) => finishWork(planSteps(points, radius, height)),
+    route: (points, offset, radius, height) =>
+      finishWork(routeSteps(points, offset, radius, height)),
   };
 }
