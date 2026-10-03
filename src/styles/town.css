@@ -702,6 +702,9 @@
   .town-scene-labels button small {
     font-size: 8px;
   }
+  .town-scene-labels button small.need-hint {
+    font-size: 10px;
+  }
   .town-scene-labels .scene-mine-button {
     flex-direction: column;
     min-height: 44px;
@@ -1803,13 +1806,23 @@ html:has(.town-museum[open]) {
     gap: 4px;
   }
   .town-map-needs button {
-    min-height: 34px;
+    min-height: 44px;
     padding: 3px 7px;
     font-size: 11px;
   }
   .town-map-needs svg {
     width: 15px;
     height: 15px;
+  }
+  /* Opened camera controls take the bottom row of a narrow map. */
+  .town-scene:has(.town-camera-bar[open]) .town-map-needs {
+    visibility: hidden;
+  }
+}
+/* Touch screens get full-size targets at any width. */
+@media (pointer: coarse) {
+  .town-map-needs button {
+    min-height: 44px;
   }
 }
 .town-in-cinematic .town-map-needs,
