@@ -46,8 +46,9 @@ export const earnedText = (entry) =>
   entry.at
     ? t('Earned {date}', { date: formatDate(entry.at) })
     : t('Earned before honours were introduced');
+// Score evidence only: First Perfect also records its level, without a score.
 export const evidenceText = (evidence) =>
-  evidence?.levelId
+  evidence?.levelId && Number.isFinite(evidence.score) && Number.isFinite(evidence.target)
     ? t('{score} on level {level} (target {target})', {
         score: number(evidence.score),
         level: evidence.levelId,

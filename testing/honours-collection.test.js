@@ -15,6 +15,7 @@ import { elementLevels } from '../src/data/honourLevels';
 import { ERA_BY_ID, ERAS } from '../src/data/eras';
 import { POWERS } from '../src/data/campaign';
 import { villageHonours } from '../src/services/publicVillage';
+import { evidenceText } from '../src/components/honours/honourDisplay';
 import { setLocale } from '../src/i18n';
 import fr from '../src/i18n/fr.json';
 import { useCampaignStore } from '../src/stores/campaignStore';
@@ -433,5 +434,13 @@ describe('Visiting a town’s honours', () => {
     expect(html).not.toContain('progressbar');
     for (const id of Object.keys(CATEGORY_LABELS))
       expect(html.includes(CATEGORY_LABELS[id])).toBe(id !== 'mine');
+  });
+});
+
+describe('Honour evidence text', () => {
+  it('formats score evidence and leaves level-only evidence such as First Perfect blank', () => {
+    expect(evidenceText({ levelId: 121 })).toBe('');
+    expect(evidenceText({ levelId: 88, score: 63360, target: 26400 })).toContain('88');
+    expect(evidenceText({ levelId: 88, score: 63360, target: 26400 })).not.toContain('NaN');
   });
 });
