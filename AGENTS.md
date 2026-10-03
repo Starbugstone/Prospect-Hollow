@@ -58,6 +58,22 @@ reuse the shared implementation where behavior is the same. See
 [the era architecture guide](docs/era-architecture.md) for the current contracts,
 renderer registries and extension checks.
 
+## Permanent board rule: completed obstacles leave no icon
+
+The user requires that once the player completes a board obstacle, its icon
+leaves the board. This is a hard rule for every current and future mechanic.
+
+- A lit lantern or survey marker, a fired spore relay, a spent charge core, a
+  collected fossil, a cut root knot, a broken seal, gate or stone, melted ice,
+  a released chain and a thawed gem all render as an ordinary cell. Relic exits
+  disappear once the last relic is delivered.
+- Never keep a dimmed icon, a check mark, a tint or a coloured border on a
+  completed cell. A short break or collection effect is fine, as long as it
+  goes away.
+- Every obstacle in `src/data/obstacles.js` needs a sample in
+  `testing/completed-board-markers.test.js`; the test fails until a new obstacle
+  has one, then checks that its completed cell matches a plain one.
+
 ## Town Honours follow the content
 
 Town Honours goals come from the shared content definitions in `src/data/honours.js`. Never copy

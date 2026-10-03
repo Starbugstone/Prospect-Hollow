@@ -6,6 +6,8 @@ $directory = sys_get_temp_dir() . '/' . $prefix;
 mkdir($directory . '/src', 0700, true);
 $source = file_get_contents(dirname(__DIR__) . '/src/Database.php');
 $names = [
+    'town_favourites',
+    'visitor_visits_visitor',
     'player_profiles',
     'visitor_visits',
     'visitor_leases',
@@ -69,6 +71,11 @@ $live = $mysql ? 'schema-live-visitors.sql' : 'schema-live-visitors-postgresql.s
 file_put_contents(
     $directory . '/' . $live,
     $rewrite(file_get_contents(dirname(__DIR__) . '/' . $live)),
+);
+$favourites = $mysql ? 'schema-town-favourites.sql' : 'schema-town-favourites-postgresql.sql';
+file_put_contents(
+    $directory . '/' . $favourites,
+    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $favourites)),
 );
 try {
     $statements = explode(';', $schema);
@@ -142,9 +149,14 @@ try {
             ]),
         'public profiles and live visitor history installed',
     );
+    check(
+        $connection->createSchemaManager()->tablesExist([$prefix . 'town_favourites']),
+        'town favourites installed',
+    );
 } finally {
     foreach (
         [
+            'town_favourites',
             'visitor_leases',
             'visitor_visits',
             'player_profiles',
@@ -174,6 +186,7 @@ try {
     @unlink($directory . '/' . $split);
     @unlink($directory . '/' . $admin);
     @unlink($directory . '/' . $live);
+    @unlink($directory . '/' . $favourites);
     unlink($directory . '/src/Database.php');
     rmdir($directory . '/src');
     rmdir($directory);

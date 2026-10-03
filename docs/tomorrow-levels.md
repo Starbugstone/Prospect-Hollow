@@ -55,7 +55,7 @@ Rules:
   neighbor can hold it, the charge still counts and completion is unaffected.
 - A full core leaves the board once it has released its bonus (or, with no
   neighbor to hold it, once its charge counts). It does nothing else. Lit
-  lanterns leave the board the same way.
+  lanterns and survey markers leave the board the same way.
 - It never spreads, counts down, harms the board or fails a puzzle.
 
 Guardrails (checked by `testing/tomorrow-levels.test.js`):

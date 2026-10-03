@@ -122,35 +122,6 @@ final class PublicTown
         }
         return $village;
     }
-    public function browse(Request $r): array
-    {
-        $this->auth->session($r);
-        $page = filter_var($r->query->get('page', '1'), FILTER_VALIDATE_INT, [
-            'options' => ['min_range' => 1, 'max_range' => 10000],
-        ]);
-        if (!$page) {
-            throw new ApiError(422, 'Invalid page.');
-        }
-        $rows = $this->database
-            ->get()
-            ->createQueryBuilder()
-            ->select('appearance')
-            ->from('towns')
-            ->where('listed=1 AND deleted_at IS NULL')
-            ->orderBy('public_id', 'ASC')
-            ->setFirstResult(($page - 1) * 20)
-            ->setMaxResults(21)
-            ->executeQuery()
-            ->fetchFirstColumn();
-        return [
-            'entries' => array_map(
-                fn($r) => self::published(json_decode($r)),
-                array_slice($rows, 0, 20),
-            ),
-            'page' => $page,
-            'hasNext' => count($rows) > 20,
-        ];
-    }
     public const SALOON_REST = 3600;
     // A share link needs no account: anyone holding the unguessable public ID may see the
     // appearance projection. Browsing the full list still needs one. Live presence is
@@ -229,7 +200,7 @@ final class PublicTown
             return ['readyAt' => $now + self::SALOON_REST];
         });
     }
-    private function saloonReadyAt(mixed $at): int
+    public static function saloonReadyAt(mixed $at): int
     {
         return $at === null || $at === false ? 0 : (int) $at + self::SALOON_REST;
     }

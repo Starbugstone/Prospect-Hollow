@@ -6,14 +6,17 @@ use Symfony\Component\Routing\Attribute\Route;
 final class ApiController
 {
     private VisitorService $visitors;
+    private TownDirectory $directory;
     public function __construct(
         private Auth $auth,
         private SaveService $saves,
         private PublicTown $public,
         private Database $database,
         ?VisitorService $visitors = null,
+        ?TownDirectory $directory = null,
     ) {
         $this->visitors = $visitors ?? new VisitorService($database, $auth, $public);
+        $this->directory = $directory ?? new TownDirectory($database, $auth);
     }
     #[Route('/api/v1/{path}', name: 'api', requirements: ['path' => '.*'])]
     public function __invoke(Request $r, string $path): JsonResponse
@@ -59,18 +62,17 @@ final class ApiController
                     }
                     $body = (array) $object;
                 }
-                if (
-                    $r->query->count() &&
-                    !(
-                        $method === 'GET' &&
-                        ($path === 'villages' ||
-                            preg_match(
-                                '~^(towns/[a-f0-9-]{36}|villages/[a-f0-9]{32})/visitors$~D',
-                                $path,
-                            )) &&
-                        array_keys($r->query->all()) === ['page']
+                $query = match (true) {
+                    $method !== 'GET' => [],
+                    $path === 'villages' => $r->query->has('q') ? ['q'] : ['page', 'seed'],
+                    (bool) preg_match(
+                        '~^(towns/[a-f0-9-]{36}|villages/[a-f0-9]{32})/visitors$~D',
+                        $path,
                     )
-                ) {
+                        => ['page'],
+                    default => [],
+                };
+                if (array_diff(array_keys($r->query->all()), $query)) {
                     throw new ApiError(422, 'Unsupported query parameters.');
                 }
                 $ip = $r->getClientIp() ?? 'unknown';
@@ -89,7 +91,10 @@ final class ApiController
                     'PATCH account/profile' => $this->visitors->updateProfile($r, $body),
                     'DELETE account' => $this->deleteAccount($r, $body),
                     'POST towns' => $this->saves->create($r, $body),
-                    'GET villages' => $this->public->browse($r),
+                    'GET villages' => $r->query->has('q')
+                        ? $this->directory->search($r)
+                        : $this->directory->browse($r),
+                    'GET villages/favourites' => $this->directory->favourites($r),
                     default => $this->townRoute($r, $path, $body),
                 };
                 $response = $result instanceof JsonResponse ? $result : new JsonResponse($result);
@@ -157,6 +162,13 @@ final class ApiController
             preg_match('~^villages/([a-f0-9]{32})(/latest)?$~D', $path, $m)
         ) {
             return $this->public->visit($r, $m[1], ($m[2] ?? '') === '');
+        }
+        if (
+            in_array($r->getMethod(), ['PUT', 'DELETE'], true) &&
+            preg_match('~^villages/([a-f0-9]{32})/favourite$~D', $path, $m)
+        ) {
+            SaveService::keys($b, []);
+            return $this->directory->favourite($r, $m[1], $r->isMethod('PUT'));
         }
         if ($r->isMethod('POST') && preg_match('~^villages/([a-f0-9]{32})/saloon$~D', $path, $m)) {
             SaveService::keys($b, []);

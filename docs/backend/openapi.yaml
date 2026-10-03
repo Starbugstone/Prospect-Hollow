@@ -959,7 +959,8 @@
         {
           'get':
             {
-              'summary': 'Paginated public appearances, ordered by public ID (not rank)',
+              'summary': 'A random draw of up to seven shared town cards for the signed-in player, or a name search with q',
+              'description': "Shared towns are dealt from a shuffle fixed by seed, whose first eight hex digits are the shuffle time: towns saved in the last 14 days first, and among them towns the caller had not visited by then; never the caller's own towns. Omit seed for a new shuffle; the reply returns it, and page N is the Nth draw of seven, so a seed never repeats a town. With q (2–24 characters, alone) it searches names instead: any part, ignoring case, names that start with q first, up to 20 entries plus more. Each entry has villageId, name, era, buildings (built count), mineLevel, saloonReady (a visitor may collect it now), visitors (people present now), visited (the caller visited it while signed in), favourite and honours (null or {earned: [id], showcase: [familyId]} from the shared appearance), never level records or the full appearance.",
               'responses':
                 {
                   '200': { 'description': 'Success' },
@@ -974,6 +975,78 @@
                     'name': 'page',
                     'in': 'query',
                     'schema': { 'type': 'integer', 'minimum': 1, 'maximum': 10000, 'default': 1 },
+                  },
+                  {
+                    'name': 'seed',
+                    'in': 'query',
+                    'schema': { 'type': 'string', 'pattern': '^[a-f0-9]{16}$' },
+                  },
+                  {
+                    'name': 'q',
+                    'in': 'query',
+                    'schema': { 'type': 'string', 'minLength': 2, 'maxLength': 24 },
+                  },
+                ],
+            },
+        },
+      '/villages/favourites':
+        {
+          'get':
+            {
+              'summary': "The caller's favourite shared towns as the same cards, newest first (at most 50); towns no longer shared are left out",
+              'responses':
+                {
+                  '200': { 'description': 'Success' },
+                  '401': { 'description': 'Sign in again' },
+                  '429': { 'description': 'Rate limited' },
+                },
+            },
+        },
+      '/villages/{publicId}/favourite':
+        {
+          'put':
+            {
+              'summary': "Keep a shared town among the caller's favourites (idempotent); body {}",
+              'responses':
+                {
+                  '200': { 'description': 'Success: {favourite: true}' },
+                  '401': { 'description': 'Sign in again' },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '404': { 'description': 'Town unavailable' },
+                  '422':
+                    {
+                      'description': 'Own town, unexpected fields, or 50 favourites already (code favourites_full)',
+                    },
+                  '429': { 'description': 'Rate limited' },
+                },
+              'parameters':
+                [
+                  {
+                    'name': 'publicId',
+                    'in': 'path',
+                    'required': true,
+                    'schema': { 'type': 'string', 'pattern': '^[a-f0-9]{32}$' },
+                  },
+                ],
+            },
+          'delete':
+            {
+              'summary': "Remove a town from the caller's favourites, even if it is no longer shared; body {}",
+              'responses':
+                {
+                  '200': { 'description': 'Success: {favourite: false}' },
+                  '401': { 'description': 'Sign in again' },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '422': { 'description': 'Unexpected fields' },
+                  '429': { 'description': 'Rate limited' },
+                },
+              'parameters':
+                [
+                  {
+                    'name': 'publicId',
+                    'in': 'path',
+                    'required': true,
+                    'schema': { 'type': 'string', 'pattern': '^[a-f0-9]{32}$' },
                   },
                 ],
             },

@@ -20,9 +20,6 @@ import {
 } from '../engine/MatchRewards';
 
 const MOTION = Object.freeze({ swap: 115, reject: 75, clear: 90, fall: 190, intro: 160 });
-// Lit lanterns and spent charge cores leave the board; lit survey markers and
-// fired spore relays keep their check mark.
-const VANISHING_SIGNALS = new Set(['lantern', 'core']);
 const CRACKS = [
   [
     [88, 10],
@@ -52,6 +49,7 @@ export function tileTexture(tile, { damaged = false, frozen = false } = {}) {
     return damaged ? 'block-cracked' : tile.health > 1 ? 'block-reinforced' : 'block-stone';
   return damaged && !frozen ? 'ice-cracked' : 'ice-frost';
 }
+const hasRelic = (board) => board.some((gem) => gem?.type === 'relic');
 const sameTile = (a, b) => {
   if (a === b) return true;
   if (!a || !b) return false;
@@ -98,6 +96,8 @@ export class BoardAnimator {
     this.cellHighlights = new Map();
     this.indexToGemId = [];
     this.tiles = [];
+    // Relic exits stay marked only while a relic is still on its way.
+    this.relicsLeft = true;
     this.markers = new Map();
     this.effects = new Set();
     this.pending = new Set();
@@ -218,6 +218,7 @@ export class BoardAnimator {
       cellSize: layout.cellSize,
     });
     if (!this.scene?.add) return;
+    this.relicsLeft = hasRelic(board);
     this.drawCells();
     this.syncToBoard(board);
   }
@@ -293,6 +294,14 @@ export class BoardAnimator {
       return gem.id;
     });
     for (const id of [...this.gemSprites.keys()]) if (!seen.has(id)) this.releaseGem(id);
+    this.trackRelics(hasRelic(board));
+  }
+
+  // Every relic starts on the board, so the exits are done once none is left.
+  trackRelics(relicsLeft) {
+    if (relicsLeft === this.relicsLeft) return;
+    this.relicsLeft = relicsLeft;
+    this.drawCells(this.tiles.flatMap((tile, index) => (tile?.exit ? [index] : [])));
   }
 
   async playIntroCascade() {
@@ -395,6 +404,9 @@ export class BoardAnimator {
       if (step.collectedRelics?.length) {
         await this.clearGems(step.collectedRelics.map(({ index }) => index));
         if (generation !== this.generation) return;
+        this.trackRelics(
+          [...this.gemSprites.values()].some(({ __gemType }) => __gemType === 'relic'),
+        );
         this.bonuses.callout(
           t(mineRelicAppearance(this.theme).id === 'pearl' ? 'PEARL DELIVERED!' : 'RELIC FOUND!'),
           this.position(step.collectedRelics[0].index),
@@ -672,17 +684,19 @@ export class BoardAnimator {
     const health = tile?.health ?? 0;
     const frozen = tile?.state === 'FROZEN';
     const contrast = this.settings?.highContrastMode;
-    const fill = tile?.fossilGroup != null ? 0x3e3024 : health > 0 || frozen ? 0x1b2130 : 0x141324;
-    const stroke =
-      tile?.fossilGroup != null
-        ? 0xd3b87c
-        : tile?.rootKnot
-          ? 0xc6ae76
-          : frozen
-            ? 0xb0c7d4
-            : health
-              ? 0x718797
-              : 0x272538;
+    // Completed obstacles leave no trace: a collected fossil or a cut root
+    // knot turns back into an ordinary cell.
+    const fossil = tile?.fossilGroup != null && !tile.fossilCollected;
+    const fill = fossil ? 0x3e3024 : health > 0 || frozen ? 0x1b2130 : 0x141324;
+    const stroke = fossil
+      ? 0xd3b87c
+      : tile?.rootKnot && health > 0
+        ? 0xc6ae76
+        : frozen
+          ? 0xb0c7d4
+          : health
+            ? 0x718797
+            : 0x272538;
     let cell = this.cellHighlights.get(index);
     if (!cell) {
       cell = this.scene.add.rectangle(p.x, p.y, 1, 1);
@@ -778,7 +792,7 @@ export class BoardAnimator {
   drawFossilFloor(index) {
     const tile = this.tiles[index];
     let sprite = this.fossilSprites.get(index);
-    if (tile?.fossilGroup == null) {
+    if (tile?.fossilGroup == null || tile.fossilCollected) {
       sprite?.destroy();
       this.fossilSprites.delete(index);
       return;
@@ -799,7 +813,7 @@ export class BoardAnimator {
       .setPosition(p.x + (0.5 - x) * this.cellSize, p.y + (0.5 - y) * this.cellSize)
       .setDisplaySize(this.cellSize * 2, this.cellSize * 2)
       .setCrop(x * 80, y * 80, 80, 80)
-      .setAlpha(tile.fossilCollected ? 0.45 : tile.health > 0 ? 0.12 : 0.82);
+      .setAlpha(tile.health > 0 ? 0.12 : 0.82);
   }
 
   // Each living root knot binds the chained cells of its group.
@@ -840,9 +854,11 @@ export class BoardAnimator {
     const chained = tile?.chainHealth > 0;
     const layers = tile?.health > 1 ? tile.health : 0;
     const frozen = tile?.state === 'FROZEN';
-    const signal =
-      tile?.signalHealth === 0 && VANISHING_SIGNALS.has(tile.signal) ? null : tile?.signal;
-    const key = `${layers}-${frozen}-${sealColor ?? ''}-${chained}-${!!tile?.exit}-${tile?.signal ?? ''}-${tile?.signalHealth}-${tile?.surveyOrder}-${tile?.rootGroup ?? ''}-${tile?.bonusOnly}-${tile?.sporeAxis}-${tile?.health}-${tile?.maxHealth}-${this.theme}-${this.cellSize}`;
+    const exit = tile?.exit && this.relicsLeft;
+    // A completed signal (lit lantern or survey marker, fired spore relay,
+    // spent charge core) leaves the board.
+    const signal = tile?.signalHealth === 0 ? null : tile?.signal;
+    const key = `${layers}-${frozen}-${sealColor ?? ''}-${chained}-${!!exit}-${tile?.signal ?? ''}-${tile?.signalHealth}-${tile?.surveyOrder}-${tile?.rootGroup ?? ''}-${tile?.bonusOnly}-${tile?.sporeAxis}-${tile?.health}-${tile?.maxHealth}-${this.theme}-${this.cellSize}`;
     let overlay = this.tileOverlays.get(index);
     if (overlay?.__tileKey === key) return;
     overlay?.destroy();
@@ -850,7 +866,7 @@ export class BoardAnimator {
     if (
       !sealColor &&
       !chained &&
-      !tile?.exit &&
+      !exit &&
       !layers &&
       !frozen &&
       !signal &&
@@ -876,7 +892,7 @@ export class BoardAnimator {
       overlay.add(label);
       return label;
     };
-    if (tile.exit) addImage(mineRelicAppearance(this.theme).exitTexture.slice(5));
+    if (exit) addImage(mineRelicAppearance(this.theme).exitTexture.slice(5));
     if (sealColor) addImage(`seal-${sealColor}`);
     if (layers || frozen)
       addLabel(size * 0.23, -size * 0.46, frozen ? '❄' : String(layers), {
@@ -894,24 +910,22 @@ export class BoardAnimator {
     if (tile.bonusOnly && tile.health > 0 && tile.health < (tile.maxHealth ?? tile.health))
       overlay.add(this.drawCracks(size));
     if (signal) {
-      const lit = tile.signalHealth === 0;
-      const skin = mineSignalAppearance(this.theme, tile.signal);
-      const ref = spriteRef(skin?.texture ?? `tile-${tile.signal}`, this.scene.textures);
+      const skin = mineSignalAppearance(this.theme, signal);
+      const ref = spriteRef(skin?.texture ?? `tile-${signal}`, this.scene.textures);
       const marker = this.scene.add
         .image(-size * 0.3, size * 0.29, ref.key, ref.frame)
-        .setDisplaySize(size * 0.43, size * 0.43)
-        .setAlpha(lit ? 0.35 : 1);
+        .setDisplaySize(size * 0.43, size * 0.43);
       overlay.add(marker);
-      if (tile.signal === 'spore')
-        addLabel(size * 0.16, size * 0.32, lit ? '✓' : tile.sporeAxis === 'column' ? '↕' : '↔', {
+      if (signal === 'spore')
+        addLabel(size * 0.16, size * 0.32, tile.sporeAxis === 'column' ? '↕' : '↔', {
           fontSize: `${Math.max(17, size * 0.34)}px`,
-          color: lit ? '#abdfc7' : '#ffffff',
+          color: '#ffffff',
           stroke: '#153a38',
           strokeThickness: 3,
           backgroundColor: '#153a38',
         });
       // Charge pips: one small static dot per charge, rebuilt only when the charge changes.
-      if (tile.signal === 'core')
+      if (signal === 'core')
         for (let pip = 0, pips = tile.coreCharges ?? CORE_CHARGES; pip < pips; pip++)
           overlay.add(
             this.scene.add
@@ -925,9 +939,9 @@ export class BoardAnimator {
               .setStrokeStyle(1.5, 0xbff6ff, 0.95),
           );
       if (tile.surveyOrder)
-        addLabel(-size * 0.3, size * 0.29, lit ? '✓' : String(tile.surveyOrder), {
+        addLabel(-size * 0.3, size * 0.29, String(tile.surveyOrder), {
           fontSize: `${Math.max(11, size * 0.21)}px`,
-          color: lit ? '#315932' : '#fff7d5',
+          color: '#fff7d5',
         });
     }
     this.tileLayer.add(overlay);

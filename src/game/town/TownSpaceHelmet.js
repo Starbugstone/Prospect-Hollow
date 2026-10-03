@@ -66,6 +66,9 @@ function restyle(d, animal, costume) {
  * A fresh cast leaves `rebuild` to its caller, which registers every new animal.
  */
 export function dressSpaceHelmet(d, town, { animate = false, rebuild = true } = {}) {
+  // A finished puzzle changes no building, so the scene can keep an older town object;
+  // later animal refreshes dress for this latest one instead.
+  d.helmetTown = town;
   const animals = d.animals ?? [];
   const species = spaceHelmetWearer(town, new Set(animals.map((a) => a.species)));
   const wearer = animals.find((a) => a.species === species);

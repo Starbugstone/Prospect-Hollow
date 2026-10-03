@@ -13,6 +13,7 @@ final class Database
         12 => '/schema-saloon-guests',
         13 => '/schema-admin',
         14 => '/schema-live-visitors',
+        15 => '/schema-town-favourites',
     ];
     private ?Connection $connection = null;
     public static function latestVersion(): int
