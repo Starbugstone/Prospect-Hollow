@@ -2261,7 +2261,7 @@ final class SaveIntegrity
                 return;
             }
             $event['fireStationLevel'] = $level;
-            $protection = $this->rules['economy']['fireProtectionByLevel'][$level];
+            $defenses = ['fireStation' => $level];
         } else {
             $sheriff = max($event['sheriffLevel'], $town['buildings']['sheriff']);
             $bank = max($event['bankLevel'] ?? 0, $town['buildings']['bank']);
@@ -2270,10 +2270,11 @@ final class SaveIntegrity
             }
             $event['sheriffLevel'] = $sheriff;
             $event['bankLevel'] = $bank;
-            $protection =
-                (min($event['gangSize'], $sheriff * 2) + min($event['gangSize'], $bank * 2)) /
-                ($event['gangSize'] * 2);
+            $defenses = ['sheriff' => $sheriff, 'bank' => $bank];
         }
+        // The shared calculation returns a float: PHP divides evenly divisible integers
+        // to int 1, and full cover must still equal 1.0 for a 'protected' outcome.
+        $protection = $this->protection(['buildings' => $defenses], $event['gangSize'], $kind);
         $remaining = ceil(5 * $event['gangSize'] * (1 - $protection));
         $loss = min(
             $event['loss'],

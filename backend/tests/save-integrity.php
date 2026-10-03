@@ -1226,5 +1226,65 @@ assertIntegrity(
     SaveIntegrity::receipt($raidClaimed)['moneyBudget']['newGrossCharge'] == 0,
     'accepted new bounty is not charged again when acknowledged',
 );
+// Finishing a defence while a raid waits to be seen refunds the loss it now prevents.
+// Full cover is an even integer division, yet it must replay as the client's 'protected'.
+foreach (
+    [
+        'sheriff' => ['gangSize' => 10, 'sheriffLevel' => 4, 'bankLevel' => 5, 'loss' => 5],
+        'fireStation' => [
+            'kind' => 'workshop-fire',
+            'fireStationLevel' => 2,
+            'gangSize' => 10,
+            'sheriffLevel' => 0,
+            'bankLevel' => 0,
+            'loss' => 9,
+        ],
+    ]
+    as $defense => $raid
+) {
+    $levelKey = $defense === 'sheriff' ? 'sheriffLevel' : 'fireStationLevel';
+    $level = $raid[$levelKey];
+    $start = $freshRaid;
+    $start['town']['buildings']['shop'] = 0;
+    $start['town']['buildings'][$defense] = $level;
+    $start['town']['projects'] = [
+        $defense => ['id' => $defense, 'stage' => $level + 1, 'wins' => 2, 'required' => 2],
+    ];
+    $event = [
+        'id' => 1,
+        'atRun' => $start['town']['completedRuns'],
+        'outcome' => 'stolen',
+        'seen' => false,
+        'targets' => ['mine'],
+        ...$raid,
+    ];
+    $start['town']['events'] = ['dusty-trail-visitors' => $event];
+    $finished = $start;
+    $finished['town']['buildings'][$defense] = $level + 1;
+    $finished['town']['buildingEras'][$defense] = 'frontier';
+    $finished['town']['buildingEraLevels'][$defense] = 0;
+    $finished['town']['projects'] = [];
+    $finished['town']['coins'] += $raid['loss'];
+    $finished['town']['income']['at'] = $moneyClock;
+    $finished['town']['events']['dusty-trail-visitors'] = [
+        ...$event,
+        $levelKey => $level + 1,
+        'loss' => 0,
+        'outcome' => 'protected',
+    ];
+    $finished['integrity']['actions'] = [
+        integrityAction(1, 'building-finish', [
+            'buildingId' => $defense,
+            'expectedStage' => $level + 1,
+            'at' => $moneyClock,
+        ]),
+    ];
+    $reinforceAnchor = $validator->accept(integrityObject($start), null, $moneyClock);
+    $reinforced = $validator->accept(integrityObject($finished), $reinforceAnchor, $moneyClock);
+    assertIntegrity(
+        $reinforced->town->events->{'dusty-trail-visitors'}->outcome === 'protected',
+        $defense . ' completing full cover replays the waiting raid as protected',
+    );
+}
 unset($_ENV['SAVE_MONEY_GUARD_MODE']);
 echo "Save integrity checks passed ($count assertions).\n";
