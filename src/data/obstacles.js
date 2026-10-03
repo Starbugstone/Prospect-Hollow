@@ -13,7 +13,7 @@ export const OBSTACLES = [
     name: 'Blast gates',
     art: '/art/obstacles/blast-gate.svg',
     instruction:
-      'The bomb mark needs a direct blast. Make a bomb near it or a cross in its row or column. Clear below a bonus to let it fall into range; swipe or double-tap it to fire. Ordinary matches do no damage. A gate marked 2 takes two hits; a bonus fusion breaks it at once.',
+      'The bomb mark needs a direct blast. Make a bomb near it or a cross in its row or column. Clear below a bonus to let it fall into range; swipe or double-tap it to fire. Ordinary matches do no damage. A gate marked 2 takes two hits, and every blast in a chain reaction counts; a bonus fusion breaks it at once.',
     present: (tile) => tile.bonusOnly === true && tile.fossilGroup == null,
   },
   {
@@ -133,14 +133,8 @@ export const OBSTACLES = [
     instruction: `Match ${color} gems on the ${mark} seal, or hit it with any bonus. Other colors can move through but will not open it.`,
     present: (tile) => tile.health > 0 && tile.sealColor === color,
   })),
-  {
-    id: 'relic',
-    name: 'Lost relic',
-    art: '/art/relic.svg',
-    instruction:
-      'Clear gems below the golden relic so it falls through a marked exit at the bottom. Relics cannot be swapped or destroyed. Collect them all to finish.',
-    present: (tile) => tile.exit,
-  },
+  // Themes reskin the relic (pearls); the default appearance holds the shared text.
+  { ...mineRelicAppearance(), present: (tile) => tile.exit },
 ];
 export const obstaclesInLevel = (tiles, theme) =>
   OBSTACLES.filter((obstacle) => tiles.some((tile) => tile && obstacle.present(tile))).map(

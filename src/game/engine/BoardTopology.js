@@ -45,3 +45,10 @@ export function gravityPath(tiles, index, cols, rows) {
   }
   return path;
 }
+
+// A relic here can still fall to a collection exit on the bottom row. Breakable
+// anchors on the way only delay it; permanent voids end the route.
+export function drainsToExit(tiles, index, cols, rows) {
+  const end = gravityPath(tiles, index, cols, rows).at(-1);
+  return end >= (rows - 1) * cols && !!tiles[end]?.exit;
+}

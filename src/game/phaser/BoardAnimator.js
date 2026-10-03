@@ -20,6 +20,25 @@ import {
 } from '../engine/MatchRewards';
 
 const MOTION = Object.freeze({ swap: 115, reject: 75, clear: 90, fall: 190, intro: 160 });
+const CRACKS = [
+  [
+    [88, 10],
+    [67, 55],
+    [87, 75],
+    [62, 108],
+    [81, 151],
+  ],
+  [
+    [87, 75],
+    [123, 65],
+    [150, 83],
+  ],
+  [
+    [65, 105],
+    [31, 98],
+    [10, 113],
+  ],
+];
 
 // Obstacle art: special casings first, then stone or ice by damage.
 export function tileTexture(tile, { damaged = false, frozen = false } = {}) {
@@ -384,7 +403,8 @@ export class BoardAnimator {
         if (tile) {
           if (tile.health > (update.health ?? tile.health)) {
             const p = this.position(update.index);
-            if (!tile.rootKnot && tile.fossilGroup == null && !tile.bonusOnly)
+            if (tile.bonusOnly) this.particles?.emitBurst?.(p, 0xda9747, update.health ? 8 : 14);
+            else if (!tile.rootKnot && tile.fossilGroup == null)
               this.particles?.emitIce?.(p, update.health === 0 ? 8 : 4);
             if (update.health === 0 && !this.reducedMotion) {
               const ref = spriteRef(
@@ -692,6 +712,24 @@ export class BoardAnimator {
     this.drawTileOverlay(index);
   }
 
+  // Cracks traced from the cracked stone art, in its 160-unit frame.
+  drawCracks(size) {
+    const unit = size / 160;
+    const graphic = this.scene.add.graphics();
+    for (const [width, color] of [
+      [7, 0x231b2b],
+      [2.5, 0xffe2a0],
+    ]) {
+      graphic.lineStyle(width * unit, color, 0.95);
+      for (const crack of CRACKS) {
+        graphic.beginPath().moveTo((crack[0][0] - 80) * unit, (crack[0][1] - 80) * unit);
+        for (const [x, y] of crack.slice(1)) graphic.lineTo((x - 80) * unit, (y - 80) * unit);
+        graphic.strokePath();
+      }
+    }
+    return graphic;
+  }
+
   // Board shape and gravity flow are fixed for a level; redraw only when they change.
   drawBoardOutline() {
     const shaped = this.tiles.some((tile) => !isPlayableCell(tile));
@@ -799,7 +837,7 @@ export class BoardAnimator {
     const chained = tile?.chainHealth > 0;
     const layers = tile?.health > 1 ? tile.health : 0;
     const frozen = tile?.state === 'FROZEN';
-    const key = `${layers}-${frozen}-${sealColor ?? ''}-${chained}-${!!tile?.exit}-${tile?.signal ?? ''}-${tile?.signalHealth}-${tile?.surveyOrder}-${tile?.rootGroup ?? ''}-${tile?.bonusOnly}-${tile?.sporeAxis}-${tile?.health}-${this.theme}-${this.cellSize}`;
+    const key = `${layers}-${frozen}-${sealColor ?? ''}-${chained}-${!!tile?.exit}-${tile?.signal ?? ''}-${tile?.signalHealth}-${tile?.surveyOrder}-${tile?.rootGroup ?? ''}-${tile?.bonusOnly}-${tile?.sporeAxis}-${tile?.health}-${tile?.maxHealth}-${this.theme}-${this.cellSize}`;
     let overlay = this.tileOverlays.get(index);
     if (overlay?.__tileKey === key) return;
     overlay?.destroy();
@@ -847,6 +885,9 @@ export class BoardAnimator {
       addImage('blast-mark')
         .setPosition(-size * 0.28, size * 0.28)
         .setDisplaySize(size * 0.39, size * 0.39);
+    // A blast-only obstacle that has taken a hit shows cracks until its last one.
+    if (tile.bonusOnly && tile.health > 0 && tile.health < (tile.maxHealth ?? tile.health))
+      overlay.add(this.drawCracks(size));
     if (tile.signal) {
       const lit = tile.signalHealth === 0;
       const skin = mineSignalAppearance(this.theme, tile.signal);

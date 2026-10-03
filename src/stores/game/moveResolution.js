@@ -9,7 +9,13 @@ import { TileManager } from '../../game/engine/TileManager';
 import { BonusActivator } from '../../game/engine/BonusActivator';
 import { HintEngine } from '../../game/engine/HintEngine';
 import { applyBonuses, detectBonusFromMatches } from '../../game/engine/MatchPatterns';
-import { BOARD_BONUSES, canSwapGem, isAnchored, isAdjacent } from '../../game/engine/TileRules';
+import {
+  BOARD_BONUSES,
+  canSwapCells,
+  canSwapGem,
+  isAnchored,
+  isAdjacent,
+} from '../../game/engine/TileRules';
 import { useInventoryStore } from '../inventoryStore';
 import { plain, workingTiles } from './boardData';
 import { storeTimers } from './storeTimers';
@@ -142,6 +148,7 @@ export async function activatePower(store, bonusName, index, consume = false) {
     'Error activating bonus:',
     async (session) => {
       const board = boardOf(store);
+      const blasts = new Map();
       const clearedIndices = rescue
         ? board.map((_, i) => i)
         : bonusActivator.activatePower(
@@ -151,6 +158,7 @@ export async function activatePower(store, bonusName, index, consume = false) {
             store.boardRows,
             index,
             tilesOf(store),
+            blasts,
           );
       if (!clearedIndices.length) return false;
       const tiles = workingTiles(store.tiles);
@@ -161,6 +169,7 @@ export async function activatePower(store, bonusName, index, consume = false) {
           {
             type: bonusName,
             indices: clearedIndices,
+            blasts,
             ...(rescue ? { fusion: { targets: clearedIndices, damage: 2 } } : {}),
           },
         ],
@@ -259,7 +268,11 @@ export async function resolveSwap(store, aIndex, bIndex, { activateInPlace = fal
   const { boardCols: cols, boardRows: rows } = store;
   const board = boardOf(store);
   const tiles = tilesOf(store);
-  if (!canSwapGem(board[aIndex], tiles[aIndex]) || !canSwapGem(board[bIndex], tiles[bIndex]))
+  if (
+    activateInPlace
+      ? !canSwapGem(board[aIndex], tiles[aIndex])
+      : !canSwapCells(board, tiles, aIndex, bIndex, cols, rows)
+  )
     return store.rejectSwap(aIndex, bIndex, session);
   const evaluation = activateInPlace
     ? matchEngine.evaluateActivation(board, cols, rows, aIndex, tiles)

@@ -40,7 +40,7 @@ const relic = {
   exitTexture: 'tile-exit',
   art: '/art/relic.svg',
   instruction:
-    'Clear gems below the golden relic so it falls through a marked exit at the bottom. Relics cannot be swapped or destroyed. Collect them all to finish.',
+    'Clear gems below the golden relic so it falls through a marked exit at the bottom. Swap a bonus gem with a relic to fire it in the relic’s place. Relics cannot be destroyed. Collect them all to finish.',
 };
 const fallback = Object.freeze({ style: {}, decorations: [], signals: { lantern, core }, relic });
 const themes = {
@@ -111,7 +111,7 @@ const themes = {
       exitTexture: 'tile-pearl-exit',
       art: '/art/obstacles/pearl.svg',
       instruction:
-        'Clear below the pearls. They roll inward along the marked slopes to one basket. Make bonus gems in the wide upper chamber and blast the gate at the narrow bottom to open the exit.',
+        'Clear below the pearls. They roll inward along the marked slopes to one basket. Make bonus gems in the wide upper chamber and blast the gate at the narrow bottom to open the exit. Swap a bonus gem with a pearl to fire it in the pearl’s place.',
     },
     decorations: [
       decoration(

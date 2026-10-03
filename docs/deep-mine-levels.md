@@ -27,8 +27,9 @@ An encased fossil is solid rock, not an ice layer under a gem. It blocks refill,
 has no gem inside, and ordinary matches on adjacent cells cannot damage it.
 A bomb symbol identifies each piece requiring a direct blast. Open all four
 pieces and the fossil collects automatically. Marked two-layer pieces need two
-hits, or a two-hit bonus fusion. The side alcoves make the blast's position and
-reach matter; exposed pieces stay open.
+hits, or a two-hit bonus fusion. Each bonus blast in a chain reaction is its own
+hit, so a cross that fires a bomb hits a piece in range of both twice. The side
+alcoves make the blast's position and reach matter; exposed pieces stay open.
 
 A mushroom has a horizontal or vertical arrow. A match on or beside it fires
 one spore burst in that direction. A burst can crack blast gates, activate other
@@ -41,7 +42,9 @@ Pearls follow visible inward arrows at the funnel edges. The lower rows narrow
 to one exit, with a bomb-marked gate above it. There are no hidden playable cells
 in the corners and no refill underneath a closed gate. The wide upper chamber
 provides space to make four-gem and T/L bonuses, then aim a blast down the throat.
-Pearls cannot swap or be destroyed. Multiple incoming branches take turns so
+Pearls cannot be destroyed or matched. Swapping a bomb, cross or rainbow gem with
+a pearl trades their places and fires the bonus, as long as the pearl can still
+fall to the basket from its new cell. Multiple incoming branches take turns so
 outer pearls cannot remain stuck behind an endless central refill.
 
 Root knots retain their familiar visible links: matching beside a knot or

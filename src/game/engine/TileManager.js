@@ -51,6 +51,7 @@ export class TileManager {
       orientation: match.orientation,
       fusion: match.fusion,
       sporeBursts: match.sporeBursts,
+      blasts: match.blasts,
     }));
     let totalLayersCleared = 0;
     // A charge core gains at most one charge per move, however long the cascade.
@@ -66,6 +67,15 @@ export class TileManager {
       const cascadeBonuses = [];
       const fusion = pendingMatches.find((match) => match.fusion)?.fusion;
       const fusionTargets = new Set(fusion?.targets ?? []);
+      // Blast-only obstacles take one hit from each separate bonus blast that
+      // reaches them, so a cross that fires a bomb hits a crate in range of both.
+      const extraBlastHits = (index) =>
+        tiles[index]?.bonusOnly
+          ? Math.max(
+              0,
+              pendingMatches.reduce((sum, match) => sum + (match.blasts?.get(index) ?? 0), 0) - 1,
+            )
+          : 0;
 
       pendingMatches.forEach((match) => {
         match.indices.forEach((index) => {
@@ -184,6 +194,7 @@ export class TileManager {
             step,
             cleared,
             protectedIndices,
+            2 + extraBlastHits(index),
           );
           return;
         }
@@ -210,7 +221,7 @@ export class TileManager {
           );
         if (tile && tile.health > 0 && sealHit && specialHit) {
           const before = tile.health;
-          tile.health = Math.max(0, tile.health - 1);
+          tile.health = Math.max(0, tile.health - 1 - extraBlastHits(index));
           if (tile.maxHealth == null) {
             tile.maxHealth = before;
           }
@@ -261,6 +272,7 @@ export class TileManager {
         // Both phases belong to the same cascade tier.
         steps.push(step);
         const { swap, fusion, swapGems } = pendingBonus;
+        const blasts = new Map();
         const indices = bonusActivator.activate(
           workingBoard,
           totalCols,
@@ -269,8 +281,11 @@ export class TileManager {
           fusion,
           swapGems,
           tiles,
+          blasts,
         );
-        pendingMatches = [{ type: 'bonus-activation', indices, ...(fusion ? { fusion } : {}) }];
+        pendingMatches = [
+          { type: 'bonus-activation', indices, blasts, ...(fusion ? { fusion } : {}) },
+        ];
         pendingBonus = null;
         continue;
       }
@@ -281,11 +296,13 @@ export class TileManager {
         steps.push(step);
         const bursts = queuedSpores;
         queuedSpores = [];
+        const blasts = new Map();
         const indices = bonusActivator.resolveChain(workingBoard, totalCols, totalRows, {
           tiles,
           targets: bursts.flatMap((burst) => burst.targets),
+          blasts,
         });
-        pendingMatches = [{ type: 'spore-burst', indices, sporeBursts: bursts }];
+        pendingMatches = [{ type: 'spore-burst', indices, sporeBursts: bursts, blasts }];
         continue;
       }
 
@@ -344,10 +361,9 @@ export class TileManager {
     };
   }
 
-  applyFusionHit(board, tiles, index, step, cleared, protectedIndices) {
+  applyFusionHit(board, tiles, index, step, cleared, protectedIndices, hits = 2) {
     const tile = tiles[index];
-    let hits = 2,
-      removed = 0;
+    let removed = 0;
     if (tile?.state === 'FROZEN') {
       tile.state = 'PLAYABLE';
       step.tileUpdates.push({ index, state: 'PLAYABLE' });

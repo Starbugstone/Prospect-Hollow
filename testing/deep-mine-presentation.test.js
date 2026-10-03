@@ -237,6 +237,31 @@ describe('fossil and linked root presentation', () => {
     expect(animator.boardOutline).toBe(outline);
   });
 
+  it('cracks a thick blast-only obstacle after a hit until its last hit breaks it', () => {
+    const { animator } = renderer();
+    const cracks = (index) =>
+      animator.tileOverlays.get(index)?.children.filter((child) => child.lines?.length) ?? [];
+    animator.tiles = Array.from({ length: 25 }, () => ({ type: 'standard', health: 0 }));
+    animator.tiles[6] = { type: 'blocker', health: 2, maxHealth: 2, bonusOnly: true };
+    animator.tiles[7] = { type: 'blocker', health: 1, maxHealth: 1, bonusOnly: true };
+    animator.drawCells();
+    expect(cracks(6)).toEqual([]);
+    expect(cracks(7)).toEqual([]);
+    animator.tiles[6] = { ...animator.tiles[6], health: 1 };
+    animator.drawCells([6]);
+    const [crack] = cracks(6);
+    // Three cracks, each with a dark edge and a light core, inside the cell.
+    expect(crack.lines).toHaveLength(6);
+    expect(
+      crack.lines
+        .flatMap(({ start, end }) => [start, end])
+        .every(({ x, y }) => Math.max(Math.abs(x), Math.abs(y)) <= animator.cellSize / 2),
+    ).toBe(true);
+    animator.tiles[6] = { type: 'standard', health: 0, maxHealth: 2, bonusOnly: true };
+    animator.drawCells([6]);
+    expect(animator.tileOverlays.has(6)).toBe(false);
+  });
+
   it.each(['atlas', 'svg'])(
     'draws thematic floor signals, vine bindings and pearl exits from %s textures',
     (mode) => {
