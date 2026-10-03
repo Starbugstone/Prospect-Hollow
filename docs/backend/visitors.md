@@ -29,6 +29,18 @@ establishes a fresh baseline without replaying earlier arrivals; entering the
 mine or switching towns clears the queue. Failed requests never generate
 departure notices or duplicate arrivals on reconnect.
 
+The guestbook card folds and unfolds with one tap on its title, and the choice is kept
+on the device. Its visit history is grouped by day in a scrolling box; older pages load
+as the reader nears the end of the box (or with “Show older visits”). Pages merge by
+visit ID, so new arrivals shifting the pages never hide or repeat a visit.
+
+Signed-in players find other towns in the Shared towns panel. It deals up to seven
+shared towns at random, towns played in the last 14 days first and never the player's
+own. “Show other towns” deals the next seven of the same shuffle, so no town comes back
+until every shared town has been shown; then a new shuffle starts. Each card shows the
+era, building count, mine level, people visiting now and whether the saloon takings can
+be collected, which spreads visits across all shared towns instead of the first page.
+
 Visitors can open the mayor's guestbook, locate themselves with Find me, and
 locate another present guest with Find visitor. These camera actions pin a
 nametag and never change saves. Clicking the VIP arrival inset pins its displayed
@@ -84,6 +96,10 @@ The API contract is in [openapi.yaml](openapi.yaml):
 - `GET /api/v1/towns/{townId}/visitors?page=1`: owner-only current presence plus
   20 history entries per page, newest first, plus `saloonCollectedAt` for collection
   receipts. All timestamps use Unix milliseconds.
+- `GET /api/v1/villages?seed=…&page=1`: signed-in browsing. A draw of up to seven
+  shared town cards (`villageId`, `name`, `era`, `buildings`, `mineLevel`,
+  `saloonReady`, `visitors`) in the order of a 16-hex-digit `seed`; omit the seed to get
+  a new shuffle, and the reply returns the `seed` to request the next `page`.
 - `GET /api/v1/villages/{publicId}/visitors?page=1`: the same public visitor
   entries and paginated history for a shared town, without the collection receipt.
   No account is required; private/deleted towns return 404.

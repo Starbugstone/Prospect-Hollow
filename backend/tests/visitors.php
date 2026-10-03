@@ -1,6 +1,6 @@
 <?php
 require __DIR__ . '/support.php';
-use App\VisitorService;
+use App\{PublicTown, VisitorService};
 $visitorTestIp = '127.' . random_int(1, 254) . '.' . random_int(1, 254) . '.' . random_int(1, 254);
 function visitorApi(
     string $method,
@@ -202,6 +202,93 @@ try {
         visitorApi('GET', 'villages/' . $publicId . '/visitors?extra=1'),
         'public unknown query',
     );
+    // Browsing deals shared towns seven at a time from a deck shuffled by the visitor's seed.
+    $dealt = [];
+    foreach (range(1, 3) as $n) {
+        $dealer = account();
+        foreach (range(1, 3) as $m) {
+            $made = status(
+                200,
+                visitorApi('POST', 'towns', townBody("Deck Town $n$m"), $dealer),
+                'deck town',
+            );
+            $dealt[$made['townId']] = status(
+                200,
+                visitorApi(
+                    'PATCH',
+                    'towns/' . $made['townId'] . '/settings',
+                    ['baseRevision' => 1, 'name' => "Deck Town $n$m", 'isPublic' => true],
+                    $dealer,
+                ),
+                'share deck town',
+            )['publicId'];
+        }
+    }
+    $staleId = array_key_last($dealt);
+    $db->get()->update(
+        'towns',
+        ['saved_at' => time() - PublicTown::ACTIVE_SECONDS - 60],
+        ['id' => $staleId],
+    );
+    $draw = fn(array $session, string $query = 'page=1') => status(
+        200,
+        visitorApi('GET', 'villages?' . $query, null, $session),
+        'browse shared towns',
+    );
+    $deck = function (array $session, string $seed) use ($draw): array {
+        $cards = [];
+        for ($page = 1; ; $page++) {
+            $result = $draw($session, "page=$page&seed=$seed");
+            check(count($result['entries']) <= PublicTown::DRAW_SIZE, 'at most seven per draw');
+            foreach ($result['entries'] as $card) {
+                check(!isset($cards[$card['villageId']]), 'a deck never repeats a town');
+                $cards[$card['villageId']] = $card;
+            }
+            if (!$result['hasNext']) {
+                return $cards;
+            }
+        }
+    };
+    $first = $draw($other);
+    check(preg_match('/^[a-f0-9]{16}$/D', $first['seed']) === 1, 'browsing picks a seed');
+    $cards = $deck($other, $first['seed']);
+    check(!array_diff([...$dealt, $publicId], array_keys($cards)), 'the deck holds every town');
+    check(
+        array_column($draw($other, 'seed=' . $first['seed'])['entries'], 'villageId') ===
+            array_column($first['entries'], 'villageId'),
+        'the same seed deals the same towns',
+    );
+    $order = array_flip(array_keys($cards));
+    check(
+        max(array_map(fn($id) => $order[$id], [...array_slice($dealt, 0, -1), $publicId])) <
+            $order[$dealt[$staleId]],
+        'recently played towns are dealt first',
+    );
+    check(!isset($deck($owner, $first['seed'])[$publicId]), 'own towns are never dealt');
+    check(
+        array_keys($cards[$publicId]) === [
+            'villageId',
+            'name',
+            'era',
+            'buildings',
+            'mineLevel',
+            'saloonReady',
+            'visitors',
+        ],
+        'cards omit level records and the full appearance',
+    );
+    check(
+        $cards[$publicId]['name'] === 'Host Harbor' &&
+            $cards[$publicId]['buildings'] === 2 &&
+            $cards[$publicId]['mineLevel'] === 1 &&
+            $cards[$publicId]['saloonReady'] &&
+            $cards[$publicId]['visitors'] === 1 &&
+            $cards[$dealt[$staleId]]['visitors'] === 0 &&
+            !$cards[$dealt[$staleId]]['saloonReady'],
+        'cards show the saloon and the people visiting now',
+    );
+    status(422, visitorApi('GET', 'villages?seed=XYZ', null, $other), 'invalid seed');
+    status(422, visitorApi('GET', 'villages?sort=name', null, $other), 'unknown browse query');
     $collection = status(
         200,
         visitorApi('POST', 'villages/' . $publicId . '/saloon', (object) []),
@@ -210,6 +297,10 @@ try {
     check(
         $book()['saloonCollectedAt'] === ($collection['readyAt'] - 3600) * 1000,
         'owner live poll receives collection timestamp in milliseconds',
+    );
+    check(
+        !$deck($other, $first['seed'])[$publicId]['saloonReady'],
+        'a collected saloon is no longer ready on its card',
     );
     $retryExpiry = time() + 10;
     $db->get()->update(

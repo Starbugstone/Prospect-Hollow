@@ -20,6 +20,7 @@ const writePreference = (key, value) => {
 
 const VILLAGE_LABELS_KEY = 'crystal-cascade-village-labels';
 const HONOUR_NOTICES_KEY = 'crystal-cascade-honour-notices';
+const GUESTBOOK_COLLAPSED_KEY = 'crystal-cascade-guestbook-collapsed';
 // Town Honours notices: Full (popup and sound), Quiet (New indicator only) or Off.
 // Presentation only: honours still unlock and stay inspectable.
 export const HONOUR_NOTICE_MODES = Object.freeze(['full', 'quiet', 'off']);
@@ -55,12 +56,22 @@ export const useSettingsStore = defineStore('settings', {
         (saved) => (HONOUR_NOTICE_MODES.includes(saved) ? saved : 'full'),
         'full',
       ),
+      // The guestbook stays open or folded as the player last left it.
+      guestbookCollapsed: readPreference(
+        GUESTBOOK_COLLAPSED_KEY,
+        (saved) => saved === 'true',
+        false,
+      ),
     };
   },
   actions: {
     setVillageLabels(visible) {
       this.showVillageLabels = visible !== false;
       writePreference(VILLAGE_LABELS_KEY, String(this.showVillageLabels));
+    },
+    setGuestbookCollapsed(collapsed) {
+      this.guestbookCollapsed = collapsed === true;
+      writePreference(GUESTBOOK_COLLAPSED_KEY, String(this.guestbookCollapsed));
     },
     setHonourNotices(mode) {
       if (!HONOUR_NOTICE_MODES.includes(mode)) return;

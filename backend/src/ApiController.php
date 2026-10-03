@@ -59,18 +59,17 @@ final class ApiController
                     }
                     $body = (array) $object;
                 }
-                if (
-                    $r->query->count() &&
-                    !(
-                        $method === 'GET' &&
-                        ($path === 'villages' ||
-                            preg_match(
-                                '~^(towns/[a-f0-9-]{36}|villages/[a-f0-9]{32})/visitors$~D',
-                                $path,
-                            )) &&
-                        array_keys($r->query->all()) === ['page']
+                $query = match (true) {
+                    $method !== 'GET' => [],
+                    $path === 'villages' => ['page', 'seed'],
+                    (bool) preg_match(
+                        '~^(towns/[a-f0-9-]{36}|villages/[a-f0-9]{32})/visitors$~D',
+                        $path,
                     )
-                ) {
+                        => ['page'],
+                    default => [],
+                };
+                if (array_diff(array_keys($r->query->all()), $query)) {
                     throw new ApiError(422, 'Unsupported query parameters.');
                 }
                 $ip = $r->getClientIp() ?? 'unknown';

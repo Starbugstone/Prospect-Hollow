@@ -959,7 +959,8 @@
         {
           'get':
             {
-              'summary': 'Paginated public appearances, ordered by public ID (not rank)',
+              'summary': 'A random draw of up to seven shared town cards for the signed-in player',
+              'description': "Shared towns are dealt from a shuffle fixed by seed: towns saved in the last 14 days first, never the caller's own towns. Omit seed for a new shuffle; the reply returns it, and page N is the Nth draw of seven, so a seed never repeats a town. Each entry has villageId, name, era, buildings (built count), mineLevel, saloonReady (a visitor may collect it now) and visitors (people present now), never level records or the full appearance.",
               'responses':
                 {
                   '200': { 'description': 'Success' },
@@ -974,6 +975,11 @@
                     'name': 'page',
                     'in': 'query',
                     'schema': { 'type': 'integer', 'minimum': 1, 'maximum': 10000, 'default': 1 },
+                  },
+                  {
+                    'name': 'seed',
+                    'in': 'query',
+                    'schema': { 'type': 'string', 'pattern': '^[a-f0-9]{16}$' },
                   },
                 ],
             },
