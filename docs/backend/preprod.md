@@ -57,3 +57,25 @@ These repository instructions do not verify or change the installed host configu
 CI tests controller rollback/retention/CI eligibility, readiness identity and outage behavior, installer preservation, plus a real build/preparation of these hooks against PostgreSQL. Both database jobs check the release-health protocol. The packaged application check verifies actual `/api/health` routing.
 
 For maintenance, disable polling, wait for running work, back up the database and follow the [template maintenance guide](https://github.com/Starbugstone/test-auto-deploy/blob/a5270a76b4acfdf5c89f5c63321468f8bec5229d/docs/o2switch-setup.md#8-maintenance-retry-and-rollback). Retained code releases do not replace database backups. Production uses the [separate main-branch installation](production.md), including a separate Git checkout so concurrent fetches cannot share `FETCH_HEAD`.
+
+## Temporary Town Honours test towns
+
+**Temporary, preprod only. Remove the data and these files before the next production release.**
+`bin/preprod-fixtures.php` seeds ten placeholder shared towns (Frontier to Riverlight) with
+Town Honours and signed-in visits, for testing the shared-town explorer, visitor views and
+visitor ranks. It refuses to run unless `APP_ORIGIN` is the `preprod.` host or a local machine.
+Every row it creates is recognisable (placeholder e-mail domain `fixtures.prospect-hollow.invalid`,
+visit IDs starting with `fx`), so removal deletes exactly that data.
+
+```bash
+"$project_php" "$project_root/current/bin/preprod-fixtures.php" status
+"$project_php" "$project_root/current/bin/preprod-fixtures.php" seed
+# Optional: every fixture mayor also visits your own shared town (its public ID from the share link)
+"$project_php" "$project_root/current/bin/preprod-fixtures.php" seed --visit=PUBLIC_ID
+"$project_php" "$project_root/current/bin/preprod-fixtures.php" remove
+```
+
+Seeding again replaces the earlier fixtures. After testing, run `remove`, then delete
+`backend/bin/preprod-fixtures.php`, `backend/src/PreprodFixtures.php`,
+`backend/tests/preprod-fixtures.php`, `backend/content/preprod-fixtures.json`,
+`scripts/create-preprod-fixtures.mjs` and this section.
