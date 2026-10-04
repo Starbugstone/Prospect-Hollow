@@ -7,7 +7,13 @@ import { defineEra } from '../src/data/eraDefinitions.js';
 import { STAR_CASCADE_TARGET, STAR_SCORE_MULTIPLIER } from '../src/data/starRating.js';
 import { BUILDINGS, BANDIT_EVENT, INTRO_ORDER, createTown } from '../src/data/town.js';
 import { buildingServiceLevel, hasShortProgression } from '../src/data/buildingProgression.js';
-import { CHEST_ECONOMY_VERSION, chestCoinReward, depthBonusPercent } from '../src/data/economy.js';
+import {
+  CHEST_ECONOMY_VERSION,
+  chestCoinCap,
+  chestCoinReward,
+  chestLevelCoins,
+  depthBonusPercent,
+} from '../src/data/economy.js';
 import { chapterGift } from '../src/data/journey.js';
 import {
   BONUS_CAPACITIES,
@@ -227,6 +233,7 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
           incident: era.evolution.incident,
           waterworks: era.evolution.waterworks,
           farmCapacity: era.evolution.farmCapacity,
+          chestCoinCap: chestCoinCap(era.id),
           buildingOffers: offersForEra(era),
         },
       ]),
@@ -287,7 +294,12 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
           speedTargetMs: level.speedTargetMs,
           ...compatibleTargets(level, knownTargets),
           miningMultiplier: 1 + depthBonusPercent(level.id) / 100,
-          chestCoins: { 1: chestCoinReward(level.id, 1), 2: chestCoinReward(level.id, 2) },
+          // Version 3 is the chapter value; the chest's town era caps it (eras.chestCoinCap).
+          chestCoins: {
+            1: chestCoinReward(level.id, 1),
+            2: chestCoinReward(level.id, 2),
+            3: chestLevelCoins(level.id),
+          },
         },
       ]),
     ),

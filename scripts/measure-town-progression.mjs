@@ -108,7 +108,7 @@ try {
       for (const chest of chests) {
         const best = bestHammer();
         const choice =
-          c.builderHammers < 5 && best?.offer.cost >= chestCoinReward(run.id)
+          c.builderHammers < 5 && best?.offer.cost >= chestCoinReward(run.id, undefined, c.town.era)
             ? 'builder-hammer'
             : 'coins';
         c.claimChest(chest.id, choice);

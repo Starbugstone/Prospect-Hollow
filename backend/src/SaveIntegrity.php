@@ -334,16 +334,12 @@ final class SaveIntegrity
                 !in_array($chest['source'] ?? null, ['completion', 'score', 'speed'], true) ||
                 !self::integer($chest['levelId'] ?? null, 1) ||
                 !isset($this->rules['levels'][$chest['levelId']]) ||
-                !in_array($chest['economyVersion'] ?? 1, [1, 2], true) ||
+                !$this->knownChestTerms($chest) ||
                 !is_array($chest['items'] ?? null) ||
                 count($chest['items']) !== 1 ||
                 !is_array($chest['items'][0] ?? null) ||
                 !is_string($chest['items'][0]['id'] ?? null) ||
-                !$this->reward(
-                    $chest['items'][0]['id'],
-                    (int) $chest['levelId'],
-                    (int) ($chest['economyVersion'] ?? 1),
-                )
+                !$this->chestReward($chest['items'][0]['id'], $chest)
             ) {
                 self::invalid('pendingChests');
             }
@@ -544,6 +540,7 @@ final class SaveIntegrity
                 'source' => $chest['source'],
                 'levelId' => $chest['levelId'],
                 'economyVersion' => $chest['economyVersion'] ?? 1,
+                'era' => ($chest['economyVersion'] ?? 1) >= 3 ? $chest['era'] ?? null : null,
                 'rewardId' => $chest['items'][0]['id'],
             ],
             $p['pendingChests'],
@@ -1181,7 +1178,7 @@ final class SaveIntegrity
             [...$this->rules['rewards']['chestDrops'], ...$this->rules['rewards']['coinTiers']]
             as $entry
         ) {
-            $reward = $this->reward($entry['id'], $chest['levelId'], $chest['economyVersion'] ?? 1);
+            $reward = $this->chestReward($entry['id'], $chest);
             $cash =
                 $reward['kind'] === 'coins'
                     ? $reward['quantity']
@@ -1248,8 +1245,30 @@ final class SaveIntegrity
         return $r['bonusCapacities'][min(3, $town['buildings']['armory'] ?? 0)] +
             ($town['buildings']['garage'] ?? 0) * $r['garageCapacityPerLevel'];
     }
-    private function reward(string $id, int $level = 1, int $version = 2): ?array
+    private function knownChestTerms(array $chest): bool
     {
+        // From version 3 a chest also names the town era whose cap applies.
+        $version = $chest['economyVersion'] ?? 1;
+        return self::integer($version, 1) &&
+            $version <= $this->rules['rewards']['chestEconomyVersion'] &&
+            ($version < 3 ||
+                (is_string($chest['era'] ?? null) && isset($this->rules['eras'][$chest['era']])));
+    }
+    private function chestReward(string $id, array $chest): ?array
+    {
+        return $this->reward(
+            $id,
+            (int) $chest['levelId'],
+            (int) ($chest['economyVersion'] ?? 1),
+            $chest['era'] ?? null,
+        );
+    }
+    private function reward(string $id, int $level, int $version, ?string $era): ?array
+    {
+        $coins = $this->rules['levels'][$level]['chestCoins'][$version] ?? 0;
+        if ($version >= 3) {
+            $coins = min($coins, $this->rules['eras'][$era]['chestCoinCap'] ?? 0);
+        }
         foreach (
             [...$this->rules['rewards']['chestDrops'], ...$this->rules['rewards']['coinTiers']]
             as $entry
@@ -1260,11 +1279,7 @@ final class SaveIntegrity
                     'kind' => $entry['kind'],
                     'quantity' =>
                         $entry['kind'] === 'coins'
-                            ? (int) floor(
-                                ($this->rules['levels'][$level]['chestCoins'][$version] ?? 0) *
-                                    ($entry['scale'] ?? 1) +
-                                    0.5,
-                            )
+                            ? (int) floor($coins * ($entry['scale'] ?? 1) + 0.5)
                             : $entry['quantity'],
                 ];
             }
@@ -1523,21 +1538,9 @@ final class SaveIntegrity
                 $chosen =
                     is_string($selection) &&
                     (!in_array($selection, ['coins-small', 'coins-big'], true) || $allFull)
-                        ? $this->reward(
-                            $selection,
-                            $chest['levelId'],
-                            $chest['economyVersion'] ?? 1,
-                        )
+                        ? $this->chestReward($selection, $chest)
                         : null;
-                $this->grant(
-                    $s,
-                    $chosen ??
-                        $this->reward(
-                            $chest['items'][0]['id'],
-                            $chest['levelId'],
-                            $chest['economyVersion'] ?? 1,
-                        ),
-                );
+                $this->grant($s, $chosen ?? $this->chestReward($chest['items'][0]['id'], $chest));
                 array_splice($s['pendingChests'], $index, 1);
                 break;
             case 'forge-collect':
@@ -1765,12 +1768,21 @@ final class SaveIntegrity
         if (!is_array($d['chests'] ?? null) || array_column($d['chests'], 'source') !== $sources) {
             self::mismatch('victory.chests');
         }
+        // Receipts from before version 3 do not name their version; queued offline
+        // victories keep the terms they were earned under.
+        $terms = [
+            'levelId' => $level,
+            'economyVersion' => $d['economyVersion'] ?? 2,
+            'era' => $s['town']['era'],
+        ];
+        if (!$this->knownChestTerms($terms) || $terms['economyVersion'] < 2) {
+            self::mismatch('victory.economyVersion');
+        }
+        if ($terms['economyVersion'] < 3) {
+            unset($terms['era']);
+        }
         foreach ($d['chests'] as $claim) {
-            $reward = $this->reward(
-                $claim['rewardId'] ?? '',
-                $level,
-                $this->rules['rewards']['chestEconomyVersion'],
-            );
+            $reward = $this->chestReward($claim['rewardId'] ?? '', $terms);
             if (!$reward || in_array($reward['id'], ['coins-small', 'coins-big'], true)) {
                 self::mismatch('victory.chests');
             }
@@ -1816,8 +1828,7 @@ final class SaveIntegrity
                 $s['pendingChests'][] = [
                     'id' => $run . '-' . $claim['source'],
                     'runId' => $run,
-                    'levelId' => $level,
-                    'economyVersion' => $this->rules['rewards']['chestEconomyVersion'],
+                    ...$terms,
                     'source' => $claim['source'],
                     'items' => [$reward],
                 ];

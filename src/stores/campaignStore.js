@@ -47,6 +47,7 @@ import {
   rollChestReward,
   CHEST_DROPS,
   chestReward,
+  pendingChestReward,
   chestRewardFits,
   availableChestDrops,
   COIN_TIERS,
@@ -221,11 +222,7 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
       if (recoveredSources.has(chest.source)) continue;
       recoveredSources.add(chest.source);
       const savedId = chest.items?.[0]?.id;
-      const drop = chestReward(
-        savedId === 'hammer' ? 'tnt' : savedId,
-        chest.levelId,
-        chest.economyVersion ?? 1,
-      );
+      const drop = pendingChestReward(savedId === 'hammer' ? 'tnt' : savedId, chest);
       if (drop) {
         grantReward(state, drop);
         state.integrity = plainIntegrity(
@@ -856,10 +853,8 @@ export const useCampaignStore = defineStore('campaign', {
       const offered =
         !COIN_TIERS.some((tier) => tier.id === selection && tier.scale !== 1) ||
         availableChestDrops(this).some((drop) => drop.id === selection);
-      const chosen = offered
-        ? chestReward(selection, chest.levelId, chest.economyVersion ?? 1)
-        : null;
-      const fallback = chestReward(chest.items[0].id, chest.levelId, chest.economyVersion ?? 1);
+      const chosen = offered ? pendingChestReward(selection, chest) : null;
+      const fallback = pendingChestReward(chest.items[0].id, chest);
       const selected = chosen ?? fallback;
       const granted = grantReward(this, selected);
       this.pendingChests = this.pendingChests.filter((entry) => entry.id !== id);
@@ -953,7 +948,7 @@ export const useCampaignStore = defineStore('campaign', {
             : rollChestReward(Math.random, this);
         this.chestsWithoutBuilderHammer =
           rolled.kind === 'builder-hammer' ? 0 : Math.min(9, this.chestsWithoutBuilderHammer + 1);
-        const reward = chestReward(rolled.id, id);
+        const reward = chestReward(rolled.id, id, CHEST_ECONOMY_VERSION, this.town.era);
         receiptChests.push({ source, rewardId: reward.id });
         const drop = chooseRewards
           ? { id: reward.id, kind: reward.kind, label: reward.label, quantity: reward.quantity }
@@ -964,6 +959,7 @@ export const useCampaignStore = defineStore('campaign', {
           runId,
           levelId: id,
           economyVersion: CHEST_ECONOMY_VERSION,
+          era: this.town.era,
           count: 1,
           source,
           items: [drop],
@@ -995,6 +991,8 @@ export const useCampaignStore = defineStore('campaign', {
         multiMatchCounts,
         chooseRewards,
         chests: receiptChests,
+        // Queued offline receipts keep the chest terms they were earned under.
+        economyVersion: CHEST_ECONOMY_VERSION,
         shopStock: this.shopStock,
         shopVisit: this.shopVisit,
         at,

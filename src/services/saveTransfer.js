@@ -2,6 +2,7 @@ import { SAVE_KEY } from './localProfile';
 import { townStorage } from './townStorage';
 import { LEVEL_COUNT } from '../data/campaign';
 import { chestReward } from '../data/rewards';
+import { knownChestTerms } from '../data/economy';
 
 export const MAX_SAVE_FILE_BYTES = 5 * 1024 * 1024;
 const invalidSave = () => new Error('Choose a valid Prospect Hollow save JSON file.');
@@ -124,7 +125,7 @@ export function parseSaveFile(text) {
         Number.isInteger(chest.levelId) &&
         chest.levelId >= 1 &&
         chest.levelId <= LEVEL_COUNT &&
-        (chest.economyVersion === undefined || [1, 2].includes(chest.economyVersion)) &&
+        knownChestTerms(chest) &&
         Array.isArray(chest.items) &&
         chest.items.length === 1 &&
         isObject(chest.items[0]) &&

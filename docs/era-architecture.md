@@ -38,7 +38,11 @@ The modernization offer factory in `src/game/town/TownModernization.js` combines
 that profile with an appearance provider. It owns the common offer structure,
 stage progression and capacity-benefit text. Eligibility remains in `TownEras.js`;
 building-specific exceptions, including landmark construction duration, remain
-explicit. Mining income and bonus formulas are outside this contract.
+explicit. Mining income and bonus formulas are outside this contract, with one
+exception: the middle modernization price also sets the era's chest coin cap.
+`chestCoinCap()` in `src/data/economy.js` pays half that price, rounded to 50 and
+never below 4,000, so a new era's chests keep pace with its prices without another
+table. Shallow levels keep their smaller chapter value.
 
 ### Water, food, comfort and happiness
 

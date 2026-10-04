@@ -30,7 +30,7 @@ export const COIN_TIERS = [
   { id: 'coins-big', label: 'Big purse', kind: 'coins', scale: 1.5 },
 ];
 // Resolve from the catalog, never from a saved or client-supplied quantity.
-export function chestReward(id, levelId = 1, economyVersion) {
+export function chestReward(id, levelId = 1, economyVersion, era) {
   const drop =
     CHEST_DROPS.find((entry) => entry.id === id) ?? COIN_TIERS.find((tier) => tier.id === id);
   return drop
@@ -40,11 +40,14 @@ export function chestReward(id, levelId = 1, economyVersion) {
         kind: drop.kind,
         quantity:
           drop.kind === 'coins'
-            ? Math.round(chestCoinReward(levelId, economyVersion) * (drop.scale ?? 1))
+            ? Math.round(chestCoinReward(levelId, economyVersion, era) * (drop.scale ?? 1))
             : drop.quantity,
       }
     : null;
 }
+// A pending chest keeps the terms it was issued under; unversioned receipts are version 1.
+export const pendingChestReward = (id, chest) =>
+  chestReward(id, chest.levelId, chest.economyVersion ?? 1, chest.era);
 // Shuffle the visual reel without changing the catalog used by weighted awards.
 export const availableChestDrops = (state) => {
   const drops = CHEST_DROPS.filter((drop) =>

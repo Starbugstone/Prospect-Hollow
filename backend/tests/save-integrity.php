@@ -740,7 +740,15 @@ $moneyScope = 'money-budget-town';
 $moneyFixture = $fixtures->fixtures[0];
 $moneyClock = $moneyFixture->serverNow;
 $moneyAnchor = $validator->accept($moneyFixture->before, null, $moneyClock, false, [], $moneyScope);
-$coinBase = $rules['levels'][1]['chestCoins'][$rules['rewards']['chestEconomyVersion']];
+// Version 3 caps the level's chest value with the town era it was issued in.
+$chestCoins = fn(int $level, int $version, string $era) => $version >= 3
+    ? min($rules['levels'][$level]['chestCoins'][3], $rules['eras'][$era]['chestCoinCap'])
+    : $rules['levels'][$level]['chestCoins'][$version];
+$coinBase = $chestCoins(
+    1,
+    $rules['rewards']['chestEconomyVersion'],
+    $moneyFixture->before->town->era,
+);
 $reserved = (int) floor($coinBase * 1.5 + 0.5);
 $exact = integrityMining($moneyFixture, 10000 - $reserved);
 $tooMuch = integrityMining($moneyFixture, 10001 - $reserved);
@@ -885,7 +893,11 @@ if ($claimAction['kind'] !== 'chest-claim') {
     throw new RuntimeException('Pending-reward fixture must end with its reload claim.');
 }
 $victoryAction = $pendingData['integrity']['actions'][1];
-$pendingReward = $rules['levels'][$victoryAction['data']['levelId']]['chestCoins'][2];
+$pendingReward = $chestCoins(
+    $victoryAction['data']['levelId'],
+    $rules['rewards']['chestEconomyVersion'],
+    $pendingData['town']['era'],
+);
 $pendingData['town']['coins'] -= $pendingReward;
 $pendingData['pendingChests'] = [
     [
@@ -893,7 +905,8 @@ $pendingData['pendingChests'] = [
         'runId' => $claimAction['data']['runId'],
         'source' => $claimAction['data']['source'],
         'levelId' => $claimAction['data']['levelId'],
-        'economyVersion' => 2,
+        'economyVersion' => $rules['rewards']['chestEconomyVersion'],
+        'era' => $pendingData['town']['era'],
         'items' => [['id' => 'coins', 'kind' => 'coins', 'quantity' => $pendingReward]],
     ],
 ];
@@ -903,7 +916,7 @@ assertIntegrity(
     SaveIntegrity::receipt($pendingAccepted)['moneyBudget']['newReservedCoins'] == $reserved,
     'pending full-bag reward reserves the largest legal purse at creation',
 );
-foreach ([1, 2] as $economyVersion) {
+foreach ([1, 2, 3] as $economyVersion) {
     $cached = integrityData($pendingAccepted);
     $cached['pendingChests'][0]['economyVersion'] = $economyVersion;
     // This is an existing accepted entitlement, including legacy economy version1.
@@ -913,7 +926,7 @@ foreach ([1, 2] as $economyVersion) {
     $cacheAnchor = $validator->accept(integrityObject($cached), null, $moneyClock);
     $claimed = integrityData($cacheAnchor);
     $claimed['pendingChests'] = [];
-    $cash = (int) floor($rules['levels'][1]['chestCoins'][$economyVersion] * 1.5 + 0.5);
+    $cash = (int) floor($chestCoins(1, $economyVersion, $cached['town']['era']) * 1.5 + 0.5);
     $claimed['town']['coins'] += $cash;
     $claimed['integrity']['actions'] = [
         integrityAction(1, 'chest-claim', [
@@ -1113,7 +1126,12 @@ unset($power);
 $overflowAfter = $deepAfter;
 $overflowAfter['powers'] = $overflowBefore['powers'];
 $overflowAfter['town']['coins'] +=
-    $rules['chapters'][$deepDef['chapterIndex']]['overflowCoins'] + $deepDef['chestCoins'][2];
+    $rules['chapters'][$deepDef['chapterIndex']]['overflowCoins'] +
+    $chestCoins(
+        $deepDef['id'],
+        $rules['rewards']['chestEconomyVersion'],
+        $overflowAfter['town']['era'],
+    );
 array_pop($overflowAfter['integrity']['actions']);
 $overflowAfter['integrity']['actions'][1]['data']['chooseRewards'] = false;
 $overflowAfter['integrity']['actions'][1]['data']['chests'][0]['rewardId'] = 'coins';
@@ -1128,6 +1146,56 @@ assertIntegrity(
                 $overflowAfter['town']['coins'] / $deepDef['miningMultiplier'],
         ) < 0.000001,
     'chapter gift overflow and immediate coin chest are included in new victory money',
+);
+
+// Version 3 chests follow the town era, while queued older receipts keep version 2.
+$latestEra = end($rules['eraOrder']);
+$eraChest = $chestCoins($deepLevel, 3, $latestEra);
+$frontierChest = $chestCoins($deepLevel, 3, $overflowBefore['town']['era']);
+assertIntegrity(
+    $eraChest > $deepDef['chestCoins'][2] && $frontierChest === $deepDef['chestCoins'][2],
+    'the latest era raises the deep chest above the version 2 cap',
+);
+$eraBefore = $overflowBefore;
+$eraBefore['town']['era'] = $latestEra;
+$eraAfter = $overflowAfter;
+$eraAfter['town']['era'] = $latestEra;
+$eraAfter['town']['coins'] += $eraChest - $frontierChest;
+$eraAnchor = $validator->accept(integrityObject($eraBefore), null, $moneyClock);
+assertIntegrity(
+    $validator->accept(integrityObject($eraAfter), $eraAnchor, $moneyClock)->town->coins ===
+        $eraAfter['town']['coins'],
+    'an immediate coin chest pays the town era cap',
+);
+$legacyAfter = $eraAfter;
+unset($legacyAfter['integrity']['actions'][1]['data']['economyVersion']);
+$legacyAfter['town']['coins'] -= $eraChest - $deepDef['chestCoins'][2];
+assertIntegrity(
+    $validator->accept(integrityObject($legacyAfter), $eraAnchor, $moneyClock)->town->coins ===
+        $legacyAfter['town']['coins'],
+    'a queued receipt without a version keeps the version 2 chest',
+);
+$futureAfter = $eraAfter;
+$futureAfter['integrity']['actions'][1]['data']['economyVersion'] =
+    $rules['rewards']['chestEconomyVersion'] + 1;
+integrityDenied(
+    fn() => $validator->accept(integrityObject($futureAfter), $eraAnchor, $moneyClock),
+    'save_integrity_mismatch',
+    'an unpublished chest economy version',
+);
+$inflatedAfter = $overflowAfter;
+$inflatedAfter['town']['coins'] += $eraChest - $frontierChest;
+integrityDenied(
+    fn() => $validator->accept(integrityObject($inflatedAfter), $overflowAnchor, $moneyClock),
+    'save_integrity_mismatch',
+    'a Frontier town claiming the latest era chest',
+);
+$unknownEra = integrityData($pendingAccepted);
+$unknownEra['pendingChests'][0]['era'] = 'atlantis';
+integrityDenied(
+    fn() => $validator->accept(integrityObject($unknownEra), $pendingAccepted, $moneyClock),
+    'save_integrity_invalid',
+    'a version 3 pending chest from an unknown era',
 );
 
 $immediate = integrityData($moneyFixture->after);

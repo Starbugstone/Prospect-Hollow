@@ -192,6 +192,15 @@ The exporter runs in Docker and in the frontend stage and hosting release build.
 `--check` detects a stale committed catalog; no catalog generation or hashing runs
 on a move or rendering frame.
 
+Chest coins are versioned. Under version 3, the current one, `levels[id].chestCoins[3]`
+is the level's chapter value and `eras[id].chestCoinCap` caps it for the town era the
+chest was issued in. A pending chest stores its `economyVersion` and, from version 3,
+its `era`; a claim always resolves from those saved terms, so advancing the town
+before opening a chest changes nothing. A victory receipt names its version. A queued
+receipt without one comes from a client older than version 3 and replays under
+version 2, so offline rewards survive the update. Unknown versions and eras are
+refused.
+
 The exporter also maintains `backend/content/save-rule-history.json`, retaining
 known score, chest and speed thresholds when content changes. An offline victory
 can use an older threshold tuple only when all three recorded values match a

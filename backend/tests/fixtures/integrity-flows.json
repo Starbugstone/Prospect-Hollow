@@ -286,6 +286,7 @@
                 "multiMatchCounts": {},
                 "chooseRewards": true,
                 "chests": [{ "source": "score", "rewardId": "clear-row" }],
+                "economyVersion": 3,
                 "shopStock": [],
                 "shopVisit": 0,
                 "at": 1780000000000
@@ -300,7 +301,7 @@
                 "runId": 1,
                 "source": "score",
                 "levelId": 1,
-                "economyVersion": 2,
+                "economyVersion": 3,
                 "selection": "clear-row",
                 "at": 1780000000000
               }
@@ -1354,6 +1355,7 @@
                 "multiMatchCounts": { "2": 2 },
                 "chooseRewards": true,
                 "chests": [{ "source": "score", "rewardId": "coins" }],
+                "economyVersion": 3,
                 "shopStock": [{ "id": "clear-row", "sold": false }],
                 "shopVisit": 1,
                 "at": 1780000000000
@@ -1368,7 +1370,7 @@
                 "runId": 1,
                 "source": "score",
                 "levelId": 1,
-                "economyVersion": 2,
+                "economyVersion": 3,
                 "selection": "coins",
                 "at": 1780000000000
               }
@@ -1911,6 +1913,7 @@
                 "multiMatchCounts": { "2": 2 },
                 "chooseRewards": true,
                 "chests": [{ "source": "score", "rewardId": "coins" }],
+                "economyVersion": 3,
                 "shopStock": [],
                 "shopVisit": 0,
                 "at": 1780000000000
@@ -1925,7 +1928,7 @@
                 "runId": 1,
                 "source": "score",
                 "levelId": 1,
-                "economyVersion": 2,
+                "economyVersion": 3,
                 "selection": "coins",
                 "at": 1780000000000
               }

@@ -167,6 +167,10 @@ describe('shared save accounting catalog', () => {
         miningMultiplier: level.chapter + 1,
         chestCoins: { 1: chestCoinReward(level.id, 1), 2: chestCoinReward(level.id, 2) },
       });
+      for (const era of ERAS)
+        expect(Math.min(saved.chestCoins[3], rules.eras[era.id].chestCoinCap)).toBe(
+          chestCoinReward(level.id, 3, era.id),
+        );
       expect(saved).not.toHaveProperty('maxMoves');
       expect(saved).not.toHaveProperty('maxDurationMs');
     }
