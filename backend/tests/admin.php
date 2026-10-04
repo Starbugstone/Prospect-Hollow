@@ -384,6 +384,7 @@ try {
             'era' => 'frontier',
             'coins' => 25,
             'buildings' => 1,
+            'honours' => null,
             'levels' => 2,
             'stars' => 5,
             'score' => 2000,
