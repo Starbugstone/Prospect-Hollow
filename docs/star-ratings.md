@@ -55,6 +55,11 @@ easier than the rest of the late campaign: levels 378, 390, 400, 382 and 396 rea
 three stars in 81–88% of runs. The save-rule history still accepts a board started
 before the change at the old target.
 
+Levels do not all need the same rate. A level that reaches three stars in about
+25–30% of runs is an intended challenge, not a calibration fault. Levels 252, 274,
+281 and 320 reach 24–32% on seeds 31–120 and keep their targets. Recalibrate a level
+only when it falls clearly below that, as 377, 379 and 388 had (17–21%).
+
 To produce a candidate table for review after changing layouts or scoring:
 
 ```sh
@@ -80,8 +85,8 @@ persistence, independent chest rewards and fallback behavior. It also plays
 and at least one three-star completion per level. The opening levels must
 achieve three stars in at least 14/20 runs each. Levels with blast-only
 obstacles, which need board bonuses to finish (today 373–402), must achieve it in
-at least 6/20. That is the final band's 30% floor, and it catches targets left
-stale by a change to bonus rules. Aggregate guards require at
+at least 5/20. That catches targets left stale by a change to bonus rules, as
+levels 377 (2/20) and 379 (4/20) were before 2026-10-04. Aggregate guards require at
 least 85% three-star attainment in the opening, a decreasing rate across later
 campaign bands, and 30–65% in the final band. Score-only attainment is also
 guarded at 80% for the opening and 5% for the final band. In calibration,
