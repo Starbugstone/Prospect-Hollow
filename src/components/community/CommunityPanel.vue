@@ -339,7 +339,8 @@ favouriteVillages()
     1.65rem Georgia,
     serif;
 }
-.community-dialog button {
+/* A visited town keeps its own map buttons, such as the saloon coins. */
+.community-dialog button:where(:not(.town-scene *)) {
   font: inherit;
   cursor: pointer;
   border: 1px solid #c4bea9;
