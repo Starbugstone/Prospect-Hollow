@@ -636,6 +636,34 @@ it('keeps animal routes that the changed town still allows', () => {
   expect(d.navigation.plans - plans).toBeLessThanOrEqual(1);
 });
 
+// A hunter walks back along its chase route. When the crowd holds it for a frame,
+// it keeps facing where it travels rather than turning around twice.
+it('keeps a returning hunter facing its way back while it waits', () => {
+  const d = fixture('canopy');
+  addTownAnimals(d, d.town);
+  advance(d, 2);
+  const cat = d.animals.find((a) => a.species === 'cat');
+  const { x, z } = cat.root.position;
+  cat.chaseRoute = {
+    role: 'hunter',
+    returning: true,
+    speed: cat.speed,
+    path: walkPath([
+      [x + 3, 0.07, z],
+      [x, 0.07, z],
+    ]),
+  };
+  cat.direction = -1;
+  cat.motion.heading = 1.2;
+  d.animalFeeder = null;
+  d.animalMotion(d.elapsed + 0.05);
+  expect(cat.root.rotation.y).toBeCloseTo(1.2, 10);
+  // Before locomotion has a heading, the reversed path pose turns it around.
+  delete cat.motion.heading;
+  d.animalMotion(d.elapsed + 0.1);
+  expect(cat.root.rotation.y).toBeCloseTo(cat.pose.heading + Math.PI, 10);
+});
+
 const helmeted = (d) => d.animals.filter((a) => a.root.getObjectByName('Space helmet'));
 const castOf = (d) => new Set(d.animals.map((a) => a.species));
 

@@ -482,8 +482,11 @@ function updateGround(d, animal, time, dt, profile) {
       !encounter.bird &&
       distance(root.position, encounter.prey.root.position) <
         animal.radius + encounter.prey.radius + 0.25);
-  if (roams && animal.motion) pose.heading = animal.motion.heading ?? pose.heading;
-  if (!threat || wild) root.rotation.y = pose.heading + (animal.direction < 0 ? Math.PI : 0);
+  // Locomotion's heading already faces back along a reversed route; a path pose does not.
+  const travel = roams ? animal.motion?.heading : undefined;
+  if (travel !== undefined) pose.heading = travel;
+  if (!threat || wild)
+    root.rotation.y = pose.heading + (travel === undefined && animal.direction < 0 ? Math.PI : 0);
   if (feeding)
     root.rotation.y = Math.atan2(food.habitat.point[0] - pose.x, food.habitat.point[2] - pose.z);
   root.userData.behavior = animal.state;
