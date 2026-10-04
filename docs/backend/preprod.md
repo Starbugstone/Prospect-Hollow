@@ -58,24 +58,13 @@ CI tests controller rollback/retention/CI eligibility, readiness identity and ou
 
 For maintenance, disable polling, wait for running work, back up the database and follow the [template maintenance guide](https://github.com/Starbugstone/test-auto-deploy/blob/a5270a76b4acfdf5c89f5c63321468f8bec5229d/docs/o2switch-setup.md#8-maintenance-retry-and-rollback). Retained code releases do not replace database backups. Production uses the [separate main-branch installation](production.md), including a separate Git checkout so concurrent fetches cannot share `FETCH_HEAD`.
 
-## Temporary Town Honours test towns
+## Placeholder shared towns in the preprod database
 
-**Temporary, preprod only. Remove the data and these files before the next production release.**
-`bin/preprod-fixtures.php` seeds ten placeholder shared towns (Frontier to Riverlight) with
-Town Honours and signed-in visits, for testing the shared-town explorer, visitor views and
-visitor ranks. It refuses to run unless `APP_ORIGIN` is the `preprod.` host or a local machine.
-Every row it creates is recognisable (placeholder e-mail domain `fixtures.prospect-hollow.invalid`,
-visit IDs starting with `fx`), so removal deletes exactly that data.
-
-```bash
-"$project_php" "$project_root/current/bin/preprod-fixtures.php" status
-"$project_php" "$project_root/current/bin/preprod-fixtures.php" seed
-# Optional: every fixture mayor also visits your own shared town (its public ID from the share link)
-"$project_php" "$project_root/current/bin/preprod-fixtures.php" seed --visit=PUBLIC_ID
-"$project_php" "$project_root/current/bin/preprod-fixtures.php" remove
-```
-
-Seeding again replaces the earlier fixtures. After testing, run `remove`, then delete
-`backend/bin/preprod-fixtures.php`, `backend/src/PreprodFixtures.php`,
-`backend/tests/preprod-fixtures.php`, `backend/content/preprod-fixtures.json`,
-`scripts/create-preprod-fixtures.mjs` and this section.
+The preprod database intentionally keeps ten placeholder shared towns from Town Honours testing
+(issue #60): accounts with the `fixtures.prospect-hollow.invalid` e-mail domain, and visit rows
+whose IDs start with `fx`, some of them on real towns. They exist only in the preprod database;
+the seeding code was removed so it can never ship to production. To delete them, restore the
+seeder from commit `a481343` on a temporary preprod branch
+(`git checkout a481343 -- backend/bin/preprod-fixtures.php backend/src/PreprodFixtures.php backend/content/preprod-fixtures.json`),
+deploy it, run `php bin/preprod-fixtures.php remove` from the preprod release, then remove those
+files again before anything reaches `main`.
