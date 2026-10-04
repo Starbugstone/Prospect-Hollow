@@ -5,7 +5,9 @@ import { smooth01 } from './TownMath';
 
 const COSTUME = 'space-helmet',
   // Seconds to shrink the old outfit away, then to grow the new one back.
-  SWAP = 0.35;
+  SWAP = 0.35,
+  // Seconds for a wild wearer to come out, or to go back to its own visits.
+  STAY = 2;
 
 // An integer hash, so the owner's and every visitor's browser agree exactly.
 function hash(n) {
@@ -45,6 +47,22 @@ export function spaceHelmetWearer(town, cast) {
 const runs = (town) =>
   Number.isSafeInteger(town?.completedRuns) && town.completedRuns > 0 ? town.completedRuns : 0;
 
+// The outfit an animal wears, or is changing into.
+const outfit = (animal) => (animal.dressing ? animal.dressing.costume : (animal.costume ?? null));
+
+/**
+ * Wild animals only visit the town now and then, so a wild wearer stays out for as
+ * long as it has the helmet and players can always find it. Returns how far it is held
+ * out, from 0 to 1: it eases in with the helmet and back to its own visits without it.
+ */
+export function helmetStay(animal, dt) {
+  const stay = animal.helmetStay ?? 0,
+    step = dt / STAY;
+  animal.helmetStay =
+    outfit(animal) === COSTUME ? Math.min(1, stay + step) : Math.max(0, stay - step);
+  return smooth01(animal.helmetStay);
+}
+
 // Rebuilds one animal's model with or without the costume, in place on its walk.
 function restyle(d, animal, costume) {
   const old = animal.root,
@@ -75,8 +93,7 @@ export function dressSpaceHelmet(d, town, { animate = false, rebuild = true } = 
   let changed = false;
   for (const animal of animals) {
     const costume = animal === wearer ? COSTUME : null;
-    const current = animal.dressing ? animal.dressing.costume : (animal.costume ?? null);
-    if (current === costume) {
+    if (outfit(animal) === costume) {
       animal.dressed = true;
       continue;
     }
@@ -86,6 +103,8 @@ export function dressSpaceHelmet(d, town, { animate = false, rebuild = true } = 
     }
     if (animal.dressing) resize(animal, 1);
     animal.dressing = null;
+    // A wild wearer is already out when the town opens or changes unwatched.
+    if (!animate || !animal.dressed) animal.helmetStay = costume ? 1 : 0;
     if ((animal.costume ?? null) !== costume) {
       restyle(d, animal, costume);
       changed = true;

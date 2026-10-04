@@ -692,6 +692,73 @@ it('casts every space-helmet wearer in the latest era town', () => {
   for (const species of SPACE_HELMET.wearers) expect(castOf(d).has(species), species).toBe(true);
 });
 
+// Wild animals only visit the town now and then; a wild wearer stays out to be found.
+const helmetEras = ERAS.slice(ERAS.findIndex(({ id }) => id === SPACE_HELMET.debut)).map(
+  ({ id }) => id,
+);
+it.each(helmetEras)('keeps the %s space-helmet wearer on screen at all times', (era) => {
+  const d = fixture(era);
+  Object.assign(d, { rebuildActors() {}, render() {} });
+  addTownAnimals(d, d.town);
+  const cast = castOf(d),
+    worn = new Set(),
+    missing = [];
+  let time = d.elapsed + 0.5;
+  for (let runs = 0; runs < 2 * SPACE_HELMET.wearers.length; runs++) {
+    d.town.completedRuns = runs;
+    dressSpaceHelmet(d, d.town);
+    const [wearer] = helmeted(d);
+    worn.add(wearer.species);
+    // Longer than a whole visit cycle, so every wild visitor would leave once.
+    for (const end = time + 160; time < end; time += 0.5) {
+      d.animalMotion(time);
+      if (!wearer.root.visible || wearer.root.scale.x !== 1)
+        missing.push(`${wearer.species} after ${runs} puzzles at ${time}s`);
+    }
+  }
+  expect(missing).toEqual([]);
+  expect([...worn].sort()).toEqual(SPACE_HELMET.wearers.filter((s) => cast.has(s)).sort());
+  expect(d.animals.some((a) => a.wild && worn.has(a.species))).toBe(true);
+});
+
+it('brings a wild wearer out for a visitor and lets it go back to its visits', () => {
+  const d = fixture('canopy');
+  Object.assign(d, { rebuildActors() {}, render() {} });
+  addTownAnimals(d, d.town);
+  const cast = castOf(d),
+    wearerAt = (completedRuns) =>
+      d.animals.find((a) => a.species === spaceHelmetWearer({ ...d.town, completedRuns }, cast));
+  let runs = 1;
+  while (!wearerAt(runs).wild) runs++;
+  d.town.completedRuns = runs - 1;
+  dressSpaceHelmet(d, d.town);
+  const next = wearerAt(runs);
+  let time = d.elapsed + 0.1;
+  for (; next.root.visible && time < 200; time += 0.1) d.animalMotion(time);
+  expect(next.root.visible).toBe(false);
+  d.town.completedRuns = runs;
+  dressSpaceHelmet(d, d.town, { animate: true });
+  expect(helmeted(d)).toEqual([next]);
+  const sizes = [];
+  for (const end = time + 2.5; time < end; time += 0.1) {
+    d.animalMotion(time);
+    sizes.push(next.root.visible ? next.root.scale.x : 0);
+  }
+  // It comes out gradually rather than popping into view.
+  expect(sizes[0]).toBeLessThan(0.1);
+  expect(sizes.at(-1)).toBe(1);
+  for (let n = 1; n < sizes.length; n++) expect(sizes[n]).toBeGreaterThanOrEqual(sizes[n - 1]);
+  d.town.completedRuns = runs + 1;
+  dressSpaceHelmet(d, d.town, { animate: true });
+  let away = false;
+  for (const end = time + 160; time < end && !away; time += 0.1) {
+    d.animalMotion(time);
+    away = !next.root.visible;
+  }
+  expect(away).toBe(true);
+  expect(next.costume).toBeNull();
+});
+
 it('moves the helmet in place after a puzzle, without re-planning any walk', () => {
   const d = fixture('riverlight');
   let rebuilt = 0;

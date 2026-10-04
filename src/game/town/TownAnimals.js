@@ -9,7 +9,7 @@ import { atPlot, PLOTS, plotStreet, routeGraph, routeOnGraph } from './TownLayou
 import { TownNavigation, walkPose, standingPose } from './TownNavigation';
 import { groundHeight } from './TownLandscape';
 import { population } from './TownRules';
-import { dressSpaceHelmet, updateDressing } from './TownSpaceHelmet';
+import { dressSpaceHelmet, helmetStay, updateDressing } from './TownSpaceHelmet';
 import { animalModel, animateAnimal } from './TownAnimalModels';
 import { animalNavigation, animalSpace } from './TownAnimalSpace';
 import { setWorkRoutine } from './TownWorkRoutine';
@@ -405,8 +405,9 @@ function updateGround(d, animal, time, dt, profile) {
     const cycle = profile.paved ? 150 : 115;
     const visit = Math.floor(time / cycle);
     const phase = (time % cycle) - (8 + hash01(visit + animal.seed) * 40);
-    root.visible = phase >= 0 && phase < 42;
-    root.scale.setScalar(Math.min(smooth01(phase / 2), smooth01((42 - phase) / 2)));
+    const stay = helmetStay(animal, dt);
+    root.visible = stay > 0 || (phase >= 0 && phase < 42);
+    root.scale.setScalar(Math.max(stay, Math.min(smooth01(phase / 2), smooth01((42 - phase) / 2))));
     if (!root.visible) return;
   }
   const threat = animal.encounter || animal.chaseRoute ? null : threatNear(d, animal, profile);

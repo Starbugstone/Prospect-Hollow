@@ -118,6 +118,9 @@ each round dresses every present animal once in a shuffled order, and no animal 
 twice in a row. Visitors get the same count in the shared appearance, so they see the same
 animal; while they watch, the old wearer shrinks away with its contact shadow and grows back
 in its own coat as the new one does in the suit. The owner's town changes while they are in the mine.
+Wild animals (fox, raccoon, deer, otter and hedgehog) usually only visit the town now and then,
+but a wild wearer stays out for as long as it has the helmet, so the helmet is always on screen
+(`helmetStay()`). It comes out over two seconds and then goes back to its own visits.
 
 ![Every animal that can wear the space helmet](images/tomorrow-city/22-space-helmet-wearers.png)
 
