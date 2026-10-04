@@ -1,4 +1,4 @@
-import { TownItineraries, finishItinerary } from './TownItineraries';
+import { TownItineraries } from './TownItineraries';
 
 import { applyRoadSetbacks } from './BuildingSetbacks';
 import { addTownAnimals, animalKey } from './TownAnimals';
@@ -10,7 +10,7 @@ import { updateMineGrowth } from './mine/addMineSite';
 import { afterPaint, finishWork, performanceMark, scheduleWork } from '../PresentationWork';
 import { geometryFootprints, registerFootprints, footprintDistance } from './BuildingFootprints';
 import { townTracks, railEdges } from './TownLayout';
-import { townNavigation, sceneryObstacles } from './TownNavigation';
+import { NPC_MARGIN, townNavigation, sceneryObstacles } from './TownNavigation';
 import { recordTownTiming, timeTown, timedSteps } from './TownProfiler';
 import { updateWorkPaths } from './TownWorkRoutine';
 import { buildingWalk } from './TownPedestrians';
@@ -508,38 +508,7 @@ export function tryActivatePlot(d) {
     generation = d.generation;
   function* repairRoutes() {
     view.itineraries = new TownItineraries(view);
-    for (const actor of actors) {
-      // The active break may be a short variant. Repair the full work route
-      // so later visits cannot restore a path through the changed footprint.
-      const path = actor.workRoutine?.paths[0] ?? actor.walkPath ?? actor.path;
-      if (!path?.points.length) continue;
-      const intersects = path.points.some(
-        (p, i) => i && !view.navigation.segment(path.points[i - 1], p, actor.radius ?? 0.45),
-      );
-      if (!intersects) {
-        if (actor.itinerary) yield* view.itineraries.prepare(actor);
-        continue;
-      }
-      const position = actor.root.position.toArray();
-      const next = path.building
-        ? buildingWalk(view, path.building, path.frontage)
-        : view.navigation.plan(
-            actor.workRoutine ? path.points : [position, ...path.points.slice(1), position],
-            actor.radius ?? 0.45,
-          );
-      if (actor.workRoutine) {
-        updateWorkPaths(actor, next);
-        actor.routeLimit = actor.direction < 0 ? 0 : next.total;
-      } else if (actor.walkPath) actor.walkPath = next;
-      else actor.path = next;
-      if (actor.motion) actor.motion.path = null;
-      if (actor.itinerary) {
-        actor.itinerary.anchor = next.points[0];
-        finishItinerary(actor, next, next.total);
-        yield* view.itineraries.prepare(actor);
-      }
-      yield;
-    }
+    for (const actor of actors) yield* repairRoute(view, actor);
   }
   d.cancelRouteWork?.();
   d.cancelRouteWork = scheduleWork(repairRoutes(), {
@@ -567,6 +536,49 @@ export function tryActivatePlot(d) {
     });
   else d.repairAnimalLife();
   return true;
+}
+
+// Replan one walker after a footprint change, if its route now crosses it. People
+// keep the clearance their route was planned with: a wider margin rejects the
+// narrow bridge lane, and the replan would join its ramps across the water.
+// They replan the same route and step back onto it from where they stand, since a
+// straight cut from there to the route's second point could also cross the river.
+export function* repairRoute(d, actor) {
+  // The active break may be a short variant. Repair the full work route
+  // so later visits cannot restore a path through the changed footprint.
+  const path = actor.workRoutine?.paths[0] ?? actor.walkPath ?? actor.path;
+  if (!path?.points.length) return;
+  const margin = actor.species
+    ? (actor.radius ?? NPC_MARGIN)
+    : (path.clearance?.margin ?? actor.radius ?? NPC_MARGIN);
+  const intersects = path.points.some(
+    (p, i) => i && !d.navigation.segment(path.points[i - 1], p, margin),
+  );
+  if (!intersects) {
+    if (actor.itinerary) yield* d.itineraries.prepare(actor);
+    return;
+  }
+  const position = actor.root.position.toArray();
+  const next = path.building
+    ? buildingWalk(d, path.building, path.frontage)
+    : d.navigation.plan(
+        actor.workRoutine || !actor.species
+          ? path.points
+          : [position, ...path.points.slice(1), position],
+        margin,
+      );
+  if (actor.workRoutine) {
+    updateWorkPaths(actor, next);
+    actor.routeLimit = actor.direction < 0 ? 0 : next.total;
+  } else if (actor.walkPath) actor.walkPath = next;
+  else actor.path = next;
+  if (actor.motion) actor.motion.path = null;
+  if (actor.itinerary) {
+    actor.itinerary.anchor = next.points.at(-1);
+    d.itineraries.finish(actor, next, next.total);
+    yield* d.itineraries.prepare(actor);
+  }
+  yield;
 }
 
 export function plotsPending(d) {
