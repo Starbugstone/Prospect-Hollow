@@ -82,6 +82,8 @@ final class SaveService
         $town = is_object($save->town ?? null) ? $save->town : new \stdClass();
         $coins = $town->coins ?? 0;
         $buildings = is_object($town->buildings ?? null) ? get_object_vars($town->buildings) : [];
+        // The owner's own Town Honours for the town card: earned IDs and the showcase order.
+        $honours = (new Honours())->sanitize($save->honours ?? null);
         return [
             'era' => is_string($town->era ?? null) ? $town->era : '',
             'coins' =>
@@ -92,6 +94,13 @@ final class SaveService
                     fn($level) => (is_int($level) || is_float($level)) && $level > 0,
                 ),
             ),
+            'honours' =>
+                $honours === null
+                    ? null
+                    : [
+                        'earned' => array_keys($honours['earned']),
+                        'showcase' => $honours['showcase'],
+                    ],
         ];
     }
     public function view(array $row, bool $profile = true): array

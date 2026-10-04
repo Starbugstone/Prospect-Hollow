@@ -822,6 +822,20 @@ try {
             'an older share is projected from the saved honours on read',
         );
     }
+    // ---------- Town cards: the owner's own showcase in the account town list ----------
+    $listed = status(200, callApi('GET', 'account', null, $owner), 'account towns');
+    $card = array_values(array_filter($listed['towns'], fn($town) => $town['townId'] === $id))[0];
+    check(
+        is_array($card['summary']['honours'] ?? null) &&
+            in_array('first-fusion', $card['summary']['honours']['earned'], true) &&
+            is_array($card['summary']['honours']['showcase']) &&
+            !array_key_exists('counts', $card['summary']['honours']),
+        'the owner town list carries earned honour IDs and the showcase, never counts',
+    );
+    check(
+        App\SaveService::summary(profile())['honours'] === null,
+        'a town without honours has no honours on its card',
+    );
     // ---------- Visitor ranks: different signed-in players, counted by the server ----------
     check(
         $definitions['first-guest'] === [

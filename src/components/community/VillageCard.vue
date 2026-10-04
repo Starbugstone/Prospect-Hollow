@@ -1,22 +1,12 @@
 <template>
-  <div class="village-card" :style="{ '--slot-hue': eraHue(entry.era) ?? 90 }">
+  <div class="village-card">
     <button class="village-card-open" :disabled="disabled" @click="$emit('visit')">
-      <span class="village-card-art" aria-hidden="true"><GameIcon name="home" /></span>
+      <TownCardArt :era="entry.era" aria-hidden="true" />
       <span class="village-card-info">
         <strong>{{ entry.name }}</strong>
+        <small v-if="entry.era" class="town-card-era-mobile">{{ eraName(entry.era) }}</small>
         <small>{{ details }}</small>
-        <span v-if="honours" class="village-card-honours">
-          <span
-            v-for="definition in honours.showcase"
-            :key="definition.id"
-            :title="t(definition.name)"
-          >
-            <HonourBadge :definition="definition" :size="24" />
-          </span>
-          <small>{{
-            honours.count === 1 ? t('1 honour') : t('{count} honours', { count: honours.count })
-          }}</small>
-        </span>
+        <HonourCardRow :honours="entry.honours" :size="26" />
         <span v-if="tags.length" class="village-card-tags">
           <span v-for="tag in tags" :key="tag.id" :class="`is-${tag.id}`"
             ><GameIcon :name="tag.icon" />{{ tag.label }}</span
@@ -38,14 +28,14 @@
 </template>
 <script setup>
 import { computed } from 'vue';
-import { eraHue, eraName } from '../account/accountContext';
-import { cardHonours } from '../../services/townDirectory';
+import { eraName } from '../account/accountContext';
 import { t } from '../../i18n';
 import GameIcon from '../GameIcon.vue';
-import HonourBadge from '../honours/HonourBadge.vue';
+import TownCardArt from '../TownCardArt.vue';
+import HonourCardRow from '../honours/HonourCardRow.vue';
 
-// One shared town in a list: what it looks like, why it might be worth a visit now, and a
-// star that keeps it among the player's favourites.
+// One shared town in a list, in the same card shape as the player's own towns: its era,
+// showcased honours, why it might be worth a visit now, and a favourite star.
 const props = defineProps({
   entry: { type: Object, required: true },
   visited: Boolean,
@@ -59,11 +49,9 @@ const label = computed(() =>
     town: props.entry.name,
   }),
 );
-const honours = computed(() => cardHonours(props.entry.honours));
 const details = computed(() => {
-  const { era, buildings, mineLevel } = props.entry;
+  const { buildings, mineLevel } = props.entry;
   return [
-    eraName(era),
     buildings === 1 ? t('1 building') : t('{count} buildings', { count: buildings ?? 0 }),
     mineLevel && t('Mine level {level}', { level: mineLevel }),
   ]

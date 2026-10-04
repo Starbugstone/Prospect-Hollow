@@ -96,7 +96,10 @@ describe('shared-town cards', () => {
     expect(html).toContain('12 buildings');
     expect(html).toContain('Mine level 45');
     expect(html).not.toContain('village-card-tags');
-    expect(html).not.toContain('village-card-honours');
+    expect(html).not.toContain('honour-card-row');
+    // Same card shape as the player's own towns: the era landscape with its label.
+    expect(html).toContain('town-card-art');
+    expect(html).toContain('Frontier Settlement');
   });
 
   it('tells a visitor who is there now and whether the saloon can be collected', async () => {
@@ -134,6 +137,7 @@ describe('shared-town cards', () => {
     });
     expect(shown).toContain('honour-badge');
     expect(shown).toContain(HONOURS.byId['first-perfect'].name);
+    expect(shown).toContain(`Showcase: ${HONOURS.byId['first-perfect'].name}`);
   });
 
   it('leaves out a mine level an older share does not carry', async () => {

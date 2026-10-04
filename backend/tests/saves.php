@@ -58,7 +58,12 @@ try {
     $listed = status(200, callApi('GET', 'account', null, $a), 'owner town summaries')['towns'];
     check(
         count($listed) === 1 &&
-            $listed[0]['summary'] === ['era' => 'frontier', 'coins' => 25, 'buildings' => 1],
+            $listed[0]['summary'] === [
+                'era' => 'frontier',
+                'coins' => 25,
+                'buildings' => 1,
+                'honours' => null,
+            ],
         'new device gets card details',
     );
     check(

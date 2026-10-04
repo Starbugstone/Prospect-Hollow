@@ -75,6 +75,11 @@ const fs = require('node:fs');
           return route.fulfill({
             json: { account: { id: owner, email: 'test@example.test' }, csrf: 'test' },
           });
+        // The owner's guestbook poll: nobody is visiting these test towns.
+        if (/^towns\/[^/]+\/visitors$/.test(path))
+          return route.fulfill({
+            json: { present: [], history: [], page: 1, hasNext: false, uniqueVisitors: 0 },
+          });
         const town = towns.find((t) => path === `towns/${t.townId}`);
         assert(town, path);
         return route.fulfill({ json: town });
@@ -91,7 +96,7 @@ const fs = require('node:fs');
     const card = page.locator('.town-slot').filter({ hasText: 'Other Device Town' });
     await card.getByText('3 buildings · 900 coins', { exact: true }).waitFor();
     await card
-      .locator('.town-slot-era')
+      .locator('.town-card-era')
       .filter({ hasText: 'Industrial / Electric Town' })
       .waitFor();
     assert.equal(
@@ -110,7 +115,7 @@ const fs = require('node:fs');
     await page.screenshot({ path: 'output/playwright/connection-towns-desktop.png' });
     await page.setViewportSize({ width: 390, height: 844 });
     await card
-      .locator('.town-slot-era-mobile')
+      .locator('.town-card-era-mobile')
       .filter({ hasText: 'Industrial / Electric Town' })
       .waitFor();
     await card.getByText('3 buildings · 900 coins', { exact: true }).scrollIntoViewIfNeeded();

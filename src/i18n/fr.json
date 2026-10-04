@@ -2831,5 +2831,6 @@
   "{count} honours": "{count} distinctions",
   "You can keep up to 50 favourite towns. Remove one first.": "Vous pouvez garder jusqu’à 50 villes favorites. Retirez-en une d’abord.",
   "Your own towns cannot be favourites.": "Vos propres villes ne peuvent pas être des favoris.",
-  "Search with 2–24 characters.": "Cherchez avec 2 à 24 caractères."
+  "Search with 2–24 characters.": "Cherchez avec 2 à 24 caractères.",
+  "Showcase: {names}": "Vitrine : {names}"
 }

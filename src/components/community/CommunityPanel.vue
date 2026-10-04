@@ -498,7 +498,7 @@ favouriteVillages()
 }
 .community-towns {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
   gap: 0.75rem;
   list-style: none;
   padding: 0;
@@ -512,12 +512,12 @@ favouriteVillages()
   height: 100%;
 }
 .community-dialog .village-card-open {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  align-content: start;
   width: 100%;
   height: 100%;
-  padding: 0.75rem 3.4rem 0.75rem 0.75rem;
+  padding: 0;
   border: 1px solid #e3dbc7;
   border-radius: 16px;
   background: #fffdf6;
@@ -531,27 +531,12 @@ favouriteVillages()
   border-color: #315940;
   box-shadow: 0 0 0 1px #315940;
 }
-.village-card-art {
-  display: grid;
-  place-items: center;
-  width: 3.5rem;
-  height: 3.5rem;
-  flex-shrink: 0;
-  border-radius: 12px;
-  color: #183832;
-  background:
-    radial-gradient(ellipse 70% 45% at 25% 100%, hsl(var(--slot-hue) 28% 58%) 98%, transparent),
-    linear-gradient(170deg, hsl(calc(var(--slot-hue) + 10) 45% 90%), hsl(var(--slot-hue) 35% 76%));
-}
-.village-card-art svg {
-  width: 1.7rem;
-  height: 1.7rem;
-}
 .village-card-info {
   display: grid;
-  gap: 0.2rem;
+  align-content: start;
+  gap: 0.25rem;
   min-width: 0;
-  flex: 1;
+  padding: 0.7rem 0.85rem 0.85rem;
 }
 .village-card-info strong {
   font-size: 1.05rem;
@@ -598,33 +583,23 @@ favouriteVillages()
 }
 .community-dialog .village-card-star {
   position: absolute;
-  top: 50%;
-  right: 0.45rem;
+  top: 0.4rem;
+  right: 0.4rem;
   display: grid;
   place-items: center;
   width: 2.6rem;
   height: 2.6rem;
   padding: 0;
-  border: 0;
+  border: 1px solid #0000001a;
   border-radius: 50%;
-  background: transparent;
+  background: #fffdf6e6;
   color: #8a7c5a;
-  transform: translateY(-50%);
 }
 .community-dialog .village-card-star:not(:disabled):hover {
   background: #f3ecd8;
 }
 .community-dialog .village-card-star[aria-pressed='true'] {
   color: #c8901f;
-}
-.village-card-honours {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.3rem;
-}
-.village-card-honours > span {
-  display: inline-flex;
 }
 .community-draw {
   position: sticky;
@@ -661,13 +636,18 @@ favouriteVillages()
     width: 100%;
     justify-content: center;
   }
+  /* Phones list towns as rows: the era tile beside the details, like the town slots. */
   .community-dialog .village-card-open {
-    gap: 0.7rem;
-    padding: 0.7rem 3.1rem 0.7rem 0.7rem;
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    grid-template-rows: auto;
+    align-items: center;
   }
-  .village-card-art {
-    width: 2.75rem;
-    height: 2.75rem;
+  .village-card-info {
+    padding: 0.6rem 3.2rem 0.6rem 0.75rem;
+  }
+  .community-dialog .village-card-star {
+    top: 50%;
+    transform: translateY(-50%);
   }
   .community-tabs {
     display: flex;
