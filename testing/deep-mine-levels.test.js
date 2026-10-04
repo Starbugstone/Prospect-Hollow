@@ -154,7 +154,8 @@ describe('append-only deep mine campaign', () => {
   });
 
   it('retains the published accounting thresholds for every redesigned level', () => {
-    // Captured from the immutable first-expansion snapshot, not the working tree.
+    // Chest and speed values come from the immutable first-expansion snapshot. Star
+    // targets include the 2026-10-04 recalibration, which only lowered nine of them.
     const payload = JSON.stringify(
       deep.map(({ id, chestTarget, speedTargetMs, starScoreTarget }) => ({
         id,
@@ -164,7 +165,7 @@ describe('append-only deep mine campaign', () => {
       })),
     );
     expect(createHash('sha256').update(payload).digest('hex')).toBe(
-      'af6ea754de5c2b341fdd2213763d55926ac4628335c6c846201c8faf1490933d',
+      '5c4332c2d0a74588bccf35356149e404e148007aa4a0ca79794f75035a386218',
     );
   });
 

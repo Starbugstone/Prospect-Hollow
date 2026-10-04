@@ -32781,8 +32781,15 @@
       "id": 374,
       "chapterIndex": 62,
       "chestTarget": 33500,
-      "starScoreTarget": 35800,
+      "starScoreTarget": 33600,
       "speedTargetMs": 163000,
+      "compatibleTargets": [
+        {
+          "chestTarget": 33500,
+          "starScoreTarget": 35800,
+          "speedTargetMs": 163000
+        }
+      ],
       "miningMultiplier": 63,
       "chestCoins": {
         "1": 31500,
@@ -32793,8 +32800,15 @@
       "id": 375,
       "chapterIndex": 62,
       "chestTarget": 35000,
-      "starScoreTarget": 35800,
+      "starScoreTarget": 34200,
       "speedTargetMs": 167000,
+      "compatibleTargets": [
+        {
+          "chestTarget": 35000,
+          "starScoreTarget": 35800,
+          "speedTargetMs": 167000
+        }
+      ],
       "miningMultiplier": 63,
       "chestCoins": {
         "1": 31500,
@@ -32817,8 +32831,15 @@
       "id": 377,
       "chapterIndex": 62,
       "chestTarget": 23000,
-      "starScoreTarget": 28600,
+      "starScoreTarget": 21600,
       "speedTargetMs": 135000,
+      "compatibleTargets": [
+        {
+          "chestTarget": 23000,
+          "starScoreTarget": 28600,
+          "speedTargetMs": 135000
+        }
+      ],
       "miningMultiplier": 63,
       "chestCoins": {
         "1": 31500,
@@ -32841,8 +32862,15 @@
       "id": 379,
       "chapterIndex": 63,
       "chestTarget": 36000,
-      "starScoreTarget": 41000,
+      "starScoreTarget": 29400,
       "speedTargetMs": 169000,
+      "compatibleTargets": [
+        {
+          "chestTarget": 36000,
+          "starScoreTarget": 41000,
+          "speedTargetMs": 169000
+        }
+      ],
       "miningMultiplier": 64,
       "chestCoins": {
         "1": 32000,
@@ -32889,8 +32917,15 @@
       "id": 383,
       "chapterIndex": 63,
       "chestTarget": 24500,
-      "starScoreTarget": 26400,
+      "starScoreTarget": 24000,
       "speedTargetMs": 139000,
+      "compatibleTargets": [
+        {
+          "chestTarget": 24500,
+          "starScoreTarget": 26400,
+          "speedTargetMs": 139000
+        }
+      ],
       "miningMultiplier": 64,
       "chestCoins": {
         "1": 32000,
@@ -32949,8 +32984,15 @@
       "id": 388,
       "chapterIndex": 64,
       "chestTarget": 39000,
-      "starScoreTarget": 40200,
+      "starScoreTarget": 29800,
       "speedTargetMs": 177000,
+      "compatibleTargets": [
+        {
+          "chestTarget": 39000,
+          "starScoreTarget": 40200,
+          "speedTargetMs": 177000
+        }
+      ],
       "miningMultiplier": 65,
       "chestCoins": {
         "1": 32500,
@@ -32985,8 +33027,15 @@
       "id": 391,
       "chapterIndex": 65,
       "chestTarget": 35000,
-      "starScoreTarget": 35000,
+      "starScoreTarget": 30600,
       "speedTargetMs": 183000,
+      "compatibleTargets": [
+        {
+          "chestTarget": 35000,
+          "starScoreTarget": 35000,
+          "speedTargetMs": 183000
+        }
+      ],
       "miningMultiplier": 66,
       "chestCoins": {
         "1": 33000,
@@ -32997,8 +33046,15 @@
       "id": 392,
       "chapterIndex": 65,
       "chestTarget": 36500,
-      "starScoreTarget": 45200,
+      "starScoreTarget": 45000,
       "speedTargetMs": 203000,
+      "compatibleTargets": [
+        {
+          "chestTarget": 36500,
+          "starScoreTarget": 45200,
+          "speedTargetMs": 203000
+        }
+      ],
       "miningMultiplier": 66,
       "chestCoins": {
         "1": 33000,
@@ -33033,8 +33089,15 @@
       "id": 395,
       "chapterIndex": 65,
       "chestTarget": 26000,
-      "starScoreTarget": 28800,
+      "starScoreTarget": 23600,
       "speedTargetMs": 175000,
+      "compatibleTargets": [
+        {
+          "chestTarget": 26000,
+          "starScoreTarget": 28800,
+          "speedTargetMs": 175000
+        }
+      ],
       "miningMultiplier": 66,
       "chestCoins": {
         "1": 33000,
@@ -34418,5 +34481,5 @@
       "backfilled": 0
     }
   },
-  "contentDigest": "af42cc1239948ead638a709e6dfe389339db37674273d6e876326638a106b19a"
+  "contentDigest": "1503f933d9498ff278234f597fb98c7154787155e16bbad8d75bf494013fa96f"
 }

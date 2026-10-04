@@ -2615,11 +2615,21 @@
     "374": [
       {
         "chestTarget": 33500,
+        "starScoreTarget": 33600,
+        "speedTargetMs": 163000
+      },
+      {
+        "chestTarget": 33500,
         "starScoreTarget": 35800,
         "speedTargetMs": 163000
       }
     ],
     "375": [
+      {
+        "chestTarget": 35000,
+        "starScoreTarget": 34200,
+        "speedTargetMs": 167000
+      },
       {
         "chestTarget": 35000,
         "starScoreTarget": 35800,
@@ -2636,6 +2646,11 @@
     "377": [
       {
         "chestTarget": 23000,
+        "starScoreTarget": 21600,
+        "speedTargetMs": 135000
+      },
+      {
+        "chestTarget": 23000,
         "starScoreTarget": 28600,
         "speedTargetMs": 135000
       }
@@ -2648,6 +2663,11 @@
       }
     ],
     "379": [
+      {
+        "chestTarget": 36000,
+        "starScoreTarget": 29400,
+        "speedTargetMs": 169000
+      },
       {
         "chestTarget": 36000,
         "starScoreTarget": 41000,
@@ -2676,6 +2696,11 @@
       }
     ],
     "383": [
+      {
+        "chestTarget": 24500,
+        "starScoreTarget": 24000,
+        "speedTargetMs": 139000
+      },
       {
         "chestTarget": 24500,
         "starScoreTarget": 26400,
@@ -2713,6 +2738,11 @@
     "388": [
       {
         "chestTarget": 39000,
+        "starScoreTarget": 29800,
+        "speedTargetMs": 177000
+      },
+      {
+        "chestTarget": 39000,
         "starScoreTarget": 40200,
         "speedTargetMs": 177000
       }
@@ -2734,11 +2764,21 @@
     "391": [
       {
         "chestTarget": 35000,
+        "starScoreTarget": 30600,
+        "speedTargetMs": 183000
+      },
+      {
+        "chestTarget": 35000,
         "starScoreTarget": 35000,
         "speedTargetMs": 183000
       }
     ],
     "392": [
+      {
+        "chestTarget": 36500,
+        "starScoreTarget": 45000,
+        "speedTargetMs": 203000
+      },
       {
         "chestTarget": 36500,
         "starScoreTarget": 45200,
@@ -2760,6 +2800,11 @@
       }
     ],
     "395": [
+      {
+        "chestTarget": 26000,
+        "starScoreTarget": 23600,
+        "speedTargetMs": 175000
+      },
       {
         "chestTarget": 26000,
         "starScoreTarget": 28800,

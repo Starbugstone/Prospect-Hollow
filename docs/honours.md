@@ -102,6 +102,12 @@ Measured on 2026-10-03 with `scripts/measure-campaign.mjs` (hint-led, 30 seeds �
 now reports `jewels` and a per-type `gems` tally for every run. A bot that finishes each puzzle
 as soon as it can is likely a lower bound for a human, who can use powers and play on.
 
+On 2026-10-04 nine deep-mine star targets were lowered (see [star ratings](star-ratings.md)).
+The score figures below were recomputed from the same runs with the new targets. Only the
+325–402 and 37–402 rows (by at most 0.8 percentage points), the 2× level count (200 → 202) and
+the Score Ace pass average (11.7 → 11.8) moved. Score Legend is unchanged, so no goal or
+requirement version changes.
+
 Score multiple (score ÷ star target) by level band; the ≥ columns are shares of runs.
 
 | Levels  | Median | p90  | Max  | ≥ 1.5× | ≥ 2×  | ≥ 3×  | ≥ 4×  |
@@ -111,14 +117,14 @@ Score multiple (score ÷ star target) by level band; the ≥ columns are shares 
 | 37–120  | 1.10   | 1.68 | 4.76 | 17.6%  | 3.4%  | 0.3%  | 0.0%  |
 | 121–240 | 1.01   | 1.58 | 4.17 | 13.0%  | 2.7%  | 0.2%  | 0.0%  |
 | 241–324 | 1.00   | 1.49 | 3.33 | 9.6%   | 1.6%  | 0.0%  | 0.0%  |
-| 325–402 | 1.04   | 1.72 | 5.75 | 17.2%  | 5.4%  | 0.6%  | 0.0%  |
-| 37–402  | 1.03   | 1.62 | 5.75 | 14.2%  | 3.2%  | 0.3%  | 0.0%  |
+| 325–402 | 1.05   | 1.74 | 5.75 | 18.0%  | 5.6%  | 0.6%  | 0.0%  |
+| 37–402  | 1.03   | 1.62 | 5.75 | 14.4%  | 3.2%  | 0.3%  | 0.0%  |
 
 Opening star targets are deliberately low, hence the level-37 floor. Of the 366 levels from 37,
-200 have at least one run at 2× and 24 at 3×.
+202 have at least one run at 2× and 24 at 3×.
 
 - **Score Ace (2×)**: one qualifying puzzle per 31 played (the score route to three stars, 1.5×,
-  is one per 7). A single pass over levels 37–402 yields 11.7 on average (7–20 per seed). The first
+  is one per 7). A single pass over levels 37–402 yields 11.8 on average (7–20 per seed). The first
   one arrives at a median of level 62 (40–195), and about 75% of players would have one by level
   75 and 99% by 200. It follows three-star play without being routine.
 - **Score Legend (3×)**: one per 366 puzzles. A pass yields 1.0 on average, and 19 of 30 seeds
