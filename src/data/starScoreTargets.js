@@ -67,10 +67,11 @@ export const STAR_SCORE_TARGETS = Object.freeze([
   33000, 40600, 41400, 36400, 30400, 39600,
   34000, 44400, 36200, 42000, 23000, 46000,
   // Deeper mines, levels 373–402 (same calibration, appended). After the
-  // bonus-required redesign, targets above a 100-seed recalibration were lowered.
+  // bonus-required redesign, targets above a 100-seed recalibration were lowered,
+  // except 391, which keeps its 28% three-star rate as a challenge.
   20800, 33600, 34200, 34000, 21600, 36800,
   29400, 35400, 36600, 35400, 24000, 39600,
   24000, 34400, 35000, 29800, 24200, 46000,
-  30600, 45000, 46800, 40800, 23600, 44600,
+  35000, 45000, 46800, 40800, 23600, 44600,
   33800, 35000, 36000, 36400, 28000, 51600,
 ]);

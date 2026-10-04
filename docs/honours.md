@@ -102,9 +102,9 @@ Measured on 2026-10-03 with `scripts/measure-campaign.mjs` (hint-led, 30 seeds �
 now reports `jewels` and a per-type `gems` tally for every run. A bot that finishes each puzzle
 as soon as it can is likely a lower bound for a human, who can use powers and play on.
 
-On 2026-10-04 nine deep-mine star targets were lowered (see [star ratings](star-ratings.md)).
+On 2026-10-04 eight deep-mine star targets were lowered (see [star ratings](star-ratings.md)).
 The score figures below were recomputed from the same runs with the new targets. Only the
-325–402 and 37–402 rows (by at most 0.8 percentage points), the 2× level count (200 → 202) and
+325–402 and 37–402 rows (by at most 0.7 percentage points), the 2× level count (200 → 202) and
 the Score Ace pass average (11.7 → 11.8) moved. Score Legend is unchanged, so no goal or
 requirement version changes.
 
@@ -117,8 +117,8 @@ Score multiple (score ÷ star target) by level band; the ≥ columns are shares 
 | 37–120  | 1.10   | 1.68 | 4.76 | 17.6%  | 3.4%  | 0.3%  | 0.0%  |
 | 121–240 | 1.01   | 1.58 | 4.17 | 13.0%  | 2.7%  | 0.2%  | 0.0%  |
 | 241–324 | 1.00   | 1.49 | 3.33 | 9.6%   | 1.6%  | 0.0%  | 0.0%  |
-| 325–402 | 1.05   | 1.74 | 5.75 | 18.0%  | 5.6%  | 0.6%  | 0.0%  |
-| 37–402  | 1.03   | 1.62 | 5.75 | 14.4%  | 3.2%  | 0.3%  | 0.0%  |
+| 325–402 | 1.05   | 1.73 | 5.75 | 17.9%  | 5.6%  | 0.6%  | 0.0%  |
+| 37–402  | 1.03   | 1.62 | 5.75 | 14.3%  | 3.2%  | 0.3%  | 0.0%  |
 
 Opening star targets are deliberately low, hence the level-37 floor. Of the 366 levels from 37,
 202 have at least one run at 2× and 24 at 3×.

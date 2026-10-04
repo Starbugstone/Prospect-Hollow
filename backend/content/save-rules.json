@@ -33027,12 +33027,12 @@
       "id": 391,
       "chapterIndex": 65,
       "chestTarget": 35000,
-      "starScoreTarget": 30600,
+      "starScoreTarget": 35000,
       "speedTargetMs": 183000,
       "compatibleTargets": [
         {
           "chestTarget": 35000,
-          "starScoreTarget": 35000,
+          "starScoreTarget": 30600,
           "speedTargetMs": 183000
         }
       ],
@@ -34481,5 +34481,5 @@
       "backfilled": 0
     }
   },
-  "contentDigest": "1503f933d9498ff278234f597fb98c7154787155e16bbad8d75bf494013fa96f"
+  "contentDigest": "a97bd5bf8d31257821c18737bb6139055a536e6b00fa2f7d4d80265bf70c9c70"
 }

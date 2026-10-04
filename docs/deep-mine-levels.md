@@ -84,7 +84,7 @@ clear-layers/relic objective; counters add no separately saved state.
 
 The redesign kept the published score chest and optional speed thresholds of
 all 402 levels. It pins the previously derived chest/time values so topology
-changes do not invalidate a queued victory from an old or offline board. Nine
+changes do not invalidate a queued victory from an old or offline board. Eight
 deep-mine star targets were lowered later (see below). The first 372
 level configurations remain byte-for-byte equivalent under the regression hash.
 Town era definitions and mine surface profiles remain independent.
@@ -111,8 +111,9 @@ The redesigned levels retain the exact published chest and optional speed
 thresholds from the immutable first-expansion source. A second captured hash
 verifies all thirty accounting tuples. The redesign changed geometry and strategy
 without recalibrating stars, so three-star rates drifted between 17% and 88% of
-runs. On 2026-10-04 the nine star targets above a 100-seed recalibration were
-lowered; the others were kept. The hash now includes those targets.
+runs. On 2026-10-04 eight star targets above a 100-seed recalibration were
+lowered; the others, including the 28% challenge level 391, were kept. The hash
+now includes those targets.
 [The star ratings guide](star-ratings.md) has the measurements.
 
 After the forge-first reorder, ten refill seeds per puzzle produced 300 complete
