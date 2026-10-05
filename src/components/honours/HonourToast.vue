@@ -33,12 +33,14 @@
           <span class="honour-toast-kicker">{{ copy.kicker }}</span>
           <strong class="honour-toast-title">{{ copy.title }}</strong>
           <span class="honour-toast-line">{{ copy.line }}</span>
+          <span v-if="copy.promotion" class="honour-toast-promotion">
+            <span aria-hidden="true">{{ copy.promotion.visual }}</span>
+            <span class="town-sr-only">{{ copy.promotion.spoken }}</span>
+          </span>
           <div class="honour-toast-foot">
             <span v-if="!summary" class="honour-toast-difficulty">
-              <svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
-                <polygon :points="GLYPHS[first.difficulty] ?? GLYPHS.medium" />
-              </svg>
-              {{ t(DIFFICULTY_LABELS[first.difficulty] ?? 'Medium') }}
+              <HonourMetalIcon :metal="first.metal" />
+              {{ difficultyLabel(first) }}
             </span>
             <button type="button" class="honour-toast-view" @click="view">
               {{ t(summary ? 'View all' : 'Open') }}<span aria-hidden="true">→</span>
@@ -65,21 +67,14 @@ import { t } from '../../i18n';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { NOTICE_MS, useHonourAnnouncements } from '../../composables/useHonourAnnouncements';
 import HonourBadge from './HonourBadge.vue';
+import HonourMetalIcon from './HonourMetalIcon.vue';
+import { difficultyLabel, metalLabel, popupText, rankName } from './honourDisplay';
 
 // The achievement popup: bottom right above the village tab bar, a compact card across
 // narrow screens. Non-modal; it never takes focus and pauses while hovered or focused.
 const props = defineProps({ active: Boolean });
 const settings = useSettingsStore();
 const { notice, visible, paused, hold, dismiss, view } = useHonourAnnouncements(() => props.active);
-const DIFFICULTY_LABELS = { easy: 'Easy', medium: 'Medium', hard: 'Very hard' };
-const polygon = (points, inner) =>
-  Array.from({ length: points * (inner ? 2 : 1) }, (_, i) => {
-    const r = inner && i % 2 ? inner : 46;
-    const a = ((-90 + (i * 360) / (points * (inner ? 2 : 1))) * Math.PI) / 180;
-    return `${(50 + r * Math.cos(a)).toFixed(1)},${(50 + r * Math.sin(a)).toFixed(1)}`;
-  }).join(' ');
-// Shape carries the difficulty as on the badges: round, hexagon, rosette.
-const GLYPHS = { easy: polygon(20), medium: polygon(6), hard: polygon(8, 26) };
 
 const summary = computed(() => notice.value?.entries.length > 1);
 const first = computed(() => notice.value?.entries[0].definition ?? {});
@@ -97,14 +92,22 @@ const copy = computed(() => {
   const shown = notice.value;
   if (!shown) return {};
   const count = shown.entries.length;
-  if (count === 1)
+  if (count === 1) {
+    // A family moving up names both metals: "Bronze → Silver".
+    const from = !shown.backfilled && shown.entries[0].from;
+    const metals = from && { from: metalLabel(from.metal), to: metalLabel(first.value.metal) };
     return {
-      kicker: t(shown.backfilled ? 'Honour recorded' : 'Achievement earned'),
-      title: t(first.value.name),
-      line: shown.backfilled
-        ? t('From your progress so far')
-        : t(first.value.popup, first.value.params?.()),
+      kicker: t(
+        shown.backfilled ? 'Honour recorded' : from ? 'New rank earned' : 'Achievement earned',
+      ),
+      title: rankName(first.value),
+      line: shown.backfilled ? t('From your progress so far') : popupText(first.value),
+      promotion: metals && {
+        visual: `${metals.from} → ${metals.to}`,
+        spoken: t('Promoted from {from} to {to}', metals),
+      },
     };
+  }
   return {
     kicker: t(shown.backfilled ? '{count} honours recorded' : '{count} achievements earned', {
       count,
@@ -253,6 +256,13 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure));
   font-size: 12px;
   line-height: 1.4;
 }
+.honour-toast-promotion {
+  margin-top: 2px;
+  color: #e9c893;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
 .honour-toast-foot {
   display: flex;
   align-items: center;
@@ -274,10 +284,9 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure));
   text-transform: uppercase;
   white-space: nowrap;
 }
-.honour-toast-difficulty svg {
+.honour-toast-difficulty .honour-metal-icon {
   width: 8px;
   height: 8px;
-  fill: currentColor;
 }
 .honour-toast-view {
   display: inline-flex;
@@ -404,6 +413,13 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure));
   }
   .honour-toast:not(.honour-toast-summary) .honour-toast-title {
     font-size: 17px;
+  }
+  .honour-toast-promotion {
+    margin-top: 2px;
+    color: #e9c893;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
   }
   .honour-toast-foot {
     margin-top: 2px;

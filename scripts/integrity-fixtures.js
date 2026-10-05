@@ -98,8 +98,7 @@ export function createIntegrityFixtures() {
     fixtures.push({ name, before, after, serverNow });
     campaign.endRun(campaign.activeRun);
   };
-  const victory = (campaign, options = {}) => {
-    const level = generateLevelConfigs()[0];
+  const victory = (campaign, options = {}, level = generateLevelConfigs()[0]) => {
     const runId = campaign.beginRun('normal', level.id);
     const rewards = campaign.recordVictory({
       id: level.id,
@@ -404,6 +403,30 @@ export function createIntegrityFixtures() {
       (campaign) => {
         expectSuccess(campaign.acknowledgeEra(), 'era cinematic');
         expectSuccess(campaign.advanceEra('river-rail'), 'era advance');
+      },
+    );
+    fixture(
+      'offline Town Honours: claimed victories, a forge collection and a protected raid',
+      (profile) => {
+        incident(profile, true);
+        profile.town.forge = { progress: 0, charge: 1 };
+        // Levels 55 and 56 hold relics, which the server credits from the level itself.
+        for (let id = 1; id < 55; id++) profile.records[id] = { score: 1, stars: 1 };
+      },
+      (campaign) => {
+        expectSuccess(campaign.markRaidSeen(1), 'protected raid seen');
+        expectSuccess(campaign.collectForgeTNT(), 'forge');
+        const levels = generateLevelConfigs();
+        victory(
+          campaign,
+          { tally: { gems: { ruby: 120, topaz: 40 }, fusions: { 'bomb+cross': 1 } } },
+          levels[54],
+        );
+        victory(
+          campaign,
+          { tally: { gems: { ruby: 30, sapphire: 20 }, fusions: { 'cross+cross': 2 } } },
+          levels[55],
+        );
       },
     );
     return { version: 1, fixtures };

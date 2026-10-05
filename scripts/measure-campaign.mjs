@@ -1,5 +1,6 @@
 // Compare deterministic, hint-led playthroughs with another checkout:
-// node scripts/measure-campaign.mjs [path-to-checkout]
+// node scripts/measure-campaign.mjs [path-to-checkout] [seedCount] [levelCount] [ids]
+// Seeds are independent: FIRST_SEED=11 measures seeds 11.. so batches can run in parallel.
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createServer } from 'vite';
@@ -7,7 +8,8 @@ const source = resolve(process.argv[2] ?? '.', 'src');
 const seedCount = Number(process.argv[3] ?? 0);
 const requestedCount = process.argv[4] ? Number(process.argv[4]) : undefined;
 const selectedIds = process.argv[5]?.split(',').map(Number);
-const seeds = seedCount ? Array.from({ length: seedCount }, (_, i) => i + 1) : [1, 19, 73];
+const firstSeed = Number(process.env.FIRST_SEED ?? 1);
+const seeds = seedCount ? Array.from({ length: seedCount }, (_, i) => i + firstSeed) : [1, 19, 73];
 const moduleAt = (file) => import(pathToFileURL(resolve(source, file)));
 const { generateLevelConfigs } = await moduleAt('game/engine/LevelGenerator.js');
 const { MatchEngine } = await moduleAt('game/engine/MatchEngine.js');
@@ -39,6 +41,13 @@ const { getStars } = await loader.ssrLoadModule('/src/data/campaign.js');
 const rules = await loader.ssrLoadModule('/src/game/town/TownRules.js');
 const { createTown, BANDIT_EVENT } = await loader.ssrLoadModule('/src/data/town.js');
 const { eraGate, advanceEra } = await loader.ssrLoadModule('/src/game/town/TownEras.js');
+// Checkouts predating TNT storage or Town Honours report no capacity or mine elements.
+const { bonusCapacity } = await loader
+  .ssrLoadModule('/src/data/rewards.js')
+  .catch(() => ({ bonusCapacity: () => null }));
+const { levelElements } = await loader
+  .ssrLoadModule('/src/data/honours.js')
+  .catch(() => ({ levelElements: () => ({}) }));
 const allLevels = generateLevelConfigs(requestedCount);
 const levelCount = allLevels.length;
 const engine = new MatchEngine(),
@@ -73,7 +82,9 @@ try {
       const blastHealth = tiles.map((tile) => (tile.bonusOnly ? tile.health : 0));
       let jewels = 0,
         score = 0,
+        fusions = 0,
         maxCombo = 1;
+      const fusionKeys = new Set();
       const gems = {};
       const comboCounts = {},
         multiMatchCounts = {};
@@ -135,6 +146,11 @@ try {
             ? clearScore(step, index)
             : (step.cleared?.length ?? 0) * 100 * cascadeTier(step, index);
           jewels += step.collectedJewels?.length ?? 0;
+          // Honours count a swap fusion by its key; the recovery sweep's fusion has none.
+          if (step.bonusFusion?.key) {
+            fusions++;
+            fusionKeys.add(step.bonusFusion.key);
+          }
           for (const { type } of step.collectedJewels ?? []) gems[type] = (gems[type] ?? 0) + 1;
           if (!step.cleared?.length) return;
           const tier = cascadeTier(step, index),
@@ -165,6 +181,9 @@ try {
         diagonalPearlDrops,
         jewels,
         gems,
+        fusions,
+        fusionKeys: [...fusionKeys].sort(),
+        mine: levelElements(level),
         coins: rules.miningPayout(jewels, bonuses, comboCounts, multiMatchCounts, level.id),
       });
     }
@@ -197,6 +216,9 @@ const villages = selectedIds
         longestSavingGap = 0,
         savingGap = 0,
         loss = 0;
+      const incidents = [],
+        forgeCollections = [],
+        tntCapacity = [];
       const visit = () => {
         town = rules.scheduleRaid(town, () => 0);
         town = rules.banditEncounter(town, () => 0) ?? town;
@@ -205,6 +227,13 @@ const villages = selectedIds
         const raid = town.events[BANDIT_EVENT];
         if (raid && !raid.seen) {
           loss += raid.loss;
+          incidents.push({
+            atRun: town.completedRuns,
+            era: town.era,
+            kind: raid.kind ?? 'bandits',
+            outcome: raid.outcome,
+            loss: raid.loss,
+          });
           town.events[BANDIT_EVENT] = { ...raid, seen: true };
         }
         if (eraGate(town).available) {
@@ -232,6 +261,14 @@ const villages = selectedIds
         town.coins += run.coins;
         town.completedRuns++;
         town = rules.advanceConstruction(town);
+        // Older checkouts have no forge. Collect each TNT as soon as it is ready,
+        // ignoring TNT storage (a player who spends TNT never fills it).
+        town = rules.advanceForge?.(town) ?? town;
+        if (town.forge?.charge) {
+          forgeCollections.push(town.completedRuns);
+          tntCapacity.push(bonusCapacity(town));
+          town = { ...town, forge: { progress: 0, charge: 0 } };
+        }
         visit();
       }
       return {
@@ -243,6 +280,9 @@ const villages = selectedIds
         longestSavingGap,
         raidLoss: loss,
         coins: town.coins,
+        incidents,
+        forgeCollections,
+        tntCapacity,
       };
     });
 console.log(JSON.stringify({ chapters, villages, results }, null, 2));

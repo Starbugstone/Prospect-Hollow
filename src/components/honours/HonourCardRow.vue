@@ -6,11 +6,11 @@
       role="img"
       :aria-label="
         t('Showcase: {names}', {
-          names: view.showcase.map((definition) => t(definition.name)).join(', '),
+          names: view.showcase.map(rankName).join(', '),
         })
       "
     >
-      <span v-for="definition in view.showcase" :key="definition.id" :title="t(definition.name)">
+      <span v-for="definition in view.showcase" :key="definition.id" :title="rankName(definition)">
         <HonourBadge :definition="definition" :size="size" />
       </span>
     </span>
@@ -24,8 +24,9 @@ import { computed } from 'vue';
 import { cardHonours } from '../../services/townDirectory';
 import { t } from '../../i18n';
 import HonourBadge from './HonourBadge.vue';
+import { rankName } from './honourDisplay';
 
-// A town card's honours: the owner's showcased families (best earned rank) and the
+// A town card's honours: the owner's showcased families (best earned rank and metal) and the
 // total, from the shared-town directory or the player's own town summary.
 const props = defineProps({
   honours: { type: Object, default: null },

@@ -1,8 +1,8 @@
 <template>
   <ul v-if="compact" class="honour-slots-compact" :aria-label="t('Showcased honours')">
-    <li v-for="slot in filled" :key="slot.familyId" :title="t(slot.definition.name)">
+    <li v-for="slot in filled" :key="slot.familyId" :title="slot.name">
       <HonourBadge :definition="slot.definition" :size="size" />
-      <span class="town-sr-only">{{ t(slot.definition.name) }}</span>
+      <span class="town-sr-only">{{ slot.name }}</span>
     </li>
   </ul>
   <ol v-else class="honour-slots" :aria-label="t('Showcase')">
@@ -13,7 +13,9 @@
     >
       <template v-if="slot">
         <HonourBadge :definition="slot.definition" :size="44" />
-        <span>{{ t(slot.definition.name) }}</span>
+        <span class="honour-slot-name"
+          >{{ t(slot.definition.name) }}<small>{{ slot.track.text }}</small></span
+        >
       </template>
       <button v-else-if="addable" class="honour-slot-add" type="button" @click="$emit('add')">
         <span class="honour-slot-plus" aria-hidden="true">+</span>{{ t('Add an earned honour') }}
@@ -28,7 +30,7 @@ import { t } from '../../i18n';
 import HonourBadge from './HonourBadge.vue';
 import { showcaseSlots } from './honourDisplay';
 // The three showcase slots: full in the collection and town management, compact
-// beside a shared town's name. Each slot shows its family's highest earned rank.
+// beside a shared town's name. Each slot shows its family's highest earned rank and metal.
 const props = defineProps({
   ids: { type: Array, default: () => [] },
   earned: { type: Object, default: () => ({}) },
@@ -98,6 +100,16 @@ const filled = computed(() => slots.value.filter(Boolean));
   border-radius: 50%;
   color: #6f6a4f;
   font-size: 22px;
+}
+.honour-slot-name {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+.honour-slot-name small {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6f5317;
 }
 .honour-slot-empty {
   padding-left: 6px;

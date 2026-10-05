@@ -30,6 +30,7 @@
           <th scope="col">Era</th>
           <th scope="col" class="number">Levels</th>
           <th scope="col" class="number">Coins</th>
+          <th scope="col" class="number">Unique visitors</th>
           <th scope="col">Last save</th>
           <th scope="col">State</th>
         </tr>
@@ -52,14 +53,19 @@
           <td>{{ eraLabel(town.stats.era) }}</td>
           <td class="number">{{ town.stats.levels }}</td>
           <td class="number">{{ whole(town.stats.coins) }}</td>
+          <td class="number">{{ whole(town.uniqueVisitors) }}</td>
           <td :title="dateTime(town.savedAt)">{{ relativeTime(town.savedAt) }}</td>
           <td><TownState :town="town" /></td>
         </tr>
         <tr v-if="!result.towns.length">
-          <td colspan="7" class="admin-empty">No towns match.</td>
+          <td colspan="8" class="admin-empty">No towns match.</td>
         </tr>
       </tbody>
     </table>
+    <p class="admin-muted">
+      Unique visitors counts each signed-in visitor once across recorded visits. Owner visits and
+      anonymous guests are excluded.
+    </p>
     <Pager
       v-if="result"
       v-model:page="query.page"

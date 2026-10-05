@@ -1,5 +1,5 @@
 import { computed, onScopeDispose, reactive, ref, toValue, watch } from 'vue';
-import { HONOURS, normalizeHonours, pendingAnnouncements } from '../data/honours';
+import { HONOURS, RANK_METALS, normalizeHonours, pendingAnnouncements } from '../data/honours';
 import { BANDIT_EVENT } from '../data/town';
 import { pendingPresentation } from '../data/townPresentations';
 import { useCampaignStore } from '../stores/campaignStore';
@@ -9,7 +9,6 @@ import { useHonourNavigation } from './useHonourNavigation';
 
 export const NOTICE_MS = 5000;
 export const SETTLE_MS = 700;
-const DIFFICULTY_ORDER = ['hard', 'medium', 'easy'];
 // The village tab bar is on screen only once the village has loaded and no incident,
 // era cinematic or presentation is playing. The card waits for it and sits above it.
 const VILLAGE_SELECTOR = '.town-tab-bar';
@@ -19,14 +18,25 @@ const BUSY_SELECTOR = 'dialog[open], .town-has-raid, .town-in-cinematic, .town-r
 
 // One card for everything pending: a single honour, or one summary for several honours
 // from the same action or batch, never a sequence of toasts. Each family shows its
-// highest new rank; `ids` also covers lower ranks earned at once so none repeats later.
-// Backfilled honours share one "recorded from your progress so far" summary.
+// highest new rank, the finest metal first; `ids` also covers lower ranks earned at
+// once so none repeats later. An entry's `from` is the rank the family already held
+// (announced before), so the card can show the promotion. Backfilled honours share one
+// "recorded from your progress so far" summary.
 export function honourNotice(honours, catalog = HONOURS) {
   const saved = normalizeHonours(honours);
   const order = (entry) =>
-    DIFFICULTY_ORDER.indexOf(entry.definition.difficulty) * catalog.definitions.length +
+    -RANK_METALS.indexOf(entry.definition.metal) * catalog.definitions.length +
     catalog.definitions.indexOf(entry.definition);
-  const entries = pendingAnnouncements(saved, catalog).sort((a, b) => order(a) - order(b));
+  const entries = pendingAnnouncements(saved, catalog)
+    .sort((a, b) => order(a) - order(b))
+    .map((entry) => {
+      const below = catalog.familyById[entry.definition.family].ranks.slice(
+        0,
+        entry.definition.rank - 1,
+      );
+      const from = below.filter((rank) => saved.earned[rank.id]?.announced).at(-1) ?? null;
+      return { ...entry, from };
+    });
   if (!entries.length) return null;
   return {
     entries,
@@ -45,7 +55,7 @@ export function honourNotice(honours, catalog = HONOURS) {
  *   its results, nor on the home page, in account panels, while visiting another town
  *   or in a read-only save;
  * - never while settings, an era cinematic, a pending town presentation or an unseen
- *   incident is up. The three-star celebration is a presentation, so Perfect Prospector
+ *   incident is up. The three-star celebration is a presentation, so a star rank
  *   appears after it finishes or is skipped;
  * - only once the village and its tab bar are on screen, never while a dialog, sheet,
  *   cinematic or results card is open (BUSY_SELECTOR), and only after a short settle, so

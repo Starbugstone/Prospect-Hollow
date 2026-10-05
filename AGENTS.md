@@ -74,25 +74,36 @@ leaves the board. This is a hard rule for every current and future mechanic.
   `testing/completed-board-markers.test.js`; the test fails until a new obstacle
   has one, then checks that its completed cell matches a plain one.
 
-## Town Honours follow the content
+## Town Honours: fixed ranks that grow with the game
 
-Town Honours goals come from the shared content definitions in `src/data/honours.js`. Never copy
-counts such as 402 levels, six gems or 26 storage into honours code.
+Town Honours are families of metal ranks (bronze → silver → gold, then diamond and later
+metals) defined in `src/data/honours.js`. The game will gain eras, levels and mechanics, so
+no honour may treat the current content as final.
 
-- When a change adds or alters levels, chapters, gem types, eras, incident kinds, powers, storage
-  buildings, bonus fusions or mine elements, update the honours registry in the same change: a
-  new gem gets its laureate and goal, a new era its defence medal, a new mine element a mastery
-  badge or an explicit opt-out. Regenerate the level element index with
-  `node scripts/export-honour-levels.mjs` after changing levels.
-- Changing a goal bumps its requirement version. Earned honours are permanent: never revoke,
-  reset or re-evaluate them away, and keep the version they were earned under. Never reuse or
-  rename an honour ID.
-- Recalibrate affected goals with the campaign simulator and record the evidence in
+- A shipped rank's requirement is fixed: its goal, measure and metal never change, and ranks
+  are never removed or reordered. Content growth adds ranks at the end of a family (diamond
+  and beyond) or new families. Requirements are fixed numbers or named milestones, never
+  "all levels", "every era" or "the final era".
+- `testing/fixtures/shipped-honour-ranks.json` records every shipped rank. Add new ranks to
+  it in the same change; changing a shipped entry needs a raised requirement version and the
+  user's explicit approval.
+- Content changes need an honours decision in the same change: a new gem gets its family and
+  goals, a new mine element a family or `NON_MASTERY_ELEMENTS`, a new era a Through the Ages
+  rank or `NON_MILESTONE_ERAS`, a new bonus fusion a rank or `LATER_FUSIONS`. A new rank sets
+  `since` to a raised `HONOURS_VERSION` so existing saves catch up and see it as new.
+  Regenerate the level element index with `node scripts/export-honour-levels.mjs` and the
+  server catalogs (`npm run export:save-rules`, `node scripts/export-public-content.mjs`)
+  after changing levels or honours.
+- Earned honours are permanent: never revoke, reset or re-evaluate them away, and keep the
+  version they were earned under. Never reuse or rename an honour or family ID.
+- Calibrate new goals with the campaign simulator and record the evidence in
   [the honours guide](docs/honours.md).
+- The server verifies what it publishes from its own counters and the validated save
+  (`backend/src/Honours.php`); keep the measure kinds of the game and the server in step.
 - Honours never gate progression, rewards or puzzle completion, and never add move or time
   limits.
-- Keep `testing/honours.test.js` passing; its coverage checks fail when a gem, era or mine
-  element has no honours decision.
+- Keep `testing/honours.test.js` passing; its coverage checks fail when a gem, era, fusion or
+  mine element has no honours decision.
 
 ## Local checks run in Docker
 

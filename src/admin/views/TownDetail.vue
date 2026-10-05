@@ -51,6 +51,14 @@
             <dd>{{ dateTime(town.deletedAt) }}</dd>
           </div>
           <div>
+            <dt
+              title="Each signed-in visitor once across recorded visits; excludes owner visits and anonymous guests."
+            >
+              Unique visitors
+            </dt>
+            <dd>{{ whole(town.uniqueVisitors) }}</dd>
+          </div>
+          <div>
             <dt>Saloon collected by a visitor</dt>
             <dd>{{ town.saloonCollectedAt ? dateTime(town.saloonCollectedAt) : 'never' }}</dd>
           </div>
@@ -63,147 +71,186 @@
         </dl>
       </div>
 
-      <h2>Campaign</h2>
-      <ol class="admin-levels" aria-label="Levels and stars">
-        <li
-          v-for="level in levels"
-          :key="level.id"
-          :class="`stars-${level.stars}`"
-          :title="level.title"
+      <div class="admin-town-tabs" role="tablist" aria-label="Town details">
+        <button
+          v-for="item in tabs"
+          :id="`town-tab-${item.id}`"
+          :key="item.id"
+          type="button"
+          role="tab"
+          :aria-selected="tab === item.id"
+          :aria-controls="`town-panel-${item.id}`"
+          :tabindex="tab === item.id ? 0 : -1"
+          @click="tab = item.id"
+          @keydown="switchTab($event, item.id)"
         >
-          <span>{{ level.id }}</span>
-          <span aria-hidden="true">{{ '★'.repeat(level.stars) || '·' }}</span>
-        </li>
-      </ol>
-      <p v-if="levels.length < LEVEL_COUNT" class="admin-muted">
-        Levels {{ levels.length + 1 }}–{{ LEVEL_COUNT }} not reached yet.
-      </p>
-
-      <div class="admin-columns">
-        <div>
-          <h2>Buildings</h2>
-          <table class="admin-table compact">
-            <thead>
-              <tr>
-                <th scope="col">Building</th>
-                <th scope="col" class="number">Level</th>
-                <th scope="col">Style</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="building in buildings" :key="building.id">
-                <td>{{ building.name }}</td>
-                <td class="number">{{ building.level }}</td>
-                <td>{{ building.era }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div>
-          <h2>Inventory</h2>
-          <dl class="admin-facts admin-facts-column">
-            <div v-for="power in powers" :key="power.id">
-              <dt>{{ power.label }}</dt>
-              <dd>{{ power.quantity }}</dd>
-            </div>
-            <div>
-              <dt>Builder hammers</dt>
-              <dd>{{ profile.builderHammers ?? 0 }}</dd>
-            </div>
-          </dl>
-          <template v-if="projects.length">
-            <h2>Under construction</h2>
-            <ul class="admin-list">
-              <li v-for="project in projects" :key="project.id">
-                {{ project.name }}: {{ project.wins }} of {{ project.required }} puzzles
-              </li>
-            </ul>
-          </template>
-        </div>
+          {{ item.label }}
+        </button>
       </div>
+      <div
+        v-if="tab === 'achievements'"
+        id="town-panel-achievements"
+        role="tabpanel"
+        aria-labelledby="town-tab-achievements"
+        tabindex="0"
+      >
+        <TownHonours
+          :profile="profile"
+          :unique-visitors="town.uniqueVisitors"
+          :towns-visited="town.townsVisited"
+        />
+      </div>
+      <div
+        v-show="tab === 'overview'"
+        id="town-panel-overview"
+        role="tabpanel"
+        aria-labelledby="town-tab-overview"
+        tabindex="0"
+      >
+        <h2>Campaign</h2>
+        <ol class="admin-levels" aria-label="Levels and stars">
+          <li
+            v-for="level in levels"
+            :key="level.id"
+            :class="`stars-${level.stars}`"
+            :title="level.title"
+          >
+            <span>{{ level.id }}</span>
+            <span aria-hidden="true">{{ '★'.repeat(level.stars) || '·' }}</span>
+          </li>
+        </ol>
+        <p v-if="levels.length < LEVEL_COUNT" class="admin-muted">
+          Levels {{ levels.length + 1 }}–{{ LEVEL_COUNT }} not reached yet.
+        </p>
 
-      <h2>Cloud history</h2>
-      <p class="admin-muted">
-        Restoring saves an older revision as the newest one; the current save stays in this list.
-        The owner’s device takes it on its next sync, or asks which copy to keep if it has unsynced
-        progress.
-      </p>
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th scope="col" class="number">Revision</th>
-            <th scope="col">Saved</th>
-            <th scope="col">Era</th>
-            <th scope="col" class="number">Coins</th>
-            <th scope="col" class="number">Levels</th>
-            <th scope="col"><span class="visually-hidden">Action</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr class="admin-current">
-            <td class="number">{{ town.revision }}</td>
-            <td>{{ dateTime(town.savedAt) }}</td>
-            <td>{{ eraLabel(stats.era) }}</td>
-            <td class="number">{{ whole(stats.coins) }}</td>
-            <td class="number">{{ stats.levels }}</td>
-            <td>Current</td>
-          </tr>
-          <tr v-for="entry in data.history" :key="entry.revision">
-            <td class="number">{{ entry.revision }}</td>
-            <td>{{ dateTime(entry.savedAt) }}</td>
-            <td>{{ eraLabel(entry.stats.era) }}</td>
-            <td class="number">{{ whole(entry.stats.coins) }}</td>
-            <td class="number">{{ entry.stats.levels }}</td>
-            <td>
-              <ConfirmAction
-                label="Restore"
-                :title="`Restore revision ${entry.revision}?`"
-                :message="`It is saved as revision ${town.revision + 1}. Revision ${town.revision} stays in the history.`"
-                :disabled="Boolean(town.deletedAt)"
-                :run="() => restore(entry.revision)"
-              />
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <template v-if="!town.deletedAt">
-        <h2>Moderation</h2>
-        <form class="admin-inline-form" @submit.prevent="rename">
-          <label>
-            Town name
-            <input v-model="name" maxlength="24" required />
-          </label>
-          <button class="admin-button" :disabled="busy || name.trim() === town.name">Rename</button>
-        </form>
-        <div class="admin-actions">
-          <ConfirmAction
-            v-if="town.isPublic"
-            label="Stop sharing"
-            title="Stop sharing this town?"
-            message="Its share link stops working and it leaves the public list. The owner can share it again."
-            :run="unshare"
-          />
-          <ConfirmAction
-            danger
-            label="Delete town"
-            title="Delete this town?"
-            message="It leaves the owner’s account at once and is purged after 30 days. Copies on the owner’s devices stay there."
-            :confirm-text="town.name"
-            :run="remove"
-          />
+        <div class="admin-columns">
+          <div>
+            <h2>Buildings</h2>
+            <table class="admin-table compact">
+              <thead>
+                <tr>
+                  <th scope="col">Building</th>
+                  <th scope="col" class="number">Level</th>
+                  <th scope="col">Style</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="building in buildings" :key="building.id">
+                  <td>{{ building.name }}</td>
+                  <td class="number">{{ building.level }}</td>
+                  <td>{{ building.era }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <h2>Inventory</h2>
+            <dl class="admin-facts admin-facts-column">
+              <div v-for="power in powers" :key="power.id">
+                <dt>{{ power.label }}</dt>
+                <dd>{{ power.quantity }}</dd>
+              </div>
+              <div>
+                <dt>Builder hammers</dt>
+                <dd>{{ profile.builderHammers ?? 0 }}</dd>
+              </div>
+            </dl>
+            <template v-if="projects.length">
+              <h2>Under construction</h2>
+              <ul class="admin-list">
+                <li v-for="project in projects" :key="project.id">
+                  {{ project.name }}: {{ project.wins }} of {{ project.required }} puzzles
+                </li>
+              </ul>
+            </template>
+          </div>
         </div>
-      </template>
-      <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
 
-      <h2>Save data</h2>
-      <button type="button" class="admin-button quiet" @click="download">
-        Download save (JSON)
-      </button>
-      <details class="admin-raw">
-        <summary>Show the full save</summary>
-        <pre>{{ JSON.stringify(profile, null, 2) }}</pre>
-      </details>
+        <h2>Cloud history</h2>
+        <p class="admin-muted">
+          Restoring saves an older revision as the newest one; the current save stays in this list.
+          The owner’s device takes it on its next sync, or asks which copy to keep if it has
+          unsynced progress.
+        </p>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th scope="col" class="number">Revision</th>
+              <th scope="col">Saved</th>
+              <th scope="col">Era</th>
+              <th scope="col" class="number">Coins</th>
+              <th scope="col" class="number">Levels</th>
+              <th scope="col"><span class="visually-hidden">Action</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="admin-current">
+              <td class="number">{{ town.revision }}</td>
+              <td>{{ dateTime(town.savedAt) }}</td>
+              <td>{{ eraLabel(stats.era) }}</td>
+              <td class="number">{{ whole(stats.coins) }}</td>
+              <td class="number">{{ stats.levels }}</td>
+              <td>Current</td>
+            </tr>
+            <tr v-for="entry in data.history" :key="entry.revision">
+              <td class="number">{{ entry.revision }}</td>
+              <td>{{ dateTime(entry.savedAt) }}</td>
+              <td>{{ eraLabel(entry.stats.era) }}</td>
+              <td class="number">{{ whole(entry.stats.coins) }}</td>
+              <td class="number">{{ entry.stats.levels }}</td>
+              <td>
+                <ConfirmAction
+                  label="Restore"
+                  :title="`Restore revision ${entry.revision}?`"
+                  :message="`It is saved as revision ${town.revision + 1}. Revision ${town.revision} stays in the history.`"
+                  :disabled="Boolean(town.deletedAt)"
+                  :run="() => restore(entry.revision)"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <template v-if="!town.deletedAt">
+          <h2>Moderation</h2>
+          <form class="admin-inline-form" @submit.prevent="rename">
+            <label>
+              Town name
+              <input v-model="name" maxlength="24" required />
+            </label>
+            <button class="admin-button" :disabled="busy || name.trim() === town.name">
+              Rename
+            </button>
+          </form>
+          <div class="admin-actions">
+            <ConfirmAction
+              v-if="town.isPublic"
+              label="Stop sharing"
+              title="Stop sharing this town?"
+              message="Its share link stops working and it leaves the public list. The owner can share it again."
+              :run="unshare"
+            />
+            <ConfirmAction
+              danger
+              label="Delete town"
+              title="Delete this town?"
+              message="It leaves the owner’s account at once and is purged after 30 days. Copies on the owner’s devices stay there."
+              :confirm-text="town.name"
+              :run="remove"
+            />
+          </div>
+        </template>
+        <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
+
+        <h2>Save data</h2>
+        <button type="button" class="admin-button quiet" @click="download">
+          Download save (JSON)
+        </button>
+        <details class="admin-raw">
+          <summary>Show the full save</summary>
+          <pre>{{ JSON.stringify(profile, null, 2) }}</pre>
+        </details>
+      </div>
     </template>
   </section>
 </template>
@@ -216,6 +263,23 @@ import { BUILDINGS, LEVEL_COUNT, buildingLabel, eraLabel, powerLabel } from '../
 import ConfirmAction from '../components/ConfirmAction.vue';
 import TownState from '../components/TownState.vue';
 import TownPreview from '../components/TownPreview.vue';
+import TownHonours from '../components/TownHonours.vue';
+const tabs = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'achievements', label: 'Achievements' },
+];
+const tab = ref('overview');
+function switchTab(event, id) {
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+  event.preventDefault();
+  tab.value =
+    event.key === 'Home'
+      ? tabs[0].id
+      : event.key === 'End'
+        ? tabs.at(-1).id
+        : tabs.find((item) => item.id !== id).id;
+  document.getElementById(`town-tab-${tab.value}`)?.focus();
+}
 const props = defineProps({ id: String });
 const data = ref(null),
   error = ref(''),

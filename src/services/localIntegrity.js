@@ -40,7 +40,7 @@ const NORMAL_ACTIONS = new Set([
   'recordVictory',
   'consumePowerItem',
   'setHonourShowcase',
-  'recordTownVisitors',
+  'recordTownSocial',
   'markHonoursSeen',
   'markHonoursAnnounced',
 ]);

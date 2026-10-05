@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { createSSRApp, effectScope, h, nextTick, reactive, ref } from 'vue';
 import { renderToString } from 'vue/server-renderer';
-import { HONOURS, awardHonour, mergeHonours, normalizeHonours } from '../src/data/honours';
+import { HONOURS, mergeHonours, normalizeHonours } from '../src/data/honours';
 import { BANDIT_EVENT } from '../src/data/town';
 import { useCampaignStore } from '../src/stores/campaignStore';
 import { useSettingsStore } from '../src/stores/settingsStore';
@@ -27,37 +27,57 @@ vi.mock('../src/composables/useHonourAnnouncements', async (importOriginal) => {
   };
 });
 
-const award = (honours, ids, options = {}) =>
-  ids.reduce((next, id, i) => awardHonour(next, id, { at: 1000 + i, ...options }), honours);
-const fresh = (ids, options) => award(normalizeHonours(null), ids, options);
+// Earned entries as the store saves them, unannounced and unseen unless stated.
+function award(honours, ids, { at, ...flags } = {}) {
+  const next = normalizeHonours(honours);
+  ids.forEach((id, i) => {
+    next.earned[id] = { at: at === undefined ? 1000 + i : at, version: 1, ...flags };
+  });
+  return normalizeHonours(next);
+}
+const fresh = (ids, options) => award(null, ids, options);
 
 describe('Honour notice batching', () => {
-  it('announces nothing without new honours, and never the quiet era medals', () => {
+  it('announces nothing without new honours, and Town Guardian ranks like any other', () => {
     expect(honourNotice(null)).toBe(null);
-    expect(honourNotice(fresh(['defence-frontier']))).toBe(null);
-    const announced = fresh(['first-perfect']);
-    announced.earned['first-perfect'].announced = true;
+    const announced = fresh(['stars-bronze']);
+    announced.earned['stars-bronze'].announced = true;
     expect(honourNotice(announced)).toBe(null);
+    expect(honourNotice(fresh(['guardian-bronze'])).entries.map(({ id }) => id)).toEqual([
+      'guardian-bronze',
+    ]);
   });
 
-  it('makes one summary of a batch, with only the highest new score rank', () => {
+  it('makes one summary of a batch, finest metal first, with one rank per family', () => {
     const notice = honourNotice(
-      fresh(['first-fusion', 'score-ace', 'score-legend', 'forge-delivers', 'defence-frontier']),
+      fresh(['fusion-bronze', 'score-silver', 'score-gold', 'forge-bronze', 'guardian-bronze']),
     );
     expect(notice.entries.map(({ id }) => id)).toEqual([
-      'score-legend',
-      'first-fusion',
-      'forge-delivers',
+      'score-gold',
+      'fusion-bronze',
+      'guardian-bronze',
+      'forge-bronze',
     ]);
     // Both score ranks are acknowledged, so the lower rank never follows on its own.
     expect(notice.ids.sort()).toEqual(
-      ['first-fusion', 'forge-delivers', 'score-ace', 'score-legend'].sort(),
+      ['fusion-bronze', 'forge-bronze', 'guardian-bronze', 'score-gold', 'score-silver'].sort(),
     );
     expect(notice.backfilled).toBe(false);
   });
 
+  it('names the rank a family moves up from, once announced before', () => {
+    const honours = fresh(['score-bronze']);
+    honours.earned['score-bronze'].announced = true;
+    const [promoted] = honourNotice(award(honours, ['score-silver'])).entries;
+    expect(promoted.id).toBe('score-silver');
+    expect(promoted.from.id).toBe('score-bronze');
+    // Two ranks at once, or a first rank, is not a promotion.
+    expect(honourNotice(fresh(['score-bronze', 'score-silver'])).entries[0].from).toBe(null);
+    expect(honourNotice(fresh(['stars-bronze'])).entries[0].from).toBe(null);
+  });
+
   it('marks a batch containing legacy backfill as one recorded summary', () => {
-    const honours = fresh(['first-perfect', 'score-ace', 'master-quartermaster'], {
+    const honours = fresh(['stars-bronze', 'score-silver', 'quartermaster-gold'], {
       at: null,
       backfilled: true,
     });
@@ -136,14 +156,14 @@ describe('Honour popup queue', () => {
 
   it('shows one card with one sound, marks it announced and closes after five seconds', async () => {
     const { toast, game } = start();
-    earn(['first-perfect']);
+    earn(['stars-bronze']);
     await settle();
-    expect(toast.notice.value.entries.map(({ id }) => id)).toEqual(['first-perfect']);
+    expect(toast.notice.value.entries.map(({ id }) => id)).toEqual(['stars-bronze']);
     expect(toast.visible.value).toBe(true);
     expect(game.audioManager.playArcadeCue).toHaveBeenCalledTimes(1);
     expect(game.audioManager.playArcadeCue).toHaveBeenCalledWith('chest-open');
-    expect(campaign.honours.earned['first-perfect'].announced).toBe(true);
-    expect(campaign.honours.earned['first-perfect'].seen).toBe(false);
+    expect(campaign.honours.earned['stars-bronze'].announced).toBe(true);
+    expect(campaign.honours.earned['stars-bronze'].seen).toBe(false);
     vi.advanceTimersByTime(NOTICE_MS - 100);
     expect(toast.notice.value).not.toBe(null);
     vi.advanceTimersByTime(100);
@@ -155,7 +175,7 @@ describe('Honour popup queue', () => {
 
   it('pauses while hovered or keyboard-focused and resumes the remaining time', async () => {
     const { toast } = start();
-    earn(['forge-delivers']);
+    earn(['forge-bronze']);
     await settle();
     vi.advanceTimersByTime(2000);
     toast.hold('hover', true);
@@ -176,7 +196,7 @@ describe('Honour popup queue', () => {
 
   it('turns one action with several honours into a single summary, never a sequence', async () => {
     const { toast, game } = start();
-    earn(['first-fusion', 'score-ace', 'score-legend', 'forge-delivers']);
+    earn(['fusion-bronze', 'score-silver', 'score-gold', 'forge-bronze']);
     await settle();
     expect(toast.notice.value.entries).toHaveLength(3);
     expect(toast.notice.value.fromPuzzle).toBe(false);
@@ -184,13 +204,13 @@ describe('Honour popup queue', () => {
     await settle(NOTICE_MS * 3);
     expect(toast.notice.value).toBe(null);
     expect(game.audioManager.playArcadeCue).toHaveBeenCalledTimes(1);
-    for (const id of ['first-fusion', 'score-ace', 'score-legend', 'forge-delivers'])
+    for (const id of ['fusion-bronze', 'score-silver', 'score-gold', 'forge-bronze'])
       expect(campaign.honours.earned[id].announced).toBe(true);
   });
 
   it('summarises legacy backfill once', async () => {
     const { toast } = start();
-    earn(['first-perfect', 'score-ace', 'perfect-prospector', 'town-complete'], {
+    earn(['stars-bronze', 'score-silver', 'quartermaster-gold', 'ages-gold'], {
       at: null,
       backfilled: true,
     });
@@ -204,12 +224,12 @@ describe('Honour popup queue', () => {
 
   it('opens the collection on the honour, or on the whole set for a summary', async () => {
     const { toast } = start();
-    earn(['score-ace']);
+    earn(['score-silver']);
     await settle();
     toast.view();
     expect(toast.notice.value).toBe(null);
     expect(useHonourNavigation().requests.collection).toEqual({ familyId: 'score' });
-    earn(['first-fusion', 'forge-delivers']);
+    earn(['fusion-bronze', 'forge-bronze']);
     await settle();
     toast.view();
     expect(useHonourNavigation().requests.collection).toEqual({ familyId: null });
@@ -221,14 +241,14 @@ describe('Honour popup queue', () => {
   ])('in %s mode unlocks and acknowledges silently', async (mode, cleared) => {
     settings.setHonourNotices(mode);
     const { toast, game } = start();
-    earn(['first-perfect', 'fusion-master']);
+    earn(['stars-bronze', 'fusion-silver']);
     await settle(NOTICE_MS);
     expect(toast.notice.value).toBe(null);
     expect(game.audioManager.playArcadeCue).not.toHaveBeenCalled();
-    expect(Object.keys(campaign.honours.earned)).toEqual(['first-perfect', 'fusion-master']);
-    expect(campaign.honours.earned['first-perfect'].announced).toBe(true);
+    expect(Object.keys(campaign.honours.earned)).toEqual(['stars-bronze', 'fusion-silver']);
+    expect(campaign.honours.earned['stars-bronze'].announced).toBe(true);
     // Quiet keeps the collection's New marker; Off clears it.
-    expect(campaign.honours.earned['fusion-master'].seen).toBe(cleared);
+    expect(campaign.honours.earned['fusion-silver'].seen).toBe(cleared);
     settings.setHonourNotices('full');
     await settle(NOTICE_MS);
     expect(toast.notice.value).toBe(null);
@@ -236,13 +256,13 @@ describe('Honour popup queue', () => {
 
   it('never repeats after a reload or a stale sync copy', async () => {
     const first = start();
-    earn(['master-quartermaster']);
+    earn(['quartermaster-gold']);
     const stale = normalizeHonours(JSON.parse(JSON.stringify(campaign.honours)));
     await settle();
     expect(first.toast.notice.value).not.toBe(null);
     first.scope.stop();
     campaign.reloadLocal();
-    expect(campaign.honours.earned['master-quartermaster'].announced).toBe(true);
+    expect(campaign.honours.earned['quartermaster-gold'].announced).toBe(true);
     campaign.honours = mergeHonours(campaign.honours, stale);
     const second = start();
     await settle(NOTICE_MS);
@@ -252,7 +272,7 @@ describe('Honour popup queue', () => {
   it('presents once per session even when the acknowledgement cannot be saved', async () => {
     const { toast, game } = start();
     vi.spyOn(campaign, 'markHonoursAnnounced').mockReturnValue(false);
-    earn(['first-perfect']);
+    earn(['stars-bronze']);
     await settle();
     toast.dismiss();
     dom.busy = true;
@@ -268,10 +288,10 @@ describe('Honour popup queue', () => {
   it('waits for the results to close and the village to open after a puzzle', async () => {
     const { toast, state, game } = start({ active: false });
     game.sessionActive = true;
-    earn(['first-perfect', 'first-fusion']);
+    earn(['stars-bronze', 'fusion-bronze']);
     await settle(NOTICE_MS);
     expect(toast.notice.value).toBe(null);
-    expect(campaign.honours.earned['first-perfect'].announced).toBe(false);
+    expect(campaign.honours.earned['stars-bronze'].announced).toBe(false);
     game.sessionActive = false;
     state.active = true;
     await settle();
@@ -280,14 +300,14 @@ describe('Honour popup queue', () => {
 
   it('never announces outside the owner village or in a read-only save', async () => {
     const { toast, state } = start({ active: false });
-    earn(['first-perfect']);
+    earn(['stars-bronze']);
     await settle(NOTICE_MS);
     expect(toast.notice.value).toBe(null);
     campaign.readOnly = true;
     state.active = true;
     await settle(NOTICE_MS);
     expect(toast.notice.value).toBe(null);
-    expect(campaign.honours.earned['first-perfect'].announced).toBe(false);
+    expect(campaign.honours.earned['stars-bronze'].announced).toBe(false);
   });
 
   it.each([
@@ -319,7 +339,7 @@ describe('Honour popup queue', () => {
     const { toast } = start();
     open();
     mutate();
-    earn(['perfect-prospector']);
+    earn(['stars-gold']);
     await settle(NOTICE_MS);
     expect(toast.notice.value).toBe(null);
     settings.isSettingsOpen = false;
@@ -329,12 +349,12 @@ describe('Honour popup queue', () => {
     await settle(SETTLE_MS - 1);
     expect(toast.notice.value).toBe(null);
     await settle(1);
-    expect(toast.notice.value.entries[0].id).toBe('perfect-prospector');
+    expect(toast.notice.value.entries[0].id).toBe('stars-gold');
   });
 
   it('hides and pauses a card while a dialog opens, and closes it when leaving town', async () => {
     const { toast, state } = start();
-    earn(['first-perfect']);
+    earn(['stars-bronze']);
     await settle();
     dom.busy = true;
     mutate();
@@ -353,22 +373,28 @@ describe('Honour popup queue', () => {
 
   it('follows the current town when its honours are replaced', async () => {
     const { toast } = start();
-    earn(['first-perfect']);
+    earn(['stars-bronze']);
     await settle();
-    campaign.honours = fresh(['forge-delivers']);
+    campaign.honours = fresh(['forge-bronze']);
     await nextTick();
     expect(toast.notice.value).toBe(null);
     await settle();
-    expect(toast.notice.value.entries[0].id).toBe('forge-delivers');
+    expect(toast.notice.value.entries[0].id).toBe('forge-bronze');
   });
 });
 
 describe('Honour popup rendering', () => {
   const definition = (id) => HONOURS.byId[id];
-  const card = (ids, extra = {}) => ({
+  // `from` names the rank a single family is promoted from.
+  const card = (ids, { from = null, ...extra } = {}) => ({
     notice: ref({
       key: 1,
-      entries: ids.map((id) => ({ id, definition: definition(id), entry: {} })),
+      entries: ids.map((id) => ({
+        id,
+        definition: definition(id),
+        entry: {},
+        from: from && definition(from),
+      })),
       ids,
       backfilled: false,
       fromPuzzle: true,
@@ -392,24 +418,42 @@ describe('Honour popup rendering', () => {
   });
 
   it('renders a single achievement as a polite, non-modal status card', async () => {
-    const html = await render(card(['master-quartermaster']));
+    const html = await render(card(['quartermaster-gold']));
     expect(html).toContain('role="status"');
     expect(html).toContain('aria-live="polite"');
     expect(html).not.toMatch(/autofocus|aria-modal|tabindex|<dialog/);
     for (const text of [
       'Achievement earned',
-      'Master Quartermaster',
-      'Every supply fully stocked',
-      'Very hard',
+      'Master Quartermaster · Gold',
+      '5 powers fully stocked',
+      'Hard',
       '>Open<',
       'aria-label="Dismiss"',
       'honour-toast-timer',
     ])
       expect(html).toContain(text);
+    // The badge takes the rank's gold rosette, and a first rank is no promotion.
+    expect(html).toMatch(/<polygon points="(?:[\d.]+,[\d.]+ ){31}[\d.]+,[\d.]+"/);
+    expect(html).toContain('honour-metal-gold');
+    expect(html).not.toContain('Very hard');
+    expect(html).not.toContain('honour-toast-promotion');
+  });
+
+  it('shows a family moving up with both metals, spoken in words', async () => {
+    const html = await render(card(['score-silver'], { from: 'score-bronze' }));
+    for (const text of [
+      'New rank earned',
+      'Score Ace · Silver',
+      'Two and a half times the star target',
+      '<span aria-hidden="true">Bronze → Silver</span>',
+      '<span class="town-sr-only">Promoted from Bronze to Silver</span>',
+      'Medium',
+    ])
+      expect(html).toContain(text);
   });
 
   it('renders a batch as one summary card', async () => {
-    const html = await render(card(['score-ace', 'first-fusion', 'forge-delivers']));
+    const html = await render(card(['score-silver', 'fusion-bronze', 'forge-bronze']));
     expect(html).toContain('3 achievements earned');
     expect(html).toContain('Score Ace, First Fusion and 1 more');
     expect(html).toContain('From your last puzzle');
@@ -421,23 +465,27 @@ describe('Honour popup rendering', () => {
   it('renders legacy backfill and French copy', async () => {
     setLocale('fr');
     const backfill = await render(
-      card(['first-perfect', 'score-ace', 'perfect-prospector', 'town-complete'], {
+      card(['stars-bronze', 'score-silver', 'quartermaster-gold', 'ages-gold'], {
         backfilled: true,
       }),
     );
     expect(backfill).toContain('4 distinctions enregistrées');
-    expect(backfill).toContain('Premier sans-faute, As du score et 2 autres');
+    expect(backfill).toContain('Étoile montante, As du score et 2 autres');
     expect(backfill).toContain('D’après votre progression');
-    const single = await render(card(['master-quartermaster']));
+    const single = await render(card(['quartermaster-gold']));
     for (const text of [
       'Succès obtenu',
-      'Maître intendant',
-      'Toutes les réserves au complet',
-      'Très difficile',
+      'Maître intendant · Or',
+      '5 pouvoirs au complet',
+      'Difficile',
       '>Ouvrir<',
       'Fermer le message',
     ])
       expect(single).toContain(text);
+    const promoted = await render(card(['score-silver'], { from: 'score-bronze' }));
+    for (const text of ['Nouveau rang obtenu', 'As du score · Argent', 'Bronze → Argent'])
+      expect(promoted).toContain(text);
+    expect(promoted).toContain('Promotion : de Bronze à Argent');
   });
 
   it('translates every popup and preference string', () => {
@@ -454,7 +502,14 @@ describe('Honour popup rendering', () => {
       'From your progress so far',
       'Easy',
       'Medium',
-      'Very hard',
+      'Hard',
+      'Bronze',
+      'Silver',
+      'Gold',
+      'Diamond',
+      'New rank earned',
+      'Promoted from {from} to {to}',
+      '{name} · {metal}',
       'Open',
       'View all',
       'Dismiss',

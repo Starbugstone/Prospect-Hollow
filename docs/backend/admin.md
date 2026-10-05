@@ -53,6 +53,22 @@ Every signed-in API request records, at most once a minute per player: the last-
 
 ## API
 
+The town list and detail show **Unique visitors**: different signed-in visitor identities
+across recorded visits, using the same count as Town Honours. Repeat arrivals count once;
+owner visits and anonymous guests are excluded. The list counts only its page of towns in
+one query. This is recorded visitor history, not a live-presence count.
+
+The town detail's **Achievements** tab shows the latest cloud save's earned ranks,
+progress toward the next rank in every honour family, all rank requirements, and the
+player's three showcase slots in order. Progress uses the shared game catalog and
+refreshes social counters from the server. It does not award ranks, mark them seen,
+or write the save. Unsynced device progress is not visible. The showcase shows the
+player's saved choices; public sharing still applies the server's verification rules.
+
+`GET towns` adds numeric `uniqueVisitors` to each town. `GET towns/{id}` includes
+`town.uniqueVisitors` and `town.townsVisited`; its existing `profile.honours` supplies
+the saved achievements and showcase.
+
 All routes are under `/api/admin/`, JSON only. Changes send `X-CSRF-Token`.
 
 | Route                                                                                                                                        | Purpose                                                           |

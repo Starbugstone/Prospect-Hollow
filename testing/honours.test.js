@@ -1,99 +1,160 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import {
-  FORGE_VETERAN_GOAL,
+  COUNTERS,
+  FUSION_MASTER_KEYS,
   GEM_GOALS,
   HONOURS,
-  INCIDENT_NAMES,
-  MEDAL_NAMES,
+  HONOURS_VERSION,
+  HONOUR_ID,
+  HONOUR_TABS,
+  LATER_FUSIONS,
   MINE_ELEMENTS,
   NON_MASTERY_ELEMENTS,
+  NON_MILESTONE_ERAS,
+  QUARTERMASTER,
+  RANK_METALS,
   SCORE_FROM_LEVEL,
   SHOWCASE_SLOTS,
-  awardHonour,
-  backfillDefenceMedal,
+  backfillHonours,
   bestScoreRun,
-  createHonourCatalog,
+  buildHonourCatalog,
   createHonours,
   createRunTally,
-  creditForge,
+  creditCounter,
   creditRun,
-  defenceMedal,
+  eraStep,
   evaluateHonours,
   honourCollection,
+  honourFamilies,
   levelElements,
-  maxPowerCapacity,
-  recordVisitors,
   mergeHonours,
   normalizeHonours,
   pendingAnnouncements,
   publicHonours,
+  recordSocial,
+  runClaim,
+  seedCounts,
   tallySteps,
   validShowcase,
 } from '../src/data/honours';
 import { elementLevels, levelHonourElements } from '../src/data/honourLevels';
 import honourLevels from '../src/data/honourLevels.json';
+import shippedRanks from './fixtures/shipped-honour-ranks.json';
 import { GEM_TYPES } from '../src/game/engine/GemFactory';
 import { FUSION_STYLES } from '../src/game/engine/BonusFusion';
 import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
 import { ERAS } from '../src/data/eras';
 import { OBSTACLES } from '../src/data/obstacles';
 import { LEVEL_COUNT, POWERS } from '../src/data/campaign';
+import { bonusCapacity } from '../src/data/rewards';
+import { BUILDING_BY_ID } from '../src/data/town';
 import { getLevelStarTarget } from '../src/data/starRating';
-import { eraEventKind } from '../src/data/townEvents';
 import { useCampaignStore, SAVE_KEY } from '../src/stores/campaignStore';
 import { HONOUR_NOTICE_MODES, useSettingsStore } from '../src/stores/settingsStore';
 import { useHonourNavigation } from '../src/composables/useHonourNavigation';
 import fr from '../src/i18n/fr.json';
-import { createSSRApp, h } from 'vue';
-import { renderToString } from 'vue/server-renderer';
-import HonourBadge from '../src/components/honours/HonourBadge.vue';
 
-const records = (entries) => Object.fromEntries(entries.map(([id, record]) => [id, record]));
 const target = (id) => getLevelStarTarget(id, null);
-const allStars = (count = LEVEL_COUNT) =>
-  Object.fromEntries(Array.from({ length: count }, (_, i) => [i + 1, { score: 1, stars: 3 }]));
-const fullPowers = (quantity) => POWERS.map((power) => ({ id: power.id, quantity }));
+const stars = (count, value = 3) =>
+  Object.fromEntries(Array.from({ length: count }, (_, i) => [i + 1, { score: 1, stars: value }]));
+const powers = (quantity, count = POWERS.length) =>
+  POWERS.map((power, index) => ({ id: power.id, quantity: index < count ? quantity : 0 }));
+const town = (overrides = {}) => ({
+  era: 'frontier',
+  buildings: {},
+  projects: {},
+  buildingEras: {},
+  buildingEraLevels: {},
+  events: {},
+  lastCollections: {},
+  ...overrides,
+});
 const state = (overrides = {}) => ({
   records: {},
-  powers: fullPowers(0),
-  town: { era: 'frontier', buildings: {}, projects: {}, buildingEras: {}, buildingEraLevels: {} },
+  powers: powers(0),
+  town: town(),
   honours: createHonours(),
   ...overrides,
 });
-const earnedIds = (honours) => Object.keys(honours.earned).sort();
+const added = (overrides) => evaluateHonours(state(overrides)).added;
+const earned = (ids, at = 1) =>
+  normalizeHonours({ earned: Object.fromEntries(ids.map((id) => [id, { at }])) });
+const ranks = (familyId, catalog = HONOURS) =>
+  catalog.familyById[familyId].ranks.map((rank) => rank.id);
 
-describe('The honours registry follows the content definitions', () => {
-  it('gives every gem type a calibrated laureate and every enabled era a named medal', () => {
-    for (const gem of GEM_TYPES) {
-      expect(GEM_GOALS[gem]).toBeGreaterThan(0);
-      expect(HONOURS.byId[`laureate-${gem}`]).toBeTruthy();
-    }
-    for (const era of ERAS.filter((entry) => entry.enabled)) {
-      expect(MEDAL_NAMES[era.id], era.id).toBeTruthy();
-      expect(INCIDENT_NAMES[eraEventKind(era.id)], era.id).toBeTruthy();
-      expect(HONOURS.byId[`defence-${era.id}`].incident).toBe(eraEventKind(era.id));
-    }
-  });
-
-  it('makes an explicit mastery decision for every mine element', () => {
-    const mastery = MINE_ELEMENTS.map((element) => element.obstacle).filter(Boolean);
-    for (const { id } of OBSTACLES)
-      expect(mastery.includes(id) || NON_MASTERY_ELEMENTS.includes(id), id).toBe(true);
-  });
-
-  it('covers every supported bonus fusion and keeps IDs unique', () => {
-    expect(HONOURS.fusionKeys).toEqual(Object.keys(FUSION_STYLES));
-    const ids = HONOURS.definitions.map((definition) => definition.id);
-    expect(new Set(ids).size).toBe(ids.length);
-    expect(HONOURS.families.filter((family) => family.category === 'achievement')).toHaveLength(
-      10 + GEM_TYPES.length,
+describe('The honours registry', () => {
+  it('builds every rank as <family>-<metal>, in ladder order, with growing goals', () => {
+    expect(new Set(HONOURS.definitions.map((rank) => rank.id)).size).toBe(
+      HONOURS.definitions.length,
     );
+    for (const family of HONOURS.families) {
+      expect(family.id).toMatch(HONOUR_ID);
+      expect(HONOUR_TABS, family.id).toContain(family.tab);
+      const metals = family.ranks.map((rank) => RANK_METALS.indexOf(rank.metal));
+      expect(metals, family.id).toEqual([...metals].sort((a, b) => a - b));
+      for (const [index, rank] of family.ranks.entries()) {
+        expect(rank.id).toBe(`${family.id}-${rank.metal}`);
+        expect(rank.id).toMatch(HONOUR_ID);
+        expect(rank.rank).toBe(index + 1);
+        expect(rank.since, rank.id).toBeLessThanOrEqual(HONOURS_VERSION);
+        if (index) expect(rank.goal, rank.id).toBeGreaterThan(family.ranks[index - 1].goal);
+      }
+    }
   });
 
-  it('derives maximum storage from the armory and garage definitions', () => {
-    // 20 from a fully upgraded armory plus 6 from a level-3 garage today.
-    expect(maxPowerCapacity().capacity).toBe(26);
+  it('never moves a shipped rank: goals, measures and versions match the release record', () => {
+    // A shipped rank may only change by raising its requirement version, which the record
+    // must then repeat. New ranks are added to the record in the same change.
+    const current = Object.fromEntries(
+      HONOURS.definitions.map((rank) => [
+        rank.id,
+        { goal: rank.goal, measure: rank.measure, version: rank.version },
+      ]),
+    );
+    expect(JSON.parse(JSON.stringify(current))).toEqual(shippedRanks);
+  });
+
+  it('rejects ladders out of metal order, unknown measures and unknown tabs', () => {
+    const [stars] = honourFamilies();
+    const build = (family) => () => buildHonourCatalog([family]);
+    expect(build({ ...stars, ranks: [...stars.ranks].reverse() })).toThrow(/metal order/);
+    expect(build({ ...stars, measure: { kind: 'luck' } })).toThrow(/measure/);
+    expect(build({ ...stars, tab: 'secret' })).toThrow(/tab/);
+    expect(build({ ...stars, ranks: [{ metal: 'bronze', goal: Infinity }] })).toThrow(/goal/);
+  });
+
+  it('gives every gem a bronze, silver and gold collection goal', () => {
+    for (const gem of GEM_TYPES) {
+      expect(GEM_GOALS[gem], gem).toHaveLength(3);
+      expect(ranks(`gem-${gem}`)).toEqual([
+        `gem-${gem}-bronze`,
+        `gem-${gem}-silver`,
+        `gem-${gem}-gold`,
+      ]);
+    }
+  });
+
+  it('makes an explicit decision for every mine element, era and bonus fusion', () => {
+    const mastery = MINE_ELEMENTS.map((element) => element.obstacle);
+    for (const { id } of OBSTACLES)
+      expect(mastery.includes(id) !== NON_MASTERY_ELEMENTS.includes(id), id).toBe(true);
+    const milestones = HONOURS.definitions
+      .filter((rank) => rank.measure.kind === 'era')
+      .map((rank) => rank.measure.era);
+    for (const era of ERAS.filter((entry) => entry.enabled))
+      expect(milestones.includes(era.id) !== NON_MILESTONE_ERAS.includes(era.id), era.id).toBe(
+        true,
+      );
+    for (const key of Object.keys(FUSION_STYLES))
+      expect(FUSION_MASTER_KEYS.includes(key) !== LATER_FUSIONS.includes(key), key).toBe(true);
+    for (const key of FUSION_MASTER_KEYS) expect(FUSION_STYLES[key], key).toBeTruthy();
+  });
+
+  it('keeps Master Quartermaster within the largest storage the town can build', () => {
+    const maxed = { buildings: { armory: 3, garage: BUILDING_BY_ID.garage.upgrades.length } };
+    expect(QUARTERMASTER.quantity).toBeLessThanOrEqual(bonusCapacity(maxed));
+    expect(QUARTERMASTER.powers).toBeLessThanOrEqual(POWERS.length);
   });
 
   it('keeps the generated level element index in step with the level definitions', () => {
@@ -104,263 +165,360 @@ describe('The honours registry follows the content definitions', () => {
     );
     expect(honourLevels).toEqual(live);
     expect(levelHonourElements(247)).toEqual({ lanterns: 2 });
-    const lanterns = elementLevels('lanterns');
-    expect(lanterns.pieces).toBe(84);
-    expect(lanterns.chapters).toEqual([42, 62]);
+    expect(elementLevels('lanterns')).toMatchObject({ pieces: 84, chapters: [42, 62] });
   });
 
-  it('sets each mastery goal near one and a half campaigns of its element', () => {
+  it('sets mine silver within one campaign and gold near one and a half campaigns', () => {
     for (const element of MINE_ELEMENTS) {
       const perCampaign = elementLevels(element.id).pieces;
-      expect(element.goal / perCampaign, element.id).toBeGreaterThan(1.3);
-      expect(element.goal / perCampaign, element.id).toBeLessThan(1.7);
+      const [bronze, silver, gold] = element.goals;
+      expect(bronze, element.id).toBeLessThan(silver);
+      expect(silver, element.id).toBeLessThanOrEqual(perCampaign);
+      expect(gold / perCampaign, element.id).toBeGreaterThan(1.3);
+      expect(gold / perCampaign, element.id).toBeLessThan(1.7);
     }
   });
 
-  it('translates every honour name, requirement and popup line', () => {
-    const strings = HONOURS.definitions.flatMap((definition) => [
-      definition.name,
-      definition.requirement,
-      ...(definition.popup ? [definition.popup] : []),
-    ]);
-    const extra = [
-      ...Object.values(INCIDENT_NAMES),
-      ...MINE_ELEMENTS.map((element) => element.label),
-    ];
-    for (const text of [...strings, ...extra]) expect(fr[text], text).toBeTruthy();
+  it('translates every honour name, requirement, popup and progress line', () => {
+    const strings = HONOURS.definitions.flatMap((rank) =>
+      [rank.name, rank.requirement, rank.popup, rank.progressText].filter(Boolean),
+    );
+    const params = HONOURS.definitions.flatMap((rank) =>
+      Object.values(rank.params()).filter((value) => typeof value === 'string'),
+    );
+    const labels = MINE_ELEMENTS.map((element) => element.label);
+    for (const text of [...strings, ...params, ...labels]) expect(fr[text], text).toBeTruthy();
   });
 });
 
-describe('Score ranks', () => {
-  it('awards Ace at exactly twice the target from level 37, not below or before', () => {
-    const id = SCORE_FROM_LEVEL;
-    const below = evaluateHonours(
-      state({ records: records([[id, { score: 2 * target(id) - 1, stars: 3 }]]) }),
-    );
-    expect(below.added).not.toContain('score-ace');
-    const at = evaluateHonours(
-      state({ records: records([[id, { score: 2 * target(id), stars: 3 }]]) }),
-    );
-    expect(at.added).toContain('score-ace');
-    expect(at.honours.earned['score-ace'].evidence).toEqual({
-      levelId: id,
-      score: 2 * target(id),
-      target: target(id),
-    });
-    const early = evaluateHonours(
-      state({ records: records([[id - 1, { score: 10 * target(id - 1), stars: 3 }]]) }),
-    );
-    expect(early.added).not.toContain('score-ace');
+describe('Measures', () => {
+  it('counts three-star puzzles for the stars ladder', () => {
+    expect(added({ records: stars(24) })).toEqual([]);
+    expect(added({ records: stars(25) })).toEqual(['stars-bronze']);
+    expect(added({ records: stars(149) })).not.toContain('stars-silver');
+    expect(added({ records: stars(150) })).toContain('stars-silver');
+    expect(added({ records: stars(400, 2) })).toEqual([]);
   });
 
-  it('promotes straight to Legend and announces only the highest new rank', () => {
-    const id = 200;
-    const { honours, added } = evaluateHonours(
-      state({ records: records([[id, { score: 3 * target(id), stars: 3 }]]) }),
+  it('awards score ranks from level 37 at exactly their multiple of the target', () => {
+    const id = SCORE_FROM_LEVEL;
+    const at = (multiple, level = id) => ({
+      records: { [level]: { score: multiple * target(level), stars: 2 } },
+    });
+    expect(added(at(1.5))).toEqual(['score-bronze']);
+    expect(added({ records: { [id]: { score: 2.5 * target(id) - 1, stars: 2 } } })).toEqual([
+      'score-bronze',
+    ]);
+    expect(evaluateHonours(state(at(2.5))).honours.earned['score-silver'].evidence).toEqual({
+      levelId: id,
+      score: 2.5 * target(id),
+      target: target(id),
+    });
+    expect(added(at(10, id - 1))).toEqual([]);
+    expect(bestScoreRun({ 500: { score: 1e9, stars: 3 } }, SCORE_FROM_LEVEL, 500)).toBeNull();
+  });
+
+  it('announces only the highest new rank of a family', () => {
+    const { honours, added: ids } = evaluateHonours(
+      state({ records: { 200: { score: 3 * target(200), stars: 3 } } }),
     );
-    expect(added).toEqual(expect.arrayContaining(['score-ace', 'score-legend']));
+    expect(ids).toEqual(expect.arrayContaining(['score-bronze', 'score-silver', 'score-gold']));
     const score = pendingAnnouncements(honours).filter(
       (entry) => entry.definition.family === 'score',
     );
-    expect(score.map((entry) => entry.id)).toEqual(['score-legend']);
+    expect(score.map((entry) => entry.id)).toEqual(['score-gold']);
   });
 
-  it('never counts a level without a usable star target', () => {
-    expect(bestScoreRun({ 500: { score: 1e9, stars: 3 } }, SCORE_FROM_LEVEL, 500)).toBeNull();
+  it('counts eras in two steps each: reached, then completed', () => {
+    expect(eraStep('frontier')).toBe(0);
+    expect(eraStep('industrial')).toBe(4);
+    expect(eraStep('industrial', true)).toBe(5);
+    expect(eraStep('starlight')).toBe(-1);
+    expect(added({ town: town({ era: 'frontier' }) })).toEqual([]);
+    expect(added({ town: town({ era: 'river-rail' }) })).toEqual(['ages-bronze']);
+    expect(added({ town: town({ era: 'contemporary' }) })).toEqual(['ages-bronze', 'ages-silver']);
+    // Reaching the last era is not completing it.
+    expect(added({ town: town({ era: 'riverlight' }) })).toEqual(['ages-bronze', 'ages-silver']);
+  });
+
+  it('counts fusions by kind: one, every listed kind, then a hundred', () => {
+    const fused = (fusions) => added({ honours: creditRun(createHonours(), { fusions }) });
+    expect(fused({ 'bomb+cross': 1 })).toEqual(['fusion-bronze']);
+    const everyKind = Object.fromEntries(FUSION_MASTER_KEYS.map((key) => [key, 1]));
+    expect(fused(everyKind)).toEqual(['fusion-bronze', 'fusion-silver']);
+    expect(fused({ 'bomb+bomb': 299 })).toEqual(['fusion-bronze']);
+    expect(fused({ 'bomb+bomb': 300 })).toEqual(['fusion-bronze', 'fusion-gold']);
+  });
+
+  it('counts gems, mine elements, forge collections and protected incidents', () => {
+    let honours = creditRun(createHonours(), {
+      gems: { ruby: GEM_GOALS.ruby[1] },
+      mine: { lanterns: MINE_ELEMENTS.find((element) => element.id === 'lanterns').goals[0] },
+    });
+    for (let i = 0; i < 5; i++)
+      honours = creditCounter(creditCounter(honours, 'forge'), 'guardian');
+    expect(added({ honours })).toEqual([
+      'gem-ruby-bronze',
+      'gem-ruby-silver',
+      'mine-lanterns-bronze',
+      'guardian-bronze',
+      'forge-bronze',
+    ]);
+  });
+
+  it('needs five powers held at 26 at the same time, and spending never revokes it', () => {
+    expect(added({ powers: powers(QUARTERMASTER.quantity, QUARTERMASTER.powers - 1) })).toEqual([]);
+    expect(added({ powers: powers(QUARTERMASTER.quantity - 1) })).toEqual([]);
+    const full = evaluateHonours(state({ powers: powers(QUARTERMASTER.quantity) }));
+    expect(full.added).toEqual(['quartermaster-gold']);
+    const spent = evaluateHonours(state({ powers: powers(0), honours: full.honours }));
+    expect(spent.honours.earned['quartermaster-gold']).toBeTruthy();
+  });
+
+  it('ranks the server’s social counts and keeps the highest of each', () => {
+    let honours = recordSocial(createHonours(), { visitors: 4, travels: 5 });
+    expect(recordSocial(honours, { visitors: 3, travels: 'many' })).toBeNull();
+    expect(added({ honours })).toEqual(['visitors-bronze', 'explorer-bronze']);
+    honours = recordSocial(honours, { visitors: 15, travels: 30 });
+    expect(added({ honours })).toEqual([
+      'visitors-bronze',
+      'visitors-silver',
+      'visitors-gold',
+      'explorer-bronze',
+      'explorer-silver',
+      'explorer-gold',
+    ]);
+    expect(
+      mergeHonours(recordSocial(createHonours(), { visitors: 9 }), honours).counts,
+    ).toMatchObject({ visitors: 15, travels: 30 });
   });
 });
 
-describe('Run tallies and lifetime counts', () => {
-  it('counts each committed gem once by type and records real fusion keys', () => {
+describe('Run tallies', () => {
+  it('counts each committed gem and every real fusion, never the rescue sweep', () => {
     const tally = tallySteps(createRunTally(), [
       {
-        collectedJewels: [
-          { id: 'a', type: 'ruby' },
-          { id: 'b', type: 'ruby' },
-          { id: 'c', type: 'relic' },
-        ],
+        collectedJewels: [{ type: 'ruby' }, { type: 'ruby' }, { type: 'relic' }],
         bonusFusion: { key: 'bomb+cross' },
       },
-      { collectedJewels: [{ id: 'd', type: 'topaz' }], bonusFusion: { key: 'bomb+cross' } },
+      { collectedJewels: [{ type: 'topaz' }], bonusFusion: { key: 'bomb+cross' } },
       { collectedJewels: [], bonusFusion: { targets: [1, 2] } },
     ]);
-    expect(tally).toEqual({ gems: { ruby: 2, topaz: 1 }, fusions: ['bomb+cross'], mine: {} });
-    const sweep = tallySteps(createRunTally(), [{ collectedJewels: [{ id: 'e', type: 'ruby' }] }], {
+    expect(tally).toEqual({ gems: { ruby: 2, topaz: 1 }, fusions: { 'bomb+cross': 2 } });
+    const sweep = tallySteps(createRunTally(), [{ collectedJewels: [{ type: 'ruby' }] }], {
       recovery: true,
     });
     expect(sweep.gems).toEqual({});
   });
 
-  it('unlocks laureates, fusions, mastery and the forge from saved counts', () => {
-    let honours = creditRun(createHonours(), {
-      gems: { ruby: GEM_GOALS.ruby },
-      fusions: Object.keys(FUSION_STYLES),
-      mine: { lanterns: 125 },
-    });
-    for (let i = 0; i < FORGE_VETERAN_GOAL; i++) honours = creditForge(honours);
-    const { added } = evaluateHonours(state({ honours }));
-    expect(added).toEqual(
-      expect.arrayContaining([
-        'laureate-ruby',
-        'first-fusion',
-        'fusion-master',
-        'lamplighter',
-        'forge-delivers',
-        'forge-veteran',
-      ]),
-    );
-    expect(added).not.toContain('laureate-sapphire');
+  it('claims only gems and known fusions in the victory receipt; mine elements stay server-side', () => {
+    expect(
+      runClaim({
+        gems: { ruby: 3, opal: -1 },
+        fusions: { 'bomb+cross': 1, constructor: 4 },
+        mine: { relics: 2 },
+      }),
+    ).toEqual({ gems: { ruby: 3 }, fusions: { 'bomb+cross': 1 } });
   });
 });
 
-describe('State-derived honours', () => {
-  const maxedTown = {
-    era: 'frontier',
-    buildings: { armory: 3, garage: 3 },
-    projects: {},
-    buildingEras: {},
-    buildingEraLevels: {},
+describe('Backfill and seeds', () => {
+  const protectedIncident = {
+    id: 1,
+    outcome: 'protected',
+    loss: 0,
+    seen: true,
   };
-  it('needs all five powers full at maximum storage at the same time', () => {
-    const capacity = maxPowerCapacity().capacity;
-    const lowCapacity = state({
-      powers: fullPowers(capacity),
-      town: { ...maxedTown, buildings: {} },
+
+  it('seeds forge and guardian from what the save proves, nothing else', () => {
+    const seeded = seedCounts(
+      createHonours(),
+      town({
+        lastCollections: { blacksmith: 5 },
+        events: { 'dusty-trail-visitors': protectedIncident },
+      }),
+    );
+    expect(seeded.counts).toMatchObject({ forge: 1, guardian: 1, gems: {}, mine: {} });
+    const unseen = town({
+      events: { 'dusty-trail-visitors': { ...protectedIncident, seen: false } },
     });
-    expect(evaluateHonours(lowCapacity).added).not.toContain('master-quartermaster');
-    const almost = state({
-      town: maxedTown,
-      powers: fullPowers(capacity).map((power, i) => (i ? power : { ...power, quantity: 1 })),
+    expect(seedCounts(createHonours(), unseen).counts.guardian).toBe(0);
+    const harmless = town({
+      events: { 'dusty-trail-visitors': { ...protectedIncident, outcome: 'harmless' } },
     });
-    expect(evaluateHonours(almost).added).not.toContain('master-quartermaster');
-    const full = evaluateHonours(state({ town: maxedTown, powers: fullPowers(capacity) }));
-    expect(full.added).toContain('master-quartermaster');
-    // Spending later never revokes an earned honour.
-    const spent = evaluateHonours(
-      state({ town: maxedTown, powers: fullPowers(0), honours: full.honours }),
-    );
-    expect(spent.honours.earned['master-quartermaster']).toBeTruthy();
+    expect(seedCounts(createHonours(), harmless).counts.guardian).toBe(0);
+    // Seeds never lower a count.
+    const many = creditCounter(creditCounter(createHonours(), 'forge'), 'forge');
+    expect(seedCounts(many, town({ lastCollections: { blacksmith: 5 } })).counts.forge).toBe(2);
   });
 
-  it('awards Perfect Prospector for every published level and keeps it when levels are added', () => {
-    const { honours, added } = evaluateHonours(state({ records: allStars() }));
-    expect(added).toContain('perfect-prospector');
-    expect(honours.earned['perfect-prospector'].evidence).toEqual({ levels: LEVEL_COUNT });
-    const future = createHonourCatalog({ levelCount: LEVEL_COUNT + 6 });
-    const later = evaluateHonours(state({ records: allStars(), honours }), { catalog: future });
-    expect(later.honours.earned['perfect-prospector']).toBeTruthy();
-    const fresh = evaluateHonours(state({ records: allStars() }), { catalog: future });
-    expect(fresh.added).not.toContain('perfect-prospector');
-  });
-
-  it('marks backfilled honours with an unknown date', () => {
-    const { honours } = evaluateHonours(
-      state({ records: records([[3, { score: 1, stars: 3 }]]) }),
-      {
-        backfill: true,
-      },
+  it('earns what an older save proves with an unknown date, once per generation', () => {
+    const honours = backfillHonours(
+      state({
+        records: stars(25),
+        town: town({ era: 'industrial', lastCollections: { blacksmith: 5 } }),
+        honours: { ...createHonours(), backfilled: 0 },
+      }),
     );
-    expect(honours.earned['first-perfect']).toMatchObject({ at: null, backfilled: true });
-    expect(honours.backfilled).toBeGreaterThan(0);
-  });
-});
-
-describe('Era defence medals', () => {
-  const event = { kind: 'workshop-fire', outcome: 'protected', loss: 0, seen: true };
-  it('needs a genuinely protected outcome in the incident’s own era', () => {
-    expect(defenceMedal(event, 'motor-age')).toBe('defence-motor-age');
-    expect(defenceMedal({ ...event, outcome: 'harmless' }, 'motor-age')).toBeNull();
-    expect(defenceMedal({ ...event, loss: 3 }, 'motor-age')).toBeNull();
-    expect(defenceMedal(event, 'frontier')).toBeNull();
-    expect(evaluateHonours(state()).added.some((id) => id.startsWith('defence-'))).toBe(false);
-  });
-  it('backfills only a receipt whose kind belongs to exactly one era', () => {
-    expect(backfillDefenceMedal({ outcome: 'protected', loss: 0, seen: true })).toBe(
-      'defence-frontier',
-    );
-    expect(backfillDefenceMedal(event)).toBeNull();
-    expect(backfillDefenceMedal({ ...event, kind: 'cargo-theft', seen: false })).toBeNull();
+    expect(Object.keys(honours.earned)).toEqual(['stars-bronze', 'ages-bronze']);
+    expect(honours.counts.forge).toBe(1);
+    expect(honours.earned['ages-bronze']).toMatchObject({ at: null, backfilled: true });
+    expect(honours.backfilled).toBe(HONOURS_VERSION);
+    expect(backfillHonours(state({ records: stars(3), honours }))).toEqual(honours);
   });
 });
 
 describe('Saved honours', () => {
   it('normalizes bounded values and preserves unknown future honours', () => {
     const honours = normalizeHonours({
-      earned: { 'future-honour': { at: 5, seen: true }, 'Bad Id!': {}, 'first-fusion': 7 },
-      counts: { gems: { ruby: 4, sapphire: -1 }, forge: 2.5, mine: { lanterns: 3 } },
-      fusions: ['bomb+cross', 'bomb+cross', 'nope'],
+      earned: { 'future-honour': { at: 5, seen: true }, 'Bad Id!': {}, 'stars-bronze': 7 },
+      counts: {
+        gems: { ruby: 4, sapphire: -1 },
+        fusions: { 'bomb+cross': 2, 'no way': 1 },
+        forge: 2.5,
+        mine: { lanterns: 3 },
+        guardian: 1,
+      },
       showcase: ['a', 'b', 'c', 'd'],
+      seenGeneration: -2,
     });
-    expect(earnedIds(honours)).toEqual(['future-honour']);
+    expect(Object.keys(honours.earned)).toEqual(['future-honour']);
     expect(honours.counts).toEqual({
       gems: { ruby: 4 },
-      forge: 0,
       mine: { lanterns: 3 },
+      fusions: { 'bomb+cross': 2 },
+      forge: 0,
+      guardian: 1,
       visitors: 0,
+      travels: 0,
     });
-    expect(honours.fusions).toEqual(['bomb+cross']);
+    expect(Object.keys(honours.counts)).toEqual(Object.keys(COUNTERS));
     expect(honours.showcase).toHaveLength(SHOWCASE_SLOTS);
+    expect(honours.seenGeneration).toBe(0);
   });
 
   it('merges two copies of a town without summing counts or losing honours', () => {
-    const a = awardHonour(creditRun(createHonours(), { gems: { ruby: 10 } }), 'first-perfect', {
-      at: 200,
+    const a = creditRun(earned(['stars-bronze'], 200), {
+      gems: { ruby: 10 },
+      fusions: { 'bomb+bomb': 1 },
     });
-    const b = awardHonour(creditRun(createHonours(), { gems: { ruby: 7 } }), 'first-perfect', {
-      at: 100,
+    const b = creditRun(earned(['stars-bronze', 'mine-lanterns-bronze'], 100), {
+      gems: { ruby: 7 },
+      fusions: { 'cross+cross': 2 },
     });
-    const merged = mergeHonours(a, awardHonour(b, 'lamplighter', { at: 300 }));
+    const merged = mergeHonours(a, b);
     expect(merged.counts.gems.ruby).toBe(10);
-    expect(merged.earned['first-perfect'].at).toBe(100);
-    expect(earnedIds(merged)).toEqual(['first-perfect', 'lamplighter']);
+    expect(merged.counts.fusions).toEqual({ 'bomb+bomb': 1, 'cross+cross': 2 });
+    expect(merged.earned['stars-bronze'].at).toBe(100);
+    expect(Object.keys(merged.earned).sort()).toEqual(['mine-lanterns-bronze', 'stars-bronze']);
     expect(mergeHonours(merged, merged)).toEqual(merged);
   });
 
   it('publishes only earned honours, dates, score evidence and the showcase', () => {
-    let honours = creditRun(createHonours(), { gems: { ruby: 99 } });
-    honours = awardHonour(honours, 'score-ace', {
-      at: 9,
-      evidence: { levelId: 40, score: 5, target: 2 },
+    const honours = normalizeHonours({
+      earned: {
+        'score-silver': { at: 9, evidence: { levelId: 40, score: 5, target: 2 } },
+        'ages-bronze': { at: 3, evidence: { era: 'industrial' } },
+        'from-the-future': { at: 1 },
+      },
+      counts: { gems: { ruby: 99 } },
     });
-    honours = awardHonour(honours, 'from-the-future', { at: 1 });
-    honours.showcase = validShowcase(['score', 'lamplighter'], honours);
+    honours.showcase = validShowcase(['score', 'mine-lanterns', 'ages'], honours);
     expect(publicHonours(honours)).toEqual({
-      version: 1,
-      earned: { 'score-ace': { at: 9, evidence: { levelId: 40, score: 5, target: 2 } } },
-      showcase: ['score'],
+      version: HONOURS_VERSION,
+      earned: {
+        'score-silver': { at: 9, evidence: { levelId: 40, score: 5, target: 2 } },
+        'ages-bronze': { at: 3 },
+      },
+      showcase: ['score', 'ages'],
     });
   });
 
-  it('lists earned families first in each collection tab', () => {
-    const honours = awardHonour(createHonours(), 'laureate-moonstone', { at: 1 });
-    const [achievements, mine, defence] = honourCollection(state({ honours }));
-    expect(achievements.families[0].id).toBe('laureate-moonstone');
-    expect(achievements.earned).toBe(1);
-    expect(achievements.fresh).toBe(1);
-    expect(mine.total).toBe(MINE_ELEMENTS.length);
-    expect(defence.families.find((family) => family.id === 'defence-frontier').status).toBe(
-      'current',
+  it('shows Mine, Town and Friends tabs with earned families first', () => {
+    const [mine, townTab, friends] = honourCollection(
+      state({ honours: earned(['gem-moonstone-silver']) }),
     );
-    expect(defence.families.find((family) => family.id === 'defence-riverlight').status).toBe(
-      'future',
-    );
+    expect([mine.id, townTab.id, friends.id]).toEqual(['mine', 'town', 'friends']);
+    expect(mine.families[0]).toMatchObject({
+      id: 'gem-moonstone',
+      earned: { id: 'gem-moonstone-silver' },
+      next: { definition: { id: 'gem-moonstone-gold' } },
+    });
+    expect(mine).toMatchObject({ earned: 1, fresh: 1 });
+    expect(townTab.families.map((family) => family.id)).toEqual([
+      'ages',
+      'guardian',
+      'forge',
+      'quartermaster',
+    ]);
+    expect(friends.families.map((family) => family.id)).toEqual(['visitors', 'explorer']);
   });
 });
 
-describe('Extending the registry', () => {
-  it('names a new era, gem and level count without editing consumers, safely', () => {
-    const catalog = createHonourCatalog({
-      eras: [...ERAS, { id: 'starlight', label: 'Starlight Age', enabled: true }],
-      gemTypes: [...GEM_TYPES, 'opal'],
-      levelCount: LEVEL_COUNT + 6,
+describe('Extending the registry with later content', () => {
+  // A later update: Diamond for the stars ladder and a new era for Through the Ages.
+  const starlight = { id: 'starlight', label: 'Starlight Age', enabled: true };
+  const eras = [...ERAS, starlight];
+  const later = buildHonourCatalog(
+    honourFamilies({ eras }).map((family) => {
+      if (family.id === 'stars')
+        return { ...family, ranks: [...family.ranks, { metal: 'diamond', goal: 500, since: 2 }] };
+      if (family.id === 'ages')
+        return {
+          ...family,
+          ranks: [
+            ...family.ranks,
+            {
+              metal: 'diamond',
+              goal: eraStep('starlight', true, eras),
+              measure: { kind: 'era', era: 'starlight', complete: true },
+              params: { era: starlight.label },
+              since: 2,
+            },
+          ],
+        };
+      return family;
+    }),
+    { eras, levelCount: LEVEL_COUNT + 120 },
+  );
+
+  it('keeps every shipped rank and its goal exactly as it was', () => {
+    for (const rank of HONOURS.definitions)
+      expect(later.byId[rank.id], rank.id).toMatchObject({
+        goal: rank.goal,
+        measure: rank.measure,
+        metal: rank.metal,
+        rank: rank.rank,
+      });
+    expect(ranks('stars', later).at(-1)).toBe('stars-diamond');
+  });
+
+  it('keeps earned honours and marks the new rank until the player has looked', () => {
+    const goldHolder = evaluateHonours(state({ records: stars(350) })).honours;
+    expect(goldHolder.earned['stars-gold']).toBeTruthy();
+    const view = (seenGeneration) =>
+      honourCollection(
+        state({ records: stars(350), honours: { ...goldHolder, seenGeneration } }),
+        later,
+      )[0].families.find((family) => family.id === 'stars');
+    expect(view(1)).toMatchObject({
+      earned: { id: 'stars-gold' },
+      newRank: true,
+      next: { definition: { id: 'stars-diamond' }, progress: { value: 350, goal: 500 } },
     });
-    expect(catalog.byId['defence-starlight'].name).toBe('Starlight Age Guardian');
-    expect(catalog.byId['laureate-opal'].name).toBe('Opal Laureate');
-    const opal = creditRun(createHonours(), { gems: { opal: 1e6 } });
-    expect(evaluateHonours(state({ honours: opal }), { catalog }).added).not.toContain(
-      'laureate-opal',
-    );
-    expect(catalog.byId['perfect-prospector'].params()).toEqual({ levels: LEVEL_COUNT + 6 });
+    expect(view(2).newRank).toBe(false);
+    const diamond = evaluateHonours(state({ records: stars(500), honours: goldHolder }), {
+      catalog: later,
+    });
+    expect(diamond.added).toEqual(['stars-diamond']);
+    expect(diamond.honours.earned['stars-gold']).toEqual(goldHolder.earned['stars-gold']);
+  });
+
+  it('leaves a gem without calibrated goals listed but impossible to earn', () => {
+    const opal = buildHonourCatalog(honourFamilies({ gemTypes: [...GEM_TYPES, 'opal'] }));
+    expect(opal.familyById['gem-opal'].ranks).toEqual([]);
+    const honours = creditRun(createHonours(), { gems: { opal: 1e6 } });
+    expect(evaluateHonours(state({ honours }), { catalog: opal }).added).toEqual([]);
   });
 });
 
@@ -381,17 +539,25 @@ describe('Campaign store honours state', () => {
 
   it('saves honours with the profile and accepts only earned families in the showcase', () => {
     const campaign = useCampaignStore();
-    campaign.honours = awardHonour(campaign.honours, 'score-ace', { at: 1 });
-    expect(campaign.setHonourShowcase(['score', 'lamplighter', 'score'])).toBe(true);
+    campaign.honours = { ...earned(['score-silver']), seenGeneration: 0 };
+    expect(campaign.setHonourShowcase(['score', 'mine-lanterns', 'score'])).toBe(true);
     expect(campaign.honours.showcase).toEqual(['score']);
     expect(campaign.markHonoursSeen()).toBe(true);
-    expect(campaign.honours.earned['score-ace'].seen).toBe(true);
+    expect(campaign.honours.earned['score-silver'].seen).toBe(true);
+    expect(campaign.honours.seenGeneration).toBe(HONOURS_VERSION);
     expect(campaign.markHonoursSeen()).toBe(false);
-    const profile = JSON.parse(saved.get(SAVE_KEY));
-    expect(profile.honours?.showcase ?? profile.data?.honours?.showcase).toBeTruthy();
+    expect(JSON.parse(saved.get(SAVE_KEY)).honours.showcase).toEqual(['score']);
     campaign.reloadLocal();
     expect(campaign.honours.showcase).toEqual(['score']);
-    expect(campaign.honours.earned['score-ace'].seen).toBe(true);
+    expect(campaign.honours.earned['score-silver'].seen).toBe(true);
+  });
+
+  it('records the guestbook’s social counts', () => {
+    const campaign = useCampaignStore();
+    expect(campaign.recordTownSocial({ visitors: 5, travels: 2 })).toBe(true);
+    expect(campaign.recordTownSocial({ visitors: 2 })).toBe(false);
+    expect(campaign.honours.counts).toMatchObject({ visitors: 5, travels: 2 });
+    expect(Object.keys(campaign.honours.earned)).toEqual(['visitors-bronze', 'visitors-silver']);
   });
 });
 
@@ -418,82 +584,14 @@ describe('Honour presentation preferences and navigation', () => {
 
   it('lets the popup open the collection and a detail open a filtered museum', () => {
     const navigation = useHonourNavigation();
-    navigation.openCollection('lamplighter');
-    navigation.openMuseumFor('lamplighter');
+    navigation.openCollection('mine-lanterns');
+    navigation.openMuseumFor('mine-lanterns');
     expect(useHonourNavigation().requests).toEqual({
-      collection: { familyId: 'lamplighter' },
-      museum: { familyId: 'lamplighter' },
+      collection: { familyId: 'mine-lanterns' },
+      museum: { familyId: 'mine-lanterns' },
     });
     navigation.closeCollection();
     navigation.clearMuseumRequest();
     expect(navigation.requests).toEqual({ collection: null, museum: null });
-  });
-});
-
-describe('Honour badge artwork', () => {
-  const render = (props) => renderToString(createSSRApp({ render: () => h(HonourBadge, props) }));
-
-  it('draws every catalog honour with a frame for its difficulty', async () => {
-    for (const definition of HONOURS.definitions) {
-      const html = await render({ definition, size: 48 });
-      expect(html, definition.id).toContain('<svg');
-      const frame = definition.art.frame;
-      expect(html, definition.id).toContain(
-        frame === 'easy' ? '<circle' : frame === 'medal' ? 'M50 4 88 15' : '<polygon',
-      );
-    }
-  });
-
-  it('greys out and locks an unearned honour and engraves score ranks', async () => {
-    const html = await render({ definition: HONOURS.byId['score-legend'], locked: true });
-    expect(html).toContain('honour-badge-locked');
-    expect(html).toContain('honour-badge-lock');
-    expect(html).toContain('3×');
-  });
-});
-
-describe('Visitor ranks', () => {
-  it('ranks the server count of different players and keeps the highest count', () => {
-    let honours = recordVisitors(createHonours(), 4);
-    expect(recordVisitors(honours, 3)).toBeNull();
-    expect(recordVisitors(honours, 'many')).toBeNull();
-    const four = evaluateHonours(state({ honours }));
-    expect(four.added).toContain('first-guest');
-    expect(four.added).not.toContain('welcoming-host');
-    honours = recordVisitors(four.honours, 15);
-    const fifteen = evaluateHonours(state({ honours }));
-    expect(fifteen.added).toEqual(['welcoming-host', 'popular-destination']);
-    const visitors = pendingAnnouncements(fifteen.honours).filter(
-      (entry) => entry.definition.family === 'visitors',
-    );
-    expect(visitors.map((entry) => entry.id)).toEqual(['popular-destination']);
-    expect(mergeHonours(recordVisitors(createHonours(), 9), honours).counts.visitors).toBe(15);
-  });
-
-  it('backfills the first rank from a saved signed-in guest', () => {
-    const town = { ...state().town, guestVip: { name: 'Dustwater', at: 5, seen: true } };
-    const { honours } = evaluateHonours(state({ town }), { backfill: true });
-    expect(honours.earned['first-guest']).toMatchObject({ at: null, backfilled: true });
-    expect(honours.earned['welcoming-host']).toBeUndefined();
-  });
-
-  it('records the guestbook count through the campaign store', () => {
-    const saved = new Map();
-    vi.stubGlobal('localStorage', {
-      getItem: (key) => saved.get(key) ?? null,
-      setItem: (key, value) => saved.set(key, value),
-    });
-    setActivePinia(createPinia());
-    try {
-      const campaign = useCampaignStore();
-      expect(campaign.recordTownVisitors(5)).toBe(true);
-      expect(campaign.recordTownVisitors(2)).toBe(false);
-      expect(campaign.honours.counts.visitors).toBe(5);
-      expect(Object.keys(campaign.honours.earned)).toEqual(
-        expect.arrayContaining(['first-guest', 'welcoming-host']),
-      );
-    } finally {
-      vi.unstubAllGlobals();
-    }
   });
 });

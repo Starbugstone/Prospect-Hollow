@@ -157,13 +157,14 @@
 import { computed, ref, watch } from 'vue';
 import MuseumLevelGrid from './MuseumLevelGrid.vue';
 import HonourBadge from '../honours/HonourBadge.vue';
+import { progressValue, rankName } from '../honours/honourDisplay';
 import { useNativeDialog } from '../../composables/useNativeDialog';
 import { useHonourNavigation } from '../../composables/useHonourNavigation';
 import { t, number } from '../../i18n';
 import { useCampaignStore } from '../../stores/campaignStore';
 import { LEVEL_COUNT, formatTime } from '../../data/campaign';
 import { CONTINUOUS_COIN_CAP } from '../../data/rewards';
-import { HONOURS, MINE_ELEMENTS, SCORE_FROM_LEVEL } from '../../data/honours';
+import { HONOURS, MINE_ELEMENTS, SCORE_FROM_LEVEL, honourCollection } from '../../data/honours';
 import { levelHonourElements } from '../../data/honourLevels';
 import { getLevelStarTarget } from '../../data/starRating';
 const emit = defineEmits(['close', 'replay', 'continuous']);
@@ -202,23 +203,28 @@ function elementCount(elementId, count) {
   return t('{label}: {count}', { label: t(label), count: number(count) });
 }
 
-// Unfinished honours only, each at its next rank. A deep-linked honour that is
-// already earned stays selectable, marked as earned.
-const honourOptions = computed(() =>
-  LINKED.map((family) => {
-    const next = family.ranks.find((definition) => !campaign.honours.earned[definition.id]);
+// Unfinished families only, each at its next rank (as the collection names it). A
+// deep-linked family with every rank earned stays selectable, marked as earned.
+const honourOptions = computed(() => {
+  const views = Object.fromEntries(
+    honourCollection(campaign)
+      .flatMap((tab) => tab.families)
+      .map((family) => [family.id, family]),
+  );
+  return LINKED.map((family) => {
+    const { next, definition } = views[family.id];
     if (next)
       return {
         id: family.id,
         link: linkOf(family),
-        definition: next,
-        progress: next.progress({ records: campaign.records, honours: campaign.honours }),
+        definition: next.definition,
+        progress: next.progress,
       };
     return family.id === familyId.value
-      ? { id: family.id, link: linkOf(family), definition: family.ranks.at(-1), earned: true }
+      ? { id: family.id, link: linkOf(family), definition, earned: true }
       : null;
-  }).filter(Boolean),
-);
+  }).filter(Boolean);
+});
 const selected = computed(
   () =>
     honourOptions.value.find((option) => option.id === familyId.value) ?? honourOptions.value[0],
@@ -234,10 +240,12 @@ const showsStars = computed(
   () =>
     show.value === 'below' || (show.value === 'honour' && selected.value?.link === 'museum-stars'),
 );
+// "Relic Keeper · Silver · 12/240": the next rank by name and metal, with progress.
 function optionLabel(option) {
-  const name = t(option.definition.name);
+  const name = rankName(option.definition);
   if (option.earned) return t('{honour} · earned', { honour: name });
-  const { value, goal } = option.progress;
+  const { goal } = option.progress;
+  const value = progressValue(option.definition, option.progress.value);
   return option.link === 'museum-score'
     ? `${name} · ${number(value)}× / ${number(goal)}×`
     : `${name} · ${number(value)}/${number(goal)}`;
@@ -299,7 +307,7 @@ function honourTags(id) {
       glyph: '◆',
       text: t('{rank} at {target} · your best {score}', {
         rank: t(option.definition.name),
-        target: number(getLevelStarTarget(id, null) * option.definition.params().multiple),
+        target: number(Math.ceil(getLevelStarTarget(id, null) * option.definition.goal)),
         score: number(record.score),
       }),
     });

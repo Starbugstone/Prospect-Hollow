@@ -2,40 +2,44 @@
   <section v-if="model" class="honour-detail" :data-honour="model.id">
     <HonourBadge :definition="model.definition" :size="112" :locked="!model.earned" />
     <HonourKicker
-      :shape="model.shape"
-      :text="`${model.kicker} · ${t(CATEGORY_LABELS[model.category])}`"
+      :metal="model.definition.metal"
+      :text="`${model.kicker} · ${t(TAB_LABELS[model.tab])}`"
     />
     <h2>{{ model.name }}</h2>
-    <p v-if="family.ranks.length === 1" class="honour-detail-requirement">
-      {{ model.requirement }}
-    </p>
-    <ol v-if="family.ranks.length > 1" class="honour-detail-ranks" :aria-label="t('Ranks')">
-      <li v-for="rank in family.ranks" :key="rank.definition.id">
+    <HonourRankTrack class="honour-detail-track" :track="model.track" />
+    <!-- The ladder: every rank, its date once earned, progress on the next one. -->
+    <ol class="honour-detail-ranks" :aria-label="t('Ranks')">
+      <li
+        v-for="rank in model.ranks"
+        :key="rank.id"
+        :class="{ 'is-earned': rank.earned, 'is-next': rank.next }"
+        :data-rank="rank.definition.metal"
+      >
         <HonourBadge :definition="rank.definition" :size="40" :locked="!rank.earned" />
-        <span>
-          <strong>{{ t(rank.definition.name) }}</strong>
-          <small>{{ requirementText(rank.definition) }}</small>
+        <span class="honour-detail-rank">
+          <HonourKicker
+            :metal="rank.definition.metal"
+            :text="`${rank.metal} · ${rank.difficulty}`"
+          />
+          <strong>{{ rank.name }}</strong>
+          <small>{{ rank.requirement }}</small>
           <small v-if="rank.earned" class="honour-earned"
-            >{{ earnedText(rank.earned)
-            }}<template v-if="rank.earned.evidence">
-              · {{ evidenceText(rank.earned.evidence) }}</template
-            ></small
+            ><span v-if="rank.earned.dated" aria-hidden="true">✓ </span>{{ rank.earned.text
+            }}<template v-if="rank.earned.evidence"> · {{ rank.earned.evidence }}</template></small
           >
+          <small v-else-if="rank.next" class="honour-detail-next">{{ t('Next rank') }}</small>
           <small v-else>{{ t('Not yet earned') }}</small>
         </span>
+        <HonourProgress
+          v-if="rank.next && (model.progress || model.chips || model.checks)"
+          class="honour-detail-progress"
+          :class="{ 'honour-progress-next': model.earned }"
+          :model="model"
+        />
       </li>
     </ol>
-    <HonourProgress
-      v-if="model.progress || model.chips || model.checks"
-      class="honour-detail-progress"
-      :model="model"
-    />
     <p v-if="best" class="honour-detail-note">
       {{ t('Best run so far: {run}', { run: evidenceText(best) }) }}
-    </p>
-    <p v-if="model.status" class="honour-detail-note">{{ model.status }}</p>
-    <p v-if="model.earned && family.ranks.length === 1" class="honour-earned">
-      <span v-if="model.earned.dated" aria-hidden="true">✓ </span>{{ model.earned.text }}
     </p>
     <div v-if="model.mine" class="honour-where-box">
       <h3>{{ t('Where to make progress') }}</h3>
@@ -78,17 +82,16 @@ import { SHOWCASE_SLOTS, bestScoreRun, honourCollection, validShowcase } from '.
 import HonourBadge from './HonourBadge.vue';
 import HonourKicker from './HonourKicker.vue';
 import HonourProgress from './HonourProgress.vue';
-import {
-  CATEGORY_LABELS,
-  describeFamily,
-  earnedText,
-  evidenceText,
-  requirementText,
-} from './honourDisplay';
-// The player's own honour in detail: requirement (each rank's for ranked families),
-// progress toward the next rank, dates, score evidence, where to progress and the
+import HonourRankTrack from './HonourRankTrack.vue';
+import { TAB_LABELS, describeFamily, evidenceText } from './honourDisplay';
+// The player's own honour in detail: the ladder of ranks with each metal, requirement,
+// date and score evidence, progress toward the next rank, where to progress and the
 // showcase choice.
-const props = defineProps({ familyId: { type: String, required: true }, links: Boolean });
+const props = defineProps({
+  familyId: { type: String, required: true },
+  links: Boolean,
+  canTravel: Boolean,
+});
 defineEmits(['link']);
 const campaign = useCampaignStore();
 const family = computed(() =>
@@ -97,10 +100,17 @@ const family = computed(() =>
     .find((entry) => entry.id === props.familyId),
 );
 const model = computed(
-  () => family.value && describeFamily(family.value, campaign, { canReplay: campaign.canReplay }),
+  () =>
+    family.value &&
+    describeFamily(family.value, campaign, {
+      canReplay: campaign.canReplay,
+      canTravel: props.canTravel,
+    }),
 );
 const best = computed(() =>
-  props.familyId === 'score' && family.value?.next ? bestScoreRun(campaign.records) : null,
+  model.value?.definition.measure.kind === 'score' && family.value.next
+    ? bestScoreRun(campaign.records)
+    : null,
 );
 const showcase = computed(() => validShowcase(campaign.honours.showcase, campaign.honours));
 const showcased = computed(() => showcase.value.includes(props.familyId));
@@ -142,15 +152,18 @@ function toggleShowcase() {
     400 28px/1.15 Georgia,
     serif;
 }
-.honour-detail-requirement,
 .honour-detail-note {
   margin: 0;
   font-size: 13.5px;
   line-height: 1.6;
   color: #4a5346;
 }
-.honour-detail-progress {
+.honour-detail-track {
   align-self: stretch;
+  justify-content: center;
+}
+.honour-detail-progress {
+  grid-column: 2;
   text-align: left;
 }
 .honour-detail-progress .honour-bar {
@@ -170,18 +183,30 @@ function toggleShowcase() {
   text-align: left;
 }
 .honour-detail-ranks li {
-  display: flex;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
   align-items: center;
-  gap: 10px;
+  gap: 8px 10px;
   padding: 8px 10px;
   border: 1px solid #e0d9c4;
   border-radius: 10px;
   background: #f6f4ea;
 }
-.honour-detail-ranks span {
+.honour-detail-ranks li.is-earned {
+  background: #fffcf2;
+}
+.honour-detail-ranks li.is-next {
+  border-style: dashed;
+  border-color: #c9b278;
+}
+.honour-detail-rank {
   display: grid;
   gap: 1px;
   font-size: 13px;
+}
+.honour-detail-ranks small.honour-detail-next {
+  font-weight: 700;
+  color: #6b5524;
 }
 .honour-detail-ranks small {
   font-size: 12px;
@@ -231,7 +256,6 @@ function toggleShowcase() {
   font-size: 12px;
   color: #555c4c;
 }
-.honour-contrast .honour-detail-requirement,
 .honour-contrast .honour-detail-note,
 .honour-contrast .honour-where-box ul,
 .honour-contrast .honour-detail-hint {

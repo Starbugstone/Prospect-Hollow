@@ -1,53 +1,65 @@
-// Town Honours (issue #60): one registry for achievements, mine mastery and era
-// defence medals. Goals derive from the shared content definitions, so adding a
-// gem, era, level or mine element changes them here (see AGENTS.md). Earned
-// honours are permanent: they keep the requirement version they were earned
-// under and are never removed by a later goal, spending or an era change.
+// Town Honours (issue #60): one registry of honour families, each a ladder of metal
+// ranks (bronze → silver → gold, with diamond and later metals kept for future
+// content). A shipped rank's goal is fixed: new levels, eras or bonuses add ranks or
+// families at the end and never move an existing goal (see AGENTS.md). Earned
+// honours are permanent and keep the requirement version they were earned under.
+//
+// Every rank declares what it measures as data ({ kind, ... }). The game evaluates
+// those measures here and the server evaluates the same exported descriptors in
+// backend/src/Honours.php, so both agree on what each honour needs.
 import { GEM_TYPES } from '../game/engine/GemFactory';
 import { FUSION_STYLES } from '../game/engine/BonusFusion';
 import { isEraComplete } from '../game/town/TownEras';
-import { LEVEL_COUNT, POWERS } from './campaign';
-import { campaignCompletion } from './campaignCompletion';
+import { LEVEL_COUNT } from './campaign';
 import { ERAS } from './eras';
 import { OBSTACLES } from './obstacles';
-import { bonusCapacity } from './rewards';
 import { getLevelStarTarget } from './starRating';
-import { BANDIT_EVENT, BUILDING_BY_ID } from './town';
-import { eraEventKind, eventKind } from './townEvents';
+import { BANDIT_EVENT } from './town';
 
-const HONOURS_VERSION = 1;
-const HONOUR_CATEGORIES = Object.freeze(['achievement', 'mine', 'defence']);
-export const SHOWCASE_SLOTS = 3;
-
-// Calibrated in docs/honours.md. Opening star targets are deliberately low, so
-// score ranks only count from the first level calibrated at the 35th percentile.
-export const SCORE_FROM_LEVEL = 37;
-const SCORE_RANKS = Object.freeze([
-  {
-    id: 'score-ace',
-    name: 'Score Ace',
-    multiple: 2,
-    difficulty: 'medium',
-    popup: 'Twice the star target',
-  },
-  {
-    id: 'score-legend',
-    name: 'Score Legend',
-    multiple: 3,
-    difficulty: 'hard',
-    popup: 'Three times the star target',
-  },
-]);
-// Lifetime gems collected in completed puzzles, set by palette availability.
-export const GEM_GOALS = Object.freeze({
-  ruby: 12000,
-  sapphire: 12000,
-  emerald: 12000,
-  topaz: 8000,
-  amethyst: 8000,
-  moonstone: 8000,
+// The saved block's shape and the catch-up generation: saves from an older generation
+// are re-evaluated once on load. It is not a requirement version (see `version` on a
+// rank) and a new rank or family raises it so existing saves earn what they prove.
+export const HONOURS_VERSION = 1;
+// Ranks in ladder order. A family may stop early; new ranks only ever append.
+export const RANK_METALS = Object.freeze(['bronze', 'silver', 'gold', 'diamond']);
+const METAL_DIFFICULTY = Object.freeze({
+  bronze: 'easy',
+  silver: 'medium',
+  gold: 'hard',
+  diamond: 'hard',
 });
-const GEM_NAMES = Object.freeze({
+export const HONOUR_TABS = Object.freeze(['mine', 'town', 'friends']);
+export const SHOWCASE_SLOTS = 3;
+// Opening star targets are deliberately low, so score ranks count from the first level
+// calibrated at the 35th percentile (docs/honours.md).
+export const SCORE_FROM_LEVEL = 37;
+
+// Lifetime counters, credited by completed puzzles and town actions. Maps count by key
+// (gem type, mine element, fusion key); the server keeps its own copy of the same
+// counters from the journal it replays (docs/honours.md, "Trust and offline play").
+export const COUNTERS = Object.freeze({
+  gems: 'map',
+  mine: 'map',
+  fusions: 'map',
+  forge: 'number',
+  guardian: 'number',
+  // Social counts come from the server: different signed-in players who visited this
+  // town, and different players' villages visited from it.
+  visitors: 'number',
+  travels: 'number',
+});
+
+// ---------- Fixed goals (calibrated in docs/honours.md) ----------
+// Lifetime gems collected in completed puzzles: bronze, silver, gold.
+export const GEM_GOALS = Object.freeze({
+  ruby: [500, 10000, 25000],
+  sapphire: [500, 10000, 25000],
+  emerald: [500, 10000, 25000],
+  topaz: [500, 6000, 16000],
+  amethyst: [500, 6000, 16000],
+  moonstone: [500, 6000, 16000],
+});
+const GEM_TEXT = Object.freeze({
   ruby: ['Ruby Laureate', 'Collect {goal} rubies in completed puzzles.', '{goal} rubies collected'],
   sapphire: [
     'Sapphire Laureate',
@@ -71,53 +83,27 @@ const GEM_NAMES = Object.freeze({
     '{goal} moonstones collected',
   ],
 });
-export const FORGE_VETERAN_GOAL = 50;
-// Different signed-in players who visited the owner's shared town, counted by the server
-// (each account once, the owner never). Signed-out visits stay in the guestbook only.
-const VISITOR_RANKS = Object.freeze([
-  {
-    id: 'first-guest',
-    name: 'First Guest',
-    goal: 1,
-    difficulty: 'easy',
-    requirement: 'Have another player visit your shared town.',
-    popup: 'Your first visitor came by',
-  },
-  {
-    id: 'welcoming-host',
-    name: 'Welcoming Host',
-    goal: 5,
-    difficulty: 'medium',
-    requirement: 'Have {goal} different players visit your shared town.',
-    popup: '{goal} different players visited',
-  },
-  {
-    id: 'popular-destination',
-    name: 'Popular Destination',
-    goal: 15,
-    difficulty: 'medium',
-    requirement: 'Have {goal} different players visit your shared town.',
-    popup: '{goal} different players visited',
-  },
-  {
-    id: 'celebrated-town',
-    name: 'Celebrated Town',
-    goal: 30,
-    difficulty: 'hard',
-    requirement: 'Have {goal} different players visit your shared town.',
-    popup: '{goal} different players visited',
-  },
+// The bonus fusions Fusion Master asks for, fixed when it shipped. A later fusion joins a
+// new rank or LATER_FUSIONS, never this list.
+export const FUSION_MASTER_KEYS = Object.freeze([
+  'bomb+bomb',
+  'bomb+cross',
+  'bomb+rainbow',
+  'cross+cross',
+  'cross+rainbow',
+  'rainbow+rainbow',
 ]);
+export const LATER_FUSIONS = Object.freeze([]);
+// Master Quartermaster: this many different powers held at this quantity at once.
+export const QUARTERMASTER = Object.freeze({ powers: 5, quantity: 26 });
 
-// Signature mine elements. Completing a puzzle consumes every one of them (they are
-// objective layers, relics or ore orders), so a completed level credits its authored
-// count. Goals are about 1.5× one campaign, so replays finish them.
+// Signature mine elements. Completing a puzzle consumes every one of them (objective
+// layers, relics or ore orders), so a completed level credits its authored count.
 export const MINE_ELEMENTS = Object.freeze([
   {
     id: 'relics',
-    honour: 'relic-keeper',
     name: 'Relic Keeper',
-    goal: 360,
+    goals: [10, 125, 360],
     obstacle: 'relic',
     art: '/art/relic.svg',
     label: 'Relics',
@@ -127,9 +113,8 @@ export const MINE_ELEMENTS = Object.freeze([
   },
   {
     id: 'lanterns',
-    honour: 'lamplighter',
     name: 'Lamplighter',
-    goal: 125,
+    goals: [10, 50, 125],
     obstacle: 'lantern',
     label: 'Lanterns',
     requirement: 'Light {goal} lanterns in completed puzzles.',
@@ -137,9 +122,8 @@ export const MINE_ELEMENTS = Object.freeze([
   },
   {
     id: 'surveys',
-    honour: 'trail-surveyor',
     name: 'Trail Surveyor',
-    goal: 60,
+    goals: [5, 20, 60],
     obstacle: 'survey',
     label: 'Survey trails',
     requirement: 'Complete {goal} survey trails.',
@@ -149,9 +133,8 @@ export const MINE_ELEMENTS = Object.freeze([
   },
   {
     id: 'oreOrders',
-    honour: 'ore-merchant',
     name: 'Ore Merchant',
-    goal: 110,
+    goals: [10, 40, 110],
     obstacle: 'ore-orders',
     label: 'Ore orders',
     requirement: 'Fill {goal} ore orders.',
@@ -160,9 +143,8 @@ export const MINE_ELEMENTS = Object.freeze([
   },
   {
     id: 'cores',
-    honour: 'core-engineer',
     name: 'Core Engineer',
-    goal: 125,
+    goals: [10, 50, 125],
     obstacle: 'charge-core',
     label: 'Charge cores',
     requirement: 'Release {goal} charge cores.',
@@ -170,17 +152,16 @@ export const MINE_ELEMENTS = Object.freeze([
   },
   {
     id: 'gates',
-    honour: 'gate-breaker',
     name: 'Gate Breaker',
-    goal: 130,
+    goals: [10, 50, 130],
     obstacle: 'blast-gate',
     label: 'Blast gates',
     requirement: 'Break {goal} blast gates.',
     popup: '{goal} blast gates broken',
   },
 ]);
-// Every other mine element is deliberately not a mastery goal: common obstacles, or
-// too few levels. A new obstacle must be added to MINE_ELEMENTS or this list.
+// Every other mine element is deliberately not a mastery family: common obstacles, or
+// too few levels. A new obstacle must join MINE_ELEMENTS or this list.
 export const NON_MASTERY_ELEMENTS = Object.freeze([
   'encased-fossil',
   'fossil',
@@ -196,49 +177,29 @@ export const NON_MASTERY_ELEMENTS = Object.freeze([
   'seal-sapphire',
   'seal-emerald',
 ]);
+// Through the Ages names its eras. Every other enabled era is listed here, so a new era
+// is a deliberate decision: a new rank (diamond and beyond) or an entry in this list.
+export const NON_MILESTONE_ERAS = Object.freeze([
+  'frontier',
+  'industrial',
+  'post-war',
+  'motor-age',
+  'aviation',
+  'contemporary',
+  'tomorrow',
+  'canopy',
+]);
 function obstacle(id) {
   return OBSTACLES.find((entry) => entry.id === id) ?? { present: () => false };
 }
 export const elementArt = (element) =>
   element.art ?? obstacle(element.obstacle).art ?? '/art/obstacles/survey.svg';
 
-export const MEDAL_NAMES = Object.freeze({
-  frontier: 'Frontier Guardian',
-  'river-rail': 'Keeper of the Cargo',
-  industrial: 'Workshop Sentinel',
-  'post-war': 'Rebuilding Guardian',
-  'motor-age': 'Roadside Responder',
-  aviation: 'Horizon Guardian',
-  broadcast: 'City Sentinel',
-  contemporary: 'River Defender',
-  tomorrow: "Tomorrow's Shield",
-  canopy: 'Canopy Protector',
-  riverlight: 'Lantern Guardian',
-});
-export const INCIDENT_NAMES = Object.freeze({
-  bandits: 'bandit raid',
-  'cargo-theft': 'cargo theft',
-  'workshop-fire': 'workshop fire',
-  'storm-cleanup': 'river storm',
-});
-
+// ---------- Measures ----------
 const MAX_COUNT = Number.MAX_SAFE_INTEGER;
 const safeCount = (value) =>
   Number.isSafeInteger(value) && value >= 0 ? Math.min(MAX_COUNT, value) : 0;
-const quantity = (state, id) => state.powers?.find?.((power) => power.id === id)?.quantity ?? 0;
-const finalEra = (eras) => eras.filter((era) => era.enabled).at(-1);
-// The server's distinct-visitor count; a saved signed-in guest also proves the first.
-const townVisitors = (state) =>
-  Math.max(safeCount(state.honours?.counts?.visitors), state.town?.guestVip ? 1 : 0);
-
-// Highest-capacity storage, from the armory and garage definitions rather than a
-// copied number (26 today).
-export function maxPowerCapacity(buildings = BUILDING_BY_ID) {
-  const levels = Object.fromEntries(
-    ['armory', 'garage'].map((id) => [id, buildings[id]?.upgrades.length ?? 0]),
-  );
-  return { capacity: bonusCapacity({ buildings: levels }), levels };
-}
+const sum = (map) => Object.values(map ?? {}).reduce((total, count) => total + safeCount(count), 0);
 
 // The best single completed normal puzzle for the score family. Continuous records
 // are stored separately and never count; a missing or nonpositive target never does.
@@ -253,321 +214,419 @@ export function bestScoreRun(records, fromLevel = SCORE_FROM_LEVEL, levelCount =
   }
   return best;
 }
+// Era progress as one number: two steps per era, the second once it is complete, so
+// "reach an era" and "complete an era" compare like every other goal.
+export const eraStep = (eraId, complete = false, eras = ERAS) => {
+  const index = eras.findIndex((era) => era.id === eraId);
+  return index < 0 ? -1 : index * 2 + (complete ? 1 : 0);
+};
+const townEraStep = (town, eras) =>
+  town?.era ? Math.max(0, eraStep(town.era, isEraComplete(town), eras)) : 0;
 
 /**
- * Builds the honour definitions from content. Each definition:
- * { id, family, category, difficulty, rank, version, name, requirement, popup,
- *   params(state), progress(state) -> { value, goal } | null,
- *   qualifies(state) -> evidence object | null (state-derived honours only),
- *   art: { frame, image?, glyph?, ribbon? }, link? }
- * Medals and fusions are awarded by events and counts, through the same evaluator.
+ * What a rank measures, by kind. `value(state, measure)` is compared with the rank's
+ * goal; `evidence` is kept with the earned honour. backend/src/Honours.php implements
+ * the same kinds over the server's records, town, powers and counters.
  */
-export function createHonourCatalog({
+const MEASURES = Object.freeze({
+  stars: {
+    value: (state) =>
+      Object.values(state.records ?? {}).filter((record) => record?.stars === 3).length,
+  },
+  score: {
+    value: (state, measure, content) =>
+      bestScoreRun(state.records, measure.fromLevel, content.levelCount)?.ratio ?? 0,
+    evidence: (state, measure, content) => {
+      const best = bestScoreRun(state.records, measure.fromLevel, content.levelCount);
+      return best && { levelId: best.levelId, score: best.score, target: best.target };
+    },
+  },
+  era: { value: (state, measure, content) => townEraStep(state.town, content.eras) },
+  // One counter, or the total of a counter map when no key is named.
+  count: {
+    value: (state, measure) => {
+      const counter = state.honours?.counts?.[measure.counter];
+      if (COUNTERS[measure.counter] !== 'map') return safeCount(counter);
+      return measure.key ? safeCount(counter?.[measure.key]) : sum(counter);
+    },
+  },
+  // How many of the listed keys of a counter map have been reached at least once.
+  distinct: {
+    value: (state, measure) =>
+      measure.keys.filter((key) => state.honours?.counts?.[measure.counter]?.[key] > 0).length,
+  },
+  powers: {
+    value: (state, measure) =>
+      (state.powers ?? []).filter((power) => power?.quantity >= measure.quantity).length,
+  },
+  // Counted by the server from visits (visitors or travels); the game keeps the highest.
+  social: { value: (state, measure) => safeCount(state.honours?.counts?.[measure.counter]) },
+});
+
+// ---------- Families ----------
+// Every family's ranks from the content. Ranks list `metal`, `goal` and, when they
+// differ from the family, `measure`, `name`, `requirement` and `popup`.
+export function honourFamilies({
   eras = ERAS,
   gemTypes = GEM_TYPES,
-  fusionKeys = Object.keys(FUSION_STYLES),
-  powers = POWERS,
-  levelCount = LEVEL_COUNT,
-  buildings = BUILDING_BY_ID,
   mineElements = MINE_ELEMENTS,
 } = {}) {
-  const storage = maxPowerCapacity(buildings);
-  const last = finalEra(eras);
-  const definitions = [
+  const eraLabel = (id) => eras.find((era) => era.id === id)?.label ?? id;
+  const era = (metal, id, complete, name, requirement, popup) => ({
+    metal,
+    name,
+    requirement,
+    popup,
+    goal: eraStep(id, complete, eras),
+    measure: { kind: 'era', era: id, complete },
+    params: { era: eraLabel(id) },
+  });
+  const fusionCount = { kind: 'count', counter: 'fusions' };
+  return [
     {
-      id: 'first-perfect',
-      category: 'achievement',
-      difficulty: 'easy',
-      name: 'First Perfect',
-      requirement: 'Earn three stars on any puzzle.',
-      popup: 'Three stars, first time',
-      art: { frame: 'easy', glyph: 'stars' },
-      qualifies: (state) => {
-        for (let id = 1; id <= levelCount; id++)
-          if (state.records?.[id]?.stars === 3) return { levelId: id };
-        return null;
-      },
+      id: 'stars',
+      tab: 'mine',
+      name: 'Perfect Prospector',
+      art: { glyph: 'stars' },
+      link: 'museum-stars',
+      measure: { kind: 'stars' },
+      progress: '{value} / {goal} three-star puzzles',
+      requirement: 'Earn three stars on {goal} puzzles.',
+      popup: 'Three stars on {goal} puzzles',
+      ranks: [
+        { metal: 'bronze', goal: 25, name: 'Rising Star' },
+        { metal: 'silver', goal: 150, name: 'Star Collector' },
+        { metal: 'gold', goal: 300 },
+      ],
     },
     {
-      id: 'first-fusion',
-      category: 'achievement',
-      difficulty: 'easy',
-      name: 'First Fusion',
-      requirement: 'Fuse two bonus gems in a puzzle you complete.',
-      popup: 'Two bonuses became one blast',
-      art: { frame: 'easy', image: '/art/bonuses/bomb.svg', second: '/art/bonuses/cross.svg' },
-      qualifies: (state) => (state.honours?.fusions?.length ? {} : null),
-    },
-    {
-      id: 'forge-delivers',
-      category: 'achievement',
-      difficulty: 'easy',
-      name: 'The Forge Delivers',
-      requirement: 'Collect your first TNT from the blacksmith’s forge.',
-      popup: 'Fresh from the forge',
-      art: { frame: 'easy', image: '/art/powers/tnt.svg' },
-      link: 'blacksmith',
-      qualifies: (state) => (state.honours?.counts?.forge >= 1 ? {} : null),
-    },
-    ...VISITOR_RANKS.map((rank, index) => ({
-      id: rank.id,
-      family: 'visitors',
-      rank: index + 1,
-      category: 'achievement',
-      difficulty: rank.difficulty,
-      name: rank.name,
-      requirement: rank.requirement,
-      popup: rank.popup,
-      params: () => ({ goal: rank.goal }),
-      art: {
-        frame: rank.difficulty,
-        glyph: 'guests',
-        ...(index ? { ribbon: `${rank.goal}` } : {}),
-      },
-      link: 'sharing',
-      progress: (state) => ({ value: townVisitors(state), goal: rank.goal }),
-      qualifies: (state) => (townVisitors(state) >= rank.goal ? {} : null),
-    })),
-    ...SCORE_RANKS.map((rank, index) => ({
-      id: rank.id,
-      family: 'score',
-      rank: index + 1,
-      category: 'achievement',
-      difficulty: rank.difficulty,
-      name: rank.name,
-      requirement:
-        'Complete a puzzle from level {level} onward with {multiple}× its star score target.',
-      popup: rank.popup,
-      params: () => ({ level: SCORE_FROM_LEVEL, multiple: rank.multiple }),
-      art: { frame: rank.difficulty, glyph: 'score', ribbon: `${rank.multiple}×` },
+      id: 'score',
+      tab: 'mine',
+      name: 'Score Legend',
+      art: { glyph: 'score' },
       link: 'museum-score',
-      progress: (state) => {
-        const best = bestScoreRun(state.records, SCORE_FROM_LEVEL, levelCount);
-        return { value: best ? Math.floor(best.ratio * 10) / 10 : 0, goal: rank.multiple };
-      },
-      qualifies: (state) => {
-        const best = bestScoreRun(state.records, SCORE_FROM_LEVEL, levelCount);
-        return best && best.ratio >= rank.multiple
-          ? { levelId: best.levelId, score: best.score, target: best.target }
-          : null;
-      },
-    })),
-    {
-      id: 'fusion-master',
-      category: 'achievement',
-      difficulty: 'medium',
-      name: 'Fusion Master',
-      requirement: 'Perform all {count} bonus fusions in puzzles you complete.',
-      popup: 'Every fusion performed',
-      params: () => ({ count: fusionKeys.length }),
-      art: { frame: 'medium', image: '/art/bonuses/rainbow.svg' },
-      progress: (state) => ({
-        value: fusionKeys.filter((key) => state.honours?.fusions?.includes(key)).length,
-        goal: fusionKeys.length,
-      }),
-      qualifies: (state) =>
-        fusionKeys.length && fusionKeys.every((key) => state.honours?.fusions?.includes(key))
-          ? {}
-          : null,
+      measure: { kind: 'score', fromLevel: SCORE_FROM_LEVEL },
+      progress: 'Best so far {value}×',
+      requirement:
+        'Complete a puzzle from level {level} onward with {goal}× its star score target.',
+      params: { level: SCORE_FROM_LEVEL },
+      ranks: [
+        {
+          metal: 'bronze',
+          goal: 1.5,
+          name: 'Score Hunter',
+          popup: 'One and a half times the star target',
+        },
+        {
+          metal: 'silver',
+          goal: 2.5,
+          name: 'Score Ace',
+          popup: 'Two and a half times the star target',
+        },
+        { metal: 'gold', goal: 3, popup: 'Three times the star target' },
+      ],
     },
     {
-      id: 'forge-veteran',
-      category: 'achievement',
-      difficulty: 'medium',
-      name: 'Forge Veteran',
-      requirement: 'Collect {goal} TNT from the forge.',
-      popup: '{goal} TNT from the forge',
-      params: () => ({ goal: FORGE_VETERAN_GOAL }),
-      art: { frame: 'medium', image: '/art/powers/tnt.svg' },
-      link: 'blacksmith',
-      progress: (state) => ({
-        value: safeCount(state.honours?.counts?.forge),
-        goal: FORGE_VETERAN_GOAL,
-      }),
-      qualifies: (state) =>
-        safeCount(state.honours?.counts?.forge) >= FORGE_VETERAN_GOAL ? {} : null,
+      id: 'fusion',
+      tab: 'mine',
+      name: 'Fusion Virtuoso',
+      art: { image: '/art/bonuses/rainbow.svg' },
+      measure: fusionCount,
+      progress: '{value} / {goal} fusions',
+      requirement: 'Perform {goal} bonus fusions in puzzles you complete.',
+      popup: '{goal} bonus fusions',
+      ranks: [
+        {
+          metal: 'bronze',
+          goal: 1,
+          name: 'First Fusion',
+          requirement: 'Fuse two bonus gems in a puzzle you complete.',
+          popup: 'Two bonuses became one blast',
+        },
+        {
+          metal: 'silver',
+          goal: FUSION_MASTER_KEYS.length,
+          name: 'Fusion Master',
+          measure: { kind: 'distinct', counter: 'fusions', keys: FUSION_MASTER_KEYS },
+          requirement: 'Perform {goal} different bonus fusions in puzzles you complete.',
+          popup: '{goal} different fusions performed',
+          progress: '{value} / {goal} different fusions',
+        },
+        { metal: 'gold', goal: 300 },
+      ],
     },
     ...gemTypes.map((gem) => {
-      const [name, requirement, popup] = GEM_NAMES[gem] ?? [
+      const [name, requirement, popup] = GEM_TEXT[gem] ?? [
         `${gem[0].toUpperCase()}${gem.slice(1)} Laureate`,
         'Collect {goal} of this gem in completed puzzles.',
         '{goal} collected',
       ];
-      const goal = GEM_GOALS[gem] ?? 0;
       return {
-        id: `laureate-${gem}`,
-        category: 'achievement',
-        difficulty: 'medium',
+        id: `gem-${gem}`,
+        tab: 'mine',
         name,
+        gem,
+        art: { image: `/art/${gem}.svg` },
+        measure: { kind: 'count', counter: 'gems', key: gem },
         requirement,
         popup,
-        gem,
-        params: () => ({ goal }),
-        art: { frame: 'medium', image: `/art/${gem}.svg` },
-        progress: (state) => ({ value: safeCount(state.honours?.counts?.gems?.[gem]), goal }),
-        // A gem without a calibrated goal is listed but cannot be earned at zero.
-        qualifies: (state) =>
-          goal > 0 && safeCount(state.honours?.counts?.gems?.[gem]) >= goal ? {} : null,
+        // A gem without calibrated goals is listed with no ranks, so it cannot be earned.
+        ranks: (GEM_GOALS[gem] ?? []).map((goal, index) => ({ metal: RANK_METALS[index], goal })),
       };
     }),
-    {
-      id: 'master-quartermaster',
-      category: 'achievement',
-      difficulty: 'hard',
-      name: 'Master Quartermaster',
-      requirement:
-        'With the armory and garage fully upgraded, hold all {count} powers at full storage ({capacity} each) at the same time.',
-      popup: 'Every supply fully stocked',
-      params: () => ({ count: powers.length, capacity: storage.capacity }),
-      art: { frame: 'hard', glyph: 'supplies' },
-      link: 'supplies',
-      progress: (state) => ({
-        value: powers.filter((power) => quantity(state, power.id) >= storage.capacity).length,
-        goal: powers.length,
-      }),
-      qualifies: (state) =>
-        storage.capacity > 0 &&
-        Object.entries(storage.levels).every(
-          ([id, level]) => (state.town?.buildings?.[id] ?? 0) >= level,
-        ) &&
-        powers.every((power) => quantity(state, power.id) >= storage.capacity)
-          ? { capacity: storage.capacity }
-          : null,
-    },
-    {
-      id: 'perfect-prospector',
-      category: 'achievement',
-      difficulty: 'hard',
-      name: 'Perfect Prospector',
-      requirement: 'Earn three stars on all {levels} puzzles.',
-      popup: 'Three stars on every puzzle',
-      params: () => ({ levels: levelCount }),
-      requirementVersion: { levels: levelCount },
-      art: { frame: 'hard', glyph: 'prospector' },
-      link: 'museum-stars',
-      progress: (state) => {
-        let stars = 0;
-        for (let id = 1; id <= levelCount; id++)
-          stars += Math.min(3, Math.max(0, state.records?.[id]?.stars ?? 0));
-        return { value: stars, goal: levelCount * 3 };
-      },
-      // Evaluated on every save: the last level rules most campaigns out at once.
-      qualifies: (state) =>
-        state.records?.[levelCount]?.stars === 3 &&
-        campaignCompletion(state.records, levelCount).complete
-          ? { levels: levelCount }
-          : null,
-    },
-    {
-      id: 'town-complete',
-      category: 'achievement',
-      difficulty: 'hard',
-      name: 'Prospect Hollow Complete',
-      requirement: 'Finish every required building and modernization through the {era}.',
-      popup: 'Every era built and modernized',
-      params: () => ({ era: last?.label ?? '' }),
-      requirementVersion: { era: last?.id ?? null },
-      art: { frame: 'hard', image: '/art/rewards/era-compass.svg' },
-      progress: (state) => ({
-        value:
-          Math.max(
-            0,
-            eras.findIndex((era) => era.id === state.town?.era),
-          ) + 1,
-        goal: eras.filter((era) => era.enabled).length,
-      }),
-      qualifies: (state) =>
-        last && state.town?.era === last.id && isEraComplete(state.town) ? { era: last.id } : null,
-    },
     ...mineElements.map((element) => ({
-      id: element.honour,
-      category: 'mine',
-      difficulty: 'medium',
+      // Saved IDs are lower case: oreOrders → mine-ore-orders.
+      id: `mine-${element.id.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`,
+      tab: 'mine',
       name: element.name,
+      element: element.id,
+      art: { image: elementArt(element) },
+      link: 'museum-element',
+      measure: { kind: 'count', counter: 'mine', key: element.id },
       requirement: element.requirement,
       popup: element.popup,
-      element: element.id,
-      params: () => ({ goal: element.goal }),
-      art: { frame: 'medium', image: elementArt(element) },
-      link: 'museum-element',
-      progress: (state) => ({
-        value: safeCount(state.honours?.counts?.mine?.[element.id]),
-        goal: element.goal,
-      }),
-      qualifies: (state) =>
-        safeCount(state.honours?.counts?.mine?.[element.id]) >= element.goal ? {} : null,
+      ranks: element.goals.map((goal, index) => ({ metal: RANK_METALS[index], goal })),
     })),
-    // Quiet medals: awarded by markRaidSeen, never re-derived from current buildings.
-    ...eras
-      .filter((era) => era.enabled)
-      .map((era) => {
-        const incident = eraEventKind(era.id);
-        return {
-          id: `defence-${era.id}`,
-          category: 'defence',
-          difficulty: 'medium',
-          quiet: true,
-          era: era.id,
-          incident,
-          name: MEDAL_NAMES[era.id] ?? `${era.label} Guardian`,
-          requirement: 'Fully protect the town from a {incident} during the {era}.',
-          popup: '',
-          params: () => ({ incident: INCIDENT_NAMES[incident] ?? incident, era: era.label }),
-          art: { frame: 'medal', image: '/art/rewards/town-bell.svg' },
-        };
-      }),
-  ].map((definition) => ({
-    family: definition.id,
-    rank: 1,
-    version: HONOURS_VERSION,
-    params: () => ({}),
-    progress: () => null,
-    qualifies: () => null,
-    ...definition,
-  }));
-  const families = [];
-  for (const definition of definitions) {
-    let family = families.find((entry) => entry.id === definition.family);
-    if (!family) {
-      family = { id: definition.family, category: definition.category, ranks: [] };
-      families.push(family);
-    }
-    family.ranks.push(definition);
-  }
+    {
+      id: 'ages',
+      tab: 'town',
+      name: 'Through the Ages',
+      art: { image: '/art/rewards/era-compass.svg' },
+      ranks: [
+        era(
+          'bronze',
+          'river-rail',
+          false,
+          'Full Steam Ahead',
+          'Reach {era}.',
+          'A new era begins: {era}',
+        ),
+        era('silver', 'broadcast', false, 'On the Air', 'Reach {era}.', 'A new era begins: {era}'),
+        era(
+          'gold',
+          'riverlight',
+          true,
+          'Lantern-lit Hollow',
+          'Finish every required building and modernization in {era}.',
+          '{era} complete',
+        ),
+      ],
+    },
+    {
+      id: 'guardian',
+      tab: 'town',
+      name: 'Town Guardian',
+      art: { image: '/art/rewards/town-bell.svg' },
+      measure: { kind: 'count', counter: 'guardian' },
+      progress: '{value} / {goal} incidents fully protected',
+      requirement: 'Fully protect the town from {goal} incidents, in any era.',
+      popup: '{goal} incidents fully protected',
+      ranks: [
+        { metal: 'bronze', goal: 5, name: 'Watchful Town' },
+        { metal: 'silver', goal: 25 },
+        { metal: 'gold', goal: 60, name: 'Hollow Sentinel' },
+      ],
+    },
+    {
+      id: 'forge',
+      tab: 'town',
+      name: 'Forge Veteran',
+      art: { image: '/art/powers/tnt.svg' },
+      link: 'blacksmith',
+      measure: { kind: 'count', counter: 'forge' },
+      progress: '{value} / {goal} TNT from the forge',
+      requirement: 'Collect {goal} TNT from the forge.',
+      popup: '{goal} TNT from the forge',
+      ranks: [
+        { metal: 'bronze', goal: 5, name: 'The Forge Delivers' },
+        { metal: 'silver', goal: 100 },
+        { metal: 'gold', goal: 250, name: 'Forge Master' },
+      ],
+    },
+    {
+      id: 'quartermaster',
+      tab: 'town',
+      name: 'Master Quartermaster',
+      art: { glyph: 'supplies' },
+      link: 'supplies',
+      measure: { kind: 'powers', quantity: QUARTERMASTER.quantity },
+      progress: '{value} / {goal} powers full',
+      requirement: 'Hold {goal} different powers at {quantity} each at the same time.',
+      popup: '{goal} powers fully stocked',
+      params: { quantity: QUARTERMASTER.quantity },
+      ranks: [{ metal: 'gold', goal: QUARTERMASTER.powers }],
+    },
+    {
+      id: 'visitors',
+      tab: 'friends',
+      name: 'Celebrated Town',
+      art: { glyph: 'guests' },
+      link: 'sharing',
+      measure: { kind: 'social', counter: 'visitors' },
+      requirement: 'Have {goal} different players visit your shared town.',
+      popup: '{goal} different players visited',
+      ranks: [
+        {
+          metal: 'bronze',
+          goal: 1,
+          name: 'First Guest',
+          requirement: 'Have another player visit your shared town.',
+          popup: 'Your first visitor came by',
+        },
+        { metal: 'silver', goal: 5, name: 'Welcoming Host' },
+        { metal: 'gold', goal: 15 },
+      ],
+    },
+    {
+      id: 'explorer',
+      tab: 'friends',
+      name: 'Village Explorer',
+      art: { glyph: 'travels' },
+      link: 'directory',
+      measure: { kind: 'social', counter: 'travels' },
+      requirement: 'Visit {goal} different players’ villages from this town.',
+      popup: '{goal} villages visited',
+      ranks: [
+        { metal: 'bronze', goal: 5, name: 'Curious Neighbour' },
+        { metal: 'silver', goal: 15, name: 'Seasoned Traveller' },
+        { metal: 'gold', goal: 30 },
+      ],
+    },
+  ];
+}
+
+// One rank definition, with the family's defaults. An invalid ladder throws, so a
+// broken content change fails its tests instead of shipping an unreachable honour.
+function defineRank(family, rank, index, content) {
+  const metalIndex = RANK_METALS.indexOf(rank.metal);
+  const previous = family.ranks[index - 1];
+  if (metalIndex < 0 || (previous && RANK_METALS.indexOf(previous.metal) >= metalIndex))
+    throw new Error(`${family.id} lists its ranks out of metal order.`);
+  const measure = rank.measure ?? family.measure;
+  if (!MEASURES[measure?.kind]) throw new Error(`${family.id} has no known measure.`);
+  if (!(rank.goal >= 0) || !Number.isFinite(rank.goal))
+    throw new Error(`${family.id}-${rank.metal} needs a finite goal.`);
+  const params = { ...family.params, ...rank.params, goal: rank.goal };
+  const { value, evidence } = MEASURES[measure.kind];
   return {
-    definitions,
-    byId: Object.fromEntries(definitions.map((definition) => [definition.id, definition])),
-    families,
-    familyById: Object.fromEntries(families.map((family) => [family.id, family])),
-    fusionKeys,
-    gemTypes,
-    mineElements,
+    id: `${family.id}-${rank.metal}`,
+    family: family.id,
+    tab: family.tab,
+    rank: index + 1,
+    metal: rank.metal,
+    difficulty: METAL_DIFFICULTY[rank.metal],
+    // The requirement version: raise it when a shipped goal must change (it should not).
+    version: rank.version ?? 1,
+    // The catch-up generation (HONOURS_VERSION) that added this rank, for the "New
+    // rank" marker. A rank added later sets it to the raised HONOURS_VERSION.
+    since: rank.since ?? 1,
+    name: rank.name ?? family.name,
+    requirement: rank.requirement ?? family.requirement,
+    popup: rank.popup ?? family.popup,
+    progressText: rank.progress ?? family.progress ?? null,
+    goal: rank.goal,
+    measure,
+    art: family.art,
+    link: family.link ?? null,
+    gem: family.gem,
+    element: family.element,
+    params: () => params,
+    progress: (state) => ({ value: value(state, measure, content), goal: rank.goal }),
+    qualifies: (state) =>
+      value(state, measure, content) >= rank.goal
+        ? (evidence?.(state, measure, content) ?? {})
+        : null,
   };
 }
-export const HONOURS = createHonourCatalog();
+
+/**
+ * The catalog: `definitions` (one per rank, in family and ladder order), `byId`,
+ * `families` ({ id, tab, name, ranks }) and `familyById`. Tests build catalogs from
+ * edited family lists to prove that new ranks and eras extend it safely.
+ */
+export function buildHonourCatalog(
+  families = honourFamilies(),
+  content = { eras: ERAS, levelCount: LEVEL_COUNT },
+) {
+  const built = families.map((family) => {
+    if (!HONOUR_TABS.includes(family.tab)) throw new Error(`${family.id} has no known tab.`);
+    return {
+      id: family.id,
+      tab: family.tab,
+      name: family.name,
+      ranks: family.ranks.map((rank, index) => defineRank(family, rank, index, content)),
+    };
+  });
+  const definitions = built.flatMap((family) => family.ranks);
+  const byId = Object.fromEntries(definitions.map((definition) => [definition.id, definition]));
+  if (Object.keys(byId).length !== definitions.length)
+    throw new Error('Honour IDs must be unique.');
+  return {
+    definitions,
+    byId,
+    families: built,
+    familyById: Object.fromEntries(built.map((family) => [family.id, family])),
+  };
+}
+export const HONOURS = buildHonourCatalog();
 
 // ---------- Saved state ----------
 // profile.honours = {
 //   version, earned: { [id]: { at: ms|null, version, evidence?, seen, announced, backfilled? } },
-//   counts: { gems: { [gem]: n }, forge: n, mine: { [element]: n }, visitors: n },
-//   fusions: [key], showcase: [familyId], backfilled: version
+//   counts: { gems: { [gem]: n }, mine: { [element]: n }, fusions: { [key]: n },
+//             forge: n, guardian: n, visitors: n },
+//   showcase: [familyId], backfilled: generation, seenGeneration: generation
 // }
-// It is presentation and history, not money: integrity replay ignores it, the server
-// merges earned entries and publishes only the public projection below.
+// `backfilled` is the last catch-up generation run on this save and `seenGeneration`
+// the last one whose new ranks the player has looked at in the collection.
+// It is presentation and history, not money. The server keeps its own counters from the
+// receipts it replays (a first cloud enrollment starts from these counts) and publishes
+// only the honours it can prove.
+const emptyCounts = () =>
+  Object.fromEntries(
+    Object.entries(COUNTERS).map(([name, shape]) => [name, shape === 'map' ? {} : 0]),
+  );
 export const createHonours = () => ({
   version: HONOURS_VERSION,
   earned: {},
-  counts: { gems: {}, forge: 0, mine: {}, visitors: 0 },
-  fusions: [],
+  counts: emptyCounts(),
   showcase: [],
   backfilled: 0,
+  seenGeneration: HONOURS_VERSION,
 });
+const KEY = /^[a-zA-Z][\w+-]{0,39}$/;
+export const HONOUR_ID = /^[a-z][a-z0-9-]{0,47}$/;
+const ID = HONOUR_ID;
 const countMap = (value) =>
   Object.fromEntries(
     Object.entries(value && typeof value === 'object' && !Array.isArray(value) ? value : {})
-      .filter(([key, count]) => /^[a-zA-Z][\w-]{0,39}$/.test(key) && safeCount(count) > 0)
+      .filter(([key, count]) => KEY.test(key) && safeCount(count) > 0)
       .map(([key, count]) => [key, safeCount(count)]),
   );
+const normalizeCounts = (counts) =>
+  Object.fromEntries(
+    Object.entries(COUNTERS).map(([name, shape]) => [
+      name,
+      shape === 'map' ? countMap(counts?.[name]) : safeCount(counts?.[name]),
+    ]),
+  );
+// Two copies of the same counters: the larger of each, never the sum, so retries,
+// restores and two tabs cannot double-count.
+const maxCounts = (a, b) =>
+  Object.fromEntries(
+    Object.entries(COUNTERS).map(([name, shape]) => {
+      if (shape !== 'map') return [name, Math.max(a[name], b[name])];
+      const keys = new Set([...Object.keys(a[name]), ...Object.keys(b[name])]);
+      return [
+        name,
+        Object.fromEntries(
+          [...keys].map((key) => [key, Math.max(a[name][key] ?? 0, b[name][key] ?? 0)]),
+        ),
+      ];
+    }),
+  );
+const generation = (value) => (Number.isSafeInteger(value) && value >= 0 ? value : 0);
+
 function normalizeEarned(entry) {
   if (!entry || typeof entry !== 'object') return null;
   const at = Number.isSafeInteger(entry.at) && entry.at > 0 ? entry.at : null;
@@ -597,37 +656,25 @@ export function normalizeHonours(saved) {
   if (!saved || typeof saved !== 'object' || Array.isArray(saved)) return honours;
   if (Number.isSafeInteger(saved.version) && saved.version > 0) honours.version = saved.version;
   for (const [id, entry] of Object.entries(saved.earned ?? {})) {
-    if (!/^[a-z][a-z0-9-]{0,47}$/.test(id)) continue;
+    if (!ID.test(id)) continue;
     const earned = normalizeEarned(entry);
     if (earned) honours.earned[id] = earned;
   }
-  honours.counts = {
-    gems: countMap(saved.counts?.gems),
-    forge: safeCount(saved.counts?.forge),
-    mine: countMap(saved.counts?.mine),
-    visitors: safeCount(saved.counts?.visitors),
-  };
-  honours.fusions = [
-    ...new Set(
-      (Array.isArray(saved.fusions) ? saved.fusions : []).filter(
-        (key) => typeof key === 'string' && /^[a-z]+\+[a-z]+$/.test(key),
-      ),
-    ),
-  ];
+  honours.counts = normalizeCounts(saved.counts);
   honours.showcase = [
     ...new Set(
       (Array.isArray(saved.showcase) ? saved.showcase : []).filter(
-        (id) => typeof id === 'string' && /^[a-z][a-z0-9-]{0,47}$/.test(id),
+        (id) => typeof id === 'string' && ID.test(id),
       ),
     ),
   ].slice(0, SHOWCASE_SLOTS);
-  if (Number.isSafeInteger(saved.backfilled) && saved.backfilled >= 0)
-    honours.backfilled = saved.backfilled;
+  honours.backfilled = generation(saved.backfilled);
+  if (saved.seenGeneration !== undefined) honours.seenGeneration = generation(saved.seenGeneration);
   return honours;
 }
 
-// Two copies of the same town: earned entries are unioned (permanent), lifetime counts
-// take the larger value, never a sum, so retries and restores cannot double-count.
+// Two copies of the same town: earned entries are unioned (permanent, earliest date
+// wins) and counts take the larger value. The first copy's showcase wins when set.
 export function mergeHonours(local, incoming) {
   const a = normalizeHonours(local);
   const b = normalizeHonours(incoming);
@@ -640,28 +687,12 @@ export function mergeHonours(local, incoming) {
       continue;
     }
     const first = x.at !== null && (y.at === null || x.at <= y.at) ? x : y;
-    merged.earned[id] = {
-      ...first,
-      seen: x.seen || y.seen,
-      announced: x.announced || y.announced,
-    };
+    merged.earned[id] = { ...first, seen: x.seen || y.seen, announced: x.announced || y.announced };
   }
-  const maxMap = (p, q) =>
-    Object.fromEntries(
-      [...new Set([...Object.keys(p), ...Object.keys(q)])].map((key) => [
-        key,
-        Math.max(p[key] ?? 0, q[key] ?? 0),
-      ]),
-    );
-  merged.counts = {
-    gems: maxMap(a.counts.gems, b.counts.gems),
-    forge: Math.max(a.counts.forge, b.counts.forge),
-    mine: maxMap(a.counts.mine, b.counts.mine),
-    visitors: Math.max(a.counts.visitors, b.counts.visitors),
-  };
-  merged.fusions = [...new Set([...a.fusions, ...b.fusions])];
+  merged.counts = maxCounts(a.counts, b.counts);
   merged.showcase = a.showcase.length ? a.showcase : b.showcase;
   merged.backfilled = Math.max(a.backfilled, b.backfilled);
+  merged.seenGeneration = Math.max(a.seenGeneration, b.seenGeneration);
   return merged;
 }
 
@@ -676,22 +707,20 @@ export function keepHonours(profile, live) {
     : { ...profile, honours };
 }
 
-// ---------- Crediting and evaluation (pure; the campaign store persists results) ----------
+// ---------- Crediting (pure; the campaign store persists results) ----------
 // The run tally lives in the game store and travels with the town handoff. Mine
 // elements are added from the level configuration at completion.
-export const createRunTally = () => ({ gems: {}, fusions: [], mine: {} });
+export const createRunTally = () => ({ gems: {}, fusions: {} });
 // A tally restored from a handoff snapshot; snapshots older than honours have none.
 export const normalizeRunTally = (saved) => ({
   gems: countMap(saved?.gems),
-  fusions: [
-    ...new Set(
-      (Array.isArray(saved?.fusions) ? saved.fusions : []).filter((key) =>
-        Object.hasOwn(FUSION_STYLES, key),
-      ),
-    ),
-  ],
-  mine: {},
+  fusions: Object.fromEntries(
+    Object.entries(countMap(saved?.fusions)).filter(([key]) => Object.hasOwn(FUSION_STYLES, key)),
+  ),
 });
+const add = (map, key, count = 1) => {
+  map[key] = Math.min(MAX_COUNT, (map[key] ?? 0) + count);
+};
 // Committed resolution steps only: collectedJewels already counts each removed gem once
 // and excludes refills, previews, bonuses and relics. Real swap fusions carry a key;
 // the free recovery sweep's technical fusion does not, and the sweep is excluded.
@@ -699,13 +728,17 @@ export function tallySteps(tally, steps, { recovery = false } = {}) {
   if (recovery || !Array.isArray(steps)) return tally;
   for (const step of steps) {
     for (const jewel of step?.collectedJewels ?? [])
-      if (GEM_TYPES.includes(jewel?.type))
-        tally.gems[jewel.type] = Math.min(MAX_COUNT, (tally.gems[jewel.type] ?? 0) + 1);
+      if (GEM_TYPES.includes(jewel?.type)) add(tally.gems, jewel.type);
     const key = step?.bonusFusion?.key;
-    if (key && FUSION_STYLES[key] && !tally.fusions.includes(key)) tally.fusions.push(key);
+    if (key && FUSION_STYLES[key]) add(tally.fusions, key);
   }
   return tally;
 }
+// The run's claim in its victory receipt, which the server credits to its own counters.
+export const runClaim = (tally) => ({
+  gems: countMap(tally?.gems),
+  fusions: normalizeRunTally(tally).fusions,
+});
 // Mine elements a completed level consumes, from its authored configuration.
 export function levelElements(config, elements = MINE_ELEMENTS) {
   if (!config) return {};
@@ -722,51 +755,40 @@ export function levelElements(config, elements = MINE_ELEMENTS) {
   );
 }
 // Credit one completed normal puzzle (or replay). Called once per settled run.
-export function creditRun(honours, { gems = {}, fusions = [], mine = {} } = {}) {
+export function creditRun(honours, { gems = {}, fusions = {}, mine = {} } = {}) {
   const next = normalizeHonours(honours);
-  for (const [gem, count] of Object.entries(countMap(gems)))
-    next.counts.gems[gem] = Math.min(MAX_COUNT, (next.counts.gems[gem] ?? 0) + count);
-  for (const [element, count] of Object.entries(countMap(mine)))
-    next.counts.mine[element] = Math.min(MAX_COUNT, (next.counts.mine[element] ?? 0) + count);
-  next.fusions = [...new Set([...next.fusions, ...fusions.filter((key) => FUSION_STYLES[key])])];
+  for (const [name, map] of Object.entries({ gems, fusions, mine }))
+    for (const [key, count] of Object.entries(countMap(map))) add(next.counts[name], key, count);
   return next;
 }
-// The owner's guestbook reports how many different players visited; keep the highest.
-export function recordVisitors(honours, count) {
+// One forge collection or fully protected incident.
+export function creditCounter(honours, counter) {
   const next = normalizeHonours(honours);
-  if (!(safeCount(count) > next.counts.visitors)) return null;
-  next.counts.visitors = safeCount(count);
+  next.counts[counter] = Math.min(MAX_COUNT, next.counts[counter] + 1);
   return next;
 }
-export function creditForge(honours) {
+// The owner's guestbook reports the server's social counts ({ visitors, travels });
+// keep the highest of each. Null when nothing grew.
+export function recordSocial(honours, reported) {
   const next = normalizeHonours(honours);
-  next.counts.forge = Math.min(MAX_COUNT, next.counts.forge + 1);
-  return next;
+  let grew = false;
+  for (const counter of ['visitors', 'travels']) {
+    const count = safeCount(reported?.[counter]);
+    if (count > next.counts[counter]) {
+      next.counts[counter] = count;
+      grew = true;
+    }
+  }
+  return grew ? next : null;
 }
-// The medal for a finalized incident: protected with no loss, attributed to the era
-// it happened in. The era gate keeps an unseen incident from crossing an era change.
-export function defenceMedal(event, era, catalog = HONOURS) {
-  if (!event || event.outcome !== 'protected' || event.loss !== 0) return null;
-  const definition = catalog.byId[`defence-${era}`];
-  return definition && definition.incident === eventKind(event) ? definition.id : null;
-}
-// Legacy backfill: only the single stored receipt, and only when its kind belongs to
-// exactly one era. Ambiguous history stays "No recorded defence".
-export function backfillDefenceMedal(event, catalog = HONOURS) {
-  if (!event?.seen || event.outcome !== 'protected' || event.loss !== 0) return null;
-  const medals = catalog.definitions.filter(
-    (definition) => definition.category === 'defence' && definition.incident === eventKind(event),
-  );
-  return medals.length === 1 ? medals[0].id : null;
-}
-export function awardHonour(honours, id, { at = null, evidence, backfilled = false } = {}) {
-  const next = normalizeHonours(honours);
-  if (next.earned[id]) return next;
-  next.earned[id] = normalizeEarned({ at, version: HONOURS_VERSION, evidence, backfilled });
-  return next;
-}
-// Evaluates every not-yet-earned, non-quiet honour against the saved state and returns
-// a normalized copy plus the newly earned IDs. Backfill records an unknown date.
+// A finalized incident the town came through completely: protected with no loss. A
+// harmless zero-loss raid on an empty purse is not protection.
+export const protectedIncident = (event) =>
+  !!event && event.outcome === 'protected' && event.loss === 0;
+
+// ---------- Evaluation ----------
+// Evaluates every not-yet-earned honour against the saved state and returns a
+// normalized copy plus the newly earned IDs. Backfill records an unknown date.
 export function evaluateHonours(
   state,
   { at = Date.now(), backfill = false, catalog = HONOURS } = {},
@@ -775,7 +797,7 @@ export function evaluateHonours(
   const view = { ...state, honours };
   const added = [];
   for (const definition of catalog.definitions) {
-    if (definition.quiet || honours.earned[definition.id]) continue;
+    if (honours.earned[definition.id]) continue;
     const evidence = definition.qualifies(view);
     if (!evidence) continue;
     honours.earned[definition.id] = normalizeEarned({
@@ -789,74 +811,82 @@ export function evaluateHonours(
   if (backfill) honours.backfilled = HONOURS_VERSION;
   return { honours, added };
 }
-// Saves from before this honours version earn what their state already proves, with
-// an unknown date, plus the one attributable defence medal. Counts are never inferred.
+// Counters a save already proves without its history: a saved forge collection time
+// is at least one collection, and a seen, fully protected incident is at least one.
+// The server seeds its counters with the same rule (Honours::seed).
+export function seedCounts(honours, town) {
+  const next = normalizeHonours(honours);
+  if (Number.isSafeInteger(town?.lastCollections?.blacksmith))
+    next.counts.forge = Math.max(next.counts.forge, 1);
+  const incident = town?.events?.[BANDIT_EVENT];
+  if (incident?.seen && protectedIncident(incident))
+    next.counts.guardian = Math.max(next.counts.guardian, 1);
+  return next;
+}
+// Saves from an older generation earn what their state already proves, with an unknown
+// date. Other counts are never inferred: they start when honours arrive.
 export function backfillHonours(state, catalog = HONOURS) {
   const current = normalizeHonours(state.honours);
   if (current.backfilled >= HONOURS_VERSION) return current;
-  const { honours } = evaluateHonours({ ...state, honours: current }, { backfill: true, catalog });
-  const medal = backfillDefenceMedal(state.town?.events?.[BANDIT_EVENT], catalog);
-  return medal ? awardHonour(honours, medal, { backfilled: true }) : honours;
+  return evaluateHonours(
+    { ...state, honours: seedCounts(current, state.town) },
+    { backfill: true, catalog },
+  ).honours;
 }
 
 // ---------- Presentation helpers ----------
-// One announcement per family (the highest new rank), quiet honours excluded.
+// One announcement per family (the highest new rank).
 export function pendingAnnouncements(honours, catalog = HONOURS) {
   const saved = normalizeHonours(honours);
   const byFamily = new Map();
   for (const [id, entry] of Object.entries(saved.earned)) {
     const definition = catalog.byId[id];
-    if (!definition || definition.quiet || entry.announced) continue;
+    if (!definition || entry.announced) continue;
     const current = byFamily.get(definition.family);
     if (!current || definition.rank > current.definition.rank)
       byFamily.set(definition.family, { id, definition, entry });
   }
   return [...byFamily.values()];
 }
-function familyView(family, state, catalog = HONOURS) {
-  const honours = normalizeHonours(state.honours);
+function familyView(family, state, honours) {
   const earned = family.ranks.filter((definition) => honours.earned[definition.id]);
   const top = earned.at(-1) ?? null;
-  const next = family.ranks.find((definition) => !honours.earned[definition.id]) ?? null;
-  const shown = top ?? next;
-  let status = top ? 'earned' : 'progress';
-  if (family.category === 'defence' && !top) {
-    const index = (id) => ERAS.findIndex((era) => era.id === id);
-    const era = index(shown.era),
-      current = index(state.town?.era);
-    status = era > current ? 'future' : era === current ? 'current' : 'none';
-  }
+  const next =
+    family.ranks.slice(top?.rank ?? 0).find((definition) => !honours.earned[definition.id]) ?? null;
   return {
     id: family.id,
-    category: family.category,
-    definition: shown,
+    tab: family.tab,
+    definition: top ?? next,
     earned: top ? { id: top.id, ...honours.earned[top.id] } : null,
     ranks: family.ranks.map((definition) => ({
       definition,
       earned: honours.earned[definition.id] ?? null,
     })),
     next: next && { definition: next, progress: next.progress({ ...state, honours }) },
-    status,
     fresh: earned.some((definition) => !honours.earned[definition.id].seen),
+    // A rank added by a later update that the player has not looked at yet.
+    newRank: family.ranks.some(
+      (definition) => !honours.earned[definition.id] && definition.since > honours.seenGeneration,
+    ),
     showcased: honours.showcase.includes(family.id),
   };
 }
 // Collection tabs: earned families first, then goals still to reach, in catalog order.
 export function honourCollection(state, catalog = HONOURS) {
-  return HONOUR_CATEGORIES.map((category) => {
+  const honours = normalizeHonours(state.honours);
+  return HONOUR_TABS.map((tab) => {
     const families = catalog.families
-      .filter((family) => family.category === category)
-      .map((family) => familyView(family, state, catalog));
-    const ordered = [
-      ...families.filter((family) => family.earned),
-      ...families.filter((family) => !family.earned),
-    ];
+      .filter((family) => family.tab === tab)
+      .map((family) => familyView(family, state, honours));
     return {
-      id: category,
-      families: ordered,
+      id: tab,
+      families: [
+        ...families.filter((family) => family.earned),
+        ...families.filter((family) => !family.earned),
+      ],
       earned: families.filter((family) => family.earned).length,
       total: families.length,
-      fresh: families.filter((family) => family.fresh).length,
+      fresh: families.filter((family) => family.fresh || family.newRank).length,
     };
   });
 }
@@ -873,9 +903,10 @@ export function publicHonours(honours, catalog = HONOURS) {
   const saved = normalizeHonours(honours);
   const earned = {};
   for (const [id, entry] of Object.entries(saved.earned)) {
-    if (!catalog.byId[id]) continue;
+    const definition = catalog.byId[id];
+    if (!definition) continue;
     earned[id] = { at: entry.at };
-    if (catalog.byId[id].family === 'score' && entry.evidence?.levelId)
+    if (definition.measure.kind === 'score' && entry.evidence?.levelId)
       earned[id].evidence = {
         levelId: entry.evidence.levelId,
         score: entry.evidence.score,

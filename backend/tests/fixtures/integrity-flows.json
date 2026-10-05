@@ -247,10 +247,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "after": {
@@ -286,6 +294,7 @@
                 "multiMatchCounts": {},
                 "chooseRewards": true,
                 "chests": [{ "source": "score", "rewardId": "clear-row" }],
+                "honours": { "gems": {}, "fusions": {} },
                 "economyVersion": 3,
                 "shopStock": [],
                 "shopVisit": 0,
@@ -542,19 +551,19 @@
         "settledRun": 1,
         "honours": {
           "version": 1,
-          "earned": {
-            "first-perfect": {
-              "at": 1780000000000,
-              "version": 1,
-              "evidence": { "levelId": 1 },
-              "seen": false,
-              "announced": false
-            }
+          "earned": {},
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
           },
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "serverNow": 1780000000000
@@ -805,10 +814,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "after": {
@@ -1062,10 +1079,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "serverNow": 1780000000000
@@ -1316,10 +1341,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "after": {
@@ -1611,19 +1644,19 @@
         "settledRun": 1,
         "honours": {
           "version": 1,
-          "earned": {
-            "first-perfect": {
-              "at": 1780000000000,
-              "version": 1,
-              "evidence": { "levelId": 1 },
-              "seen": false,
-              "announced": false
-            }
+          "earned": {},
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
           },
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "serverNow": 1780000000000
@@ -1874,10 +1907,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "after": {
@@ -2169,19 +2210,19 @@
         "settledRun": 1,
         "honours": {
           "version": 1,
-          "earned": {
-            "first-perfect": {
-              "at": 1780000000000,
-              "version": 1,
-              "evidence": { "levelId": 1 },
-              "seen": false,
-              "announced": false
-            }
+          "earned": {},
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
           },
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
           "showcase": [],
-          "backfilled": 1
+          "backfilled": 1,
+          "seenGeneration": 1
         }
       },
       "serverNow": 1780000000000
@@ -2432,10 +2473,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "after": {
@@ -2689,10 +2738,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "serverNow": 1780000000000
@@ -2943,10 +3000,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "after": {
@@ -3242,10 +3307,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "serverNow": 1780000000000
@@ -3496,10 +3569,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "after": {
@@ -3759,10 +3840,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "serverNow": 1780000000000
@@ -4013,10 +4102,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "after": {
@@ -4276,10 +4373,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "serverNow": 1780000000000
@@ -4529,11 +4634,21 @@
         "settledRun": 0,
         "honours": {
           "version": 1,
-          "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "earned": {
+            "ages-bronze": { "at": 1780000000000, "version": 1, "seen": false, "announced": false }
+          },
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "after": {
@@ -4822,11 +4937,21 @@
         "settledRun": 0,
         "honours": {
           "version": 1,
-          "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "earned": {
+            "ages-bronze": { "at": 1780000000000, "version": 1, "seen": false, "announced": false }
+          },
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "serverNow": 1780000000000
@@ -5088,11 +5213,21 @@
         "settledRun": 0,
         "honours": {
           "version": 1,
-          "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "earned": {
+            "ages-bronze": { "at": 1780000000000, "version": 1, "seen": false, "announced": false }
+          },
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "after": {
@@ -5369,11 +5504,21 @@
         "settledRun": 0,
         "honours": {
           "version": 1,
-          "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "earned": {
+            "ages-bronze": { "at": 1780000000000, "version": 1, "seen": false, "announced": false }
+          },
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "serverNow": 1780000000000
@@ -5624,10 +5769,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "after": {
@@ -5880,18 +6033,19 @@
         "settledRun": 0,
         "honours": {
           "version": 1,
-          "earned": {
-            "forge-delivers": {
-              "at": 1780000000000,
-              "version": 1,
-              "seen": false,
-              "announced": false
-            }
+          "earned": {},
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 1,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
           },
-          "counts": { "gems": {}, "forge": 1, "mine": {}, "visitors": 0 },
-          "fusions": [],
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "serverNow": 1780000000000
@@ -6142,10 +6296,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "after": {
@@ -6399,10 +6561,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "serverNow": 1780000000000
@@ -6653,10 +6823,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "after": {
@@ -6916,10 +7094,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "serverNow": 1780000000000
@@ -7182,10 +7368,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "after": {
@@ -7459,10 +7653,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "serverNow": 1780000000000
@@ -7725,10 +7927,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "after": {
@@ -8006,19 +8216,19 @@
         "settledRun": 0,
         "honours": {
           "version": 1,
-          "earned": {
-            "defence-frontier": {
-              "at": 1780000000000,
-              "version": 1,
-              "evidence": { "eventId": 1 },
-              "seen": false,
-              "announced": false
-            }
+          "earned": {},
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 1,
+            "visitors": 0,
+            "travels": 0
           },
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "serverNow": 1780000000000
@@ -8269,10 +8479,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "after": {
@@ -8538,10 +8756,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "serverNow": 1780000000000
@@ -8792,10 +9018,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "after": {
@@ -9049,10 +9283,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "serverNow": 1780000000000
@@ -9303,10 +9545,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "after": {
@@ -9565,11 +9815,21 @@
         "settledRun": 0,
         "honours": {
           "version": 1,
-          "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "earned": {
+            "ages-bronze": { "at": 1780000000000, "version": 1, "seen": false, "announced": false }
+          },
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "serverNow": 1780000000000
@@ -9819,11 +10079,22 @@
         "settledRun": 0,
         "honours": {
           "version": 1,
-          "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "earned": {
+            "ages-bronze": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
+            "ages-silver": { "at": 1780000000000, "version": 1, "seen": false, "announced": false }
+          },
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "after": {
@@ -10100,11 +10371,22 @@
         "settledRun": 0,
         "honours": {
           "version": 1,
-          "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "earned": {
+            "ages-bronze": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
+            "ages-silver": { "at": 1780000000000, "version": 1, "seen": false, "announced": false }
+          },
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "serverNow": 1780000000000
@@ -10355,10 +10637,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "after": {
@@ -10612,10 +10902,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "serverNow": 1780000000000
@@ -10878,10 +11176,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "after": {
@@ -11165,10 +11471,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "serverNow": 1780000000000
@@ -11419,10 +11733,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "after": {
@@ -11682,10 +12004,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "serverNow": 1780000000000
@@ -11936,10 +12266,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "after": {
@@ -12199,10 +12537,18 @@
         "honours": {
           "version": 1,
           "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "serverNow": 1780000000000
@@ -12458,11 +12804,21 @@
         "settledRun": 0,
         "honours": {
           "version": 1,
-          "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "earned": {
+            "ages-bronze": { "at": 1780000000000, "version": 1, "seen": false, "announced": false }
+          },
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "after": {
@@ -12721,11 +13077,789 @@
         "settledRun": 0,
         "honours": {
           "version": 1,
-          "earned": {},
-          "counts": { "gems": {}, "forge": 0, "mine": {}, "visitors": 0 },
-          "fusions": [],
+          "earned": {
+            "ages-bronze": { "at": 1780000000000, "version": 1, "seen": false, "announced": false }
+          },
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
           "showcase": [],
-          "backfilled": 0
+          "backfilled": 0,
+          "seenGeneration": 1
+        }
+      },
+      "serverNow": 1780000000000
+    },
+    {
+      "name": "offline Town Honours: claimed victories, a forge collection and a protected raid",
+      "before": {
+        "schemaVersion": 2,
+        "integrity": {
+          "version": 1,
+          "epoch": "00000000-0000-4000-8000-000000000117",
+          "clientAt": 1780000000000,
+          "baseSequence": 0,
+          "actions": []
+        },
+        "records": {
+          "1": { "score": 1, "stars": 1 },
+          "2": { "score": 1, "stars": 1 },
+          "3": { "score": 1, "stars": 1 },
+          "4": { "score": 1, "stars": 1 },
+          "5": { "score": 1, "stars": 1 },
+          "6": { "score": 1, "stars": 1 },
+          "7": { "score": 1, "stars": 1 },
+          "8": { "score": 1, "stars": 1 },
+          "9": { "score": 1, "stars": 1 },
+          "10": { "score": 1, "stars": 1 },
+          "11": { "score": 1, "stars": 1 },
+          "12": { "score": 1, "stars": 1 },
+          "13": { "score": 1, "stars": 1 },
+          "14": { "score": 1, "stars": 1 },
+          "15": { "score": 1, "stars": 1 },
+          "16": { "score": 1, "stars": 1 },
+          "17": { "score": 1, "stars": 1 },
+          "18": { "score": 1, "stars": 1 },
+          "19": { "score": 1, "stars": 1 },
+          "20": { "score": 1, "stars": 1 },
+          "21": { "score": 1, "stars": 1 },
+          "22": { "score": 1, "stars": 1 },
+          "23": { "score": 1, "stars": 1 },
+          "24": { "score": 1, "stars": 1 },
+          "25": { "score": 1, "stars": 1 },
+          "26": { "score": 1, "stars": 1 },
+          "27": { "score": 1, "stars": 1 },
+          "28": { "score": 1, "stars": 1 },
+          "29": { "score": 1, "stars": 1 },
+          "30": { "score": 1, "stars": 1 },
+          "31": { "score": 1, "stars": 1 },
+          "32": { "score": 1, "stars": 1 },
+          "33": { "score": 1, "stars": 1 },
+          "34": { "score": 1, "stars": 1 },
+          "35": { "score": 1, "stars": 1 },
+          "36": { "score": 1, "stars": 1 },
+          "37": { "score": 1, "stars": 1 },
+          "38": { "score": 1, "stars": 1 },
+          "39": { "score": 1, "stars": 1 },
+          "40": { "score": 1, "stars": 1 },
+          "41": { "score": 1, "stars": 1 },
+          "42": { "score": 1, "stars": 1 },
+          "43": { "score": 1, "stars": 1 },
+          "44": { "score": 1, "stars": 1 },
+          "45": { "score": 1, "stars": 1 },
+          "46": { "score": 1, "stars": 1 },
+          "47": { "score": 1, "stars": 1 },
+          "48": { "score": 1, "stars": 1 },
+          "49": { "score": 1, "stars": 1 },
+          "50": { "score": 1, "stars": 1 },
+          "51": { "score": 1, "stars": 1 },
+          "52": { "score": 1, "stars": 1 },
+          "53": { "score": 1, "stars": 1 },
+          "54": { "score": 1, "stars": 1 }
+        },
+        "continuousRecords": {},
+        "powers": [
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 0 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 0 },
+          { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
+          { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 0 },
+          { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
+        ],
+        "builderHammers": 0,
+        "chestsWithoutBuilderHammer": 0,
+        "pendingChests": [],
+        "shopStock": [],
+        "shopVisit": 0,
+        "vipReceipts": [],
+        "seenObstacles": [],
+        "seenTips": [],
+        "town": {
+          "era": "frontier",
+          "buildingEras": {
+            "well": "frontier",
+            "farm": "frontier",
+            "home": "frontier",
+            "saloon": "frontier",
+            "stable": "frontier",
+            "sheriff": "frontier",
+            "museum": "frontier",
+            "armory": "frontier",
+            "bank": "frontier",
+            "shop": "frontier",
+            "square": "frontier",
+            "watermill": "frontier",
+            "fisherman": "frontier",
+            "blacksmith": "frontier",
+            "school": "frontier",
+            "doctor": "frontier",
+            "bridge": "frontier",
+            "riverPort": "frontier",
+            "railDepot": "frontier",
+            "post": "frontier",
+            "warehouse": "frontier",
+            "hotel": "frontier",
+            "home5": "frontier",
+            "market": "frontier",
+            "powerHouse": "frontier",
+            "fireStation": "frontier",
+            "rowHouses": "frontier",
+            "mill": "frontier",
+            "garage": "frontier",
+            "busDepot": "frontier",
+            "gardenCourt": "frontier",
+            "diner": "frontier",
+            "teaHouse": "frontier",
+            "blossomAtelier": "frontier",
+            "orchardCottages": "frontier",
+            "glassworks": "frontier",
+            "springsRetreat": "frontier",
+            "riverlightPavilion": "frontier",
+            "airport": "frontier",
+            "radioTower": "frontier",
+            "concertHall": "frontier",
+            "television": "frontier",
+            "skyline": "frontier",
+            "cityHall": "frontier",
+            "apartments": "frontier",
+            "supermarket": "frontier",
+            "waterPlant": "frontier",
+            "transitHub": "frontier",
+            "library": "frontier",
+            "crystalLab": "frontier",
+            "cityHomes": "frontier",
+            "riverPark": "frontier",
+            "skyPods": "frontier",
+            "biodome": "frontier",
+            "maglevStation": "frontier",
+            "horseField": "frontier",
+            "park": "frontier",
+            "home2": "frontier",
+            "home3": "frontier",
+            "home4": "frontier",
+            "well2": "frontier",
+            "farm2": "frontier",
+            "farm3": "frontier"
+          },
+          "buildingEraLevels": {
+            "well": 0,
+            "farm": 0,
+            "home": 0,
+            "saloon": 0,
+            "stable": 0,
+            "sheriff": 0,
+            "museum": 0,
+            "armory": 0,
+            "bank": 0,
+            "shop": 0,
+            "square": 0,
+            "watermill": 0,
+            "fisherman": 0,
+            "blacksmith": 0,
+            "school": 0,
+            "doctor": 0,
+            "bridge": 0,
+            "riverPort": 0,
+            "railDepot": 0,
+            "post": 0,
+            "warehouse": 0,
+            "hotel": 0,
+            "home5": 0,
+            "market": 0,
+            "powerHouse": 0,
+            "fireStation": 0,
+            "rowHouses": 0,
+            "mill": 0,
+            "garage": 0,
+            "busDepot": 0,
+            "gardenCourt": 0,
+            "diner": 0,
+            "teaHouse": 0,
+            "blossomAtelier": 0,
+            "orchardCottages": 0,
+            "glassworks": 0,
+            "springsRetreat": 0,
+            "riverlightPavilion": 0,
+            "airport": 0,
+            "radioTower": 0,
+            "concertHall": 0,
+            "television": 0,
+            "skyline": 0,
+            "cityHall": 0,
+            "apartments": 0,
+            "supermarket": 0,
+            "waterPlant": 0,
+            "transitHub": 0,
+            "library": 0,
+            "crystalLab": 0,
+            "cityHomes": 0,
+            "riverPark": 0,
+            "skyPods": 0,
+            "biodome": 0,
+            "maglevStation": 0,
+            "horseField": 0,
+            "park": 0,
+            "home2": 0,
+            "home3": 0,
+            "home4": 0,
+            "well2": 0,
+            "farm2": 0,
+            "farm3": 0
+          },
+          "firstLightsSeen": false,
+          "forge": { "progress": 0, "charge": 1 },
+          "coins": 100000,
+          "tourSeen": false,
+          "buildings": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 5,
+            "stable": 3,
+            "sheriff": 5,
+            "museum": 3,
+            "armory": 3,
+            "bank": 5,
+            "shop": 3,
+            "square": 5,
+            "watermill": 3,
+            "fisherman": 3,
+            "blacksmith": 5,
+            "school": 3,
+            "doctor": 3,
+            "bridge": 0,
+            "riverPort": 0,
+            "railDepot": 0,
+            "post": 0,
+            "warehouse": 0,
+            "hotel": 0,
+            "home5": 0,
+            "market": 0,
+            "powerHouse": 0,
+            "fireStation": 0,
+            "rowHouses": 0,
+            "mill": 0,
+            "garage": 0,
+            "busDepot": 0,
+            "gardenCourt": 0,
+            "diner": 0,
+            "teaHouse": 0,
+            "blossomAtelier": 0,
+            "orchardCottages": 0,
+            "glassworks": 0,
+            "springsRetreat": 0,
+            "riverlightPavilion": 0,
+            "airport": 0,
+            "radioTower": 0,
+            "concertHall": 0,
+            "television": 0,
+            "skyline": 0,
+            "cityHall": 0,
+            "apartments": 0,
+            "supermarket": 0,
+            "waterPlant": 0,
+            "transitHub": 0,
+            "library": 0,
+            "crystalLab": 0,
+            "cityHomes": 0,
+            "riverPark": 0,
+            "skyPods": 0,
+            "biodome": 0,
+            "maglevStation": 0,
+            "horseField": 0,
+            "park": 0,
+            "home2": 3,
+            "home3": 3,
+            "home4": 3,
+            "well2": 3,
+            "farm2": 3,
+            "farm3": 3
+          },
+          "events": {
+            "dusty-trail-visitors": {
+              "id": 1,
+              "atRun": 10,
+              "gangSize": 10,
+              "sheriffLevel": 5,
+              "bankLevel": 5,
+              "targets": ["mine", "saloon"],
+              "outcome": "protected",
+              "loss": 0,
+              "seen": false
+            }
+          },
+          "presentations": {},
+          "projects": {},
+          "completedRuns": 10,
+          "nextRaidRun": null,
+          "income": { "at": null, "remainder": 0, "stored": 0 },
+          "lastCollections": { "saloon": null, "blacksmith": null },
+          "saloonVisitAt": 0,
+          "guestVip": null,
+          "progressionVersion": 1
+        },
+        "townProjectFocus": "",
+        "issuedRun": 0,
+        "settledRun": 0,
+        "honours": {
+          "version": 1,
+          "earned": {},
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
+          "showcase": [],
+          "backfilled": 0,
+          "seenGeneration": 1
+        }
+      },
+      "after": {
+        "schemaVersion": 2,
+        "integrity": {
+          "version": 1,
+          "epoch": "00000000-0000-4000-8000-000000000117",
+          "clientAt": 1780000000000,
+          "baseSequence": 0,
+          "actions": [
+            {
+              "sequence": 1,
+              "id": "00000000-0000-4000-8000-000000000120",
+              "kind": "raid-seen",
+              "data": { "raidId": 1, "at": 1780000000000 }
+            },
+            {
+              "sequence": 2,
+              "id": "00000000-0000-4000-8000-000000000121",
+              "kind": "forge-collect",
+              "data": { "at": 1780000000000 }
+            },
+            {
+              "sequence": 3,
+              "id": "00000000-0000-4000-8000-000000000122",
+              "kind": "run-start",
+              "data": { "runId": 1, "mode": "normal", "levelId": 55, "at": 1780000000000 }
+            },
+            {
+              "sequence": 4,
+              "id": "00000000-0000-4000-8000-000000000123",
+              "kind": "income-start",
+              "data": { "at": 1780000000000 }
+            },
+            {
+              "sequence": 5,
+              "id": "00000000-0000-4000-8000-000000000124",
+              "kind": "victory",
+              "data": {
+                "runId": 1,
+                "levelId": 55,
+                "score": 24500,
+                "target": 24500,
+                "starTarget": 25800,
+                "combo": 4,
+                "elapsedMs": 3755000,
+                "speedTargetMs": 155000,
+                "jewels": 217,
+                "bonusGems": 2,
+                "comboCounts": { "2": 3, "5": 1 },
+                "multiMatchCounts": { "2": 2 },
+                "chooseRewards": false,
+                "chests": [{ "source": "score", "rewardId": "clear-row" }],
+                "honours": { "gems": { "ruby": 120, "topaz": 40 }, "fusions": { "bomb+cross": 1 } },
+                "economyVersion": 3,
+                "shopStock": [
+                  { "id": "clear-row", "sold": false },
+                  { "id": "tile-breaker", "sold": false },
+                  { "id": "shuffle", "sold": false },
+                  { "id": "tnt", "sold": false },
+                  { "id": "color-wand", "sold": false }
+                ],
+                "shopVisit": 1,
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 6,
+              "id": "00000000-0000-4000-8000-000000000125",
+              "kind": "run-start",
+              "data": { "runId": 2, "mode": "normal", "levelId": 56, "at": 1780000000000 }
+            },
+            {
+              "sequence": 7,
+              "id": "00000000-0000-4000-8000-000000000126",
+              "kind": "victory",
+              "data": {
+                "runId": 2,
+                "levelId": 56,
+                "score": 27500,
+                "target": 27500,
+                "starTarget": 31200,
+                "combo": 4,
+                "elapsedMs": 3779000,
+                "speedTargetMs": 179000,
+                "jewels": 217,
+                "bonusGems": 2,
+                "comboCounts": { "2": 3, "5": 1 },
+                "multiMatchCounts": { "2": 2 },
+                "chooseRewards": false,
+                "chests": [{ "source": "score", "rewardId": "clear-row" }],
+                "honours": {
+                  "gems": { "ruby": 30, "sapphire": 20 },
+                  "fusions": { "cross+cross": 2 }
+                },
+                "economyVersion": 3,
+                "shopStock": [
+                  { "id": "shuffle", "sold": false },
+                  { "id": "color-wand", "sold": false },
+                  { "id": "tile-breaker", "sold": false },
+                  { "id": "tnt", "sold": false },
+                  { "id": "clear-row", "sold": false }
+                ],
+                "shopVisit": 2,
+                "at": 1780000000000
+              }
+            }
+          ]
+        },
+        "records": {
+          "1": { "score": 1, "stars": 1 },
+          "2": { "score": 1, "stars": 1 },
+          "3": { "score": 1, "stars": 1 },
+          "4": { "score": 1, "stars": 1 },
+          "5": { "score": 1, "stars": 1 },
+          "6": { "score": 1, "stars": 1 },
+          "7": { "score": 1, "stars": 1 },
+          "8": { "score": 1, "stars": 1 },
+          "9": { "score": 1, "stars": 1 },
+          "10": { "score": 1, "stars": 1 },
+          "11": { "score": 1, "stars": 1 },
+          "12": { "score": 1, "stars": 1 },
+          "13": { "score": 1, "stars": 1 },
+          "14": { "score": 1, "stars": 1 },
+          "15": { "score": 1, "stars": 1 },
+          "16": { "score": 1, "stars": 1 },
+          "17": { "score": 1, "stars": 1 },
+          "18": { "score": 1, "stars": 1 },
+          "19": { "score": 1, "stars": 1 },
+          "20": { "score": 1, "stars": 1 },
+          "21": { "score": 1, "stars": 1 },
+          "22": { "score": 1, "stars": 1 },
+          "23": { "score": 1, "stars": 1 },
+          "24": { "score": 1, "stars": 1 },
+          "25": { "score": 1, "stars": 1 },
+          "26": { "score": 1, "stars": 1 },
+          "27": { "score": 1, "stars": 1 },
+          "28": { "score": 1, "stars": 1 },
+          "29": { "score": 1, "stars": 1 },
+          "30": { "score": 1, "stars": 1 },
+          "31": { "score": 1, "stars": 1 },
+          "32": { "score": 1, "stars": 1 },
+          "33": { "score": 1, "stars": 1 },
+          "34": { "score": 1, "stars": 1 },
+          "35": { "score": 1, "stars": 1 },
+          "36": { "score": 1, "stars": 1 },
+          "37": { "score": 1, "stars": 1 },
+          "38": { "score": 1, "stars": 1 },
+          "39": { "score": 1, "stars": 1 },
+          "40": { "score": 1, "stars": 1 },
+          "41": { "score": 1, "stars": 1 },
+          "42": { "score": 1, "stars": 1 },
+          "43": { "score": 1, "stars": 1 },
+          "44": { "score": 1, "stars": 1 },
+          "45": { "score": 1, "stars": 1 },
+          "46": { "score": 1, "stars": 1 },
+          "47": { "score": 1, "stars": 1 },
+          "48": { "score": 1, "stars": 1 },
+          "49": { "score": 1, "stars": 1 },
+          "50": { "score": 1, "stars": 1 },
+          "51": { "score": 1, "stars": 1 },
+          "52": { "score": 1, "stars": 1 },
+          "53": { "score": 1, "stars": 1 },
+          "54": { "score": 1, "stars": 1 },
+          "55": { "score": 24500, "stars": 2, "bestTimeMs": 3755000 },
+          "56": { "score": 27500, "stars": 2, "bestTimeMs": 3779000 }
+        },
+        "continuousRecords": {},
+        "powers": [
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 2 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 1 },
+          { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
+          { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 0 },
+          { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
+        ],
+        "builderHammers": 0,
+        "chestsWithoutBuilderHammer": 2,
+        "pendingChests": [],
+        "shopStock": [
+          { "id": "shuffle", "sold": false },
+          { "id": "color-wand", "sold": false },
+          { "id": "tile-breaker", "sold": false },
+          { "id": "tnt", "sold": false },
+          { "id": "clear-row", "sold": false }
+        ],
+        "shopVisit": 2,
+        "vipReceipts": [],
+        "seenObstacles": [],
+        "seenTips": [],
+        "town": {
+          "era": "frontier",
+          "buildingEras": {
+            "well": "frontier",
+            "farm": "frontier",
+            "home": "frontier",
+            "saloon": "frontier",
+            "stable": "frontier",
+            "sheriff": "frontier",
+            "museum": "frontier",
+            "armory": "frontier",
+            "bank": "frontier",
+            "shop": "frontier",
+            "square": "frontier",
+            "watermill": "frontier",
+            "fisherman": "frontier",
+            "blacksmith": "frontier",
+            "school": "frontier",
+            "doctor": "frontier",
+            "bridge": "frontier",
+            "riverPort": "frontier",
+            "railDepot": "frontier",
+            "post": "frontier",
+            "warehouse": "frontier",
+            "hotel": "frontier",
+            "home5": "frontier",
+            "market": "frontier",
+            "powerHouse": "frontier",
+            "fireStation": "frontier",
+            "rowHouses": "frontier",
+            "mill": "frontier",
+            "garage": "frontier",
+            "busDepot": "frontier",
+            "gardenCourt": "frontier",
+            "diner": "frontier",
+            "teaHouse": "frontier",
+            "blossomAtelier": "frontier",
+            "orchardCottages": "frontier",
+            "glassworks": "frontier",
+            "springsRetreat": "frontier",
+            "riverlightPavilion": "frontier",
+            "airport": "frontier",
+            "radioTower": "frontier",
+            "concertHall": "frontier",
+            "television": "frontier",
+            "skyline": "frontier",
+            "cityHall": "frontier",
+            "apartments": "frontier",
+            "supermarket": "frontier",
+            "waterPlant": "frontier",
+            "transitHub": "frontier",
+            "library": "frontier",
+            "crystalLab": "frontier",
+            "cityHomes": "frontier",
+            "riverPark": "frontier",
+            "skyPods": "frontier",
+            "biodome": "frontier",
+            "maglevStation": "frontier",
+            "horseField": "frontier",
+            "park": "frontier",
+            "home2": "frontier",
+            "home3": "frontier",
+            "home4": "frontier",
+            "well2": "frontier",
+            "farm2": "frontier",
+            "farm3": "frontier"
+          },
+          "buildingEraLevels": {
+            "well": 0,
+            "farm": 0,
+            "home": 0,
+            "saloon": 0,
+            "stable": 0,
+            "sheriff": 0,
+            "museum": 0,
+            "armory": 0,
+            "bank": 0,
+            "shop": 0,
+            "square": 0,
+            "watermill": 0,
+            "fisherman": 0,
+            "blacksmith": 0,
+            "school": 0,
+            "doctor": 0,
+            "bridge": 0,
+            "riverPort": 0,
+            "railDepot": 0,
+            "post": 0,
+            "warehouse": 0,
+            "hotel": 0,
+            "home5": 0,
+            "market": 0,
+            "powerHouse": 0,
+            "fireStation": 0,
+            "rowHouses": 0,
+            "mill": 0,
+            "garage": 0,
+            "busDepot": 0,
+            "gardenCourt": 0,
+            "diner": 0,
+            "teaHouse": 0,
+            "blossomAtelier": 0,
+            "orchardCottages": 0,
+            "glassworks": 0,
+            "springsRetreat": 0,
+            "riverlightPavilion": 0,
+            "airport": 0,
+            "radioTower": 0,
+            "concertHall": 0,
+            "television": 0,
+            "skyline": 0,
+            "cityHall": 0,
+            "apartments": 0,
+            "supermarket": 0,
+            "waterPlant": 0,
+            "transitHub": 0,
+            "library": 0,
+            "crystalLab": 0,
+            "cityHomes": 0,
+            "riverPark": 0,
+            "skyPods": 0,
+            "biodome": 0,
+            "maglevStation": 0,
+            "horseField": 0,
+            "park": 0,
+            "home2": 0,
+            "home3": 0,
+            "home4": 0,
+            "well2": 0,
+            "farm2": 0,
+            "farm3": 0
+          },
+          "firstLightsSeen": false,
+          "forge": { "progress": 0, "charge": 1 },
+          "coins": 105940,
+          "tourSeen": false,
+          "buildings": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 5,
+            "stable": 3,
+            "sheriff": 5,
+            "museum": 3,
+            "armory": 3,
+            "bank": 5,
+            "shop": 3,
+            "square": 5,
+            "watermill": 3,
+            "fisherman": 3,
+            "blacksmith": 5,
+            "school": 3,
+            "doctor": 3,
+            "bridge": 0,
+            "riverPort": 0,
+            "railDepot": 0,
+            "post": 0,
+            "warehouse": 0,
+            "hotel": 0,
+            "home5": 0,
+            "market": 0,
+            "powerHouse": 0,
+            "fireStation": 0,
+            "rowHouses": 0,
+            "mill": 0,
+            "garage": 0,
+            "busDepot": 0,
+            "gardenCourt": 0,
+            "diner": 0,
+            "teaHouse": 0,
+            "blossomAtelier": 0,
+            "orchardCottages": 0,
+            "glassworks": 0,
+            "springsRetreat": 0,
+            "riverlightPavilion": 0,
+            "airport": 0,
+            "radioTower": 0,
+            "concertHall": 0,
+            "television": 0,
+            "skyline": 0,
+            "cityHall": 0,
+            "apartments": 0,
+            "supermarket": 0,
+            "waterPlant": 0,
+            "transitHub": 0,
+            "library": 0,
+            "crystalLab": 0,
+            "cityHomes": 0,
+            "riverPark": 0,
+            "skyPods": 0,
+            "biodome": 0,
+            "maglevStation": 0,
+            "horseField": 0,
+            "park": 0,
+            "home2": 3,
+            "home3": 3,
+            "home4": 3,
+            "well2": 3,
+            "farm2": 3,
+            "farm3": 3
+          },
+          "events": {
+            "dusty-trail-visitors": {
+              "id": 1,
+              "atRun": 10,
+              "gangSize": 10,
+              "sheriffLevel": 5,
+              "bankLevel": 5,
+              "targets": ["mine", "saloon"],
+              "outcome": "protected",
+              "loss": 0,
+              "seen": true,
+              "bounty": 100
+            }
+          },
+          "presentations": {},
+          "projects": {},
+          "completedRuns": 12,
+          "nextRaidRun": null,
+          "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
+          "lastCollections": { "saloon": null, "blacksmith": 1780000000000 },
+          "saloonVisitAt": 0,
+          "guestVip": null,
+          "progressionVersion": 1
+        },
+        "townProjectFocus": "",
+        "issuedRun": 2,
+        "settledRun": 2,
+        "honours": {
+          "version": 1,
+          "earned": {
+            "fusion-bronze": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            }
+          },
+          "counts": {
+            "gems": { "ruby": 150, "topaz": 40, "sapphire": 20 },
+            "mine": {},
+            "fusions": { "bomb+cross": 1, "cross+cross": 2 },
+            "forge": 1,
+            "guardian": 1,
+            "visitors": 0,
+            "travels": 0
+          },
+          "showcase": [],
+          "backfilled": 0,
+          "seenGeneration": 1
         }
       },
       "serverNow": 1780000000000

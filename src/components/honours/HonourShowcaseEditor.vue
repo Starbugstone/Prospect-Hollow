@@ -13,7 +13,7 @@
         <span class="honour-editor-number" aria-hidden="true">{{ index + 1 }}</span>
         <template v-if="slot">
           <HonourBadge :definition="slot.definition" :size="44" />
-          <strong>{{ t(slot.definition.name) }}</strong>
+          <strong>{{ slot.name }}</strong>
           <span class="honour-editor-actions">
             <button
               v-for="action in ACTIONS"
@@ -48,7 +48,7 @@
       <li v-for="choice in choices" :key="choice.familyId">
         <button type="button" :aria-disabled="full" @click="add(choice)">
           <HonourBadge :definition="choice.definition" :size="36" />
-          <span class="honour-editor-name">{{ t(choice.definition.name) }}</span>
+          <span class="honour-editor-name">{{ choice.name }}</span>
           <small>{{ t(full ? 'Showcase full' : 'Add') }}</small>
         </button>
       </li>

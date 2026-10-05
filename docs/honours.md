@@ -1,164 +1,195 @@
 # Town Honours
 
 Town Honours ([issue #60](https://github.com/Starbugstone/Prospect-Hollow/issues/60)) are a
-permanent, town-specific collection: achievements, mine mastery badges and quiet era defence
-medals, with a three-slot showcase visible to visitors. The badge and its presentation are the
-reward. Honours never change coins, chests, construction, progression or puzzle rules, and they
-never add move limits, timers or progression gates.
+permanent, town-specific collection of **families**, each a ladder of metal **ranks**: bronze is
+earned by just playing, silver needs some steering and gold needs active pursuit. Later content
+adds diamond and further metals at the end of a ladder. A three-slot showcase is visible to
+visitors. The badge and its presentation are the reward: honours never change coins, chests,
+construction, progression or puzzle rules, and never add move limits, timers or progression
+gates.
 
-`src/data/honours.js` is the single registry. `testing/honours.test.js` covers it, including the
-coverage checks that keep it in step with the content (see [Extending content](#extending-content)).
+`src/data/honours.js` is the single registry. `testing/honours.test.js` and
+`testing/honours-tracking.test.js` cover it, including the coverage checks that keep it in step
+with the content (see [Extending content](#extending-content)).
+
+## Principles
+
+- **Fixed goals.** A shipped rank's goal, measure and metal never change. Goals are fixed numbers
+  or named milestones, never "all levels" or "the final era", so a content update cannot move a
+  goal under a player. `testing/fixtures/shipped-honour-ranks.json` records every shipped rank;
+  the registry test fails if one changes.
+- **Growth appends.** New content adds ranks at the end of a family (diamond, then later metals)
+  or new families. Rank IDs are `<family>-<metal>`, so they are predictable and never reused.
+- **Permanent.** Earned honours are never revoked, reset or re-evaluated away; they keep the
+  requirement version they were earned under.
+- **Reachable.** No honour can be missed for good: every family can still progress through
+  museum replays, the forge, incidents or visits, whatever era the town is in.
 
 ## Catalogue
 
-### Achievements
+| Tab     | Family                                    | Bronze                  | Silver                      | Gold                          |
+| ------- | ----------------------------------------- | ----------------------- | --------------------------- | ----------------------------- |
+| Mine    | Stars (three-star puzzles)                | 25 · Rising Star        | 150 · Star Collector        | 300 · Perfect Prospector      |
+| Mine    | Score (best ÷ star target, from lvl 37)   | 1.5× · Score Hunter     | 2.5× · Score Ace            | 3× · Score Legend             |
+| Mine    | Fusion                                    | 1 fusion · First Fusion | 6 different · Fusion Master | 300 fusions · Fusion Virtuoso |
+| Mine    | Ruby, Sapphire, Emerald Laureate          | 500                     | 10,000                      | 25,000                        |
+| Mine    | Topaz, Amethyst, Moonstone Laureate       | 500                     | 6,000                       | 16,000                        |
+| Mine    | Relic Keeper (relics delivered)           | 10                      | 125                         | 360                           |
+| Mine    | Lamplighter (lanterns lit)                | 10                      | 50                          | 125                           |
+| Mine    | Trail Surveyor (survey trails)            | 5                       | 20                          | 60                            |
+| Mine    | Ore Merchant (ore orders)                 | 10                      | 40                          | 110                           |
+| Mine    | Core Engineer (charge cores)              | 10                      | 50                          | 125                           |
+| Mine    | Gate Breaker (blast gates)                | 10                      | 50                          | 130                           |
+| Town    | Through the Ages                          | Reach River & Rail      | Reach Music & Television    | Complete the Riverlight Age   |
+| Town    | Town Guardian (incidents fully protected) | 5 · Watchful Town       | 25                          | 60 · Hollow Sentinel          |
+| Town    | Forge Veteran (TNT from the forge)        | 5 · The Forge Delivers  | 100                         | 250 · Forge Master            |
+| Town    | Master Quartermaster                      | —                       | —                           | 5 powers held at 26 at once   |
+| Friends | Visitors (different signed-in players)    | 1 · First Guest         | 5 · Welcoming Host          | 15 · Celebrated Town          |
+| Friends | Village Explorer (villages visited)       | 5 · Curious Neighbour   | 15 · Seasoned Traveller     | 30 · Village Explorer         |
 
-| Difficulty         | Honour                                   | Requirement                                                                          |
-| ------------------ | ---------------------------------------- | ------------------------------------------------------------------------------------ |
-| Easy               | First Perfect                            | Three stars on any normal puzzle                                                     |
-| Easy               | First Fusion                             | Any bonus fusion in a completed puzzle                                               |
-| Easy               | The Forge Delivers                       | First TNT collected from the forge                                                   |
-| Easy → Very hard   | First Guest → Celebrated Town (one card) | 1, 5, 15 and 30 different signed-in players visited the shared town                  |
-| Medium → Very hard | Score Ace → Score Legend (one card)      | A completed puzzle from level 37 with 2× / 3× its star score target                  |
-| Medium             | Fusion Master                            | All six bonus fusions                                                                |
-| Medium             | Forge Veteran                            | 50 TNT collected from the forge                                                      |
-| Medium             | Ruby, Sapphire and Emerald Laureate      | 12,000 of that gem                                                                   |
-| Medium             | Topaz, Amethyst and Moonstone Laureate   | 8,000 of that gem                                                                    |
-| Very hard          | Master Quartermaster                     | Armory and garage at maximum, all five powers full at the same time (26 each today)  |
-| Very hard          | Perfect Prospector                       | Three stars on every published normal puzzle (402 today)                             |
-| Very hard          | Prospect Hollow Complete                 | Every required building and modernization through the final enabled era (Riverlight) |
+A rank without its own name uses the family name; the metal is always shown beside it.
 
-### Mine mastery
-
-Each goal is about 1.5× what one campaign contains, so finishing it means replaying some of
-those levels in the museum.
-
-| Honour         | Element                 | In one campaign | Goal | Where                      |
-| -------------- | ----------------------- | --------------- | ---- | -------------------------- |
-| Relic Keeper   | relics delivered        | 242             | 360  | 128 levels, chapters 10–67 |
-| Lamplighter    | lanterns lit            | 84              | 125  | 38 levels, chapters 42–62  |
-| Trail Surveyor | survey trails completed | 39              | 60   | 39 levels, chapters 44–59  |
-| Ore Merchant   | ore orders filled       | 73              | 110  | 52 levels, chapters 41–62  |
-| Core Engineer  | charge cores released   | 85              | 125  | 55 levels, chapters 55–64  |
-| Gate Breaker   | blast gates broken      | 89              | 130  | 29 levels, chapters 63–67  |
-
-Common obstacles (ice, stone, chains, seals) and elements on only six levels (encased fossils,
-spores, root knots) are deliberately not mastery goals (`NON_MASTERY_ELEMENTS`).
-
-### Era defence medals
-
-One quiet medal per enabled era (Frontier Guardian … Lantern Guardian, `MEDAL_NAMES`), named
-for the era's incident from its era contract. Medals never produce popups or sounds.
+- Fusion Master lists its six fusions (`FUSION_MASTER_KEYS`); a later fusion joins a new rank or
+  `LATER_FUSIONS`, never that list.
+- Town Guardian counts any incident kind in any era: a bandit raid, cargo theft, workshop fire or
+  river storm the town came through protected with nothing lost. A harmless raid on an empty purse
+  is not protection. It replaces the per-era defence medals, which depended on a random incident
+  arriving at the right moment and could be missed for good.
+- Through the Ages names eras. Every other enabled era is listed in `NON_MILESTONE_ERAS`, so a new
+  era is a deliberate decision (a diamond rank or that list).
+- Village Explorer counts different players' villages visited **from this town** while signed in
+  (the town chosen as the visiting town). Visiting your own other towns never counts.
 
 ## Counting rules
 
-- **Run-based counts are credited only when a normal puzzle is completed**, including museum
-  replays: gems, fusions and mine elements. Leaving a puzzle unfinished credits nothing and
-  continuous play does not count. The per-run tally travels with the town handoff.
-- The game store's `honourTally` is filled by `commitResolution`, which runs only after a move
-  finished animating, in normal play only. It is reset with the run presentation (start and
-  exit) and credited once by `recordVictory`, after its settled-run checks. A duplicate, stale
-  or continuous victory credits nothing.
-- Gems come from committed resolution steps (`step.collectedJewels`, each removed gem once).
-  Refills, previews, bonuses, relics and the free recovery sweep never count. Swaps, powers and
-  matches after a shuffle (including the seeded repair) count normally; the sweep's resolution
-  is flagged `recovery`.
-- Fusions come from `step.bonusFusion.key` on committed steps. Either swap order is the same key.
-  The recovery sweep's technical fusion has no key and never counts.
+- **Run counts are credited only when a normal puzzle is completed**, museum replays included:
+  gems, fusions and mine elements. Leaving a puzzle unfinished credits nothing and continuous
+  play never counts. The per-run tally travels with the town handoff.
+- The game store's `honourTally` (`{ gems, fusions }`) is filled by `commitResolution`, which runs
+  only after a move finished animating, in normal play. It is reset with the run presentation and
+  credited once by `recordVictory`, after its settled-run checks.
+- Gems come from committed steps (`step.collectedJewels`, each removed gem once). Refills,
+  previews, bonuses, relics and the free recovery sweep never count. Fusions count every real
+  swap fusion by key (`step.bonusFusion.key`); the sweep's technical fusion has no key.
 - Mine elements are credited from the completed level's authored configuration
-  (`levelElements`). Completion consumes all of them: lanterns, survey markers and cores are
-  signal layers, gates are health layers, and relics and ore orders are explicit objectives.
-- The forge counts only successful `collectForgeTNT` commits, never TNT from chests, the shop,
-  gifts or rewards.
-- Visitor ranks (First Guest, Welcoming Host, Popular Destination, Celebrated Town) count
-  different players who visited the owner's shared town. The server counts each signed-in
-  account once (the owner's own visits are never recorded) and returns it as `uniqueVisitors`
-  in the owner's guestbook (`GET /towns/{townId}/visitors`). Signed-out visits stay in the
-  guestbook but never count, because a new private window is a new anonymous identity. The
-  game keeps the highest count it has seen (`recordTownVisitors`), so ranks never drop when a
-  visiting town is deleted. A saved signed-in guest (`town.guestVip`) also proves First Guest,
-  which backfills earlier visits.
-- Score ranks use the best single completed normal puzzle from level 37 (`records`), against
-  the authored star target. Continuous records and levels without a usable target never count.
-  Changing these thresholds never changes stars or chests.
-- Master Quartermaster needs maximum storage (derived from the armory and garage definitions)
-  and all five powers full at the same moment. Spending later never revokes it.
-- A defence medal is awarded when an incident is marked seen with outcome `protected` and zero
-  loss. The era gate keeps an unseen incident from crossing an era change, so the current era
-  at that moment is the originating era. A harmless zero-loss raid (a poor town) never counts.
+  (`levelElements`): completing a level consumes all of them.
+- The forge counts successful `collectForgeTNT` commits only, never TNT from chests, the shop or
+  gifts. Storage tops out at 26, so higher ranks mean spending TNT along the way.
+- Town Guardian counts `markRaidSeen` of a protected, zero-loss incident.
+- Social counts come from the server through the owner's guestbook (`uniqueVisitors`,
+  `townsVisited`); the game keeps the highest of each (`recordTownSocial`). Only the server's
+  counts prove them, so the owner and visitors always see the same social ranks.
+- Score ranks use the best single completed normal puzzle from level 37 against its star
+  target. Changing these thresholds never changes stars or chests.
 - State-derived honours are evaluated at one point, `campaignStore.save()`, so every action is
-  covered without per-action code. New honours are written with that save and appear only once
-  it succeeded: a failed or read-only save earns nothing until a later save stores it. Forge
-  counts and medals join their action's own commit, so a failed save rolls them back.
-- Older saves are backfilled on load, once per honours version: the honours their state already
-  proves, plus the one attributable defence medal, with `at: null` and `backfilled: true`. Load
-  never writes; the next save stores the result, so repeated loads give the same honours.
-  Counts start at zero and are never inferred.
+  covered without per-action code, and appear only once that save succeeded. Forge and incident
+  counts join their action's own commit, so a failed save rolls them back.
+
+## Trust and offline play
+
+Honours are earned and shown on the device immediately, online or offline; the local save keeps
+them. What other players see is decided by the server, which keeps its own copy of the counters
+and publishes only honours it can prove.
+
+- **Server counters.** Normal victory receipts carry the run's claim
+  (`honours: { gems, fusions }`, `runClaim`). While replaying the integrity journal the server
+  adds mine elements from the level definition (`honourElements` in `save-rules.json`, generated
+  from `levelElements`), the claimed gems and fusions when the claim is plausible (known keys,
+  totals within the receipt's `jewels`), each `forge-collect` and each `raid-seen` of a
+  protected, zero-loss incident. The counters live in the integrity context, so they are covered
+  by the signed checkpoint and survive recovery. An implausible claim is ignored, never a reason
+  to reject the save.
+- **Offline play.** Offline puzzles, forge collections and incidents queue in the journal like
+  every other action. When the device reconnects, the next sync replays them and the server
+  credits its counters, so everything earned offline is verified and published then.
+- **Verified honours.** On every accepted save the server records which ranks its counters, the
+  validated records, town and powers, and its visit counts prove (`verified`). That list only
+  grows: a later content change, a raised star target, an admin restore of an older snapshot or
+  a deleted visitor town never hides an honour once verified. Visitors receive earned honours
+  that are verified or proven at that moment. A claim the server cannot prove stays in the
+  owner's own save but is not published.
+- **Limits.** Gem and fusion counts are client measurements bounded by the journal, like the
+  other puzzle measurements (see [save integrity](backend/save-integrity.md)). A town's first
+  cloud enrollment is an unverified baseline for its counters, as it is for money. Guest-only
+  play stays on the device and is never published. Console edits of the honours block are
+  blocked by the local mutation guard.
+
+## What existing saves receive
+
+Saves from before honours (including every save from the `main` branch) are backfilled on load,
+once per catch-up generation (`HONOURS_VERSION`): they earn what their state proves, with
+`at: null` and `backfilled: true`, announced as one "N honours recorded" card. Counters a save
+proves without its history are seeded (`seedCounts`): a saved forge collection time is one
+collection and a seen, fully protected incident is one incident. Other counts start at zero when
+honours arrive. The server seeds its counters with the same rule.
+
+| Family                      | From a `main` save                                                  |
+| --------------------------- | ------------------------------------------------------------------- |
+| Stars, Score                | Yes, from the saved records (levels 1–372 keep their star targets)  |
+| Through the Ages            | Bronze and silver from the current era; gold needs the new eras     |
+| Master Quartermaster        | If the save holds five powers at 26 at load                         |
+| Visitors, Village Explorer  | From the server's visit history, at the owner's next guestbook poll |
+| Forge, Town Guardian        | Seeded with at most one each; ranks need new play                   |
+| Fusion, gems, mine elements | Start at zero                                                       |
+
+`testing/honours-tracking.test.js` loads the exported `main` beta saves in `testing/fixtures`:
+the Connected City save receives Stars bronze to gold and Through the Ages bronze and silver.
 
 ## Balancing evidence
 
-Measured on 2026-10-03 with `scripts/measure-campaign.mjs` (hint-led, 30 seeds × 402 levels =
-12,060 completed runs, no inventory powers, no stalling) and the level definitions. The script
-now reports `jewels` and a per-type `gems` tally for every run. A bot that finishes each puzzle
-as soon as it can is likely a lower bound for a human, who can use powers and play on.
+Measured on 2026-10-05 with `scripts/measure-campaign.mjs` (hint-led bot, 30 seeds × 402 levels
+= 12,060 completed runs, no inventory powers, no stalling), which now also reports fusions per
+run, mine elements, incidents and forge collections per simulated village. The bot is a lower
+bound for a human for stars, score and fusions; the village economy (mining payouts only) is a
+late bound for eras. "Level N" means N completed puzzles in a straight pass.
 
-On 2026-10-04 eight deep-mine star targets were lowered (see [star ratings](star-ratings.md)).
-The score figures below were recomputed from the same runs with the new targets. Only the
-325–402 and 37–402 rows (by at most 0.7 percentage points), the 2× level count (200 → 202) and
-the Score Ace pass average (11.7 → 11.8) moved. Score Legend is unchanged, so no goal or
-requirement version changes.
+| Family           | Bronze reached             | Silver reached                   | One pass gives / gold effort                    |
+| ---------------- | -------------------------- | -------------------------------- | ----------------------------------------------- |
+| Stars            | 25 at L28 (25–32)          | 150 at L239 (219–282)            | 236 (224–260); 300 ≈ 100 targeted replays       |
+| Score            | 1.5× at L40 median (37–55) | 2.5× at L107 median, 29/30 seeds | 3× in 19/30 passes; deliberate play             |
+| Fusion           | 1 at L3                    | 6 kinds in 18/30 passes, L222    | 198 (168–229); 300 ≈ 1.5 campaigns              |
+| Common gems      | 500 at L18–20              | 10,000 at L232–235               | ~17,800; 25,000 ≈ 1.4 campaigns                 |
+| Rare gems        | 500 at L28–33              | 6,000 at L214–219                | ~11,800; 16,000 ≈ 1.35 campaigns                |
+| Mine elements    | shortly after they appear  | about half a pass of the element | gold ≈ 1.5× the element's levels (7–62 replays) |
+| Through the Ages | River & Rail at run 35     | Music & Television at run 218    | Riverlight complete ≈ run 712 (conservative)    |
+| Town Guardian    | 5 at L28 (19–69)           | 25 at L224 (186–280)             | 42.5 (37–48); 60 ≈ 1.4 campaigns                |
+| Forge            | 5 at L30                   | 100 at L221                      | 190; 250 ≈ 1.3 campaigns (spending TNT)         |
 
-Score multiple (score ÷ star target) by level band; the ≥ columns are shares of runs.
+Mine elements per campaign: relics 242 (from chapter 10), lanterns 84 (chapter 42), survey trails
+39 (chapter 44), ore orders 73 (chapter 41), charge cores 85 (chapter 55), blast gates 89
+(chapter 63). Their silver goals fall shortly after the element's content, gold at about 1.5×.
+Visitor and explorer goals are social choices (1/5/15 and 5/15/30), not simulated.
 
-| Levels  | Median | p90  | Max  | ≥ 1.5× | ≥ 2×  | ≥ 3×  | ≥ 4×  |
-| ------- | ------ | ---- | ---- | ------ | ----- | ----- | ----- |
-| 1–12    | 2.66   | 4.25 | 7.89 | 92.8%  | 76.1% | 37.5% | 13.1% |
-| 13–36   | 1.52   | 2.58 | 4.94 | 52.4%  | 25.6% | 5.8%  | 0.7%  |
-| 37–120  | 1.10   | 1.68 | 4.76 | 17.6%  | 3.4%  | 0.3%  | 0.0%  |
-| 121–240 | 1.01   | 1.58 | 4.17 | 13.0%  | 2.7%  | 0.2%  | 0.0%  |
-| 241–324 | 1.00   | 1.49 | 3.33 | 9.6%   | 1.6%  | 0.0%  | 0.0%  |
-| 325–402 | 1.05   | 1.73 | 5.75 | 17.9%  | 5.6%  | 0.6%  | 0.0%  |
-| 37–402  | 1.03   | 1.62 | 5.75 | 14.3%  | 3.2%  | 0.3%  | 0.0%  |
-
-Opening star targets are deliberately low, hence the level-37 floor. Of the 366 levels from 37,
-202 have at least one run at 2× and 24 at 3×.
-
-- **Score Ace (2×)**: one qualifying puzzle per 31 played (the score route to three stars, 1.5×,
-  is one per 7). A single pass over levels 37–402 yields 11.8 on average (7–20 per seed). The first
-  one arrives at a median of level 62 (40–195), and about 75% of players would have one by level
-  75 and 99% by 200. It follows three-star play without being routine.
-- **Score Legend (3×)**: one per 366 puzzles. A pass yields 1.0 on average, and 19 of 30 seeds
-  (64%) had at least one, at a median of level 164 for those that did. The 24 levels that can
-  reach it are scattered, and the best (387, 390, 400) give 7–17% per attempt, so it is rare
-  but a player who aims for it can attain it. Stalling for patience, which the bot never does,
-  only raises this.
-- Raising Ace to 2.5× would give 3.1 per pass (first at about level 107) and Legend at 4× is
-  essentially unreachable (0.1 per pass, 3 of 30 seeds), so neither is recommended.
-
-Gems per campaign pass (all 402 levels, completed puzzles), and where the goal is reached in a
-straight campaign (mean level across seeds):
-
-| Gem       | Mean per pass | Min–max       | Goal   | Goal ÷ pass | Goal reached at level |
-| --------- | ------------- | ------------- | ------ | ----------- | --------------------- |
-| Ruby      | 17,901        | 17,414–18,479 | 12,000 | 67.0%       | 278 (270–290)         |
-| Sapphire  | 17,769        | 17,242–18,310 | 12,000 | 67.5%       | 281 (273–290)         |
-| Emerald   | 17,836        | 17,283–18,593 | 12,000 | 67.3%       | 280 (270–290)         |
-| Topaz     | 11,860        | 11,319–12,463 | 8,000  | 67.5%       | 280 (266–290)         |
-| Amethyst  | 11,827        | 11,410–12,250 | 8,000  | 67.6%       | 283 (271–296)         |
-| Moonstone | 11,684        | 11,320–12,263 | 8,000  | 68.5%       | 286 (274–297)         |
-
-Later levels yield more gems (65% of a pass by level 268), so the goals land about 70% of the
-way through the campaign by level number and two-thirds of it by gems. Mine goals are 1.46–1.54×
-one campaign from the level definitions (table above), so they need no measurement.
-
-- Conclusion: the approved thresholds hold; no change is recommended. Re-measure after any change
-  to scoring, levels or gem palettes.
-- Score Legend partly rewards patience: with unlimited moves a player can stall before the final
-  objective. That is accepted and never limited by moves or time.
-- The forge makes one TNT per 6 → 2 completed puzzles by blacksmith level, pauses while a TNT
-  waits and refuses collection when TNT storage is full, so 50 collections is mid-to-late play.
+Score Legend partly rewards patience: with unlimited moves a player can stall before the final
+objective. That is accepted and never limited by moves or time. Re-measure after any change to
+scoring, levels, gem palettes or the town economy before adding ranks.
 
 ## Data contract
+
+### Registry (`src/data/honours.js`)
+
+- `honourFamilies(content)` lists every family from the content: `{ id, tab, name, measure,
+requirement, popup, progress?, params?, art, link?, ranks: [{ metal, goal, name?, measure?,
+requirement?, popup?, since?, version? }] }`.
+- `buildHonourCatalog(families, content)` validates the ladders (metal order, known measure and
+  tab, finite goals) and returns `definitions` (one per rank), `byId`, `families` and
+  `familyById`. `HONOURS` is the current catalog.
+- A rank definition has `id, family, tab, rank, metal, difficulty, version, since, name,
+requirement, popup, progressText, goal, measure, art, link, params(), progress(state),
+qualifies(state)`. Display strings are English keys for `t()`.
+- **Measures** (`MEASURES`, mirrored in `backend/src/Honours.php`): `stars` (three-star records),
+  `score` (`fromLevel`; best ratio, evidence `{ levelId, score, target }`), `era` (`era`,
+  `complete`; two steps per era), `count` (`counter`, optional `key`; a map without a key sums),
+  `distinct` (`counter`, `keys`), `powers` (`quantity`) and `social` (`counter`: `visitors` or
+  `travels`). A rank qualifies when the value reaches its goal.
+- `evaluateHonours(state, { at, backfill, catalog })`, `backfillHonours(state)`,
+  `seedCounts(honours, town)`, `createRunTally()`, `normalizeRunTally(saved)`,
+  `tallySteps(tally, steps, { recovery })`, `runClaim(tally)`, `levelElements(config)`,
+  `creditRun(honours, tally)`, `creditCounter(honours, counter)`, `recordSocial(honours, counts)`,
+  `protectedIncident(event)`, `mergeHonours`, `keepHonours`, `pendingAnnouncements`,
+  `honourCollection`, `validShowcase`, `publicHonours`.
+- `src/data/honourLevels.js` gives `levelHonourElements(levelId)` and `elementLevels(element)` from
+  the generated `src/data/honourLevels.json`.
 
 ### Saved state: `profile.honours`
 
@@ -166,175 +197,75 @@ one campaign from the level definitions (table above), so they need no measureme
 {
   version: 1,
   earned: { [id]: { at: ms | null, version, evidence?, seen, announced, backfilled? } },
-  counts: { gems: { [gem]: n }, forge: n, mine: { [element]: n }, visitors: n },
-  fusions: ['bomb+cross', ...],
+  counts: {
+    gems: { [gem]: n }, mine: { [element]: n }, fusions: { [key]: n },
+    forge: n, guardian: n, visitors: n, travels: n,
+  },
   showcase: [familyId, ...], // at most 3, earned families only
-  backfilled: 0 | version,   // legacy backfill already run
+  backfilled: generation,    // last catch-up generation run on this save
+  seenGeneration: generation, // last generation whose new ranks the player has looked at
 }
 ```
 
-It is presentation and history, not money: integrity replay ignores it, and it is never part
-of a journal action or receipt. `normalizeHonours` bounds every value and preserves unknown
-future honour IDs without displaying them. `mergeHonours(first, second)` unions earned entries
-(earliest date wins, `seen` and `announced` kept) and takes the larger of each count, never the
-sum, so retries, two tabs, restores and cloud pulls cannot double-count. The first copy's
-showcase wins when it has one.
+It is presentation and history, not money. `normalizeHonours` bounds every value and preserves
+unknown future honour IDs without displaying them. `mergeHonours` unions earned entries (earliest
+date wins, `seen` and `announced` kept) and takes the larger of each count, never the sum, so
+retries, two tabs, restores and cloud pulls cannot double-count. The server adds a server-owned
+`verified` list to its stored copy and, for tracked towns, stores its own counters.
 
 `honours` is a protected campaign field (`src/services/localIntegrity.js`): console edits are
 ignored, and it changes only through loading, `save()`, `recordVictory`, `collectForgeTNT`,
-`markRaidSeen` and the presentation actions below. `updateEarnedHonours` is internal and accepts
-only the `seen` and `announced` flags.
-
-### Run tally: `game.honourTally`
-
-```js
-{ gems: { [gem]: n }, fusions: ['bomb+cross', ...], mine: {} }
-```
-
-`completeLevel` passes `recordVictory({ ..., tally })` with `mine` replaced by
-`levelElements(store.currentLevel.config)`. The tally is a handoff field; a snapshot without it
-restores an empty tally (`normalizeRunTally`).
+`markRaidSeen`, `recordTownSocial` and the presentation actions (`setHonourShowcase`,
+`markHonoursSeen`, which also records `seenGeneration`, and `markHonoursAnnounced`).
 
 ### Town copies
 
-The same town replacing its live copy keeps the live honours (`keepHonours(incoming, live)`,
-the incoming showcase first):
-
-- A backup import keeps them when `townStorage.keepsIdentity(backup.town)`: the backup carries
-  the selected town's ID or no ID (older backups are restored into the selected town). Another
-  town's backup gives the local slot that town's identity and its own honours.
-- Cloud sync keeps them when a newer cloud copy is downloaded and when the server copy wins a
-  conflict (the local copy is also preserved for recovery). A history restore or recovery
-  overwrite uploads the restored copy with the kept honours. When the live copy added
-  anything, the town is marked unsynced so the kept honours upload.
-- A town handoff needs no merge: the sending window saves first and the receiving window loads
-  that save; the run tally travels in the puzzle snapshot.
-- `resetProgress` and new account towns start with fresh honours. Copying a missing account
-  town into a new slot copies its whole profile, honours included, as it continues that
-  town's progress.
-
-### Registry API (`src/data/honours.js`)
-
-- `HONOURS` / `createHonourCatalog(content)`: `definitions`, `byId`, `families`, `familyById`.
-  A definition has `id, family, rank, category, difficulty, name, requirement, popup, params(),
-progress(state), qualifies(state), art, link?, quiet?`. Display strings are English keys for
-  `t()`, with `params()` placeholders.
-- `evaluateHonours(state, { at, backfill })` → `{ honours, added }` for every non-quiet honour.
-  `state` is `{ records, town, powers, honours }`, for example the campaign store.
-- `createRunTally()`, `normalizeRunTally(saved)`, `tallySteps(tally, steps, { recovery })`,
-  `levelElements(config)`, `creditRun(honours, tally)`, `creditForge(honours)`,
-  `recordVisitors(honours, count)`,
-  `defenceMedal(event, era)`, `backfillDefenceMedal(event)`, `backfillHonours(state)`,
-  `awardHonour(honours, id, { at, evidence, backfilled })`, `keepHonours(profile, live)`.
-- `pendingAnnouncements(honours)`: one entry per family (highest new rank), quiet honours
-  excluded.
-- `honourCollection(state)`: the three tabs with family views (`earned`, `next.progress`,
-  `status` of `earned | progress | current | none | future`, `fresh`, `showcased`), earned
-  families first.
-- `validShowcase(ids, honours)`, `publicHonours(honours)`.
-- `src/data/honourLevels.js`: `levelHonourElements(levelId)` and `elementLevels(element)` from
-  `src/data/honourLevels.json`. Regenerate it with
-  `node scripts/export-honour-levels.mjs` (in Docker) after changing levels; the test fails when
-  it is stale.
-
-### Campaign store
-
-`campaign.honours` holds the normalized state and is saved with the profile. It is replaced
-(never mutated in place) whenever honours change, so watching it sees every new honour.
-`setHonourShowcase(familyIds)`, `markHonoursSeen(ids?)` and `markHonoursAnnounced(ids)` change
-presentation only. A defence medal's `evidence` is `{ eventId }`; backfilled entries have
-`at: null` and `backfilled: true`.
-
-### Shared presentation contracts
-
-- `useHonourNavigation()` (`src/composables/useHonourNavigation.js`): `requests.collection`
-  (`{ familyId }` or `null`) and `requests.museum` (`{ familyId }` or `null`), with
-  `openCollection`, `closeCollection`, `openMuseumFor` and `clearMuseumRequest`. The popup and
-  honour details use it to open the collection or a pre-filtered museum.
-- `useSettingsStore().honourNotices`: `'full' | 'quiet' | 'off'`, set with
-  `setHonourNotices(mode)`. It is a device preference, kept apart from the synced save.
-
-### Public projection
-
-The shared town appearance carries only `appearance.honours = publicHonours(...)`: earned IDs
-and dates, the score evidence (level, score, target) and the showcase order. A missing field
-means "unknown" (older owner or server), not an empty or revoked collection.
+The same town replacing its live copy keeps the live honours (`keepHonours(incoming, live)`): a
+backup import of the same town, a newer cloud copy, a server copy winning a conflict, and history
+restores. `resetProgress` and new account towns start with fresh honours. A town handoff needs no
+merge: the run tally travels in the puzzle snapshot.
 
 ## Presentation
 
-### Popup
+- **Collection** (`HonourCollection.vue` and its parts): Mine, Town and Friends tabs, earned
+  families first. Every card shows its family's rank track with the metal names and a
+  "Silver · 2 of 3" label, the frame of the highest earned metal (grey while locked), progress to
+  the next rank and a "New rank" marker when an update added a rank the player has not looked at.
+  The detail is a ladder of every rank with its requirement, earned date and evidence, plus links
+  to the museum, supplies, blacksmith, sharing or town directory.
+- **Popup** (`HonourToast.vue`, `useHonourAnnouncements.js`): "{name} · {metal}" with the metal
+  frame and a promotion line when a family moves up; one card per family per batch, backfilled
+  honours grouped into one "N honours recorded" card, shown only at a safe point in the player's
+  own village. The device preference `honourNotices` is Full, Quiet or Off; honours unlock in
+  every mode.
+- **Showcase and visitors**: three ordered slots of family IDs, so a later rank upgrades the slot;
+  visitors see each family's best published rank with its metal.
+- **Museum**: the Replay mode's "For an honour" filter offers the next rank of each level-linked
+  family (stars, score, mine elements), with tags such as "◆ Lamplighter · 2 lanterns".
 
-`HonourToast.vue` (mounted once in `App.vue`) shows a bottom-right card in a Steam-like layout
-with the Prospect Hollow palette, above the town tab bar; narrow screens get a compact card
-across the width. It lasts about five seconds, pauses while hovered, focused, hidden or blocked,
-never takes focus, announces once through a polite live region and plays the existing
-`chest-open` chime at the SFX volume. Reduced motion keeps only a fade.
+Screenshots (a seeded mid-campaign town in the dev build, 2026-10-05):
 
-`useHonourAnnouncements.js` builds the queue from `pendingAnnouncements`: several honours from
-one batch become one "N achievements earned" card with the highest rank per family, and
-backfilled honours become one "N honours recorded" card. Shown or suppressed cards are marked
-with `markHonoursAnnounced`, so reloads and sync retries never repeat them. Medals are quiet.
-The card appears only at a safe point, when all of these hold:
-
-- the player's own active village (never the mine or its results, the home page, account or
-  community panels, another player's town or a read-only save);
-- settings closed, and no pending era transition, town presentation (the three-star
-  celebration comes first) or unseen incident;
-- the town tab bar on screen and no open dialog, sheet, raid or cinematic;
-- a short settle after the action that earned it.
-
-The device preference (`honourNotices`, in Settings) is Full (popup and sound, subject to volume
-and mute), Quiet (no popup or sound; the collection keeps its New marker) or Off (no unsolicited
-popup, sound or New marker). Honours unlock in every mode.
-
-### Collection and showcase
-
-- `HonourCollection.vue` (with `HonourCollectionList`, `HonourCard`, `HonourProgress`,
-  `HonourKicker` and `HonourDetail`) shows the three tabs from `honourCollection`, earned
-  families first, greyed locked cards with readable requirements and progress, and a detail
-  with links to the museum (`openMuseumFor`), supplies or the blacksmith. Families with several
-  ranks (score, visitors) show the highest rank earned and the next one.
-- The More menu entry and the town management section (`HonourAccountSection.vue`) open it;
-  both work without signing in. `TownView.vue` answers `requests.collection` in the village and
-  `HonourCollectionHost.vue` everywhere else.
-- `HonourShowcaseSlots.vue` and `HonourShowcaseEditor.vue` manage the three ordered slots with
-  accessible move and remove buttons; slots store family IDs, so a later rank upgrades them.
-- Visitors: `villageHonours()` in `src/services/publicVillage.js` normalizes
-  `appearance.honours` (missing means unknown and hides the UI). The showcase sits beside the
-  town name and "View town honours" opens the earned-only `HonourGallery.vue`.
-
-### Museum
-
-The Replay mode's Show control offers All completed, Below ✦✦✦ and For an honour, with a picker
-of unfinished level-linked honours (mine mastery, Perfect Prospector and the next score rank).
-Every level card shows its mine element icons, and honour mode adds tags such as
-"◆ Lamplighter · 2 lanterns" or "Score Ace at {target} · your best {score}". A museum request
-from an honour detail opens it pre-filtered.
-
-Release screenshots and an end-to-end recording (a real puzzle completed with the game's
-hints, then the popup and the collection): [video](images/honours/honours-end-to-end.mp4),
-[popup after a puzzle](images/honours/final-popup-after-puzzle.png),
-[collection](images/honours/final-collection-ranks.png),
-[town management](images/honours/final-town-manage.png),
-[visitor gallery](images/honours/final-visit-gallery.png),
-[museum](images/honours/final-museum-lamplighter.png),
-[French mobile](images/honours/final-mobile-fr.png).
-
-Mockups: [popups](images/honours/mockup-popups.png),
-[collection](images/honours/mockup-collection-achievements.png),
-[mine mastery](images/honours/mockup-collection-mine-mastery.png),
-[era defence](images/honours/mockup-collection-era-defence.png),
-[locked detail](images/honours/mockup-detail-locked.png),
-[museum](images/honours/mockup-museum-filter.png).
+- [Mine tab](images/honours/collection-mine.png), [Town tab](images/honours/collection-town.png)
+  and [Friends tab](images/honours/collection-friends.png) of the collection
+- [Rank ladder in an honour's detail](images/honours/detail-ladder.png)
+- [Promotion popup](images/honours/popup-promotion.png) (bronze → silver)
+- [Museum filtered for the next Relic Keeper rank](images/honours/museum-honour-filter.png)
+- [French collection on a phone](images/honours/mobile-fr-collection.png)
 
 ## Extending content
 
 `testing/honours.test.js` fails when the content changes without an honours decision:
 
-- A new gem type needs a `GEM_GOALS` entry and laureate names.
-- A new enabled era needs a `MEDAL_NAMES` entry and an `INCIDENT_NAMES` entry for its incident.
-- A new mine element (obstacle) must join `MINE_ELEMENTS` or `NON_MASTERY_ELEMENTS`.
-- Changed levels need `node scripts/export-honour-levels.mjs`; recalibrate affected goals.
+- A new gem type needs `GEM_GOALS` (bronze, silver, gold) and laureate names.
+- A new mine element (obstacle) joins `MINE_ELEMENTS` or `NON_MASTERY_ELEMENTS`.
+- A new enabled era joins a Through the Ages rank or `NON_MILESTONE_ERAS`.
+- A new bonus fusion joins a rank or `LATER_FUSIONS`.
+- Every rank must match `testing/fixtures/shipped-honour-ranks.json`.
 
-Changing a goal bumps its requirement version. Earned honours stay earned under the version they
-were earned with. Never reuse or rename an honour ID.
+To add a rank: append it to its family with the next metal, set `since` to a raised
+`HONOURS_VERSION` (existing saves then catch up once and show it as a new rank), add it to the
+shipped-ranks record, calibrate it with the simulator and record the evidence here. Then
+regenerate `node scripts/export-honour-levels.mjs` (after level changes), `npm run
+export:save-rules` and `node scripts/export-public-content.mjs`, all in Docker. Never edit,
+remove or reorder a shipped rank; changing one needs a raised requirement version and the
+user's approval, and earned honours keep the version they were earned under.

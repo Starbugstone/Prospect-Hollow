@@ -1,41 +1,44 @@
 <template>
   <article
     class="honour-card"
-    :class="{
-      'is-earned': model.earned,
-      'is-locked': !model.earned,
-      'is-medal': medal,
-      'is-current': model.current && !model.earned,
-      'has-new': isNew,
-    }"
+    :class="[
+      model.metal ? `honour-card-${model.metal}` : 'is-locked',
+      { 'is-earned': model.earned, 'has-new': isNew || newRank },
+    ]"
     :data-honour="model.id"
   >
     <div class="honour-card-top">
-      <HonourBadge :definition="model.definition" :size="medal ? 54 : 58" :locked="!model.earned" />
+      <HonourBadge :definition="model.definition" :size="58" :locked="!model.earned" />
       <div class="honour-card-title">
-        <HonourKicker :shape="model.shape" :text="model.kicker" />
+        <HonourKicker :metal="model.definition.metal" :text="model.kicker" />
         <h3>
           <!-- The whole card opens the detail; the link below stays a separate target. -->
           <button class="honour-card-open" type="button" @click="$emit('open', model.id)">
             {{ model.name
             }}<span class="town-sr-only">
-              · {{ model.earned ? t('Earned') : t('Not yet earned') }}</span
+              · {{ model.earned ? model.track.text : t('Not yet earned') }}</span
             >
           </button>
         </h3>
       </div>
-      <span v-if="isNew" class="honour-new">{{ t('New') }}</span>
+      <span v-if="isNew || newRank" class="honour-markers">
+        <span v-if="isNew" class="honour-new">{{ t('New') }}</span>
+        <span v-if="newRank" class="honour-new honour-new-rank">{{ t('New rank') }}</span>
+      </span>
     </div>
-    <p v-if="!medal" class="honour-requirement">{{ model.requirement }}</p>
-    <HonourProgress
-      v-if="model.progress || model.chips || model.checks || model.nextRank"
-      :model="model"
-    />
+    <HonourRankTrack :track="model.track" />
+    <p class="honour-requirement">{{ model.requirement }}</p>
+    <div
+      v-if="model.progress || model.chips || model.checks"
+      :class="{ 'honour-progress-next': model.nextRank }"
+    >
+      <p v-if="model.nextRank" class="honour-next-rank">{{ model.nextRank }}</p>
+      <HonourProgress :model="model" />
+    </div>
     <p v-if="model.mine" class="honour-where">
       {{ model.mine.summary
       }}<template v-if="!model.mine.reached"> · {{ t('not reached yet') }}</template>
     </p>
-    <p v-if="model.status" class="honour-status">{{ model.status }}</p>
     <p v-if="model.earned" class="honour-earned">
       <span v-if="model.earned.dated" aria-hidden="true">✓ </span>{{ model.earned.text
       }}<template v-if="model.earned.evidence"> · {{ model.earned.evidence }}</template>
@@ -51,20 +54,22 @@
   </article>
 </template>
 <script setup>
-import { computed } from 'vue';
 import { t } from '../../i18n';
 import HonourBadge from './HonourBadge.vue';
 import HonourKicker from './HonourKicker.vue';
 import HonourProgress from './HonourProgress.vue';
-// One collection card: earned in full colour with its date, otherwise greyed with a
-// readable requirement, progress and where to make it.
-const props = defineProps({
+import HonourRankTrack from './HonourRankTrack.vue';
+// One collection card: framed in the metal of its highest earned rank with its date,
+// otherwise greyed with a readable requirement; every rank on a track, then progress
+// toward the next rank and where to make it.
+defineProps({
   model: { type: Object, required: true },
   isNew: Boolean,
+  // A rank added by an update since the player last looked at the collection.
+  newRank: Boolean,
   links: Boolean,
 });
 defineEmits(['open', 'link']);
-const medal = computed(() => props.model.category === 'defence');
 </script>
 <style>
 .honour-card {
@@ -80,7 +85,6 @@ const medal = computed(() => props.model.category === 'defence');
   color: #4f5747;
 }
 .honour-card.is-earned {
-  border-color: #e0cd9b;
   background: #fffcf2;
   box-shadow:
     0 1px 0 #fff inset,
@@ -98,7 +102,7 @@ const medal = computed(() => props.model.category === 'defence');
   min-width: 0;
 }
 .honour-card.has-new .honour-card-title {
-  padding-right: 44px;
+  padding-right: 64px;
 }
 .honour-card h3 {
   margin: 2px 0 0;
@@ -132,10 +136,15 @@ const medal = computed(() => props.model.category === 'defence');
   outline: 3px solid #496d60;
   outline-offset: 2px;
 }
-.honour-new {
+.honour-markers {
   position: absolute;
   top: 12px;
   right: 12px;
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+}
+.honour-new {
   padding: 2px 8px;
   border-radius: 99px;
   background: #9b5a25;
@@ -145,14 +154,28 @@ const medal = computed(() => props.model.category === 'defence');
   letter-spacing: 1px;
   text-transform: uppercase;
 }
+.honour-new-rank {
+  background: #3f6b5a;
+}
+.honour-progress-next {
+  display: grid;
+  gap: 6px;
+  padding-top: 9px;
+  border-top: 1px dashed #d9c58f;
+}
+.honour-next-rank {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #6b5524;
+}
 .honour-requirement {
   margin: 0;
   font-size: 13px;
   line-height: 1.55;
   color: #4f5747;
 }
-.honour-where,
-.honour-status {
+.honour-where {
   margin: 0;
   font-size: 12px;
   line-height: 1.5;
@@ -188,37 +211,31 @@ const medal = computed(() => props.model.category === 'defence');
   outline: 3px solid #496d60;
   outline-offset: 2px;
 }
-.honour-card.is-medal {
-  align-items: center;
-  gap: 3px;
-  padding: 16px 10px;
-  text-align: center;
+/* The frame follows the highest earned metal; the badge shape and track name it too. */
+.honour-card-bronze {
+  border-color: #d2a77a;
 }
-.honour-card.is-medal .honour-card-top {
-  flex-direction: column;
-  gap: 6px;
+.honour-card-silver {
+  border-color: #aab7be;
 }
-.honour-card.is-medal .honour-card-title {
-  padding: 0;
+.honour-card-gold {
+  border-color: #dcbd6b;
 }
-.honour-card.is-medal h3 {
-  font-size: 16px;
+.honour-card-diamond {
+  border-color: #8fc3d6;
 }
-.honour-card.is-medal .honour-earned,
-.honour-card.is-medal .honour-status {
-  margin-top: 4px;
-  font-size: 11.5px;
-}
-.honour-card.is-medal.is-current {
-  border: 1.5px solid #6f9670;
-  background: #f1f5ea;
+.honour-card-bronze,
+.honour-card-silver,
+.honour-card-gold,
+.honour-card-diamond {
+  border-top-width: 3px;
+  padding-top: 14px;
 }
 .honour-contrast .honour-card {
   border-color: #626b50;
 }
 .honour-contrast .honour-card,
 .honour-contrast .honour-card .honour-requirement,
-.honour-contrast .honour-card .honour-status,
 .honour-contrast .honour-card .honour-where {
   color: #253f2f;
 }

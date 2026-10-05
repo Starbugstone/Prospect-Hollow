@@ -6,7 +6,7 @@ import TownMuseum from '../src/components/town/TownMuseum.vue';
 import MuseumLevelGrid from '../src/components/town/MuseumLevelGrid.vue';
 import { useCampaignStore } from '../src/stores/campaignStore';
 import { useHonourNavigation } from '../src/composables/useHonourNavigation';
-import { HONOURS, MINE_ELEMENTS, SCORE_FROM_LEVEL, awardHonour } from '../src/data/honours';
+import { HONOURS, MINE_ELEMENTS, SCORE_FROM_LEVEL, normalizeHonours } from '../src/data/honours';
 import { elementLevels, levelHonourElements } from '../src/data/honourLevels';
 import { getLevelStarTarget } from '../src/data/starRating';
 import { LEVEL_COUNT } from '../src/data/campaign';
@@ -27,6 +27,15 @@ const RECORDS = {
   [lanterns[1]]: { score: 41_900, stars: 2 },
 };
 const count = (html, pattern) => html.match(pattern)?.length ?? 0;
+// The mine mastery family of an element, and earning ranks as the store saves them.
+const familyOf = (element) =>
+  HONOURS.families.find((family) => family.ranks[0].element === element).id;
+function earn(honours, ids) {
+  const next = normalizeHonours(honours);
+  for (const id of ids) next.earned[id] = { at: 1, version: 1, seen: true, announced: true };
+  return next;
+}
+const scoreTarget = (id, multiple) => number(Math.ceil(multiple * getLevelStarTarget(id, null)));
 const cards = (html) => count(html, /class="museum-level"/g);
 const text = (html) => html.replace(/<!--[^>]*-->/g, '');
 
@@ -113,49 +122,51 @@ describe('Museum Show filter', () => {
 });
 
 describe('For an honour', () => {
-  it('offers only unfinished level-linked honours, mine mastery first, at their next rank', async () => {
-    campaign.honours = awardHonour(campaign.honours, 'lamplighter');
-    campaign.honours = awardHonour(campaign.honours, 'score-ace');
-    campaign.honours.counts.mine.relics = 12;
+  it('offers only unfinished level-linked families, mine mastery first, at their next rank', async () => {
+    const lanterns = HONOURS.familyById['mine-lanterns'].ranks.map((rank) => rank.id);
+    campaign.honours = earn(campaign.honours, [...lanterns, 'score-bronze', 'score-silver']);
+    campaign.honours.counts.mine.relics = 7;
     const html = await museum({ show: 'honour' });
-    const mine = MINE_ELEMENTS.map((element) => element.honour).filter(
-      (id) => id !== 'lamplighter',
+    const mine = MINE_ELEMENTS.map((element) => familyOf(element.id)).filter(
+      (id) => id !== 'mine-lanterns',
     );
-    expect(options(html)).toEqual([...mine, 'perfect-prospector', 'score']);
-    expect(html).toContain('Relic Keeper · 12/360');
-    expect(html).toContain('Perfect Prospector · 17/1,206');
-    expect(html).toContain('Score Legend · ');
+    expect(options(html)).toEqual([...mine, 'stars', 'score']);
+    // Each option names the next rank and its metal, with progress toward it.
+    expect(html).toContain('Relic Keeper · Bronze · 7/10');
+    expect(html).toContain('Rising Star · Bronze · 4/25');
+    expect(html).toContain('Score Legend · Gold · ');
     expect(html).not.toContain('Score Ace ·');
-    expect(html).not.toMatch(/laureate|fusion-master|forge|defence-/);
+    expect(html).not.toMatch(/value="(?:gem-|fusion|forge|ages|guardian)/);
     // The first unfinished honour is selected and drawn with the shared badge.
-    expect(html).toMatch(/<option value="relic-keeper" selected/);
+    expect(html).toMatch(/<option value="mine-relics" selected/);
     expect(html).toContain('<select aria-label="Honour">');
     expect(html).toContain('honour-badge');
   });
 
-  it('drops a fully earned honour and hides the mode once none remain', async () => {
-    for (const definition of HONOURS.definitions.filter((entry) =>
-      entry.link?.startsWith('museum-'),
-    ))
-      campaign.honours = awardHonour(campaign.honours, definition.id);
+  it('drops a fully earned family and hides the mode once none remain', async () => {
+    const linked = HONOURS.definitions.filter((entry) => entry.link?.startsWith('museum-'));
+    campaign.honours = earn(
+      campaign.honours,
+      linked.map((definition) => definition.id),
+    );
     const html = await museum();
     expect(html).not.toContain('For an honour');
     expect(options(html)).toEqual([]);
   });
 
   it('tags mine levels with the honour and element count, and counts levels still ahead', async () => {
-    const html = await openFor('lamplighter');
-    expect(options(html)[0]).toBe('relic-keeper');
-    expect(html).toMatch(/<option value="lamplighter" selected/);
+    const html = await openFor('mine-lanterns');
+    expect(options(html)[0]).toBe('mine-relics');
+    expect(html).toMatch(/<option value="mine-lanterns" selected/);
     expect(cards(html)).toBe(2);
     expect(html).not.toContain('Replay level 1:');
     expect(tagsOf(html, lanterns[0])).toEqual([
       `Lamplighter · ${levelHonourElements(lanterns[0]).lanterns} lanterns`,
     ]);
-    // A level below three stars also shows it advances Perfect Prospector.
+    // A level below three stars also shows it advances the next star rank.
     expect(tagsOf(html, lanterns[1])).toEqual([
       `Lamplighter · ${levelHonourElements(lanterns[1]).lanterns} lanterns`,
-      'Perfect Prospector · needs 3 stars',
+      'Rising Star · needs 3 stars',
     ]);
     expect(html).toContain('museum-tag museum-tag-secondary');
     expect(notes(html)).toContain(`Lamplighter: 2 of ${lanterns.length} levels completed.`);
@@ -170,11 +181,11 @@ describe('For an honour', () => {
       const [id] = elementLevels(element.id).levels;
       campaign.records = { [id]: { score: 1, stars: 3 } };
       const amount = levelHonourElements(id)[element.id];
-      const [tag] = tagsOf(await openFor(element.honour), id);
+      const [tag] = tagsOf(await openFor(familyOf(element.id)), id);
       expect(tag, element.id).toMatch(new RegExp(`^${element.name} · ${amount} [a-z]`));
       expect(tag, element.id).not.toContain(`${element.label}:`);
       setLocale('fr');
-      const [french] = tagsOf(await openFor(element.honour), id);
+      const [french] = tagsOf(await openFor(familyOf(element.id)), id);
       setLocale('en');
       expect(french, element.id).toContain(`${fr[element.name]} · ${amount} `);
       expect(french, element.id).not.toBe(tag);
@@ -186,49 +197,52 @@ describe('For an honour', () => {
     expect(html).not.toContain('Replay level 36:');
     expect(cards(html)).toBe(Object.keys(RECORDS).filter((id) => id >= SCORE_FROM_LEVEL).length);
     expect(tagsOf(html, 37)).toEqual([
-      `Score Ace at ${number(2 * getLevelStarTarget(37, null))} · your best 41,000`,
-      'Perfect Prospector · needs 3 stars',
+      `Score Hunter at ${scoreTarget(37, 1.5)} · your best 41,000`,
+      'Rising Star · needs 3 stars',
     ]);
     const qualifying = Array.from({ length: LEVEL_COUNT }, (_, i) => i + 1).filter(
       (id) => id >= SCORE_FROM_LEVEL && getLevelStarTarget(id, null) > 0,
     ).length;
-    expect(notes(html)).toContain(`Score Ace: 4 of ${qualifying} levels completed.`);
+    expect(notes(html)).toContain(`Score Hunter: 4 of ${qualifying} levels completed.`);
     expect(notes(html)).toContain('Levels from 37 onward count.');
-    campaign.honours = awardHonour(campaign.honours, 'score-ace');
+    campaign.honours = earn(campaign.honours, ['score-bronze']);
     expect(tagsOf(await openFor('score'), 38)).toEqual([
-      `Score Legend at ${number(3 * getLevelStarTarget(38, null))} · your best 52,000`,
+      `Score Ace at ${scoreTarget(38, 2.5)} · your best 52,000`,
     ]);
   });
 
-  it('lists Perfect Prospector levels below three stars with the main tag', async () => {
-    const html = await openFor('perfect-prospector');
+  it('lists levels below three stars for the next star rank with the main tag', async () => {
+    const html = await openFor('stars');
     expect(cards(html)).toBe(3);
-    expect(tagsOf(html, 2)).toEqual(['Perfect Prospector · needs 3 stars']);
+    expect(tagsOf(html, 2)).toEqual(['Rising Star · needs 3 stars']);
     expect(html).not.toContain('museum-tag-secondary');
-    expect(notes(html)).toContain(`Perfect Prospector: 7 of ${LEVEL_COUNT} levels completed.`);
+    expect(notes(html)).toContain(`Rising Star: 7 of ${LEVEL_COUNT} levels completed.`);
   });
 });
 
 describe('Museum deep links', () => {
   it('opens Replay on the requested honour and clears the request', async () => {
     const navigation = useHonourNavigation();
-    navigation.openMuseumFor('trail-surveyor');
+    navigation.openMuseumFor('mine-surveys');
     const html = await museum();
     expect(navigation.requests.museum).toBeNull();
     expect(html).toMatch(/aria-pressed="true"[^>]*>\s*Replay levels/);
     expect(html).toMatch(/aria-pressed="true"[^>]*>\s*For an honour/);
-    expect(html).toMatch(/<option value="trail-surveyor" selected/);
+    expect(html).toMatch(/<option value="mine-surveys" selected/);
   });
 
-  it('keeps an already earned honour selectable, marked as earned', async () => {
-    campaign.honours = awardHonour(campaign.honours, 'lamplighter');
-    const html = await openFor('lamplighter');
-    expect(html).toMatch(/<option value="lamplighter" selected[^>]*>\s*Lamplighter · earned/);
+  it('keeps a fully earned family selectable at its top rank, marked as earned', async () => {
+    const lanterns = HONOURS.familyById['mine-lanterns'].ranks.map((rank) => rank.id);
+    campaign.honours = earn(campaign.honours, lanterns);
+    const html = await openFor('mine-lanterns');
+    expect(html).toMatch(
+      /<option value="mine-lanterns" selected[^>]*>\s*Lamplighter · Gold · earned/,
+    );
     expect(cards(html)).toBe(2);
   });
 
   it('ignores and clears a request for an honour the museum cannot advance', async () => {
-    const html = await openFor('forge-veteran');
+    const html = await openFor('forge');
     expect(useHonourNavigation().requests.museum).toBeNull();
     expect(html).toMatch(/aria-pressed="true"[^>]*>\s*All completed/);
     expect(html).not.toContain('museum-honour-picker');
@@ -282,8 +296,9 @@ describe('Element icons on level cards', () => {
 
 it('translates the museum filter, notes and tags into French', async () => {
   setLocale('fr');
-  campaign.honours.counts.mine.lanterns = 52;
-  const html = await openFor('lamplighter');
+  campaign.honours = earn(campaign.honours, ['mine-lanterns-bronze']);
+  campaign.honours.counts.mine.lanterns = 42;
+  const html = await openFor('mine-lanterns');
   for (const english of [
     'All completed',
     'For an honour',
@@ -295,11 +310,11 @@ it('translates the museum filter, notes and tags into French', async () => {
     ' lanterns',
   ])
     expect(html, english).not.toContain(english);
-  expect(html).toContain(`${fr.Lamplighter} · 52/125`);
+  expect(html).toContain(`${fr.Lamplighter} · ${fr.Silver} · 42/50`);
   expect(notes(html)).toContain(`${fr.Lamplighter} : 2 niveaux terminés sur ${lanterns.length}.`);
   expect(html).toContain(fr['needs 3 stars']);
   const score = await openFor('score');
   expect(score).toContain(
-    `${fr['Score Ace']} à ${number(2 * getLevelStarTarget(37, null))} · votre record ${number(41_000)}`,
+    `${fr['Score Hunter']} à ${scoreTarget(37, 1.5)} · votre record ${number(41_000)}`,
   );
 });

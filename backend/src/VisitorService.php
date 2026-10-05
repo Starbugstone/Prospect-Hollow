@@ -459,9 +459,10 @@ final class VisitorService
                 'serverNow' => $now * 1000,
             ];
             if ($owner !== null) {
-                $result['uniqueVisitors'] = (int) $db->fetchOne(sprintf(Honours::VISITORS, 'id'), [
-                    $town,
-                ]);
+                // The server's social counts for the owner's Town Honours.
+                $social = Honours::social($db, 'id', $town);
+                $result['uniqueVisitors'] = $social('visitors');
+                $result['townsVisited'] = $social('travels');
                 $result['saloonCollectedAt'] =
                     (int) $db->fetchOne(
                         'SELECT collected_at FROM saloon_collections WHERE town_id=?',

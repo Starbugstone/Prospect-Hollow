@@ -472,8 +472,60 @@ try {
             in_array($town['townId'], array_column($towns['towns'], 'id'), true),
         'town search by name',
     );
+    $listedTown = array_values(
+        array_filter($towns['towns'], fn($row) => $row['id'] === $town['townId']),
+    )[0];
+    check($listedTown['uniqueVisitors'] === 0, 'town without visits has a numeric zero');
+    $beforeVisitRead = $db
+        ->get()
+        ->fetchAssociative('SELECT profile,revision FROM towns WHERE id=?', [$town['townId']]);
+    // Repeat arrivals count once, anonymous guests do not count, and a home-town
+    // identity still counts when its recorded display name is empty.
+    foreach (
+        [
+            ['repeat', 'Guest', null],
+            ['repeat', 'Renamed guest', null],
+            ['anonymous', '', null],
+            ['home', '', $town['townId']],
+        ]
+        as [$key, $guestName, $origin]
+    ) {
+        $db->get()->insert('visitor_visits', [
+            'id' => bin2hex(random_bytes(16)),
+            'town_id' => $town['townId'],
+            'visitor_key' => hash('sha256', $key),
+            'name' => $guestName,
+            'origin_town_id' => $origin,
+            'era' => 'frontier',
+            'arrived_at' => time() - 3600,
+            'last_seen_at' => time() - 3500,
+            'departed_at' => time() - 3400,
+        ]);
+    }
+    $towns = status(
+        200,
+        adminCall('GET', 'towns?q=' . $town['townId'], null, $s),
+        'visitor counts in list',
+    );
+    check(
+        $towns['towns'][0]['uniqueVisitors'] === 2,
+        'list deduplicates all recorded signed-in visitors',
+    );
     status(422, adminCall('GET', 'towns?filter=secret', null, $s), 'filter allowlist');
     $view = status(200, adminCall('GET', 'towns/' . $town['townId'], null, $s), 'town detail');
+    check(
+        $view['town']['uniqueVisitors'] === 2 && $view['town']['townsVisited'] === 0,
+        'detail returns server social counts',
+    );
+    check(
+        $beforeVisitRead ===
+            $db
+                ->get()
+                ->fetchAssociative('SELECT profile,revision FROM towns WHERE id=?', [
+                    $town['townId'],
+                ]),
+        'admin visitor reads leave the save unchanged',
+    );
     check(
         $view['town']['owner']['id'] === $player['id'] &&
             $view['appearance']['era'] === 'frontier' &&

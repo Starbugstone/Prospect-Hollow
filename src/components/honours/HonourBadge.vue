@@ -15,14 +15,14 @@
           />
         </linearGradient>
       </defs>
-      <!-- Shape and engraving carry the difficulty, never colour alone. -->
-      <template v-if="frame === 'easy'">
+      <!-- Shape and engraving carry the metal, never colour alone. -->
+      <template v-if="frame === 'bronze'">
         <circle
           cx="50"
           cy="50"
           r="46"
           :fill="`url(#${uid}-fill)`"
-          stroke="#6b4626"
+          :stroke="palette.edge"
           stroke-width="2.5"
         />
         <circle
@@ -35,65 +35,47 @@
           stroke-width="1.4"
           stroke-dasharray="1.5 3.2"
         />
-        <circle cx="50" cy="50" r="35" fill="#f9f0de" stroke="#9c6a3c" stroke-width="2" />
-      </template>
-      <template v-else-if="frame === 'hard'">
-        <polygon
-          :points="rosette"
-          :fill="`url(#${uid}-fill)`"
-          stroke="#7a561c"
-          stroke-width="2"
-          stroke-linejoin="round"
-        />
         <circle
           cx="50"
           cy="50"
-          r="38"
-          fill="none"
-          stroke="#fff1c9"
-          stroke-opacity=".8"
-          stroke-width="1.3"
-          stroke-dasharray="1.5 2.6"
-        />
-        <circle cx="50" cy="50" r="33.5" fill="#fff8e4" stroke="#b48a3c" stroke-width="2.2" />
-      </template>
-      <template v-else-if="frame === 'medal'">
-        <path
-          d="M50 4 88 15v33c0 24-17 40-38 48C29 88 12 72 12 48V15Z"
-          :fill="medalColor"
-          stroke="#2f3a2f"
-          stroke-width="2.4"
-          stroke-linejoin="round"
-        />
-        <path
-          d="M50 12 80 21v27c0 19-13 32-30 39C33 80 20 67 20 48V21Z"
-          fill="#f8f2e2"
-          stroke="#e9c893"
-          stroke-width="1.6"
+          r="35"
+          :fill="palette.field"
+          :stroke="palette.rim"
+          stroke-width="2"
         />
       </template>
       <template v-else>
         <polygon
-          :points="hexagon(47)"
+          :points="palette.shape[0]"
           :fill="`url(#${uid}-fill)`"
-          stroke="#45604f"
-          stroke-width="2.5"
+          :stroke="palette.edge"
+          stroke-width="2.2"
           stroke-linejoin="round"
         />
         <polygon
-          :points="hexagon(41)"
+          :points="palette.shape[1]"
           fill="none"
-          stroke="#f4f7f1"
-          stroke-opacity=".75"
+          stroke="#fffaf0"
+          stroke-opacity=".8"
           stroke-width="1.3"
-          stroke-dasharray="1.5 3"
+          stroke-dasharray="1.5 2.8"
+          stroke-linejoin="round"
         />
         <polygon
-          :points="hexagon(36)"
-          fill="#f6f4ea"
-          stroke="#6f8a78"
-          stroke-width="2"
+          :points="palette.shape[2]"
+          :fill="palette.field"
+          :stroke="palette.rim"
+          stroke-width="2.1"
           stroke-linejoin="round"
+        />
+        <!-- Diamond is cut: facets join its outer and inner edges. -->
+        <path
+          v-if="frame === 'diamond'"
+          :d="FACETS"
+          fill="none"
+          :stroke="palette.edge"
+          stroke-opacity=".55"
+          stroke-width="1.2"
         />
       </template>
       <g v-if="art.glyph === 'stars'" fill="#d8a73f" stroke="#7a561c" stroke-width="1.2">
@@ -117,7 +99,7 @@
           font-size="25"
           fill="#5b4416"
         >
-          {{ art.ribbon }}
+          {{ engraving }}
         </text>
       </g>
       <g v-else-if="art.glyph === 'supplies'">
@@ -125,48 +107,19 @@
         <image href="/art/powers/color-wand.svg" x="47" y="30" width="36" height="36" />
         <image href="/art/powers/tnt.svg" x="29" y="27" width="44" height="44" />
       </g>
-      <g v-else-if="art.glyph === 'prospector'" fill="#d8a73f" stroke="#7a561c" stroke-width="1">
-        <path
-          v-for="(point, i) in ring"
-          :key="i"
-          :d="STAR"
-          :transform="`translate(${point}) scale(.5)`"
-        />
-        <path :d="STAR" transform="translate(38 38)" />
-      </g>
       <g v-else-if="art.glyph === 'guests'" stroke-width="1.4">
         <circle cx="39" cy="42" r="7" fill="#7f9f83" stroke="#45604f" />
         <path d="M27 70v-8a12 12 0 0 1 24 0v8Z" fill="#7f9f83" stroke="#45604f" />
         <circle cx="61" cy="39" r="8" fill="#d8a73f" stroke="#7a561c" />
         <path d="M48 70v-9a13 13 0 0 1 26 0v9Z" fill="#d8a73f" stroke="#7a561c" />
       </g>
-      <template v-else-if="art.image">
-        <image v-if="art.second" :href="art.image" x="17" y="27" width="42" height="42" />
-        <image v-if="art.second" :href="art.second" x="41" y="31" width="42" height="42" />
-        <image
-          v-else
-          :href="art.image"
-          :x="imageBox[0]"
-          :y="imageBox[0]"
-          :width="imageBox[1]"
-          :height="imageBox[1]"
-        />
-      </template>
-      <g v-if="art.ribbon && frame !== 'medal'">
-        <path d="M26 78h48l-4 11H30z" fill="#6c4f1b" stroke="#3d2c0d" stroke-width="1" />
-        <text
-          x="50"
-          y="86.6"
-          text-anchor="middle"
-          font-size="8"
-          font-weight="700"
-          letter-spacing=".6"
-          fill="#fff4d8"
-          font-family="Segoe UI, sans-serif"
-        >
-          {{ art.ribbon }}
-        </text>
+      <g v-else-if="art.glyph === 'travels'" stroke-width="1.4" stroke-linejoin="round">
+        <path d="M47.5 27h5v47h-5Z" fill="#8a6a3e" stroke="#5a4222" />
+        <path d="M29 32h27l7 6.5-7 6.5H29Z" fill="#d8a73f" stroke="#7a561c" />
+        <path d="M71 49H44l-7 6.5 7 6.5h27Z" fill="#7f9f83" stroke="#45604f" />
+        <path d="M38 74h24" stroke="#5a4222" stroke-width="3" stroke-linecap="round" />
       </g>
+      <image v-else-if="art.image" :href="art.image" x="27" y="27" width="46" height="46" />
     </svg>
     <span v-if="locked" class="honour-badge-lock">
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -178,10 +131,11 @@
 </template>
 <script setup>
 import { computed, useId } from 'vue';
-import { ERAS } from '../../data/eras';
+import { number } from '../../i18n';
+import { outline } from './honourDisplay';
 
-// One badge frame system for the collection, showcase, museum and popup. The shape
-// follows difficulty (round, hexagon, rosette); era medals are shields.
+// One badge frame system for the collection, showcase, museum and popup. The frame is
+// the rank's metal: round bronze, hexagon silver, rosette gold and cut octagon diamond.
 const props = defineProps({
   definition: { type: Object, required: true },
   size: { type: Number, default: 64 },
@@ -189,49 +143,67 @@ const props = defineProps({
 });
 const uid = `honour-${useId()}`;
 const STAR = 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9Z';
+const octagon = (radius) => outline(8, radius, radius, -67.5);
+const FACETS = Array.from({ length: 8 }, (_, i) => {
+  const [outer, inner] = [octagon(47), octagon(36)].map((points) => points.split(' ')[i]);
+  return `M${outer}L${inner}`;
+}).join('');
+// Gradient stops, outer edge, inner rim, field and outlines (outer, dashed, inner).
 const PALETTES = {
-  easy: [
-    [0, '#f0c48e'],
-    [0.55, '#c48a52'],
-    [1, '#8d5a2f'],
-  ],
-  medium: [
-    [0, '#eef3ec'],
-    [0.5, '#b6c8ba'],
-    [1, '#7e9887'],
-  ],
-  hard: [
-    [0, '#fbe6a8'],
-    [0.5, '#e2b75c'],
-    [1, '#a87b2c'],
-  ],
+  bronze: {
+    stops: [
+      [0, '#f0c48e'],
+      [0.55, '#c48a52'],
+      [1, '#8d5a2f'],
+    ],
+    edge: '#6b4626',
+    rim: '#9c6a3c',
+    field: '#f9f0de',
+  },
+  silver: {
+    stops: [
+      [0, '#f6f8f9'],
+      [0.5, '#c5ced3'],
+      [1, '#8b9aa3'],
+    ],
+    edge: '#56656e',
+    rim: '#7f8f98',
+    field: '#f5f6f4',
+    shape: [outline(6, 47), outline(6, 41), outline(6, 36)],
+  },
+  gold: {
+    stops: [
+      [0, '#fbe6a8'],
+      [0.5, '#e2b75c'],
+      [1, '#a87b2c'],
+    ],
+    edge: '#7a561c',
+    rim: '#b48a3c',
+    field: '#fff8e4',
+    shape: [outline(32, 48, 41.5), outline(32, 38, 38), outline(32, 33.5, 33.5)],
+  },
+  diamond: {
+    stops: [
+      [0, '#f4fcff'],
+      [0.5, '#bfe4f1'],
+      [1, '#79b1c6'],
+    ],
+    edge: '#3a6f83',
+    rim: '#6aa3b8',
+    field: '#f6fbfc',
+    shape: [octagon(47), octagon(41), octagon(36)],
+  },
 };
-const MEDAL_COLORS = ['#b5773d', '#4f7f8f', '#8a5a44', '#7b6d5a', '#a4553d', '#5d7fa6'];
 const art = computed(() => props.definition.art ?? {});
-const frame = computed(() => art.value.frame ?? props.definition.difficulty ?? 'medium');
-const palette = computed(() => ({ stops: PALETTES[frame.value] ?? PALETTES.medium }));
-const medalColor = computed(() => {
-  const index = Math.max(
-    0,
-    ERAS.findIndex((era) => era.id === props.definition.era),
-  );
-  return MEDAL_COLORS[index % MEDAL_COLORS.length];
-});
-const imageBox = computed(() => (frame.value === 'medal' ? [31, 38] : [27, 46]));
-const hexagon = (r) =>
-  Array.from({ length: 6 }, (_, i) => {
-    const a = ((-90 + i * 60) * Math.PI) / 180;
-    return `${(50 + r * Math.cos(a)).toFixed(1)},${(50 + r * Math.sin(a)).toFixed(1)}`;
-  }).join(' ');
-const rosette = Array.from({ length: 32 }, (_, i) => {
-  const r = i % 2 ? 41.5 : 48;
-  const a = ((-90 + (i * 180) / 16) * Math.PI) / 180;
-  return `${(50 + r * Math.cos(a)).toFixed(1)},${(50 + r * Math.sin(a)).toFixed(1)}`;
-}).join(' ');
-const ring = Array.from({ length: 8 }, (_, i) => {
-  const a = (i * Math.PI) / 4;
-  return `${(50 + 19 * Math.cos(a) - 6).toFixed(1)} ${(50 + 19 * Math.sin(a) - 6).toFixed(1)}`;
-});
+// A metal added before its frame is drawn shows the bronze round frame.
+const frame = computed(() =>
+  PALETTES[props.definition.metal] ? props.definition.metal : 'bronze',
+);
+const palette = computed(() => PALETTES[frame.value]);
+// Score ranks engrave their multiple of the star target.
+const engraving = computed(() =>
+  props.definition.measure?.kind === 'score' ? `${number(props.definition.goal)}×` : '',
+);
 </script>
 <style>
 .honour-badge {

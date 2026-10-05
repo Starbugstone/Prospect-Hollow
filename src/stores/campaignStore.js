@@ -12,16 +12,17 @@ import {
 } from '../data/townPresentations';
 import { campaignCompletion } from '../data/campaignCompletion';
 import {
-  awardHonour,
+  HONOURS_VERSION,
   backfillHonours,
   createHonours,
-  creditForge,
+  creditCounter,
   creditRun,
-  defenceMedal,
   evaluateHonours,
   mergeHonours,
   normalizeHonours,
-  recordVisitors,
+  protectedIncident,
+  recordSocial,
+  runClaim,
   validShowcase,
 } from '../data/honours';
 import { miningDepthBonus, CHEST_ECONOMY_VERSION } from '../data/economy';
@@ -392,28 +393,32 @@ export const useCampaignStore = defineStore('campaign', {
       );
     },
     // Town Honours presentation choices. They never change buildings, rewards or progress.
-    // The owner's guestbook reports the server's count of different signed-in visitors.
-    recordTownVisitors(count) {
-      const honours = recordVisitors(this.honours, count);
+    // The owner's guestbook reports the server's social counts: different signed-in
+    // visitors and different villages visited from this town.
+    recordTownSocial(reported) {
+      const honours = recordSocial(this.honours, reported);
       return !!honours && this.commit({ honours });
     },
     setHonourShowcase(ids) {
       const showcase = validShowcase(Array.isArray(ids) ? ids : [], this.honours);
       return this.commit({ honours: { ...this.honours, showcase } });
     },
+    // Looking at the collection also acknowledges ranks added by a later update.
     markHonoursSeen(ids = Object.keys(this.honours.earned)) {
-      return this.updateEarnedHonours(ids, 'seen');
+      return this.updateEarnedHonours(ids, 'seen', {
+        seenGeneration: Math.max(this.honours.seenGeneration, HONOURS_VERSION),
+      });
     },
     markHonoursAnnounced(ids) {
       return this.updateEarnedHonours(ids, 'announced');
     },
-    updateEarnedHonours(ids, flag) {
+    updateEarnedHonours(ids, flag, { seenGeneration = this.honours.seenGeneration } = {}) {
       if (!['seen', 'announced'].includes(flag) || !Array.isArray(ids)) return false;
       const changed = ids.filter((id) => this.honours.earned[id] && !this.honours.earned[id][flag]);
-      if (!changed.length) return false;
+      if (!changed.length && seenGeneration === this.honours.seenGeneration) return false;
       const earned = { ...this.honours.earned };
       for (const id of changed) earned[id] = { ...earned[id], [flag]: true };
-      return this.commit({ honours: { ...this.honours, earned } });
+      return this.commit({ honours: { ...this.honours, earned, seenGeneration } });
     },
     acknowledgePresentation(id) {
       const next = acknowledgePresentation(this.town, id);
@@ -498,7 +503,7 @@ export const useCampaignStore = defineStore('campaign', {
           powers: this.powers.map((power) =>
             power.id === 'tnt' ? { ...power, quantity: power.quantity + 1 } : power,
           ),
-          honours: creditForge(this.honours),
+          honours: creditCounter(this.honours, 'forge'),
         },
         { kind: 'forge-collect', data: { at: now } },
       );
@@ -781,9 +786,7 @@ export const useCampaignStore = defineStore('campaign', {
       if (!event || event.id !== id || event.seen) return false;
       const town = this.town;
       const bounty = Math.min(raidBounty(event), Number.MAX_SAFE_INTEGER - town.coins);
-      // The era gate keeps an unseen incident from crossing an era change, so the current
-      // era is the one it happened in. The medal is quiet and earned once per era.
-      const medal = defenceMedal(event, town.era);
+      // Town Guardian counts each incident the town came through completely, in any era.
       return this.commit(
         {
           town: {
@@ -791,9 +794,7 @@ export const useCampaignStore = defineStore('campaign', {
             coins: town.coins + bounty,
             events: { ...town.events, [BANDIT_EVENT]: { ...event, seen: true, bounty } },
           },
-          ...(medal && !this.honours.earned[medal]
-            ? { honours: awardHonour(this.honours, medal, { at, evidence: { eventId: id } }) }
-            : {}),
+          ...(protectedIncident(event) ? { honours: creditCounter(this.honours, 'guardian') } : {}),
         },
         { kind: 'raid-seen', data: { raidId: id, at } },
       );
@@ -973,7 +974,8 @@ export const useCampaignStore = defineStore('campaign', {
       );
       this.settledRun = runId;
       // Gems, fusions and mine elements count once, with this settled normal victory.
-      // They stay outside the integrity receipt: honours are presentation, not money.
+      // The receipt carries the run's claim, so the server credits its own counters
+      // when this victory syncs, including after offline play.
       if (tally) this.honours = creditRun(this.honours, tally);
       this.town = queueCampaignPresentations(this.town, this.records);
       this.recordAction('victory', {
@@ -991,6 +993,7 @@ export const useCampaignStore = defineStore('campaign', {
         multiMatchCounts,
         chooseRewards,
         chests: receiptChests,
+        ...(tally ? { honours: runClaim(tally) } : {}),
         // Queued offline receipts keep the chest terms they were earned under.
         economyVersion: CHEST_ECONOMY_VERSION,
         shopStock: this.shopStock,

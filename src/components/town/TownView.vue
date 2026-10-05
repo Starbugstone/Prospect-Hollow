@@ -639,7 +639,7 @@ const {
   enqueue: enqueueVisitorNotice,
 } = useTownVisitors(() => props.active, {
   collectSaloon: (at) => (campaign.readOnly ? null : campaign.collectSaloonForVisitor(at)),
-  recordVisitors: (count) => !campaign.readOnly && campaign.recordTownVisitors(count),
+  recordSocial: (counts) => !campaign.readOnly && campaign.recordTownSocial(counts),
 });
 async function findVisitor(id) {
   closeDialog();

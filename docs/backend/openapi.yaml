@@ -1288,6 +1288,11 @@
                       'type': 'integer',
                       'description': 'Owner endpoint only. Different signed-in players who visited this town, each account once; signed-out visits never count. Drives the Town Honours visitor ranks.',
                     },
+                  'townsVisited':
+                    {
+                      'type': 'integer',
+                      'description': "Owner endpoint only. Different other players' villages visited from this town as its home town, each village once; the owner's own towns never count. Drives the Town Honours explorer ranks.",
+                    },
                   'page': { 'type': 'integer' },
                   'hasNext': { 'type': 'boolean' },
                   'serverNow': { 'type': 'integer', 'description': 'Unix milliseconds' },
@@ -1318,7 +1323,7 @@
               'type': 'object',
               'additionalProperties': false,
               'required': ['version', 'earned', 'showcase'],
-              'description': 'Town Honours shared with visitors, the publicHonours() shape. Absent means unknown (an older owner client or server), never an empty or revoked collection. First Perfect, the score ranks, Perfect Prospector and Prospect Hollow Complete are published only when the saved records and town prove them; other honours are the owner claims. Never counts, progress, flags, inventory or account data.',
+              'description': 'Town Honours shared with visitors, the publicHonours() shape. Absent means unknown (an older owner client or server), never an empty or revoked collection. Only honours the owner earned and the server verified (its replayed records, town and powers, its own replay counters and visit counts) are published; verified honours are never unpublished. Never counts, progress, flags, inventory or account data.',
               'properties':
                 {
                   'version': { 'type': 'integer', 'minimum': 1 },

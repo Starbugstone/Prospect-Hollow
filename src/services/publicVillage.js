@@ -31,8 +31,9 @@ export function villageLevels(village) {
 }
 
 // The owner's public Town Honours: null when the field is missing (an older owner or
-// server, so unknown), otherwise catalog honours with a valid date, the public score
-// evidence and a showcase of earned families. Never read from this visitor's save.
+// server, so unknown), otherwise catalog ranks with a valid date, the public score
+// evidence and a showcase of earned families, each shown at its best rank. IDs this
+// version does not know are ignored. Never read from this visitor's save.
 export function villageHonours(village) {
   const saved = village.appearance?.honours;
   if (!saved || typeof saved !== 'object' || Array.isArray(saved)) return null;
@@ -43,7 +44,7 @@ export function villageHonours(village) {
     earned[id] = { at: Number.isSafeInteger(entry.at) && entry.at > 0 ? entry.at : null };
     const { levelId, score, target } = entry.evidence ?? {};
     if (
-      HONOURS.byId[id].family === 'score' &&
+      HONOURS.byId[id].measure.kind === 'score' &&
       Number.isInteger(levelId) &&
       [score, target].every(Number.isFinite)
     )

@@ -5,21 +5,26 @@ import { createSSRApp, h } from 'vue';
 import { renderToString } from 'vue/server-renderer';
 import {
   HONOURS,
-  awardHonour,
+  HONOUR_TABS,
+  QUARTERMASTER,
+  RANK_METALS,
+  buildHonourCatalog,
   createHonours,
   honourCollection,
-  maxPowerCapacity,
+  honourFamilies,
+  normalizeHonours,
   validShowcase,
 } from '../src/data/honours';
 import { elementLevels } from '../src/data/honourLevels';
-import { ERA_BY_ID, ERAS } from '../src/data/eras';
 import { POWERS } from '../src/data/campaign';
 import { villageHonours } from '../src/services/publicVillage';
-import { evidenceText } from '../src/components/honours/honourDisplay';
+import { cardHonours } from '../src/services/townDirectory';
 import { setLocale } from '../src/i18n';
 import fr from '../src/i18n/fr.json';
 import { useCampaignStore } from '../src/stores/campaignStore';
 import { useSettingsStore } from '../src/stores/settingsStore';
+import HonourBadge from '../src/components/honours/HonourBadge.vue';
+import HonourCardRow from '../src/components/honours/HonourCardRow.vue';
 import HonourCollectionList from '../src/components/honours/HonourCollectionList.vue';
 import HonourDetail from '../src/components/honours/HonourDetail.vue';
 import HonourGallery from '../src/components/honours/HonourGallery.vue';
@@ -28,13 +33,16 @@ import HonourShowcaseSlots from '../src/components/honours/HonourShowcaseSlots.v
 import HonourAccountSection from '../src/components/honours/HonourAccountSection.vue';
 import TownMoreMenu from '../src/components/town/TownMoreMenu.vue';
 import {
-  CATEGORY_LABELS,
+  TAB_LABELS,
+  evidenceText,
   honourSummary,
   moveSlot,
+  rankTrack,
   unseenIds,
 } from '../src/components/honours/honourDisplay';
 
 const OCT_2 = Date.UTC(2026, 9, 2, 12);
+const SCORE_EVIDENCE = { levelId: 88, score: 61400, target: 30600 };
 const render = (component, props, pinia) =>
   renderToString(
     (() => {
@@ -46,29 +54,42 @@ const render = (component, props, pinia) =>
 // One card of the rendered collection, by honour family.
 const card = (html, id) =>
   html.match(new RegExp(`<article[^>]*data-honour="${id}"[\\s\\S]*?</article>`))?.[0];
-const { levels: storage } = maxPowerCapacity();
+const ids = (html) => [...html.matchAll(/data-honour="([\w-]+)"/g)].map((match) => match[1]);
 const firstLevel = (element) => elementLevels(element).levels[0];
+// Earned entries as the store saves them: unseen and unannounced unless stated.
+function earn(honours, list, { at = OCT_2, ...flags } = {}) {
+  const next = normalizeHonours(honours);
+  for (const id of list)
+    next.earned[id] = { at, version: 1, seen: false, announced: false, ...flags };
+  return next;
+}
 
-// A Connected City town: earned (dated and backfilled), fresh, locked and medal states.
+// A Connected City town with earned (dated and backfilled), fresh and locked families.
 function townState() {
-  let honours = createHonours();
-  honours = awardHonour(honours, 'first-perfect', { backfilled: true });
-  honours = awardHonour(honours, 'score-ace', {
-    at: OCT_2,
-    evidence: { levelId: 88, score: 61400, target: 30600 },
+  let honours = earn(createHonours(), ['stars-bronze'], { at: null, seen: true, backfilled: true });
+  honours = earn(honours, ['score-bronze', 'fusion-bronze', 'mine-lanterns-bronze'], {
+    seen: true,
   });
-  honours = awardHonour(honours, 'defence-frontier', { at: OCT_2 });
-  honours.earned['first-perfect'].seen = true;
-  honours.earned['defence-frontier'].seen = true;
-  honours.fusions = ['bomb+bomb', 'bomb+cross', 'cross+cross', 'cross+rainbow'];
-  honours.counts.mine = { lanterns: 52 };
-  honours.counts.gems = { sapphire: 9830 };
+  honours = earn(honours, ['ages-bronze', 'ages-silver'], { seen: true });
+  honours = earn(honours, ['score-silver']);
+  honours.earned['score-silver'].evidence = SCORE_EVIDENCE;
+  honours.counts.fusions = {
+    'bomb+bomb': 2,
+    'bomb+cross': 1,
+    'cross+cross': 3,
+    'cross+rainbow': 1,
+  };
+  honours.counts.mine = { lanterns: 42 };
+  honours.counts.gems = { sapphire: 330 };
   honours.showcase = ['score'];
   return {
     honours,
     records: { 1: { stars: 3, score: 900 } },
-    town: { era: 'contemporary', buildings: { armory: storage.armory, garage: 1 } },
-    powers: POWERS.map((power, index) => ({ id: power.id, quantity: index < 3 ? 26 : 4 })),
+    town: { era: 'contemporary', buildings: {} },
+    powers: POWERS.map((power, index) => ({
+      id: power.id,
+      quantity: index < 3 ? QUARTERMASTER.quantity : 4,
+    })),
     nextLevel: firstLevel('lanterns') + 1,
   };
 }
@@ -83,169 +104,223 @@ const collection = (state, props = {}) =>
     canReplay: true,
     ...props,
   });
+// The stars family with a diamond rank appended by a later update (generation 2).
+function diamondCatalog() {
+  const families = honourFamilies().map((family) =>
+    family.id === 'stars'
+      ? {
+          ...family,
+          ranks: [
+            ...family.ranks,
+            { metal: 'diamond', goal: 500, name: 'Star Sovereign', since: 2 },
+          ],
+        }
+      : family,
+  );
+  return buildHonourCatalog(families);
+}
 
 afterEach(() => setLocale('en'));
 
 describe('The honours collection', () => {
-  it('shows earned honours first in full colour with their date or an unknown date', async () => {
+  it('frames earned families in their best metal with a rank track and their date', async () => {
     const html = await collection(townState());
     const score = card(html, 'score');
+    expect(score).toContain('honour-card-silver');
     expect(score).not.toContain('honour-badge-locked');
-    expect(score).toContain('is-earned');
+    expect(score).toContain('Silver · 2 of 3');
+    // Every rank on the track, named by metal and filled once earned.
+    expect(score.match(/<li class="honour-track-\w+[^"]*"/g)).toEqual([
+      '<li class="honour-track-bronze is-earned"',
+      '<li class="honour-track-silver is-earned"',
+      '<li class="honour-track-gold"',
+    ]);
+    for (const metal of ['Bronze', 'Silver', 'Gold']) expect(score).toContain(`>${metal}</span>`);
     expect(score).toContain('Earned ');
     expect(score).toContain('61,400 on level 88 (target 30,600)');
-    expect(score).toContain('Next rank · Score Legend — Three times the star target');
+    expect(score).toContain('Next rank · Gold · Score Legend — Three times the star target');
     expect(score).toContain('Best so far');
-    expect(score).toContain('New');
-    expect(card(html, 'first-perfect')).toContain('Earned before honours were introduced');
-    expect(card(html, 'first-perfect')).not.toContain('>New<');
+    expect(score).toContain('honour-progress-next');
+    expect(score).toContain('>New<');
+    expect(card(html, 'stars')).toContain('honour-card-bronze');
+    expect(card(html, 'stars')).toContain('Earned before honours were introduced');
+    expect(card(html, 'stars')).not.toContain('>New<');
     // Earned families lead the grid.
-    const order = [...html.matchAll(/data-honour="([\w-]+)"/g)].map((match) => match[1]);
-    expect(order.slice(0, 2).sort()).toEqual(['first-perfect', 'score']);
+    const earned = ['stars', 'score', 'fusion', 'mine-lanterns'];
+    expect(ids(html).slice(0, 4).sort()).toEqual(earned.sort());
   });
 
-  it('keeps unearned honours locked but readable, with requirement, progress and status', async () => {
+  it('tells metals apart by shape and text, and words the difficulty from the rank', async () => {
     const html = await collection(townState());
-    const fusion = card(html, 'fusion-master');
-    expect(fusion).toContain('honour-badge-locked');
-    expect(fusion).toContain('Perform all 6 bonus fusions in puzzles you complete.');
-    expect(fusion).toContain('4 / 6 fusions');
+    // The kicker repeats the shape of the rank's metal: round, hexagon, rosette.
+    expect(card(html, 'stars')).toContain('honour-kicker-bronze');
+    expect(card(html, 'stars')).toMatch(/honour-kicker-bronze[^>]*>[\s\S]*?<circle/);
+    expect(card(html, 'score')).toMatch(/honour-kicker-silver[\s\S]*?Medium/);
+    expect(card(html, 'stars')).toContain('Easy');
+    const quartermaster = card(await collection(townState(), { tab: 'town' }), 'quartermaster');
+    expect(quartermaster).toContain('Hard');
+    expect(quartermaster).not.toContain('Very hard');
+    // Screen readers hear each rank's state, not just a filled shape.
+    expect(card(html, 'score')).toContain('Silver</span><span class="town-sr-only"> · Earned');
+    expect(card(html, 'score')).toMatch(/Gold<\/span><span class="town-sr-only"> · Not yet earned/);
+    expect(card(html, 'score')).toMatch(/Score Ace<span class="town-sr-only"> · Silver · 2 of 3/);
+  });
+
+  it('keeps unearned honours locked but readable, with requirement and progress', async () => {
+    const html = await collection(townState());
+    const fusion = card(html, 'fusion');
+    expect(fusion).toContain('Next rank · Silver · Fusion Master — 6 different fusions performed');
+    expect(fusion).toContain('4 / 6 different fusions');
     expect(fusion).toContain('Bomb + Rainbow');
     expect((fusion.match(/is-done/g) ?? []).length).toBe(4);
-    expect(card(html, 'laureate-sapphire')).toContain('9,830 / 12,000 sapphires collected');
-    const quartermaster = card(html, 'master-quartermaster');
-    expect(quartermaster).toContain('Armory fully upgraded');
-    expect(quartermaster).toContain(`Garage level 1 of ${storage.garage}`);
-    expect(quartermaster).toContain('All 5 powers at 26 at the same time');
+    const sapphire = card(html, 'gem-sapphire');
+    expect(sapphire).toContain('is-locked');
+    expect(sapphire).toContain('honour-badge-locked');
+    expect(sapphire).toContain('No rank yet · 0 of 3');
+    expect(sapphire).toContain('330 / 500 sapphires collected');
+    expect(sapphire).toMatch(/Sapphire Laureate<span class="town-sr-only"> · Not yet earned/);
+  });
+
+  it('shows the town tab: eras, single-rank supplies and building links', async () => {
+    const html = await collection(townState(), { tab: 'town' });
+    const ages = card(html, 'ages');
+    expect(ages).toContain('Silver · 2 of 3');
+    expect(ages).toContain('On the Air');
+    expect(ages).toContain('Now in Connected City · next milestone: complete Riverlight Age');
+    const quartermaster = card(html, 'quartermaster');
+    // One rank: just its metal, without a track of one.
+    expect(quartermaster).not.toContain('honour-track-steps');
+    expect(quartermaster).toContain('honour-track-single');
+    expect(quartermaster).toMatch(/<\/svg>Gold<\/span>/);
+    expect(quartermaster).toContain('Hold 5 different powers at 26 each at the same time.');
     expect(quartermaster).toContain('3 / 5 powers full');
-    expect(card(html, 'town-complete')).toContain('Era 8 of 11 · Connected City');
-    expect(card(html, 'forge-veteran')).toContain('Blacksmith details');
-    expect(card(html, 'master-quartermaster')).toContain('Open supplies');
-    expect(card(html, 'perfect-prospector')).toContain('Show levels below three stars');
+    for (const power of POWERS) expect(quartermaster).toContain(`${power.label} at 26`);
+    expect((quartermaster.match(/is-done/g) ?? []).length).toBe(3);
+    expect(quartermaster).toContain('Open supplies');
+    expect(card(html, 'forge')).toContain('Blacksmith details');
+    expect(card(html, 'guardian')).toContain('0 / 5 incidents fully protected');
+  });
+
+  it('opens the directory from Village Explorer only for a signed-in player', async () => {
+    const state = townState();
+    const explorer = card(await collection(state, { tab: 'friends', canTravel: true }), 'explorer');
+    // Locked, the family shows its first rank.
+    expect(explorer).toContain('Curious Neighbour');
+    expect(explorer).toContain('honour-badge-locked');
+    expect(explorer).toContain('Visit 5 different players’ villages from this town.');
+    expect(explorer).toContain('0 / 5 villages visited');
+    expect(explorer).toContain('Find villages to visit');
+    const signedOut = await collection(state, { tab: 'friends' });
+    expect(card(signedOut, 'explorer')).not.toContain('Find villages to visit');
+    expect(ids(signedOut).sort()).toEqual(['explorer', 'visitors']);
   });
 
   it('shows where mine honours are found and whether the player got there yet', async () => {
     const state = townState();
     const html = await collection(state, { tab: 'mine' });
     const lanterns = elementLevels('lanterns');
-    const lamplighter = card(html, 'lamplighter');
-    expect(lamplighter).toContain('52 / 125 lanterns lit');
+    const lamplighter = card(html, 'mine-lanterns');
+    expect(lamplighter).toContain('Bronze · 1 of 3');
+    expect(lamplighter).toContain('42 / 50 lanterns lit');
     expect(lamplighter).toContain(
       `${lanterns.levels.length} levels · chapters ${lanterns.chapters[0]}–${lanterns.chapters[1]}`,
     );
     expect(lamplighter).not.toContain('not reached yet');
     expect(lamplighter).toContain('Show these levels in the museum');
-    const gates = card(html, 'gate-breaker');
+    const gates = card(html, 'mine-gates');
     expect(firstLevel('gates')).toBeGreaterThan(state.nextLevel);
     expect(gates).toContain('not reached yet');
     expect(gates).not.toContain('Show these levels in the museum');
     // Without a museum there is nowhere to replay.
     expect(
-      card(await collection(state, { tab: 'mine', canReplay: false }), 'lamplighter'),
+      card(await collection(state, { tab: 'mine', canReplay: false }), 'mine-lanterns'),
     ).not.toContain('Show these levels in the museum');
   });
 
-  it('gives era medals their recorded, current and future statuses', async () => {
-    const html = await collection(townState(), { tab: 'defence' });
-    expect(card(html, 'defence-frontier')).toContain('Earned ');
-    expect(card(html, 'defence-industrial')).toContain('No recorded defence');
-    const current = card(html, 'defence-contemporary');
-    expect(current).toContain('is-current');
-    expect(current).toContain('Fully protect the town from a river storm in this era.');
-    expect(card(html, 'defence-tomorrow')).toContain(`Reach ${ERA_BY_ID.tomorrow.label}`);
-  });
-
-  it('counts each tab and hides New indicators when notices are off', async () => {
+  it('lists Mine, Town and Friends tabs with counts and hides New when notices are off', async () => {
     const state = townState();
     const tabs = honourCollection(state);
     const html = await collection(state);
-    for (const tab of tabs) expect(html).toContain(`${tab.earned}/${tab.total}`);
+    expect(tabs.map((tab) => tab.id)).toEqual([...HONOUR_TABS]);
+    const labels = [...html.matchAll(/role="tab"[\s\S]*?<span>([^<]+)<\/span><b>([^<]+)<\/b>/g)];
+    expect(labels.map((match) => [match[1], match[2]])).toEqual(
+      tabs.map((tab) => [TAB_LABELS[tab.id], `${tab.earned}/${tab.total}`]),
+    );
     expect(html).toContain('honour-dot');
     const quiet = await collection(state, { showNew: false });
     expect(quiet).not.toContain('honour-dot');
     expect(quiet).not.toContain('honour-new');
     // Viewing a tab marks only its unseen honours.
-    expect(unseenIds(tabs[0])).toEqual(['score-ace']);
-    expect(unseenIds(tabs[2])).toEqual([]);
+    expect(unseenIds(tabs[0])).toEqual(['score-silver']);
+    expect(unseenIds(tabs[1])).toEqual([]);
     expect(honourSummary(state.honours)).toEqual({
-      earned: 3,
+      earned: 5,
       total: HONOURS.families.length,
       fresh: 1,
     });
   });
 
-  it('shows any ranked family at its highest rank with the next rank and its progress', async () => {
-    // Shaped like a visitors family: four ranks counting distinct visitors.
-    const ranks = [
-      ['first-guest', 1, 'easy'],
-      ['welcoming-host', 5, 'medium'],
-      ['popular-destination', 15, 'medium'],
-      ['celebrated-town', 30, 'hard'],
-    ].map(([id, goal, difficulty], index) => ({
-      id,
-      family: 'visitors',
-      rank: index + 1,
-      category: 'achievement',
-      difficulty,
-      version: 1,
-      name: id,
-      requirement: 'Welcome {goal} different visitors.',
-      popup: '{goal} visitors welcomed',
-      params: () => ({ goal }),
-      progress: (state) => ({ value: state.visitors, goal }),
-      art: { frame: difficulty, glyph: 'guests' },
-    }));
-    const catalog = { families: [{ id: 'visitors', category: 'achievement', ranks }] };
+  it('extends any family with a later diamond rank, marked as a new rank', async () => {
+    const catalog = diamondCatalog();
     const state = {
       ...townState(),
-      visitors: 3,
-      honours: awardHonour(createHonours(), 'first-guest', { at: OCT_2 }),
-    };
-    const html = await render(HonourCollectionList, {
-      tabs: honourCollection(state, catalog),
-      state,
-    });
-    const visitors = card(html, 'visitors');
-    expect(visitors).toContain('first-guest');
-    expect(visitors).toContain('Welcome 1 different visitors.');
-    expect(visitors).toContain('Next rank · welcoming-host — 5 visitors welcomed');
-    expect(visitors).toContain('3 / 5 visitors welcomed');
-    expect(visitors).toContain('aria-valuemax="5"');
-    expect(visitors).not.toContain('Best so far');
-    const locked = { ...state, honours: createHonours() };
-    const first = card(
-      await render(HonourCollectionList, {
-        tabs: honourCollection(locked, catalog),
-        state: locked,
+      honours: earn(createHonours(), ['stars-bronze', 'stars-silver', 'stars-gold'], {
+        seen: true,
       }),
-      'visitors',
+    };
+    const tabs = honourCollection(state, catalog);
+    const stars = tabs[0].families.find((family) => family.id === 'stars');
+    expect(stars.newRank).toBe(true);
+    expect(tabs[0].fresh).toBe(1);
+    expect(honourSummary(state.honours, catalog).fresh).toBe(1);
+    const html = await render(HonourCollectionList, {
+      tabs,
+      state,
+      newRanks: ['stars'],
+      showNew: true,
+    });
+    const view = card(html, 'stars');
+    expect(view).toContain('Gold · 3 of 4');
+    expect(view).toContain('honour-card-gold');
+    expect(view).toContain('<li class="honour-track-diamond"');
+    expect(view).toContain('>Diamond</span>');
+    expect(view).toContain('>New rank<');
+    expect(view).toContain('Next rank · Diamond · Star Sovereign — Three stars on 500 puzzles');
+    // Once earned, the diamond frame and track.
+    const top = earn(state.honours, ['stars-diamond']);
+    const earned = card(
+      await render(HonourCollectionList, {
+        tabs: honourCollection({ ...state, honours: top }, catalog),
+        state: { ...state, honours: top },
+      }),
+      'stars',
     );
-    expect(first).toContain('honour-badge-locked');
-    expect(first).toContain('3 / 1 visitors welcomed');
-    expect(first).not.toContain('Next rank');
+    expect(earned).toContain('honour-card-diamond');
+    expect(earned).toContain('Diamond · 4 of 4');
+    expect(earned).not.toContain('New rank');
+    expect(rankTrack(catalog.familyById.stars.ranks, (rank) => rank.metal === 'bronze').text).toBe(
+      'Bronze · 1 of 4',
+    );
   });
 
   it('filters to earned or not yet earned honours', async () => {
-    const ids = (html) => [...html.matchAll(/data-honour="([\w-]+)"/g)].map((match) => match[1]);
     const state = townState();
-    expect(ids(await collection(state, { filter: 'earned' })).sort()).toEqual([
-      'first-perfect',
-      'score',
-    ]);
-    const open = ids(await collection(state, { filter: 'open' }));
-    expect(open).toHaveLength(
-      HONOURS.families.filter((f) => f.category === 'achievement').length - 2,
+    expect(ids(await collection(state, { filter: 'earned' })).sort()).toEqual(
+      ['fusion', 'mine-lanterns', 'score', 'stars'].sort(),
     );
+    const open = ids(await collection(state, { filter: 'open' }));
+    expect(open).toHaveLength(HONOURS.families.filter((f) => f.tab === 'mine').length - 4);
     expect(open).not.toContain('score');
-    expect(await collection(state, { tab: 'mine', filter: 'earned' })).toContain(
+    expect(await collection(state, { tab: 'friends', filter: 'earned' })).toContain(
       'Nothing earned here yet.',
     );
   });
 
-  it('translates nested names and every collection string into French', async () => {
+  it('translates every collection string and the rank wording into French', async () => {
     const sources = [
       ...readdirSync('src/components/honours').map((file) => `src/components/honours/${file}`),
       'src/components/town/TownMoreMenu.vue',
+      'src/components/town/TownMuseum.vue',
       'src/components/community/VillageVisit.vue',
     ];
     const missing = sources.flatMap((file) =>
@@ -253,10 +328,18 @@ describe('The honours collection', () => {
     );
     expect([...new Set(missing)]).toEqual([]);
     setLocale('fr');
-    const html = await collection(townState(), { tab: 'defence' });
-    expect(html).toContain(fr['Era defence']);
-    expect(html).toContain(fr['No recorded defence']);
-    expect(card(html, 'defence-contemporary')).toContain(fr['river storm']);
+    const html = await collection(townState());
+    expect(html).toContain('Argent · 2 sur 3');
+    expect(html).toContain(fr['Friends']);
+    expect(card(html, 'score')).toContain(
+      'Rang suivant · Or · Légende du score — Trois fois l’objectif des étoiles',
+    );
+    expect(card(html, 'gem-sapphire')).toContain('Aucun rang · 0 sur 3');
+    const town = await collection(townState(), { tab: 'town' });
+    expect(card(town, 'ages')).toContain(
+      'Ère actuelle : Ville connectée · prochaine étape : terminer « L’ère des lumières douces »',
+    );
+    expect(card(town, 'quartermaster')).toContain(`${fr['Clear Row']} à 26`);
   });
 });
 
@@ -277,12 +360,140 @@ function translatable(source) {
       messages.push(literal[1] ?? literal[2]);
   }
   for (const match of source.matchAll(
-    /const (?:DIFFICULTIES|CATEGORY_LABELS|BONUS_NAMES|COUNTERS|INTROS|NOTES) = \{([\s\S]*?)\n\};/g,
+    /const (?:DIFFICULTIES|METAL_LABELS|TAB_LABELS|BONUS_NAMES|INTROS|NOTES) = \{([\s\S]*?)\};/g,
   ))
     for (const literal of match[1].matchAll(/:\s*'((?:[^'\\]|\\.)*)'/g)) messages.push(literal[1]);
   for (const literal of source.matchAll(/\blabel: '((?:[^'\\]|\\.)*)'/g)) messages.push(literal[1]);
   return messages.filter((message) => /[A-Za-z]/.test(message) && !/^[a-z-]+$/.test(message));
 }
+
+describe('The honour detail', () => {
+  let pinia, campaign;
+  beforeEach(() => {
+    const saved = new Map();
+    vi.stubGlobal('localStorage', {
+      getItem: (key) => saved.get(key) ?? null,
+      setItem: (key, value) => saved.set(key, value),
+    });
+    pinia = createPinia();
+    setActivePinia(pinia);
+    campaign = useCampaignStore();
+    const state = townState();
+    campaign.honours = state.honours;
+    campaign.powers = state.powers;
+    campaign.town = { ...campaign.town, era: state.town.era };
+  });
+  afterEach(() => vi.unstubAllGlobals());
+  const detail = (familyId, props = {}) =>
+    render(HonourDetail, { familyId, links: true, ...props }, pinia);
+  const rungs = (html) =>
+    html
+      .match(/<ol class="honour-detail-ranks"[\s\S]*?<\/ol>/)[0]
+      .split(/(?=<li[^>]*data-rank=)/)
+      .slice(1);
+
+  it('lays out every rank as a ladder with its metal, date and progress on the next', async () => {
+    const html = await detail('mine-lanterns');
+    const [bronze, silver, gold] = rungs(html);
+    expect(rungs(html)).toHaveLength(3);
+    expect(bronze).toContain('is-earned');
+    expect(bronze).toContain('Bronze · Easy');
+    expect(bronze).toContain('Light 10 lanterns in completed puzzles.');
+    expect(bronze).toContain('Earned ');
+    expect(silver).toContain('is-next');
+    expect(silver).toContain('Silver · Medium');
+    expect(silver).toContain('Next rank');
+    expect(silver).toContain('42 / 50 lanterns lit');
+    expect(silver).toContain('role="progressbar"');
+    expect(gold).toContain('Gold · Hard');
+    expect(gold).toContain('Light 125 lanterns in completed puzzles.');
+    expect(gold).toContain('Not yet earned');
+    expect(gold).not.toContain('progressbar');
+    expect(html).toContain('Bronze · 1 of 3');
+    expect(html).toContain('Where to make progress');
+    expect(html).toMatch(/<button[^>]*>\s*Add to showcase/);
+    expect(html).not.toMatch(/<button[^>]*disabled[^>]*>\s*Add to showcase/);
+  });
+
+  it('keeps score evidence and the best run on the score ladder', async () => {
+    const html = await detail('score');
+    const [, silver, gold] = rungs(html);
+    expect(silver).toContain('61,400 on level 88 (target 30,600)');
+    expect(rungs(html)[0]).toContain(
+      'Complete a puzzle from level 37 onward with 1.5× its star score target.',
+    );
+    expect(gold).toContain('Complete a puzzle from level 37 onward with 3× its star score target.');
+    expect(gold).toContain('Best so far');
+    expect(html).toContain('Remove from showcase');
+  });
+
+  it('shows fusion chips, supply checks and the next era milestone on their ranks', async () => {
+    const fusion = rungs(await detail('fusion'))[1];
+    expect(fusion).toContain('aria-label="Bonus fusions"');
+    expect((fusion.match(/is-done/g) ?? []).length).toBe(4);
+    expect(fusion).toMatch(/Bomb \+ Rainbow<span class="town-sr-only"> · Not yet/);
+    const [supplies] = rungs(await detail('quartermaster'));
+    expect(supplies).toContain('aria-label="Powers"');
+    expect(supplies).toMatch(/TNT at 26<span class="town-sr-only"> · Done/);
+    expect(supplies).toMatch(/Shuffle at 26<span class="town-sr-only"> · Not yet/);
+    const ages = await detail('ages');
+    expect(rungs(ages)[2]).toContain(
+      'Now in Connected City · next milestone: complete Riverlight Age',
+    );
+    expect(rungs(ages)[0]).toContain('Reach River &amp; Rail Boom.');
+  });
+
+  it('keeps a locked honour off the showcase', async () => {
+    const html = await detail('gem-sapphire');
+    expect(html).toContain('honour-badge-locked');
+    expect(html).toContain('No rank yet · 0 of 3');
+    expect(html).toMatch(/<button[^>]*disabled[^>]*>\s*Add to showcase/);
+    expect(html).toContain('Earn this honour to show it to visitors.');
+  });
+
+  it('links Village Explorer to the directory only when the player can travel', async () => {
+    expect(await detail('explorer', { canTravel: true })).toContain('Find villages to visit');
+    expect(await detail('explorer')).not.toContain('Find villages to visit');
+  });
+});
+
+describe('Honour badge artwork', () => {
+  const badge = (props) => render(HonourBadge, props);
+  // The first outline's point count: the frame shape of each metal.
+  const corners = (html) => html.match(/<polygon points="([^"]+)"/)?.[1].split(' ').length;
+
+  it('draws every catalog rank with artwork in the frame of its metal', async () => {
+    const shapes = { silver: 6, gold: 32, diamond: 8 };
+    for (const definition of HONOURS.definitions) {
+      const html = await badge({ definition, size: 48 });
+      expect(html, definition.id).toContain('<svg');
+      expect(html, definition.id).toMatch(/<image|<g[ >]/);
+      if (definition.metal === 'bronze') expect(html, definition.id).toContain('<circle');
+      else expect(corners(html), definition.id).toBe(shapes[definition.metal]);
+    }
+  });
+
+  it('cuts a diamond frame and falls back to bronze for a metal without a frame', async () => {
+    const stars = diamondCatalog().byId['stars-diamond'];
+    const diamond = await badge({ definition: stars });
+    expect(corners(diamond)).toBe(8);
+    expect(diamond).toMatch(/<path d="M[\d.,]+L/);
+    expect(RANK_METALS).toContain('diamond');
+    const future = await badge({ definition: { ...stars, metal: 'platinum' } });
+    expect(future).toContain('<circle');
+  });
+
+  it('greys out and locks an unearned rank and engraves score multiples', async () => {
+    const html = await badge({ definition: HONOURS.byId['score-gold'], locked: true });
+    expect(html).toContain('honour-badge-locked');
+    expect(html).toContain('honour-badge-lock');
+    expect(html).toContain('3×');
+    expect(await badge({ definition: HONOURS.byId['score-bronze'] })).toContain('1.5×');
+    expect(await badge({ definition: HONOURS.byId['explorer-bronze'] })).toContain(
+      'M47.5 27h5v47h-5Z',
+    );
+  });
+});
 
 describe('The showcase', () => {
   beforeEach(() => {
@@ -304,15 +515,25 @@ describe('The showcase', () => {
     );
   });
 
-  it('accepts only earned families and shows each slot at its highest rank', async () => {
+  it('accepts only earned families and shows each slot at its top metal', async () => {
     const { honours } = townState();
-    expect(
-      validShowcase(['score', 'lamplighter', 'score', 'nope', 'first-perfect'], honours),
-    ).toEqual(['score', 'first-perfect']);
-    const upgraded = awardHonour(honours, 'score-legend', { at: OCT_2 });
+    expect(validShowcase(['score', 'nope', 'score', 'mine-lanterns', 'stars'], honours)).toEqual([
+      'score',
+      'mine-lanterns',
+      'stars',
+    ]);
+    const upgraded = earn(honours, ['score-gold']);
     const html = await render(HonourShowcaseSlots, { ids: ['score'], earned: upgraded.earned });
     expect(html).toContain('Score Legend');
+    expect(html).toContain('Gold · 3 of 3');
     expect(html).toContain('3×');
+    const compact = await render(HonourShowcaseSlots, {
+      ids: ['score'],
+      earned: upgraded.earned,
+      compact: true,
+    });
+    expect(compact).toContain('title="Score Legend · Gold"');
+    expect(compact).toContain('<span class="town-sr-only">Score Legend · Gold</span>');
     expect(moveSlot(['a', 'b', 'c'], 2, -1)).toEqual(['a', 'c', 'b']);
     expect(moveSlot(['a', 'b'], 0, -1)).toEqual(['a', 'b']);
   });
@@ -321,41 +542,16 @@ describe('The showcase', () => {
     const pinia = createPinia();
     setActivePinia(pinia);
     const campaign = useCampaignStore();
-    campaign.honours = { ...townState().honours, showcase: ['score', 'first-perfect'] };
+    campaign.honours = { ...townState().honours, showcase: ['score', 'stars'] };
     const html = await render(HonourShowcaseEditor, {}, pinia);
     expect(html).toContain('aria-label="Move Score Ace earlier"');
     expect(html).toMatch(/data-action="earlier" aria-disabled="true"/);
-    expect(html).toContain('Remove First Perfect from the showcase');
-    // Earned but not shown: offered for an empty slot.
-    expect(html).toContain('Frontier Guardian');
-    expect(campaign.setHonourShowcase(['first-perfect', 'score'])).toBe(true);
-    expect(campaign.honours.showcase).toEqual(['first-perfect', 'score']);
-  });
-
-  it('shows a locked detail with where to progress and no showcase choice', async () => {
-    const pinia = createPinia();
-    setActivePinia(pinia);
-    const campaign = useCampaignStore();
-    const state = townState();
-    campaign.honours = state.honours;
-    const html = await render(HonourDetail, { familyId: 'lamplighter', links: true }, pinia);
-    expect(html).toContain('honour-badge-locked');
-    expect(html).toContain('Light 125 lanterns in completed puzzles.');
-    expect(html).toContain('52 / 125 lanterns lit');
-    expect(html).toContain('Where to make progress');
-    expect(html).toMatch(/<button[^>]*disabled[^>]*>\s*Add to showcase/);
-    expect(html).toContain('Earn this honour to show it to visitors.');
-    const score = await render(HonourDetail, { familyId: 'score' }, pinia);
-    expect(score).toContain('61,400 on level 88 (target 30,600)');
-    // Every rank's requirement, then the next rank and its progress.
-    expect(score).toContain(
-      'Complete a puzzle from level 37 onward with 2× its star score target.',
-    );
-    expect(score).toContain(
-      'Complete a puzzle from level 37 onward with 3× its star score target.',
-    );
-    expect(score).toContain('Next rank · Score Legend');
-    expect(score).toContain('Remove from showcase');
+    expect(html).toContain('Remove Rising Star from the showcase');
+    expect(html).toContain('Score Ace · Silver');
+    // Earned but not shown: offered for an empty slot with its metal.
+    expect(html).toContain('First Fusion · Bronze');
+    expect(campaign.setHonourShowcase(['stars', 'score'])).toBe(true);
+    expect(campaign.honours.showcase).toEqual(['stars', 'score']);
   });
 
   it('summarizes honours in town management with what visitors see', async () => {
@@ -363,7 +559,7 @@ describe('The showcase', () => {
     setActivePinia(pinia);
     useCampaignStore().honours = townState().honours;
     const html = await render(HonourAccountSection, { town: 'Willowbrook', shared: true }, pinia);
-    expect(html).toContain(`3 of ${HONOURS.families.length} honours earned`);
+    expect(html).toContain(`5 of ${HONOURS.families.length} honours earned`);
     expect(html).toContain('1 new');
     expect(html).toContain('What visitors see');
     expect(html).toContain('Willowbrook');
@@ -395,50 +591,64 @@ describe('Visiting a town’s honours', () => {
     expect(html).not.toContain('honour-gallery-group');
   });
 
-  it('keeps known earned honours, public score evidence and an earned showcase only', async () => {
+  it('shows known families at their best metal, score evidence and an earned showcase', async () => {
     const normalized = villageHonours(
       village({
         version: 1,
         earned: {
-          'score-ace': { at: OCT_2, evidence: { levelId: 88, score: 61400, target: 30600 } },
-          'first-perfect': { at: null, evidence: { levelId: 3, score: 1, target: 1 } },
-          'defence-frontier': { at: 'yesterday' },
+          'score-bronze': { at: OCT_2 },
+          'score-silver': { at: OCT_2, evidence: SCORE_EVIDENCE },
+          'stars-bronze': { at: null, evidence: { levelId: 3, score: 1, target: 1 } },
+          'ages-bronze': { at: 'yesterday' },
           'from-the-future': { at: OCT_2 },
           constructor: { at: OCT_2 },
         },
-        showcase: ['lamplighter', 'score', 'score', 7, 'first-perfect', 'defence-frontier'],
+        showcase: ['mine-lanterns', 'score', 'score', 7, 'stars', 'ages'],
       }),
     );
     expect(Object.keys(normalized.earned).sort()).toEqual([
-      'defence-frontier',
-      'first-perfect',
-      'score-ace',
+      'ages-bronze',
+      'score-bronze',
+      'score-silver',
+      'stars-bronze',
     ]);
-    expect(normalized.earned['first-perfect']).toEqual({ at: null });
-    expect(normalized.earned['defence-frontier']).toEqual({ at: null });
-    expect(normalized.earned['score-ace'].evidence).toEqual({
-      levelId: 88,
-      score: 61400,
-      target: 30600,
-    });
-    expect(normalized.showcase).toEqual(['score', 'first-perfect', 'defence-frontier']);
+    expect(normalized.earned['stars-bronze']).toEqual({ at: null });
+    expect(normalized.earned['ages-bronze']).toEqual({ at: null });
+    expect(normalized.earned['score-silver'].evidence).toEqual(SCORE_EVIDENCE);
+    expect(normalized.showcase).toEqual(['score', 'stars', 'ages']);
     const html = await render(HonourGallery, { honours: normalized, town: 'Willowbrook' });
     expect(html).toContain('3 honours earned');
     expect(html).toContain('Score Ace');
+    expect(html).not.toContain('Score Hunter');
+    expect(html).toContain('Silver · 2 of 3');
+    expect(html).toContain('honour-kicker-silver');
     expect(html).toContain('61,400 on level 88 (target 30,600)');
     expect(html).toContain('Earned before honours were introduced');
-    expect(html).toContain(ERAS[0].label);
     // Earned only: no locked badges, progress or goals a visitor cannot see.
     expect(html).not.toContain('honour-badge-locked');
     expect(html).not.toContain('Lamplighter');
     expect(html).not.toContain('progressbar');
-    for (const id of Object.keys(CATEGORY_LABELS))
-      expect(html.includes(CATEGORY_LABELS[id])).toBe(id !== 'mine');
+    const headings = [...html.matchAll(/<h3>\s*([^<]+?)\s*<span>/g)].map((match) => match[1]);
+    expect(headings).toEqual(['Mine', 'Town']);
+  });
+
+  it('shows a shared town card with the best rank of each showcased family', async () => {
+    const honours = {
+      earned: ['score-bronze', 'score-silver', 'stars-bronze', 'from-the-future'],
+      showcase: ['score', 'from-the-future'],
+    };
+    expect(cardHonours(honours).count).toBe(3);
+    expect(cardHonours(honours).showcase.map((definition) => definition.id)).toEqual([
+      'score-silver',
+    ]);
+    const html = await render(HonourCardRow, { honours });
+    expect(html).toContain('aria-label="Showcase: Score Ace · Silver"');
+    expect(html).toContain('3 honours');
   });
 });
 
 describe('Honour evidence text', () => {
-  it('formats score evidence and leaves level-only evidence such as First Perfect blank', () => {
+  it('formats score evidence and leaves level-only evidence blank', () => {
     expect(evidenceText({ levelId: 121 })).toBe('');
     expect(evidenceText({ levelId: 88, score: 63360, target: 26400 })).toContain('88');
     expect(evidenceText({ levelId: 88, score: 63360, target: 26400 })).not.toContain('NaN');

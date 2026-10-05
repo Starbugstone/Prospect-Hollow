@@ -33,7 +33,7 @@
         :tabindex="entry.id === tab ? 0 : -1"
         @click="tab = entry.id"
       >
-        <span>{{ t(CATEGORY_LABELS[entry.id]) }}</span>
+        <span>{{ t(TAB_LABELS[entry.id]) }}</span>
         <b>{{ entry.earned }}/{{ entry.total }}</b>
         <i v-if="showNew && entry.fresh" class="honour-dot"
           ><span class="town-sr-only">{{ t('New honours') }}</span></i
@@ -64,12 +64,13 @@
           )
         }}
       </p>
-      <div class="honour-grid" :class="{ 'honour-grid-medals': tab === 'defence' }">
+      <div class="honour-grid">
         <HonourCard
           v-for="card in cards"
           :key="card.id"
           :model="card"
           :is-new="showNew && fresh.includes(card.id)"
+          :new-rank="showNew && newRanks.includes(card.id)"
           :links="links"
           @open="$emit('open', $event)"
           @link="$emit('link', $event)"
@@ -83,29 +84,32 @@ import { computed, ref, useId } from 'vue';
 import { t } from '../../i18n';
 import HonourCard from './HonourCard.vue';
 import HonourShowcaseSlots from './HonourShowcaseSlots.vue';
-import { CATEGORY_LABELS, describeFamily } from './honourDisplay';
-// The collection body: showcase, category tabs, filter and cards (earned first).
+import { TAB_LABELS, describeFamily } from './honourDisplay';
+// The collection body: showcase, Mine / Town / Friends tabs, filter and cards (earned first).
 const props = defineProps({
   tabs: { type: Array, required: true },
   state: { type: Object, required: true },
   showcase: { type: Array, default: () => [] },
   // Families that were new when the collection opened keep their label while it is open.
   fresh: { type: Array, default: () => [] },
+  // Families with a rank added by an update, as they were when the collection opened.
+  newRanks: { type: Array, default: () => [] },
   showNew: Boolean,
   links: Boolean,
   canReplay: Boolean,
+  canTravel: Boolean,
 });
 defineEmits(['open', 'manage', 'link']);
-const tab = defineModel('tab', { type: String, default: 'achievement' });
+const tab = defineModel('tab', { type: String, default: 'mine' });
 const FILTERS = [
   { id: 'all', label: 'All' },
   { id: 'earned', label: 'Earned' },
   { id: 'open', label: 'Not yet' },
 ];
 const NOTES = {
-  achievement: '{earned} of {total} earned · earned first, then goals still to reach',
-  mine: 'Each goal is about one and a half campaigns of that element: replay its levels to finish it.',
-  defence: 'Medals update quietly, without popups.',
+  mine: 'Completed puzzles count, including museum replays. Each honour climbs from bronze to gold.',
+  town: '{earned} of {total} earned · earned first, then goals still to reach',
+  friends: 'Each different player counts once, for visits to your town and from it.',
 };
 const uid = `honours-${useId()}`;
 const filter = defineModel('filter', { type: String, default: 'all' });
@@ -114,7 +118,12 @@ const current = computed(() => props.tabs.find((entry) => entry.id === tab.value
 const cards = computed(() =>
   current.value.families
     .filter((family) => filter.value === 'all' || !!family.earned === (filter.value === 'earned'))
-    .map((family) => describeFamily(family, props.state, { canReplay: props.canReplay })),
+    .map((family) =>
+      describeFamily(family, props.state, {
+        canReplay: props.canReplay,
+        canTravel: props.canTravel,
+      }),
+    ),
 );
 const note = computed(() =>
   t(NOTES[current.value.id], { earned: current.value.earned, total: current.value.total }),
@@ -268,10 +277,6 @@ function moveTab(event) {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
-.honour-grid-medals {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
 .honour-contrast .honour-showcase,
 .honour-contrast .honour-tabs,
 .honour-contrast .honour-filter {
@@ -285,9 +290,6 @@ function moveTab(event) {
 @media (max-width: 860px) {
   .honour-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .honour-grid-medals {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .honour-showcase {
     grid-template-columns: 1fr;
@@ -319,9 +321,6 @@ function moveTab(event) {
   .honour-grid {
     grid-template-columns: 1fr;
     gap: 10px;
-  }
-  .honour-grid-medals {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 </style>

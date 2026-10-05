@@ -262,9 +262,10 @@ final class SaveService
             }
             [$name, $normalized] = $this->nameAvailable($db, $a['id'], $id, $body['name']);
             $now = (int) floor(microtime(true) * 1000);
+            $integrity = new SaveIntegrity();
             $json = json_encode(
-                Honours::load()->keep(
-                    (new SaveIntegrity())->accept(
+                Honours::load(fn() => $integrity)->keep(
+                    $integrity->accept(
                         json_decode($json, false, 64, JSON_THROW_ON_ERROR),
                         null,
                         $now,
@@ -273,6 +274,7 @@ final class SaveService
                         $id,
                     ),
                     null,
+                    Honours::social($db, 'id', $id),
                 ),
                 JSON_THROW_ON_ERROR,
             );
@@ -349,11 +351,13 @@ final class SaveService
                 : [];
             $now = (int) floor(microtime(true) * 1000);
             $previous = json_decode($row['profile'], false, 64, JSON_THROW_ON_ERROR);
-            // Earned honours are never revoked: every accepted upload, including signed
-            // recovery and history restores, keeps those of the replaced cloud save.
+            // Earned and verified honours are never revoked: every accepted upload,
+            // including signed recovery and history restores, keeps those of the replaced
+            // cloud save and verifies what the accepted state proves.
+            $integrity = new SaveIntegrity();
             $json = json_encode(
-                Honours::load()->keep(
-                    (new SaveIntegrity())->accept(
+                Honours::load(fn() => $integrity)->keep(
+                    $integrity->accept(
                         json_decode($json, false, 64, JSON_THROW_ON_ERROR),
                         $previous,
                         $now,
@@ -363,6 +367,7 @@ final class SaveService
                         (int) $row['saved_at'] * 1000,
                     ),
                     $previous,
+                    Honours::social($db, 'id', $id),
                 ),
                 JSON_THROW_ON_ERROR,
             );

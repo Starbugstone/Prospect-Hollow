@@ -106,9 +106,12 @@ The API contract is in [openapi.yaml](openapi.yaml):
 - `GET /api/v1/towns/{townId}/visitors?page=1`: owner-only current presence plus
   20 history entries per page, newest first, plus `saloonCollectedAt` for collection
   receipts. All timestamps use Unix milliseconds.
-  The owner reply also includes `uniqueVisitors`: different signed-in players who have
-  visited (each account once; signed-out visits never count), used by the Town Honours
-  visitor ranks. The public guestbook never includes it.
+  The owner reply also includes the server's Town Honours social counts:
+  `uniqueVisitors`, different signed-in players who have visited (each account once;
+  signed-out visits never count), and `townsVisited`, different other players' villages
+  visited from this town as its home town (each village once; the owner's own towns never
+  count, and a village unshared or deleted later still counts while its visit records
+  remain). The public guestbook includes neither.
 - `GET /api/v1/villages?seed=…&page=1`: signed-in browsing. A draw of up to seven
   shared town cards (`villageId`, `name`, `era`, `buildings`, `mineLevel`,
   `saloonReady`, `visitors`, `visited`, `favourite`, `honours`) in the order of a
@@ -157,38 +160,41 @@ A shared appearance may carry `appearance.honours`, exactly the client's
 {
   "version": 1,
   "earned": {
-    "score-ace": {
+    "score-silver": {
       "at": 1790000000000,
-      "evidence": { "levelId": 52, "score": 31200, "target": 15000 }
+      "evidence": { "levelId": 52, "score": 39000, "target": 15000 }
     },
-    "first-fusion": { "at": null }
+    "fusion-bronze": { "at": null }
   },
-  "showcase": ["score", "first-fusion"]
+  "showcase": ["score", "fusion"]
 }
 ```
 
 - `earned` maps catalog honour IDs to `at`, the earning time in Unix milliseconds, or
   `null` when unknown (history recorded before honours existed). Unknown or future IDs
   are never published.
-- Only the score family (`score-ace`, `score-legend`) has `evidence`, and only its
-  `levelId`, `score` and `target`.
+- Only the score family's ranks have `evidence`, and only its `levelId`, `score` and
+  `target`: the server's best completed normal puzzle against the level's current star
+  score target, never the client's evidence.
 - `showcase` lists at most three family IDs in the owner's order, each with a
   published rank.
 - Nothing else is shared: no counts, progress, fusions, seen or announced flags,
   inventory, journal or account data.
 
-The server recomputes the honours it can prove from the saved records and town, and
-publishes them only when proven. First Perfect needs a three-star record within the
-published levels. Score Ace and Score Legend need a completed normal puzzle from
-level 37 with at least 2× or 3× that level's current star score target; their
-evidence is the best such run, not the client's. Perfect Prospector needs three stars
-on every published level. Prospect Hollow Complete needs the final enabled era with
-every required building built and modernized, the same check that gates the server's
-era advance. Raising a star target, or adding levels or an era, can therefore hide
-these honours from visitors until the town meets the new requirement; the owner's
-stored honours never change. Observation-based honours (fusions, gems, forge,
-supplies, mine mastery and defence medals) are published as the owner's claims, as
-described in [save integrity](save-integrity.md#town-honours).
+Visitors only see honours the server verified itself. A rank is published when the
+owner earned it and it is in the save's server-owned `verified` list, or the server
+proves it at projection time. `backend/src/Honours.php` evaluates every rank's exported
+measure (`stars`, `score`, `era`, `count`, `distinct`, `powers`, `social`) over a proof
+state of the accepted save: its replayed records, town and powers, the Town Honours
+counters the integrity replay credited (never the client's `honours.counts`) and the
+server's own social counts (`uniqueVisitors` and `townsVisited` above). A save outside
+the integrity replay has no proof state and publishes nothing. Every accepted save,
+signed recovery and admin restore adds each rank it proves to `verified`, and nothing
+ever removes one: a raised star target, a moved goal, a removed rank, an older restored
+snapshot or a visitor's deleted town cannot unpublish an honour verified earlier. The
+counters and their limits are described in
+[save integrity](save-integrity.md#town-honours). Claims the server cannot verify stay
+in the owner's own save and are simply not published.
 
 A missing `appearance.honours` means unknown (an older owner client or server), never
 an empty or revoked collection. `{ "earned": {}, "showcase": [] }` means the owner's

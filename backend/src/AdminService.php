@@ -373,11 +373,15 @@ final class AdminService
                 ($page - 1) * self::PAGE,
             $params,
         );
+        $visitors = Honours::visitorCounts($db, array_column($rows, 'id'));
         return [
             'total' => $total,
             'page' => $page,
             'pageSize' => self::PAGE,
-            'towns' => array_map(fn($row) => self::town($row), $rows),
+            'towns' => array_map(
+                fn($row) => self::town($row) + ['uniqueVisitors' => $visitors[$row['id']]],
+                $rows,
+            ),
         ];
     }
     public function townDetail(string $id): array
@@ -391,6 +395,7 @@ final class AdminService
             throw new ApiError(404, 'No town has that ID.');
         }
         $profile = self::decode($row['profile']);
+        $social = Honours::social($db, 'id', $id);
         // The same appearance projection a share link renders, built even for private towns.
         try {
             $appearance = json_decode(
@@ -401,6 +406,8 @@ final class AdminService
         }
         return [
             'town' => self::town($row) + [
+                'uniqueVisitors' => $social('visitors'),
+                'townsVisited' => $social('travels'),
                 'saloonCollectedAt' => self::time($row['saloon_at']),
                 'guest' =>
                     $row['guest_name'] === null
@@ -519,9 +526,10 @@ final class AdminService
             }
             $now = (int) floor(microtime(true) * 1000);
             $latest = json_decode($row['profile'], false, 64, JSON_THROW_ON_ERROR);
-            // An older snapshot never revokes the honours earned since.
-            $restored = Honours::load()->keep(
-                (new SaveIntegrity())->restoreKnownCheckpoint(
+            // An older snapshot never revokes the honours earned or verified since.
+            $integrity = new SaveIntegrity();
+            $restored = Honours::load(fn() => $integrity)->keep(
+                $integrity->restoreKnownCheckpoint(
                     json_decode($old['profile'], false, 64, JSON_THROW_ON_ERROR),
                     $latest,
                     $now,
@@ -529,6 +537,7 @@ final class AdminService
                     (int) $row['saved_at'] * 1000,
                 ),
                 $latest,
+                Honours::social($db, 'id', $row['id']),
             );
             $profile = json_encode($restored, JSON_THROW_ON_ERROR);
             SaveService::archive($db, $row);

@@ -7,7 +7,7 @@ import { visitorChanges } from '../data/liveVisitors';
 
 export function useTownVisitors(
   active,
-  { collectSaloon = () => null, recordVisitors = () => false } = {},
+  { collectSaloon = () => null, recordSocial = () => false } = {},
 ) {
   const snapshot = shallowRef(null),
     notices = shallowRef([]),
@@ -59,8 +59,9 @@ export function useTownVisitors(
           confirmed = result.present;
           enqueue(changes);
           applyCollection(result.saloonCollectedAt);
-          // Town Honours count different signed-in visitors; the campaign keeps the highest.
-          if (Number.isSafeInteger(result.uniqueVisitors)) recordVisitors(result.uniqueVisitors);
+          // Town Honours count different signed-in visitors and villages visited from this
+          // town; the campaign keeps the highest of each.
+          recordSocial({ visitors: result.uniqueVisitors, travels: result.townsVisited });
           snapshot.value = result;
           error.value = '';
         },

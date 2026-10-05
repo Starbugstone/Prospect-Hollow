@@ -56,7 +56,7 @@ describe('honours on town cards', () => {
 
   it('shows the best earned rank of each showcased family', () => {
     const honours = cardHonours({
-      earned: [low.id, high.id, 'first-perfect', 'from-a-newer-version'],
+      earned: [low.id, high.id, 'visitors-bronze', 'from-a-newer-version'],
       showcase: [family.id, 'unknown-family'],
     });
     expect(honours.count).toBe(3);
@@ -127,17 +127,17 @@ describe('shared-town cards', () => {
     expect(on.match(/<button/g)).toHaveLength(2);
   });
 
-  it('shows showcased honour badges and the honour count', async () => {
-    const html = await card({ ...town, honours: { earned: ['first-perfect'], showcase: [] } });
+  it('shows showcased honour badges with their metal and the honour count', async () => {
+    const html = await card({ ...town, honours: { earned: ['stars-bronze'], showcase: [] } });
     expect(html).toContain('1 honour');
-    const family = HONOURS.byId['first-perfect'].family;
     const shown = await card({
       ...town,
-      honours: { earned: ['first-perfect'], showcase: [family] },
+      honours: { earned: ['stars-bronze', 'stars-silver'], showcase: ['stars'] },
     });
     expect(shown).toContain('honour-badge');
-    expect(shown).toContain(HONOURS.byId['first-perfect'].name);
-    expect(shown).toContain(`Showcase: ${HONOURS.byId['first-perfect'].name}`);
+    expect(shown).toContain('2 honours');
+    // The family's best rank, named with its metal.
+    expect(shown).toContain(`Showcase: ${HONOURS.byId['stars-silver'].name} · Silver`);
   });
 
   it('leaves out a mine level an older share does not carry', async () => {

@@ -765,6 +765,9 @@ final class SaveIntegrity
         string $status,
         string $townId,
     ): object {
+        if (isset($context['honours'])) {
+            $context['honours'] = Honours::encodeCounts($context['honours']);
+        }
         $incoming['integrity'] = [
             'version' => 1,
             'epoch' => $epoch,
@@ -878,6 +881,10 @@ final class SaveIntegrity
             ) {
                 unset($context['run']);
             }
+            // Town Honours counters start from the client's own, like the rest of this
+            // unverified historical baseline; later credit comes from the replay.
+            $context['honours'] = $incoming['honours']['counts'] ?? null;
+            $context = $this->honourCounters($context, $incoming['town']);
             $context = $this->moneyContext($context, null, $now, null, []);
             return $this->seal($incoming, $context, $journal['epoch'], $ack, 'baseline', $townId);
         }
@@ -892,12 +899,15 @@ final class SaveIntegrity
                     ) {
                         return $this->seal(
                             $incoming,
-                            $this->moneyContext(
-                                $anchor['context'] ?? [],
-                                $anchor['context'] ?? [],
-                                $now,
-                                $previousServerAt,
-                                [],
+                            $this->honourCounters(
+                                $this->moneyContext(
+                                    $anchor['context'] ?? [],
+                                    $anchor['context'] ?? [],
+                                    $now,
+                                    $previousServerAt,
+                                    [],
+                                ),
+                                $incoming['town'],
                             ),
                             $anchor['epoch'],
                             $anchor['baseSequence'],
@@ -964,12 +974,16 @@ final class SaveIntegrity
             if ($signedState === null) {
                 return $this->seal(
                     $incoming,
-                    $this->moneyContext(
-                        $candidate['integrity']['context'] ?? ($anchor['context'] ?? []),
+                    $this->honourCounters(
+                        $this->moneyContext(
+                            $candidate['integrity']['context'] ?? ($anchor['context'] ?? []),
+                            $anchor['context'] ?? [],
+                            $now,
+                            $previousServerAt,
+                            [],
+                        ),
+                        $candidate['town'],
                         $anchor['context'] ?? [],
-                        $now,
-                        $previousServerAt,
-                        [],
                     ),
                     $journal['epoch'],
                     $journal['baseSequence'] + count($journal['actions']),
@@ -998,7 +1012,8 @@ final class SaveIntegrity
             }
         }
         $state = $signedState ?? $this->normalized($candidate);
-        $context = $checkpoint['context'] ?? [];
+        // Every town tracked before Town Honours starts its counters from its checkpoint.
+        $context = $this->honourCounters($checkpoint['context'] ?? [], $state['town']);
         $ack = $checkpoint['baseSequence'];
         // An older pre-guard signature retains the latest allowance. Its historical
         // money is unverified; only its newly replayed sources are charged here.
@@ -1061,12 +1076,16 @@ final class SaveIntegrity
                 self::mismatch(self::difference($value, $actual[$field], $field));
             }
         }
-        $context = $this->moneyContext(
-            $context,
+        $context = $this->honourCounters(
+            $this->moneyContext(
+                $context,
+                $anchor['context'] ?? [],
+                $now,
+                $previousServerAt,
+                $sources,
+            ),
+            $state['town'],
             $anchor['context'] ?? [],
-            $now,
-            $previousServerAt,
-            $sources,
         );
         return $this->seal(
             $incoming,
@@ -1119,7 +1138,11 @@ final class SaveIntegrity
             }
             $incoming['records'] = $records;
         }
-        $context = $journal['context'] ?? ['clockOffset' => $anchor['context']['clockOffset'] ?? 0];
+        $context = $this->honourCounters(
+            $journal['context'] ?? ['clockOffset' => $anchor['context']['clockOffset'] ?? 0],
+            $incoming['town'],
+            $anchor['context'] ?? [],
+        );
         $context = $this->moneyContext(
             $context,
             $anchor['context'] ?? [],
@@ -1136,6 +1159,20 @@ final class SaveIntegrity
             $journal ? 'tracked' : 'baseline',
             $townId,
         );
+    }
+    /**
+     * The branch's Town Honours counters, seeded from its town where they predate them.
+     * With the latest cloud context they never fall below its counters, so recovery,
+     * restores and replays of already credited actions neither lose nor double-count.
+     */
+    private function honourCounters(array $branch, array $town, ?array $latest = null): array
+    {
+        $counts = Honours::seed(Honours::counts($branch['honours'] ?? null), $town);
+        $branch['honours'] =
+            $latest === null
+                ? $counts
+                : Honours::maxCounts($counts, Honours::counts($latest['honours'] ?? null));
+        return $branch;
     }
     private function moneyContext(
         array $branch,
@@ -1556,6 +1593,7 @@ final class SaveIntegrity
                 $s['town']['forge'] = ['progress' => 0, 'charge' => 0];
                 $s['town']['lastCollections']['blacksmith'] = $d['at'];
                 $s['powers']['tnt']++;
+                $context['honours'] = Honours::credit($context['honours'], 'forge');
                 break;
             case 'saloon-collect':
                 $this->accrue($s, $context, $d['at'] ?? null, $now);
@@ -1650,6 +1688,9 @@ final class SaveIntegrity
                             $this->rules['economy']['bountyPerCaptured']
                         : 0;
                 $bounty = min($bounty, 9007199254740991 - $s['town']['coins']);
+                if (Honours::protectedIncident($event)) {
+                    $context['honours'] = Honours::credit($context['honours'], 'guardian');
+                }
                 $event['seen'] = true;
                 $event['bounty'] = $bounty;
                 $this->addCoins($s, $bounty);
@@ -1840,6 +1881,43 @@ final class SaveIntegrity
         $s['settledRun'] = $run;
         unset($context['run']);
         $this->stock($s, $d['shopStock'] ?? null, $d['shopVisit'] ?? null, true);
+        $this->creditVictory($context, $level, $d);
+    }
+    /**
+     * Town Honours for a replayed victory: the level's authored mine elements, plus the
+     * receipt's gem and fusion claim when it is plausible. Like scores, the claim is a
+     * client measurement, bounded by known keys, safe counts and the receipt's jewels;
+     * an implausible or missing claim credits nothing and never rejects the save.
+     */
+    private function creditVictory(array &$context, int $level, array $d): void
+    {
+        $counts = $context['honours'];
+        foreach ($this->rules['levels'][$level]['honourElements'] ?? [] as $element => $count) {
+            $counts = Honours::credit($counts, 'mine', $count, (string) $element);
+        }
+        $claim = $d['honours'] ?? null;
+        $plausible = is_array($claim);
+        foreach (['gems', 'fusions'] as $counter) {
+            $map = $claim[$counter] ?? [];
+            $known = $this->rules['honours'][$counter] ?? [];
+            $plausible =
+                $plausible &&
+                is_array($map) &&
+                !array_filter(
+                    $map,
+                    fn($count, $key) => !in_array($key, $known, true) || !self::integer($count),
+                    ARRAY_FILTER_USE_BOTH,
+                ) &&
+                array_sum($map) <= ($d['jewels'] ?? 0);
+        }
+        if ($plausible) {
+            foreach (['gems', 'fusions'] as $counter) {
+                foreach ($claim[$counter] ?? [] as $key => $count) {
+                    $counts = Honours::credit($counts, $counter, $count, (string) $key);
+                }
+            }
+        }
+        $context['honours'] = $counts;
     }
     private function clock(mixed $at, array $context, int $now): int
     {
@@ -2358,6 +2436,18 @@ final class SaveIntegrity
             }
         }
         return true;
+    }
+    /**
+     * Town Honours era progress, as eraStep() in honours.js: two steps per era, the
+     * second once it is complete. Zero for a town without a known era.
+     */
+    public function eraStep(array $town): int
+    {
+        $index =
+            is_string($town['era'] ?? null) && is_array($this->rules['eraOrder'] ?? null)
+                ? $this->eraIndex($town['era'])
+                : -1;
+        return $index < 0 ? 0 : $index * 2 + (int) $this->eraComplete($town);
     }
     /** The level's current star score target, or null without a usable one. */
     public function starScoreTarget(int $level): int|float|null

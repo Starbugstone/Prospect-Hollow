@@ -42,6 +42,9 @@ import {
 import { ERA_BUILDING_LEVELS, eraIndex } from '../src/game/town/TownEras.js';
 import { needTerms } from '../src/game/town/TownNeeds.js';
 import { HAPPINESS } from '../src/data/townNeeds.js';
+import { levelElements } from '../src/data/honours.js';
+import { GEM_TYPES } from '../src/game/engine/GemFactory.js';
+import { FUSION_STYLES } from '../src/game/engine/BonusFusion.js';
 import { freshProfile } from '../src/stores/campaignStore.js';
 
 // Object keys are canonicalized so the digest survives formatting and irrelevant
@@ -145,6 +148,12 @@ function compatibleTargets(level, knownTargets) {
     (tuple) => compareTargets(tuple, current) !== 0,
   );
   return compatible.length ? { compatibleTargets: compatible } : {};
+}
+
+// Town Honours mine elements a completed level credits to the server's counters.
+function honourElements(level) {
+  const elements = levelElements(level);
+  return Object.keys(elements).length ? { honourElements: elements } : {};
 }
 
 const economicOffer = (offer) =>
@@ -300,6 +309,7 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
             2: chestCoinReward(level.id, 2),
             3: chestLevelCoins(level.id),
           },
+          ...honourElements(level),
         },
       ]),
     ),
@@ -345,6 +355,8 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
       banditEvent: BANDIT_EVENT,
       introOrder: INTRO_ORDER,
     },
+    // The keys a victory receipt's Town Honours claim may credit (gem types, fusions).
+    honours: { gems: GEM_TYPES, fusions: Object.keys(FUSION_STYLES) },
     defaultTown: defaultProfile.town,
     defaultProfile,
   };

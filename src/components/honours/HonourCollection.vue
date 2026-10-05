@@ -31,9 +31,11 @@
       :state="campaign"
       :showcase="showcase"
       :fresh="fresh"
+      :new-ranks="newRanks"
       :show-new="settings.honourNotices !== 'off'"
       :links="links"
       :can-replay="campaign.canReplay"
+      :can-travel="canTravel"
       @open="detail = $event"
       @manage="managing = true"
       @link="follow"
@@ -47,7 +49,7 @@
     @close="detail = null"
   >
     <div :class="{ 'honour-contrast': settings.highContrastMode }">
-      <HonourDetail :family-id="detail" :links="links" @link="follow" />
+      <HonourDetail :family-id="detail" :links="links" :can-travel="canTravel" @link="follow" />
     </div>
   </TownDialog>
   <TownDialog
@@ -79,26 +81,31 @@ import { unseenIds } from './honourDisplay';
 const props = defineProps({ familyId: { type: String, default: null }, links: Boolean });
 const emit = defineEmits(['close', 'inspect']);
 const INTROS = {
-  achievement: 'Earned honours stay with this town, even when new goals arrive.',
-  mine: 'Mine mastery counts puzzles you complete, including museum replays.',
-  defence: 'Era medals record a fully protected incident in each era.',
+  mine: 'Mine honours count the puzzles you complete. Earned ranks stay with this town.',
+  town: 'Town honours follow your eras, the forge, supplies and protected incidents.',
+  friends: 'Friends honours count visits between shared towns.',
 };
 const campaign = useCampaignStore(),
   settings = useSettingsStore();
 const cloudAccount = inject('cloudAccount', null);
 const townName = computed(() => cloudAccount?.townName.value ?? 'Prospect Hollow');
+// The shared-town directory opens only for a signed-in account.
+const canTravel = computed(() => !!cloudAccount?.signedIn.value);
 const { dialog, closeButton, dismissBackdrop } = useNativeDialog(() => emit('close'));
 const { openMuseumFor } = useHonourNavigation();
 const tabs = computed(() => honourCollection(campaign));
 const showcase = computed(() => validShowcase(campaign.honours.showcase, campaign.honours));
 // What was new on opening keeps its label while the collection stays open.
-const fresh = tabs.value.flatMap((entry) =>
-  entry.families.filter((family) => family.fresh).map((family) => family.id),
-);
+const opened = (flag) =>
+  tabs.value.flatMap((entry) =>
+    entry.families.filter((family) => family[flag]).map((family) => family.id),
+  );
+const fresh = opened('fresh'),
+  newRanks = opened('newRank');
 const tab = ref(
-  HONOURS.familyById[props.familyId]?.category ??
+  HONOURS.familyById[props.familyId]?.tab ??
     tabs.value.find((entry) => entry.fresh && settings.honourNotices !== 'off')?.id ??
-    'achievement',
+    'mine',
 );
 const detail = ref(null),
   managing = ref(false);
@@ -107,12 +114,13 @@ const detailName = computed(
     tabs.value.flatMap((entry) => entry.families).find((family) => family.id === detail.value)
       ?.definition.name ?? '',
 );
-// A tab on screen counts as seen; this never changes what is earned.
+// A tab on screen counts as seen, and so do ranks added by an update; this never
+// changes what is earned.
 watch(
   tab,
   (id) => {
     const ids = unseenIds(tabs.value.find((entry) => entry.id === id));
-    if (ids.length) campaign.markHonoursSeen(ids);
+    if (ids.length || newRanks.length) campaign.markHonoursSeen(ids);
   },
   { immediate: true },
 );
@@ -121,14 +129,17 @@ watch(
 function showRequested(familyId) {
   const family = HONOURS.familyById[familyId];
   if (!family) return;
-  tab.value = family.category;
+  tab.value = family.tab;
   detail.value = familyId;
 }
 onMounted(() => showRequested(props.familyId));
 watch(() => props.familyId, showRequested);
 function follow(model) {
   if (model.link.museum) openMuseumFor(model.id);
-  else emit('inspect', model.link.building);
+  else if (model.link.directory) {
+    emit('close');
+    cloudAccount?.openCommunity();
+  } else emit('inspect', model.link.building);
 }
 </script>
 <style>

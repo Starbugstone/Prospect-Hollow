@@ -1,13 +1,12 @@
 <template>
-  <div class="honour-progress" :class="{ 'honour-progress-next': model.nextRank }">
-    <p v-if="model.nextRank" class="honour-next-rank">{{ model.nextRank }}</p>
+  <div class="honour-progress">
     <ul v-if="model.chips" class="honour-chips" :aria-label="t('Bonus fusions')">
       <li v-for="chip in model.chips" :key="chip.key" :class="{ 'is-done': chip.done }">
         <span v-if="chip.done" aria-hidden="true">✓</span>{{ chip.text
         }}<span class="town-sr-only"> · {{ t(chip.done ? 'Done' : 'Not yet') }}</span>
       </li>
     </ul>
-    <ul v-if="model.checks" class="honour-checks">
+    <ul v-if="model.checks" class="honour-checks" :aria-label="t('Powers')">
       <li v-for="check in model.checks" :key="check.id" :class="{ 'is-done': check.done }">
         <span aria-hidden="true">{{ check.done ? '✓' : '○' }}</span
         >{{ check.text
@@ -32,7 +31,8 @@
 </template>
 <script setup>
 import { t } from '../../i18n';
-// Progress toward a family's next rank, shared by cards and the detail view.
+// Progress toward a family's next rank, shared by cards and the detail view: the bar,
+// and the keys or powers a rank needs all of (Fusion Master, Master Quartermaster).
 defineProps({ model: { type: Object, required: true } });
 </script>
 <style>
@@ -40,16 +40,6 @@ defineProps({ model: { type: Object, required: true } });
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
-.honour-progress-next {
-  padding-top: 9px;
-  border-top: 1px dashed #d9c58f;
-}
-.honour-next-rank {
-  margin: 0;
-  font-size: 12px;
-  line-height: 1.5;
-  color: #6b5524;
 }
 .honour-bar {
   height: 8px;
@@ -64,6 +54,7 @@ defineProps({ model: { type: Object, required: true } });
   border-radius: inherit;
   background: linear-gradient(90deg, #5d805f, #7fa279);
 }
+/* Toward a further rank of a family already earned: a gold bar. */
 .honour-progress-next .honour-bar i {
   background: linear-gradient(90deg, #b48b35, #d9b468);
 }

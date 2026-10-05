@@ -1,36 +1,50 @@
-// Display models for Town Honours: the collection, details, showcase and the visitor
-// gallery share these, so every view words requirements, progress and dates alike.
-// Presentation only; nothing here changes the saved honours.
+// Display models for Town Honours: the collection, details, showcase, popup, museum and
+// the visitor gallery share these, so every view words metals, ranks, requirements,
+// progress and dates alike. Presentation only; nothing here changes the saved honours.
 import { t, number, locale } from '../../i18n';
 import { ERA_BY_ID } from '../../data/eras';
 import { POWERS } from '../../data/campaign';
-import { BUILDING_BY_ID } from '../../data/town';
-import { HONOURS, MINE_ELEMENTS, SHOWCASE_SLOTS, maxPowerCapacity } from '../../data/honours';
+import { HONOURS, MINE_ELEMENTS, SHOWCASE_SLOTS } from '../../data/honours';
 import { elementLevels } from '../../data/honourLevels';
 
-// Difficulty is named and shaped (round, hexagon, rosette), never shown by colour alone.
-const DIFFICULTIES = { easy: 'Easy', medium: 'Medium', hard: 'Very hard' };
-export const CATEGORY_LABELS = {
-  achievement: 'Achievements',
-  mine: 'Mine mastery',
-  defence: 'Era defence',
+// Each metal is named and shaped (round, hexagon, rosette, octagon), never told apart
+// by colour alone. A metal added to RANK_METALS without a label shows its ID.
+const METAL_LABELS = {
+  bronze: 'Bronze',
+  silver: 'Silver',
+  gold: 'Gold',
+  diamond: 'Diamond',
 };
+const DIFFICULTIES = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
+export const TAB_LABELS = { mine: 'Mine', town: 'Town', friends: 'Friends' };
 const BONUS_NAMES = { bomb: 'Bomb', cross: 'Cross', rainbow: 'Rainbow' };
-// Where an unfinished honour advances. Museum links open the filtered museum.
+// Where an unfinished honour advances. Museum links open the filtered museum and the
+// directory link the shared-town directory, which needs a signed-in account.
 const LINKS = {
   blacksmith: { label: 'Blacksmith details', building: 'blacksmith' },
   supplies: { label: 'Open supplies', building: 'armory' },
   'museum-score': { label: 'Show score levels in the museum', museum: true },
   'museum-stars': { label: 'Show levels below three stars', museum: true },
   'museum-element': { label: 'Show these levels in the museum', museum: true },
-};
-const COUNTERS = {
-  'fusion-master': '{value} / {goal} fusions',
-  'perfect-prospector': '{value} / {goal} stars',
-  'master-quartermaster': '{value} / {goal} powers full',
+  directory: { label: 'Find villages to visit', directory: true },
 };
 
-// Nested English names (eras, incidents) are translated and numbers localized.
+// Points of a regular outline in a 100×100 box; `inner` alternates for a rosette.
+export const outline = (count, outer, inner = outer, turn = -90) =>
+  Array.from({ length: count }, (_, i) => {
+    const radius = i % 2 ? inner : outer;
+    const angle = ((turn + (i * 360) / count) * Math.PI) / 180;
+    return `${(50 + radius * Math.cos(angle)).toFixed(1)},${(50 + radius * Math.sin(angle)).toFixed(1)}`;
+  }).join(' ');
+
+export const metalLabel = (metal) => t(METAL_LABELS[metal] ?? metal);
+export const difficultyLabel = (definition) =>
+  t(DIFFICULTIES[definition.difficulty] ?? DIFFICULTIES.medium);
+// "Score Ace · Silver": a rank by name and metal, for the popup, showcase and gallery.
+export const rankName = (definition) =>
+  t('{name} · {metal}', { name: t(definition.name), metal: metalLabel(definition.metal) });
+
+// Nested English names (eras) are translated and numbers localized.
 const honourParams = (definition) =>
   Object.fromEntries(
     Object.entries(definition.params()).map(([key, value]) => [
@@ -38,15 +52,14 @@ const honourParams = (definition) =>
       typeof value === 'number' ? number(value) : t(value),
     ]),
   );
-export const requirementText = (definition) => t(definition.requirement, honourParams(definition));
-export const difficultyLabel = (definition) =>
-  t(DIFFICULTIES[definition.difficulty] ?? DIFFICULTIES.medium);
+const requirementText = (definition) => t(definition.requirement, honourParams(definition));
+export const popupText = (definition) => t(definition.popup, honourParams(definition));
 const formatDate = (at) => new Date(at).toLocaleDateString(locale.value, { dateStyle: 'medium' });
 export const earnedText = (entry) =>
   entry.at
     ? t('Earned {date}', { date: formatDate(entry.at) })
     : t('Earned before honours were introduced');
-// Score evidence only: First Perfect also records its level, without a score.
+// Score evidence only: other ranks record no public evidence.
 export const evidenceText = (evidence) =>
   evidence?.levelId && Number.isFinite(evidence.score) && Number.isFinite(evidence.target)
     ? t('{score} on level {level} (target {target})', {
@@ -56,17 +69,51 @@ export const evidenceText = (evidence) =>
       })
     : '';
 
+/**
+ * Every rank of a family as a track (filled once earned) with a summary such as
+ * "Silver · 2 of 3", for any number of ranks. A single-rank family is just its metal.
+ * `earned(definition)` says whether the player or visited owner holds that rank.
+ */
+export function rankTrack(ranks, earned) {
+  const steps = ranks.map((definition) => ({
+    id: definition.id,
+    metal: definition.metal,
+    label: metalLabel(definition.metal),
+    earned: !!earned(definition),
+  }));
+  const top = ranks.filter(earned).at(-1);
+  let text = metalLabel(ranks[0]?.metal);
+  if (ranks.length > 1)
+    text = top
+      ? t('{metal} · {rank} of {total}', {
+          metal: metalLabel(top.metal),
+          rank: top.rank,
+          total: ranks.length,
+        })
+      : t('No rank yet · 0 of {total}', { total: ranks.length });
+  return { steps, text, single: ranks.length === 1 };
+}
+
 // The highest earned rank of a family, or null. Showcase slots hold family IDs, so a
 // later rank upgrades the same slot.
 function topEarned(familyId, earned, catalog = HONOURS) {
-  const definition = catalog.familyById[familyId]?.ranks.filter((rank) => earned[rank.id]).at(-1);
-  return definition ? { familyId, definition, entry: earned[definition.id] } : null;
+  const family = catalog.familyById[familyId];
+  const definition = family?.ranks.filter((rank) => earned[rank.id]).at(-1);
+  return definition
+    ? {
+        familyId,
+        definition,
+        entry: earned[definition.id],
+        name: rankName(definition),
+        track: rankTrack(family.ranks, (rank) => earned[rank.id]),
+      }
+    : null;
 }
 export const earnedFamilies = (earned, catalog = HONOURS) =>
   catalog.families.map((family) => topEarned(family.id, earned, catalog)).filter(Boolean);
-export const showcaseSlots = (ids, earned) =>
+export const showcaseSlots = (ids, earned, catalog = HONOURS) =>
   Array.from({ length: SHOWCASE_SLOTS }, (_, index) =>
-    ids[index] ? topEarned(ids[index], earned) : null,
+    ids[index] ? topEarned(ids[index], earned, catalog) : null,
   );
 // Moves one showcase entry; the order is what visitors see.
 export function moveSlot(ids, index, offset) {
@@ -77,14 +124,19 @@ export function moveSlot(ids, index, offset) {
   return next;
 }
 
-// Earned and fresh families for menus and summaries, without computing progress.
+// Earned and fresh families for menus and summaries, without computing progress. A
+// family is fresh with an unseen rank or a rank added since the player last looked.
 export function honourSummary(honours, catalog = HONOURS) {
   const earned = honours?.earned ?? {};
-  const families = earnedFamilies(earned, catalog);
+  const seenGeneration = honours?.seenGeneration ?? 0;
   return {
-    earned: families.length,
+    earned: earnedFamilies(earned, catalog).length,
     total: catalog.families.length,
-    fresh: catalog.definitions.filter((definition) => earned[definition.id]?.seen === false).length,
+    fresh: catalog.families.filter((family) =>
+      family.ranks.some((rank) =>
+        earned[rank.id] ? earned[rank.id].seen === false : rank.since > seenGeneration,
+      ),
+    ).length,
   };
 }
 // Earned honour IDs of a tab that the player has not seen yet.
@@ -95,57 +147,51 @@ export const unseenIds = (tab) =>
       .map((rank) => rank.definition.id),
   );
 
+// Score ranks compare a ratio, shown to one decimal and never rounded up to the goal.
+export const progressValue = (definition, value) =>
+  definition.measure.kind === 'score' ? Math.floor(value * 10) / 10 : value;
+function eraProgress(definition, state) {
+  const { era, complete } = definition.measure;
+  return t(
+    complete
+      ? 'Now in {current} · next milestone: complete {era}'
+      : 'Now in {current} · next milestone: reach {era}',
+    {
+      current: t(ERA_BY_ID[state.town?.era]?.label ?? ''),
+      era: t(ERA_BY_ID[era]?.label ?? era),
+    },
+  );
+}
 function progressText(definition, { value, goal }, state) {
-  const values = { value: number(value), goal: number(goal) };
-  // Score ranks compare a ratio; every other ranked family counts toward its goal.
-  if (definition.family === 'score') return t('Best so far {ratio}×', { ratio: number(value) });
-  if (definition.id === 'town-complete')
-    return t('Era {value} of {goal} · {era}', {
-      ...values,
-      era: t(ERA_BY_ID[state.town?.era]?.label ?? ''),
-    });
-  if (COUNTERS[definition.id]) return t(COUNTERS[definition.id], values);
+  if (definition.measure.kind === 'era') return eraProgress(definition, state);
+  const values = { value: number(progressValue(definition, value)), goal: number(goal) };
+  if (definition.progressText) return t(definition.progressText, values);
   // Counted goals reuse their popup wording: "{goal} lanterns lit" → "52 / 125 lanterns lit".
   if (definition.popup.includes('{goal}'))
     return t(definition.popup, { goal: `${values.value} / ${values.goal}` });
   return `${values.value} / ${values.goal}`;
 }
-function quartermasterChecks(state) {
-  const { capacity, levels } = maxPowerCapacity();
-  const quantity = (id) => state.powers?.find?.((power) => power.id === id)?.quantity ?? 0;
-  const full = POWERS.every((power) => quantity(power.id) >= capacity);
-  return [
-    ...Object.entries(levels).map(([id, max]) => {
-      const level = Math.min(max, state.town?.buildings?.[id] ?? 0);
-      return {
-        id,
-        done: level >= max,
-        text: t(level >= max ? '{building} fully upgraded' : '{building} level {level} of {max}', {
-          building: t(BUILDING_BY_ID[id]?.shortName ?? id),
-          level,
-          max,
-        }),
-      };
-    }),
-    {
-      id: 'powers',
-      done: full,
-      text: t('All {count} powers at {capacity} at the same time', {
-        count: POWERS.length,
-        capacity,
-      }),
-    },
-  ];
-}
-const fusionChips = (state) =>
-  HONOURS.fusionKeys.map((key) => ({
+// A "different keys" rank (Fusion Master): which of its keys are done.
+const keyChips = ({ counter, keys }, state) =>
+  keys.map((key) => ({
     key,
-    done: !!state.honours?.fusions?.includes(key),
+    done: state.honours?.counts?.[counter]?.[key] > 0,
     text: key
       .split('+')
       .map((bonus) => t(BONUS_NAMES[bonus] ?? bonus))
       .join(' + '),
   }));
+// A "powers held" rank (Master Quartermaster): one check per power at the quantity.
+const powerChecks = ({ quantity }, state) =>
+  POWERS.map((power) => {
+    const done =
+      (state.powers?.find?.((entry) => entry.id === power.id)?.quantity ?? 0) >= quantity;
+    return {
+      id: power.id,
+      done,
+      text: t('{power} at {quantity}', { power: t(power.label), quantity: number(quantity) }),
+    };
+  });
 // Where a mine honour advances: its levels, chapters and whether the player got there.
 function mineLevels(definition, state) {
   const element = MINE_ELEMENTS.find((entry) => entry.id === definition.element);
@@ -167,66 +213,75 @@ function mineLevels(definition, state) {
     }),
   };
 }
-function medalStatus(family) {
-  const params = honourParams(family.definition);
-  if (family.status === 'current')
-    return t('Fully protect the town from a {incident} in this era.', params);
-  if (family.status === 'future') return t('Reach {era}', params);
-  return t('No recorded defence');
-}
 
 /**
  * One family as shown on a card and in its detail, with every string translated.
- * `state` is the campaign store (records, town, powers, honours, nextLevel).
+ * `state` is the campaign store (records, town, powers, honours, nextLevel). Links
+ * show only where they can open: museum replays need `canReplay`, the shared-town
+ * directory `canTravel` (a signed-in account).
  */
-export function describeFamily(family, state, { canReplay = false } = {}) {
+export function describeFamily(family, state, { canReplay = false, canTravel = false } = {}) {
   const { definition, earned, next } = family;
-  const mine = family.category === 'mine' ? mineLevels(definition, state) : null;
+  const mine = definition.element ? mineLevels(definition, state) : null;
   const target = next && LINKS[next.definition.link];
+  const opens = target && (target.museum ? canReplay && (!mine || mine.reached) : true);
   const link =
-    target && (!target.museum || (canReplay && (!mine || mine.reached)))
-      ? { ...target, label: t(target.label) }
-      : null;
+    opens && (!target.directory || canTravel) ? { ...target, label: t(target.label) } : null;
+  const measure = next?.definition.measure;
   return {
     id: family.id,
-    category: family.category,
+    tab: family.tab,
     definition,
     name: t(definition.name),
+    // The frame takes the metal of the highest earned rank; locked families have none.
+    metal: earned ? definition.metal : null,
     difficulty: difficultyLabel(definition),
-    shape: definition.art?.frame === 'medal' ? 'medal' : (definition.difficulty ?? 'medium'),
-    kicker:
-      family.category === 'defence'
-        ? t(ERA_BY_ID[definition.era]?.label ?? '')
-        : mine
-          ? `${difficultyLabel(definition)} · ${mine.element}`
-          : difficultyLabel(definition),
+    kicker: mine ? `${difficultyLabel(definition)} · ${mine.element}` : difficultyLabel(definition),
     requirement: requirementText(definition),
+    track: rankTrack(
+      family.ranks.map((rank) => rank.definition),
+      (rank) => family.ranks[rank.rank - 1]?.earned,
+    ),
+    // Every rank, as the detail's ladder lists them.
+    ranks: family.ranks.map((rank) => ({
+      id: rank.definition.id,
+      definition: rank.definition,
+      metal: metalLabel(rank.definition.metal),
+      difficulty: difficultyLabel(rank.definition),
+      name: t(rank.definition.name),
+      requirement: requirementText(rank.definition),
+      earned: rank.earned && {
+        text: earnedText(rank.earned),
+        evidence: evidenceText(rank.earned.evidence),
+        dated: !!rank.earned.at,
+      },
+      next: rank.definition === next?.definition,
+    })),
     earned: earned && {
       text: earnedText(earned),
       evidence: evidenceText(earned.evidence),
       dated: !!earned.at,
     },
-    // Any ranked family keeps its highest rank and names the next one.
+    // A family keeps its highest rank on show and names the next one.
     nextRank:
       earned && next
-        ? t('Next rank · {name} — {popup}', {
+        ? t('Next rank · {metal} · {name} — {popup}', {
+            metal: metalLabel(next.definition.metal),
             name: t(next.definition.name),
-            popup: t(next.definition.popup, honourParams(next.definition)),
+            popup: popupText(next.definition),
           })
         : '',
     progress:
-      next?.progress && next.progress.goal > 0
+      next && next.progress.goal > 0
         ? {
             ...next.progress,
-            percent: Math.min(100, (100 * next.progress.value) / next.progress.goal),
+            percent: Math.min(100, Math.max(0, (100 * next.progress.value) / next.progress.goal)),
             text: progressText(next.definition, next.progress, state),
           }
         : null,
-    chips: definition.id === 'fusion-master' && !earned ? fusionChips(state) : null,
-    checks: definition.id === 'master-quartermaster' && !earned ? quartermasterChecks(state) : null,
-    mine: earned ? null : mine,
-    status: family.category === 'defence' && !earned ? medalStatus(family) : '',
-    current: family.status === 'current',
+    chips: measure?.kind === 'distinct' ? keyChips(measure, state) : null,
+    checks: measure?.kind === 'powers' ? powerChecks(measure, state) : null,
+    mine: next ? mine : null,
     link,
   };
 }

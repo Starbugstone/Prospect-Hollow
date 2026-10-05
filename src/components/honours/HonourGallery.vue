@@ -20,13 +20,13 @@
     />
     <section v-for="group in groups" :key="group.id" class="honour-gallery-group">
       <h3>
-        {{ t(CATEGORY_LABELS[group.id]) }} <span>{{ group.items.length }}</span>
+        {{ t(TAB_LABELS[group.id]) }} <span>{{ group.items.length }}</span>
       </h3>
       <ul>
         <li v-for="item in group.items" :key="item.familyId">
           <HonourBadge :definition="item.definition" :size="52" />
           <span>
-            <HonourKicker :shape="item.shape" :text="item.kicker" />
+            <HonourKicker :metal="item.definition.metal" :text="item.track.text" />
             <strong>{{ t(item.definition.name) }}</strong>
             <small>{{ earnedText(item.entry) }}</small>
             <small v-if="item.entry.evidence">{{ evidenceText(item.entry.evidence) }}</small>
@@ -42,38 +42,25 @@
 <script setup>
 import { computed, useId } from 'vue';
 import { t } from '../../i18n';
-import { ERA_BY_ID } from '../../data/eras';
 import HonourBadge from './HonourBadge.vue';
 import HonourKicker from './HonourKicker.vue';
 import HonourShowcaseSlots from './HonourShowcaseSlots.vue';
-import {
-  CATEGORY_LABELS,
-  difficultyLabel,
-  earnedFamilies,
-  earnedText,
-  evidenceText,
-} from './honourDisplay';
-// A visitor's earned-only gallery from the owner's public honours. It never reads
-// the visitor's own save: progress, counts and locked goals stay private.
+import { HONOUR_TABS } from '../../data/honours';
+import { TAB_LABELS, earnedFamilies, earnedText, evidenceText } from './honourDisplay';
+// A visitor's earned-only gallery from the owner's public honours: each family at its
+// best earned rank and metal. It never reads the visitor's own save: progress, counts
+// and locked goals stay private.
 const props = defineProps({
   honours: { type: Object, required: true },
   town: { type: String, default: '' },
 });
 const uid = `honour-gallery-${useId()}`;
-const items = computed(() =>
-  earnedFamilies(props.honours.earned).map((item) => ({
-    ...item,
-    shape: item.definition.art?.frame === 'medal' ? 'medal' : item.definition.difficulty,
-    kicker:
-      item.definition.category === 'defence'
-        ? t(ERA_BY_ID[item.definition.era]?.label ?? '')
-        : difficultyLabel(item.definition),
-  })),
-);
+const items = computed(() => earnedFamilies(props.honours.earned));
 const groups = computed(() =>
-  Object.keys(CATEGORY_LABELS)
-    .map((id) => ({ id, items: items.value.filter((item) => item.definition.category === id) }))
-    .filter((group) => group.items.length),
+  HONOUR_TABS.map((id) => ({
+    id,
+    items: items.value.filter((item) => item.definition.tab === id),
+  })).filter((group) => group.items.length),
 );
 </script>
 <style>
