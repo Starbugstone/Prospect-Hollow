@@ -213,6 +213,8 @@ describe('Honour popup queue', () => {
       'stars-bronze',
     ]);
     expect(player.notice.value).toMatchObject({ player: true });
+    // Two cards appearing together chime once.
+    expect(shared.audioManager.playArcadeCue).toHaveBeenCalledTimes(1);
     expect(player.notice.value.entries.map(({ id }) => id)).toEqual([
       'player-alpha',
       'player-time',
@@ -226,6 +228,14 @@ describe('Honour popup queue', () => {
     expect(useHonourNavigation().requests.collection).toEqual({ familyId: 'player-alpha' });
     await settle(NOTICE_MS * 2);
     expect(town.notice.value).toBe(null);
+    // A card on its own later chimes again.
+    distinctions.unannounced.value = [
+      { id: 'player-time', at: 8, tenure: { unit: 'year', count: 4 } },
+    ];
+    await settle();
+    expect(player.notice.value).not.toBe(null);
+    expect(shared.audioManager.playArcadeCue).toHaveBeenCalledTimes(2);
+    player.dismiss();
     // Quiet announces without a popup; Off also clears the New marker.
     settings.honourNotices = 'off';
     distinctions.unannounced.value = [

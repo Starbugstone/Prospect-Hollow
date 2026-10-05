@@ -11,6 +11,15 @@ import { usePlayerDistinctions } from './usePlayerDistinctions';
 
 export const NOTICE_MS = 5000;
 export const SETTLE_MS = 700;
+// The town and player cards appearing together share one chime.
+const CHIME_GAP_MS = 1000;
+const chimedAt = new WeakMap();
+function chime(game) {
+  const now = Date.now();
+  if (now - (chimedAt.get(game) ?? -Infinity) < CHIME_GAP_MS) return;
+  chimedAt.set(game, now);
+  game.audioManager?.playArcadeCue?.('chest-open');
+}
 // The village tab bar is on screen only once the village has loaded and no incident,
 // era cinematic or presentation is playing. The card waits for it and sits above it.
 const VILLAGE_SELECTOR = '.town-tab-bar';
@@ -172,7 +181,7 @@ export function useHonourAnnouncements(
       fromPuzzle: puzzles.size === 1 && !puzzles.has(null),
     };
     remaining = NOTICE_MS;
-    game.audioManager?.playArcadeCue?.('chest-open');
+    chime(game);
     run();
   }
   watch(
