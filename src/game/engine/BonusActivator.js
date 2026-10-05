@@ -64,6 +64,7 @@ export class BonusActivator {
             context:
               gem.type === 'rainbow'
                 ? {
+                    randomCrates: swap.bIndex === -1,
                     targetType: GEM_TYPES.includes(counterpart?.type)
                       ? counterpart.type
                       : dominantGemType(board),
@@ -89,7 +90,7 @@ export class BonusActivator {
       !isPlayableCell(tiles[index])
     )
       return [];
-    const targets = this.activateBonus(type, board, cols, rows, index);
+    const targets = this.activateBonus(type, board, cols, rows, index, { tiles });
     return this.resolveChain(board, cols, rows, { targets, tiles, blasts });
   }
 
@@ -143,7 +144,7 @@ export class BonusActivator {
       const { index, type, context } = queue[cursor];
       if (visited.has(index) || !canFire(index)) continue;
       visited.add(index);
-      blast(this.activateBonus(type, board, cols, rows, index, context));
+      blast(this.activateBonus(type, board, cols, rows, index, { ...context, tiles }));
     }
     return [...affected];
   }
@@ -194,6 +195,25 @@ export class BonusActivator {
     board.forEach((cell, i) => {
       if (cell?.type === targetType) cleared.add(i);
     });
+    // Blast-only crates have no gem colour. Every rainbow reaches one;
+    // a double-tap rolls a nonempty subset of the remaining crates.
+    const crates = (context?.tiles ?? []).flatMap((tile, i) =>
+      i < board.length &&
+      isPlayableCell(tile) &&
+      tile.type === 'blocker' &&
+      tile.bonusOnly &&
+      tile.health > 0 &&
+      tile.state !== 'FROZEN'
+        ? [i]
+        : [],
+    );
+    if (crates.length) {
+      const count = context?.randomCrates ? 1 + Math.floor(Math.random() * crates.length) : 1;
+      for (let n = 0; n < count; n++) {
+        const pick = context?.randomCrates ? Math.floor(Math.random() * crates.length) : 0;
+        cleared.add(crates.splice(pick, 1)[0]);
+      }
+    }
     cleared.add(index);
     return [...cleared];
   }

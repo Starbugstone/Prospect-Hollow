@@ -73,7 +73,9 @@ export class HintEngine {
           ? new Set(
               evaluation.bonuses
                 .flatMap(({ type, index }) =>
-                  bonusActivator.activateBonus(type, evaluation.board, cols, rows, index),
+                  bonusActivator.activateBonus(type, evaluation.board, cols, rows, index, {
+                    tiles,
+                  }),
                 )
                 .filter((index) => tiles[index]?.bonusOnly && tiles[index].health > 0),
             ).size
@@ -162,9 +164,12 @@ export class HintEngine {
                 .activateBonus(type, swapped, cols, rows, index)
                 .forEach((i) => affected.add(i));
             } else if (type === 'rainbow' && !SPECIAL.has(swapped[counterpart].type)) {
-              swapped.forEach((gem, i) => {
-                if (gem?.type === swapped[counterpart].type) affected.add(i);
-              });
+              bonusActivator
+                .activateBonus(type, swapped, cols, rows, index, {
+                  tiles,
+                  targetType: swapped[counterpart].type,
+                })
+                .forEach((i) => affected.add(i));
             }
           }
           indices = [...affected];
@@ -193,8 +198,15 @@ export class HintEngine {
     if (routed || hasBlastTargets || tiles.some((tile) => tile?.signal === 'spore')) {
       for (let index = 0; index < board.length; index++) {
         if (!SPECIAL.has(board[index]?.type) || !canSwapGem(board[index], tiles[index])) continue;
-        const activation = this.matchEngine.evaluateActivation(board, cols, rows, index, tiles);
-        const indices = activation.matches.flatMap((match) => match.indices);
+        // Preview the guaranteed hit without rolling the double-tap's extra crates.
+        const indices = bonusActivator.previewBonus(
+          board[index].type,
+          board,
+          cols,
+          rows,
+          index,
+          tiles,
+        );
         if (!indices.length) continue;
         const candidate = {
           swap: { aIndex: index, bIndex: index },
@@ -220,8 +232,14 @@ export class HintEngine {
           activateInPlace: true,
           usesBonus: true,
           createsBonus: false,
-          totalCleared: this.matchEngine.evaluateActivation(board, cols, rows, index, tiles)
-            .matches[0].indices.length,
+          totalCleared: bonusActivator.previewBonus(
+            board[index].type,
+            board,
+            cols,
+            rows,
+            index,
+            tiles,
+          ).length,
         };
     }
     return best;

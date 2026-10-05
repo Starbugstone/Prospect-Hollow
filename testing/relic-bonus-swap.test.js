@@ -92,7 +92,7 @@ describe('swapping a board bonus with a relic', () => {
     const evaluation = engine.evaluateSwap(rainbow.board, 7, 9, 24, 31, rainbow.tiles);
     const colors = new Set(
       evaluation.matches[0].indices
-        .filter((index) => index !== 31)
+        .filter((index) => index !== 31 && rainbow.board[index])
         .map((index) => rainbow.board[index].type),
     );
     expect(colors.size).toBe(1);

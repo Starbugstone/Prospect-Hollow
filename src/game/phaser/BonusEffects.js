@@ -45,7 +45,7 @@ export function describeBonusEffects(step, typeAt) {
     ...step.cleared.flatMap((index) => {
       const type = typeAt(index);
       return activated.has(index) && BONUS_TYPES.includes(type)
-        ? [{ type, index, targets: step.cleared }]
+        ? [{ type, index, targets: type === 'rainbow' ? [...activated] : step.cleared }]
         : [];
     }),
   ];
