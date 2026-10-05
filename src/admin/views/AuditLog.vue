@@ -44,7 +44,7 @@ const log = ref(null),
 const link = (entry) =>
   entry.action.startsWith('town_')
     ? `#/towns/${entry.target}`
-    : entry.action === 'player_signed_out'
+    : ['player_signed_out', 'distinction_granted', 'distinction_removed'].includes(entry.action)
       ? `#/players/${entry.target}`
       : '';
 async function load() {

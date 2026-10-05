@@ -6,6 +6,7 @@ $directory = sys_get_temp_dir() . '/' . $prefix;
 mkdir($directory . '/src', 0700, true);
 $source = file_get_contents(dirname(__DIR__) . '/src/Database.php');
 $names = [
+    'player_distinction_revocations',
     'player_distinctions',
     'town_favourites',
     'visitor_visits_visitor',
@@ -84,6 +85,13 @@ $distinctions = $mysql
 file_put_contents(
     $directory . '/' . $distinctions,
     $rewrite(file_get_contents(dirname(__DIR__) . '/' . $distinctions)),
+);
+$revocations = $mysql
+    ? 'schema-distinction-revocations.sql'
+    : 'schema-distinction-revocations-postgresql.sql';
+file_put_contents(
+    $directory . '/' . $revocations,
+    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $revocations)),
 );
 try {
     $statements = explode(';', $schema);
@@ -175,9 +183,16 @@ try {
         $connection->createSchemaManager()->tablesExist([$prefix . 'town_favourites']),
         'town favourites installed',
     );
+    check(
+        $connection
+            ->createSchemaManager()
+            ->tablesExist([$prefix . 'player_distinction_revocations']),
+        'distinction revocations installed',
+    );
 } finally {
     foreach (
         [
+            'player_distinction_revocations',
             'player_distinctions',
             'town_favourites',
             'visitor_leases',
@@ -211,6 +226,7 @@ try {
     @unlink($directory . '/' . $live);
     @unlink($directory . '/' . $favourites);
     @unlink($directory . '/' . $distinctions);
+    @unlink($directory . '/' . $revocations);
     unlink($directory . '/src/Database.php');
     rmdir($directory . '/src');
     rmdir($directory);

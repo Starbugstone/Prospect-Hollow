@@ -14,6 +14,7 @@ import {
   useHonourAnnouncements,
 } from '../src/composables/useHonourAnnouncements';
 import HonourToast from '../src/components/honours/HonourToast.vue';
+import { distinctionBadge } from '../src/data/playerDistinctions';
 import { setLocale } from '../src/i18n';
 import fr from '../src/i18n/fr.json';
 
@@ -99,7 +100,7 @@ describe('Honour popup queue', () => {
   const earn = (ids, options) => {
     campaign.honours = award(campaign.honours, ids, options);
   };
-  function start({ active = true, game } = {}) {
+  function start({ active = true, game, distinctions } = {}) {
     const state = reactive({ active });
     const page = Object.assign(new EventTarget(), {
       hidden: false,
@@ -114,7 +115,13 @@ describe('Honour popup queue', () => {
     });
     const scope = effectScope();
     scopes.push(scope);
-    const toast = scope.run(() => useHonourAnnouncements(() => state.active, { game, page }));
+    const toast = scope.run(() =>
+      useHonourAnnouncements(() => state.active, {
+        game,
+        page,
+        ...(distinctions ? { distinctions } : {}),
+      }),
+    );
     return { state, game, page, toast, scope };
   }
 
@@ -171,6 +178,44 @@ describe('Honour popup queue', () => {
     await settle(NOTICE_MS * 2);
     expect(toast.notice.value).toBe(null);
     expect(game.audioManager.playArcadeCue).toHaveBeenCalledTimes(1);
+  });
+
+  it('announces a new player distinction once, after any town honour card', async () => {
+    const alpha = { id: 'player-alpha', at: 5 };
+    const year = { id: 'player-time', at: 6, tenure: { unit: 'year', count: 2 } };
+    const distinctions = {
+      unannounced: ref([alpha, year]),
+      markAnnounced: vi.fn((keys) => {
+        distinctions.unannounced.value = distinctions.unannounced.value.filter(
+          (item) => !keys.includes(item.tenure ? `${item.id}@year-2` : item.id),
+        );
+      }),
+      markSeen: vi.fn(),
+    };
+    const { toast } = start({ distinctions });
+    earn(['stars-bronze']);
+    await settle();
+    expect(toast.notice.value.player).toBeUndefined();
+    toast.dismiss();
+    await settle();
+    expect(toast.notice.value).toMatchObject({ player: true });
+    expect(toast.notice.value.entries.map(({ definition }) => definition.player)).toEqual([
+      true,
+      true,
+    ]);
+    expect(distinctions.markAnnounced).toHaveBeenCalledWith(['player-alpha', 'player-time@year-2']);
+    toast.view();
+    expect(useHonourNavigation().requests.collection).toEqual({ familyId: 'player-alpha' });
+    await settle(NOTICE_MS * 2);
+    expect(toast.notice.value).toBe(null);
+    // Quiet announces without a popup; Off also clears the New marker.
+    settings.honourNotices = 'off';
+    distinctions.unannounced.value = [
+      { id: 'player-time', at: 7, tenure: { unit: 'year', count: 3 } },
+    ];
+    await settle();
+    expect(toast.notice.value).toBe(null);
+    expect(distinctions.markSeen).toHaveBeenCalledWith(['player-time@year-3']);
   });
 
   it('pauses while hovered or keyboard-focused and resumes the remaining time', async () => {
@@ -415,6 +460,42 @@ describe('Honour popup rendering', () => {
   afterEach(() => {
     preview.card = null;
     setLocale('en');
+  });
+
+  it('words a player distinction card with its time step and no metal', async () => {
+    const step = { unit: 'year', count: 2 };
+    const preset = card([]);
+    preset.notice.value = {
+      key: 2,
+      player: true,
+      entries: [
+        {
+          id: 'player-time',
+          definition: distinctionBadge('player-time', { tenure: step }),
+          entry: { tenure: step },
+          from: null,
+        },
+      ],
+      ids: ['player-time@year-2'],
+      backfilled: false,
+    };
+    const html = await render(preset);
+    for (const text of ['Player distinction', 'Loyal Prospector · 2 years', '2 years since'])
+      expect(html).toContain(text);
+    expect(html).toContain('honour-badge-player');
+    expect(html).not.toContain('honour-toast-difficulty');
+    preset.notice.value = {
+      ...preset.notice.value,
+      entries: [
+        {
+          id: 'player-alpha',
+          definition: distinctionBadge('player-alpha', { at: 1 }),
+          entry: {},
+          from: null,
+        },
+      ],
+    };
+    expect(await render(preset)).toContain('You played during the alpha. Thank you!');
   });
 
   it('renders a single achievement as a polite, non-modal status card', async () => {

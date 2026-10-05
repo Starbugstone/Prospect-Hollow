@@ -919,6 +919,29 @@ try {
         'sessions revoked',
     );
     status(401, callApi('GET', 'account', null, $player), 'player signed out everywhere');
+    // Player distinctions are given and removed through the admin HTTP routes.
+    $distinction = 'players/' . $player['id'] . '/distinctions/player-alpha';
+    $state = fn(array $reply) => array_column($reply['distinctions'], 'state', 'id')[
+        'player-alpha'
+    ];
+    check(
+        $state(status(200, adminCall('POST', $distinction, (object) [], $s), 'give')) === 'held' &&
+            $state(status(200, adminCall('DELETE', $distinction, (object) [], $s), 'remove')) ===
+                'removed',
+        'an admin gives and removes a player distinction',
+    );
+    status(405, adminCall('PATCH', $distinction, (object) [], $s), 'distinction method');
+    status(
+        404,
+        adminCall(
+            'POST',
+            'players/' . $player['id'] . '/distinctions/player-nope',
+            (object) [],
+            $s,
+        ),
+        'unknown distinction',
+    );
+    status(401, adminCall('POST', $distinction, (object) [], []), 'distinctions need an admin');
     status(
         422,
         adminCall('DELETE', 'players/' . $player['id'], ['confirmation' => 'nope'], $s),

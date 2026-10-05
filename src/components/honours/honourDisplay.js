@@ -308,6 +308,11 @@ export const distinctionName = (badge) =>
   badge.tenure
     ? t('{name} · {time}', { name: t(badge.name), time: tenureLabel(badge.tenure) })
     : t(badge.name);
+// The popup line: "2 years since your first sign-in", or the event's own message.
+export const distinctionPopup = (badge) =>
+  badge.tenure
+    ? t('{time} since your first sign-in', { time: tenureLabel(badge.tenure) })
+    : t(badge.popup ?? badge.description);
 function distinctionSlot(id, received) {
   const definition = Object.hasOwn(received, id) && distinctionBadge(id, received[id]);
   return definition

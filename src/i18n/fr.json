@@ -2927,5 +2927,8 @@
   "Your first player distinction arrives one week after your first sign-in.": "Votre première distinction de joueur arrive une semaine après votre première connexion.",
   "Sign in to receive player distinctions. They mark special moments of the game and your time in Prospect Hollow.": "Connectez-vous pour recevoir des distinctions de joueur. Elles marquent les moments spéciaux du jeu et votre temps à Prospect Hollow.",
   "Show this one instead": "Montrer celle-ci à la place",
-  "Player distinctions mark special moments of the game and your time in Prospect Hollow.": "Les distinctions de joueur marquent les moments spéciaux du jeu et votre temps à Prospect Hollow."
+  "Player distinctions mark special moments of the game and your time in Prospect Hollow.": "Les distinctions de joueur marquent les moments spéciaux du jeu et votre temps à Prospect Hollow.",
+  "You played during the alpha. Thank you!": "Vous avez joué pendant l’alpha. Merci !",
+  "{time} since your first sign-in": "{time} depuis votre première connexion",
+  "{count} player distinctions": "{count} distinctions de joueur"
 }

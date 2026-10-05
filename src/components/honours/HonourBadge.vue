@@ -161,21 +161,34 @@
         {{ art.letter }}
       </text>
       <g v-else-if="art.glyph === 'hourglass'" :fill="palette.ink" :stroke="palette.ink">
+        <!-- The time step reads first: a large count and its unit in capitals. -->
         <template v-if="tenure">
-          <path d="M43 19.5h14M43 36.5h14" stroke-width="2" stroke-linecap="round" />
-          <path d="M44.5 20.5h11L50 28ZM44.5 35.5h11L50 28Z" fill="#e3b958" stroke-width="1" />
+          <path d="M45.5 17h9M45.5 27h9" stroke-width="1.6" stroke-linecap="round" />
+          <path d="M46.7 17.7h6.6L50 22ZM46.7 26.3h6.6L50 22Z" fill="#e3b958" stroke-width=".7" />
           <text
             x="50"
-            y="60"
+            y="55"
             text-anchor="middle"
             font-family="Georgia, serif"
-            font-size="22"
+            font-weight="700"
+            font-size="31"
             stroke="none"
           >
             {{ number(tenure.count) }}
           </text>
-          <text x="50" y="71" text-anchor="middle" font-size="8.5" stroke="none">
-            {{ tenureUnit(tenure) }}
+          <text
+            x="50"
+            y="71"
+            text-anchor="middle"
+            font-family="'Segoe UI', sans-serif"
+            font-weight="700"
+            font-size="13.5"
+            letter-spacing=".3"
+            stroke="none"
+            :textLength="unit.length > 5 ? 44 : undefined"
+            lengthAdjust="spacingAndGlyphs"
+          >
+            {{ unit }}
           </text>
         </template>
         <template v-else>
@@ -195,7 +208,7 @@
 </template>
 <script setup>
 import { computed, useId } from 'vue';
-import { number } from '../../i18n';
+import { locale, number } from '../../i18n';
 import { outline, tenureUnit } from './honourDisplay';
 
 // One badge frame system for the collection, showcase, museum and popup. The frame is
@@ -292,6 +305,9 @@ const PALETTES = {
 const art = computed(() => props.definition.art ?? {});
 const player = computed(() => props.definition.player === true);
 const tenure = computed(() => (player.value ? props.definition.tenure : null));
+const unit = computed(() =>
+  tenure.value ? tenureUnit(tenure.value).toLocaleUpperCase(locale.value) : '',
+);
 // A metal added before its frame is drawn shows the bronze round frame.
 const frame = computed(() =>
   PALETTES[props.definition.metal] ? props.definition.metal : 'bronze',

@@ -24,6 +24,7 @@ export const PLAYER_DISTINCTIONS = Object.freeze([
     kind: 'event',
     name: 'Alpha Player',
     description: 'Played Prospect Hollow during its alpha, before the beta began.',
+    popup: 'You played during the alpha. Thank you!',
     art: { letter: 'α' },
     palette: 'amethyst',
   },
@@ -33,6 +34,7 @@ export const PLAYER_DISTINCTIONS = Object.freeze([
     name: 'Loyal Prospector',
     description:
       'Time since your first sign-in. It grows every week, then every month after the first month, then every year after the first year.',
+    // The popup reads "{time} since your first sign-in" (honourDisplay.js).
     art: { glyph: 'hourglass' },
     palette: 'midnight',
   },

@@ -2,6 +2,9 @@
   <ul v-if="compact" class="honour-slots-compact" :aria-label="t('Showcased honours')">
     <li v-for="slot in filled" :key="slot.familyId" :title="slot.name">
       <HonourBadge :definition="slot.definition" :size="size" />
+      <small v-if="slot.definition.tenure" class="honour-slot-time" aria-hidden="true">{{
+        slot.track.text
+      }}</small>
       <span class="town-sr-only">{{ slot.name }}</span>
     </li>
   </ul>
@@ -32,7 +35,8 @@ import HonourBadge from './HonourBadge.vue';
 import { showcaseSlots } from './honourDisplay';
 // The three showcase slots: full in the collection and town management, compact
 // beside a shared town's name. Each slot shows its family's highest earned rank and
-// metal, or the owner's player distinction (`received`, by ID).
+// metal, or the owner's player distinction (`received`, by ID). A small time badge also
+// names its step beside it: "2 years".
 const props = defineProps({
   ids: { type: Array, default: () => [] },
   earned: { type: Object, default: () => ({}) },
@@ -131,6 +135,14 @@ const filled = computed(() => slots.value.filter(Boolean));
 }
 .honour-slots-compact li {
   display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.honour-slot-time {
+  font-size: 12px;
+  font-weight: 700;
+  color: #4d3384;
+  white-space: nowrap;
 }
 @media (max-width: 600px) {
   .honour-slots > li {

@@ -88,7 +88,18 @@ export async function request(
     throw error;
   }
   if (data.csrf) cloud.csrf = data.csrf;
+  if (!authentication) rememberDistinctions(data.distinctions);
   return data;
+}
+// Account, town save and load replies and the owner's guestbook poll carry the player's
+// distinctions as the server decides them now (a new time step, an admin grant or
+// removal). They are kept with the account record for offline play.
+export function rememberDistinctions(distinctions) {
+  if (!cloud.account || !distinctions || typeof distinctions !== 'object') return;
+  if (Array.isArray(distinctions)) return;
+  if (JSON.stringify(cloud.account.distinctions ?? null) === JSON.stringify(distinctions)) return;
+  cloud.account = { ...cloud.account, distinctions };
+  townStorage.account(cloud.account);
 }
 export function configureSync(options) {
   const stored = townStorage.auth().account;

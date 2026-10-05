@@ -128,6 +128,35 @@ describe('What a player received', () => {
     expect(receivedDistinctions(null)).toEqual({});
   });
 
+  it('takes the latest distinctions from any owner reply, keeping them offline', async () => {
+    const { cloud, rememberDistinctions } = await import('../src/services/cloudProfile');
+    const { townStorage } = await import('../src/services/townStorage');
+    const saved = new Map();
+    vi.stubGlobal('localStorage', {
+      getItem: (key) => saved.get(key) ?? null,
+      setItem: (key, value) => saved.set(key, value),
+      removeItem: (key) => saved.delete(key),
+    });
+    const written = vi.spyOn(townStorage, 'account').mockImplementation(() => {});
+    cloud.account = { id: 'p1', email: 'p@example.test', distinctions: {} };
+    rememberDistinctions({ 'player-time': ONE_YEAR });
+    expect(cloud.account.distinctions).toEqual({ 'player-time': ONE_YEAR });
+    expect(written).toHaveBeenCalledTimes(1);
+    // The same reply again, or a reply without distinctions, writes nothing.
+    rememberDistinctions({ 'player-time': ONE_YEAR });
+    rememberDistinctions(undefined);
+    rememberDistinctions([]);
+    expect(written).toHaveBeenCalledTimes(1);
+    // An admin removal arrives the same way.
+    rememberDistinctions({});
+    expect(receivedDistinctions(cloud.account)).toEqual({});
+    cloud.account = null;
+    rememberDistinctions({ 'player-alpha': { at: 1 } });
+    expect(cloud.account).toBeNull();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
   it('marks a new time step as new while the same step stays seen', () => {
     const week = { tenure: { unit: 'week', count: 1 } };
     expect(distinctionKey('player-time', week)).toBe('player-time@week-1');
@@ -240,8 +269,29 @@ describe('Player distinction badges and the Player tab', () => {
     const time = await render(HonourBadge, {
       definition: distinctionBadge('player-time', received['player-time']),
     });
-    expect(time).toMatch(/>\s*1\s*<\/text>/);
-    expect(time).toMatch(/>\s*year\s*<\/text>/);
+    // The time step reads at a glance: a large count and its unit in capitals.
+    expect(time).toMatch(/font-size="31"[^>]*>\s*1\s*<\/text>/);
+    expect(time).toMatch(/>\s*YEAR\s*<\/text>/);
+    const months = await render(HonourBadge, {
+      definition: distinctionBadge('player-time', { tenure: { unit: 'month', count: 11 } }),
+    });
+    expect(months).toMatch(/>\s*11\s*<\/text>/);
+    expect(months).toMatch(/textLength="44"[^>]*>\s*MONTHS\s*<\/text>/);
+    // Drawn small beside a town name or on a card, the step is also written out.
+    const compact = await render(HonourShowcaseSlots, {
+      ids: ['player-time'],
+      received: { 'player-time': { at: 1, tenure: { unit: 'week', count: 3 } } },
+      compact: true,
+    });
+    expect(compact).toContain('class="honour-slot-time" aria-hidden="true">3 weeks</small>');
+    const row = await render(HonourCardRow, {
+      honours: {
+        earned: [],
+        showcase: ['player-time'],
+        distinction: { id: 'player-time', at: 1, tenure: { unit: 'month', count: 2 } },
+      },
+    });
+    expect(row).toContain('2 months</small>');
   });
 
   it('lists only received distinctions, with dates and the next time step', async () => {

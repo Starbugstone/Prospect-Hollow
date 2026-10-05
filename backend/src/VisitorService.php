@@ -463,6 +463,8 @@ final class VisitorService
                 $social = Honours::social($db, 'id', $town);
                 $result['uniqueVisitors'] = $social('visitors');
                 $result['townsVisited'] = $social('travels');
+                // Polled while the owner is in their village: their player distinctions.
+                $result['distinctions'] = PlayerDistinctions::owned($db, $owner);
                 $result['saloonCollectedAt'] =
                     (int) $db->fetchOne(
                         'SELECT collected_at FROM saloon_collections WHERE town_id=?',

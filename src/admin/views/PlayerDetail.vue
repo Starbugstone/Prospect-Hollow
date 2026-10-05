@@ -37,13 +37,6 @@
           <dd>{{ player.activeDays }}</dd>
         </div>
         <div>
-          <dt>Player distinctions</dt>
-          <dd>
-            <template v-if="distinctions.length">{{ distinctions.join(' · ') }}</template>
-            <template v-else>—</template>
-          </dd>
-        </div>
-        <div>
           <dt>Last device</dt>
           <dd>
             {{
@@ -69,6 +62,52 @@
       <p v-if="!player.lastSeenAt" class="admin-muted">
         Connections are recorded from the admin release onward; this player has not connected since.
       </p>
+
+      <h2>Player distinctions</h2>
+      <p class="admin-muted">
+        Badges held by the account, shown in the game and in one showcase slot per town. Removing
+        one (for a cheater) hides it everywhere, and later grants to every player skip this player
+        until you give it back.
+      </p>
+      <table class="admin-table admin-distinctions">
+        <thead>
+          <tr>
+            <th scope="col">Distinction</th>
+            <th scope="col">State</th>
+            <th scope="col"><span class="visually-hidden">Action</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in distinctions" :key="item.id" :data-distinction="item.id">
+            <td>
+              <strong>{{ item.name }}</strong>
+              <small class="admin-muted"> · {{ item.kindLabel }}</small>
+            </td>
+            <td>{{ item.stateText }}</td>
+            <td>
+              <ConfirmAction
+                v-if="item.state === 'held'"
+                danger
+                label="Remove"
+                :title="`Remove ${item.name} from this player?`"
+                message="It leaves their account and every showcase straight away. You can give it back later."
+                :run="() => setDistinction(item, false)"
+              />
+              <ConfirmAction
+                v-else-if="item.kind === 'event' || item.state === 'removed'"
+                :label="item.state === 'removed' ? 'Give back' : 'Give'"
+                :title="`Give ${item.name} to this player?`"
+                :message="
+                  item.kind === 'event'
+                    ? 'They receive it now and see it the next time their game checks in.'
+                    : 'It follows their time since the first sign-in again.'
+                "
+                :run="() => setDistinction(item, true)"
+              />
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
       <h2>Towns</h2>
       <table class="admin-table">
@@ -158,13 +197,35 @@ const data = ref(null),
   error = ref(''),
   notice = ref('');
 const player = computed(() => data.value.player);
-// "Alpha Player", "Loyal Prospector · 3 months": what this player holds now.
+// Every catalog distinction for this player: held (with the time step), removed or not yet.
 const distinctions = computed(() =>
-  (player.value.distinctions ?? [])
-    .map((entry) => distinctionBadge(entry.id, entry))
-    .filter(Boolean)
-    .map(distinctionName),
+  (player.value.distinctions ?? []).map((item) => {
+    const badge = distinctionBadge(item.id, item);
+    return {
+      ...item,
+      name: badge ? distinctionName(badge) : item.id,
+      kindLabel: item.kind === 'tenure' ? 'time since first sign-in' : 'event',
+      stateText:
+        item.state === 'held'
+          ? item.kind === 'tenure'
+            ? `Held · step reached ${dateTime(item.at)}`
+            : `Held since ${dateTime(item.at)}`
+          : item.state === 'removed'
+            ? `Removed ${dateTime(item.removedAt)}`
+            : item.kind === 'tenure'
+              ? 'Not yet: one week after the first sign-in'
+              : 'Not held',
+    };
+  }),
 );
+async function setDistinction(item, held) {
+  const result = await adminApi(
+    held ? 'POST' : 'DELETE',
+    `players/${props.id}/distinctions/${item.id}`,
+  );
+  data.value.player.distinctions = result.distinctions;
+  notice.value = held ? 'Distinction given.' : 'Distinction removed.';
+}
 async function load() {
   try {
     data.value = await adminApi('GET', `players/${props.id}`);

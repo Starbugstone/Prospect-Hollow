@@ -97,6 +97,8 @@ const ACTIONS = {
   admin_deleted: 'Removed admin',
   player_signed_out: 'Signed player out',
   player_deleted: 'Deleted player account',
+  distinction_granted: 'Gave player distinction',
+  distinction_removed: 'Removed player distinction',
   town_renamed: 'Renamed town',
   town_unshared: 'Stopped sharing town',
   town_deleted: 'Deleted town',

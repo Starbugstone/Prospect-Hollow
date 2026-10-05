@@ -16,6 +16,8 @@ final class Database
         15 => '/schema-town-favourites',
         // Grants Alpha Player to every account that exists when this release is deployed.
         16 => '/schema-player-distinctions',
+        // Distinctions an admin removed (a cheater), kept apart so a mass grant skips them.
+        17 => '/schema-distinction-revocations',
     ];
     private ?Connection $connection = null;
     public static function latestVersion(): int

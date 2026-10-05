@@ -54,6 +54,7 @@ check(
 );
 
 $distinctions = PlayerDistinctions::load();
+$adminActor = 'distinctions-test-' . bin2hex(random_bytes(4));
 $name = fn(string $prefix): string => $prefix . ' ' . bin2hex(random_bytes(3));
 // Shares a town whose saved showcase lists $showcase, as an older or edited save might.
 $share = function (array $owner, string $town, array $showcase): string {
@@ -194,13 +195,120 @@ try {
         'a directory card shows the owner’s distinction',
     );
 
-    // ---------- Admin ----------
+    // ---------- Admin: give and remove, for example from a cheater ----------
     $admin = new AdminService($db, new AdminAuth($db, $auth), $saves, $public);
+    $state = fn(string $player, string $id): array => array_values(
+        array_filter(
+            $admin->player($player)['player']['distinctions'],
+            fn($item) => $item['id'] === $id,
+        ),
+    )[0];
     check(
-        array_column($admin->player($other['id'])['player']['distinctions'], 'id') === [
-            'player-alpha',
-        ] && $admin->player($other['id'])['player']['distinctions'][0]['at'] === 1700000000,
-        'the admin player view lists distinctions in seconds',
+        $state($other['id'], 'player-alpha')['state'] === 'held' &&
+            $state($other['id'], 'player-alpha')['at'] === 1700000000 &&
+            $state($other['id'], 'player-time')['state'] === 'none',
+        'the admin player view lists every distinction with its state, dated in seconds',
+    );
+    $removed = $admin->setDistinction($adminActor, $other['id'], 'player-alpha', false);
+    check(
+        $removed['changed'] &&
+            !$admin->setDistinction($adminActor, $other['id'], 'player-alpha', false)['changed'] &&
+            $state($other['id'], 'player-alpha')['state'] === 'removed',
+        'an admin removes a distinction once',
+    );
+    $honours = $visit($gulchPublic);
+    check(
+        $honours['showcase'] === [] &&
+            !array_key_exists('distinction', $honours) &&
+            !isset(
+                status(200, callApi('GET', 'account', null, $other), 'account')['account'][
+                    'distinctions'
+                ]['player-alpha'],
+            ),
+        'a removed distinction leaves the account and the showcase',
+    );
+    check(
+        $distinctions->award($db->get(), 'player-alpha', $other['id']) === 0 &&
+            $distinctions->award($db->get(), 'player-alpha') >= 0 &&
+            $state($other['id'], 'player-alpha')['state'] === 'removed',
+        'later grants to everyone skip a player an admin removed it from',
+    );
+    check(
+        $admin->setDistinction($adminActor, $other['id'], 'player-alpha', true)['changed'] &&
+            $state($other['id'], 'player-alpha')['state'] === 'held' &&
+            $visit($gulchPublic)['showcase'] === ['player-alpha'],
+        'an admin gives it back',
+    );
+    // The time distinction is computed, yet an admin can withhold and restore it too.
+    $db->get()->update('players', ['created_at' => time() - 20 * 86400], ['id' => $other['id']]);
+    $admin->setDistinction($adminActor, $other['id'], 'player-time', false);
+    check(
+        $state($other['id'], 'player-time')['state'] === 'removed' &&
+            !isset(
+                $distinctions->received($db->get(), [$other['id']], time() * 1000)[$other['id']][
+                    'player-time'
+                ],
+            ),
+        'an admin withholds the time distinction',
+    );
+    $admin->setDistinction($adminActor, $other['id'], 'player-time', true);
+    check(
+        $state($other['id'], 'player-time')['state'] === 'held' &&
+            $state($other['id'], 'player-time')['tenure']['count'] === 2,
+        'and restores it at the current step',
+    );
+    foreach (['player-unknown', 'stars'] as $unknown) {
+        try {
+            $admin->setDistinction($adminActor, $other['id'], $unknown, true);
+            check(false, "$unknown is not a player distinction");
+        } catch (App\ApiError $e) {
+            check($e->status === 404, "$unknown is not a player distinction");
+        }
+    }
+    check(
+        (int) $db
+            ->get()
+            ->fetchOne('SELECT COUNT(*) FROM admin_audit WHERE admin=? AND target=?', [
+                $adminActor,
+                $other['id'],
+            ]) === 4,
+        'each change is in the audit log',
+    );
+
+    // ---------- Fresh in the game without a new session ----------
+    $gulchTown = $db->get()->fetchOne('SELECT id FROM towns WHERE public_id=?', [$gulchPublic]);
+    $loaded = status(200, callApi('GET', 'towns/' . $gulchTown, null, $other), 'load town');
+    $polled = status(
+        200,
+        callApi('GET', 'towns/' . $gulchTown . '/visitors', null, $other),
+        'guestbook poll',
+    );
+    $saved = status(
+        200,
+        callApi(
+            'PUT',
+            'towns/' . $gulchTown,
+            [
+                'baseRevision' => $loaded['revision'],
+                'uploadId' => uuid(),
+                'profile' => townBody($gulch)['profile'],
+            ],
+            $other,
+        ),
+        'save town',
+    );
+    check(
+        array_keys($loaded['distinctions']) === array_keys($polled['distinctions']) &&
+            array_keys($saved['distinctions']) === array_keys($polled['distinctions']) &&
+            isset($saved['distinctions']['player-alpha'], $saved['distinctions']['player-time']),
+        'town loads, saves and the owner guestbook poll carry the player distinctions',
+    );
+    check(
+        !array_key_exists(
+            'distinctions',
+            status(200, callApi('GET', 'villages/' . $gulchPublic . '/visitors'), 'public'),
+        ),
+        'the public guestbook never carries them',
     );
 
     // ---------- Deletion ----------
@@ -215,5 +323,6 @@ try {
     );
     echo "Player distinction checks passed ($count assertions).\n";
 } finally {
+    $db->get()->delete('admin_audit', ['admin' => $adminActor]);
     cleanup();
 }

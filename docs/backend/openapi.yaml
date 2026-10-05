@@ -1283,6 +1283,11 @@
                       'type': 'integer',
                       'description': 'Owner endpoint only. Last visitor collection in Unix milliseconds, or zero.',
                     },
+                  'distinctions':
+                    {
+                      'type': 'object',
+                      'description': "Owner endpoint only. The owner's player distinctions now, as in GET /account; this poll keeps them fresh in the village.",
+                    },
                   'uniqueVisitors':
                     {
                       'type': 'integer',
@@ -1546,6 +1551,11 @@
                   'updatedAt': { 'type': 'integer', 'description': 'Unix seconds' },
                   'isPublic': { 'type': 'boolean' },
                   'publicId': { 'type': 'string', 'pattern': '^[a-f0-9]{32}$' },
+                  'distinctions':
+                    {
+                      'type': 'object',
+                      'description': "Owner load and save replies: the caller's player distinctions now, as in GET /account (PlayerDistinction without id, by ID), so a new time step or an admin change reaches the game without a new session.",
+                    },
                   'profile': { '$ref': '#/components/schemas/Profile' },
                   'integrity': { '$ref': '#/components/schemas/IntegrityReceipt' },
                 },

@@ -10,11 +10,14 @@ use Doctrine\DBAL\Connection;
  * player's account rather than a town. The server alone decides who holds them; the game
  * only shows what it receives. Event distinctions are rows of player_distinctions,
  * granted to the players present at a key moment: Alpha Player by the version 16
- * migration, later ones with `php bin/admin.php award-distinction`. The time distinction
- * is computed here from players.created_at (the first sign-in) and the server clock with
- * the STEPS ladder, so it climbs on its own. A town shows at most one distinction in its
- * showcase, and visitors receive it only while its owner holds it. The catalog is
- * exported to public-schema.json.
+ * migration, later ones with `php bin/admin.php award-distinction` or from the admin
+ * player page. The time distinction is computed here from players.created_at (the first
+ * sign-in) and the server clock with the STEPS ladder, so it climbs on its own. An admin
+ * can remove any distinction from a player (a cheater): a row in
+ * player_distinction_revocations hides it everywhere, and mass grants skip that player
+ * until an admin grants it again. A town shows at most one distinction in its showcase,
+ * and visitors receive it only while its owner holds it. The catalog is exported to
+ * public-schema.json.
  */
 final class PlayerDistinctions
 {
@@ -78,6 +81,17 @@ final class PlayerDistinctions
             return [];
         }
         $received = array_fill_keys($players, []);
+        $revoked = [];
+        foreach (
+            $db->fetchAllAssociative(
+                'SELECT player_id,distinction_id FROM player_distinction_revocations WHERE player_id IN (?)',
+                [$players],
+                [ArrayParameterType::STRING],
+            )
+            as $row
+        ) {
+            $revoked[$row['player_id']][$row['distinction_id']] = true;
+        }
         foreach (
             $db->fetchAllAssociative(
                 'SELECT player_id,distinction_id,awarded_at FROM player_distinctions WHERE player_id IN (?)',
@@ -86,7 +100,10 @@ final class PlayerDistinctions
             )
             as $row
         ) {
-            if ($this->kind($row['distinction_id']) === 'event') {
+            if (
+                $this->kind($row['distinction_id']) === 'event' &&
+                !isset($revoked[$row['player_id']][$row['distinction_id']])
+            ) {
                 $received[$row['player_id']][$row['distinction_id']] = [
                     'at' => (int) $row['awarded_at'] * 1000,
                 ];
@@ -109,6 +126,9 @@ final class PlayerDistinctions
             ) {
                 $step = self::tenure((int) $row['created_at'] * 1000, $now);
                 foreach ($step === null ? [] : $timed as $id) {
+                    if (isset($revoked[$row['id']][$id])) {
+                        continue;
+                    }
                     $received[$row['id']][$id] = [
                         'at' => $step['at'],
                         'tenure' => [
@@ -121,6 +141,18 @@ final class PlayerDistinctions
             }
         }
         return $received;
+    }
+
+    /**
+     * One player's distinctions as their own game receives them: GET /account, every town
+     * save and load, and the owner's guestbook poll, so a new time step or an admin change
+     * reaches the game without a new session.
+     */
+    public static function owned(Connection $db, string $player): \stdClass
+    {
+        return (object) (self::load()->received($db, [$player], (int) (microtime(true) * 1000))[
+            $player
+        ] ?? []);
     }
 
     /**
@@ -163,7 +195,8 @@ final class PlayerDistinctions
 
     /**
      * Grants an event distinction to every current player, or to one, who lacks it. Returns
-     * how many players received it now; a player who already holds it keeps the first date.
+     * how many players received it now; a player who already holds it keeps the first date,
+     * and a player an admin removed it from is skipped (grant() gives it back).
      */
     public function award(Connection $db, string $id, ?string $player = null, ?int $at = null): int
     {
@@ -171,10 +204,89 @@ final class PlayerDistinctions
             throw new \InvalidArgumentException("$id is not an event distinction.");
         }
         return $db->executeStatement(
-            'INSERT INTO player_distinctions(player_id,distinction_id,awarded_at) SELECT p.id,?,? FROM players p WHERE NOT EXISTS (SELECT 1 FROM player_distinctions d WHERE d.player_id=p.id AND d.distinction_id=?)' .
+            'INSERT INTO player_distinctions(player_id,distinction_id,awarded_at) SELECT p.id,?,? FROM players p WHERE NOT EXISTS (SELECT 1 FROM player_distinctions d WHERE d.player_id=p.id AND d.distinction_id=?) AND NOT EXISTS (SELECT 1 FROM player_distinction_revocations r WHERE r.player_id=p.id AND r.distinction_id=?)' .
                 ($player === null ? '' : ' AND p.id=?'),
-            [$id, $at ?? time(), $id, ...$player === null ? [] : [$player]],
+            [$id, $at ?? time(), $id, $id, ...$player === null ? [] : [$player]],
         );
+    }
+
+    /**
+     * An admin gives one player a distinction: an event is granted now (or keeps its first
+     * date), and a removed distinction, the time distinction included, is restored. False
+     * when the player already held it.
+     */
+    public function grant(Connection $db, string $id, string $player): bool
+    {
+        if ($this->kind($id) === null) {
+            throw new \InvalidArgumentException("$id is not a player distinction.");
+        }
+        $restored =
+            $db->delete('player_distinction_revocations', [
+                'player_id' => $player,
+                'distinction_id' => $id,
+            ]) > 0;
+        return ($this->kind($id) === 'event' && $this->award($db, $id, $player) > 0) || $restored;
+    }
+
+    /**
+     * An admin removes a distinction from one player, for example a cheater: it disappears
+     * from their account and every showcase, and mass grants skip them. False when it was
+     * already removed.
+     */
+    public function revoke(Connection $db, string $id, string $player): bool
+    {
+        if ($this->kind($id) === null) {
+            throw new \InvalidArgumentException("$id is not a player distinction.");
+        }
+        $db->delete('player_distinctions', ['player_id' => $player, 'distinction_id' => $id]);
+        if (
+            $db->fetchOne(
+                'SELECT 1 FROM player_distinction_revocations WHERE player_id=? AND distinction_id=?',
+                [$player, $id],
+            )
+        ) {
+            return false;
+        }
+        $db->insert('player_distinction_revocations', [
+            'player_id' => $player,
+            'distinction_id' => $id,
+            'revoked_at' => time(),
+        ]);
+        return true;
+    }
+
+    /**
+     * The admin view of one player: every catalog distinction with its state, `held` (with
+     * `at` in seconds and the time step), `removed` (with `removedAt`) or `none`.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function states(Connection $db, string $player, int $now): array
+    {
+        $held = $this->received($db, [$player], $now)[$player] ?? [];
+        $removed = array_column(
+            $db->fetchAllAssociative(
+                'SELECT distinction_id,revoked_at FROM player_distinction_revocations WHERE player_id=?',
+                [$player],
+            ),
+            'revoked_at',
+            'distinction_id',
+        );
+        $states = [];
+        foreach ($this->catalog as $id => $definition) {
+            $state = ['id' => (string) $id, 'kind' => $definition['kind'] ?? null];
+            if (isset($held[$id])) {
+                $states[] =
+                    ['at' => intdiv($held[$id]['at'], 1000), 'state' => 'held'] +
+                    $state +
+                    $held[$id];
+            } elseif (isset($removed[$id])) {
+                $states[] = $state + ['state' => 'removed', 'removedAt' => (int) $removed[$id]];
+            } else {
+                $states[] = $state + ['state' => 'none'];
+            }
+        }
+        return $states;
     }
 
     /**

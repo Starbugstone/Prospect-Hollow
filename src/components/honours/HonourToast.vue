@@ -38,7 +38,7 @@
             <span class="town-sr-only">{{ copy.promotion.spoken }}</span>
           </span>
           <div class="honour-toast-foot">
-            <span v-if="!summary" class="honour-toast-difficulty">
+            <span v-if="!summary && !notice.player" class="honour-toast-difficulty">
               <HonourMetalIcon :metal="first.metal" />
               {{ difficultyLabel(first) }}
             </span>
@@ -68,7 +68,13 @@ import { useSettingsStore } from '../../stores/settingsStore';
 import { NOTICE_MS, useHonourAnnouncements } from '../../composables/useHonourAnnouncements';
 import HonourBadge from './HonourBadge.vue';
 import HonourMetalIcon from './HonourMetalIcon.vue';
-import { difficultyLabel, metalLabel, popupText, rankName } from './honourDisplay';
+import {
+  difficultyLabel,
+  distinctionPopup,
+  metalLabel,
+  popupText,
+  rankName,
+} from './honourDisplay';
 
 // The achievement popup: bottom right above the village tab bar, a compact card across
 // narrow screens. Non-modal; it never takes focus and pauses while hovered or focused.
@@ -92,6 +98,19 @@ const copy = computed(() => {
   const shown = notice.value;
   if (!shown) return {};
   const count = shown.entries.length;
+  // A player distinction from the server: Alpha Player, or a new time step.
+  if (shown.player)
+    return count === 1
+      ? {
+          kicker: t('Player distinction'),
+          title: rankName(first.value),
+          line: distinctionPopup(first.value),
+        }
+      : {
+          kicker: t('{count} player distinctions', { count }),
+          title: names(shown.entries),
+          line: t('Added to your collection'),
+        };
   if (count === 1) {
     // A family moving up names both metals: "Bronze → Silver".
     const from = !shown.backfilled && shown.entries[0].from;

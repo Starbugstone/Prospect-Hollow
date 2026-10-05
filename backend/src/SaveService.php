@@ -137,6 +137,12 @@ final class SaveService
         }
         return $result;
     }
+    // A town reply to its owner also carries their player distinctions as the server decides
+    // them now, so a new time step or an admin change reaches the game without a new session.
+    private function ownerView(Connection $db, array $row, string $player): array
+    {
+        return $this->view($row) + ['distinctions' => PlayerDistinctions::owned($db, $player)];
+    }
     private function transaction(Request $r, bool $write, callable $operation): mixed
     {
         $session = $this->auth->session($r, $write);
@@ -168,12 +174,7 @@ final class SaveService
                 'account' => [
                     'id' => $account['id'],
                     'email' => $account['email'],
-                    'distinctions' =>
-                        (object) (PlayerDistinctions::load()->received(
-                            $db,
-                            [$account['id']],
-                            (int) (microtime(true) * 1000),
-                        )[$account['id']] ?? []),
+                    'distinctions' => PlayerDistinctions::owned($db, $account['id']),
                 ],
                 'csrf' => $session['csrf'],
                 'towns' => array_map(fn($row) => $this->view($row, false), $towns),
@@ -198,7 +199,7 @@ final class SaveService
         return $this->transaction(
             $r,
             false,
-            fn($db, $a) => $this->view($this->owned($db, $a['id'], $id)),
+            fn($db, $a) => $this->ownerView($db, $this->owned($db, $a['id'], $id), $a['id']),
         );
     }
     public function nameAvailable(Connection $db, string $owner, string $id, string $name): array
@@ -249,7 +250,7 @@ final class SaveService
                     $existing['upload_id'] === $body['uploadId'] &&
                     hash_equals($existing['upload_hash'], $hash)
                 ) {
-                    return $this->view($existing);
+                    return $this->ownerView($db, $existing, $a['id']);
                 }
                 throw new ApiError(
                     409,
@@ -309,7 +310,7 @@ final class SaveService
                     'code' => 'town_exists',
                 ]);
             }
-            return $this->view($row);
+            return $this->ownerView($db, $row, $a['id']);
         });
     }
     public static function archive(Connection $db, array $row): void
@@ -342,7 +343,7 @@ final class SaveService
                 if (!hash_equals($row['upload_hash'], $hash)) {
                     throw new ApiError(409, 'That upload ID belongs to a different save.');
                 }
-                return $this->view($row);
+                return $this->ownerView($db, $row, $a['id']);
             }
             if ((int) $row['revision'] !== $body['baseRevision']) {
                 throw new ApiError(
@@ -398,7 +399,7 @@ final class SaveService
                 );
             }
             $db->update('towns', $changes, ['id' => $id, 'player_id' => $a['id']]);
-            return $this->view(array_merge($row, $changes));
+            return $this->ownerView($db, array_merge($row, $changes), $a['id']);
         });
     }
     // The owner's game saved this guest as a VIP, so delete it. Only that exact visit is
@@ -453,7 +454,7 @@ final class SaveService
                     : null,
             ];
             $db->update('towns', $changes, ['id' => $id, 'player_id' => $a['id']]);
-            return $this->view(array_merge($row, $changes));
+            return $this->ownerView($db, array_merge($row, $changes), $a['id']);
         });
     }
     public function history(Request $r, string $id): array

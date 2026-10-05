@@ -281,14 +281,6 @@ final class AdminService
         $row = $this->playerRow($id);
         $db = $this->database->get();
         $now = time();
-        // Player distinctions held now, the time step included, dated in seconds.
-        $distinctions = [];
-        foreach (
-            PlayerDistinctions::load()->received($db, [$id], $now * 1000)[$id] ?? []
-            as $distinction => $entry
-        ) {
-            $distinctions[] = ['id' => $distinction, 'at' => intdiv($entry['at'], 1000)] + $entry;
-        }
         return [
             'player' =>
                 [
@@ -299,7 +291,8 @@ final class AdminService
                         'SELECT COUNT(*) FROM activity_days WHERE player_id=? AND day>?',
                         [$id, intdiv($now, 86400) - 30],
                     ),
-                    'distinctions' => $distinctions,
+                    // Every player distinction: held (with the time step), removed or not.
+                    'distinctions' => PlayerDistinctions::load()->states($db, $id, $now * 1000),
                 ] + self::activity($row),
             'sessions' => array_map(
                 fn($s) => [
@@ -319,6 +312,41 @@ final class AdminService
                 ),
             ),
         ];
+    }
+    // Gives a player distinction (an event now, or one removed earlier) or removes one, for
+    // example from a cheater. Removal hides it on the account and every showcase.
+    public function setDistinction(
+        string $actor,
+        string $id,
+        string $distinction,
+        bool $held,
+    ): array {
+        return $this->database
+            ->get()
+            ->transactional(function ($db) use ($actor, $id, $distinction, $held) {
+                if (!$db->fetchOne('SELECT id FROM players WHERE id=? FOR UPDATE', [$id])) {
+                    throw new ApiError(404, 'No player has that ID.');
+                }
+                $distinctions = PlayerDistinctions::load();
+                if ($distinctions->kind($distinction) === null) {
+                    throw new ApiError(404, 'No player distinction has that ID.');
+                }
+                $changed = $held
+                    ? $distinctions->grant($db, $distinction, $id)
+                    : $distinctions->revoke($db, $distinction, $id);
+                if ($changed) {
+                    $this->admins->audit(
+                        $actor,
+                        $held ? 'distinction_granted' : 'distinction_removed',
+                        $id,
+                        $distinction,
+                    );
+                }
+                return [
+                    'changed' => $changed,
+                    'distinctions' => $distinctions->states($db, $id, time() * 1000),
+                ];
+            });
     }
     // Ends every device session and unused sign-in link; the player's saves are untouched.
     public function signOutPlayer(string $actor, string $id): array

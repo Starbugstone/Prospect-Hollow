@@ -125,6 +125,25 @@ final class AdminController
             SaveService::keys($body, ['username']);
             return $this->admin->create($actor, $body['username'] ?? null);
         }
+        if (
+            preg_match(
+                '~^players/([a-f0-9]{32})/distinctions/(player-[a-z0-9-]{1,40})$~D',
+                $path,
+                $m,
+            )
+        ) {
+            return match ($method) {
+                'POST' => $this->empty(
+                    $body,
+                    fn() => $this->service->setDistinction($actor, $m[1], $m[2], true),
+                ),
+                'DELETE' => $this->empty(
+                    $body,
+                    fn() => $this->service->setDistinction($actor, $m[1], $m[2], false),
+                ),
+                default => throw new ApiError(405, 'Method is not allowed.'),
+            };
+        }
         if (preg_match('~^players/([a-f0-9]{32})(?:/(sign-out))?$~D', $path, $m)) {
             return match ($method . ' ' . ($m[2] ?? '')) {
                 'GET ' => $this->service->player($m[1]),

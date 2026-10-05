@@ -1,11 +1,13 @@
 import { computed, onScopeDispose, reactive, ref, toValue, watch } from 'vue';
 import { HONOURS, RANK_METALS, normalizeHonours, pendingAnnouncements } from '../data/honours';
+import { distinctionBadge, distinctionKey } from '../data/playerDistinctions';
 import { BANDIT_EVENT } from '../data/town';
 import { pendingPresentation } from '../data/townPresentations';
 import { useCampaignStore } from '../stores/campaignStore';
 import { useGameStore } from '../stores/gameStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useHonourNavigation } from './useHonourNavigation';
+import { usePlayerDistinctions } from './usePlayerDistinctions';
 
 export const NOTICE_MS = 5000;
 export const SETTLE_MS = 700;
@@ -49,6 +51,23 @@ export function honourNotice(honours, catalog = HONOURS) {
   };
 }
 
+// One card for the player distinctions the server reported that this device has not
+// announced yet: a new event (Alpha Player) or a new time step. `ids` are their keys.
+function distinctionNotice(items) {
+  if (!items.length) return null;
+  return {
+    player: true,
+    entries: items.map((item) => ({
+      id: item.id,
+      definition: distinctionBadge(item.id, item),
+      entry: item,
+      from: null,
+    })),
+    ids: items.map((item) => distinctionKey(item.id, item)),
+    backfilled: false,
+  };
+}
+
 /**
  * The achievement popup queue. Safe points, from store state and page signals:
  * - only in this player's own active village (`active`): never in the mine, including
@@ -62,6 +81,7 @@ export function honourNotice(honours, catalog = HONOURS) {
  *   town honours follow the committed action.
  * A card on screen hides and pauses while blocked and closes when the village does.
  * Quiet and Off mark honours announced without a popup; Off also clears the New marker.
+ * Player distinctions use the same card once no town honour is waiting.
  */
 export function useHonourAnnouncements(
   active,
@@ -71,6 +91,7 @@ export function useHonourAnnouncements(
     game = useGameStore(),
     page = globalThis.document,
     catalog = HONOURS,
+    distinctions = usePlayerDistinctions({ campaign }),
   } = {},
 ) {
   const navigation = useHonourNavigation();
@@ -82,13 +103,17 @@ export function useHonourAnnouncements(
   const handled = reactive(new Set());
   const origins = new Map();
   const key = (id) => `${id}@${campaign.honours.earned[id]?.at ?? 'backfill'}`;
+  // A player distinction's id is already its key (distinctionKey).
+  const handledKey = (next, id) => (next.player ? id : key(id));
   let serial = 0;
 
   const owned = computed(() => !!toValue(active) && !campaign.readOnly && !game.sessionActive);
   const pending = computed(() => {
-    const next = honourNotice(campaign.honours, catalog);
-    if (!next || next.ids.every((id) => handled.has(key(id)))) return null;
-    return next;
+    const unhandled = (next) => next && !next.ids.every((id) => handled.has(handledKey(next, id)));
+    const honours = honourNotice(campaign.honours, catalog);
+    if (unhandled(honours)) return honours;
+    const player = distinctionNotice(distinctions.unannounced.value);
+    return unhandled(player) ? player : null;
   });
   const storeBusy = computed(() => {
     const town = campaign.town;
@@ -115,8 +140,9 @@ export function useHonourAnnouncements(
   );
 
   function acknowledge(next) {
-    for (const id of next.ids) handled.add(key(id));
-    campaign.markHonoursAnnounced(next.ids);
+    for (const id of next.ids) handled.add(handledKey(next, id));
+    if (next.player) distinctions.markAnnounced(next.ids);
+    else campaign.markHonoursAnnounced(next.ids);
   }
   // Quiet and Off never wait for a popup slot: they only need the owner's village.
   watch(
@@ -125,7 +151,9 @@ export function useHonourAnnouncements(
       const next = pending.value;
       if (!next || !owned.value || settings.honourNotices === 'full') return;
       acknowledge(next);
-      if (settings.honourNotices === 'off') campaign.markHonoursSeen(next.ids);
+      if (settings.honourNotices !== 'off') return;
+      if (next.player) distinctions.markSeen(next.ids);
+      else campaign.markHonoursSeen(next.ids);
     },
     { immediate: true },
   );
@@ -178,7 +206,7 @@ export function useHonourAnnouncements(
   // An import or reset replaces the honours on screen.
   watch(
     () => campaign.honours.earned,
-    (earned) => notice.value?.ids.some((id) => !earned[id]) && dismiss(),
+    (earned) => !notice.value?.player && notice.value?.ids.some((id) => !earned[id]) && dismiss(),
   );
 
   // Page signals are observed only while something waits or shows.
@@ -230,7 +258,11 @@ export function useHonourAnnouncements(
       dismiss();
       if (shown)
         navigation.openCollection(
-          shown.entries.length === 1 ? shown.entries[0].definition.family : null,
+          shown.player
+            ? shown.entries[0].id
+            : shown.entries.length === 1
+              ? shown.entries[0].definition.family
+              : null,
         );
     },
   };

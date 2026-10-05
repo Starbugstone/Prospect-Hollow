@@ -292,18 +292,31 @@ publishes. A guest without an account has none.
 
 - **Event** distinctions are rows of `player_distinctions` (player, ID, grant time). The
   version 16 migration grants Alpha Player to every account present when that release is
-  deployed, on each environment. Later events (Beta Player, special events) are granted with
-  `php bin/admin.php award-distinction ID [PLAYER_ID]` ([admin guide](backend/admin.md)); a
-  repeated grant keeps the first date. Grants are permanent and deleted only with the account.
+  deployed, on each environment. Later events (Beta Player, special events) are granted to
+  everyone with `php bin/admin.php award-distinction ID`, or to one player from the admin
+  player page ([admin guide](backend/admin.md)); a repeated grant keeps the first date.
+- **Removal** (a cheater): from the admin player page, an admin removes any distinction, the
+  time distinction included. A row in `player_distinction_revocations` (version 17) hides it
+  from the account, every showcase and the directory at once, and grants to everyone skip
+  that player. **Give back** restores it (the time distinction at its current step). Every
+  grant and removal is in the admin audit log.
 - **Time** (`player-time`) is computed on the server clock from `players.created_at`, the first
   sign-in, by the `STEPS` ladder: whole weeks until the first month, then whole calendar months
   (UTC; a missing day is the month's last) until the first year, then whole years, with no end.
   A later step takes over at its first unit, so it reads 1, 2, 3, 4 weeks, 1 to 11 months, then
-  1, 2, 3… years. Nothing is stored, so it climbs on its own. `GET /account` also returns the
-  next step and its date. `backend/tests/fixtures/tenure-steps.json` pins the ladder, month ends
+  1, 2, 3… years. Nothing is stored, so it climbs on its own. The owner's game also receives
+  the next step and its date. `backend/tests/fixtures/tenure-steps.json` pins the ladder, month ends
   and leap days included.
 - A future dated event (for example "signed in on Christmas Day") would be another event kind
   that the server grants when it sees that activity; the game would still only display it.
+
+### Fresh without a new session
+
+The owner's game receives `distinctions` with `GET /account`, every town load and save
+(`GET`/`PUT /towns/{id}`) and the owner's guestbook poll (`GET /towns/{id}/visitors`, every 20
+seconds in the village). Each reply replaces the copy kept with the account record
+(`rememberDistinctions` in `src/services/cloudProfile.js`), so a new time step, a grant or a
+removal shows within one poll, and the last known distinctions stay available offline.
 
 ### One per town
 
@@ -323,10 +336,17 @@ showcase otherwise. The owner's own town cards use their account's distinctions.
 
 Player distinctions are glowing shields with sparkles on the rim, unlike every town medal
 (round, hexagon, rosette, octagon). Each has its own colours (Alpha Player amethyst with α, the
-time distinction midnight blue with an hourglass engraved with the count and unit). The glow
-holds still with reduced motion. A new distinction or time step lights the honours marker and a
-New label in the Player tab until the tab is opened; this is remembered per account on the
-device (`prospect-distinctions-seen-v1`).
+time distinction midnight blue with a small hourglass over a large count and its unit in
+capitals: "2 / YEARS"). Drawn small (beside a shared town's name, on town cards) the time badge
+also writes its step beside it ("2 years"); elsewhere its name reads "Loyal Prospector · 2
+years". The glow holds still with reduced motion.
+
+A new distinction or time step gets the honours popup ("Player distinction · Loyal Prospector ·
+2 years · 2 years since your first sign-in", or "You played during the alpha. Thank you!"),
+after any town honour card and with the same safe points and notice preference. It also lights
+the honours marker and a New label in the Player tab until the tab is opened. Both are
+remembered per account on the device (`prospect-distinctions-announced-v1`,
+`prospect-distinctions-seen-v1`), so another device announces them once more.
 
 ### Adding a distinction
 
