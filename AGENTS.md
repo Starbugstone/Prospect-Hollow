@@ -141,3 +141,14 @@ keeps generated files owned by you rather than root.
 - PHP formatting is part of Prettier (`@prettier/plugin-php`), so `npm run format:check`
   covers the backend too. Static analysis runs PHPStan (level 6, `backend/phpstan.neon`):
   `docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD":/src -w /src/backend --entrypoint composer prospect-hollow-check analyse`
+
+## Committing on `preprod`
+
+`preprod` is the test branch for final fixes before a major push to `main`. On
+`preprod`, commit and push every pending change without asking for confirmation,
+including uncommitted work already in the tree that the current task did not
+create. Group unrelated changes into separate commits with clear messages, and
+run the relevant Docker checks first.
+
+This applies to `preprod` only. On every other branch, commit or push only when
+the user asks, and only the changes they asked for.
