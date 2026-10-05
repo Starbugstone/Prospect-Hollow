@@ -60,6 +60,24 @@ describe('GameStore - Bonus Activation', () => {
     expect(firstStep.cleared).toEqual([0, 1, 2]);
   });
 
+  it('starts Clear Row at a playable cell on a shaped board', async () => {
+    // Row 0 starts with a void and row 1 is entirely void, as on level 373.
+    for (const i of [0, 3, 4, 5]) {
+      gameStore.tiles[i] = { type: 'void', health: 0, maxHealth: 0 };
+      gameStore.board[i] = null;
+    }
+    const origins = [];
+    for (const roll of [0, 0.99]) {
+      // This test board has no objective, so each power completes it.
+      gameStore.levelCleared = false;
+      vi.spyOn(Math, 'random').mockReturnValueOnce(roll);
+      expect(await gameStore.activateOneTimeBonus('clear-row')).toBe(true);
+      const steps = gameStore.renderer.animator.playSteps.mock.calls.at(-1)[0];
+      origins.push(steps[0].bonusEffect.originIndex);
+    }
+    expect(origins).toEqual([1, 6]);
+  });
+
   it('rejects a one-time power while input is paused without changing the board or score', async () => {
     gameStore.inputPaused = true;
     const before = JSON.stringify({ board: gameStore.board, tiles: gameStore.tiles });

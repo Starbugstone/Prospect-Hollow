@@ -36,8 +36,12 @@ start another upload. Unsupported journal or content definitions are preserved
 instead of silently being converted into a fresh trusted save.
 
 The first synchronized checkpoint anchors the device clock to the server clock,
-so a stable clock offset does not prevent normal play. Later timestamps cannot
-expand that trusted envelope by changing the device clock. Cloud collection
+so a device clock that runs ahead does not prevent normal play. The upload is
+stamped when it is queued, so a delayed first delivery reads like a slow clock;
+the stored offset is therefore never negative and server time is always allowed.
+A corrected clock or another device keeps syncing, and this grants no time beyond
+the server's own. Later timestamps cannot expand that trusted envelope by changing
+the device clock. Cloud collection
 checks preserve genuine offline elapsed time and the existing reserve capacity.
 Clock discrepancies are recoverable save problems, never evidence for banning a
 player, and never stop an active puzzle.
@@ -121,6 +125,13 @@ upload `clientAt`, and `actions`. Each action has a unique UUID `id`, a contiguo
 `sequence`, a `kind` and semantic `data`. Client-provided prices or arbitrary
 balance deltas are not authoritative. The existing upload ID and revision check
 still serialize whole snapshots and make acknowledgment-loss retries idempotent.
+
+A guest town has no server to acknowledge its receipts, and enrolment accepts its
+history as an unverified baseline that reads only the receipts of a run in progress.
+Once a guest journal holds more than 200 receipts, it keeps just that run's
+receipts and advances `baseSequence` past the rest, so the local save stays
+bounded. A guest journal the server has sealed, such as the copy kept after
+attaching a town, and a guest town being attached keep every receipt.
 
 The server response includes `integrity` with `version`, `epoch`, `ackSequence` and
 `status`. The stored profile keeps an empty action list at that acknowledged

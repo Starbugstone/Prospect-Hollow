@@ -1404,7 +1404,7 @@
                     {
                       'type': 'integer',
                       'minimum': 0,
-                      'description': 'Device Unix milliseconds captured once when the upload enters its immutable retry queue. Only the first baseline establishes a clock offset.',
+                      'description': 'Device Unix milliseconds captured once when the upload enters its immutable retry queue. Only the first baseline establishes a clock offset, which is never negative: server time is always allowed.',
                     },
                   'actions':
                     {

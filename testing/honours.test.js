@@ -414,6 +414,15 @@ describe('Saved honours', () => {
     expect(mergeHonours(merged, merged)).toEqual(merged);
   });
 
+  it('keeps a cleared showcase and falls back only when a copy has none', () => {
+    const chosen = { ...createHonours(), showcase: ['stars'] };
+    expect(mergeHonours({ ...createHonours(), showcase: [] }, chosen).showcase).toEqual([]);
+    const { showcase, ...older } = createHonours();
+    expect(showcase).toEqual([]);
+    expect(mergeHonours(older, chosen).showcase).toEqual(['stars']);
+    expect(mergeHonours(undefined, chosen).showcase).toEqual(['stars']);
+  });
+
   it('publishes only earned honours, dates, score evidence and the showcase', () => {
     const honours = normalizeHonours({
       earned: {

@@ -476,8 +476,14 @@ export const useCampaignStore = defineStore('campaign', {
       const next = load({ data: parsed }, false);
       // A backup of this same town restores its progress, never fewer honours. Another
       // town's backup replaces the slot's identity and its honours with it.
+      // A backup saved before the showcase existed keeps the live one.
       if (townStorage.keepsIdentity(parsed._backupTown))
-        next.honours = mergeHonours(next.honours, this.honours);
+        next.honours = mergeHonours(
+          Array.isArray(parsed.honours?.showcase)
+            ? next.honours
+            : { ...next.honours, showcase: undefined },
+          this.honours,
+        );
       // Commit the normalized profile before replacing any live progress.
       try {
         townStorage.import(profileData(next), parsed._backupTown);

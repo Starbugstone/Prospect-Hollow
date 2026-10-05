@@ -82,8 +82,35 @@ export function mergeIntegrity(integrity, persisted) {
   });
 }
 
+// Nothing acknowledges a guest town's receipts, and enrolment accepts its history as
+// an unverified baseline that only reads the receipts of a run still in progress.
+// Past this limit the journal keeps just those, so the save stays bounded. A journal
+// the server has sealed (it has a checkpoint) keeps every receipt for a restore.
+export const GUEST_JOURNAL_LIMIT = 200;
+export function compactGuestIntegrity(integrity, profile) {
+  integrity = plain(integrity);
+  if (
+    !journal(integrity) ||
+    integrity.checkpoint !== undefined ||
+    integrity.actions.length <= GUEST_JOURNAL_LIMIT
+  )
+    return integrity;
+  const run = profile?.issuedRun > profile?.settledRun ? profile.issuedRun : null;
+  const start =
+    run === null
+      ? -1
+      : integrity.actions.findLastIndex((a) => a.kind === 'run-start' && a.data?.runId === run);
+  const dropped = start < 0 ? integrity.actions.length : start;
+  if (!dropped) return integrity;
+  return plain({
+    ...integrity,
+    baseSequence: integrity.baseSequence + dropped,
+    actions: integrity.actions.slice(dropped),
+  });
+}
+
 // Stamp the upload envelope once, when it enters the existing durable retry queue.
-// The first server baseline uses this to anchor a stable device-clock offset.
+// The first server baseline uses this to allow for a device clock ahead of the server.
 export function prepareIntegritySnapshot(profile, now = Date.now()) {
   if (!journal(profile?.integrity)) return profile;
   return { ...profile, integrity: plain({ ...toRaw(profile.integrity), clientAt: now }) };

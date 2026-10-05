@@ -833,7 +833,9 @@ final class SaveIntegrity
             }
             $ack = $journal['baseSequence'] + count($journal['actions']);
             $clientAt = self::integer($journal['clientAt'] ?? null) ? $journal['clientAt'] : $now;
-            $context = ['clockOffset' => $clientAt - $now];
+            // clientAt is stamped when the upload is queued, so a delayed delivery looks
+            // like a slow clock. Only a device ahead of the server needs an allowance.
+            $context = ['clockOffset' => max(0, $clientAt - $now)];
             // Enrollment may happen during an offline puzzle. Its existing rewards
             // form the unverified baseline, while run identity and continuous credit
             // must survive pruning so the next normal receipt can still reconcile.
@@ -1924,7 +1926,9 @@ final class SaveIntegrity
         if (!self::integer($at)) {
             self::mismatch('at');
         }
-        if ($at > $now + ($context['clockOffset'] ?? 0) + self::CLOCK_SKEW_MS) {
+        // Server time is always allowed: a negative offset stored by an older baseline
+        // would otherwise reject a corrected clock or another device indefinitely.
+        if ($at > $now + max(0, $context['clockOffset'] ?? 0) + self::CLOCK_SKEW_MS) {
             throw new ApiError(
                 422,
                 'The device clock is ahead of this cloud checkpoint. Your local progress and the last cloud save are safe. Check the clock before retrying.',

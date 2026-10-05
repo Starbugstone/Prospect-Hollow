@@ -1,7 +1,12 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-import { createTownStorage, progressKey } from '../src/services/townStorage';
+import { SAVE_KEY, createTownStorage, progressKey } from '../src/services/townStorage';
 import { createSyncService } from '../src/services/syncService';
-import { appendIntegrityAction, createIntegrity } from '../src/services/saveIntegrity';
+import { createHonours } from '../src/data/honours';
+import {
+  GUEST_JOURNAL_LIMIT,
+  appendIntegrityAction,
+  createIntegrity,
+} from '../src/services/saveIntegrity';
 
 const memory = () => {
   const values = new Map();
@@ -336,4 +341,47 @@ it('clears file restore intent when newer cloud progress replaces the selected s
   expect(storage.active().meta.dirty).toBe(false);
   expect([...preserved.values()][0].profile).toEqual(imported);
   expect(request.mock.calls.every(([, body]) => !body)).toBe(true);
+});
+
+it('keeps every receipt of an account town and of a guest town being attached', () => {
+  for (let i = 0; i <= GUEST_JOURNAL_LIMIT; i++) advance();
+  expect(storage.active().profile.integrity.actions).toHaveLength(GUEST_JOURNAL_LIMIT + 1);
+  const local = memory();
+  const session = memory();
+  storage = createTownStorage({ storage: () => local, session: () => session, changed: () => {} });
+  storage.save(copy(remote.profile));
+  storage.attachment({ profile: storage.active().profile }, storage.active().meta.sequence);
+  for (let i = 0; i <= GUEST_JOURNAL_LIMIT; i++) advance();
+  expect(storage.active().meta.owner).toBe(null);
+  expect(storage.active().profile.integrity.actions).toHaveLength(GUEST_JOURNAL_LIMIT + 1);
+  // Once attached, the retained guest copy shares the sealed journal and keeps it.
+  storage.account(owner);
+  const sealed = {
+    ...accepted({ profile: storage.active().profile }),
+    townId: storage.active().meta.id,
+  };
+  sealed.integrity.checkpoint = 'signed-server-checkpoint';
+  storage.attach(sealed, owner.id, storage.active().meta.sequence);
+  const guest = JSON.parse(local.getItem(SAVE_KEY));
+  expect(guest.integrity.checkpoint).toBe('signed-server-checkpoint');
+  storage.logout();
+  advance();
+  expect(storage.active().meta.owner).toBe(null);
+  expect(storage.active().profile.integrity.actions).toHaveLength(1);
+  expect(storage.active().profile.integrity.baseSequence).toBe(GUEST_JOURNAL_LIMIT + 1);
+});
+
+it('keeps a showcase cleared on another device when downloading the newer cloud copy', async () => {
+  const honours = { ...createHonours(), showcase: ['stars'] };
+  storage.save({ ...storage.active().profile, honours });
+  await service.sync();
+  expect(remote.profile.honours.showcase).toEqual(['stars']);
+  expect(storage.active().meta.dirty).toBe(false);
+  // Another device clears its last showcased honour and uploads first.
+  const cleared = { ...remote.profile, honours: { ...honours, showcase: [] } };
+  remote = { ...remote, revision: remote.revision + 1, profile: cleared };
+  await service.sync();
+  expect(storage.active().profile.honours.showcase).toEqual([]);
+  expect(storage.active().meta.dirty).toBe(false);
+  expect(request.mock.calls.at(-1)[1]).toBeUndefined();
 });

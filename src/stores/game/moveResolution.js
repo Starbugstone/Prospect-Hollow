@@ -255,11 +255,29 @@ export function activateOneTimeBonus(store, bonusName, { consume = false } = {})
     return false;
   store.clearBonusPreview(true);
   const { boardCols: cols, boardRows: rows } = store;
-  const origin =
-    bonusName === 'clear-row'
-      ? Math.floor(Math.random() * rows) * cols
-      : boardCenterIndex(cols, rows);
-  return store._activatePower(bonusName, origin, consume);
+  return store._activatePower(bonusName, oneTimeOrigin(store, bonusName, cols, rows), consume);
+}
+
+// Shaped boards have void cells, which cannot start a power. Clear Row picks a row
+// with a playable cell and starts at its first one; other powers use the playable
+// cell nearest the centre.
+function oneTimeOrigin(store, bonusName, cols, rows) {
+  const tiles = tilesOf(store);
+  const center = boardCenterIndex(cols, rows);
+  const playable = [];
+  for (let i = 0; i < cols * rows; i++) if (isPlayableCell(tiles[i])) playable.push(i);
+  if (!playable.length) return center;
+  if (bonusName === 'clear-row') {
+    const rowStarts = [];
+    for (const i of playable) rowStarts[Math.floor(i / cols)] ??= i;
+    const starts = rowStarts.filter((i) => i !== undefined);
+    return starts[Math.floor(Math.random() * starts.length)];
+  }
+  if (isPlayableCell(tiles[center])) return center;
+  const distance = (i) =>
+    Math.abs(Math.floor(i / cols) - Math.floor(center / cols)) +
+    Math.abs((i % cols) - (center % cols));
+  return playable.reduce((best, i) => (distance(i) < distance(best) ? i : best));
 }
 
 export async function resolveSwap(store, aIndex, bIndex, { activateInPlace = false } = {}) {

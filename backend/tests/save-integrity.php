@@ -230,6 +230,49 @@ integrityDenied(
     'save_clock_mismatch',
     'clientAt cannot reset established server time',
 );
+// The first upload was queued an hour before it reached the server (or came from a
+// device an hour slow). Later progress at real server time must still sync.
+$late = 3600000;
+$delayed = integrityProfile($rules, $now - $late);
+$delayedBaseline = $validator->accept($delayed, null, $now);
+assertIntegrity(
+    $delayedBaseline->integrity->context->clockOffset === 0,
+    'a delayed or slow first upload stores no negative clock offset',
+);
+$current = integrityData($delayed);
+$current['town']['buildings']['well'] = 1;
+$current['town']['income']['at'] = $now + 60000;
+$current['integrity']['clientAt'] = $now + 60000;
+$current['integrity']['actions'] = [
+    integrityAction(1, 'building-buy', [
+        'buildingId' => 'well',
+        'expectedStage' => 0,
+        'at' => $now + 60000,
+    ]),
+];
+assertIntegrity(
+    SaveIntegrity::receipt(
+        $validator->accept(integrityObject($current), $delayedBaseline, $now + 60000),
+    )['ackSequence'] === 1,
+    'progress at server time syncs after a delayed first upload',
+);
+// A town enrolled before this guard may have stored a negative offset; a correctly
+// timed device, or the same device after its clock is fixed, recovers on its own.
+$poisoned = integrityData($delayedBaseline);
+$poisoned['integrity']['context']['clockOffset'] = -$late;
+assertIntegrity(
+    SaveIntegrity::receipt(
+        $validator->accept(integrityObject($current), integrityObject($poisoned), $now + 60000),
+    )['ackSequence'] === 1,
+    'a stored negative offset no longer rejects a correctly timed device',
+);
+$ahead = $current;
+$ahead['town']['income']['at'] = $now + 86400000;
+integrityDenied(
+    fn() => $validator->accept(integrityObject($ahead), integrityObject($poisoned), $now + 60000),
+    'save_clock_mismatch',
+    'ignoring a negative offset still rejects a clock ahead of the server',
+);
 $restored = $validator->accept($baseline, $bought, $now, true, [$baseline]);
 assertIntegrity(
     $restored->town->buildings->well === 0,

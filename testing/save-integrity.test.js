@@ -2,8 +2,10 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { isReactive, reactive, watch } from 'vue';
 import {
+  GUEST_JOURNAL_LIMIT,
   acknowledgeIntegrity,
   appendIntegrityAction,
+  compactGuestIntegrity,
   createIntegrity,
   loadIntegrity,
   mergeIntegrity,
@@ -391,4 +393,47 @@ it('preserves full-hammer-bag guaranteed rewards and accounting across a reload'
   expect(play(restored)[0].items[0].kind).toBe('coins');
   expect(restored.town.coins).toBe(coins + chestReward('coins', 1).quantity);
   expect(restored.builderHammers).toBe(5);
+});
+
+it('keeps a guest journal bounded without losing progress or an unfinished run', () => {
+  const campaign = useCampaignStore();
+  expect(campaign.upgradeBuilding('well', 0)).toBe(true);
+  for (let at = 1; at < GUEST_JOURNAL_LIMIT; at++) campaign.recordAction('power-spend', { at });
+  expect(campaign.save()).toBe(true);
+  expect(campaign.integrity.actions).toHaveLength(GUEST_JOURNAL_LIMIT);
+  // Enrolment reads only the receipts of a run still in progress.
+  const runId = campaign.beginRun('normal', 1);
+  const durable = JSON.parse(saved.get(SAVE_KEY)).integrity;
+  expect(durable.baseSequence).toBe(GUEST_JOURNAL_LIMIT);
+  expect(durable.actions.map(({ kind, data }) => [kind, data.runId])).toEqual([
+    ['run-start', runId],
+  ]);
+  expect(campaign.integrity).toEqual(durable);
+  setActivePinia(createPinia());
+  const restored = useCampaignStore();
+  expect(restored.town.buildings.well).toBe(1);
+  expect(restored.integrity).toEqual(durable);
+  expect(appendIntegrityAction(restored.integrity, 'victory', { runId }).actions[1].sequence).toBe(
+    GUEST_JOURNAL_LIMIT + 2,
+  );
+});
+
+it('compacts only a long unsealed guest journal and keeps an unfinished run', () => {
+  let integrity = createIntegrity();
+  for (let at = 0; at < GUEST_JOURNAL_LIMIT; at++)
+    integrity = appendIntegrityAction(integrity, 'power-spend', { at });
+  const profile = { issuedRun: 3, settledRun: 2 };
+  expect(compactGuestIntegrity(integrity, profile)).toBe(integrity);
+  integrity = appendIntegrityAction(integrity, 'run-start', { runId: 3, mode: 'normal' });
+  integrity = appendIntegrityAction(integrity, 'continuous', { runId: 3, jewels: 40 });
+  const kept = compactGuestIntegrity(integrity, profile);
+  expect(kept.baseSequence).toBe(GUEST_JOURNAL_LIMIT);
+  expect(kept.actions).toEqual(integrity.actions.slice(GUEST_JOURNAL_LIMIT));
+  const settled = compactGuestIntegrity(integrity, { issuedRun: 3, settledRun: 3 });
+  expect(settled.baseSequence).toBe(GUEST_JOURNAL_LIMIT + 2);
+  expect(settled.actions).toEqual([]);
+  const sealed = { ...integrity, checkpoint: 'signed-server-checkpoint' };
+  expect(compactGuestIntegrity(sealed, profile)).toBe(sealed);
+  const newer = { version: 2 };
+  expect(compactGuestIntegrity(newer, profile)).toBe(newer);
 });

@@ -674,7 +674,8 @@ export function normalizeHonours(saved) {
 }
 
 // Two copies of the same town: earned entries are unioned (permanent, earliest date
-// wins) and counts take the larger value. The first copy's showcase wins when set.
+// wins) and counts take the larger value. The first copy's showcase wins when it has
+// one, including an empty one: clearing the showcase is a choice, not a missing value.
 export function mergeHonours(local, incoming) {
   const a = normalizeHonours(local);
   const b = normalizeHonours(incoming);
@@ -690,14 +691,14 @@ export function mergeHonours(local, incoming) {
     merged.earned[id] = { ...first, seen: x.seen || y.seen, announced: x.announced || y.announced };
   }
   merged.counts = maxCounts(a.counts, b.counts);
-  merged.showcase = a.showcase.length ? a.showcase : b.showcase;
+  merged.showcase = Array.isArray(local?.showcase) ? a.showcase : b.showcase;
   merged.backfilled = Math.max(a.backfilled, b.backfilled);
   merged.seenGeneration = Math.max(a.seenGeneration, b.seenGeneration);
   return merged;
 }
 
 // A copy of the same town replacing the live one (backup import, cloud pull, restore)
-// keeps every earned honour and the larger counts; the incoming showcase wins when set.
+// keeps every earned honour and the larger counts; the incoming showcase wins when saved.
 // Returns `profile` itself when the live copy adds nothing.
 export function keepHonours(profile, live) {
   if (!live?.honours || !profile || typeof profile !== 'object') return profile;

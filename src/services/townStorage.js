@@ -1,6 +1,6 @@
 // Each town is an atomic save + outbox record. Selection belongs to this tab;
 // account identity is shared, but gameplay never rewrites another town's record.
-import { acknowledgeIntegrity, mergeIntegrity } from './saveIntegrity';
+import { acknowledgeIntegrity, compactGuestIntegrity, mergeIntegrity } from './saveIntegrity';
 import { jsonCopy } from './jsonCopy';
 export const SAVE_KEY = 'crystal-cascade-profile-v3';
 export const TOWN_CHANGED = 'prospect-town-save-changed';
@@ -252,6 +252,9 @@ export function createTownStorage({
       const next = jsonCopy(gameplay);
       if (integrity !== undefined)
         next.integrity = mergeIntegrity(integrity, entry.profile.integrity);
+      // An attachment in flight is acknowledged against its uploaded journal.
+      if (next.integrity !== undefined && key === SAVE_KEY && !entry.meta.attachment)
+        next.integrity = compactGuestIntegrity(next.integrity, next);
       const previousKey =
         progressCache?.store === store && progressCache.key === key && progressCache.raw === raw
           ? progressCache.progress
@@ -376,7 +379,8 @@ export function createTownStorage({
         townKey(cloud.townId, owner),
       );
       // The account copy now owns retries; the retained guest copy needs no duplicate request.
-      persist({ profile: current.profile, meta: { ...current.meta, attachment: null } }, SAVE_KEY);
+      // It shares the sealed journal, so it keeps its receipts for a later restore.
+      persist({ profile: attachedProfile, meta: { ...current.meta, attachment: null } }, SAVE_KEY);
       rememberPreference(cloud.townId, owner);
       selectKey(townKey(cloud.townId, owner));
     },
