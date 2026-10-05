@@ -177,7 +177,13 @@ A shared appearance may carry `appearance.honours`, exactly the client's
   `target`: the server's best completed normal puzzle against the level's current star
   score target, never the client's evidence.
 - `showcase` lists at most three family IDs in the owner's order, each with a
-  published rank.
+  published rank, and at most one player distinction ID (`player-…`).
+- `distinction` describes that player distinction when the owner holds it at the time
+  of the read: `{ "id": "player-time", "at": 1790000000000, "tenure": { "unit": "year",
+"count": 2 } }`, or `{ "id": "player-alpha", "at": … }` for an event. It belongs to the
+  owner's account, not the saved town, so the server checks it and computes the time
+  step on every visit, latest refresh and directory card; one the owner does not hold
+  leaves the showcase. See [player distinctions](../honours.md#player-distinctions).
 - Nothing else is shared: no counts, progress, fusions, seen or announced flags,
   inventory, journal or account data.
 

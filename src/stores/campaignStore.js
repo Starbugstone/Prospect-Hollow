@@ -399,8 +399,9 @@ export const useCampaignStore = defineStore('campaign', {
       const honours = recordSocial(this.honours, reported);
       return !!honours && this.commit({ honours });
     },
-    setHonourShowcase(ids) {
-      const showcase = validShowcase(Array.isArray(ids) ? ids : [], this.honours);
+    // `received`: the player distinctions this town may show (usePlayerDistinctions).
+    setHonourShowcase(ids, received = {}) {
+      const showcase = validShowcase(Array.isArray(ids) ? ids : [], this.honours, { received });
       return this.commit({ honours: { ...this.honours, showcase } });
     },
     // Looking at the collection also acknowledges ranks added by a later update.

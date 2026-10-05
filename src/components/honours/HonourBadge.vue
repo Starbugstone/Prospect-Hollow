@@ -1,8 +1,8 @@
 <template>
   <span
     class="honour-badge"
-    :class="{ 'honour-badge-locked': locked }"
-    :style="{ '--honour-badge-size': `${size}px` }"
+    :class="{ 'honour-badge-locked': locked, 'honour-badge-player': player }"
+    :style="{ '--honour-badge-size': `${size}px`, '--player-glow': palette.glow }"
   >
     <svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
       <defs>
@@ -16,7 +16,37 @@
         </linearGradient>
       </defs>
       <!-- Shape and engraving carry the metal, never colour alone. -->
-      <template v-if="frame === 'bronze'">
+      <!-- A player distinction is a shield with sparkles, unlike every town medal. -->
+      <template v-if="player">
+        <path
+          :d="SHIELD"
+          :fill="`url(#${uid}-fill)`"
+          :stroke="palette.edge"
+          stroke-width="2.4"
+          stroke-linejoin="round"
+        />
+        <path
+          :d="SHIELD"
+          transform="translate(50 50) scale(.86) translate(-50 -50)"
+          fill="none"
+          stroke="#fffaf0"
+          stroke-opacity=".8"
+          stroke-width="1.3"
+          stroke-dasharray="1.5 2.8"
+          vector-effect="non-scaling-stroke"
+        />
+        <path
+          :d="SHIELD"
+          transform="translate(50 50) scale(.74) translate(-50 -50)"
+          :fill="palette.field"
+          :stroke="palette.rim"
+          stroke-width="2"
+          vector-effect="non-scaling-stroke"
+        />
+        <path :d="SPARKLE" transform="translate(12 4) scale(.75)" fill="#fffbe8" />
+        <path :d="SPARKLE" transform="translate(77 7) scale(.55)" fill="#fffbe8" />
+      </template>
+      <template v-else-if="frame === 'bronze'">
         <circle
           cx="50"
           cy="50"
@@ -119,6 +149,40 @@
         <path d="M71 49H44l-7 6.5 7 6.5h27Z" fill="#7f9f83" stroke="#45604f" />
         <path d="M38 74h24" stroke="#5a4222" stroke-width="3" stroke-linecap="round" />
       </g>
+      <text
+        v-else-if="art.letter"
+        x="50"
+        y="63"
+        text-anchor="middle"
+        font-family="Georgia, serif"
+        font-size="40"
+        :fill="palette.ink"
+      >
+        {{ art.letter }}
+      </text>
+      <g v-else-if="art.glyph === 'hourglass'" :fill="palette.ink" :stroke="palette.ink">
+        <template v-if="tenure">
+          <path d="M43 19.5h14M43 36.5h14" stroke-width="2" stroke-linecap="round" />
+          <path d="M44.5 20.5h11L50 28ZM44.5 35.5h11L50 28Z" fill="#e3b958" stroke-width="1" />
+          <text
+            x="50"
+            y="60"
+            text-anchor="middle"
+            font-family="Georgia, serif"
+            font-size="22"
+            stroke="none"
+          >
+            {{ number(tenure.count) }}
+          </text>
+          <text x="50" y="71" text-anchor="middle" font-size="8.5" stroke="none">
+            {{ tenureUnit(tenure) }}
+          </text>
+        </template>
+        <template v-else>
+          <path d="M39 27h22M39 69h22" stroke-width="3" stroke-linecap="round" />
+          <path d="M41 28h18L50 48ZM41 68h18L50 48Z" fill="#e3b958" stroke-width="1.4" />
+        </template>
+      </g>
       <image v-else-if="art.image" :href="art.image" x="27" y="27" width="46" height="46" />
     </svg>
     <span v-if="locked" class="honour-badge-lock">
@@ -132,10 +196,12 @@
 <script setup>
 import { computed, useId } from 'vue';
 import { number } from '../../i18n';
-import { outline } from './honourDisplay';
+import { outline, tenureUnit } from './honourDisplay';
 
 // One badge frame system for the collection, showcase, museum and popup. The frame is
 // the rank's metal: round bronze, hexagon silver, rosette gold and cut octagon diamond.
+// A player distinction (definition.player) is a glowing shield in its own colours, and
+// the time distinction engraves its current step ("2 years").
 const props = defineProps({
   definition: { type: Object, required: true },
   size: { type: Number, default: 64 },
@@ -143,6 +209,35 @@ const props = defineProps({
 });
 const uid = `honour-${useId()}`;
 const STAR = 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9Z';
+const SHIELD = 'M50 4 89 15v31c0 24-16 41-39 50C27 87 11 70 11 46V15Z';
+const SPARKLE = 'M12 0c1 7 5 11 12 12-7 1-11 5-12 12-1-7-5-11-12-12 7-1 11-5 12-12Z';
+// Player distinction colours: gradient stops, edge, rim, field, engraving and glow.
+const PLAYER_PALETTES = {
+  amethyst: {
+    stops: [
+      [0, '#efe2ff'],
+      [0.5, '#a97de4'],
+      [1, '#5d3995'],
+    ],
+    edge: '#3e2466',
+    rim: '#7b54b6',
+    field: '#fbf7ff',
+    ink: '#4a2d78',
+    glow: '#b98cff',
+  },
+  midnight: {
+    stops: [
+      [0, '#dbe7ff'],
+      [0.5, '#6585c8'],
+      [1, '#2b3f7a'],
+    ],
+    edge: '#1c2a56',
+    rim: '#4a66a6',
+    field: '#f5f8ff',
+    ink: '#22325f',
+    glow: '#82b2ff',
+  },
+};
 const octagon = (radius) => outline(8, radius, radius, -67.5);
 const FACETS = Array.from({ length: 8 }, (_, i) => {
   const [outer, inner] = [octagon(47), octagon(36)].map((points) => points.split(' ')[i]);
@@ -195,11 +290,17 @@ const PALETTES = {
   },
 };
 const art = computed(() => props.definition.art ?? {});
+const player = computed(() => props.definition.player === true);
+const tenure = computed(() => (player.value ? props.definition.tenure : null));
 // A metal added before its frame is drawn shows the bronze round frame.
 const frame = computed(() =>
   PALETTES[props.definition.metal] ? props.definition.metal : 'bronze',
 );
-const palette = computed(() => PALETTES[frame.value]);
+const palette = computed(() =>
+  player.value
+    ? (PLAYER_PALETTES[props.definition.palette] ?? PLAYER_PALETTES.amethyst)
+    : PALETTES[frame.value],
+);
 // Score ranks engrave their multiple of the star target.
 const engraving = computed(() =>
   props.definition.measure?.kind === 'score' ? `${number(props.definition.goal)}×` : '',
@@ -221,6 +322,27 @@ const engraving = computed(() =>
 }
 .honour-badge-locked > svg {
   filter: grayscale(1) contrast(0.85) opacity(0.5);
+}
+/* Player distinctions glow softly; the glow holds still with reduced motion. */
+.honour-badge-player > svg {
+  filter: drop-shadow(0 0 calc(var(--honour-badge-size) * 0.08) var(--player-glow))
+    drop-shadow(0 2px 3px #2d281a40);
+  animation: player-distinction-glow 2.6s ease-in-out infinite alternate;
+}
+@keyframes player-distinction-glow {
+  from {
+    filter: drop-shadow(0 0 calc(var(--honour-badge-size) * 0.04) var(--player-glow))
+      drop-shadow(0 2px 3px #2d281a40);
+  }
+  to {
+    filter: drop-shadow(0 0 calc(var(--honour-badge-size) * 0.13) var(--player-glow))
+      drop-shadow(0 2px 3px #2d281a40);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .honour-badge-player > svg {
+    animation: none;
+  }
 }
 .honour-badge-lock {
   position: absolute;

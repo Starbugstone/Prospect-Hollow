@@ -6,6 +6,7 @@
       compact
       :ids="honours.showcase"
       :earned="honours.earned"
+      :received="honours.received"
       :size="40"
     />
   </div>
@@ -37,6 +38,7 @@
           compact
           :ids="honours.showcase"
           :earned="honours.earned"
+          :received="honours.received"
           :size="28"
         /><template v-if="saloonMessage"> · {{ saloonMessage }}</template>
       </p>
@@ -86,7 +88,7 @@
       <HonourGallery
         v-else-if="inspected === 'honours'"
         :class="{ 'honour-contrast': settings.highContrastMode }"
-        :honours="honours ?? { earned: {}, showcase: [] }"
+        :honours="honours ?? { earned: {}, showcase: [], received: {} }"
         :town="current.name"
       />
       <section v-else-if="inspected === 'mine'" class="town-building-details">

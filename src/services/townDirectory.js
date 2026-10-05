@@ -1,5 +1,10 @@
 import { request } from './cloudProfile';
 import { HONOURS } from '../data/honours';
+import {
+  distinctionBadge,
+  isPlayerDistinction,
+  publishedDistinction,
+} from '../data/playerDistinctions';
 
 // Shared towns are dealt like a shuffled deck (see TownDirectory::browse). The server picks a
 // seed, each page is the next draw of up to seven towns, and a spent deck is reshuffled with
@@ -24,16 +29,29 @@ export const favouriteVillages = () => request('villages/favourites');
 export const setFavourite = (id, keep) =>
   request(`villages/${encodeURIComponent(id)}/favourite`, {}, keep ? 'PUT' : 'DELETE');
 
-// A card shows the best earned rank of each honour family the owner showcases, and how
-// many honours the town holds. IDs this version does not know are not counted or shown.
-export function cardHonours(honours, catalog = HONOURS) {
+// A card shows the best earned rank of each honour family the owner showcases, the
+// owner's player distinction (the directory's `distinction`, or the owner's own
+// `received` on their town list), and how many honours the town holds. IDs this
+// version does not know are not counted or shown.
+export function cardHonours(
+  honours,
+  received = publishedDistinction(honours?.distinction),
+  catalog = HONOURS,
+) {
   if (!honours) return null;
   const earned = new Set((honours.earned ?? []).filter((id) => catalog.byId[id]));
-  if (!earned.size) return null;
+  let distinction = false;
   const showcase = (honours.showcase ?? [])
-    .map((family) =>
-      catalog.familyById[family]?.ranks.filter((definition) => earned.has(definition.id)).at(-1),
-    )
+    .map((id) => {
+      if (!isPlayerDistinction(id))
+        return catalog.familyById[id]?.ranks
+          .filter((definition) => earned.has(definition.id))
+          .at(-1);
+      if (distinction || !Object.hasOwn(received, id)) return null;
+      distinction = true;
+      return distinctionBadge(id, received[id]);
+    })
     .filter(Boolean);
+  if (!earned.size && !showcase.length) return null;
   return { count: earned.size, showcase };
 }

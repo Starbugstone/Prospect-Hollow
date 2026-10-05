@@ -14,12 +14,14 @@ It prints a temporary password once. Sign in at `https://HOST/admin`, replace th
 
 The same command recovers a locked-out admin or lists accounts: `list`, `reset-password USERNAME` (new temporary password), `reset-authenticator USERNAME` (set up a new phone at the next sign-in) and `delete USERNAME`. The panel cannot delete its last admin; the server command can.
 
+Event player distinctions (see [player distinctions](../honours.md#player-distinctions)) are granted from the same command: `award-distinction player-beta` grants one to every current account, and `award-distinction player-beta PLAYER_ID` to one player. A player who already holds it keeps the first date, so repeating the command is safe. Alpha Player needs no command: the version 16 migration grants it to every account that exists when that release is deployed.
+
 All admins are equal. Any admin can add another (the panel shows the new temporary password once, to send privately), reset another admin's password or authenticator, or remove them. Nobody resets or removes themselves from the panel; use **Change my password** for your own account.
 
 ## What the panel shows
 
 - **Overview**: player totals, players online (seen in the last 5 minutes), active today/7/30 days, live sessions, towns (shared, awaiting purge), web vs app, daily active players and new accounts for 30 UTC days, towns by era and campaign progress.
-- **Players**: search by email or player ID, sorted by last seen, newest or email. A player page shows sign-up date, last connection and sign-in, number of email sign-ins, active days in the last 30, last device type, IP address and browser, live sessions and every town (including deleted ones kept for 30 days).
+- **Players**: search by email or player ID, sorted by last seen, newest or email. A player page shows sign-up date, last connection and sign-in, number of email sign-ins, active days in the last 30, player distinctions held now, last device type, IP address and browser, live sessions and every town (including deleted ones kept for 30 days).
 - **Towns**: search by name, owner email or ID; filter all, shared or deleted. A town page lists era, coins, levels and stars, buildings, inventory, the five kept cloud revisions and the full save (viewable and downloadable as JSON). The simulation starts disconnected: **Connect to town** loads the share page's read-only renderer, even for private towns. Camera controls remain available, with no gameplay actions. **Disconnect** stops and disposes the simulation; opening another town or revision starts disconnected again. This view uses the saved snapshot, without joining visitor presence, creating visitor logs, collecting the saloon or making the admin a guest.
 - **Activity log**: every admin sign-in, failed sign-in against a real admin, and change. A deleted player appears by ID only.
 

@@ -73,6 +73,8 @@ const props = defineProps({
   profile: { type: Object, required: true },
   uniqueVisitors: { type: Number, default: 0 },
   townsVisited: { type: Number, default: 0 },
+  // The owner's player distinctions by ID; a showcase may hold one of them.
+  distinctions: { type: Object, default: () => ({}) },
 });
 // Presentation only: these pure helpers do not award ranks, mark notices seen or save.
 const state = computed(() => ({
@@ -90,7 +92,7 @@ const state = computed(() => ({
     }) ?? normalizeHonours(props.profile.honours),
 }));
 const slots = computed(() =>
-  showcaseSlots(state.value.honours.showcase, state.value.honours.earned),
+  showcaseSlots(state.value.honours.showcase, state.value.honours.earned, props.distinctions),
 );
 const groups = computed(() =>
   honourCollection(state.value).map((group) => ({

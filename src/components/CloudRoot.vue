@@ -182,6 +182,7 @@ import { createSyncScheduler } from '../services/syncScheduler';
 import { describeSaveState } from '../services/saveStatus';
 import { uploadBlocked } from '../services/syncService';
 import { syncTownParam } from '../services/appRoute';
+import { receivedDistinctions } from '../data/playerDistinctions';
 import GameIcon from './GameIcon.vue';
 const AccountPanel = defineAsyncComponent(() => import('./account/AccountPanel.vue'));
 const CommunityPanel = defineAsyncComponent(() => import('./community/CommunityPanel.vue'));
@@ -234,6 +235,9 @@ provide('cloudAccount', {
   saveState,
   cloudAt: computed(() => (activeMeta.value?.cloudAt ?? 0) * 1000),
   signedIn: computed(() => !!cloud.account),
+  accountId: computed(() => cloud.account?.id ?? null),
+  // The player's own distinctions, kept with the account record for offline play.
+  distinctions: computed(() => receivedDistinctions(cloud.account)),
   canSync: computed(
     () =>
       accountTown.value &&

@@ -1,0 +1,179 @@
+[
+  {
+    "label": "one second before the first week",
+    "since": "2026-01-10T12:00:00Z",
+    "now": "2026-01-17T11:59:59Z",
+    "expected": null
+  },
+  {
+    "label": "the first week",
+    "since": "2026-01-10T12:00:00Z",
+    "now": "2026-01-17T12:00:00Z",
+    "expected": {
+      "unit": "week",
+      "count": 1,
+      "at": "2026-01-17T12:00:00Z",
+      "next": {
+        "unit": "week",
+        "count": 2,
+        "at": "2026-01-24T12:00:00Z"
+      }
+    }
+  },
+  {
+    "label": "weeks until the first month",
+    "since": "2026-01-10T12:00:00Z",
+    "now": "2026-02-09T12:00:00Z",
+    "expected": {
+      "unit": "week",
+      "count": 4,
+      "at": "2026-02-07T12:00:00Z",
+      "next": {
+        "unit": "month",
+        "count": 1,
+        "at": "2026-02-10T12:00:00Z"
+      }
+    }
+  },
+  {
+    "label": "the first month replaces the weeks",
+    "since": "2026-01-10T12:00:00Z",
+    "now": "2026-02-10T12:00:00Z",
+    "expected": {
+      "unit": "month",
+      "count": 1,
+      "at": "2026-02-10T12:00:00Z",
+      "next": {
+        "unit": "month",
+        "count": 2,
+        "at": "2026-03-10T12:00:00Z"
+      }
+    }
+  },
+  {
+    "label": "months until the first year",
+    "since": "2026-01-10T12:00:00Z",
+    "now": "2026-12-31T00:00:00Z",
+    "expected": {
+      "unit": "month",
+      "count": 11,
+      "at": "2026-12-10T12:00:00Z",
+      "next": {
+        "unit": "year",
+        "count": 1,
+        "at": "2027-01-10T12:00:00Z"
+      }
+    }
+  },
+  {
+    "label": "the first year replaces the months",
+    "since": "2026-01-10T12:00:00Z",
+    "now": "2027-01-10T12:00:00Z",
+    "expected": {
+      "unit": "year",
+      "count": 1,
+      "at": "2027-01-10T12:00:00Z",
+      "next": {
+        "unit": "year",
+        "count": 2,
+        "at": "2028-01-10T12:00:00Z"
+      }
+    }
+  },
+  {
+    "label": "years climb on their own",
+    "since": "2026-01-10T12:00:00Z",
+    "now": "2029-03-01T00:00:00Z",
+    "expected": {
+      "unit": "year",
+      "count": 3,
+      "at": "2029-01-10T12:00:00Z",
+      "next": {
+        "unit": "year",
+        "count": 4,
+        "at": "2030-01-10T12:00:00Z"
+      }
+    }
+  },
+  {
+    "label": "a missing month end is its last day",
+    "since": "2026-01-31T08:00:00Z",
+    "now": "2026-02-28T08:00:00Z",
+    "expected": {
+      "unit": "month",
+      "count": 1,
+      "at": "2026-02-28T08:00:00Z",
+      "next": {
+        "unit": "month",
+        "count": 2,
+        "at": "2026-03-31T08:00:00Z"
+      }
+    }
+  },
+  {
+    "label": "weeks before a short month ends",
+    "since": "2026-01-31T08:00:00Z",
+    "now": "2026-02-27T08:00:00Z",
+    "expected": {
+      "unit": "week",
+      "count": 3,
+      "at": "2026-02-21T08:00:00Z",
+      "next": {
+        "unit": "month",
+        "count": 1,
+        "at": "2026-02-28T08:00:00Z"
+      }
+    }
+  },
+  {
+    "label": "a leap day anniversary",
+    "since": "2024-02-29T00:00:00Z",
+    "now": "2025-02-28T00:00:00Z",
+    "expected": {
+      "unit": "year",
+      "count": 1,
+      "at": "2025-02-28T00:00:00Z",
+      "next": {
+        "unit": "year",
+        "count": 2,
+        "at": "2026-02-28T00:00:00Z"
+      }
+    }
+  },
+  {
+    "label": "one millisecond before a month",
+    "since": "2026-03-15T10:20:30.250Z",
+    "now": "2026-04-15T10:20:30.249Z",
+    "expected": {
+      "unit": "week",
+      "count": 4,
+      "at": "2026-04-12T10:20:30.250Z",
+      "next": {
+        "unit": "month",
+        "count": 1,
+        "at": "2026-04-15T10:20:30.250Z"
+      }
+    }
+  },
+  {
+    "label": "to the millisecond",
+    "since": "2026-03-15T10:20:30.250Z",
+    "now": "2026-04-15T10:20:30.250Z",
+    "expected": {
+      "unit": "month",
+      "count": 1,
+      "at": "2026-04-15T10:20:30.250Z",
+      "next": {
+        "unit": "month",
+        "count": 2,
+        "at": "2026-05-15T10:20:30.250Z"
+      }
+    }
+  },
+  {
+    "label": "a clock before the first sign-in",
+    "since": "2026-05-01T00:00:00Z",
+    "now": "2026-04-01T00:00:00Z",
+    "expected": null
+  }
+]

@@ -1,6 +1,7 @@
 import { createTown } from '../data/town';
 import { LEVEL_COUNT } from '../data/campaign';
 import { HONOURS, validShowcase } from '../data/honours';
+import { publishedDistinction } from '../data/playerDistinctions';
 
 // Public completion awards only; never fall back to this visitor's campaign store.
 export function villageLevels(village) {
@@ -32,8 +33,9 @@ export function villageLevels(village) {
 
 // The owner's public Town Honours: null when the field is missing (an older owner or
 // server, so unknown), otherwise catalog ranks with a valid date, the public score
-// evidence and a showcase of earned families, each shown at its best rank. IDs this
-// version does not know are ignored. Never read from this visitor's save.
+// evidence and a showcase of earned families, each shown at its best rank, with the
+// owner's showcased player distinction (`received`, by ID) when the server sent one.
+// IDs this version does not know are ignored. Never read from this visitor's save.
 export function villageHonours(village) {
   const saved = village.appearance?.honours;
   if (!saved || typeof saved !== 'object' || Array.isArray(saved)) return null;
@@ -53,10 +55,12 @@ export function villageHonours(village) {
   const showcase = Array.isArray(saved.showcase)
     ? saved.showcase.filter((id) => typeof id === 'string')
     : [];
+  const received = publishedDistinction(saved.distinction);
   return {
     version: Number.isSafeInteger(saved.version) && saved.version > 0 ? saved.version : 1,
     earned,
-    showcase: validShowcase(showcase, { earned }),
+    received,
+    showcase: validShowcase(showcase, { earned }, { received }),
   };
 }
 

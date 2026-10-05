@@ -16,8 +16,22 @@
       compact
       :ids="honours.showcase"
       :earned="honours.earned"
+      :received="honours.received ?? {}"
       :size="48"
     />
+    <section v-if="distinction" class="honour-gallery-group">
+      <h3>{{ t('Player distinction') }}</h3>
+      <ul>
+        <li>
+          <HonourBadge :definition="distinction.badge" :size="52" />
+          <span>
+            <strong>{{ distinction.title }}</strong>
+            <small>{{ distinction.description }}</small>
+            <small v-if="distinction.received">{{ distinction.received }}</small>
+          </span>
+        </li>
+      </ul>
+    </section>
     <section v-for="group in groups" :key="group.id" class="honour-gallery-group">
       <h3>
         {{ t(TAB_LABELS[group.id]) }} <span>{{ group.items.length }}</span>
@@ -46,16 +60,30 @@ import HonourBadge from './HonourBadge.vue';
 import HonourKicker from './HonourKicker.vue';
 import HonourShowcaseSlots from './HonourShowcaseSlots.vue';
 import { HONOUR_TABS } from '../../data/honours';
-import { TAB_LABELS, earnedFamilies, earnedText, evidenceText } from './honourDisplay';
+import { distinctionList } from '../../data/playerDistinctions';
+import {
+  TAB_LABELS,
+  describeDistinction,
+  earnedFamilies,
+  earnedText,
+  evidenceText,
+} from './honourDisplay';
 // A visitor's earned-only gallery from the owner's public honours: each family at its
-// best earned rank and metal. It never reads the visitor's own save: progress, counts
-// and locked goals stay private.
+// best earned rank and metal, and the owner's showcased player distinction. It never
+// reads the visitor's own save: progress, counts and locked goals stay private.
 const props = defineProps({
   honours: { type: Object, required: true },
   town: { type: String, default: '' },
 });
 const uid = `honour-gallery-${useId()}`;
 const items = computed(() => earnedFamilies(props.honours.earned));
+// Only the showcased one is published, without the owner's next time step.
+const distinction = computed(() => {
+  const item = distinctionList(props.honours.received).find((entry) =>
+    props.honours.showcase.includes(entry.id),
+  );
+  return item ? describeDistinction(item) : null;
+});
 const groups = computed(() =>
   HONOUR_TABS.map((id) => ({
     id,

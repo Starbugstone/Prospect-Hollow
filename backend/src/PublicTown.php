@@ -159,7 +159,22 @@ final class PublicTown
             );
         }
         $village->saloonReadyAt = $this->saloonReadyAt($row['collected_at']);
-        return self::published($village);
+        return $this->distinguish(self::published($village), $row['player_id']);
+    }
+    // A showcased player distinction belongs to the owner, not the saved town: it is checked
+    // and described at each read, so the time distinction keeps climbing between saves.
+    private function distinguish(object $village, string $owner): object
+    {
+        $honours = $village->appearance->honours ?? null;
+        if (PlayerDistinctions::showcases($honours)) {
+            $received = PlayerDistinctions::load()->received(
+                $this->database->get(),
+                [$owner],
+                (int) (microtime(true) * 1000),
+            );
+            PlayerDistinctions::attach($honours, $received[$owner] ?? []);
+        }
+        return $village;
     }
 
     // Saloon: any visitor may collect it for the owner, at most once per hour per town.

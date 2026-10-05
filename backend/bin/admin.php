@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 // Server-side admin account management: create the first admin, or recover a locked-out one.
+// Also grants event player distinctions (docs/honours.md), such as Beta Player.
 if (PHP_SAPI !== 'cli') {
     exit(1);
 }
@@ -38,8 +39,14 @@ try {
             (print "Authenticator removed for $username. They set up a new one at their next sign-in.\n"),
         'delete' => $admins->delete(App\AdminAuth::SERVER, $admins->find($username)['id']) &&
             (print "Admin $username deleted.\n"),
+        // Every current account, or one player ID; a player who holds it keeps the first date.
+        'award-distinction' => printf(
+            "%s granted to %d player(s).\n",
+            $username,
+            App\PlayerDistinctions::load()->award($database->get(), $username, $argv[3] ?? null),
+        ),
         default => throw new InvalidArgumentException(
-            'Usage: php bin/admin.php list | create USERNAME | reset-password USERNAME | reset-authenticator USERNAME | delete USERNAME',
+            'Usage: php bin/admin.php list | create USERNAME | reset-password USERNAME | reset-authenticator USERNAME | delete USERNAME | award-distinction DISTINCTION_ID [PLAYER_ID]',
         ),
     };
 } catch (App\ApiError $e) {

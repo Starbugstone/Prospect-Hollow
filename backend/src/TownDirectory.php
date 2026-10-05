@@ -15,7 +15,7 @@ final class TownDirectory
     public const SEARCH_SIZE = 20;
     public const FAVOURITE_LIMIT = 50;
     public const ACTIVE_SECONDS = 14 * 86400;
-    private const CARD = 'SELECT t.id,t.public_id,t.name,t.appearance,s.collected_at FROM towns t LEFT JOIN saloon_collections s ON s.town_id=t.id';
+    private const CARD = 'SELECT t.id,t.public_id,t.player_id,t.name,t.appearance,s.collected_at FROM towns t LEFT JOIN saloon_collections s ON s.town_id=t.id';
     private const SHARED = 't.listed=1 AND t.deleted_at IS NULL';
 
     public function __construct(private Database $database, private Auth $auth) {}
@@ -222,29 +222,54 @@ final class TownDirectory
                 [1 => ArrayParameterType::STRING],
             ),
         );
-        return array_map(function ($row) use ($present, $visited, $favourites, $now) {
-            $appearance = json_decode($row['appearance'])->appearance ?? new \stdClass();
-            $buildings = (array) ($appearance->buildings ?? []);
-            return [
-                'villageId' => $row['public_id'],
-                'name' => $row['name'],
-                'era' => $appearance->era ?? null,
-                'buildings' => count(array_filter($buildings, fn($level) => $level > 0)),
-                'mineLevel' => $appearance->mineLevel ?? null,
-                'saloonReady' =>
-                    ($buildings['saloon'] ?? 0) > 0 &&
-                    PublicTown::saloonReadyAt($row['collected_at']) <= $now,
-                'visitors' => (int) ($present[$row['id']] ?? 0),
-                'visited' => isset($visited[$row['id']]),
-                'favourite' => isset($favourites[$row['id']]),
-                'honours' => $this->honours($appearance->honours ?? null),
-            ];
-        }, $rows);
+        // Owners of towns that showcase a player distinction, checked as a visit does.
+        $appearances = array_map(
+            fn($row) => json_decode($row['appearance'])->appearance ?? new \stdClass(),
+            $rows,
+        );
+        $owners = [];
+        foreach ($rows as $index => $row) {
+            if (PlayerDistinctions::showcases($appearances[$index]->honours ?? null)) {
+                $owners[] = $row['player_id'];
+            }
+        }
+        $distinctions = PlayerDistinctions::load()->received($db, $owners, $now * 1000);
+        return array_map(
+            function ($row, $appearance) use (
+                $present,
+                $visited,
+                $favourites,
+                $distinctions,
+                $now,
+            ) {
+                $buildings = (array) ($appearance->buildings ?? []);
+                return [
+                    'villageId' => $row['public_id'],
+                    'name' => $row['name'],
+                    'era' => $appearance->era ?? null,
+                    'buildings' => count(array_filter($buildings, fn($level) => $level > 0)),
+                    'mineLevel' => $appearance->mineLevel ?? null,
+                    'saloonReady' =>
+                        ($buildings['saloon'] ?? 0) > 0 &&
+                        PublicTown::saloonReadyAt($row['collected_at']) <= $now,
+                    'visitors' => (int) ($present[$row['id']] ?? 0),
+                    'visited' => isset($visited[$row['id']]),
+                    'favourite' => isset($favourites[$row['id']]),
+                    'honours' => $this->honours(
+                        $appearance->honours ?? null,
+                        $distinctions[$row['player_id']] ?? [],
+                    ),
+                ];
+            },
+            $rows,
+            $appearances,
+        );
     }
 
     // Town Honours as the shared appearance publishes them (earned IDs and the owner's
-    // showcase); null until the owner's town has published any.
-    private function honours(mixed $honours): ?array
+    // showcase, with its player distinction while the owner holds it); null until the
+    // owner's town has published any.
+    private function honours(mixed $honours, array $distinctions): ?array
     {
         if (
             !($honours instanceof \stdClass) ||
@@ -252,12 +277,11 @@ final class TownDirectory
         ) {
             return null;
         }
+        $honours = PlayerDistinctions::attach(clone $honours, $distinctions);
         $id = fn($value) => is_string($value) && preg_match('/^[a-z0-9-]{1,64}$/D', $value);
         return [
             'earned' => array_values(array_filter(array_keys((array) $honours->earned), $id)),
-            'showcase' => array_values(
-                array_filter(is_array($honours->showcase ?? null) ? $honours->showcase : [], $id),
-            ),
-        ];
+            'showcase' => array_values(array_filter($honours->showcase, $id)),
+        ] + (isset($honours->distinction) ? ['distinction' => $honours->distinction] : []);
     }
 }

@@ -615,6 +615,7 @@ import TownMoreMenu from './TownMoreMenu.vue';
 import TownDefenseStatus from './TownDefenseStatus.vue';
 import { useHonourNavigation } from '../../composables/useHonourNavigation';
 import { honourSummary } from '../honours/honourDisplay';
+import { usePlayerDistinctions } from '../../composables/usePlayerDistinctions';
 const HonourCollection = defineAsyncComponent(() => import('../honours/HonourCollection.vue'));
 
 const props = defineProps({
@@ -891,9 +892,12 @@ const collectionOpen = computed(
     !town.value.transition?.pending &&
     !openingPresentation.value,
 );
+const { unseen: unseenDistinctions } = usePlayerDistinctions({ campaign });
+// New player distinctions (Alpha Player, a new time step) light the same marker.
 const honourMenu = computed(() => {
   const summary = honourSummary(campaign.honours);
-  return { ...summary, fresh: settings.honourNotices === 'off' ? 0 : summary.fresh };
+  const fresh = summary.fresh + unseenDistinctions.value.length;
+  return { ...summary, fresh: settings.honourNotices === 'off' ? 0 : fresh };
 });
 function openHonours() {
   closeDialog();

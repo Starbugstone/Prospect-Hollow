@@ -231,12 +231,13 @@ final class Honours
     }
 
     /**
-     * The visitor copy, exactly the publicHonours() shape: the catalog honours the owner
-     * earned that the server verified at an accepted save or proves now, with their
-     * date, the server's best score run as score evidence, and the showcase of published
-     * families. Unverifiable claims stay in the owner's save and are simply not
-     * published. Never counts, progress or presentation flags. Null when the save has
-     * no honours object.
+     * The visitor copy, the publicHonours() shape: the catalog honours the owner earned
+     * that the server verified at an accepted save or proves now, with their date, the
+     * server's best score run as score evidence, and the showcase of published families
+     * with at most one player distinction (PlayerDistinctions::attach checks it at each
+     * read). Unverifiable claims stay in the owner's save and are simply not published.
+     * Never counts, progress or presentation flags. Null when the save has no honours
+     * object.
      *
      * @param (\Closure(string): int)|null $social The server's social counts (social()).
      * @return array<string, mixed>|null
@@ -273,12 +274,29 @@ final class Honours
             $earned->$id = (object) $public;
             $families[$definition['family']] = true;
         }
+        // Published families, and at most one known player distinction. Whether the owner
+        // holds it is checked when a visitor reads it (PlayerDistinctions::attach).
+        $distinctions = is_array($this->catalog['playerDistinctions'] ?? null)
+            ? $this->catalog['playerDistinctions']
+            : [];
+        $distinction = false;
+        $showcase = array_filter($saved['showcase'], function ($id) use (
+            $families,
+            $distinctions,
+            &$distinction,
+        ) {
+            if (!PlayerDistinctions::isDistinction($id)) {
+                return isset($families[$id]);
+            }
+            if ($distinction || !isset($distinctions[$id])) {
+                return false;
+            }
+            return $distinction = true;
+        });
         return [
             'version' => $this->version(),
             'earned' => $earned,
-            'showcase' => array_values(
-                array_filter($saved['showcase'], fn($family) => isset($families[$family])),
-            ),
+            'showcase' => array_values($showcase),
         ];
     }
 

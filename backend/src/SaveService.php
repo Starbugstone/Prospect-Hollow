@@ -163,7 +163,18 @@ final class SaveService
                 [$account['id']],
             );
             return [
-                'account' => ['id' => $account['id'], 'email' => $account['email']],
+                // The player distinctions this account holds now, as the server decides
+                // them: event grants and the time step from the first sign-in.
+                'account' => [
+                    'id' => $account['id'],
+                    'email' => $account['email'],
+                    'distinctions' =>
+                        (object) (PlayerDistinctions::load()->received(
+                            $db,
+                            [$account['id']],
+                            (int) (microtime(true) * 1000),
+                        )[$account['id']] ?? []),
+                ],
                 'csrf' => $session['csrf'],
                 'towns' => array_map(fn($row) => $this->view($row, false), $towns),
                 'limit' => self::TOWN_SLOTS,

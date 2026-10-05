@@ -120,7 +120,7 @@
             eraName(town.card.era)
           }}</small>
           <small v-if="town.card">{{ stats(town.card) }}</small>
-          <HonourCardRow :honours="town.card?.honours" :size="26" />
+          <HonourCardRow :honours="town.card?.honours" :received="distinctions" :size="26" />
           <small>{{ savedAgo(town) }}</small>
           <span v-if="isCurrent(town)" class="town-slot-playing"
             ><GameIcon name="check" />{{ t('Playing now') }}</span
@@ -187,6 +187,7 @@ import {
 } from '../../services/cloudProfile';
 import { townStorage } from '../../services/townStorage';
 import { cardSummary, profileSummary } from '../../services/townSummary';
+import { receivedDistinctions } from '../../data/playerDistinctions';
 import { timeAgo } from '../../services/saveStatus';
 import { freshProfile } from '../../stores/campaignStore';
 import { useGameStore } from '../../stores/gameStore';
@@ -222,6 +223,8 @@ const missingTown = computed(
     props.writable && active.value?.meta.owner === cloud.account.id && active.value.meta.missing,
 );
 const full = computed(() => cloud.towns.length >= SLOT_LIMIT);
+// The player's own distinctions, for the one each town card may show.
+const distinctions = computed(() => receivedDistinctions(cloud.account));
 const emptySlots = computed(() => {
   const free = Math.max(0, SLOT_LIMIT - cloud.towns.length);
   const attach = localTown.value && !registeredLocal.value && free > 0 ? ['attach'] : [];

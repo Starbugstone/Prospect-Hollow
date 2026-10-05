@@ -585,7 +585,7 @@ describe('Visiting a town’s honours', () => {
     expect(villageHonours(village(undefined))).toBeNull();
     expect(villageHonours(village([]))).toBeNull();
     const empty = villageHonours(village({ version: 1, earned: {}, showcase: [] }));
-    expect(empty).toEqual({ version: 1, earned: {}, showcase: [] });
+    expect(empty).toEqual({ version: 1, earned: {}, received: {}, showcase: [] });
     const html = await render(HonourGallery, { honours: empty, town: 'Willowbrook' });
     expect(html).toContain('No honours earned yet');
     expect(html).not.toContain('honour-gallery-group');

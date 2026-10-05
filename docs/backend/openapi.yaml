@@ -283,7 +283,7 @@
           'get':
             {
               'summary': 'Account, CSRF token and up to three owned town cards',
-              'description': 'Each town contains townId, name, revision, updatedAt, isPublic, publicId and summary {era, coins, buildings}. Buildings counts positive numeric building levels. saloonCollectedAt is the last time a share-link visitor collected the saloon (milliseconds, 0 if never); the owner game moves its reserved coins once per collection. guest {name, at} | null is the latest signed-in viewer, named after one of their towns after sanitising; the owner game saves it as a VIP and then deletes it. The list never includes full profiles; GET /towns/{id} loads a playable save. Summaries are private to the authenticated owner.',
+              'description': 'Each town contains townId, name, revision, updatedAt, isPublic, publicId and summary {era, coins, buildings}. Buildings counts positive numeric building levels. saloonCollectedAt is the last time a share-link visitor collected the saloon (milliseconds, 0 if never); the owner game moves its reserved coins once per collection. guest {name, at} | null is the latest signed-in viewer, named after one of their towns after sanitising; the owner game saves it as a VIP and then deletes it. The list never includes full profiles; GET /towns/{id} loads a playable save. Summaries are private to the authenticated owner. account.distinctions maps each player distinction the caller holds now to {at, tenure?} (PlayerDistinction without id): event grants and the time step, both decided by the server; the game only shows them.',
               'responses':
                 {
                   '200': { 'description': 'Success' },
@@ -960,7 +960,7 @@
           'get':
             {
               'summary': 'A random draw of up to seven shared town cards for the signed-in player, or a name search with q',
-              'description': "Shared towns are dealt from a shuffle fixed by seed, whose first eight hex digits are the shuffle time: towns saved in the last 14 days first, and among them towns the caller had not visited by then; never the caller's own towns. Omit seed for a new shuffle; the reply returns it, and page N is the Nth draw of seven, so a seed never repeats a town. With q (2–24 characters, alone) it searches names instead: any part, ignoring case, names that start with q first, up to 20 entries plus more. Each entry has villageId, name, era, buildings (built count), mineLevel, saloonReady (a visitor may collect it now), visitors (people present now), visited (the caller visited it while signed in), favourite and honours (null or {earned: [id], showcase: [familyId]} from the shared appearance), never level records or the full appearance.",
+              'description': "Shared towns are dealt from a shuffle fixed by seed, whose first eight hex digits are the shuffle time: towns saved in the last 14 days first, and among them towns the caller had not visited by then; never the caller's own towns. Omit seed for a new shuffle; the reply returns it, and page N is the Nth draw of seven, so a seed never repeats a town. With q (2–24 characters, alone) it searches names instead: any part, ignoring case, names that start with q first, up to 20 entries plus more. Each entry has villageId, name, era, buildings (built count), mineLevel, saloonReady (a visitor may collect it now), visitors (people present now), visited (the caller visited it while signed in), favourite and honours (null or {earned: [id], showcase: [familyId], distinction?} from the shared appearance; distinction is the owner's showcased player distinction as in PublicHonours, checked when the list is read), never level records or the full appearance.",
               'responses':
                 {
                   '200': { 'description': 'Success' },
@@ -1366,7 +1366,41 @@
                       'maxItems': 3,
                       'uniqueItems': true,
                       'items': { 'type': 'string' },
-                      'description': 'Family IDs in the owner order, each with a published rank.',
+                      'description': 'Family IDs in the owner order, each with a published rank, and at most one player distinction ID (player-…) that the owner holds when the town is read.',
+                    },
+                  'distinction': { '$ref': '#/components/schemas/PlayerDistinction' },
+                },
+            },
+          'PlayerDistinction':
+            {
+              'type': 'object',
+              'additionalProperties': false,
+              'required': ['id', 'at'],
+              'description': "A player distinction as the server decides it (docs/honours.md). In PublicHonours and directory cards it is the owner's one showcased distinction, without its next step; in GET /account it is one of the caller's own.",
+              'properties':
+                {
+                  'id': { 'type': 'string', 'pattern': '^player-[a-z0-9-]{1,40}$' },
+                  'at':
+                    {
+                      'type': ['integer', 'null'],
+                      'description': 'Unix milliseconds: when an event distinction was granted, or when the current time step was reached.',
+                    },
+                  'tenure':
+                    {
+                      'type': 'object',
+                      'additionalProperties': false,
+                      'required': ['unit', 'count'],
+                      'description': 'Time distinction only: whole units since the first sign-in on the server clock, weeks until the first month, months until the first year, then years.',
+                      'properties':
+                        {
+                          'unit': { 'enum': ['week', 'month', 'year'] },
+                          'count': { 'type': 'integer', 'minimum': 1 },
+                          'next':
+                            {
+                              'type': 'object',
+                              'description': 'GET /account only: the following step {unit, count, at}.',
+                            },
+                        },
                     },
                 },
             },

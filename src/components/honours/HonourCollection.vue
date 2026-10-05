@@ -30,6 +30,8 @@
       :tabs="tabs"
       :state="campaign"
       :showcase="showcase"
+      :received="received"
+      :fresh-distinctions="freshDistinctions"
       :fresh="fresh"
       :new-ranks="newRanks"
       :show-new="settings.honourNotices !== 'off'"
@@ -70,7 +72,9 @@ import { useNativeDialog } from '../../composables/useNativeDialog';
 import { useHonourNavigation } from '../../composables/useHonourNavigation';
 import { useCampaignStore } from '../../stores/campaignStore';
 import { useSettingsStore } from '../../stores/settingsStore';
-import { HONOURS, honourCollection, validShowcase } from '../../data/honours';
+import { HONOURS, honourCollection } from '../../data/honours';
+import { isPlayerDistinction } from '../../data/playerDistinctions';
+import { usePlayerDistinctions } from '../../composables/usePlayerDistinctions';
 import TownDialog from '../town/TownDialog.vue';
 import HonourCollectionList from './HonourCollectionList.vue';
 import HonourDetail from './HonourDetail.vue';
@@ -84,6 +88,7 @@ const INTROS = {
   mine: 'Mine honours count the puzzles you complete. Earned ranks stay with this town.',
   town: 'Town honours follow your eras, the forge, supplies and protected incidents.',
   friends: 'Friends honours count visits between shared towns.',
+  player: 'Player distinctions mark special moments of the game and your time in Prospect Hollow.',
 };
 const campaign = useCampaignStore(),
   settings = useSettingsStore();
@@ -93,17 +98,28 @@ const townName = computed(() => cloudAccount?.townName.value ?? 'Prospect Hollow
 const canTravel = computed(() => !!cloudAccount?.signedIn.value);
 const { dialog, closeButton, dismissBackdrop } = useNativeDialog(() => emit('close'));
 const { openMuseumFor } = useHonourNavigation();
-const tabs = computed(() => honourCollection(campaign));
-const showcase = computed(() => validShowcase(campaign.honours.showcase, campaign.honours));
+const { showcase, received, list, unseen, markSeen } = usePlayerDistinctions({ campaign });
+// The town tabs, then the player's own distinctions: received ones only, so no total.
+const tabs = computed(() => [
+  ...honourCollection(campaign),
+  {
+    id: 'player',
+    families: [],
+    earned: list.value.length,
+    total: null,
+    fresh: unseen.value.length,
+  },
+]);
 // What was new on opening keeps its label while the collection stays open.
 const opened = (flag) =>
   tabs.value.flatMap((entry) =>
     entry.families.filter((family) => family[flag]).map((family) => family.id),
   );
 const fresh = opened('fresh'),
-  newRanks = opened('newRank');
+  newRanks = opened('newRank'),
+  freshDistinctions = [...unseen.value];
 const tab = ref(
-  HONOURS.familyById[props.familyId]?.tab ??
+  (isPlayerDistinction(props.familyId) ? 'player' : HONOURS.familyById[props.familyId]?.tab) ??
     tabs.value.find((entry) => entry.fresh && settings.honourNotices !== 'off')?.id ??
     'mine',
 );
@@ -119,6 +135,7 @@ const detailName = computed(
 watch(
   tab,
   (id) => {
+    if (id === 'player') return markSeen();
     const ids = unseenIds(tabs.value.find((entry) => entry.id === id));
     if (ids.length || newRanks.length) campaign.markHonoursSeen(ids);
   },
@@ -127,6 +144,10 @@ watch(
 // Opened from a popup or a link: show that honour over the collection, also when a
 // later request names another honour while the collection is open.
 function showRequested(familyId) {
+  if (isPlayerDistinction(familyId)) {
+    tab.value = 'player';
+    return;
+  }
   const family = HONOURS.familyById[familyId];
   if (!family) return;
   tab.value = family.tab;

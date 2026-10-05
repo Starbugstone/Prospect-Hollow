@@ -14,7 +14,7 @@
         <HonourBadge :definition="definition" :size="size" />
       </span>
     </span>
-    <small>{{
+    <small v-if="view.count">{{
       view.count === 1 ? t('1 honour') : t('{count} honours', { count: view.count })
     }}</small>
   </span>
@@ -26,13 +26,17 @@ import { t } from '../../i18n';
 import HonourBadge from './HonourBadge.vue';
 import { rankName } from './honourDisplay';
 
-// A town card's honours: the owner's showcased families (best earned rank and metal) and the
-// total, from the shared-town directory or the player's own town summary.
+// A town card's honours: the owner's showcased families (best earned rank and metal), their
+// player distinction and the total, from the shared-town directory or the player's own town
+// summary. `received` is the owner's own distinctions on their town list.
 const props = defineProps({
   honours: { type: Object, default: null },
+  received: { type: Object, default: null },
   size: { type: Number, default: 28 },
 });
-const view = computed(() => cardHonours(props.honours));
+const view = computed(() =>
+  props.received ? cardHonours(props.honours, props.received) : cardHonours(props.honours),
+);
 </script>
 <style>
 .honour-card-row {

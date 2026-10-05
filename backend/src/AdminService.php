@@ -281,6 +281,14 @@ final class AdminService
         $row = $this->playerRow($id);
         $db = $this->database->get();
         $now = time();
+        // Player distinctions held now, the time step included, dated in seconds.
+        $distinctions = [];
+        foreach (
+            PlayerDistinctions::load()->received($db, [$id], $now * 1000)[$id] ?? []
+            as $distinction => $entry
+        ) {
+            $distinctions[] = ['id' => $distinction, 'at' => intdiv($entry['at'], 1000)] + $entry;
+        }
         return [
             'player' =>
                 [
@@ -291,6 +299,7 @@ final class AdminService
                         'SELECT COUNT(*) FROM activity_days WHERE player_id=? AND day>?',
                         [$id, intdiv($now, 86400) - 30],
                     ),
+                    'distinctions' => $distinctions,
                 ] + self::activity($row),
             'sessions' => array_map(
                 fn($s) => [
@@ -409,6 +418,13 @@ final class AdminService
                 'uniqueVisitors' => $social('visitors'),
                 'townsVisited' => $social('travels'),
                 'saloonCollectedAt' => self::time($row['saloon_at']),
+                // The owner's player distinctions (milliseconds), for the showcase slot.
+                'ownerDistinctions' =>
+                    (object) (PlayerDistinctions::load()->received(
+                        $db,
+                        [$row['player_id']],
+                        time() * 1000,
+                    )[$row['player_id']] ?? []),
                 'guest' =>
                     $row['guest_name'] === null
                         ? null

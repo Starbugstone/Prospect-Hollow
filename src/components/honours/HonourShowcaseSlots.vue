@@ -14,7 +14,8 @@
       <template v-if="slot">
         <HonourBadge :definition="slot.definition" :size="44" />
         <span class="honour-slot-name"
-          >{{ t(slot.definition.name) }}<small>{{ slot.track.text }}</small></span
+          >{{ t(slot.definition.name)
+          }}<small :class="{ 'is-player': slot.player }">{{ slot.track.text }}</small></span
         >
       </template>
       <button v-else-if="addable" class="honour-slot-add" type="button" @click="$emit('add')">
@@ -30,16 +31,18 @@ import { t } from '../../i18n';
 import HonourBadge from './HonourBadge.vue';
 import { showcaseSlots } from './honourDisplay';
 // The three showcase slots: full in the collection and town management, compact
-// beside a shared town's name. Each slot shows its family's highest earned rank and metal.
+// beside a shared town's name. Each slot shows its family's highest earned rank and
+// metal, or the owner's player distinction (`received`, by ID).
 const props = defineProps({
   ids: { type: Array, default: () => [] },
   earned: { type: Object, default: () => ({}) },
+  received: { type: Object, default: () => ({}) },
   compact: Boolean,
   addable: Boolean,
   size: { type: Number, default: 34 },
 });
 defineEmits(['add']);
-const slots = computed(() => showcaseSlots(props.ids, props.earned));
+const slots = computed(() => showcaseSlots(props.ids, props.earned, props.received));
 const filled = computed(() => slots.value.filter(Boolean));
 </script>
 <style>
@@ -110,6 +113,9 @@ const filled = computed(() => slots.value.filter(Boolean));
   font-size: 11px;
   font-weight: 600;
   color: #6f5317;
+}
+.honour-slot-name small.is-player {
+  color: #4d3384;
 }
 .honour-slot-empty {
   padding-left: 6px;

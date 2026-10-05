@@ -13,6 +13,7 @@ import { isEraComplete } from '../game/town/TownEras';
 import { LEVEL_COUNT } from './campaign';
 import { ERAS } from './eras';
 import { OBSTACLES } from './obstacles';
+import { isPlayerDistinction } from './playerDistinctions';
 import { getLevelStarTarget } from './starRating';
 import { BANDIT_EVENT } from './town';
 
@@ -550,6 +551,9 @@ export function buildHonourCatalog(
 ) {
   const built = families.map((family) => {
     if (!HONOUR_TABS.includes(family.tab)) throw new Error(`${family.id} has no known tab.`);
+    // Showcases hold family and player distinction IDs side by side.
+    if (isPlayerDistinction(family.id))
+      throw new Error(`${family.id} uses the player distinction prefix.`);
     return {
       id: family.id,
       tab: family.tab,
@@ -891,11 +895,20 @@ export function honourCollection(state, catalog = HONOURS) {
     };
   });
 }
-// Showcase slots hold earned families only; a later rank upgrades the same slot.
-export function validShowcase(ids, honours, catalog = HONOURS) {
+// Showcase slots hold earned families, so a later rank upgrades the same slot, and at
+// most one player distinction the player received (`received`, keyed by ID: see
+// src/data/playerDistinctions.js).
+export function validShowcase(ids, honours, { catalog = HONOURS, received = {} } = {}) {
   const saved = normalizeHonours(honours);
+  let distinction = false;
   return [...new Set(ids)]
-    .filter((id) => catalog.familyById[id]?.ranks.some((definition) => saved.earned[definition.id]))
+    .filter((id) => {
+      if (isPlayerDistinction(id)) {
+        if (distinction || !Object.hasOwn(received, id)) return false;
+        return (distinction = true);
+      }
+      return catalog.familyById[id]?.ranks.some((definition) => saved.earned[definition.id]);
+    })
     .slice(0, SHOWCASE_SLOTS);
 }
 // The only honours data a visitor receives: earned IDs, dates, the public part of the
@@ -917,6 +930,6 @@ export function publicHonours(honours, catalog = HONOURS) {
   return {
     version: HONOURS_VERSION,
     earned,
-    showcase: validShowcase(saved.showcase, saved, catalog),
+    showcase: validShowcase(saved.showcase, saved, { catalog }),
   };
 }

@@ -37,6 +37,13 @@
           <dd>{{ player.activeDays }}</dd>
         </div>
         <div>
+          <dt>Player distinctions</dt>
+          <dd>
+            <template v-if="distinctions.length">{{ distinctions.join(' · ') }}</template>
+            <template v-else>—</template>
+          </dd>
+        </div>
+        <div>
           <dt>Last device</dt>
           <dd>
             {{
@@ -144,11 +151,20 @@ import { date, dateTime, describeAgent, isOnline, relativeTime, whole } from '..
 import { eraLabel } from '../labels';
 import ConfirmAction from '../components/ConfirmAction.vue';
 import TownState from '../components/TownState.vue';
+import { distinctionBadge } from '../../data/playerDistinctions';
+import { distinctionName } from '../../components/honours/honourDisplay';
 const props = defineProps({ id: String });
 const data = ref(null),
   error = ref(''),
   notice = ref('');
 const player = computed(() => data.value.player);
+// "Alpha Player", "Loyal Prospector · 3 months": what this player holds now.
+const distinctions = computed(() =>
+  (player.value.distinctions ?? [])
+    .map((entry) => distinctionBadge(entry.id, entry))
+    .filter(Boolean)
+    .map(distinctionName),
+);
 async function load() {
   try {
     data.value = await adminApi('GET', `players/${props.id}`);

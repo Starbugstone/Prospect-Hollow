@@ -2,6 +2,9 @@
   <section class="honour-editor" :aria-label="t('Manage showcase')">
     <p class="honour-editor-hint">
       {{ t('Visitors see up to three earned honours beside your town name, in this order.') }}
+      <template v-if="distinctions.length">{{
+        t('One of them can be a player distinction.')
+      }}</template>
     </p>
     <ol ref="list" class="honour-editor-slots" tabindex="-1" :aria-label="t('Showcase order')">
       <li
@@ -53,6 +56,41 @@
         </button>
       </li>
     </ul>
+    <template v-if="distinctions.length">
+      <h3>{{ t('Player distinctions') }}</h3>
+      <p class="honour-editor-hint">
+        {{
+          t(
+            accountTown
+              ? 'Your town can show one player distinction. Choosing another one replaces it.'
+              : 'Only towns on your account can show player distinctions.',
+          )
+        }}
+      </p>
+      <ul v-if="accountTown" class="honour-editor-choices">
+        <li v-for="choice in distinctions" :key="choice.familyId">
+          <button
+            type="button"
+            :aria-disabled="choice.shown || (full && !shownDistinction)"
+            @click="showDistinction(choice)"
+          >
+            <HonourBadge :definition="choice.definition" :size="36" />
+            <span class="honour-editor-name">{{ choice.name }}</span>
+            <small>{{
+              t(
+                choice.shown
+                  ? 'In the showcase'
+                  : shownDistinction
+                    ? 'Replace'
+                    : full
+                      ? 'Showcase full'
+                      : 'Add',
+              )
+            }}</small>
+          </button>
+        </li>
+      </ul>
+    </template>
     <p v-if="full && choices.length" class="honour-editor-hint">
       {{ t('Remove an honour from the showcase to make room for another.') }}
     </p>
@@ -63,21 +101,36 @@
 import { computed, nextTick, ref } from 'vue';
 import { t } from '../../i18n';
 import { useCampaignStore } from '../../stores/campaignStore';
-import { SHOWCASE_SLOTS, validShowcase } from '../../data/honours';
+import { usePlayerDistinctions } from '../../composables/usePlayerDistinctions';
+import { SHOWCASE_SLOTS } from '../../data/honours';
+import { isPlayerDistinction } from '../../data/playerDistinctions';
 import HonourBadge from './HonourBadge.vue';
 import { earnedFamilies, moveSlot, showcaseSlots } from './honourDisplay';
-// Showcase order, removal and additions from earned families. Presentation only:
-// it never changes buildings, rewards or progress.
+// Showcase order, removal and additions from earned families and at most one player
+// distinction. Presentation only: it never changes buildings, rewards or progress.
 const ACTIONS = [
   { id: 'earlier', offset: -1, label: 'Move {name} earlier', icon: 'M12 19V5m-6 6 6-6 6 6' },
   { id: 'later', offset: 1, label: 'Move {name} later', icon: 'M12 5v14m-6-6 6 6 6-6' },
   { id: 'remove', label: 'Remove {name} from the showcase', icon: 'm6 6 12 12M6 18 18 6' },
 ];
 const campaign = useCampaignStore();
+const {
+  showcase: ids,
+  saveShowcase,
+  received,
+  showcaseable,
+  accountTown,
+} = usePlayerDistinctions({ campaign });
 const list = ref(null),
   announcement = ref('');
-const ids = computed(() => validShowcase(campaign.honours.showcase, campaign.honours));
-const slots = computed(() => showcaseSlots(ids.value, campaign.honours.earned));
+const slots = computed(() => showcaseSlots(ids.value, campaign.honours.earned, received.value));
+const shownDistinction = computed(() => ids.value.find(isPlayerDistinction) ?? null);
+const distinctions = computed(() =>
+  Object.keys(received.value)
+    .map((id) => showcaseSlots([id], {}, received.value)[0])
+    .filter(Boolean)
+    .map((choice) => ({ ...choice, shown: choice.familyId === shownDistinction.value })),
+);
 const families = computed(() => earnedFamilies(campaign.honours.earned));
 const choices = computed(() =>
   families.value.filter((family) => !ids.value.includes(family.familyId)),
@@ -86,9 +139,7 @@ const full = computed(() => ids.value.length >= SHOWCASE_SLOTS);
 const allowed = (action, index) =>
   !action.offset || (index + action.offset >= 0 && index + action.offset < ids.value.length);
 function save(next, message) {
-  announcement.value = campaign.setHonourShowcase(next)
-    ? message
-    : t('Your showcase could not be saved.');
+  announcement.value = saveShowcase(next) ? message : t('Your showcase could not be saved.');
 }
 // Keyed slots may be re-inserted when they move, so focus follows the same control.
 async function focus(familyId, action) {
@@ -113,6 +164,17 @@ function run(action, index) {
     t('{name} moved to position {position}', { name, position: index + action.offset + 1 }),
   );
   focus(slot.familyId, action.id);
+}
+// One player distinction per town: another one takes the same slot.
+function showDistinction(choice) {
+  if (choice.shown || !Object.hasOwn(showcaseable.value, choice.familyId)) return;
+  const current = shownDistinction.value;
+  if (!current) return add(choice);
+  save(
+    ids.value.map((id) => (id === current ? choice.familyId : id)),
+    t('{name} replaces your player distinction', { name: choice.name }),
+  );
+  focus(choice.familyId, 'remove');
 }
 function add(choice) {
   if (full.value) return;

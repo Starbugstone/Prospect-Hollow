@@ -78,7 +78,8 @@
 import { computed, ref } from 'vue';
 import { t } from '../../i18n';
 import { useCampaignStore } from '../../stores/campaignStore';
-import { SHOWCASE_SLOTS, bestScoreRun, honourCollection, validShowcase } from '../../data/honours';
+import { SHOWCASE_SLOTS, bestScoreRun, honourCollection } from '../../data/honours';
+import { usePlayerDistinctions } from '../../composables/usePlayerDistinctions';
 import HonourBadge from './HonourBadge.vue';
 import HonourKicker from './HonourKicker.vue';
 import HonourProgress from './HonourProgress.vue';
@@ -112,7 +113,7 @@ const best = computed(() =>
     ? bestScoreRun(campaign.records)
     : null,
 );
-const showcase = computed(() => validShowcase(campaign.honours.showcase, campaign.honours));
+const { showcase, saveShowcase } = usePlayerDistinctions({ campaign });
 const showcased = computed(() => showcase.value.includes(props.familyId));
 const full = computed(() => showcase.value.length >= SHOWCASE_SLOTS);
 const saved = ref('');
@@ -132,7 +133,7 @@ function toggleShowcase() {
   const next = adding
     ? [...showcase.value, props.familyId]
     : showcase.value.filter((id) => id !== props.familyId);
-  saved.value = campaign.setHonourShowcase(next)
+  saved.value = saveShowcase(next)
     ? t(adding ? 'Added to your showcase.' : 'Removed from your showcase.')
     : t('Your showcase could not be saved.');
 }

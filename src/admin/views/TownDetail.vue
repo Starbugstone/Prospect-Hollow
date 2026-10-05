@@ -98,6 +98,7 @@
           :profile="profile"
           :unique-visitors="town.uniqueVisitors"
           :towns-visited="town.townsVisited"
+          :distinctions="town.ownerDistinctions"
         />
       </div>
       <div

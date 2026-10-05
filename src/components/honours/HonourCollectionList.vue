@@ -8,6 +8,7 @@
       <HonourShowcaseSlots
         :ids="showcase"
         :earned="state.honours?.earned ?? {}"
+        :received="received"
         addable
         @add="$emit('manage')"
       />
@@ -34,13 +35,21 @@
         @click="tab = entry.id"
       >
         <span>{{ t(TAB_LABELS[entry.id]) }}</span>
-        <b>{{ entry.earned }}/{{ entry.total }}</b>
+        <b>{{ entry.total === null ? entry.earned : `${entry.earned}/${entry.total}` }}</b>
         <i v-if="showNew && entry.fresh" class="honour-dot"
           ><span class="town-sr-only">{{ t('New honours') }}</span></i
         >
       </button>
     </div>
-    <div :id="`${uid}-panel`" role="tabpanel" :aria-labelledby="`${uid}-tab-${tab}`">
+    <div
+      v-if="current.id === 'player'"
+      :id="`${uid}-panel`"
+      role="tabpanel"
+      :aria-labelledby="`${uid}-tab-${tab}`"
+    >
+      <PlayerDistinctionList :fresh="freshDistinctions" :show-new="showNew" />
+    </div>
+    <div v-else :id="`${uid}-panel`" role="tabpanel" :aria-labelledby="`${uid}-tab-${tab}`">
       <div class="honour-toolbar">
         <div class="honour-filter" role="group" :aria-label="t('Show honours')">
           <button
@@ -84,12 +93,19 @@ import { computed, ref, useId } from 'vue';
 import { t } from '../../i18n';
 import HonourCard from './HonourCard.vue';
 import HonourShowcaseSlots from './HonourShowcaseSlots.vue';
+import PlayerDistinctionList from './PlayerDistinctionList.vue';
 import { TAB_LABELS, describeFamily } from './honourDisplay';
-// The collection body: showcase, Mine / Town / Friends tabs, filter and cards (earned first).
+// The collection body: showcase, Mine / Town / Friends tabs, filter and cards (earned
+// first), and the Player tab of received player distinctions when the host lists it.
+// Players only see the distinctions they received, so that tab counts without a total.
 const props = defineProps({
   tabs: { type: Array, required: true },
   state: { type: Object, required: true },
   showcase: { type: Array, default: () => [] },
+  // Player distinctions by ID, for the showcase slots.
+  received: { type: Object, default: () => ({}) },
+  // Player distinctions that were new when the collection opened.
+  freshDistinctions: { type: Array, default: () => [] },
   // Families that were new when the collection opened keep their label while it is open.
   fresh: { type: Array, default: () => [] },
   // Families with a rank added by an update, as they were when the collection opened.

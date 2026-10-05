@@ -14,6 +14,7 @@
     <HonourShowcaseSlots
       :ids="showcase"
       :earned="campaign.honours.earned"
+      :received="received"
       addable
       @add="managing = true"
     />
@@ -33,6 +34,7 @@
           compact
           :ids="showcase"
           :earned="campaign.honours.earned"
+          :received="received"
           :size="30"
         />
         <span v-else>{{ t('No honours on show yet') }}</span>
@@ -47,7 +49,7 @@ import { t } from '../../i18n';
 import { useHonourNavigation } from '../../composables/useHonourNavigation';
 import { useCampaignStore } from '../../stores/campaignStore';
 import { useSettingsStore } from '../../stores/settingsStore';
-import { validShowcase } from '../../data/honours';
+import { usePlayerDistinctions } from '../../composables/usePlayerDistinctions';
 import HonourShowcaseEditor from './HonourShowcaseEditor.vue';
 import HonourShowcaseSlots from './HonourShowcaseSlots.vue';
 import { honourSummary } from './honourDisplay';
@@ -59,9 +61,11 @@ const campaign = useCampaignStore(),
 const { openCollection } = useHonourNavigation();
 const uid = `honour-account-${useId()}`;
 const managing = ref(false);
+const { showcase, received, unseen } = usePlayerDistinctions({ campaign });
 const summary = computed(() => honourSummary(campaign.honours));
-const fresh = computed(() => (settings.honourNotices === 'off' ? 0 : summary.value.fresh));
-const showcase = computed(() => validShowcase(campaign.honours.showcase, campaign.honours));
+const fresh = computed(() =>
+  settings.honourNotices === 'off' ? 0 : summary.value.fresh + unseen.value.length,
+);
 </script>
 <style>
 .honour-account-summary {

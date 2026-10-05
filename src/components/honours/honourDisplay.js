@@ -6,6 +6,7 @@ import { ERA_BY_ID } from '../../data/eras';
 import { POWERS } from '../../data/campaign';
 import { HONOURS, MINE_ELEMENTS, SHOWCASE_SLOTS } from '../../data/honours';
 import { elementLevels } from '../../data/honourLevels';
+import { distinctionBadge, isPlayerDistinction } from '../../data/playerDistinctions';
 
 // Each metal is named and shaped (round, hexagon, rosette, octagon), never told apart
 // by colour alone. A metal added to RANK_METALS without a label shows its ID.
@@ -16,7 +17,7 @@ const METAL_LABELS = {
   diamond: 'Diamond',
 };
 const DIFFICULTIES = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
-export const TAB_LABELS = { mine: 'Mine', town: 'Town', friends: 'Friends' };
+export const TAB_LABELS = { mine: 'Mine', town: 'Town', friends: 'Friends', player: 'Player' };
 const BONUS_NAMES = { bomb: 'Bomb', cross: 'Cross', rainbow: 'Rainbow' };
 // Where an unfinished honour advances. Museum links open the filtered museum and the
 // directory link the shared-town directory, which needs a signed-in account.
@@ -40,9 +41,12 @@ export const outline = (count, outer, inner = outer, turn = -90) =>
 export const metalLabel = (metal) => t(METAL_LABELS[metal] ?? metal);
 export const difficultyLabel = (definition) =>
   t(DIFFICULTIES[definition.difficulty] ?? DIFFICULTIES.medium);
-// "Score Ace · Silver": a rank by name and metal, for the popup, showcase and gallery.
+// "Score Ace · Silver": a rank by name and metal, for the popup, showcase and gallery. A
+// player distinction has no metal: "Loyal Prospector · 2 years".
 export const rankName = (definition) =>
-  t('{name} · {metal}', { name: t(definition.name), metal: metalLabel(definition.metal) });
+  definition.player
+    ? distinctionName(definition)
+    : t('{name} · {metal}', { name: t(definition.name), metal: metalLabel(definition.metal) });
 
 // Nested English names (eras) are translated and numbers localized.
 const honourParams = (definition) =>
@@ -111,10 +115,13 @@ function topEarned(familyId, earned, catalog = HONOURS) {
 }
 export const earnedFamilies = (earned, catalog = HONOURS) =>
   catalog.families.map((family) => topEarned(family.id, earned, catalog)).filter(Boolean);
-export const showcaseSlots = (ids, earned, catalog = HONOURS) =>
-  Array.from({ length: SHOWCASE_SLOTS }, (_, index) =>
-    ids[index] ? topEarned(ids[index], earned, catalog) : null,
-  );
+// `received`: player distinctions by ID (receivedDistinctions or publishedDistinction).
+export const showcaseSlots = (ids, earned, received = {}, catalog = HONOURS) =>
+  Array.from({ length: SHOWCASE_SLOTS }, (_, index) => {
+    const id = ids[index];
+    if (!id) return null;
+    return isPlayerDistinction(id) ? distinctionSlot(id, received) : topEarned(id, earned, catalog);
+  });
 // Moves one showcase entry; the order is what visitors see.
 export function moveSlot(ids, index, offset) {
   const target = index + offset;
@@ -283,5 +290,57 @@ export function describeFamily(family, state, { canReplay = false, canTravel = f
     checks: measure?.kind === 'powers' ? powerChecks(measure, state) : null,
     mine: next ? mine : null,
     link,
+  };
+}
+
+// ---------- Player distinctions ----------
+// Time steps read "1 week", "3 months", "2 years"; the badge engraves the number and unit.
+const TENURE_TEXT = {
+  week: ['1 week', '{count} weeks', 'week', 'weeks'],
+  month: ['1 month', '{count} months', 'month', 'months'],
+  year: ['1 year', '{count} years', 'year', 'years'],
+};
+const tenureText = (step) => TENURE_TEXT[step.unit] ?? ['', '{count}', '', ''];
+export const tenureLabel = (step) =>
+  step.count === 1 ? t(tenureText(step)[0]) : t(tenureText(step)[1], { count: number(step.count) });
+export const tenureUnit = (step) => t(tenureText(step)[step.count === 1 ? 2 : 3]);
+export const distinctionName = (badge) =>
+  badge.tenure
+    ? t('{name} · {time}', { name: t(badge.name), time: tenureLabel(badge.tenure) })
+    : t(badge.name);
+function distinctionSlot(id, received) {
+  const definition = Object.hasOwn(received, id) && distinctionBadge(id, received[id]);
+  return definition
+    ? {
+        familyId: id,
+        player: true,
+        definition,
+        entry: received[id],
+        name: distinctionName(definition),
+        track: {
+          text: definition.tenure ? tenureLabel(definition.tenure) : t('Player distinction'),
+        },
+      }
+    : null;
+}
+// One received distinction for the Player tab: its badge, wording and dates.
+export function describeDistinction(item) {
+  const badge = distinctionBadge(item.id, item);
+  const step = item.tenure;
+  return {
+    id: item.id,
+    badge,
+    name: t(badge.name),
+    title: distinctionName(badge),
+    description: t(badge.description),
+    received: item.at
+      ? t(step ? 'Reached {date}' : 'Received {date}', { date: formatDate(item.at) })
+      : '',
+    next: step?.next
+      ? t('Next: {time} on {date}', {
+          time: tenureLabel(step.next),
+          date: formatDate(step.next.at),
+        })
+      : '',
   };
 }

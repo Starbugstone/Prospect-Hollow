@@ -6,6 +6,7 @@ $directory = sys_get_temp_dir() . '/' . $prefix;
 mkdir($directory . '/src', 0700, true);
 $source = file_get_contents(dirname(__DIR__) . '/src/Database.php');
 $names = [
+    'player_distinctions',
     'town_favourites',
     'visitor_visits_visitor',
     'player_profiles',
@@ -77,6 +78,13 @@ file_put_contents(
     $directory . '/' . $favourites,
     $rewrite(file_get_contents(dirname(__DIR__) . '/' . $favourites)),
 );
+$distinctions = $mysql
+    ? 'schema-player-distinctions.sql'
+    : 'schema-player-distinctions-postgresql.sql';
+file_put_contents(
+    $directory . '/' . $distinctions,
+    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $distinctions)),
+);
 try {
     $statements = explode(';', $schema);
     file_put_contents(
@@ -112,10 +120,24 @@ try {
             'retry preserves existing rows',
         );
     }
+    if (!$mysql) {
+        // PostgreSQL rolled back the first attempt, so this account joins afterwards.
+        $connection->insert($prefix . 'players', [
+            'id' => 'kept',
+            'email' => 'resume@example.test',
+            'created_at' => 1,
+        ]);
+    }
     // Also model a crash after every DDL statement but before the final version marker.
     $connection->executeStatement('DELETE FROM ' . $prefix . 'schema_versions');
     $migration->migrate();
     $migration->migrate();
+    check(
+        $connection->fetchAllAssociative(
+            'SELECT player_id,distinction_id FROM ' . $prefix . 'player_distinctions',
+        ) === [['player_id' => 'kept', 'distinction_id' => 'player-alpha']],
+        'existing accounts receive Alpha Player once, also when the migration is repeated',
+    );
     check(
         count($connection->createSchemaManager()->listTableIndexes($prefix . 'towns')) >= 4,
         'retry preserves required indexes',
@@ -156,6 +178,7 @@ try {
 } finally {
     foreach (
         [
+            'player_distinctions',
             'town_favourites',
             'visitor_leases',
             'visitor_visits',
@@ -187,6 +210,7 @@ try {
     @unlink($directory . '/' . $admin);
     @unlink($directory . '/' . $live);
     @unlink($directory . '/' . $favourites);
+    @unlink($directory . '/' . $distinctions);
     unlink($directory . '/src/Database.php');
     rmdir($directory . '/src');
     rmdir($directory);

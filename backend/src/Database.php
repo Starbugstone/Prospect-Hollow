@@ -14,6 +14,8 @@ final class Database
         13 => '/schema-admin',
         14 => '/schema-live-visitors',
         15 => '/schema-town-favourites',
+        // Grants Alpha Player to every account that exists when this release is deployed.
+        16 => '/schema-player-distinctions',
     ];
     private ?Connection $connection = null;
     public static function latestVersion(): int

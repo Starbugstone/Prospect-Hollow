@@ -269,3 +269,70 @@ regenerate `node scripts/export-honour-levels.mjs` (after level changes), `npm r
 export:save-rules` and `node scripts/export-public-content.mjs`, all in Docker. Never edit,
 remove or reorder a shipped rank; changing one needs a raised requirement version and the
 user's approval, and earned honours keep the version they were earned under.
+
+## Player distinctions
+
+Player distinctions are limited badges that belong to a player's account, not to a town. They
+mark being there at key moments of the game and the time since the first sign-in. Players only
+ever see the distinctions they received: the collection's **Player** tab lists them, with no
+locked goals. Like honours, they never change coins, chests, construction, progression or puzzle
+rules.
+
+| ID             | Name             | Kind   | Who holds it                                                     |
+| -------------- | ---------------- | ------ | ---------------------------------------------------------------- |
+| `player-alpha` | Alpha Player     | event  | Every account that exists when the version 16 migration runs     |
+| `player-time`  | Loyal Prospector | tenure | Every account at least one week after its first sign-in, growing |
+
+### The server decides
+
+`backend/src/PlayerDistinctions.php` alone decides who holds which distinction. The game never
+grants one or computes a time step: it shows what `GET /account` returns
+(`account.distinctions`, kept with the account record for offline play) and what a shared town
+publishes. A guest without an account has none.
+
+- **Event** distinctions are rows of `player_distinctions` (player, ID, grant time). The
+  version 16 migration grants Alpha Player to every account present when that release is
+  deployed, on each environment. Later events (Beta Player, special events) are granted with
+  `php bin/admin.php award-distinction ID [PLAYER_ID]` ([admin guide](backend/admin.md)); a
+  repeated grant keeps the first date. Grants are permanent and deleted only with the account.
+- **Time** (`player-time`) is computed on the server clock from `players.created_at`, the first
+  sign-in, by the `STEPS` ladder: whole weeks until the first month, then whole calendar months
+  (UTC; a missing day is the month's last) until the first year, then whole years, with no end.
+  A later step takes over at its first unit, so it reads 1, 2, 3, 4 weeks, 1 to 11 months, then
+  1, 2, 3… years. Nothing is stored, so it climbs on its own. `GET /account` also returns the
+  next step and its date. `backend/tests/fixtures/tenure-steps.json` pins the ladder, month ends
+  and leap days included.
+- A future dated event (for example "signed in on Christmas Day") would be another event kind
+  that the server grants when it sees that activity; the game would still only display it.
+
+### One per town
+
+A town's showcase keeps its three slots; at most one of them may hold a player distinction, and
+only a town on the player's account can show one. The ID sits in the saved `honours.showcase`
+beside family IDs (`player-` is reserved, `buildHonourCatalog` rejects a family using it). Every
+showcase change goes through `usePlayerDistinctions().saveShowcase`, which validates with the
+player's received distinctions, so editing town honours never drops the one on show. Choosing
+another distinction replaces it in the same slot.
+
+Visitors receive it as `honours.distinction` (`{ id, at, tenure? }`, without the next step). The
+stored share keeps only the ID: the server checks that the owner holds it and computes the time
+step on every visit and directory card (`PlayerDistinctions::attach`), and removes it from the
+showcase otherwise. The owner's own town cards use their account's distinctions.
+
+### Presentation
+
+Player distinctions are glowing shields with sparkles on the rim, unlike every town medal
+(round, hexagon, rosette, octagon). Each has its own colours (Alpha Player amethyst with α, the
+time distinction midnight blue with an hourglass engraved with the count and unit). The glow
+holds still with reduced motion. A new distinction or time step lights the honours marker and a
+New label in the Player tab until the tab is opened; this is remembered per account on the
+device (`prospect-distinctions-seen-v1`).
+
+### Adding a distinction
+
+Add an entry to `PLAYER_DISTINCTIONS` in `src/data/playerDistinctions.js` (ID `player-…`, kind,
+name, description, art and palette, with French text), record it in
+`testing/fixtures/shipped-player-distinctions.json`, then run `node scripts/export-public-content.mjs`
+so the server knows it. Grant an event with the admin command. A shipped ID is never reused,
+renamed or removed. A new time unit is a server `STEPS` entry plus its labels and accepted unit
+in the game (`TENURE_UNITS`, `TENURE_TEXT`).
