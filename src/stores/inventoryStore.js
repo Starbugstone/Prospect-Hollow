@@ -3,7 +3,7 @@ import { useGameStore } from './gameStore';
 import { useCampaignStore } from './campaignStore';
 
 // Powers that wait for a board tap; they are consumed on that tap.
-const TARGETED_POWERS = new Set(['tnt', 'color-wand', 'tile-breaker']);
+export const TARGETED_POWERS = new Set(['tnt', 'color-wand', 'tile-breaker']);
 
 export const useInventoryStore = defineStore('inventory', {
   getters: {

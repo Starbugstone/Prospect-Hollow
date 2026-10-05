@@ -183,6 +183,16 @@ export class BoardInput {
       this.gameStore.setBonusMode(null);
     }
   }
+  // The cell under a page point, such as a power dragged from the bar onto the board.
+  cellAtClientPoint(clientX, clientY) {
+    const rect = this.scene?.game?.canvas?.getBoundingClientRect?.();
+    if (!rect?.width || !rect.height) return null;
+    const { width = rect.width, height = rect.height } = this.scene.scale ?? {};
+    return this.getCellIndexFromPointer({
+      x: ((clientX - rect.left) * width) / rect.width,
+      y: ((clientY - rect.top) * height) / rect.height,
+    });
+  }
   getCellIndexFromPointer(pointer) {
     const { boardCols, boardRows, cellSize } = this.layout;
     if (!cellSize) return null;
