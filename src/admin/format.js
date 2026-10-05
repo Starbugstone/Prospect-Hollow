@@ -99,6 +99,8 @@ const ACTIONS = {
   player_deleted: 'Deleted player account',
   distinction_granted: 'Gave player distinction',
   distinction_removed: 'Removed player distinction',
+  audit_retention_changed: 'Changed activity log retention',
+  audit_purged: 'Purged activity log',
   town_renamed: 'Renamed town',
   town_unshared: 'Stopped sharing town',
   town_deleted: 'Deleted town',

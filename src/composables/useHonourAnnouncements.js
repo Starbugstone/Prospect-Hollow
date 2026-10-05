@@ -81,7 +81,8 @@ function distinctionNotice(items) {
  *   town honours follow the committed action.
  * A card on screen hides and pauses while blocked and closes when the village does.
  * Quiet and Off mark honours announced without a popup; Off also clears the New marker.
- * Player distinctions use the same card once no town honour is waiting.
+ * `kind` picks the queue: town honours (`town`) or player distinctions (`player`). Each
+ * has its own card, so both can be on screen at once, one above the other.
  */
 export function useHonourAnnouncements(
   active,
@@ -91,9 +92,11 @@ export function useHonourAnnouncements(
     game = useGameStore(),
     page = globalThis.document,
     catalog = HONOURS,
-    distinctions = usePlayerDistinctions({ campaign }),
+    kind = 'town',
+    distinctions = kind === 'player' ? usePlayerDistinctions({ campaign }) : null,
   } = {},
 ) {
+  const player = kind === 'player';
   const navigation = useHonourNavigation();
   const notice = ref(null);
   const holds = reactive({ hover: false, focus: false, hidden: !!page?.hidden });
@@ -102,18 +105,17 @@ export function useHonourAnnouncements(
   // cannot loop the same card, while another town or a fresh save announces normally.
   const handled = reactive(new Set());
   const origins = new Map();
-  const key = (id) => `${id}@${campaign.honours.earned[id]?.at ?? 'backfill'}`;
-  // A player distinction's id is already its key (distinctionKey).
-  const handledKey = (next, id) => (next.player ? id : key(id));
+  // Honours by ID and date; a player distinction's id is already its key.
+  const key = (id) => (player ? id : `${id}@${campaign.honours.earned[id]?.at ?? 'backfill'}`);
   let serial = 0;
 
   const owned = computed(() => !!toValue(active) && !campaign.readOnly && !game.sessionActive);
   const pending = computed(() => {
-    const unhandled = (next) => next && !next.ids.every((id) => handled.has(handledKey(next, id)));
-    const honours = honourNotice(campaign.honours, catalog);
-    if (unhandled(honours)) return honours;
-    const player = distinctionNotice(distinctions.unannounced.value);
-    return unhandled(player) ? player : null;
+    const next = player
+      ? distinctionNotice(distinctions.unannounced.value)
+      : honourNotice(campaign.honours, catalog);
+    if (!next || next.ids.every((id) => handled.has(key(id)))) return null;
+    return next;
   });
   const storeBusy = computed(() => {
     const town = campaign.town;
@@ -140,8 +142,8 @@ export function useHonourAnnouncements(
   );
 
   function acknowledge(next) {
-    for (const id of next.ids) handled.add(handledKey(next, id));
-    if (next.player) distinctions.markAnnounced(next.ids);
+    for (const id of next.ids) handled.add(key(id));
+    if (player) distinctions.markAnnounced(next.ids);
     else campaign.markHonoursAnnounced(next.ids);
   }
   // Quiet and Off never wait for a popup slot: they only need the owner's village.
@@ -152,7 +154,7 @@ export function useHonourAnnouncements(
       if (!next || !owned.value || settings.honourNotices === 'full') return;
       acknowledge(next);
       if (settings.honourNotices !== 'off') return;
-      if (next.player) distinctions.markSeen(next.ids);
+      if (player) distinctions.markSeen(next.ids);
       else campaign.markHonoursSeen(next.ids);
     },
     { immediate: true },
@@ -206,7 +208,7 @@ export function useHonourAnnouncements(
   // An import or reset replaces the honours on screen.
   watch(
     () => campaign.honours.earned,
-    (earned) => !notice.value?.player && notice.value?.ids.some((id) => !earned[id]) && dismiss(),
+    (earned) => !player && notice.value?.ids.some((id) => !earned[id]) && dismiss(),
   );
 
   // Page signals are observed only while something waits or shows.
@@ -256,9 +258,10 @@ export function useHonourAnnouncements(
     view() {
       const shown = notice.value;
       dismiss();
+      // The player card opens the Player tab.
       if (shown)
         navigation.openCollection(
-          shown.player
+          player
             ? shown.entries[0].id
             : shown.entries.length === 1
               ? shown.entries[0].definition.family

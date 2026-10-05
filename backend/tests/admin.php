@@ -1077,6 +1077,67 @@ try {
         'deleted email not kept in the log',
     );
 
+    // The activity log keeps three months unless changed, and can be purged by hand.
+    $audit = fn() => status(200, adminCall('GET', 'audit', null, $s), 'audit');
+    check($audit()['retentionDays'] === 90, 'the activity log is kept for three months');
+    $stale = fn(int $days) => $db->get()->insert('admin_audit', [
+        'at' => time() - $days * 86400,
+        'admin' => 'retention-test',
+        'action' => 'sign_in',
+    ]);
+    $kept = fn() => (int) $db
+        ->get()
+        ->fetchOne("SELECT COUNT(*) FROM admin_audit WHERE admin='retention-test'");
+    $stale(100);
+    $stale(200);
+    $audit();
+    check($kept() === 0, 'opening the log removes entries older than three months');
+    status(
+        422,
+        adminCall('PATCH', 'audit/settings', ['retentionDays' => 45], $s),
+        'retention outside the offered choices',
+    );
+    $stale(100);
+    $stale(200);
+    check(
+        status(
+            200,
+            adminCall('PATCH', 'audit/settings', ['retentionDays' => 180], $s),
+            'keep six months',
+        )['purged'] === 1 &&
+            $audit()['retentionDays'] === 180 &&
+            $kept() === 1,
+        'a longer retention keeps newer entries and removes older ones at once',
+    );
+    $db->get()->update('admin_settings', ['value' => '30'], ['name' => 'audit_retention_days']);
+    check(
+        App\AdminService::expireAudit($db->get()) >= 1 && $kept() === 0,
+        'the daily cleanup applies the retention',
+    );
+    $stale(1);
+    check(
+        status(200, adminCall('POST', 'audit/purge', ['all' => false], $s), 'purge old')[
+            'purged'
+        ] === 0 && $kept() === 1,
+        'purging old entries keeps recent ones',
+    );
+    status(200, adminCall('POST', 'audit/purge', ['all' => true], $s), 'purge everything');
+    $remaining = $audit()['entries'];
+    check(
+        $kept() === 0 &&
+            count($remaining) === 1 &&
+            $remaining[0]['action'] === 'audit_purged' &&
+            str_ends_with($remaining[0]['detail'], ', all'),
+        'purging everything leaves only the record of the purge',
+    );
+    status(401, adminCall('POST', 'audit/purge', ['all' => true], []), 'purge needs an admin');
+    status(
+        422,
+        adminCall('POST', 'audit/purge', ['everything' => true], $s),
+        'purge rejects unknown fields',
+    );
+    $db->get()->update('admin_settings', ['value' => '90'], ['name' => 'audit_retention_days']);
+
     // Sign-in brute force is limited per client address.
     $ip = '10.' . random_int(0, 255) . '.' . random_int(0, 255) . '.' . random_int(1, 254);
     for ($i = 0; $i < 10; $i++) {

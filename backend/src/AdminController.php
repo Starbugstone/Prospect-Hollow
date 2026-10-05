@@ -118,6 +118,12 @@ final class AdminController
         if ($method . ' ' . $path === 'GET audit') {
             return $this->service->auditLog($query);
         }
+        if ($method . ' ' . $path === 'PATCH audit/settings') {
+            return $this->service->setAuditRetention($actor, $body);
+        }
+        if ($method . ' ' . $path === 'POST audit/purge') {
+            return $this->service->purgeAudit($actor, $body);
+        }
         if ($method . ' ' . $path === 'GET admins') {
             return ['admins' => $this->admin->all(), 'self' => $actor];
         }

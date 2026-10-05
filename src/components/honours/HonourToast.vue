@@ -7,161 +7,21 @@
     role="status"
     aria-live="polite"
   >
-    <Transition name="honour-toast">
-      <article
-        v-if="notice"
-        v-show="visible"
-        ref="card"
-        :key="notice.key"
-        class="honour-toast"
-        :class="{ 'honour-toast-summary': summary, 'honour-toast-paused': paused }"
-        @pointerenter="hold('hover', true)"
-        @pointerleave="hold('hover', false)"
-        @focusin="focusIn"
-        @focusout="focusOut"
-        @keydown.esc="close"
-      >
-        <div class="honour-toast-art" aria-hidden="true">
-          <HonourBadge
-            v-for="{ id, definition } in notice.entries.slice(0, 3)"
-            :key="id"
-            :definition="definition"
-            :size="summary ? 46 : 68"
-          />
-        </div>
-        <div class="honour-toast-text">
-          <span class="honour-toast-kicker">{{ copy.kicker }}</span>
-          <strong class="honour-toast-title">{{ copy.title }}</strong>
-          <span class="honour-toast-line">{{ copy.line }}</span>
-          <span v-if="copy.promotion" class="honour-toast-promotion">
-            <span aria-hidden="true">{{ copy.promotion.visual }}</span>
-            <span class="town-sr-only">{{ copy.promotion.spoken }}</span>
-          </span>
-          <div class="honour-toast-foot">
-            <span v-if="!summary && !notice.player" class="honour-toast-difficulty">
-              <HonourMetalIcon :metal="first.metal" />
-              {{ difficultyLabel(first) }}
-            </span>
-            <button type="button" class="honour-toast-view" @click="view">
-              {{ t(summary ? 'View all' : 'Open') }}<span aria-hidden="true">→</span>
-            </button>
-          </div>
-        </div>
-        <button
-          type="button"
-          class="honour-toast-close"
-          :aria-label="t('Dismiss')"
-          :title="t('Dismiss')"
-          @click="close"
-        >
-          <span aria-hidden="true">×</span>
-        </button>
-        <span class="honour-toast-timer" aria-hidden="true"></span>
-      </article>
-    </Transition>
+    <HonourToastCard kind="player" :active="active" @shown="measure" />
+    <HonourToastCard kind="town" :active="active" @shown="measure" />
   </div>
 </template>
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { t } from '../../i18n';
+import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useSettingsStore } from '../../stores/settingsStore';
-import { NOTICE_MS, useHonourAnnouncements } from '../../composables/useHonourAnnouncements';
-import HonourBadge from './HonourBadge.vue';
-import HonourMetalIcon from './HonourMetalIcon.vue';
-import {
-  difficultyLabel,
-  distinctionPopup,
-  metalLabel,
-  popupText,
-  rankName,
-} from './honourDisplay';
+import { NOTICE_MS } from '../../composables/useHonourAnnouncements';
+import HonourToastCard from './HonourToastCard.vue';
 
-// The achievement popup: bottom right above the village tab bar, a compact card across
-// narrow screens. Non-modal; it never takes focus and pauses while hovered or focused.
-const props = defineProps({ active: Boolean });
+// The achievement popups: bottom right above the village tab bar, compact cards across
+// narrow screens. Player distinctions and town honours each have their own card; when
+// both are up, the player card sits above the town card.
+defineProps({ active: Boolean });
 const settings = useSettingsStore();
-const { notice, visible, paused, hold, dismiss, view } = useHonourAnnouncements(() => props.active);
-
-const summary = computed(() => notice.value?.entries.length > 1);
-const first = computed(() => notice.value?.entries[0].definition ?? {});
-const names = (entries) => {
-  const [a, b] = entries.map(({ definition }) => t(definition.name));
-  if (entries.length === 2) return t('{first} and {second}', { first: a, second: b });
-  const more = entries.length - 2;
-  return t(more === 1 ? '{first}, {second} and 1 more' : '{first}, {second} and {count} more', {
-    first: a,
-    second: b,
-    count: more,
-  });
-};
-const copy = computed(() => {
-  const shown = notice.value;
-  if (!shown) return {};
-  const count = shown.entries.length;
-  // A player distinction from the server: Alpha Player, or a new time step.
-  if (shown.player)
-    return count === 1
-      ? {
-          kicker: t('Player distinction'),
-          title: rankName(first.value),
-          line: distinctionPopup(first.value),
-        }
-      : {
-          kicker: t('{count} player distinctions', { count }),
-          title: names(shown.entries),
-          line: t('Added to your collection'),
-        };
-  if (count === 1) {
-    // A family moving up names both metals: "Bronze → Silver".
-    const from = !shown.backfilled && shown.entries[0].from;
-    const metals = from && { from: metalLabel(from.metal), to: metalLabel(first.value.metal) };
-    return {
-      kicker: t(
-        shown.backfilled ? 'Honour recorded' : from ? 'New rank earned' : 'Achievement earned',
-      ),
-      title: rankName(first.value),
-      line: shown.backfilled ? t('From your progress so far') : popupText(first.value),
-      promotion: metals && {
-        visual: `${metals.from} → ${metals.to}`,
-        spoken: t('Promoted from {from} to {to}', metals),
-      },
-    };
-  }
-  return {
-    kicker: t(shown.backfilled ? '{count} honours recorded' : '{count} achievements earned', {
-      count,
-    }),
-    title: names(shown.entries),
-    line: t(
-      shown.backfilled
-        ? 'From your progress so far'
-        : shown.fromPuzzle
-          ? 'From your last puzzle'
-          : 'Added to your collection',
-    ),
-  };
-});
-
-// Keyboard users return to where they were when they close the card.
-const card = ref(null);
-let returnFocus = null;
-function focusIn(event) {
-  if (!card.value?.contains(event.relatedTarget)) returnFocus = event.relatedTarget;
-  hold('focus', true);
-}
-function focusOut(event) {
-  if (!card.value?.contains(event.relatedTarget)) hold('focus', false);
-}
-function close() {
-  const inside = card.value?.contains(document.activeElement);
-  dismiss();
-  if (inside && returnFocus?.isConnected) returnFocus.focus({ preventScroll: true });
-}
-// A card that closes under the pointer or focus never sends leave events.
-watch(notice, () => {
-  hold('focus', false);
-  hold('hover', false);
-});
 
 // Sit above the village tab bar, which already includes the bottom safe area.
 const tabOffset = ref(0);
@@ -169,12 +29,14 @@ function measure() {
   const bar = document.querySelector('.town-tab-bar')?.getBoundingClientRect();
   tabOffset.value = bar?.height ? Math.max(0, Math.round(window.innerHeight - bar.top)) : 0;
 }
-watch(visible, (shown) => shown && measure(), { flush: 'post' });
 onMounted(() => window.addEventListener('resize', measure));
 onBeforeUnmount(() => window.removeEventListener('resize', measure));
 </script>
 <style>
 .honour-toast-region {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   position: fixed;
   right: max(20px, calc(env(safe-area-inset-right) + 12px));
   bottom: max(calc(var(--honour-toast-tab, 0px) + 16px), calc(env(safe-area-inset-bottom) + 16px));
@@ -443,6 +305,27 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure));
   .honour-toast-foot {
     margin-top: 2px;
   }
+}
+/* The player distinction card is night violet, never the town's green, so a player
+   reward always reads apart from a town reward. */
+.honour-toast-player {
+  border-color: #c9b2ff7a;
+  background:
+    radial-gradient(120% 140% at 0% 0%, #6a4aa6 0%, transparent 55%),
+    linear-gradient(135deg, #3d2a6b 0%, #2c1f52 55%, #1f163b 100%);
+  box-shadow:
+    0 18px 44px #140c2a99,
+    0 0 0 1px #b98cff33,
+    0 2px 0 #fff6e512 inset;
+}
+.honour-toast-player .honour-toast-art::before {
+  background: radial-gradient(circle, #b98cff59 0%, transparent 65%);
+}
+.honour-toast-player .honour-toast-kicker {
+  color: #dccbff;
+}
+.honour-toast-player .honour-toast-line {
+  color: #d9d0ee;
 }
 .high-contrast .honour-toast {
   border-color: #e9c893;

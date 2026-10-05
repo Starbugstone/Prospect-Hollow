@@ -20,4 +20,6 @@ $db->executeStatement('DELETE FROM admin_sessions WHERE expires_at<? OR used_at<
 ]);
 // Daily active-player marks feed the admin charts; keep 90 days.
 $db->executeStatement('DELETE FROM activity_days WHERE day<?', [intdiv(time(), 86400) - 90]);
-echo "Expired credentials and rate buckets removed.\n";
+// The admin activity log keeps its retention (three months unless changed in the panel).
+App\AdminService::expireAudit($db);
+echo "Expired credentials, rate buckets and old activity log entries removed.\n";

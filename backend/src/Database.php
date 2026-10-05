@@ -18,6 +18,8 @@ final class Database
         16 => '/schema-player-distinctions',
         // Distinctions an admin removed (a cheater), kept apart so a mass grant skips them.
         17 => '/schema-distinction-revocations',
+        // Admin settings, starting with how long the activity log is kept.
+        18 => '/schema-admin-settings',
     ];
     private ?Connection $connection = null;
     public static function latestVersion(): int

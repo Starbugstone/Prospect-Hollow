@@ -2,6 +2,7 @@
 declare(strict_types=1);
 namespace App;
 use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\Connection;
 
 /** Admin views of players and towns, and the audited support and moderation actions. */
 final class AdminService
@@ -611,16 +612,39 @@ final class AdminService
         return $this->townDetail($id);
     }
 
+    /** Activity log retention in days: three months unless an admin changes it. */
+    public const AUDIT_RETENTION_DAYS = 90;
+    /** The retention choices the panel offers, in days. */
+    public const AUDIT_RETENTION_CHOICES = [30, 90, 180, 365, 730];
+    public static function auditRetention(Connection $db): int
+    {
+        $days = $db->fetchOne("SELECT value FROM admin_settings WHERE name='audit_retention_days'");
+        return is_numeric($days) && in_array((int) $days, self::AUDIT_RETENTION_CHOICES, true)
+            ? (int) $days
+            : self::AUDIT_RETENTION_DAYS;
+    }
+    /**
+     * Removes activity log entries older than the retention (bin/cleanup.php daily, and
+     * whenever the log is opened, so it holds without a scheduled task). Returns how many.
+     */
+    public static function expireAudit(Connection $db, ?int $now = null): int
+    {
+        return $db->executeStatement('DELETE FROM admin_audit WHERE at<?', [
+            ($now ?? time()) - self::auditRetention($db) * 86400,
+        ]);
+    }
     public function auditLog(array $query): array
     {
         $page = self::page($query);
-        $rows = $this->database
-            ->get()
-            ->fetchAllAssociative(
-                'SELECT * FROM admin_audit ORDER BY id DESC LIMIT 51 OFFSET ' . ($page - 1) * 50,
-            );
+        $db = $this->database->get();
+        self::expireAudit($db);
+        $rows = $db->fetchAllAssociative(
+            'SELECT * FROM admin_audit ORDER BY id DESC LIMIT 51 OFFSET ' . ($page - 1) * 50,
+        );
         return [
             'page' => $page,
+            'retentionDays' => self::auditRetention($db),
+            'retentionChoices' => self::AUDIT_RETENTION_CHOICES,
             'hasNext' => count($rows) > 50,
             'entries' => array_map(
                 fn($r) => [
@@ -633,5 +657,59 @@ final class AdminService
                 array_slice($rows, 0, 50),
             ),
         ];
+    }
+    // Changes how long the activity log is kept; shorter applies at once.
+    public function setAuditRetention(string $actor, array $body): array
+    {
+        SaveService::keys($body, ['retentionDays']);
+        $days = $body['retentionDays'] ?? null;
+        if (!is_int($days) || !in_array($days, self::AUDIT_RETENTION_CHOICES, true)) {
+            throw new ApiError(422, 'Choose one of the offered retention periods.');
+        }
+        return $this->database->get()->transactional(function ($db) use ($actor, $days) {
+            $before = self::auditRetention($db);
+            if (
+                !$db->update(
+                    'admin_settings',
+                    ['value' => (string) $days],
+                    ['name' => 'audit_retention_days'],
+                )
+            ) {
+                $db->insert('admin_settings', [
+                    'name' => 'audit_retention_days',
+                    'value' => (string) $days,
+                ]);
+            }
+            if ($before !== $days) {
+                $this->admins->audit(
+                    $actor,
+                    'audit_retention_changed',
+                    null,
+                    "$before → $days days",
+                );
+            }
+            return ['retentionDays' => $days, 'purged' => self::expireAudit($db)];
+        });
+    }
+    // Purges the activity log now: entries past the retention, or every entry. The purge
+    // itself is then recorded, so the log always shows who emptied it and when.
+    public function purgeAudit(string $actor, array $body): array
+    {
+        SaveService::keys($body, ['all']);
+        $all = ($body['all'] ?? false) === true;
+        return $this->database->get()->transactional(function ($db) use ($actor, $all) {
+            $purged = $all
+                ? $db->executeStatement('DELETE FROM admin_audit')
+                : self::expireAudit($db);
+            $this->admins->audit(
+                $actor,
+                'audit_purged',
+                null,
+                $all
+                    ? "$purged entries, all"
+                    : "$purged entries older than " . self::auditRetention($db) . ' days',
+            );
+            return ['purged' => $purged];
+        });
     }
 }

@@ -24,7 +24,11 @@ vi.mock('../src/composables/useHonourAnnouncements', async (importOriginal) => {
   const real = await importOriginal();
   return {
     ...real,
-    useHonourAnnouncements: (...args) => preview.card ?? real.useHonourAnnouncements(...args),
+    // A preset card replaces the queue of its kind (town unless stated).
+    useHonourAnnouncements: (active, options = {}) =>
+      preview.card && (preview.card.kind ?? 'town') === (options.kind ?? 'town')
+        ? preview.card
+        : real.useHonourAnnouncements(active, options),
   };
 });
 
@@ -100,7 +104,7 @@ describe('Honour popup queue', () => {
   const earn = (ids, options) => {
     campaign.honours = award(campaign.honours, ids, options);
   };
-  function start({ active = true, game, distinctions } = {}) {
+  function start({ active = true, game, distinctions, kind } = {}) {
     const state = reactive({ active });
     const page = Object.assign(new EventTarget(), {
       hidden: false,
@@ -119,6 +123,7 @@ describe('Honour popup queue', () => {
       useHonourAnnouncements(() => state.active, {
         game,
         page,
+        ...(kind ? { kind } : {}),
         ...(distinctions ? { distinctions } : {}),
       }),
     );
@@ -180,7 +185,7 @@ describe('Honour popup queue', () => {
     expect(game.audioManager.playArcadeCue).toHaveBeenCalledTimes(1);
   });
 
-  it('announces a new player distinction once, after any town honour card', async () => {
+  it('gives player distinctions their own card, shown with the town card', async () => {
     const alpha = { id: 'player-alpha', at: 5 };
     const year = { id: 'player-time', at: 6, tenure: { unit: 'year', count: 2 } };
     const distinctions = {
@@ -192,29 +197,42 @@ describe('Honour popup queue', () => {
       }),
       markSeen: vi.fn(),
     };
-    const { toast } = start({ distinctions });
-    earn(['stars-bronze']);
+    const shared = reactive({
+      sessionActive: false,
+      sessionVersion: 1,
+      audioManager: { playArcadeCue: vi.fn() },
+    });
+    const { toast: town } = start({ game: shared });
+    const { toast: player } = start({ game: shared, kind: 'player', distinctions });
+    earn(['stars-bronze', 'forge-bronze']);
     await settle();
-    expect(toast.notice.value.player).toBeUndefined();
-    toast.dismiss();
-    await settle();
-    expect(toast.notice.value).toMatchObject({ player: true });
-    expect(toast.notice.value.entries.map(({ definition }) => definition.player)).toEqual([
-      true,
-      true,
+    // Both cards are up at once; several of a kind share their card, never mixed.
+    expect(town.notice.value.player).toBeUndefined();
+    expect(town.notice.value.entries.map(({ id }) => id).sort()).toEqual([
+      'forge-bronze',
+      'stars-bronze',
+    ]);
+    expect(player.notice.value).toMatchObject({ player: true });
+    expect(player.notice.value.entries.map(({ id }) => id)).toEqual([
+      'player-alpha',
+      'player-time',
     ]);
     expect(distinctions.markAnnounced).toHaveBeenCalledWith(['player-alpha', 'player-time@year-2']);
-    toast.view();
+    expect(campaign.honours.earned['stars-bronze'].announced).toBe(true);
+    // Each card closes on its own and opens its own collection tab.
+    player.view();
+    expect(player.notice.value).toBe(null);
+    expect(town.notice.value).not.toBe(null);
     expect(useHonourNavigation().requests.collection).toEqual({ familyId: 'player-alpha' });
     await settle(NOTICE_MS * 2);
-    expect(toast.notice.value).toBe(null);
+    expect(town.notice.value).toBe(null);
     // Quiet announces without a popup; Off also clears the New marker.
     settings.honourNotices = 'off';
     distinctions.unannounced.value = [
       { id: 'player-time', at: 7, tenure: { unit: 'year', count: 3 } },
     ];
     await settle();
-    expect(toast.notice.value).toBe(null);
+    expect(player.notice.value).toBe(null);
     expect(distinctions.markSeen).toHaveBeenCalledWith(['player-time@year-3']);
   });
 
@@ -464,7 +482,7 @@ describe('Honour popup rendering', () => {
 
   it('words a player distinction card with its time step and no metal', async () => {
     const step = { unit: 'year', count: 2 };
-    const preset = card([]);
+    const preset = { ...card([]), kind: 'player' };
     preset.notice.value = {
       key: 2,
       player: true,
@@ -483,6 +501,8 @@ describe('Honour popup rendering', () => {
     for (const text of ['Player distinction', 'Loyal Prospector · 2 years', '2 years since'])
       expect(html).toContain(text);
     expect(html).toContain('honour-badge-player');
+    // Its own violet card, without the town card's metal and difficulty.
+    expect(html).toContain('honour-toast-player');
     expect(html).not.toContain('honour-toast-difficulty');
     preset.notice.value = {
       ...preset.notice.value,

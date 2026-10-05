@@ -341,10 +341,14 @@ capitals: "2 / YEARS"). Drawn small (beside a shared town's name, on town cards)
 also writes its step beside it ("2 years"); elsewhere its name reads "Loyal Prospector · 2
 years". The glow holds still with reduced motion.
 
-A new distinction or time step gets the honours popup ("Player distinction · Loyal Prospector ·
-2 years · 2 years since your first sign-in", or "You played during the alpha. Thank you!"),
-after any town honour card and with the same safe points and notice preference. It also lights
-the honours marker and a New label in the Player tab until the tab is opened. Both are
+A new distinction or time step gets its own popup card ("Player distinction · Loyal Prospector
+· 2 years · 2 years since your first sign-in", or "You played during the alpha. Thank you!"),
+in night violet rather than the town card's green, so a player reward never reads as a town
+reward. Player distinctions and town honours never share a card: each kind has its own queue
+(`useHonourAnnouncements(active, { kind })`), several of a kind share their card, and when both
+are up the player card sits above the town card. Both follow the same safe points and notice
+preference. A new distinction also lights the honours marker and a New label in the Player tab
+until the tab is opened. Both are
 remembered per account on the device (`prospect-distinctions-announced-v1`,
 `prospect-distinctions-seen-v1`), so another device announces them once more.
 

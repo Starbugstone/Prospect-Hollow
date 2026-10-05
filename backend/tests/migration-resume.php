@@ -6,6 +6,7 @@ $directory = sys_get_temp_dir() . '/' . $prefix;
 mkdir($directory . '/src', 0700, true);
 $source = file_get_contents(dirname(__DIR__) . '/src/Database.php');
 $names = [
+    'admin_settings',
     'player_distinction_revocations',
     'player_distinctions',
     'town_favourites',
@@ -85,6 +86,11 @@ $distinctions = $mysql
 file_put_contents(
     $directory . '/' . $distinctions,
     $rewrite(file_get_contents(dirname(__DIR__) . '/' . $distinctions)),
+);
+$settings = $mysql ? 'schema-admin-settings.sql' : 'schema-admin-settings-postgresql.sql';
+file_put_contents(
+    $directory . '/' . $settings,
+    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $settings)),
 );
 $revocations = $mysql
     ? 'schema-distinction-revocations.sql'
@@ -189,9 +195,14 @@ try {
             ->tablesExist([$prefix . 'player_distinction_revocations']),
         'distinction revocations installed',
     );
+    check(
+        $connection->createSchemaManager()->tablesExist([$prefix . 'admin_settings']),
+        'admin settings installed',
+    );
 } finally {
     foreach (
         [
+            'admin_settings',
             'player_distinction_revocations',
             'player_distinctions',
             'town_favourites',
@@ -227,6 +238,7 @@ try {
     @unlink($directory . '/' . $favourites);
     @unlink($directory . '/' . $distinctions);
     @unlink($directory . '/' . $revocations);
+    @unlink($directory . '/' . $settings);
     unlink($directory . '/src/Database.php');
     rmdir($directory . '/src');
     rmdir($directory);
