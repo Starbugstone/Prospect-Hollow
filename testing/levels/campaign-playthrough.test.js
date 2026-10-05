@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
-import { simulateCampaignLevel } from './helpers/campaignSimulation';
+import { generateLevelConfigs } from '../../src/game/engine/LevelGenerator';
+import { simulateCampaignLevel } from '../helpers/campaignSimulation';
 
 const levels = generateLevelConfigs();
 const reviewedLayouts = new Set([

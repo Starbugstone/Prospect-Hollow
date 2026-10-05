@@ -67,7 +67,8 @@ To produce a candidate table for review after changing layouts or scoring:
 ```sh
 node scripts/measure-campaign.mjs . 30 > /tmp/campaign-scores.json
 node scripts/calibrate-star-targets.mjs /tmp/campaign-scores.json > /tmp/star-targets.js
-npx vitest run testing/star-ratings.test.js testing/campaign-playthrough.test.js testing/chapter-progression.test.js
+npm run test:levels
+npx vitest run testing/star-ratings.test.js testing/chapter-progression.test.js
 ```
 
 The calibration command only prints a candidate; review it before replacing
@@ -82,8 +83,8 @@ node scripts/calibrate-star-targets.mjs /tmp/deep-mine-scores.json 373 402
 ```
 
 `testing/star-ratings.test.js` checks exact 100%/150% and ×4 boundaries,
-persistence, independent chest rewards and fallback behavior. It also plays
-20 held-out refill seeds per level (101–120), checking completion on every run
+persistence, independent chest rewards and fallback behavior.
+`testing/levels/star-attainment.test.js` plays 20 held-out refill seeds per level (101–120), checking completion on every run
 and at least one three-star completion per level. The opening levels must
 achieve three stars in at least 14/20 runs each. Levels with blast-only
 obstacles, which need board bonuses to finish (today 373–402), must achieve it in
@@ -94,6 +95,9 @@ campaign bands, and 30–65% in the final band. Score-only attainment is also
 guarded at 80% for the opening and 5% for the final band. In calibration,
 score-only three-star attainment was about 93% in the opening and 10% in the
 final band; most later three-star runs used the ×4 cascade route.
+
+The level simulations in `testing/levels/` are not part of `npm test` or CI: run
+`npm run test:levels` after changing levels, star targets, scoring or bonus rules.
 
 These simulations are repeatable balancing evidence, not human success rates
 or an exhaustive solvability proof. Finite simulation budgets are diagnostics,

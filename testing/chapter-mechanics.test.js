@@ -46,7 +46,7 @@ afterEach(() => {
 describe('light marker resolution', () => {
   beforeEach(() => {
     // Isolate the impact under test; complete legal cascade games are covered
-    // by campaign-playthrough.test.js for every authored level and several seeds.
+    // by levels/campaign-playthrough.test.js for every authored level and several seeds.
     vi.spyOn(MatchEngine.prototype, 'findMatches').mockReturnValue([]);
   });
 
@@ -318,7 +318,7 @@ describe('append-only campaign and replay', () => {
     // Baseline for the unchanged 238 levels, captured before the mine audit's
     // explicit retuning of 33/52. Those two retain their workload and rewards below.
     // Ignore ephemeral gem IDs, empty oreOrders, and the independently tuned
-    // starScoreTarget (covered by star-ratings.test.js). Chest targets stay fixed.
+    // starScoreTarget (covered by star-ratings.test.js and levels/star-attainment.test.js). Chest targets stay fixed.
     const levels = generateLevelConfigs(240)
       .filter(({ id }) => ![33, 52].includes(id))
       .map(({ board, oreOrders, starScoreTarget, ...level }) => {
