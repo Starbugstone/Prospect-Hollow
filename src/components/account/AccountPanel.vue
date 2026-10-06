@@ -20,8 +20,8 @@
       <button
         v-if="cloud.account && view === 'towns'"
         class="account-round"
-        :aria-label="t('Account')"
-        :title="t('Account')"
+        :aria-label="t('Mayor’s Office')"
+        :title="t('Mayor’s Office')"
         @click="view = 'account'"
       >
         <GameIcon name="user" />
@@ -48,46 +48,7 @@
         <AccountSignIn :login-link="loginLink" />
       </template>
       <TownManage v-else-if="view === 'manage'" :active="active" :focus="focus" />
-      <template v-else-if="view === 'account'">
-        <PublicProfile />
-        <section class="account-section">
-          <div class="account-identity">
-            <span class="account-avatar"><GameIcon name="user" /></span>
-            <span
-              ><strong>{{ t('Signed in') }}</strong
-              ><small>{{
-                t('{count} of 3 slots used', { count: cloud.towns.length })
-              }}</small></span
-            >
-          </div>
-          <div class="account-row">
-            <button :disabled="busy" @click="act(() => logout())">{{ t('Sign out') }}</button>
-            <button :disabled="busy" @click="act(() => logout(true))">
-              {{ t('Sign out on every device') }}
-            </button>
-          </div>
-        </section>
-        <details class="account-danger">
-          <summary><GameIcon name="trash" />{{ t('Delete my account…') }}</summary>
-          <p>
-            {{
-              t(
-                'This deletes the account and its cached towns and preserved saves on this device. Export any progress you want to keep first.',
-              )
-            }}
-          </p>
-          <label class="account-field"
-            >{{ t('Type DELETE MY ACCOUNT to confirm') }}<input v-model="deleteAccountText"
-          /></label>
-          <button
-            class="account-destructive"
-            :disabled="busy || deleteAccountText !== 'DELETE MY ACCOUNT'"
-            @click="act(deleteAccount)"
-          >
-            {{ t('Delete my account') }}
-          </button>
-        </details>
-      </template>
+      <MayorOffice v-else-if="view === 'account'" @towns="view = 'towns'" />
       <TownSlots v-else :writable="writable" @manage="manage" />
       <DeviceCopies v-if="cloud.account" />
     </div>
@@ -96,21 +57,34 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { useNativeDialog } from '../../composables/useNativeDialog';
-import { cloud, logout, deleteAccount as removeAccount } from '../../services/cloudProfile';
+import { cloud, refreshAccount } from '../../services/cloudProfile';
+import { confirmEmailChange } from '../../services/playerData';
 import { townStorage } from '../../services/townStorage';
 import { provideAccountContext } from './accountContext';
 import AccountSignIn from './AccountSignIn.vue';
-import PublicProfile from './PublicProfile.vue';
+import MayorOffice from './MayorOffice.vue';
 import TownSlots from './TownSlots.vue';
 import TownManage from './TownManage.vue';
 import DeviceCopies from './DeviceCopies.vue';
 import GameIcon from '../GameIcon.vue';
 import { t } from '../../i18n';
 import '../../styles/account.css';
-const props = defineProps({ loginLink: String, writable: Boolean, section: String });
-const emit = defineEmits(['close', 'changed', 'community', 'recovery', 'signed-in']);
+const props = defineProps({
+  loginLink: String,
+  emailLink: String,
+  writable: Boolean,
+  section: String,
+});
+const emit = defineEmits([
+  'close',
+  'changed',
+  'community',
+  'recovery',
+  'signed-in',
+  'email-confirmed',
+]);
 const { dialog, closeButton, dismissBackdrop } = useNativeDialog(() => emit('close'));
-const { busy, message, act } = provideAccountContext({
+const { message, act } = provideAccountContext({
   changed: () => emit('changed'),
   close: () => emit('close'),
   community: () => emit('community'),
@@ -118,8 +92,7 @@ const { busy, message, act } = provideAccountContext({
   signedIn: () => emit('signed-in'),
 });
 const requestedView = ref('towns'),
-  focus = ref(''),
-  deleteAccountText = ref('');
+  focus = ref('');
 const active = computed(() => {
   void cloud.storageVersion;
   return townStorage.active();
@@ -153,16 +126,30 @@ const title = computed(() =>
     ? t('Protect my progress')
     : view.value === 'manage'
       ? active.value.meta.name
-      : t(view.value === 'account' ? 'Account' : 'My towns'),
+      : view.value === 'account'
+        ? t('Mayor’s Office')
+        : t('My towns'),
 );
 function manage(section) {
   focus.value = section;
   view.value = 'manage';
 }
-// Opened on a section of the town being played, e.g. from a "Share my town" button.
-if (props.section) manage(props.section);
-async function deleteAccount() {
-  await removeAccount(deleteAccountText.value);
-  emit('changed');
+// Opened on the Mayor's Office, or on a section of the town being played, e.g. from a
+// "Share my town" button.
+if (props.section === 'office') view.value = 'account';
+else if (props.section) manage(props.section);
+// An email change link proves the new address, on this device or any other.
+async function confirmEmail(token) {
+  const { email } = await confirmEmailChange(token);
+  emit('email-confirmed');
+  message.value = t('Your account now uses {email}.', { email });
+  if (cloud.account && !cloud.sessionExpired) await refreshAccount();
 }
+watch(
+  () => props.emailLink,
+  (token) => {
+    if (token) act(() => confirmEmail(token));
+  },
+  { immediate: true },
+);
 </script>

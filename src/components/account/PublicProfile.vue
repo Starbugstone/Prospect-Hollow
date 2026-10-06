@@ -23,6 +23,17 @@
           </option>
         </select>
       </label>
+      <label class="account-toggle">
+        <span>
+          <strong>{{ t('Private visits') }}</strong>
+          <small>{{
+            t(
+              'Sign guestbooks without your name or town. Your visits still count for the towns you visit.',
+            )
+          }}</small>
+        </span>
+        <input v-model="anonymous" type="checkbox" role="switch" />
+      </label>
       <p class="public-profile-preview" :aria-label="t('Visitor name preview')">
         <strong>{{ visitorName(preview) }}</strong>
         <span v-if="visitorTitle(preview)">{{ visitorTitle(preview) }}</span>
@@ -45,18 +56,23 @@ import { t } from '../../i18n';
 const profile = ref(null),
   towns = ref([]),
   name = ref(''),
-  townId = ref(null);
+  townId = ref(null),
+  anonymous = ref(false);
 const loading = ref(true),
   saving = ref(false),
   message = ref('');
 let disposed = false;
-const preview = computed(() => ({
-  name: name.value.trim(),
-  townName: (
-    towns.value.find((town) => town.townId === (townId.value || townStorage.active()?.meta.id)) ??
-    towns.value[0]
-  )?.name,
-}));
+// A private visit shows as a plain visitor, exactly as other mayors will see it.
+const preview = computed(() =>
+  anonymous.value ? {} : { name: name.value.trim(), townName: previewTown.value },
+);
+const previewTown = computed(
+  () =>
+    (
+      towns.value.find((town) => town.townId === (townId.value || townStorage.active()?.meta.id)) ??
+      towns.value[0]
+    )?.name,
+);
 async function load() {
   loading.value = true;
   message.value = '';
@@ -67,6 +83,7 @@ async function load() {
     towns.value = result.towns;
     name.value = result.profile?.displayName ?? '';
     townId.value = result.profile?.visitingTownId ?? null;
+    anonymous.value = result.profile?.anonymousVisits ?? false;
   } catch (error) {
     if (!disposed) message.value = error.message;
   } finally {
@@ -81,6 +98,7 @@ async function save() {
     const result = await saveVisitorProfile({
       displayName: name.value.trim(),
       visitingTownId: townId.value,
+      anonymousVisits: anonymous.value,
     });
     if (disposed) return;
     profile.value = result.profile;

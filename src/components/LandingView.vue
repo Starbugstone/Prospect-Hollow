@@ -157,7 +157,8 @@
     </section>
     <footer class="landing-footer">
       <span>PROSPECT HOLLOW</span
-      ><span>{{ t(campaign.saveWarning || 'Your adventure is saved on this device.') }}</span>
+      ><span>{{ t(campaign.saveWarning || 'Your adventure is saved on this device.') }}</span
+      ><a :href="privacyUrl()">{{ t('Privacy') }}</a>
     </footer>
   </main>
 </template>
@@ -167,6 +168,7 @@ import { t, locale } from '../i18n';
 import { latestUpdates } from '../data/updates';
 import { useCampaignStore } from '../stores/campaignStore';
 import { cloud } from '../services/cloudProfile';
+import { privacyUrl } from '../services/appRoute';
 import TownBuilding from './town/TownBuilding.vue';
 import TownMine from './town/TownMine.vue';
 import TownIcon from './town/TownIcon.vue';
