@@ -2,6 +2,7 @@ import { MeshStandardMaterial } from 'three';
 import { horizonMaterial } from './TownAtmosphere';
 import { walkObstacle } from './TownNavigation';
 import { fountainDesign } from '../../data/fountains';
+import { COZY_PALETTES } from '../../data/cozyArchitecture';
 
 // The square's centerpiece follows the era its square was completed in. Every design
 // fits the same 1.1-unit walk radius, is built from shared primitives and joins the
@@ -493,6 +494,22 @@ function orbitalRings(d, g, grand) {
   }
 }
 
+function gardenBloom(d, g, grand, style) {
+  const p = COZY_PALETTES[style];
+  d.mesh(g, 'cylinder', [1.06, 0.18, 1.06], [0, 0.25, 0], p.shell);
+  d.mesh(g, 'cylinder', [0.95, 0.035, 0.95], [0, 0.35, 0], p.glass);
+  d.mesh(g, 'cylinder', [0.12, 0.6, 0.12], [0, 0.64, 0], p.deep);
+  const y = grand ? 1.05 : 0.88;
+  for (let n = 0; n < 5; n++) {
+    const a = (n * TAU) / 5;
+    const petal = d.ball(g, Math.sin(a) * 0.24, y, Math.cos(a) * 0.24, [0.22, 0.1, 0.38], p.roof);
+    petal.rotation.y = a;
+  }
+  if (style === 'riverlight') d.ball(g, 0, y + 0.32, 0, [0.16, 0.38, 0.16], p.light, 'rock');
+  else d.ball(g, 0, y + 0.12, 0, 0.16, p.flower);
+  radialArcs(d, g, grand ? 5 : 3, [0.26, y], [0.8, 0.35], 0.12);
+}
+
 /** One renderer for each id in FOUNTAIN_DESIGNS (src/data/fountains.js). */
 export const FOUNTAINS = Object.freeze({
   'frontier-spring': frontierSpring,
@@ -504,6 +521,8 @@ export const FOUNTAINS = Object.freeze({
   postmodern,
   'splash-plaza': splashPlaza,
   'orbital-rings': orbitalRings,
+  'canopy-bloom': (d, g, grand) => gardenBloom(d, g, grand, 'canopy'),
+  'riverlight-crystal': (d, g, grand) => gardenBloom(d, g, grand, 'riverlight'),
 });
 /** Build the central fountain for a square completed in `era`; stage 3 adds its tier. */
 export function addTownFountain(d, parent, stage, era = 'frontier') {

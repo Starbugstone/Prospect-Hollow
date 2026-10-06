@@ -3,6 +3,7 @@ import { BonusActivator } from './BonusActivator.js';
 import { BOARD_BONUSES, canSwapGem, neighborsOf } from './TileRules.js';
 import { detectBonusFromMatches } from './MatchPatterns.js';
 import { signalTargets } from './ChapterMechanics.js';
+import { gravityPath, isPlayableCell } from './BoardTopology.js';
 const bonusActivator = new BonusActivator();
 
 const SPECIAL = new Set(BOARD_BONUSES);
@@ -16,9 +17,113 @@ export class HintEngine {
     if (!board?.length || !cols || !rows) return null;
     let best = null;
     const hasSignals = tiles.some((tile) => tile.signalHealth > 0);
+    const hasBlastTargets = tiles.some((tile) => tile?.bonusOnly && tile.health > 0);
+    const routed = tiles.some((tile) => !isPlayableCell(tile) || Number.isInteger(tile?.flowTo));
+    const relicRoutes = routed
+      ? board.flatMap((gem, origin) =>
+          gem?.type === 'relic' ? [new Set(gravityPath(tiles, origin, cols, rows).slice(1))] : [],
+        )
+      : [];
     const requested = new Set(
       oreOrders.filter((order) => order.progress < order.target).map((order) => order.color),
     );
+    const scoreImpact = (
+      indices,
+      {
+        usesBonus = false,
+        usesFusion = false,
+        createsBonus = false,
+        ordinaryMatches = [],
+        evaluation = null,
+        swap = null,
+      } = {},
+    ) => {
+      const nearbyBlocks = new Set();
+      for (const index of new Set(ordinaryMatches.flatMap((match) => match.indices))) {
+        if (tiles[index]?.state === 'FROZEN') continue;
+        for (const neighbor of neighborsOf(index, cols, rows))
+          if (
+            tiles[neighbor]?.type === 'blocker' &&
+            tiles[neighbor].health > 0 &&
+            !tiles[neighbor].bonusOnly
+          )
+            nearbyBlocks.add(neighbor);
+      }
+      const damage = indices.reduce(
+        (sum, index) =>
+          sum +
+          Number(
+            (tiles[index]?.health ?? 0) > 0 &&
+              (!tiles[index]?.bonusOnly || usesBonus) &&
+              (!tiles[index]?.sealColor ||
+                usesBonus ||
+                evaluation?.matches.some(
+                  (match) => match.type === tiles[index].sealColor && match.indices.includes(index),
+                )),
+          ),
+        0,
+      );
+      const blastHits = usesBonus
+        ? indices.filter((index) => tiles[index]?.bonusOnly && tiles[index].health > 0).length
+        : 0;
+      // Sealed beds and throat gates need deliberately aimed bonuses. Reward
+      // a useful earned bonus too, rather than firing every blast at easy dust.
+      const plannedBlastHits =
+        hasBlastTargets && evaluation?.bonuses.length
+          ? new Set(
+              evaluation.bonuses
+                .flatMap(({ type, index }) =>
+                  bonusActivator.activateBonus(type, evaluation.board, cols, rows, index, {
+                    tiles,
+                  }),
+                )
+                .filter((index) => tiles[index]?.bonusOnly && tiles[index].health > 0),
+            ).size
+          : 0;
+      const relicPaths = indices.filter((index) =>
+        routed
+          ? relicRoutes.some((route) => route.has(index))
+          : board.some(
+              (gem, origin) =>
+                gem?.type === 'relic' && origin < index && origin % cols === index % cols,
+            ),
+      ).length;
+      return (
+        Number(usesBonus) * 50 +
+        Number(usesFusion) * 150 +
+        Number(createsBonus) * (hasBlastTargets ? 600 : 100) +
+        damage * 120 +
+        blastHits * 1000 +
+        plannedBlastHits * 500 +
+        indices.filter((index) => tiles[index]?.chainHealth > 0).length * 180 +
+        nearbyBlocks.size * 180 +
+        relicPaths * 90 +
+        indices.length +
+        (hasSignals
+          ? signalTargets(
+              tiles,
+              indices,
+              cols,
+              rows,
+              ordinaryMatches.flatMap((match) => match.indices),
+            ).length * 190
+          : 0) +
+        (requested.size
+          ? indices.filter((index) =>
+              requested.has(
+                (swap
+                  ? index === swap.aIndex
+                    ? board[swap.bIndex]
+                    : index === swap.bIndex
+                      ? board[swap.aIndex]
+                      : board[index]
+                  : board[index]
+                )?.type,
+              ),
+            ).length * 90
+          : 0)
+      );
+    };
     for (let a = 0; a < board.length; a++) {
       for (const b of [a % cols < cols - 1 ? a + 1 : -1, a + cols]) {
         if (
@@ -59,58 +164,25 @@ export class HintEngine {
                 .activateBonus(type, swapped, cols, rows, index)
                 .forEach((i) => affected.add(i));
             } else if (type === 'rainbow' && !SPECIAL.has(swapped[counterpart].type)) {
-              swapped.forEach((gem, i) => {
-                if (gem?.type === swapped[counterpart].type) affected.add(i);
-              });
+              bonusActivator
+                .activateBonus(type, swapped, cols, rows, index, {
+                  tiles,
+                  targetType: swapped[counterpart].type,
+                })
+                .forEach((i) => affected.add(i));
             }
           }
           indices = [...affected];
         }
-        const nearbyBlocks = new Set();
-        for (const index of new Set(ordinaryMatches.flatMap((match) => match.indices))) {
-          if (tiles[index]?.state === 'FROZEN') continue;
-          for (const neighbor of neighborsOf(index, cols, rows)) {
-            if (tiles[neighbor]?.type === 'blocker' && tiles[neighbor].health > 0)
-              nearbyBlocks.add(neighbor);
-          }
-        }
-        const damage = indices.reduce(
-          (sum, index) =>
-            sum +
-            Number(
-              (tiles[index]?.health ?? 0) > 0 &&
-                (!tiles[index]?.sealColor ||
-                  usesBonus ||
-                  evaluation?.matches.some(
-                    (match) =>
-                      match.type === tiles[index].sealColor && match.indices.includes(index),
-                  )),
-            ),
-          0,
-        );
-        const relicPaths = indices.filter((index) =>
-          board.some(
-            (gem, origin) =>
-              gem?.type === 'relic' && origin < index && origin % cols === index % cols,
-          ),
-        ).length;
-        const heuristicScore =
-          Number(usesBonus) * 50 +
-          Number(usesFusion) * 150 +
-          Number(createsBonus) * 100 +
-          damage * 120 +
-          indices.filter((index) => tiles[index]?.chainHealth > 0).length * 180 +
-          nearbyBlocks.size * 180 +
-          relicPaths * 90 +
-          indices.length +
-          (hasSignals ? signalTargets(tiles, indices, cols, rows).length * 190 : 0) +
-          (requested.size
-            ? indices.filter((index) =>
-                requested.has(
-                  (index === a ? board[b] : index === b ? board[a] : board[index])?.type,
-                ),
-              ).length * 90
-            : 0);
+        indices = indices.filter((index) => isPlayableCell(tiles[index]));
+        const heuristicScore = scoreImpact(indices, {
+          usesBonus,
+          usesFusion,
+          createsBonus,
+          ordinaryMatches,
+          evaluation,
+          swap: { aIndex: a, bIndex: b },
+        });
         const candidate = {
           swap: { aIndex: a, bIndex: b },
           indices: [a, b],
@@ -118,6 +190,32 @@ export class HintEngine {
           createsBonus,
           totalCleared: indices.length,
           heuristicScore,
+        };
+        if (first) return candidate;
+        if (!best || candidate.heuristicScore > best.heuristicScore) best = candidate;
+      }
+    }
+    if (routed || hasBlastTargets || tiles.some((tile) => tile?.signal === 'spore')) {
+      for (let index = 0; index < board.length; index++) {
+        if (!SPECIAL.has(board[index]?.type) || !canSwapGem(board[index], tiles[index])) continue;
+        // Preview the guaranteed hit without rolling the double-tap's extra crates.
+        const indices = bonusActivator.previewBonus(
+          board[index].type,
+          board,
+          cols,
+          rows,
+          index,
+          tiles,
+        );
+        if (!indices.length) continue;
+        const candidate = {
+          swap: { aIndex: index, bIndex: index },
+          indices: [index],
+          activateInPlace: true,
+          usesBonus: true,
+          createsBonus: false,
+          totalCleared: indices.length,
+          heuristicScore: scoreImpact(indices, { usesBonus: true }),
         };
         if (first) return candidate;
         if (!best || candidate.heuristicScore > best.heuristicScore) best = candidate;
@@ -134,8 +232,14 @@ export class HintEngine {
           activateInPlace: true,
           usesBonus: true,
           createsBonus: false,
-          totalCleared: this.matchEngine.evaluateActivation(board, cols, rows, index, tiles)
-            .matches[0].indices.length,
+          totalCleared: bonusActivator.previewBonus(
+            board[index].type,
+            board,
+            cols,
+            rows,
+            index,
+            tiles,
+          ).length,
         };
     }
     return best;

@@ -29,6 +29,20 @@ export const streetHeight = (x, z) => {
 };
 export const riverDistance = (x, z) => Math.abs(x - riverCenterX(z));
 export const wetBank = (x, z, margin = 0) => riverDistance(x, z) < RIVER.bankWidth + margin;
+// Open water, unless the point is up on the bridge deck between its rails.
+export const overWater = (x, y, z) =>
+  riverDistance(x, z) < RIVER.halfWidth &&
+  !(Math.abs(z - BRIDGE.z) <= BRIDGE.halfWidth && y >= bridgeDeckHeight(x) - 0.25);
+// Whether a straight walk from a to b ([x, y, z]) would wade through the river.
+export function crossesRiver(a, b) {
+  const steps = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[2] - a[2]) / 0.25));
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    if (overWater(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t))
+      return true;
+  }
+  return false;
+}
 export const riverPath = (from = -130, to = 130, step = 1) =>
   Array.from({ length: Math.ceil((to - from) / step) + 1 }, (_, i) => {
     const z = Math.min(to, from + i * step);

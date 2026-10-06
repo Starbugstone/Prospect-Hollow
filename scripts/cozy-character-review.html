@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Canopy and Riverlight town life</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #f2ebda;
+        color: #416156;
+        font:
+          18px Georgia,
+          serif;
+      }
+      header {
+        padding: 25px 30px 18px;
+      }
+      h1 {
+        font-size: 32px;
+        margin: 0 0 8px;
+      }
+      p {
+        margin: 0;
+        color: #708170;
+      }
+      main {
+        display: grid;
+        gap: 18px;
+        padding: 0 28px 28px;
+      }
+      .neighbors,
+      .wildlife {
+        display: grid;
+        gap: 18px;
+      }
+      .neighbors {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .wildlife {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+      article {
+        position: relative;
+        height: calc((100vh - 155px) * 0.54);
+        min-width: 0;
+        border: 1px solid #d5ccb8;
+        border-radius: 18px;
+        overflow: hidden;
+      }
+      .wildlife article {
+        height: calc((100vh - 155px) * 0.46 - 18px);
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      h2 {
+        position: absolute;
+        bottom: 18px;
+        left: 0;
+        width: 100%;
+        text-align: center;
+        font-size: 23px;
+        margin: 0;
+        pointer-events: none;
+      }
+      .wildlife h2 {
+        font-size: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Canopy &amp; Riverlight town life</h1>
+      <p>Neighbors and garden companions</p>
+    </header>
+    <main>
+      <section class="neighbors" aria-label="Residents"></section>
+      <section class="wildlife" aria-label="Garden companions"></section>
+    </main>
+    <script type="module" src="./cozy-character-review.js"></script>
+  </body>
+</html>

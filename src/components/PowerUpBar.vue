@@ -6,7 +6,7 @@
         :key="item.id"
         :data-power-id="item.id"
         class="powerup-button"
-        :class="{ active: activeId === item.id }"
+        :class="{ active: activeId === item.id, draggable: TARGETED_POWERS.has(item.id) }"
         :disabled="
           !inventory.availableQuantity(item.id) ||
           !game.sessionActive ||
@@ -28,24 +28,39 @@
             description: t(descriptions[item.id]),
           })
         "
-        @click="inventory.usePowerUp(item.id)"
+        @pointerdown="drag.start($event, item.id)"
+        @click="drag.click(item.id)"
       >
         <span class="powerup-art"
-          ><img :src="`/art/powers/${item.id}.svg`" alt="" /><span class="powerup-qty">{{
-            inventory.availableQuantity(item.id)
-          }}</span></span
+          ><img :src="`/art/powers/${item.id}.svg`" alt="" draggable="false" /><span
+            class="powerup-qty"
+            >{{ inventory.availableQuantity(item.id) }}</span
+          ></span
         ><span class="powerup-name">{{ t(item.label) }}</span>
       </button>
     </div>
+    <Teleport to="body">
+      <img
+        v-if="drag.ghost.id"
+        class="powerup-drag-ghost"
+        :class="{ touch: drag.ghost.touch }"
+        :src="`/art/powers/${drag.ghost.id}.svg`"
+        :style="{ left: `${drag.ghost.x}px`, top: `${drag.ghost.y}px` }"
+        alt=""
+        aria-hidden="true"
+      />
+    </Teleport>
   </section>
 </template>
 <script setup>
 import { t } from '../i18n';
 import { computed } from 'vue';
 import { useGameStore } from '../stores/gameStore';
-import { useInventoryStore } from '../stores/inventoryStore';
+import { TARGETED_POWERS, useInventoryStore } from '../stores/inventoryStore';
+import { usePowerDrag } from '../composables/usePowerDrag';
 const inventory = useInventoryStore();
 const game = useGameStore();
+const drag = usePowerDrag();
 const activeId = computed(() => game.activeBonusMode);
 const visiblePowers = computed(() =>
   inventory.quickAccessSlots.filter((item) => item.quantity > 0 || activeId.value === item.id),

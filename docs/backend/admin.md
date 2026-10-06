@@ -14,14 +14,17 @@ It prints a temporary password once. Sign in at `https://HOST/admin`, replace th
 
 The same command recovers a locked-out admin or lists accounts: `list`, `reset-password USERNAME` (new temporary password), `reset-authenticator USERNAME` (set up a new phone at the next sign-in) and `delete USERNAME`. The panel cannot delete its last admin; the server command can.
 
+Event player distinctions (see [player distinctions](../honours.md#player-distinctions)) are granted to every current account from the same command: `award-distinction player-beta`. A player who already holds it keeps the first date, so repeating the command is safe, and players an admin removed it from are skipped. Alpha Player needs no command: the version 16 migration grants it to every account that exists when that release is deployed. Single players are handled on their player page.
+
 All admins are equal. Any admin can add another (the panel shows the new temporary password once, to send privately), reset another admin's password or authenticator, or remove them. Nobody resets or removes themselves from the panel; use **Change my password** for your own account.
 
 ## What the panel shows
 
 - **Overview**: player totals, players online (seen in the last 5 minutes), active today/7/30 days, live sessions, towns (shared, awaiting purge), web vs app, daily active players and new accounts for 30 UTC days, towns by era and campaign progress.
 - **Players**: search by email or player ID, sorted by last seen, newest or email. A player page shows sign-up date, last connection and sign-in, number of email sign-ins, active days in the last 30, last device type, IP address and browser, live sessions and every town (including deleted ones kept for 30 days).
+- **Player distinctions** (on a player page): every distinction with its state (held with its date or time step, removed, or not held). **Give** grants an event distinction now, **Remove** takes any distinction away (a cheater), including the time distinction, from the account and every showcase at once, and **Give back** restores it. Each change is in the activity log.
 - **Towns**: search by name, owner email or ID; filter all, shared or deleted. A town page lists era, coins, levels and stars, buildings, inventory, the five kept cloud revisions and the full save (viewable and downloadable as JSON). The simulation starts disconnected: **Connect to town** loads the share page's read-only renderer, even for private towns. Camera controls remain available, with no gameplay actions. **Disconnect** stops and disposes the simulation; opening another town or revision starts disconnected again. This view uses the saved snapshot, without joining visitor presence, creating visitor logs, collecting the saloon or making the admin a guest.
-- **Activity log**: every admin sign-in, failed sign-in against a real admin, and change. A deleted player appears by ID only.
+- **Activity log**: every admin sign-in, failed sign-in against a real admin, and change. A deleted player appears by ID only. Entries are kept for three months by default; the page sets the period (1 month, 3 months, 6 months, 1 year or 2 years, stored in `admin_settings`, schema version 18). Older entries are removed by the daily cleanup and whenever the page opens, so the period holds even without a scheduled task. **Purge old entries** applies the period now, and **Purge everything** (type `PURGE`) empties the log, for example to clear test activity before going live. Each change of period and each purge is recorded, so the log always shows who emptied it.
 
 **Hide emails** masks addresses (`p•••@example.com`) for screen sharing; the choice is remembered on that device.
 
@@ -49,9 +52,25 @@ Every signed-in API request records, at most once a minute per player: the last-
 - Authenticator secrets are encrypted (AES-256-GCM) with a key derived from `APP_SECRET`. Changing `APP_SECRET` therefore also requires `reset-authenticator` for every admin, in addition to signing players out.
 - The session cookie is `__Host-cascade-admin` on HTTPS (HttpOnly, SameSite Strict, browser session only). Sessions end after one hour idle or 12 hours, and unfinished sign-ins after 10 minutes. Changes need the session CSRF token. Resetting an admin's password or authenticator signs them out.
 - Sign-in attempts are limited per IP address (10 per 15 minutes) and per username (20 per 15 minutes); codes per admin (10 per 15 minutes); all admin requests per IP (300 per minute). A burst of failures can briefly lock the real admin out too; wait 15 minutes or reset from the server.
-- `/admin` and `/api/admin/*` send `noindex` and `no-store`. `php bin/cleanup.php` removes expired admin sessions and old activity days.
+- `/admin` and `/api/admin/*` send `noindex` and `no-store`. `php bin/cleanup.php` removes expired admin sessions, old activity days and activity log entries past the retention period.
 
 ## API
+
+The town list and detail show **Unique visitors**: different signed-in visitor identities
+across recorded visits, using the same count as Town Honours. Repeat arrivals count once;
+owner visits and anonymous guests are excluded. The list counts only its page of towns in
+one query. This is recorded visitor history, not a live-presence count.
+
+The town detail's **Achievements** tab shows the latest cloud save's earned ranks,
+progress toward the next rank in every honour family, all rank requirements, and the
+player's three showcase slots in order. Progress uses the shared game catalog and
+refreshes social counters from the server. It does not award ranks, mark them seen,
+or write the save. Unsynced device progress is not visible. The showcase shows the
+player's saved choices; public sharing still applies the server's verification rules.
+
+`GET towns` adds numeric `uniqueVisitors` to each town. `GET towns/{id}` includes
+`town.uniqueVisitors` and `town.townsVisited`; its existing `profile.honours` supplies
+the saved achievements and showcase.
 
 All routes are under `/api/admin/`, JSON only. Changes send `X-CSRF-Token`.
 
@@ -69,5 +88,8 @@ All routes are under `/api/admin/`, JSON only. Changes send `X-CSRF-Token`.
 | `GET towns/{id}`, `PATCH towns/{id}` `{name?,isPublic:false?}`, `DELETE towns/{id}` `{confirmation}`, `POST towns/{id}/restore` `{revision}` | Town page and moderation.                                         |
 | `GET admins`, `POST admins` `{username}`, `POST admins/{id}/reset-password`, `POST admins/{id}/reset-authenticator`, `DELETE admins/{id}`    | Admin accounts.                                                   |
 | `GET audit?page=`                                                                                                                            | Activity log, 50 per page.                                        |
+| `PATCH audit/settings` `{retentionDays}`                                                                                                     | Keep the log 30, 90, 180, 365 or 730 days.                        |
+| `POST audit/purge` `{all}`                                                                                                                   | Purge entries past the period, or all.                            |
+| `POST`/`DELETE players/{id}/distinctions/{distinctionId}`                                                                                    | Give or remove a player distinction.                              |
 
 `backend/tests/admin.php` covers the sign-in stages, limits, origin and CSRF checks, activity recording, every action and the server command on PostgreSQL and MySQL; `testing/admin-panel.test.js` covers the panel's client.

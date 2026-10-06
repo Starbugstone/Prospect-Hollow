@@ -5,7 +5,7 @@ import { createTown } from '../src/data/town';
 import { mineAppearance, ERA_CONSTRUCTION } from '../src/data/mineEvolution';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { TownPresentation } from '../src/game/town/TownPresentation';
-import { addMineWorks } from '../src/game/town/TownMineWorks';
+import { addMineSite } from '../src/game/town/mine/addMineSite';
 import { PLOTS } from '../src/game/town/TownLayout';
 import { geometryFootprints, registerFootprints } from '../src/game/town/BuildingFootprints';
 import { townNavigation } from '../src/game/town/TownNavigation';
@@ -31,9 +31,20 @@ function fixture(from = 'motor-age', to = 'aviation') {
   d.render = vi.fn();
   d.actorRenderer = { update: vi.fn() };
   d.motions = [];
-  const permanent = addMineWorks(d, d.world, from);
+  const permanent = addMineSite(d, d.world, from);
   d.staticScenery = { entries: new Map([['mine-works', { group: permanent }]]) };
-  d.buildingRenderer = { batches: new Map([[permanent, { visible: true }]]) };
+  // The static renderer's visibility contract: batches follow their root.
+  d.buildingRenderer = {
+    batches: new Map([[permanent, { visible: true }]]),
+    refreshVisibility() {
+      for (const [root, batch] of this.batches) batch.visible = root.visible;
+    },
+    setVisible(root, visible) {
+      if (!root) return;
+      root.visible = visible;
+      this.refreshVisibility();
+    },
+  };
   views.push(d);
   return d;
 }
@@ -123,7 +134,7 @@ it('hides the new static batch after the era reveal and restores it on skip/clea
   d.setCinematic(true);
   const shot = d.cinematic.presentation;
   d.eraFrame(0.2);
-  const group = addMineWorks(d, d.world, 'aviation'),
+  const group = addMineSite(d, d.world, 'aviation'),
     batch = { visible: true };
   d.staticScenery.entries.set('mine-works', { group });
   d.buildingRenderer.batches.set(group, batch);
@@ -166,7 +177,7 @@ it('inherits mine architecture for a future era and safely handles unknown ident
 it('retains hillside workshops through Motor Age and refits them to its architecture', () => {
   const d = fixture('post-war', 'motor-age');
   const previous = d.staticScenery.entries.get('mine-works').group;
-  const next = addMineWorks(d, d.world, 'motor-age');
+  const next = addMineSite(d, d.world, 'motor-age');
   for (const key of ['crusher', 'fan-house', 'upper-terrace']) {
     const oldFeature = previous.getObjectByName(`Mine feature ${key}`);
     const feature = next.getObjectByName(`Mine feature ${key}`);

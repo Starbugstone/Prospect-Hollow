@@ -17,9 +17,23 @@
 import { computed } from 'vue';
 import { t } from '../i18n';
 import { useGameStore } from '../stores/gameStore';
+import { deepMineProgress } from '../game/engine/DeepMineMechanics';
+import { mineSignalAppearance, mineRelicAppearance } from '../data/mineThemes';
 const game = useGameStore();
 const props = defineProps({ initialTiles: Array });
 const groups = [
+  {
+    id: 'spore',
+    label: 'Spore relays',
+    art: '/art/obstacles/mushroom.svg',
+    value: (tile) => (tile.signal === 'spore' ? tile.signalHealth : 0),
+  },
+  {
+    id: 'blast-gate',
+    label: 'Blast gates',
+    art: '/art/obstacles/blast-gate.svg',
+    value: (tile) => (tile.bonusOnly && tile.fossilGroup == null ? tile.health : 0),
+  },
   {
     id: 'lantern',
     label: 'Lanterns',
@@ -42,19 +56,23 @@ const groups = [
     id: 'ice',
     label: 'Ice',
     art: '/art/ice/frost.svg',
-    value: (tile) => (tile.type !== 'blocker' && !tile.sealColor ? (tile.health ?? 0) : 0),
+    value: (tile) =>
+      tile.type !== 'blocker' && !tile.sealColor && tile.fossilGroup == null
+        ? (tile.health ?? 0)
+        : 0,
   },
   {
     id: 'stone',
     label: 'Stone',
     art: '/art/blocks/stone.svg',
-    value: (tile) => (tile.type === 'blocker' ? tile.health : 0),
+    value: (tile) =>
+      tile.type === 'blocker' && !tile.rootKnot && !tile.bonusOnly ? tile.health : 0,
   },
   {
     id: 'chain',
     label: 'Chained gem',
     art: '/art/obstacles/chain.svg',
-    value: (tile) => tile.chainHealth ?? 0,
+    value: (tile) => (tile.rootGroup == null ? (tile.chainHealth ?? 0) : 0),
   },
   {
     id: 'seal',
@@ -63,33 +81,55 @@ const groups = [
     value: (tile) => (tile.sealColor ? tile.health : 0),
   },
 ];
-const goals = computed(() => [
-  ...game.oreOrders.map((order) => ({
-    id: `ore-${order.color}`,
-    label: t('Collect {color} ore', { color: t(order.color) }),
-    art: `/art/${order.color}.svg`,
-    count: order.target - order.progress,
-    total: order.target,
-  })),
-  ...groups
-    .filter((g) => props.initialTiles?.some((tile) => g.value(tile) > 0))
-    .map((g) => ({
-      ...g,
-      total: props.initialTiles.reduce((sum, tile) => sum + g.value(tile), 0),
-      count: game.tiles.reduce((sum, tile) => sum + g.value(tile), 0),
+const goals = computed(() => {
+  const theme = game.currentLevel?.config.theme;
+  const initial = deepMineProgress(props.initialTiles);
+  const progress = deepMineProgress(game.tiles);
+  const delivery = mineRelicAppearance(theme);
+  return [
+    ...[
+      { id: 'fossils', label: 'Fossils', art: '/art/obstacles/fossil.svg' },
+      { id: 'roots', label: 'Root knots', art: '/art/obstacles/root-knot.svg' },
+    ]
+      .filter((goal) => initial[goal.id].total > 0)
+      .map((goal) => ({
+        ...goal,
+        total: initial[goal.id].total,
+        count: Math.max(0, initial[goal.id].total - progress[goal.id].completed),
+      })),
+    ...game.oreOrders.map((order) => ({
+      id: `ore-${order.color}`,
+      label: t('Collect {color} ore', { color: t(order.color) }),
+      art: `/art/${order.color}.svg`,
+      count: order.target - order.progress,
+      total: order.target,
     })),
-  ...(game.totalRelics
-    ? [
-        {
-          id: 'relic',
-          label: 'Relics to deliver',
-          art: '/art/relic.svg',
-          count: game.remainingRelics,
-          total: game.totalRelics,
-        },
-      ]
-    : []),
-]);
+    ...groups
+      .filter((g) => props.initialTiles?.some((tile) => g.value(tile) > 0))
+      .map((g) => ({
+        ...g,
+        ...(mineSignalAppearance(theme, g.id)
+          ? {
+              label: mineSignalAppearance(theme, g.id).goalLabel,
+              art: mineSignalAppearance(theme, g.id).art,
+            }
+          : {}),
+        total: props.initialTiles.reduce((sum, tile) => sum + g.value(tile), 0),
+        count: game.tiles.reduce((sum, tile) => sum + g.value(tile), 0),
+      })),
+    ...(game.totalRelics
+      ? [
+          {
+            id: 'relic',
+            label: delivery.goalLabel,
+            art: delivery.art,
+            count: game.remainingRelics,
+            total: game.totalRelics,
+          },
+        ]
+      : []),
+  ];
+});
 </script>
 <style scoped>
 .mine-visual-goals {

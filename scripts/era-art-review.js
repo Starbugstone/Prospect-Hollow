@@ -14,7 +14,7 @@ import {
 } from '../src/game/town/buildings/BuildingRenderer';
 import { addImprovements } from '../src/game/town/TownImprovements';
 import { buildTownSquare } from '../src/game/town/TownSquare';
-import { addMineWorks } from '../src/game/town/TownMineWorks';
+import { addMineSite } from '../src/game/town/mine/addMineSite';
 
 const width = 440,
   height = 330;
@@ -132,7 +132,7 @@ window.renderEraReview = async (id) => {
     await new Promise((resolve) => setTimeout(resolve, 0));
   }
   const mine = new THREE.Group();
-  addMineWorks(d, mine, era.id);
+  addMineSite(d, mine, era.id);
   result.buildings.push({
     id: 'mine',
     name: 'Mine surface works',

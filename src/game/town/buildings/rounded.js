@@ -3,7 +3,7 @@ import { CITY_FAMILIES } from '../../../data/city';
 import { ROUNDED_PALETTE as P, roundedForm } from '../../../data/roundedArchitecture';
 import { addFishingDock } from './river';
 import { leisureModel } from '../LeisureAssets';
-import { motorVehicle } from '../TownVehicles';
+import { motorVehicle, parkedVehicle } from '../TownVehicles';
 
 // Rounded city architecture: domes, drums, vaults and pods from the shared sphere and
 // cylinder primitives. Nothing here allocates geometry; the plot batch merges every
@@ -219,7 +219,7 @@ const FORMS = {
       pod(d, g, 0.22, 0.12, 0.22, 0.6, 2.45, -0.6, P.warm);
     }
     if (['garage', 'stable'].includes(s.kind) || s.identity === 'fire') {
-      const vehicle = motorVehicle(d, d.group(g, 0, 0, 2.35), false, s.era);
+      const vehicle = parkedVehicle(d, d.group(g, 0, 0, 2.35), s.kind, s.era);
       vehicle.rotation.y = Math.PI / 2;
     }
     return { top: r + 0.1, radius: Math.min(1.2, r) };

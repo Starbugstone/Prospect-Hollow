@@ -1,13 +1,17 @@
 import { describe, expect, it, vi } from 'vitest';
-import { BoxGeometry, Group, MeshBasicMaterial, Scene } from 'three';
+import { BoxGeometry, Group, MeshBasicMaterial, Scene, Vector3 } from 'three';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { TownEraIncident, INCIDENT_SPEED } from '../src/game/town/TownEraIncident';
 import { PLOTS } from '../src/game/town/TownLayout';
+import { BRIDGE } from '../src/game/town/TownRiver';
 import { createTown } from '../src/data/town';
+import { ERAS } from '../src/data/eras';
 import { raidProtection } from '../src/game/town/TownRules';
 import {
   CARGO_CRATES,
   INCIDENT_BEATS,
+  civicIncident,
+  eraEventKind,
   incidentScript,
   incidentStory,
   phaseAt,
@@ -280,6 +284,40 @@ describe('Frontier and civic incidents only claim what the town can show', () =>
       expect(incidentStory(event).text).not.toMatch(
         fireStationLevel ? /bucket/ : /brigade protected/,
       );
+    },
+  );
+
+  // Timber and road bridges share one deck profile; the van must ride both like traffic.
+  it.each(ERAS.map(({ id }) => id).filter((era) => civicIncident(eraEventKind(era))))(
+    'pitches the %s response vehicle down and back up the bridge ramp',
+    (era) => {
+      const event = {
+        id: 1,
+        kind: eraEventKind(era),
+        fireStationLevel: 1,
+        // A call beyond the river: the van drives down off the bridge and back up.
+        targets: ['mill'],
+        outcome: 'stolen',
+        loss: 5,
+      };
+      const front = new Vector3(),
+        axle = new Vector3(),
+        ramps = new Set();
+      play(event, era, (scene) => {
+        const van = scene.vehicle?.root;
+        if (!van?.visible) return;
+        axle.set(1, 0, 0).applyQuaternion(van.quaternion);
+        expect(axle.y).toBeCloseTo(0, 8); // Pitch must never become sideways roll.
+        const { x, z } = van.position;
+        const fromCenter = Math.abs(x - BRIDGE.centerX);
+        if (Math.abs(z - BRIDGE.z) > 0.3 || fromCenter < 4.6 || fromCenter > 6.2) return;
+        front.set(0, 0, 1).applyQuaternion(van.quaternion);
+        const climbing = Math.sign(front.x) === Math.sign(BRIDGE.centerX - x);
+        expect(Math.sign(front.y), `${era} at x ${x}`).toBe(climbing ? 1 : -1);
+        expect(Math.abs(front.y)).toBeGreaterThan(0.4);
+        ramps.add(climbing ? 'up' : 'down');
+      });
+      expect([...ramps].sort()).toEqual(['down', 'up']);
     },
   );
 

@@ -233,11 +233,15 @@ it.each([false, true])(
         plotCache: new Map([['home', previous]]),
         targets: [previous.group],
         frameCache: {},
-        pendingPlot: {
-          id: 'home',
-          group,
-          previous,
-          entries: [{ x: 0, z: 0, y: 0, height: 2, radius: 1 }],
+        plotWork: {
+          queue: [],
+          active: {
+            kind: 'swap',
+            id: 'home',
+            group,
+            previous,
+            entries: [{ x: 0, z: 0, y: 0, height: 2, radius: 1 }],
+          },
         },
         refreshServiceDrops: vi.fn(),
         buildingRenderer: { sync: vi.fn() },

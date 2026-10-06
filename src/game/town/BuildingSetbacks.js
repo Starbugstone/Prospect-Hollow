@@ -2,6 +2,7 @@ import { Group } from 'three';
 import { SIDEWALK_OFFSET, NPC_BODY_MARGIN } from '../../data/townClearances';
 import { townTracks, PLOTS, RAIL_EDGE } from './TownLayout';
 import { ERAS } from '../../data/eras';
+import { GARDEN_PARCELS } from '../../data/townGardenDistrict';
 import { BUILDINGS } from '../../data/town';
 const potentialRoads = new Map();
 function facadeRoads(era) {
@@ -22,7 +23,15 @@ import { geometryFootprints } from './BuildingFootprints';
 export function plotSetbacks(id, town) {
   if (FOOTPRINT_EXCEPTIONS[id] || id === 'mine' || id === 'airport') return null;
   const [x, z] = PLOTS[id],
-    bounds = { minX: -Infinity, maxX: Infinity, minZ: -Infinity, maxZ: Infinity };
+    parcel = GARDEN_PARCELS[id],
+    bounds = parcel
+      ? {
+          minX: -parcel.halfWidth,
+          maxX: parcel.halfWidth,
+          minZ: -parcel.halfDepth,
+          maxZ: parcel.halfDepth,
+        }
+      : { minX: -Infinity, maxX: Infinity, minZ: -Infinity, maxZ: Infinity };
   for (const road of [...facadeRoads(ERAS.filter((era) => era.enabled).at(-1).id), RAIL_EDGE]) {
     if (road.width < 0.85) continue; // entrance paths intentionally terminate at doors
     // Reserve the railway even before it opens. Train overhang and ballast
@@ -57,7 +66,7 @@ export function applyRoadSetbacks(root, id, town) {
   if (!limits) return;
   // Station canopies must clear the train too, above pedestrian head height.
   const solids = geometryFootprints(root).filter(
-    (s) => id === 'railDepot' || (s.yMin < 1.7 && s.yMax > 0.08),
+    (s) => id === 'railDepot' || GARDEN_PARCELS[id] || (s.yMin < 1.7 && s.yMax > 0.08),
   );
   if (!solids.length) return;
   let contents;

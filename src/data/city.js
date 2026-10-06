@@ -84,6 +84,7 @@ export const CITY_DESCRIPTIONS = {
     'A planted promenade, solar shade and cycle stands welcome families by the river.',
   ],
 };
+const LANDMARK_VISITORS = { airport: 4, radioTower: 2, concertHall: 4, television: 2 };
 const newLandmarks = [
   [
     'airport',
@@ -133,16 +134,99 @@ const newLandmarks = [
   introducedEra,
   family,
   purpose,
-  effects: { happiness: 1 },
+  // Landmarks draw visitors, who need water and food like residents do.
+  effects: { ...(LANDMARK_VISITORS[id] ? { visitors: LANDMARK_VISITORS[id] } : {}), comfort: 1 },
   color: '#71938a',
   unlock: [],
-  benefits: [
-    'Adds 1 happiness in total.',
-    'Adds 2 happiness in total.',
-    'Adds 3 happiness in total.',
-  ],
 }));
+
+// The garden district uses the same bounded service and construction lifecycle
+// as every city building. Content varies here; tier behavior stays shared.
+const gardenBuildings = [
+  {
+    id: 'teaHouse',
+    name: 'Clover riverside tea house',
+    shortName: 'Tea house',
+    purpose: 'A quiet cup and a garden veranda for neighbors',
+    introducedEra: 'canopy',
+    family: 'culture',
+    effects: { visitors: 2, comfort: 2 },
+    color: '#89a587',
+  },
+  {
+    id: 'blossomAtelier',
+    name: 'Seed & Blossom atelier',
+    shortName: 'Blossom atelier',
+    purpose: 'Grow seeds, share harvests and make beautiful things',
+    introducedEra: 'canopy',
+    family: 'farm',
+    effects: { food: 4, water: 4, comfort: 1 },
+    color: '#89a587',
+  },
+  {
+    id: 'orchardCottages',
+    name: 'Cloudberry orchard cottages',
+    shortName: 'Orchard cottages',
+    purpose: 'Cozy homes around a shared fruit garden',
+    introducedEra: 'canopy',
+    family: 'residence',
+    effects: { housing: 4, comfort: 1 },
+    color: '#89a587',
+  },
+  {
+    id: 'glassworks',
+    name: 'Hollow crystal glassworks',
+    shortName: 'Glassworks',
+    purpose: 'Shape mine crystals into glass that gathers daylight',
+    introducedEra: 'riverlight',
+    family: 'research',
+    effects: { visitors: 2, comfort: 2 },
+    color: '#aaa1bc',
+  },
+  {
+    id: 'springsRetreat',
+    name: 'Willow warm springs retreat',
+    shortName: 'Springs retreat',
+    purpose: 'Quiet pools, warm water and a sheltered lounge',
+    introducedEra: 'riverlight',
+    family: 'water',
+    effects: { water: 4, comfort: 1 },
+    color: '#aaa1bc',
+  },
+  {
+    id: 'riverlightPavilion',
+    name: 'Prospect Riverlight pavilion',
+    shortName: 'Riverlight pavilion',
+    purpose: 'A luminous gathering place for the whole valley',
+    introducedEra: 'riverlight',
+    family: 'culture',
+    effects: { visitors: 4, comfort: 3 },
+    color: '#aaa1bc',
+  },
+].map((building) => ({
+  ...building,
+  kind: building.id,
+  unlock: [{ id: 'bridge', level: 1 }],
+}));
+for (const building of gardenBuildings) CITY_FAMILIES[building.kind] = building.family;
+
+// Each level's benefit line follows the building's effects, so a balance change
+// can never leave an outdated number in the text.
+export function cityBenefit({ housing, visitors, food, water, comfort }, level) {
+  const parts = [];
+  if (housing) parts.push(`Room for ${housing * level} residents.`);
+  if (visitors) parts.push(`Room for ${visitors * level} visitors.`);
+  if (food && food === water) parts.push(`Adds food and water for ${food * level} people.`);
+  else {
+    if (food) parts.push(`Adds food for ${food * level} people.`);
+    if (water) parts.push(`Adds water for ${water * level} people.`);
+  }
+  if (comfort) parts.push(`Adds ${comfort * level} comfort in total.`);
+  return parts.join(' ');
+}
+
 export const CITY_BUILDINGS = [
+  ...gardenBuildings,
   ...newLandmarks,
   {
     id: 'cityHall',
@@ -153,7 +237,7 @@ export const CITY_BUILDINGS = [
     introducedEra: 'post-war',
     family: 'civic',
     effects: {
-      happiness: 2,
+      comfort: 2,
     },
     color: '#71938a',
     unlock: [
@@ -161,11 +245,6 @@ export const CITY_BUILDINGS = [
         id: 'bridge',
         level: 1,
       },
-    ],
-    benefits: [
-      'Adds 2 happiness in total.',
-      'Adds 4 happiness in total.',
-      'Adds 6 happiness in total.',
     ],
   },
   {
@@ -178,7 +257,7 @@ export const CITY_BUILDINGS = [
     family: 'residence',
     effects: {
       housing: 8,
-      happiness: 1,
+      comfort: 1,
     },
     color: '#71938a',
     unlock: [
@@ -186,11 +265,6 @@ export const CITY_BUILDINGS = [
         id: 'bridge',
         level: 1,
       },
-    ],
-    benefits: [
-      'Room for 8 residents, with food and water. Adds 1 happiness in total.',
-      'Room for 16 residents, with food and water. Adds 2 happiness in total.',
-      'Room for 24 residents, with food and water. Adds 3 happiness in total.',
     ],
   },
   {
@@ -202,8 +276,8 @@ export const CITY_BUILDINGS = [
     introducedEra: 'post-war',
     family: 'retail',
     effects: {
-      food: 18,
-      happiness: 1,
+      food: 5,
+      comfort: 1,
     },
     color: '#71938a',
     unlock: [
@@ -211,11 +285,6 @@ export const CITY_BUILDINGS = [
         id: 'bridge',
         level: 1,
       },
-    ],
-    benefits: [
-      'Adds food for 18 people. Adds 1 happiness in total.',
-      'Adds food for 36 people. Adds 2 happiness in total.',
-      'Adds food for 54 people. Adds 3 happiness in total.',
     ],
   },
   {
@@ -227,8 +296,8 @@ export const CITY_BUILDINGS = [
     introducedEra: 'post-war',
     family: 'water',
     effects: {
-      water: 18,
-      happiness: 1,
+      water: 5,
+      comfort: 1,
     },
     color: '#71938a',
     unlock: [
@@ -236,11 +305,6 @@ export const CITY_BUILDINGS = [
         id: 'bridge',
         level: 1,
       },
-    ],
-    benefits: [
-      'Adds water for 18 people. Adds 1 happiness in total.',
-      'Adds water for 36 people. Adds 2 happiness in total.',
-      'Adds water for 54 people. Adds 3 happiness in total.',
     ],
   },
   {
@@ -253,7 +317,7 @@ export const CITY_BUILDINGS = [
     family: 'station',
     effects: {
       visitors: 2,
-      happiness: 1,
+      comfort: 1,
     },
     color: '#71938a',
     unlock: [
@@ -261,11 +325,6 @@ export const CITY_BUILDINGS = [
         id: 'bridge',
         level: 1,
       },
-    ],
-    benefits: [
-      'Room for 2 visitors, with food and water. Adds 1 happiness in total.',
-      'Room for 4 visitors, with food and water. Adds 2 happiness in total.',
-      'Room for 6 visitors, with food and water. Adds 3 happiness in total.',
     ],
   },
   {
@@ -277,7 +336,7 @@ export const CITY_BUILDINGS = [
     introducedEra: 'contemporary',
     family: 'culture',
     effects: {
-      happiness: 2,
+      comfort: 2,
     },
     color: '#71938a',
     unlock: [
@@ -285,11 +344,6 @@ export const CITY_BUILDINGS = [
         id: 'bridge',
         level: 1,
       },
-    ],
-    benefits: [
-      'Adds 2 happiness in total.',
-      'Adds 4 happiness in total.',
-      'Adds 6 happiness in total.',
     ],
   },
   {
@@ -301,7 +355,7 @@ export const CITY_BUILDINGS = [
     introducedEra: 'contemporary',
     family: 'research',
     effects: {
-      happiness: 1,
+      comfort: 1,
     },
     color: '#71938a',
     unlock: [
@@ -309,11 +363,6 @@ export const CITY_BUILDINGS = [
         id: 'bridge',
         level: 1,
       },
-    ],
-    benefits: [
-      'Adds 1 happiness in total.',
-      'Adds 2 happiness in total.',
-      'Adds 3 happiness in total.',
     ],
   },
   {
@@ -326,7 +375,7 @@ export const CITY_BUILDINGS = [
     family: 'residence',
     effects: {
       housing: 6,
-      happiness: 1,
+      comfort: 1,
     },
     color: '#71938a',
     unlock: [
@@ -334,11 +383,6 @@ export const CITY_BUILDINGS = [
         id: 'bridge',
         level: 1,
       },
-    ],
-    benefits: [
-      'Room for 6 residents, with food and water. Adds 1 happiness in total.',
-      'Room for 12 residents, with food and water. Adds 2 happiness in total.',
-      'Room for 18 residents, with food and water. Adds 3 happiness in total.',
     ],
   },
   {
@@ -350,7 +394,7 @@ export const CITY_BUILDINGS = [
     introducedEra: 'contemporary',
     family: 'park',
     effects: {
-      happiness: 2,
+      comfort: 2,
     },
     color: '#71938a',
     unlock: [
@@ -358,11 +402,6 @@ export const CITY_BUILDINGS = [
         id: 'bridge',
         level: 1,
       },
-    ],
-    benefits: [
-      'Adds 2 happiness in total.',
-      'Adds 4 happiness in total.',
-      'Adds 6 happiness in total.',
     ],
   },
   {
@@ -375,7 +414,7 @@ export const CITY_BUILDINGS = [
     family: 'residence',
     effects: {
       housing: 6,
-      happiness: 1,
+      comfort: 1,
     },
     color: '#71938a',
     unlock: [
@@ -383,11 +422,6 @@ export const CITY_BUILDINGS = [
         id: 'bridge',
         level: 1,
       },
-    ],
-    benefits: [
-      'Room for 6 residents, with food and water. Adds 1 happiness in total.',
-      'Room for 12 residents, with food and water. Adds 2 happiness in total.',
-      'Room for 18 residents, with food and water. Adds 3 happiness in total.',
     ],
   },
   {
@@ -399,8 +433,8 @@ export const CITY_BUILDINGS = [
     introducedEra: 'tomorrow',
     family: 'farm',
     effects: {
-      food: 18,
-      happiness: 1,
+      food: 5,
+      comfort: 1,
     },
     color: '#71938a',
     unlock: [
@@ -408,11 +442,6 @@ export const CITY_BUILDINGS = [
         id: 'bridge',
         level: 1,
       },
-    ],
-    benefits: [
-      'Adds food for 18 people. Adds 1 happiness in total.',
-      'Adds food for 36 people. Adds 2 happiness in total.',
-      'Adds food for 54 people. Adds 3 happiness in total.',
     ],
   },
   {
@@ -425,7 +454,7 @@ export const CITY_BUILDINGS = [
     family: 'station',
     effects: {
       visitors: 2,
-      happiness: 1,
+      comfort: 1,
     },
     color: '#71938a',
     unlock: [
@@ -434,32 +463,25 @@ export const CITY_BUILDINGS = [
         level: 1,
       },
     ],
-    benefits: [
-      'Room for 2 visitors, with food and water. Adds 1 happiness in total.',
-      'Room for 4 visitors, with food and water. Adds 2 happiness in total.',
-      'Room for 6 visitors, with food and water. Adds 3 happiness in total.',
-    ],
   },
-].map(({ benefits, ...building }) => ({
+].map((building) => ({
   ...building,
   stages: [
     'Empty plot',
     ...[1, 2, 3].map((level) => `${ERA_BY_ID[building.introducedEra].label} · Level ${level}`),
   ],
-  upgrades: benefits.map((benefit, index) => ({
+  upgrades: [1, 2, 3].map((level, index) => ({
     cost: cityBuildingPrice(
       building.id,
       eraEvolution(building.introducedEra).newBuildingPrices[index],
     ),
     runs: isMajorCityBuilding(building.id) && index === 0 ? 2 : 1,
     title: index ? 'Expand {building}' : 'Build {building}',
-    benefit,
-    story: benefit,
+    benefit: cityBenefit(building.effects, level),
+    story: cityBenefit(building.effects, level),
     speaker: 'Ada · the caretaker',
   })),
 }));
-export const cityCapacity = (town, stat) =>
-  CITY_BUILDINGS.reduce((sum, b) => sum + (b.effects[stat] ?? 0) * (town.buildings[b.id] ?? 0), 0);
 export const cityVariant = (kind, era) =>
   ['airport', 'radio', 'concert', 'television', 'skyline'].includes(CITY_FAMILIES[kind])
     ? 'Renew the landmark with improved facilities and city lighting.'

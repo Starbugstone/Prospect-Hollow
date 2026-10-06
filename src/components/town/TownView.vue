@@ -1,50 +1,5 @@
 <template>
-  <main class="town-view">
-    <div class="town-heading">
-      <div>
-        <p class="town-kicker">
-          {{ t(ERA_BY_ID[town.era].label) }} · {{ t(ERA_BY_ID[town.era].yearLabel) }}
-        </p>
-        <h1>Prospect Hollow</h1>
-      </div>
-      <div class="town-wallet" :aria-label="t('Town savings')">
-        <TownIcon name="coin" />
-        <div>
-          <strong>{{ number(town.coins) }}</strong
-          ><span>{{ t('Coins') }}</span>
-        </div>
-      </div>
-    </div>
-    <div class="town-tools">
-      <button :aria-label="t('Village tour')" @click="tourOpen = true">
-        <GameIcon name="info" />
-      </button>
-      <span v-if="campaign.builderHammers > 0" class="town-hammer-stock"
-        ><img src="/art/rewards/builder-hammer.svg" alt="" />{{
-          t('Builder hammers: {count}/{cap}', {
-            count: campaign.builderHammers,
-            cap: HAMMER_CAPACITY,
-          })
-        }}</span
-      >
-      <button v-if="town.buildings.saloon" @click="inspectBuilding('saloon')">
-        <TownIcon name="coin" />{{ t('{rate}/hour', { rate: incomeRate }) }}
-      </button>
-      <button
-        v-if="!fullscreen && (town.era !== 'frontier' || town.buildings.home > 0)"
-        @click="dialogMode = 'projects'"
-      >
-        {{ t('Town projects') }} →
-      </button>
-      <button
-        v-if="cloudAccount?.signedIn.value"
-        class="town-tools-community"
-        @click="cloudAccount.openCommunity()"
-      >
-        <GameIcon name="eye" />{{ t('Shared towns') }} →
-      </button>
-      <button @click="inspectBuilding('armory')">{{ t('Supplies') }} →</button>
-    </div>
+  <main class="town-view" :style="{ '--town-tab-height': `${tabHeight}px` }">
     <section class="town-world" :aria-label="t('Your town')">
       <div
         ref="mapFrame"
@@ -56,73 +11,32 @@
           'town-in-cinematic': town.transition?.pending || openingPresentation,
         }"
       >
-        <button
-          ref="fullscreenButton"
-          class="town-fullscreen-button"
-          :aria-label="t(fullscreen ? 'Exit full screen village' : 'Full screen village')"
-          :title="t(fullscreen ? 'Exit full screen village' : 'Full screen village')"
-          :aria-pressed="fullscreen"
-          @click="fullscreen = !fullscreen"
-        >
-          <GameIcon name="expand" />
-        </button>
-        <button
-          v-if="built > 0"
-          class="town-fullscreen-button town-story-button"
-          :aria-label="t('Read village story')"
-          :title="t('Read village story')"
-          @click="dialogMode = 'story'"
-        >
-          <GameIcon name="book" />
-        </button>
-        <button
-          v-if="fullscreen && !activeRaid && (town.era !== 'frontier' || town.buildings.home > 0)"
-          class="town-fullscreen-button town-projects-button"
-          :aria-label="t('Town projects')"
-          :title="t('Town projects')"
-          @click="dialogMode = 'projects'"
-        >
-          <GameIcon name="clipboard" />
-        </button>
-        <button
-          class="town-fullscreen-button town-help-button"
-          :aria-label="t('Village tour')"
-          :title="t('Village tour')"
-          @click="tourOpen = true"
-        >
-          <GameIcon name="info" />
-        </button>
-        <button
-          class="town-fullscreen-button town-settings-button"
-          :aria-label="t('Settings')"
-          :title="t('Settings')"
-          @click="settings.toggleSettings(true)"
-        >
-          <GameIcon name="settings" />
-        </button>
-        <div class="town-map-corner">
-          <SaveStatusPill v-if="cloudAccount && !activeRaid" />
-          <div
-            v-if="fullscreen && !activeRaid"
-            class="town-map-wallet"
-            :aria-label="t('Town savings')"
-          >
-            <TownIcon name="coin" /><strong>{{ number(town.coins) }}</strong>
-          </div>
+        <div v-if="!activeRaid" class="town-map-corner">
+          <SaveStatusPill v-if="cloudAccount" />
         </div>
-        <div v-if="campaign.builderHammers > 0" class="town-map-caption">
-          <span
-            class="town-map-hammers"
-            :title="t('Builder hammers')"
-            :aria-label="
-              t('Builder hammers: {count}/{cap}', {
-                count: campaign.builderHammers,
-                cap: HAMMER_CAPACITY,
-              })
-            "
-            ><img src="/art/rewards/builder-hammer.svg" alt="" />{{ campaign.builderHammers }}</span
-          >
+        <div v-if="!activeRaid" class="town-map-status" :aria-label="t('Town savings')">
+          <TownIcon name="coin" /><strong>{{ number(town.coins) }}</strong>
+          <template v-if="campaign.builderHammers > 0">
+            <i aria-hidden="true"></i
+            ><img
+              src="/art/rewards/builder-hammer.svg"
+              :alt="t('Builder hammers')"
+              :title="
+                t('Builder hammers: {count}/{cap}', {
+                  count: campaign.builderHammers,
+                  cap: HAMMER_CAPACITY,
+                })
+              "
+            /><strong>{{ campaign.builderHammers }}</strong>
+          </template>
         </div>
+        <p
+          v-if="(campaign.saveWarning || campaign.inventoryNotice) && !activeRaid"
+          role="status"
+          class="town-map-notice"
+        >
+          {{ t(campaign.saveWarning || campaign.inventoryNotice) }}
+        </p>
         <div v-if="activeRaid" class="town-raid-banner" role="status" aria-live="polite">
           <span class="town-kicker"
             >{{ t(eventHeading(activeRaid))
@@ -185,8 +99,7 @@
           :presentation="openingPresentation"
           @presentation-ready="presentationReady = true"
           @presentation-unavailable="presentationFallback = true"
-          :forge-collectible="campaign.canCollectForge(collectionNow)"
-          :now="collectionNow"
+          :forge-collectible="forgeCollectible"
           :builder-hammers="campaign.builderHammers"
           :selected="selected"
           :reduced-motion="settings.reducedMotion"
@@ -196,6 +109,7 @@
             settings.isSettingsOpen ||
             mineEntryPending ||
             museumOpen ||
+            collectionOpen ||
             !!dialogMode ||
             firstLightsOpen ||
             tourOpen
@@ -204,7 +118,9 @@
           :raid="activeRaid"
           :raid-defense-ids="readyRaidDefenses"
           :construction="construction"
+          :need-chips="needs.demand && !activeRaid ? needChips : []"
           @select="selectBuilding"
+          @inspect="inspectBuilding"
           @mine="goMining"
           @raid-phase="raidPhase = $event"
           @raid-cue="playRaidCue"
@@ -253,112 +169,36 @@
           "
           @close="raidNotice = null"
         />
-        <div
+        <TownTabBar
           v-if="!activeRaid && !town.transition?.pending && !openingPresentation"
-          class="town-progress-panel"
-        >
-          <div class="town-progress-toolbar">
-            <button
-              class="town-progress-handle"
-              aria-controls="village-progress"
-              :aria-expanded="progressOpen"
-              @click="progressOpen = !progressOpen"
-            >
-              <GameIcon name="chevron" />{{ t(progressOpen ? 'Hide progress' : 'Progress') }}
-            </button>
-            <button
-              v-if="!progressOpen"
-              class="town-next-action"
-              :class="{ 'is-ready': nextAction.kind !== 'mine' }"
-              @click="nextAct"
-            >
-              <TownIcon :name="nextAction.icon" />{{ t(nextAction.label, nextAction.params) }}
-            </button>
-            <button class="town-plots-button" @click="openDirectory">
-              {{ t('Available plots') }} <TownIcon name="arrow" />
-            </button>
-          </div>
-          <TownNextStep
-            id="village-progress"
-            v-show="progressOpen"
-            class="village-next-inline"
-            :town="town"
-            :hammers="campaign.builderHammers"
-            @select="selectBuilding"
-            @inspect="inspectBuilding"
-            @build-free="buildFree"
-            @mine="goMining"
-            @advance-era="beginEra"
-          />
-        </div>
+          :current="currentTab"
+          :build-count="directoryPlots.length"
+          :build-nudge="buildNudge"
+          :mine-label="mineLabel"
+          @select="openTab"
+          @height="tabHeight = $event"
+        />
         <span class="town-sr-only" role="status">{{ t(announcement) }}</span>
       </div>
-      <div class="town-needs" :aria-label="t('Basic town needs')">
-        <button @click="inspectBuilding('well')">
-          <TownIcon name="water" /><span
-            >{{ t('Water')
-            }}<small>{{
-              t('Water for {count} people', { count: waterCapacity(town) })
-            }}</small></span
-          >
-        </button>
-        <button @click="inspectBuilding('farm')">
-          <TownIcon name="food" /><span
-            >{{ t('Food')
-            }}<small>{{ t('Food for {count} people', { count: foodCapacity(town) }) }}</small></span
-          >
-        </button>
-        <button @click="inspectBuilding('home')">
-          <TownIcon name="people" /><span
-            >{{ t('{count} people', { count: people })
-            }}<small>{{
-              t('{residents} residents · {visitors} visitors', { residents, visitors })
-            }}</small></span
-          >
-        </button>
-      </div>
-      <button class="town-happiness" @click="inspectBuilding('square')">
-        <TownIcon name="happiness" />
-        <span
-          >{{ t('Happiness') }} <strong>{{ happiness(town) }}%</strong>
-          <meter :value="happiness(town)" min="0" max="100" :aria-label="t('Village happiness')" />
-          <small>{{
-            t('Saloon income +{bonus}% · Improve the town square', {
-              bonus: saloonHappinessBonus(town),
-            })
-          }}</small>
-        </span>
-        <TownIcon name="arrow" />
-      </button>
-      <p v-if="activeProjects.length" class="town-construction-summary">
-        {{ t('Active construction: {count}', { count: activeProjects.length }) }} ·
-        {{ t('Each completed puzzle advances every building in progress.') }}
-      </p>
     </section>
-    <p
-      v-if="campaign.saveWarning || campaign.inventoryNotice"
-      role="status"
-      class="town-save-warning"
-    >
-      {{ t(campaign.saveWarning || campaign.inventoryNotice) }}
-    </p>
-    <p class="town-bottom-note">
-      {{ t(campaign.saveWarning ? 'Progress kept for this session' : 'Saved on this device') }}
-    </p>
     <TownDialog
       v-if="active && dialogMode"
+      :key="tabSheet ? 'sheet' : 'dialog'"
+      :sheet="tabSheet"
       :title="
         t(
           dialogMode === 'projects'
             ? 'Town projects'
             : dialogMode === 'story'
               ? 'Village story'
-              : dialogMode === 'directory'
+              : dialogMode === 'build'
                 ? t('Available plots · {built}/{total} built', {
                     built,
                     total: currentEraPlots.length,
                   })
-                : 'Your town',
+                : dialogMode === 'more'
+                  ? 'More'
+                  : 'Your town',
         )
       "
       close-label="Close building details"
@@ -371,8 +211,10 @@
           :snapshot="visitorSnapshot"
           :error="visitorError"
           :era="town.era"
+          :unshared="!!visitorTownId && cloudAccount?.shared.value === false"
           can-find
           @find="findVisitor"
+          @share="cloudAccount.openSharing()"
         />
         <section class="town-story-stats" :aria-label="t('Village overview')">
           <h2>{{ t('Village overview') }}</h2>
@@ -390,7 +232,7 @@
                 ><small v-if="stat.detail">{{ stat.detail }}</small>
                 <meter
                   v-if="stat.id === 'happiness'"
-                  :value="happiness(town)"
+                  :value="needs.happiness"
                   min="0"
                   max="100"
                   :aria-label="t('Village happiness')"
@@ -474,33 +316,9 @@
           </section>
         </div>
       </template>
-      <template v-else-if="dialogMode === 'directory'">
-        <p v-if="town.era === 'industrial'" class="town-service">
-          {{
-            t(
-              'First Lights: finish every new building and modernize every existing plot to complete this era. Build the power house to unlock electric modernization.',
-            )
-          }}
-        </p>
+      <template v-else-if="dialogMode === 'build'">
         <p class="town-kicker">
           {{ t(ERA_BY_ID[town.era].label) }} · {{ t('Current era available') }}
-        </p>
-        <p v-if="town.era === 'frontier'">
-          {{ t('The east-bank district and railway station open in the River & Rail era.') }}
-        </p>
-        <p class="town-directory-hint">
-          {{
-            t(
-              'Select a row to finish construction or buy with the coins or hammer shown. This list stays open. Collect resources by tapping buildings in the town.',
-            )
-          }}
-        </p>
-        <p class="town-directory-hint">
-          {{
-            t(
-              'Finish upgrading each well, farm or house to level 2 to unlock the next plot of its type. Farm II must reach level 2 before Farm III, and the same rule applies to extra houses. Other buildings have one plot each.',
-            )
-          }}
         </p>
         <p v-if="!directoryPlots.length" role="status">
           {{
@@ -537,6 +355,40 @@
             </span>
           </button>
         </section>
+        <TownNextStep
+          class="town-build-next"
+          :town="town"
+          :hammers="campaign.builderHammers"
+          @select="selectBuilding"
+          @inspect="inspectBuilding"
+          @build-free="buildFree"
+          @mine="goMining"
+          @advance-era="beginEra"
+        />
+        <p v-if="town.era === 'industrial'" class="town-service">
+          {{
+            t(
+              'First Lights: finish every new building and modernize every existing plot to complete this era. Build the power house to unlock electric modernization.',
+            )
+          }}
+        </p>
+        <p v-if="town.era === 'frontier'">
+          {{ t('The east-bank district and railway station open in the River & Rail era.') }}
+        </p>
+        <p class="town-directory-hint">
+          {{
+            t(
+              'Select a row to finish construction or buy with the coins or hammer shown. This list stays open. Collect resources by tapping buildings in the town.',
+            )
+          }}
+        </p>
+        <p class="town-directory-hint">
+          {{
+            t(
+              'Finish upgrading each well, farm or house to level 2 to unlock the next plot of its type. Farm II must reach level 2 before Farm III, and the same rule applies to extra houses. Other buildings have one plot each.',
+            )
+          }}
+        </p>
         <p class="town-service">
           {{
             t(
@@ -580,6 +432,22 @@
           </section>
         </details>
       </template>
+      <TownMoreMenu
+        v-else-if="dialogMode === 'more'"
+        :can-replay="campaign.canReplay"
+        :shared-towns="!!cloudAccount?.signedIn.value"
+        :muted="muted"
+        :honours="honourMenu"
+        @projects="dialogMode = 'projects'"
+        @museum="visitMuseum"
+        @honours="openHonours"
+        @supplies="inspectBuilding('armory')"
+        @shared="openSharedTowns"
+        @tour="openTour"
+        @settings="openSettings"
+        @mute="settings.toggleMute()"
+        @home="leaveForHome"
+      />
       <TownBuildingDetails
         v-else
         :key="selected"
@@ -589,7 +457,6 @@
         :bonus-limit="campaign.bonusLimit"
         :powers="campaign.powers"
         :last-income="campaign.lastSaloonIncome"
-        :now="collectionNow"
         @build="startWork"
         @hammer="useHammer"
         @finish="finishBuilding(selected)"
@@ -612,9 +479,16 @@
     />
     <TownMuseum
       v-if="active && museumOpen && campaign.canReplay"
-      @close="museumOpen = false"
+      @close="closeMuseum"
       @replay="$emit('replay', $event)"
       @continuous="$emit('continuous', $event)"
+    />
+    <HonourCollection
+      v-if="collectionOpen"
+      :family-id="honourRequests.collection.familyId"
+      links
+      @close="honours.closeCollection()"
+      @inspect="inspectFromHonour"
     />
     <TownDialog
       v-if="firstLightsOpen"
@@ -684,7 +558,17 @@ import { pendingPresentation } from '../../data/townPresentations';
 
 import { motorTraffic, modernTransport } from '../../game/town/TownEvolution';
 import { civicIncident } from '../../data/townEvents';
-import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import {
+  computed,
+  defineAsyncComponent,
+  inject,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  provide,
+  ref,
+  watch,
+} from 'vue';
 import { t, number } from '../../i18n';
 import { BUILDINGS, BUILDING_BY_ID, BANDIT_EVENT, INITIAL_STORY } from '../../data/town';
 import {
@@ -698,11 +582,7 @@ import {
 import { ERA_BY_ID } from '../../data/eras';
 import { eraGate, plotInEra, eraBuildingLevel } from '../../game/town/TownEras';
 import {
-  population,
-  residentPopulation,
-  visitorPopulation,
-  visitorCapacity,
-  happiness,
+  needsReport,
   nextGoal,
   upgradeOffer,
   availableParcels,
@@ -710,13 +590,11 @@ import {
   saloonIncomeRate,
   saloonHappinessBonus,
   canRingTownBell,
-  waterCapacity,
-  foodCapacity,
-  housingCapacity,
   gangSize,
   raidProtection,
   raidIntervalRange,
 } from '../../game/town/TownRules';
+import { visitorShare } from '../../game/town/TownNeeds';
 import { useGameStore } from '../../stores/gameStore';
 import { useCampaignStore } from '../../stores/campaignStore';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -724,7 +602,6 @@ import { HAMMER_CAPACITY } from '../../data/rewards';
 import { LEVEL_COUNT } from '../../data/campaign';
 import TownMuseum from './TownMuseum.vue';
 import TownTour from './TownTour.vue';
-import GameIcon from '../GameIcon.vue';
 import SaveStatusPill from '../SaveStatusPill.vue';
 import { useTownAudio } from '../../composables/useTownAudio';
 import TownScene from './TownScene.vue';
@@ -735,15 +612,20 @@ import TownIcon from './TownIcon.vue';
 import TownRaidNotice from './TownRaidNotice.vue';
 import TownResourceCollection from './TownResourceCollection.vue';
 import TownNextStep from './TownNextStep.vue';
-import { useNextStepAction, villageProgressOpen } from '../../composables/useNextStepAction';
+import TownTabBar from './TownTabBar.vue';
+import TownMoreMenu from './TownMoreMenu.vue';
 import TownDefenseStatus from './TownDefenseStatus.vue';
+import { useHonourNavigation } from '../../composables/useHonourNavigation';
+import { honourSummary } from '../honours/honourDisplay';
+import { usePlayerDistinctions } from '../../composables/usePlayerDistinctions';
+const HonourCollection = defineAsyncComponent(() => import('../honours/HonourCollection.vue'));
 
 const props = defineProps({
   mineEntryPending: Boolean,
   openMuseum: Boolean,
   active: { type: Boolean, default: true },
 });
-const emit = defineEmits(['mine', 'replay', 'continuous', 'museum-change']);
+const emit = defineEmits(['mine', 'replay', 'continuous', 'museum-change', 'home']);
 const campaign = useCampaignStore(),
   settings = useSettingsStore();
 // Provided by CloudRoot; absent when the village renders without account support.
@@ -760,6 +642,7 @@ const {
   enqueue: enqueueVisitorNotice,
 } = useTownVisitors(() => props.active, {
   collectSaloon: (at) => (campaign.readOnly ? null : campaign.collectSaloonForVisitor(at)),
+  recordSocial: (counts) => !campaign.readOnly && campaign.recordTownSocial(counts),
 });
 async function findVisitor(id) {
   closeDialog();
@@ -767,27 +650,10 @@ async function findVisitor(id) {
   await nextTick();
   if (!townScene.value?.findVisitor(id)) enqueueVisitorNotice([{ kind: 'unavailable' }]);
 }
-const progressOpen = computed({
-  get: () => villageProgressOpen(settings.villageProgressOpen, town.value),
-  set: (open) => settings.setVillageProgress(open),
-});
-// Keeps the next step one tap away while progress is collapsed.
-const { action: nextAction, act: nextAct } = useNextStepAction(
-  town,
-  () => campaign.builderHammers,
-  (event, id) =>
-    ({
-      select: selectBuilding,
-      inspect: inspectBuilding,
-      'build-free': buildFree,
-      'advance-era': beginEra,
-      mine: goMining,
-    })[event](id),
-);
 const tourOpen = ref(false),
+  // The village always fills the screen while it is the active view.
   fullscreen = ref(false),
-  mapFrame = ref(null),
-  fullscreenButton = ref(null);
+  mapFrame = ref(null);
 let previousOverflow;
 function finishTour() {
   tourOpen.value = false;
@@ -797,25 +663,99 @@ watch(fullscreen, (open) => {
   if (open) {
     previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-  } else {
-    document.body.style.overflow = previousOverflow ?? '';
-    if (props.active) fullscreenButton.value?.focus({ preventScroll: true });
-  }
+  } else document.body.style.overflow = previousOverflow ?? '';
 });
-function leaveFullscreen(event) {
-  if (
-    event.key === 'Escape' &&
-    !props.mineEntryPending &&
-    !dialogMode.value &&
-    !tourOpen.value &&
-    !settings.isSettingsOpen
-  )
-    fullscreen.value = false;
+
+// The tab bar: Village, Build (available plots), Mine, Story and More.
+const currentTab = computed(
+  () =>
+    ({ build: 'build', story: 'story', more: 'more', projects: 'more' })[dialogMode.value] ??
+    'village',
+);
+const mineLabel = computed(() =>
+  campaign.completedCount < LEVEL_COUNT
+    ? t('Mine · {level}', { level: campaign.nextLevel })
+    : t('Museum'),
+);
+// New players and finished constructions are pointed to Build.
+const buildNudge = computed(
+  () =>
+    !town.value.tourSeen ||
+    !Object.values(town.value.buildings).some(Boolean) ||
+    Object.values(town.value.projects).some(constructionReady),
+);
+const muted = computed(() => settings.musicVolume === 0 && settings.sfxVolume === 0);
+// While the tab bar shows, every village panel opens as a sheet above it, so the
+// tabs keep working; during raids and cinematics panels are modal.
+const tabHeight = ref(0);
+const tabSheet = computed(() => tabHeight.value > 0);
+function openTab(tab) {
+  if (tab === 'mine') goMining();
+  // Tapping the open tab again closes its panel.
+  else if (tab !== 'village' && currentTab.value === tab) closeDialog();
+  else if (tab !== 'village') {
+    museumOpen.value = false;
+    dialogMode.value = tab;
+    // Sheets share one panel; each tab starts at its top.
+    nextTick(() => document.querySelector('.town-dialog')?.scrollTo({ top: 0 }));
+  } else if (dialogMode.value || museumOpen.value) {
+    // Village closes whatever is open; on the map it brings the camera home.
+    closeDialog();
+    museumOpen.value = false;
+  } else townScene.value?.resetView();
+}
+function openTour() {
+  closeDialog();
+  tourOpen.value = true;
+}
+function openSettings() {
+  closeDialog();
+  settings.toggleSettings(true);
+}
+function openSharedTowns() {
+  closeDialog();
+  cloudAccount?.openCommunity();
+}
+function leaveForHome() {
+  closeDialog();
+  emit('home');
 }
 
-const residents = computed(() => residentPopulation(town.value));
-const visitors = computed(() => visitorPopulation(town.value));
-const people = computed(() => population(town.value));
+const needs = computed(() => needsReport(town.value));
+// Happy visitors still stay away while the town has no spare water or food.
+const supplyLimitsVisitors = computed(
+  () =>
+    needs.value.visitors <
+    Math.floor(needs.value.visitorPlaces * visitorShare(needs.value.happiness)),
+);
+const residents = computed(() => needs.value.residents);
+const visitors = computed(() => needs.value.visitors);
+const people = computed(() => needs.value.population);
+// Supplies against everyone the town can hold; a shortage names how many go without.
+const supplyNote = (supply) =>
+  supply < needs.value.demand
+    ? t('{supply}/{demand} people · short by {missing}', {
+        supply,
+        demand: needs.value.demand,
+        missing: needs.value.demand - supply,
+      })
+    : t('{supply}/{demand} people', { supply, demand: needs.value.demand });
+const needChips = computed(() => {
+  const n = needs.value;
+  return [
+    ['water', 'water', 'Water: {capacity}/{demand}', `${n.water}/${n.demand}`, n.water],
+    ['food', 'food', 'Food: {capacity}/{demand}', `${n.food}/${n.demand}`, n.food],
+    ['comfort', 'happiness', 'Happiness: {value}%', `${n.happiness}%`, n.happiness],
+  ].map(([stat, icon, label, value, capacity]) => ({
+    stat,
+    icon,
+    value,
+    short: n.short[stat],
+    fixable: !!n.fixes[stat],
+    id: n.fixes[stat] ?? { water: 'well', food: 'farm', comfort: 'square' }[stat],
+    label: t(label, { capacity, demand: n.demand, value: capacity }),
+  }));
+});
 const incomeRate = computed(() => saloonIncomeRate(town.value));
 const activeProjects = computed(() => Object.values(town.value.projects));
 const goal = computed(() => nextGoal(town.value));
@@ -857,14 +797,18 @@ function completeEraCinematic() {
   if (campaign.acknowledgeEra())
     nextTick(() => mapFrame.value?.querySelector('canvas')?.focus({ preventScroll: true }));
 }
+// The one-second collection clock. Only its readers (cooldown checks in the scene and
+// building card) re-render each second; this view sees derived values that rarely change.
 const collectionNow = ref(Date.now());
+provide('townClock', collectionNow);
+const forgeCollectible = computed(() => campaign.canCollectForge(collectionNow.value));
 let collectionClock;
 const currentEraPlots = computed(() => BUILDINGS.filter(({ id }) => plotInEra(town.value, id)));
 const built = computed(
   () => currentEraPlots.value.filter(({ id }) => town.value.buildings[id]).length,
 );
 const villageStats = computed(() => {
-  const demand = housingCapacity(town.value) + visitorCapacity(town.value);
+  const { water, food, happiness: happy } = needs.value;
   return [
     {
       id: 'era',
@@ -889,21 +833,31 @@ const villageStats = computed(() => {
       id: 'water',
       icon: 'water',
       label: t('Water'),
-      value: number(waterCapacity(town.value)),
-      detail: t('Capacity in people · Demand: {count}', { count: demand }),
+      value: number(water),
+      detail: supplyNote(water),
     },
     {
       id: 'food',
       icon: 'food',
       label: t('Food'),
-      value: number(foodCapacity(town.value)),
-      detail: t('Capacity in people · Demand: {count}', { count: demand }),
+      value: number(food),
+      detail: supplyNote(food),
     },
     {
       id: 'happiness',
       icon: 'happiness',
       label: t('Happiness'),
-      value: `${happiness(town.value)}%`,
+      value: `${happy}%`,
+      detail: t(
+        supplyLimitsVisitors.value
+          ? 'Saloon income +{bonus}% · {visitors} of {places} visitors come · not enough spare water or food'
+          : 'Saloon income +{bonus}% · {visitors} of {places} visitors come',
+        {
+          bonus: number(saloonHappinessBonus(town.value)),
+          visitors: visitors.value,
+          places: needs.value.visitorPlaces,
+        },
+      ),
     },
     {
       id: 'saloon',
@@ -929,6 +883,49 @@ const villageStats = computed(() => {
 const selected = ref(goal.value?.id ?? 'home');
 const museumOpen = ref(props.openMuseum && campaign.canReplay),
   dialogMode = ref('');
+// Town Honours open over the village once no cinematic needs the screen. Elsewhere
+// (town management, the home page) the app's honours host opens them without links.
+const honours = useHonourNavigation();
+const honourRequests = honours.requests;
+const collectionOpen = computed(
+  () =>
+    props.active &&
+    !!honourRequests.collection &&
+    !town.value.transition?.pending &&
+    !openingPresentation.value,
+);
+const { unseen: unseenDistinctions } = usePlayerDistinctions({ campaign });
+// New player distinctions (Alpha Player, a new time step) light the same marker.
+const honourMenu = computed(() => {
+  const summary = honourSummary(campaign.honours);
+  const fresh = summary.fresh + unseenDistinctions.value.length;
+  return { ...summary, fresh: settings.honourNotices === 'off' ? 0 : fresh };
+});
+function openHonours() {
+  closeDialog();
+  honours.openCollection();
+}
+function inspectFromHonour(id) {
+  honours.closeCollection();
+  inspectBuilding(id);
+}
+// An honour's museum link closes the collection and opens the museum it filters.
+watch(
+  () => honourRequests.museum,
+  (request) => {
+    if (!request || !props.active) return;
+    honours.closeCollection();
+    if (campaign.canReplay) visitMuseum();
+    else {
+      honours.clearMuseumRequest();
+      selectBuilding('museum');
+    }
+  },
+);
+function closeMuseum() {
+  museumOpen.value = false;
+  honours.clearMuseumRequest();
+}
 const firstLightsOpen = computed(
   () =>
     props.active &&
@@ -938,6 +935,7 @@ const firstLightsOpen = computed(
     !town.value.transition?.pending &&
     !dialogMode.value &&
     !museumOpen.value &&
+    !collectionOpen.value &&
     !tourOpen.value &&
     !settings.isSettingsOpen &&
     !props.mineEntryPending,
@@ -1044,9 +1042,6 @@ watch(
 );
 function closeDialog() {
   dialogMode.value = '';
-}
-function openDirectory() {
-  dialogMode.value = 'directory';
 }
 function collectVipSpending(receipt) {
   const amount = campaign.collectVipSpending(receipt);
@@ -1282,13 +1277,11 @@ onMounted(() => {
   }, 1000);
   visibilityChanged();
   document.addEventListener('visibilitychange', visibilityChanged);
-  document.addEventListener('keydown', leaveFullscreen);
   if (props.active) enterVillage();
 });
 onBeforeUnmount(() => {
   clearInterval(collectionClock);
   document.removeEventListener('visibilitychange', visibilityChanged);
-  document.removeEventListener('keydown', leaveFullscreen);
   if (fullscreen.value) document.body.style.overflow = previousOverflow ?? '';
 });
 </script>

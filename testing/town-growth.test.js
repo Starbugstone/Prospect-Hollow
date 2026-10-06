@@ -144,21 +144,21 @@ describe('Substantial building stages and a growing frontier', () => {
       expect(purchase(town, building.id, 5)).toBeNull();
     }
     let town = village({ saloon: 1, home: 2 });
-    expect(saloonIncomeRate(town)).toBe(13);
+    expect(saloonIncomeRate(town)).toBe(19);
     town = purchase(town, 'saloon', 1);
     while (town.projects.saloon) {
-      expect(saloonIncomeRate(town)).toBe(13);
+      expect(saloonIncomeRate(town)).toBe(19);
       town = finishConstruction(advanceConstruction(town), 'saloon', 2);
     }
-    expect(saloonIncomeRate(town)).toBe(27);
+    expect(saloonIncomeRate(town)).toBe(40);
   });
   it('uses shared food and water capacity for the expanding residential neighborhood', () => {
     const town = village({ home: 3, home2: 3, home3: 3, home4: 3 });
-    expect(population(town)).toBe(6);
+    expect(population(town)).toBe(4);
     town.buildings.well = town.buildings.farm = 3;
-    expect(population(town)).toBe(30);
+    expect(population(town)).toBe(20);
     town.buildings.well2 = town.buildings.farm2 = 1;
-    expect(population(town)).toBe(36);
+    expect(population(town)).toBe(24);
     expect(roadLevel(createTown())).toBe(0);
     expect(roadLevel(village())).toBe(1);
     expect(roadLevel(town)).toBeGreaterThan(1);
@@ -176,7 +176,7 @@ describe('Stored saloon earnings and explicit collection', () => {
       town = result.town;
       earned += result.earned;
     }
-    expect(earned).toBe(6);
+    expect(earned).toBe(10);
     expect(town.income.remainder).toBe(0);
     expect(settleSaloonIncome(town, HOUR_MS * 2).earned).toBe(0);
   });
@@ -187,21 +187,21 @@ describe('Stored saloon earnings and explicit collection', () => {
     campaign.save();
     const checkpoint = saves.get(SAVE_KEY);
     for (let hour = 2; hour <= 20; hour++) campaign.accrueSaloonIncome(HOUR_MS * hour);
-    expect(campaign.town.income.stored).toBe(30);
+    expect(campaign.town.income.stored).toBe(50);
     expect(campaign.town.coins).toBe(600);
     expect(saves.get(SAVE_KEY)).toBe(checkpoint);
     setActivePinia(createPinia());
     const reloaded = useCampaignStore();
     reloaded.accrueSaloonIncome(HOUR_MS * 20);
-    expect(reloaded.town.income.stored).toBe(30);
+    expect(reloaded.town.income.stored).toBe(50);
     expect(reloaded.town.coins).toBe(600);
-    expect(reloaded.collectSaloonIncome(HOUR_MS * 20)).toBe(30);
-    expect(reloaded.town.coins).toBe(630);
+    expect(reloaded.collectSaloonIncome(HOUR_MS * 20)).toBe(50);
+    expect(reloaded.town.coins).toBe(650);
     setActivePinia(createPinia());
     const collected = useCampaignStore();
     expect(collected.collectSaloonIncome(HOUR_MS * 20)).toBe(0);
-    expect(collected.collectSaloonIncome(HOUR_MS * 21)).toBe(6);
-    expect(collected.town.coins).toBe(636);
+    expect(collected.collectSaloonIncome(HOUR_MS * 21)).toBe(10);
+    expect(collected.town.coins).toBe(660);
   });
   it.each([0, 1])('does not write idle checkpoints with saloon level %i', (saloon) => {
     const campaign = useCampaignStore();
@@ -210,7 +210,7 @@ describe('Stored saloon earnings and explicit collection', () => {
     campaign.save();
     const write = vi.spyOn(localStorage, 'setItem');
     for (let tick = 1; tick <= 120; tick++) campaign.accrueSaloonIncome(HOUR_MS + tick * 30000);
-    expect(campaign.town.income.stored).toBe(saloon ? 6 : 0);
+    expect(campaign.town.income.stored).toBe(saloon ? 10 : 0);
     expect(write).not.toHaveBeenCalled();
   });
   it('persists a missing legacy income checkpoint once so idle earnings survive reload', () => {
@@ -224,7 +224,7 @@ describe('Stored saloon earnings and explicit collection', () => {
     campaign.accrueSaloonIncome(HOUR_MS * 2);
     expect(saves.get(SAVE_KEY)).toBe(checkpoint);
     setActivePinia(createPinia());
-    expect(useCampaignStore().collectSaloonIncome(HOUR_MS * 2)).toBe(6);
+    expect(useCampaignStore().collectSaloonIncome(HOUR_MS * 2)).toBe(10);
   });
   it('recalculates fractional idle earnings after reload and persists collection exactly once', () => {
     const campaign = useCampaignStore();
@@ -232,25 +232,25 @@ describe('Stored saloon earnings and explicit collection', () => {
     campaign.accrueSaloonIncome(HOUR_MS);
     campaign.save();
     campaign.accrueSaloonIncome(HOUR_MS + 30000);
-    expect(campaign.town.income.remainder).toBe(180000);
+    expect(campaign.town.income.remainder).toBe(300000);
     setActivePinia(createPinia());
     const reloaded = useCampaignStore();
     expect(reloaded.collectSaloonIncome(HOUR_MS + 630000)).toBe(1);
-    expect(reloaded.town.income.remainder).toBe(180000);
+    expect(reloaded.town.income.remainder).toBe(2700000);
     expect(reloaded.town.coins).toBe(601);
     setActivePinia(createPinia());
     const collected = useCampaignStore();
     expect(collected.collectSaloonIncome(HOUR_MS + 630000)).toBe(0);
-    expect(collected.town.income.remainder).toBe(180000);
+    expect(collected.town.income.remainder).toBe(2700000);
     expect(collected.town.coins).toBe(601);
   });
   it('scales with completed saloon levels and houses; needs customers and stops at five away hours', () => {
     const town = village({ saloon: 3, home: 2, home2: 1, home3: 1, home4: 1 });
     town.projects.home4 = { id: 'home4', stage: 2, wins: 0, required: 4 };
-    expect(saloonIncomeRate(town)).toBe(55);
+    expect(saloonIncomeRate(town)).toBe(40);
     const start = settleSaloonIncome(town, HOUR_MS).town;
     const collected = settleSaloonIncome(start, HOUR_MS * 101);
-    expect(collected.earned).toBe(275);
+    expect(collected.earned).toBe(200);
     expect(settleSaloonIncome(collected.town, HOUR_MS * 101).earned).toBe(0);
     expect(settleSaloonIncome(collected.town, HOUR_MS * 102).earned).toBe(0);
     expect(saloonIncomeRate(village({ farm: 0, saloon: 3 }))).toBe(0);
@@ -259,17 +259,17 @@ describe('Stored saloon earnings and explicit collection', () => {
   it('preserves already stored coins if a population change lowers the current storage cap', () => {
     let town = settleSaloonIncome(village({ saloon: 1, stable: 1 }), HOUR_MS).town;
     town = settleSaloonIncome(town, HOUR_MS * 9).town;
-    expect(town.income.stored).toBe(65);
+    expect(town.income.stored).toBe(95);
     town.buildings.farm = 0;
-    expect(saloonIncomeRate(town) * 5).toBeLessThan(65);
+    expect(saloonIncomeRate(town) * 5).toBeLessThan(95);
     town = normalizeTown(town);
-    expect(settleSaloonIncome(town, HOUR_MS * 10).town.income.stored).toBe(65);
+    expect(settleSaloonIncome(town, HOUR_MS * 10).town.income.stored).toBe(95);
   });
   it('does not double-credit clock rollback and rejects invalid clock/checkpoint values', () => {
     const town = settleSaloonIncome(village({ saloon: 1 }), HOUR_MS * 2).town;
     for (const time of [HOUR_MS, NaN, Infinity, -1, 1.2])
       expect(settleSaloonIncome(town, time).town).toBe(town);
-    expect(settleSaloonIncome(town, HOUR_MS * 3).earned).toBe(6);
+    expect(settleSaloonIncome(town, HOUR_MS * 3).earned).toBe(10);
     expect(normalizeTown({ income: { at: -1, remainder: 999999999 } }).income).toEqual({
       at: null,
       remainder: 0,
@@ -285,13 +285,13 @@ describe('Stored saloon earnings and explicit collection', () => {
     Date.now.mockReturnValue(HOUR_MS * 2);
     expect(campaign.useBuilderHammer('saloon', 1)).toBe(true);
     expect(campaign.town.coins).toBe(600);
-    expect(campaign.town.income.stored).toBe(6);
+    expect(campaign.town.income.stored).toBe(10);
     expect(campaign.town.buildings.saloon).toBe(2);
     setActivePinia(createPinia());
     const reloaded = useCampaignStore();
-    expect(reloaded.collectSaloonIncome()).toBe(6);
+    expect(reloaded.collectSaloonIncome()).toBe(10);
     expect(reloaded.collectSaloonIncome()).toBe(0);
-    expect(reloaded.collectSaloonIncome(HOUR_MS * 3)).toBe(13);
+    expect(reloaded.collectSaloonIncome(HOUR_MS * 3)).toBe(20);
   });
 });
 
@@ -299,26 +299,37 @@ describe('A useful square and a longer village economy', () => {
   it('connects visitors, basic needs, happiness, and saloon spending', () => {
     const town = village({ saloon: 1 });
     expect(residentPopulation(town)).toBe(2);
-    expect(saloonIncomeRate(town)).toBe(6);
+    expect(happiness(town)).toBe(100);
+    expect(saloonIncomeRate(town)).toBe(10);
+    // A content town welcomes every visitor it has room and spare supplies for.
     town.buildings.stable = 1;
     expect(visitorPopulation(town)).toBe(2);
     expect(population(town)).toBe(4);
-    expect(saloonIncomeRate(town)).toBe(13);
-    town.buildings.square = 1;
-    expect(happiness(town)).toBe(50);
-    expect(saloonIncomeRate(town)).toBe(14);
+    expect(happiness(town)).toBe(90);
+    expect(saloonIncomeRate(town)).toBe(19);
+    // More visitor places than spare food: food runs short and happiness drops.
     town.buildings.museum = 2;
     expect(visitorCapacity(town)).toBe(4);
+    expect(visitorPopulation(town)).toBe(2);
+    expect(happiness(town)).toBe(67);
+    town.buildings.farm = 2;
     expect(visitorPopulation(town)).toBe(4);
-    expect(saloonIncomeRate(town)).toBe(22);
+    expect(happiness(town)).toBe(100);
+    expect(saloonIncomeRate(town)).toBe(30);
+    // New homes outgrow the water: residents are capped and visitors stay away.
     town.buildings.home = 3;
     expect(residentPopulation(town)).toBe(6);
     expect(visitorPopulation(town)).toBe(0);
-    expect(happiness(town)).toBe(31);
-    town.buildings.well = town.buildings.farm = 2;
-    expect(visitorPopulation(town)).toBe(2);
-    expect(happiness(town)).toBe(48);
-    expect(saloonIncomeRate(town)).toBe(43);
+    expect(happiness(town)).toBe(36);
+    town.buildings.well = town.buildings.farm = 3;
+    expect(residentPopulation(town)).toBe(10);
+    expect(happiness(town)).toBe(83);
+    expect(visitorPopulation(town)).toBe(3);
+    // Comfort for the bigger town brings happiness, and every visitor, back.
+    town.buildings.square = 1;
+    expect(happiness(town)).toBe(100);
+    expect(visitorPopulation(town)).toBe(4);
+    expect(saloonIncomeRate(town)).toBe(70);
   });
   it('settles existing visitors and happiness before a square changes the income rate', () => {
     const campaign = useCampaignStore();
@@ -331,10 +342,10 @@ describe('A useful square and a longer village economy', () => {
     expect(campaign.town.coins).toBe(600);
     setActivePinia(createPinia());
     const reloaded = useCampaignStore();
-    expect(reloaded.collectSaloonIncome()).toBe(13);
+    expect(reloaded.collectSaloonIncome()).toBe(19);
     expect(reloaded.collectSaloonIncome()).toBe(0);
-    expect(reloaded.collectSaloonIncome(HOUR_MS * 3)).toBe(14);
-    expect(happiness(reloaded.town)).toBe(50);
+    expect(reloaded.collectSaloonIncome(HOUR_MS * 3)).toBe(20);
+    expect(happiness(reloaded.town)).toBe(100);
   });
   it('allows fourth and fifth levels without a completed-puzzle gate for either payment', () => {
     for (const { id } of frontierBuildings.filter((b) => b.upgrades.length === 5)) {

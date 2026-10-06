@@ -4,6 +4,7 @@ import { townStorage, townKey } from './townStorage';
 import { townCoordinator } from './townCoordinator';
 import { createSyncService, legacyRecovery, uploadBlocked } from './syncService';
 import { recoveryStore } from './recoveryStore';
+import { prepareIntegritySnapshot } from './saveIntegrity';
 const native = Capacitor.isNativePlatform();
 const base = (import.meta.env.VITE_API_BASE ?? '/api/v1').replace(/\/$/, '');
 let bearer = '',
@@ -87,7 +88,18 @@ export async function request(
     throw error;
   }
   if (data.csrf) cloud.csrf = data.csrf;
+  if (!authentication) rememberDistinctions(data.distinctions);
   return data;
+}
+// Account, town save and load replies and the owner's guestbook poll carry the player's
+// distinctions as the server decides them now (a new time step, an admin grant or
+// removal). They are kept with the account record for offline play.
+export function rememberDistinctions(distinctions) {
+  if (!cloud.account || !distinctions || typeof distinctions !== 'object') return;
+  if (Array.isArray(distinctions)) return;
+  if (JSON.stringify(cloud.account.distinctions ?? null) === JSON.stringify(distinctions)) return;
+  cloud.account = { ...cloud.account, distinctions };
+  townStorage.account(cloud.account);
 }
 export function configureSync(options) {
   const stored = townStorage.auth().account;
@@ -159,7 +171,7 @@ export async function syncNow({ pull = true, retryRejected = false } = {}) {
     return true;
   } catch (error) {
     updateSaveStatus();
-    if (cloud.account && !cloud.sessionExpired && !townStorage.active()?.meta.uploadError)
+    if (cloud.account && !cloud.sessionExpired && !townStorage.activeMeta()?.uploadError)
       cloud.status = 'offline';
     cloud.error = error.message;
     return false;
@@ -220,7 +232,7 @@ export async function createAccountTown(name, profile) {
             name: townName(name),
             baseRevision: 0,
             uploadId: crypto.randomUUID(),
-            profile,
+            profile: prepareIntegritySnapshot(profile),
           };
     townStorage.creation({ owner, body });
     let result;
@@ -269,7 +281,7 @@ export async function attachLocal(name) {
             name: townName(name),
             baseRevision: 0,
             uploadId: crypto.randomUUID(),
-            profile: local.profile,
+            profile: prepareIntegritySnapshot(local.profile),
           };
       const sequence = saved?.body === body ? saved.sequence : local.meta.sequence;
       townStorage.attachment(body, sequence);
@@ -388,5 +400,5 @@ function saveStatusOf(meta) {
   return meta.dirty || meta.pending ? 'pending' : 'saved';
 }
 export function updateSaveStatus() {
-  cloud.status = saveStatusOf(townStorage.active()?.meta);
+  cloud.status = saveStatusOf(townStorage.activeMeta());
 }

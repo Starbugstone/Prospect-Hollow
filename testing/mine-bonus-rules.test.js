@@ -4,6 +4,7 @@ import { MatchEngine } from '../src/game/engine/MatchEngine';
 import { TileManager } from '../src/game/engine/TileManager';
 import { createGem, GEM_TYPES } from '../src/game/engine/GemFactory';
 import { describeBonusEffects } from '../src/game/phaser/BonusEffects';
+import { HintEngine } from '../src/game/engine/HintEngine';
 const engine = new MatchEngine();
 const activator = new BonusActivator();
 const fixture = () => {
@@ -13,6 +14,91 @@ const fixture = () => {
   return { board, tiles: board.map(() => ({ type: 'standard', health: 0 })), cols: 6, rows: 6 };
 };
 afterEach(() => vi.restoreAllMocks());
+
+describe('rainbows against blast-only crates', () => {
+  const crates = [28, 30, 35];
+  const setup = () => {
+    const state = fixture();
+    state.board[0] = createGem('rainbow');
+    for (const index of crates) {
+      state.board[index] = null;
+      state.tiles[index] = { type: 'blocker', health: 2, maxHealth: 2, bonusOnly: true };
+    }
+    return state;
+  };
+
+  it('adds one crate to a swapped colour and records one blast hit', () => {
+    const state = setup();
+    const evaluation = engine.evaluateSwap(state.board, 6, 6, 0, 1, state.tiles);
+    const match = evaluation.matches[0];
+    const colors = evaluation.board.flatMap((gem, i) =>
+      gem?.type === state.board[1].type || i === 1 ? [i] : [],
+    );
+    expect(match.indices.sort((a, b) => a - b)).toEqual([...colors, 28].sort((a, b) => a - b));
+    expect(match.blasts.get(28)).toBe(1);
+    vi.spyOn(MatchEngine.prototype, 'findMatches').mockReturnValue([]);
+    const { steps } = new TileManager().getResolution({ ...evaluation, tiles: state.tiles });
+    expect(crates.map((i) => state.tiles[i].health)).toEqual([1, 2, 2]);
+    expect(describeBonusEffects(steps[0], (i) => evaluation.board[i]?.type)[0].targets).toContain(
+      28,
+    );
+  });
+
+  it.each([
+    [0, 1],
+    [0.5, 2],
+    [0.999999, 3],
+  ])('double-tap roll %s hits %i distinct crates alongside the dominant colour', (roll, count) => {
+    const state = setup();
+    for (const i of [1, 2, 3]) state.board[i] = createGem('emerald');
+    vi.spyOn(Math, 'random').mockReturnValue(roll);
+    const evaluation = engine.evaluateActivation(state.board, 6, 6, 0, state.tiles);
+    const match = evaluation.matches[0];
+    const hit = crates.filter((i) => match.indices.includes(i));
+    expect(hit).toHaveLength(count);
+    expect(match.indices.filter((i) => !crates.includes(i)).sort((a, b) => a - b)).toEqual(
+      state.board.flatMap((gem, i) => (gem?.type === 'emerald' || i === 0 ? [i] : [])),
+    );
+    for (const index of hit) expect(match.blasts.get(index)).toBe(1);
+    vi.spyOn(MatchEngine.prototype, 'findMatches').mockReturnValue([]);
+    new TileManager().getResolution({ ...evaluation, tiles: state.tiles });
+    expect(crates.map((i) => state.tiles[i].health)).toEqual(
+      crates.map((i) => (hit.includes(i) ? 1 : 2)),
+    );
+  });
+
+  it('can pick a later crate and ignores completed crates, ordinary stone and holes', () => {
+    const state = setup();
+    state.tiles[28].health = 0;
+    state.tiles[30].bonusOnly = false;
+    state.tiles[34] = { type: 'void', health: 2, bonusOnly: true };
+    state.board[34] = null;
+    state.tiles[35].health = 1;
+    vi.spyOn(Math, 'random').mockReturnValue(0.999999);
+    const evaluation = engine.evaluateActivation(state.board, 6, 6, 0, state.tiles);
+    expect(crates.filter((i) => evaluation.matches[0].indices.includes(i))).toEqual([35]);
+    expect(evaluation.matches[0].indices).not.toContain(34);
+    vi.spyOn(MatchEngine.prototype, 'findMatches').mockReturnValue([]);
+    new TileManager().getResolution({ ...evaluation, tiles: state.tiles });
+    expect(state.tiles[35]).toMatchObject({ type: 'standard', health: 0 });
+  });
+
+  it('chooses crate locations randomly without replacement', () => {
+    const state = setup();
+    vi.spyOn(Math, 'random').mockReturnValueOnce(0).mockReturnValue(0.999999);
+    const { matches } = engine.evaluateActivation(state.board, 6, 6, 0, state.tiles);
+    expect(crates.filter((i) => matches[0].indices.includes(i))).toEqual([35]);
+  });
+
+  it('includes a crate in chained rainbows and previews without consuming randomness', () => {
+    const state = setup();
+    const random = vi.spyOn(Math, 'random');
+    expect(activator.previewBonus('rainbow', state.board, 6, 6, 0, state.tiles)).toContain(28);
+    expect(activator.activatePower('tnt', state.board, 6, 6, 1, state.tiles)).toContain(28);
+    expect(new HintEngine().findBestMove(state.board, state.tiles, 6, 6)).not.toBeNull();
+    expect(random).not.toHaveBeenCalled();
+  });
+});
 
 it('activates a rainbow in place against the most common color without randomness or collateral colors', () => {
   const { board, tiles } = fixture();

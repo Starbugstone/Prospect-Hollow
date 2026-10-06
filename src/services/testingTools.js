@@ -9,6 +9,8 @@ import { BUILDINGS, BANDIT_EVENT } from '../data/town';
 import { ERA_BUILDING_LEVELS, eraGate, plotInEra } from '../game/town/TownEras';
 import { normalizeTown, settleSaloonIncome } from '../game/town/TownRules';
 import { townFrameStats, townTimings } from '../game/town/TownProfiler';
+import { runRegisteredTestingMutation } from './localIntegrity';
+import { jsonCopy } from './jsonCopy';
 
 export const TESTING_TOWN_CHANGED = 'prospect-debug-town-changed';
 
@@ -18,14 +20,19 @@ export const debugToolsAllowed = (
   env = import.meta.env,
   hostname = globalThis.location?.hostname ?? '',
 ) => !!env.DEV || env.VITE_DEBUG_TOOLS === 'true' || hostname.startsWith('preprod.');
+const testingPermits = new WeakSet();
+export const isRegisteredTestingPermit = (permit) =>
+  testingPermits.has(permit) && debugToolsAllowed();
 
-function saveChanges(campaign, changes) {
-  if (!campaign.commit(changes))
+function saveChanges(campaign, changes, permit) {
+  if (!runRegisteredTestingMutation(campaign, permit, () => campaign.commit(changes)))
     throw new Error('Test changes could not be saved. Previous progress was restored.');
 }
 
 // Console-only tools for this device-local game; see debugToolsAllowed.
 export function createTestingTools(pinia) {
+  const permit = {};
+  if (debugToolsAllowed()) testingPermits.add(permit);
   return Object.freeze({
     async showNavigation(value = true) {
       return (await import('../game/town/NavigationDebug')).showNavigation(value);
@@ -47,7 +54,7 @@ export function createTestingTools(pinia) {
       if (campaign.readOnly) throw new Error(campaign.saveWarning);
       if (campaign.activeRun || useGameStore(pinia).sessionActive)
         throw new Error('Exit the mine before preparing an era.');
-      const town = JSON.parse(JSON.stringify(settleSaloonIncome(campaign.town, Date.now()).town));
+      const town = jsonCopy(settleSaloonIncome(campaign.town, Date.now()).town);
       town.era = era;
       town.projects = {};
       town.transition = null;
@@ -69,7 +76,7 @@ export function createTestingTools(pinia) {
         Object.keys(town.presentations).map((id) => [id, 'seen']),
       );
       const ready = normalizeTown(town);
-      saveChanges(campaign, { town: ready, townProjectFocus: '', lastConstruction: [] });
+      saveChanges(campaign, { town: ready, townProjectFocus: '', lastConstruction: [] }, permit);
       globalThis.window?.dispatchEvent(new Event(TESTING_TOWN_CHANGED));
       const gate = eraGate(ready);
       return { era, nextEra: gate.next?.id ?? null, readyToChange: gate.available };
@@ -82,7 +89,7 @@ export function createTestingTools(pinia) {
       const [firstLevel] = chapterLevelIds(chapter - 1);
       const records = { ...campaign.records };
       for (let id = 1; id < firstLevel; id++) records[id] ??= { score: 0, stars: 1 };
-      saveChanges(campaign, { records });
+      saveChanges(campaign, { records }, permit);
       const game = useGameStore(pinia);
       game.exitLevel();
       globalThis.window?.dispatchEvent(new Event(TESTING_TOWN_CHANGED));
@@ -104,7 +111,7 @@ export function createTestingTools(pinia) {
       // Explicitly re-arm this debug preview even if it was already watched.
       // The normal presentation lifecycle starts it on the next village visit.
       delete town.presentations['three-star-celebration'];
-      saveChanges(campaign, { records, town: queueCampaignPresentations(town, records) });
+      saveChanges(campaign, { records, town: queueCampaignPresentations(town, records) }, permit);
       return { levels: LEVEL_COUNT, stars: LEVEL_COUNT * 3, celebration: 'pending' };
     },
     grant({ coins = 100000, hammers = HAMMER_CAPACITY } = {}) {
@@ -112,13 +119,15 @@ export function createTestingTools(pinia) {
         throw new TypeError('Coins and hammers must be non-negative safe integers.');
       const campaign = useCampaignStore(pinia);
       if (campaign.readOnly) throw new Error(campaign.saveWarning);
-      const granted = campaign.commit({
-        town: {
-          ...campaign.town,
-          coins: Math.min(Number.MAX_SAFE_INTEGER, campaign.town.coins + coins),
-        },
-        builderHammers: Math.min(HAMMER_CAPACITY, campaign.builderHammers + hammers),
-      });
+      const granted = runRegisteredTestingMutation(campaign, permit, () =>
+        campaign.commit({
+          town: {
+            ...campaign.town,
+            coins: Math.min(Number.MAX_SAFE_INTEGER, campaign.town.coins + coins),
+          },
+          builderHammers: Math.min(HAMMER_CAPACITY, campaign.builderHammers + hammers),
+        }),
+      );
       if (!granted) throw new Error('Test resources could not be saved. Balances were restored.');
       return { coins: campaign.town.coins, builderHammers: campaign.builderHammers };
     },

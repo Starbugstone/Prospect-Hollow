@@ -14,6 +14,16 @@ const POWER_COLOR = {
   'clear-row': 0x93efff,
 };
 
+const POWER_LABEL = {
+  bomb: 'BOOM!',
+  tnt: 'BOOM!',
+  rainbow: 'RAINBOW RUSH!',
+  'color-wand': 'COLOR RUSH!',
+  cross: 'CROSS FIRE!',
+  'tile-breaker': 'CROSS FIRE!',
+  'clear-row': 'ROW ROCKET!',
+};
+
 // Descriptors preserve the actual origin and affected cells, including toolbar powers.
 export function describeBonusEffects(step, typeAt) {
   const primary = step.bonusEffect
@@ -35,7 +45,7 @@ export function describeBonusEffects(step, typeAt) {
     ...step.cleared.flatMap((index) => {
       const type = typeAt(index);
       return activated.has(index) && BONUS_TYPES.includes(type)
-        ? [{ type, index, targets: step.cleared }]
+        ? [{ type, index, targets: type === 'rainbow' ? [...activated] : step.cleared }]
         : [];
     }),
   ];
@@ -73,19 +83,10 @@ export class BonusEffects {
     effects.slice(0, 6).forEach((effect) => this.impact(effect));
     a.onImpact?.({ type: primary.type, color: `#${color.toString(16).padStart(6, '0')}` });
     this.boardBurst(color);
-    const labels = {
-      bomb: 'BOOM!',
-      tnt: 'BOOM!',
-      rainbow: 'RAINBOW RUSH!',
-      'color-wand': 'COLOR RUSH!',
-      cross: 'CROSS FIRE!',
-      'tile-breaker': 'CROSS FIRE!',
-      'clear-row': 'ROW ROCKET!',
-    };
     this.callout(
       effects.length > 1
         ? t('CHAIN REACTION ×{count}', { count: effects.length })
-        : t(labels[primary.type]),
+        : t(POWER_LABEL[primary.type]),
       a.position(primary.index),
       color,
     );

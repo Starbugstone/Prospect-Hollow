@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import vue from '@vitejs/plugin-vue';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -59,5 +59,8 @@ export default defineConfig({
     environment: 'node',
     setupFiles: ['testing/setup-meshes.js'],
     include: ['testing/**/*.test.js'],
+    // Whole-campaign level simulations are slow and only change with the levels: run them
+    // locally with `npm run test:levels` (vitest.levels.config.js), not on every push.
+    exclude: [...configDefaults.exclude, 'testing/levels/**'],
   },
 });

@@ -1,7 +1,10 @@
 <template>
   <div
     class="app-shell"
-    :style="{ '--mine-header-height': `${mineHeaderHeight}px` }"
+    :style="{
+      ...(game.sessionActive ? mineThemeAppearance(currentConfig?.theme).style : {}),
+      '--mine-header-height': `${mineHeaderHeight}px`,
+    }"
     :data-mine-theme="game.sessionActive ? currentConfig?.theme : undefined"
     :class="{
       'is-playing': game.sessionActive,
@@ -101,6 +104,7 @@
       :key="townVisit"
       :open-museum="returnToMuseum"
       @museum-change="returnToMuseum = $event"
+      @home="showHome"
       @mine="startLevel(campaign.nextLevel)"
       @replay="startLevel"
       @continuous="startLevel($event, 'continuous')"
@@ -205,6 +209,7 @@
           :class="{
             'power-active': game.activeBonusMode,
             'fusion-impact': game.arcadeImpact?.type === 'bonus-fusion',
+            'shaped-board': game.tiles.some((tile) => tile.type === 'void'),
           }"
         >
           <div class="frame-corner corner-tl"></div>
@@ -240,8 +245,8 @@
       :score-target="scoreTarget"
       :star-score-target="game.starScoreTarget"
       :can-replay="campaign.canReplay"
-      :can-continue="campaign.completedCount < LEVEL_COUNT"
-      @next="startLevel(campaign.nextLevel)"
+      :can-continue="campaign.nextMiningLevel !== null"
+      @next="startLevel(campaign.nextMiningLevel)"
       @claimed="game.levelRewards[$event.index].items = [$event.reward]"
       @menu="showTown"
       @town="showTown"
@@ -265,6 +270,8 @@
       @reset-progress="resetProgress"
       @import-progress="resumeImportedVillage"
     />
+    <HonourCollectionHost :village="townActive && !props.suspended" />
+    <HonourToast :active="townActive && !props.suspended" />
   </div>
 </template>
 
@@ -293,13 +300,16 @@ import { CONTINUOUS_COIN_CAP } from './data/rewards';
 import { LEVEL_COUNT, POWERS } from './data/campaign';
 import VictoryModal from './components/VictoryModal.vue';
 import SettingsDrawer from './components/SettingsDrawer.vue';
+import HonourCollectionHost from './components/honours/HonourCollectionHost.vue';
+import HonourToast from './components/honours/HonourToast.vue';
 import GameIcon from './components/GameIcon.vue';
 import { useGameStore } from './stores/gameStore';
 import { useCampaignStore } from './stores/campaignStore';
-import { useSettingsStore, DEFAULT_AUDIO_LEVELS } from './stores/settingsStore';
+import { useSettingsStore } from './stores/settingsStore';
 import { useAudio } from './composables/useAudio';
 import { LEVEL_NAMES } from './data/levelNames';
 import { obstaclesInLevel } from './data/obstacles';
+import { mineThemeAppearance } from './data/mineThemes';
 import ObstacleGuide from './components/ObstacleGuide.vue';
 import { TESTING_TOWN_CHANGED } from './services/testingTools';
 import { isPlayRoute, navigate, syncTownParam } from './services/appRoute';
@@ -382,7 +392,7 @@ watch(
   () => {
     guideOpen.value = false;
     if (!game.sessionActive) return;
-    levelObstacles.value = obstaclesInLevel(game.tiles);
+    levelObstacles.value = obstaclesInLevel(game.tiles, currentConfig.value?.theme);
     const unseen = levelObstacles.value.filter(
       (item) =>
         !campaign.seenObstacles.includes(item.id) &&
@@ -397,17 +407,7 @@ watch(
 );
 let clockInterval, incomeInterval;
 const muted = computed(() => settings.musicVolume === 0 && settings.sfxVolume === 0);
-let previousVolumes = [DEFAULT_AUDIO_LEVELS.music, DEFAULT_AUDIO_LEVELS.sfx];
-const toggleMute = () => {
-  if (muted.value) {
-    settings.setMusicVolume(previousVolumes[0]);
-    settings.setSfxVolume(previousVolumes[1]);
-  } else {
-    previousVolumes = [settings.musicVolume, settings.sfxVolume];
-    settings.setMusicVolume(0);
-    settings.setSfxVolume(0);
-  }
-};
+const toggleMute = () => settings.toggleMute();
 const currentConfig = computed(() => game.currentLevel?.config);
 const levelName = computed(() => LEVEL_NAMES[game.currentLevelId - 1]);
 const powerName = computed(

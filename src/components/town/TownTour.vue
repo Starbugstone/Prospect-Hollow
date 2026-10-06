@@ -41,28 +41,28 @@ const steps = [
   {
     id: 'well',
     title: 'Tap a plot to begin',
-    text: 'Tap a building or choose All plots to see its cost and benefits. Your first building is free. A basic well, farm, or home opens immediately.',
+    text: 'Tap a building, or open Build to see every available plot with its cost and benefits. Your first building is free. A basic well, farm, or home opens immediately.',
   },
   {
     id: 'mine',
     title: 'The mine funds your village',
-    text: 'Complete a mine puzzle to earn coins and prepare every construction in progress. Then tap each scaffolded building in the village to finish it. Each completed chapter gives the mine a free visual upgrade.',
+    text: 'Tap Mine at the bottom to play the next puzzle. Each completed puzzle earns coins and prepares every construction in progress; then tap each scaffolded building in the village to finish it. Each completed chapter gives the mine a free visual upgrade.',
   },
   {
     id: 'home',
     stage: 2,
     title: 'Care for your neighbors',
-    text: 'Families need water, food, and room. Tap the water, food, or population indicators to improve the well, farm, or homes. Existing services stay open during upgrades; level 2 unlocks extra plots.',
+    text: 'Families need water, food, and room. The water, food and happiness readings at the top show what runs short; tap one to open the building that helps. Existing services stay open during upgrades; level 2 unlocks extra plots.',
   },
   {
     id: 'square',
     title: 'A happier village',
-    text: 'The town square adds happiness and gains a raid warning bell at level 4. Stables and museum galleries attract visitors when food and water are available. More people and happiness increase saloon income. All five building levels are available without a completed-puzzle requirement.',
+    text: 'The town square adds comfort and gains a raid warning bell at level 4. Happiness grows with comfort for the size of the town and falls when water or food run short; a happy town welcomes more visitors and earns more at the saloon. All five building levels are available without a completed-puzzle requirement.',
   },
   {
     id: 'saloon',
     title: 'Keep the village growing',
-    text: 'The saloon stores up to five hours of earnings. Tap it to collect your coins. Visit the museum to replay old puzzles. Rare builder hammers come only from mine bonus chests and build or improve an unlocked building instantly for free.',
+    text: 'The saloon stores up to five hours of earnings. Tap it to collect your coins. Open More to visit the museum and replay old puzzles. Rare builder hammers come only from mine bonus chests and build or improve an unlocked building instantly for free.',
   },
   {
     id: 'bank',

@@ -1,0 +1,534 @@
+{
+  "stars-bronze": {
+    "goal": 25,
+    "measure": {
+      "kind": "stars"
+    },
+    "version": 1
+  },
+  "stars-silver": {
+    "goal": 150,
+    "measure": {
+      "kind": "stars"
+    },
+    "version": 1
+  },
+  "stars-gold": {
+    "goal": 300,
+    "measure": {
+      "kind": "stars"
+    },
+    "version": 1
+  },
+  "score-bronze": {
+    "goal": 1.5,
+    "measure": {
+      "kind": "score",
+      "fromLevel": 37
+    },
+    "version": 1
+  },
+  "score-silver": {
+    "goal": 2.5,
+    "measure": {
+      "kind": "score",
+      "fromLevel": 37
+    },
+    "version": 1
+  },
+  "score-gold": {
+    "goal": 3,
+    "measure": {
+      "kind": "score",
+      "fromLevel": 37
+    },
+    "version": 1
+  },
+  "fusion-bronze": {
+    "goal": 1,
+    "measure": {
+      "kind": "count",
+      "counter": "fusions"
+    },
+    "version": 1
+  },
+  "fusion-silver": {
+    "goal": 6,
+    "measure": {
+      "kind": "distinct",
+      "counter": "fusions",
+      "keys": [
+        "bomb+bomb",
+        "bomb+cross",
+        "bomb+rainbow",
+        "cross+cross",
+        "cross+rainbow",
+        "rainbow+rainbow"
+      ]
+    },
+    "version": 1
+  },
+  "fusion-gold": {
+    "goal": 300,
+    "measure": {
+      "kind": "count",
+      "counter": "fusions"
+    },
+    "version": 1
+  },
+  "gem-ruby-bronze": {
+    "goal": 500,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "ruby"
+    },
+    "version": 1
+  },
+  "gem-ruby-silver": {
+    "goal": 10000,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "ruby"
+    },
+    "version": 1
+  },
+  "gem-ruby-gold": {
+    "goal": 25000,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "ruby"
+    },
+    "version": 1
+  },
+  "gem-sapphire-bronze": {
+    "goal": 500,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "sapphire"
+    },
+    "version": 1
+  },
+  "gem-sapphire-silver": {
+    "goal": 10000,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "sapphire"
+    },
+    "version": 1
+  },
+  "gem-sapphire-gold": {
+    "goal": 25000,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "sapphire"
+    },
+    "version": 1
+  },
+  "gem-emerald-bronze": {
+    "goal": 500,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "emerald"
+    },
+    "version": 1
+  },
+  "gem-emerald-silver": {
+    "goal": 10000,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "emerald"
+    },
+    "version": 1
+  },
+  "gem-emerald-gold": {
+    "goal": 25000,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "emerald"
+    },
+    "version": 1
+  },
+  "gem-topaz-bronze": {
+    "goal": 500,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "topaz"
+    },
+    "version": 1
+  },
+  "gem-topaz-silver": {
+    "goal": 6000,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "topaz"
+    },
+    "version": 1
+  },
+  "gem-topaz-gold": {
+    "goal": 16000,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "topaz"
+    },
+    "version": 1
+  },
+  "gem-amethyst-bronze": {
+    "goal": 500,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "amethyst"
+    },
+    "version": 1
+  },
+  "gem-amethyst-silver": {
+    "goal": 6000,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "amethyst"
+    },
+    "version": 1
+  },
+  "gem-amethyst-gold": {
+    "goal": 16000,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "amethyst"
+    },
+    "version": 1
+  },
+  "gem-moonstone-bronze": {
+    "goal": 500,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "moonstone"
+    },
+    "version": 1
+  },
+  "gem-moonstone-silver": {
+    "goal": 6000,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "moonstone"
+    },
+    "version": 1
+  },
+  "gem-moonstone-gold": {
+    "goal": 16000,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "moonstone"
+    },
+    "version": 1
+  },
+  "mine-relics-bronze": {
+    "goal": 10,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "relics"
+    },
+    "version": 1
+  },
+  "mine-relics-silver": {
+    "goal": 125,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "relics"
+    },
+    "version": 1
+  },
+  "mine-relics-gold": {
+    "goal": 360,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "relics"
+    },
+    "version": 1
+  },
+  "mine-lanterns-bronze": {
+    "goal": 10,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "lanterns"
+    },
+    "version": 1
+  },
+  "mine-lanterns-silver": {
+    "goal": 50,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "lanterns"
+    },
+    "version": 1
+  },
+  "mine-lanterns-gold": {
+    "goal": 125,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "lanterns"
+    },
+    "version": 1
+  },
+  "mine-surveys-bronze": {
+    "goal": 5,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "surveys"
+    },
+    "version": 1
+  },
+  "mine-surveys-silver": {
+    "goal": 20,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "surveys"
+    },
+    "version": 1
+  },
+  "mine-surveys-gold": {
+    "goal": 60,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "surveys"
+    },
+    "version": 1
+  },
+  "mine-ore-orders-bronze": {
+    "goal": 10,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "oreOrders"
+    },
+    "version": 1
+  },
+  "mine-ore-orders-silver": {
+    "goal": 40,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "oreOrders"
+    },
+    "version": 1
+  },
+  "mine-ore-orders-gold": {
+    "goal": 110,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "oreOrders"
+    },
+    "version": 1
+  },
+  "mine-cores-bronze": {
+    "goal": 10,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "cores"
+    },
+    "version": 1
+  },
+  "mine-cores-silver": {
+    "goal": 50,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "cores"
+    },
+    "version": 1
+  },
+  "mine-cores-gold": {
+    "goal": 125,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "cores"
+    },
+    "version": 1
+  },
+  "mine-gates-bronze": {
+    "goal": 10,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "gates"
+    },
+    "version": 1
+  },
+  "mine-gates-silver": {
+    "goal": 50,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "gates"
+    },
+    "version": 1
+  },
+  "mine-gates-gold": {
+    "goal": 130,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "gates"
+    },
+    "version": 1
+  },
+  "ages-bronze": {
+    "goal": 2,
+    "measure": {
+      "kind": "era",
+      "era": "river-rail",
+      "complete": false
+    },
+    "version": 1
+  },
+  "ages-silver": {
+    "goal": 12,
+    "measure": {
+      "kind": "era",
+      "era": "broadcast",
+      "complete": false
+    },
+    "version": 1
+  },
+  "ages-gold": {
+    "goal": 21,
+    "measure": {
+      "kind": "era",
+      "era": "riverlight",
+      "complete": true
+    },
+    "version": 1
+  },
+  "guardian-bronze": {
+    "goal": 5,
+    "measure": {
+      "kind": "count",
+      "counter": "guardian"
+    },
+    "version": 1
+  },
+  "guardian-silver": {
+    "goal": 25,
+    "measure": {
+      "kind": "count",
+      "counter": "guardian"
+    },
+    "version": 1
+  },
+  "guardian-gold": {
+    "goal": 60,
+    "measure": {
+      "kind": "count",
+      "counter": "guardian"
+    },
+    "version": 1
+  },
+  "forge-bronze": {
+    "goal": 5,
+    "measure": {
+      "kind": "count",
+      "counter": "forge"
+    },
+    "version": 1
+  },
+  "forge-silver": {
+    "goal": 100,
+    "measure": {
+      "kind": "count",
+      "counter": "forge"
+    },
+    "version": 1
+  },
+  "forge-gold": {
+    "goal": 250,
+    "measure": {
+      "kind": "count",
+      "counter": "forge"
+    },
+    "version": 1
+  },
+  "quartermaster-gold": {
+    "goal": 5,
+    "measure": {
+      "kind": "powers",
+      "quantity": 26
+    },
+    "version": 1
+  },
+  "visitors-bronze": {
+    "goal": 1,
+    "measure": {
+      "kind": "social",
+      "counter": "visitors"
+    },
+    "version": 1
+  },
+  "visitors-silver": {
+    "goal": 5,
+    "measure": {
+      "kind": "social",
+      "counter": "visitors"
+    },
+    "version": 1
+  },
+  "visitors-gold": {
+    "goal": 15,
+    "measure": {
+      "kind": "social",
+      "counter": "visitors"
+    },
+    "version": 1
+  },
+  "explorer-bronze": {
+    "goal": 5,
+    "measure": {
+      "kind": "social",
+      "counter": "travels"
+    },
+    "version": 1
+  },
+  "explorer-silver": {
+    "goal": 15,
+    "measure": {
+      "kind": "social",
+      "counter": "travels"
+    },
+    "version": 1
+  },
+  "explorer-gold": {
+    "goal": 30,
+    "measure": {
+      "kind": "social",
+      "counter": "travels"
+    },
+    "version": 1
+  }
+}

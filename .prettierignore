@@ -2,6 +2,8 @@ node_modules/
 dist/
 output/
 .playwright-cli/
+# Local session coordination is excluded from Git and changes independently.
+COORD.md
 package-lock.json
 public/art/
 capacitor/

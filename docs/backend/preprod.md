@@ -57,3 +57,14 @@ These repository instructions do not verify or change the installed host configu
 CI tests controller rollback/retention/CI eligibility, readiness identity and outage behavior, installer preservation, plus a real build/preparation of these hooks against PostgreSQL. Both database jobs check the release-health protocol. The packaged application check verifies actual `/api/health` routing.
 
 For maintenance, disable polling, wait for running work, back up the database and follow the [template maintenance guide](https://github.com/Starbugstone/test-auto-deploy/blob/a5270a76b4acfdf5c89f5c63321468f8bec5229d/docs/o2switch-setup.md#8-maintenance-retry-and-rollback). Retained code releases do not replace database backups. Production uses the [separate main-branch installation](production.md), including a separate Git checkout so concurrent fetches cannot share `FETCH_HEAD`.
+
+## Placeholder shared towns in the preprod database
+
+The preprod database intentionally keeps ten placeholder shared towns from Town Honours testing
+(issue #60): accounts with the `fixtures.prospect-hollow.invalid` e-mail domain, and visit rows
+whose IDs start with `fx`, some of them on real towns. They exist only in the preprod database;
+the seeding code was removed so it can never ship to production. To delete them, restore the
+seeder from commit `a481343` on a temporary preprod branch
+(`git checkout a481343 -- backend/bin/preprod-fixtures.php backend/src/PreprodFixtures.php backend/content/preprod-fixtures.json`),
+deploy it, run `php bin/preprod-fixtures.php remove` from the preprod release, then remove those
+files again before anything reaches `main`.

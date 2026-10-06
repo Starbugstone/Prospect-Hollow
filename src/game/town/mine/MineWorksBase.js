@@ -1,5 +1,6 @@
 import { mineAppearance } from '../../../data/mineEvolution';
 import { PLOTS } from '../TownLayout';
+import { addCozyMineRoof } from './MineCozyArchitecture';
 
 // The same authored assembly is used in the permanent town and its construction.
 // All equipment stands west of the decline; the cart and encounter lanes stay open.
@@ -62,7 +63,8 @@ export function addMineWorksBase(d, parent, era) {
     d.rod(house, [-4.25, 1.4, 2.65], [-4.25, 2.8, 2.65], 0.08, '#53635c');
   } else if (a.machine !== 'hand') {
     d.box(house, 1.5, 1.8, 1.25, -4.5, 1, 3.55, a.wall);
-    d.box(house, 1.75, 0.16, 1.5, -4.5, 1.99, 3.55, a.roof);
+    if (a.cozyStyle) addCozyMineRoof(d, house, a, -4.5, 1.99, 3.55, 1.75, 1.5);
+    else d.box(house, 1.75, 0.16, 1.5, -4.5, 1.99, 3.55, a.roof);
     d.box(house, 0.75, 0.65, 0.06, -4.5, 1.35, 4.2, '#85b8c8');
     d.box(house, 0.08, 0.75, 0.09, -4.5, 1.35, 4.23, a.wall);
     if (a.machine === 'electric') {
@@ -72,7 +74,8 @@ export function addMineWorksBase(d, parent, era) {
   }
   const finish = section('Mine roof and era equipment', 4);
   if (['enclosed', 'motor', 'radio', 'control', 'digital'].includes(a.machine)) {
-    d.box(finish, 1.95, 0.18, 2.4, -3.65, h + 0.95, 1.4, a.roof);
+    if (a.cozyStyle) addCozyMineRoof(d, finish, a, -3.65, h + 0.95, 1.4, 1.95, 2.4);
+    else d.box(finish, 1.95, 0.18, 2.4, -3.65, h + 0.95, 1.4, a.roof);
     for (const x of [-4.38, -2.92]) d.box(finish, 0.1, 0.8, 0.1, x, h + 0.5, 2.3, a.wall);
     d.box(finish, 1.4, 0.6, 0.07, -3.65, h + 0.5, 2.3, '#85b8c8');
 

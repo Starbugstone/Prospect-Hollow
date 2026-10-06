@@ -1,4 +1,5 @@
 import { MAIN_LANE_X, POWER_HOUSE_POSITION, PLOT_STREET_OFFSET } from '../../data/townClearances';
+import { GARDEN_PARCELS, GARDEN_LANE_X } from '../../data/townGardenDistrict';
 import { MINE_POSITION } from '../../data/mineSite';
 import { WATERMILL_SITE } from '../../data/watermill';
 import { SQUARE_POSITION } from '../../data/townSquare';
@@ -65,6 +66,9 @@ export const PLOTS = {
   maglevStation: [65, -4],
   biodome: [65, 12],
   skyPods: [65, 28],
+  ...Object.fromEntries(
+    Object.entries(GARDEN_PARCELS).map(([id, parcel]) => [id, parcel.position]),
+  ),
 };
 export const AIRPORT = {
   center: PLOTS.airport,
@@ -100,7 +104,7 @@ export const plotStreet = (id) => {
   const [x, z] = PLOTS[id];
   return x === 0 && id !== 'mine'
     ? [LANE_X, z + 2]
-    : [x, z + (id === 'mine' ? 4.5 : PLOT_STREET_OFFSET)];
+    : [x, z + (GARDEN_PARCELS[id]?.streetOffset ?? (id === 'mine' ? 4.5 : PLOT_STREET_OFFSET))];
 };
 // The sheriff patrols both main streets, passing the bank, mine and department.
 export const SHERIFF_PATROL = [
@@ -197,6 +201,42 @@ const INDUSTRIAL_TRACKS = [
   road([38, plotStreet(id)[1]], plotStreet(id), 0.85, id),
   road(atPlot(id, 0, 2), plotStreet(id), 0.75, id),
 ]);
+// Continue each existing east-bank street to the garden spine. Deriving the
+// endpoints from the unlocked grid keeps paving and navigation in agreement.
+// With no town, expose all future connections for permanent scenery clearance.
+export function gardenConnections(town) {
+  const rows = new Map();
+  for (const { from, to, plot } of INDUSTRIAL_TRACKS) {
+    if (from[1] !== to[1] || (town && !plotUnlocked(town, plot))) continue;
+    rows.set(to[1], Math.max(rows.get(to[1]) ?? -Infinity, from[0], to[0]));
+  }
+  return [...rows].map(([z, x]) => road([x, z], [GARDEN_LANE_X, z]));
+}
+// New garden streets start beyond the existing district and never replace a
+// historical road. Their entrance paths terminate outside the larger buildings.
+export function gardenTracks(town) {
+  const parcels = Object.entries(GARDEN_PARCELS).filter(([id]) => plotUnlocked(town, id));
+  if (!parcels.length) return [];
+  const connections = gardenConnections(town);
+  const rows = [...connections.map(({ to }) => to[1]), ...parcels.map(([id]) => plotStreet(id)[1])];
+  return [
+    ...connections,
+    road([GARDEN_LANE_X, Math.min(...rows)], [GARDEN_LANE_X, Math.max(...rows)], 1.05),
+    ...parcels.flatMap(([id, parcel]) => {
+      const approach = [...parcel.approach, [0, parcel.entranceZ]].map(([x, z]) =>
+        atPlot(id, x, z),
+      );
+      return [
+        road([GARDEN_LANE_X, plotStreet(id)[1]], plotStreet(id), 0.85, id),
+        road(atPlot(id, 0, parcel.entranceZ), plotStreet(id), 0.75, id),
+        ...approach.slice(1).map((to, i) => ({
+          ...road(approach[i], to, 0.75, id),
+          modes: ['pedestrian'],
+        })),
+      ];
+    }),
+  ];
+}
 export const townTracks = (town) => [
   ...TOWN_TRACKS.filter(({ plot }) => !plot || plot === 'mine' || plotUnlocked(town, plot)),
   ...(town.era !== 'frontier' && town.buildings.bridge
@@ -218,6 +258,7 @@ export const townTracks = (town) => [
     ? [road([38, 23.5], [38, 31.5], 1.05)]
     : []),
   ...INDUSTRIAL_TRACKS.filter(({ plot }) => plotUnlocked(town, plot)),
+  ...gardenTracks(town),
 ];
 export const railEdges = (town) =>
   town.era !== 'frontier' && town.buildings.railDepot ? [RAIL_EDGE] : [];

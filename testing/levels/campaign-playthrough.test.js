@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
-import { simulateCampaignLevel } from './helpers/campaignSimulation';
+import { generateLevelConfigs } from '../../src/game/engine/LevelGenerator';
+import { simulateCampaignLevel } from '../helpers/campaignSimulation';
 
 const levels = generateLevelConfigs();
 const reviewedLayouts = new Set([
@@ -28,8 +28,18 @@ const playLevel = (id, level) => {
     // returning to the previous 90–250 move outliers on these fixed seeds.
     // The appended late campaign permits occasional harder layouts; its
     // aggregate median/p90 are guarded below. This is diagnostic only.
+    // Shaped endgame boards require earned specials at bottlenecks; their
+    // separate held-out pacing regression guards levels 373–402.
     expect(turns).toBeLessThanOrEqual(
-      id > 240 ? 80 : id <= 12 ? 30 : reviewedLayouts.has(id) ? 70 : 60,
+      id >= 373 && id <= 402
+        ? 200
+        : id > 240
+          ? 80
+          : id <= 12
+            ? 30
+            : reviewedLayouts.has(id)
+              ? 70
+              : 60,
     );
     turnCounts.push(turns);
     expect(shuffles).toBeLessThanOrEqual(id <= 12 ? 0 : 3);

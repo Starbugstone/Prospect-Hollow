@@ -61,9 +61,11 @@ it('loads just the active finish and recovers atlas errors with SVG assets', () 
 });
 function tileRenderer(mode) {
   const core = frames['board-core'].frames;
+  const glyphs = new Set();
   const textures = {
-    exists: (key) => (mode === 'atlas' ? key === 'board-core' : !!core[key]),
+    exists: (key) => glyphs.has(key) || (mode === 'atlas' ? key === 'board-core' : !!core[key]),
     get: (key) => ({ has: (frame) => key === 'board-core' && !!core[frame] }),
+    createCanvas: (key) => glyphs.add(key) && { draw() {} },
   };
   const object = () => ({
     scaleX: 1,
@@ -91,7 +93,11 @@ function tileRenderer(mode) {
   });
   const circle = vi.fn(object);
   const animator = new BoardAnimator({
-    scene: { textures, add: { image, container: object, text: object, circle } },
+    scene: {
+      textures,
+      add: { image, container: object, circle },
+      make: { text: () => ({ width: 20, height: 16, canvas: {}, destroy() {} }) },
+    },
     tileLayer: { add: vi.fn() },
   });
   animator.boardCols = animator.boardRows = 6;
@@ -133,10 +139,12 @@ it.each(['atlas', 'svg'])('renders lantern and survey markers from %s textures',
   const { animator, image } = tileRenderer(mode);
   animator.tiles = [
     { signal: 'lantern', signalHealth: 1 },
-    { signal: 'survey', signalHealth: 0, surveyOrder: 2 },
+    { signal: 'survey', signalHealth: 1, surveyOrder: 2 },
   ];
   animator.tiles.forEach((_, index) => animator.drawTileOverlay(index));
-  expect(image.mock.calls.map((args) => args.slice(2))).toEqual(
+  expect(
+    image.mock.calls.map((args) => args.slice(2)).filter(([key]) => !key.startsWith('glyph:')),
+  ).toEqual(
     ['tile-lantern', 'tile-survey'].map((id) =>
       mode === 'atlas' ? ['board-core', id] : [id, undefined],
     ),
@@ -154,11 +162,57 @@ it.each(['atlas', 'svg'])(
     expect(circle.mock.calls.map((args) => args[3])).toEqual([0xffd36e, 0x1d3f55, 0x1d3f55]);
     animator.drawTileOverlay(0);
     expect(circle).toHaveBeenCalledTimes(3);
-    animator.tiles[0].signalHealth = 0;
+    animator.tiles[0].signalHealth = 1;
     animator.drawTileOverlay(0);
     expect(circle.mock.calls.slice(3).map((args) => args[3])).toEqual([
-      0xffd36e, 0xffd36e, 0xffd36e,
+      0xffd36e, 0xffd36e, 0x1d3f55,
     ]);
+    // Once full, the core has released its bonus and leaves the board.
+    animator.tiles[0].signalHealth = 0;
+    animator.drawTileOverlay(0);
+    expect(circle).toHaveBeenCalledTimes(6);
+    expect(image).toHaveBeenCalledTimes(2);
+    expect(animator.tileOverlays.has(0)).toBe(false);
+  },
+);
+it.each(['atlas', 'svg'])('removes a lantern marker once it is lit (%s)', (mode) => {
+  const { animator, image } = tileRenderer(mode);
+  animator.tiles = [{ signal: 'lantern', signalHealth: 1 }];
+  animator.drawTileOverlay(0);
+  const marker = animator.tileOverlays.get(0);
+  vi.spyOn(marker, 'destroy');
+  animator.tiles[0].signalHealth = 0;
+  animator.drawTileOverlay(0);
+  expect(marker.destroy).toHaveBeenCalledOnce();
+  expect(animator.tileOverlays.has(0)).toBe(false);
+  // A lit lantern on an exit keeps the exit art but not the lantern.
+  animator.tiles[0].exit = true;
+  animator.drawTileOverlay(0);
+  expect(image.mock.calls.at(-1).slice(2)).toEqual(
+    mode === 'atlas' ? ['board-core', 'tile-exit'] : ['tile-exit', undefined],
+  );
+});
+it.each(['atlas', 'svg'])(
+  'removes every completed signal and its badge from the board (%s)',
+  (mode) => {
+    const { animator, image } = tileRenderer(mode);
+    animator.levelId = 385; // Glowshroom grotto: spore relays use the mushroom art.
+    animator.tiles = [
+      { signal: 'spore', signalHealth: 1, sporeAxis: 'column' },
+      { signal: 'survey', signalHealth: 1, surveyOrder: 1 },
+      { signal: 'lantern', signalHealth: 1 },
+      { signal: 'core', signalHealth: 1, coreCharges: 3 },
+    ];
+    animator.tiles.forEach((_, index) => animator.drawTileOverlay(index));
+    expect(animator.tileOverlays.size).toBe(4);
+    const drawn = image.mock.calls.length;
+    animator.tiles.forEach((tile, index) => {
+      tile.signalHealth = 0;
+      animator.drawTileOverlay(index);
+    });
+    expect(animator.tileOverlays.size).toBe(0);
+    // No dimmed icon or check mark is drawn in its place.
+    expect(image).toHaveBeenCalledTimes(drawn);
   },
 );
 function attach() {

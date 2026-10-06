@@ -26,19 +26,21 @@ vi.mock('../src/game/engine/TileManager', () => ({
   },
 }));
 
-vi.mock('../src/game/engine/LevelGenerator', () => ({
-  generateLevelConfigs: () => [
-    {
-      id: 1,
-      board: [
-        { id: 'a', type: 'ruby' },
-        { id: 'b', type: 'sapphire' },
-      ],
-      tiles: [{ health: 1, maxHealth: 1 }],
-      objectives: [{ type: 'clear-layers', target: 1 }],
-    },
-  ],
-}));
+vi.mock('../src/game/engine/LevelGenerator', () => {
+  const level = {
+    id: 1,
+    board: [
+      { id: 'a', type: 'ruby' },
+      { id: 'b', type: 'sapphire' },
+    ],
+    tiles: [{ health: 1, maxHealth: 1 }],
+    objectives: [{ type: 'clear-layers', target: 1 }],
+  };
+  return {
+    generateLevelConfigs: () => [level],
+    levelConfig: (id) => (id === 1 ? level : null),
+  };
+});
 
 describe('Victory Logic', () => {
   let store;

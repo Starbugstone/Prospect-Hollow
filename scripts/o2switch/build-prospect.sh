@@ -12,6 +12,7 @@ cd "$source_checkout"
 "$php_bin" "$composer_bin" install --working-dir=backend --no-dev --prefer-dist --no-interaction --no-scripts --optimize-autoloader
 npm ci --include=dev --cache "$source_checkout/npm-cache"
 node scripts/export-public-content.mjs
+node scripts/export-save-rules.mjs
 npm run build
 cp -R dist/. backend/public/
 # Source archives contain no production configuration. Secrets are linked in prepare.

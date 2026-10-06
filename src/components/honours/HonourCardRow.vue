@@ -1,0 +1,67 @@
+<template>
+  <span v-if="view" class="honour-card-row">
+    <span
+      v-if="view.showcase.length"
+      class="honour-card-row-badges"
+      role="img"
+      :aria-label="
+        t('Showcase: {names}', {
+          names: view.showcase.map(rankName).join(', '),
+        })
+      "
+    >
+      <span v-for="definition in view.showcase" :key="definition.id" :title="rankName(definition)">
+        <HonourBadge :definition="definition" :size="size" />
+        <small v-if="definition.tenure" class="honour-card-row-time" aria-hidden="true">{{
+          tenureLabel(definition.tenure)
+        }}</small>
+      </span>
+    </span>
+    <small v-if="view.count">{{
+      view.count === 1 ? t('1 honour') : t('{count} honours', { count: view.count })
+    }}</small>
+  </span>
+</template>
+<script setup>
+import { computed } from 'vue';
+import { cardHonours } from '../../services/townDirectory';
+import { t } from '../../i18n';
+import HonourBadge from './HonourBadge.vue';
+import { rankName, tenureLabel } from './honourDisplay';
+
+// A town card's honours: the owner's showcased families (best earned rank and metal), their
+// player distinction and the total, from the shared-town directory or the player's own town
+// summary. `received` is the owner's own distinctions on their town list.
+const props = defineProps({
+  honours: { type: Object, default: null },
+  received: { type: Object, default: null },
+  size: { type: Number, default: 28 },
+});
+const view = computed(() =>
+  props.received ? cardHonours(props.honours, props.received) : cardHonours(props.honours),
+);
+</script>
+<style>
+.honour-card-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+.honour-card-row-badges {
+  display: inline-flex;
+  gap: 0.2rem;
+}
+.honour-card-row-badges > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.honour-card-row-badges .honour-card-row-time {
+  color: #4d3384;
+}
+.honour-card-row small {
+  color: #6b5a2e;
+  font-weight: 600;
+}
+</style>

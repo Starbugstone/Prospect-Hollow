@@ -1,0 +1,2 @@
+CREATE TABLE IF NOT EXISTS admin_settings (name VARCHAR(40) PRIMARY KEY, value VARCHAR(255) NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+INSERT INTO schema_versions(version) VALUES (18);

@@ -4,7 +4,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { markRaw } from 'vue';
 import { advanceOreOrders, remainingOre } from '../src/game/engine/ChapterMechanics';
 import { createGem, GEM_TYPES } from '../src/game/engine/GemFactory';
-import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
+import { generateLevelConfigs, levelConfig } from '../src/game/engine/LevelGenerator';
 import { MatchEngine } from '../src/game/engine/MatchEngine';
 import { TileManager } from '../src/game/engine/TileManager';
 import { PlayClock } from '../src/game/engine/PlayClock';
@@ -46,7 +46,7 @@ afterEach(() => {
 describe('light marker resolution', () => {
   beforeEach(() => {
     // Isolate the impact under test; complete legal cascade games are covered
-    // by campaign-playthrough.test.js for every authored level and several seeds.
+    // by levels/campaign-playthrough.test.js for every authored level and several seeds.
     vi.spyOn(MatchEngine.prototype, 'findMatches').mockReturnValue([]);
   });
 
@@ -318,7 +318,7 @@ describe('append-only campaign and replay', () => {
     // Baseline for the unchanged 238 levels, captured before the mine audit's
     // explicit retuning of 33/52. Those two retain their workload and rewards below.
     // Ignore ephemeral gem IDs, empty oreOrders, and the independently tuned
-    // starScoreTarget (covered by star-ratings.test.js). Chest targets stay fixed.
+    // starScoreTarget (covered by star-ratings.test.js and levels/star-attainment.test.js). Chest targets stay fixed.
     const levels = generateLevelConfigs(240)
       .filter(({ id }) => ![33, 52].includes(id))
       .map(({ board, oreOrders, starScoreTarget, ...level }) => {
@@ -349,7 +349,7 @@ describe('append-only campaign and replay', () => {
   );
 
   it('gives every appended puzzle a reachable chapter mechanic and available ore colors', () => {
-    const levels = generateLevelConfigs().slice(240);
+    const levels = generateLevelConfigs().slice(240, 372);
     // 84 late levels plus the 48 Tomorrow City levels with charge cores.
     expect(levels).toHaveLength(132);
     for (const level of levels) {
@@ -378,11 +378,11 @@ describe('append-only campaign and replay', () => {
       game.startLevel(id);
       expect(game.currentLevelId).toBe(id);
       expect(game.sessionActive).toBe(true);
-      const original = JSON.stringify(game.availableLevels[id - 1].config);
+      const original = JSON.stringify(levelConfig(id));
       for (const order of game.oreOrders) order.progress = order.target;
       for (const tile of game.tiles) if (tile.signalHealth) tile.signalHealth = 0;
       game.startLevel(id);
-      expect(JSON.stringify(game.availableLevels[id - 1].config)).toBe(original);
+      expect(JSON.stringify(levelConfig(id))).toBe(original);
       expect(game.oreOrders.every((order) => order.progress === 0)).toBe(true);
       expect(game.tiles.reduce((sum, tile) => sum + layerCount(tile), 0)).toBe(game.totalLayers);
     }

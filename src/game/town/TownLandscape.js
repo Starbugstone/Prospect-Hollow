@@ -3,9 +3,11 @@ import { addMineExcavation } from './TownMineShaft';
 import * as THREE from 'three';
 import { MINE_FACE_COLUMNS, MINE_HILLSIDE, mineHillsideHeight } from './TownMineHillside';
 import { MILLRACE, millraceDistance, millraceHeight, landscapeGeometry } from './TownMillrace';
-import { TOWN_TRACKS, PLOTS, RAIL_EDGE, segmentDistance } from './TownLayout';
+import { GARDEN_PARCELS, GARDEN_CLEARING, GARDEN_LANE_X } from '../../data/townGardenDistrict';
+import { TOWN_TRACKS, PLOTS, RAIL_EDGE, segmentDistance, gardenConnections } from './TownLayout';
 import { RIVER, riverDistance, wetBank, buildRiver } from './TownRiver';
 import { hash01, smoothBetween } from './TownMath';
+import { addCactus } from './buildings/frontierParts';
 
 function noise(x, z) {
   const ix = Math.floor(x),
@@ -38,6 +40,10 @@ export function groundHeight(x, z) {
     0,
   );
   const eastClearing = Math.hypot(Math.max(37 - x, 0, x - 70), Math.max(-17 - z, 0, z - 33));
+  const gardenClearing = Math.hypot(
+    Math.max(GARDEN_CLEARING.minX - x, 0, x - GARDEN_CLEARING.maxX),
+    Math.max(GARDEN_CLEARING.minZ - z, 0, z - GARDEN_CLEARING.maxZ),
+  );
   const westClearing = Math.hypot(Math.max(-59 - x, 0, x + 28), Math.max(-18 - z, 0, z - 26));
   // Low rolling hills leave room for orbiting and a north/south flight corridor.
   const flightCorridor = smoothBetween(4, 13, Math.abs(x + 53));
@@ -45,6 +51,7 @@ export function groundHeight(x, z) {
     smoothBetween(34, 49, distance) *
     smoothBetween(0, 7, eastClearing) *
     smoothBetween(0, 7, westClearing) *
+    smoothBetween(0, 7, gardenClearing) *
     (hills + ridges) *
     0.24 *
     flightCorridor;
@@ -97,8 +104,25 @@ const reservedGround = (x, z) =>
   (x > -63 && x < -28 && z > -20 && z < 28) ||
   Math.abs(x + 53) < 6 ||
   (Math.abs(x) < 4.7 && z > PLOTS.mine[1] + 2 && z < -8) ||
+  gardenGroundReserved(x, z) ||
   Object.values(PLOTS).some(([px, pz]) => Math.hypot(x - px, z - pz) < 4.5) ||
   segmentDistance(x, z, RAIL_EDGE.from, RAIL_EDGE.to) < 2;
+
+// Reserve future plot extents and the entire new street/sidewalk envelope from
+// permanent prairie props, even before those parcels become visible.
+let gardenStreetConnections;
+function gardenGroundReserved(x, z) {
+  if (x >= GARDEN_LANE_X - 3 && x <= GARDEN_LANE_X + 3 && z >= -11.5 && z <= GARDEN_CLEARING.maxZ)
+    return true;
+  gardenStreetConnections ??= gardenConnections();
+  if (gardenStreetConnections.some(({ from, to }) => segmentDistance(x, z, from, to) < 3))
+    return true;
+  return Object.values(GARDEN_PARCELS).some(
+    ({ position: [px, pz], halfWidth, halfDepth, streetOffset }) =>
+      (Math.abs(x - px) <= halfWidth + 2 && Math.abs(z - pz) <= halfDepth + 2) ||
+      (x >= GARDEN_LANE_X - 3 && x <= px + 3 && Math.abs(z - pz - streetOffset) <= 3),
+  );
+}
 
 function trackDistance(x, z) {
   const streets = Math.min(
@@ -269,7 +293,7 @@ export function buildLandscape(town) {
   ]) {
     if (wetBank(x, z, 0.6) || reservedGround(x, z)) continue;
     const plant = town.group(plants, x, groundHeight(x, z), z);
-    town.cactus(plant, 0, 0);
+    addCactus(town, plant, 0, 0);
   }
   town.batch(plants);
   return landscape;

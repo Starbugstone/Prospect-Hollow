@@ -53,11 +53,20 @@
       <path d="M-44-104a36 22 0 0 1 72 0Z" fill="#a6d3d4" />
       <ellipse cx="-8" cy="-104" rx="42" ry="7" fill="#8fb07a" />
     </g>
+    <TownCozyRoof
+      v-if="style.cozy"
+      :x="-8"
+      :y="-113"
+      :radius="73"
+      :palette="style.cozy.palette"
+      :cozy-style="style.cozy.style"
+    />
   </g>
 </template>
 <script setup>
 import { computed } from 'vue';
 import { watermillAppearance } from '../../data/watermill';
+import TownCozyRoof from './TownCozyRoof.vue';
 const props = defineProps({ era: String, level: Number });
 const style = computed(() => watermillAppearance(props.era));
 </script>

@@ -1,4 +1,4 @@
-import { eraEvolution } from './eras';
+import { ERA_BY_ID, eraEvolution } from './eras';
 import { LEVEL_COUNT } from './campaign';
 import { chapterIndexOf } from './chapters';
 
@@ -18,14 +18,30 @@ export const miningDepthBonus = (baseCoins, levelId) =>
   );
 
 // Preserve the first three chapters, then taper windfalls instead of letting a
-// single late chest buy several improvements. Old pending receipts keep version 1.
-export const CHEST_ECONOMY_VERSION = 2;
-export const chestCoinReward = (levelId = 1, version = CHEST_ECONOMY_VERSION) => {
-  const chapter = miningChapter(levelId);
-  return version === 1
-    ? 500 * chapter
-    : Math.min(4000, 500 * Math.min(3, chapter) + 250 * Math.max(0, chapter - 3));
+// single late chest buy several improvements. Old pending receipts keep their version.
+export const CHEST_ECONOMY_VERSION = 3;
+const CHEST_COIN_CAP = 4000;
+// Version 3 lets the cap follow the town era: half the era's middle modernization
+// price, never below the original cap. A new era gets its cap from its prices.
+export const chestCoinCap = (era) => {
+  const price = eraEvolution(era).prices?.[1] ?? 0;
+  return Math.max(CHEST_COIN_CAP, Math.round(price / 100) * 50);
 };
+// The chapter value before any cap; version 3 save rules export it per level.
+export const chestLevelCoins = (levelId) => {
+  const chapter = miningChapter(levelId);
+  return 500 * Math.min(3, chapter) + 250 * Math.max(0, chapter - 3);
+};
+export const chestCoinReward = (levelId = 1, version = CHEST_ECONOMY_VERSION, era) => {
+  if (version === 1) return 500 * miningChapter(levelId);
+  return Math.min(version === 2 ? CHEST_COIN_CAP : chestCoinCap(era), chestLevelCoins(levelId));
+};
+// A saved chest names a published version; from version 3 it also names its town era.
+export const knownChestTerms = ({ economyVersion = 1, era }) =>
+  Number.isInteger(economyVersion) &&
+  economyVersion >= 1 &&
+  economyVersion <= CHEST_ECONOMY_VERSION &&
+  (economyVersion < 3 || Object.hasOwn(ERA_BY_ID, era));
 
 // Agreed per-era level prices. Mining windfalls never increase a quoted price.
 export const RIVER_RAIL_LEVEL_PRICES = eraEvolution('river-rail').prices;

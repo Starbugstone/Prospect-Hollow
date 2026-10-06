@@ -1,6 +1,7 @@
 import { createGem, GEM_TYPES } from './GemFactory.js';
 import { MatchEngine } from './MatchEngine.js';
 import { canSwapGem, isAnchored, neighborsOf } from './TileRules.js';
+import { isPlayableCell } from './BoardTopology.js';
 
 const engine = new MatchEngine();
 
@@ -16,7 +17,14 @@ export function recoverBoard(board, tiles, cols, rows) {
           const line = [0, 1, 2].map((n) => a + (offset + n) * stride);
           if (
             line.includes(b) ||
-            line.some((i) => i < 0 || i >= board.length || !board[i] || board[i].type === 'relic')
+            line.some(
+              (i) =>
+                i < 0 ||
+                i >= board.length ||
+                !isPlayableCell(tiles[i]) ||
+                !board[i] ||
+                board[i].type === 'relic',
+            )
           )
             continue;
           if (stride === 1 && line.some((i) => Math.floor(i / cols) !== Math.floor(a / cols)))
@@ -44,7 +52,7 @@ export function recoverBoard(board, tiles, cols, rows) {
               [next[a], next[donor]] = [next[donor], next[a]];
             }
             if (
-              !engine.findMatches(next, cols, rows).length &&
+              !engine.findMatches(next, cols, rows, tiles).length &&
               engine.evaluateSwap(next, cols, rows, a, b, tiles).matches.length
             )
               return next;

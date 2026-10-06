@@ -21,7 +21,7 @@
         </button>
       </form>
     </section>
-    <section class="account-section">
+    <section ref="sharingSection" class="account-section">
       <h2>{{ t('Sharing') }}</h2>
       <label class="account-toggle">
         <span>
@@ -46,6 +46,7 @@
         {{ t('Shared town names are checked in English and French.') }}
       </p>
     </section>
+    <HonourAccountSection :town="meta.name" :shared="meta.isPublic" @share="showSharing" />
     <section ref="historySection" class="account-section">
       <h2>{{ t('Save history') }}</h2>
       <ul class="account-timeline">
@@ -203,6 +204,7 @@ import { useCampaignStore } from '../../stores/campaignStore';
 import { useGameStore } from '../../stores/gameStore';
 import { useAccountContext, townSummary } from './accountContext';
 import GameIcon from '../GameIcon.vue';
+import HonourAccountSection from '../honours/HonourAccountSection.vue';
 import { t, locale } from '../../i18n';
 const props = defineProps({ active: { type: Object, required: true }, focus: String });
 const { busy, act, recovery, changed } = useAccountContext();
@@ -217,6 +219,7 @@ const campaign = useCampaignStore(),
   copied = ref(false),
   details = ref(null),
   historySection = ref(null),
+  sharingSection = ref(null),
   deleteSection = ref(null),
   backupInput = ref(null);
 const meta = computed(() => props.active.meta);
@@ -284,6 +287,12 @@ function deleteTown() {
     await refreshAccount();
   });
 }
+// The sharing switch, scrolled into view and focused, for every "Share my town" link.
+function showSharing() {
+  const section = sharingSection.value;
+  section?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  section?.querySelector('input')?.focus({ preventScroll: true });
+}
 async function copyShareLink() {
   await navigator.clipboard?.writeText(shareUrl.value);
   copied.value = true;
@@ -320,7 +329,10 @@ watch(
 );
 onMounted(() => {
   act(loadHistory);
-  const target = { history: historySection, delete: deleteSection }[props.focus] ?? details;
+  const target =
+    { sharing: sharingSection, history: historySection, delete: deleteSection }[props.focus] ??
+    details;
   target.value?.scrollIntoView({ block: 'nearest' });
+  if (props.focus === 'sharing') showSharing();
 });
 </script>

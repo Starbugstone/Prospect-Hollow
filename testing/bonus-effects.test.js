@@ -19,7 +19,7 @@ describe('bonus visual accuracy', () => {
     const types = ['cross', 'bomb', 'ruby', 'rainbow'];
     expect(describeBonusEffects(step, (index) => types[index])).toEqual([
       { type: 'bomb', index: 1, targets: [1, 2, 3] },
-      { type: 'rainbow', index: 3, targets: [1, 2, 3] },
+      { type: 'rainbow', index: 3, targets: [0, 1, 2, 3] },
     ]);
   });
 

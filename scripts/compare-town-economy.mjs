@@ -88,7 +88,10 @@ for (const [name, root] of [
                   }
                 : rewards.rollChestReward(rng, state);
             pity = drop.id === 'builder-hammer' ? 0 : pity + 1;
-            rewards.grantReward(state, rewards.chestReward(drop.id, run.id));
+            rewards.grantReward(
+              state,
+              rewards.chestReward(drop.id, run.id, undefined, state.town.era),
+            );
           }
           state.town.coins += run.coins;
           visit();

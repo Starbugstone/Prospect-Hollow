@@ -3,7 +3,7 @@ WORKDIR /build
 COPY package*.json ./
 RUN npm ci
 COPY . .
-RUN node scripts/export-public-content.mjs && npm run build
+RUN node scripts/export-public-content.mjs && node scripts/export-save-rules.mjs && npm run build
 
 FROM php:8.4-apache-bookworm AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends libpq-dev libicu-dev unzip \

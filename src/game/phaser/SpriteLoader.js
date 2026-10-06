@@ -8,6 +8,7 @@ import geodeUrl from '../../assets/board/gems-geode.png';
 import { spriteRef } from './spriteRefs';
 import { performanceMark } from '../PresentationWork';
 import { gemFinish, GEM_FINISHES } from '../../data/gemAppearance';
+import { DEEP_MINE_SPRITES } from '../../data/mineThemes';
 
 export const BONUS_TYPES = ['bomb', 'rainbow', 'cross'];
 const BONUS_FRAME_SIZE = 192;
@@ -38,6 +39,8 @@ export function preloadSpriteAssets(scene, { levelId = 1 } = {}) {
     if (!scene.textures.exists(key)) scene.load.atlas(key, urls[key], frames[key]);
 }
 function preloadSvgAssets(scene) {
+  for (const [id, file] of DEEP_MINE_SPRITES)
+    scene.load.svg(id, `/art/${file}`, { width: 160, height: 160 });
   GEM_TYPES.forEach((type) =>
     scene.load.svg(`gem-${type}`, `/art/${type}.svg`, { width: 160, height: 160 }),
   );

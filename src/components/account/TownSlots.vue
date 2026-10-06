@@ -83,12 +83,7 @@
         class="town-slot"
         :class="{ 'is-current': isCurrent(town) }"
       >
-        <div class="town-slot-art" :style="art(town.card)">
-          <img src="/art/amethyst.svg" alt="" />
-          <span v-if="eraName(town.card?.era)" class="town-slot-era">{{
-            eraName(town.card?.era)
-          }}</span>
-        </div>
+        <TownCardArt :era="town.card?.era" />
         <button
           class="town-slot-more"
           aria-haspopup="menu"
@@ -100,8 +95,8 @@
         </button>
         <div v-if="menu === town.townId" class="town-slot-menu" role="menu">
           <template v-if="isCurrent(town)">
-            <button role="menuitem" @click="manage('details')">
-              <GameIcon name="settings" />{{ t('Rename & sharing') }}
+            <button role="menuitem" @click="manage('sharing')">
+              <GameIcon name="share" />{{ t('Share & rename') }}
             </button>
             <button role="menuitem" @click="manage('history')">
               <GameIcon name="history" />{{ t('Save history') }}
@@ -121,10 +116,16 @@
         </div>
         <div class="town-slot-info">
           <strong>{{ town.name }}</strong>
-          <small v-if="town.card?.era" class="town-slot-era-mobile">{{
+          <span class="town-slot-sharing" :class="{ 'is-shared': town.isPublic }"
+            ><GameIcon v-if="town.isPublic" name="share" />{{
+              t(town.isPublic ? 'Shared' : 'Private')
+            }}</span
+          >
+          <small v-if="town.card?.era" class="town-card-era-mobile">{{
             eraName(town.card.era)
           }}</small>
           <small v-if="town.card">{{ stats(town.card) }}</small>
+          <HonourCardRow :honours="town.card?.honours" :received="distinctions" :size="26" />
           <small>{{ savedAgo(town) }}</small>
           <span v-if="isCurrent(town)" class="town-slot-playing"
             ><GameIcon name="check" />{{ t('Playing now') }}</span
@@ -191,11 +192,14 @@ import {
 } from '../../services/cloudProfile';
 import { townStorage } from '../../services/townStorage';
 import { cardSummary, profileSummary } from '../../services/townSummary';
+import { receivedDistinctions } from '../../data/playerDistinctions';
 import { timeAgo } from '../../services/saveStatus';
 import { freshProfile } from '../../stores/campaignStore';
 import { useGameStore } from '../../stores/gameStore';
-import { useAccountContext, eraName, eraHue } from './accountContext';
+import { useAccountContext, eraName } from './accountContext';
 import GameIcon from '../GameIcon.vue';
+import TownCardArt from '../TownCardArt.vue';
+import HonourCardRow from '../honours/HonourCardRow.vue';
 import { townUrl } from '../../services/appRoute';
 import { t, number } from '../../i18n';
 const SLOT_LIMIT = 3;
@@ -224,6 +228,8 @@ const missingTown = computed(
     props.writable && active.value?.meta.owner === cloud.account.id && active.value.meta.missing,
 );
 const full = computed(() => cloud.towns.length >= SLOT_LIMIT);
+// The player's own distinctions, for the one each town card may show.
+const distinctions = computed(() => receivedDistinctions(cloud.account));
 const emptySlots = computed(() => {
   const free = Math.max(0, SLOT_LIMIT - cloud.towns.length);
   const attach = localTown.value && !registeredLocal.value && free > 0 ? ['attach'] : [];
@@ -251,10 +257,6 @@ const stats = (summary) =>
 const savedAgo = (town) => {
   const ago = timeAgo(town.updatedAt * 1000);
   return ago ? t('Saved {time}', { time: ago }) : t('Not synced yet');
-};
-const art = (summary) => {
-  const hue = eraHue(summary?.era);
-  return hue === null ? {} : { '--slot-hue': hue };
 };
 function manage(section) {
   menu.value = null;

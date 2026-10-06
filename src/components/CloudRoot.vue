@@ -20,7 +20,7 @@
     <GameIcon name="cloud" />
     <p>
       {{ t('Cloud saving is paused. Your progress is saved on this device.') }}
-      {{ t(activeTown.meta.uploadError.message) }}
+      {{ t(activeMeta.uploadError.message) }}
     </p>
     <button
       class="save-recovery-compare"
@@ -39,22 +39,18 @@
     <p>
       {{
         t(
-          activeTown.meta.conflict
+          activeMeta.conflict
             ? 'You played {town} on another device. That save will load when you return to the village.'
             : 'You played {town} on another device, so we loaded that save.',
           { town: townName },
         )
       }}
     </p>
-    <button
-      v-if="!activeTown.meta.conflict"
-      class="save-recovery-compare"
-      @click="recoveryOpen = true"
-    >
+    <button v-if="!activeMeta.conflict" class="save-recovery-compare" @click="recoveryOpen = true">
       {{ t('Compare saves') }}
     </button>
     <button
-      v-if="!activeTown.meta.conflict"
+      v-if="!activeMeta.conflict"
       class="save-recovery-dismiss"
       :aria-label="t('Dismiss')"
       :title="t('Dismiss')"
@@ -140,6 +136,7 @@
   <AccountPanel
     v-if="accountOpen"
     :login-link="loginLink"
+    :section="accountSection"
     :writable="ready"
     @close="accountOpen = false"
     @changed="reload"
@@ -153,7 +150,11 @@
       accountOpen = false;
     "
   />
-  <CommunityPanel v-if="communityOpen && cloud.account" @close="communityOpen = false" />
+  <CommunityPanel
+    v-if="communityOpen && cloud.account"
+    @close="communityOpen = false"
+    @share="openSharing"
+  />
 </template>
 <script setup>
 import {
@@ -186,6 +187,7 @@ import { createSyncScheduler } from '../services/syncScheduler';
 import { describeSaveState } from '../services/saveStatus';
 import { uploadBlocked } from '../services/syncService';
 import { syncTownParam } from '../services/appRoute';
+import { receivedDistinctions } from '../data/playerDistinctions';
 import GameIcon from './GameIcon.vue';
 const AccountPanel = defineAsyncComponent(() => import('./account/AccountPanel.vue'));
 const CommunityPanel = defineAsyncComponent(() => import('./community/CommunityPanel.vue'));
@@ -194,6 +196,8 @@ townStorage.setWriteGuard(townCoordinator.owns);
 const campaign = useCampaignStore(),
   game = useGameStore();
 const accountOpen = ref(false),
+  // The town section the account panel opens on, such as 'sharing'; cleared on close.
+  accountSection = ref(''),
   recoveryOpen = ref(false),
   communityOpen = ref(false),
   viewVersion = ref(0),
@@ -206,22 +210,31 @@ const accountOpen = ref(false),
   handingOver = ref(false),
   transferError = ref(''),
   notice = ref('This town is open in another tab.');
-const activeTown = computed(() => {
+// Metadata only, parsed once per stored save (see townStorage.activeMeta).
+const activeMeta = computed(() => {
   void cloud.storageVersion;
-  return townStorage.active();
+  return townStorage.activeMeta();
 });
-const blockedUpload = computed(() => uploadBlocked(activeTown.value?.meta));
-const accountTown = computed(
-  () => !!cloud.account && activeTown.value?.meta.owner === cloud.account.id,
-);
-const townName = computed(() => activeTown.value?.meta.name || t('Your town'));
+const blockedUpload = computed(() => uploadBlocked(activeMeta.value));
+const accountTown = computed(() => !!cloud.account && activeMeta.value?.owner === cloud.account.id);
+const townName = computed(() => activeMeta.value?.name || t('Your town'));
+const shared = computed(() => accountTown.value && !!activeMeta.value?.isPublic);
+watch(accountOpen, (open) => {
+  if (!open) accountSection.value = '';
+});
+// Every "Share my town" button opens the sharing switch of the town being played.
+function openSharing() {
+  communityOpen.value = false;
+  accountSection.value = 'sharing';
+  accountOpen.value = true;
+}
 const saveState = computed(() =>
   describeSaveState({
     signedIn: !!cloud.account,
     sessionExpired: cloud.sessionExpired,
     accountTown: accountTown.value,
     status: cloud.status,
-    meta: activeTown.value?.meta,
+    meta: activeMeta.value,
   }),
 );
 // Never cover an active puzzle; the notice waits for the village.
@@ -229,16 +242,21 @@ const recoveryToast = computed(
   () =>
     accountTown.value &&
     !game.sessionActive &&
-    (activeTown.value.meta.conflict || activeTown.value.meta.desyncNotice) &&
+    (activeMeta.value.conflict || activeMeta.value.desyncNotice) &&
     !recoveryOpen.value,
 );
 // Account controls live in the village save pill and the settings drawer.
 provide('cloudAccount', {
   townName,
   accountTown,
+  // Whether the town being played is backed up and open to visitors.
+  shared,
   saveState,
-  cloudAt: computed(() => (activeTown.value?.meta.cloudAt ?? 0) * 1000),
+  cloudAt: computed(() => (activeMeta.value?.cloudAt ?? 0) * 1000),
   signedIn: computed(() => !!cloud.account),
+  accountId: computed(() => cloud.account?.id ?? null),
+  // The player's own distinctions, kept with the account record for offline play.
+  distinctions: computed(() => receivedDistinctions(cloud.account)),
   canSync: computed(
     () =>
       accountTown.value &&
@@ -259,6 +277,7 @@ provide('cloudAccount', {
   openCommunity: () => {
     communityOpen.value = true;
   },
+  openSharing,
 });
 watch(
   townName,
@@ -423,7 +442,7 @@ function reload() {
   }
 }
 function dismissRecovery() {
-  const meta = activeTown.value?.meta;
+  const meta = activeMeta.value;
   if (meta?.owner && ready.value)
     townStorage.mutate(meta.id, meta.owner, (entry) => {
       entry.meta.desyncNotice = false;

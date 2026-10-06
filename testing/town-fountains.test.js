@@ -73,6 +73,8 @@ describe('Era town square fountains', () => {
       'postmodern',
       'splash-plaza',
       'orbital-rings',
+      'canopy-bloom',
+      'riverlight-crystal',
     ]);
   });
 

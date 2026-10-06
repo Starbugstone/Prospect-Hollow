@@ -1,13 +1,15 @@
-import { townWardrobe } from '../../data/townWardrobes';
 import { scheduleWork } from '../PresentationWork';
 import { AnimalSpaceBuilder } from './TownAnimalSpace';
 import { Group, Vector3 } from 'three';
-import { ANIMAL_HABITATS, TOWN_ANIMALS } from '../../data/townAnimals';
+import { ANIMAL_HABITATS, TOWN_ANIMALS, townFauna, flyingAnimal } from '../../data/townAnimals';
+import { COMPANION_NEIGHBORHOODS, COMPANION_STREET_FALLBACK } from '../../data/townCompanions';
+import { riverCenterX, RIVER } from './TownRiver';
 import { eraEvolution } from '../../data/eras';
 import { atPlot, PLOTS, plotStreet, routeGraph, routeOnGraph } from './TownLayout';
 import { TownNavigation, walkPose, standingPose } from './TownNavigation';
 import { groundHeight } from './TownLandscape';
 import { population } from './TownRules';
+import { dressSpaceHelmet, helmetStay, updateDressing } from './TownSpaceHelmet';
 import { animalModel, animateAnimal } from './TownAnimalModels';
 import { animalNavigation, animalSpace } from './TownAnimalSpace';
 import { setWorkRoutine } from './TownWorkRoutine';
@@ -15,6 +17,9 @@ import { buildingWalk } from './TownPedestrians';
 import { prepareBirdApproaches, createBirdFlight, birdFlightPose } from './TownBirdFlight';
 import { clamp01, hash01, smooth01 } from './TownMath';
 import { finishWork } from '../PresentationWork';
+import { createAnimalBehavior, updateAnimalBehavior } from './TownAnimalBehavior';
+import { prepareAnimalRoaming, updateAnimalRoaming } from './TownAnimalRoaming';
+import { updateAnimalChase } from './TownAnimalChase';
 
 const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 
@@ -65,26 +70,27 @@ function* prepareHabitats(d, town) {
   return habitats;
 }
 
-function groundRoute(nav, points, radius) {
+function groundRoute(nav, points, radius, height = 1) {
   return nav.plan(
     points.map(([x, z]) => [x, 0.07, z]),
     radius,
+    height,
   );
 }
 
 // Animal routes survive a re-population when the town around them still allows them,
 // as villager routes do: only routes that a changed building now blocks are planned
 // again. Keys name what a route connects; a route for other inputs is never reused.
-function* keptRoute(previous, routes, key, nav, radius, plan) {
+function* keptRoute(previous, routes, key, nav, radius, plan, height = 1) {
   const kept = previous?.get(key);
-  const path = kept && (yield* nav.routeClearSteps(kept, radius)) ? kept : yield* plan();
+  const path = kept && (yield* nav.routeClearSteps(kept, radius, height)) ? kept : yield* plan();
   routes.set(key, path);
   return path;
 }
 
 // Resumable: the whole-town loop is the longest animal plan, so it yields between
 // navigation steps when prepared in the background.
-function* streetRoute(nav, graph, ids, radius) {
+function* streetRoute(nav, graph, ids, radius, height = 1) {
   const points = [];
   for (let n = 0; n < ids.length; n++) {
     const section = routeOnGraph(graph, plotStreet(ids[n]), plotStreet(ids[(n + 1) % ids.length]));
@@ -92,15 +98,19 @@ function* streetRoute(nav, graph, ids, radius) {
     points.push(...section.slice(points.length ? 1 : 0));
   }
   if (points.length < 2) return null;
-  // Keep small animals on the verge, away from carriage wheels. The animal
-  // itinerary stays on this bank; no unsupported straight-line river crossings.
-  const path = yield* nav.routeSteps(points, 1.2, radius);
+  // Keep the cast on sidewalks, away from carriage wheels. Each neighborhood
+  // itinerary follows the street graph, including its supported crossings.
+  const path = yield* nav.routeSteps(points, 1.2, radius, height);
   // A return leg can approach the starting street from the opposite direction.
   // Close its sidewalk offset through navigation rather than jumping lanes.
-  return path.points.length ? yield* nav.planSteps([...path.points, path.points[0]], radius) : path;
+  return path.points.length
+    ? yield* nav.planSteps([...path.points, path.points[0]], radius, height)
+    : path;
 }
 
 function threatNear(d, animal, profile) {
+  // Town neighbors yield through the shared locomotion system, like people.
+  if (animal.resident) return null;
   const point = animal.root.position;
   let closest = null,
     nearest = Infinity;
@@ -112,7 +122,7 @@ function threatNear(d, animal, profile) {
       nearest = gap;
     }
   }
-  if (animal.species === 'pigeon' || animal.wild) {
+  if (flyingAnimal(animal.species) || animal.wild) {
     for (const { root } of d.actors ?? []) {
       if (!root.visible || root === d.animalFeeder?.root || Math.abs(root.position.y - point.y) > 1)
         continue;
@@ -134,12 +144,50 @@ function threatNear(d, animal, profile) {
   return closest;
 }
 
-// Retained animals are reused only when they would look the same (costume included).
-export const animalKey = (a) => `${a.species}:${a.seed}:${a.costume ?? ''}`;
+// Retained animals keep their identity; a later outfit change happens in place.
+export const animalKey = (a) => `${a.species}:${a.seed}`;
+
+function retainAnimalLife(old, fresh, space) {
+  Object.assign(old, {
+    path: fresh.path,
+    habitats: fresh.habitats,
+    space,
+    roaming: fresh.roaming,
+    chaseRoute: null,
+    escapeFrom: null,
+    escapeUntil: 0,
+    roamingHold: false,
+  });
+  if (
+    old.walkPath &&
+    !old.roaming?.legs.some((leg) => leg.path === old.walkPath) &&
+    old.roaming?.joinLeg?.path !== old.walkPath
+  ) {
+    old.walkPath = null;
+    old.routeLimit = undefined;
+  }
+}
+
+// Rebuilt animals that look the same as a retained one keep the retained object,
+// and with it their pose and motion; the fresh model and unmatched animals go.
+function adoptRetainedAnimals(d, animals, retained, space) {
+  const adopted = animals.map((fresh) => {
+    const key = animalKey(fresh),
+      old = retained.get(key);
+    if (!old) return fresh;
+    retained.delete(key);
+    d.clearGroup(fresh.root);
+    retainAnimalLife(old, fresh, space);
+    old.clearance = fresh.clearance;
+    return old;
+  });
+  for (const old of retained.values()) d.clearGroup(old.root);
+  return adopted;
+}
 
 function addGroundAnimal(d, species, path, seed, options = {}) {
   if (!path?.total) return null;
-  const model = animalModel(d, species, seed, options.costume);
+  const model = animalModel(d, species, seed);
   const animal = {
     ...model,
     ...TOWN_ANIMALS[species],
@@ -188,7 +236,7 @@ function addFeeder(d, habitat, nav, era) {
   const grain = d.group(d.world);
   grain.name = 'Scattered bird seed';
   grain.userData.animated = true;
-  const birds = d.animals.filter((a) => a.species === 'pigeon');
+  const birds = d.animals.filter((a) => flyingAnimal(a.species));
   const feedingSites = birds.flatMap((a) =>
     a.habitats.filter((h) => h.kind === 'ground' && h.building === habitat.building),
   );
@@ -357,38 +405,58 @@ function updateGround(d, animal, time, dt, profile) {
     const cycle = profile.paved ? 150 : 115;
     const visit = Math.floor(time / cycle);
     const phase = (time % cycle) - (8 + hash01(visit + animal.seed) * 40);
-    root.visible = phase >= 0 && phase < 42;
-    root.scale.setScalar(Math.min(smooth01(phase / 2), smooth01((42 - phase) / 2)));
+    const stay = helmetStay(animal, dt);
+    root.visible = stay > 0 || (phase >= 0 && phase < 42);
+    root.scale.setScalar(Math.max(stay, Math.min(smooth01(phase / 2), smooth01((42 - phase) / 2))));
     if (!root.visible) return;
   }
-  const threat = threatNear(d, animal, profile);
+  const threat = animal.encounter || animal.chaseRoute ? null : threatNear(d, animal, profile);
   const food = d.animalFeeder;
   const feeding =
     !wild &&
+    !animal.companion &&
     food?.active &&
     Math.hypot(root.position.x - food.habitat.point[0], root.position.z - food.habitat.point[2]) <
       1.65;
+  const encounter = animal.encounter;
+  const pursuing = encounter?.predator === animal;
+  const focus =
+    threat?.position ??
+    (encounter
+      ? pursuing
+        ? encounter.bird
+          ? encounter.goal
+          : encounter.prey.root.position
+        : encounter.predator.root.position
+      : time < (animal.escapeUntil ?? 0)
+        ? animal.escapeFrom
+        : null);
   if (threat) {
     animal.state = wild ? 'retreating' : 'alert';
     animal.rest = Math.max(animal.rest, 1.5);
-    if (wild) {
+    if (wild && animal.roaming?.activeLeg == null) {
       const toward =
         Math.sin(animal.pose.heading) * (threat.position.x - root.position.x) +
         Math.cos(animal.pose.heading) * (threat.position.z - root.position.z);
       animal.direction = toward > 0 ? -1 : 1;
-      if (!animal.motion) animal.progress += dt * animal.speed * 2 * animal.direction;
+      if (!animal.motion && !animal.roaming?.legs.length)
+        animal.progress += dt * animal.speed * 2 * animal.direction;
     }
     root.rotation.y = Math.atan2(
       threat.position.x - root.position.x,
       threat.position.z - root.position.z,
     );
+  } else if (encounter) {
+    animal.state = pursuing ? 'chasing' : 'fleeing';
+    animal.rest = 0;
   } else if (feeding) animal.state = 'feeding';
   else if (animal.rest > 0) {
     animal.rest -= dt;
     animal.state = animal.idle;
   } else {
     animal.state = 'walking';
-    if (!animal.motion) animal.progress += dt * animal.speed * animal.direction;
+    if (!animal.motion && !animal.roaming?.legs.length)
+      animal.progress += dt * animal.speed * animal.direction;
     animal.untilStop -= dt;
     if (animal.untilStop <= 0) {
       animal.rest = TOWN_ANIMALS[animal.species].rest;
@@ -402,7 +470,23 @@ function updateGround(d, animal, time, dt, profile) {
   );
   if (!animal.motion)
     root.position.set(pose.x, wild ? groundHeight(pose.x, pose.z) + 0.07 : pose.y, pose.z);
-  if (!threat || wild) root.rotation.y = pose.heading + (animal.direction < 0 ? Math.PI : 0);
+  animal.movementSpeed =
+    animal.speed * (animal.state === 'chasing' ? 2.2 : animal.state === 'fleeing' ? 2.7 : 1);
+  const roams =
+    updateAnimalChase(animal, time) || updateAnimalRoaming(animal, time, focus, !pursuing);
+  // The pursuer never needs to touch its target. Stop briefly if the gap closes;
+  // the prey keeps its own movement and the encounter has a fixed deadline.
+  animal.behaviorHold =
+    animal.roamingHold ||
+    (pursuing &&
+      !encounter.bird &&
+      distance(root.position, encounter.prey.root.position) <
+        animal.radius + encounter.prey.radius + 0.25);
+  // Locomotion's heading already faces back along a reversed route; a path pose does not.
+  const travel = roams ? animal.motion?.heading : undefined;
+  if (travel !== undefined) pose.heading = travel;
+  if (!threat || wild)
+    root.rotation.y = pose.heading + (travel === undefined && animal.direction < 0 ? Math.PI : 0);
   if (feeding)
     root.rotation.y = Math.atan2(food.habitat.point[0] - pose.x, food.habitat.point[2] - pose.z);
   root.userData.behavior = animal.state;
@@ -412,7 +496,7 @@ function updateGround(d, animal, time, dt, profile) {
     animal.state,
     animal.motion
       ? animal.acceptedWalking
-      : animal.state === 'walking' || animal.state === 'retreating',
+      : ['walking', 'retreating', 'chasing', 'fleeing'].includes(animal.state),
   );
 }
 
@@ -449,7 +533,9 @@ function updateBird(d, animal, time, dt, habitats, profile) {
       animal.state = f.target.kind === 'perch' ? 'perching' : 'pecking';
     }
   } else {
-    const threat = animal.habitat.kind === 'ground' && threatNear(d, animal, profile);
+    const threat =
+      animal.habitat.kind === 'ground' &&
+      (animal.encounter?.predator.root ?? threatNear(d, animal, profile));
     const food = d.animalFeeder;
     const feeding = food?.active && animal.habitat.building === food.habitat.building;
     animal.rest -= dt;
@@ -501,11 +587,55 @@ function updateBird(d, animal, time, dt, habitats, profile) {
   eatGrain(animal);
 }
 
+// A deferred rebuild fills the animal state on a stage: an object that reads
+// everything else (models, navigation, clock) from the live diorama but holds its
+// own world, cast and motions, so the village keeps its current animals until the
+// stage commits in one step. The motion closures keep reading the stage, so a
+// commit points its world and actors at the live ones.
+const ANIMAL_STATE = [
+  'animals',
+  'animalFeeder',
+  'animalHabitats',
+  'animalSpace',
+  'animalNavigation',
+  'animalRoutes',
+  'animalMotion',
+  'animalBehavior',
+];
+function animalStage(d) {
+  return Object.assign(Object.create(d), {
+    world: new Group(),
+    habitatWorld: d.world,
+    animals: [],
+    actors: [],
+    motions: [],
+    animalFeeder: null,
+    retainedActors: null,
+    retainedAnimals: null,
+  });
+}
+function commitAnimalStage(d, stage) {
+  if (d.animalFeeder) {
+    d.clearGroup(d.animalFeeder.root);
+    d.clearGroup(d.animalFeeder.grain);
+    d.actors = d.actors.filter((a) => a.root !== d.animalFeeder.root);
+  }
+  d.world.add(...stage.world.children);
+  stage.world = d.world;
+  for (const animal of stage.animals) d.world.add(animal.root);
+  d.actors.push(...stage.actors);
+  stage.actors = d.actors;
+  for (const key of ANIMAL_STATE) d[key] = stage[key];
+  d.retainedAnimals = null;
+  d.motions.push(stage.animalMotion);
+}
+
 // A bounded, disposable runtime on the diorama clock. Rebuilding the village
 // replaces the cast and prepared routes; no timers, persistence or rewards.
 export function addTownAnimals(d, town, preparedSpace) {
   if (!population(town) && !town.buildings.farm) {
     d.animals = [];
+    d.animalBehavior = null;
     return;
   }
   if (d.deferLife && !preparedSpace) {
@@ -519,61 +649,23 @@ export function addTownAnimals(d, town, preparedSpace) {
         if (!next.done) yield;
       } while (!next.done);
       if (generation !== d.generation) return;
-      const stage = Object.create(d);
-      Object.assign(stage, {
-        world: new Group(),
-        habitatWorld: d.world,
-        animals: [],
-        actors: [],
-        motions: [],
-        animalFeeder: null,
-        retainedActors: null,
-        retainedAnimals: null,
-      });
+      const stage = animalStage(d);
       let committed = false;
       try {
         yield* populateAnimals(stage, town, next.value);
         if (generation !== d.generation) return;
         const retained =
           d.retainedAnimals ?? new Map((d.animals ?? []).map((a) => [animalKey(a), a]));
-        stage.animals = stage.animals.map((fresh) => {
-          const key = animalKey(fresh),
-            old = retained.get(key);
-          if (!old) return fresh;
-          retained.delete(key);
-          d.clearGroup(fresh.root);
-          Object.assign(old, {
-            path: fresh.path,
-            habitats: fresh.habitats,
-            space: stage.animalSpace,
-          });
-          old.clearance = fresh.clearance;
-          return old;
-        });
-        for (const old of retained.values()) d.clearGroup(old.root);
-        if (d.animalFeeder) {
-          d.clearGroup(d.animalFeeder.root);
-          d.clearGroup(d.animalFeeder.grain);
-          d.actors = d.actors.filter((a) => a.root !== d.animalFeeder.root);
-        }
-        d.world.add(...stage.world.children);
-        stage.world = d.world;
-        for (const animal of stage.animals) d.world.add(animal.root);
-        d.actors.push(...stage.actors);
-        stage.actors = d.actors;
-        for (const key of [
-          'animals',
-          'animalFeeder',
-          'animalHabitats',
-          'animalSpace',
-          'animalNavigation',
-          'animalRoutes',
-          'animalMotion',
-        ])
-          d[key] = stage[key];
-        d.retainedAnimals = null;
-        d.motions.push(stage.animalMotion);
+        stage.animals = adoptRetainedAnimals(d, stage.animals, retained, stage.animalSpace);
+        stage.animalBehavior = createAnimalBehavior(
+          stage.animals,
+          stage.navigation,
+          stage.animalSpace,
+          stage.elapsed,
+        );
+        commitAnimalStage(d, stage);
         committed = true;
+        dressSpaceHelmet(d, d.helmetTown ?? town, { animate: d.animateCostumes, rebuild: false });
       } finally {
         if (!committed) d.clearGroup(stage.world);
       }
@@ -587,6 +679,7 @@ export function addTownAnimals(d, town, preparedSpace) {
     return;
   }
   finishWork(populateAnimals(d, town, preparedSpace));
+  dressSpaceHelmet(d, d.helmetTown ?? town, { animate: d.animateCostumes, rebuild: false });
 }
 function* populateAnimals(d, town, preparedSpace) {
   const oldFeeder = d.animalFeeder;
@@ -602,9 +695,11 @@ function* populateAnimals(d, town, preparedSpace) {
   const nav = (d.animalNavigation = animalNavigation(d.navigation, d.animalSpace));
   const previousRoutes = d.animalRoutes;
   const routes = (d.animalRoutes = new Map());
-  const route = (key, radius, plan) => keptRoute(previousRoutes, routes, key, nav, radius, plan);
+  const route = (key, radius, plan, height = 1) =>
+    keptRoute(previousRoutes, routes, key, nav, radius, plan, height);
   if (!population(town) && !town.buildings.farm) return;
   const profile = eraEvolution(town.era);
+  const fauna = townFauna(profile);
   const graph = routeGraph(town);
   const habitats = yield* prepareHabitats(d, town);
   d.animalHabitats = habitats;
@@ -634,9 +729,7 @@ function* populateAnimals(d, town, preparedSpace) {
         );
       });
     }
-    // The era wardrobe may dress the village dog (Tomorrow City's space dog).
-    const costume = species === 'dog' ? (townWardrobe(profile).petCostume ?? null) : null;
-    addGroundAnimal(d, species, path, species === 'dog' ? 4 : 17, costume ? { costume } : {});
+    addGroundAnimal(d, species, path, species === 'dog' ? 4 : 17);
     yield;
   }
   if (town.buildings.farm)
@@ -656,51 +749,54 @@ function* populateAnimals(d, town, preparedSpace) {
       yield;
     }
   const ground = habitats.filter((h) => h.kind === 'ground');
-  for (let n = 0; n < Math.min(3, ground.length + 1); n++) {
-    if (!ground.length) break;
-    const sites = habitats.flatMap((h) => {
-      if (h.kind === 'perch') return [h];
-      return [-0.8, 0.3, 1.2].flatMap((offset) => {
-        const point = landingPoint(d, nav, [
-          h.point[0] + (n - 1) * 0.9,
-          h.point[1],
-          h.point[2] + offset,
-        ]);
-        return point ? [{ ...h, point }] : [];
+  let birdIndex = 0;
+  for (const { species, count, seed } of fauna.birds) {
+    for (let n = 0; n < Math.min(count, ground.length + 1); n++, birdIndex++) {
+      if (!ground.length) break;
+      const sites = habitats.flatMap((h) => {
+        if (h.kind === 'perch') return [h];
+        return [-0.8, 0.3, 1.2].flatMap((offset) => {
+          const point = landingPoint(d, nav, [
+            h.point[0] + (birdIndex - 1) * 0.9,
+            h.point[1],
+            h.point[2] + offset,
+          ]);
+          return point ? [{ ...h, point }] : [];
+        });
       });
-    });
-    for (const site of sites) {
-      if (!site.approaches)
-        site.approaches = prepareBirdApproaches(
-          d.animalSpace,
-          site.point,
-          TOWN_ANIMALS.pigeon.radius,
-        );
+      for (const site of sites) {
+        if (!site.approaches)
+          site.approaches = prepareBirdApproaches(
+            d.animalSpace,
+            site.point,
+            TOWN_ANIMALS[species].radius,
+          );
+        yield;
+      }
+      const groundSites = sites.filter((h) => h.kind === 'ground');
+      const habitat = groundSites[birdIndex % groundSites.length];
+      if (!habitat) continue;
+      const model = animalModel(d, species, n);
+      model.root.position.fromArray(habitat.point);
+      const animal = {
+        ...model,
+        ...TOWN_ANIMALS[species],
+        habitat,
+        habitats: sites,
+        space: d.animalSpace,
+        rest: 7 + n * 4,
+        seed: seed + n * 7,
+        visit: 0,
+        state: 'pecking',
+      };
+      model.root.visible = false;
+      d.animals.push(animal);
+      if (n === 2) {
+        animal.root.position.add(new Vector3(-12, d.animalSpace.ceiling, 3));
+        startFlight(animal, habitat);
+      }
       yield;
     }
-    const groundSites = sites.filter((h) => h.kind === 'ground');
-    const habitat = groundSites[n % groundSites.length];
-    if (!habitat) continue;
-    const model = animalModel(d, 'pigeon', n);
-    model.root.position.fromArray(habitat.point);
-    const animal = {
-      ...model,
-      ...TOWN_ANIMALS.pigeon,
-      habitat,
-      habitats: sites,
-      space: d.animalSpace,
-      rest: 7 + n * 4,
-      seed: 71 + n * 7,
-      visit: 0,
-      state: 'pecking',
-    };
-    model.root.visible = false;
-    d.animals.push(animal);
-    if (n === 2) {
-      animal.root.position.add(new Vector3(-12, d.animalSpace.ceiling, 3));
-      startFlight(animal, habitat);
-    }
-    yield;
   }
   d.animalFeeder = population(town)
     ? addFeeder(
@@ -734,38 +830,104 @@ function* populateAnimals(d, town, preparedSpace) {
     addGroundAnimal(d, species, path, 91 + n * 43, { wild: true });
     yield;
   }
+  // A fixed, small garden cast. Routes are planned with body height and real
+  // scenery once, then retained across unchanged building updates.
+  for (const species of fauna.garden) {
+    const { radius, height, seed } = TOWN_ANIMALS[species];
+    let points;
+    if (species === 'otter') {
+      points = [0, 2, 5, 7, 5, 2, 0].map((offset, i) => {
+        const z = edge + offset;
+        return [riverCenterX(z) - RIVER.bankWidth - 2.5 - (i % 2) * 0.4, z];
+      });
+    } else {
+      // The southern hills rise above the planner's flat walking plane. Use
+      // the open verge of the old-town clearing so these small visits have a
+      // complete route through the actual rendered landscape.
+      const x = species === 'deer' ? -15 : -22;
+      const z = species === 'deer' ? 27 : 25;
+      points = [
+        [x, z],
+        [x + 2, z + 0.8],
+        [x + 1.5, z + 2],
+        [x - 0.8, z + 1.5],
+        [x, z],
+      ];
+    }
+    const path = yield* route(
+      `garden:${species}:${points}`,
+      radius,
+      function* () {
+        return groundRoute(nav, points, radius, height);
+      },
+      height,
+    );
+    addGroundAnimal(d, species, path, seed, { wild: true });
+    yield;
+  }
+  if (fauna.companions) {
+    const { species, mode } = fauna.companions;
+    const { radius, height } = TOWN_ANIMALS[species];
+    for (const neighborhood of COMPANION_NEIGHBORHOODS) {
+      let path;
+      if (mode === 'street') {
+        let ids = neighborhood.streets.filter((id) => town.buildings[id]);
+        if (ids.length < 2) ids = COMPANION_STREET_FALLBACK.filter((id) => town.buildings[id]);
+        path = yield* route(
+          `companion:${species}:${neighborhood.id}:${ids}`,
+          radius,
+          () => streetRoute(nav, graph, ids, radius, height),
+          height,
+        );
+      } else {
+        for (const garden of neighborhood.gardens) {
+          if (!town.buildings[garden.building]) continue;
+          path = yield* route(
+            `companion:${species}:${neighborhood.id}:${garden.building}`,
+            radius,
+            function* () {
+              return groundRoute(
+                nav,
+                garden.points.map(([x, z]) => atPlot(garden.building, x, z)),
+                radius,
+                height,
+              );
+            },
+            height,
+          );
+          if (path?.total) break;
+        }
+      }
+      addGroundAnimal(d, species, path, neighborhood.seed, { neighborhood: neighborhood.id });
+      yield;
+    }
+  }
+  yield* prepareAnimalRoaming(d);
   for (const animal of d.animals) animal.root.visible = true;
   if (d.retainedAnimals) {
-    d.animals = d.animals.map((fresh) => {
-      const old = d.retainedAnimals.get(animalKey(fresh));
-      if (!old) return fresh;
-      d.retainedAnimals.delete(animalKey(fresh));
-      d.clearGroup(fresh.root);
-      Object.assign(old, {
-        path: fresh.path,
-        habitats: fresh.habitats,
-        space: fresh.space ?? d.animalSpace,
-      });
-      d.world.add(old.root);
-      return old;
-    });
-    for (const old of d.retainedAnimals.values()) d.clearGroup(old.root);
+    d.animals = adoptRetainedAnimals(d, d.animals, d.retainedAnimals, d.animalSpace);
+    for (const animal of d.animals) if (animal.root.parent !== d.world) d.world.add(animal.root);
     d.retainedAnimals = null;
   }
-  for (const animal of d.animals)
-    if (animal.species !== 'pigeon')
+  for (const animal of d.animals) {
+    animal.space = d.animalSpace;
+    if (!flyingAnimal(animal.species))
       animal.clearance = (from, to, radius) =>
         d.animalSpace.segment(from, to, radius, animal.height ?? 0.6);
+  }
   let previous = d.elapsed ?? 0;
+  d.animalBehavior = createAnimalBehavior(d.animals, d.navigation, d.animalSpace, previous);
   let initialized = false;
   const update = (time) => {
     if (initialized && time === previous) return;
     initialized = true;
     const dt = Math.max(0, Math.min(0.5, time - previous));
     previous = time;
+    updateAnimalBehavior(d.animalBehavior, time);
     updateFeeder(d.animalFeeder, time);
     for (const animal of d.animals) {
-      if (animal.species === 'pigeon') updateBird(d, animal, time, dt, animal.habitats, profile);
+      if (animal.dressing) updateDressing(d, animal, time);
+      if (flyingAnimal(animal.species)) updateBird(d, animal, time, dt, animal.habitats, profile);
       else updateGround(d, animal, time, dt, profile);
     }
   };

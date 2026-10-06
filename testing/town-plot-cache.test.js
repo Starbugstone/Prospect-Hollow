@@ -220,7 +220,8 @@ it('reuses unchanged plots and windmills while rebuilding a changed construction
   const home = view.plotCache.get('home').group;
   const farm = view.plotCache.get('farm');
   const rotorPosition = farm.movingPart.rotor.position.clone();
-  const dispose = vi.spyOn(home.children.find((child) => child.isMesh).geometry, 'dispose');
+  // Plots reuse the shared unit geometries; replacing one must never dispose them.
+  const shared = vi.spyOn(view.geometries.box, 'dispose');
   town.projects.home = { stage: 2, wins: 0, required: 2 };
   view.update(town, labels, 0, 'home');
   expect(view.plotCache.get('farm').group).toBe(farm.group);
@@ -228,7 +229,8 @@ it('reuses unchanged plots and windmills while rebuilding a changed construction
   expect(farm.movingPart.rotor.position.equals(rotorPosition)).toBe(true);
   expect(view.motions).toContain(farm.movingPart.update);
   expect(view.plotCache.get('home').group).not.toBe(home);
-  expect(dispose).toHaveBeenCalledOnce();
+  expect(home.parent.parent).toBeNull();
+  expect(shared).not.toHaveBeenCalled();
   const existingBatches = [...view.buildingRenderer.meshes];
   view.finishConstruction();
   expect(view.buildingRenderer.meshes).toHaveLength(existingBatches.length + 1);
@@ -298,11 +300,17 @@ it.each(ERAS.map((era) => era.id))(
       expect(mesh.geometry.index).not.toBeNull();
     }
     const home = view.plotCache.get('home').group;
-    const dispose = vi.spyOn(home.children.find((child) => child.isMesh).geometry, 'dispose');
+    // Batched source meshes stay with their plot, hidden from rendering.
+    expect(home.children).toContain(home.userData.batchedSources);
+    const sources = [];
+    home.userData.batchedSources.traverse((object) => object.isMesh && sources.push(object));
+    expect(sources.length).toBeGreaterThan(0);
+    const shared = sources.map(({ geometry }) => vi.spyOn(geometry, 'dispose'));
     view.update(createTown(), labels);
     expect(view.plotCache.get('home').group).not.toBe(home);
     expect(home.parent.parent).toBeNull();
-    expect(dispose).toHaveBeenCalledOnce();
+    // Their unit or catalog geometry is shared with other plots and stays alive.
+    for (const dispose of shared) expect(dispose).not.toHaveBeenCalled();
     expect(view.plotCache.has('garage')).toBe(false);
   },
 );

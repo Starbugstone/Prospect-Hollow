@@ -34,6 +34,8 @@ export const ROUNDED_FORMS = Object.freeze({
 });
 
 export const isRoundedEra = (era) => eraEvolution(era).architecture === 'rounded';
+/** Whether the era's vehicles are the rounded family from RoundedTransports/TownVehicles. */
+export const hasRoundedTransport = (era) => eraEvolution(era).transportStyle === 'rounded';
 /** The rounded form for a building kind, or null when another renderer owns it. */
 export const roundedForm = (kind) =>
   Object.hasOwn(ROUNDED_FORMS, CITY_FAMILIES[kind]) ? ROUNDED_FORMS[CITY_FAMILIES[kind]] : null;

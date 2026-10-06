@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="sceneElement"
     class="town-scene"
     :class="{ 'is-raiding': raid && !reducedMotion, 'is-read-only': readOnly }"
     :aria-label="t(readOnly ? 'Village visit · view only' : 'Interactive 3D town')"
@@ -63,6 +64,7 @@
     </div>
     <span
       v-if="villagerLabel"
+      ref="villagerElement"
       class="villager-name"
       role="status"
       :style="{ left: `${villagerLabel.x}%`, top: `${villagerLabel.y}%` }"
@@ -74,50 +76,22 @@
         :key="anchor.id"
         :ref="(element) => trackElement(actionElements, anchor.id, element)"
         class="town-action-icon"
-        :class="{
-          'town-era-icon': indicators[anchor.id] === 'era',
-          'town-completion-icon': indicators[anchor.id] === 'ready',
-          'raid-defense-ready': raidDefenseIds.includes(anchor.id),
-          'raid-bell-ready': indicators[anchor.id] === 'bell',
-        }"
+        :class="[
+          TOWN_ACTIONS[indicators[anchor.id]].class,
+          { 'raid-defense-ready': raidDefenseIds.includes(anchor.id) },
+        ]"
         :data-town-plot="anchor.id"
         :style="{
-          left: `${anchor.collection.x}%`,
-          top: `${anchor.collection.y}%`,
-          '--action-scale': townIndicatorScale(indicators[anchor.id]),
+          translate: labelTranslate(anchor.collection),
+          '--action-scale': TOWN_ACTIONS[indicators[anchor.id]].scale,
         }"
-        :aria-label="
-          readOnly
-            ? t('Collect the saloon takings for the mayor')
-            : indicators[anchor.id] === 'ready'
-              ? t('Finish {building}', { building: t(BUILDING_BY_ID[anchor.id].shortName) })
-              : anchor.id === 'saloon'
-                ? t('Collect {coins} coins', { coins: town.income.stored })
-                : indicators[anchor.id] === 'bell'
-                  ? t('Ring town bell · halve the loss')
-                  : indicators[anchor.id] === 'era'
-                    ? t('Advance to the next era')
-                    : t('Collect 1 TNT')
-        "
+        :aria-label="actionLabel(anchor.id)"
         @focus="anchor.id === 'mine' && prefetchBoard()"
         @pointerenter="anchor.id === 'mine' && prefetchBoard()"
         @pointerdown="anchor.id === 'mine' && prefetchBoard()"
         @click="chooseLabel(anchor.id, $event)"
       >
-        <img
-          :src="
-            indicators[anchor.id] === 'ready'
-              ? '/art/rewards/builder-hammer.svg'
-              : anchor.id === 'saloon'
-                ? '/art/rewards/coins.svg'
-                : indicators[anchor.id] === 'bell'
-                  ? '/art/rewards/town-bell.svg'
-                  : indicators[anchor.id] === 'era'
-                    ? '/art/rewards/era-compass.svg'
-                    : '/art/powers/tnt.svg'
-          "
-          alt=""
-        />
+        <img :src="TOWN_ACTIONS[indicators[anchor.id]].icon" alt="" />
       </button>
     </div>
     <div
@@ -131,7 +105,7 @@
         :ref="(element) => trackElement(labelElements, anchor.id, element)"
         :data-town-plot="anchor.id"
         v-show="anchor.visible"
-        :style="{ left: `${anchor.x}%`, top: `${anchor.y}%` }"
+        :style="{ translate: labelTranslate(anchor) }"
         :class="{
           'scene-mine-button': anchor.id === 'mine',
           'quiet-plot': quietPlot(anchor.id),
@@ -141,19 +115,9 @@
           'raid-defense-ready': raidDefenseIds.includes(anchor.id),
           'can-build': availableIds.includes(anchor.id),
           'has-income': indicators[anchor.id] === 'coins',
-          'has-action-icon': ['ready', 'coins', 'tnt', 'bell', 'era'].includes(
-            indicators[anchor.id],
-          ),
+          'has-action-icon': !!TOWN_ACTIONS[indicators[anchor.id]],
         }"
-        :aria-label="
-          t(
-            readOnly
-              ? t(anchor.id === 'mine' ? 'Mine' : BUILDING_BY_ID[anchor.id].name)
-              : anchor.id === 'mine'
-                ? t('Enter the mine: play level {level}', { level: nextLevel })
-                : t('Choose {building}', { building: t(BUILDING_BY_ID[anchor.id].name) }),
-          )
-        "
+        :aria-label="plotLabel(anchor.id)"
         :title="t(anchor.id === 'mine' ? 'Mine' : BUILDING_BY_ID[anchor.id].shortName)"
         :aria-pressed="anchor.id === 'mine' ? undefined : anchor.id === selected"
         @focus="anchor.id === 'mine' && prefetchBoard()"
@@ -195,6 +159,9 @@
           <small v-else-if="anchor.id === 'blacksmith' && forgeCollectible">{{
             t('Collect 1 TNT')
           }}</small>
+          <small v-else-if="needHints[anchor.id]" class="need-hint">{{
+            t(NEED_HINTS[needHints[anchor.id]])
+          }}</small>
           <small v-else-if="availableIds.includes(anchor.id)">{{
             t(town.buildings[anchor.id] ? 'Upgrade' : 'Build')
           }}</small>
@@ -205,39 +172,25 @@
         </template>
       </button>
     </div>
-    <details class="town-camera-bar" @pointerdown.stop @pointerup.stop @pointermove.stop>
-      <summary :title="t('Camera controls')">
-        <GameIcon name="expand" /><span>{{ t('View') }}</span>
-      </summary>
-      <div
-        class="town-camera-controls"
-        role="group"
-        :aria-label="t('Camera controls')"
-        @pointerdown.stop
-        @pointerup.stop
-        @pointermove.stop
+    <div
+      v-if="needChips.length"
+      class="town-map-needs"
+      role="group"
+      :aria-label="t('Basic town needs')"
+      @pointerdown.stop
+      @pointerup.stop
+    >
+      <button
+        v-for="chip in needChips"
+        :key="chip.stat"
+        :class="{ short: chip.short }"
+        :aria-label="chip.label"
+        :title="chip.label"
+        @click="emit('inspect', chip.id)"
       >
-        <button
-          v-for="action in cameraActions"
-          :key="action.id"
-          :aria-label="t(action.label)"
-          :title="t(action.label)"
-          @click="scene?.cameraAction(action.id)"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.6"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path :d="action.path" />
-          </svg>
-        </button>
-      </div>
-    </details>
+        <TownIcon :name="chip.icon" /><span>{{ chip.value }}</span>
+      </button>
+    </div>
   </div>
 </template>
 <script setup>
@@ -249,17 +202,35 @@ import { prefetchBoard } from '../../game/phaser/loadBoard';
 import { prepareAudio } from '../../composables/useAudio';
 import { useSettingsStore } from '../../stores/settingsStore';
 import GameIcon from '../GameIcon.vue';
+import TownIcon from './TownIcon.vue';
 import GameViewStatus from '../GameViewStatus.vue';
-import { townIndicatorScale } from '../../data/townIndicators';
+import { TOWN_ACTIONS } from '../../data/townIndicators';
 import { eraBuildingLevel } from '../../game/town/TownEras';
-import { computed, nextTick, onMounted, onBeforeUnmount, ref, shallowRef, watch } from 'vue';
-import { placeLabels, trackElement, updateLabels } from '../../game/town/TownLabels';
+import {
+  computed,
+  inject,
+  nextTick,
+  onMounted,
+  onBeforeUnmount,
+  ref,
+  shallowRef,
+  watch,
+} from 'vue';
+import {
+  labelBox,
+  placeLabels,
+  sameIndicators,
+  trackElement,
+  updateLabels,
+} from '../../game/town/TownLabels';
 import { BUILDING_BY_ID, BUILDINGS } from '../../data/town';
+import { dressSpaceHelmet } from '../../game/town/TownSpaceHelmet';
 import {
   constructionRuns,
   constructionVisual,
   constructionReady,
   availablePurchases,
+  openOffers,
   nextGoal,
   buildingIndicators,
 } from '../../game/town/TownRules';
@@ -284,7 +255,18 @@ const props = defineProps({
   raid: Object,
   raidDefenseIds: { type: Array, default: () => [] },
   construction: Object,
+  // Water, food and happiness against the town's size, always visible on the map.
+  needChips: { type: Array, default: () => [] },
 });
+// The building that would fix a shortage says so on its label.
+const NEED_HINTS = { water: 'Water needed', food: 'Food needed', comfort: 'Comfort needed' };
+const needHints = computed(() =>
+  Object.fromEntries(
+    props.needChips
+      .filter((chip) => chip.short && chip.fixable)
+      .map((chip) => [chip.id, chip.stat]),
+  ),
+);
 const emit = defineEmits([
   'select',
   'visit',
@@ -317,27 +299,59 @@ const quietPlot = (id) =>
   id !== suggestedId.value &&
   !props.town.buildings[id] &&
   !props.town.projects[id];
-// Purchases depend on the town only; the one-second clock just re-checks cooldowns.
-const townPurchases = computed(() => availablePurchases(props.town));
-// A visitor sees only the coins of buildings they may collect for the owner.
-const indicators = computed(() =>
-  props.readOnly
+// Purchases depend on the town only; the village's one-second clock (provided by
+// TownView) just re-checks cooldowns. Unchanged indicators keep the same object, so
+// the labels re-render only when an action actually appears or disappears.
+const offers = computed(() => openOffers(props.town));
+const townPurchases = computed(() => availablePurchases(props.town, 0, offers.value));
+const townClock = inject('townClock', null);
+const indicators = computed((previous) => {
+  // A visitor sees only the coins of buildings they may collect for the owner.
+  const next = props.readOnly
     ? Object.fromEntries(props.visitorTaps.map((id) => [id, 'coins']))
-    : buildingIndicators(props.town, props.forgeCollectible, props.now, townPurchases.value),
-);
+    : buildingIndicators(
+        props.town,
+        props.forgeCollectible,
+        townClock?.value ?? props.now,
+        townPurchases.value,
+      );
+  return previous && sameIndicators(previous, next) ? previous : next;
+});
 const availableIds = computed(() =>
-  props.readOnly ? [] : availablePurchases(props.town, props.builderHammers).map(({ id }) => id),
+  props.readOnly
+    ? []
+    : availablePurchases(props.town, props.builderHammers, offers.value).map(({ id }) => id),
 );
 const upgradeIds = computed(() =>
   Object.keys(indicators.value).filter((id) => indicators.value[id] === 'upgrade'),
 );
 const actionAnchors = computed(() =>
   anchors.value.filter(
-    (anchor) =>
-      ['ready', 'coins', 'tnt', 'bell', 'era'].includes(indicators.value[anchor.id]) &&
-      anchor.collection.visible,
+    (anchor) => TOWN_ACTIONS[indicators.value[anchor.id]] && anchor.collection.visible,
   ),
 );
+const buildingName = (id) => t(BUILDING_BY_ID[id].shortName);
+const ACTION_LABELS = {
+  ready: (id) => t('Finish {building}', { building: buildingName(id) }),
+  coins: () => t('Collect {coins} coins', { coins: props.town.income.stored }),
+  tnt: () => t('Collect 1 TNT'),
+  bell: () => t('Ring town bell · halve the loss'),
+  era: () => t('Advance to the next era'),
+};
+const actionLabel = (id) =>
+  props.readOnly
+    ? t('Collect the saloon takings for the mayor')
+    : ACTION_LABELS[indicators.value[id]](id);
+const plotLabel = (id) => {
+  if (props.readOnly) return t(id === 'mine' ? 'Mine' : BUILDING_BY_ID[id].name);
+  return id === 'mine'
+    ? t('Enter the mine: play level {level}', { level: props.nextLevel })
+    : t('Choose {building}', { building: t(BUILDING_BY_ID[id].name) });
+};
+// Labels sit at the scene's top-left corner and move with `translate`, which the
+// browser composites without laying out the page on every camera frame.
+const box = labelBox();
+const labelTranslate = (point) => box.translate(point);
 function collectionOrigin(id) {
   const anchor = anchors.value.find((anchor) => anchor.id === id);
   const origin = anchor?.collection?.visible ? anchor.collection : anchor;
@@ -350,6 +364,8 @@ let presentationTime = 0;
 let cinematicProgress = 0;
 defineExpose({
   findVisitor: (id) => scene?.findVisitor(id) ?? false,
+  // Camera buttons are gone: drag, pinch, wheel and keys move the view; Village resets it.
+  resetView: () => scene?.cameraAction('reset'),
   collectionOrigin,
   cinematicFrame: (progress) => {
     cinematicProgress = progress;
@@ -360,20 +376,28 @@ defineExpose({
     scene?.presentationFrame(time, props.reducedMotion);
   },
 });
-const cameraActions = [
-  { id: 'out', label: 'Zoom out', path: 'M6 12h12' },
-  { id: 'in', label: 'Zoom in', path: 'M6 12h12M12 6v12' },
-  { id: 'left', label: 'Rotate left', path: 'm8 7-4 4 4 4M4 11h10a5 5 0 0 1 0 10' },
-  { id: 'right', label: 'Rotate right', path: 'm16 7 4 4-4 4m4-4H10a5 5 0 0 0 0 10' },
-  { id: 'reset', label: 'Reset view', path: 'M4 9a8 8 0 1 1 0 6M4 4v5h5M12 9v3l2 2' },
-];
 let lastVisual = '';
 let lastConstruction;
 let scene,
   disposed = false,
   dragged = false;
 const pointers = new Map();
-const villagerLabel = ref(null);
+// A named villager moves every frame; Vue re-renders only when the name changes.
+const villagerLabel = shallowRef(null),
+  villagerElement = ref(null);
+function showVillagerLabel(label) {
+  const current = villagerLabel.value;
+  if (!label || !current || label.name !== current.name || label.live !== current.live) {
+    villagerLabel.value = label;
+    return;
+  }
+  Object.assign(current, label);
+  const element = villagerElement.value;
+  if (element) {
+    element.style.left = `${label.x}%`;
+    element.style.top = `${label.y}%`;
+  }
+}
 const choose = (id) => {
   if (!props.readOnly) id === 'mine' ? emit('mine') : emit('select', id);
   // A visitor may collect what visitorTaps allows; any other tap only looks at the building.
@@ -396,12 +420,12 @@ const rememberPointer = (event) => {
 };
 const movePointer = (event) => {
   if (!pointers.size && event.pointerType === 'mouse')
-    scene?.showVillager(event.clientX, event.clientY);
+    scene?.hoverVillager(event.clientX, event.clientY);
   const start = pointers.get(event.pointerId);
   if (start && Math.hypot(event.clientX - start[0], event.clientY - start[1]) > 6) dragged = true;
 };
 const leavePointer = (event) => {
-  if (!pointers.size && event.pointerType === 'mouse') scene?.showVillager(-Infinity, -Infinity);
+  if (!pointers.size && event.pointerType === 'mouse') scene?.hoverVillager(-Infinity, -Infinity);
 };
 const pick = (event) => {
   movePointer(event);
@@ -488,6 +512,10 @@ async function update() {
     lastVisual = visual;
     lastConstruction = props.construction?.serial;
   }
+  // A visitor watches the helmet move after the owner's puzzles; the owner's own
+  // town only changes while they are in the mine.
+  scene.animateCostumes = props.readOnly && !props.reducedMotion;
+  dressSpaceHelmet(scene, props.town, { animate: scene.animateCostumes });
   scene.setPresentation(props.presentation);
   if (props.presentation) {
     scene.presentationFrame(presentationTime, props.reducedMotion);
@@ -574,43 +602,40 @@ async function initialize() {
     await loadFootprints(props.town);
     performanceMark('assets-ready');
     if (disposed || !props.active) return;
-    scene = new TownDiorama(
-      canvas.value,
-      choose,
-      (positions) => {
+    scene = new TownDiorama(canvas.value, {
+      onSelect: choose,
+      onLabels: (positions) => {
         const layout = updateLabels(anchors.value, positions, anchorLayout);
-        if (layout === null) placeLabels(anchors.value, labelElements, actionElements);
+        if (layout === null) placeLabels(anchors.value, labelElements, actionElements, box);
         else {
           anchorLayout = layout;
           anchors.value = positions;
         }
       },
-      (distance) => emit('camera-distance', distance),
-      recoverGraphics,
-    );
-    // A shared town is only a view: VIP guests visit the owner's own game.
-    scene.vipsHidden = props.readOnly;
+      onCameraDistance: (distance) => emit('camera-distance', distance),
+      onUnavailable: recoverGraphics,
+      onVipSpend: (receipt) => emit('vip-spend', receipt),
+      onGuestVip: (at) => emit('guest-vip', at),
+      onVillagerLabel: showVillagerLabel,
+      onEventInset: (view) => {
+        eventInset.value = view;
+      },
+      // Once the village is on screen, warm up what the player is likely to open next.
+      onFirstFrame: () =>
+        scheduleWork(
+          (function* () {
+            yield;
+            prefetchBoard();
+            const next = ERAS[ERAS.findIndex((era) => era.id === props.town.era) + 1];
+            if (next?.enabled) loadFamilies(requiredFamilies({ ...props.town, era: next.id }));
+            if (navigator.userActivation?.hasBeenActive) prepareAudio(settings);
+            else document.addEventListener('pointerdown', warmAudio, { once: true, passive: true });
+          })(),
+        ),
+      // A shared town is only a view: VIP guests visit the owner's own game.
+      vipsHidden: props.readOnly,
+    });
     scene.setLiveVisitors(props.liveVisitors, props.reducedMotion, props.liveVisitorTownId);
-    scene.onVipSpend = (receipt) => emit('vip-spend', receipt);
-    scene.onGuestVip = (at) => emit('guest-vip', at);
-    scene.onVillagerLabel = (label) => {
-      villagerLabel.value = label;
-    };
-    scene.onEventInset = (view) => {
-      eventInset.value = view;
-    };
-    scene.onFirstFrame = () => {
-      scheduleWork(
-        (function* () {
-          yield;
-          prefetchBoard();
-          const next = ERAS[ERAS.findIndex((era) => era.id === props.town.era) + 1];
-          if (next?.enabled) loadFamilies(requiredFamilies({ ...props.town, era: next.id }));
-          if (navigator.userActivation?.hasBeenActive) prepareAudio(settings);
-          else document.addEventListener('pointerdown', warmAudio, { once: true, passive: true });
-        })(),
-      );
-    };
     await update();
     scene.vipArrivals?.reset(true);
     if (recoveryPose) {
@@ -638,7 +663,9 @@ watch(
     scene?.setLiveVisitors(props.liveVisitors, props.reducedMotion, props.liveVisitorTownId);
   },
 );
+const sceneElement = ref(null);
 onMounted(() => {
+  box.observe(sceneElement.value);
   document.addEventListener('visibilitychange', visibilityChanged);
   initialize();
 });
@@ -732,6 +759,7 @@ watch(
     JSON.stringify(props.town.buildingEras),
     JSON.stringify(props.town.buildingEraLevels),
     props.town.era,
+    props.town.completedRuns,
     props.nextLevel,
     props.construction?.serial,
     locale.value,
@@ -746,16 +774,14 @@ watch(
 );
 watch(
   () => props.paused,
-  () => visibilityChanged(),
-);
-watch(
-  () => props.paused,
   (paused) => {
+    visibilityChanged();
     scene?.setPaused(paused);
     if (!paused) scene?.select(props.selected);
   },
 );
 onBeforeUnmount(() => {
+  box.disconnect();
   disposed = true;
   updateGeneration++;
   document.removeEventListener('visibilitychange', visibilityChanged);
@@ -765,30 +791,6 @@ onBeforeUnmount(() => {
 });
 </script>
 <style scoped>
-/* Keep camera controls with the renderer so standalone admin views have them too. */
-details.town-camera-bar {
-  display: block;
-  width: fit-content;
-  right: auto;
-  pointer-events: auto;
-}
-.town-camera-bar > summary {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  width: fit-content;
-  min-height: 44px;
-  padding: 8px 12px;
-  border: 1px solid #a99b76;
-  border-radius: 10px;
-  background: #fff8e9;
-  color: #405448;
-  font-size: 12px;
-}
-.town-camera-bar .town-camera-controls {
-  margin-top: 6px;
-}
 .town-graphics-unavailable {
   position: absolute;
   inset: 0;

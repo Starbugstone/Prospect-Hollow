@@ -65,7 +65,7 @@ const projects = [
     'Riverside home',
     'New neighbors across the river',
     '#ba9279',
-    'Room for ten residents, with food and water.',
+    'Room for ten residents, if there is food and water.',
     600,
     [{ id: 'bridge', level: 1 }],
   ],

@@ -3,6 +3,7 @@ import { useCampaignStore } from '../src/stores/campaignStore';
 import { useGameStore } from '../src/stores/gameStore';
 import { createPinia, setActivePinia } from 'pinia';
 import { HintEngine } from '../src/game/engine/HintEngine';
+import { levelConfig } from '../src/game/engine/LevelGenerator';
 
 afterEach(() => useGameStore().exitLevel());
 
@@ -18,7 +19,7 @@ describe('Starting an unlocked mine', () => {
   });
 
   it('starts an unlocked early level with a compact, fully populated, playable board', () => {
-    const levelThree = gameStore.availableLevels.find((level) => level.id === 3);
+    const levelThree = levelConfig(3);
     expect(levelThree).toBeDefined();
 
     useCampaignStore().records = { 1: { stars: 1, score: 0 }, 2: { stars: 1, score: 0 } };

@@ -1,4 +1,5 @@
 import { addSquareModernization } from '../TownSquare';
+import { addWindow } from './frontierParts';
 import { addHeritageUpgrade } from './HeritageDetails';
 import { renderWatermill } from './watermill';
 import { eraEvolution } from '../../../data/eras';
@@ -131,7 +132,7 @@ function renderRiverModernization(d, parent, kind, level) {
   if (level >= 2 && !['well', 'square', 'fisherman'].includes(kind)) {
     d.box(parent, 1.15, 2.15, 2.1, -1.95, 1.22, -0.2, '#ad725c');
     d.box(parent, 1.45, 0.18, 2.35, -1.95, 2.4, -0.2, '#526e79');
-    d.window(parent, -1.95, 1.4, 0.9);
+    addWindow(d, parent, -1.95, 1.4, 0.9);
   }
   if (level >= 3) addHeritageUpgrade(d, parent, originalKind);
   if (level >= 2 && ['well', 'square', 'fisherman'].includes(kind)) {

@@ -1,4 +1,4 @@
-// Quiet outdoor places add happiness and visible life, without upkeep.
+// Quiet outdoor places add comfort and visible life, without upkeep.
 export const LEISURE_BUILDINGS = [
   {
     id: 'horseField',
@@ -9,9 +9,9 @@ export const LEISURE_BUILDINGS = [
     introducedEra: 'industrial',
     unlock: [{ id: 'stable', level: 1 }],
     benefits: [
-      'A fenced meadow welcomes one horse. Adds 2 happiness.',
-      'A roofed shelter welcomes a second horse. Adds 4 happiness in total.',
-      'Shade, seating and a third horse complete the field. Adds 6 happiness in total.',
+      'A fenced meadow welcomes one horse. Adds 2 comfort.',
+      'A roofed shelter welcomes a second horse. Adds 4 comfort in total.',
+      'Shade, seating and a third horse complete the field. Adds 6 comfort in total.',
     ],
   },
   {
@@ -23,9 +23,9 @@ export const LEISURE_BUILDINGS = [
     introducedEra: 'motor-age',
     unlock: [],
     benefits: [
-      'Swings, a bench and occasional dog walks. Adds 3 happiness.',
-      'A slide and climbing steps expand the playground. Adds 6 happiness in total.',
-      'Flowers, shade and a park lamp welcome everyone. Adds 9 happiness in total.',
+      'Swings, a bench and occasional dog walks. Adds 3 comfort.',
+      'A slide and climbing steps expand the playground. Adds 6 comfort in total.',
+      'Flowers, shade and a park lamp welcome everyone. Adds 9 comfort in total.',
     ],
   },
 ].map(({ benefits, ...building }) => ({

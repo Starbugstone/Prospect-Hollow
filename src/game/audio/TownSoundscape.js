@@ -49,8 +49,8 @@ export const villageSounds = (state) =>
       ];
 const clamp = (value) => Math.min(1, Math.max(0, Number(value) || 0));
 
-// Gentle distance attenuation across the camera's 13–110 unit zoom range.
-// The fallback map uses a comfortable middle distance.
+// Gentle distance attenuation from 110 units in to 13; any closer zoom plays at
+// full volume. The fallback map uses a comfortable middle distance.
 export const villageAmbienceGain = (distance = 55) => {
   const proximity = clamp((110 - (Number(distance) || 55)) / 97);
   return 0.3 + 0.7 * proximity * proximity * (3 - 2 * proximity);

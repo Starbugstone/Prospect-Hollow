@@ -1,8 +1,9 @@
 // Each town is an atomic save + outbox record. Selection belongs to this tab;
 // account identity is shared, but gameplay never rewrites another town's record.
+import { acknowledgeIntegrity, compactGuestIntegrity, mergeIntegrity } from './saveIntegrity';
+import { jsonCopy } from './jsonCopy';
 export const SAVE_KEY = 'crystal-cascade-profile-v3';
 export const TOWN_CHANGED = 'prospect-town-save-changed';
-const copy = (value) => JSON.parse(JSON.stringify(value));
 const profileOf = ({ _cloud, ...profile }) => profile;
 // Advancing an idle income checkpoint alone is not new player progress. A changed
 // stored balance or fractional earning still makes the snapshot dirty.
@@ -10,6 +11,8 @@ export const progressKey = (profile) =>
   JSON.stringify(
     {
       ...profile,
+      // Acknowledging receipts is transport bookkeeping, not new gameplay.
+      integrity: undefined,
       town: profile.town
         ? {
             ...profile.town,
@@ -65,27 +68,40 @@ export function createTownStorage({
     previousStorage,
     progressCache,
     guard = () => true;
+  // Parsed once per stored string: the account record is read by every selection
+  // check, and the active town's metadata after every save. Neither is mutated.
+  const parsed = new Map();
+  function parsedOnce(key, raw, parse) {
+    const cached = parsed.get(key);
+    if (cached && cached.store === storage() && cached.raw === raw) return cached.value;
+    const value = raw ? parse(JSON.parse(raw)) : null;
+    parsed.set(key, { store: storage(), raw, value });
+    return value;
+  }
   function read(key) {
     const raw = storage()?.getItem(key);
     const root = raw ? JSON.parse(raw) : null;
     return root;
   }
-  function write(key, value) {
+  // `current` is the stored string when the caller has just read it.
+  function write(key, value, current = storage()?.getItem(key)) {
     if (!storage()) throw new Error('Local storage is unavailable.');
     const serialized = JSON.stringify(value);
-    if (storage().getItem(key) !== serialized) {
+    if (current !== serialized) {
       storage().setItem(key, serialized);
       changed();
     }
     return serialized;
   }
+  const accountOf = () =>
+    parsedOnce(ACCOUNT_KEY, storage()?.getItem(ACCOUNT_KEY) ?? null, (root) => root?.account);
   function selected() {
     if (previousStorage !== storage()) {
       previousStorage = storage();
       fallbackSelection = SAVE_KEY;
     }
     const selectedKey = session()?.getItem(SELECTION_KEY) ?? fallbackSelection;
-    const account = read(ACCOUNT_KEY)?.account;
+    const account = accountOf();
     return account && selectedKey.startsWith(`${TOWN_PREFIX}${account.id}:`)
       ? selectedKey
       : SAVE_KEY;
@@ -113,9 +129,9 @@ export function createTownStorage({
   function activeRoot() {
     return read(selected());
   }
-  function persist(entry, key = selected()) {
+  function persist(entry, key = selected(), current) {
     assertWrite(key);
-    return write(key, rootOf(entry));
+    return write(key, rootOf(entry), ...(current === undefined ? [] : [current]));
   }
   const api = {
     // Run once under the browser migration lock before mounting the application.
@@ -154,7 +170,7 @@ export function createTownStorage({
       const entry = this.active();
       if (snapshot === undefined) return entry?.meta.handoff ?? null;
       if (snapshot === null) delete entry.meta.handoff;
-      else entry.meta.handoff = copy(snapshot);
+      else entry.meta.handoff = jsonCopy(snapshot);
       persist(entry);
     },
     selectedKey: selected,
@@ -200,6 +216,14 @@ export function createTownStorage({
     active() {
       return entryOf(activeRoot());
     },
+    // Read-only metadata of the selected town, for status displays and routing.
+    activeMeta() {
+      const key = selected();
+      return parsedOnce(`meta:${key}`, storage()?.getItem(key) ?? null, (root) => {
+        const entry = entryOf(root);
+        return entry ? Object.freeze({ ...entry.meta }) : null;
+      });
+    },
     get(id, owner) {
       return entryOf(read(townKey(id, owner)));
     },
@@ -215,15 +239,22 @@ export function createTownStorage({
       }
       return result;
     },
-    save(profile, expectedId = null) {
+    save(profile, expectedId = null, onStoredIntegrity = null) {
       const key = selected(),
         store = storage(),
         raw = store?.getItem(key);
       const root = raw ? JSON.parse(raw) : null;
       const entry = entryOf(root) ?? { profile: {}, meta: freshMeta() };
       if (expectedId && entry.meta.id !== expectedId) throw new Error('The selected town changed.');
-      // Snapshot the live store once; comparing plain data avoids walking it again.
-      const next = copy(profile);
+      // Snapshot mutable gameplay once. persist() serializes the immutable journal
+      // synchronously, so another copy needlessly walks every offline receipt.
+      const { integrity, ...gameplay } = profile;
+      const next = jsonCopy(gameplay);
+      if (integrity !== undefined)
+        next.integrity = mergeIntegrity(integrity, entry.profile.integrity);
+      // An attachment in flight is acknowledged against its uploaded journal.
+      if (next.integrity !== undefined && key === SAVE_KEY && !entry.meta.attachment)
+        next.integrity = compactGuestIntegrity(next.integrity, next);
       const previousKey =
         progressCache?.store === store && progressCache.key === key && progressCache.raw === raw
           ? progressCache.progress
@@ -238,9 +269,10 @@ export function createTownStorage({
         };
       }
       entry.profile = next;
-      const serialized = persist(entry, key);
+      const serialized = persist(entry, key, raw ?? null);
       // Exact serialized-record matching invalidates this cache after any other writer.
       progressCache = { store, key, raw: serialized, progress: nextKey };
+      onStoredIntegrity?.(next.integrity);
       return entry.meta;
     },
     account(account, newSession = false) {
@@ -322,9 +354,15 @@ export function createTownStorage({
       if (current?.meta.id !== cloud.townId || this.auth().account?.id !== owner)
         throw new Error('The selected town changed. Sign in again to recover the attached copy.');
       assertWrite();
+      const attachedProfile = current.profile.integrity
+        ? {
+            ...current.profile,
+            integrity: acknowledgeIntegrity(current.profile.integrity, cloud.integrity),
+          }
+        : current.profile;
       persist(
         {
-          profile: current.profile,
+          profile: attachedProfile,
           meta: {
             ...current.meta,
             owner,
@@ -341,7 +379,8 @@ export function createTownStorage({
         townKey(cloud.townId, owner),
       );
       // The account copy now owns retries; the retained guest copy needs no duplicate request.
-      persist({ profile: current.profile, meta: { ...current.meta, attachment: null } }, SAVE_KEY);
+      // It shares the sealed journal, so it keeps its receipts for a later restore.
+      persist({ profile: attachedProfile, meta: { ...current.meta, attachment: null } }, SAVE_KEY);
       rememberPreference(cloud.townId, owner);
       selectKey(townKey(cloud.townId, owner));
     },
@@ -373,6 +412,12 @@ export function createTownStorage({
         throw new Error('Use account town management to create or delete a town.');
       persist({ profile, meta: freshMeta() });
     },
+    // Whether import() keeps the selected town's identity, making the backup a restore of
+    // the same town. A backup without an identity always does; another town's replaces it.
+    keepsIdentity(identity) {
+      const id = this.activeMeta()?.id;
+      return !!id && (!identity || identity.id === id);
+    },
     import(profile, identity) {
       const current = this.active() ?? { profile: {}, meta: freshMeta() };
       if (current.meta.owner && identity && identity.id !== current.meta.id)
@@ -387,6 +432,9 @@ export function createTownStorage({
         conflict: null,
         attachment: null,
         uploadError: null,
+        // The import confirmation authorizes restoring this selected snapshot.
+        // Keep that intent separate from receipts so normal offline play can continue.
+        restoreIntent: current.meta.owner ? crypto.randomUUID() : null,
         updatedAt: Date.now(),
       };
       current.profile = profile;

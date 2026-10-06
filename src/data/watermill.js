@@ -1,4 +1,5 @@
 import { eraEvolution } from './eras';
+import { cozyAppearance } from './cozyArchitecture';
 
 export const WATERMILL_SITE = Object.freeze({
   position: Object.freeze([21.5, -12]),
@@ -44,9 +45,14 @@ const STYLES = {
 export function watermillAppearance(era) {
   const profile = eraEvolution(era);
   const [wall, roof, name, description] = STYLES[profile.style] ?? STYLES.frontier;
+  const cozy = profile.architecture === 'cozy' ? cozyAppearance(era) : null;
   return {
-    wall: profile.digitalCity ? '#d2dbcb' : profile.tallCity ? '#a8bbc0' : wall,
-    roof: profile.digitalCity ? '#547f75' : profile.detailAsset ? '#668c9a' : roof,
+    wall:
+      cozy?.palette.shell ??
+      (profile.digitalCity ? '#d2dbcb' : profile.tallCity ? '#a8bbc0' : wall),
+    roof:
+      cozy?.palette.roof ??
+      (profile.digitalCity ? '#547f75' : profile.detailAsset ? '#668c9a' : roof),
     name,
     description,
     masonry: profile.style !== 'frontier',
@@ -54,8 +60,9 @@ export function watermillAppearance(era) {
     streamlined: profile.style === 'motor-age',
     city: profile.style === 'city',
     aerial: !!profile.detailAsset,
-    tall: profile.tallCity && profile.architecture !== 'rounded',
-    solar: profile.digitalCity && profile.architecture !== 'rounded',
+    tall: profile.tallCity && profile.architecture === 'standard',
+    solar: profile.digitalCity && profile.architecture === 'standard',
     rounded: profile.architecture === 'rounded',
+    cozy,
   };
 }

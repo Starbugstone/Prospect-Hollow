@@ -12,6 +12,7 @@ import {
   CARGO_CRATES,
 } from '../../data/townEvents';
 import { streetHeight } from './TownItineraries';
+import { placeTraffic } from './TownTrafficRoutes';
 import { BRIDGE, RIVER, riverDistance } from './TownRiver';
 import { PLOTS, plotStreet, routeGraph, routeOnGraph } from './TownLayout';
 import { clamp01, smooth01 } from './TownMath';
@@ -88,7 +89,7 @@ export class TownEraIncident {
   // Pose an actor `progress` of the way along `path`, around any obstacles.
   travel(actor, progress, offset = 0, path = this.path) {
     const distance = clamp01(progress) * path.total;
-    const detour = actor !== this.vehicle && this.d.navigation?.route(path, offset);
+    const detour = this.d.navigation?.route(path, offset);
     // Detours must not make the fixed event timeline accelerate the crew.
     // Start further along a longer path and keep the same destination.
     const span = detour && Math.min(detour.total, path.total);
@@ -109,6 +110,13 @@ export class TownEraIncident {
     )
       actor.root.position.y = streetHeight(actor.root.position.x, actor.root.position.z);
     return progress > 0 && progress < 1;
+  }
+  // Vehicles keep to the road and pitch along its grade like traffic, so they
+  // climb the bridge ramps in every era. `turn` adds to the road heading.
+  drive(vehicle, progress, path, turn = 0) {
+    vehicle.distance = clamp01(progress) * path.total;
+    const pose = routePose(path, vehicle.distance);
+    placeTraffic(vehicle.root, { x: pose.x, z: pose.z, heading: pose.heading + turn });
   }
   // Travel at `speed` from `start`; returns whether the actor is still moving.
   run(actor, path, time, start, speed, offset = 0) {
@@ -550,22 +558,16 @@ export class TownEraIncident {
     const working = time >= arrive && time < resolved;
     if (team.vehicle) {
       const vehicle = team.vehicle;
-      if (time < leave + 0.8) {
-        this.travel(
+      if (time < leave + 0.8)
+        this.drive(
           vehicle,
           ((time - route.start) * DRIVE) / (route.path.total || 1),
-          0,
           route.path,
+          // Turn around at the scene once the crew is back on board.
+          Math.PI * smooth01((time - leave) / 0.8),
         );
-        // Turn around at the scene once the crew is back on board.
-        vehicle.root.rotation.y += Math.PI * smooth01((time - leave) / 0.8);
-      } else
-        this.travel(
-          vehicle,
-          ((time - leave - 0.8) * DRIVE) / (route.home.total || 1),
-          0,
-          route.home,
-        );
+      else
+        this.drive(vehicle, ((time - leave - 0.8) * DRIVE) / (route.home.total || 1), route.home);
       animateVehicle(vehicle.root, vehicle.distance);
       // A cut route begins in the approach shot instead of popping in mid-street.
       vehicle.root.visible = !route.cut || time >= route.start;

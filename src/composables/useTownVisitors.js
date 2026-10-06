@@ -5,7 +5,10 @@ import { createVisitorPoller } from '../services/visitorPresence';
 import { townVisitors } from '../services/visitorApi';
 import { visitorChanges } from '../data/liveVisitors';
 
-export function useTownVisitors(active, { collectSaloon = () => null } = {}) {
+export function useTownVisitors(
+  active,
+  { collectSaloon = () => null, recordSocial = () => false } = {},
+) {
   const snapshot = shallowRef(null),
     notices = shallowRef([]),
     error = ref('');
@@ -56,6 +59,9 @@ export function useTownVisitors(active, { collectSaloon = () => null } = {}) {
           confirmed = result.present;
           enqueue(changes);
           applyCollection(result.saloonCollectedAt);
+          // Town Honours count different signed-in visitors and villages visited from this
+          // town; the campaign keeps the highest of each.
+          recordSocial({ visitors: result.uniqueVisitors, travels: result.townsVisited });
           snapshot.value = result;
           error.value = '';
         },

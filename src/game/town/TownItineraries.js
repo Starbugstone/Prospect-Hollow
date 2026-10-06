@@ -1,13 +1,49 @@
 import { ERA_BY_ID, FRONTIER_ERA } from '../../data/eras';
 import { PLOTS, plotStreet, routeGraph, routeOnGraph } from './TownLayout';
 import { walkPath } from './TownNavigation';
-import { BRIDGE, streetHeight } from './TownRiver';
+import { BRIDGE, crossesRiver, overWater, streetHeight } from './TownRiver';
 import { villagerRandom, villagerIdentity } from '../../data/villagers';
 import { hasVisitorTransport } from '../../data/visitorArrivals';
 import { canVipSpend, vipVisitBuildings, vipVisitCount } from '../../data/vipVisits';
 
 export { streetHeight } from './TownRiver';
 const gap = (a, b) => Math.hypot(a[0] - b[0], a[2] - b[2]);
+// Off-route walkers step straight back onto a route only from sidewalk distance.
+const REJOIN_DISTANCE = 3;
+const dry = (points, from = 0) =>
+  points.every((p, i) => i <= from || !crossesRiver(points[i - 1], p));
+
+// Closest point of each route edge to `from`, nearest first. `next` indexes the
+// edge's end point, where the rest of the route continues.
+function routeJoins(path, from) {
+  const joins = [];
+  for (let i = 1; i < path.points.length; i++) {
+    const a = path.points[i - 1],
+      b = path.points[i],
+      dx = b[0] - a[0],
+      dz = b[2] - a[2];
+    const t = Math.max(
+      0,
+      Math.min(1, ((from[0] - a[0]) * dx + (from[2] - a[2]) * dz) / (dx * dx + dz * dz || 1)),
+    );
+    const point = [a[0] + dx * t, a[1] + (b[1] - a[1]) * t, a[2] + dz * t];
+    joins.push({ point, next: i, gap: gap(point, from), heading: Math.atan2(dx, dz) });
+  }
+  return joins.sort((a, b) => a.gap - b.gap);
+}
+// A route passes some places twice, e.g. out and back. Keep walking the way the
+// walker faces rather than turning round at the same spot.
+function nearestJoin(joins, heading, usable = () => true) {
+  const close = [];
+  for (const join of joins) {
+    if (close.length && join.gap > close[0].gap + 0.05) break;
+    if (usable(join)) close.push(join);
+  }
+  if (!close.length || !Number.isFinite(heading)) return close[0];
+  return close.reduce((best, join) =>
+    Math.cos(join.heading - heading) > Math.cos(best.heading - heading) ? join : best,
+  );
+}
 
 // One graph and memoized legs per town snapshot. Compilation is driven by the
 // staged population generator, never by the animation loop or a coin update.
@@ -153,6 +189,51 @@ export class TownItineraries {
     this.legs.set(key, null);
     return null;
   }
+  // The rest of `path` from where an off-route walker stands, or null. A rebuild or
+  // repair can leave a walker across the river from its route, where a straight
+  // rejoin would wade: a distant walker takes the streets and the bridge instead.
+  resume(actor, path) {
+    const navigation = this.d.navigation;
+    const { x, y, z } = actor.root.position;
+    const from = [actor.motion?.x ?? x, y, actor.motion?.z ?? z];
+    const margin = path.clearance?.margin ?? 0.29;
+    const joins = routeJoins(path, from);
+    const heading = actor.motion?.heading;
+    const rest = (lead, join) => {
+      const route = walkPath([...lead, ...path.points.slice(join.next)]);
+      return navigation?.track ? navigation.track(route, margin) : route;
+    };
+    const step = (join) => {
+      if (join.gap < 1e-3) return rest([from], join);
+      const lead = navigation
+        ? navigation.plan([from, join.point], margin).points
+        : [from, join.point];
+      return lead.length && gap(lead.at(-1), join.point) < 0.05 && dry(lead)
+        ? rest(lead, join)
+        : null;
+    };
+    const near = nearestJoin(joins, heading, (join) => !crossesRiver(from, join.point));
+    const nearby = near && near.gap <= REJOIN_DISTANCE && step(near);
+    if (nearby) return nearby;
+    const target = nearestJoin(joins, heading);
+    const leg = target && this.leg(from, target.point);
+    // Someone already standing in the water may wade out on the first step.
+    if (leg?.total && dry(leg.points, overWater(...from) ? 1 : 0)) return rest(leg.points, target);
+    return (near && step(near)) || null;
+  }
+  // End the current journey on `path` from where the walker stands, then rest.
+  // `laps` is the route limit on `path` itself if no dry way back is found.
+  finish(actor, path, laps) {
+    const route = actor.motion && path?.total ? this.resume(actor, path) : null;
+    if (!route) {
+      finishItinerary(actor, path, laps);
+      return;
+    }
+    actor.walkPath = route;
+    finishItinerary(actor, route, route.total);
+    actor.motion.path = route;
+    actor.motion.routeDistance = 0;
+  }
   *prepare(actor) {
     if (actor.work || (actor.manual && !actor.transportVisitor) || !actor.walkPath?.points.length)
       return;
@@ -232,7 +313,7 @@ export class TownItineraries {
       actor.itinerary.plans = plans;
       if (actor.itinerary.path !== actor.walkPath) {
         const distance = actor.motion?.routeDistance ?? 0;
-        finishItinerary(
+        this.finish(
           actor,
           actor.walkPath,
           Math.max(1, Math.ceil(distance / actor.walkPath.total)) * actor.walkPath.total,
@@ -251,7 +332,7 @@ export class TownItineraries {
     };
     // Existing actors finish their current route before adopting a new journey.
     if (actor.motion)
-      finishItinerary(
+      this.finish(
         actor,
         actor.walkPath,
         Math.ceil(actor.motion.routeDistance / (actor.walkPath.total || 1)) * actor.walkPath.total,

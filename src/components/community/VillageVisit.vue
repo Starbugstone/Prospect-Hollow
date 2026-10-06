@@ -1,5 +1,15 @@
 <template>
-  <h2>{{ current.name }}</h2>
+  <div class="village-title">
+    <h2>{{ current.name }}</h2>
+    <HonourShowcaseSlots
+      v-if="honours?.showcase.length"
+      compact
+      :ids="honours.showcase"
+      :earned="honours.earned"
+      :received="honours.received"
+      :size="40"
+    />
+  </div>
   <p>{{ t('View only') }} · {{ t(ERA_BY_ID[current.era]?.label ?? current.era) }}</p>
   <p v-if="unshared" role="alert">{{ t('This town is no longer shared.') }}</p>
   <template v-else>
@@ -23,7 +33,14 @@
       <!-- Full screen covers the page, so the town name and saloon news move onto the map. -->
       <p v-if="fullscreen" class="village-fullscreen-caption">
         <strong>{{ current.name }}</strong
-        ><template v-if="saloonMessage"> · {{ saloonMessage }}</template>
+        ><HonourShowcaseSlots
+          v-if="honours?.showcase.length"
+          compact
+          :ids="honours.showcase"
+          :earned="honours.earned"
+          :received="honours.received"
+          :size="28"
+        /><template v-if="saloonMessage"> · {{ saloonMessage }}</template>
       </p>
       <p v-if="findError" class="village-find-error" role="status">{{ t(findError) }}</p>
       <TownScene
@@ -42,6 +59,7 @@
     <p class="village-hint">{{ t('Tap a building or the mine to see its details.') }}</p>
     <div class="village-guestbook-actions" :class="{ 'village-guestbook-fullscreen': fullscreen }">
       <button @click="inspected = 'guestbook'">{{ t("Mayor's guestbook") }}</button>
+      <button v-if="honours" @click="inspected = 'honours'">{{ t('View town honours') }}</button>
       <button
         v-if="ownVisitId"
         :disabled="!liveVisitors.some((visitor) => visitor.id === ownVisitId)"
@@ -53,7 +71,7 @@
 
     <TownDialog
       v-if="inspected"
-      :class="{ 'village-level-dialog': showsLevels }"
+      :class="{ 'village-level-dialog': showsLevels || inspected === 'honours' }"
       :title="current.name"
       close-label="Close building details"
       @close="inspected = ''"
@@ -66,6 +84,12 @@
         :era="town.era"
         can-find
         @find="findVisitor"
+      />
+      <HonourGallery
+        v-else-if="inspected === 'honours'"
+        :class="{ 'honour-contrast': settings.highContrastMode }"
+        :honours="honours ?? { earned: {}, showcase: [], received: {} }"
+        :town="current.name"
       />
       <section v-else-if="inspected === 'mine'" class="town-building-details">
         <div class="town-detail-title">
@@ -99,7 +123,7 @@
         <p v-else class="museum-empty">{{ t('Level awards are not available yet.') }}</p>
       </section>
       <TownBuildingDetails
-        v-if="!['mine', 'guestbook'].includes(inspected)"
+        v-if="!['mine', 'guestbook', 'honours'].includes(inspected)"
         :key="inspected"
         :id="inspected"
         :town="town"
@@ -114,7 +138,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch 
 import { useVillageVisitors } from '../../composables/useVillageVisitors';
 import TownGuestbook from '../town/TownGuestbook.vue';
 import VisitPresence from './VisitPresence.vue';
-import { villageAppearance, villageLevels } from '../../services/publicVillage';
+import { villageAppearance, villageHonours, villageLevels } from '../../services/publicVillage';
 import { latestVillage, tapSaloon } from '../../services/cloudProfile';
 import { createVillagePoller } from '../../services/villagePolling';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -125,6 +149,8 @@ import GameIcon from '../GameIcon.vue';
 import TownDialog from '../town/TownDialog.vue';
 import TownBuildingDetails from '../town/TownBuildingDetails.vue';
 import MuseumLevelGrid from '../town/MuseumLevelGrid.vue';
+import HonourGallery from '../honours/HonourGallery.vue';
+import HonourShowcaseSlots from '../honours/HonourShowcaseSlots.vue';
 import { BUILDING_BY_ID } from '../../data/town';
 import '../../styles/town.css';
 // One read-only renderer for shared towns, whether opened from the list or a share link.
@@ -164,6 +190,8 @@ const mineLevel = computed(() => current.value.appearance?.mineLevel ?? 0);
 const inspected = ref('');
 const showsLevels = computed(() => ['mine', 'museum'].includes(inspected.value));
 const levels = computed(() => villageLevels(current.value));
+// The owner's public honours; null hides them (an owner or server from before honours).
+const honours = computed(() => villageHonours(current.value));
 function inspect(id) {
   if (id === 'mine' || Object.hasOwn(BUILDING_BY_ID, id)) inspected.value = id;
 }
@@ -248,12 +276,23 @@ async function collectSaloon() {
 }
 </script>
 <style>
+.village-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+.village-fullscreen-caption .honour-slots-compact {
+  margin-left: 8px;
+}
 .village-guestbook-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
 }
 .village-guestbook-actions button {
+  min-height: 44px;
   padding: 10px 14px;
   border: 1px solid #bca8bf;
   border-radius: 10px;

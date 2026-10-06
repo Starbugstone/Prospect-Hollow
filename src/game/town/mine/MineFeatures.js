@@ -6,6 +6,7 @@ import { mineCart, haulCycle } from './MineRollingStock';
 import { Vector3 } from 'three';
 import { railEdges } from '../TownLayout';
 import { RAIL_TUNNEL, tunnelRearX } from '../TownRailTunnel';
+import { addCozyMineRoof, addCozySortingHall } from './MineCozyArchitecture';
 
 const ground = (x, z) => mineHillsideHeight(x, z, MINE_POSITION[1], landscapeGroundHeight(x, z));
 function mineSupportFoot(x, z, railway) {
@@ -84,10 +85,25 @@ function refitWorkshop(d, root, a, width, height, depth) {
   );
   glass.name = 'Era workshop glazing';
   if (['motor', 'radio', 'control', 'digital'].includes(a.machine)) {
-    d.box(root, width + 0.2, 0.1, depth + 0.12, 0, height, 0, a.roof);
+    if (a.cozyStyle) addCozyMineRoof(d, root, a, 0, height, 0, width + 0.2, depth + 0.12);
+    else d.box(root, width + 0.2, 0.1, depth + 0.12, 0, height, 0, a.roof);
     for (const z of [-depth * 0.42, depth * 0.42])
       d.box(root, 0.1, height, 0.1, width / 2 + 0.03, height / 2, z, a.frame);
   }
+}
+function cozySorting(d, g, a) {
+  addCozySortingHall(d, terrace(d, g, MINE_SITE.sortingPlant, 3.5), a);
+}
+function ropewayCable(d, g, a, from, to) {
+  if (!a.cozyStyle) return d.rod(g, from, to, 0.02, '#4d5c56');
+  // The same twelve-segment cable route remains intact. Its tiny cross-section
+  // uses a square beam in cozy eras, saving 864 static triangles for their roofs.
+  const start = new Vector3(...from);
+  const end = new Vector3(...to);
+  const center = start.clone().add(end).multiplyScalar(0.5);
+  const cable = d.box(g, 0.04, start.distanceTo(end), 0.04, center.x, center.y, center.z, a.frame);
+  cable.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), end.sub(start).normalize());
+  return cable;
 }
 export const MINE_FEATURES = {
   cribbing(d, g, a) {
@@ -146,7 +162,7 @@ export const MINE_FEATURES = {
     const r = terrace(d, g, MINE_SITE.terrace, 3.1);
     d.box(r, 2.3, 1.45, 1.25, 0, 0.95, 0, a.wall);
     refitWorkshop(d, r, a, 2.3, 1.7, 1.25);
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; !a.cozyStyle && i < 3; i++) {
       const roof = d.box(r, 0.9, 0.13, 1.6, -0.8 + i * 0.8, 1.77, 0, a.roof);
       roof.rotation.z = 0.28;
     }
@@ -200,7 +216,7 @@ export const MINE_FEATURES = {
     d.box(r, 2.9, 1.3, 1.2, 0, 0.9, 0, a.wall);
     refitWorkshop(d, r, a, 2.9, 1.55, 1.2);
     d.box(r, 2.6, 0.55, 0.08, 0, 1.15, 0.65, '#7da7ad');
-    d.box(r, 3.4, 0.18, 1.6, 0, 1.65, 0, a.roof);
+    if (!a.cozyStyle) d.box(r, 3.4, 0.18, 1.6, 0, 1.65, 0, a.roof);
   },
   ropeway(d, g, a, motions) {
     const [from, to] = MINE_SITE.ropeway,
@@ -217,7 +233,7 @@ export const MINE_FEATURES = {
     ];
     for (const offset of [-0.2, 0.2])
       for (let n = 0; n < 12; n++)
-        d.rod(g, cable(n / 12, offset), cable((n + 1) / 12, offset), 0.02, '#4d5c56');
+        ropewayCable(d, g, a, cable(n / 12, offset), cable((n + 1) / 12, offset));
     for (let i = 0; i < 3; i++) {
       const bucket = d.group(g);
       bucket.userData.animated = true;
@@ -279,6 +295,8 @@ export const MINE_FEATURES = {
     d.ball(r, 0, 0.25, 0, [1.85, 1.9, 1.05], ROUNDED_PALETTE.glass, 'rock');
     d.mesh(r, 'cylinder', [1.9, 0.14, 1.1], [0, 0.3, 0], ROUNDED_PALETTE.green);
   },
+  'garden-sorting': cozySorting,
+  'lantern-sorting': cozySorting,
   'wind-turbine'(d, g, a, motions) {
     const [x, z] = MINE_SITE.turbine,
       r = d.group(g, x, ground(x, z), z - MINE_POSITION[1]);

@@ -1,6 +1,32 @@
 <template>
   <g class="town-fountain" :data-design="design" stroke-linejoin="round" stroke-linecap="round">
-    <template v-if="design === 'victorian-iron'">
+    <template v-if="design === 'canopy-bloom' || design === 'riverlight-crystal'">
+      <ellipse cy="-24" rx="40" ry="16" :fill="cozy.shell" />
+      <ellipse cy="-30" rx="35" ry="12" :fill="cozy.glass" />
+      <path d="M-4-30v-34h8v34Z" :fill="cozy.deep" />
+      <ellipse
+        v-for="n in 5"
+        :key="n"
+        :cx="Math.sin((n * Math.PI * 2) / 5) * 15"
+        :cy="-65 + Math.cos((n * Math.PI * 2) / 5) * 5"
+        rx="13"
+        ry="6"
+        :fill="cozy.roof"
+      />
+      <path
+        v-if="design === 'riverlight-crystal'"
+        d="M0-96 9-82 6-65-6-65-9-82Z"
+        :fill="cozy.light"
+      />
+      <circle v-else cy="-70" r="7" :fill="cozy.flower" />
+      <path
+        v-for="x in [-1, 1]"
+        :key="x"
+        :d="`M${x * 17}-63q${x * 12} 2 ${x * 14} 27`"
+        v-bind="jet"
+      />
+    </template>
+    <template v-else-if="design === 'victorian-iron'">
       <polygon :points="ring(38, 16, -24, 8)" fill="#8f8c82" />
       <polygon :points="ring(38, 16, -32, 8)" fill="#c4c0b3" />
       <ellipse cy="-33" rx="30" ry="11" :fill="water" />
@@ -265,11 +291,13 @@
 <script setup>
 import { computed } from 'vue';
 import { fountainDesign } from '../../data/fountains';
+import { cozyAppearance } from '../../data/cozyArchitecture';
 
 // Flat counterparts of TownFountains.js for the SVG fallback, drawn around the
 // same center point used by the square.
 const props = defineProps({ stage: Number, era: { type: String, default: 'frontier' } });
 const design = computed(() => fountainDesign(props.era));
+const cozy = computed(() => cozyAppearance(props.era).palette);
 const grand = computed(() => props.stage >= 3);
 const water = '#5fa6b4',
   iron = '#3d5c4f';

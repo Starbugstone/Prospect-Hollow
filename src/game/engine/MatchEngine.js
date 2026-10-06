@@ -1,7 +1,8 @@
 import { BonusActivator } from './BonusActivator.js';
 import { applyBonuses, detectBonusFromMatches } from './MatchPatterns.js';
-import { BOARD_BONUSES, canSwapGem, isAdjacent } from './TileRules.js';
+import { BOARD_BONUSES, canSwapCells, canSwapGem, isAdjacent } from './TileRules.js';
 import { getBonusFusion } from './BonusFusion.js';
+import { isPlayableCell } from './BoardTopology.js';
 
 const bonusActivator = new BonusActivator();
 const noMatch = (board, cols, rows) => ({
@@ -22,6 +23,7 @@ export class MatchEngine {
       !canSwapGem(board[index], tiles[index])
     )
       return noMatch(board, cols, rows);
+    const blasts = new Map();
     const indices = bonusActivator.activate(
       board,
       cols,
@@ -30,8 +32,12 @@ export class MatchEngine {
       null,
       null,
       tiles,
+      blasts,
     );
-    return { ...noMatch(board, cols, rows), matches: [{ type: 'bonus-activation', indices }] };
+    return {
+      ...noMatch(board, cols, rows),
+      matches: [{ type: 'bonus-activation', indices, blasts }],
+    };
   }
 
   evaluateSwap(board, cols, rows, aIndex, bIndex, tiles = []) {
@@ -42,10 +48,9 @@ export class MatchEngine {
       bIndex < 0 ||
       aIndex >= board.length ||
       bIndex >= board.length ||
-      !canSwapGem(board[aIndex], tiles[aIndex]) ||
-      !canSwapGem(board[bIndex], tiles[bIndex]) ||
       aIndex === bIndex ||
-      !isAdjacent(aIndex, bIndex, cols)
+      !isAdjacent(aIndex, bIndex, cols) ||
+      !canSwapCells(board, tiles, aIndex, bIndex, cols, rows)
     )
       return noMatch(board, cols, rows);
 
@@ -65,12 +70,15 @@ export class MatchEngine {
         : null;
     // Remember the original pair before a matched jewel becomes a new bonus.
     const pendingBonus = matches.length && usesBonus ? { swap, fusion, swapGems } : null;
+    const blasts = new Map();
     const bonusClear = pendingBonus
       ? []
-      : bonusActivator.activate(nextBoard, cols, rows, swap, fusion, null, tiles);
+      : bonusActivator.activate(nextBoard, cols, rows, swap, fusion, null, tiles, blasts);
     if (bonusClear.length > 0) {
       return {
-        matches: [{ type: 'bonus-activation', indices: bonusClear, ...(fusion ? { fusion } : {}) }],
+        matches: [
+          { type: 'bonus-activation', indices: bonusClear, blasts, ...(fusion ? { fusion } : {}) },
+        ],
         board: nextBoard,
         cols,
         rows,
@@ -99,7 +107,9 @@ export class MatchEngine {
 
     // Bonuses survive passive alignments; only activation can consume them.
     const typeAt = (index) =>
-      board[index]?.type !== 'relic' && !bonusActivator.isBonus(board[index]?.type)
+      isPlayableCell(tiles[index]) &&
+      board[index]?.type !== 'relic' &&
+      !bonusActivator.isBonus(board[index]?.type)
         ? board[index]?.type
         : null;
 

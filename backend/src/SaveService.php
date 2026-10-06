@@ -1,177 +1,522 @@
 <?php
 declare(strict_types=1);
 namespace App;
+
+use Doctrine\DBAL\Connection;
 use Symfony\Component\HttpFoundation\Request;
 
-/** Account-owned snapshots. Gameplay rules deliberately live only in the client. */
-final class SaveService {
+/** Account-owned snapshots with background economy journal validation. */
+final class SaveService
+{
     /** Cloud towns one account may keep. */
-    public const TOWN_SLOTS=3;
-    public function __construct(private Database $database, private Auth $auth, private PublicTown $public) {}
-    public static function keys(array $data,array $allowed): void {
-        if(array_diff(array_keys($data),$allowed)) throw new ApiError(422,'Unexpected field.');
+    public const TOWN_SLOTS = 3;
+    /** An offline receipt batch can be larger than the retained gameplay snapshot. */
+    public const MAX_UPLOAD_BYTES = 8388608;
+    public function __construct(
+        private Database $database,
+        private Auth $auth,
+        private PublicTown $public,
+    ) {}
+    public static function keys(array $data, array $allowed): void
+    {
+        if (array_diff(array_keys($data), $allowed)) {
+            throw new ApiError(422, 'Unexpected field.');
+        }
     }
-    public static function uuid(mixed $id): string {
-        if(!is_string($id)||!preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/D',$id)) throw new ApiError(422,'Invalid town ID.');
+    public static function uuid(mixed $id): string
+    {
+        if (
+            !is_string($id) ||
+            !preg_match(
+                '/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/D',
+                $id,
+            )
+        ) {
+            throw new ApiError(422, 'Invalid town ID.');
+        }
         return $id;
     }
-    public static function profile(mixed $profile): string {
-        if(!$profile instanceof \stdClass || ($profile->schemaVersion??null)!==2) throw new ApiError(422,'This save needs a compatible game version. Your local copy is safe.',['code'=>'save_format_unsupported','supportedSchemaVersions'=>[2]]);
-        foreach(['town','records','continuousRecords'] as $key) if(!($profile->$key??null) instanceof \stdClass) throw new ApiError(422,'Invalid save structure.');
-        if(!is_array($profile->powers??null) || !($profile->town->buildings??null) instanceof \stdClass || !is_string($profile->town->era??null)) throw new ApiError(422,'Invalid save structure.');
-        $json=json_encode($profile,JSON_THROW_ON_ERROR);
-        if(strlen($json)>1048576) throw new ApiError(413,'A town save must be smaller than 1 MB.');
+    public static function profile(mixed $profile): string
+    {
+        if (!($profile instanceof \stdClass) || ($profile->schemaVersion ?? null) !== 2) {
+            throw new ApiError(
+                422,
+                'This save needs a compatible game version. Your local copy is safe.',
+                ['code' => 'save_format_unsupported', 'supportedSchemaVersions' => [2]],
+            );
+        }
+        foreach (['town', 'records', 'continuousRecords'] as $key) {
+            if (!(($profile->$key ?? null) instanceof \stdClass)) {
+                throw new ApiError(422, 'Invalid save structure.');
+            }
+        }
+        if (
+            !is_array($profile->powers ?? null) ||
+            !(($profile->town->buildings ?? null) instanceof \stdClass) ||
+            !is_string($profile->town->era ?? null)
+        ) {
+            throw new ApiError(422, 'Invalid save structure.');
+        }
+        $json = json_encode($profile, JSON_THROW_ON_ERROR);
+        if (strlen($json) > self::MAX_UPLOAD_BYTES) {
+            throw new ApiError(
+                413,
+                'A town upload must be smaller than 8 MB. Your local copy is safe.',
+            );
+        }
+        $snapshot = clone $profile;
+        if (($snapshot->integrity ?? null) instanceof \stdClass) {
+            $snapshot->integrity = clone $snapshot->integrity;
+            unset($snapshot->integrity->actions);
+        }
+        if (strlen(json_encode($snapshot, JSON_THROW_ON_ERROR)) > 1048576) {
+            throw new ApiError(
+                413,
+                'A town save must be smaller than 1 MB. Your local copy is safe.',
+            );
+        }
         return $json;
     }
-    public static function summary(mixed $save): array {
-        $town=is_object($save->town??null)?$save->town:new \stdClass();
-        $coins=$town->coins??0;
-        $buildings=is_object($town->buildings??null)?get_object_vars($town->buildings):[];
+    public static function summary(mixed $save): array
+    {
+        $town = is_object($save->town ?? null) ? $save->town : new \stdClass();
+        $coins = $town->coins ?? 0;
+        $buildings = is_object($town->buildings ?? null) ? get_object_vars($town->buildings) : [];
+        // The owner's own Town Honours for the town card: earned IDs and the showcase order.
+        $honours = (new Honours())->sanitize($save->honours ?? null);
         return [
-            'era'=>is_string($town->era??null)?$town->era:'',
-            'coins'=>(is_int($coins)||is_float($coins))?max(0,min(9007199254740991,$coins)):0,
-            'buildings'=>count(array_filter($buildings,fn($level)=>(is_int($level)||is_float($level))&&$level>0)),
+            'era' => is_string($town->era ?? null) ? $town->era : '',
+            'coins' =>
+                is_int($coins) || is_float($coins) ? max(0, min(9007199254740991, $coins)) : 0,
+            'buildings' => count(
+                array_filter(
+                    $buildings,
+                    fn($level) => (is_int($level) || is_float($level)) && $level > 0,
+                ),
+            ),
+            'honours' =>
+                $honours === null
+                    ? null
+                    : [
+                        'earned' => array_keys($honours['earned']),
+                        'showcase' => $honours['showcase'],
+                    ],
         ];
     }
-    public function view(array $row,bool $profile=true): array {
-        $result=['townId'=>$row['id'],'name'=>$row['name'],'revision'=>(int)$row['revision'],'updatedAt'=>(int)$row['saved_at'],'isPublic'=>(bool)$row['listed'],'publicId'=>$row['public_id']];
-        $save=json_decode($row['profile'],false,64,JSON_THROW_ON_ERROR);
-        if($profile) $result['profile']=$save;
-        else {
+    public function view(array $row, bool $profile = true): array
+    {
+        $result = [
+            'townId' => $row['id'],
+            'name' => $row['name'],
+            'revision' => (int) $row['revision'],
+            'updatedAt' => (int) $row['saved_at'],
+            'isPublic' => (bool) $row['listed'],
+            'publicId' => $row['public_id'],
+        ];
+        $save = json_decode($row['profile'], false, 64, JSON_THROW_ON_ERROR);
+        $integrity = SaveIntegrity::receipt($save);
+        if ($profile && $integrity !== null) {
+            $result['integrity'] = $integrity;
+        }
+        if ($profile) {
+            $result['profile'] = $save;
+        } else {
             // Owner-only card data; never send full saves in the town list.
-            $result['summary']=self::summary($save);
+            $result['summary'] = self::summary($save);
             // Share-link events for the owner's own game to apply when it reconnects (milliseconds).
-            if(array_key_exists('saloon_collected_at',$row)) {
-                $result['saloonCollectedAt']=$row['saloon_collected_at']===null?0:(int)$row['saloon_collected_at']*1000;
-                $result['guest']=$row['guest_name']===null?null:['name'=>$row['guest_name'],'at'=>(int)$row['guest_at']*1000];
+            if (array_key_exists('saloon_collected_at', $row)) {
+                $result['saloonCollectedAt'] =
+                    $row['saloon_collected_at'] === null
+                        ? 0
+                        : (int) $row['saloon_collected_at'] * 1000;
+                $result['guest'] =
+                    $row['guest_name'] === null
+                        ? null
+                        : ['name' => $row['guest_name'], 'at' => (int) $row['guest_at'] * 1000];
             }
         }
         return $result;
     }
-    private function transaction(Request $r,bool $write,callable $operation): mixed {
-        $session=$this->auth->session($r,$write);$db=$this->database->get();
-        if($write)$this->auth->limit('save:'.$session['player_id'],120,60);
-        return $db->transactional(function() use($db,$session,$operation) {
-            $account=$db->fetchAssociative('SELECT * FROM players WHERE id=? FOR UPDATE',[$session['player_id']]);
-            if(!$account)throw new ApiError(401,'Please sign in again.');
+    // A town reply to its owner also carries their player distinctions as the server decides
+    // them now, so a new time step or an admin change reaches the game without a new session.
+    private function ownerView(Connection $db, array $row, string $player): array
+    {
+        return $this->view($row) + ['distinctions' => PlayerDistinctions::owned($db, $player)];
+    }
+    private function transaction(Request $r, bool $write, callable $operation): mixed
+    {
+        $session = $this->auth->session($r, $write);
+        $db = $this->database->get();
+        if ($write) {
+            $this->auth->limit('save:' . $session['player_id'], 120, 60);
+        }
+        return $db->transactional(function () use ($db, $session, $operation) {
+            $account = $db->fetchAssociative('SELECT * FROM players WHERE id=? FOR UPDATE', [
+                $session['player_id'],
+            ]);
+            if (!$account) {
+                throw new ApiError(401, 'Please sign in again.');
+            }
             $this->auth->recheck($session);
-            return $operation($db,$account,$session);
+            return $operation($db, $account, $session);
         });
     }
-    public function account(Request $r): array {
-        return $this->transaction($r,false,function($db,$account,$session) {
-            $towns=$db->fetchAllAssociative('SELECT t.id,t.name,t.revision,t.saved_at,t.listed,t.public_id,t.profile,s.collected_at AS saloon_collected_at,g.name AS guest_name,g.visited_at AS guest_at FROM towns t LEFT JOIN saloon_collections s ON s.town_id=t.id LEFT JOIN town_guests g ON g.town_id=t.id WHERE t.player_id=? AND t.deleted_at IS NULL ORDER BY t.name,t.id',[$account['id']]);
-            return ['account'=>['id'=>$account['id'],'email'=>$account['email']],'csrf'=>$session['csrf'],'towns'=>array_map(fn($row)=>$this->view($row,false),$towns),'limit'=>self::TOWN_SLOTS];
+    public function account(Request $r): array
+    {
+        return $this->transaction($r, false, function ($db, $account, $session) {
+            $towns = $db->fetchAllAssociative(
+                'SELECT t.id,t.name,t.revision,t.saved_at,t.listed,t.public_id,t.profile,s.collected_at AS saloon_collected_at,g.name AS guest_name,g.visited_at AS guest_at FROM towns t LEFT JOIN saloon_collections s ON s.town_id=t.id LEFT JOIN town_guests g ON g.town_id=t.id WHERE t.player_id=? AND t.deleted_at IS NULL ORDER BY t.name,t.id',
+                [$account['id']],
+            );
+            return [
+                // The player distinctions this account holds now, as the server decides
+                // them: event grants and the time step from the first sign-in.
+                'account' => [
+                    'id' => $account['id'],
+                    'email' => $account['email'],
+                    'distinctions' => PlayerDistinctions::owned($db, $account['id']),
+                ],
+                'csrf' => $session['csrf'],
+                'towns' => array_map(fn($row) => $this->view($row, false), $towns),
+                'limit' => self::TOWN_SLOTS,
+            ];
         });
     }
-    private function owned($db,string $owner,string $id): array {
-        $row=$db->fetchAssociative('SELECT * FROM towns WHERE id=? AND player_id=? AND deleted_at IS NULL',[$id,$owner]);
-        if(!$row) throw new ApiError(404,'This cloud town is unavailable. Your local copy is safe.');
+    private function owned(Connection $db, string $owner, string $id): array
+    {
+        $row = $db->fetchAssociative(
+            'SELECT * FROM towns WHERE id=? AND player_id=? AND deleted_at IS NULL',
+            [$id, $owner],
+        );
+        if (!$row) {
+            throw new ApiError(404, 'This cloud town is unavailable. Your local copy is safe.');
+        }
         return $row;
     }
-    public function get(Request $r,string $id): array {
+    public function get(Request $r, string $id): array
+    {
         self::uuid($id);
-        return $this->transaction($r,false,fn($db,$a)=>$this->view($this->owned($db,$a['id'],$id)));
+        return $this->transaction(
+            $r,
+            false,
+            fn($db, $a) => $this->ownerView($db, $this->owned($db, $a['id'], $id), $a['id']),
+        );
     }
-    public function nameAvailable($db,string $owner,string $id,string $name): array {
-        [$name,$normalized]=$this->public->name($name);
-        if($db->fetchOne('SELECT id FROM towns WHERE player_id=? AND normalized_name=? AND id<>?',[$owner,$normalized,$id])) throw new ApiError(409,'You already have a town with that name. Choose another name.',['code'=>'name_taken']);
-        return [$name,$normalized];
+    public function nameAvailable(Connection $db, string $owner, string $id, string $name): array
+    {
+        [$name, $normalized] = $this->public->name($name);
+        if (
+            $db->fetchOne(
+                'SELECT id FROM towns WHERE player_id=? AND normalized_name=? AND id<>?',
+                [$owner, $normalized, $id],
+            )
+        ) {
+            throw new ApiError(
+                409,
+                'You already have a town with that name. Choose another name.',
+                ['code' => 'name_taken'],
+            );
+        }
+        return [$name, $normalized];
     }
-    private function upload(array $body): array {
-        if(!is_string($body['uploadId']??null)||!preg_match('/^[a-zA-Z0-9-]{16,64}$/D',$body['uploadId']))throw new ApiError(422,'A save upload ID is required.');
-        if(!is_int($body['baseRevision']??null)||$body['baseRevision']<0) throw new ApiError(422,'Invalid base revision.');
-        $json=self::profile($body['profile']??null);
-        return [$json,hash('sha256',json_encode($body,JSON_THROW_ON_ERROR))];
+    private function upload(array $body): array
+    {
+        if (
+            !is_string($body['uploadId'] ?? null) ||
+            !preg_match('/^[a-zA-Z0-9-]{16,64}$/D', $body['uploadId'])
+        ) {
+            throw new ApiError(422, 'A save upload ID is required.');
+        }
+        if (!is_int($body['baseRevision'] ?? null) || $body['baseRevision'] < 0) {
+            throw new ApiError(422, 'Invalid base revision.');
+        }
+        $json = self::profile($body['profile'] ?? null);
+        return [$json, hash('sha256', json_encode($body, JSON_THROW_ON_ERROR))];
     }
-    public function create(Request $r,array $body): array {
-        self::keys($body,['townId','name','baseRevision','uploadId','profile']);$id=self::uuid($body['townId']??null);
-        if(!is_string($body['name']??null)||($body['baseRevision']??null)!==0)throw new ApiError(422,'A new town needs a name and revision zero.');
-        [$json,$hash]=$this->upload($body);
-        return $this->transaction($r,true,function($db,$a)use($body,$id,$json,$hash) {
-            $existing=$db->fetchAssociative('SELECT * FROM towns WHERE id=?',[$id]);
-            if($existing) {
-                if($existing['player_id']===$a['id']&&!$existing['deleted_at']&&$existing['upload_id']===$body['uploadId']&&hash_equals($existing['upload_hash'],$hash))return $this->view($existing);
-                throw new ApiError(409,'This town ID is already attached or was deleted. Keep your local copy.',['code'=>'town_exists']);
+    public function create(Request $r, array $body): array
+    {
+        self::keys($body, ['townId', 'name', 'baseRevision', 'uploadId', 'profile']);
+        $id = self::uuid($body['townId'] ?? null);
+        if (!is_string($body['name'] ?? null) || ($body['baseRevision'] ?? null) !== 0) {
+            throw new ApiError(422, 'A new town needs a name and revision zero.');
+        }
+        [$json, $hash] = $this->upload($body);
+        return $this->transaction($r, true, function ($db, $a) use ($body, $id, $json, $hash) {
+            $existing = $db->fetchAssociative('SELECT * FROM towns WHERE id=?', [$id]);
+            if ($existing) {
+                if (
+                    $existing['player_id'] === $a['id'] &&
+                    !$existing['deleted_at'] &&
+                    $existing['upload_id'] === $body['uploadId'] &&
+                    hash_equals($existing['upload_hash'], $hash)
+                ) {
+                    return $this->ownerView($db, $existing, $a['id']);
+                }
+                throw new ApiError(
+                    409,
+                    'This town ID is already attached or was deleted. Keep your local copy.',
+                    ['code' => 'town_exists'],
+                );
             }
-            if((int)$db->fetchOne('SELECT COUNT(*) FROM towns WHERE player_id=? AND deleted_at IS NULL',[$a['id']])>=self::TOWN_SLOTS)throw new ApiError(409,'Your account already has '.self::TOWN_SLOTS.' towns. Keep playing locally or manage your cloud towns.',['code'=>'slots_full']);
-            [$name,$normalized]=$this->nameAvailable($db,$a['id'],$id,$body['name']);
-            $row=['id'=>$id,'player_id'=>$a['id'],'name'=>$name,'normalized_name'=>$normalized,'revision'=>1,'profile'=>$json,'saved_at'=>time(),'public_id'=>bin2hex(random_bytes(16)),'listed'=>0,'upload_id'=>$body['uploadId'],'upload_hash'=>$hash];
-            try { $db->insert('towns',$row); }
-            catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException) { throw new ApiError(409,'This town ID is already attached. Keep your local copy.',['code'=>'town_exists']); }
-            return $this->view($row);
+            if (
+                (int) $db->fetchOne(
+                    'SELECT COUNT(*) FROM towns WHERE player_id=? AND deleted_at IS NULL',
+                    [$a['id']],
+                ) >= self::TOWN_SLOTS
+            ) {
+                throw new ApiError(
+                    409,
+                    'Your account already has ' .
+                        self::TOWN_SLOTS .
+                        ' towns. Keep playing locally or manage your cloud towns.',
+                    ['code' => 'slots_full'],
+                );
+            }
+            [$name, $normalized] = $this->nameAvailable($db, $a['id'], $id, $body['name']);
+            $now = (int) floor(microtime(true) * 1000);
+            $integrity = new SaveIntegrity();
+            $json = json_encode(
+                Honours::load(fn() => $integrity)->keep(
+                    $integrity->accept(
+                        json_decode($json, false, 64, JSON_THROW_ON_ERROR),
+                        null,
+                        $now,
+                        false,
+                        [],
+                        $id,
+                    ),
+                    null,
+                    Honours::social($db, 'id', $id),
+                ),
+                JSON_THROW_ON_ERROR,
+            );
+            $row = [
+                'id' => $id,
+                'player_id' => $a['id'],
+                'name' => $name,
+                'normalized_name' => $normalized,
+                'revision' => 1,
+                'profile' => $json,
+                'saved_at' => intdiv($now, 1000),
+                'public_id' => bin2hex(random_bytes(16)),
+                'listed' => 0,
+                'upload_id' => $body['uploadId'],
+                'upload_hash' => $hash,
+            ];
+            try {
+                $db->insert('towns', $row);
+            } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException) {
+                throw new ApiError(409, 'This town ID is already attached. Keep your local copy.', [
+                    'code' => 'town_exists',
+                ]);
+            }
+            return $this->ownerView($db, $row, $a['id']);
         });
     }
-    public static function archive($db,array $row): void {
-        $db->insert('town_history',['town_id'=>$row['id'],'revision'=>$row['revision'],'profile'=>$row['profile'],'saved_at'=>$row['saved_at']]);
-        $db->executeStatement('DELETE FROM town_history WHERE town_id=? AND revision<?',[$row['id'],max(0,(int)$row['revision']-4)]);
+    public static function archive(Connection $db, array $row): void
+    {
+        $db->insert('town_history', [
+            'town_id' => $row['id'],
+            'revision' => $row['revision'],
+            'profile' => $row['profile'],
+            'saved_at' => $row['saved_at'],
+        ]);
+        $db->executeStatement('DELETE FROM town_history WHERE town_id=? AND revision<?', [
+            $row['id'],
+            max(0, (int) $row['revision'] - 4),
+        ]);
     }
-    public function save(Request $r,string $id,array $body): array {
-        self::uuid($id);self::keys($body,['baseRevision','uploadId','profile']);[$json,$hash]=$this->upload($body);
-        return $this->transaction($r,true,function($db,$a)use($id,$body,$json,$hash) {
-            $row=$this->owned($db,$a['id'],$id);
-            if($row['upload_id']===$body['uploadId']) {
-                if(!hash_equals($row['upload_hash'],$hash))throw new ApiError(409,'That upload ID belongs to a different save.');
-                return $this->view($row);
+    public function save(Request $r, string $id, array $body, bool $resolve = false): array
+    {
+        self::uuid($id);
+        self::keys($body, ['baseRevision', 'uploadId', 'profile']);
+        [$json, $hash] = $this->upload($body);
+        return $this->transaction($r, true, function ($db, $a) use (
+            $id,
+            $body,
+            $json,
+            $hash,
+            $resolve,
+        ) {
+            $row = $this->owned($db, $a['id'], $id);
+            if ($row['upload_id'] === $body['uploadId']) {
+                if (!hash_equals($row['upload_hash'], $hash)) {
+                    throw new ApiError(409, 'That upload ID belongs to a different save.');
+                }
+                return $this->ownerView($db, $row, $a['id']);
             }
-            if((int)$row['revision']!==$body['baseRevision']) throw new ApiError(409,'This town changed on another device. Choose which save to keep.',['code'=>'save_conflict','cloud'=>$this->view($row)]);
-            self::archive($db,$row);
-            $changes=['profile'=>$json,'revision'=>(int)$row['revision']+1,'saved_at'=>time(),'upload_id'=>$body['uploadId'],'upload_hash'=>$hash];
-            if($row['listed'])$changes['appearance']=$this->public->projection(json_decode($json),$row['name'],$row['public_id']);
-            $db->update('towns',$changes,['id'=>$id,'player_id'=>$a['id']]);return $this->view(array_merge($row,$changes));
+            if ((int) $row['revision'] !== $body['baseRevision']) {
+                throw new ApiError(
+                    409,
+                    'This town changed on another device. Choose which save to keep.',
+                    ['code' => 'save_conflict', 'cloud' => $this->view($row)],
+                );
+            }
+            $history = $resolve
+                ? array_map(
+                    fn($entry) => json_decode($entry['profile'], false, 64, JSON_THROW_ON_ERROR),
+                    $db->fetchAllAssociative(
+                        'SELECT profile FROM town_history WHERE town_id=? ORDER BY revision DESC',
+                        [$id],
+                    ),
+                )
+                : [];
+            $now = (int) floor(microtime(true) * 1000);
+            $previous = json_decode($row['profile'], false, 64, JSON_THROW_ON_ERROR);
+            // Earned and verified honours are never revoked: every accepted upload,
+            // including signed recovery and history restores, keeps those of the replaced
+            // cloud save and verifies what the accepted state proves.
+            $integrity = new SaveIntegrity();
+            $json = json_encode(
+                Honours::load(fn() => $integrity)->keep(
+                    $integrity->accept(
+                        json_decode($json, false, 64, JSON_THROW_ON_ERROR),
+                        $previous,
+                        $now,
+                        $resolve,
+                        $history,
+                        $id,
+                        (int) $row['saved_at'] * 1000,
+                    ),
+                    $previous,
+                    Honours::social($db, 'id', $id),
+                ),
+                JSON_THROW_ON_ERROR,
+            );
+            self::archive($db, $row);
+            $changes = [
+                'profile' => $json,
+                'revision' => (int) $row['revision'] + 1,
+                'saved_at' => intdiv($now, 1000),
+                'upload_id' => $body['uploadId'],
+                'upload_hash' => $hash,
+            ];
+            if ($row['listed']) {
+                $changes['appearance'] = $this->public->projection(
+                    json_decode($json),
+                    $row['name'],
+                    $row['public_id'],
+                );
+            }
+            $db->update('towns', $changes, ['id' => $id, 'player_id' => $a['id']]);
+            return $this->ownerView($db, array_merge($row, $changes), $a['id']);
         });
     }
     // The owner's game saved this guest as a VIP, so delete it. Only that exact visit is
     // deleted: a newer visitor who replaced it meanwhile stays for the next reconnect.
-    public function clearGuest(Request $r,string $id,array $body): array {
-        self::uuid($id);self::keys($body,['guestAt']);
-        $at=$body['guestAt']??null;
-        if(!is_int($at)||$at<=0||$at%1000)throw new ApiError(422,'Invalid guest visit.');
-        return $this->transaction($r,true,function($db,$a)use($id,$at) {
-            $this->owned($db,$a['id'],$id);
-            $cleared=$db->executeStatement('DELETE FROM town_guests WHERE town_id=? AND visited_at=?',[$id,intdiv($at,1000)]);
-            return ['cleared'=>$cleared>0];
-        });
-    }
-    public function metadata(Request $r,string $id,array $body): array {
-        self::uuid($id);self::keys($body,['baseRevision','name','isPublic']);
-        return $this->transaction($r,true,function($db,$a)use($id,$body) {
-            $row=$this->owned($db,$a['id'],$id);
-            if(($body['baseRevision']??null)!==(int)$row['revision'])throw new ApiError(409,'Refresh this town before changing its details.',['code'=>'save_conflict','cloud'=>$this->view($row)]);
-            if(!is_string($body['name']??null)||!is_bool($body['isPublic']??null))throw new ApiError(422,'Choose a name and sharing preference.');
-            [$name,$normalized]=$this->nameAvailable($db,$a['id'],$id,$body['name']);
-            if($body['isPublic'])$this->public->moderate($name);
-            // Metadata is independent of gameplay: keep its revision and upload receipt.
-            $changes=['name'=>$name,'normalized_name'=>$normalized,'listed'=>(int)$body['isPublic'],'appearance'=>$body['isPublic']?$this->public->projection(json_decode($row['profile']),$name,$row['public_id']):null];
-            $db->update('towns',$changes,['id'=>$id,'player_id'=>$a['id']]);return $this->view(array_merge($row,$changes));
-        });
-    }
-    public function history(Request $r,string $id): array {
+    public function clearGuest(Request $r, string $id, array $body): array
+    {
         self::uuid($id);
-        return $this->transaction($r,false,function($db,$a)use($id) {
-            $this->owned($db,$a['id'],$id);
-            return ['revisions'=>array_map(fn($r)=>['revision'=>(int)$r['revision'],'updatedAt'=>(int)$r['saved_at'],'profile'=>json_decode($r['profile'])],$db->fetchAllAssociative('SELECT revision,saved_at,profile FROM town_history WHERE town_id=? ORDER BY revision DESC',[$id]))];
+        self::keys($body, ['guestAt']);
+        $at = $body['guestAt'] ?? null;
+        if (!is_int($at) || $at <= 0 || $at % 1000) {
+            throw new ApiError(422, 'Invalid guest visit.');
+        }
+        return $this->transaction($r, true, function ($db, $a) use ($id, $at) {
+            $this->owned($db, $a['id'], $id);
+            $cleared = $db->executeStatement(
+                'DELETE FROM town_guests WHERE town_id=? AND visited_at=?',
+                [$id, intdiv($at, 1000)],
+            );
+            return ['cleared' => $cleared > 0];
         });
     }
-    public function delete(Request $r,string $id,array $body): array {
-        self::uuid($id);self::keys($body,['baseRevision','confirmation']);
-        return $this->transaction($r,true,function($db,$a)use($id,$body) {
-            $row=$this->owned($db,$a['id'],$id);
-            if(($body['confirmation']??null)!==$row['name'])throw new ApiError(422,'Type the town name to confirm deletion.');
-            if(($body['baseRevision']??null)!==(int)$row['revision'])throw new ApiError(409,'This town changed. Review it again before deleting.');
-            self::tombstone($db,$id);
-            return ['ok'=>true];
+    public function metadata(Request $r, string $id, array $body): array
+    {
+        self::uuid($id);
+        self::keys($body, ['baseRevision', 'name', 'isPublic']);
+        return $this->transaction($r, true, function ($db, $a) use ($id, $body) {
+            $row = $this->owned($db, $a['id'], $id);
+            if (($body['baseRevision'] ?? null) !== (int) $row['revision']) {
+                throw new ApiError(409, 'Refresh this town before changing its details.', [
+                    'code' => 'save_conflict',
+                    'cloud' => $this->view($row),
+                ]);
+            }
+            if (!is_string($body['name'] ?? null) || !is_bool($body['isPublic'] ?? null)) {
+                throw new ApiError(422, 'Choose a name and sharing preference.');
+            }
+            [$name, $normalized] = $this->nameAvailable($db, $a['id'], $id, $body['name']);
+            if ($body['isPublic']) {
+                $this->public->moderate($name);
+            }
+            // Metadata is independent of gameplay: keep its revision and upload receipt.
+            $changes = [
+                'name' => $name,
+                'normalized_name' => $normalized,
+                'listed' => (int) $body['isPublic'],
+                'appearance' => $body['isPublic']
+                    ? $this->public->projection(
+                        json_decode($row['profile']),
+                        $name,
+                        $row['public_id'],
+                    )
+                    : null,
+            ];
+            $db->update('towns', $changes, ['id' => $id, 'player_id' => $a['id']]);
+            return $this->ownerView($db, array_merge($row, $changes), $a['id']);
+        });
+    }
+    public function history(Request $r, string $id): array
+    {
+        self::uuid($id);
+        return $this->transaction($r, false, function ($db, $a) use ($id) {
+            $this->owned($db, $a['id'], $id);
+            return [
+                'revisions' => array_map(
+                    fn($r) => [
+                        'revision' => (int) $r['revision'],
+                        'updatedAt' => (int) $r['saved_at'],
+                        'profile' => json_decode($r['profile']),
+                    ],
+                    $db->fetchAllAssociative(
+                        'SELECT revision,saved_at,profile FROM town_history WHERE town_id=? ORDER BY revision DESC',
+                        [$id],
+                    ),
+                ),
+            ];
+        });
+    }
+    public function delete(Request $r, string $id, array $body): array
+    {
+        self::uuid($id);
+        self::keys($body, ['baseRevision', 'confirmation']);
+        return $this->transaction($r, true, function ($db, $a) use ($id, $body) {
+            $row = $this->owned($db, $a['id'], $id);
+            if (($body['confirmation'] ?? null) !== $row['name']) {
+                throw new ApiError(422, 'Type the town name to confirm deletion.');
+            }
+            if (($body['baseRevision'] ?? null) !== (int) $row['revision']) {
+                throw new ApiError(409, 'This town changed. Review it again before deleting.');
+            }
+            self::tombstone($db, $id);
+            return ['ok' => true];
         });
     }
     // Frees the slot and name and removes the listing; cleanup purges it after 30 days.
-    public static function tombstone($db,string $id): void {
-        $db->update('towns',['deleted_at'=>time(),'listed'=>0,'appearance'=>null,'normalized_name'=>null],['id'=>$id]);
+    public static function tombstone(Connection $db, string $id): void
+    {
+        $db->update(
+            'towns',
+            [
+                'deleted_at' => time(),
+                'listed' => 0,
+                'appearance' => null,
+                'normalized_name' => null,
+            ],
+            ['id' => $id],
+        );
     }
-    public function deleteAccount(Request $r,array $body): array {
-        self::keys($body,['confirmation']);
-        if(($body['confirmation']??null)!=='DELETE MY ACCOUNT')throw new ApiError(422,'Type DELETE MY ACCOUNT to confirm.');
-        return $this->transaction($r,true,function($db,$a) {
-            $db->delete('login_intents',['email'=>$a['email']]);$db->delete('players',['id'=>$a['id']]);return ['ok'=>true];
+    public function deleteAccount(Request $r, array $body): array
+    {
+        self::keys($body, ['confirmation']);
+        if (($body['confirmation'] ?? null) !== 'DELETE MY ACCOUNT') {
+            throw new ApiError(422, 'Type DELETE MY ACCOUNT to confirm.');
+        }
+        return $this->transaction($r, true, function ($db, $a) {
+            $db->delete('login_intents', ['email' => $a['email']]);
+            $db->delete('players', ['id' => $a['id']]);
+            return ['ok' => true];
         });
     }
 }

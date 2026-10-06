@@ -7,15 +7,19 @@ describe('Account town card summaries', () => {
     town: { era: 'frontier', coins: 1000, buildings: { well: 2, farm: 1, home: 0 } },
   };
   it('fills a new device card without a cached save', () => {
-    expect(cardSummary(server)).toEqual(server.summary);
+    expect(cardSummary(server)).toEqual({ ...server.summary, honours: null });
   });
   it('shows active offline progress, and server summaries for other towns', () => {
     expect(cardSummary(server, { activeProfile: offline })).toEqual({
       era: 'frontier',
       coins: 1000,
       buildings: 2,
+      honours: null,
     });
-    expect(cardSummary(server, { cachedProfile: offline })).toEqual(server.summary);
+    expect(cardSummary(server, { cachedProfile: offline })).toEqual({
+      ...server.summary,
+      honours: null,
+    });
   });
   it('supports an older server without fabricating a playable save', () => {
     expect(cardSummary({}, { cachedProfile: offline })).toEqual(profileSummary(offline));
@@ -24,9 +28,25 @@ describe('Account town card summaries', () => {
   it('handles future eras and malformed numeric values defensively', () => {
     expect(
       cardSummary({ summary: { era: 'future-era', coins: -1, buildings: 'invalid' } }),
-    ).toEqual({ era: 'future-era', coins: 0, buildings: 0 });
+    ).toEqual({ era: 'future-era', coins: 0, buildings: 0, honours: null });
     expect(
       profileSummary({ town: { coins: Infinity, buildings: { a: '1', b: 1, c: null, d: -1 } } }),
-    ).toEqual({ era: '', coins: 0, buildings: 1 });
+    ).toEqual({ era: '', coins: 0, buildings: 1, honours: null });
+  });
+  it('carries the town honours showcase for the card, from a save or the server', () => {
+    const honours = {
+      earned: { 'first-perfect': { at: 1 }, 'score-ace': { at: 2 } },
+      showcase: ['score'],
+      counts: { gems: { ruby: 9 } },
+    };
+    expect(profileSummary({ ...offline, honours }).honours).toEqual({
+      earned: ['first-perfect', 'score-ace'],
+      showcase: ['score'],
+    });
+    const listed = {
+      summary: { ...server.summary, honours: { earned: ['score-ace'], showcase: ['score'] } },
+    };
+    expect(cardSummary(listed).honours).toEqual({ earned: ['score-ace'], showcase: ['score'] });
+    expect(cardSummary({ summary: { ...server.summary, honours: 'junk' } }).honours).toBeNull();
   });
 });

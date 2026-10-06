@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { LEVEL_COUNT } from '../src/data/campaign';
-import { chestCoinReward } from '../src/data/economy';
+import { CHEST_ECONOMY_VERSION, chestCoinCap, chestCoinReward } from '../src/data/economy';
+import { ERAS } from '../src/data/eras';
 import { chestReward } from '../src/data/rewards';
 import { SAVE_KEY, useCampaignStore } from '../src/stores/campaignStore';
 
@@ -144,5 +145,106 @@ it.each(['tap', 'skip', 'reload', 'import'])(
     expect(campaign.claimChest('1-score', 'coins')).toBeNull();
     setActivePinia(createPinia());
     expect(useCampaignStore().town.coins).toBe(12000);
+  },
+);
+
+it.each([
+  ['frontier', 4000],
+  ['river-rail', 4000],
+  ['motor-age', 4000],
+  ['broadcast', 4000],
+  ['contemporary', 4500],
+  ['tomorrow', 5300],
+  ['canopy', 6100],
+  ['riverlight', 7000],
+])('caps %s chests at %i coins', (era, cap) => {
+  expect(chestCoinCap(era)).toBe(cap);
+  expect(chestCoinReward(LEVEL_COUNT, CHEST_ECONOMY_VERSION, era)).toBe(cap);
+});
+it('derives every era cap from its prices and never pays less than version 2', () => {
+  for (const era of ERAS) {
+    const middle = era.evolution.prices?.[1] ?? 0;
+    expect(chestCoinCap(era.id)).toBe(Math.max(4000, Math.round(middle / 100) * 50));
+    let previous = 0;
+    for (let level = 1; level <= LEVEL_COUNT; level++) {
+      const coins = chestCoinReward(level, 3, era.id);
+      expect(coins).toBeGreaterThanOrEqual(Math.max(previous, chestCoinReward(level, 2)));
+      expect(coins).toBeLessThanOrEqual(chestCoinCap(era.id));
+      previous = coins;
+    }
+  }
+  // Shallow levels keep their chapter value, and an unknown era falls back to 4,000.
+  expect(chestCoinReward(1, 3, 'riverlight')).toBe(500);
+  expect(chestCoinReward(LEVEL_COUNT, 3, 'atlantis')).toBe(4000);
+  expect(chestCoinReward(LEVEL_COUNT, 3)).toBe(4000);
+});
+function lateWin(campaign, chooseRewards) {
+  // Level 397 opens the last chapter, so no chapter gift joins the chest money.
+  campaign.records = Object.fromEntries(
+    Array.from({ length: 396 }, (_, i) => [i + 1, { score: 100, stars: 1 }]),
+  );
+  return campaign.recordVictory({
+    id: 397,
+    score: 2000,
+    target: 1000,
+    combo: 1,
+    elapsedMs: 1000,
+    speedTargetMs: 10000,
+    chooseRewards,
+  });
+}
+it('pays the town era cap for late chests and records the terms on the receipt', () => {
+  const campaign = useCampaignStore();
+  campaign.town.era = 'riverlight';
+  const coins = campaign.town.coins;
+  const rewards = lateWin(campaign, false);
+  expect(rewards.map((chest) => chest.items[0].quantity)).toEqual([7000, 7000]);
+  expect(campaign.town.coins).toBe(coins + 14000);
+  const receipt = campaign.integrity.actions.findLast((action) => action.kind === 'victory');
+  expect(receipt.data.economyVersion).toBe(CHEST_ECONOMY_VERSION);
+});
+it('keeps a pending chest on the era it was earned in', () => {
+  const campaign = useCampaignStore();
+  campaign.town.era = 'canopy';
+  const coins = campaign.town.coins;
+  const [tapped, interrupted] = lateWin(campaign, true);
+  expect(tapped).toMatchObject({ economyVersion: CHEST_ECONOMY_VERSION, era: 'canopy' });
+  campaign.town.era = 'riverlight';
+  expect(campaign.claimChest(tapped.id, 'coins').quantity).toBe(6100);
+  expect(campaign.claimChest(tapped.id, 'coins')).toBeNull();
+  // A reload claims the unopened chest's saved coin fallback under the same terms.
+  expect(interrupted.items[0]).toMatchObject({ kind: 'coins', quantity: 6100 });
+  campaign.save();
+  setActivePinia(createPinia());
+  expect(useCampaignStore().town.coins).toBe(coins + 12200);
+  expect(useCampaignStore().pendingChests).toEqual([]);
+});
+it('keeps an old version 2 chest at its original cap in a later era', () => {
+  const campaign = useCampaignStore();
+  campaign.town.era = 'riverlight';
+  campaign.issuedRun = campaign.settledRun = 1;
+  campaign.pendingChests = [
+    {
+      id: '1-score',
+      runId: 1,
+      source: 'score',
+      levelId: LEVEL_COUNT,
+      economyVersion: 2,
+      items: [{ id: 'coins', quantity: 999999 }],
+    },
+  ];
+  expect(campaign.claimChest('1-score', 'coins').quantity).toBe(4000);
+});
+it.each([undefined, 'atlantis'])(
+  'rejects an imported version 3 chest without a known era (%s)',
+  (era) => {
+    const campaign = useCampaignStore();
+    campaign.town.era = 'riverlight';
+    lateWin(campaign, true);
+    const file = JSON.parse(campaign.exportSave());
+    expect(file.profile.pendingChests).toHaveLength(2);
+    expect(() => campaign.importSave(JSON.stringify(file))).not.toThrow();
+    for (const chest of file.profile.pendingChests) chest.era = era;
+    expect(() => campaign.importSave(JSON.stringify(file))).toThrow();
   },
 );

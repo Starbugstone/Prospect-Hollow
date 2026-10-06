@@ -4,6 +4,12 @@ Gameplay stays local. Guests use one local town and make no account API requests
 Account towns keep independent UUIDs, local records and browser writer locks.
 Server access always checks the authenticated owner; a UUID is never authorization.
 
+Upgraded profiles keep resource-action receipts with the same atomic town record.
+Background synchronization verifies them and acknowledges only the uploaded
+prefix, preserving newer actions and offline earnings. Integrity or clock
+validation errors retain current local progress and the last accepted cloud copy;
+they never interrupt a puzzle. See [save integrity](save-integrity.md).
+
 ## Revisions and retries
 
 Only a gameplay snapshot upload increments the town revision. Names and public

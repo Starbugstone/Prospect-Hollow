@@ -1,13 +1,17 @@
 import { recoveryStore } from './recoveryStore';
+import { acknowledgeIntegrity, prepareIntegritySnapshot } from './saveIntegrity';
+import { jsonCopy } from './jsonCopy';
+import { keepHonours } from '../data/honours';
 const queues = new WeakMap();
-const copy = (value) => JSON.parse(JSON.stringify(value));
 const CHANGED_SINCE_REVIEW = 'Your save changed. Review it before confirming another overwrite.';
 const LEAVE_MINE_TO_REVIEW = 'Return to the village to review your preserved save.';
 const WRONG_TOWN = 'The server returned a different town.';
 // A rejected upload waits for new progress, except a format the server will never accept.
 export const uploadBlocked = (meta) =>
   !!meta?.uploadError &&
-  (meta.uploadError.code === 'save_format_unsupported' ||
+  (['save_format_unsupported', 'save_rules_unsupported', 'save_integrity_unsupported'].includes(
+    meta.uploadError.code,
+  ) ||
     meta.uploadError.sequence === meta.sequence);
 // Recovery copies used to live inline in the town record; they move to the recovery store.
 export const legacyRecovery = (recovery, owner, townId) => ({
@@ -43,7 +47,7 @@ function serialize(storage, key, operation) {
     .catch(() => {});
   return task;
 }
-// Synchronization copies snapshots; it never authorizes or executes gameplay actions.
+// Gameplay remains local; the server checks resource receipts with each snapshot.
 export function createSyncService({
   storage,
   recoveries = recoveryStore,
@@ -92,9 +96,32 @@ export function createSyncService({
     const { profile, ...descriptor } = saved;
     return descriptor;
   }
-  async function accept(id, owner, result, sequence, downloaded = false, pending = null) {
+  async function accept(
+    id,
+    owner,
+    result,
+    sequence,
+    downloaded = false,
+    pending = null,
+    submittedIntegrity = null,
+  ) {
     if (!current(owner)) return;
     if (result.townId !== id) throw new Error(WRONG_TOWN);
+    const ack = result.integrity;
+    if (ack && pending) {
+      const submittedSequence =
+        submittedIntegrity?.actions?.at(-1)?.sequence ?? submittedIntegrity?.baseSequence;
+      if (
+        ack.version !== 1 ||
+        ack.epoch !== submittedIntegrity?.epoch ||
+        !Number.isSafeInteger(ack.ackSequence) ||
+        ack.ackSequence < submittedIntegrity?.baseSequence ||
+        ack.ackSequence > submittedSequence
+      )
+        throw new Error(
+          'The server returned an invalid save receipt. Your local progress is kept.',
+        );
+    }
     let replaced = false,
       recovery;
     const before = entry(id, owner);
@@ -113,19 +140,24 @@ export function createSyncService({
         }
         r.meta.recovery = recovery;
         r.meta.desyncNotice = false;
-        r.profile = result.profile;
+        r.profile = keepHonours(result.profile, r.profile);
         replaced = true;
       }
       if (downloaded && (r.meta.sequence !== sequence || r.meta.dirty || !canApply(id)))
         return false;
       if (downloaded) {
-        r.profile = result.profile;
+        r.profile = keepHonours(result.profile, r.profile);
         replaced = true;
       }
+      if (ack && !replaced && r.profile.integrity)
+        r.profile.integrity = acknowledgeIntegrity(r.profile.integrity, ack);
+      if (replaced || (pending?.restoreIntent && pending.restoreIntent === r.meta.restoreIntent))
+        delete r.meta.restoreIntent;
       r.meta = {
         ...r.meta,
         ...cloudMeta(result),
-        dirty: r.meta.sequence !== sequence,
+        // Honours kept from the replaced copy still need uploading.
+        dirty: r.meta.sequence !== sequence || (replaced && r.profile !== result.profile),
         pending: null,
         conflict: null,
         missing: false,
@@ -154,11 +186,13 @@ export function createSyncService({
         if (!eligible(id, owner) || !canApply(id) || r.meta.sequence !== before.meta.sequence)
           return;
         if (r.meta.dirty) r.meta.recovery = recovery;
-        r.profile = cloud.profile;
+        // The server copy wins, but the town never loses an earned honour.
+        r.profile = keepHonours(cloud.profile, r.profile);
+        delete r.meta.restoreIntent;
         r.meta = {
           ...r.meta,
           ...cloudMeta(cloud),
-          dirty: false,
+          dirty: r.profile !== cloud.profile,
           conflict: null,
           sequence: r.meta.sequence + 1,
           desyncNotice: r.meta.recovery?.reason === 'desync',
@@ -168,6 +202,10 @@ export function createSyncService({
     if (replaced) applied(id);
   }
   async function stage(id, owner, pending) {
+    pending = {
+      ...pending,
+      body: { ...pending.body, profile: prepareIntegritySnapshot(pending.body.profile) },
+    };
     try {
       await recoveries.putUpload({
         id: pending.body.uploadId,
@@ -218,7 +256,7 @@ export function createSyncService({
         body = { ...body, profile: snapshot.profile };
       }
       const result = await request(`towns/${id}${resolve ? '/resolve' : ''}`, body, 'PUT');
-      await accept(id, owner, result, pending.sequence, false, pending);
+      await accept(id, owner, result, pending.sequence, false, pending, body.profile?.integrity);
     } catch (error) {
       if (error.status === 409 && error.data?.cloud) {
         await conflict(id, owner, error.data.cloud, pending);
@@ -300,6 +338,8 @@ export function createSyncService({
       else await accept(id, owner, remote, local.meta.sequence, true);
     } else if (local.meta.dirty) {
       const pending = {
+        resolve: !!local.meta.restoreIntent,
+        restoreIntent: local.meta.restoreIntent ?? null,
         sequence: local.meta.sequence,
         body: {
           baseRevision: local.meta.baseRevision,
@@ -307,7 +347,7 @@ export function createSyncService({
           uploadId: crypto.randomUUID(),
         },
       };
-      await upload(id, owner, await stage(id, owner, pending));
+      await upload(id, owner, await stage(id, owner, pending), pending.resolve);
     }
   }
   return {
@@ -347,7 +387,7 @@ export function createSyncService({
             ? local.meta.recovery
             : await recoveries.get(recoveryId ?? local.meta.recovery.id, owner, id);
         if (!recovery) throw new Error('This preserved save is unavailable.');
-        return copy({
+        return jsonCopy({
           townId: id,
           owner,
           revision: local.meta.baseRevision,
@@ -395,7 +435,7 @@ export function createSyncService({
           sequence: local.meta.sequence,
           body: {
             baseRevision: review.revision,
-            profile: copy(recovery.profile),
+            profile: keepHonours(jsonCopy(recovery.profile), local.profile),
             uploadId: crypto.randomUUID(),
           },
         };
@@ -416,7 +456,11 @@ export function createSyncService({
           resolve: true,
           replace: true,
           sequence: local.meta.sequence,
-          body: { baseRevision: local.meta.baseRevision, profile, uploadId: crypto.randomUUID() },
+          body: {
+            baseRevision: local.meta.baseRevision,
+            profile: keepHonours(profile, local.profile),
+            uploadId: crypto.randomUUID(),
+          },
         };
         await upload(id, owner, await stage(id, owner, pending), true);
       });

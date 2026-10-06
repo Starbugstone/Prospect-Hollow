@@ -4,6 +4,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { useCampaignStore } from '../src/stores/campaignStore';
 import { chapterGift, journeyProgress } from '../src/data/journey';
 import { chestRewardFits, rollChestReward } from '../src/data/rewards';
+import { GUEST_JOURNAL_LIMIT } from '../src/services/saveIntegrity';
 
 beforeEach(() => {
   const saves = new Map();
@@ -74,6 +75,20 @@ it(
       c = useCampaignStore();
     }
     expect(journeyProgress(c.records)).toBeNull();
+    // A guest journal stays bounded, while its sequence still counts every receipt once.
+    const { actions, baseSequence } = c.integrity;
+    expect(actions.length).toBeLessThanOrEqual(GUEST_JOURNAL_LIMIT);
+    expect(baseSequence + actions.length).toBe(LEVEL_COUNT * 2);
+    expect(actions.map((action) => action.sequence)).toEqual(
+      actions.map((_, index) => baseSequence + index + 1),
+    );
+    expect(new Set(actions.map((action) => action.id)).size).toBe(actions.length);
+    expect(actions[0].kind).toBe('run-start');
+    expect(actions.at(-1)).toMatchObject({
+      sequence: LEVEL_COUNT * 2,
+      kind: 'victory',
+      data: { levelId: LEVEL_COUNT },
+    });
     c.town.buildings.museum = 1;
     finish(c, LEVEL_COUNT);
     expect(c.lastChapterReward).toBeNull();

@@ -4,9 +4,10 @@
       <h1>Prospect Hollow admin</h1>
       <p class="admin-muted">{{ host }}</p>
       <template v-if="!adminSession.stage">
-        <label
-          >Username <input v-model="username" autocomplete="username" required autofocus
-        /></label>
+        <label>
+          Username
+          <input ref="stepInput" v-model="username" autocomplete="username" required />
+        </label>
         <label>
           Password
           <input v-model="password" type="password" autocomplete="current-password" required />
@@ -15,7 +16,7 @@
       </template>
       <template v-else-if="adminSession.stage === 'totp'">
         <p>Enter the 6-digit code from your authenticator app.</p>
-        <label>Code <input v-model="code" v-bind="codeInput" autofocus /></label>
+        <label>Code <input ref="stepInput" v-model="code" v-bind="codeInput" /></label>
         <button class="admin-button" :disabled="busy">Verify</button>
       </template>
       <template v-else-if="adminSession.stage === 'change'">
@@ -24,12 +25,12 @@
         <label>
           New password
           <input
+            ref="stepInput"
             v-model="password"
             type="password"
             autocomplete="new-password"
             minlength="12"
             required
-            autofocus
           />
         </label>
         <label>
@@ -57,7 +58,7 @@
             <code class="admin-secret">{{ enrollment.secret.match(/.{1,4}/g).join(' ') }}</code>
           </p>
         </template>
-        <label>Code <input v-model="code" v-bind="codeInput" /></label>
+        <label>Code <input ref="stepInput" v-model="code" v-bind="codeInput" /></label>
         <button class="admin-button" :disabled="busy || !enrollment">
           Turn on two-step sign-in
         </button>
@@ -70,7 +71,7 @@
   </main>
 </template>
 <script setup>
-import { ref, watch } from 'vue';
+import { nextTick, ref, watch } from 'vue';
 import { adminApi, adminSession, restoreSession, signOut } from '../api';
 import QrCode from '../components/QrCode.vue';
 const host = location.host;
@@ -81,7 +82,8 @@ const codeInput = {
   maxlength: 7,
   required: true,
 };
-const username = ref(''),
+const stepInput = ref(null),
+  username = ref(''),
   password = ref(''),
   repeat = ref(''),
   code = ref(''),
@@ -98,11 +100,13 @@ async function loadEnrollment() {
 }
 watch(
   () => adminSession.stage,
-  (stage) => {
+  async (stage) => {
     code.value = '';
     password.value = '';
     repeat.value = '';
     if (stage === 'enroll') loadEnrollment();
+    await nextTick();
+    stepInput.value?.focus();
   },
   { immediate: true },
 );

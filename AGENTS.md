@@ -58,6 +58,53 @@ reuse the shared implementation where behavior is the same. See
 [the era architecture guide](docs/era-architecture.md) for the current contracts,
 renderer registries and extension checks.
 
+## Permanent board rule: completed obstacles leave no icon
+
+The user requires that once the player completes a board obstacle, its icon
+leaves the board. This is a hard rule for every current and future mechanic.
+
+- A lit lantern or survey marker, a fired spore relay, a spent charge core, a
+  collected fossil, a cut root knot, a broken seal, gate or stone, melted ice,
+  a released chain and a thawed gem all render as an ordinary cell. Relic exits
+  disappear once the last relic is delivered.
+- Never keep a dimmed icon, a check mark, a tint or a coloured border on a
+  completed cell. A short break or collection effect is fine, as long as it
+  goes away.
+- Every obstacle in `src/data/obstacles.js` needs a sample in
+  `testing/completed-board-markers.test.js`; the test fails until a new obstacle
+  has one, then checks that its completed cell matches a plain one.
+
+## Town Honours: fixed ranks that grow with the game
+
+Town Honours are families of metal ranks (bronze → silver → gold, then diamond and later
+metals) defined in `src/data/honours.js`. The game will gain eras, levels and mechanics, so
+no honour may treat the current content as final.
+
+- A shipped rank's requirement is fixed: its goal, measure and metal never change, and ranks
+  are never removed or reordered. Content growth adds ranks at the end of a family (diamond
+  and beyond) or new families. Requirements are fixed numbers or named milestones, never
+  "all levels", "every era" or "the final era".
+- `testing/fixtures/shipped-honour-ranks.json` records every shipped rank. Add new ranks to
+  it in the same change; changing a shipped entry needs a raised requirement version and the
+  user's explicit approval.
+- Content changes need an honours decision in the same change: a new gem gets its family and
+  goals, a new mine element a family or `NON_MASTERY_ELEMENTS`, a new era a Through the Ages
+  rank or `NON_MILESTONE_ERAS`, a new bonus fusion a rank or `LATER_FUSIONS`. A new rank sets
+  `since` to a raised `HONOURS_VERSION` so existing saves catch up and see it as new.
+  Regenerate the level element index with `node scripts/export-honour-levels.mjs` and the
+  server catalogs (`npm run export:save-rules`, `node scripts/export-public-content.mjs`)
+  after changing levels or honours.
+- Earned honours are permanent: never revoke, reset or re-evaluate them away, and keep the
+  version they were earned under. Never reuse or rename an honour or family ID.
+- Calibrate new goals with the campaign simulator and record the evidence in
+  [the honours guide](docs/honours.md).
+- The server verifies what it publishes from its own counters and the validated save
+  (`backend/src/Honours.php`); keep the measure kinds of the game and the server in step.
+- Honours never gate progression, rewards or puzzle completion, and never add move or time
+  limits.
+- Keep `testing/honours.test.js` passing; its coverage checks fail when a gem, era, fusion or
+  mine element has no honours decision.
+
 ## Local checks run in Docker
 
 The user requires every local check to run in Docker, never with the host's PHP
@@ -70,6 +117,10 @@ keeps generated files owned by you rather than root.
   prefix for `npm run verify`, `npm run build`, `npm run format:check` or a
   single `npx vitest run <file>`:
   `docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD":/app -w /app node:24-bookworm-slim npm test`
+- Level simulations (`testing/levels/`: every level played for completion, pacing
+  and three stars) are slow, so `npm test` and CI skip them. Run
+  `npm run test:levels` with the same prefix after adding or changing levels, star
+  targets, scoring or bonus rules.
 - Backend image, built from this repository's Dockerfile. Rebuild it after
   changing the Dockerfile or PHP extensions:
   `docker build --target runtime -t prospect-hollow-check .`
@@ -86,3 +137,18 @@ keeps generated files owned by you rather than root.
   ```
 
   The same applies to `concurrency.php` and `release-health.php`.
+
+- PHP formatting is part of Prettier (`@prettier/plugin-php`), so `npm run format:check`
+  covers the backend too. Static analysis runs PHPStan (level 6, `backend/phpstan.neon`):
+  `docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD":/src -w /src/backend --entrypoint composer prospect-hollow-check analyse`
+
+## Committing on `preprod`
+
+`preprod` is the test branch for final fixes before a major push to `main`. On
+`preprod`, commit and push every pending change without asking for confirmation,
+including uncommitted work already in the tree that the current task did not
+create. Group unrelated changes into separate commits with clear messages, and
+run the relevant Docker checks first.
+
+This applies to `preprod` only. On every other branch, commit or push only when
+the user asks, and only the changes they asked for.

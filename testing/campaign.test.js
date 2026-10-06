@@ -100,6 +100,48 @@ it('enforces sequential unlocks in the game action, saves completion and awards 
   expect(useCampaignStore().nextLevel).toBe(2);
   expect(useCampaignStore().powers.reduce((sum, power) => sum + power.quantity, 0)).toBe(powers);
 });
+it('continues to unfinished levels before replaying mines with fewer than three stars', () => {
+  const campaign = useCampaignStore();
+  expect(campaign.nextMiningLevel).toBe(1);
+  campaign.town.buildings.museum = 1;
+  campaign.records[1] = { score: 100, stars: 1 };
+  expect(campaign.nextMiningLevel).toBe(2);
+});
+
+it('continues a completed campaign at the lowest mine without three stars and keeps all mines unlocked', () => {
+  const campaign = useCampaignStore();
+  campaign.town.buildings.museum = 1;
+  campaign.records = Object.fromEntries(
+    Array.from({ length: LEVEL_COUNT }, (_, i) => [i + 1, { score: 12000, stars: 3 }]),
+  );
+  campaign.records[2] = { score: 6000, stars: 2 };
+  campaign.records[5] = { score: 100, stars: 1 };
+  expect(campaign.nextMiningLevel).toBe(2);
+  expect(campaign.canPlay(LEVEL_COUNT)).toBe(true);
+
+  const game = useGameStore();
+  game.bootstrap();
+  expect(game.startLevel(campaign.nextMiningLevel)).toBe(true);
+  expect(game.currentLevelId).toBe(2);
+
+  campaign.recordVictory({ id: 2, score: 100, target: 6000, combo: 1 });
+  expect(campaign.nextMiningLevel).toBe(2);
+  campaign.recordVictory({ id: 2, score: 12000, target: 6000, combo: 1 });
+  expect(campaign.nextMiningLevel).toBe(5);
+  campaign.recordVictory({ id: 5, score: 12000, target: 6000, combo: 1 });
+  expect(campaign.nextMiningLevel).toBeNull();
+});
+
+it('requires the museum to continue replaying a completed campaign', () => {
+  const campaign = useCampaignStore();
+  campaign.records = Object.fromEntries(
+    Array.from({ length: LEVEL_COUNT }, (_, i) => [i + 1, { score: 100, stars: 1 }]),
+  );
+  expect(campaign.nextMiningLevel).toBeNull();
+  campaign.town.buildings.museum = 1;
+  expect(campaign.nextMiningLevel).toBe(1);
+});
+
 it.each([
   [5999, 1],
   [6000, 1],
