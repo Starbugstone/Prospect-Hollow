@@ -30,6 +30,7 @@ import { TownPrimitives } from '../src/game/town/TownPrimitives';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { buildPlot, plotSignatures } from '../src/game/town/TownPlots';
 import { paintBuilding } from '../src/game/town/TownPaint';
+import { buildingPaintRole } from '../src/data/buildingPaint';
 import {
   addBuildingChoice,
   buildPersonalAreas,
@@ -311,6 +312,32 @@ describe('Personalisation rendering', () => {
       }
     },
   );
+  it('paints the actual Industrial main walls and roof, leaving window glass unchanged', () => {
+    const town = createTown();
+    town.era = 'industrial';
+    town.buildings.home = 3;
+    town.buildingEras.home = 'industrial';
+    town.buildingEraLevels.home = 3;
+    const d = fixture(town),
+      root = new Group();
+    buildPlot(d, 'home', root, town, { home: 'Home' });
+    const surfaces = [];
+    root.traverse((mesh) => {
+      const colour = mesh.material?.color?.getHexString();
+      if (['aa795f', '53726d', '9bbbbb'].includes(colour)) surfaces.push([mesh, colour]);
+    });
+    expect(surfaces.some(([, colour]) => colour === 'aa795f')).toBe(true);
+    expect(surfaces.some(([, colour]) => colour === '53726d')).toBe(true);
+    paintBuilding(d, root, { walls: '#83b5aa', roof: '#b54f5c' }, 'industrial');
+    for (const [mesh, source] of surfaces)
+      expect(mesh.material.color.getHexString()).toBe(
+        { aa795f: '83b5aa', '53726d': 'b54f5c', '9bbbbb': '9bbbbb' }[source],
+      );
+    // The corresponding SVG preview uses these distinct authored colours.
+    expect(buildingPaintRole('#b37e65', '', 'industrial')).toBe('walls');
+    expect(buildingPaintRole('#66877b', '', 'industrial')).toBe('roof');
+    expect(buildingPaintRole('#b5d1bd', '', 'industrial')).toBeNull();
+  });
   it('renders every frontage distinctly and adds visible growth', () => {
     const d = fixture();
     const signatures = new Set();

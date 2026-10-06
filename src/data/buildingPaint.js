@@ -96,6 +96,18 @@ const SOURCES = {
     '#aa9877',
   ],
 };
+// Industrial meshes and their SVG previews use their own masonry palette.
+// Keep these mappings together so the preview and the town paint the same surfaces.
+const INDUSTRIAL_SOURCES = {
+  walls: ['#aa795f', '#b59478', '#b57560', '#b6a38b', '#bd9678', '#b6b39a', '#b37e65', '#bcaa91'],
+  roof: ['#53726d', '#56786e', '#527b70', '#66877b'],
+  secondary: ['#c29a7a', '#8e7766', '#aa735c', '#956b55', '#bb997c', '#917d69'],
+  trim: ['#dfcba4', '#dcc0a0', '#ede0bc', '#dbc5a0', '#d0a084'],
+  accent: ['#506e67'],
+};
+const INDUSTRIAL = Object.fromEntries(
+  Object.entries(INDUSTRIAL_SOURCES).flatMap(([role, values]) => values.map((v) => [v, role])),
+);
 const LEGACY = Object.fromEntries(
   Object.entries(SOURCES).flatMap(([role, values]) => values.map((v) => [v, role])),
 );
@@ -112,6 +124,8 @@ export function buildingPaintRole(colour, name = '', era = 'frontier') {
   if (PROTECTED.test(name)) return null;
   const named = NAMES.find(([, pattern]) => pattern.test(name));
   if (named) return named[0];
+  if (era === 'industrial' && INDUSTRIAL[colour.toLowerCase()])
+    return INDUSTRIAL[colour.toLowerCase()];
   const profile = eraEvolution(era);
   const p =
     profile.architecture === 'cozy'
