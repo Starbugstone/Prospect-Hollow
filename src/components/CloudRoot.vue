@@ -136,6 +136,7 @@
   <AccountPanel
     v-if="accountOpen"
     :login-link="loginLink"
+    :section="accountSection"
     :writable="ready"
     @close="accountOpen = false"
     @changed="reload"
@@ -149,7 +150,11 @@
       accountOpen = false;
     "
   />
-  <CommunityPanel v-if="communityOpen && cloud.account" @close="communityOpen = false" />
+  <CommunityPanel
+    v-if="communityOpen && cloud.account"
+    @close="communityOpen = false"
+    @share="openSharing"
+  />
 </template>
 <script setup>
 import {
@@ -191,6 +196,8 @@ townStorage.setWriteGuard(townCoordinator.owns);
 const campaign = useCampaignStore(),
   game = useGameStore();
 const accountOpen = ref(false),
+  // The town section the account panel opens on, such as 'sharing'; cleared on close.
+  accountSection = ref(''),
   recoveryOpen = ref(false),
   communityOpen = ref(false),
   viewVersion = ref(0),
@@ -211,6 +218,16 @@ const activeMeta = computed(() => {
 const blockedUpload = computed(() => uploadBlocked(activeMeta.value));
 const accountTown = computed(() => !!cloud.account && activeMeta.value?.owner === cloud.account.id);
 const townName = computed(() => activeMeta.value?.name || t('Your town'));
+const shared = computed(() => accountTown.value && !!activeMeta.value?.isPublic);
+watch(accountOpen, (open) => {
+  if (!open) accountSection.value = '';
+});
+// Every "Share my town" button opens the sharing switch of the town being played.
+function openSharing() {
+  communityOpen.value = false;
+  accountSection.value = 'sharing';
+  accountOpen.value = true;
+}
 const saveState = computed(() =>
   describeSaveState({
     signedIn: !!cloud.account,
@@ -232,6 +249,8 @@ const recoveryToast = computed(
 provide('cloudAccount', {
   townName,
   accountTown,
+  // Whether the town being played is backed up and open to visitors.
+  shared,
   saveState,
   cloudAt: computed(() => (activeMeta.value?.cloudAt ?? 0) * 1000),
   signedIn: computed(() => !!cloud.account),
@@ -258,6 +277,7 @@ provide('cloudAccount', {
   openCommunity: () => {
     communityOpen.value = true;
   },
+  openSharing,
 });
 watch(
   townName,

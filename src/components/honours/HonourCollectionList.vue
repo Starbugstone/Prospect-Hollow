@@ -114,6 +114,7 @@ const props = defineProps({
   links: Boolean,
   canReplay: Boolean,
   canTravel: Boolean,
+  canShare: Boolean,
 });
 defineEmits(['open', 'manage', 'link']);
 const tab = defineModel('tab', { type: String, default: 'mine' });
@@ -138,6 +139,7 @@ const cards = computed(() =>
       describeFamily(family, props.state, {
         canReplay: props.canReplay,
         canTravel: props.canTravel,
+        canShare: props.canShare,
       }),
     ),
 );

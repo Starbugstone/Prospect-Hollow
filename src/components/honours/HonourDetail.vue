@@ -92,6 +92,7 @@ const props = defineProps({
   familyId: { type: String, required: true },
   links: Boolean,
   canTravel: Boolean,
+  canShare: Boolean,
 });
 defineEmits(['link']);
 const campaign = useCampaignStore();
@@ -106,6 +107,7 @@ const model = computed(
     describeFamily(family.value, campaign, {
       canReplay: campaign.canReplay,
       canTravel: props.canTravel,
+      canShare: props.canShare,
     }),
 );
 const best = computed(() =>

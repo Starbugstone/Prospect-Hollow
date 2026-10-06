@@ -39,7 +39,12 @@
         />
         <span v-else>{{ t('No honours on show yet') }}</span>
       </p>
-      <small v-if="!shared">{{ t('Visitors see this once sharing is on.') }}</small>
+      <small v-if="!shared"
+        >{{ t('Visitors see this once sharing is on.') }}
+        <button type="button" class="account-link" @click="$emit('share')">
+          {{ t('Share my town') }}
+        </button></small
+      >
     </div>
   </section>
 </template>
@@ -56,6 +61,7 @@ import { honourSummary } from './honourDisplay';
 // Town management: the showcase beside the town name, what visitors see, and the way
 // into the collection. The collection opens over this panel, signed in or not.
 defineProps({ town: { type: String, default: '' }, shared: Boolean });
+defineEmits(['share']);
 const campaign = useCampaignStore(),
   settings = useSettingsStore();
 const { openCollection } = useHonourNavigation();
@@ -98,6 +104,10 @@ const fresh = computed(() =>
 .honour-account-preview small {
   color: #5c5f4f;
   font-size: 12px;
+}
+.honour-account-preview small button {
+  padding: 0 0.2rem;
+  font-size: inherit;
 }
 .honour-account-preview p {
   display: flex;

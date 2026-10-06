@@ -107,7 +107,7 @@ import DeviceCopies from './DeviceCopies.vue';
 import GameIcon from '../GameIcon.vue';
 import { t } from '../../i18n';
 import '../../styles/account.css';
-const props = defineProps({ loginLink: String, writable: Boolean });
+const props = defineProps({ loginLink: String, writable: Boolean, section: String });
 const emit = defineEmits(['close', 'changed', 'community', 'recovery', 'signed-in']);
 const { dialog, closeButton, dismissBackdrop } = useNativeDialog(() => emit('close'));
 const { busy, message, act } = provideAccountContext({
@@ -159,6 +159,8 @@ function manage(section) {
   focus.value = section;
   view.value = 'manage';
 }
+// Opened on a section of the town being played, e.g. from a "Share my town" button.
+if (props.section) manage(props.section);
 async function deleteAccount() {
   await removeAccount(deleteAccountText.value);
   emit('changed');

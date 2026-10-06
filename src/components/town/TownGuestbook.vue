@@ -12,6 +12,7 @@
         <span v-if="collapsed && present.length" class="guestbook-live">{{
           t('Here now · {count}', { count: number(present.length) })
         }}</span>
+        <span v-else-if="collapsed && unshared" class="guestbook-private">{{ t('Private') }}</span>
         <GameIcon class="guestbook-chevron" name="chevron" />
       </button>
     </h2>
@@ -21,12 +22,24 @@
       </p>
       <template v-else>
         <p v-if="error || problem" role="status">{{ t(error || problem) }}</p>
-        <h3>{{ t('Here now · {count}', { count: number(present.length) }) }}</h3>
-        <p v-if="!snapshot && !error">{{ t('Loading visitors…') }}</p>
-        <p v-else-if="!present.length" class="guestbook-empty">
-          {{ t('No players visiting right now.') }}
-        </p>
-        <ul v-else class="guestbook-now">
+        <!-- A private town has no visitors to wait for: offer the sharing switch instead. -->
+        <div v-if="unshared" class="guestbook-private-callout">
+          <p>
+            <strong>{{ t('Your town is private.') }}</strong>
+            {{ t('Share it so other mayors can visit and sign your guestbook.') }}
+          </p>
+          <button type="button" @click="$emit('share')">
+            <GameIcon name="share" />{{ t('Share my town') }}
+          </button>
+        </div>
+        <template v-if="!unshared">
+          <h3>{{ t('Here now · {count}', { count: number(present.length) }) }}</h3>
+          <p v-if="!snapshot && !error">{{ t('Loading visitors…') }}</p>
+          <p v-else-if="!present.length" class="guestbook-empty">
+            {{ t('No players visiting right now.') }}
+          </p>
+        </template>
+        <ul v-if="present.length" class="guestbook-now">
           <li v-for="visitor in present" :key="visitor.id">
             <span class="guestbook-badge" aria-hidden="true">✦</span>
             <div>
@@ -46,8 +59,8 @@
             >
           </li>
         </ul>
-        <h3>{{ t('Visit history') }}</h3>
-        <p v-if="!visits.length && snapshot" class="guestbook-empty">
+        <h3 v-if="!unshared || visits.length">{{ t('Visit history') }}</h3>
+        <p v-if="!visits.length && snapshot && !unshared" class="guestbook-empty">
           {{ t('Your guestbook is waiting for its first visitor.') }}
         </p>
         <!-- Older pages load while the reader scrolls this box, which keeps the rest of the
@@ -118,8 +131,10 @@ const props = defineProps({
   error: String,
   era: String,
   canFind: Boolean,
+  // The player's own town is backed up but closed to visitors.
+  unshared: Boolean,
 });
-defineEmits(['find']);
+defineEmits(['find', 'share']);
 // The live poll refreshes page 1; older pages are appended as the history box scrolls.
 const older = shallowRef([]),
   page = ref(1),
@@ -248,6 +263,38 @@ onBeforeUnmount(() => {
   color: #1f5135;
   font-size: 0.78rem;
   white-space: nowrap;
+}
+.guestbook-private {
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: #efe5ef;
+  color: #6a4f70;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+.guestbook-private-callout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.4rem 0;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #e3cfe4;
+  border-radius: 10px;
+  background: #fff;
+}
+.guestbook-private-callout p {
+  flex: 1 1 14rem;
+  margin: 0;
+}
+.town-guestbook .guestbook-private-callout button:not(.guestbook-toggle) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-color: #82518b;
+  background: #82518b;
+  color: #fff;
+  font-weight: 700;
 }
 .guestbook-chevron {
   transition: transform 0.15s;

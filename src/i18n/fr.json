@@ -2298,7 +2298,7 @@
   "Play here instead": "Jouer ici",
   "Playing now": "En cours",
   "Put it in an empty slot so it is backed up.": "Placez-la dans un emplacement libre pour la sauvegarder.",
-  "Rename & sharing": "Nom et partage",
+  "Share & rename": "Partage et nom",
   "Resend in {seconds}s": "Renvoyer dans {seconds} s",
   "Resend link": "Renvoyer le lien",
   "Restore": "Restaurer",
@@ -2930,5 +2930,11 @@
   "Player distinctions mark special moments of the game and your time in Prospect Hollow.": "Les distinctions de joueur marquent les moments spéciaux du jeu et votre temps à Prospect Hollow.",
   "You played during the alpha. Thank you!": "Vous avez joué pendant l’alpha. Merci !",
   "{time} since your first sign-in": "{time} depuis votre première connexion",
-  "{count} player distinctions": "{count} distinctions de joueur"
+  "{count} player distinctions": "{count} distinctions de joueur",
+  "Shared": "Partagée",
+  "Private": "Privée",
+  "Share my town": "Partager ma ville",
+  "Your town is private.": "Votre ville est privée.",
+  "Share it so other mayors can visit and sign your guestbook.": "Partagez-la pour que d’autres maires puissent la visiter et signer votre livre d’or.",
+  "Share it so other mayors can visit you too.": "Partagez-la pour que d’autres maires puissent aussi vous rendre visite."
 }

@@ -460,6 +460,27 @@
   color: #64756a;
   font-size: 0.76rem;
 }
+/* Whether visitors can open the town, so a private town is never a surprise. */
+.town-slot-sharing {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 0.25rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: #efe9da;
+  color: #64563a;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.town-slot-sharing.is-shared {
+  background: #dcebdc;
+  color: #2d5a3c;
+}
+.town-slot-sharing svg {
+  width: 0.85rem;
+  height: 0.85rem;
+}
 .town-slot-info button,
 .town-slot-playing {
   margin-top: 0.5rem;

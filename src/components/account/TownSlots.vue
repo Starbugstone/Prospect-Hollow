@@ -95,8 +95,8 @@
         </button>
         <div v-if="menu === town.townId" class="town-slot-menu" role="menu">
           <template v-if="isCurrent(town)">
-            <button role="menuitem" @click="manage('details')">
-              <GameIcon name="settings" />{{ t('Rename & sharing') }}
+            <button role="menuitem" @click="manage('sharing')">
+              <GameIcon name="share" />{{ t('Share & rename') }}
             </button>
             <button role="menuitem" @click="manage('history')">
               <GameIcon name="history" />{{ t('Save history') }}
@@ -116,6 +116,11 @@
         </div>
         <div class="town-slot-info">
           <strong>{{ town.name }}</strong>
+          <span class="town-slot-sharing" :class="{ 'is-shared': town.isPublic }"
+            ><GameIcon v-if="town.isPublic" name="share" />{{
+              t(town.isPublic ? 'Shared' : 'Private')
+            }}</span
+          >
           <small v-if="town.card?.era" class="town-card-era-mobile">{{
             eraName(town.card.era)
           }}</small>

@@ -38,6 +38,7 @@
       :links="links"
       :can-replay="campaign.canReplay"
       :can-travel="canTravel"
+      :can-share="canShare"
       @open="detail = $event"
       @manage="managing = true"
       @link="follow"
@@ -51,7 +52,13 @@
     @close="detail = null"
   >
     <div :class="{ 'honour-contrast': settings.highContrastMode }">
-      <HonourDetail :family-id="detail" :links="links" :can-travel="canTravel" @link="follow" />
+      <HonourDetail
+        :family-id="detail"
+        :links="links"
+        :can-travel="canTravel"
+        :can-share="canShare"
+        @link="follow"
+      />
     </div>
   </TownDialog>
   <TownDialog
@@ -96,6 +103,10 @@ const cloudAccount = inject('cloudAccount', null);
 const townName = computed(() => cloudAccount?.townName.value ?? 'Prospect Hollow');
 // The shared-town directory opens only for a signed-in account.
 const canTravel = computed(() => !!cloudAccount?.signedIn.value);
+// The sharing switch helps only a backed-up town that visitors cannot open yet.
+const canShare = computed(
+  () => !!cloudAccount?.accountTown.value && cloudAccount.shared.value === false,
+);
 const { dialog, closeButton, dismissBackdrop } = useNativeDialog(() => emit('close'));
 const { openMuseumFor } = useHonourNavigation();
 const { showcase, received, list, unseen, markSeen } = usePlayerDistinctions({ campaign });
@@ -160,6 +171,9 @@ function follow(model) {
   else if (model.link.directory) {
     emit('close');
     cloudAccount?.openCommunity();
+  } else if (model.link.sharing) {
+    emit('close');
+    cloudAccount?.openSharing();
   } else emit('inspect', model.link.building);
 }
 </script>

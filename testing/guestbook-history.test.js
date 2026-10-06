@@ -94,4 +94,30 @@ describe('guestbook card', () => {
     expect(html).toContain('guestbook-live');
     expect(html).toMatch(/class="guestbook-body"[^>]*style="display:none;"/);
   });
+
+  // A backed-up town nobody can open must not wait for visitors: it offers sharing.
+  it('offers sharing instead of waiting for visitors while the town is private', async () => {
+    const empty = { present: [], history: [], hasNext: false, page: 1 };
+    const shared = await render({ townId: 'a'.repeat(36), snapshot: empty });
+    expect(shared).toContain('Your guestbook is waiting for its first visitor.');
+    expect(shared).not.toContain('Share my town');
+
+    const html = await render({ townId: 'a'.repeat(36), snapshot: empty, unshared: true });
+    expect(html).toContain('Your town is private.');
+    expect(html).toContain('Share my town');
+    expect(html).not.toContain('waiting for its first visitor');
+    expect(html).not.toContain('Here now');
+    expect(html).not.toContain('Visit history');
+
+    // Visits from before the town went private stay readable.
+    const kept = await render({ townId: 'a'.repeat(36), snapshot, unshared: true });
+    expect(kept).toContain('Share my town');
+    expect(kept).toContain('Visit history');
+
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    useSettingsStore().setGuestbookCollapsed(true);
+    const folded = await render({ townId: 'a'.repeat(36), snapshot: empty, unshared: true }, pinia);
+    expect(folded).toContain('guestbook-private');
+  });
 });

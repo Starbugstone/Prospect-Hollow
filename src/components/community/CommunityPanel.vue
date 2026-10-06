@@ -35,6 +35,16 @@
         <VillageVisit :village="village" />
       </template>
       <template v-else>
+        <!-- Visiting others is the moment a private town is noticed: one tap to open it up. -->
+        <aside v-if="privateTown" class="community-share">
+          <p>
+            <strong>{{ t('Your town is private.') }}</strong>
+            {{ t('Share it so other mayors can visit you too.') }}
+          </p>
+          <button type="button" @click="$emit('share')">
+            <GameIcon name="share" />{{ t('Share my town') }}
+          </button>
+        </aside>
         <form class="community-search" role="search" @submit.prevent>
           <GameIcon name="search" />
           <input
@@ -129,7 +139,7 @@
   </dialog>
 </template>
 <script setup>
-import { computed, nextTick, onBeforeUnmount, reactive, ref, shallowRef, watch } from 'vue';
+import { computed, inject, nextTick, onBeforeUnmount, reactive, ref, shallowRef, watch } from 'vue';
 import { publicVillage } from '../../services/cloudProfile';
 import {
   drawVillages,
@@ -147,7 +157,12 @@ import { t, number } from '../../i18n';
 import GameIcon from '../GameIcon.vue';
 import VillageCard from './VillageCard.vue';
 import VillageVisit from './VillageVisit.vue';
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'share']);
+const cloudAccount = inject('cloudAccount', null);
+// The player's backed-up town is closed to visitors.
+const privateTown = computed(
+  () => !!cloudAccount?.accountTown.value && cloudAccount.shared.value === false,
+);
 const { dialog, closeButton, dismissBackdrop } = useNativeDialog(() => emit('close'));
 // With many players a full list would always open on the same towns, so Discover shows one
 // random draw of up to seven and deals the next seven from the same deck. Search finds a
@@ -408,6 +423,31 @@ favouriteVillages()
   }
 }
 .community-back,
+.community-share {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 0.9rem;
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid #ecd49a;
+  border-radius: 12px;
+  background: #fff1cf;
+}
+.community-share p {
+  flex: 1 1 16rem;
+  margin: 0;
+  color: #4d4a35;
+}
+.community-dialog .community-share button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-color: #183832;
+  background: #183832;
+  color: #fff;
+  font-weight: 700;
+}
 .community-draw-button {
   display: inline-flex;
   align-items: center;

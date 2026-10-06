@@ -211,8 +211,10 @@
           :snapshot="visitorSnapshot"
           :error="visitorError"
           :era="town.era"
+          :unshared="!!visitorTownId && cloudAccount?.shared.value === false"
           can-find
           @find="findVisitor"
+          @share="cloudAccount.openSharing()"
         />
         <section class="town-story-stats" :aria-label="t('Village overview')">
           <h2>{{ t('Village overview') }}</h2>

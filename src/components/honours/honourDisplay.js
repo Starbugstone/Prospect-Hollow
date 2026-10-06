@@ -19,8 +19,9 @@ const METAL_LABELS = {
 const DIFFICULTIES = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
 export const TAB_LABELS = { mine: 'Mine', town: 'Town', friends: 'Friends', player: 'Player' };
 const BONUS_NAMES = { bomb: 'Bomb', cross: 'Cross', rainbow: 'Rainbow' };
-// Where an unfinished honour advances. Museum links open the filtered museum and the
-// directory link the shared-town directory, which needs a signed-in account.
+// Where an unfinished honour advances. Museum links open the filtered museum, the
+// directory link the shared-town directory, which needs a signed-in account, and the
+// sharing link the sharing switch of a backed-up town that is still private.
 const LINKS = {
   blacksmith: { label: 'Blacksmith details', building: 'blacksmith' },
   supplies: { label: 'Open supplies', building: 'armory' },
@@ -28,6 +29,7 @@ const LINKS = {
   'museum-stars': { label: 'Show levels below three stars', museum: true },
   'museum-element': { label: 'Show these levels in the museum', museum: true },
   directory: { label: 'Find villages to visit', directory: true },
+  sharing: { label: 'Share my town', sharing: true },
 };
 
 // Points of a regular outline in a 100×100 box; `inner` alternates for a rosette.
@@ -225,15 +227,22 @@ function mineLevels(definition, state) {
  * One family as shown on a card and in its detail, with every string translated.
  * `state` is the campaign store (records, town, powers, honours, nextLevel). Links
  * show only where they can open: museum replays need `canReplay`, the shared-town
- * directory `canTravel` (a signed-in account).
+ * directory `canTravel` (a signed-in account) and the sharing switch `canShare` (a
+ * backed-up town that is not shared yet).
  */
-export function describeFamily(family, state, { canReplay = false, canTravel = false } = {}) {
+export function describeFamily(
+  family,
+  state,
+  { canReplay = false, canTravel = false, canShare = false } = {},
+) {
   const { definition, earned, next } = family;
   const mine = definition.element ? mineLevels(definition, state) : null;
   const target = next && LINKS[next.definition.link];
   const opens = target && (target.museum ? canReplay && (!mine || mine.reached) : true);
   const link =
-    opens && (!target.directory || canTravel) ? { ...target, label: t(target.label) } : null;
+    opens && (!target.directory || canTravel) && (!target.sharing || canShare)
+      ? { ...target, label: t(target.label) }
+      : null;
   const measure = next?.definition.measure;
   return {
     id: family.id,

@@ -455,6 +455,11 @@ describe('The honour detail', () => {
     expect(await detail('explorer', { canTravel: true })).toContain('Find villages to visit');
     expect(await detail('explorer')).not.toContain('Find villages to visit');
   });
+
+  it('links Celebrated Town to the sharing switch only while the town is private', async () => {
+    expect(await detail('visitors', { canShare: true })).toContain('Share my town');
+    expect(await detail('visitors', { canTravel: true })).not.toContain('Share my town');
+  });
 });
 
 describe('Honour badge artwork', () => {
@@ -564,6 +569,10 @@ describe('The showcase', () => {
     expect(html).toContain('What visitors see');
     expect(html).toContain('Willowbrook');
     expect(html).toContain('Open collection');
+    expect(html).not.toContain('Share my town');
+    expect(await render(HonourAccountSection, { town: 'Willowbrook' }, pinia)).toContain(
+      'Share my town',
+    );
     useSettingsStore().setHonourNotices('off');
     expect(await render(HonourAccountSection, { town: 'Willowbrook' }, pinia)).not.toContain(
       '1 new',
