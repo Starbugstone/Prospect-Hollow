@@ -2,6 +2,21 @@
 // text are English keys for t(); add the French text to src/i18n/fr.json.
 const UPDATES = [
   {
+    date: '2026-10-06',
+    title: 'Earn Town Honours',
+    text: 'Earn bronze, silver and gold honours for mine puzzles, town milestones and visits between towns, then pick three for your showcase beside your town name. Player distinctions such as Alpha Player mark your time in Prospect Hollow.',
+  },
+  {
+    date: '2026-10-06',
+    title: 'Share your town in one tap',
+    text: 'Your town cards and guestbook now show whether your town is shared, with a Share my town button wherever visitors come up. Find shared towns by name and keep your favourites with a star.',
+  },
+  {
+    date: '2026-10-06',
+    title: 'Easier to play, in town and in the mine',
+    text: 'A new tab bar keeps the village, building, the mine and your story one tap away. Drag armory bonuses from the power bar onto the board, and finished obstacles now leave the board completely.',
+  },
+  {
     date: '2026-10-03',
     title: 'Canopy and Riverlight are here',
     text: 'Two new eras follow Tomorrow City: Canopy Age and Riverlight Age. Build six new landmarks, from a riverside tea house to a glowing pavilion, and meet garden wildlife and Willowkin neighbors.',
