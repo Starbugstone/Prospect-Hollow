@@ -186,7 +186,7 @@ final class TownDirectory
     // Live presence records signed-in visits under this key (see VisitorService::presence).
     private function visitorKey(array $session): string
     {
-        return $this->auth->hash('player:' . $session['player_id']);
+        return $this->auth->visitorKey($session['player_id']);
     }
 
     // A list card carries what helps choose a town. "visited" covers every visit this player

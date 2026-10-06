@@ -374,8 +374,7 @@ final class AdminService
             if (($body['confirmation'] ?? null) !== $player['email']) {
                 throw new ApiError(422, 'Type the player’s email to confirm deletion.');
             }
-            $db->delete('login_intents', ['email' => $player['email']]);
-            $db->delete('players', ['id' => $id]);
+            $this->saves->eraseAccount($db, $player);
             // The log keeps only the ID: the deleted email must not outlive the account.
             $this->admins->audit($actor, 'player_deleted', $id);
             return ['ok' => true];

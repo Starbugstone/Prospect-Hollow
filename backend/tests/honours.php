@@ -1000,6 +1000,8 @@ try {
             'origin_town_id' => $origin,
             'town_name' => $origin === null ? null : 'Somewhere',
             'era' => 'frontier',
+            // Live presence marks every visit made while signed in.
+            'signed_in' => $name !== '' || $origin !== null ? 1 : 0,
             'arrived_at' => 1000 + $visitNumber,
             'last_seen_at' => 1000 + $visitNumber,
             'departed_at' => 1000 + $visitNumber,

@@ -497,6 +497,8 @@ try {
             'name' => $guestName,
             'origin_town_id' => $origin,
             'era' => 'frontier',
+            // Live presence marks every visit made while signed in.
+            'signed_in' => $guestName !== '' || $origin !== null ? 1 : 0,
             'arrived_at' => time() - 3600,
             'last_seen_at' => time() - 3500,
             'departed_at' => time() - 3400,

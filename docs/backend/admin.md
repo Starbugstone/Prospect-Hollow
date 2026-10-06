@@ -43,7 +43,7 @@ Renames and unsharing do not change the gameplay revision, so they never conflic
 
 ## Player activity recorded
 
-Every signed-in API request records, at most once a minute per player: the last-seen time (minute precision), the last IP address and browser user agent (only the latest, printable characters, 255 at most), and whether it came from the web or the mobile app. Email sign-ins also record their time and count. One row per active UTC day feeds the daily chart and is kept for 90 days. Everything is deleted with the account. The IP address and user agent are personal data: mention them in the privacy notice. Recording never blocks a request; a failure is logged without details.
+Every signed-in API request records, at most once a minute per player: the last-seen time (minute precision), the last IP address and browser user agent (only the latest, printable characters, 255 at most), and whether it came from the web or the mobile app. Email sign-ins also record their time and count. One row per active UTC day feeds the daily chart and is kept for 90 days. Everything is deleted with the account. The IP address and user agent are personal data: the [privacy notice](privacy.md) lists them and players see their own in the Mayor's Office. Deleting a player uses the same erasure as the player's own deletion. Recording never blocks a request; a failure is logged without details.
 
 ## Security
 

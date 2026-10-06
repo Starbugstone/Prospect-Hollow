@@ -97,7 +97,10 @@ The API contract is in [openapi.yaml](openapi.yaml):
 
 - `GET /api/v1/account/profile`: public profile and owned town choices; signed
   out returns a null profile and no towns.
-- `PATCH /api/v1/account/profile`: save `displayName` and `visitingTownId`.
+- `PATCH /api/v1/account/profile`: save `displayName`, `visitingTownId` and optional
+  `anonymousVisits`. A private visit records neither the public name nor the home town's
+  name, so the guestbook shows a plain visitor without a return link; the home town is
+  still stored so the visit counts for the visitor's `townsVisited`.
 - `POST /api/v1/villages/{publicId}/presence`: join or renew using `token`,
   `sequence`, optional `browserToken` and optional owned `townId`. Active replies
   include `visitId` so the visitor can identify their own character.
@@ -108,7 +111,9 @@ The API contract is in [openapi.yaml](openapi.yaml):
   receipts. All timestamps use Unix milliseconds.
   The owner reply also includes the server's Town Honours social counts:
   `uniqueVisitors`, different signed-in players who have visited (each account once;
-  signed-out visits never count), and `townsVisited`, different other players' villages
+  signed-out visits never count). A visit is marked `signed_in` when it is recorded, so it
+  keeps counting after the visitor hides their name, deletes their home town or erases
+  their account ([privacy](privacy.md)), and `townsVisited`, different other players' villages
   visited from this town as its home town (each village once; the owner's own towns never
   count, and a village unshared or deleted later still counts while its visit records
   remain). The public guestbook includes neither.
