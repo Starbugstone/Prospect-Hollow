@@ -1,3 +1,4 @@
+import { createPersonalisation } from './townPersonalisation';
 import { hasShortProgression } from './buildingProgression';
 import { purchasePrice, RIVER_RAIL_LEVEL_PRICES } from './economy';
 import { FRONTIER_BUILDINGS } from './frontier';
@@ -625,6 +626,7 @@ export const INITIAL_STORY = {
 };
 
 export const createTown = () => ({
+  personalisation: createPersonalisation(),
   ...createEraState(BUILDINGS.map(({ id }) => id)),
   coins: 0,
   tourSeen: false,

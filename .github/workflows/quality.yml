@@ -81,10 +81,12 @@ jobs:
           php backend/tests/moderation.php
           php backend/tests/money-budget.php
           php backend/tests/save-integrity.php
+          php backend/tests/personalisation.php
           php backend/bin/migrate.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/saves.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/money-sync.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/visitors.php
+          TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/personalisation-public.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/honours.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/player-distinctions.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/concurrency.php

@@ -26,6 +26,7 @@ const NORMAL_ACTIONS = new Set([
   'welcomeGuest',
   'markGuestSeen',
   'upgradeBuilding',
+  'personalise',
   'finishConstruction',
   'useBuilderHammer',
   'resolveBandits',

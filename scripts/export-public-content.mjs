@@ -3,7 +3,7 @@ import { writeFileSync } from 'node:fs';
 const result = await build({
   stdin: {
     contents:
-      "export { BUILDINGS } from './src/data/town.js'; export { ERAS } from './src/data/eras.js'; export { LEVEL_COUNT } from './src/data/campaign.js'; export { COUNTERS, HONOURS, HONOURS_VERSION, SHOWCASE_SLOTS } from './src/data/honours.js'; export { PLAYER_DISTINCTIONS } from './src/data/playerDistinctions.js';",
+      "export { LANDMARK_OPTIONS } from './src/data/townLandmarks.js'; export { PAINT_GROUPS, CLOTHING_GROUPS, CREST_SHAPES, CREST_PATTERNS, BUILDING_CHOICES, PERSONAL_AREAS } from './src/data/townPersonalisation.js'; export { CREST_EMBLEM_IDS } from './src/data/townCrests.js'; export { BUILDINGS } from './src/data/town.js'; export { ERAS } from './src/data/eras.js'; export { LEVEL_COUNT } from './src/data/campaign.js'; export { COUNTERS, HONOURS, HONOURS_VERSION, SHOWCASE_SLOTS } from './src/data/honours.js'; export { PLAYER_DISTINCTIONS } from './src/data/playerDistinctions.js';",
     resolveDir: process.cwd(),
   },
   bundle: true,
@@ -12,6 +12,14 @@ const result = await build({
   write: false,
 });
 const {
+  LANDMARK_OPTIONS,
+  PAINT_GROUPS,
+  CLOTHING_GROUPS,
+  CREST_SHAPES,
+  CREST_PATTERNS,
+  BUILDING_CHOICES,
+  PERSONAL_AREAS,
+  CREST_EMBLEM_IDS,
   BUILDINGS,
   ERAS,
   LEVEL_COUNT,
@@ -26,13 +34,37 @@ const {
 
 // The measure kinds backend/src/Honours.php evaluates. A new kind must be implemented
 // there first: the server would otherwise never verify, and so never publish, its ranks.
-const SERVER_MEASURES = ['stars', 'score', 'era', 'count', 'distinct', 'powers', 'social'];
+const SERVER_MEASURES = [
+  'stars',
+  'score',
+  'era',
+  'count',
+  'distinct',
+  'powers',
+  'social',
+  'landmark',
+];
 for (const definition of HONOURS.definitions) {
   if (!SERVER_MEASURES.includes(definition.measure.kind))
     throw new Error(`${definition.id} measures ${definition.measure.kind}, unknown to the server.`);
 }
 
 const schema = {
+  personalisation: {
+    eras: ERAS.map((e) => e.id),
+    paint: PAINT_GROUPS.map((g) => g.id),
+    clothing: CLOTHING_GROUPS.map((g) => g.id),
+    shapes: CREST_SHAPES,
+    patterns: CREST_PATTERNS,
+    emblems: CREST_EMBLEM_IDS,
+    choices: BUILDING_CHOICES,
+    areas: PERSONAL_AREAS,
+    landmarks: LANDMARK_OPTIONS,
+    buildings: [
+      ...BUILDINGS.map((b) => b.id),
+      ...PERSONAL_AREAS.filter((a) => !a.timeless).map((a) => a.id),
+    ],
+  },
   buildings: BUILDINGS.map((b) => b.id),
   eras: ERAS.map((e) => e.id),
   buildingLevels: Object.fromEntries(BUILDINGS.map((b) => [b.id, b.upgrades.length])),

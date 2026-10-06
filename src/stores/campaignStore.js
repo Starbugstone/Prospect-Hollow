@@ -1,3 +1,5 @@
+import { personaliseTown } from '../data/townPersonalisation';
+import { CREST_EMBLEM_IDS } from '../data/townCrests';
 import {
   VIP_SPEND,
   VIP_RECEIPT_LIMIT,
@@ -684,6 +686,19 @@ export const useCampaignStore = defineStore('campaign', {
       const guest = this.town.guestVip;
       if (!guest || guest.at !== at || guest.seen) return false;
       return this.commit({ town: { ...this.town, guestVip: { ...guest, seen: true } } });
+    },
+    personalise(commands, received = {}) {
+      let next = this.town;
+      const earned = [...Object.keys(this.honours.earned), ...Object.keys(received)];
+      for (const command of commands) {
+        next = personaliseTown(next, command, CREST_EMBLEM_IDS, earned);
+        if (!next) return false;
+      }
+      const purchases = commands.filter((c) => c.kind === 'area');
+      return this.commit(
+        { town: next },
+        purchases.length ? { kind: 'landmark-buy', data: { purchases, at: Date.now() } } : null,
+      );
     },
     upgradeBuilding(id, expectedStage) {
       const at = Date.now();

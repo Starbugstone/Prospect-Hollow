@@ -565,6 +565,10 @@ final class SaveIntegrity
         ) {
             $result['town'][$key] = $p['town'][$key];
         }
+        $result['town']['landmarks'] = [
+            'areas' => $p['town']['personalisation']['areas'] ?? [],
+            'levels' => $p['town']['personalisation']['areaLevels'] ?? [],
+        ];
         return $result;
     }
     private function journal(mixed $value): ?array
@@ -1460,6 +1464,29 @@ final class SaveIntegrity
             }
         }
         switch ($kind) {
+            case 'landmark-buy':
+                if (
+                    !is_array($d['purchases'] ?? null) ||
+                    !array_is_list($d['purchases']) ||
+                    count($d['purchases']) < 1 ||
+                    count($d['purchases']) > 11
+                ) {
+                    self::mismatch('landmark-buy.purchases');
+                }
+                foreach ($d['purchases'] as $purchase) {
+                    $next = is_array($purchase)
+                        ? TownPersonalisation::purchase(
+                            $s['town'],
+                            $purchase,
+                            $this->rules['eraOrder'],
+                        )
+                        : null;
+                    if ($next === null) {
+                        self::mismatch('landmark-buy');
+                    }
+                    $s['town'] = $next;
+                }
+                break;
             case 'run-start':
                 $run = $this->count($d['runId'] ?? null, 'runId');
                 $mode = $d['mode'] ?? 'normal';

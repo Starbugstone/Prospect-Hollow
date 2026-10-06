@@ -247,6 +247,9 @@ final class TownDirectory
                     'villageId' => $row['public_id'],
                     'name' => $row['name'],
                     'era' => $appearance->era ?? null,
+                    ...$appearance->personalisation->crest ?? null
+                        ? ['crest' => $appearance->personalisation->crest]
+                        : [],
                     'buildings' => count(array_filter($buildings, fn($level) => $level > 0)),
                     'mineLevel' => $appearance->mineLevel ?? null,
                     'saloonReady' =>

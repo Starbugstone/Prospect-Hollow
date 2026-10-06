@@ -83,7 +83,7 @@
         class="town-slot"
         :class="{ 'is-current': isCurrent(town) }"
       >
-        <TownCardArt :era="town.card?.era" />
+        <TownCardArt :era="town.card?.era" :crest="town.card?.crest" />
         <button
           class="town-slot-more"
           aria-haspopup="menu"

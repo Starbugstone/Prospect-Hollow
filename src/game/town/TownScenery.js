@@ -1,3 +1,5 @@
+import { buildPersonalAreas, buildTownBanner } from './TownPersonalisation';
+import { PERSONAL_AREAS, areaStage } from '../../data/townPersonalisation';
 import { buildMineHillside } from './TownMineHillside';
 import { groundHeight, landscapeColor } from './TownLandscape';
 import { RAIL_EDGE } from './TownLayout';
@@ -30,6 +32,26 @@ export class TownScenery {
     // completed plots. Earlier roads keep their batch when a new building opens.
     const overhead = hasElectricity(town) && !!eraEvolution(town.era).overheadPower;
     const definitions = [
+      [
+        'town-banner',
+        JSON.stringify(town.personalisation?.crest),
+        () => buildTownBanner(view, town),
+      ],
+      [
+        'personal-areas',
+        JSON.stringify([
+          town.personalisation?.areas,
+          PERSONAL_AREAS.map((a) => [
+            town.personalisation?.paint?.[a.id],
+            town.personalisation?.plaques?.[a.id],
+          ]),
+          town.displayHonours,
+          town.displayDistinctions,
+          town.personalisation?.crest,
+          PERSONAL_AREAS.map((area) => areaStage(town, area)),
+        ]),
+        () => buildPersonalAreas(view, town),
+      ],
       [
         'mine-hillside',
         !!railEdges(town).length,

@@ -86,6 +86,9 @@ final class SaveService
         $honours = (new Honours())->sanitize($save->honours ?? null);
         return [
             'era' => is_string($town->era ?? null) ? $town->era : '',
+            ...$town->personalisation->crest ?? null
+                ? ['crest' => TownPersonalisation::normalize($town->personalisation, $town)->crest]
+                : [],
             'coins' =>
                 is_int($coins) || is_float($coins) ? max(0, min(9007199254740991, $coins)) : 0,
             'buildings' => count(
@@ -278,7 +281,10 @@ final class SaveService
             $json = json_encode(
                 Honours::load(fn() => $integrity)->keep(
                     $integrity->accept(
-                        json_decode($json, false, 64, JSON_THROW_ON_ERROR),
+                        TownPersonalisation::keep(
+                            json_decode($json, false, 64, JSON_THROW_ON_ERROR),
+                            null,
+                        ),
                         null,
                         $now,
                         false,
@@ -370,7 +376,10 @@ final class SaveService
             $json = json_encode(
                 Honours::load(fn() => $integrity)->keep(
                     $integrity->accept(
-                        json_decode($json, false, 64, JSON_THROW_ON_ERROR),
+                        TownPersonalisation::keep(
+                            json_decode($json, false, 64, JSON_THROW_ON_ERROR),
+                            $previous,
+                        ),
                         $previous,
                         $now,
                         $resolve,

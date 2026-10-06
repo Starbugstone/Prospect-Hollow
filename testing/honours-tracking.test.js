@@ -4,6 +4,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { readFileSync } from 'node:fs';
 import {
   QUARTERMASTER,
+  HONOURS_VERSION,
   createHonours,
   creditRun,
   levelElements,
@@ -553,7 +554,7 @@ describe('Backfilling older saves', () => {
   it('does not backfill again once the current version has run', () => {
     const profile = freshProfile();
     for (let id = 1; id <= 25; id++) profile.records[id] = { score: 1, stars: 3 };
-    profile.honours.backfilled = 1;
+    profile.honours.backfilled = HONOURS_VERSION;
     const campaign = open(profile);
     expect(campaign.honours.earned).toEqual({});
     expect(campaign.save()).toBe(true);

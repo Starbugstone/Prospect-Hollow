@@ -1,3 +1,5 @@
+import { paintBuilding } from './TownPaint';
+import { addBuildingChoice, addBuildingPlaque } from './TownPersonalisation';
 import { TownItineraries } from './TownItineraries';
 
 import { applyRoadSetbacks } from './BuildingSetbacks';
@@ -95,6 +97,10 @@ export function buildPlot(d, id, group, town, labels) {
           town.buildingEras[id],
           town.buildingEraLevels[id] || stage,
         );
+      if (stage) {
+        paintBuilding(d, group, town.personalisation?.paint?.[id], town.buildingEras[id]);
+        addBuildingPlaque(d, group, town, id);
+      }
       if (project) addScaffolding(d, group, kind, stage, constructionVisual(project));
     } else if (!stage) addConstructionPlot(d, group, kind, project ? 2 : -1, labels[id]);
     else {
@@ -136,6 +142,14 @@ export function buildPlot(d, id, group, town, labels) {
             wheel.rotation.x = time * 0.45;
           },
         };
+      addBuildingChoice(
+        d,
+        group,
+        town.personalisation?.choices?.[id],
+        town.buildingEraLevels[id] || stage,
+      );
+      paintBuilding(d, group, town.personalisation?.paint?.[id], town.buildingEras[id]);
+      addBuildingPlaque(d, group, town, id);
       if (project) addScaffolding(d, group, kind, stage, constructionVisual(project));
     }
   }
@@ -149,6 +163,11 @@ export function plotSignatures(d, town, labels) {
       id,
       JSON.stringify([
         labels[id],
+        town.personalisation?.paint?.[id],
+        town.personalisation?.choices?.[id],
+        town.personalisation?.plaques?.[id],
+        town.displayHonours,
+        town.displayDistinctions,
         town.era,
         town.buildings[id],
         constructionVisual(town.projects[id]),
@@ -164,6 +183,7 @@ function topologyParts(d, town, labels) {
   return Object.fromEntries(
     Object.entries({
       era: town.era,
+      personalisation: town.personalisation?.clothing,
       plots: visiblePlots(town).map(({ id }) => id),
       tracks: townTracks(town),
       rails: railEdges(town),
@@ -220,7 +240,15 @@ export function changeTown(d, town, labels, mineProgress, constructionId, reduce
   const work = plotWork(d);
   work.queue = [];
   if (!changed.length && sameTopology) {
+    const expanded =
+      JSON.stringify(d.town?.personalisation?.areas) !==
+      JSON.stringify(town.personalisation?.areas);
     d.town = town;
+    if (refreshScenery(d).length) {
+      d.buildingRenderer.sync(d.world.children.filter((child) => child.userData.static));
+      d.repairAnimalLife();
+    }
+    if (expanded && d.overview) d.frameTown();
     // No plot will activate to retire a construction cue shown for this change.
     if (d.cue) d.cue.visible = false;
     d.render();

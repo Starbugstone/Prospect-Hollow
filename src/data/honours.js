@@ -16,11 +16,12 @@ import { OBSTACLES } from './obstacles';
 import { isPlayerDistinction } from './playerDistinctions';
 import { getLevelStarTarget } from './starRating';
 import { BANDIT_EVENT } from './town';
+import { PERSONAL_AREAS } from './townLandmarks';
 
 // The saved block's shape and the catch-up generation: saves from an older generation
 // are re-evaluated once on load. It is not a requirement version (see `version` on a
 // rank) and a new rank or family raises it so existing saves earn what they prove.
-export const HONOURS_VERSION = 1;
+export const HONOURS_VERSION = 2;
 // Ranks in ladder order. A family may stop early; new ranks only ever append.
 export const RANK_METALS = Object.freeze(['bronze', 'silver', 'gold', 'diamond']);
 const METAL_DIFFICULTY = Object.freeze({
@@ -243,6 +244,13 @@ const MEASURES = Object.freeze({
     },
   },
   era: { value: (state, measure, content) => townEraStep(state.town, content.eras) },
+  landmark: {
+    value: (state, measure) => {
+      const area = PERSONAL_AREAS.find((area) => area.id === measure.area);
+      const slots = state.town?.personalisation?.areas?.[measure.area];
+      return Number(!!area && Array.isArray(slots) && area.choices.includes(slots[0]));
+    },
+  },
   // One counter, or the total of a counter map when no key is named.
   count: {
     value: (state, measure) => {
@@ -492,6 +500,17 @@ export function honourFamilies({
         { metal: 'silver', goal: 15, name: 'Seasoned Traveller' },
         { metal: 'gold', goal: 30 },
       ],
+    },
+    {
+      id: 'monument',
+      tab: 'town',
+      name: 'A Lasting Legacy',
+      art: { image: '/art/rewards/monument.svg' },
+      measure: { kind: 'landmark', area: 'monument' },
+      progress: '{value} / {goal} monument built',
+      requirement: 'Build your first monument.',
+      popup: 'Your first monument stands in the Hollow',
+      ranks: [{ metal: 'gold', goal: 1, since: 2 }],
     },
   ];
 }

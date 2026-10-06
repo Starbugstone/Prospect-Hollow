@@ -35203,6 +35203,16 @@
     ]
   },
   "defaultTown": {
+    "personalisation": {
+      "version": 1,
+      "crest": null,
+      "paint": {},
+      "clothing": {},
+      "choices": {},
+      "areas": {},
+      "areaLevels": {},
+      "plaques": {}
+    },
     "era": "frontier",
     "buildingEras": {
       "well": "frontier",
@@ -35469,6 +35479,16 @@
     "seenObstacles": [],
     "seenTips": [],
     "town": {
+      "personalisation": {
+        "version": 1,
+        "crest": null,
+        "paint": {},
+        "clothing": {},
+        "choices": {},
+        "areas": {},
+        "areaLevels": {},
+        "plaques": {}
+      },
       "era": "frontier",
       "buildingEras": {
         "well": "frontier",
@@ -35694,7 +35714,7 @@
     "issuedRun": 0,
     "settledRun": 0,
     "honours": {
-      "version": 1,
+      "version": 2,
       "earned": {},
       "counts": {
         "gems": {},
@@ -35707,8 +35727,8 @@
       },
       "showcase": [],
       "backfilled": 0,
-      "seenGeneration": 1
+      "seenGeneration": 2
     }
   },
-  "contentDigest": "143b5742edeb5b6c30a08cb8b8cb7dd724e50c584db8de73500318dd29cf7a76"
+  "contentDigest": "3bf8ee114128a05ead49b44eac4bcb8fd078df32bd1d7af8d494c1a8f313b68c"
 }

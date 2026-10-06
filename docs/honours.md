@@ -44,6 +44,7 @@ with the content (see [Extending content](#extending-content)).
 | Town    | Town Guardian (incidents fully protected) | 5 · Watchful Town       | 25                          | 60 · Hollow Sentinel          |
 | Town    | Forge Veteran (TNT from the forge)        | 5 · The Forge Delivers  | 100                         | 250 · Forge Master            |
 | Town    | Master Quartermaster                      | —                       | —                           | 5 powers held at 26 at once   |
+| Town    | A Lasting Legacy                          | —                       | —                           | Build your first monument     |
 | Friends | Visitors (different signed-in players)    | 1 · First Guest         | 5 · Welcoming Host          | 15 · Celebrated Town          |
 | Friends | Village Explorer (villages visited)       | 5 · Curious Neighbour   | 15 · Seasoned Traveller     | 30 · Village Explorer         |
 
@@ -59,6 +60,12 @@ A rank without its own name uses the family name; the metal is always shown besi
   era is a deliberate decision (a diamond rank or that list).
 - Village Explorer counts different players' villages visited **from this town** while signed in
   (the town chosen as the visiting town). Visiting your own other towns never counts.
+
+The monument family has exactly one rank, `monument-gold`: **A Lasting Legacy**.
+Any of the five Monument Square choices earns it on the first successful purchase.
+Replacements never add ranks or repeat the award, and the original award stays permanent.
+Older saves with a monument catch up in honours generation 2. The badge can be showcased
+and displayed on buildings like other Town Honours; it grants no coins or progression.
 
 ## Counting rules
 
@@ -160,6 +167,16 @@ Mine elements per campaign: relics 242 (from chapter 10), lanterns 84 (chapter 4
 (chapter 63). Their silver goals fall shortly after the element's content, gold at about 1.5×.
 Visitor and explorer goals are social choices (1/5/15 and 5/15/30), not simulated.
 
+Monument milestone checked on 2026-10-06 with
+`node scripts/measure-campaign.mjs . 1 90` in the Node 24 Docker image: seed 1 completed
+90 puzzles, reached Industrial after run 59, and reached Post-war after run 89 with
+2,589 coins remaining under the normal progression-first spending policy. This proves
+the optional monument unlock is reachable without requiring a purchase. Its fixed goal
+is exactly one monument, irrespective of price (6,000–15,000 coins); the player chooses
+when to save for it. Purchase/replacement fixtures and honour tests cover all five
+choices, exact debits, one award, persistence and server verification. The simulator
+does not buy optional monuments or predict when players will choose to buy one.
+
 Score Legend partly rewards patience: with unlimited moves a player can stall before the final
 objective. That is accepted and never limited by moves or time. Re-measure after any change to
 scoring, levels, gem palettes or the town economy before adding ranks.
@@ -177,7 +194,7 @@ requirement?, popup?, since?, version? }] }`.
 - A rank definition has `id, family, tab, rank, metal, difficulty, version, since, name,
 requirement, popup, progressText, goal, measure, art, link, params(), progress(state),
 qualifies(state)`. Display strings are English keys for `t()`.
-- **Measures** (`MEASURES`, mirrored in `backend/src/Honours.php`): `stars` (three-star records),
+- **Measures** (`MEASURES`, mirrored in `backend/src/Honours.php`): `landmark` (a known option built in a named optional parcel), `stars` (three-star records),
   `score` (`fromLevel`; best ratio, evidence `{ levelId, score, target }`), `era` (`era`,
   `complete`; two steps per era), `count` (`counter`, optional `key`; a map without a key sums),
   `distinct` (`counter`, `keys`), `powers` (`quantity`) and `social` (`counter`: `visitors` or

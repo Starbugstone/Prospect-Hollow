@@ -1,3 +1,5 @@
+import { LANDMARK_OPTIONS, PERSONAL_AREAS } from '../src/data/townLandmarks';
+import { CREST_EMBLEMS } from '../src/data/townCrests';
 import { CITY_DESCRIPTIONS } from '../src/data/city';
 import { afterEach, describe, expect, it } from 'vitest';
 import { browserLocale, locale, setLocale, t, number } from '../src/i18n';
@@ -74,6 +76,9 @@ describe('One browser language across the game and town', () => {
   });
   it('keeps a translated catalog for all levels, chapters, rewards, and town content', () => {
     const messages = [
+      ...LANDMARK_OPTIONS.flatMap((o) => [o.label, o.detail]),
+      ...PERSONAL_AREAS.map((a) => a.label),
+      ...CREST_EMBLEMS.map((e) => e.label),
       ...LEVEL_NAMES,
       ...Object.values(CITY_DESCRIPTIONS).flat(),
       ...generateLevelConfigs().map((level) => level.tip),

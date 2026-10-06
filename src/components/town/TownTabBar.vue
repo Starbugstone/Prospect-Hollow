@@ -50,6 +50,7 @@ const tabs = computed(() => [
     nudge: props.buildNudge,
   },
   { id: 'mine', icon: 'pickaxe', label: props.mineLabel },
+  { id: 'personalise', icon: 'color-wand', label: t('Personalise') },
   { id: 'story', icon: 'book', label: t('Story') },
   { id: 'more', icon: 'menu', label: t('More') },
 ]);

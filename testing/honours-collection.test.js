@@ -5,6 +5,7 @@ import { createSSRApp, h } from 'vue';
 import { renderToString } from 'vue/server-renderer';
 import {
   HONOURS,
+  HONOURS_VERSION,
   HONOUR_TABS,
   QUARTERMASTER,
   RANK_METALS,
@@ -112,7 +113,7 @@ function diamondCatalog() {
           ...family,
           ranks: [
             ...family.ranks,
-            { metal: 'diamond', goal: 500, name: 'Star Sovereign', since: 2 },
+            { metal: 'diamond', goal: 500, name: 'Star Sovereign', since: HONOURS_VERSION + 1 },
           ],
         }
       : family,

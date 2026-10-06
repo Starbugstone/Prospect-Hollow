@@ -483,6 +483,7 @@ final class Honours
             ),
             'score' => $this->bestScore($state, $measure)['ratio'] ?? 0,
             'era' => $this->rules()->eraStep($state['town']),
+            'landmark' => $this->landmark($state['town'], $measure['area'] ?? null),
             // One counter, or the total of a counter map when no key is named.
             'count' => is_array($counts)
                 ? (is_string($key)
@@ -509,6 +510,22 @@ final class Honours
             'social' => $state['social'] === null ? null : $state['social']($counter),
             default => null,
         };
+    }
+
+    /** A known, paid landmark in the validated save; the same catalog as the client. */
+    private function landmark(array $town, mixed $id): int
+    {
+        if (!is_string($id)) {
+            return 0;
+        }
+        $slots = $town['personalisation']['areas'][$id] ?? null;
+        foreach (TownPersonalisation::catalog()['areas'] as $area) {
+            if ($area['id'] === $id) {
+                return (int) (is_array($slots) &&
+                    in_array($slots[0] ?? null, $area['choices'], true));
+            }
+        }
+        return 0;
     }
 
     /**

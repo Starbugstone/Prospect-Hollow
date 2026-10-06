@@ -196,9 +196,11 @@
                     built,
                     total: currentEraPlots.length,
                   })
-                : dialogMode === 'more'
-                  ? 'More'
-                  : 'Your town',
+                : dialogMode === 'personalise'
+                  ? 'Personalise your town'
+                  : dialogMode === 'more'
+                    ? 'More'
+                    : 'Your town',
         )
       "
       close-label="Close building details"
@@ -432,6 +434,16 @@
           </section>
         </details>
       </template>
+      <TownPersonalise
+        v-else-if="dialogMode === 'personalise'"
+        :town="town"
+        :honours="campaign.honours"
+        :received="personalDistinctions"
+        :initial-building="personalBuilding"
+        :commit="savePersonalisation"
+        @preview="personalCommands = $event"
+        @focus="focusPersonalBuilding"
+      />
       <TownMoreMenu
         v-else-if="dialogMode === 'more'"
         :can-replay="campaign.canReplay"
@@ -457,6 +469,7 @@
         :bonus-limit="campaign.bonusLimit"
         :powers="campaign.powers"
         :last-income="campaign.lastSaloonIncome"
+        @personalise="openPersonalisation"
         @build="startWork"
         @hammer="useHammer"
         @finish="finishBuilding(selected)"
@@ -547,6 +560,9 @@
   </main>
 </template>
 <script setup>
+import TownPersonalise from './TownPersonalise.vue';
+import { BUILDING_CHOICES, personaliseTown } from '../../data/townPersonalisation';
+import { CREST_EMBLEM_IDS } from '../../data/townCrests';
 import { performanceMark } from '../../game/PresentationWork';
 import { isCityEra } from '../../data/city';
 import TownProjects from './TownProjects.vue';
@@ -669,8 +685,13 @@ watch(fullscreen, (open) => {
 // The tab bar: Village, Build (available plots), Mine, Story and More.
 const currentTab = computed(
   () =>
-    ({ build: 'build', story: 'story', more: 'more', projects: 'more' })[dialogMode.value] ??
-    'village',
+    ({
+      personalise: 'personalise',
+      build: 'build',
+      story: 'story',
+      more: 'more',
+      projects: 'more',
+    })[dialogMode.value] ?? 'village',
 );
 const mineLabel = computed(() =>
   campaign.completedCount < LEVEL_COUNT
@@ -690,6 +711,7 @@ const muted = computed(() => settings.musicVolume === 0 && settings.sfxVolume ==
 const tabHeight = ref(0);
 const tabSheet = computed(() => tabHeight.value > 0);
 function openTab(tab) {
+  if (tab === 'personalise') personalBuilding.value = null;
   if (tab === 'mine') goMining();
   // Tapping the open tab again closes its panel.
   else if (tab !== 'village' && currentTab.value === tab) closeDialog();
@@ -765,11 +787,37 @@ const townScene = ref(null);
 const eraRevealed = ref(false);
 const eraReady = ref(false);
 const eraFallback = ref(false);
-const sceneTown = computed(() =>
-  town.value.transition?.pending && !eraRevealed.value
-    ? { ...town.value, era: town.value.transition.from }
-    : town.value,
-);
+const personalCommands = ref([]),
+  personalBuilding = ref(null);
+function openPersonalisation(id) {
+  personalBuilding.value = id;
+  dialogMode.value = 'personalise';
+}
+function focusPersonalBuilding(id) {
+  if (BUILDING_BY_ID[id]) selected.value = id;
+  nextTick(() => townScene.value?.focusPlace(id));
+}
+function savePersonalisation(commands) {
+  return campaign.personalise(commands, personalDistinctions.value);
+}
+const sceneTown = computed(() => {
+  const earned = [
+    ...Object.keys(campaign.honours.earned),
+    ...Object.keys(personalDistinctions.value),
+  ];
+  const preview = personalCommands.value.reduce(
+    (value, command) => personaliseTown(value, command, CREST_EMBLEM_IDS, earned) ?? value,
+    town.value,
+  );
+  return {
+    ...preview,
+    displayHonours: campaign.honours,
+    displayDistinctions: personalDistinctions.value,
+    ...(town.value.transition?.pending && !eraRevealed.value
+      ? { era: town.value.transition.from }
+      : {}),
+  };
+});
 watch(
   () => town.value.transition?.id,
   () => {
@@ -894,7 +942,9 @@ const collectionOpen = computed(
     !town.value.transition?.pending &&
     !openingPresentation.value,
 );
-const { unseen: unseenDistinctions } = usePlayerDistinctions({ campaign });
+const { unseen: unseenDistinctions, showcaseable: personalDistinctions } = usePlayerDistinctions({
+  campaign,
+});
 // New player distinctions (Alpha Player, a new time step) light the same marker.
 const honourMenu = computed(() => {
   const summary = honourSummary(campaign.honours);
@@ -1105,6 +1155,10 @@ function buildFree(id) {
   startWork(offer.stage);
 }
 function selectParcel(id) {
+  if (BUILDING_CHOICES[id] && !town.value.buildings[id] && !town.value.projects[id]) {
+    inspectBuilding(id);
+    return;
+  }
   if (constructionReady(town.value.projects[id])) finishBuilding(id, true);
   else {
     const offer = upgradeOffer(town.value, id);

@@ -1581,7 +1581,7 @@ html:has(.town-museum[open]) {
   z-index: 5;
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 4px;
   padding: 6px 6px max(6px, env(safe-area-inset-bottom));
   border-top: 1px solid #c6c3a6;
@@ -1647,14 +1647,14 @@ html:has(.town-museum[open]) {
 .reduced-motion .town-tab-bar .nudge svg {
   animation: none;
 }
-@media (max-width: 360px) {
+@media (max-width: 420px) {
   .town-tab-bar button {
     font-size: 10px;
   }
 }
 @media (min-width: 900px) {
   .town-tab-bar {
-    grid-template-columns: repeat(5, minmax(0, 150px));
+    grid-template-columns: repeat(6, minmax(0, 150px));
     justify-content: center;
   }
   .town-tab-bar button {

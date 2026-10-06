@@ -1,3 +1,5 @@
+import { normalizePersonalisation } from '../../data/townPersonalisation';
+import { CREST_EMBLEM_IDS } from '../../data/townCrests';
 import { normalizePresentations } from '../../data/townPresentations';
 import { normalizeGuestVip } from '../../data/guestVip';
 import { RIVER_RAIL_LEVEL_PRICES } from '../../data/economy';
@@ -190,6 +192,7 @@ export function normalizeTown(saved) {
       };
     }
   }
+  town.personalisation = normalizePersonalisation(saved?.personalisation, town, CREST_EMBLEM_IDS);
   town.tourSeen = saved?.tourSeen === true;
   town.presentations = normalizePresentations(saved?.presentations, town);
   return settleForgeProduction(town);

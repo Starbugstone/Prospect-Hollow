@@ -155,7 +155,7 @@ $adminAudit = 'honours-test-' . bin2hex(random_bytes(4));
 try {
     // ---------- Shared definitions ----------
     check(
-        $schema['honours']['version'] === 1 &&
+        $schema['honours']['version'] === 2 &&
             $schema['honours']['showcaseSlots'] === 3 &&
             $schema['honours']['counters'] === [
                 'gems' => 'map',
@@ -168,7 +168,7 @@ try {
             ],
         'the public schema exports the honours constants and counters from the registry',
     );
-    $kinds = ['stars', 'score', 'era', 'count', 'distinct', 'powers', 'social'];
+    $kinds = ['stars', 'score', 'era', 'count', 'distinct', 'powers', 'social', 'landmark'];
     foreach ($definitions as $id => $definition) {
         check(
             array_keys($definition) === ['family', 'rank', 'metal', 'tab', 'goal', 'measure'] &&
@@ -207,6 +207,55 @@ try {
             ),
         'save rules export claimable keys and each level’s mine elements ' .
             json_encode(array_slice($elements, 0, 3, true)),
+    );
+
+    // The paid-landmark replay is the proof, not an uploaded honour claim.
+    $monumentFlow = flow('optional landmark monument: construction, upgrades and replacement');
+    $monumentClock = $monumentFlow->after->integrity->clientAt;
+    $monumentBase = $validator->accept(
+        $monumentFlow->before,
+        null,
+        $monumentClock,
+        false,
+        [],
+        'monument-town',
+    );
+    $monumentBase = $catalog->keep($monumentBase, null, $noSocial);
+    check(
+        !in_array('monument-gold', $monumentBase->honours->verified, true),
+        'no monument, no distinction',
+    );
+    $monumentSaved = $validator->accept(
+        $monumentFlow->after,
+        $monumentBase,
+        $monumentClock,
+        false,
+        [],
+        'monument-town',
+    );
+    $monumentSaved = $catalog->keep($monumentSaved, $monumentBase, $noSocial);
+    check(
+        in_array('monument-gold', $monumentSaved->honours->verified, true),
+        'paid construction and replacements verify the single monument distinction',
+    );
+    $monumentAgain = $validator->accept(
+        $monumentFlow->after,
+        $monumentSaved,
+        $monumentClock,
+        false,
+        [],
+        'monument-town',
+    );
+    $monumentAgain = $catalog->keep($monumentAgain, $monumentSaved, $noSocial);
+    check(
+        $monumentAgain->honours->earned->{'monument-gold'} ==
+            $monumentSaved->honours->earned->{'monument-gold'},
+        'receipt retries keep the first award',
+    );
+    $monumentPublic = published($monumentSaved);
+    check(
+        isset($monumentPublic['earned']['monument-gold']),
+        'visitors see the verified monument distinction',
     );
 
     // ---------- Storage bounds ----------
@@ -380,7 +429,8 @@ try {
         'bounding an already bounded block changes nothing',
     );
     check(
-        kept([], ['honours' => ['earned' => []]])['seenGeneration'] === 1,
+        kept([], ['honours' => ['earned' => []]])['seenGeneration'] ===
+            $schema['honours']['version'],
         'a block from before generations has seen the current generation, as on the client',
     );
 
@@ -856,7 +906,7 @@ try {
         check(
             str_contains(
                 $public->projection($odd, 'Odd', 'honours'),
-                '"honours":{"version":1,"earned":{},"showcase":[]}',
+                '"honours":{"version":2,"earned":{},"showcase":[]}',
             ),
             'garbage still projects an empty object',
         );

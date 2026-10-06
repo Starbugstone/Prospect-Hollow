@@ -40,6 +40,7 @@ import {
 } from '../src/data/honours';
 import { elementLevels, levelHonourElements } from '../src/data/honourLevels';
 import honourLevels from '../src/data/honourLevels.json';
+import { PERSONAL_AREAS } from '../src/data/townLandmarks';
 import shippedRanks from './fixtures/shipped-honour-ranks.json';
 import { GEM_TYPES } from '../src/game/engine/GemFactory';
 import { FUSION_STYLES } from '../src/game/engine/BonusFusion';
@@ -459,6 +460,7 @@ describe('Saved honours', () => {
       'guardian',
       'forge',
       'quartermaster',
+      'monument',
     ]);
     expect(friends.families.map((family) => family.id)).toEqual(['visitors', 'explorer']);
   });
@@ -602,5 +604,56 @@ describe('Honour presentation preferences and navigation', () => {
     navigation.closeCollection();
     navigation.clearMuseumRequest();
     expect(navigation.requests).toEqual({ collection: null, museum: null });
+  });
+});
+
+describe('First monument: one permanent distinction', () => {
+  const monumentTown = (choice) =>
+    town({ era: 'industrial', personalisation: { areas: { monument: [choice] } } });
+  it('has exactly one rank and awards any of the five monuments', () => {
+    expect(ranks('monument')).toEqual(['monument-gold']);
+    for (const choice of PERSONAL_AREAS.find((area) => area.id === 'monument').choices) {
+      expect(added({ town: monumentTown(choice) })).toContain('monument-gold');
+    }
+    for (const choice of [null, 'unknown', 'roundhouse']) {
+      expect(added({ town: monumentTown(choice) })).not.toContain('monument-gold');
+    }
+    expect(added({ town: town() })).not.toContain('monument-gold');
+  });
+  it('keeps the original award when replaced or restored and never adds another tier', () => {
+    const first = evaluateHonours(state({ town: monumentTown('founders-arch') }), { at: 123 });
+    for (const choice of ['guardian', null]) {
+      const next = evaluateHonours(state({ town: monumentTown(choice), honours: first.honours }), {
+        at: 456,
+      });
+      expect(next.added).not.toContain('monument-gold');
+      expect(next.honours.earned['monument-gold']).toEqual(first.honours.earned['monument-gold']);
+    }
+  });
+  it('treats an unknown landmark parcel as zero progress', () => {
+    const catalog = buildHonourCatalog(
+      honourFamilies().map((family) =>
+        family.id === 'monument'
+          ? { ...family, measure: { kind: 'landmark', area: 'unknown' } }
+          : family,
+      ),
+    );
+    const view = state({ town: town({ personalisation: { areas: { unknown: ['guardian'] } } }) });
+    expect(catalog.byId['monument-gold'].progress(view).value).toBe(0);
+    expect(evaluateHonours(view, { catalog }).added).not.toContain('monument-gold');
+  });
+  it('catches up saves from the previous honour generation once', () => {
+    const old = state({
+      town: monumentTown('world-tree'),
+      honours: { ...createHonours(), version: 1, backfilled: 1, seenGeneration: 1 },
+    });
+    const honours = backfillHonours(old);
+    expect(honours.earned['monument-gold']).toMatchObject({
+      at: null,
+      backfilled: true,
+      version: 1,
+    });
+    expect(honours.backfilled).toBe(HONOURS_VERSION);
+    expect(backfillHonours({ ...old, honours })).toEqual(honours);
   });
 });

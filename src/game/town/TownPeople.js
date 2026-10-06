@@ -40,9 +40,15 @@ export function addPerson(
     era = d.town?.era,
   },
 ) {
+  const clothing = !visitor && !sheriff ? (d.town?.personalisation?.clothing ?? {}) : {};
+  const clothingKey = JSON.stringify(clothing);
   const persistentKey = !manual && JSON.stringify([seed, work, visitor, sheriff, route]);
   const retained = d.retainedActors?.get(persistentKey);
-  if (retained && retained.appearance.era === era) {
+  if (
+    retained &&
+    retained.appearance.era === era &&
+    retained.appearance.clothingKey === clothingKey
+  ) {
     d.retainedActors.delete(persistentKey);
     parent.add(retained.root);
     d.actors.push(retained);
@@ -60,6 +66,9 @@ export function addPerson(
     dress ||= female && resident.variant === 1;
     hat = resident.hat;
   }
+  color = clothing.shirt ?? color;
+  hat = clothing.hat ?? hat;
+  if (resident && clothing.accent) resident.accent = clothing.accent;
   if (sheriff && wardrobe.patrol) color = '#315d83';
   const root = d.group(parent);
   root.userData.villager = { ...identity, name: firstVIP?.name ?? null };
@@ -97,6 +106,8 @@ export function addPerson(
   }
   const residentDetails = d.group(torso);
   residentDetails.name = 'Neighbor garden clothing';
+  if (!resident && clothing.accent)
+    d.box(residentDetails, 0.205, 0.055, 0.215, 0, 0.29, 0, clothing.accent, true);
   if (resident) {
     root.userData.residentOutfit = resident;
     if (resident.apron) {
@@ -199,7 +210,7 @@ export function addPerson(
     d.ball(fore, 0, -0.19, 0, [0.045, 0.057, 0.04], skin);
     arms.push({ upper: arm, lower: fore });
     const thigh = d.group(body, side * 0.078, -0.065, 0);
-    const legColor = resident?.trousers ?? wardrobe.trousers;
+    const legColor = clothing.trousers ?? resident?.trousers ?? wardrobe.trousers;
     trousers.push(d.rod(thigh, [0, 0, 0], [0, -0.22, 0], 0.065, legColor));
     const shin = d.group(thigh, 0, -0.22, 0);
     trousers.push(d.rod(shin, [0, 0, 0], [0, -0.21, 0], 0.047, legColor));
@@ -211,6 +222,7 @@ export function addPerson(
   const skirt = d.mesh(body, 'cone', [0.2, 0.29, 0.17], [0, -0.085, 0], color);
   skirt.visible = !!dress || (female && !sheriff && eraEvolution(era).wardrobe === 'frontier');
   const appearance = {
+    clothingKey,
     hair,
     jaw,
     hips,

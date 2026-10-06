@@ -39,6 +39,7 @@ import {
   cameraAction,
   findVisitor,
   frameTown,
+  focusTownPlace,
 } from './TownCamera';
 import {
   projectLabelPositions,
@@ -290,6 +291,9 @@ export class TownDiorama extends TownPrimitives {
   }
   projectLabelPositions() {
     projectLabelPositions(this);
+  }
+  focusPlace(id) {
+    return focusTownPlace(this, id);
   }
   frameTown() {
     frameTown(this);

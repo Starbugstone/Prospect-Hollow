@@ -363,6 +363,7 @@ function collectionOrigin(id) {
 let presentationTime = 0;
 let cinematicProgress = 0;
 defineExpose({
+  focusPlace: (id) => scene?.focusPlace(id),
   findVisitor: (id) => scene?.findVisitor(id) ?? false,
   // Camera buttons are gone: drag, pinch, wheel and keys move the view; Village resets it.
   resetView: () => scene?.cameraAction('reset'),
@@ -484,7 +485,12 @@ async function update() {
         props.town.buildingEraLevels?.[id],
       ]),
     ) +
-    props.town.era;
+    props.town.era +
+    JSON.stringify([
+      props.town.personalisation,
+      props.town.displayHonours,
+      props.town.displayDistinctions,
+    ]);
   const newConstruction = props.construction?.serial !== lastConstruction;
   if (visual !== lastVisual || newConstruction) {
     const constructionId = newConstruction ? props.construction?.id : null;

@@ -587,6 +587,28 @@ foreach ($fixtures->fixtures as $fixture) {
         'save_integrity_mismatch',
         $fixture->name . ' cannot hide an extra coin in a legitimate batch',
     );
+    if (str_starts_with($fixture->name, 'optional landmark ')) {
+        $free = integrityData($fixture->after);
+        $free['town']['coins'] = $fixture->before->town->coins;
+        integrityDenied(
+            fn() => $validator->accept(integrityObject($free), $starting, $clock),
+            'save_integrity_mismatch',
+            'landmark ownership cannot keep the purchase money',
+        );
+        $unpaid = integrityData($fixture->after);
+        $unpaid['integrity']['actions'] = [];
+        $unpaid['town']['coins'] = $fixture->before->town->coins;
+        integrityDenied(
+            fn() => $validator->accept(integrityObject($unpaid), $starting, $clock),
+            'save_integrity_mismatch',
+            'cosmetic edits cannot forge landmark ownership',
+        );
+        $retry = $validator->accept($fixture->after, $result, $clock);
+        assertIntegrity(
+            $retry->town->coins === $result->town->coins,
+            'lost-response retry never charges twice',
+        );
+    }
     if ($fixture->name === 'victory after 175 moves and an expired speed target') {
         $middle = integrityData($fixture->before);
         $firstAction = integrityData($fixture->after)['integrity']['actions'][0];

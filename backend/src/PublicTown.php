@@ -92,6 +92,11 @@ final class PublicTown
         if (is_array($schema['honours'] ?? null)) {
             $appearance['honours'] = $this->honoursProjection($profile, $schema, $publicId);
         }
+        $appearance['personalisation'] = TownPersonalisation::publish(
+            $town,
+            isset($appearance['honours']) ? (object) $appearance['honours'] : null,
+            $schema,
+        );
         return json_encode(
             ['villageId' => $publicId, 'name' => $name, 'era' => $era, 'appearance' => $appearance],
             JSON_THROW_ON_ERROR,
@@ -166,13 +171,25 @@ final class PublicTown
     private function distinguish(object $village, string $owner): object
     {
         $honours = $village->appearance->honours ?? null;
-        if (PlayerDistinctions::showcases($honours)) {
+        $plaques = $village->appearance->personalisation->plaques ?? new \stdClass();
+        $playerPlaques = array_filter((array) $plaques, fn($id) => str_starts_with($id, 'player-'));
+        if ($playerPlaques || PlayerDistinctions::showcases($honours)) {
             $received = PlayerDistinctions::load()->received(
                 $this->database->get(),
                 [$owner],
                 (int) (microtime(true) * 1000),
             );
-            PlayerDistinctions::attach($honours, $received[$owner] ?? []);
+            if ($honours) {
+                PlayerDistinctions::attach($honours, $received[$owner] ?? []);
+            }
+            $village->appearance->plaqueDistinctions = new \stdClass();
+            foreach ($playerPlaques as $building => $id) {
+                if (isset($received[$owner][$id])) {
+                    $village->appearance->plaqueDistinctions->$id = $received[$owner][$id];
+                } else {
+                    unset($plaques->$building);
+                }
+            }
         }
         return $village;
     }

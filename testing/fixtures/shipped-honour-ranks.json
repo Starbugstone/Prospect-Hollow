@@ -530,5 +530,13 @@
       "counter": "travels"
     },
     "version": 1
+  },
+  "monument-gold": {
+    "goal": 1,
+    "measure": {
+      "kind": "landmark",
+      "area": "monument"
+    },
+    "version": 1
   }
 }

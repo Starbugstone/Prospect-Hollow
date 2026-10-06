@@ -1,3 +1,4 @@
+import { PERSONAL_AREAS } from '../../data/townPersonalisation';
 import { terrainMaterial } from './TownAtmosphere';
 import { addMineExcavation } from './TownMineShaft';
 import * as THREE from 'three';
@@ -39,6 +40,16 @@ export function groundHeight(x, z) {
     (height, [hx, hz, rise]) => height + rise * Math.exp(-((x - hx) ** 2 + (z - hz) ** 2) / 440),
     0,
   );
+  const personalClearing = Math.min(
+    ...PERSONAL_AREAS.flatMap((area) =>
+      area.positions.map(([px, pz]) =>
+        Math.hypot(
+          Math.max(0, Math.abs(x - px) - area.radius),
+          Math.max(0, Math.abs(z - pz) - area.radius),
+        ),
+      ),
+    ),
+  );
   const eastClearing = Math.hypot(Math.max(37 - x, 0, x - 70), Math.max(-17 - z, 0, z - 33));
   const gardenClearing = Math.hypot(
     Math.max(GARDEN_CLEARING.minX - x, 0, x - GARDEN_CLEARING.maxX),
@@ -48,6 +59,7 @@ export function groundHeight(x, z) {
   // Low rolling hills leave room for orbiting and a north/south flight corridor.
   const flightCorridor = smoothBetween(4, 13, Math.abs(x + 53));
   const prairie =
+    smoothBetween(0, 4, personalClearing) *
     smoothBetween(34, 49, distance) *
     smoothBetween(0, 7, eastClearing) *
     smoothBetween(0, 7, westClearing) *
@@ -99,6 +111,9 @@ export function landscapeGroundHeight(x, z) {
 }
 
 const reservedGround = (x, z) =>
+  PERSONAL_AREAS.some((area) =>
+    area.positions.some(([px, pz]) => Math.hypot(x - px, z - pz) < area.radius + 2),
+  ) ||
   (z < PLOTS.mine[1] && z > PLOTS.mine[1] - 13 && Math.abs(x) < 12) ||
   millraceDistance(x, z) < MILLRACE.bankWidth + 0.4 ||
   (x > -63 && x < -28 && z > -20 && z < 28) ||
