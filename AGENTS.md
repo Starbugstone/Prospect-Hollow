@@ -121,6 +121,10 @@ keeps generated files owned by you rather than root.
   and three stars) are slow, so `npm test` and CI skip them. Run
   `npm run test:levels` with the same prefix after adding or changing levels, star
   targets, scoring or bonus rules.
+- The board motion check (`testing/browser/board-motion.cjs`) follows every gem at
+  60 fps on shaped boards and fails on stutters or stacked gems. CI skips it. Run it
+  after changing board animation, gravity or board shapes; the Docker commands are in
+  [the deep mine guide](docs/deep-mine-levels.md#board-motion-check).
 - Backend image, built from this repository's Dockerfile. Rebuild it after
   changing the Dockerfile or PHP extensions:
   `docker build --target runtime -t prospect-hollow-check .`
