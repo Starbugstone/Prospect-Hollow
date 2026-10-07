@@ -30,6 +30,11 @@ IDs are never rendered as earned plaques.
 ## Monument sites
 
 `townLandmarks.js` owns eleven spacious monument sites, one introduced in each era.
+Only the timeless Monument Square stands in front of the town. Every other site lies
+beyond the railway, in two rows behind the mine ridge and a column west of the
+airport's approach. That leaves the space elevator and Skyward parcels room across the
+track. `testing/monument-site-layout.test.js` keeps new sites behind the railway, on
+level ground and out of the approach.
 Monuments are optional: they give no economic bonus, never gate an era and can be
 built at any time once their site opens. **A site's first monument is permanent.**
 No other design can replace it, on the client or in the server replay.

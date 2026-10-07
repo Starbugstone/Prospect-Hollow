@@ -294,23 +294,26 @@ export const LANDMARK_OPTIONS = [
   ),
 ];
 export const LANDMARK_BY_ID = Object.fromEntries(LANDMARK_OPTIONS.map((o) => [o.id, o]));
+// Only Monument Square stands before the town. Every other site lies beyond the
+// railway: two rows behind the mine ridge and a column west of the airport's
+// approach, clear of the space elevator and Skyward parcels across the track.
 const plots = [
-  ['meadow', 'Founders’ Meadow', [-17, 38], ['roundhouse', 'windgarden', 'longhall']],
-  ['river-court', 'River Court', [4, 38], ['tideclock', 'exchange', 'beacon']],
+  ['meadow', 'Founders’ Meadow', [-4, -60], ['roundhouse', 'windgarden', 'longhall']],
+  ['river-court', 'River Court', [14, -60], ['tideclock', 'exchange', 'beacon']],
   [
     'monument',
     'Monument Square',
     [-6, 61],
     ['founders-arch', 'crystal-spire', 'guardian', 'world-tree', 'celestial-sphere'],
   ],
-  ['commons', 'Civic Commons', [45, 47], ['amphitheatre', 'conservatory', 'library-hall']],
-  ['motor-court', 'Promenade', [-28, 61], ['starlight', 'autocourt', 'clock-gardens']],
-  ['outlook', 'Sky Outlook', [65, 47], ['skyhall', 'planetarium', 'sky-beacon']],
-  ['arts-court', 'Arts Quarter', [-28, 82], ['music-shell', 'broadcast-spire', 'arts-forum']],
-  ['city-court', 'City Gardens', [-6, 84], ['wave-centre', 'city-atrium', 'garden-steps']],
-  ['horizon', 'Horizon Park', [15, 84], ['orbit-house', 'solar-crown', 'future-forum']],
-  ['canopy-court', 'Canopy Grove', [65, 69], ['living-tower', 'canopy-house', 'seed-vault']],
-  ['light-court', 'Riverlight Court', [87, 73], ['river-palace', 'light-garden', 'lotus-forum']],
+  ['commons', 'Civic Commons', [-39, -60], ['amphitheatre', 'conservatory', 'library-hall']],
+  ['motor-court', 'Promenade', [-70, -40], ['starlight', 'autocourt', 'clock-gardens']],
+  ['outlook', 'Sky Outlook', [-70, -60], ['skyhall', 'planetarium', 'sky-beacon']],
+  ['arts-court', 'Arts Quarter', [-4, -80], ['music-shell', 'broadcast-spire', 'arts-forum']],
+  ['city-court', 'City Gardens', [-22, -80], ['wave-centre', 'city-atrium', 'garden-steps']],
+  ['horizon', 'Horizon Park', [-39, -80], ['orbit-house', 'solar-crown', 'future-forum']],
+  ['canopy-court', 'Canopy Grove', [-70, -80], ['living-tower', 'canopy-house', 'seed-vault']],
+  ['light-court', 'Riverlight Court', [14, -80], ['river-palace', 'light-garden', 'lotus-forum']],
 ];
 export const PERSONAL_AREAS = plots.map(([id, label, position, choices], index) => ({
   id,
