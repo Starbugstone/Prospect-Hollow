@@ -512,7 +512,8 @@ describe('Through the Ages', () => {
     const tools = createTestingTools(pinia);
     tools.prepareEra('broadcast');
     expect(Object.keys(campaign.honours.earned)).toEqual(['ages-bronze', 'ages-silver']);
-    expect(tools.prepareEra('riverlight').readyToChange).toBe(false);
+    // Skysail follows Riverlight, so a finished Riverlight town is ready to move on.
+    expect(tools.prepareEra('riverlight').readyToChange).toBe(true);
     expect(campaign.honours.earned['ages-gold']).toBeTruthy();
   }, 20000);
 });

@@ -131,6 +131,10 @@ export const MINE_PROFILES = {
       },
     ],
   },
+  // The later eras keep the lantern-lit surface and crown its portal in their own style.
+  skysail: { inherits: 'riverlight', portal: 'sail-arch' },
+  stargazer: { inherits: 'skysail', portal: 'dome-arch' },
+  moonward: { inherits: 'stargazer', portal: 'homestead-arch' },
 };
 const portals = new Set(Object.values(MINE_PROFILES).map((p) => p.portal));
 const works = new Set(Object.values(MINE_PROFILES).map((p) => p.works));

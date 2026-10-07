@@ -1,5 +1,5 @@
 import { MAIN_LANE_X, POWER_HOUSE_POSITION, PLOT_STREET_OFFSET } from '../../data/townClearances';
-import { GARDEN_PARCELS, GARDEN_LANE_X } from '../../data/townGardenDistrict';
+import { GARDEN_PARCELS, GARDEN_LANE_X, isLaneParcel } from '../../data/townGardenDistrict';
 import { MINE_POSITION } from '../../data/mineSite';
 import { WATERMILL_SITE } from '../../data/watermill';
 import { SQUARE_POSITION } from '../../data/townSquare';
@@ -217,17 +217,25 @@ export function gardenConnections(town) {
 export function gardenTracks(town) {
   const parcels = Object.entries(GARDEN_PARCELS).filter(([id]) => plotUnlocked(town, id));
   if (!parcels.length) return [];
-  const connections = gardenConnections(town);
-  const rows = [...connections.map(({ to }) => to[1]), ...parcels.map(([id]) => plotStreet(id)[1])];
+  const lane = parcels.filter(([id]) => isLaneParcel(id));
+  const connections = lane.length ? gardenConnections(town) : [];
+  const rows = [...connections.map(({ to }) => to[1]), ...lane.map(([id]) => plotStreet(id)[1])];
   return [
     ...connections,
-    road([GARDEN_LANE_X, Math.min(...rows)], [GARDEN_LANE_X, Math.max(...rows)], 1.05),
+    ...(lane.length
+      ? [road([GARDEN_LANE_X, Math.min(...rows)], [GARDEN_LANE_X, Math.max(...rows)], 1.05)]
+      : []),
     ...parcels.flatMap(([id, parcel]) => {
       const approach = [...parcel.approach, [0, parcel.entranceZ]].map(([x, z]) =>
         atPlot(id, x, z),
       );
+      // Access parcels follow their own road from an existing street; the last
+      // access point shares the frontage street's row.
+      const access = parcel.access ? [...parcel.access, plotStreet(id)] : null;
       return [
-        road([GARDEN_LANE_X, plotStreet(id)[1]], plotStreet(id), 0.85, id),
+        ...(access
+          ? access.slice(1).map((to, i) => road(access[i], to, 1.05, id))
+          : [road([GARDEN_LANE_X, plotStreet(id)[1]], plotStreet(id), 0.85, id)]),
         road(atPlot(id, 0, parcel.entranceZ), plotStreet(id), 0.75, id),
         ...approach.slice(1).map((to, i) => ({
           ...road(approach[i], to, 0.75, id),

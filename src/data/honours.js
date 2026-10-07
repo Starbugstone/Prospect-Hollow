@@ -190,6 +190,9 @@ export const NON_MILESTONE_ERAS = Object.freeze([
   'contemporary',
   'tomorrow',
   'canopy',
+  'skysail',
+  'stargazer',
+  'moonward',
 ]);
 function obstacle(id) {
   return OBSTACLES.find((entry) => entry.id === id) ?? { present: () => false };

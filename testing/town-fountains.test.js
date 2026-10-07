@@ -75,6 +75,9 @@ describe('Era town square fountains', () => {
       'orbital-rings',
       'canopy-bloom',
       'riverlight-crystal',
+      'wind-spiral',
+      'orrery',
+      'first-well',
     ]);
   });
 

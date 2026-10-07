@@ -506,7 +506,17 @@ export function renderCozyBuilding(d, parent, kind, label, level, era, serviceLe
   const form = cozyForm(kind);
   if (!form) return false;
   const appearance = cozyAppearance(era);
-  const s = { ...cityAppearance(era, kind), ...appearance, kind, era, level, serviceLevel };
+  // Kinds without a catalog style (for example later-era landmarks) use ordinary lot sizes.
+  const s = {
+    width: 3.4,
+    height: 3,
+    ...cityAppearance(era, kind),
+    ...appearance,
+    kind,
+    era,
+    level,
+    serviceLevel,
+  };
   if (['fisherman', 'riverPort'].includes(kind))
     addFishingDock(d, parent, serviceLevel, kind === 'riverPort');
   const root = d.group(parent);

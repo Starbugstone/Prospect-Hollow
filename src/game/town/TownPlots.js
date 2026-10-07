@@ -23,6 +23,7 @@ import * as THREE from 'three';
 
 import { addConstructionPlot, addWell } from './buildings/frontierParts';
 import { WATERMILL_WHEEL } from './buildings/watermill';
+import { ELEVATOR_CLIMBERS, moveClimbers } from './buildings/future';
 
 import { BUILDING_BY_ID } from '../../data/town';
 
@@ -65,11 +66,14 @@ const plotWork = (d) => (d.plotWork ??= { queue: [], active: null });
 // A rotor (windmill sails, watermill wheel) keeps turning while the rest of its plot
 // is batched: it moves into the world as an animated actor with its motion, and
 // animals treat its swept sphere as solid.
-function attachMovingPart(d, group, { rotor, update }) {
+function attachMovingPart(d, group, { rotor, update, solid = true }) {
   group.updateMatrixWorld(true);
   rotor.updateWorldMatrix(true, false);
   d.world.attach(rotor);
   rotor.userData.animated = true;
+  d.motions.push(update);
+  // Parts high above the ground (elevator climbers) never obstruct animals.
+  if (!solid) return;
   const center = rotor.getWorldPosition(new THREE.Vector3());
   const bounds = new THREE.Box3().setFromObject(rotor);
   const radius = Math.max(center.distanceTo(bounds.min), center.distanceTo(bounds.max));
@@ -77,7 +81,6 @@ function attachMovingPart(d, group, { rotor, update }) {
     center,
     new THREE.Vector3().setScalar(radius * 2),
   );
-  d.motions.push(update);
 }
 
 export function buildPlot(d, id, group, town, labels) {
@@ -141,6 +144,13 @@ export function buildPlot(d, id, group, town, labels) {
           update: (time) => {
             wheel.rotation.x = time * 0.45;
           },
+        };
+      const climbers = group.getObjectByName(ELEVATOR_CLIMBERS);
+      if (climbers)
+        movingPart = {
+          rotor: climbers,
+          update: (time) => moveClimbers(climbers, time),
+          solid: false,
         };
       addBuildingChoice(
         d,

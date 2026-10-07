@@ -16,8 +16,9 @@ describe('An explorable town on rolling terrain', () => {
       .map(([, position]) => position))
       for (const dx of [-1.5, 0, 1.5])
         for (const dz of [-1.5, 0, 1.5]) expect(groundHeight(x + dx, z + dz)).toBe(0);
-    expect(groundHeight(-38, -42)).toBeGreaterThan(1);
-    expect(groundHeight(-38, -42)).toBeLessThan(5);
+    // The space elevator levels the ridge's town-facing foot; it still rises behind.
+    expect(groundHeight(-38, -56)).toBeGreaterThan(1);
+    expect(groundHeight(-38, -56)).toBeLessThan(5);
   });
   it('keeps all permitted orbit headings above the hills without changing distance', () => {
     const target = new Vector3(0, 0.7, 0);

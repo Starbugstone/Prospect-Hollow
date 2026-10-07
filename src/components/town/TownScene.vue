@@ -173,7 +173,7 @@
       </button>
     </div>
     <div
-      v-if="needChips.length"
+      v-if="needChips.length || moon.homesteads"
       class="town-map-needs"
       role="group"
       :aria-label="t('Basic town needs')"
@@ -190,6 +190,15 @@
       >
         <TownIcon :name="chip.icon" /><span>{{ chip.value }}</span>
       </button>
+      <button
+        v-if="moon.homesteads"
+        class="moon"
+        :aria-label="moonLabel"
+        :title="moonLabel"
+        @click="emit('inspect', 'spaceElevator')"
+      >
+        <TownMoon :lights="moon.lights" /><span>{{ moon.homesteads }}</span>
+      </button>
     </div>
   </div>
 </template>
@@ -203,6 +212,8 @@ import { prepareAudio } from '../../composables/useAudio';
 import { useSettingsStore } from '../../stores/settingsStore';
 import GameIcon from '../GameIcon.vue';
 import TownIcon from './TownIcon.vue';
+import TownMoon from './TownMoon.vue';
+import { moonSettlement } from '../../data/moonSettlement';
 import GameViewStatus from '../GameViewStatus.vue';
 import { TOWN_ACTIONS } from '../../data/townIndicators';
 import { eraBuildingLevel } from '../../game/town/TownEras';
@@ -258,6 +269,11 @@ const props = defineProps({
   // Water, food and happiness against the town's size, always visible on the map.
   needChips: { type: Array, default: () => [] },
 });
+// New Hollow's homesteads on the Moon, supplied by the space elevator.
+const moon = computed(() => moonSettlement(props.town));
+const moonLabel = computed(() =>
+  t('New Hollow on the Moon: {count} homesteads', { count: moon.value.homesteads }),
+);
 // The building that would fix a shortage says so on its label.
 const NEED_HINTS = { water: 'Water needed', food: 'Food needed', comfort: 'Comfort needed' };
 const needHints = computed(() =>

@@ -1,6 +1,7 @@
 import { eraEvolution } from './eras';
 import { cityAppearance } from './cityAppearance';
 import { cozyAppearance } from './cozyArchitecture';
+import { futureAppearance, isFutureEra } from './futureArchitecture';
 import { ROUNDED_PALETTE } from './roundedArchitecture';
 
 // Semantic palette adapter for older procedural art. New art should name its
@@ -130,9 +131,11 @@ export function buildingPaintRole(colour, name = '', era = 'frontier') {
   const p =
     profile.architecture === 'cozy'
       ? cozyAppearance(era).palette
-      : profile.architecture === 'rounded'
-        ? ROUNDED_PALETTE
-        : cityAppearance(era);
+      : isFutureEra(era)
+        ? futureAppearance(era).palette
+        : profile.architecture === 'rounded'
+          ? ROUNDED_PALETTE
+          : cityAppearance(era);
   const roles = {
     walls: p.wall ?? p.shell,
     roof: p.roof ?? p.accent,
