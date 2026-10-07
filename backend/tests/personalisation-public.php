@@ -15,7 +15,8 @@ try {
         ],
         'clothing' => (object) ['shirt' => '#123456'],
         'paint' => (object) ['well' => (object) ['walls' => '#abcdef']],
-        'plaques' => (object) ['well' => 'player-alpha'],
+        'choices' => (object) ['home' => 'garden'],
+        'plaques' => (object) ['mine' => 'player-alpha', 'well' => 'player-alpha'],
     ];
     $id = status(200, callApi('POST', 'towns', $body, $owner), 'personalised save')['townId'];
     $shared = status(
@@ -43,18 +44,22 @@ try {
         'visitors keep individual resident outfits',
     );
     check(
-        $appearance['personalisation']['paint']['all']['walls'] === '#abcdef',
-        'visitors see paint',
+        !isset($appearance['personalisation']['paint'], $appearance['personalisation']['choices']),
+        'retired paint and styles are not published',
     );
     check(
-        !isset($appearance['personalisation']['plaques']['well']),
+        !isset($appearance['personalisation']['plaques']['mine']),
         'unearned player plaque is removed on public read',
     );
     PlayerDistinctions::load()->award($db->get(), 'player-alpha', $owner['id'], 1700000000);
     $appearance = $visit();
     check(
-        $appearance['personalisation']['plaques']['well'] === 'player-alpha',
+        $appearance['personalisation']['plaques']['mine'] === 'player-alpha',
         'earned player plaque survives public read',
+    );
+    check(
+        !isset($appearance['personalisation']['plaques']['well']),
+        'earned badges stay off other buildings',
     );
     check(
         isset($appearance['plaqueDistinctions']['player-alpha']),

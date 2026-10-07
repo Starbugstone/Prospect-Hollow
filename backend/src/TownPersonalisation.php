@@ -19,28 +19,13 @@ final class TownPersonalisation
     {
         return is_string($value) && preg_match('/^#[0-9a-f]{6}$/iD', $value) === 1;
     }
-    private static function colours(mixed $value, array $groups): object
-    {
-        $result = new \stdClass();
-        if (!is_object($value)) {
-            return $result;
-        }
-        foreach ($groups as $group) {
-            if (self::colour($value->$group ?? null)) {
-                $result->$group = strtolower($value->$group);
-            }
-        }
-        return $result;
-    }
-    public static function normalize(mixed $saved, object $town, ?array $catalog = null): object
+    public static function normalize(mixed $saved, ?array $catalog = null): object
     {
         $c = $catalog ?? self::catalog();
         $saved = is_object($saved) ? $saved : new \stdClass();
         $result = (object) [
-            'version' => 2,
+            'version' => 3,
             'crest' => null,
-            'paint' => (object) ['all' => new \stdClass()],
-            'choices' => new \stdClass(),
             'areas' => new \stdClass(),
             'areaLevels' => new \stdClass(),
             'plaques' => new \stdClass(),
@@ -65,30 +50,10 @@ final class TownPersonalisation
                     : $c['defaultEmblemColour'],
             ];
         }
-        // Match the client migration: home first, then catalog order, per paint role.
-        if (is_object($saved->paint ?? null) && property_exists($saved->paint, 'all')) {
-            $result->paint->all = self::colours($saved->paint->all, $c['paint']);
-        } else {
-            foreach (['home', ...$c['buildings']] as $id) {
-                foreach (
-                    self::colours($saved->paint->$id ?? null, $c['paint'])
-                    as $role => $colour
-                ) {
-                    $result->paint->all->$role ??= $colour;
-                }
-            }
-        }
-        foreach ($c['buildings'] as $id) {
-            if (isset($c['choices'][$id])) {
-                $choice = $saved->choices->$id ?? null;
-                if ($choice !== 'original' && in_array($choice, $c['choices'][$id], true)) {
-                    $result->choices->$id = $choice;
-                }
-            }
-            $plaque = $saved->plaques->$id ?? null;
-            if (is_string($plaque) && preg_match('/^[a-z0-9-]{1,80}$/D', $plaque)) {
-                $result->plaques->$id = $plaque;
-            }
+        // Keep only the mine display; retired palettes/frontages never return on reload.
+        $plaque = $saved->plaques->mine ?? null;
+        if (is_string($plaque) && preg_match('/^[a-z0-9-]{1,80}$/D', $plaque)) {
+            $result->plaques->mine = $plaque;
         }
         foreach ($c['areas'] as $area) {
             $id = $area['id'];
@@ -114,29 +79,12 @@ final class TownPersonalisation
         }
         return $result;
     }
-    /** An old client or a history restore cannot replace a settled design. */
+    /** Preserve supported appearance when an old client omits it. */
     public static function keep(object $profile, ?object $previous): object
     {
         $town = $profile->town;
-        $old = $previous
-            ? self::normalize($previous->town->personalisation ?? null, $previous->town)
-            : null;
-        $p = self::normalize($town->personalisation ?? $old, $town);
-        if ($old) {
-            foreach (self::catalog()['choices'] as $id => $_choices) {
-                $choice = $old->choices->$id ?? 'original';
-                if (
-                    ($previous->town->buildings->$id ?? 0) > 0 ||
-                    isset($previous->town->projects->$id)
-                ) {
-                    if ($choice === 'original') {
-                        unset($p->choices->$id);
-                    } else {
-                        $p->choices->$id = $choice;
-                    }
-                }
-            }
-        }
+        $old = $previous ? self::normalize($previous->town->personalisation ?? null) : null;
+        $p = self::normalize($town->personalisation ?? $old);
         $town->personalisation = $p;
         return $profile;
     }
@@ -199,7 +147,7 @@ final class TownPersonalisation
     }
     public static function publish(object $town, ?object $honours, array $schema): object
     {
-        $p = self::normalize($town->personalisation ?? null, $town, $schema['personalisation']);
+        $p = self::normalize($town->personalisation ?? null, $schema['personalisation']);
         foreach ($p->plaques as $id => $plaque) {
             if (
                 !isset($honours->earned->$plaque) &&

@@ -194,7 +194,7 @@ export function normalizeTown(saved) {
       };
     }
   }
-  town.personalisation = normalizePersonalisation(saved?.personalisation, town, CREST_EMBLEM_IDS);
+  town.personalisation = normalizePersonalisation(saved?.personalisation, CREST_EMBLEM_IDS);
   town.tourSeen = saved?.tourSeen === true;
   town.presentations = normalizePresentations(saved?.presentations, town);
   return settleForgeProduction(town);

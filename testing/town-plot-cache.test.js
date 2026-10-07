@@ -455,3 +455,46 @@ it('keeps the mine solid until the rail depot opens its tunnel, then restores it
   expect(hillside().group).not.toBe(tunnel);
   expect(tunnel.parent).toBeNull();
 });
+
+it('changes the crest and mine badge without rebuilding plots, navigation or animal life', () => {
+  const { view, town, labels } = fixture();
+  view.update(town, labels);
+  const plots = new Map([...view.plotCache].map(([id, entry]) => [id, entry.group]));
+  const animals = [...view.animals];
+  const navigation = vi.spyOn(view.navigation, 'replaceOwner');
+  const repair = vi.spyOn(view, 'repairAnimalLife');
+  const updated = {
+    ...town,
+    personalisation: {
+      ...town.personalisation,
+      crest: {
+        shape: 'shield',
+        pattern: 'plain',
+        emblem: 'fox',
+        primary: '#123456',
+        secondary: '#abcdef',
+      },
+      plaques: { mine: 'player-alpha' },
+    },
+    displayDistinctions: { 'player-alpha': { at: 1 } },
+  };
+  view.changeTown(updated, labels, 0, null);
+  for (const [id, group] of plots) expect(view.plotCache.get(id).group).toBe(group);
+  expect(view.animals).toEqual(animals);
+  expect(navigation).not.toHaveBeenCalled();
+  expect(repair).not.toHaveBeenCalled();
+  const banner = view.staticScenery.entries.get('town-banner').group;
+  const plaque = view.staticScenery.entries.get('mine-plaque').group;
+  expect(banner).toBeTruthy();
+  expect(plaque?.userData.distinction).toBe('player-alpha');
+  view.changeTown(
+    { ...updated, personalisation: { ...updated.personalisation, crest: null, plaques: {} } },
+    labels,
+    0,
+    null,
+  );
+  expect(banner.parent).toBeNull();
+  expect(plaque.parent).toBeNull();
+  expect(navigation).not.toHaveBeenCalled();
+  expect(repair).not.toHaveBeenCalled();
+});

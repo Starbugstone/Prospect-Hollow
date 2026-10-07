@@ -344,7 +344,14 @@ it('saves personalisation and a permanent paid monument through the production m
   profile.town.era = 'industrial';
   profile.town.coins = 30000;
   const campaign = open(profile);
-  expect(campaign.personalise([{ kind: 'paint', group: 'walls', value: '#123456' }])).toBe(true);
+  const crest = {
+    shape: 'shield',
+    pattern: 'plain',
+    emblem: 'otter',
+    primary: '#123456',
+    secondary: '#abcdef',
+  };
+  expect(campaign.personalise([{ kind: 'crest', value: crest }])).toBe(true);
   const purchase = {
     kind: 'area',
     id: 'monument',
@@ -367,7 +374,7 @@ it('saves personalisation and a permanent paid monument through the production m
   expect(campaign.town.coins).toBe(22000);
   const saved = JSON.parse(values.get(SAVE_KEY));
   expect(saved.town.personalisation.areas.monument).toEqual(['crystal-spire']);
-  expect(saved.town.personalisation.paint.all.walls).toBe('#123456');
+  expect(saved.town.personalisation.crest.primary).toBe('#123456');
   const restored = open(saved);
   expect(restored.town.coins).toBe(22000);
   expect(restored.honours.earned['monument-gold']).toEqual(distinction);

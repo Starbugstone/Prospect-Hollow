@@ -35209,12 +35209,8 @@
   },
   "defaultTown": {
     "personalisation": {
-      "version": 2,
+      "version": 3,
       "crest": null,
-      "paint": {
-        "all": {}
-      },
-      "choices": {},
       "areas": {},
       "areaLevels": {},
       "plaques": {}
@@ -35488,12 +35484,8 @@
     "seenTips": [],
     "town": {
       "personalisation": {
-        "version": 2,
+        "version": 3,
         "crest": null,
-        "paint": {
-          "all": {}
-        },
-        "choices": {},
         "areas": {},
         "areaLevels": {},
         "plaques": {}
@@ -35741,5 +35733,5 @@
       "seenGeneration": 2
     }
   },
-  "contentDigest": "f85d98020dcd1e8bbd1bfb1eeeed89ee63db08c860e5a036e84f1dabff56f712"
+  "contentDigest": "78cd8c7a4dcb619e94292f6ef2ac96640c81b8a26b99792bf050797643469adf"
 }

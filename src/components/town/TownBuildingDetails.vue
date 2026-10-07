@@ -13,9 +13,6 @@
         })
       }}</span>
     </div>
-    <button v-if="!readOnly" class="town-secondary" @click="$emit('personalise', id)">
-      {{ t('Personalise this building') }}
-    </button>
     <div class="town-detail-hero">
       <div class="town-building-preview" :style="{ '--building-tint': building.color }">
         <svg viewBox="-160 -230 320 275" aria-hidden="true">
@@ -29,7 +26,6 @@
             :era-level="town.buildingEraLevels[id] || stage"
           />
           <TownBuilding
-            :paint="town.personalisation?.paint?.all"
             v-else
             :id="id"
             :stage="offer && offer.type !== 'modernization' ? stage + 1 : stage"
@@ -392,17 +388,7 @@ const props = defineProps({
   // actions or private state such as stored earnings, the forge or the armory.
   readOnly: Boolean,
 });
-defineEmits([
-  'personalise',
-  'build',
-  'hammer',
-  'finish',
-  'ring-bell',
-  'advance-era',
-  'select',
-  'museum',
-  'mine',
-]);
+defineEmits(['build', 'hammer', 'finish', 'ring-bell', 'advance-era', 'select', 'museum', 'mine']);
 // The village's one-second clock, when shown inside it (see TownView).
 const townClock = inject('townClock', null);
 const cooldownSeconds = computed(() =>

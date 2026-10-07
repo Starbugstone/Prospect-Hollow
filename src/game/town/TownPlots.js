@@ -1,5 +1,3 @@
-import { paintBuilding } from './TownPaint';
-import { addBuildingChoice, addBuildingPlaque } from './TownPersonalisation';
 import { TownItineraries } from './TownItineraries';
 
 import { applyRoadSetbacks } from './BuildingSetbacks';
@@ -41,7 +39,7 @@ import { addScaffolding, addImprovements } from './TownImprovements';
 import { constructionVisual, nextGoal, roadLevel } from './TownRules';
 
 import { addServiceDrops } from './TownEvolution';
-import { TownScenery } from './TownScenery';
+import { TownScenery, sceneryAffectsNavigation } from './TownScenery';
 
 import { PLOTS, visiblePlots } from './TownLayout';
 import { updateTownShadowCoverage } from './TownShadows';
@@ -98,10 +96,6 @@ export function buildPlot(d, id, group, town, labels) {
           town.buildingEras[id],
           town.buildingEraLevels[id] || stage,
         );
-      if (stage) {
-        paintBuilding(d, group, town.personalisation?.paint?.all, town.buildingEras[id]);
-        addBuildingPlaque(d, group, town, id);
-      }
       if (project) addScaffolding(d, group, kind, stage, constructionVisual(project));
     } else if (!stage) addConstructionPlot(d, group, kind, project ? 2 : -1, labels[id]);
     else {
@@ -143,14 +137,6 @@ export function buildPlot(d, id, group, town, labels) {
             wheel.rotation.x = time * 0.45;
           },
         };
-      addBuildingChoice(
-        d,
-        group,
-        town.personalisation?.choices?.[id],
-        town.buildingEraLevels[id] || stage,
-      );
-      paintBuilding(d, group, town.personalisation?.paint?.all, town.buildingEras[id]);
-      addBuildingPlaque(d, group, town, id);
       if (project) addScaffolding(d, group, kind, stage, constructionVisual(project));
     }
   }
@@ -164,11 +150,6 @@ export function plotSignatures(d, town, labels) {
       id,
       JSON.stringify([
         labels[id],
-        town.personalisation?.paint?.all,
-        town.personalisation?.choices?.[id],
-        town.personalisation?.plaques?.[id],
-        town.displayHonours,
-        town.displayDistinctions,
         town.era,
         town.buildings[id],
         constructionVisual(town.projects[id]),
@@ -244,9 +225,10 @@ export function changeTown(d, town, labels, mineProgress, constructionId, reduce
       JSON.stringify(d.town?.personalisation?.areas) !==
       JSON.stringify(town.personalisation?.areas);
     d.town = town;
-    if (refreshScenery(d).length) {
+    const sceneryChanges = refreshScenery(d);
+    if (sceneryChanges.length) {
       d.buildingRenderer.sync(d.world.children.filter((child) => child.userData.static));
-      d.repairAnimalLife();
+      if (sceneryChanges.some(sceneryAffectsNavigation)) d.repairAnimalLife();
     }
     if (expanded && d.overview) d.frameTown();
     // No plot will activate to retire a construction cue shown for this change.
@@ -618,6 +600,7 @@ function refreshScenery(d) {
   if (!d.staticScenery) return [];
   const changed = d.staticScenery.update(d, d.town);
   for (const id of changed) {
+    if (!sceneryAffectsNavigation(id)) continue;
     const group = d.staticScenery.entries.get(id).group;
     d.navigation?.replaceOwner(`scenery:${id}`, group ? sceneryObstacles(group) : []);
   }

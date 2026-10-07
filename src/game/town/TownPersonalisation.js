@@ -1,6 +1,12 @@
-import { paintBuilding } from './TownPaint';
 import { buildLandmark } from './TownLandmarks';
-import { Box3, CanvasTexture, DoubleSide, MeshStandardMaterial, SRGBColorSpace } from 'three';
+import {
+  CanvasTexture,
+  DoubleSide,
+  Mesh,
+  MeshStandardMaterial,
+  PlaneGeometry,
+  SRGBColorSpace,
+} from 'three';
 import { CREST_BY_ID, crestOutline, crestPattern } from '../../data/townCrests';
 import {
   PERSONAL_AREAS,
@@ -15,93 +21,23 @@ import { mineHillsideHeight } from './TownMineHillside';
 import { PLOTS } from './TownLayout';
 import { walkObstacle } from './TownNavigation';
 
-function flowerpot(d, parent, x, z, size = 1) {
-  const root = d.group(parent, x, 0, z);
-  root.scale.setScalar(size);
-  d.mesh(root, 'cylinder', [0.24, 0.35, 0.24], [0, 0.18, 0], '#c58f73');
-  d.ball(root, 0, 0.51, 0, [0.34, 0.26, 0.34], '#658c68');
-  for (const [dx, dz] of [
-    [-0.15, 0],
-    [0.15, 0],
-    [0, 0.16],
-  ])
-    d.ball(root, dx, 0.68, dz, 0.1, '#eddaeb');
-}
-
-// Frontage treatments use the building's measured shell, including later eras.
-// They grow with upgrades, remain inside the existing plot and keep the doorway clear.
-export function addBuildingChoice(d, parent, choice, level = 1) {
-  if (!choice || choice === 'original') return;
-  parent.userData.personalisedGeometry = true;
-  parent.updateWorldMatrix(true, true);
-  const bounds = new Box3().setFromObject(parent).applyMatrix4(parent.matrixWorld.clone().invert());
-  const root = d.group(parent, 0, 0, bounds.isEmpty() ? 0 : Math.max(0, bounds.max.z - 1));
-  root.name = `Town design: ${choice}`;
-  const tier = Math.min(3, Math.max(1, level));
-  for (const side of [-1, 1]) {
-    const x = side * 2.15,
-      z = 1.65;
-    if (choice === 'garden' || choice === 'orchard') {
-      flowerpot(d, root, x, z);
-      if (tier >= 2) flowerpot(d, root, x, z - 0.8, 0.85);
-      if (choice === 'orchard') {
-        d.rod(root, [x, 0.2, z], [x, 1.8, z], 0.07, '#91785e');
-        d.ball(root, x, 1.9, z, [0.55, 0.75, 0.55], '#8caf80');
-        if (tier >= 3)
-          for (const dx of [-0.25, 0.25]) d.ball(root, x + dx, 1.7, z + 0.45, 0.11, '#bd705f');
-      }
-    } else if (choice === 'crystal' || choice === 'sculpture') {
-      d.box(root, 0.65, 0.4, 0.65, x, 0.2, z, '#ddd1b5');
-      if (choice === 'crystal')
-        d.ball(
-          root,
-          x,
-          0.7,
-          z,
-          [0.27, 0.45 + tier * 0.12, 0.27],
-          side < 0 ? '#9b91c4' : '#76b0a6',
-          'rock',
-        );
-      else {
-        d.mesh(root, 'cone', [0.3, 0.65 + tier * 0.15, 0.3], [x, 0.9, z], '#cc954f');
-        d.ball(root, x, 1.4, z, 0.2, '#ddd1b5');
-      }
-    } else if (choice === 'artisan') {
-      d.box(root, 0.7, 0.13, 0.75, x, 0.85, z, '#91785e');
-      for (const dx of [-0.26, 0.26]) d.box(root, 0.07, 0.8, 0.6, x + dx, 0.4, z, '#655343');
-      for (let n = 0; n < tier; n++)
-        d.mesh(
-          root,
-          'cylinder',
-          [0.11, 0.2 + n * 0.06, 0.11],
-          [x - 0.23 + n * 0.23, 1.02, z],
-          '#76b0a6',
-        );
-    } else {
-      d.box(root, 0.08, 2.5, 0.08, x, 1.25, z, '#ddd1b5');
-      d.box(root, 0.9, 0.12, 1.4, x, 2.55, z - 0.15, choice === 'market' ? '#bd705f' : '#658c68');
-      if (tier >= 2) flowerpot(d, root, x, z + 0.3, 0.7);
-      if (tier >= 3) d.box(root, 0.7, 0.12, 0.4, x, 0.5, z - 0.6, '#91785e');
-    }
-  }
-}
-
-export function plaqueDefinition(town, id) {
-  const chosen = town.personalisation?.plaques?.[id];
+export function plaqueDefinition(town) {
+  const chosen = town.personalisation?.plaques?.mine;
   if (Object.hasOwn(town.displayHonours?.earned ?? {}, chosen) && HONOURS.byId[chosen])
     return HONOURS.byId[chosen];
   if (Object.hasOwn(town.displayDistinctions ?? {}, chosen))
     return distinctionBadge(chosen, town.displayDistinctions[chosen]);
   return null;
 }
-export function addBuildingPlaque(d, parent, town, id) {
-  const definition = plaqueDefinition(town, id);
-  if (!definition) return;
-  parent.userData.personalisedGeometry = true;
-  parent.updateMatrixWorld(true);
-  // Stay beside the entrance at human height; building models share local +Z frontage.
-  const bounds = new Box3().setFromObject(parent).applyMatrix4(parent.matrixWorld.clone().invert());
-  const root = d.group(parent, -1.05, 1.5, Math.max(1.4, bounds.max.z) + 0.08);
+export function buildMinePlaque(d, town) {
+  const definition = plaqueDefinition(town);
+  if (!definition) return null;
+  // The central rock face above the sunken entrance slopes back slightly.
+  // Keep this display independent of building models and their footprint caches.
+  const root = d.group(d.world, 0, 2.8, PLOTS.mine[1] - 0.56);
+  root.rotation.x = -Math.atan(0.23 / 1.25);
+  root.scale.setScalar(1.4);
+  root.userData.static = true;
   root.name = `Distinction plaque: ${definition.id}`;
   root.userData.distinction = definition.id;
   const metal =
@@ -131,10 +67,20 @@ export function addBuildingPlaque(d, parent, town, id) {
     [0, 0, 0.12],
     definition.art,
   );
+  return root;
 }
 
-function addEmblemPanel(d, root, crest, width, height, position, art) {
-  const face = d.box(root, width, height, 0.035, ...position, crest.primary);
+function addEmblemPanel(d, root, crest, width, height, position, art, cloth = false) {
+  const face = cloth
+    ? new Mesh(new PlaneGeometry(width, height, 8, 10), d.material(crest.primary))
+    : d.box(root, width, height, 0.035, ...position, crest.primary);
+  if (cloth) {
+    face.geometry.userData.owned = true;
+    face.position.set(...position);
+    face.userData.animated = true;
+    face.layers.set(2);
+    root.add(face);
+  }
   face.name = `Crest emblem: ${crest.emblem}`;
   if (typeof document === 'undefined' || typeof Path2D === 'undefined') return face;
   const canvas = document.createElement('canvas');
@@ -248,10 +194,6 @@ export function buildPersonalAreas(d, town) {
       g.name = `${area.id} ${slot}: ${choice} stage ${stage}`;
       walkObstacle(g, 0, 0, area.radius, 14);
       buildLandmark(d, g, choice, stage, area.timeless);
-      if (!area.timeless) {
-        paintBuilding(d, g, town.personalisation?.paint?.all, town.era);
-        addBuildingPlaque(d, g, town, area.id);
-      }
     });
   }
   return root;
@@ -269,6 +211,19 @@ export function buildTownBanner(d, town) {
   d.rod(g, [0, 0, 0], [0, 5.7, 0], 0.075, '#655343');
   d.rod(g, [0, 5.4, 0], [2.6, 5.4, 0], 0.055, '#655343');
   d.ball(g, 0, 5.8, 0, 0.17, '#e8bf79');
-  addEmblemPanel(d, g, crest, 2.3, 2.8, [1.3, 3.9, 0.04]);
+  const cloth = addEmblemPanel(d, g, crest, 2.3, 2.8, [1.3, 3.9, 0.04], null, true);
+  const positions = cloth.geometry.attributes.position;
+  // A few vertices in the existing animation loop: no textures, materials or
+  // static town batches are rebuilt. The top edge stays tied to the crossbar.
+  root.userData.sceneryUpdate = (time) => {
+    for (let i = 0; i < positions.count; i++) {
+      const drop = (1.4 - positions.getY(i)) / 2.8;
+      const ripple = positions.getX(i) * 2.4 + drop * 3 - time * 1.8;
+      positions.setZ(i, drop * (0.1 * Math.sin(ripple) + 0.045 * Math.sin(time * 0.9)));
+    }
+    positions.needsUpdate = true;
+    cloth.geometry.computeVertexNormals();
+  };
+  root.userData.sceneryUpdate(0);
   return root;
 }

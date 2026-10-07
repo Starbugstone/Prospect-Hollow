@@ -29,14 +29,14 @@ function copyPersonalisation(object $value): object
 {
     return json_decode(json_encode($value, JSON_THROW_ON_ERROR), false, 64, JSON_THROW_ON_ERROR);
 }
-$empty = TownPersonalisation::normalize(null, $town);
+$empty = TownPersonalisation::normalize(null);
 checkPersonalisation(
-    json_encode($empty) === json_encode(TownPersonalisation::normalize($empty, $town)),
+    json_encode($empty) === json_encode(TownPersonalisation::normalize($empty)),
     'normalization is idempotent',
 );
 foreach ([null, [], 'bad', 1, (object) ['crest' => (object) ['emblem' => '<script>']]] as $bad) {
     checkPersonalisation(
-        TownPersonalisation::normalize($bad, $town)->crest === null,
+        TownPersonalisation::normalize($bad)->crest === null,
         'malformed values have no banner',
     );
 }
@@ -59,68 +59,31 @@ $town->personalisation = (object) [
     'areas' => (object) ['meadow' => ['roundhouse', 'windgarden', 'longhall']],
     'plaques' => new stdClass(),
 ];
-$p = TownPersonalisation::normalize($town->personalisation, $town);
+$p = TownPersonalisation::normalize($town->personalisation);
 checkPersonalisation(
     $p->crest->primary === '#abcdef' && !isset($p->crest->url),
     'crest bounded to catalog fields',
 );
-checkPersonalisation(
-    !isset($p->paint->all->roof, $p->paint->all->extra, $p->paint->unknown),
-    'invalid colours and plots removed',
-);
+checkPersonalisation(!isset($p->paint), 'retired building paint removed');
+checkPersonalisation(!isset($p->choices), 'retired building styles removed');
 checkPersonalisation(!isset($p->clothing), 'legacy clothing overrides removed');
-checkPersonalisation(
-    $p->choices->home === 'garden' && !isset($p->choices->saloon),
-    'unknown choices default to original',
-);
-checkPersonalisation($p->areas->meadow === ['roundhouse'], 'only one authored landmark choice');
-
+checkPersonalisation($p->areas->meadow === ['roundhouse'], 'paid landmark choice preserved');
 checkPersonalisation($p->crest->emblemColour === '#ab1234', 'emblem colour normalized');
-checkPersonalisation($p->paint->all->walls === '#123456', 'legacy paint migrated');
 $legacyPalette = copyPersonalisation($town->personalisation);
-$legacyPalette->paint->well = (object) ['walls' => '#112233', 'roof' => '#AABBCC'];
+$legacyPalette->paint->all = (object) ['walls' => '#112233'];
 $legacyPalette->crest->emblemColour = 'url(bad)';
-$migrated = TownPersonalisation::normalize($legacyPalette, $town);
+$migrated = TownPersonalisation::normalize($legacyPalette);
 checkPersonalisation(
-    $migrated->paint->all->walls === '#123456' && $migrated->paint->all->roof === '#aabbcc',
-    'home takes precedence, other saved roles fill the shared palette',
+    !isset($migrated->paint, $migrated->choices),
+    'shared paint and styles discarded',
 );
 checkPersonalisation(
     $migrated->crest->emblemColour === '#393c43',
     'invalid emblem colour defaults',
 );
-$legacyPalette->paint->all = new stdClass();
 checkPersonalisation(
-    count((array) TownPersonalisation::normalize($legacyPalette, $town)->paint->all) === 0,
-    'explicit empty palette does not resurrect old paint',
-);
-checkPersonalisation(
-    json_encode($migrated) === json_encode(TownPersonalisation::normalize($migrated, $town)),
+    json_encode($migrated) === json_encode(TownPersonalisation::normalize($migrated)),
     'migration is idempotent',
-);
-
-foreach ($schema['personalisation']['choices'] as $id => $choices) {
-    foreach ($choices as $choice) {
-        $previous = (object) ['town' => copyPersonalisation($town)];
-        $previous->town->buildings->$id = 1;
-        $previous->town->personalisation->choices->$id = $choice;
-        $incoming = copyPersonalisation($previous);
-        $incoming->town->personalisation->choices->$id = $choices[array_key_last($choices)];
-        $incoming->town->personalisation->areas->meadow = ['glasshouse', null];
-        $kept = TownPersonalisation::keep($incoming, $previous)->town->personalisation;
-        checkPersonalisation(
-            ($kept->choices->$id ?? 'original') === $choice,
-            'settled ' . $id . ' keeps ' . $choice,
-        );
-    }
-}
-$legacy = (object) ['town' => copyPersonalisation($town)];
-unset($legacy->town->personalisation);
-$legacy->town->buildings->home = 1;
-$incoming = (object) ['town' => copyPersonalisation($town)];
-checkPersonalisation(
-    !isset(TownPersonalisation::keep($incoming, $legacy)->town->personalisation->choices->home),
-    'already settled legacy building stays original',
 );
 $previous = (object) ['town' => copyPersonalisation($town)];
 $oldClient = copyPersonalisation($previous);
@@ -133,23 +96,26 @@ checkPersonalisation(
 
 $rank = array_key_first($schema['honours']['definitions']);
 $town->personalisation->plaques = (object) [
+    'mine' => $rank,
     'home' => $rank,
     'saloon' => 'invented-award',
     'museum' => 'player-alpha',
 ];
 $public = TownPersonalisation::publish($town, null, $schema);
 checkPersonalisation(
-    !isset($public->plaques->home, $public->plaques->saloon),
-    'unearned ranks are never public',
+    count((array) $public->plaques) === 0,
+    'unearned and off-mine plaques removed',
 );
 $honours = (object) ['earned' => (object) [$rank => (object) ['at' => 1]]];
+$public = TownPersonalisation::publish($town, $honours, $schema);
 checkPersonalisation(
-    TownPersonalisation::publish($town, $honours, $schema)->plaques->home === $rank,
-    'verified rank can be published',
+    (array) $public->plaques === ['mine' => $rank],
+    'verified rank is published only on the mine',
 );
 // Player entries remain pending verification by PublicTown::distinguish on each read.
+$town->personalisation->plaques->mine = 'player-alpha';
 checkPersonalisation(
-    $public->plaques->museum === 'player-alpha',
+    TownPersonalisation::publish($town, null, $schema)->plaques->mine === 'player-alpha',
     'player badge is resolved against its owner at read time',
 );
 foreach ($schema['personalisation']['areas'] as $area) {

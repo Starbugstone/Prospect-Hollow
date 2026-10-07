@@ -3,7 +3,7 @@
     <legend>{{ label }}</legend>
     <div class="personal-swatches">
       <button
-        v-for="colour in PAINT_COLOURS"
+        v-for="colour in CREST_COLOURS"
         :key="colour"
         type="button"
         :style="{ '--swatch': colour }"
@@ -23,20 +23,12 @@
           :value="modelValue || '#658c68'"
           @input="$emit('update:modelValue', $event.target.value)"
       /></label>
-      <button
-        v-if="resettable"
-        type="button"
-        class="personal-text-button"
-        @click="$emit('update:modelValue', null)"
-      >
-        {{ t('Original colour') }}
-      </button>
     </div>
   </fieldset>
 </template>
 <script setup>
-import { PAINT_COLOURS } from '../../data/townPersonalisation';
+import { CREST_COLOURS } from '../../data/townPersonalisation';
 import { t } from '../../i18n';
-defineProps({ label: String, modelValue: String, resettable: Boolean });
+defineProps({ label: String, modelValue: String });
 defineEmits(['update:modelValue']);
 </script>

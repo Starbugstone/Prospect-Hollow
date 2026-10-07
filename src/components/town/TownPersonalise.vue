@@ -3,7 +3,7 @@
     <div class="personal-intro">
       <span class="town-kicker">{{ t('Make yourself at home') }}</span>
       <h2>{{ t('A town that feels like yours') }}</h2>
-      <p>{{ t('Your colours, your character. Visitors see your choices too.') }}</p>
+      <p>{{ t('Your crest, your achievements.') }}</p>
     </div>
     <nav class="personal-sections" :aria-label="t('Personalisation sections')">
       <button
@@ -104,133 +104,28 @@
       />
     </div>
 
-    <div v-else-if="section === 'colours'" class="personal-section">
-      <div class="personal-building-preview">
-        <svg viewBox="-180 -255 360 300" :aria-label="t('Colour preview')" role="img">
-          <TownBuilding
-            id="home"
-            :stage="Math.max(1, town.buildings.home || 0)"
-            :era="town.era"
-            :era-level="town.buildingEraLevels.home || 1"
-            :paint="p.paint.all"
-          />
-        </svg>
-        <small>{{ t('Example building · these colours apply throughout your town') }}</small>
-      </div>
-      <label class="personal-field"
-        >{{ t('Building element')
-        }}<select v-model="paintGroup">
-          <option v-for="group in PAINT_GROUPS" :key="group.id" :value="group.id">
-            {{ t(group.label) }}
-          </option>
-        </select></label
-      >
-      <TownColourPicker
-        :label="t(PAINT_GROUPS.find((g) => g.id === paintGroup).label)"
-        :model-value="p.paint.all[paintGroup]"
-        resettable
-        @update:model-value="change({ kind: 'paint', group: paintGroup, value: $event })"
-      />
-      <p class="personal-note">
-        {{
-          t(
-            'Your palette follows all buildings as they grow, including new buildings and monuments. The Monument Square monument keeps its own colours.',
-          )
-        }}
-      </p>
-      <p class="personal-note">
-        {{
-          t(
-            'Some elements appear as the building develops. Glass, plants and signs keep their original colours.',
-          )
-        }}
-      </p>
-    </div>
-
-    <div v-else-if="section === 'buildings'" class="personal-section">
-      <label class="personal-field"
-        >{{ t('Choose a building')
-        }}<select v-model="choiceBuilding" @change="$emit('focus', choiceBuilding)">
-          <option v-for="building in choiceBuildings" :key="building.id" :value="building.id">
-            {{ t(building.name) }}
-          </option>
-        </select></label
-      >
-      <p class="personal-note">
-        {{
-          t(
-            choiceLocked(town, choiceBuilding)
-              ? 'This place is already settled. Keep its character here, or try another design in a new town.'
-              : 'Choose its character before construction begins. The design stays as it grows.',
-          )
-        }}
-      </p>
-      <div class="personal-designs">
-        <button
-          v-for="choice in BUILDING_CHOICES[choiceBuilding]"
-          :key="choice"
-          :disabled="choiceLocked(town, choiceBuilding)"
-          :aria-pressed="(p.choices[choiceBuilding] || 'original') === choice"
-          @click="change({ kind: 'choice', id: choiceBuilding, value: choice })"
-        >
-          <TownDesignPreview :choice="choice" /><span>{{ t(CHOICE_LABELS[choice]) }}</span
-          ><small v-if="(p.choices[choiceBuilding] || 'original') === choice">{{
-            t('Selected')
-          }}</small>
-        </button>
-      </div>
-      <aside class="personal-monuments">
-        <TownIcon name="monument" />
-        <div>
-          <strong>{{ t('Looking for monuments?') }}</strong>
-          <p>
-            {{
-              t(
-                'Each era opens a monument site in town. Tap its marker on the map, or find it in Build.',
-              )
-            }}
-          </p>
-          <button class="personal-text-button" @click="$emit('monuments')">
-            {{ t('See monument sites') }}
-          </button>
-        </div>
-      </aside>
-    </div>
-
     <div v-else class="personal-section">
       <p>
-        {{
-          t(
-            'Give an earned distinction a place on a building. Visitors can see what your town is proud of.',
-          )
-        }}
+        {{ t('Display your favourite earned distinction on the mine face above the mineshaft.') }}
       </p>
-      <label class="personal-field"
-        >{{ t('Choose a building')
-        }}<select v-model="plaqueBuilding" @change="$emit('focus', plaqueBuilding)">
-          <option v-for="building in builtBuildings" :key="building.id" :value="building.id">
-            {{ t(building.name) }}
-          </option>
-        </select></label
-      >
-      <p v-if="!builtBuildings.length || !badges.length" class="personal-empty">
+      <p v-if="!badges.length" class="personal-empty">
         {{
           t(
-            'Your earned honours and player distinctions will appear here. Build a place to display them, then choose your favourite.',
+            'Your earned honours and player distinctions will appear here. Choose your favourite for the mine.',
           )
         }}
       </p>
       <div v-else class="personal-badges">
         <button
-          :aria-pressed="!p.plaques[plaqueBuilding]"
-          @click="change({ kind: 'plaque', id: plaqueBuilding, value: null })"
+          :aria-pressed="!p.plaques.mine"
+          @click="change({ kind: 'plaque', id: 'mine', value: null })"
         >
           <GameIcon name="close" /><span>{{ t('No plaque') }}</span></button
         ><button
           v-for="badge in badges"
           :key="badge.id"
-          :aria-pressed="p.plaques[plaqueBuilding] === badge.id"
-          @click="change({ kind: 'plaque', id: plaqueBuilding, value: badge.id })"
+          :aria-pressed="p.plaques.mine === badge.id"
+          @click="change({ kind: 'plaque', id: 'mine', value: badge.id })"
         >
           <HonourBadge :definition="badge" :size="56" /><span>{{ t(badge.name) }}</span>
         </button>
@@ -240,9 +135,7 @@
     <footer class="personal-save">
       <p v-if="error" class="personal-note" role="alert">{{ error }}</p>
       <span role="status">{{
-        commands.length
-          ? t('Preview · not saved yet')
-          : t(saved ? 'Changes saved' : 'Make a choice to preview it')
+        commands.length ? t('Preview · not saved yet') : t('Make a choice to preview it')
       }}</span>
       <div>
         <button class="town-secondary" :disabled="!commands.length" @click="discard">
@@ -257,55 +150,34 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import { t } from '../../i18n';
-import { BUILDINGS } from '../../data/town';
 import { HONOURS } from '../../data/honours';
 import { distinctionBadge } from '../../data/playerDistinctions';
 import { CREST_EMBLEMS, CREST_EMBLEM_IDS } from '../../data/townCrests';
 import {
-  BUILDING_CHOICES,
-  CHOICE_LABELS,
   DEFAULT_EMBLEM_COLOUR,
   CREST_PATTERNS,
   CREST_SHAPES,
-  PAINT_GROUPS,
-  PERSONAL_AREAS,
-  areaUnlocked,
-  choiceLocked,
   normalizePersonalisation,
   personaliseTown,
 } from '../../data/townPersonalisation';
-import { plotUnlocked } from '../../game/town/TownRules';
 import GameIcon from '../GameIcon.vue';
 import HonourBadge from '../honours/HonourBadge.vue';
-import TownBuilding from './TownBuilding.vue';
 import TownCrest from './TownCrest.vue';
 import TownColourPicker from './TownColourPicker.vue';
-import TownDesignPreview from './TownDesignPreview.vue';
-import TownIcon from './TownIcon.vue';
 
 const props = defineProps({
   town: { type: Object, required: true },
   honours: { type: Object, required: true },
   received: { type: Object, default: () => ({}) },
-  initialBuilding: String,
   commit: { type: Function, required: true },
 });
-const emit = defineEmits(['preview', 'focus', 'monuments']);
+const emit = defineEmits(['preview', 'focus', 'saved']);
 const sections = [
   { id: 'crest', label: 'Crest', icon: 'spark' },
-  { id: 'colours', label: 'Colours', icon: 'color-wand' },
-  { id: 'buildings', label: 'Buildings', icon: 'home' },
   { id: 'distinctions', label: 'Distinctions', icon: 'star' },
 ];
-const section = ref(
-  props.initialBuilding
-    ? BUILDING_CHOICES[props.initialBuilding] && !choiceLocked(props.town, props.initialBuilding)
-      ? 'buildings'
-      : 'colours'
-    : 'crest',
-);
-const commands = ref([]),
-  saved = ref(false);
+const section = ref('crest');
+const commands = ref([]);
 const earned = computed(() => [
   ...Object.keys(props.honours.earned),
   ...Object.keys(props.received),
@@ -316,9 +188,7 @@ const draft = computed(() =>
     props.town,
   ),
 );
-const p = computed(() =>
-  normalizePersonalisation(draft.value.personalisation, draft.value, CREST_EMBLEM_IDS),
-);
+const p = computed(() => normalizePersonalisation(draft.value.personalisation, CREST_EMBLEM_IDS));
 const crest = computed(
   () =>
     p.value.crest ?? {
@@ -359,28 +229,6 @@ const emblems = computed(() =>
       t(item.label).toLocaleLowerCase().includes(search.value.toLocaleLowerCase()),
   ),
 );
-const availableBuildings = computed(() => [
-  ...BUILDINGS.filter((b) => plotUnlocked(props.town, b.id)),
-  ...PERSONAL_AREAS.filter((a) => !a.timeless && areaUnlocked(props.town, a)).map((a) => ({
-    id: a.id,
-    name: a.label,
-  })),
-]);
-const builtBuildings = computed(() =>
-  availableBuildings.value.filter(
-    (b) => props.town.buildings[b.id] > 0 || props.town.personalisation?.areas?.[b.id]?.[0],
-  ),
-);
-const choiceBuildings = computed(() =>
-  availableBuildings.value.filter((b) => BUILDING_CHOICES[b.id]),
-);
-const choiceBuilding = ref(
-  BUILDING_CHOICES[props.initialBuilding]
-    ? props.initialBuilding
-    : choiceBuildings.value[0]?.id || 'home',
-);
-const plaqueBuilding = ref(builtBuildings.value[0]?.id || 'well');
-const paintGroup = ref('walls');
 const badges = computed(() => [
   ...HONOURS.families.flatMap((family) =>
     family.ranks.filter((rank) => props.honours.earned[rank.id]).slice(-1),
@@ -394,23 +242,17 @@ function change(command) {
   // Keep only the latest edit for an element; a colour drag never creates hundreds of commands.
   commands.value = [
     ...commands.value.filter(
-      (c) =>
-        !(
-          c.kind === command.kind &&
-          c.id === command.id &&
-          c.group === command.group &&
-          c.slot === command.slot
-        ),
+      (c) => !(c.kind === command.kind && c.id === command.id && c.slot === command.slot),
     ),
     command,
   ];
-  saved.value = false;
   emit('preview', commands.value);
 }
 function changeCrest(patch) {
   change({ kind: 'crest', value: { ...crest.value, ...patch } });
 }
-watch(section, async () => {
+watch(section, async (value) => {
+  if (value === 'distinctions') emit('focus', 'mine');
   await nextTick();
   document.querySelector('.town-dialog')?.scrollTo({ top: 0 });
 });
@@ -418,13 +260,12 @@ const error = ref('');
 function discard() {
   commands.value = [];
   error.value = '';
-  saved.value = false;
   emit('preview', []);
 }
 function save() {
   if (props.commit(commands.value)) {
     discard();
-    saved.value = true;
+    emit('saved');
   } else error.value = t('Your town changed. Undo the preview and try again.');
 }
 const crestHero = ref(null);
@@ -470,7 +311,7 @@ onBeforeUnmount(() => {
 }
 .personal-sections {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 5px;
   padding: 6px;
   margin: 20px 0;
@@ -545,8 +386,7 @@ onBeforeUnmount(() => {
   grid-template-columns: 1fr 1fr;
   gap: 14px;
 }
-.personal-two-fields label,
-.personal-field {
+.personal-two-fields label {
   display: grid;
   gap: 7px;
   font-size: 13px;
@@ -597,7 +437,6 @@ onBeforeUnmount(() => {
   padding: 3px;
 }
 .personal-emblems button,
-.personal-designs button,
 .personal-badges button {
   display: flex;
   flex-direction: column;
@@ -615,7 +454,6 @@ onBeforeUnmount(() => {
   text-align: center;
 }
 .personal-emblems button[aria-pressed='true'],
-.personal-designs button[aria-pressed='true'],
 .personal-badges button[aria-pressed='true'] {
   border-color: #496c51;
   box-shadow: inset 0 0 0 2px #496c51;
@@ -698,67 +536,6 @@ onBeforeUnmount(() => {
   cursor: pointer;
   font: inherit;
   font-size: 13px;
-}
-.personal-building-preview {
-  text-align: center;
-  border-radius: 15px;
-  padding: 14px;
-  background: #e9ecdc;
-}
-.personal-building-preview > svg {
-  width: 100%;
-  max-height: 210px;
-}
-.personal-building-preview small {
-  display: block;
-  font-size: 11px;
-  color: #657365;
-}
-.personal-designs {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 9px;
-  margin-bottom: 15px;
-}
-.personal-designs button {
-  justify-content: start;
-  font-size: 12px;
-  padding: 7px;
-}
-.personal-designs button:disabled {
-  cursor: default;
-  opacity: 0.6;
-}
-.personal-designs button:disabled[aria-pressed='true'] {
-  opacity: 1;
-}
-.personal-designs small {
-  color: #365943;
-  font-weight: 700;
-}
-.personal-design-art {
-  width: 100%;
-  max-height: 100px;
-}
-.personal-monuments {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  padding: 14px;
-  border-radius: 14px;
-  background: #f4ead0;
-}
-.personal-monuments > svg {
-  width: 26px;
-  height: 26px;
-  flex: 0 0 26px;
-  color: #8a6427;
-}
-.personal-monuments p {
-  margin: 4px 0 0;
-  font-size: 13px;
-  line-height: 1.5;
-  color: #657365;
 }
 .personal-badges {
   display: grid;

@@ -9,35 +9,26 @@ import { riverDistance, RIVER } from '../src/game/town/TownRiver';
 import { ERAS } from '../src/data/eras';
 import { CREST_EMBLEMS, CREST_EMBLEM_IDS } from '../src/data/townCrests';
 import {
-  BUILDING_CHOICES,
   PERSONAL_AREAS,
-  PAINT_GROUPS,
   DEFAULT_EMBLEM_COLOUR,
   areaStage,
   areaUnlocked,
-  choiceLocked,
   createPersonalisation,
   normalizePersonalisation,
   personaliseTown,
 } from '../src/data/townPersonalisation';
-import {
-  normalizeTown,
-  purchase,
-  buildWithHammer,
-  advanceConstruction,
-  finishConstruction,
-} from '../src/game/town/TownRules';
+import { normalizeTown } from '../src/game/town/TownRules';
 import { TownPrimitives } from '../src/game/town/TownPrimitives';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { buildPlot, plotSignatures } from '../src/game/town/TownPlots';
-import { paintBuilding } from '../src/game/town/TownPaint';
-import { buildingPaintRole } from '../src/data/buildingPaint';
 import {
-  addBuildingChoice,
   buildPersonalAreas,
   buildTownBanner,
+  buildMinePlaque,
   plaqueDefinition,
 } from '../src/game/town/TownPersonalisation';
+import { TownScenery } from '../src/game/town/TownScenery';
+import { TownStatics } from '../src/game/town/TownStatics';
 import { sceneryObstacles } from '../src/game/town/TownNavigation';
 import { PLOTS } from '../src/game/town/TownLayout';
 import { villageAppearance } from '../src/services/publicVillage';
@@ -116,54 +107,13 @@ describe('Personalisation save and progression contract', () => {
       areas: { meadow: ['unknown', 'pavilion', 'workshop'] },
     },
   ])('bounds malformed and future fields: %j', (saved) => {
-    const town = createTown();
-    const p = normalizePersonalisation(saved, town, CREST_EMBLEM_IDS);
+    const p = normalizePersonalisation(saved, CREST_EMBLEM_IDS);
     expect(p.crest).toBeNull();
-    expect(p.paint.unknown).toBeUndefined();
+    expect(p.paint).toBeUndefined();
+    expect(p.choices).toBeUndefined();
     expect(p.clothing).toBeUndefined();
-    expect(p.paint.all?.walls).toBeUndefined();
-    expect(p.paint.all?.extra).toBeUndefined();
-    expect(normalizePersonalisation(p, town, CREST_EMBLEM_IDS)).toEqual(p);
+    expect(normalizePersonalisation(p, CREST_EMBLEM_IDS)).toEqual(p);
   });
-  it.each(Object.entries(BUILDING_CHOICES))(
-    'locks %s at construction and preserves each alternative on reload',
-    (id, choices) => {
-      for (const value of choices) {
-        let town = createTown();
-        town.coins = 1e7;
-        town = edit(town, { kind: 'choice', id, value });
-        expect(town).not.toBeNull();
-        town.projects[id] = { id, stage: 1, wins: 0, required: 1 };
-        expect(choiceLocked(town, id)).toBe(true);
-        expect(edit(town, { kind: 'choice', id, value: choices.at(-1) })).toBeNull();
-        expect(
-          normalizePersonalisation(
-            JSON.parse(JSON.stringify(town.personalisation)),
-            town,
-            CREST_EMBLEM_IDS,
-          ).choices[id] ?? 'original',
-        ).toBe(value);
-      }
-    },
-  );
-  it.each(['coins', 'hammer'])(
-    'carries a selected frontage through a real %s construction',
-    (method) => {
-      let town = edit(createTown(), { kind: 'choice', id: 'home', value: 'orchard' });
-      expect(town).toBeNull(); // Not a home option.
-      town = edit(createTown(), { kind: 'choice', id: 'home', value: 'garden' });
-      town = purchase(town, 'well', 0);
-      town.coins = 10000;
-      town = method === 'hammer' ? buildWithHammer(town, 'home', 0) : purchase(town, 'home', 0);
-      if (town.projects.home) {
-        town = advanceConstruction(town);
-        town = finishConstruction(town, 'home', 1);
-      }
-      expect(town.buildings.home).toBe(1);
-      expect(normalizeTown(town).personalisation.choices.home).toBe('garden');
-      expect(edit(town, { kind: 'choice', id: 'home', value: 'veranda' })).toBeNull();
-    },
-  );
   it.each(PERSONAL_AREAS)(
     'develops $id through the final era without gating progression',
     (area) => {
@@ -254,36 +204,49 @@ describe('Personalisation save and progression contract', () => {
       expect(areaMaximum(town, area)).toBe(previous + 3);
       const upgraded = buy(town, area);
       expect(
-        normalizePersonalisation(upgraded.personalisation, upgraded, CREST_EMBLEM_IDS).areaLevels[
-          area.id
-        ],
+        normalizePersonalisation(upgraded.personalisation, CREST_EMBLEM_IDS).areaLevels[area.id],
       ).toBe(previous + 1);
     } finally {
       ERAS.pop();
     }
   });
-  it('migrates legacy paint to one palette, drops clothing and keeps resets on reload', () => {
-    const town = createTown();
-    town.personalisation = {
-      version: 1,
-      crest: { ...crest, emblemColour: undefined },
-      paint: {
-        home: { walls: '#ABCDEF' },
-        well: { walls: '#112233', roof: '#445566' },
-        unknown: { trim: '#123456' },
-      },
-      clothing: { shirt: '#123456' },
-    };
-    const loaded = normalizeTown(town);
-    expect(loaded.personalisation.paint).toEqual({ all: { walls: '#abcdef', roof: '#445566' } });
-    expect(loaded.personalisation.crest.emblemColour).toBe(DEFAULT_EMBLEM_COLOUR);
-    expect(loaded.personalisation.clothing).toBeUndefined();
-    expect(edit(loaded, { kind: 'clothing', group: 'shirt', value: '#123456' })).toBeNull();
-    const reset = edit(loaded, { kind: 'paint', group: 'walls', value: null });
-    expect(normalizeTown(reset).personalisation.paint.all).toEqual({ roof: '#445566' });
-    const empty = edit(reset, { kind: 'paint', group: 'roof', value: null });
-    expect(normalizeTown(empty).personalisation.paint).toEqual({ all: {} });
-  });
+  it.each([1, 2])(
+    'drops retired version %s cosmetics while preserving the crest and paid plots',
+    (version) => {
+      const town = createTown();
+      town.personalisation = {
+        version,
+        crest: { ...crest, emblemColour: undefined },
+        paint: { all: { walls: '#abcdef' }, home: { roof: '#123456' } },
+        choices: { home: 'garden' },
+        clothing: { shirt: '#123456' },
+        areas: { meadow: ['roundhouse'] },
+        areaLevels: { meadow: 2 },
+        plaques: { home: 'player-alpha', meadow: 'player-alpha', mine: 'player-alpha' },
+      };
+      const loaded = normalizeTown(town);
+      expect(loaded.personalisation).toEqual({
+        version: 3,
+        crest: { ...crest, emblemColour: DEFAULT_EMBLEM_COLOUR },
+        areas: { meadow: ['roundhouse'] },
+        areaLevels: { meadow: 2 },
+        plaques: { mine: 'player-alpha' },
+      });
+      expect(normalizeTown(loaded)).toEqual(loaded);
+      for (const command of [
+        { kind: 'paint', group: 'walls', value: '#123456' },
+        { kind: 'choice', id: 'home', value: 'garden' },
+        { kind: 'clothing', group: 'shirt', value: '#123456' },
+        { kind: 'plaque', id: 'home', value: 'player-alpha' },
+        { kind: 'plaque', id: 'meadow', value: 'player-alpha' },
+      ])
+        expect(edit(loaded, command, ['player-alpha'])).toBeNull();
+      expect(edit(loaded, { kind: 'plaque', id: 'mine', value: 'unearned' })).toBeNull();
+      expect(
+        edit(loaded, { kind: 'plaque', id: 'mine', value: null }).personalisation.plaques,
+      ).toEqual({});
+    },
+  );
   it('bounds the emblem colour and preserves it independently from both banner colours', () => {
     const town = edit(createTown(), {
       kind: 'crest',
@@ -304,13 +267,12 @@ describe('Personalisation save and progression contract', () => {
   });
   it('publishes the same cosmetic render state without mutating the owner or visiting player', () => {
     let town = edit(createTown(), { kind: 'crest', value: crest });
-    town = edit(town, { kind: 'paint', group: 'walls', value: '#112233' });
     town.coins = 10000;
     town = buy(town, PERSONAL_AREAS[0]);
     const visit = villageAppearance({ appearance: JSON.parse(JSON.stringify(town)) });
     expect(visit.personalisation).toEqual(town.personalisation);
-    visit.personalisation.paint.all.walls = '#ffffff';
-    expect(town.personalisation.paint.all.walls).toBe('#112233');
+    visit.personalisation.crest.primary = '#ffffff';
+    expect(town.personalisation.crest.primary).toBe(crest.primary);
   });
   it('saves all edits atomically through the campaign store and restores them', () => {
     const values = new Map();
@@ -328,122 +290,48 @@ describe('Personalisation save and progression contract', () => {
       ]),
     ).toBe(false);
     expect(JSON.stringify(campaign.town)).toBe(before);
-    expect(
-      campaign.personalise([
-        { kind: 'crest', value: crest },
-        { kind: 'paint', group: 'roof', value: '#abcdef' },
-      ]),
-    ).toBe(true);
+    expect(campaign.personalise([{ kind: 'crest', value: crest }])).toBe(true);
     setActivePinia(createPinia());
     const restored = useCampaignStore();
     expect(restored.town.personalisation.crest).toEqual(crest);
-    expect(restored.town.personalisation.paint.all.roof).toBe('#abcdef');
+    expect(restored.town.personalisation.paint).toBeUndefined();
   });
 });
 
 describe('Personalisation rendering', () => {
-  it('applies one palette to existing and newly built places and ordinary landmarks', () => {
-    let town = createTown();
-    for (const { id: group } of PAINT_GROUPS)
-      town = edit(town, { kind: 'paint', group, value: '#ab1234' });
-    // Add buildings after choosing the palette, just as future construction does.
-    town.buildings.home = town.buildings.well = 1;
-    town.buildingEras.home = town.buildingEras.well = town.era;
-    const hasPaint = (root) => {
-      const matches = [];
-      root.traverse((mesh) => {
-        if (mesh.isMesh && mesh.material.color?.getHexString() === 'ab1234') matches.push(mesh);
-      });
-      return matches.length > 0;
-    };
-    for (const id of ['home', 'well']) {
-      const root = new Group();
-      buildPlot(fixture(town), id, root, town, { home: 'Home', well: 'Well' });
-      expect(hasPaint(root), id).toBe(true);
-    }
-    town.coins = 10000;
-    town = buy(town, PERSONAL_AREAS[0]);
-    expect(hasPaint(buildPersonalAreas(fixture(town), town))).toBe(true);
-    town.buildings.futureWorkshop = 1;
-    expect(normalizeTown(town).personalisation.paint.all).toEqual(
-      Object.fromEntries(PAINT_GROUPS.map(({ id }) => [id, '#ab1234'])),
-    );
-  });
   it.each(ERAS.filter((e) => e.enabled).map((e) => e.id))(
-    'paints a home in %s without editing geometry or shared materials',
+    'ignores removed building cosmetics in %s without changing original artwork',
     (era) => {
       const town = createTown();
       town.era = era;
       town.buildings.home = 2;
       town.buildingEras.home = era;
       town.buildingEraLevels.home = 3;
-      const d = fixture(town),
-        root = new Group();
-      buildPlot(d, 'home', root, town, { home: 'Home' });
-      const before = [];
-      root.traverse((m) => {
-        if (m.isMesh) before.push([m, m.material, m.material.color?.getHexString(), m.geometry]);
-      });
-      const paint = Object.fromEntries(PAINT_GROUPS.map((g, i) => [g.id, `#${i + 1}12233`]));
-      paintBuilding(d, root, paint, era);
-      expect(before.some(([m, material]) => m.material !== material)).toBe(true);
-      for (const [m, material, colour, geometry] of before) {
-        expect(m.geometry).toBe(geometry);
-        expect(material.color?.getHexString()).toBe(colour);
-      }
-    },
-  );
-  it('paints the actual Industrial main walls and roof, leaving window glass unchanged', () => {
-    const town = createTown();
-    town.era = 'industrial';
-    town.buildings.home = 3;
-    town.buildingEras.home = 'industrial';
-    town.buildingEraLevels.home = 3;
-    const d = fixture(town),
-      root = new Group();
-    buildPlot(d, 'home', root, town, { home: 'Home' });
-    const surfaces = [];
-    root.traverse((mesh) => {
-      const colour = mesh.material?.color?.getHexString();
-      if (['aa795f', '53726d', '9bbbbb'].includes(colour)) surfaces.push([mesh, colour]);
-    });
-    expect(surfaces.some(([, colour]) => colour === 'aa795f')).toBe(true);
-    expect(surfaces.some(([, colour]) => colour === '53726d')).toBe(true);
-    paintBuilding(d, root, { walls: '#83b5aa', roof: '#b54f5c' }, 'industrial');
-    for (const [mesh, source] of surfaces)
-      expect(mesh.material.color.getHexString()).toBe(
-        { aa795f: '83b5aa', '53726d': 'b54f5c', '9bbbbb': '9bbbbb' }[source],
-      );
-    // The corresponding SVG preview uses these distinct authored colours.
-    expect(buildingPaintRole('#b37e65', '', 'industrial')).toBe('walls');
-    expect(buildingPaintRole('#66877b', '', 'industrial')).toBe('roof');
-    expect(buildingPaintRole('#b5d1bd', '', 'industrial')).toBeNull();
-  });
-  it('renders every frontage distinctly and adds visible growth', () => {
-    const d = fixture();
-    const signatures = new Set();
-    for (const choice of new Set(Object.values(BUILDING_CHOICES).flat())) {
-      const counts = [];
-      for (const level of [1, 3]) {
-        const root = new Group();
-        addBuildingChoice(d, root, choice, level);
-        const parts = [];
+      const d = fixture(town);
+      const original = new Group();
+      buildPlot(d, 'home', original, town, { home: 'Home' });
+      town.personalisation.paint = { all: { walls: '#ab1234', roof: '#ab1234' } };
+      town.personalisation.choices = { home: 'garden' };
+      town.personalisation.plaques.mine = 'player-alpha';
+      town.displayDistinctions = { 'player-alpha': { at: 1 } };
+      const legacy = new Group();
+      buildPlot(d, 'home', legacy, town, { home: 'Home' });
+      const parts = (root) => {
+        const result = [];
         root.traverse((m) => {
           if (m.isMesh)
-            parts.push([m.position.toArray(), m.scale.toArray(), m.material.color.getHexString()]);
+            result.push([
+              m.geometry.uuid,
+              m.material.uuid,
+              m.position.toArray(),
+              m.scale.toArray(),
+            ]);
         });
-        counts.push(JSON.stringify(parts));
-        const bounds = new Box3().setFromObject(root);
-        if (choice !== 'original') {
-          expect(bounds.min.x).toBeGreaterThan(-3);
-          expect(bounds.max.x).toBeLessThan(3);
-        }
-      }
-      if (choice !== 'original') expect(counts[0]).not.toBe(counts[1]);
-      signatures.add(counts[1]);
-    }
-    expect(signatures.size).toBe(new Set(Object.values(BUILDING_CHOICES).flat()).size);
-  });
+        return result;
+      };
+      expect(parts(legacy)).toEqual(parts(original));
+    },
+  );
   it('reserves real navigation obstacles for each garden choice, clear of existing plots', () => {
     for (const area of PERSONAL_AREAS)
       for (const choice of area.choices) {
@@ -568,23 +456,90 @@ describe('Personalisation rendering', () => {
   it('only displays earned town honours or verified player distinctions', () => {
     const town = createTown(),
       rank = HONOURS.definitions[0];
-    town.personalisation.plaques.home = rank.id;
-    expect(plaqueDefinition(town, 'home')).toBeNull();
+    town.personalisation.plaques.mine = rank.id;
+    expect(plaqueDefinition(town)).toBeNull();
     town.displayHonours = { earned: { [rank.id]: {} } };
-    expect(plaqueDefinition(town, 'home')).toBe(rank);
-    town.personalisation.plaques.home = 'player-alpha';
-    expect(plaqueDefinition(town, 'home')).toBeNull();
+    expect(plaqueDefinition(town)).toBe(rank);
+    town.personalisation.plaques.mine = 'player-alpha';
+    expect(plaqueDefinition(town)).toBeNull();
     town.displayDistinctions = { 'player-alpha': { at: 1 } };
-    expect(plaqueDefinition(town, 'home').id).toBe('player-alpha');
+    expect(plaqueDefinition(town).id).toBe('player-alpha');
   });
-  it('invalidates every painted plot when the shared palette changes', () => {
+  it('keeps every building cached when the crest, badge or obsolete paint changes', () => {
     const town = createTown();
     town.buildings.home = town.buildings.well = 1;
     const before = plotSignatures({}, town, {});
-    town.personalisation.paint.all = { roof: '#123456' };
-    const after = plotSignatures({}, town, {});
-    expect(before.get('home')).not.toBe(after.get('home'));
-    expect(before.get('well')).not.toBe(after.get('well'));
+    town.personalisation.paint = { all: { roof: '#123456' } };
+    town.personalisation.choices = { home: 'garden' };
+    town.personalisation.crest = crest;
+    town.personalisation.plaques.mine = 'player-alpha';
+    town.displayDistinctions = { 'player-alpha': { at: 1 } };
+    expect(plotSignatures({}, town, {})).toEqual(before);
+  });
+  it('mounts the single earned badge above the mineshaft on the sloping rock face', () => {
+    const town = edit(createTown(), { kind: 'plaque', id: 'mine', value: 'player-alpha' }, [
+      'player-alpha',
+    ]);
+    const d = fixture(town);
+    expect(buildMinePlaque(d, town)).toBeNull();
+    town.displayDistinctions = { 'player-alpha': { at: 1 } };
+    const plaque = buildMinePlaque(d, town);
+    const bounds = new Box3().setFromObject(plaque);
+    expect(bounds.min.y).toBeGreaterThan(2);
+    expect(bounds.max.y).toBeLessThan(4);
+    expect(plaque.position.x).toBe(0);
+    expect(plaque.position.z).toBeLessThan(PLOTS.mine[1]);
+    expect(plaque.position.z).toBeGreaterThan(PLOTS.mine[1] - 1);
+    expect(plaque.rotation.x).toBeLessThan(0);
+    expect(plaque.userData.distinction).toBe('player-alpha');
+  });
+  it('flutters only the cloth and retires its animation and geometry when replaced or removed', () => {
+    const town = edit(createTown(), { kind: 'crest', value: crest });
+    const d = fixture(town),
+      scenery = new TownScenery();
+    scenery.update(d, town);
+    const banner = scenery.entries.get('town-banner').group;
+    const cloth = banner.getObjectByName('Crest emblem: otter');
+    const positions = cloth.geometry.attributes.position;
+    const before = Array.from(positions.array);
+    const material = cloth.material,
+      geometry = cloth.geometry;
+    const motion = banner.userData.sceneryUpdate;
+    expect(d.motions.filter((m) => m === motion)).toHaveLength(1);
+    motion(2);
+    expect(Array.from(positions.array)).not.toEqual(before);
+    for (let i = 0; i < positions.count; i++) {
+      if (positions.getY(i) > 1.39) expect(positions.getZ(i)).toBeCloseTo(0);
+      expect(Math.abs(positions.getZ(i))).toBeLessThan(0.15);
+    }
+    expect(cloth.material).toBe(material);
+    expect(cloth.geometry).toBe(geometry);
+    expect(cloth.layers.mask).toBe(1 << 2);
+    const statics = new TownStatics(d.scene);
+    statics.sync([banner]);
+    expect(cloth.visible).toBe(true);
+    expect(cloth.parent.visible).toBe(true);
+    const disposed = vi.fn();
+    geometry.addEventListener('dispose', disposed);
+    const same = scenery.update(d, town);
+    expect(same).toEqual([]);
+    expect(d.motions.filter((m) => m === motion)).toHaveLength(1);
+    const next = edit(town, { kind: 'crest', value: { ...crest, emblem: 'fox' } });
+    expect(scenery.update(d, next)).toEqual(['town-banner']);
+    expect(d.motions).not.toContain(motion);
+    expect(disposed).toHaveBeenCalledOnce();
+    const nextMotion = scenery.entries.get('town-banner').group.userData.sceneryUpdate;
+    // A full scene rebuild clears motions, then reattaches retained scenery.
+    scenery.detach();
+    d.motions = [];
+    scenery.update(d, next);
+    expect(d.motions.filter((m) => m === nextMotion)).toHaveLength(1);
+    scenery.update(d, edit(next, { kind: 'crest', value: null }));
+    expect(d.motions).not.toContain(nextMotion);
+    expect(scenery.entries.get('town-banner').group).toBeNull();
+    statics.dispose();
+    scenery.dispose(d);
+    expect(d.motions).toEqual([]);
   });
   it.each(ERAS.filter((e) => e.enabled).map((e) => e.id))(
     'ignores legacy clothing overrides and preserves individual outfits in %s',

@@ -1,35 +1,31 @@
 # Town personalisation
 
-The town's **Personalise** tab contains Crest, Colours, Buildings and Distinctions.
-Changes preview in the town and are committed together with Save changes. Undo
-removes the preview. Construction purchases require a second confirmation showing
-the total cost. Public visits use the same normalized appearance and renderer.
+The town's **Personalise** tab contains Crest and Distinctions. Changes preview in
+the town and are committed together with Save changes, which closes the window
+after a successful save. Undo removes the preview; a failed save keeps the editor
+open. Public visits use the same normalized appearance and renderer.
 
 ## Appearance contract
 
-`town.personalisation` is versioned and bounded by `townPersonalisation.js`.
-Missing data means original artwork, outfits and no banner or plaques. The crest
-catalog contains 60 authored animal/symbol vectors; its shape, pattern and colours
-are shared by the menu, hill banner and village cards. The emblem has an independent
-colour; a small floating crest preview stays visible when the editor scrolls past
-the main preview. Five material roles control one shared building palette, shown
-on an example home. Residents always keep their individual era outfits.
-Material references are replaced without modifying cached materials.
+`town.personalisation` version 3 retains the crest, paid landmark ownership and
+stages, and one optional earned plaque at `plaques.mine`. Legacy building palettes,
+frontage styles, clothing overrides and plaques on other buildings are discarded
+by both client and server normalization. Buildings keep their authored artwork;
+there are no painting passes, preview directives or frontage geometry overrides.
 
-Existing buildings can receive permanent frontage choices before construction
-(Personalise › Buildings).
-Already-built legacy buildings retain their original design. Paint,
-crest and earned plaques remain editable. Public player plaques are verified
-against the owner's current distinctions; Town Honours come from server-verified
-honours. Hidden or unearned distinction IDs are never rendered as earned plaques.
+The crest catalog contains 60 authored animal/symbol vectors. Shape, pattern,
+colours and independent emblem ink are shared by the menu, hill banner and village
+cards. Missing or invalid emblem ink uses the original dark ink. The banner's
+small cloth mesh gently ripples below its fixed crossbar in the existing town
+animation loop. It uses the animated render layer, preserving static town batches
+and the cached background. Pause, hidden views and reduced motion freeze it;
+replacing or removing a banner retires its animation and owned resources.
 
-Appearance version 2 stores the shared palette in `paint.all`, including for future
-buildings and ordinary landmarks. Monuments retain their authored colours. Legacy
-per-building paint is migrated by preferring the home's colour for each role,
-then the first saved colour in building/landmark catalog order. An explicitly empty
-shared palette preserves a reset. Legacy clothing overrides are discarded. Missing
-or invalid `crest.emblemColour` uses the original dark ink. PHP normalization and
-public town projection follow the same rules.
+The distinction plaque sits on the central mine rock face above the sunken shaft.
+It has its own scenery cache entry, so changing it or the crest never rebuilds
+ordinary buildings. Public player plaques are verified against the owner's current
+distinctions; Town Honours come from server-verified honours. Hidden or unearned
+IDs are never rendered as earned plaques.
 
 ## Monument sites
 
@@ -54,16 +50,14 @@ Monument sites follow the same interaction as every other building:
   building improvements.
 - The Build tab lists every unlocked site under **Monuments** (open sites with their
   starting price, built ones with their stage or next upgrade price) and names the
-  next site to open. Personalise only points to monument sites; it no longer sells
-  them.
+  next site to open. Monument purchases are separate from Personalise.
 - Visitors see built monuments and can open a read-only card; open sites have no
   label for them.
 
 The third-era site is Monument Square. Its five timeless models have separate
 prices: Founders' Arch (6,000), Crystal Spire (8,000), Guardian of the Hollow
 (10,000), World Tree (12,000), Celestial Sphere (15,000). Every player in Industrial
-or later may build one. Timeless monuments have no upgrades and ignore era, crest
-and paint changes. The first monument purchase earns the single gold Town Honour
+or later may build one. Timeless monuments have no upgrades and retain their authored appearance. The first monument purchase earns the single gold Town Honour
 **A Lasting Legacy**, regardless of the model; older monument-owning saves receive
 it through honours generation 2 catch-up. The server verifies ownership from the
 paid landmark replay before publishing this distinction. Saves that replaced their
@@ -86,7 +80,9 @@ are shared with terrain reservation, navigation obstacles and camera framing.
 
 Regression coverage checks all choices and upgrade stages, parcel/river/building
 clearances, open-site markers for unlocked eras only, timeless monument geometry,
-rejected replacements in every later era, insufficient funds, stale commands, save normalization, visitors, shared paint and individual outfits
-across eras. Actual frontend purchase flows for every parcel are replayed by
+rejected replacements in every later era, insufficient funds, stale commands, save
+normalization, visitors, removal of retired cosmetics, mine-only badges, flag motion
+and resource cleanup, and individual outfits across eras. Actual frontend purchase
+flows for every parcel are replayed by
 `backend/tests/save-integrity.php`. Keep the ordinary chapter progression tests,
 including unlimited moves, alongside these checks.

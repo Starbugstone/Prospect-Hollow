@@ -40,8 +40,6 @@ export function plotFootprintKey(id, town) {
   });
 }
 export function footprintsFor(key, root) {
-  if (root.userData.personalisedGeometry)
-    return { solids: geometryFootprints(root), provisional: false };
   const era = key.split('|')[2],
     catalog = ready.get(era),
     family = eraEvolution(era).cityAssets;

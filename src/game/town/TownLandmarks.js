@@ -44,7 +44,7 @@ function pedestal(d, g, radius, height = 0.6) {
       [radius - n * 0.4, height / 3, radius - n * 0.4],
       [0, ((n + 0.5) * height) / 3, 0],
       n === 1 ? DARK : STONE,
-    ).userData.paintRole = 'secondary';
+    );
 }
 function tree(d, g, x, z, height, colour) {
   d.rod(g, [x, 0.3, z], [x, height, z], 0.35, DARK);
@@ -58,7 +58,7 @@ function tree(d, g, x, z, height, colour) {
       [height * 0.34, height * 0.26, height * 0.3],
       colour,
       'rock',
-    ).userData.paintRole = false;
+    );
   }
 }
 
@@ -283,21 +283,5 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false) {
     for (let n = 0; n < age; n++)
       d.box(g, 0.6, 0.09, 0.7, (n - (age - 1) / 2) * 0.85, 0.65, 4.8, n % 2 ? colour : GOLD);
   }
-  if (!timeless)
-    g.traverse((mesh) => {
-      if (!mesh.isMesh || !mesh.material?.color) return;
-      if (Object.hasOwn(mesh.userData, 'paintRole')) return;
-      const colourHex = `#${mesh.material.color.getHexString()}`;
-      mesh.userData.paintRole =
-        colourHex === colour
-          ? 'roof'
-          : colourHex === wall
-            ? 'walls'
-            : colourHex === DARK
-              ? 'trim'
-              : colourHex === GOLD
-                ? 'accent'
-                : false;
-    });
   return g;
 }

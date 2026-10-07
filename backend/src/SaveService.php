@@ -87,7 +87,7 @@ final class SaveService
         return [
             'era' => is_string($town->era ?? null) ? $town->era : '',
             ...$town->personalisation->crest ?? null
-                ? ['crest' => TownPersonalisation::normalize($town->personalisation, $town)->crest]
+                ? ['crest' => TownPersonalisation::normalize($town->personalisation)->crest]
                 : [],
             'coins' =>
                 is_int($coins) || is_float($coins) ? max(0, min(9007199254740991, $coins)) : 0,

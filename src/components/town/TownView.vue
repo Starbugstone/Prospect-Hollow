@@ -480,11 +480,10 @@
         :town="town"
         :honours="campaign.honours"
         :received="personalDistinctions"
-        :initial-building="personalBuilding"
         :commit="savePersonalisation"
         @preview="personalCommands = $event"
         @focus="focusPersonalBuilding"
-        @monuments="openTab('build')"
+        @saved="closeDialog"
       />
       <TownMonumentSite
         v-else-if="dialogMode === 'monument'"
@@ -519,7 +518,6 @@
         :bonus-limit="campaign.bonusLimit"
         :powers="campaign.powers"
         :last-income="campaign.lastSaloonIncome"
-        @personalise="openPersonalisation"
         @build="startWork"
         @hammer="useHammer"
         @finish="finishBuilding(selected)"
@@ -622,7 +620,7 @@ import {
   areaUnlocked,
   landmarkOffer,
 } from '../../data/townLandmarks';
-import { BUILDING_CHOICES, personaliseTown } from '../../data/townPersonalisation';
+import { personaliseTown } from '../../data/townPersonalisation';
 import { CREST_EMBLEM_IDS } from '../../data/townCrests';
 import { performanceMark } from '../../game/PresentationWork';
 import { isCityEra } from '../../data/city';
@@ -773,7 +771,6 @@ const muted = computed(() => settings.musicVolume === 0 && settings.sfxVolume ==
 const tabHeight = ref(0);
 const tabSheet = computed(() => tabHeight.value > 0);
 function openTab(tab) {
-  if (tab === 'personalise') personalBuilding.value = null;
   if (tab === 'mine') goMining();
   // Tapping the open tab again closes its panel.
   else if (tab !== 'village' && currentTab.value === tab) closeDialog();
@@ -849,12 +846,7 @@ const townScene = ref(null);
 const eraRevealed = ref(false);
 const eraReady = ref(false);
 const eraFallback = ref(false);
-const personalCommands = ref([]),
-  personalBuilding = ref(null);
-function openPersonalisation(id) {
-  personalBuilding.value = id;
-  dialogMode.value = 'personalise';
-}
+const personalCommands = ref([]);
 function focusPersonalBuilding(id) {
   if (BUILDING_BY_ID[id]) selected.value = id;
   nextTick(() => townScene.value?.focusPlace(id));
@@ -862,7 +854,7 @@ function focusPersonalBuilding(id) {
 function savePersonalisation(commands) {
   return campaign.personalise(commands, personalDistinctions.value);
 }
-// Monument sites open from the map, the Build list or Personalise.
+// Monument sites open from the map or the Build list.
 const monumentSite = ref(PERSONAL_AREAS[0].id),
   monumentPreview = ref(null);
 function openMonument(id) {
@@ -1306,10 +1298,6 @@ function buildFree(id) {
   startWork(offer.stage);
 }
 function selectParcel(id) {
-  if (BUILDING_CHOICES[id] && !town.value.buildings[id] && !town.value.projects[id]) {
-    inspectBuilding(id);
-    return;
-  }
   if (constructionReady(town.value.projects[id])) finishBuilding(id, true);
   else {
     const offer = upgradeOffer(town.value, id);
