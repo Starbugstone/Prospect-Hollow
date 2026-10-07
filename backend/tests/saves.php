@@ -591,7 +591,7 @@ try {
         $awards === [4 => ['stars' => 2]],
         'awards omit unknown levels, invalid stars and private record fields',
     );
-    // Shared-town art follows the generated client catalog, including cozy eras.
+    // Shared-town art follows the generated client catalog, including cozy and later eras.
     foreach (
         [
             'canopy' => ['teaHouse', 'blossomAtelier', 'orchardCottages'],
@@ -603,6 +603,9 @@ try {
                 'springsRetreat',
                 'riverlightPavilion',
             ],
+            'skysail' => ['skyHarbour', 'cloudOrchard', 'windsongLofts'],
+            'stargazer' => ['greatTelescope', 'dewlightGardens', 'starlightTerraces'],
+            'moonward' => ['spaceElevator', 'moonpost', 'missionHomesteads'],
         ]
         as $era => $buildings
     ) {
