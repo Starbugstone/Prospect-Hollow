@@ -12,6 +12,8 @@ final class SaveService
     public const TOWN_SLOTS = 3;
     /** An offline receipt batch can be larger than the retained gameplay snapshot. */
     public const MAX_UPLOAD_BYTES = 8388608;
+    /** Upload ID prefix of a revision an admin saved from a sync comparison. */
+    public const ADMIN_RESET = 'admin-reset-';
     public function __construct(
         private Database $database,
         private Auth $auth,
@@ -116,6 +118,10 @@ final class SaveService
             'isPublic' => (bool) $row['listed'],
             'publicId' => $row['public_id'],
         ];
+        // An admin edited this revision after a blocked sync: the owner's game loads it.
+        if (str_starts_with((string) ($row['upload_id'] ?? ''), self::ADMIN_RESET)) {
+            $result['adminReset'] = true;
+        }
         $save = json_decode($row['profile'], false, 64, JSON_THROW_ON_ERROR);
         $integrity = SaveIntegrity::receipt($save);
         if ($profile && $integrity !== null) {
@@ -338,12 +344,48 @@ final class SaveService
         self::uuid($id);
         self::keys($body, ['baseRevision', 'uploadId', 'profile']);
         [$json, $hash] = $this->upload($body);
+        $rejected = null;
+        try {
+            return $this->transact($r, $id, $body, $json, $hash, $resolve, $rejected);
+        } catch (ApiError $e) {
+            // The rejected save rolled back; its record for the admin sync log is kept.
+            if ($rejected !== null) {
+                try {
+                    SyncRejections::record(
+                        $this->database->get(),
+                        $rejected[0],
+                        $json,
+                        $rejected[1],
+                        $e,
+                    );
+                } catch (\Throwable $failure) {
+                    error_log(
+                        json_encode([
+                            'event' => 'sync_rejection_not_recorded',
+                            'type' => get_class($failure),
+                        ]),
+                    );
+                }
+            }
+            throw $e;
+        }
+    }
+    private function transact(
+        Request $r,
+        string $id,
+        array $body,
+        string $json,
+        string $hash,
+        bool $resolve,
+        ?array &$rejected,
+    ): array {
         return $this->transaction($r, true, function ($db, $a) use (
             $id,
             $body,
             $json,
             $hash,
             $resolve,
+            &$rejected,
         ) {
             $row = $this->owned($db, $a['id'], $id);
             if ($row['upload_id'] === $body['uploadId']) {
@@ -374,20 +416,34 @@ final class SaveService
             // including signed recovery and history restores, keeps those of the replaced
             // cloud save and verifies what the accepted state proves.
             $integrity = new SaveIntegrity();
-            $json = json_encode(
-                Honours::load(fn() => $integrity)->keep(
-                    $integrity->accept(
-                        TownPersonalisation::keep(
-                            json_decode($json, false, 64, JSON_THROW_ON_ERROR),
-                            $previous,
-                        ),
+            $incoming = TownPersonalisation::keep(
+                json_decode($json, false, 64, JSON_THROW_ON_ERROR),
+                $previous,
+            );
+            $previousAt = (int) $row['saved_at'] * 1000;
+            // An admin let the next upload through a false desync; it is used up here.
+            $forced = (bool) $row['force_sync'];
+            try {
+                $accepted = $forced
+                    ? $integrity->acceptOverride($incoming, $previous, $now, $id, $previousAt)
+                    : $integrity->accept(
+                        $incoming,
                         $previous,
                         $now,
                         $resolve,
                         $history,
                         $id,
-                        (int) $row['saved_at'] * 1000,
-                    ),
+                        $previousAt,
+                    );
+            } catch (ApiError $e) {
+                if ($e->status === 422) {
+                    $rejected = [$row, $integrity->expected()];
+                }
+                throw $e;
+            }
+            $json = json_encode(
+                Honours::load(fn() => $integrity)->keep(
+                    $accepted,
                     $previous,
                     Honours::social($db, 'id', $id),
                 ),
@@ -401,6 +457,9 @@ final class SaveService
                 'upload_id' => $body['uploadId'],
                 'upload_hash' => $hash,
             ];
+            if ($forced) {
+                $changes['force_sync'] = 0;
+            }
             if ($row['listed']) {
                 $changes['appearance'] = $this->public->projection(
                     json_decode($json),

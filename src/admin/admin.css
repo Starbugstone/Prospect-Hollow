@@ -14,6 +14,7 @@
   --brand-ink: #fff7df;
   --accent: #1c5cab;
   --danger: #b42f2f;
+  --warn: #9a5b00;
   --good: #006300;
   --wash: #eef3fa;
   font-family:
@@ -38,6 +39,7 @@
     --series: #3987e5;
     --brand: #10261f;
     --accent: #86b6ef;
+    --warn: #f0a841;
     --danger: #e66767;
     --good: #0ca30c;
     --wash: #1d2633;
@@ -390,6 +392,86 @@ td.admin-actions {
 .admin-badge.deleted {
   background: color-mix(in srgb, var(--danger) 18%, transparent);
   color: var(--ink);
+}
+.admin-badge.blocked {
+  background: color-mix(in srgb, var(--warn) 22%, transparent);
+  color: var(--ink);
+}
+
+/* Sync log and comparison */
+.admin-check {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.9rem;
+}
+.admin-sync-compare {
+  margin: 1rem 0 1.6rem;
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px var(--ring);
+}
+.admin-sync-compare-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.admin-sync-compare-heading h3 {
+  margin: 0;
+}
+.admin-sync-reason {
+  padding: 0.55rem 0.8rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border-left: 4px solid var(--danger);
+}
+.admin-sync-table {
+  table-layout: fixed;
+}
+.admin-sync-table th[scope='row'] {
+  text-transform: none;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+.admin-sync-table td {
+  overflow-wrap: anywhere;
+}
+.admin-sync-table input {
+  width: 100%;
+  font-family: ui-monospace, monospace;
+}
+.admin-sync-value {
+  width: 100%;
+  padding: 0.15rem 0.3rem;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font:
+    0.85rem ui-monospace,
+    monospace;
+  text-align: left;
+  cursor: copy;
+}
+.admin-sync-value:hover {
+  background: var(--wash);
+}
+/* The value the server rejected stands out at a glance. */
+.admin-sync-rejected {
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  box-shadow: inset 4px 0 0 var(--danger);
+  font-weight: 600;
+}
+.admin-sync-mismatch {
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+}
+.admin-sync-edited input {
+  outline: 2px solid var(--accent);
+}
+.admin-sync-flag {
+  margin-right: 0.3rem;
+  color: var(--danger);
 }
 .admin-online {
   font-weight: 600;

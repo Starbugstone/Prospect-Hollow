@@ -140,7 +140,39 @@ it('keeps progress and queued actions after a validation error without repeatedl
   expect(local.meta.uploadError.code).toBe('save_integrity_mismatch');
   request.mockClear();
   await service.sync();
-  expect(request).not.toHaveBeenCalled();
+  expect(request.mock.calls.every(([, body]) => !body)).toBe(true);
+  expect(storage.active().meta.uploadError.code).toBe('save_integrity_mismatch');
+});
+
+it('loads a support reset over a blocked upload without asking, keeping a backup', async () => {
+  advance();
+  request.mockImplementation(async (_path, body) => {
+    if (!body) return copy(remote);
+    throw Object.assign(new Error('Your local save is kept.'), {
+      status: 422,
+      data: { code: 'save_integrity_mismatch' },
+    });
+  });
+  await expect(service.sync()).rejects.toThrow('Your local save is kept.');
+  remote = {
+    ...remote,
+    revision: 2,
+    adminReset: true,
+    profile: { ...copy(remote.profile), town: { ...remote.profile.town, coins: 500 } },
+  };
+  request.mockImplementation(async (_path, body) => {
+    if (body) throw new Error('A blocked town must not upload.');
+    return copy(remote);
+  });
+  await service.sync({ pull: false });
+  expect(storage.active().profile.town.coins).toBe(11);
+  await service.sync();
+  const local = storage.active();
+  expect(local.profile.town.coins).toBe(500);
+  expect(local.meta.baseRevision).toBe(2);
+  expect(local.meta.uploadError).toBeNull();
+  expect(local.meta.desyncNotice).toBe('support');
+  expect([...preserved.values()].map((saved) => saved.profile.town.coins)).toEqual([11]);
 });
 
 it.each(['sequence', 'epoch'])(
@@ -180,7 +212,7 @@ it.each(['save_rules_unsupported', 'save_integrity_unsupported'])(
     advance();
     request.mockClear();
     await service.sync();
-    expect(request).not.toHaveBeenCalled();
+    expect(request.mock.calls.every(([, body]) => !body)).toBe(true);
     expect(storage.active().profile.town.coins).toBe(12);
     expect(storage.active().profile.integrity.actions).toHaveLength(2);
     storage.mutate(storage.active().meta.id, owner.id, (record) => {

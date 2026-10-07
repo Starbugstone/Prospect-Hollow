@@ -63,7 +63,8 @@ export function describeSaveState({ signedIn, accountTown, status, meta, session
       detail: 'Cloud saving is paused. Your progress is saved on this device.',
       action: 'retry',
     };
-  if (meta?.desyncNotice)
+  // Support's reset loads without a choice; its notice is the village toast.
+  if (meta?.desyncNotice && meta.desyncNotice !== 'support')
     return {
       tone: 'alert',
       label: 'Choose a save',

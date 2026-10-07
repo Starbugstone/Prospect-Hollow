@@ -117,6 +117,11 @@ progress, Town Honours counters and money budget, and later uploads are replayed
 normally again. Any other server rejects the receipt as a mismatch, so production
 tracked saves still require valid resource accounting.
 
+An admin can let one upload of a town through the same re-baseline after a false
+desync (**Accept next sync**), or save an edited copy that the owner's game loads
+without asking. Rejected uploads are kept for that comparison; see
+[blocked syncs](admin.md#blocked-syncs). Nothing in the client can set either.
+
 These JavaScript checks deter straightforward console changes, not a player who
 modifies browser code. Local-only saves and first-enrollment history remain
 editable, and calling normal reward actions with invented gameplay measurements

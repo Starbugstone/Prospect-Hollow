@@ -25,8 +25,8 @@ admins. In one transaction holding the player row lock it:
    `uniqueVisitors` count (each erased visitor still counts once, because the visits share
    the new key) while nothing links the visits to the account any more.
 2. Deletes pending sign-in links and the email's `identities` row.
-3. Deletes the player; cascades remove towns, history, sessions, profile, activity,
-   distinctions, revocations, favourites and pending email changes.
+3. Deletes the player; cascades remove towns, history, rejected sync uploads, sessions,
+   profile, activity, distinctions, revocations, favourites and pending email changes.
 
 After the commit the old address gets one last email; the admin audit log keeps only the
 account ID. A visit counts as signed in because `visitor_visits.signed_in` was set when it

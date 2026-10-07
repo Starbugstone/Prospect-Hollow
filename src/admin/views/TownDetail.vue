@@ -7,7 +7,7 @@
     <p v-if="error" class="admin-error" role="alert">{{ error }}</p>
     <template v-if="data">
       <header class="admin-heading">
-        <h1>{{ town.name }} <TownState :town="town" /></h1>
+        <h1>{{ town.name }} <TownState :town="town" /> <SyncBlocked :town="town" /></h1>
         <p class="admin-muted">Town {{ town.id }} · revision {{ town.revision }}</p>
       </header>
       <div class="admin-town-layout">
@@ -167,6 +167,67 @@
           </div>
         </div>
 
+        <h2>Cloud sync <SyncBlocked :town="town" /></h2>
+        <p class="admin-muted">
+          Uploads the save protection rejected, newest first (the latest five, kept 30 days).
+          Compare one to see the cloud save, what the server expected and what the game sent. Accept
+          the next sync for a false desync, or edit the values and reset the player’s game to that
+          save.
+        </p>
+        <ForceSyncToggle
+          v-if="!town.deletedAt"
+          class="admin-check"
+          labelled
+          :town="town"
+          @update:force-sync="town.forceSync = $event"
+          @error="error = $event"
+        />
+        <table v-if="data.syncRejections.length" class="admin-table">
+          <thead>
+            <tr>
+              <th scope="col">Rejected</th>
+              <th scope="col" class="number">Revision</th>
+              <th scope="col">Reason</th>
+              <th scope="col">Field</th>
+              <th scope="col"><span class="visually-hidden">Action</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="rejection in data.syncRejections"
+              :key="rejection.id"
+              :class="{ 'admin-current': rejection.id === comparing }"
+            >
+              <td :title="dateTime(rejection.at)">{{ relativeTime(rejection.at) }}</td>
+              <td class="number">{{ rejection.revision }}</td>
+              <td :title="rejection.message">{{ codeLabel(rejection.code) }}</td>
+              <td>
+                <code v-if="rejection.field">{{ rejection.field }}</code>
+              </td>
+              <td>
+                <button
+                  type="button"
+                  class="admin-button quiet"
+                  @click="comparing = comparing === rejection.id ? '' : rejection.id"
+                >
+                  {{ comparing === rejection.id ? 'Hide' : 'Compare' }}
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-else class="admin-muted">No rejected uploads.</p>
+        <p v-if="syncNotice" class="admin-notice" role="status">{{ syncNotice }}</p>
+        <SyncCompare
+          v-if="comparing"
+          :key="comparing"
+          :town-id="town.id"
+          :town-name="town.name"
+          :rejection-id="comparing"
+          @close="comparing = ''"
+          @reset="afterReset"
+        />
+
         <h2>Cloud history</h2>
         <p class="admin-muted">
           Restoring saves an older revision as the newest one; the current save stays in this list.
@@ -259,12 +320,16 @@
 import { computed, onMounted, ref } from 'vue';
 import { adminApi } from '../api';
 import { go, shownEmail } from '../state';
-import { dateTime, relativeTime, whole } from '../format';
+import { codeLabel, dateTime, relativeTime, whole } from '../format';
+import { downloadJson } from '../download';
 import { BUILDINGS, LEVEL_COUNT, buildingLabel, eraLabel, powerLabel } from '../labels';
 import ConfirmAction from '../components/ConfirmAction.vue';
 import TownState from '../components/TownState.vue';
 import TownPreview from '../components/TownPreview.vue';
 import TownHonours from '../components/TownHonours.vue';
+import SyncBlocked from '../components/SyncBlocked.vue';
+import SyncCompare from '../components/SyncCompare.vue';
+import ForceSyncToggle from '../components/ForceSyncToggle.vue';
 const tabs = [
   { id: 'overview', label: 'Overview' },
   { id: 'achievements', label: 'Achievements' },
@@ -286,7 +351,9 @@ const data = ref(null),
   error = ref(''),
   notice = ref(''),
   name = ref(''),
-  busy = ref(false);
+  busy = ref(false),
+  comparing = ref(''),
+  syncNotice = ref('');
 const town = computed(() => data.value.town);
 const stats = computed(() => data.value.town.stats);
 const profile = computed(() => data.value.profile ?? {});
@@ -369,13 +436,12 @@ async function remove() {
   await adminApi('DELETE', `towns/${props.id}`, { body: { confirmation: town.value.name } });
   go(`players/${town.value.owner.id}`);
 }
-function download() {
-  const blob = new Blob([JSON.stringify(profile.value, null, 2)], { type: 'application/json' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `${town.value.name.replace(/[^\p{L}\p{N}-]+/gu, '-')}-revision-${town.value.revision}.json`;
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+const download = () =>
+  downloadJson(`${town.value.name}-revision-${town.value.revision}`, profile.value);
+async function afterReset(result) {
+  comparing.value = '';
+  await load(result);
+  syncNotice.value = `Saved as revision ${town.value.revision}. The owner’s game loads it on its next sync.`;
 }
 onMounted(() => load());
 </script>

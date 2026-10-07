@@ -6,6 +6,8 @@ $directory = sys_get_temp_dir() . '/' . $prefix;
 mkdir($directory . '/src', 0700, true);
 $source = file_get_contents(dirname(__DIR__) . '/src/Database.php');
 $names = [
+    'town_sync_rejections_town',
+    'town_sync_rejections',
     'town_travels',
     'email_changes_player',
     'email_changes',
@@ -113,6 +115,11 @@ $helmets = $mysql ? 'schema-helmet-finds.sql' : 'schema-helmet-finds-postgresql.
 file_put_contents(
     $directory . '/' . $helmets,
     $rewrite(file_get_contents(dirname(__DIR__) . '/' . $helmets)),
+);
+$forceSync = $mysql ? 'schema-force-sync.sql' : 'schema-force-sync-postgresql.sql';
+file_put_contents(
+    $directory . '/' . $forceSync,
+    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $forceSync)),
 );
 try {
     $statements = explode(';', $schema);
@@ -233,6 +240,7 @@ try {
 } finally {
     foreach (
         [
+            'town_sync_rejections',
             'town_travels',
             'email_changes',
             'helmet_finds',
@@ -275,6 +283,7 @@ try {
     @unlink($directory . '/' . $settings);
     @unlink($directory . '/' . $playerData);
     @unlink($directory . '/' . $helmets);
+    @unlink($directory . '/' . $forceSync);
     unlink($directory . '/src/Database.php');
     rmdir($directory . '/src');
     rmdir($directory);

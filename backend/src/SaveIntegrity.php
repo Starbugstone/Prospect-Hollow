@@ -13,6 +13,8 @@ final class SaveIntegrity
     private array $rules;
     // The town being replayed: a space-helmet receipt is only valid for its own town.
     private string $townId = '';
+    // The replayed state a rejected upload was compared with, for the admin sync log.
+    private ?array $expected = null;
     private const CLOCK_SKEW_MS = 300000;
     public function __construct(?array $rules = null)
     {
@@ -793,10 +795,23 @@ final class SaveIntegrity
             $ack,
             $townId,
         );
-        // PHP's associative decode loses the distinction between {} and []. Keep
-        // the wire schema explicit so an untouched cloud backup can upload again.
+        $json = json_encode(self::wire($incoming), JSON_THROW_ON_ERROR);
+        if (strlen($json) > 1048576) {
+            throw new ApiError(
+                413,
+                'A town save including its recovery checkpoint must be smaller than 1 MB. Your local copy is safe.',
+            );
+        }
+        return json_decode($json, false, 64, JSON_THROW_ON_ERROR);
+    }
+    /**
+     * PHP's associative decode loses the distinction between {} and []. Keep the wire
+     * schema explicit so an untouched cloud backup can upload again.
+     */
+    private static function wire(array $profile): array
+    {
         foreach (['records', 'continuousRecords'] as $key) {
-            $incoming[$key] = (object) $incoming[$key];
+            $profile[$key] = (object) $profile[$key];
         }
         foreach (
             [
@@ -809,18 +824,79 @@ final class SaveIntegrity
             ]
             as $key
         ) {
-            if (isset($incoming['town'][$key])) {
-                $incoming['town'][$key] = (object) $incoming['town'][$key];
+            if (isset($profile['town'][$key])) {
+                $profile['town'][$key] = (object) $profile['town'][$key];
             }
         }
-        $json = json_encode($incoming, JSON_THROW_ON_ERROR);
-        if (strlen($json) > 1048576) {
-            throw new ApiError(
-                413,
-                'A town save including its recovery checkpoint must be smaller than 1 MB. Your local copy is safe.',
-            );
+        return $profile;
+    }
+    /** The replayed state the last rejected upload was compared with, if it got that far. */
+    public function expected(): ?array
+    {
+        return $this->expected;
+    }
+    /** A save as the replay compares it, with powers by ID; null when it cannot be read. */
+    public function comparable(object $profile): ?array
+    {
+        try {
+            $this->ready();
+            return $this->normalized(self::arrayOf($profile));
+        } catch (\Throwable) {
+            return null;
         }
-        return json_decode($json, false, 64, JSON_THROW_ON_ERROR);
+    }
+    /**
+     * Seals a save an admin edited from a sync comparison (a comparable state) as an
+     * unverified baseline on the latest checkpoint's journal, so the owner's game loads
+     * it and keeps syncing from there. Money is observed, never held.
+     */
+    public function adminReset(
+        array $state,
+        object $latest,
+        int $now,
+        string $townId,
+        ?int $previousServerAt = null,
+    ): object {
+        $this->ready();
+        $state['powers'] = array_map(
+            fn($id, $quantity) => ['id' => $id, 'quantity' => $quantity],
+            array_keys($state['powers']),
+            array_values($state['powers']),
+        );
+        $anchor = $this->journal(self::arrayOf($latest)['integrity'] ?? null);
+        unset($state['integrity']);
+        $profile = json_decode(
+            json_encode(self::wire($state), JSON_THROW_ON_ERROR),
+            false,
+            64,
+            JSON_THROW_ON_ERROR,
+        );
+        $this->validate($profile);
+        if (!$anchor) {
+            return $profile;
+        }
+        $this->townId = $townId;
+        $context = $this->honourCounters(
+            $anchor['context'] ?? [],
+            $state['town'],
+            $anchor['context'] ?? [],
+        );
+        $context = $this->moneyContext(
+            $context,
+            $anchor['context'] ?? [],
+            $now,
+            $previousServerAt,
+            [],
+            new MoneyBudget('observe'),
+        );
+        return $this->seal(
+            self::arrayOf($profile),
+            $context,
+            $anchor['epoch'],
+            $anchor['baseSequence'],
+            'baseline',
+            $townId,
+        );
     }
     /** Console testing tools exist on preprod and explicitly flagged servers only. */
     public static function testingToolsAllowed(): bool
@@ -844,6 +920,7 @@ final class SaveIntegrity
         string $townId,
         ?array $latest = null,
         ?int $previousServerAt = null,
+        ?MoneyBudget $budget = null,
     ): object {
         // Enrollment may happen during an offline puzzle, and a testing upload during a run.
         foreach ($journal['actions'] as $action) {
@@ -891,7 +968,7 @@ final class SaveIntegrity
             unset($context['run']);
         }
         $context = $this->honourCounters($context, $incoming['town'], $latest);
-        $context = $this->moneyContext($context, $latest, $now, $previousServerAt, []);
+        $context = $this->moneyContext($context, $latest, $now, $previousServerAt, [], $budget);
         return $this->seal(
             $incoming,
             $context,
@@ -945,17 +1022,7 @@ final class SaveIntegrity
             if (!self::testingToolsAllowed()) {
                 self::mismatch('integrity.testing');
             }
-            $context = $anchor['context'] ?? [];
-            $context['honours'] = $incoming['honours']['counts'] ?? null;
-            return $this->baseline(
-                $incoming,
-                $journal,
-                $context,
-                $now,
-                $townId,
-                $anchor['context'] ?? [],
-                $previousServerAt,
-            );
+            return $this->rebaseline($incoming, $journal, $anchor, $now, $previousServerAt);
         }
         if (!$journal) {
             if ($resolve) {
@@ -1142,6 +1209,7 @@ final class SaveIntegrity
         $expected = $this->protected($state);
         foreach ($expected as $field => $value) {
             if (!self::same($actual[$field], $value)) {
+                $this->expected = array_diff_key($state, ['integrity' => true]);
                 self::mismatch(self::difference($value, $actual[$field], $field));
             }
         }
@@ -1163,6 +1231,57 @@ final class SaveIntegrity
             $historical ? $ack : max($anchor['baseSequence'], $ack),
             'tracked',
             $townId,
+        );
+    }
+    /**
+     * Accepts one upload an admin let through after a false desync: the town is
+     * re-baselined like a testing-tools upload instead of replayed, keeping the latest
+     * clock, run, honours and money context. Money is observed, never held. A save that
+     * is not tracked on both sides takes the normal path.
+     */
+    public function acceptOverride(
+        object $profile,
+        object $previous,
+        int $now,
+        string $townId,
+        ?int $previousServerAt = null,
+    ): object {
+        $this->validate($profile);
+        $this->townId = $townId;
+        $incoming = self::arrayOf($profile);
+        $journal = $this->journal($incoming['integrity'] ?? null);
+        $anchor = $this->journal(self::arrayOf($previous)['integrity'] ?? null);
+        if (!$journal || !$anchor) {
+            return $this->accept($profile, $previous, $now, false, [], $townId, $previousServerAt);
+        }
+        return $this->rebaseline(
+            $incoming,
+            $journal,
+            $anchor,
+            $now,
+            $previousServerAt,
+            new MoneyBudget('observe'),
+        );
+    }
+    private function rebaseline(
+        array $incoming,
+        array $journal,
+        array $anchor,
+        int $now,
+        ?int $previousServerAt,
+        ?MoneyBudget $budget = null,
+    ): object {
+        $context = $anchor['context'] ?? [];
+        $context['honours'] = $incoming['honours']['counts'] ?? null;
+        return $this->baseline(
+            $incoming,
+            $journal,
+            $context,
+            $now,
+            $this->townId,
+            $anchor['context'] ?? [],
+            $previousServerAt,
+            $budget,
         );
     }
     /** Only for a historical row selected by an authorized server-side operation. */
