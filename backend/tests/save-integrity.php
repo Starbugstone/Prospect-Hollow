@@ -1595,5 +1595,64 @@ foreach (
         $defense . ' completing full cover replays the waiting raid as protected',
     );
 }
+// Console testing tools re-baseline a tracked town only where the server allows them.
+$cheated = integrityData($midAnchor);
+$cheated['town']['coins'] += 100000;
+$cheated['builderHammers'] = 5;
+$cheated['integrity']['actions'] = [
+    integrityAction(3, 'testing', ['command' => 'grant', 'at' => $now]),
+];
+$origin = $_ENV['APP_ORIGIN'] ?? null;
+$_ENV['APP_ORIGIN'] = 'https://prospecthollow.starbugstone.com';
+unset($_ENV['SAVE_TESTING_TOOLS']);
+assertIntegrity(!SaveIntegrity::testingToolsAllowed(), 'production does not allow testing tools');
+integrityDenied(
+    fn() => $validator->accept(integrityObject($cheated), $midAnchor, $now),
+    'save_integrity_mismatch',
+    'testing receipt on a production server',
+);
+$_ENV['SAVE_TESTING_TOOLS'] = 'true';
+assertIntegrity(
+    $validator->accept(integrityObject($cheated), $midAnchor, $now)->town->coins === 100003,
+    'an explicitly flagged server accepts testing receipts',
+);
+unset($_ENV['SAVE_TESTING_TOOLS']);
+$_ENV['APP_ORIGIN'] = 'https://preprod.prospecthollow.starbugstone.com';
+$cheatAnchor = $validator->accept(integrityObject($cheated), $midAnchor, $now);
+$cheatReceipt = SaveIntegrity::receipt($cheatAnchor);
+assertIntegrity(
+    $cheatAnchor->town->coins === 100003 &&
+        $cheatAnchor->builderHammers === 5 &&
+        $cheatReceipt['status'] === 'baseline' &&
+        $cheatReceipt['ackSequence'] === 3,
+    'preprod accepts a testing receipt as a new unverified baseline',
+);
+$afterCheat = integrityData($cheatAnchor);
+$afterCheat['town']['coins'] = 100005;
+$afterCheat['continuousRecords'][1] = ['coins' => 5, 'score' => 500];
+$afterCheat['integrity']['actions'] = [
+    integrityAction(4, 'continuous', [
+        'runId' => 1,
+        'levelId' => 1,
+        'jewels' => 50,
+        'score' => 500,
+    ]),
+];
+assertIntegrity(
+    $validator->accept(integrityObject($afterCheat), $cheatAnchor, $now)->town->coins === 100005,
+    'a puzzle in progress keeps its run and credit across a testing baseline',
+);
+$forged = integrityData($cheatAnchor);
+$forged['town']['coins'] += 1;
+integrityDenied(
+    fn() => $validator->accept(integrityObject($forged), $cheatAnchor, $now),
+    'save_integrity_mismatch',
+    'direct coin injection after a testing baseline',
+);
+if ($origin === null) {
+    unset($_ENV['APP_ORIGIN']);
+} else {
+    $_ENV['APP_ORIGIN'] = $origin;
+}
 unset($_ENV['SAVE_MONEY_GUARD_MODE']);
 echo "Save integrity checks passed ($count assertions).\n";

@@ -822,6 +822,85 @@ final class SaveIntegrity
         }
         return json_decode($json, false, 64, JSON_THROW_ON_ERROR);
     }
+    /** Console testing tools exist on preprod and explicitly flagged servers only. */
+    public static function testingToolsAllowed(): bool
+    {
+        if (Env::get('SAVE_TESTING_TOOLS') === 'true') {
+            return true;
+        }
+        $host = parse_url((string) Env::get('APP_ORIGIN'), PHP_URL_HOST);
+        return is_string($host) && str_starts_with($host, 'preprod.');
+    }
+    /**
+     * Seals the uploaded town as an unverified baseline without replaying its rewards.
+     * Run identity and continuous credit survive pruning so the next normal receipt can
+     * still reconcile; Town Honours counters never fall below the latest cloud save's.
+     */
+    private function baseline(
+        array $incoming,
+        array $journal,
+        array $context,
+        int $now,
+        string $townId,
+        ?array $latest = null,
+        ?int $previousServerAt = null,
+    ): object {
+        // Enrollment may happen during an offline puzzle, and a testing upload during a run.
+        foreach ($journal['actions'] as $action) {
+            $data = $action['data'];
+            if (
+                $action['kind'] === 'run-start' &&
+                self::integer($data['runId'] ?? null, 1) &&
+                in_array($data['mode'] ?? null, ['normal', 'continuous'], true)
+            ) {
+                $context['run'] = [
+                    'runId' => $data['runId'],
+                    'mode' => $data['mode'],
+                    'levelId' => $data['levelId'] ?? null,
+                    'credited' => 0,
+                ];
+            } elseif (
+                $action['kind'] === 'continuous' &&
+                isset($context['run']) &&
+                $context['run']['runId'] === ($data['runId'] ?? null) &&
+                self::integer($data['levelId'] ?? null, 1) &&
+                isset($this->rules['levels'][$data['levelId']]) &&
+                self::integer($data['jewels'] ?? null)
+            ) {
+                $context['run']['credited'] = max(
+                    $context['run']['credited'],
+                    min(
+                        $this->rules['rewards']['continuousCoinCap'],
+                        floor($data['jewels'] / 10) *
+                            $this->rules['levels'][$data['levelId']]['miningMultiplier'],
+                    ),
+                );
+            } elseif (
+                $action['kind'] === 'victory' &&
+                isset($context['run']) &&
+                $context['run']['runId'] === ($data['runId'] ?? null)
+            ) {
+                unset($context['run']);
+            }
+        }
+        if (
+            isset($context['run']) &&
+            ($context['run']['runId'] !== ($incoming['issuedRun'] ?? 0) ||
+                $context['run']['runId'] <= ($incoming['settledRun'] ?? 0))
+        ) {
+            unset($context['run']);
+        }
+        $context = $this->honourCounters($context, $incoming['town'], $latest);
+        $context = $this->moneyContext($context, $latest, $now, $previousServerAt, []);
+        return $this->seal(
+            $incoming,
+            $context,
+            $journal['epoch'],
+            $journal['baseSequence'] + count($journal['actions']),
+            'baseline',
+            $townId,
+        );
+    }
     /** The caller holds the account transaction lock before comparing checkpoints. */
     public function accept(
         object $profile,
@@ -842,64 +921,41 @@ final class SaveIntegrity
             if (!$journal) {
                 return $profile;
             }
-            $ack = $journal['baseSequence'] + count($journal['actions']);
             $clientAt = self::integer($journal['clientAt'] ?? null) ? $journal['clientAt'] : $now;
             // clientAt is stamped when the upload is queued, so a delayed delivery looks
             // like a slow clock. Only a device ahead of the server needs an allowance.
-            $context = ['clockOffset' => max(0, $clientAt - $now)];
-            // Enrollment may happen during an offline puzzle. Its existing rewards
-            // form the unverified baseline, while run identity and continuous credit
-            // must survive pruning so the next normal receipt can still reconcile.
-            foreach ($journal['actions'] as $action) {
-                $data = $action['data'];
-                if (
-                    $action['kind'] === 'run-start' &&
-                    self::integer($data['runId'] ?? null, 1) &&
-                    in_array($data['mode'] ?? null, ['normal', 'continuous'], true)
-                ) {
-                    $context['run'] = [
-                        'runId' => $data['runId'],
-                        'mode' => $data['mode'],
-                        'levelId' => $data['levelId'] ?? null,
-                        'credited' => 0,
-                    ];
-                } elseif (
-                    $action['kind'] === 'continuous' &&
-                    isset($context['run']) &&
-                    $context['run']['runId'] === ($data['runId'] ?? null) &&
-                    self::integer($data['levelId'] ?? null, 1) &&
-                    isset($this->rules['levels'][$data['levelId']]) &&
-                    self::integer($data['jewels'] ?? null)
-                ) {
-                    $context['run']['credited'] = max(
-                        $context['run']['credited'],
-                        min(
-                            $this->rules['rewards']['continuousCoinCap'],
-                            floor($data['jewels'] / 10) *
-                                $this->rules['levels'][$data['levelId']]['miningMultiplier'],
-                        ),
-                    );
-                } elseif (
-                    $action['kind'] === 'victory' &&
-                    isset($context['run']) &&
-                    $context['run']['runId'] === ($data['runId'] ?? null)
-                ) {
-                    unset($context['run']);
-                }
-            }
-            if (
-                isset($context['run']) &&
-                ($context['run']['runId'] !== ($incoming['issuedRun'] ?? 0) ||
-                    $context['run']['runId'] <= ($incoming['settledRun'] ?? 0))
-            ) {
-                unset($context['run']);
-            }
             // Town Honours counters start from the client's own, like the rest of this
             // unverified historical baseline; later credit comes from the replay.
+            return $this->baseline(
+                $incoming,
+                $journal,
+                [
+                    'clockOffset' => max(0, $clientAt - $now),
+                    'honours' => $incoming['honours']['counts'] ?? null,
+                ],
+                $now,
+                $townId,
+            );
+        }
+        // Registered console testing tools change the town outside the game rules. On a
+        // server that allows them, their upload re-baselines the town like enrollment,
+        // keeping the latest clock, run, honours and money context; elsewhere it never
+        // reconciles. Nothing in the client can grant itself this exception.
+        if ($journal && in_array('testing', array_column($journal['actions'], 'kind'), true)) {
+            if (!self::testingToolsAllowed()) {
+                self::mismatch('integrity.testing');
+            }
+            $context = $anchor['context'] ?? [];
             $context['honours'] = $incoming['honours']['counts'] ?? null;
-            $context = $this->honourCounters($context, $incoming['town']);
-            $context = $this->moneyContext($context, null, $now, null, []);
-            return $this->seal($incoming, $context, $journal['epoch'], $ack, 'baseline', $townId);
+            return $this->baseline(
+                $incoming,
+                $journal,
+                $context,
+                $now,
+                $townId,
+                $anchor['context'] ?? [],
+                $previousServerAt,
+            );
         }
         if (!$journal) {
             if ($resolve) {

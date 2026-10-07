@@ -109,8 +109,13 @@ save formats and historical migration remain compatible.
 
 Registered `prospectDebug` commands retain their explicit local exception in
 development, preprod and builds with `VITE_DEBUG_TOOLS=true`. Enabling those tools
-does not exempt arbitrary direct mutations. Their local exception grants no
-server permission: tracked account saves still require valid resource accounting.
+does not exempt arbitrary direct mutations. Each command also records a `testing`
+receipt. A server whose `APP_ORIGIN` host starts with `preprod.`, or which sets
+`SAVE_TESTING_TOOLS=true`, accepts an upload carrying that receipt as a new
+unverified baseline, like enrollment: it keeps the latest clock offset, run in
+progress, Town Honours counters and money budget, and later uploads are replayed
+normally again. Any other server rejects the receipt as a mismatch, so production
+tracked saves still require valid resource accounting.
 
 These JavaScript checks deter straightforward console changes, not a player who
 modifies browser code. Local-only saves and first-enrollment history remain

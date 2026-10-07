@@ -41,6 +41,33 @@ it('adds test resources, caps hammers, and persists without changing buildings o
   expect(loaded.town.coins).toBe(100500);
   expect(loaded.builderHammers).toBe(5);
 });
+it('records a testing receipt with each command so a preprod server can keep cloud saving', () => {
+  const campaign = useCampaignStore(pinia);
+  const cheat = createTestingTools(pinia);
+  const receipts = () => campaign.integrity.actions.filter((action) => action.kind === 'testing');
+  cheat.grant();
+  cheat.prepareEra();
+  cheat.mineStage(2);
+  cheat.completeMine();
+  expect(receipts().map((action) => action.data.command)).toEqual([
+    'grant',
+    'prepareEra',
+    'mineStage',
+    'completeMine',
+  ]);
+  // The receipt is saved with the change, so the next upload carries it.
+  const saved = JSON.parse(saves.get(SAVE_KEY));
+  expect(JSON.stringify(saved)).toContain('"kind":"testing"');
+});
+it('drops the testing receipt with the change when saving fails', () => {
+  const campaign = useCampaignStore(pinia);
+  const before = JSON.stringify(campaign.integrity);
+  localStorage.setItem = () => {
+    throw new Error('Storage full');
+  };
+  expect(() => createTestingTools(pinia).grant()).toThrow('Balances were restored');
+  expect(JSON.stringify(campaign.integrity)).toBe(before);
+});
 it('rejects invalid amounts before changing the save', () => {
   const grant = createTestingTools(pinia).grant;
   for (const value of [-1, 1.5, Infinity, NaN, '5', Number.MAX_SAFE_INTEGER + 1]) {
