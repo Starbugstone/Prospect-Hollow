@@ -541,6 +541,29 @@ assertIntegrity(
         'orbital',
     'server era lifecycle extends from one authoritative catalog without a hardcoded chronological list',
 );
+// An era with a `modernizes` list leaves its other buildings in their earlier finish.
+$modernizes = $rules['eras'][$lastEra]['modernizes'] ?? null;
+$previousEra = $rules['eraOrder'][count($rules['eraOrder']) - 2];
+assertIntegrity(
+    is_array($modernizes) && in_array('square', $modernizes, true),
+    'the latest era lists the landmarks it modernizes',
+);
+$kept = $future;
+foreach ($rules['buildings'] as $id => $definition) {
+    if ($definition['introducedEra'] !== $lastEra && !in_array($id, $modernizes, true)) {
+        $kept['town']['buildingEras'][$id] = $previousEra;
+    }
+}
+assertIntegrity(
+    $validator->eraComplete($kept['town']),
+    'buildings an era leaves alone count as finished in their earlier finish',
+);
+$unfinished = $kept;
+$unfinished['town']['buildingEras']['square'] = $previousEra;
+assertIntegrity(
+    !$validator->eraComplete($unfinished['town']),
+    'a listed landmark still needs the new era modernization',
+);
 $incomplete = $extended;
 unset($incomplete['eras']['orbital']['buildingOffers']);
 integrityDenied(

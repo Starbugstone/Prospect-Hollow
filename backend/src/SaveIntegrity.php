@@ -2451,13 +2451,17 @@ final class SaveIntegrity
             // Normalized replay state is already clamped; older saves keep legacy levels.
             $level = $town['buildings'][$id] ?? 0;
             $level = is_int($level) ? min($definition['maxLevel'], $level) : 0;
+            // An era with a `modernizes` list leaves every other building finished.
+            $modernizes = $this->rules['eras'][$town['era']]['modernizes'] ?? null;
             $eraLevel =
                 $town['era'] === 'frontier' || $definition['introducedEra'] === $town['era']
                     ? $level
-                    : (($town['buildingEras'][$id] ?? null) === $town['era']
-                        ? ($town['buildingEraLevels'][$id] ?? 0 ?:
-                        1)
-                        : 0);
+                    : (is_array($modernizes) && !in_array($id, $modernizes, true)
+                        ? $this->rules['eraBuildingLevels']
+                        : (($town['buildingEras'][$id] ?? null) === $town['era']
+                            ? ($town['buildingEraLevels'][$id] ?? 0 ?:
+                            1)
+                            : 0));
             if (
                 $level !== $definition['maxLevel'] ||
                 isset($town['projects'][$id]) ||
