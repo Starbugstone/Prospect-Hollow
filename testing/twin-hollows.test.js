@@ -26,6 +26,7 @@ import {
   moonstoneKeepsakes,
 } from '../src/data/moonSettlement';
 import { VISITOR_TRANSPORTS } from '../src/data/visitorArrivals';
+import { moonHeight } from '../src/game/town/moon/MoonScene';
 import {
   eraBuildingLevel,
   finishEra,
@@ -197,6 +198,32 @@ describe('New Hollow buildings', () => {
     // The homestead lights keep growing with the supply era's Moon buildings.
     const before = moonSettlement({ ...town, buildings: { ...town.buildings, settlerDomes: 0 } });
     expect(moonSettlement(town).homesteads).toBeGreaterThanOrEqual(before.homesteads);
+  });
+
+  it('keeps the settlement level on smooth regolith with a soft rim and hills beyond', () => {
+    // Every lot and the ring road sit on level ground.
+    for (const [id, [x, z]] of Object.entries(MOON_LOTS))
+      for (const [dx, dz] of [
+        [0, 0],
+        [4, 0],
+        [-4, 0],
+        [0, 4],
+        [0, -4],
+      ])
+        expect(Math.abs(moonHeight(x + dx, z + dz)), id).toBeLessThan(0.01);
+    for (let a = 0; a < Math.PI * 2; a += 0.2)
+      expect(
+        Math.abs(moonHeight(Math.cos(a) * MOON_RING_ROAD, Math.sin(a) * MOON_RING_ROAD)),
+      ).toBeLessThan(0.01);
+    // A soft rim rings the crater, and the land swells gently toward the horizon.
+    const rim = Array.from({ length: 24 }, (_, n) =>
+      moonHeight(Math.cos(n / 4) * 53, Math.sin(n / 4) * 53),
+    );
+    expect(Math.max(...rim)).toBeGreaterThan(2);
+    let steepest = 0;
+    for (let x = -200; x < 200; x += 1)
+      steepest = Math.max(steepest, Math.abs(moonHeight(x + 1, -150) - moonHeight(x, -150)));
+    expect(steepest, 'no boulder cliffs on the horizon').toBeLessThan(1.5);
   });
 
   it('brings Moon guests down the elevator once per climber trip', () => {

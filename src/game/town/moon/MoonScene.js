@@ -3,13 +3,13 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TownPrimitives } from '../TownPrimitives';
 import { renderMoonBuilding } from '../buildings/moon';
 import { MOON_PALETTE as p } from '../../../data/futureArchitecture';
-import { MOON_CRATER_RADIUS, MOON_LOTS, MOON_RING_ROAD } from '../../../data/moonSettlement';
+import { MOON_LOTS, MOON_RING_ROAD } from '../../../data/moonSettlement';
 
 // New Hollow on the Moon: a small scene of its own beside the valley's. One
 // renderer, a crater of lots, the ribbon arriving from the valley, settlers,
 // rovers and the odd meteor shower. Earth hangs over the crater rim.
 const SKY = '#10162b';
-const GROUND = '#a7a49b';
+const GROUND = '#aaa79f';
 const TAU = Math.PI * 2;
 const hash = (n) => {
   const x = Math.sin(n * 127.1) * 43758.5453;
@@ -38,90 +38,182 @@ function starfield() {
   return stars;
 }
 
-function earth(d) {
-  const g = new THREE.Group();
-  g.name = 'Earth over the crater rim';
-  const basic = (color) => new THREE.MeshBasicMaterial({ color, fog: false });
-  const globe = new THREE.Mesh(d.geometries.sphere, basic('#4f8fc7'));
-  globe.scale.setScalar(19);
-  g.add(globe);
-  // Continents and clouds sit just outside the ocean.
-  for (let n = 0; n < 9; n++) {
-    const a = hash(n + 50) * TAU,
-      b = (hash(n + 90) - 0.5) * 2.2;
-    const land = new THREE.Mesh(d.geometries.rock, basic(n % 3 ? '#79b06a' : '#f3f4f2'));
-    land.scale.set(4 + hash(n) * 4, 3 + hash(n + 7) * 3, 2);
-    land.position.set(
-      Math.cos(a) * Math.cos(b) * 17.4,
-      Math.sin(b) * 17.4,
-      Math.sin(a) * Math.cos(b) * 17.4,
-    );
-    land.lookAt(0, 0, 0);
-    g.add(land);
+// Earth is a painted, perfectly round image on a sprite, not a 3D globe: it always
+// faces the camera, costs two triangles and opens the valley when tapped.
+const EARTH_TEXTURE = 256;
+function paintEarth() {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = EARTH_TEXTURE;
+  const c = canvas.getContext('2d'),
+    mid = EARTH_TEXTURE / 2,
+    r = mid * 0.78;
+  // A soft blue glow of atmosphere around the disc.
+  const glow = c.createRadialGradient(mid, mid, r * 0.92, mid, mid, mid);
+  glow.addColorStop(0, '#a9d4ffaa');
+  glow.addColorStop(1, '#a9d4ff00');
+  c.fillStyle = glow;
+  c.fillRect(0, 0, EARTH_TEXTURE, EARTH_TEXTURE);
+  c.save();
+  c.beginPath();
+  c.arc(mid, mid, r, 0, Math.PI * 2);
+  c.clip();
+  const ocean = c.createRadialGradient(mid - r * 0.35, mid - r * 0.35, r * 0.1, mid, mid, r);
+  ocean.addColorStop(0, '#79b7ea');
+  ocean.addColorStop(1, '#2f6aa8');
+  c.fillStyle = ocean;
+  c.fillRect(0, 0, EARTH_TEXTURE, EARTH_TEXTURE);
+  // Rounded continents and soft cloud bands.
+  const blob = (x, y, w, h, color, turn = 0) => {
+    c.fillStyle = color;
+    c.beginPath();
+    c.ellipse(mid + x * r, mid + y * r, w * r, h * r, turn, 0, Math.PI * 2);
+    c.fill();
+  };
+  blob(-0.3, -0.15, 0.32, 0.22, '#7fb36b', 0.5);
+  blob(-0.12, 0.12, 0.18, 0.3, '#86b870', -0.3);
+  blob(0.35, -0.3, 0.22, 0.14, '#9cbf78', 0.2);
+  blob(0.28, 0.32, 0.2, 0.12, '#c9b98a', -0.4);
+  c.globalAlpha = 0.85;
+  blob(-0.05, -0.45, 0.5, 0.06, '#f6f7f4', 0.1);
+  blob(0.2, 0.05, 0.42, 0.05, '#f6f7f4', -0.15);
+  blob(-0.25, 0.48, 0.36, 0.05, '#f6f7f4', 0.05);
+  // The night side, with a few warm valley lights.
+  c.globalAlpha = 1;
+  const night = c.createLinearGradient(mid - r, 0, mid + r, 0);
+  night.addColorStop(0.55, '#0a122800');
+  night.addColorStop(1, '#0a1228c0');
+  c.fillStyle = night;
+  c.fillRect(0, 0, EARTH_TEXTURE, EARTH_TEXTURE);
+  c.fillStyle = '#ffd98a';
+  for (const [x, y] of [
+    [0.62, 0.05],
+    [0.66, 0.12],
+    [0.58, -0.08],
+  ]) {
+    c.beginPath();
+    c.arc(mid + x * r, mid + y * r, 2.2, 0, Math.PI * 2);
+    c.fill();
   }
-  const glow = new THREE.Mesh(
-    d.geometries.sphere,
-    new THREE.MeshBasicMaterial({ color: '#9fd0ff', transparent: true, opacity: 0.18, fog: false }),
+  c.restore();
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+function earth() {
+  const sprite = new THREE.Sprite(
+    new THREE.SpriteMaterial({ map: paintEarth(), fog: false, depthWrite: false }),
   );
-  glow.scale.setScalar(22);
-  g.add(glow);
-  g.position.set(-44, 12, -175);
-  g.userData.materials = g.children.map((m) => m.material);
-  return g;
+  sprite.name = 'Earth over the crater rim';
+  // Far beyond the rim, half risen over the hills from the usual view.
+  sprite.scale.setScalar(50);
+  sprite.position.set(52, 6, -175);
+  return sprite;
 }
 
-function terrain(d) {
-  const g = new THREE.Group();
-  g.name = 'Moon crater';
-  const ground = new THREE.Mesh(
-    new THREE.CircleGeometry(260, 64),
-    new THREE.MeshStandardMaterial({ color: GROUND, roughness: 1 }),
-  );
-  ground.rotation.x = -Math.PI / 2;
-  ground.receiveShadow = true;
-  ground.userData.owned = true;
-  g.add(ground);
-  // The crater rim rings the settlement; little craters dot the floor.
-  const rim = new THREE.Mesh(
-    new THREE.TorusGeometry(MOON_CRATER_RADIUS + 6, 4.5, 6, 48),
-    new THREE.MeshStandardMaterial({ color: '#a9a59b', roughness: 1, flatShading: true }),
-  );
-  rim.rotation.x = Math.PI / 2;
-  rim.scale.z = 0.55;
-  rim.receiveShadow = rim.castShadow = true;
-  g.add(rim);
-  for (let n = 0; n < 26; n++) {
+// Smooth value noise for the regolith: gentle swells, never boulders.
+function noise(x, z) {
+  const ix = Math.floor(x),
+    iz = Math.floor(z),
+    fx = x - ix,
+    fz = z - iz;
+  const sx = fx * fx * (3 - 2 * fx),
+    sz = fz * fz * (3 - 2 * fz);
+  const at = (a, b) => hash(a * 157 + b * 311);
+  const top = at(ix, iz) + (at(ix + 1, iz) - at(ix, iz)) * sx,
+    bottom = at(ix, iz + 1) + (at(ix + 1, iz + 1) - at(ix, iz + 1)) * sx;
+  return top + (bottom - top) * sz;
+}
+const smooth = (a, b, v) => {
+  const t = Math.min(1, Math.max(0, (v - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
+// Soft craters: a shallow bowl with a raised lip. The settlement keeps only small
+// ones, clear of every lot and the ring road.
+const CRATERS = (() => {
+  const list = [];
+  for (let n = 0; list.length < 46 && n < 400; n++) {
     const a = hash(n + 200) * TAU,
-      r = 12 + hash(n + 300) * 32,
-      size = 0.8 + hash(n + 400) * 2.2;
+      r = 8 + hash(n + 300) * 190;
     const x = Math.cos(a) * r,
       z = Math.sin(a) * r;
-    if (Object.values(MOON_LOTS).some(([lx, lz]) => Math.hypot(lx - x, lz - z) < 6.5)) continue;
-    const crater = d.mesh(g, 'ring', [size, size, size * 0.7], [x, 0.02, z], '#a39f95');
-    crater.rotation.x = Math.PI / 2;
+    const inside = r < 44;
+    const size = inside ? 1.4 + hash(n + 400) * 1.6 : 3 + hash(n + 400) * (r / 22);
+    if (Object.values(MOON_LOTS).some(([lx, lz]) => Math.hypot(lx - x, lz - z) < 7 + size))
+      continue;
+    if (Math.abs(r - MOON_RING_ROAD) < 2.5 + size) continue;
+    list.push({ x, z, size, depth: inside ? 0.22 : 0.5 + size * 0.08 });
   }
-  // Distant hills beyond the rim frame the horizon.
-  for (let n = 0; n < 22; n++) {
-    const a = (n / 22) * TAU + hash(n) * 0.2,
-      r = 110 + hash(n + 9) * 50;
-    const hill = d.ball(
-      g,
-      Math.cos(a) * r,
-      0,
-      Math.sin(a) * r,
-      [14 + hash(n + 5) * 18, 6 + hash(n + 6) * 12, 12 + hash(n + 8) * 14],
-      '#a8a49a',
-      'rock',
-    );
-    hill.castShadow = false;
+  return list;
+})();
+export function moonHeight(x, z) {
+  const r = Math.hypot(x, z);
+  // The settlement floor is level; a soft rim rings it; hills swell beyond.
+  const rim = 3.6 * Math.exp(-(((r - 53) / 6.5) ** 2));
+  const hills =
+    smooth(62, 130, r) * (noise(x * 0.018, z * 0.018) * 11 + noise(x * 0.05, z * 0.05) * 3.5 - 4);
+  let height = smooth(41, 47, r) * (rim + Math.max(hills, -2));
+  for (const { x: cx, z: cz, size, depth } of CRATERS) {
+    const d = Math.hypot(x - cx, z - cz) / size;
+    if (d > 1.6) continue;
+    height += d < 1 ? -depth * (1 - d * d) : 0;
+    height += depth * 0.45 * Math.exp(-(((d - 1) / 0.22) ** 2));
   }
-  // A ring road joins the lots around the landing.
+  return height;
+}
+function terrain() {
+  const g = new THREE.Group();
+  g.name = 'Moon crater';
+  // A polar grid: fine near the settlement, coarser toward the horizon.
+  const rings = 130,
+    segments = 180,
+    positions = [],
+    colors = [],
+    indices = [];
+  const base = new THREE.Color(GROUND),
+    mare = new THREE.Color('#8f8c86'),
+    bright = new THREE.Color('#c4c0b6'),
+    color = new THREE.Color();
+  for (let i = 0; i <= rings; i++) {
+    const r = 260 * (i / rings) ** 1.7;
+    for (let j = 0; j < segments; j++) {
+      const a = (j / segments) * TAU,
+        x = Math.cos(a) * r,
+        z = Math.sin(a) * r,
+        y = moonHeight(x, z);
+      positions.push(x, y, z);
+      // Darker maria and crater floors, lighter rims and ridges.
+      const tone = noise(x * 0.012 + 40, z * 0.012 - 17);
+      color.copy(base).lerp(mare, smooth(0.5, 0.78, tone) * 0.85);
+      color.lerp(bright, Math.min(0.6, Math.max(0, y * 0.12)));
+      if (y < -0.05) color.lerp(mare, Math.min(0.7, -y * 1.8));
+      color.multiplyScalar(0.97 + noise(x * 0.4, z * 0.4) * 0.06);
+      colors.push(color.r, color.g, color.b);
+      if (i < rings) {
+        const k = i * segments + j,
+          next = i * segments + ((j + 1) % segments);
+        // Counter-clockwise seen from above, so the ground faces the sky.
+        indices.push(k, next, k + segments, next, next + segments, k + segments);
+      }
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  const ground = new THREE.Mesh(
+    geometry,
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 }),
+  );
+  ground.receiveShadow = true;
+  g.add(ground);
+  // A pale ring road joins the lots around the landing.
   const road = new THREE.Mesh(
-    new THREE.RingGeometry(MOON_RING_ROAD - 0.8, MOON_RING_ROAD + 0.8, 64),
-    new THREE.MeshStandardMaterial({ color: '#cfccc3', roughness: 1 }),
+    new THREE.RingGeometry(MOON_RING_ROAD - 0.8, MOON_RING_ROAD + 0.8, 96),
+    new THREE.MeshStandardMaterial({ color: '#cdcac1', roughness: 1 }),
   );
   road.rotation.x = -Math.PI / 2;
-  road.position.y = 0.03;
+  road.position.y = 0.04;
   road.receiveShadow = true;
   g.add(road);
   return g;
@@ -151,9 +243,10 @@ function rover(d, parent) {
 }
 
 export class MoonScene {
-  constructor(canvas, { onLabels = () => {}, reducedMotion = false } = {}) {
+  constructor(canvas, { onLabels = () => {}, onEarth = () => {}, reducedMotion = false } = {}) {
     this.canvas = canvas;
     this.onLabels = onLabels;
+    this.onEarth = onEarth;
     this.reducedMotion = reducedMotion;
     this.d = new TownPrimitives();
     this.scene = new THREE.Scene();
@@ -181,9 +274,9 @@ export class MoonScene {
     earthshine.position.set(-40, 30, -80);
     this.scene.add(earthshine);
     this.scene.add(starfield());
-    this.earth = earth(this.d);
+    this.earth = earth();
     this.scene.add(this.earth);
-    this.scene.add(terrain(this.d));
+    this.scene.add(terrain());
     // The ribbon always arrives from the valley, even before the landing is built.
     const ribbon = this.d.mesh(
       this.scene,
@@ -213,6 +306,32 @@ export class MoonScene {
     this.controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
     this.controls.addEventListener('change', () => this.requestFrame());
     this.controls.update();
+    // A tap on Earth (not a drag) returns to the valley.
+    this.raycaster = new THREE.Raycaster();
+    this.pointer = null;
+    // OrbitControls captures the pointer on the canvas's parent, so listen there.
+    const surface = canvas.parentElement;
+    this.surface = surface;
+    this.onPointerDown = (event) => {
+      this.pointer =
+        event.target === canvas || event.target === surface ? [event.clientX, event.clientY] : null;
+    };
+    this.onPointerUp = (event) => {
+      const start = this.pointer;
+      this.pointer = null;
+      if (
+        start &&
+        Math.hypot(event.clientX - start[0], event.clientY - start[1]) < 6 &&
+        this.hitsEarth(event)
+      )
+        this.onEarth();
+    };
+    this.onPointerMove = (event) => {
+      if (!this.pointer) canvas.style.cursor = this.hitsEarth(event) ? 'pointer' : '';
+    };
+    surface.addEventListener('pointerdown', this.onPointerDown);
+    surface.addEventListener('pointerup', this.onPointerUp);
+    surface.addEventListener('pointermove', this.onPointerMove);
     this.elapsed = 0;
     this.signature = '';
     this.observer = new ResizeObserver(() => this.resize());
@@ -321,7 +440,6 @@ export class MoonScene {
       this.elapsed += delta;
       this.move(this.elapsed);
       this.meteor(this.elapsed);
-      this.earth.rotation.y = this.elapsed * 0.02;
     }
     this.render();
   }
@@ -355,6 +473,18 @@ export class MoonScene {
     this.labelKey = key;
     this.onLabels(labels);
   }
+  hitsEarth(event) {
+    const box = this.canvas.getBoundingClientRect();
+    if (!box.width || !box.height) return false;
+    this.raycaster.setFromCamera(
+      new THREE.Vector2(
+        ((event.clientX - box.left) / box.width) * 2 - 1,
+        -((event.clientY - box.top) / box.height) * 2 + 1,
+      ),
+      this.camera,
+    );
+    return this.raycaster.intersectObject(this.earth).length > 0;
+  }
   resize() {
     const width = this.canvas.clientWidth,
       height = this.canvas.clientHeight;
@@ -374,6 +504,9 @@ export class MoonScene {
     this.renderer.setAnimationLoop(null);
     if (this.frame) cancelAnimationFrame(this.frame);
     this.observer.disconnect();
+    this.surface.removeEventListener('pointerdown', this.onPointerDown);
+    this.surface.removeEventListener('pointerup', this.onPointerUp);
+    this.surface.removeEventListener('pointermove', this.onPointerMove);
     this.controls.dispose();
     // Shared primitives are released once below; everything else is owned here.
     const shared = new Set(Object.values(this.d.geometries)),
@@ -384,7 +517,10 @@ export class MoonScene {
       if (object.material) materials.add(object.material);
     });
     geometries.forEach((geometry) => geometry.dispose());
-    materials.forEach((material) => material.dispose());
+    materials.forEach((material) => {
+      material.map?.dispose();
+      material.dispose();
+    });
     this.d.disposePrimitives();
     this.renderer.dispose();
     this.renderer.forceContextLoss?.();

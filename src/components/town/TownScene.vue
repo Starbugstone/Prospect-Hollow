@@ -200,6 +200,19 @@
         <TownMoon :lights="moon.lights" /><span>{{ moon.homesteads }}</span>
       </button>
     </div>
+    <button
+      v-if="skyMoon && !moonOpen"
+      type="button"
+      class="town-sky-moon"
+      :style="{ left: `${skyMoon.x}%`, top: `${skyMoon.y}%` }"
+      :aria-label="moonLabel"
+      :title="moonLabel"
+      @pointerdown.stop
+      @pointerup.stop
+      @click="openMoon"
+    >
+      <TownMoon :lights="moon.lights" :light-size="0.5" />
+    </button>
     <TownMoonView
       v-if="moonOpen"
       ref="moonView"
@@ -307,6 +320,21 @@ watch(moonOpen, () => scene?.setMotion(motionEnabled()));
 watch(moonReachable, (reachable) => {
   if (!reachable) moonOpen.value = false;
 });
+// The Moon hangs in the valley sky to the north-west, above the mine and the
+// elevator. It drifts across the sky as the camera turns and opens New Hollow.
+const skyMoon = ref(null);
+function placeSkyMoon() {
+  if (!scene?.skyPoint || !moon.value.homesteads) return (skyMoon.value = null);
+  const { x, y, facing, distance } = scene.skyPoint(-0.55, -1);
+  // Sky shows at the top of the frame once the view is wide (the land fades into the
+  // sky) or tilted until the horizon is in view; close up, the frame is all town.
+  const skyInView = distance > 95 || y > 8;
+  skyMoon.value =
+    skyInView && facing > 0.3 && x > 6 && x < 94
+      ? { x, y: Math.min(Math.max(y - 9, 13), 34) }
+      : null;
+}
+watch(() => moon.value.homesteads, placeSkyMoon);
 const motionEnabled = () => props.active && !document.hidden && !props.paused && !moonOpen.value;
 // The building that would fix a shortage says so on its label.
 const NEED_HINTS = { water: 'Water needed', food: 'Food needed', comfort: 'Comfort needed' };
@@ -670,6 +698,7 @@ async function initialize() {
     scene = new TownDiorama(canvas.value, {
       onSelect: choose,
       onLabels: (positions) => {
+        placeSkyMoon();
         const layout = updateLabels(anchors.value, positions, anchorLayout);
         if (layout === null) placeLabels(anchors.value, labelElements, actionElements, box);
         else {

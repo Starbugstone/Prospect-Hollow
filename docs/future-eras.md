@@ -163,13 +163,19 @@ valley renderer, footprints and labels skip Moon buildings.
 Needs are shared: the valley's spare water and food go up the ribbon, so a
 well-run valley lets the Moon grow. The era is complete when both are finished.
 
-The Moon chip beside water, food and happiness opens the **Moon map** once Moon
-buildings are available (`TownMoonView.vue` inside `TownScene`, so shared-town
+The Moon also hangs in the valley sky, a round image to the north-west above the
+mine and the elevator that drifts across the sky as the camera turns. It shows
+when sky is in view (a wide view, or tilted until the horizon shows) and carries
+the homestead lights. Tapping it, or the Moon chip beside water, food and
+happiness, opens the **Moon map** once Moon buildings are available (`TownMoonView.vue` inside `TownScene`, so shared-town
 visitors see it too). `game/town/moon/MoonScene.js` is a small scene of its own:
-a crater of lots (`MOON_LOTS`), a ring road, the ribbon arriving from the valley,
-Earth over the rim, a starfield, settlers walking and rovers driving the ring,
-and an occasional meteor (still under reduced motion). The valley pauses while
-the Moon is open. Lot buttons open the shared building details. Without WebGL
+a crater of lots (`MOON_LOTS`) on smooth rolling regolith with soft craters
+(`moonHeight()`), a ring road, the ribbon arriving from the valley, a starfield,
+settlers walking and rovers driving the ring, and an occasional meteor (still
+under reduced motion). Earth is a painted, round image on a sprite (not a 3D
+globe), half risen over the far hills; tapping it returns to the valley. The
+valley pauses while the Moon is open, and the Moon view keeps its input from the
+valley's camera. Lot buttons open the shared building details. Without WebGL
 the map falls back to an SVG crater with the same buttons. `buildings/moon.js`
 draws the ten buildings (glass domes on ceramic drums, airlocks, gold foil,
 solar fins), and `TownMoonBuilding.vue` draws them for cards and the fallback.
@@ -188,3 +194,4 @@ Honours: Through the Ages gains its diamond rank, **Two Towns, One Sky**
 
 ![Twin Hollows in the valley](images/future-eras/twin-hollows-town.png)
 ![New Hollow on the Moon](images/future-eras/twin-hollows-moon.png)
+![The Moon in the valley sky](images/future-eras/twin-hollows-sky-moon.png)

@@ -1,9 +1,14 @@
 <template>
+  <!-- The valley's own controls sit on the parent scene: keep Moon input to the Moon. -->
   <section
     class="town-moon-view"
     :class="{ 'is-fallback': unavailable }"
     role="region"
     :aria-label="t('New Hollow on the Moon')"
+    @pointerdown.stop
+    @pointerup.stop
+    @wheel.stop
+    @keydown.stop
   >
     <canvas v-if="!unavailable" ref="canvas" class="town-moon-canvas" aria-hidden="true" />
     <svg
@@ -130,6 +135,8 @@ async function start() {
     scene = new MoonScene(canvas.value, {
       reducedMotion: props.reducedMotion,
       onLabels: (next) => (labels.value = next),
+      // Tapping Earth over the rim returns to the valley.
+      onEarth: () => emit('close'),
     });
     scene.update(props.town);
     updateMotion();
