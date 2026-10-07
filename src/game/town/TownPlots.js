@@ -45,7 +45,6 @@ import { TownScenery, sceneryAffectsNavigation } from './TownScenery';
 import { PLOTS, visiblePlots } from './TownLayout';
 import { updateTownShadowCoverage } from './TownShadows';
 import { GARDEN_PARCELS } from '../../data/townGardenDistrict';
-import { LANDMARK_BY_ID, PERSONAL_AREAS, areaUnlocked } from '../../data/townLandmarks';
 
 // The plot lifecycle: building a plot's model, swapping changed plots one per frame,
 // holding a finished building until its site is clear, the construction reveal and
@@ -787,21 +786,6 @@ export function rebuildTown(
     if (id === constructionId)
       d.construction = new TownConstruction(d, group, movingPart?.rotor, previousParts, partKeys);
     d.plotCache.set(id, { signature: signatures.get(id), group, movingPart, parts });
-  }
-  // Every unlocked monument site has a label, built or still open (see TownScene).
-  for (const area of PERSONAL_AREAS) {
-    if (!areaUnlocked(town, area)) continue;
-    const [x, z] = area.positions[0];
-    const longest = Math.max(
-      area.label.length,
-      ...area.choices.map((choice) => LANDMARK_BY_ID[choice].label.length),
-    );
-    d.anchors.push({
-      id: area.id,
-      width: longest * 7 + 35,
-      position: point(x, 0.2, z + area.radius * 0.4),
-      collection: point(x, 1, z + area.radius * 0.4),
-    });
   }
   if (prepared && prepared !== adopted) d.clearGroup(prepared.group);
   // Model preparation can be expensive. Start the reveal clock on its first visible frame.

@@ -56,7 +56,7 @@ $town->personalisation = (object) [
     ],
     'clothing' => (object) ['shirt' => '#ABCDEF', 'skin' => '#000000'],
     'choices' => (object) ['home' => 'garden', 'saloon' => 'bogus'],
-    'areas' => (object) ['meadow' => ['roundhouse', 'windgarden', 'longhall']],
+    'areas' => (object) ['meadow' => ['headframe', 'windgarden', 'longhall']],
     'plaques' => new stdClass(),
 ];
 $p = TownPersonalisation::normalize($town->personalisation);
@@ -67,7 +67,7 @@ checkPersonalisation(
 checkPersonalisation(!isset($p->paint), 'retired building paint removed');
 checkPersonalisation(!isset($p->choices), 'retired building styles removed');
 checkPersonalisation(!isset($p->clothing), 'legacy clothing overrides removed');
-checkPersonalisation($p->areas->meadow === ['roundhouse'], 'paid landmark choice preserved');
+checkPersonalisation($p->areas->meadow === ['headframe'], 'paid landmark choice preserved');
 checkPersonalisation($p->crest->emblemColour === '#ab1234', 'emblem colour normalized');
 $legacyPalette = copyPersonalisation($town->personalisation);
 $legacyPalette->paint->all = (object) ['walls' => '#112233'];
@@ -169,7 +169,7 @@ foreach (
     [
         null,
         'unknown',
-        'roundhouse',
+        'headframe',
         'founders-arch',
         'crystal-spire',
         'guardian',

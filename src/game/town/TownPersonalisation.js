@@ -40,6 +40,7 @@ export function buildMinePlaque(d, town) {
   root.userData.static = true;
   root.name = `Distinction plaque: ${definition.id}`;
   root.userData.distinction = definition.id;
+  root.userData.distinctionName = definition.name;
   const metal =
     { bronze: '#bd8b58', silver: '#c8d1dc', gold: '#edc66e', diamond: '#b4e0e3' }[
       definition.metal
@@ -47,30 +48,49 @@ export function buildMinePlaque(d, town) {
   d.box(root, 0.72, 0.82, 0.09, 0, 0, 0, '#655343', true);
   const plate = d.box(root, 0.55, 0.62, 0.08, 0, 0, 0.07, metal, true);
   plate.name = definition.name;
-  // Each family has a distinct engraving, rather than the same completion tick.
-  const emblem = definition.family?.startsWith('gem-')
-    ? 'crystal'
-    : ({
-        explorer: 'compass',
-        eras: 'compass',
-        stars: 'star',
-        guests: 'heart',
-        travels: 'sailboat',
-        quartermaster: 'hammer',
-      }[definition.family] ?? 'star');
-  addEmblemPanel(
-    d,
-    root,
-    { shape: 'shield', pattern: 'plain', primary: metal, secondary: '#393c43', emblem },
-    0.5,
-    0.6,
-    [0, 0, 0.12],
-    definition.art,
-  );
+  addBadgeFace(d, root, definition, 0.52, [0, 0, 0.12]);
   return root;
 }
 
-function addEmblemPanel(d, root, crest, width, height, position, art, cloth = false) {
+function canvasMaterial(canvas) {
+  const map = new CanvasTexture(canvas);
+  map.colorSpace = SRGBColorSpace;
+  const material = new MeshStandardMaterial({
+    map,
+    transparent: true,
+    alphaTest: 0.1,
+    side: DoubleSide,
+    roughness: 1,
+  });
+  material.userData.transient = true;
+  return material;
+}
+
+// The plaque shows the badge exactly as the honours list draws it.
+function addBadgeFace(d, root, definition, size, position) {
+  const face = d.box(root, size, size, 0.035, ...position, '#fff8e8');
+  face.name = `Honour badge: ${definition.id}`;
+  if (typeof document === 'undefined') return;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 256;
+  const material = canvasMaterial(canvas);
+  face.material = material;
+  let disposed = false;
+  material.addEventListener('dispose', () => {
+    disposed = true;
+  });
+  import('../../components/honours/honourBadgeImage')
+    .then(({ honourBadgeImage }) => honourBadgeImage(definition, canvas.width))
+    .then((picture) => {
+      if (disposed) return;
+      canvas.getContext('2d').drawImage(picture, 0, 0, canvas.width, canvas.height);
+      material.map.needsUpdate = true;
+      d.render?.();
+    })
+    .catch(() => {});
+}
+
+function addEmblemPanel(d, root, crest, width, height, position, cloth = false) {
   const face = cloth
     ? new Mesh(new PlaneGeometry(width, height, 8, 10), d.material(crest.primary))
     : d.box(root, width, height, 0.035, ...position, crest.primary);
@@ -103,55 +123,13 @@ function addEmblemPanel(d, root, crest, width, height, position, art, cloth = fa
   ctx.lineWidth = 1.5;
   ctx.lineJoin = ctx.lineCap = 'round';
   ctx.stroke(new Path2D(CREST_BY_ID[crest.emblem]?.path ?? CREST_BY_ID.crystal.path));
-  const texture = new CanvasTexture(canvas);
-  texture.colorSpace = SRGBColorSpace;
-  const material = new MeshStandardMaterial({
-    map: texture,
-    transparent: true,
-    alphaTest: 0.1,
-    side: DoubleSide,
-    roughness: 1,
-  });
-  material.userData.transient = true;
-  face.material = material;
-  if (art) {
-    const clear = () => {
-      ctx.setTransform(2, 0, 0, 2, 0, 0);
-      ctx.fillStyle = '#fff8e8';
-      ctx.beginPath();
-      ctx.arc(50, 53, 32, 0, Math.PI * 2);
-      ctx.fill();
-    };
-    if (art.letter) {
-      clear();
-      ctx.fillStyle = '#393c43';
-      ctx.font = 'bold 48px Georgia';
-      ctx.textAlign = 'center';
-      ctx.fillText(art.letter, 50, 67);
-      texture.needsUpdate = true;
-    } else if (art.image) {
-      const picture = new Image();
-      let disposed = false;
-      material.addEventListener('dispose', () => {
-        disposed = true;
-        picture.onload = null;
-      });
-      picture.onload = () => {
-        if (disposed) return;
-        clear();
-        ctx.drawImage(picture, 23, 26, 54, 54);
-        texture.needsUpdate = true;
-        d.render?.();
-      };
-      picture.src = art.image;
-    }
-  }
+  face.material = canvasMaterial(canvas);
   return face;
 }
 
 const STONE = '#ddd1b5';
 // An open monument site: a gravel court ringed by kerb stones, survey stakes and an
-// empty plinth. It reads as reserved ground; its map label invites the choice.
+// empty plinth. It reads as reserved ground; a tap on it opens the choice.
 function addMonumentSite(d, g, radius) {
   const court = radius * 0.72;
   d.mesh(g, 'cylinder', [court, 0.06, court], [0, 0.03, 0], '#d8cfae');
@@ -211,7 +189,7 @@ export function buildTownBanner(d, town) {
   d.rod(g, [0, 0, 0], [0, 5.7, 0], 0.075, '#655343');
   d.rod(g, [0, 5.4, 0], [2.6, 5.4, 0], 0.055, '#655343');
   d.ball(g, 0, 5.8, 0, 0.17, '#e8bf79');
-  const cloth = addEmblemPanel(d, g, crest, 2.3, 2.8, [1.3, 3.9, 0.04], null, true);
+  const cloth = addEmblemPanel(d, g, crest, 2.3, 2.8, [1.3, 3.9, 0.04], true);
   const positions = cloth.geometry.attributes.position;
   // A few vertices in the existing animation loop: no textures, materials or
   // static town batches are rebuilt. The top edge stays tied to the crossbar.

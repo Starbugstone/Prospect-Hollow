@@ -43,6 +43,7 @@ import {
 } from './TownCamera';
 import {
   projectLabelPositions,
+  projectPlaque,
   projectVillager,
   selectVillager,
   showVillager,
@@ -402,14 +403,24 @@ export class TownDiorama extends TownPrimitives {
       this.camera,
     );
     // Monument sites are scenery; a tap on one opens its card like a plot.
-    const sites = this.staticScenery?.entries.get('personal-areas')?.group;
-    const hit = this.raycaster.intersectObjects(
-      sites ? [...this.targets, sites] : this.targets,
-      true,
-    )[0];
+    const scenery = ['personal-areas', 'mine-plaque']
+      .map((id) => this.staticScenery?.entries.get(id)?.group)
+      .filter(Boolean);
+    const hit = this.raycaster.intersectObjects([...this.targets, ...scenery], true)[0];
     let object = hit?.object;
-    while (object && !object.userData.plot && !object.userData.monumentSite) object = object.parent;
-    if (object) this.onSelect(object.userData.plot ?? object.userData.monumentSite);
+    while (
+      object &&
+      !object.userData.plot &&
+      !object.userData.monumentSite &&
+      !object.userData.distinction
+    )
+      object = object.parent;
+    // A tap on the mine plaque names its honour; a second tap or any other one hides it.
+    const plaque = object?.userData.distinction ? object : null;
+    this.namedPlaque = plaque && this.namedPlaque !== plaque ? plaque : null;
+    projectPlaque(this);
+    if (plaque) this.render();
+    else if (object) this.onSelect(object.userData.plot ?? object.userData.monumentSite);
     else {
       const ground = this.raycaster.ray.intersectPlane(
         new THREE.Plane(point(0, 1, 0), -0.08),

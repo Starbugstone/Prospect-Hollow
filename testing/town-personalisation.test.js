@@ -1,8 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { Box3, Group, Scene } from 'three';
+import { Box3, Group, PerspectiveCamera, Scene } from 'three';
 import { createTown } from '../src/data/town';
-import { landmarkOffer, areaChoice, areaMaximum, LANDMARK_BY_ID } from '../src/data/townLandmarks';
+import {
+  landmarkOffer,
+  areaChoice,
+  areaMaximum,
+  LANDMARK_BY_ID,
+  LANDMARK_OPTIONS,
+} from '../src/data/townLandmarks';
 import { buildLandmark } from '../src/game/town/TownLandmarks';
 import { isEraComplete } from '../src/game/town/TownEras';
 import { riverDistance, RIVER } from '../src/game/town/TownRiver';
@@ -31,6 +37,7 @@ import { TownScenery } from '../src/game/town/TownScenery';
 import { TownStatics } from '../src/game/town/TownStatics';
 import { sceneryObstacles } from '../src/game/town/TownNavigation';
 import { PLOTS } from '../src/game/town/TownLayout';
+import { projectPlaque } from '../src/game/town/TownLabelProjection';
 import { villageAppearance } from '../src/services/publicVillage';
 import { useCampaignStore } from '../src/stores/campaignStore';
 import { HONOURS } from '../src/data/honours';
@@ -190,6 +197,43 @@ describe('Personalisation save and progression contract', () => {
       expect(areaChoice(town, area)).toBe(area.choices[1]);
     },
   );
+  it('opens a monument site every other era, each design with its own silhouette', () => {
+    const eras = PERSONAL_AREAS.map((area) => ERAS.findIndex((era) => era.id === area.era));
+    expect(eras).not.toContain(-1);
+    const sorted = [...eras].sort((a, b) => a - b);
+    for (let n = 1; n < sorted.length; n++)
+      expect(sorted[n] - sorted[n - 1]).toBeGreaterThanOrEqual(2);
+    const choices = PERSONAL_AREAS.flatMap((area) => area.choices);
+    expect(new Set(choices).size).toBe(choices.length);
+    expect(choices.sort()).toEqual(LANDMARK_OPTIONS.map((o) => o.id).sort());
+    expect(new Set(LANDMARK_OPTIONS.map((o) => o.form)).size).toBe(LANDMARK_OPTIONS.length);
+  });
+  it.each(PERSONAL_AREAS.filter((a) => !a.timeless))(
+    'grows $id by one stage per era, stage n costing n times its price',
+    (area) => {
+      let town = createTown();
+      town.coins = 1e9;
+      const intro = ERAS.findIndex((era) => era.id === area.era);
+      for (const [step, era] of ERAS.slice(intro).entries()) {
+        town.era = era.id;
+        expect(areaMaximum(town, area)).toBe(step + 1);
+        const offer = landmarkOffer(town, area, area.choices[0]);
+        expect(offer.level).toBe(step + 1);
+        expect(offer.price).toBe(LANDMARK_BY_ID[area.choices[0]].price * (step + 1));
+        town = buy(town, area);
+        expect(buy(town, area)).toBeNull();
+      }
+    },
+  );
+  it('shows a stage from the old three-per-era rule as the most the era allows', () => {
+    const area = PERSONAL_AREAS.find((a) => !a.timeless),
+      town = createTown();
+    town.era = area.era;
+    town.personalisation.areas[area.id] = [area.choices[0]];
+    town.personalisation.areaLevels[area.id] = 3;
+    expect(areaStage(town, area)).toBe(1);
+    expect(landmarkOffer(town, area, area.choices[0])).toBeNull();
+  });
   it('extends landmark upgrade capacity through a newly registered era', () => {
     const area = PERSONAL_AREAS[0],
       town = createTown();
@@ -201,7 +245,7 @@ describe('Personalisation save and progression contract', () => {
     ERAS.push({ ...ERAS.at(-1), id: 'personalisation-future-era' });
     try {
       town.era = 'personalisation-future-era';
-      expect(areaMaximum(town, area)).toBe(previous + 3);
+      expect(areaMaximum(town, area)).toBe(previous + 1);
       const upgraded = buy(town, area);
       expect(
         normalizePersonalisation(upgraded.personalisation, CREST_EMBLEM_IDS).areaLevels[area.id],
@@ -220,7 +264,7 @@ describe('Personalisation save and progression contract', () => {
         paint: { all: { walls: '#abcdef' }, home: { roof: '#123456' } },
         choices: { home: 'garden' },
         clothing: { shirt: '#123456' },
-        areas: { meadow: ['roundhouse'] },
+        areas: { meadow: ['headframe'] },
         areaLevels: { meadow: 2 },
         plaques: { home: 'player-alpha', meadow: 'player-alpha', mine: 'player-alpha' },
       };
@@ -228,7 +272,7 @@ describe('Personalisation save and progression contract', () => {
       expect(loaded.personalisation).toEqual({
         version: 3,
         crest: { ...crest, emblemColour: DEFAULT_EMBLEM_COLOUR },
-        areas: { meadow: ['roundhouse'] },
+        areas: { meadow: ['headframe'] },
         areaLevels: { meadow: 2 },
         plaques: { mine: 'player-alpha' },
       });
@@ -492,6 +536,30 @@ describe('Personalisation rendering', () => {
     expect(plaque.position.z).toBeGreaterThan(PLOTS.mine[1] - 1);
     expect(plaque.rotation.x).toBeLessThan(0);
     expect(plaque.userData.distinction).toBe('player-alpha');
+    expect(plaque.userData.distinctionName).toBe('Alpha Player');
+  });
+  it('names the tapped plaque above it until the plaque is replaced', () => {
+    const town = edit(createTown(), { kind: 'plaque', id: 'mine', value: 'player-alpha' }, [
+      'player-alpha',
+    ]);
+    town.displayDistinctions = { 'player-alpha': { at: 1 } };
+    const d = fixture(town);
+    const plaque = buildMinePlaque(d, town);
+    d.camera = new PerspectiveCamera(50, 1, 0.1, 500);
+    d.camera.position.set(0, 8, PLOTS.mine[1] + 20);
+    d.camera.lookAt(0, 3, PLOTS.mine[1]);
+    d.camera.updateMatrixWorld();
+    d.world.updateMatrixWorld(true);
+    const labels = [];
+    d.onPlaqueLabel = (label) => labels.push(label);
+    d.namedPlaque = plaque;
+    projectPlaque(d);
+    expect(labels.at(-1)).toMatchObject({ name: 'Alpha Player' });
+    expect(labels.at(-1).x).toBeCloseTo(50, 0);
+    plaque.removeFromParent();
+    projectPlaque(d);
+    expect(labels.at(-1)).toBeNull();
+    expect(d.namedPlaque).toBeNull();
   });
   it('flutters only the cloth and retires its animation and geometry when replaced or removed', () => {
     const town = edit(createTown(), { kind: 'crest', value: crest });

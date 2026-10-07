@@ -1,6 +1,5 @@
 import { Vector3 } from 'three';
 import { constructionReady } from './TownRules';
-import { AREA_BY_ID, areaChoice } from '../../data/townLandmarks';
 import { overlapsEventInset } from './TownInset';
 import { forEachWalker } from './TownWalkers';
 
@@ -41,8 +40,6 @@ export function projectLabelPositions(d) {
         !overlapsEventInset(d, ((reward.x + 1) * width) / 2, ((1 - reward.y) * height) / 2, 48),
     };
     const p = screen.copy(position).project(d.camera);
-    // Monument sites: an open site stays findable from afar, a built one acts like a building.
-    const site = AREA_BY_ID[id];
     return {
       id,
       x: (p.x + 1) * 50,
@@ -58,8 +55,7 @@ export function projectLabelPositions(d) {
         (id === 'mine' ||
           town.buildings[id] > 0 ||
           !!town.projects[id] ||
-          d.availablePlots?.has(id) ||
-          !!site) &&
+          d.availablePlots?.has(id)) &&
         inFront(p) &&
         (Math.abs(p.x) * width) / 2 + labelWidth / 2 + 8 < width / 2 &&
         p.y < 0.84 &&
@@ -69,8 +65,7 @@ export function projectLabelPositions(d) {
           id === d.selected ||
           id === d.guidedPlot ||
           !!town.projects[id] ||
-          (!town.buildings[id] && d.availablePlots?.has(id)) ||
-          (site && !areaChoice(town, site))),
+          (!town.buildings[id] && d.availablePlots?.has(id))),
     };
   });
   // Higher-ranked labels claim their space first; overlapping later ones hide.
@@ -90,6 +85,25 @@ export function projectLabelPositions(d) {
   }
   d.onLabels(projected);
   projectVillager(d);
+  projectPlaque(d);
+}
+
+// A tapped mine plaque names its honour or distinction until the next tap.
+export function projectPlaque(d) {
+  const root = d.namedPlaque;
+  if (root?.parent !== d.world) d.namedPlaque = null;
+  if (!d.namedPlaque || d.raid || d.cinematic) {
+    d.onPlaqueLabel?.(null);
+    return;
+  }
+  const p = screen.setFromMatrixPosition(root.matrixWorld);
+  p.y += 0.9;
+  p.project(d.camera);
+  d.onPlaqueLabel?.(
+    inFront(p) && Math.abs(p.x) <= 1 && Math.abs(p.y) <= 1
+      ? { name: root.userData.distinctionName, x: (p.x + 1) * 50, y: (1 - p.y) * 50 }
+      : null,
+  );
 }
 
 // The named villager's tag follows them; it hides when they go indoors or off screen.

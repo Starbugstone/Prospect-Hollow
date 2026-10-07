@@ -448,23 +448,6 @@
 .town-scene-labels button:hover {
   box-shadow: 0 4px 14px #534a3044;
 }
-/* Monument sites: an open site is a dashed gold invitation, a built monument a
-   regular label with its emblem. */
-.town-scene-labels button.monument-label svg {
-  width: 16px;
-  height: 16px;
-  flex: 0 0 16px;
-  color: #8a6427;
-}
-.town-scene-labels button.open-site {
-  border: 2px dashed #b48a3c;
-  background: #fbefcfee;
-  color: #5b4520;
-}
-.town-scene-labels button.open-site small {
-  color: #8a6427;
-  font-weight: 700;
-}
 /* Keep the mine entrance visible below its label at every camera distance. */
 .town-scene-labels .scene-mine-button {
   margin-top: -56px;

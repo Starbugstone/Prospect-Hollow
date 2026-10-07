@@ -615,7 +615,7 @@ describe('First monument: one permanent distinction', () => {
     for (const choice of PERSONAL_AREAS.find((area) => area.id === 'monument').choices) {
       expect(added({ town: monumentTown(choice) })).toContain('monument-gold');
     }
-    for (const choice of [null, 'unknown', 'roundhouse']) {
+    for (const choice of [null, 'unknown', 'headframe']) {
       expect(added({ town: monumentTown(choice) })).not.toContain('monument-gold');
     }
     expect(added({ town: town() })).not.toContain('monument-gold');
