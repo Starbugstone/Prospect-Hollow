@@ -230,6 +230,18 @@ final class PlayerData
                         [$id],
                     ),
                 ),
+                // Space helmets found in other towns, kept until redeemed (30 days at most).
+                'astronautFinds' => array_map(
+                    fn($find) => [
+                        'foundIn' => $find['host'],
+                        'rewardedTown' => $find['home'],
+                        'foundAt' => $time($find['found_at']),
+                    ],
+                    $db->fetchAllAssociative(
+                        'SELECT h.name AS host,t.name AS home,f.found_at FROM helmet_finds f JOIN towns t ON t.id=f.town_id LEFT JOIN towns h ON h.id=f.host_town_id WHERE f.player_id=? ORDER BY f.found_at',
+                        [$id],
+                    ),
+                ),
                 'distinctions' => $distinctions,
             ];
         });

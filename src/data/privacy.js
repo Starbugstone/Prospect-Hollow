@@ -14,6 +14,7 @@ export const RETENTION = {
   activeDays: '90 days',
   deletedTown: '30 days',
   earlierSaves: 'the 5 previous saves of each town',
+  helmetFinds: '30 days',
   adminLog: '3 months',
   hostRecords: '30 days',
 };
@@ -44,6 +45,12 @@ export const PRIVACY_DATA = [
     why: 'To show other mayors who visited, only when you choose to share or set a name.',
     basis: 'Providing the account you asked for',
     kept: 'Until you change them or delete your account; your visits then stay in other towns without your name',
+  },
+  {
+    data: 'Astronauts you found in other towns',
+    why: 'To give the reward to your own town and allow one find every 12 hours.',
+    basis: 'Providing the account you asked for',
+    kept: '{helmetFinds}, or until you delete your account',
   },
   {
     data: 'Last connection: time, IP address, browser and device type',

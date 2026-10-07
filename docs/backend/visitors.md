@@ -86,7 +86,7 @@ town's owner poll (`GET /towns/{townId}/visitors`) lists finds of the last 30 da
 application secret, so the game can redeem a find only for the town it was made for. The game
 redeems each find newer than its `helmetVisitAt` once (the `helmet-visitor` journal action,
 checked by the save replay) and shows a notice with the coins. The cleanup job removes finds
-older than 30 days. Migration 20 adds the table; 19 is reserved for the player-data migration.
+older than 30 days. Migration 20 adds the table. The account data export lists these finds.
 
 ## Presence lifecycle
 

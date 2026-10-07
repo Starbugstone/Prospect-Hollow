@@ -96,6 +96,9 @@ describe('Privacy notice', () => {
     expect(RETENTION.deletedTown).toBe('30 days');
     expect(cleanup).toContain('time() - 30 * 86400');
     expect(RETENTION.earlierSaves).toBe('the 5 previous saves of each town');
+    expect(RETENTION.helmetFinds).toBe('30 days');
+    expect(read('backend/src/PublicTown.php')).toContain('HELMET_KEEP = 30 * 86400');
+    expect(cleanup).toContain('App\\PublicTown::HELMET_KEEP');
     expect(saves).toContain("(int) $row['revision'] - 4");
   });
 

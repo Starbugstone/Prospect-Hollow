@@ -3326,5 +3326,8 @@
   "Find the astronaut in your own town from your game.": "Trouvez l’astronaute de votre propre ville depuis votre partie.",
   "This town has no astronaut yet.": "Cette ville n’a pas encore d’astronaute.",
   "Choose one of your towns to receive the reward.": "Choisissez l’une de vos villes pour recevoir la récompense.",
-  "You found an astronaut recently. Come back later.": "Vous avez trouvé un astronaute récemment. Revenez plus tard."
+  "You found an astronaut recently. Come back later.": "Vous avez trouvé un astronaute récemment. Revenez plus tard.",
+  "Astronauts you found in other towns": "Astronautes que vous avez trouvés dans d’autres villes",
+  "To give the reward to your own town and allow one find every 12 hours.": "Pour remettre la récompense à votre propre ville et n’autoriser qu’une trouvaille toutes les 12 heures.",
+  "{helmetFinds}, or until you delete your account": "{helmetFinds}, ou jusqu’à la suppression de votre compte"
 }
