@@ -16,16 +16,15 @@ export function boardEdges(tiles, cols, rows) {
   return edges;
 }
 
-// Keep bends, but animate a straight shaft as one fall instead of stopping at every cell.
-export function fallWaypoints(path, cols) {
-  return path.filter((index, position) => {
-    if (position === 0 || position === path.length - 1) return true;
-    const before = path[position - 1],
-      after = path[position + 1];
-    const dx1 = (index % cols) - (before % cols),
-      dy1 = Math.floor(index / cols) - Math.floor(before / cols);
-    const dx2 = (after % cols) - (index % cols),
-      dy2 = Math.floor(after / cols) - Math.floor(index / cols);
-    return dx1 * dy2 !== dx2 * dy1;
-  });
+// The cells a falling gem passes through, in grid units: `lead` cells queued straight
+// above its entry cell, then every cell of its gravity path. One point per cell lets a
+// single tween carry the gem through bends at an even pace, without stopping.
+export function fallRoute(path, cols, lead = 0) {
+  const entry = path[0];
+  const col = entry % cols,
+    row = Math.floor(entry / cols);
+  return [
+    ...Array.from({ length: lead }, (_, step) => ({ col, row: row - lead + step })),
+    ...path.map((index) => ({ col: index % cols, row: Math.floor(index / cols) })),
+  ];
 }

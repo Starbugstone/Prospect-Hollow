@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { BoardInput } from '../src/game/phaser/BoardInput';
 import { BoardAnimator } from '../src/game/phaser/BoardAnimator';
-import { boardEdges, fallWaypoints } from '../src/game/phaser/BoardGeometry';
+import { boardEdges, fallRoute } from '../src/game/phaser/BoardGeometry';
 
 const mask = ['.....', '.....', '_..._', '__.__'];
 const tiles = mask
@@ -51,22 +51,79 @@ describe('visible and interactive shaped boards', () => {
     expect(input.focusIndex).toBe(11);
   });
 
-  it('keeps directional bends visible during a pearl fall and respects cancellation', async () => {
-    const path = [1, 6, 11, 17, 23];
-    expect(fallWaypoints(path, 5)).toEqual([1, 11, 23]);
-    const animator = new BoardAnimator({});
-    Object.assign(animator, { boardCols: 5, cellSize: 40 });
-    const sprite = animator.position(1);
-    animator.tween = vi.fn(async (target, config) => Object.assign(target, config));
-    await animator.fallAlong(sprite, path);
-    expect(animator.tween.mock.calls.map(([, config]) => ({ x: config.x, y: config.y }))).toEqual([
-      animator.position(11),
-      animator.position(23),
+  it('routes a fall through every cell, queued above its entry', () => {
+    expect(fallRoute([1, 6, 11, 17, 23], 5)).toEqual([
+      { col: 1, row: 0 },
+      { col: 1, row: 1 },
+      { col: 1, row: 2 },
+      { col: 2, row: 3 },
+      { col: 3, row: 4 },
     ]);
-    animator.tween = vi.fn(async () => {
-      animator.generation++;
+    expect(fallRoute([2, 7], 5, 2)).toEqual([
+      { col: 2, row: -2 },
+      { col: 2, row: -1 },
+      { col: 2, row: 0 },
+      { col: 2, row: 1 },
+    ]);
+  });
+
+  it.each([false, true])(
+    'moves a gem around bends in one fall, never stopping at a bend (reduced motion: %s)',
+    (reducedMotion) => {
+      const animator = new BoardAnimator({ settings: { reducedMotion } });
+      Object.assign(animator, { boardCols: 5, cellSize: 40 });
+      const sprite = { setPosition: vi.fn((x, y) => Object.assign(sprite, { x, y })) };
+      animator.tween = vi.fn().mockResolvedValue();
+      animator.fallAlong(sprite, fallRoute([1, 6, 11, 17, 23], 5, 1));
+      expect(animator.tween).toHaveBeenCalledOnce();
+      expect(sprite).toMatchObject({ x: 60, y: -20 });
+      const [, config] = animator.tween.mock.calls[0];
+      if (reducedMotion) {
+        expect(config).toMatchObject({ ...animator.position(23), duration: 90 });
+        return;
+      }
+      // The same easing and pace as a straight fall of the same length.
+      expect(config).toMatchObject({
+        x: [60, 60, 60, 60, 100, 140],
+        y: [-20, 20, 60, 100, 140, 180],
+        interpolation: 'linear',
+        ease: 'Bounce.easeOut',
+        duration: animator.fallDuration(5),
+      });
+    },
+  );
+
+  it('queues shaped-board refills one cell apart instead of stacking them', async () => {
+    const animator = new BoardAnimator({});
+    Object.assign(animator, { boardCols: 5, boardRows: 4, cellSize: 40, scene: { add: {} } });
+    animator.bonuses.play = vi.fn().mockResolvedValue();
+    animator.drawCells = vi.fn();
+    animator.createGem = vi.fn((gem) => {
+      const sprite = { setPosition: vi.fn((x, y) => Object.assign(sprite, { x, y })) };
+      animator.gemSprites.set(gem.id, sprite);
+      return sprite;
     });
-    await animator.fallAlong(sprite, path);
-    expect(animator.tween).toHaveBeenCalledOnce();
+    const starts = [];
+    animator.tween = vi.fn(async (sprite) => starts.push({ x: sprite.x, y: sprite.y }));
+    const gem = (id) => ({ id, type: 'ruby' });
+    // Three refills enter at cell 2; the deepest one leads the queue.
+    await animator.playSteps([
+      {
+        matches: [],
+        cleared: [],
+        drops: [],
+        spawns: [
+          { index: 17, gem: gem('a'), path: [2, 7, 12, 17] },
+          { index: 12, gem: gem('b'), path: [2, 7, 12] },
+          { index: 7, gem: gem('c'), path: [2, 7] },
+        ],
+      },
+    ]);
+    expect(animator.tween).toHaveBeenCalledTimes(3);
+    expect(starts).toEqual([
+      { x: 100, y: -20 },
+      { x: 100, y: -60 },
+      { x: 100, y: -100 },
+    ]);
   });
 });

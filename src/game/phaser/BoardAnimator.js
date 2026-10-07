@@ -9,7 +9,7 @@ import { chapterIndexOf } from '../../data/chapters';
 import { mineSignalAppearance, mineRelicAppearance } from '../../data/mineThemes';
 import { BonusEffects } from './BonusEffects';
 import { isPlayableCell, gravityDestination } from '../engine/BoardTopology';
-import { boardEdges, fallWaypoints } from './BoardGeometry';
+import { boardEdges, fallRoute } from './BoardGeometry';
 import { glyphImage } from './TextGlyphs';
 import {
   cascadeTier,
@@ -465,54 +465,66 @@ export class BoardAnimator {
         if (sprite)
           falls.push(
             path
-              ? this.fallAlong(sprite, path)
+              ? this.fallAlong(sprite, fallRoute(path, this.boardCols))
               : this.fall(sprite, to, Math.ceil((to - from) / this.boardCols)),
           );
       }
       const columnCounts = new Map();
       for (const { index, path } of step.spawns)
-        columnCounts.set(
-          (path?.[0] ?? index) % this.boardCols,
-          (columnCounts.get((path?.[0] ?? index) % this.boardCols) ?? 0) + 1,
-        );
+        if (!path)
+          columnCounts.set(
+            index % this.boardCols,
+            (columnCounts.get(index % this.boardCols) ?? 0) + 1,
+          );
+      // Shaped-board refills queue above their entry cell one cell apart, deepest first,
+      // as a rectangular column does, so they never start stacked on each other.
+      const queued = new Map();
       for (const { index, gem, path } of step.spawns) {
         const sprite = this.createGem(gem, index);
-        const entry = path?.[0] ?? index;
-        const distance = columnCounts.get(entry % this.boardCols);
-        if (path) {
-          const p = this.position(entry);
-          sprite.setPosition(p.x, p.y);
-        }
-        sprite.y -= distance * this.cellSize;
         this.indexToGemId[index] = gem.id;
-        falls.push(path ? this.fallAlong(sprite, path, true) : this.fall(sprite, index, distance));
+        if (path) {
+          const lead = (queued.get(path[0]) ?? 0) + 1;
+          queued.set(path[0], lead);
+          falls.push(this.fallAlong(sprite, fallRoute(path, this.boardCols, lead)));
+          continue;
+        }
+        const distance = columnCounts.get(index % this.boardCols);
+        sprite.y -= distance * this.cellSize;
+        falls.push(this.fall(sprite, index, distance));
       }
       await Promise.all(falls);
     }
   }
 
+  fallDuration(distance) {
+    return this.reducedMotion ? 90 : MOTION.fall + Math.min(5, distance) * 12;
+  }
+
   fall(sprite, index, distance) {
     return this.tween(sprite, {
       ...this.position(index),
-      duration: this.reducedMotion ? 90 : MOTION.fall + Math.min(5, distance) * 12,
+      duration: this.fallDuration(distance),
       ease: 'Bounce.easeOut',
     });
   }
 
-  async fallAlong(sprite, path, entering = false) {
-    const generation = this.generation;
-    if (this.reducedMotion) return this.fall(sprite, path.at(-1), path.length);
-    const stops = fallWaypoints(path, this.boardCols);
-    for (const index of entering ? stops : stops.slice(1)) {
-      if (generation !== this.generation) return;
-      const p = this.position(index);
-      const distance = Math.hypot(p.x - sprite.x, p.y - sprite.y) / this.cellSize;
-      await this.tween(sprite, {
-        ...p,
-        duration: Math.min(220, 90 + distance * 22),
-        ease: 'Quad.easeInOut',
-      });
-    }
+  // A shaped-board fall is one tween through every cell of its route, eased like a
+  // straight fall, so gems flow around bends instead of pausing at each one.
+  fallAlong(sprite, route) {
+    const points = route.map(({ col, row }) => ({
+      x: (col + 0.5) * this.cellSize,
+      y: (row + 0.5) * this.cellSize,
+    }));
+    sprite.setPosition(points[0].x, points[0].y);
+    const end = points.at(-1);
+    if (this.reducedMotion) return this.tween(sprite, { ...end, duration: this.fallDuration() });
+    return this.tween(sprite, {
+      x: points.map(({ x }) => x),
+      y: points.map(({ y }) => y),
+      interpolation: 'linear',
+      duration: this.fallDuration(points.length - 1),
+      ease: 'Bounce.easeOut',
+    });
   }
 
   async playSporeBursts(bursts) {
