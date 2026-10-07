@@ -68,7 +68,8 @@
       class="villager-name"
       role="status"
       :style="{ left: `${villagerLabel.x}%`, top: `${villagerLabel.y}%` }"
-      >{{ t(villagerLabel.live ? 'Town visitor' : 'VIP visitor') }} · {{ villagerLabel.name }}</span
+      ><template v-if="!villagerLabel.live">{{ t('VIP visitor') }} · </template
+      >{{ villagerLabel.name }}</span
     >
     <div class="town-action-icons">
       <button
