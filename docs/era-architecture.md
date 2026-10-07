@@ -205,6 +205,17 @@ instead of adding conditionals. Large parcels may declare an `access` road inste
 of joining the garden lane; shadow coverage grows only with the clearings that
 hold a visible parcel. See [the future eras guide](future-eras.md).
 
+### Partial modernization: `modernizes`
+
+An era may list the building ids it modernizes (`modernizes` in its evolution
+profile; `null`, the default, modernizes every building). Every other building
+keeps the finish of the latest era that did modernize it (`finishEra()`), offers
+no modernization and counts as complete for the era gate. The save rules export
+the list per era and the server's era-complete check reads it. Twin Hollows uses
+it so that, on Earth, only a few homecoming landmarks change while the Moon
+settlement is built. A building may also declare `settlement: 'moon'`: it shares
+every lifecycle but stands on the Moon map instead of a valley lot.
+
 ## Regression evidence
 
 `testing/era-definitions.test.js` covers invalid definitions, immutable shared

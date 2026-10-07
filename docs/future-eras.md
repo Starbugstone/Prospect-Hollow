@@ -13,8 +13,8 @@ gardens. The garden neighbor's street walks continue into the new Skyward quarte
 | Stargazer   | 2230 | `stargazer` | `observatory` | Domes and a great telescope find crystal glints on the Moon.          |
 | Moonward    | 2270 | `moonward`  | `homestead`   | A space elevator beside the mine supplies Moon homesteads.            |
 
-A fourth era, Twin Hollows (looking after the town and the Moon settlement), is
-planned separately. It needs a second settlement map and a save format change.
+A fourth era, Twin Hollows (2300), takes the town to the Moon; see
+[Twin Hollows](#twin-hollows-2300) below.
 
 ## Looks that evolve
 
@@ -120,3 +120,71 @@ The space elevator beside the mine, and each finished town:
 ![Skysail overview](images/future-eras/skysail-overview.png)
 ![Stargazer overview](images/future-eras/stargazer-overview.png)
 ![Moonward overview](images/future-eras/moonward-overview.png)
+
+## Twin Hollows (2300)
+
+The Moon is the new frontier. The town now looks after two places: Prospect
+Hollow in the valley and **New Hollow** on the Moon. There is one wallet, no Moon
+currency, and nothing on the Moon can fail, decay or run on a timer.
+
+### Light homecoming on Earth
+
+The era's `modernizes` capability lists the only valley buildings it modernizes:
+the square, the main well and farm, the station, the space elevator and the
+Moonpost. Every other building keeps its Moonward finish and counts as complete
+(`modernizesInEra()` and `eraBuildingLevel()` in `TownEras.js`;
+`SaveIntegrity::eraComplete()` reads the exported `modernizes` list). A new
+homecoming hall stands in the garden district beside the blossom atelier. The
+`twin` architecture reuses the homestead kit in softer silver-blue with teal and
+gold twin lanterns and an arch carrying a little Earth and Moon; the square gets
+the twin-globes fountain and the mine portal a homecoming gable.
+
+### New Hollow
+
+Ten Moon buildings are ordinary `BUILDINGS` entries flagged `settlement: 'moon'`,
+so offers, construction (completed puzzles), needs, saves, server validation and
+shared projections all use the existing lifecycle. They have no valley lot:
+`EARTH_BUILDINGS`/`MOON_BUILDINGS` in `data/town.js` separate the two, and the
+valley renderer, footprints and labels skip Moon buildings.
+
+| Building              | Effects (per level)   |
+| --------------------- | --------------------- |
+| Ribbon landing        | 4 visitors, 1 comfort |
+| Settler domes         | 6 homes, 1 comfort    |
+| Crater ice well       | 12 water, 1 comfort   |
+| Earthlight greenhouse | 12 food, 1 comfort    |
+| Willowkin garden dome | 2 visitors, 2 comfort |
+| New Hollow commons    | 2 visitors, 2 comfort |
+| Crater homesteads     | 6 homes, 1 comfort    |
+| Moonstone workshop    | 2 visitors, 1 comfort |
+| Rover barn            | 2 comfort             |
+| Earthrise lookout     | 2 visitors, 2 comfort |
+
+Needs are shared: the valley's spare water and food go up the ribbon, so a
+well-run valley lets the Moon grow. The era is complete when both are finished.
+
+The Moon chip beside water, food and happiness opens the **Moon map** once Moon
+buildings are available (`TownMoonView.vue` inside `TownScene`, so shared-town
+visitors see it too). `game/town/moon/MoonScene.js` is a small scene of its own:
+a crater of lots (`MOON_LOTS`), a ring road, the ribbon arriving from the valley,
+Earth over the rim, a starfield, settlers walking and rovers driving the ring,
+and an occasional meteor (still under reduced motion). The valley pauses while
+the Moon is open. Lot buttons open the shared building details. Without WebGL
+the map falls back to an SVG crater with the same buttons. `buildings/moon.js`
+draws the ten buildings (glass domes on ceramic drums, airlocks, gold foil,
+solar fins), and `TownMoonBuilding.vue` draws them for cards and the fallback.
+
+Purely cosmetic gifts: one **moonstone keepsake** per finished Moon building level
+and one **letter home** per finished Moon building, both derived from building
+levels (`moonstoneKeepsakes()`, `moonLetters()`), so nothing new is saved. Moon
+guests ride down the elevator: it is a visitor transport like the train, boat and
+plane, publishing an arrival each time a climber reaches the docks.
+
+The Willowkin stay in the story: the garden dome raises the first Willowkin born
+on the Moon, and the valley's Willowkin neighbors keep their walks.
+
+Honours: Through the Ages gains its diamond rank, **Two Towns, One Sky**
+(complete Twin Hollows, goal 29, `HONOURS_VERSION` 3).
+
+![Twin Hollows in the valley](images/future-eras/twin-hollows-town.png)
+![New Hollow on the Moon](images/future-eras/twin-hollows-moon.png)
