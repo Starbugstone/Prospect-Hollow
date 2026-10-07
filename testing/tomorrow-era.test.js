@@ -118,7 +118,14 @@ describe('Tomorrow City era contract', () => {
   });
 
   it('rejects unsupported or misplaced architectures when the catalog loads', () => {
-    expect(CITY_ARCHITECTURES).toEqual(['standard', 'rounded', 'cozy']);
+    expect(CITY_ARCHITECTURES).toEqual([
+      'standard',
+      'rounded',
+      'cozy',
+      'sail',
+      'observatory',
+      'homestead',
+    ]);
     const base = { ...ERA_BY_ID.contemporary, id: 'invalid-architecture' };
     expect(() =>
       defineEra({ ...base, evolution: { ...base.evolution, architecture: 'blobby' } }),

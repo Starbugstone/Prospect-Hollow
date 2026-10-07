@@ -194,6 +194,17 @@ per-building budget (under 4,000 triangles, at most eight materials), the whole-
 comparison, level-by-level visible changes, a synthetic rounded successor era, the new
 plots, prices, benefit previews and the SVG forms.
 
+### Future archetypes: Skysail, Stargazer and Moonward
+
+The eras after Riverlight share one set of archetypes and swap a small kit per
+architecture (`sail`, `observatory`, `homestead`): walls, roof, round body, cap,
+door, a level-two wing, a level-three crown and a street prop. The renderer
+registry in `buildings/city.js` maps each architecture to its building, airport
+lounge, airport grounds and bridge hooks, so a new architecture registers once
+instead of adding conditionals. Large parcels may declare an `access` road instead
+of joining the garden lane; shadow coverage grows only with the clearings that
+hold a visible parcel. See [the future eras guide](future-eras.md).
+
 ## Regression evidence
 
 `testing/era-definitions.test.js` covers invalid definitions, immutable shared

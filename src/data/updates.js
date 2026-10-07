@@ -3,6 +3,11 @@
 const UPDATES = [
   {
     date: '2026-10-07',
+    title: 'Three new eras: Skysail, Stargazer and Moonward',
+    text: 'Raise sailcloth roofs and floating orchards, turn every street toward the stars, then build a space elevator beside the old mine. Cross the railway to the new Skyward quarter, and watch homestead lights appear on the Moon as you send up supplies.',
+  },
+  {
+    date: '2026-10-07',
     title: 'Your data, your choice',
     text: 'Open the Mayor’s Office from Settings to see what we keep about you, download it, change your email or delete your account for good. Turn on private visits to sign guestbooks without your name, and read the new privacy notice from the home page.',
   },

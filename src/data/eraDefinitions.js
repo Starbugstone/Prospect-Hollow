@@ -4,13 +4,15 @@ import { ERA_SUPPLY_STEP } from './townNeeds';
 
 /**
  * @typedef {'frontier'|'river-rail'|'industrial'|'motor-age'|'city'} BuildingStyle
- * @typedef {'standard'|'rounded'|'cozy'} CityArchitecture
+ * @typedef {'standard'|'rounded'|'cozy'|'sail'|'observatory'|'homestead'} CityArchitecture
  * @typedef {'standard'|'rounded'} TransportStyle
  * @typedef {Object} EraEvolution
  * @property {BuildingStyle} style Shared building/modernization renderer family.
  * @property {CityArchitecture} architecture City building forms: Blender period shells
  *   (`standard`), procedural domes/pods (`rounded`) or planted timber/glass
- *   architecture selected by the shared `cozyStyle` profile (`cozy`).
+ *   architecture selected by the shared `cozyStyle` profile (`cozy`), or one of the
+ *   shared future archetype styles: sailcloth decks (`sail`), night-blue observatory
+ *   domes (`observatory`) or moon-white gabled homesteads (`homestead`).
  * @property {'canopy'|'riverlight'|null} cozyStyle Shared cozy architecture palette and forms.
  * @property {TransportStyle} transportStyle Airport, station, port and street vehicles:
  *   period and city models (`standard`) or the sky saucer, solar express, hover ferry
@@ -44,10 +46,19 @@ import { ERA_SUPPLY_STEP } from './townNeeds';
  * @property {string} upgradeTitle
  * @property {readonly string[]} upgradeDescriptions Second and third modernization descriptions.
  * @property {boolean} requiresPower
+ * @property {boolean} moonSettlement Settlement lights on the Moon and the space elevator's
+ *   climbers follow this era's completed supply projects.
  */
 
 /** Registered city building forms; renderers and SVG drawings exist for each. */
-export const CITY_ARCHITECTURES = Object.freeze(['standard', 'rounded', 'cozy']);
+export const CITY_ARCHITECTURES = Object.freeze([
+  'standard',
+  'rounded',
+  'cozy',
+  'sail',
+  'observatory',
+  'homestead',
+]);
 /** Registered vehicle families; each has airport, rail, ferry and traffic models. */
 export const TRANSPORT_STYLES = Object.freeze(['standard', 'rounded']);
 
@@ -159,6 +170,7 @@ export function defineEra(definition) {
     upgradeTitle: '',
     upgradeDescriptions: [],
     requiresPower: false,
+    moonSettlement: false,
     ...STYLES[style],
     ...definition.evolution,
   };

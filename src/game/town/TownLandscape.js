@@ -4,7 +4,12 @@ import { addMineExcavation } from './TownMineShaft';
 import * as THREE from 'three';
 import { MINE_FACE_COLUMNS, MINE_HILLSIDE, mineHillsideHeight } from './TownMineHillside';
 import { MILLRACE, millraceDistance, millraceHeight, landscapeGeometry } from './TownMillrace';
-import { GARDEN_PARCELS, GARDEN_CLEARING, GARDEN_LANE_X } from '../../data/townGardenDistrict';
+import {
+  GARDEN_PARCELS,
+  GARDEN_LANE_X,
+  PARCEL_CLEARINGS,
+  isLaneParcel,
+} from '../../data/townGardenDistrict';
 import { TOWN_TRACKS, PLOTS, RAIL_EDGE, segmentDistance, gardenConnections } from './TownLayout';
 import { RIVER, riverDistance, wetBank, buildRiver } from './TownRiver';
 import { hash01, smoothBetween } from './TownMath';
@@ -51,9 +56,10 @@ export function groundHeight(x, z) {
     ),
   );
   const eastClearing = Math.hypot(Math.max(37 - x, 0, x - 70), Math.max(-17 - z, 0, z - 33));
-  const gardenClearing = Math.hypot(
-    Math.max(GARDEN_CLEARING.minX - x, 0, x - GARDEN_CLEARING.maxX),
-    Math.max(GARDEN_CLEARING.minZ - z, 0, z - GARDEN_CLEARING.maxZ),
+  const gardenClearing = Math.min(
+    ...PARCEL_CLEARINGS.map(({ minX, maxX, minZ, maxZ }) =>
+      Math.hypot(Math.max(minX - x, 0, x - maxX), Math.max(minZ - z, 0, z - maxZ)),
+    ),
   );
   const westClearing = Math.hypot(Math.max(-59 - x, 0, x + 28), Math.max(-18 - z, 0, z - 26));
   // Low rolling hills leave room for orbiting and a north/south flight corridor.
@@ -70,6 +76,7 @@ export function groundHeight(x, z) {
   // A local mountain shoulder rises north of the mine. The existing railway
   // cutting below keeps the full train corridor open in every era.
   const mineRidge =
+    smoothBetween(0, 7, gardenClearing) *
     (1 - smoothBetween(8, 23, Math.abs(x + 1))) *
     smoothBetween(25, 30, -z) *
     (1 - smoothBetween(37, 52, -z)) *
@@ -125,17 +132,28 @@ const reservedGround = (x, z) =>
 
 // Reserve future plot extents and the entire new street/sidewalk envelope from
 // permanent prairie props, even before those parcels become visible.
-let gardenStreetConnections;
+let gardenStreetConnections, laneRows;
 function gardenGroundReserved(x, z) {
-  if (x >= GARDEN_LANE_X - 3 && x <= GARDEN_LANE_X + 3 && z >= -11.5 && z <= GARDEN_CLEARING.maxZ)
+  laneRows ??= Object.entries(GARDEN_PARCELS)
+    .filter(([id]) => isLaneParcel(id))
+    .map(([, { position, streetOffset }]) => position[1] + streetOffset);
+  if (
+    x >= GARDEN_LANE_X - 3 &&
+    x <= GARDEN_LANE_X + 3 &&
+    z >= Math.min(-11.5, ...laneRows) &&
+    z <= Math.max(...laneRows)
+  )
     return true;
   gardenStreetConnections ??= gardenConnections();
   if (gardenStreetConnections.some(({ from, to }) => segmentDistance(x, z, from, to) < 3))
     return true;
   return Object.values(GARDEN_PARCELS).some(
-    ({ position: [px, pz], halfWidth, halfDepth, streetOffset }) =>
-      (Math.abs(x - px) <= halfWidth + 2 && Math.abs(z - pz) <= halfDepth + 2) ||
-      (x >= GARDEN_LANE_X - 3 && x <= px + 3 && Math.abs(z - pz - streetOffset) <= 3),
+    ({ position: [px, pz], halfWidth, halfDepth, streetOffset, access }) => {
+      if (Math.abs(x - px) <= halfWidth + 2 && Math.abs(z - pz) <= halfDepth + 2) return true;
+      const street = [px, pz + streetOffset];
+      const route = access ? [...access, street] : [[GARDEN_LANE_X, street[1]], street];
+      return route.slice(1).some((to, i) => segmentDistance(x, z, route[i], to) <= 3);
+    },
   );
 }
 

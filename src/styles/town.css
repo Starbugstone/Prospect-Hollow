@@ -1523,6 +1523,36 @@ html:has(.town-museum[open]) {
     min-height: 44px;
   }
 }
+/* New Hollow: a small Moon whose homestead lights twinkle out of step. */
+.town-map-needs button.moon {
+  border-color: #c9b98a;
+  color: #5d5236;
+}
+.town-map-needs .town-moon {
+  width: 24px;
+  height: 24px;
+}
+.town-moon-light {
+  fill: #e8b84a;
+  animation: town-moon-twinkle 2.4s ease-in-out infinite;
+}
+@keyframes town-moon-twinkle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .town-moon-light {
+    animation: none;
+  }
+}
+.reduced-motion .town-moon-light {
+  animation: none;
+}
 .town-in-cinematic .town-map-needs,
 .town-scene.is-raiding .town-map-needs {
   visibility: hidden;

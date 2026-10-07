@@ -377,6 +377,9 @@ describe('Two eras and explicit modernization', () => {
       'tomorrow',
       'canopy',
       'riverlight',
+      'skysail',
+      'stargazer',
+      'moonward',
     ]);
   });
   it('saves the transition before presenting it and cannot advance twice across reload', () => {

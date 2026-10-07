@@ -65,6 +65,9 @@ it('orders rebuilding after Electric and before cars, with two saved, idempotent
     'tomorrow',
     'canopy',
     'riverlight',
+    'skysail',
+    'stargazer',
+    'moonward',
   ]);
   for (const from of ['industrial', 'motor-age']) {
     let c = useCampaignStore();
@@ -252,7 +255,7 @@ it('opens Tomorrow City only after the complete Connected City', () => {
   expect(eraGate(copy).available).toBe(false);
 });
 it('only finishes the entire city once every final-era plot and modernization is complete', () => {
-  const town = complete('riverlight');
+  const town = complete(ERAS.at(-1).id);
   expect(isEraComplete(town)).toBe(true);
   expect(eraGate(town).next).toBeUndefined();
   expect(nextGoal(town)).toBeNull();

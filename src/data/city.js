@@ -8,7 +8,7 @@ export const CITY_LEVEL_PRICES = Object.fromEntries(
 );
 // Large civic landmarks carry a modest premium; earnings and rewards stay unchanged.
 export const isMajorCityBuilding = (id) =>
-  ['airport', 'skyline', 'cityHomes', 'skyPods'].includes(id);
+  ['airport', 'skyline', 'cityHomes', 'skyPods', 'spaceElevator'].includes(id);
 export const cityBuildingPrice = (id, price) =>
   Math.ceil(price * (isMajorCityBuilding(id) ? 1.25 : 1));
 export const CITY_FAMILIES = {
@@ -209,6 +209,107 @@ const gardenBuildings = [
   unlock: [{ id: 'bridge', level: 1 }],
 }));
 for (const building of gardenBuildings) CITY_FAMILIES[building.kind] = building.family;
+
+// Skyward quarter beyond the railway, and the space elevator beside the mine. They
+// share the garden district's parcel, construction and service lifecycle.
+const skywardBuildings = [
+  {
+    id: 'skyHarbour',
+    name: 'Prospect sky harbour',
+    shortName: 'Sky harbour',
+    purpose: 'Airships and kite-sail gliders moor above the valley',
+    introducedEra: 'skysail',
+    family: 'station',
+    effects: { visitors: 4, comfort: 2 },
+    color: '#e8a64a',
+  },
+  {
+    id: 'cloudOrchard',
+    name: 'Drifting cloud orchard',
+    shortName: 'Cloud orchard',
+    purpose: 'Willowkin gardeners tend fruit trees on little floating islands',
+    introducedEra: 'skysail',
+    family: 'farm',
+    effects: { food: 4, water: 4, comfort: 1 },
+    color: '#e8a64a',
+  },
+  {
+    id: 'windsongLofts',
+    name: 'Windsong lofts',
+    shortName: 'Windsong lofts',
+    purpose: 'Breezy homes under sailcloth roofs',
+    introducedEra: 'skysail',
+    family: 'residence',
+    effects: { housing: 4, comfort: 1 },
+    color: '#e8a64a',
+  },
+  {
+    id: 'greatTelescope',
+    name: 'Great telescope and planetarium',
+    shortName: 'Great telescope',
+    purpose: 'Watch the night sky together and find our crystals on the Moon',
+    introducedEra: 'stargazer',
+    family: 'research',
+    effects: { visitors: 4, comfort: 2 },
+    color: '#3f4f84',
+  },
+  {
+    id: 'dewlightGardens',
+    name: 'Dewlight gardens',
+    shortName: 'Dewlight gardens',
+    purpose: 'Willowkin night gardens that gather dew and grow by starlight',
+    introducedEra: 'stargazer',
+    family: 'farm',
+    effects: { food: 4, water: 4, comfort: 1 },
+    color: '#3f4f84',
+  },
+  {
+    id: 'starlightTerraces',
+    name: 'Starlight terraces',
+    shortName: 'Starlight terraces',
+    purpose: 'Homes with a rooftop dome for every family',
+    introducedEra: 'stargazer',
+    family: 'residence',
+    effects: { housing: 4, comfort: 1 },
+    color: '#3f4f84',
+  },
+  {
+    id: 'spaceElevator',
+    name: 'Hollow space elevator',
+    shortName: 'Space elevator',
+    purpose: 'A silver ribbon carrying supplies and Willowkin seedlings to the Moon',
+    introducedEra: 'moonward',
+    family: 'station',
+    effects: { visitors: 6, comfort: 3 },
+    color: '#e8b84a',
+    unlock: [{ id: 'railDepot', level: 1 }],
+  },
+  {
+    id: 'moonpost',
+    name: 'Moonpost office',
+    shortName: 'Moonpost',
+    purpose: 'Letters and parcels between Prospect Hollow and the Moon',
+    introducedEra: 'moonward',
+    family: 'civic',
+    effects: { visitors: 2, comfort: 2 },
+    color: '#e8b84a',
+  },
+  {
+    id: 'missionHomesteads',
+    name: 'Mission homesteads',
+    shortName: 'Mission homesteads',
+    purpose: 'Homes for the families of our Moon crews',
+    introducedEra: 'moonward',
+    family: 'residence',
+    effects: { housing: 4, comfort: 1 },
+    color: '#e8b84a',
+  },
+].map((building) => ({
+  unlock: [{ id: 'bridge', level: 1 }],
+  ...building,
+  kind: building.id,
+}));
+for (const building of skywardBuildings) CITY_FAMILIES[building.kind] = building.family;
 
 // Each level's benefit line follows the building's effects, so a balance change
 // can never leave an outdated number in the text.
@@ -464,6 +565,7 @@ export const CITY_BUILDINGS = [
       },
     ],
   },
+  ...skywardBuildings,
 ].map((building) => ({
   ...building,
   stages: [
