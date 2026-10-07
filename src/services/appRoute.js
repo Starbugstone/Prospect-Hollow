@@ -6,10 +6,13 @@ export const HOME_PATH = import.meta.env.BASE_URL ?? '/';
 const PLAY_PATH = `${HOME_PATH}play`;
 // Shared towns open at their own view-only address, never inside the game.
 const VISIT_PATH = `${HOME_PATH}visit`;
+// The privacy notice is a plain page that never opens a town or touches the saves.
+const PRIVACY_PATH = `${HOME_PATH}privacy`;
 
 const routePath = (url) => url.pathname.replace(/\/+$/, '');
 export const isPlayRoute = (url = location) => routePath(url) === PLAY_PATH;
 export const isVisitRoute = (url = location) => routePath(url) === VISIT_PATH;
+export const isPrivacyRoute = (url = location) => routePath(url) === PRIVACY_PATH;
 // The public id stays in the hash so it never reaches server logs or referrers.
 export const visitId = (url = location) => new URLSearchParams(url.hash.slice(1)).get('town') ?? '';
 
@@ -48,10 +51,14 @@ export function upgradeLegacyLink() {
   history.replaceState(history.state, '', url);
 }
 export const townUrl = (id) => `${location.origin}${PLAY_PATH}?play=${encodeURIComponent(id)}`;
-// Share links point at the public site, including from the native app.
-export function visitUrl(publicId, env = import.meta.env) {
+// Share links and the privacy notice point at the public site, including from the native app.
+function publicOrigin(env) {
   const api = env.VITE_API_BASE;
   const origin =
     env.VITE_PUBLIC_ORIGIN || (api?.startsWith('https://') ? new URL(api).origin : location.origin);
-  return `${origin.replace(/\/+$/, '')}${VISIT_PATH}#${new URLSearchParams({ town: publicId })}`;
+  return origin.replace(/\/+$/, '');
 }
+export function visitUrl(publicId, env = import.meta.env) {
+  return `${publicOrigin(env)}${VISIT_PATH}#${new URLSearchParams({ town: publicId })}`;
+}
+export const privacyUrl = (env = import.meta.env) => `${publicOrigin(env)}${PRIVACY_PATH}`;

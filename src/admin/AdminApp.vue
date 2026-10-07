@@ -40,6 +40,7 @@ import Towns from './views/Towns.vue';
 import TownDetail from './views/TownDetail.vue';
 import Admins from './views/Admins.vue';
 import AuditLog from './views/AuditLog.vue';
+import Settings from './views/Settings.vue';
 const host = location.host;
 const links = [
   { section: 'overview', path: '', label: 'Overview' },
@@ -47,6 +48,7 @@ const links = [
   { section: 'towns', path: 'towns', label: 'Towns' },
   { section: 'admins', path: 'admins', label: 'Admins' },
   { section: 'log', path: 'log', label: 'Activity log' },
+  { section: 'settings', path: 'settings', label: 'Settings' },
 ];
 const view = computed(
   () =>
@@ -56,6 +58,7 @@ const view = computed(
       towns: route.id ? TownDetail : Towns,
       admins: Admins,
       log: AuditLog,
+      settings: Settings,
     })[route.section],
 );
 onMounted(restoreSession);

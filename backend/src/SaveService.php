@@ -146,7 +146,8 @@ final class SaveService
     {
         return $this->view($row) + ['distinctions' => PlayerDistinctions::owned($db, $player)];
     }
-    private function transaction(Request $r, bool $write, callable $operation): mixed
+    /** Runs an operation for the signed-in account, holding its player row lock. */
+    public function transaction(Request $r, bool $write, callable $operation): mixed
     {
         $session = $this->auth->session($r, $write);
         $db = $this->database->get();
@@ -522,10 +523,37 @@ final class SaveService
         if (($body['confirmation'] ?? null) !== 'DELETE MY ACCOUNT') {
             throw new ApiError(422, 'Type DELETE MY ACCOUNT to confirm.');
         }
-        return $this->transaction($r, true, function ($db, $a) {
-            $db->delete('login_intents', ['email' => $a['email']]);
-            $db->delete('players', ['id' => $a['id']]);
-            return ['ok' => true];
+        $email = $this->transaction($r, true, function ($db, $a) {
+            $this->eraseAccount($db, $a);
+            return $a['email'];
         });
+        // The last message to the address, sent once it is gone from the database.
+        $this->auth->mail(
+            $email,
+            'Your Prospect Hollow account was deleted',
+            "Your Prospect Hollow account, its cloud towns and your email address have been deleted.\n\n" .
+                "Towns you visited keep counting your visits, without your name. Your game on each device keeps playing offline until you remove it there.\n\n" .
+                'If you did not delete your account, ' .
+                SiteSettings::contactHint($this->database->get()) .
+                '.',
+        );
+        return ['ok' => true];
+    }
+    /**
+     * Removes every trace of a player, holding their player row lock. Cascades delete the
+     * account's towns, history, sessions, profile, activity, distinctions and favourites.
+     * Their visits stay in other players' guestbooks and keep counting for those towns,
+     * but lose the name and home town and share one new random key that nothing links to
+     * the account. The email leaves with its pending sign-in links and identity lock.
+     */
+    public function eraseAccount(Connection $db, array $player): void
+    {
+        $db->executeStatement(
+            "UPDATE visitor_visits SET visitor_key=?,name='',town_name=NULL,origin_town_id=NULL WHERE visitor_key=?",
+            [bin2hex(random_bytes(32)), $this->auth->visitorKey($player['id'])],
+        );
+        $db->delete('login_intents', ['email' => $player['email']]);
+        $db->delete('identities', ['email_hash' => $this->auth->identityHash($player['email'])]);
+        $db->delete('players', ['id' => $player['id']]);
     }
 }

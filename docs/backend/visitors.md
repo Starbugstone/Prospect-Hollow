@@ -109,7 +109,9 @@ own guest. Refreshes and brief reconnects during an active lease reuse the visit
 
 Names, town names and clothing eras are snapshotted when a visit starts. A later
 rename or era advancement does not rewrite history. A return link is evaluated
-when read and disappears if its source town becomes private or is deleted.
+when read and disappears if its source town becomes private or is deleted. A deleted
+home town keeps its name while the visitor's account exists; entries carry
+`townGone: true` and show "Former mayor of {town}". Erasing the account clears the name.
 
 ## API and data
 
@@ -117,7 +119,10 @@ The API contract is in [openapi.yaml](openapi.yaml):
 
 - `GET /api/v1/account/profile`: public profile and owned town choices; signed
   out returns a null profile and no towns.
-- `PATCH /api/v1/account/profile`: save `displayName` and `visitingTownId`.
+- `PATCH /api/v1/account/profile`: save `displayName`, `visitingTownId` and optional
+  `anonymousVisits`. A private visit records neither the public name nor the home town's
+  name, so the guestbook shows a plain visitor without a return link; the home town is
+  still stored so the visit counts for the visitor's `townsVisited`.
 - `POST /api/v1/villages/{publicId}/presence`: join or renew using `token`,
   `sequence`, optional `browserToken` and optional owned `townId`. Active replies
   include `visitId` so the visitor can identify their own character.
@@ -128,10 +133,13 @@ The API contract is in [openapi.yaml](openapi.yaml):
   receipts. All timestamps use Unix milliseconds.
   The owner reply also includes the server's Town Honours social counts:
   `uniqueVisitors`, different signed-in players who have visited (each account once;
-  signed-out visits never count), and `townsVisited`, different other players' villages
+  signed-out visits never count). A visit is marked `signed_in` when it is recorded, so it
+  keeps counting after the visitor hides their name, deletes their home town or erases
+  their account ([privacy](privacy.md)), and `townsVisited`, different other players' villages
   visited from this town as its home town (each village once; the owner's own towns never
-  count, and a village unshared or deleted later still counts while its visit records
-  remain). The public guestbook includes neither.
+  count). Travels are recorded in `town_travels` when a visit starts and belong to the
+  visiting town, so a village later unshared, deleted, purged or erased with its owner's
+  account still counts. The public guestbook includes neither.
 - `GET /api/v1/villages?seed=…&page=1`: signed-in browsing. A draw of up to seven
   shared town cards (`villageId`, `name`, `era`, `buildings`, `mineLevel`,
   `saloonReady`, `visitors`, `visited`, `favourite`, `honours`) in the order of a

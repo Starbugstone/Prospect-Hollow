@@ -213,6 +213,38 @@ observed. The tab retained older Electron-preview startup errors and a failed
 request from an earlier stopped dev server; those predate the tested session.
 The fixtures use a local test profile with no signed-in cloud account.
 
+## Board motion check
+
+Shaped boards move gems along gravity routes with bends, merges and refills that queue
+above their entry cell. The unit tests mock the tweens, so they cannot see how a fall
+looks. [Before and after recordings](images/board-falls/side-by-side.mp4) show the
+1.1.0-beta stutter: gems stopped at every bend and refills arrived stacked on one
+another.
+
+`testing/browser/board-motion.cjs` plays five seeded hint moves on levels 13
+(rectangular control), 373, 376, 385 and 397 on an exact 60 fps clock. It follows
+every gem and fails if:
+
+- a falling gem slows below a fifth of its top speed and then speeds up again before
+  landing;
+- two gems that are not fading out come within 0.6 cells of each other.
+
+It is slow and needs a browser, so CI does not run it. Run it after changing board
+animation, gravity or board shapes. Start the dev server, run the check, then stop
+the server:
+
+```bash
+docker run -d --rm --name hollow-motion-web --user "$(id -u):$(id -g)" -e HOME=/tmp -p 127.0.0.1:8192:8192 -v "$PWD":/app -w /app node:24-bookworm-slim npm run dev -- --host 0.0.0.0 --port 8192 --strictPort
+docker run --rm --network host --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD":/app -w /app mcr.microsoft.com/playwright:v1.55.0-noble sh -c 'npm i --no-save --silent --prefix /tmp/pw playwright@1.55.0 && PLAYWRIGHT_MODULE=/tmp/pw/node_modules/playwright node testing/browser/board-motion.cjs'
+docker stop hollow-motion-web
+```
+
+`PH_TEST_ORIGIN` points the check at another server, for example a
+`VITE_DEBUG_TOOLS=true` build served by `vite preview`. `PH_MOTION_LEVELS` (a
+comma-separated list) and `PH_MOTION_MOVES` change the scenarios. On 1.1.0-beta the
+check reports thousands of problems on all four shaped levels; level 13 passes on
+both versions.
+
 ## Individual mechanic demos
 
 [Open the mechanic video gallery](images/deep-mines/mechanics/index.html).

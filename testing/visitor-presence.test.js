@@ -174,3 +174,18 @@ it('formats names without exposing identifiers and handles unnamed mayors', () =
   expect(visitorLabel({ name: '', townName: 'Silver Creek' })).toBe('Mayor of Silver Creek');
   expect(visitorLabel({ name: '', townName: null })).toBe('Visitor');
 });
+
+it('keeps a deleted home town’s name, marked as a former town', () => {
+  setLocale('en');
+  expect(visitorLabel({ name: 'Camille', townName: 'Silver Creek', townGone: true })).toBe(
+    'Camille · Former mayor of Silver Creek',
+  );
+  expect(visitorLabel({ name: '', townName: 'Silver Creek', townGone: true })).toBe(
+    'Former mayor of Silver Creek',
+  );
+  setLocale('fr');
+  expect(visitorLabel({ name: '', townName: 'Silver Creek', townGone: true })).toBe(
+    'Ex-maire de Silver Creek',
+  );
+  setLocale('en');
+});

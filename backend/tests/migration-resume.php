@@ -6,6 +6,9 @@ $directory = sys_get_temp_dir() . '/' . $prefix;
 mkdir($directory . '/src', 0700, true);
 $source = file_get_contents(dirname(__DIR__) . '/src/Database.php');
 $names = [
+    'town_travels',
+    'email_changes_player',
+    'email_changes',
     'helmet_finds_town',
     'helmet_finds',
     'admin_settings',
@@ -100,6 +103,11 @@ $revocations = $mysql
 file_put_contents(
     $directory . '/' . $revocations,
     $rewrite(file_get_contents(dirname(__DIR__) . '/' . $revocations)),
+);
+$playerData = $mysql ? 'schema-player-data.sql' : 'schema-player-data-postgresql.sql';
+file_put_contents(
+    $directory . '/' . $playerData,
+    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $playerData)),
 );
 $helmets = $mysql ? 'schema-helmet-finds.sql' : 'schema-helmet-finds-postgresql.sql';
 file_put_contents(
@@ -207,12 +215,26 @@ try {
         'admin settings installed',
     );
     check(
+        $connection->createSchemaManager()->tablesExist([$prefix . 'email_changes']) &&
+            $connection->createSchemaManager()->tablesExist([$prefix . 'town_travels']) &&
+            isset(
+                array_change_key_case(
+                    $connection
+                        ->createSchemaManager()
+                        ->listTableColumns($prefix . 'visitor_visits'),
+                )['signed_in'],
+            ),
+        'email changes and signed-in visits installed, also when the migration is repeated',
+    );
+    check(
         $connection->createSchemaManager()->tablesExist([$prefix . 'helmet_finds']),
         'space-helmet finds installed',
     );
 } finally {
     foreach (
         [
+            'town_travels',
+            'email_changes',
             'helmet_finds',
             'admin_settings',
             'player_distinction_revocations',
@@ -251,6 +273,7 @@ try {
     @unlink($directory . '/' . $distinctions);
     @unlink($directory . '/' . $revocations);
     @unlink($directory . '/' . $settings);
+    @unlink($directory . '/' . $playerData);
     @unlink($directory . '/' . $helmets);
     unlink($directory . '/src/Database.php');
     rmdir($directory . '/src');

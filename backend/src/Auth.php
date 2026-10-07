@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace App;
+use Doctrine\DBAL\Connection;
 use Symfony\Component\HttpFoundation\{Request, Cookie, JsonResponse};
 use Symfony\Component\Mailer\{Mailer, Transport};
 use Symfony\Component\Mime\Email;
@@ -44,6 +45,11 @@ final class Auth
     public function hash(string $value): string
     {
         return hash_hmac('sha256', $value, $this->secret());
+    }
+    /** The guestbook key of a signed-in visitor: stable per account, never the account ID. */
+    public function visitorKey(string $player): string
+    {
+        return $this->hash('player:' . $player);
     }
     public function guardHost(Request $r): void
     {
@@ -199,10 +205,7 @@ final class Auth
     public function loginLink(Request $r, array $body): array
     {
         SaveService::keys($body, ['email']);
-        $email = is_string($body['email'] ?? null) ? strtolower(trim($body['email'])) : '';
-        if (strlen($email) > 254 || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            throw new ApiError(422, 'Enter a valid email address.');
-        }
+        $email = self::email($body['email'] ?? null);
         $this->limit('email:' . $email, 5, 3600);
         $token = bin2hex(random_bytes(32));
         $db = $this->database->get();
@@ -212,24 +215,60 @@ final class Auth
             'expires_at' => time() + 900,
         ]);
         $link = $this->origin() . '/#login=' . $token;
-        try {
-            $mailer = new Mailer(Transport::fromDsn(Env::get('MAILER_DSN')));
-            $mailer->send(
-                (new Email())
-                    ->from(Env::get('MAIL_FROM'))
-                    ->to($email)
-                    ->subject('Your Prospect Hollow sign-in link')
-                    ->text(
-                        "Confirm your sign-in within 15 minutes:\n\n" .
-                            $link .
-                            "\n\nOn mobile, paste this link into the game's account screen. If you did not request it, ignore this email.",
-                    ),
-            );
-        } catch (\Throwable) {
+        if (
+            !$this->mail(
+                $email,
+                'Your Prospect Hollow sign-in link',
+                "Confirm your sign-in within 15 minutes:\n\n" .
+                    $link .
+                    "\n\nOn mobile, paste this link into the game's account screen. If you did not request it, ignore this email.",
+            )
+        ) {
             $db->delete('login_intents', ['token_hash' => $this->hash($token)]);
-            error_log('mail_delivery_failed');
         }
         return ['message' => 'If delivery is possible, a sign-in link is on its way.'];
+    }
+    public static function email(mixed $value): string
+    {
+        $email = is_string($value) ? strtolower(trim($value)) : '';
+        if (strlen($email) > 254 || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new ApiError(422, 'Enter a valid email address.');
+        }
+        return $email;
+    }
+    public function identityHash(string $email): string
+    {
+        return $this->hash('identity:' . $email);
+    }
+    /**
+     * Serializes everything that gives an address an account (a first sign-in or an email
+     * change) on a row lock of its keyed hash. Call inside the transaction.
+     */
+    public function lockIdentity(Connection $db, string $email): void
+    {
+        $emailHash = $this->identityHash($email);
+        $db->executeStatement(
+            $this->database->isMySql()
+                ? 'INSERT INTO identities(email_hash) VALUES (?) ON DUPLICATE KEY UPDATE email_hash=VALUES(email_hash)'
+                : 'INSERT INTO identities(email_hash) VALUES (?) ON CONFLICT(email_hash) DO NOTHING',
+            [$emailHash],
+        );
+        $db->fetchOne('SELECT email_hash FROM identities WHERE email_hash=? FOR UPDATE', [
+            $emailHash,
+        ]);
+    }
+    /** Sends a plain-text email. A failure is logged without the address and never thrown. */
+    public function mail(string $to, string $subject, string $text): bool
+    {
+        try {
+            (new Mailer(Transport::fromDsn(Env::get('MAILER_DSN'))))->send(
+                (new Email())->from(Env::get('MAIL_FROM'))->to($to)->subject($subject)->text($text),
+            );
+            return true;
+        } catch (\Throwable) {
+            error_log('mail_delivery_failed');
+            return false;
+        }
     }
     public function confirm(Request $r, array $body): JsonResponse
     {
@@ -252,17 +291,7 @@ final class Auth
         }
         $id = null;
         $response = $db->transactional(function () use ($db, $body, $hash, $intent, &$id) {
-            $emailHash = $this->hash('identity:' . $intent['email']);
-            $mysql = $this->database->isMySql();
-            $db->executeStatement(
-                $mysql
-                    ? 'INSERT INTO identities(email_hash) VALUES (?) ON DUPLICATE KEY UPDATE email_hash=VALUES(email_hash)'
-                    : 'INSERT INTO identities(email_hash) VALUES (?) ON CONFLICT(email_hash) DO NOTHING',
-                [$emailHash],
-            );
-            $db->fetchOne('SELECT email_hash FROM identities WHERE email_hash=? FOR UPDATE', [
-                $emailHash,
-            ]);
+            $this->lockIdentity($db, $intent['email']);
             $live = $db->fetchAssociative(
                 'SELECT * FROM login_intents WHERE token_hash=? FOR UPDATE',
                 [$hash],

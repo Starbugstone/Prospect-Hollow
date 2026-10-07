@@ -3,7 +3,7 @@
   'info':
     {
       'title': 'Prospect Hollow account saves',
-      'version': '14.0.0',
+      'version': '14.1.0',
       'description': 'Local-first single-player snapshots, public town appearances and live visitor presence. Private town operations require ownership. No gameplay action API.',
     },
   'servers': [{ 'url': '/api/v1' }],
@@ -296,6 +296,7 @@
           'delete':
             {
               'summary': 'Permanently delete account and live account data',
+              'description': 'Erases the account, its towns, history, sessions, profile, activity, distinctions, favourites, pending links and identity row. The player’s visits stay in other guestbooks as unnamed signed-in visits under one new random key, so hosts keep their visitor counts. A last email confirms the deletion.',
               'responses':
                 {
                   '200': { 'description': 'Success' },
@@ -795,6 +796,118 @@
                 },
             },
         },
+      '/privacy':
+        {
+          'get':
+            {
+              'summary': 'The privacy contact an admin set',
+              'security': [{}],
+              'description': 'Public. Returns {contact}: the address players write to about their data, or null when none is set.',
+              'responses': { '200': { 'description': 'Success' } },
+            },
+        },
+      '/account/data':
+        {
+          'get':
+            {
+              'summary': 'The account owner’s overview of what the server keeps',
+              'description': 'Counts and the latest connection for the Mayor’s Office: email, createdAt, publicName, anonymousVisits, lastSeenAt, lastIp, lastBrowser, platform (web|app), lastSignInAt, emailSignIns, activeDays, sessions, towns, deletedTowns, savedVersions, honours, distinctions, visits, townsVisited, favourites and pendingEmail (null or the address awaiting confirmation). Times are Unix milliseconds or null.',
+              'responses':
+                { '200': { 'description': 'Success' }, '401': { 'description': 'Sign in again' } },
+            },
+        },
+      '/account/export':
+        {
+          'get':
+            {
+              'summary': 'Everything stored about the account, as one JSON document',
+              'description': 'GDPR access and portability: account (id, email, createdAt, pendingEmailChange), publicProfile, activity (last connection, IP address, browser, email sign-ins, active days), signedInDevices (no secrets), towns with their full saves and earlier saves, visitsMade, favouriteTowns and distinctions. Times are ISO 8601 UTC. Other players are counted (differentSignedInVisitors) but never named. Limited to 10 exports per account per hour.',
+              'responses':
+                {
+                  '200': { 'description': 'Success' },
+                  '401': { 'description': 'Sign in again' },
+                  '429': { 'description': 'Rate limited' },
+                },
+            },
+        },
+      '/account/email':
+        {
+          'post':
+            {
+              'summary': 'Email a confirmation link to a new address',
+              'description': 'Nothing changes until the link (/#email=<token>, valid for one hour) is confirmed. Only the latest request stays valid. The new address shares the sign-in link rate limit.',
+              'parameters':
+                [
+                  {
+                    'name': 'X-CSRF-Token',
+                    'in': 'header',
+                    'required': true,
+                    'schema': { 'type': 'string' },
+                  },
+                ],
+              'requestBody':
+                {
+                  'required': true,
+                  'content':
+                    {
+                      'application/json':
+                        {
+                          'schema':
+                            {
+                              'type': 'object',
+                              'additionalProperties': false,
+                              'required': ['email'],
+                              'properties': { 'email': { 'type': 'string', 'format': 'email' } },
+                            },
+                        },
+                    },
+                },
+              'responses':
+                {
+                  '200': { 'description': 'Link sent; returns pendingEmail' },
+                  '401': { 'description': 'Sign in again' },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '422': { 'description': 'Invalid address or the current one' },
+                  '429': { 'description': 'Rate limited' },
+                  '503': { 'description': 'The confirmation email could not be sent' },
+                },
+            },
+        },
+      '/account/email/confirm':
+        {
+          'post':
+            {
+              'summary': 'Confirm an email change from the emailed link',
+              'security': [{}],
+              'description': 'The token proves the new address, so no session is needed. The old address loses its pending sign-in links and identity row and is told about the change. Returns {email}.',
+              'requestBody':
+                {
+                  'required': true,
+                  'content':
+                    {
+                      'application/json':
+                        {
+                          'schema':
+                            {
+                              'type': 'object',
+                              'additionalProperties': false,
+                              'required': ['token'],
+                              'properties':
+                                { 'token': { 'type': 'string', 'pattern': '^[a-f0-9]{64}$' } },
+                            },
+                        },
+                    },
+                },
+              'responses':
+                {
+                  '200': { 'description': 'The account now uses the new address' },
+                  '401': { 'description': 'Expired or already used link' },
+                  '409': { 'description': 'Another account already uses this address' },
+                  '422': { 'description': 'Malformed link' },
+                  '429': { 'description': 'Rate limited' },
+                },
+            },
+        },
       '/villages/{publicId}/presence':
         {
           'parameters':
@@ -1224,6 +1337,11 @@
                       'type': ['string', 'null'],
                       'format': 'uuid',
                       'description': 'Must belong to the current account; null enables the town fallback.',
+                    },
+                  'anonymousVisits':
+                    {
+                      'type': 'boolean',
+                      'description': 'Private visits: guestbooks show neither the public name nor the home town, but the visit still counts for the host and the visitor’s travels. Omitted keeps the stored choice.',
                     },
                 },
             },

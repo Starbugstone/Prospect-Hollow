@@ -125,6 +125,6 @@ Mine teardown explicitly releases its WebGL context. If the village loses its gr
 
 ## Account backend and preproduction deployment
 
-Gameplay is fully local and works offline. Signed-out players have one device-only town; accounts can back up three independent towns through the PHP/Symfony API. Revision checks prevent competing devices from silently overwriting each other. On divergence, the latest server save is loaded with a preserved local copy and an explicit, reviewed overwrite option. See [browser saving](docs/backend/browser-saving.md), [local setup and hosting](docs/backend/hosting.md), [security boundaries](docs/backend/security.md), and the [API contract](docs/backend/openapi.yaml).
+Gameplay is fully local and works offline. Signed-out players have one device-only town; accounts can back up three independent towns through the PHP/Symfony API. Revision checks prevent competing devices from silently overwriting each other. On divergence, the latest server save is loaded with a preserved local copy and an explicit, reviewed overwrite option. See [browser saving](docs/backend/browser-saving.md), [local setup and hosting](docs/backend/hosting.md), [security boundaries](docs/backend/security.md), [privacy and player data](docs/backend/privacy.md), and the [API contract](docs/backend/openapi.yaml).
 
 The `preprod` branch deploys to o2switch after its exact commit passes Quality checks. The private hosting controller and cron job must be enabled on the host. See [the preproduction setup](docs/backend/preprod.md).
