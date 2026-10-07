@@ -439,7 +439,9 @@ export function createIntegrityFixtures() {
       fixture(
         `optional landmark ${area.id}: construction, upgrades and replacement`,
         (profile) => {
-          develop(profile, 'riverlight');
+          // Earlier landmarks keep their Riverlight fixture; later ones need their own era.
+          const index = (id) => ERAS.findIndex((era) => era.id === id);
+          develop(profile, index(area.era) > index('riverlight') ? area.era : 'riverlight');
           profile.town.coins = 10000000;
         },
         (campaign) => {

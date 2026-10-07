@@ -291,6 +291,106 @@ export const LANDMARK_OPTIONS = [
     21000,
     'A petal-coloured civic rotunda with a generous open court.',
   ),
+  // Skysail: Kite Meadow.
+  option(
+    'kite-tower',
+    'Kite-festival Tower',
+    'kites',
+    '#e8a64a',
+    22000,
+    'A lattice tower that flies the whole town’s kites on festival days.',
+  ),
+  option(
+    'lantern-pavilion',
+    'Sky-lantern Pavilion',
+    'lanterns',
+    '#e57f62',
+    23000,
+    'An open pavilion with paper sky lanterns drifting above its roof.',
+  ),
+  option(
+    'wind-organ',
+    'Wind Organ',
+    'organ',
+    '#4fa3a5',
+    24000,
+    'A curve of tall pipes and sails that plays whenever the valley breathes.',
+  ),
+  // Stargazer: Stargazers' Lawn.
+  option(
+    'orbit-garden',
+    'Orrery Garden',
+    'orbits',
+    '#3f4f84',
+    25000,
+    'A ring of hedges where brass planets circle a golden sun.',
+  ),
+  option(
+    'comet-arch',
+    'Comet Arch',
+    'comet',
+    '#9c86d0',
+    26000,
+    'A slender arch with a comet and its starry tail streaming over the lawn.',
+  ),
+  option(
+    'aurora-dome',
+    'Aurora Dome',
+    'aurora',
+    '#5fb8a8',
+    27000,
+    'A glass dome under ribbons of aurora light.',
+  ),
+  // Moonward: Launch Green.
+  option(
+    'first-rocket',
+    'First-rocket Monument',
+    'rocket',
+    '#b85a44',
+    28000,
+    'The valley’s first little rocket, kept on its launch tower for everyone to see.',
+  ),
+  option(
+    'moon-chapel',
+    'Homestead Chapel',
+    'chapel',
+    '#4d6283',
+    29000,
+    'A frontier chapel with a round Moon window over the door.',
+  ),
+  option(
+    'lunar-sundial',
+    'Lunar Sundial',
+    'sundial',
+    '#c9a24a',
+    30000,
+    'A great dial that tells the hour and the phases of the Moon.',
+  ),
+  // Twin Hollows: Homecoming Green.
+  option(
+    'lantern-walk',
+    'Twin-lantern Walk',
+    'lantern-walk',
+    '#3f8f8a',
+    31000,
+    'An avenue of twin lanterns, one for the valley and one for the Moon.',
+  ),
+  option(
+    'globe-garden',
+    'Earth and Moon Garden',
+    'globes',
+    '#4f8fc7',
+    32000,
+    'A fountain garden where a little Earth and Moon share one pool.',
+  ),
+  option(
+    'welcome-arch',
+    'Family Welcome Arch',
+    'welcome-arch',
+    '#b88757',
+    33000,
+    'A homecoming arch with banners and a bench for waiting families.',
+  ),
 ];
 export const LANDMARK_BY_ID = Object.fromEntries(LANDMARK_OPTIONS.map((o) => [o.id, o]));
 const plots = [
@@ -310,6 +410,15 @@ const plots = [
   ['horizon', 'Horizon Park', [15, 84], ['orbit-house', 'solar-crown', 'future-forum']],
   ['canopy-court', 'Canopy Grove', [65, 69], ['living-tower', 'canopy-house', 'seed-vault']],
   ['light-court', 'Riverlight Court', [87, 73], ['river-palace', 'light-garden', 'lotus-forum']],
+  ['kite-meadow', 'Kite Meadow', [48, -80], ['kite-tower', 'lantern-pavilion', 'wind-organ']],
+  ['stargazer-lawn', 'Stargazers’ Lawn', [80, -80], ['orbit-garden', 'comet-arch', 'aurora-dome']],
+  ['launch-green', 'Launch Green', [-22, -60], ['first-rocket', 'moon-chapel', 'lunar-sundial']],
+  [
+    'homecoming-green',
+    'Homecoming Green',
+    [48, 66],
+    ['lantern-walk', 'globe-garden', 'welcome-arch'],
+  ],
 ];
 export const PERSONAL_AREAS = plots.map(([id, label, position, choices], index) => ({
   id,

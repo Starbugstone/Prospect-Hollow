@@ -68,6 +68,22 @@ continue the Riverlight steps (modernization 13.6k–22k, new buildings 15.5k–
 and the space elevator carries the major-landmark premium and a two-puzzle first
 stage. Town needs tests confirm every finished era houses everyone.
 
+## Optional landmark plots
+
+Each era also adds one optional landmark plot with three architectural choices,
+like every earlier era. They are cosmetic, never gate progression and keep
+upgrading through later eras.
+
+| Era          | Plot             | Where                       | Choices                                                       |
+| ------------ | ---------------- | --------------------------- | ------------------------------------------------------------- |
+| Skysail      | Kite Meadow      | Beyond the Skyward quarter  | Kite-festival Tower, Sky-lantern Pavilion, Wind Organ         |
+| Stargazer    | Stargazers’ Lawn | Beyond the Skyward quarter  | Orrery Garden, Comet Arch, Aurora Dome                        |
+| Moonward     | Launch Green     | Behind the space elevator   | First-rocket Monument, Homestead Chapel, Lunar Sundial        |
+| Twin Hollows | Homecoming Green | By the east-bank river walk | Twin-lantern Walk, Earth and Moon Garden, Family Welcome Arch |
+
+Prices continue the ladder from 22,000 to 33,000. The server replays each plot's
+purchases from the exported catalog like every other landmark.
+
 ## The Moon
 
 The default camera looks down at the town, so a moon in the 3D sky would never be
@@ -195,3 +211,23 @@ Honours: Through the Ages gains its diamond rank, **Two Towns, One Sky**
 ![Twin Hollows in the valley](images/future-eras/twin-hollows-town.png)
 ![New Hollow on the Moon](images/future-eras/twin-hollows-moon.png)
 ![The Moon in the valley sky](images/future-eras/twin-hollows-sky-moon.png)
+
+### Landmark choices in the town
+
+Kite Meadow and Stargazers’ Lawn (each row shows one set of choices):
+
+![Kite tower and orrery garden](images/future-eras/landmarks/a-north.png)
+![Sky-lantern pavilion and comet arch](images/future-eras/landmarks/b-north.png)
+![Wind organ and aurora dome](images/future-eras/landmarks/c-north.png)
+
+Launch Green:
+
+![First-rocket monument](images/future-eras/landmarks/a-launch.png)
+![Homestead chapel](images/future-eras/landmarks/b-launch.png)
+![Lunar sundial](images/future-eras/landmarks/c-launch.png)
+
+Homecoming Green:
+
+![Twin-lantern walk](images/future-eras/landmarks/a-home.png)
+![Earth and Moon garden](images/future-eras/landmarks/b-home.png)
+![Family welcome arch](images/future-eras/landmarks/c-home.png)

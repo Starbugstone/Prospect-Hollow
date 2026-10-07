@@ -22,7 +22,7 @@ honours. Hidden or unearned distinction IDs are never rendered as earned plaques
 
 ## Optional landmark plots
 
-`townLandmarks.js` owns eleven spacious parcels, one introduced in each era. Each
+`townLandmarks.js` owns fifteen spacious parcels, one introduced in each era. Each
 ordinary parcel has three architectural choices, with three paid stages per era
 through the current final era. New eras extend the shared stage calculation;
 there is no hardcoded final-era completion requirement. Earlier-stage architecture
