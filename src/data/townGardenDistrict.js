@@ -67,6 +67,15 @@ const parcels = {
     entranceZ: 6.1,
     approach: [[0, 5.25]],
   },
+  // The homecoming hall shares the atelier's street row in the garden district.
+  homecomingHall: {
+    position: [79, 8],
+    halfWidth: 5,
+    halfDepth: 5,
+    streetOffset: 8.5,
+    entranceZ: 5,
+    approach: [[0, 4.5]],
+  },
   // Skyward quarter: the garden lane crosses the railway to two rows of lots.
   moonpost: skyward(48, -40, 5.5),
   skyHarbour: skyward(63, -40),

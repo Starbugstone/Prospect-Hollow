@@ -46,4 +46,13 @@ export const FUTURE_MINE_CROWNS = {
     d.box(entry, 0.07, 1.5, 0.07, 1.45, 3.55, -0.2, p.deep);
     d.ball(entry, 1.45, 4.35, -0.2, 0.13, p.light, 'rock');
   },
+  // Twin Hollows: twin lanterns and a little Earth and Moon over the homecoming arch.
+  'twin-arch'(d, entry) {
+    const p = FUTURE_PALETTES.twin;
+    const gable = d.mesh(entry, futureShape(d, 'gable'), [3.4, 0.7, 1.15], [0, 2.78, 0.12], p.roof);
+    gable.name = 'Mine homecoming gable';
+    d.box(entry, 1.4, 0.06, 0.06, 0, 3.75, 0.2, p.deep);
+    d.ball(entry, -0.45, 3.95, 0.2, 0.2, p.flower, 'rock');
+    d.ball(entry, 0.45, 3.92, 0.2, 0.15, p.shell, 'rock');
+  },
 };

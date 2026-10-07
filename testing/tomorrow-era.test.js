@@ -125,6 +125,7 @@ describe('Tomorrow City era contract', () => {
       'sail',
       'observatory',
       'homestead',
+      'twin',
     ]);
     const base = { ...ERA_BY_ID.contemporary, id: 'invalid-architecture' };
     expect(() =>

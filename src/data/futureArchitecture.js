@@ -39,6 +39,30 @@ export const FUTURE_PALETTES = Object.freeze({
     flower: '#b85a44',
     light: '#e8b84a',
   }),
+  // Twin Hollows homecoming: the homestead lines in softer silver-blue, with teal
+  // and gold twin lanterns for the valley and the Moon.
+  twin: Object.freeze({
+    shell: '#f1eee6',
+    roof: '#4d6283',
+    glass: '#bcdde4',
+    deep: '#55607a',
+    green: '#8db383',
+    timber: '#b88757',
+    flower: '#3f8f8a',
+    light: '#f0c45a',
+  }),
+});
+// New Hollow on the Moon: moon-white ceramic, steel dome ribs, crater-ice glass,
+// gold foil and the valley's barn red. Used by the Moon map and its drawings.
+export const MOON_PALETTE = Object.freeze({
+  shell: '#ece9e1',
+  roof: '#7f8fa6',
+  glass: '#a9dbe0',
+  deep: '#4c5566',
+  green: '#8fb58a',
+  timber: '#b08a5a',
+  flower: '#b85a44',
+  light: '#e8b84a',
 });
 export const FUTURE_ARCHITECTURES = Object.freeze(Object.keys(FUTURE_PALETTES));
 
@@ -75,11 +99,17 @@ export const FUTURE_LANDMARKS = Object.freeze({
   spaceElevator: Object.freeze({ form: 'spaceElevator', scale: 1 }),
   moonpost: Object.freeze({ form: 'moonpost', scale: 1.35 }),
   missionHomesteads: Object.freeze({ form: 'missionHomesteads', scale: 1.3 }),
+  homecomingHall: Object.freeze({ form: 'homecomingHall', scale: 1.35 }),
 });
 
 // Mine portal crowns of the future eras. Each replaces the cozy petal canopy, so
 // the mine changes with every era and stays within its static triangle budget.
-export const FUTURE_MINE_PORTALS = Object.freeze(['sail-arch', 'dome-arch', 'homestead-arch']);
+export const FUTURE_MINE_PORTALS = Object.freeze([
+  'sail-arch',
+  'dome-arch',
+  'homestead-arch',
+  'twin-arch',
+]);
 
 export const isFutureEra = (era) => FUTURE_ARCHITECTURES.includes(eraEvolution(era).architecture);
 

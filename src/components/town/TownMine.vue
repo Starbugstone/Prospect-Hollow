@@ -134,6 +134,12 @@
         <path d="M54-40v-50" :stroke="future.homestead.deep" stroke-width="3" />
         <circle cx="54" cy="-92" r="5" :fill="future.homestead.light" />
       </g>
+      <g v-if="profile.portal === 'twin-arch'">
+        <path d="M-62-38 0-64 62-38Z" :fill="future.twin.roof" />
+        <path d="M-28-74H28" :stroke="future.twin.deep" stroke-width="3" />
+        <circle cx="-12" cy="-80" r="8" :fill="future.twin.flower" />
+        <circle cx="12" cy="-79" r="6" :fill="future.twin.shell" />
+      </g>
       <g v-if="profile.portal === 'rounded-arch'">
         <path d="M-60-16a60 34 0 0 1 120 0Z" fill="#a6d3d4" stroke="#6d9f98" stroke-width="5" />
       </g>

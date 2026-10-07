@@ -1240,6 +1240,9 @@ function showConstruction(keepDirectory = false) {
   if (!keepDirectory) closeDialog();
   construction.value = { id: selected.value, serial: (construction.value?.serial ?? 0) + 1 };
   if (!keepDirectory) mapFrame.value?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+  // Moon work happens on the Moon map.
+  if (!keepDirectory && BUILDING_BY_ID[selected.value]?.settlement === 'moon')
+    nextTick(() => townScene.value?.openMoon());
 }
 function finishBuilding(id, keepDirectory = false) {
   performanceMark('build-tap');

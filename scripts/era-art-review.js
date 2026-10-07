@@ -109,7 +109,7 @@ window.renderEraReview = async (id) => {
   d.town = createTown();
   d.town.era = era.id;
   const available = BUILDINGS.filter(
-    (b) => ERAS.findIndex((e) => e.id === b.introducedEra) <= index,
+    (b) => !b.settlement && ERAS.findIndex((e) => e.id === b.introducedEra) <= index,
   );
   for (const b of available) d.town.buildings[b.id] = b.upgrades.length;
   const result = { era: era.id, label: era.label, year: era.yearLabel, buildings: [] };

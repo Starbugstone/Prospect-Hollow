@@ -43,6 +43,7 @@ const ARCHITECTURES = {
   sail: FUTURE,
   observatory: FUTURE,
   homestead: FUTURE,
+  twin: FUTURE,
 };
 
 export const futureModel = (d, parent, name) => blenderModel(d, parent, null, name, 'future');

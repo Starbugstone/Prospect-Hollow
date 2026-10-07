@@ -614,6 +614,9 @@ export const BUILDINGS = [
   };
 });
 
+// Buildings on valley lots; Moon settlement buildings stand on the Moon map.
+export const EARTH_BUILDINGS = BUILDINGS.filter((building) => !building.settlement);
+export const MOON_BUILDINGS = BUILDINGS.filter((building) => building.settlement === 'moon');
 export const BUILDING_BY_ID = Object.fromEntries(
   BUILDINGS.map((building) => [building.id, building]),
 );

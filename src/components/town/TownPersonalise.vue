@@ -511,7 +511,7 @@ const emblems = computed(() =>
   ),
 );
 const availableBuildings = computed(() => [
-  ...BUILDINGS.filter((b) => plotUnlocked(props.town, b.id)),
+  ...BUILDINGS.filter((b) => !b.settlement && plotUnlocked(props.town, b.id)),
   ...PERSONAL_AREAS.filter((a) => !a.timeless && areaUnlocked(props.town, a)).map((a) => ({
     id: a.id,
     name: a.label,

@@ -265,6 +265,10 @@ const parts = computed(() => {
       result.blocks.push(block(-66, 60, 78), block(10, 60, 90));
       if (level >= 2) result.blocks.push(block(82, 60, 74));
       break;
+    case 'homecomingHall':
+      result.blocks.push(block(0, 140, 90));
+      if (level >= 2) result.blocks.unshift(block(-104, 44, 56, { door: false, accent: true }));
+      break;
     case 'spaceElevator':
       result.blocks.push(block(-92, 60, 62, { door: true }), block(92, 60, 62, { door: false }));
       break;

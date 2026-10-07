@@ -352,7 +352,13 @@ export class TownDiorama extends TownPrimitives {
       this.selection.geometry.dispose();
       this.selection.material.dispose();
     }
-    const [x, z] = PLOTS[id] ?? [0, 0];
+    // Moon buildings have no valley lot to ring.
+    if (!PLOTS[id]) {
+      this.selection = null;
+      this.render();
+      return;
+    }
+    const [x, z] = PLOTS[id];
     this.selection = new THREE.Mesh(
       new THREE.RingGeometry(1.65, 1.71, 64),
       new THREE.MeshBasicMaterial({

@@ -4,7 +4,7 @@ import { ERA_SUPPLY_STEP } from './townNeeds';
 
 /**
  * @typedef {'frontier'|'river-rail'|'industrial'|'motor-age'|'city'} BuildingStyle
- * @typedef {'standard'|'rounded'|'cozy'|'sail'|'observatory'|'homestead'} CityArchitecture
+ * @typedef {'standard'|'rounded'|'cozy'|'sail'|'observatory'|'homestead'|'twin'} CityArchitecture
  * @typedef {'standard'|'rounded'} TransportStyle
  * @typedef {Object} EraEvolution
  * @property {BuildingStyle} style Shared building/modernization renderer family.
@@ -46,6 +46,8 @@ import { ERA_SUPPLY_STEP } from './townNeeds';
  * @property {string} upgradeTitle
  * @property {readonly string[]} upgradeDescriptions Second and third modernization descriptions.
  * @property {boolean} requiresPower
+ * @property {readonly string[]|null} modernizes Building ids this era modernizes; null
+ *   modernizes every building. Others keep their earlier finish and count as complete.
  * @property {boolean} moonSettlement Settlement lights on the Moon and the space elevator's
  *   climbers follow this era's completed supply projects.
  */
@@ -58,6 +60,7 @@ export const CITY_ARCHITECTURES = Object.freeze([
   'sail',
   'observatory',
   'homestead',
+  'twin',
 ]);
 /** Registered vehicle families; each has airport, rail, ferry and traffic models. */
 export const TRANSPORT_STYLES = Object.freeze(['standard', 'rounded']);
@@ -171,6 +174,7 @@ export function defineEra(definition) {
     upgradeDescriptions: [],
     requiresPower: false,
     moonSettlement: false,
+    modernizes: null,
     ...STYLES[style],
     ...definition.evolution,
   };
@@ -194,6 +198,12 @@ export function defineEra(definition) {
     throw new Error(`Missing modernization copy for era ${definition.id}`);
   if (style !== 'frontier' && !evolution.prices)
     throw new Error(`Missing modernization prices for era ${definition.id}`);
+  if (
+    evolution.modernizes != null &&
+    (!Array.isArray(evolution.modernizes) ||
+      !evolution.modernizes.every((id) => typeof id === 'string' && id))
+  )
+    throw new Error(`Invalid modernizes list for era ${definition.id}`);
   if (!CITY_ARCHITECTURES.includes(evolution.architecture))
     throw new Error(`Unsupported architecture for era ${definition.id}`);
   if (!Object.hasOwn(TOWN_FAUNA, evolution.wildlife))

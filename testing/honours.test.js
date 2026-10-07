@@ -474,7 +474,9 @@ describe('Extending the registry with later content', () => {
     honourFamilies({ eras }).map((family) => {
       if (family.id === 'stars')
         return { ...family, ranks: [...family.ranks, { metal: 'diamond', goal: 500, since: 2 }] };
-      if (family.id === 'ages')
+      // Through the Ages shipped its diamond with Twin Hollows; a ladder without one
+      // still shows how a later era rank joins it.
+      if (family.id === 'ages' && !family.ranks.some((rank) => rank.metal === 'diamond'))
         return {
           ...family,
           ranks: [

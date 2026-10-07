@@ -2,7 +2,7 @@ import { plotSetbacks } from '../src/game/town/BuildingSetbacks';
 import { Group, Scene } from 'three';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
-import { BUILDINGS, createTown } from '../src/data/town';
+import { BUILDINGS, EARTH_BUILDINGS, createTown } from '../src/data/town';
 import { ERAS } from '../src/data/eras';
 import { plotInEra } from '../src/game/town/TownEras';
 import { PLOTS } from '../src/game/town/TownLayout';
@@ -29,7 +29,8 @@ export async function generateFootprints({ eras = null } = {}) {
     d.town = { ...createTown(), era: era.id };
     for (const b of BUILDINGS)
       if (plotInEra(d.town, b.id)) d.town.buildings[b.id] = b.upgrades.length;
-    for (const building of BUILDINGS) {
+    // Moon settlement buildings have no valley lot or footprint.
+    for (const building of EARTH_BUILDINGS) {
       if (building.id === 'mine' || !plotInEra(d.town, building.id)) continue;
       for (let serviceLevel = 0; serviceLevel <= building.upgrades.length; serviceLevel++) {
         for (const eraLevel of era.id === 'frontier' ? [0] : [1, 2, 3]) {

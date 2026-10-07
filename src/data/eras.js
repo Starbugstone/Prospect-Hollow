@@ -374,6 +374,39 @@ export const ERAS = continueSupplyTiers(
       horizon: 'A new frontier is waiting above Prospect Hollow.',
       finale: 'Look up tonight: every little light on the Moon is a neighbor from home.',
     },
+    {
+      id: 'twin-hollows',
+      evolution: {
+        ...FUTURE_CITY_EVOLUTION,
+        architecture: 'twin',
+        wildlife: 'garden-town',
+        waterworks: [265, 281, 297],
+        farmCapacity: [226, 242, 258],
+        prices: [18400, 21000, 23600],
+        wardrobe: 'twin',
+        newBuildingPrices: [21000, 23500, 26000],
+        fountain: 'twin-globes',
+        roadStyle: 'twin-lane',
+        moonSettlement: true,
+        // The Moon is the new frontier: on Earth only a few homecoming landmarks
+        // are modernized; every other building keeps its Moonward finish.
+        modernizes: ['square', 'well', 'farm', 'railDepot', 'spaceElevator', 'moonpost'],
+        upgradeTitle: 'Homecoming level {level}: {name}',
+        upgradeDescriptions: [
+          'Add a welcome porch with twin lanterns, one for the valley and one for the Moon.',
+          'Complete the homecoming arch with its Earth and Moon globes and a family bench.',
+        ],
+        cityDescription:
+          'Twin lanterns and homecoming arches welcome families travelling between the valley and the Moon.',
+      },
+      label: 'Twin Hollows',
+      yearLabel: '2300',
+      enabled: true,
+      story:
+        'The ribbon carries us all the way now. On the Moon, New Hollow is our new frontier: settler domes, crater ice and a Willowkin garden under glass. Down in the valley, every family keeps a lantern lit for the ones who went up.',
+      horizon: 'Two towns are about to share one sky.',
+      finale: 'Two towns, one sky. Wherever we go, Prospect Hollow is home.',
+    },
   ].map(defineEra),
 );
 export const ERA_BY_ID = Object.fromEntries(ERAS.map((era) => [era.id, era]));

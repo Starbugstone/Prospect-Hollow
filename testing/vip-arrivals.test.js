@@ -13,6 +13,12 @@ import { addEraActivity, trainJourney, boatJourney } from '../src/game/town/Town
 import { addAviationActivity, airplaneArrival } from '../src/game/town/TownAviation';
 import { renderEventInset } from '../src/game/town/TownEventCamera';
 import { createTown } from '../src/data/town';
+import {
+  ELEVATOR_CLIMBERS,
+  elevatorArrival,
+  elevatorMotion,
+  renderFutureBuilding,
+} from '../src/game/town/buildings/future';
 import { vipVisitor } from '../src/data/villagers';
 import { VISITOR_TRANSPORTS } from '../src/data/visitorArrivals';
 import { eventInsetRect, overlapsEventInset } from '../src/game/town/TownInset';
@@ -73,9 +79,18 @@ function fixture(source) {
   d.camera.position.set(30, 25, 40);
   addEraActivity(d, town);
   addAviationActivity(d, town);
-  const journey = { railDepot: trainJourney, riverPort: boatJourney, airport: airplaneArrival }[
-    source
-  ];
+  if (source === 'spaceElevator') {
+    // The real elevator model and the motion TownPlots attaches to its climbers.
+    const plot = d.group(d.world, PLOTS.spaceElevator[0], 0.08, PLOTS.spaceElevator[1]);
+    renderFutureBuilding(d, plot, 'spaceElevator', 'Space elevator', 1, 'moonward');
+    d.motions.push(elevatorMotion(d, plot.getObjectByName(ELEVATOR_CLIMBERS)));
+  }
+  const journey = {
+    railDepot: trainJourney,
+    riverPort: boatJourney,
+    airport: airplaneArrival,
+    spaceElevator: elevatorArrival,
+  }[source];
   const arrival = Array.from({ length: 1000 }, (_, i) => i / 4).find(
     (t) => journey(t).arrived && journey(t).sinceArrival <= 0.25,
   );

@@ -37,6 +37,18 @@ export const VISITOR_ARRIVAL_SITES = {
     cameraDirection: [0.85, 1.1, 0.85],
     height: 0.35,
   },
+  // Guests from the Moon step off a climber at the west cargo dock.
+  spaceElevator: {
+    destination: 'square',
+    approach: [
+      [-3.6, 4.4],
+      [-3.6, 7.5],
+      [0, 7.5],
+      [0, 11.5],
+    ],
+    cameraDirection: [0.7, 1.3, 0.9],
+    height: 0.35,
+  },
 };
 export const VISITOR_TRANSPORTS = Object.keys(VISITOR_ARRIVAL_SITES);
 export const hasVisitorTransport = (town) =>

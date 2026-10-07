@@ -92,6 +92,14 @@ const ROAD_STYLES = Object.freeze(
         crossing: 'pavers',
         crossingColor: '#c8a052',
       },
+      'twin-lane': {
+        color: '#a8a7a1',
+        edge: '#ebe6da',
+        line: 'dash',
+        paint: '#7fc4c0',
+        crossing: 'pavers',
+        crossingColor: '#d9b866',
+      },
       'glow-lane': {
         color: '#a2aba6',
         edge: '#dcd6c4',
