@@ -59,6 +59,15 @@
         @inspect="inspect"
         @helmet="findHelmet"
       />
+      <TownResourceCollection
+        v-if="helmetBurst"
+        :key="helmetBurst.serial"
+        resource="helmet-coins"
+        :amount="helmetBurst.amount"
+        :origin="helmetBurst.origin"
+        :reduced-motion="settings.reducedMotion"
+        @close="helmetBurst = null"
+      />
     </div>
     <p class="village-hint">{{ t('Tap a building or the mine to see its details.') }}</p>
     <div class="village-guestbook-actions" :class="{ 'village-guestbook-fullscreen': fullscreen }">
@@ -145,12 +154,14 @@ import TownGuestbook from '../town/TownGuestbook.vue';
 import VisitPresence from './VisitPresence.vue';
 import { villageAppearance, villageHonours, villageLevels } from '../../services/publicVillage';
 import { cloud, latestVillage, tapHelmet, tapSaloon } from '../../services/cloudProfile';
-import { spaceHelmetOut } from '../../game/town/TownRules';
+import { normalizeTown, spaceHelmetOut, spaceHelmetReward } from '../../game/town/TownRules';
+import { townStorage } from '../../services/townStorage';
 import { createVillagePoller } from '../../services/villagePolling';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { ERA_BY_ID } from '../../data/eras';
 import { t } from '../../i18n';
 import TownScene from '../town/TownScene.vue';
+import TownResourceCollection from '../town/TownResourceCollection.vue';
 import GameIcon from '../GameIcon.vue';
 import TownDialog from '../town/TownDialog.vue';
 import TownBuildingDetails from '../town/TownBuildingDetails.vue';
@@ -221,6 +232,10 @@ const poller = createVillagePoller({
     if (visual(village) !== visual(current.value)) current.value = village;
     // Another visitor may have collected meanwhile; the saloon's rest only ever moves later.
     readyAt.value = Math.max(readyAt.value, (village.saloonReadyAt ?? 0) * 1000);
+    townHelmetReadyAt.value = Math.max(
+      townHelmetReadyAt.value,
+      (village.helmetReadyAt ?? 0) * 1000,
+    );
   },
   gone: () => (unshared.value = true),
 });
@@ -271,11 +286,21 @@ const saloonMessage = computed(() => {
   return t('Tap the coins over the saloon to collect its takings for the mayor.');
 });
 // Finding the space helmet rewards the visitor's own town (the one they visit as) with half
-// an hour of its saloon takings, once per 12 hours; the server keeps that rest.
+// an hour of its saloon takings, once per 12 hours per player, and each town's helmet is
+// found by one visitor per 12 hours; the server keeps both rests.
 const homeTown = ref(null),
   helmetReadyAt = ref(0),
+  townHelmetReadyAt = ref((props.village.helmetReadyAt ?? 0) * 1000),
   helmetBusy = ref(false),
-  helmetNote = ref(null);
+  helmetNote = ref(null),
+  helmetBurst = ref(null);
+let burstSerial = 0;
+// The coins a find brings the town visited as, counted from its copy in this browser; that
+// town redeems it later from its own takings. Null when this browser holds no copy.
+function helmetCoins(townId) {
+  const saved = cloud.account && townStorage.get(townId, cloud.account.id)?.profile?.town;
+  return saved ? spaceHelmetReward(normalizeTown(saved), 'visitor') : null;
+}
 const hasHelmet = computed(() => spaceHelmetOut(town.value));
 const helmetMessage = computed(() => {
   if (!hasHelmet.value) return '';
@@ -287,6 +312,10 @@ const helmetMessage = computed(() => {
   if (note?.kind === 'error') return t(note.message);
   if (note?.kind === 'own')
     return t('This is your own town: find its astronaut from your game for your reward.');
+  if (townHelmetReadyAt.value > now.value)
+    return t("A visitor found this town's astronaut recently. Come back in {hours} h.", {
+      hours: Math.ceil((townHelmetReadyAt.value - now.value) / 3_600_000),
+    });
   if (note?.kind === 'signed-out')
     return t('You found the astronaut! Sign in with a town of your own to earn its reward.');
   if (helmetReadyAt.value > now.value)
@@ -297,11 +326,16 @@ const helmetMessage = computed(() => {
     'Find the animal in a space helmet: your own town earns half an hour of saloon takings.',
   );
 });
-async function findHelmet() {
+async function findHelmet(origin) {
   now.value = Date.now();
   if (helmetBusy.value) return;
   if (homeTown.value?.own) {
     helmetNote.value = { kind: 'own' };
+    return;
+  }
+  // Another visitor found this town's helmet; a find of this visitor's own stays thanked.
+  if (townHelmetReadyAt.value > now.value) {
+    if (helmetNote.value?.kind !== 'found') helmetNote.value = null;
     return;
   }
   if (!cloud.account || !homeTown.value) {
@@ -313,10 +347,13 @@ async function findHelmet() {
   helmetBusy.value = true;
   try {
     const town = homeTown.value;
-    helmetReadyAt.value = (await tapHelmet(props.village.villageId, town.townId)).readyAt * 1000;
+    const { readyAt } = await tapHelmet(props.village.villageId, town.townId);
+    helmetReadyAt.value = townHelmetReadyAt.value = readyAt * 1000;
     helmetNote.value = { kind: 'found', town: town.name };
+    helmetBurst.value = { amount: helmetCoins(town.townId), origin, serial: ++burstSerial };
   } catch (e) {
-    if (e.data?.readyAt) helmetReadyAt.value = e.data.readyAt * 1000;
+    if (e.data?.code === 'helmet_taken') townHelmetReadyAt.value = e.data.readyAt * 1000;
+    else if (e.data?.readyAt) helmetReadyAt.value = e.data.readyAt * 1000;
     else helmetNote.value = { kind: 'error', message: e.message };
   } finally {
     helmetBusy.value = false;

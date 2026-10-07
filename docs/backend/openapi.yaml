@@ -1168,7 +1168,7 @@
         {
           'get':
             {
-              'summary': 'Read-only public appearance and saloonReadyAt for a share link, no account needed; no arrival side effect; 404 when private or deleted',
+              'summary': 'Read-only public appearance, saloonReadyAt and helmetReadyAt for a share link, no account needed; no arrival side effect; 404 when private or deleted',
               'description': 'Appearance includes mineLevel (the next unlocked puzzle), completedRuns (the completed puzzle count that picks the space-helmet animal) and levelRecords, a map of authored level IDs to {stars: 1–3}. Completed levels and earned stars are visible in the mine and museum. Private scores, times, inventory and rewards are omitted. Older projections are refreshed from the saved profile on visit.',
               'security': [],
               'responses':
@@ -1200,7 +1200,7 @@
         {
           'get':
             {
-              'summary': 'The same public appearance and saloonReadyAt, polled by an open visit to follow the owner progress; never records a guest; 404 once private or deleted',
+              'summary': 'The same public appearance, saloonReadyAt and helmetReadyAt, polled by an open visit to follow the owner progress; never records a guest; 404 once private or deleted',
               'security': [],
               'responses':
                 {
@@ -1231,7 +1231,7 @@
         {
           'post':
             {
-              'summary': "Find a shared town's space-helmet wearer; the signed-in visitor's own town earns the reward, once per 12 hours per player",
+              'summary': "Find a shared town's space-helmet wearer; the signed-in visitor's own town earns the reward, once per 12 hours per player and once per 12 hours per host town",
               'description': "Body {townId}: one of the caller's own towns, which receives half an hour of its own saloon takings. The host must be shared, in Tomorrow City or a later era, and not the caller's town. Stores only the find; the rewarded town's owner poll (GET /towns/{townId}/visitors) hands it over with a signed receipt, and that town's save replay credits it once. Unredeemed finds are kept for 30 days. Signed-in mutation with CSRF.",
               'requestBody':
                 {
@@ -1259,7 +1259,10 @@
                   '401': { 'description': 'Sign in required' },
                   '403': { 'description': 'Origin or CSRF rejected' },
                   '404': { 'description': 'Town unavailable' },
-                  '409': { 'description': 'no_helmet, or helmet_resting with readyAt (seconds)' },
+                  '409':
+                    {
+                      'description': "no_helmet; helmet_taken with readyAt (seconds) when another visitor found this town's helmet within 12 hours; or helmet_resting with readyAt when this player found one within 12 hours",
+                    },
                   '422': { 'description': 'Invalid request, own_town or no_home_town' },
                   '429': { 'description': 'Rate limited' },
                 },
@@ -1483,7 +1486,7 @@
             {
               'type': 'object',
               'required': ['villageId', 'name', 'era', 'appearance'],
-              'description': 'A shared town for visitors. Browse entries use the same shape without saloonReadyAt.',
+              'description': 'A shared town for visitors. Browse entries use the same shape without saloonReadyAt and helmetReadyAt.',
               'properties':
                 {
                   'villageId': { 'type': 'string', 'pattern': '^[a-f0-9]{32}$' },
@@ -1491,6 +1494,11 @@
                   'era': { 'type': 'string' },
                   'saloonReadyAt':
                     { 'type': 'integer', 'description': 'Unix seconds; 0 when ready to collect.' },
+                  'helmetReadyAt':
+                    {
+                      'type': 'integer',
+                      'description': "Unix seconds when a visitor may next find this town's space helmet; 0 or past when findable.",
+                    },
                   'appearance':
                     {
                       'type': 'object',

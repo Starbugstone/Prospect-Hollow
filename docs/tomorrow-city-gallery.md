@@ -135,7 +135,9 @@ town.
 
 Signed-in visitors can find it in shared Tomorrow City towns too. Their reward goes to the
 town they visit as and is worth half an hour of that town's own saloon takings, so visiting richer
-towns pays no more; each player is rewarded at most once per 12 hours. See
+towns pays no more; each player is rewarded at most once per 12 hours, and each town's
+astronaut is found by one visitor per 12 hours however many visit. The coins fly from the
+animal on the visit page too. See
 [the visitor guide](backend/visitors.md#finding-the-astronaut). None of this touches puzzles:
 it adds no move or time limit and never gates progression.
 

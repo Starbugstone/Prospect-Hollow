@@ -132,7 +132,7 @@ final class PublicTown
         $row = $this->database
             ->get()
             ->fetchAssociative(
-                'SELECT t.id,t.player_id,t.appearance,s.collected_at FROM towns t LEFT JOIN saloon_collections s ON s.town_id=t.id WHERE t.public_id=? AND t.listed=1 AND t.deleted_at IS NULL',
+                'SELECT t.id,t.player_id,t.appearance,s.collected_at,(SELECT MAX(h.found_at) FROM helmet_finds h WHERE h.host_town_id=t.id) AS helmet_at FROM towns t LEFT JOIN saloon_collections s ON s.town_id=t.id WHERE t.public_id=? AND t.listed=1 AND t.deleted_at IS NULL',
                 [$id],
             );
         if (!$row) {
@@ -164,6 +164,7 @@ final class PublicTown
             );
         }
         $village->saloonReadyAt = $this->saloonReadyAt($row['collected_at']);
+        $village->helmetReadyAt = self::restedAt($row['helmet_at'], self::HELMET_REST);
         return $this->distinguish(self::published($village), $row['player_id']);
     }
     // A showcased player distinction belongs to the owner, not the saved town: it is checked
@@ -228,8 +229,9 @@ final class PublicTown
             return ['readyAt' => $now + self::SALOON_REST];
         });
     }
-    // A player finds a space helmet in another town at most once per 12 hours. The find is
-    // redeemed in the town they visit as, for half an hour of that town's own saloon takings, so
+    // A player finds a space helmet in another town at most once per 12 hours, and each town's
+    // helmet is found by one visitor per 12 hours however many visit. The find is redeemed in
+    // the town the finder visits as, for half an hour of that town's own saloon takings, so
     // visiting richer towns pays no more. Unredeemed finds are kept for 30 days.
     public const HELMET_REST = 43200;
     public const HELMET_KEEP = 30 * 86400;
@@ -239,11 +241,12 @@ final class PublicTown
         $this->auth->limit('helmet:' . $session['player_id'], 30, 3600);
         $home = SaveService::uuid($b['townId'] ?? null);
         return $this->database->get()->transactional(function ($db) use ($session, $id, $home) {
-            // The player row lock keeps two tabs from both finding within one rest.
+            // The player row lock keeps two tabs from both finding within one rest, and the host
+            // row lock keeps two visitors from both finding one town's helmet.
             $db->fetchOne('SELECT id FROM players WHERE id=? FOR UPDATE', [$session['player_id']]);
             $this->auth->recheck($session);
             $host = $db->fetchAssociative(
-                'SELECT id,player_id,appearance FROM towns WHERE public_id=? AND listed=1 AND deleted_at IS NULL',
+                'SELECT id,player_id,appearance FROM towns WHERE public_id=? AND listed=1 AND deleted_at IS NULL FOR UPDATE',
                 [$id],
             );
             if (!$host) {
@@ -271,13 +274,29 @@ final class PublicTown
                 ]);
             }
             $now = time();
-            $last = $db->fetchOne('SELECT MAX(found_at) FROM helmet_finds WHERE player_id=?', [
-                $session['player_id'],
-            ]);
-            if ($last !== null && $last !== false && (int) $last + self::HELMET_REST > $now) {
+            $taken = self::restedAt(
+                $db->fetchOne('SELECT MAX(found_at) FROM helmet_finds WHERE host_town_id=?', [
+                    $host['id'],
+                ]),
+                self::HELMET_REST,
+            );
+            if ($taken > $now) {
+                throw new ApiError(
+                    409,
+                    'A visitor found this town\'s astronaut recently. Come back later.',
+                    ['code' => 'helmet_taken', 'readyAt' => $taken],
+                );
+            }
+            $resting = self::restedAt(
+                $db->fetchOne('SELECT MAX(found_at) FROM helmet_finds WHERE player_id=?', [
+                    $session['player_id'],
+                ]),
+                self::HELMET_REST,
+            );
+            if ($resting > $now) {
                 throw new ApiError(409, 'You found an astronaut recently. Come back later.', [
                     'code' => 'helmet_resting',
-                    'readyAt' => (int) $last + self::HELMET_REST,
+                    'readyAt' => $resting,
                 ]);
             }
             $db->insert('helmet_finds', [
@@ -291,7 +310,12 @@ final class PublicTown
     }
     public static function saloonReadyAt(mixed $at): int
     {
-        return $at === null || $at === false ? 0 : (int) $at + self::SALOON_REST;
+        return self::restedAt($at, self::SALOON_REST);
+    }
+    // When a rest that began at `at` (seconds, or none) ends; 0 when it never began.
+    private static function restedAt(mixed $at, int $rest): int
+    {
+        return $at === null || $at === false ? 0 : (int) $at + $rest;
     }
 
     // Guest names appear in another player's village: never a link or an email, only

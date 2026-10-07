@@ -532,6 +532,39 @@ try {
         $found['readyAt'] - time() > PublicTown::HELMET_REST - 60,
         'the next helmet reward rests 12 hours',
     );
+    $taken = status(409, $findHelmet($guest, $originId), 'helmet taken');
+    check(
+        $taken['code'] === 'helmet_taken' && $taken['readyAt'] === $found['readyAt'],
+        'a second find in the same town within 12 hours is refused with when it is ready',
+    );
+    $otherHome = status(
+        200,
+        visitorApi('POST', 'towns', townBody('Copper Bend'), $other),
+        'second visitor home',
+    )['townId'];
+    $taken = status(409, $findHelmet($other, $otherHome), 'helmet taken by another visitor');
+    check(
+        $taken['code'] === 'helmet_taken' && $taken['readyAt'] === $found['readyAt'],
+        'each town\'s helmet is found by one visitor per 12 hours',
+    );
+    check(
+        status(200, visitorApi('GET', 'villages/' . $publicId . '/latest'), 'helmet rest')[
+            'helmetReadyAt'
+        ] === $found['readyAt'],
+        'the shared town tells visitors when its helmet can be found again',
+    );
+    // Another town's helmet is free, but this player's own 12-hour rest still applies.
+    $db->get()->update(
+        'helmet_finds',
+        ['host_town_id' => $otherHome],
+        ['player_id' => $guest['id']],
+    );
+    check(
+        status(200, visitorApi('GET', 'villages/' . $publicId . '/latest'), 'helmet free')[
+            'helmetReadyAt'
+        ] === 0,
+        'a town nobody found the helmet in is ready',
+    );
     $resting = status(409, $findHelmet($guest, $originId), 'helmet resting');
     check(
         $resting['code'] === 'helmet_resting' && $resting['readyAt'] === $found['readyAt'],
@@ -554,7 +587,7 @@ try {
     );
     $db->get()->update(
         'helmet_finds',
-        ['found_at' => time() - PublicTown::HELMET_REST],
+        ['found_at' => time() - PublicTown::HELMET_REST, 'host_town_id' => $hostId],
         ['player_id' => $guest['id']],
     );
     status(200, $findHelmet($guest, $originId), 'a find after the rest');

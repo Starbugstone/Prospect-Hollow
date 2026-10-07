@@ -1242,7 +1242,12 @@ function findHelmet(origin) {
     return;
   }
   closeDialog();
-  collection.value = { resource: 'coins', amount: coins, serial: ++collectionSerial, origin };
+  collection.value = {
+    resource: 'helmet-coins',
+    amount: coins,
+    serial: ++collectionSerial,
+    origin,
+  };
 }
 function collectIncome() {
   collectionNow.value = Date.now();

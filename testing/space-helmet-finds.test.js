@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { createSSRApp } from 'vue';
+import { renderToString } from 'vue/server-renderer';
+import TownResourceCollection from '../src/components/town/TownResourceCollection.vue';
 import { useCampaignStore } from '../src/stores/campaignStore';
 import { createTown } from '../src/data/town';
 import { ERAS } from '../src/data/eras';
@@ -105,5 +108,21 @@ describe('the space helmet', () => {
         helmetRun: 0,
         helmetVisitAt: 0,
       });
+  });
+});
+
+describe('the coins a find shows', () => {
+  const burst = (amount) =>
+    renderToString(createSSRApp(TownResourceCollection, { resource: 'helmet-coins', amount }));
+  it('counts a known reward from the astronaut', async () => {
+    const html = await burst(240);
+    expect(html).toContain('+240');
+    expect(html).toContain('Found the astronaut: 240 coins!');
+  });
+  it('still bursts coins when the visitor town counts the reward elsewhere', async () => {
+    const html = await burst(null);
+    expect(html).toContain('collection-particles');
+    expect(html).not.toContain('+');
+    expect(html).toContain('Found the astronaut: coins for your town!');
   });
 });
