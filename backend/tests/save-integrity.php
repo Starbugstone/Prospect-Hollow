@@ -623,6 +623,182 @@ foreach ($fixtures->fixtures as $fixture) {
     }
 }
 
+// The space helmet pays an hour of saloon takings once per completed puzzle. A find while
+// visiting another town needs the server's receipt for exactly this town and time.
+$helmet = null;
+foreach ($fixtures->fixtures as $fixture) {
+    if ($fixture->name === 'space helmet found once for its completed puzzle') {
+        $helmet = $fixture;
+    }
+}
+if ($helmet === null) {
+    throw new RuntimeException('The frontend parity fixtures need a space-helmet find.');
+}
+$clock = $helmet->serverNow;
+$helmetTown = integrityUuid(900);
+$helmetStart = $validator->accept($helmet->before, null, $clock, false, [], $helmetTown);
+$helmetFound = integrityData($helmet->after);
+$helmetAction = $helmetFound['integrity']['actions'][0];
+$hourOfTakings = $helmetFound['town']['coins'] - $helmet->before->town->coins;
+assertIntegrity(
+    $hourOfTakings > 1 &&
+        $validator->accept($helmet->after, $helmetStart, $clock, false, [], $helmetTown)->town
+            ->helmetRun === 12,
+    'the helmet wearer pays an hour of saloon takings for its completed puzzle',
+);
+$twice = $helmetFound;
+$twice['integrity']['actions'][] = array_replace($helmetAction, [
+    'sequence' => 2,
+    'id' => integrityUuid(901),
+]);
+$twice['town']['coins'] += $hourOfTakings;
+integrityDenied(
+    fn() => $validator->accept(
+        integrityObject($twice),
+        $helmetStart,
+        $clock,
+        false,
+        [],
+        $helmetTown,
+    ),
+    'save_integrity_mismatch',
+    'the helmet pays once per completed puzzle',
+);
+$ahead = $helmetFound;
+$ahead['integrity']['actions'][0]['data']['run'] = 13;
+$ahead['town']['helmetRun'] = 13;
+integrityDenied(
+    fn() => $validator->accept(
+        integrityObject($ahead),
+        $helmetStart,
+        $clock,
+        false,
+        [],
+        $helmetTown,
+    ),
+    'save_integrity_mismatch',
+    'the helmet cannot be found for a puzzle not yet completed',
+);
+$debut = array_search('tomorrow', $rules['eraOrder'], true);
+assertIntegrity(
+    $debut > 0 &&
+        $validator->spaceHelmetOut('tomorrow') &&
+        $validator->spaceHelmetOut(end($rules['eraOrder'])) &&
+        !$validator->spaceHelmetOut($rules['eraOrder'][$debut - 1]) &&
+        !$validator->spaceHelmetOut('no-such-era') &&
+        !$validator->spaceHelmetOut(null),
+    'there is a helmet to find from its debut era on',
+);
+// A visitor's find pays half an hour of this town's own takings.
+$halfHour = intdiv($hourOfTakings, 2);
+$visited = function (array $finds) use ($helmet, $helmetAction, $halfHour): object {
+    $profile = integrityData($helmet->before);
+    $profile['integrity']['actions'] = [];
+    foreach ($finds as $n => [$foundAt, $receipt]) {
+        $profile['integrity']['actions'][] = [
+            'sequence' => $n + 1,
+            'id' => integrityUuid(910 + $n),
+            'kind' => 'helmet-visitor',
+            'data' => [
+                'at' => $helmetAction['data']['at'],
+                'foundAt' => $foundAt,
+                'receipt' => $receipt,
+            ],
+        ];
+        $profile['town']['coins'] += $halfHour;
+        $profile['town']['helmetVisitAt'] = $foundAt;
+    }
+    return integrityObject($profile);
+};
+$foundAt = $clock - 3600000;
+$receipt = SaveIntegrity::helmetReceipt($helmetTown, $foundAt);
+$redeemed = $validator->accept(
+    $visited([[$foundAt, $receipt]]),
+    $helmetStart,
+    $clock,
+    false,
+    [],
+    $helmetTown,
+);
+assertIntegrity(
+    $redeemed->town->helmetVisitAt === $foundAt &&
+        $redeemed->town->coins === $helmet->before->town->coins + $halfHour,
+    'a find while visiting redeems half an hour of this town\'s saloon takings',
+);
+$fullHour = integrityData($visited([[$foundAt, $receipt]]));
+$fullHour['town']['coins'] += $hourOfTakings - $halfHour;
+integrityDenied(
+    fn() => $validator->accept(
+        integrityObject($fullHour),
+        $helmetStart,
+        $clock,
+        false,
+        [],
+        $helmetTown,
+    ),
+    'save_integrity_mismatch',
+    'a visitor\'s find cannot pay the owner\'s full hour',
+);
+$later = $clock - 1000;
+assertIntegrity(
+    $validator->accept(
+        $visited([
+            [$foundAt, $receipt],
+            [$later, SaveIntegrity::helmetReceipt($helmetTown, $later)],
+        ]),
+        $helmetStart,
+        $clock,
+        false,
+        [],
+        $helmetTown,
+    )->town->helmetVisitAt === $later,
+    'several finds since the last redemption each pay once, oldest first',
+);
+foreach (
+    [
+        'a forged receipt' => [[$foundAt, str_repeat('0', 64)]],
+        'another town\'s receipt' => [
+            [$foundAt, SaveIntegrity::helmetReceipt(integrityUuid(902), $foundAt)],
+        ],
+        'a receipt for another time' => [[$later, $receipt]],
+        'the same find twice' => [[$foundAt, $receipt], [$foundAt, $receipt]],
+    ]
+    as $label => $finds
+) {
+    integrityDenied(
+        fn() => $validator->accept($visited($finds), $helmetStart, $clock, false, [], $helmetTown),
+        'save_integrity_mismatch',
+        $label . ' pays no helmet reward',
+    );
+}
+$again = integrityData($redeemed);
+$again['integrity']['actions'] = [
+    [
+        'sequence' => $again['integrity']['baseSequence'] + 1,
+        'id' => integrityUuid(920),
+        'kind' => 'helmet-visitor',
+        'data' => ['at' => $clock, 'foundAt' => $foundAt, 'receipt' => $receipt],
+    ],
+];
+$again['town']['coins'] += $halfHour;
+$next = $again;
+$next['integrity']['actions'][0]['data']['foundAt'] = $later;
+$next['integrity']['actions'][0]['data']['receipt'] = SaveIntegrity::helmetReceipt(
+    $helmetTown,
+    $later,
+);
+$next['town']['helmetVisitAt'] = $later;
+assertIntegrity(
+    $validator->accept(integrityObject($next), $redeemed, $clock, false, [], $helmetTown)->town
+        ->helmetVisitAt === $later,
+    'a later find redeems after an earlier one',
+);
+integrityDenied(
+    fn() => $validator->accept(integrityObject($again), $redeemed, $clock, false, [], $helmetTown),
+    'save_integrity_mismatch',
+    'a redeemed find cannot be redeemed again later',
+);
+
 // A signed older checkpoint authenticates the economic branch, while an archived
 // complete target tuple identifies the actual old board's reward thresholds.
 // Changing the latest board must not invalidate a legitimate offline completion.

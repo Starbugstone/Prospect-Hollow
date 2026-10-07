@@ -10,6 +10,7 @@ import { useGameStore } from '../src/stores/gameStore.js';
 import { useInventoryStore } from '../src/stores/inventoryStore.js';
 import { generateLevelConfigs } from '../src/game/engine/LevelGenerator.js';
 import { BUILDINGS, BANDIT_EVENT } from '../src/data/town.js';
+import { SPACE_HELMET } from '../src/data/townAnimals.js';
 import { ERAS } from '../src/data/eras.js';
 import { eraIndex } from '../src/game/town/TownEras.js';
 import { HOUR_MS, projectRuns } from '../src/game/town/TownRules.js';
@@ -265,6 +266,18 @@ export function createIntegrityFixtures() {
       )
         throw new Error('VIP did not spend the ordinary reward.');
     });
+    fixture(
+      'space helmet found once for its completed puzzle',
+      (profile) => {
+        develop(profile, SPACE_HELMET.debut);
+        profile.town.completedRuns = 12;
+        profile.town.helmetRun = 11;
+      },
+      (campaign) => {
+        if (!(campaign.findSpaceHelmet() > 0)) throw new Error('The helmet paid nothing.');
+        if (campaign.findSpaceHelmet() !== null) throw new Error('The helmet paid twice.');
+      },
+    );
     fixture(
       'raid bell refund and ordinary raid acknowledgment',
       (profile) => {

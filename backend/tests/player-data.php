@@ -192,6 +192,12 @@ try {
             $summary['pendingEmail'] === null,
         'the overview counts what is kept ' . json_encode($summary),
     );
+    $db->get()->insert('helmet_finds', [
+        'player_id' => $named['id'],
+        'found_at' => time() - 60,
+        'town_id' => $namedHome['townId'],
+        'host_town_id' => $hostTown['townId'],
+    ]);
     $export = status(200, dataApi('GET', 'account/export', null, $named), 'export');
     check(
         $export['account']['email'] === email($named['id']) &&
@@ -205,7 +211,10 @@ try {
             $export['towns'][0]['earlierSaves'] === [] &&
             count($export['visitsMade']) === 2 &&
             $export['visitsMade'][0]['town'] === 'Lantern Rest' &&
-            $export['visitsMade'][0]['shownAs'] === 'Clementine',
+            $export['visitsMade'][0]['shownAs'] === 'Clementine' &&
+            count($export['astronautFinds']) === 1 &&
+            $export['astronautFinds'][0]['foundIn'] === 'Lantern Rest' &&
+            $export['astronautFinds'][0]['rewardedTown'] === 'Copper Ridge',
         'the export holds the account, activity, towns and visits ' .
             json_encode(array_diff_key($export, ['towns' => 1])),
     );

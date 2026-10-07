@@ -83,6 +83,9 @@ export const SPACE_HELMET = {
   wearers: ['dog', 'cat', 'fox', 'raccoon', 'hedgehog', 'otter', 'deer', 'hen'],
   // Suit colors for wearers whose own coat would hide the white suit.
   suits: { hen: '#e5873a' },
+  // Finding the wearer pays this share of an hour of saloon takings: a full hour in the
+  // owner's own town, half an hour to a visitor's own town.
+  rewardHours: { owner: 1, visitor: 0.5 },
 };
 
 // Each profile adds to the previous cast. Stable species seeds keep existing

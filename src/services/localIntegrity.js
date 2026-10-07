@@ -23,6 +23,8 @@ const NORMAL_ACTIONS = new Set([
   'collectVipSpending',
   'collectSaloonIncome',
   'collectSaloonForVisitor',
+  'findSpaceHelmet',
+  'redeemHelmetVisit',
   'welcomeGuest',
   'markGuestSeen',
   'upgradeBuilding',

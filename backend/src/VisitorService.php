@@ -519,6 +519,18 @@ final class VisitorService
                         'SELECT collected_at FROM saloon_collections WHERE town_id=?',
                         [$town],
                     ) * 1000;
+                // Space helmets the owner found while visiting as this town, oldest first,
+                // each with the receipt its save replay checks. The town redeems newer ones.
+                $result['helmetFinds'] = array_map(
+                    fn($at) => [
+                        'at' => (int) $at * 1000,
+                        'receipt' => SaveIntegrity::helmetReceipt($town, (int) $at * 1000),
+                    ],
+                    $db->fetchFirstColumn(
+                        'SELECT found_at FROM helmet_finds WHERE town_id=? AND found_at>=? ORDER BY found_at',
+                        [$town, $now - PublicTown::HELMET_KEEP],
+                    ),
+                );
             }
             return $result;
         });

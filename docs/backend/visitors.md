@@ -68,6 +68,26 @@ visitors see the same wearer as the owner without any stored choice. When a poll
 new count, the old wearer shrinks away and the new one grows back in its suit; reduced
 motion swaps them at once.
 
+## Finding the astronaut
+
+From Tomorrow City onwards the shared town shows the owner's space-helmet wearer. A signed-in
+visitor who taps it earns a reward for their own town: the town chosen in “Visiting as”
+receives half an hour of its own saloon takings, at most once per 12 hours per player, whichever
+town they find it in. Rewards follow the visitor's town, not the host's, so richer towns pay
+no more. Signed-out visitors, visitors without a town and owners viewing their own shared
+town are told how to earn it instead; owners find their own wearer from their game, once per
+completed puzzle. A find never changes the host's save.
+
+`POST /api/v1/villages/{publicId}/helmet` with `{townId}` stores the find in `helmet_finds`
+(player, time, rewarded town, host town) under the player row lock, so two tabs cannot both
+claim one rest. It returns `readyAt`, or 409 `helmet_resting` with `readyAt`. The rewarded
+town's owner poll (`GET /towns/{townId}/visitors`) lists finds of the last 30 days as
+`helmetFinds: [{at, receipt}]`. The receipt is an HMAC of the town and the find time under the
+application secret, so the game can redeem a find only for the town it was made for. The game
+redeems each find newer than its `helmetVisitAt` once (the `helmet-visitor` journal action,
+checked by the save replay) and shows a notice with the coins. The cleanup job removes finds
+older than 30 days. Migration 20 adds the table. The account data export lists these finds.
+
 ## Presence lifecycle
 
 The visit page sends a heartbeat immediately and every 12 seconds. Both visible town views check visitors every 3 seconds. Normal arrivals/departures therefore

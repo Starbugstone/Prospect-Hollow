@@ -1,11 +1,15 @@
 import { afterEach, expect, it } from 'vitest';
-import { Group, MeshBasicMaterial, Scene, Vector3 } from 'three';
+import { Group, MeshBasicMaterial, PerspectiveCamera, Scene, Vector3 } from 'three';
 import { TownActors } from '../src/game/town/TownActors';
 import { updateTownLocomotion } from '../src/game/town/TownLocomotion';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { addTownAnimals, animalHabitats, animalKey } from '../src/game/town/TownAnimals';
-import { dressSpaceHelmet, spaceHelmetWearer } from '../src/game/town/TownSpaceHelmet';
+import {
+  dressSpaceHelmet,
+  spaceHelmetAt,
+  spaceHelmetWearer,
+} from '../src/game/town/TownSpaceHelmet';
 import { addPowerGrid, addEraStreetscape } from '../src/game/town/TownEvolution';
 import { townNavigation, walkPose, walkPath } from '../src/game/town/TownNavigation';
 import { createAnimalBehavior } from '../src/game/town/TownAnimalBehavior';
@@ -747,6 +751,44 @@ it.each(helmetEras)('keeps the %s space-helmet wearer on screen at all times', (
   expect(missing).toEqual([]);
   expect([...worn].sort()).toEqual(SPACE_HELMET.wearers.filter((s) => cast.has(s)).sort());
   expect(d.animals.some((a) => a.wild && worn.has(a.species))).toBe(true);
+});
+
+// A tap on the wearer finds it; a tap elsewhere is left to people and buildings.
+it('finds the space-helmet wearer where it stands on the map', () => {
+  const d = fixture('tomorrow');
+  Object.assign(d, { rebuildActors() {}, render() {} });
+  d.town.completedRuns = 5;
+  addTownAnimals(d, d.town);
+  const [wearer] = helmeted(d);
+  wearer.root.visible = true;
+  wearer.root.scale.setScalar(1);
+  wearer.root.position.set(2, 0, 3);
+  d.camera = new PerspectiveCamera(40, 2, 0.1, 400);
+  d.camera.position.set(2, 8, 15);
+  d.camera.lookAt(2, 0, 3);
+  d.camera.updateMatrixWorld();
+  // The camera looks at the wearer's feet, in the middle of this canvas.
+  d.canvas = { getBoundingClientRect: () => ({ left: 100, top: 50, width: 800, height: 400 }) };
+  const hit = spaceHelmetAt(d, 500, 245);
+  expect(hit.x).toBeCloseTo(50, 5);
+  expect(hit.y).toBeLessThan(50);
+  expect(spaceHelmetAt(d, 500, 250)).toEqual(hit);
+  expect(spaceHelmetAt(d, 700, 250)).toBeNull();
+  // Nobody else wears the helmet, so no other animal can be found.
+  wearer.root.position.set(40, 0, 3);
+  expect(spaceHelmetAt(d, 500, 250)).toBeNull();
+  wearer.root.position.set(2, 0, 3);
+  // Not while it changes outfits, nor while a wild wearer is away.
+  wearer.dressing = { costume: null, start: null, swapped: false };
+  expect(spaceHelmetAt(d, 500, 250)).toBeNull();
+  wearer.dressing = null;
+  wearer.root.visible = false;
+  expect(spaceHelmetAt(d, 500, 250)).toBeNull();
+  // A town without a helmet has nothing to find.
+  dressSpaceHelmet(d, { ...d.town, era: 'contemporary' });
+  wearer.root.visible = true;
+  expect(helmeted(d)).toEqual([]);
+  expect(spaceHelmetAt(d, 500, 250)).toBeNull();
 });
 
 it('brings a wild wearer out for a visitor and lets it go back to its visits', () => {

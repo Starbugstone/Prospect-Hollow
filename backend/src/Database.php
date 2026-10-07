@@ -22,6 +22,8 @@ final class Database
         18 => '/schema-admin-settings',
         // Signed-in visits recorded as such, private visits and confirmed email changes.
         19 => '/schema-player-data',
+        // Space helmets found while visiting, redeemed by the finder's own town.
+        20 => '/schema-helmet-finds',
     ];
     private ?Connection $connection = null;
     public static function latestVersion(): int

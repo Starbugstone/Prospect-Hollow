@@ -127,6 +127,9 @@ export const latestVillage = (id) =>
 // Any visitor may collect a shared town's saloon for its owner, once per hour per town.
 export const tapSaloon = (id) =>
   request(`villages/${encodeURIComponent(id)}/saloon`, {}, 'POST', true);
+// A signed-in visitor found the space helmet; `townId` is their own town to reward.
+export const tapHelmet = (id, townId) =>
+  request(`villages/${encodeURIComponent(id)}/helmet`, { townId }, 'POST');
 // Once the owner's save holds the latest guest, the server forgets that visitor.
 export const clearGuest = (id, guestAt) => request(`towns/${id}/guest`, { guestAt }, 'DELETE');
 export function refreshAccount() {

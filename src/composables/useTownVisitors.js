@@ -7,7 +7,7 @@ import { visitorChanges } from '../data/liveVisitors';
 
 export function useTownVisitors(
   active,
-  { collectSaloon = () => null, recordSocial = () => false } = {},
+  { collectSaloon = () => null, redeemHelmet = () => null, recordSocial = () => false } = {},
 ) {
   const snapshot = shallowRef(null),
     notices = shallowRef([]),
@@ -34,6 +34,13 @@ export function useTownVisitors(
     const coins = collectSaloon(at);
     if (coins > 0) enqueue([{ kind: 'collection', coins }]);
   }
+  // Space helmets found while visiting as this town: the campaign skips redeemed ones.
+  function applyHelmets(finds) {
+    for (const find of Array.isArray(finds) ? finds : []) {
+      const coins = redeemHelmet(find);
+      if (coins !== null && coins !== undefined) enqueue([{ kind: 'helmet', coins }]);
+    }
+  }
   function scheduleNotice() {
     clearTimeout(noticeTimer);
     if (notices.value.length) noticeTimer = setTimeout(dismissNotice, 6000);
@@ -59,6 +66,7 @@ export function useTownVisitors(
           confirmed = result.present;
           enqueue(changes);
           applyCollection(result.saloonCollectedAt);
+          applyHelmets(result.helmetFinds);
           // Town Honours count different signed-in visitors and villages visited from this
           // town; the campaign keeps the highest of each.
           recordSocial({ visitors: result.uniqueVisitors, travels: result.townsVisited });

@@ -1,5 +1,6 @@
-import { SPACE_HELMET } from '../../data/townAnimals';
-import { eraIndex } from './TownEras';
+import { Vector3 } from 'three';
+import { SPACE_HELMET, TOWN_ANIMALS } from '../../data/townAnimals';
+import { spaceHelmetOut } from './TownRules';
 import { animalModel } from './TownAnimalModels';
 import { smooth01 } from './TownMath';
 
@@ -32,8 +33,7 @@ function shuffled(list, round) {
  * any stored choice.
  */
 export function spaceHelmetWearer(town, cast) {
-  const index = eraIndex(town?.era);
-  if (index < 0 || index < eraIndex(SPACE_HELMET.debut)) return null;
+  if (!spaceHelmetOut(town)) return null;
   const candidates = SPACE_HELMET.wearers.filter((species) => cast.has(species));
   if (candidates.length < 3) return candidates[(runs(town) % 2) % candidates.length] ?? null;
   const count = candidates.length,
@@ -61,6 +61,39 @@ export function helmetStay(animal, dt) {
   animal.helmetStay =
     outfit(animal) === COSTUME ? Math.min(1, stay + step) : Math.max(0, stay - step);
   return smooth01(animal.helmetStay);
+}
+
+const feet = new Vector3(),
+  head = new Vector3();
+/**
+ * Where the helmet wearer is on the canvas, in percent, when a click lands on it; else
+ * null. Animals are small and keep moving, so the hit area reaches past the body. An
+ * animal still changing outfits or hidden on its wild visits cannot be found.
+ */
+export function spaceHelmetAt(d, clientX, clientY) {
+  const animal = d.animals?.find((a) => a.costume === COSTUME && !a.dressing);
+  const root = animal?.root;
+  if (!root?.visible || root.scale.x < 0.5) return null;
+  const rect = d.canvas.getBoundingClientRect();
+  const toScreen = (p) => [
+    rect.left + ((p.x + 1) * rect.width) / 2,
+    rect.top + ((1 - p.y) * rect.height) / 2,
+  ];
+  feet.copy(root.position).project(d.camera);
+  head.copy(root.position);
+  head.y += (TOWN_ANIMALS[animal.species]?.height ?? 1) * root.scale.y;
+  head.project(d.camera);
+  if (feet.z < -1 || feet.z > 1) return null;
+  const [fx, fy] = toScreen(feet),
+    [hx, hy] = toScreen(head);
+  const x = (fx + hx) / 2,
+    y = (fy + hy) / 2,
+    reach = Math.max(28, Math.hypot(hx - fx, hy - fy) / 2 + 14);
+  if (Math.hypot(clientX - x, clientY - y) > reach) return null;
+  return {
+    x: ((x - rect.left) / rect.width) * 100,
+    y: ((y - rect.top) / rect.height) * 100,
+  };
 }
 
 // Rebuilds one animal's model with or without the costume, in place on its walk.

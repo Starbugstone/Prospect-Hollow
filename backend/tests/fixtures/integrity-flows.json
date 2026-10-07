@@ -248,6 +248,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -563,6 +565,8 @@
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -835,6 +839,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -1110,6 +1116,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -1382,6 +1390,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -1696,6 +1706,8 @@
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -1968,6 +1980,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -2282,6 +2296,8 @@
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -2554,6 +2570,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -2829,6 +2847,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -3101,6 +3121,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -3418,6 +3440,8 @@
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -3690,6 +3714,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -3971,6 +3997,8 @@
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -4243,6 +4271,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -4524,6 +4554,8 @@
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -4796,6 +4828,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -5109,6 +5143,8 @@
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -5395,6 +5431,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -5696,6 +5734,8 @@
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -5970,6 +6010,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -6245,6 +6287,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": 1780000000000 },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -6517,6 +6561,8 @@
           "income": { "at": 1779985600000, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -6792,6 +6838,8 @@
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
           "lastCollections": { "saloon": 1780000000000, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -7064,6 +7112,8 @@
           "income": { "at": 1779985600000, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -7345,6 +7395,8 @@
           "income": { "at": 1780000000000, "stored": 453, "remainder": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 1779999999000,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -7371,12 +7423,569 @@
       "serverNow": 1780000000000
     },
     {
-      "name": "raid bell refund and ordinary raid acknowledgment",
+      "name": "space helmet found once for its completed puzzle",
       "before": {
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000066",
+          "clientAt": 1780000000000,
+          "baseSequence": 0,
+          "actions": []
+        },
+        "records": {},
+        "continuousRecords": {},
+        "powers": [
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 0 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 0 },
+          { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
+          { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 0 },
+          { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
+        ],
+        "builderHammers": 0,
+        "chestsWithoutBuilderHammer": 0,
+        "pendingChests": [],
+        "shopStock": [],
+        "shopVisit": 0,
+        "vipReceipts": [],
+        "seenObstacles": [],
+        "seenTips": [],
+        "town": {
+          "personalisation": {
+            "version": 1,
+            "crest": null,
+            "paint": {},
+            "clothing": {},
+            "choices": {},
+            "areas": {},
+            "areaLevels": {},
+            "plaques": {}
+          },
+          "era": "tomorrow",
+          "buildingEras": {
+            "well": "tomorrow",
+            "farm": "tomorrow",
+            "home": "tomorrow",
+            "saloon": "tomorrow",
+            "stable": "tomorrow",
+            "sheriff": "tomorrow",
+            "museum": "tomorrow",
+            "armory": "tomorrow",
+            "bank": "tomorrow",
+            "shop": "tomorrow",
+            "square": "tomorrow",
+            "watermill": "tomorrow",
+            "fisherman": "tomorrow",
+            "blacksmith": "tomorrow",
+            "school": "tomorrow",
+            "doctor": "tomorrow",
+            "bridge": "tomorrow",
+            "riverPort": "tomorrow",
+            "railDepot": "tomorrow",
+            "post": "tomorrow",
+            "warehouse": "tomorrow",
+            "hotel": "tomorrow",
+            "home5": "tomorrow",
+            "market": "tomorrow",
+            "powerHouse": "tomorrow",
+            "fireStation": "tomorrow",
+            "rowHouses": "tomorrow",
+            "mill": "tomorrow",
+            "garage": "tomorrow",
+            "busDepot": "tomorrow",
+            "gardenCourt": "tomorrow",
+            "diner": "tomorrow",
+            "teaHouse": "frontier",
+            "blossomAtelier": "frontier",
+            "orchardCottages": "frontier",
+            "glassworks": "frontier",
+            "springsRetreat": "frontier",
+            "riverlightPavilion": "frontier",
+            "airport": "tomorrow",
+            "radioTower": "tomorrow",
+            "concertHall": "tomorrow",
+            "television": "tomorrow",
+            "skyline": "tomorrow",
+            "cityHall": "tomorrow",
+            "apartments": "tomorrow",
+            "supermarket": "tomorrow",
+            "waterPlant": "tomorrow",
+            "transitHub": "tomorrow",
+            "library": "tomorrow",
+            "crystalLab": "tomorrow",
+            "cityHomes": "tomorrow",
+            "riverPark": "tomorrow",
+            "skyPods": "tomorrow",
+            "biodome": "tomorrow",
+            "maglevStation": "tomorrow",
+            "horseField": "tomorrow",
+            "park": "tomorrow",
+            "home2": "tomorrow",
+            "home3": "tomorrow",
+            "home4": "tomorrow",
+            "well2": "tomorrow",
+            "farm2": "tomorrow",
+            "farm3": "tomorrow"
+          },
+          "buildingEraLevels": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 3,
+            "stable": 3,
+            "sheriff": 3,
+            "museum": 3,
+            "armory": 3,
+            "bank": 3,
+            "shop": 3,
+            "square": 3,
+            "watermill": 3,
+            "fisherman": 3,
+            "blacksmith": 3,
+            "school": 3,
+            "doctor": 3,
+            "bridge": 3,
+            "riverPort": 3,
+            "railDepot": 3,
+            "post": 3,
+            "warehouse": 3,
+            "hotel": 3,
+            "home5": 3,
+            "market": 3,
+            "powerHouse": 3,
+            "fireStation": 3,
+            "rowHouses": 3,
+            "mill": 3,
+            "garage": 3,
+            "busDepot": 3,
+            "gardenCourt": 3,
+            "diner": 3,
+            "teaHouse": 0,
+            "blossomAtelier": 0,
+            "orchardCottages": 0,
+            "glassworks": 0,
+            "springsRetreat": 0,
+            "riverlightPavilion": 0,
+            "airport": 3,
+            "radioTower": 3,
+            "concertHall": 3,
+            "television": 3,
+            "skyline": 3,
+            "cityHall": 3,
+            "apartments": 3,
+            "supermarket": 3,
+            "waterPlant": 3,
+            "transitHub": 3,
+            "library": 3,
+            "crystalLab": 3,
+            "cityHomes": 3,
+            "riverPark": 3,
+            "skyPods": 3,
+            "biodome": 3,
+            "maglevStation": 3,
+            "horseField": 3,
+            "park": 3,
+            "home2": 3,
+            "home3": 3,
+            "home4": 3,
+            "well2": 3,
+            "farm2": 3,
+            "farm3": 3
+          },
+          "firstLightsSeen": false,
+          "forge": { "progress": 0, "charge": 0 },
+          "coins": 100000,
+          "tourSeen": false,
+          "buildings": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 5,
+            "stable": 3,
+            "sheriff": 5,
+            "museum": 3,
+            "armory": 3,
+            "bank": 5,
+            "shop": 3,
+            "square": 5,
+            "watermill": 3,
+            "fisherman": 3,
+            "blacksmith": 5,
+            "school": 3,
+            "doctor": 3,
+            "bridge": 3,
+            "riverPort": 3,
+            "railDepot": 3,
+            "post": 3,
+            "warehouse": 3,
+            "hotel": 3,
+            "home5": 3,
+            "market": 3,
+            "powerHouse": 3,
+            "fireStation": 3,
+            "rowHouses": 3,
+            "mill": 3,
+            "garage": 3,
+            "busDepot": 3,
+            "gardenCourt": 3,
+            "diner": 3,
+            "teaHouse": 0,
+            "blossomAtelier": 0,
+            "orchardCottages": 0,
+            "glassworks": 0,
+            "springsRetreat": 0,
+            "riverlightPavilion": 0,
+            "airport": 3,
+            "radioTower": 3,
+            "concertHall": 3,
+            "television": 3,
+            "skyline": 3,
+            "cityHall": 3,
+            "apartments": 3,
+            "supermarket": 3,
+            "waterPlant": 3,
+            "transitHub": 3,
+            "library": 3,
+            "crystalLab": 3,
+            "cityHomes": 3,
+            "riverPark": 3,
+            "skyPods": 3,
+            "biodome": 3,
+            "maglevStation": 3,
+            "horseField": 3,
+            "park": 3,
+            "home2": 3,
+            "home3": 3,
+            "home4": 3,
+            "well2": 3,
+            "farm2": 3,
+            "farm3": 3
+          },
+          "events": {},
+          "presentations": {},
+          "projects": {},
+          "completedRuns": 12,
+          "nextRaidRun": null,
+          "income": { "at": null, "remainder": 0, "stored": 0 },
+          "lastCollections": { "saloon": null, "blacksmith": null },
+          "saloonVisitAt": 0,
+          "helmetRun": 11,
+          "helmetVisitAt": 0,
+          "guestVip": null,
+          "progressionVersion": 1
+        },
+        "townProjectFocus": "",
+        "issuedRun": 0,
+        "settledRun": 0,
+        "honours": {
+          "version": 2,
+          "earned": {
+            "ages-bronze": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
+            "ages-silver": { "at": 1780000000000, "version": 1, "seen": false, "announced": false }
+          },
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
+          "showcase": [],
+          "backfilled": 0,
+          "seenGeneration": 2
+        }
+      },
+      "after": {
+        "schemaVersion": 2,
+        "integrity": {
+          "version": 1,
+          "epoch": "00000000-0000-4000-8000-000000000066",
+          "clientAt": 1780000000000,
+          "baseSequence": 0,
+          "actions": [
+            {
+              "sequence": 1,
+              "id": "00000000-0000-4000-8000-000000000069",
+              "kind": "helmet-find",
+              "data": { "at": 1780000000000, "run": 12 }
+            }
+          ]
+        },
+        "records": {},
+        "continuousRecords": {},
+        "powers": [
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 0 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 0 },
+          { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
+          { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 0 },
+          { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
+        ],
+        "builderHammers": 0,
+        "chestsWithoutBuilderHammer": 0,
+        "pendingChests": [],
+        "shopStock": [],
+        "shopVisit": 0,
+        "vipReceipts": [],
+        "seenObstacles": [],
+        "seenTips": [],
+        "town": {
+          "personalisation": {
+            "version": 1,
+            "crest": null,
+            "paint": {},
+            "clothing": {},
+            "choices": {},
+            "areas": {},
+            "areaLevels": {},
+            "plaques": {}
+          },
+          "era": "tomorrow",
+          "buildingEras": {
+            "well": "tomorrow",
+            "farm": "tomorrow",
+            "home": "tomorrow",
+            "saloon": "tomorrow",
+            "stable": "tomorrow",
+            "sheriff": "tomorrow",
+            "museum": "tomorrow",
+            "armory": "tomorrow",
+            "bank": "tomorrow",
+            "shop": "tomorrow",
+            "square": "tomorrow",
+            "watermill": "tomorrow",
+            "fisherman": "tomorrow",
+            "blacksmith": "tomorrow",
+            "school": "tomorrow",
+            "doctor": "tomorrow",
+            "bridge": "tomorrow",
+            "riverPort": "tomorrow",
+            "railDepot": "tomorrow",
+            "post": "tomorrow",
+            "warehouse": "tomorrow",
+            "hotel": "tomorrow",
+            "home5": "tomorrow",
+            "market": "tomorrow",
+            "powerHouse": "tomorrow",
+            "fireStation": "tomorrow",
+            "rowHouses": "tomorrow",
+            "mill": "tomorrow",
+            "garage": "tomorrow",
+            "busDepot": "tomorrow",
+            "gardenCourt": "tomorrow",
+            "diner": "tomorrow",
+            "teaHouse": "frontier",
+            "blossomAtelier": "frontier",
+            "orchardCottages": "frontier",
+            "glassworks": "frontier",
+            "springsRetreat": "frontier",
+            "riverlightPavilion": "frontier",
+            "airport": "tomorrow",
+            "radioTower": "tomorrow",
+            "concertHall": "tomorrow",
+            "television": "tomorrow",
+            "skyline": "tomorrow",
+            "cityHall": "tomorrow",
+            "apartments": "tomorrow",
+            "supermarket": "tomorrow",
+            "waterPlant": "tomorrow",
+            "transitHub": "tomorrow",
+            "library": "tomorrow",
+            "crystalLab": "tomorrow",
+            "cityHomes": "tomorrow",
+            "riverPark": "tomorrow",
+            "skyPods": "tomorrow",
+            "biodome": "tomorrow",
+            "maglevStation": "tomorrow",
+            "horseField": "tomorrow",
+            "park": "tomorrow",
+            "home2": "tomorrow",
+            "home3": "tomorrow",
+            "home4": "tomorrow",
+            "well2": "tomorrow",
+            "farm2": "tomorrow",
+            "farm3": "tomorrow"
+          },
+          "buildingEraLevels": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 3,
+            "stable": 3,
+            "sheriff": 3,
+            "museum": 3,
+            "armory": 3,
+            "bank": 3,
+            "shop": 3,
+            "square": 3,
+            "watermill": 3,
+            "fisherman": 3,
+            "blacksmith": 3,
+            "school": 3,
+            "doctor": 3,
+            "bridge": 3,
+            "riverPort": 3,
+            "railDepot": 3,
+            "post": 3,
+            "warehouse": 3,
+            "hotel": 3,
+            "home5": 3,
+            "market": 3,
+            "powerHouse": 3,
+            "fireStation": 3,
+            "rowHouses": 3,
+            "mill": 3,
+            "garage": 3,
+            "busDepot": 3,
+            "gardenCourt": 3,
+            "diner": 3,
+            "teaHouse": 0,
+            "blossomAtelier": 0,
+            "orchardCottages": 0,
+            "glassworks": 0,
+            "springsRetreat": 0,
+            "riverlightPavilion": 0,
+            "airport": 3,
+            "radioTower": 3,
+            "concertHall": 3,
+            "television": 3,
+            "skyline": 3,
+            "cityHall": 3,
+            "apartments": 3,
+            "supermarket": 3,
+            "waterPlant": 3,
+            "transitHub": 3,
+            "library": 3,
+            "crystalLab": 3,
+            "cityHomes": 3,
+            "riverPark": 3,
+            "skyPods": 3,
+            "biodome": 3,
+            "maglevStation": 3,
+            "horseField": 3,
+            "park": 3,
+            "home2": 3,
+            "home3": 3,
+            "home4": 3,
+            "well2": 3,
+            "farm2": 3,
+            "farm3": 3
+          },
+          "firstLightsSeen": false,
+          "forge": { "progress": 0, "charge": 0 },
+          "coins": 107058,
+          "tourSeen": false,
+          "buildings": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 5,
+            "stable": 3,
+            "sheriff": 5,
+            "museum": 3,
+            "armory": 3,
+            "bank": 5,
+            "shop": 3,
+            "square": 5,
+            "watermill": 3,
+            "fisherman": 3,
+            "blacksmith": 5,
+            "school": 3,
+            "doctor": 3,
+            "bridge": 3,
+            "riverPort": 3,
+            "railDepot": 3,
+            "post": 3,
+            "warehouse": 3,
+            "hotel": 3,
+            "home5": 3,
+            "market": 3,
+            "powerHouse": 3,
+            "fireStation": 3,
+            "rowHouses": 3,
+            "mill": 3,
+            "garage": 3,
+            "busDepot": 3,
+            "gardenCourt": 3,
+            "diner": 3,
+            "teaHouse": 0,
+            "blossomAtelier": 0,
+            "orchardCottages": 0,
+            "glassworks": 0,
+            "springsRetreat": 0,
+            "riverlightPavilion": 0,
+            "airport": 3,
+            "radioTower": 3,
+            "concertHall": 3,
+            "television": 3,
+            "skyline": 3,
+            "cityHall": 3,
+            "apartments": 3,
+            "supermarket": 3,
+            "waterPlant": 3,
+            "transitHub": 3,
+            "library": 3,
+            "crystalLab": 3,
+            "cityHomes": 3,
+            "riverPark": 3,
+            "skyPods": 3,
+            "biodome": 3,
+            "maglevStation": 3,
+            "horseField": 3,
+            "park": 3,
+            "home2": 3,
+            "home3": 3,
+            "home4": 3,
+            "well2": 3,
+            "farm2": 3,
+            "farm3": 3
+          },
+          "events": {},
+          "presentations": {},
+          "projects": {},
+          "completedRuns": 12,
+          "nextRaidRun": null,
+          "income": { "at": null, "remainder": 0, "stored": 0 },
+          "lastCollections": { "saloon": null, "blacksmith": null },
+          "saloonVisitAt": 0,
+          "helmetRun": 12,
+          "helmetVisitAt": 0,
+          "guestVip": null,
+          "progressionVersion": 1
+        },
+        "townProjectFocus": "",
+        "issuedRun": 0,
+        "settledRun": 0,
+        "honours": {
+          "version": 2,
+          "earned": {
+            "ages-bronze": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
+            "ages-silver": { "at": 1780000000000, "version": 1, "seen": false, "announced": false }
+          },
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
+          "showcase": [],
+          "backfilled": 0,
+          "seenGeneration": 2
+        }
+      },
+      "serverNow": 1780000000000
+    },
+    {
+      "name": "raid bell refund and ordinary raid acknowledgment",
+      "before": {
+        "schemaVersion": 2,
+        "integrity": {
+          "version": 1,
+          "epoch": "00000000-0000-4000-8000-000000000070",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -7629,6 +8238,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -7656,19 +8267,19 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000066",
+          "epoch": "00000000-0000-4000-8000-000000000070",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000069",
+              "id": "00000000-0000-4000-8000-000000000073",
               "kind": "raid-bell",
               "data": { "raidId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000070",
+              "id": "00000000-0000-4000-8000-000000000074",
               "kind": "raid-seen",
               "data": { "raidId": 1, "at": 1780000000000 }
             }
@@ -7924,6 +8535,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -7955,7 +8568,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000071",
+          "epoch": "00000000-0000-4000-8000-000000000075",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -8208,6 +8821,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -8235,25 +8850,25 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000071",
+          "epoch": "00000000-0000-4000-8000-000000000075",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000074",
+              "id": "00000000-0000-4000-8000-000000000078",
               "kind": "raid-seen",
               "data": { "raidId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000075",
+              "id": "00000000-0000-4000-8000-000000000079",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000076",
+              "id": "00000000-0000-4000-8000-000000000080",
               "kind": "raid-encounter",
               "data": { "event": null, "nextRaidRun": 13, "at": 1780000000000 }
             }
@@ -8508,6 +9123,8 @@
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -8539,7 +9156,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000077",
+          "epoch": "00000000-0000-4000-8000-000000000081",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -8780,6 +9397,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -8807,19 +9426,19 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000077",
+          "epoch": "00000000-0000-4000-8000-000000000081",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000080",
+              "id": "00000000-0000-4000-8000-000000000084",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "continuous", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000081",
+              "id": "00000000-0000-4000-8000-000000000085",
               "kind": "continuous",
               "data": {
                 "runId": 1,
@@ -9067,6 +9686,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -9098,7 +9719,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000082",
+          "epoch": "00000000-0000-4000-8000-000000000086",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -9339,6 +9960,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -9366,13 +9989,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000082",
+          "epoch": "00000000-0000-4000-8000-000000000086",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000085",
+              "id": "00000000-0000-4000-8000-000000000089",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "continuous", "levelId": 1, "at": 1780000000000 }
             }
@@ -9614,6 +10237,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -9645,7 +10270,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000086",
+          "epoch": "00000000-0000-4000-8000-000000000090",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -9886,6 +10511,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -9913,13 +10540,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000086",
+          "epoch": "00000000-0000-4000-8000-000000000090",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000089",
+              "id": "00000000-0000-4000-8000-000000000093",
               "kind": "era-advance",
               "data": { "expectedEra": "frontier", "at": 1780000000000 }
             }
@@ -10161,6 +10788,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1,
           "transition": {
@@ -10200,7 +10829,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000090",
+          "epoch": "00000000-0000-4000-8000-000000000094",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -10441,6 +11070,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -10471,19 +11102,19 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000090",
+          "epoch": "00000000-0000-4000-8000-000000000094",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000093",
+              "id": "00000000-0000-4000-8000-000000000097",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000094",
+              "id": "00000000-0000-4000-8000-000000000098",
               "kind": "building-buy",
               "data": {
                 "buildingId": "teaHouse",
@@ -10743,6 +11374,8 @@
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -10777,7 +11410,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000095",
+          "epoch": "00000000-0000-4000-8000-000000000099",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -11018,6 +11651,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -11045,13 +11680,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000095",
+          "epoch": "00000000-0000-4000-8000-000000000099",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000098",
+              "id": "00000000-0000-4000-8000-000000000102",
               "kind": "power-spend",
               "data": { "itemId": "tnt", "at": 1780000000000 }
             }
@@ -11293,6 +11928,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -11324,7 +11961,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000099",
+          "epoch": "00000000-0000-4000-8000-000000000103",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -11577,6 +12214,8 @@
           "income": { "at": 1780000000000, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -11604,13 +12243,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000099",
+          "epoch": "00000000-0000-4000-8000-000000000103",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000102",
+              "id": "00000000-0000-4000-8000-000000000106",
               "kind": "building-finish",
               "data": {
                 "buildingId": "sheriff",
@@ -11882,6 +12521,8 @@
           "income": { "at": 1780000000000, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -11913,7 +12554,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000103",
+          "epoch": "00000000-0000-4000-8000-000000000107",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -12154,6 +12795,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -12181,19 +12824,19 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000103",
+          "epoch": "00000000-0000-4000-8000-000000000107",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000106",
+              "id": "00000000-0000-4000-8000-000000000110",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "continuous", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000107",
+              "id": "00000000-0000-4000-8000-000000000111",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 2, "at": 1780000000000 }
             }
@@ -12435,6 +13078,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -12466,7 +13111,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000108",
+          "epoch": "00000000-0000-4000-8000-000000000112",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -12707,6 +13352,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -12734,19 +13381,19 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000108",
+          "epoch": "00000000-0000-4000-8000-000000000112",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000111",
+              "id": "00000000-0000-4000-8000-000000000115",
               "kind": "income-start",
               "data": { "at": 1779992800000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000112",
+              "id": "00000000-0000-4000-8000-000000000116",
               "kind": "saloon-collect",
               "data": { "at": 1780000000000 }
             }
@@ -12988,6 +13635,8 @@
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
           "lastCollections": { "saloon": 1780000000000, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -13019,7 +13668,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000113",
+          "epoch": "00000000-0000-4000-8000-000000000117",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -13260,6 +13909,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1,
           "transition": {
@@ -13295,13 +13946,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000113",
+          "epoch": "00000000-0000-4000-8000-000000000117",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000116",
+              "id": "00000000-0000-4000-8000-000000000120",
               "kind": "era-advance",
               "data": { "expectedEra": "river-rail", "at": 1780000000000 }
             }
@@ -13543,6 +14194,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1,
           "transition": {
@@ -13582,7 +14235,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000117",
+          "epoch": "00000000-0000-4000-8000-000000000121",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -13890,6 +14543,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -13917,37 +14572,37 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000117",
+          "epoch": "00000000-0000-4000-8000-000000000121",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000120",
+              "id": "00000000-0000-4000-8000-000000000124",
               "kind": "raid-seen",
               "data": { "raidId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000121",
+              "id": "00000000-0000-4000-8000-000000000125",
               "kind": "forge-collect",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000122",
+              "id": "00000000-0000-4000-8000-000000000126",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 55, "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000123",
+              "id": "00000000-0000-4000-8000-000000000127",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000124",
+              "id": "00000000-0000-4000-8000-000000000128",
               "kind": "victory",
               "data": {
                 "runId": 1,
@@ -13979,13 +14634,13 @@
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000125",
+              "id": "00000000-0000-4000-8000-000000000129",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 56, "at": 1780000000000 }
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000126",
+              "id": "00000000-0000-4000-8000-000000000130",
               "kind": "victory",
               "data": {
                 "runId": 2,
@@ -14332,6 +14987,8 @@
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
           "lastCollections": { "saloon": null, "blacksmith": 1780000000000 },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -14370,7 +15027,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000127",
+          "epoch": "00000000-0000-4000-8000-000000000131",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -14611,6 +15268,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -14642,13 +15301,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000127",
+          "epoch": "00000000-0000-4000-8000-000000000131",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000130",
+              "id": "00000000-0000-4000-8000-000000000134",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -14666,7 +15325,7 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000131",
+              "id": "00000000-0000-4000-8000-000000000135",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -14684,7 +15343,7 @@
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000132",
+              "id": "00000000-0000-4000-8000-000000000136",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -14702,7 +15361,7 @@
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000133",
+              "id": "00000000-0000-4000-8000-000000000137",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -14720,7 +15379,7 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000134",
+              "id": "00000000-0000-4000-8000-000000000138",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -14738,7 +15397,7 @@
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000135",
+              "id": "00000000-0000-4000-8000-000000000139",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -14756,7 +15415,7 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000136",
+              "id": "00000000-0000-4000-8000-000000000140",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -14774,7 +15433,7 @@
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000137",
+              "id": "00000000-0000-4000-8000-000000000141",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -14792,7 +15451,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000138",
+              "id": "00000000-0000-4000-8000-000000000142",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -14810,7 +15469,7 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000139",
+              "id": "00000000-0000-4000-8000-000000000143",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -14828,7 +15487,7 @@
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000140",
+              "id": "00000000-0000-4000-8000-000000000144",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -14846,7 +15505,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000141",
+              "id": "00000000-0000-4000-8000-000000000145",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -14864,7 +15523,7 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000142",
+              "id": "00000000-0000-4000-8000-000000000146",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -14882,7 +15541,7 @@
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000143",
+              "id": "00000000-0000-4000-8000-000000000147",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -14900,7 +15559,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000144",
+              "id": "00000000-0000-4000-8000-000000000148",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -14918,7 +15577,7 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000145",
+              "id": "00000000-0000-4000-8000-000000000149",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -14936,7 +15595,7 @@
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000146",
+              "id": "00000000-0000-4000-8000-000000000150",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -14954,7 +15613,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000147",
+              "id": "00000000-0000-4000-8000-000000000151",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -14972,7 +15631,7 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000148",
+              "id": "00000000-0000-4000-8000-000000000152",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -14990,7 +15649,7 @@
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000149",
+              "id": "00000000-0000-4000-8000-000000000153",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -15008,7 +15667,7 @@
             },
             {
               "sequence": 21,
-              "id": "00000000-0000-4000-8000-000000000150",
+              "id": "00000000-0000-4000-8000-000000000154",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -15026,7 +15685,7 @@
             },
             {
               "sequence": 22,
-              "id": "00000000-0000-4000-8000-000000000151",
+              "id": "00000000-0000-4000-8000-000000000155",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -15044,7 +15703,7 @@
             },
             {
               "sequence": 23,
-              "id": "00000000-0000-4000-8000-000000000152",
+              "id": "00000000-0000-4000-8000-000000000156",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -15062,7 +15721,7 @@
             },
             {
               "sequence": 24,
-              "id": "00000000-0000-4000-8000-000000000153",
+              "id": "00000000-0000-4000-8000-000000000157",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -15080,7 +15739,7 @@
             },
             {
               "sequence": 25,
-              "id": "00000000-0000-4000-8000-000000000154",
+              "id": "00000000-0000-4000-8000-000000000158",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -15098,7 +15757,7 @@
             },
             {
               "sequence": 26,
-              "id": "00000000-0000-4000-8000-000000000155",
+              "id": "00000000-0000-4000-8000-000000000159",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -15116,7 +15775,7 @@
             },
             {
               "sequence": 27,
-              "id": "00000000-0000-4000-8000-000000000156",
+              "id": "00000000-0000-4000-8000-000000000160",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -15134,7 +15793,7 @@
             },
             {
               "sequence": 28,
-              "id": "00000000-0000-4000-8000-000000000157",
+              "id": "00000000-0000-4000-8000-000000000161",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -15152,7 +15811,7 @@
             },
             {
               "sequence": 29,
-              "id": "00000000-0000-4000-8000-000000000158",
+              "id": "00000000-0000-4000-8000-000000000162",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -15170,7 +15829,7 @@
             },
             {
               "sequence": 30,
-              "id": "00000000-0000-4000-8000-000000000159",
+              "id": "00000000-0000-4000-8000-000000000163",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -15188,7 +15847,7 @@
             },
             {
               "sequence": 31,
-              "id": "00000000-0000-4000-8000-000000000160",
+              "id": "00000000-0000-4000-8000-000000000164",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -15206,7 +15865,7 @@
             },
             {
               "sequence": 32,
-              "id": "00000000-0000-4000-8000-000000000161",
+              "id": "00000000-0000-4000-8000-000000000165",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -15224,7 +15883,7 @@
             },
             {
               "sequence": 33,
-              "id": "00000000-0000-4000-8000-000000000162",
+              "id": "00000000-0000-4000-8000-000000000166",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -15478,6 +16137,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -15513,7 +16174,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000163",
+          "epoch": "00000000-0000-4000-8000-000000000167",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -15754,6 +16415,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -15785,13 +16448,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000163",
+          "epoch": "00000000-0000-4000-8000-000000000167",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000166",
+              "id": "00000000-0000-4000-8000-000000000170",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -15809,7 +16472,7 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000167",
+              "id": "00000000-0000-4000-8000-000000000171",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -15827,7 +16490,7 @@
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000168",
+              "id": "00000000-0000-4000-8000-000000000172",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -15845,7 +16508,7 @@
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000169",
+              "id": "00000000-0000-4000-8000-000000000173",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -15863,7 +16526,7 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000170",
+              "id": "00000000-0000-4000-8000-000000000174",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -15881,7 +16544,7 @@
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000171",
+              "id": "00000000-0000-4000-8000-000000000175",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -15899,7 +16562,7 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000172",
+              "id": "00000000-0000-4000-8000-000000000176",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -15917,7 +16580,7 @@
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000173",
+              "id": "00000000-0000-4000-8000-000000000177",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -15935,7 +16598,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000174",
+              "id": "00000000-0000-4000-8000-000000000178",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -15953,7 +16616,7 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000175",
+              "id": "00000000-0000-4000-8000-000000000179",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -15971,7 +16634,7 @@
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000176",
+              "id": "00000000-0000-4000-8000-000000000180",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -15989,7 +16652,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000177",
+              "id": "00000000-0000-4000-8000-000000000181",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -16007,7 +16670,7 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000178",
+              "id": "00000000-0000-4000-8000-000000000182",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -16025,7 +16688,7 @@
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000179",
+              "id": "00000000-0000-4000-8000-000000000183",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -16043,7 +16706,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000180",
+              "id": "00000000-0000-4000-8000-000000000184",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -16061,7 +16724,7 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000181",
+              "id": "00000000-0000-4000-8000-000000000185",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -16079,7 +16742,7 @@
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000182",
+              "id": "00000000-0000-4000-8000-000000000186",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -16097,7 +16760,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000183",
+              "id": "00000000-0000-4000-8000-000000000187",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -16115,7 +16778,7 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000184",
+              "id": "00000000-0000-4000-8000-000000000188",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -16133,7 +16796,7 @@
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000185",
+              "id": "00000000-0000-4000-8000-000000000189",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -16151,7 +16814,7 @@
             },
             {
               "sequence": 21,
-              "id": "00000000-0000-4000-8000-000000000186",
+              "id": "00000000-0000-4000-8000-000000000190",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -16169,7 +16832,7 @@
             },
             {
               "sequence": 22,
-              "id": "00000000-0000-4000-8000-000000000187",
+              "id": "00000000-0000-4000-8000-000000000191",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -16187,7 +16850,7 @@
             },
             {
               "sequence": 23,
-              "id": "00000000-0000-4000-8000-000000000188",
+              "id": "00000000-0000-4000-8000-000000000192",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -16205,7 +16868,7 @@
             },
             {
               "sequence": 24,
-              "id": "00000000-0000-4000-8000-000000000189",
+              "id": "00000000-0000-4000-8000-000000000193",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -16223,7 +16886,7 @@
             },
             {
               "sequence": 25,
-              "id": "00000000-0000-4000-8000-000000000190",
+              "id": "00000000-0000-4000-8000-000000000194",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -16241,7 +16904,7 @@
             },
             {
               "sequence": 26,
-              "id": "00000000-0000-4000-8000-000000000191",
+              "id": "00000000-0000-4000-8000-000000000195",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -16259,7 +16922,7 @@
             },
             {
               "sequence": 27,
-              "id": "00000000-0000-4000-8000-000000000192",
+              "id": "00000000-0000-4000-8000-000000000196",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -16277,7 +16940,7 @@
             },
             {
               "sequence": 28,
-              "id": "00000000-0000-4000-8000-000000000193",
+              "id": "00000000-0000-4000-8000-000000000197",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -16295,7 +16958,7 @@
             },
             {
               "sequence": 29,
-              "id": "00000000-0000-4000-8000-000000000194",
+              "id": "00000000-0000-4000-8000-000000000198",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -16313,7 +16976,7 @@
             },
             {
               "sequence": 30,
-              "id": "00000000-0000-4000-8000-000000000195",
+              "id": "00000000-0000-4000-8000-000000000199",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -16567,6 +17230,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -16602,7 +17267,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000196",
+          "epoch": "00000000-0000-4000-8000-000000000200",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -16843,6 +17508,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -16874,13 +17541,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000196",
+          "epoch": "00000000-0000-4000-8000-000000000200",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000199",
+              "id": "00000000-0000-4000-8000-000000000203",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -16898,7 +17565,7 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000200",
+              "id": "00000000-0000-4000-8000-000000000204",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -16916,7 +17583,7 @@
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000201",
+              "id": "00000000-0000-4000-8000-000000000205",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -16934,7 +17601,7 @@
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000202",
+              "id": "00000000-0000-4000-8000-000000000206",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -16952,7 +17619,7 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000203",
+              "id": "00000000-0000-4000-8000-000000000207",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -17206,6 +17873,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -17247,7 +17916,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000204",
+          "epoch": "00000000-0000-4000-8000-000000000208",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -17488,6 +18157,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -17519,13 +18190,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000204",
+          "epoch": "00000000-0000-4000-8000-000000000208",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000207",
+              "id": "00000000-0000-4000-8000-000000000211",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -17543,7 +18214,7 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000208",
+              "id": "00000000-0000-4000-8000-000000000212",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -17561,7 +18232,7 @@
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000209",
+              "id": "00000000-0000-4000-8000-000000000213",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -17579,7 +18250,7 @@
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000210",
+              "id": "00000000-0000-4000-8000-000000000214",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -17597,7 +18268,7 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000211",
+              "id": "00000000-0000-4000-8000-000000000215",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -17615,7 +18286,7 @@
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000212",
+              "id": "00000000-0000-4000-8000-000000000216",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -17633,7 +18304,7 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000213",
+              "id": "00000000-0000-4000-8000-000000000217",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -17651,7 +18322,7 @@
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000214",
+              "id": "00000000-0000-4000-8000-000000000218",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -17669,7 +18340,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000215",
+              "id": "00000000-0000-4000-8000-000000000219",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -17687,7 +18358,7 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000216",
+              "id": "00000000-0000-4000-8000-000000000220",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -17705,7 +18376,7 @@
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000217",
+              "id": "00000000-0000-4000-8000-000000000221",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -17723,7 +18394,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000218",
+              "id": "00000000-0000-4000-8000-000000000222",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -17741,7 +18412,7 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000219",
+              "id": "00000000-0000-4000-8000-000000000223",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -17759,7 +18430,7 @@
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000220",
+              "id": "00000000-0000-4000-8000-000000000224",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -17777,7 +18448,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000221",
+              "id": "00000000-0000-4000-8000-000000000225",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -17795,7 +18466,7 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000222",
+              "id": "00000000-0000-4000-8000-000000000226",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -17813,7 +18484,7 @@
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000223",
+              "id": "00000000-0000-4000-8000-000000000227",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -17831,7 +18502,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000224",
+              "id": "00000000-0000-4000-8000-000000000228",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -17849,7 +18520,7 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000225",
+              "id": "00000000-0000-4000-8000-000000000229",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -17867,7 +18538,7 @@
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000226",
+              "id": "00000000-0000-4000-8000-000000000230",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -17885,7 +18556,7 @@
             },
             {
               "sequence": 21,
-              "id": "00000000-0000-4000-8000-000000000227",
+              "id": "00000000-0000-4000-8000-000000000231",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -17903,7 +18574,7 @@
             },
             {
               "sequence": 22,
-              "id": "00000000-0000-4000-8000-000000000228",
+              "id": "00000000-0000-4000-8000-000000000232",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -17921,7 +18592,7 @@
             },
             {
               "sequence": 23,
-              "id": "00000000-0000-4000-8000-000000000229",
+              "id": "00000000-0000-4000-8000-000000000233",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -17939,7 +18610,7 @@
             },
             {
               "sequence": 24,
-              "id": "00000000-0000-4000-8000-000000000230",
+              "id": "00000000-0000-4000-8000-000000000234",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18193,6 +18864,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -18228,7 +18901,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000231",
+          "epoch": "00000000-0000-4000-8000-000000000235",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -18469,6 +19142,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -18500,13 +19175,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000231",
+          "epoch": "00000000-0000-4000-8000-000000000235",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000234",
+              "id": "00000000-0000-4000-8000-000000000238",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18524,7 +19199,7 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000235",
+              "id": "00000000-0000-4000-8000-000000000239",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18542,7 +19217,7 @@
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000236",
+              "id": "00000000-0000-4000-8000-000000000240",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18560,7 +19235,7 @@
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000237",
+              "id": "00000000-0000-4000-8000-000000000241",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18578,7 +19253,7 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000238",
+              "id": "00000000-0000-4000-8000-000000000242",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18596,7 +19271,7 @@
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000239",
+              "id": "00000000-0000-4000-8000-000000000243",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18614,7 +19289,7 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000240",
+              "id": "00000000-0000-4000-8000-000000000244",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18632,7 +19307,7 @@
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000241",
+              "id": "00000000-0000-4000-8000-000000000245",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18650,7 +19325,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000242",
+              "id": "00000000-0000-4000-8000-000000000246",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18668,7 +19343,7 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000243",
+              "id": "00000000-0000-4000-8000-000000000247",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18686,7 +19361,7 @@
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000244",
+              "id": "00000000-0000-4000-8000-000000000248",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18704,7 +19379,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000245",
+              "id": "00000000-0000-4000-8000-000000000249",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18722,7 +19397,7 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000246",
+              "id": "00000000-0000-4000-8000-000000000250",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18740,7 +19415,7 @@
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000247",
+              "id": "00000000-0000-4000-8000-000000000251",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18758,7 +19433,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000248",
+              "id": "00000000-0000-4000-8000-000000000252",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18776,7 +19451,7 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000249",
+              "id": "00000000-0000-4000-8000-000000000253",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18794,7 +19469,7 @@
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000250",
+              "id": "00000000-0000-4000-8000-000000000254",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18812,7 +19487,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000251",
+              "id": "00000000-0000-4000-8000-000000000255",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18830,7 +19505,7 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000252",
+              "id": "00000000-0000-4000-8000-000000000256",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18848,7 +19523,7 @@
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000253",
+              "id": "00000000-0000-4000-8000-000000000257",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18866,7 +19541,7 @@
             },
             {
               "sequence": 21,
-              "id": "00000000-0000-4000-8000-000000000254",
+              "id": "00000000-0000-4000-8000-000000000258",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19120,6 +19795,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -19155,7 +19832,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000255",
+          "epoch": "00000000-0000-4000-8000-000000000259",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -19396,6 +20073,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -19427,13 +20106,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000255",
+          "epoch": "00000000-0000-4000-8000-000000000259",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000258",
+              "id": "00000000-0000-4000-8000-000000000262",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19451,7 +20130,7 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000259",
+              "id": "00000000-0000-4000-8000-000000000263",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19469,7 +20148,7 @@
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000260",
+              "id": "00000000-0000-4000-8000-000000000264",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19487,7 +20166,7 @@
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000261",
+              "id": "00000000-0000-4000-8000-000000000265",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19505,7 +20184,7 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000262",
+              "id": "00000000-0000-4000-8000-000000000266",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19523,7 +20202,7 @@
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000263",
+              "id": "00000000-0000-4000-8000-000000000267",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19541,7 +20220,7 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000264",
+              "id": "00000000-0000-4000-8000-000000000268",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19559,7 +20238,7 @@
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000265",
+              "id": "00000000-0000-4000-8000-000000000269",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19577,7 +20256,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000266",
+              "id": "00000000-0000-4000-8000-000000000270",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19595,7 +20274,7 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000267",
+              "id": "00000000-0000-4000-8000-000000000271",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19613,7 +20292,7 @@
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000268",
+              "id": "00000000-0000-4000-8000-000000000272",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19631,7 +20310,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000269",
+              "id": "00000000-0000-4000-8000-000000000273",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19649,7 +20328,7 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000270",
+              "id": "00000000-0000-4000-8000-000000000274",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19667,7 +20346,7 @@
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000271",
+              "id": "00000000-0000-4000-8000-000000000275",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19685,7 +20364,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000272",
+              "id": "00000000-0000-4000-8000-000000000276",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19703,7 +20382,7 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000273",
+              "id": "00000000-0000-4000-8000-000000000277",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19721,7 +20400,7 @@
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000274",
+              "id": "00000000-0000-4000-8000-000000000278",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19739,7 +20418,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000275",
+              "id": "00000000-0000-4000-8000-000000000279",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19993,6 +20672,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -20028,7 +20709,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000276",
+          "epoch": "00000000-0000-4000-8000-000000000280",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -20269,6 +20950,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -20300,13 +20983,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000276",
+          "epoch": "00000000-0000-4000-8000-000000000280",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000279",
+              "id": "00000000-0000-4000-8000-000000000283",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20324,7 +21007,7 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000280",
+              "id": "00000000-0000-4000-8000-000000000284",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20342,7 +21025,7 @@
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000281",
+              "id": "00000000-0000-4000-8000-000000000285",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20360,7 +21043,7 @@
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000282",
+              "id": "00000000-0000-4000-8000-000000000286",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20378,7 +21061,7 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000283",
+              "id": "00000000-0000-4000-8000-000000000287",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20396,7 +21079,7 @@
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000284",
+              "id": "00000000-0000-4000-8000-000000000288",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20414,7 +21097,7 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000285",
+              "id": "00000000-0000-4000-8000-000000000289",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20432,7 +21115,7 @@
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000286",
+              "id": "00000000-0000-4000-8000-000000000290",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20450,7 +21133,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000287",
+              "id": "00000000-0000-4000-8000-000000000291",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20468,7 +21151,7 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000288",
+              "id": "00000000-0000-4000-8000-000000000292",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20486,7 +21169,7 @@
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000289",
+              "id": "00000000-0000-4000-8000-000000000293",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20504,7 +21187,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000290",
+              "id": "00000000-0000-4000-8000-000000000294",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20522,7 +21205,7 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000291",
+              "id": "00000000-0000-4000-8000-000000000295",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20540,7 +21223,7 @@
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000292",
+              "id": "00000000-0000-4000-8000-000000000296",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20558,7 +21241,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000293",
+              "id": "00000000-0000-4000-8000-000000000297",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20812,6 +21495,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -20847,7 +21532,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000294",
+          "epoch": "00000000-0000-4000-8000-000000000298",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -21088,6 +21773,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -21119,13 +21806,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000294",
+          "epoch": "00000000-0000-4000-8000-000000000298",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000297",
+              "id": "00000000-0000-4000-8000-000000000301",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21143,7 +21830,7 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000298",
+              "id": "00000000-0000-4000-8000-000000000302",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21161,7 +21848,7 @@
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000299",
+              "id": "00000000-0000-4000-8000-000000000303",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21179,7 +21866,7 @@
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000300",
+              "id": "00000000-0000-4000-8000-000000000304",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21197,7 +21884,7 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000301",
+              "id": "00000000-0000-4000-8000-000000000305",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21215,7 +21902,7 @@
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000302",
+              "id": "00000000-0000-4000-8000-000000000306",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21233,7 +21920,7 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000303",
+              "id": "00000000-0000-4000-8000-000000000307",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21251,7 +21938,7 @@
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000304",
+              "id": "00000000-0000-4000-8000-000000000308",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21269,7 +21956,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000305",
+              "id": "00000000-0000-4000-8000-000000000309",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21287,7 +21974,7 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000306",
+              "id": "00000000-0000-4000-8000-000000000310",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21305,7 +21992,7 @@
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000307",
+              "id": "00000000-0000-4000-8000-000000000311",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21323,7 +22010,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000308",
+              "id": "00000000-0000-4000-8000-000000000312",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21577,6 +22264,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -21612,7 +22301,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000309",
+          "epoch": "00000000-0000-4000-8000-000000000313",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -21853,6 +22542,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -21884,13 +22575,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000309",
+          "epoch": "00000000-0000-4000-8000-000000000313",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000312",
+              "id": "00000000-0000-4000-8000-000000000316",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21908,7 +22599,7 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000313",
+              "id": "00000000-0000-4000-8000-000000000317",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21926,7 +22617,7 @@
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000314",
+              "id": "00000000-0000-4000-8000-000000000318",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21944,7 +22635,7 @@
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000315",
+              "id": "00000000-0000-4000-8000-000000000319",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21962,7 +22653,7 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000316",
+              "id": "00000000-0000-4000-8000-000000000320",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21980,7 +22671,7 @@
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000317",
+              "id": "00000000-0000-4000-8000-000000000321",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21998,7 +22689,7 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000318",
+              "id": "00000000-0000-4000-8000-000000000322",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22016,7 +22707,7 @@
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000319",
+              "id": "00000000-0000-4000-8000-000000000323",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22034,7 +22725,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000320",
+              "id": "00000000-0000-4000-8000-000000000324",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22288,6 +22979,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -22323,7 +23016,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000321",
+          "epoch": "00000000-0000-4000-8000-000000000325",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -22564,6 +23257,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -22595,13 +23290,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000321",
+          "epoch": "00000000-0000-4000-8000-000000000325",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000324",
+              "id": "00000000-0000-4000-8000-000000000328",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22619,7 +23314,7 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000325",
+              "id": "00000000-0000-4000-8000-000000000329",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22637,7 +23332,7 @@
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000326",
+              "id": "00000000-0000-4000-8000-000000000330",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22655,7 +23350,7 @@
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000327",
+              "id": "00000000-0000-4000-8000-000000000331",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22673,7 +23368,7 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000328",
+              "id": "00000000-0000-4000-8000-000000000332",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22691,7 +23386,7 @@
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000329",
+              "id": "00000000-0000-4000-8000-000000000333",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22945,6 +23640,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -22980,7 +23677,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000330",
+          "epoch": "00000000-0000-4000-8000-000000000334",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -23221,6 +23918,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
@@ -23252,13 +23951,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000330",
+          "epoch": "00000000-0000-4000-8000-000000000334",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000333",
+              "id": "00000000-0000-4000-8000-000000000337",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -23276,7 +23975,7 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000334",
+              "id": "00000000-0000-4000-8000-000000000338",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -23294,7 +23993,7 @@
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000335",
+              "id": "00000000-0000-4000-8000-000000000339",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -23548,6 +24247,8 @@
           "income": { "at": null, "remainder": 0, "stored": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
           "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
           "guestVip": null,
           "progressionVersion": 1
         },
