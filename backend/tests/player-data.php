@@ -60,7 +60,11 @@ try {
     $hostTown = shared($host, 'Lantern Rest');
     $namedHome = shared($named, 'Copper Ridge');
     // No public name: the guestbook shows "Mayor of Dust Flats" until the account goes.
-    status(200, dataApi('POST', 'towns', townBody('Dust Flats'), $nameless), 'nameless home');
+    $dustFlats = status(
+        200,
+        dataApi('POST', 'towns', townBody('Dust Flats'), $nameless),
+        'nameless home',
+    );
     $privateHome = status(
         200,
         dataApi('POST', 'towns', townBody('Quiet Hollow'), $private),
@@ -127,6 +131,48 @@ try {
         ->get()
         ->fetchOne(sprintf(App\Honours::TRAVELS, 'id'), [$privateHome['townId']]);
     check($privateTravels === 1, 'a private visit still counts for the visitor’s travels');
+
+    // A visitor deletes their home town: the guestbook keeps its name as a former town,
+    // and the visit keeps counting, also once cleanup removes the town for good.
+    $dust = fn() => array_values(
+        array_filter(
+            guests($hostTown['townId'], $host)['history'],
+            fn($v) => $v['townName'] === 'Dust Flats',
+        ),
+    );
+    check(
+        count($dust()) === 1 && $dust()[0]['townGone'] === false,
+        'a live home town is not marked gone',
+    );
+    status(
+        200,
+        dataApi(
+            'DELETE',
+            'towns/' . $dustFlats['townId'],
+            ['baseRevision' => 1, 'confirmation' => 'Dust Flats'],
+            $nameless,
+        ),
+        'delete home town',
+    );
+    check(
+        count($dust()) === 1 &&
+            $dust()[0]['townGone'] === true &&
+            $dust()[0]['publicId'] === null &&
+            guests($hostTown['townId'], $host)['uniqueVisitors'] === 3,
+        'a deleted home town stays named, marked gone, and its visit still counts',
+    );
+    $db->get()->delete('towns', ['id' => $dustFlats['townId']]);
+    check(
+        count($dust()) === 1 &&
+            $dust()[0]['townGone'] === true &&
+            guests($hostTown['townId'], $host)['uniqueVisitors'] === 3,
+        'the name and count survive the purge of the deleted town',
+    );
+    $live = array_filter(
+        guests($hostTown['townId'], $host)['history'],
+        fn($v) => $v['townName'] === 'Copper Ridge' && $v['townGone'] === false,
+    );
+    check(count($live) === 2, 'other visitors’ towns are not marked gone');
 
     // Overview and export of the named visitor.
     status(401, dataApi('GET', 'account/data'), 'overview needs sign in');
@@ -365,6 +411,58 @@ try {
         'no erased public name stays in the guestbook',
     );
     status(401, dataApi('GET', 'account/data', null, $named), 'the erased session is gone');
+
+    // A traveller keeps counting a village its owner deletes, purges and erases.
+    $owner = account(['REMOTE_ADDR' => $dataTestIp]);
+    $traveller = account(['REMOTE_ADDR' => $dataTestIp]);
+    $village = shared($owner, 'Far Meadow');
+    $home = status(200, dataApi('POST', 'towns', townBody('Wander Rest'), $traveller), 'home');
+    visit($village['publicId'], $traveller);
+    visit($village['publicId'], $traveller);
+    $travels = fn() => (int) $db
+        ->get()
+        ->fetchOne(sprintf(App\Honours::TRAVELS, 'id'), [$home['townId']]);
+    check($travels() === 1, 'a village visited twice is one travel');
+    status(
+        200,
+        dataApi(
+            'DELETE',
+            'towns/' . $village['townId'],
+            ['baseRevision' => 1, 'confirmation' => 'Far Meadow'],
+            $owner,
+        ),
+        'owner deletes the village',
+    );
+    check($travels() === 1, 'a deleted village still counts');
+    $db->get()->delete('towns', ['id' => $village['townId']]);
+    check($travels() === 1, 'a purged village still counts');
+    $second = shared($owner, 'Near Meadow');
+    visit($second['publicId'], $traveller);
+    check($travels() === 2, 'another village of the same owner counts too');
+    status(
+        200,
+        dataApi('DELETE', 'account', ['confirmation' => 'DELETE MY ACCOUNT'], $owner),
+        'owner erases their account',
+    );
+    check($travels() === 2, 'an erased owner’s villages still count for the traveller');
+    $travelExport = status(200, dataApi('GET', 'account/export', null, $traveller), 'export');
+    check(
+        $travelExport['towns'][0]['otherPlayersTownsVisited'] === 2,
+        'the export counts the traveller’s travels',
+    );
+    status(
+        200,
+        dataApi('DELETE', 'account', ['confirmation' => 'DELETE MY ACCOUNT'], $traveller),
+        'the traveller erases their account',
+    );
+    check(
+        !$db
+            ->get()
+            ->fetchOne('SELECT origin_town_id FROM town_travels WHERE origin_town_id=?', [
+                $home['townId'],
+            ]),
+        'the traveller’s own travels leave with their towns',
+    );
     echo "Player data checks passed ($count assertions).\n";
 } finally {
     cleanup();

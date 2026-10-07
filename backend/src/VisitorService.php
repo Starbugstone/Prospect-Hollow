@@ -292,6 +292,9 @@ final class VisitorService
                                     'departed_at' => null,
                                 ],
                         );
+                        if ($identity['origin_town_id'] !== null) {
+                            $this->recordTravel($identity['origin_town_id'], $host['id'], $now);
+                        }
                     }
                 }
                 $values = [
@@ -318,6 +321,23 @@ final class VisitorService
             throw $result;
         }
         return $result;
+    }
+
+    /**
+     * A travel for the visitor's home town, kept with that town rather than the host's
+     * guestbook, so it still counts after the host is deleted. Presence never records a
+     * visit to the player's own town.
+     */
+    private function recordTravel(string $origin, string $host, int $at): void
+    {
+        $this->database
+            ->get()
+            ->executeStatement(
+                $this->database->isMySql()
+                    ? 'INSERT INTO town_travels(origin_town_id,host_town_id,visited_at) VALUES (?,?,?) ON DUPLICATE KEY UPDATE origin_town_id=origin_town_id'
+                    : 'INSERT INTO town_travels(origin_town_id,host_town_id,visited_at) VALUES (?,?,?) ON CONFLICT DO NOTHING',
+                [$origin, $host, $at],
+            );
     }
 
     private function identity(?array $session, mixed $selected, array $host): array
@@ -465,6 +485,11 @@ final class VisitorService
                     $row['town_name'] !== null && $row['listed'] && $row['deleted_at'] === null
                         ? $row['public_id']
                         : null,
+                // A deleted home town keeps its name while the visitor's account exists,
+                // marked as gone so the guestbook can say so.
+                'townGone' =>
+                    $row['town_name'] !== null &&
+                    ($row['origin_town_id'] === null || $row['deleted_at'] !== null),
                 'arrivedAt' => (int) $row['arrived_at'] * 1000,
                 'lastSeenAt' => (int) $row['last_seen_at'] * 1000,
                 'departedAt' =>

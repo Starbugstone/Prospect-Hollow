@@ -1006,6 +1006,26 @@ try {
             'last_seen_at' => 1000 + $visitNumber,
             'departed_at' => 1000 + $visitNumber,
         ]);
+        // Presence records a travel for a home town visiting another player's village.
+        $owner = fn($town) => $db
+            ->get()
+            ->fetchOne('SELECT player_id FROM towns WHERE id=?', [$town]);
+        if (
+            $origin !== null &&
+            $owner($host) !== $owner($origin) &&
+            !$db
+                ->get()
+                ->fetchOne(
+                    'SELECT host_town_id FROM town_travels WHERE origin_town_id=? AND host_town_id=?',
+                    [$origin, $host],
+                )
+        ) {
+            $db->get()->insert('town_travels', [
+                'origin_town_id' => $origin,
+                'host_town_id' => $host,
+                'visited_at' => 1000 + $visitNumber,
+            ]);
+        }
     };
     $hostProfile = tracked();
     $hostProfile->honours = asObject([
@@ -1102,15 +1122,15 @@ try {
         'social ranks verify at save time from the server counts ' .
             json_encode($hostSave['profile']['honours']['verified']),
     );
-    // The visitors and one visited village disappear; verified honours stay published.
+    // The visitors and one visited village disappear; verified honours stay published and
+    // the village keeps counting, since travels belong to the visiting town.
     $db->get()->executeStatement('DELETE FROM visitor_visits WHERE town_id=?', [$hostId]);
     $db->get()->executeStatement('DELETE FROM towns WHERE id=?', [$others[1]]);
     check(
         status(200, callApi('GET', 'towns/' . $hostId . '/visitors', null, $owner), 'later')[
             'townsVisited'
-        ] ===
-            $travelGoal - 1,
-        'a deleted village no longer counts as visited',
+        ] === $travelGoal,
+        'a deleted village still counts as visited',
     );
     $visit = status(200, callApi('GET', 'villages/' . $hostPublic), 'visit host');
     check(

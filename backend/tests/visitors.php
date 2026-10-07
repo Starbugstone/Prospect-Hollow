@@ -190,6 +190,7 @@ try {
             'townName',
             'era',
             'publicId',
+            'townGone',
             'arrivedAt',
             'lastSeenAt',
             'departedAt',

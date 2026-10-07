@@ -3314,5 +3314,6 @@
   "Visits: {count}": "Visites : {count}",
   "Signed-in devices and browsers: {count}": "Appareils et navigateurs connectés : {count}",
   "Your cloud towns ({towns}) and their saved versions ({versions})": "Vos villes en ligne ({towns}) et leurs versions sauvegardées ({versions})",
-  "Your Town Honours ({honours}) and player distinctions ({distinctions}). Distinctions such as Alpha Player can never be earned again.": "Vos distinctions de la ville ({honours}) et vos distinctions de joueur ({distinctions}). Les distinctions de joueur comme Joueur alpha ne pourront jamais être obtenues à nouveau."
+  "Your Town Honours ({honours}) and player distinctions ({distinctions}). Distinctions such as Alpha Player can never be earned again.": "Vos distinctions de la ville ({honours}) et vos distinctions de joueur ({distinctions}). Les distinctions de joueur comme Joueur alpha ne pourront jamais être obtenues à nouveau.",
+  "Former mayor of {town}": "Ex-maire de {town}"
 }

@@ -137,6 +137,10 @@ final class PlayerData
                     'deletedAt' => $time($town['deleted_at']),
                     'saloonCollectedByVisitorAt' => $time($town['collected_at']),
                     'differentSignedInVisitors' => $visitors[$town['id']] ?? 0,
+                    'otherPlayersTownsVisited' => (int) $db->fetchOne(
+                        'SELECT COUNT(*) FROM town_travels WHERE origin_town_id=?',
+                        [$town['id']],
+                    ),
                     'save' => json_decode($town['profile']),
                     'earlierSaves' => array_map(
                         fn($entry) => [

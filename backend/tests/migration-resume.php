@@ -6,6 +6,7 @@ $directory = sys_get_temp_dir() . '/' . $prefix;
 mkdir($directory . '/src', 0700, true);
 $source = file_get_contents(dirname(__DIR__) . '/src/Database.php');
 $names = [
+    'town_travels',
     'email_changes_player',
     'email_changes',
     'admin_settings',
@@ -208,6 +209,7 @@ try {
     );
     check(
         $connection->createSchemaManager()->tablesExist([$prefix . 'email_changes']) &&
+            $connection->createSchemaManager()->tablesExist([$prefix . 'town_travels']) &&
             isset(
                 array_change_key_case(
                     $connection
@@ -220,6 +222,7 @@ try {
 } finally {
     foreach (
         [
+            'town_travels',
             'email_changes',
             'admin_settings',
             'player_distinction_revocations',

@@ -1,15 +1,19 @@
 import { t } from '../i18n';
 
+// A home town its mayor has since deleted keeps its name, as a former town.
+const mayorOf = (visitor) =>
+  visitor.townGone
+    ? t('Former mayor of {town}', { town: visitor.townName })
+    : t('Mayor of {town}', { town: visitor.townName });
+
 // Names are public profile snapshots, never account identifiers or email addresses.
 export function visitorName(visitor) {
-  const name =
-    visitor.name ||
-    (visitor.townName ? t('Mayor of {town}', { town: visitor.townName }) : t('Visitor'));
+  const name = visitor.name || (visitor.townName ? mayorOf(visitor) : t('Visitor'));
   return visitor.self ? t('{name} (you)', { name }) : name;
 }
 
 export function visitorTitle(visitor) {
-  return visitor.name && visitor.townName ? t('Mayor of {town}', { town: visitor.townName }) : '';
+  return visitor.name && visitor.townName ? mayorOf(visitor) : '';
 }
 
 export function visitorLabel(visitor) {

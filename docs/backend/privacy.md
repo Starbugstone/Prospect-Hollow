@@ -31,7 +31,11 @@ admins. In one transaction holding the player row lock it:
 After the commit the old address gets one last email; the admin audit log keeps only the
 account ID. A visit counts as signed in because `visitor_visits.signed_in` was set when it
 was recorded, not because it still has a name or home town, so erasure, a private visit
-or a deleted home town never lowers another player's counts or honours.
+or a deleted home town never lowers another player's counts or honours. Travels (the
+villages a town visited, for Explorer honours) are kept in `town_travels` with the
+visiting town, so deleting a village or erasing its owner never lowers a visitor's count.
+A deleted home town's name stays in guestbooks, marked as a former town, until the
+visitor's account is erased.
 
 `backend/bin/cleanup.php` also removes expired email change links and identity rows left
 by accounts deleted before erasure removed them.
