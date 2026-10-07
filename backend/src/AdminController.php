@@ -121,6 +121,12 @@ final class AdminController
         if ($method . ' ' . $path === 'PATCH audit/settings') {
             return $this->service->setAuditRetention($actor, $body);
         }
+        if ($method . ' ' . $path === 'GET settings') {
+            return $this->service->settings();
+        }
+        if ($method . ' ' . $path === 'PATCH settings/privacy') {
+            return $this->service->setPrivacyContact($actor, $body);
+        }
         if ($method . ' ' . $path === 'POST audit/purge') {
             return $this->service->purgeAudit($actor, $body);
         }

@@ -533,7 +533,9 @@ final class SaveService
             'Your Prospect Hollow account was deleted',
             "Your Prospect Hollow account, its cloud towns and your email address have been deleted.\n\n" .
                 "Towns you visited keep counting your visits, without your name. Your game on each device keeps playing offline until you remove it there.\n\n" .
-                'If you did not delete your account, reply to this email.',
+                'If you did not delete your account, ' .
+                SiteSettings::contactHint($this->database->get()) .
+                '.',
         );
         return ['ok' => true];
     }

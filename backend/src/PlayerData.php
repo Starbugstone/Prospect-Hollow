@@ -327,7 +327,9 @@ final class PlayerData
             $previous,
             'Your Prospect Hollow email address was changed',
             "Your Prospect Hollow account now signs in with a different email address. This address is no longer linked to it.\n\n" .
-                'If you did not make this change, reply to this email.',
+                'If you did not make this change, ' .
+                SiteSettings::contactHint($this->database->get()) .
+                '.',
         );
         return ['email' => $email];
     }

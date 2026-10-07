@@ -15,11 +15,8 @@ export const RETENTION = {
   deletedTown: '30 days',
   earlierSaves: 'the 5 previous saves of each town',
   adminLog: '3 months',
-  hostRecords: 'at most 30 days',
+  hostRecords: '30 days',
 };
-
-// An optional contact address for privacy requests, set at build time.
-export const privacyContact = (env = import.meta.env) => env.VITE_PRIVACY_CONTACT || '';
 
 export const PRIVACY_SUMMARY = [
   'You can play without an account. Your game then stays on your device.',

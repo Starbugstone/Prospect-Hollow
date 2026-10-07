@@ -4,6 +4,9 @@ import { downloadSaveFile } from './saveTransfer';
 import { privacyUrl } from './appRoute';
 import { t } from '../i18n';
 
+// The contact address an admin set for privacy requests, or null; no account needed.
+export const loadPrivacyContact = async () =>
+  (await request('privacy', undefined, 'GET', true)).contact ?? null;
 // The account overview: counts and the latest connection the server keeps.
 export const loadDataSummary = () => request('account/data');
 // Mails a link to the new address; the account keeps its email until the link is opened.

@@ -9,7 +9,6 @@ import {
   PRIVACY_SECTIONS,
   PRIVACY_SUMMARY,
   RETENTION,
-  privacyContact,
   privacyMessages,
 } from '../src/data/privacy';
 import { isPrivacyRoute, privacyUrl } from '../src/services/appRoute';
@@ -27,6 +26,7 @@ const {
   describeBrowser,
   downloadAccountData,
   loadDataSummary,
+  loadPrivacyContact,
   maskEmail,
   requestEmailChange,
 } = await import('../src/services/playerData');
@@ -121,11 +121,12 @@ describe('Privacy notice', () => {
     expect(html).not.toMatch(/\{\w+\}/);
   });
 
-  it('shows a contact address only when one is configured', () => {
-    expect(privacyContact({})).toBe('');
-    expect(privacyContact({ VITE_PRIVACY_CONTACT: 'privacy@example.test' })).toBe(
-      'privacy@example.test',
-    );
+  it('reads the contact an admin set, without an account', async () => {
+    request.mockResolvedValueOnce({ contact: 'privacy@example.test' });
+    await expect(loadPrivacyContact()).resolves.toBe('privacy@example.test');
+    expect(request).toHaveBeenCalledWith('privacy', undefined, 'GET', true);
+    request.mockResolvedValueOnce({ contact: null });
+    await expect(loadPrivacyContact()).resolves.toBe(null);
   });
 
   it('lives at /privacy on the public site, also from the app', () => {

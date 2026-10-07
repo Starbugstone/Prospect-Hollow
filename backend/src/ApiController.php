@@ -91,6 +91,10 @@ final class ApiController
                 }
                 $result = match ($method . ' ' . $path) {
                     'GET health' => $this->health(),
+                    // Public: the privacy notice shows the contact an admin has set.
+                    'GET privacy' => [
+                        'contact' => SiteSettings::privacyContact($this->database->get()) ?: null,
+                    ],
                     'POST auth/login-link' => $this->auth->loginLink($r, $body),
                     'POST auth/confirm' => $this->auth->confirm($r, $body),
                     'POST auth/logout' => $this->logout($r, $body, false),

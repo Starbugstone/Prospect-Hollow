@@ -796,6 +796,16 @@
                 },
             },
         },
+      '/privacy':
+        {
+          'get':
+            {
+              'summary': 'The privacy contact an admin set',
+              'security': [{}],
+              'description': 'Public. Returns {contact}: the address players write to about their data, or null when none is set.',
+              'responses': { '200': { 'description': 'Success' } },
+            },
+        },
       '/account/data':
         {
           'get':

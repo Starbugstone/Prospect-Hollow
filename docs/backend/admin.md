@@ -26,6 +26,8 @@ All admins are equal. Any admin can add another (the panel shows the new tempora
 - **Towns**: search by name, owner email or ID; filter all, shared or deleted. A town page lists era, coins, levels and stars, buildings, inventory, the five kept cloud revisions and the full save (viewable and downloadable as JSON). The simulation starts disconnected: **Connect to town** loads the share page's read-only renderer, even for private towns. Camera controls remain available, with no gameplay actions. **Disconnect** stops and disposes the simulation; opening another town or revision starts disconnected again. This view uses the saved snapshot, without joining visitor presence, creating visitor logs, collecting the saloon or making the admin a guest.
 - **Activity log**: every admin sign-in, failed sign-in against a real admin, and change. A deleted player appears by ID only. Entries are kept for three months by default; the page sets the period (1 month, 3 months, 6 months, 1 year or 2 years, stored in `admin_settings`, schema version 18). Older entries are removed by the daily cleanup and whenever the page opens, so the period holds even without a scheduled task. **Purge old entries** applies the period now, and **Purge everything** (type `PURGE`) empties the log, for example to clear test activity before going live. Each change of period and each purge is recorded, so the log always shows who emptied it.
 
+- **Settings**: the **privacy contact**, the address players write to about their data. It appears on `/privacy` (`GET /api/v1/privacy`, public) and in the emails sent after an account deletion or email change. Empty removes it, and players are then asked to reply to a game email. Stored in `admin_settings`; each change is logged.
+
 **Hide emails** masks addresses (`p•••@example.com`) for screen sharing; the choice is remembered on that device.
 
 ## Actions
@@ -90,6 +92,7 @@ All routes are under `/api/admin/`, JSON only. Changes send `X-CSRF-Token`.
 | `GET audit?page=`                                                                                                                            | Activity log, 50 per page.                                        |
 | `PATCH audit/settings` `{retentionDays}`                                                                                                     | Keep the log 30, 90, 180, 365 or 730 days.                        |
 | `POST audit/purge` `{all}`                                                                                                                   | Purge entries past the period, or all.                            |
+| `GET settings`, `PATCH settings/privacy` `{privacyContact}`                                                                                  | Privacy contact; an empty string removes it.                      |
 | `POST`/`DELETE players/{id}/distinctions/{distinctionId}`                                                                                    | Give or remove a player distinction.                              |
 
 `backend/tests/admin.php` covers the sign-in stages, limits, origin and CSRF checks, activity recording, every action and the server command on PostgreSQL and MySQL; `testing/admin-panel.test.js` covers the panel's client.

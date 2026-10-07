@@ -101,6 +101,7 @@ const ACTIONS = {
   distinction_removed: 'Removed player distinction',
   audit_retention_changed: 'Changed activity log retention',
   audit_purged: 'Purged activity log',
+  privacy_contact_changed: 'Changed privacy contact',
   town_renamed: 'Renamed town',
   town_unshared: 'Stopped sharing town',
   town_deleted: 'Deleted town',

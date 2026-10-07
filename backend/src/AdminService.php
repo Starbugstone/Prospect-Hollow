@@ -617,7 +617,7 @@ final class AdminService
     public const AUDIT_RETENTION_CHOICES = [30, 90, 180, 365, 730];
     public static function auditRetention(Connection $db): int
     {
-        $days = $db->fetchOne("SELECT value FROM admin_settings WHERE name='audit_retention_days'");
+        $days = SiteSettings::get($db, 'audit_retention_days');
         return is_numeric($days) && in_array((int) $days, self::AUDIT_RETENTION_CHOICES, true)
             ? (int) $days
             : self::AUDIT_RETENTION_DAYS;
@@ -667,18 +667,7 @@ final class AdminService
         }
         return $this->database->get()->transactional(function ($db) use ($actor, $days) {
             $before = self::auditRetention($db);
-            if (
-                !$db->update(
-                    'admin_settings',
-                    ['value' => (string) $days],
-                    ['name' => 'audit_retention_days'],
-                )
-            ) {
-                $db->insert('admin_settings', [
-                    'name' => 'audit_retention_days',
-                    'value' => (string) $days,
-                ]);
-            }
+            SiteSettings::set($db, 'audit_retention_days', (string) $days);
             if ($before !== $days) {
                 $this->admins->audit(
                     $actor,
@@ -688,6 +677,41 @@ final class AdminService
                 );
             }
             return ['retentionDays' => $days, 'purged' => self::expireAudit($db)];
+        });
+    }
+    public function settings(): array
+    {
+        return ['privacyContact' => SiteSettings::privacyContact($this->database->get())];
+    }
+    // The address the privacy notice and the game's account emails give players; an empty
+    // value removes it, and the notice then asks players to reply to a game email.
+    public function setPrivacyContact(string $actor, array $body): array
+    {
+        SaveService::keys($body, ['privacyContact']);
+        $contact = $body['privacyContact'] ?? null;
+        if (!is_string($contact)) {
+            throw new ApiError(422, 'Enter an email address, or leave it empty.');
+        }
+        $contact = trim($contact);
+        if ($contact !== '') {
+            $contact = Auth::email($contact);
+        }
+        return $this->database->get()->transactional(function ($db) use ($actor, $contact) {
+            $before = SiteSettings::privacyContact($db);
+            SiteSettings::set(
+                $db,
+                SiteSettings::PRIVACY_CONTACT,
+                $contact === '' ? null : $contact,
+            );
+            if ($before !== $contact) {
+                $this->admins->audit(
+                    $actor,
+                    'privacy_contact_changed',
+                    null,
+                    ($before ?: 'none') . ' → ' . ($contact ?: 'none'),
+                );
+            }
+            return ['privacyContact' => $contact];
         });
     }
     // Purges the activity log now: entries past the retention, or every entry. The purge

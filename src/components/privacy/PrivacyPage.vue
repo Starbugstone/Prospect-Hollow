@@ -82,27 +82,34 @@
   </main>
 </template>
 <script setup>
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import {
   PRIVACY_DATA,
   PRIVACY_SECTIONS,
   PRIVACY_SUMMARY,
   PRIVACY_UPDATED,
-  privacyContact,
   retentionValues,
 } from '../../data/privacy';
+import { loadPrivacyContact } from '../../services/playerData';
 import { HOME_PATH } from '../../services/appRoute';
 import { t, locale } from '../../i18n';
 import GameIcon from '../GameIcon.vue';
-const contact = privacyContact();
+// Set by an admin in the panel; until it loads, or if none is set, players reply to a
+// game email instead.
+const contact = ref('');
 const retention = computed(() => retentionValues(t));
 const updated = computed(() =>
   new Intl.DateTimeFormat(locale.value, { dateStyle: 'long', timeZone: 'UTC' }).format(
     new Date(PRIVACY_UPDATED),
   ),
 );
-onMounted(() => {
+onMounted(async () => {
   document.title = `${t('Privacy')} · Prospect Hollow`;
+  try {
+    contact.value = (await loadPrivacyContact()) ?? '';
+  } catch {
+    // Offline or unavailable: the reply-to-an-email route still works.
+  }
 });
 </script>
 <style>

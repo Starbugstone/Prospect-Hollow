@@ -61,8 +61,9 @@ erasure removes it, and raise `PRIVACY_UPDATED`.
 
 Operator settings:
 
-- `VITE_PRIVACY_CONTACT` (build time) shows a contact address on the notice. Without it,
-  the notice asks players to reply to any game email, so `MAIL_FROM` must reach a
-  monitored mailbox.
+- The **privacy contact** is set in the admin panel (Settings), stored in `admin_settings`
+  (`SiteSettings`) and published by `GET /api/v1/privacy`. The notice and the account
+  emails use it; without one they ask players to reply to a game email, so `MAIL_FROM`
+  must then reach a monitored mailbox.
 - `RETENTION.hostRecords` states how long the host keeps web server logs and backups;
   keep it in line with the hosting plan and any database dumps you keep yourself.
