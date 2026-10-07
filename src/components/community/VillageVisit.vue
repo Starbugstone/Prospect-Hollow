@@ -95,6 +95,7 @@
         :honours="honours ?? { earned: {}, showcase: [], received: {} }"
         :town="current.name"
       />
+      <TownMonumentSite v-else-if="AREA_BY_ID[inspected]" :id="inspected" :town="town" read-only />
       <section v-else-if="inspected === 'mine'" class="town-building-details">
         <div class="town-detail-title">
           <div>
@@ -127,7 +128,7 @@
         <p v-else class="museum-empty">{{ t('Level awards are not available yet.') }}</p>
       </section>
       <TownBuildingDetails
-        v-if="!['mine', 'guestbook', 'honours'].includes(inspected)"
+        v-if="!['mine', 'guestbook', 'honours'].includes(inspected) && !AREA_BY_ID[inspected]"
         :key="inspected"
         :id="inspected"
         :town="town"
@@ -153,6 +154,8 @@ import TownScene from '../town/TownScene.vue';
 import GameIcon from '../GameIcon.vue';
 import TownDialog from '../town/TownDialog.vue';
 import TownBuildingDetails from '../town/TownBuildingDetails.vue';
+import TownMonumentSite from '../town/TownMonumentSite.vue';
+import { AREA_BY_ID, areaChoice } from '../../data/townLandmarks';
 import MuseumLevelGrid from '../town/MuseumLevelGrid.vue';
 import HonourGallery from '../honours/HonourGallery.vue';
 import HonourShowcaseSlots from '../honours/HonourShowcaseSlots.vue';
@@ -199,6 +202,8 @@ const levels = computed(() => villageLevels(current.value));
 const honours = computed(() => villageHonours(current.value));
 function inspect(id) {
   if (id === 'mine' || Object.hasOwn(BUILDING_BY_ID, id)) inspected.value = id;
+  // Visitors can admire a built monument; open sites have no label for them.
+  else if (AREA_BY_ID[id] && areaChoice(town.value, AREA_BY_ID[id])) inspected.value = id;
 }
 const hasSaloon = computed(() => current.value.appearance?.buildings?.saloon > 0);
 const readyAt = ref((props.village.saloonReadyAt ?? 0) * 1000),

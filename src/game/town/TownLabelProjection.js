@@ -1,5 +1,6 @@
 import { Vector3 } from 'three';
 import { constructionReady } from './TownRules';
+import { AREA_BY_ID, areaChoice } from '../../data/townLandmarks';
 import { overlapsEventInset } from './TownInset';
 import { forEachWalker } from './TownWalkers';
 
@@ -40,6 +41,8 @@ export function projectLabelPositions(d) {
         !overlapsEventInset(d, ((reward.x + 1) * width) / 2, ((1 - reward.y) * height) / 2, 48),
     };
     const p = screen.copy(position).project(d.camera);
+    // Monument sites: an open site stays findable from afar, a built one acts like a building.
+    const site = AREA_BY_ID[id];
     return {
       id,
       x: (p.x + 1) * 50,
@@ -55,7 +58,8 @@ export function projectLabelPositions(d) {
         (id === 'mine' ||
           town.buildings[id] > 0 ||
           !!town.projects[id] ||
-          d.availablePlots?.has(id)) &&
+          d.availablePlots?.has(id) ||
+          !!site) &&
         inFront(p) &&
         (Math.abs(p.x) * width) / 2 + labelWidth / 2 + 8 < width / 2 &&
         p.y < 0.84 &&
@@ -65,7 +69,8 @@ export function projectLabelPositions(d) {
           id === d.selected ||
           id === d.guidedPlot ||
           !!town.projects[id] ||
-          (!town.buildings[id] && d.availablePlots?.has(id))),
+          (!town.buildings[id] && d.availablePlots?.has(id)) ||
+          (site && !areaChoice(town, site))),
     };
   });
   // Higher-ranked labels claim their space first; overlapping later ones hide.

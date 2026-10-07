@@ -16,7 +16,8 @@ the main preview. Five material roles control one shared building palette, shown
 on an example home. Residents always keep their individual era outfits.
 Material references are replaced without modifying cached materials.
 
-Existing buildings can receive permanent frontage choices before construction.
+Existing buildings can receive permanent frontage choices before construction
+(Personalise › Buildings).
 Already-built legacy buildings retain their original design. Paint,
 crest and earned plaques remain editable. Public player plaques are verified
 against the owner's current distinctions; Town Honours come from server-verified
@@ -30,34 +31,51 @@ shared palette preserves a reset. Legacy clothing overrides are discarded. Missi
 or invalid `crest.emblemColour` uses the original dark ink. PHP normalization and
 public town projection follow the same rules.
 
-## Optional landmark plots
+## Monument sites
 
-`townLandmarks.js` owns eleven spacious parcels, one introduced in each era. Each
-ordinary parcel has three architectural choices, with three paid stages per era
-through the current final era. New eras extend the shared stage calculation;
-there is no hardcoded final-era completion requirement. Earlier-stage architecture
-is retained until upgraded. Landmark purchases and upgrades are immediate and
-optional, provide no economic bonuses, and never affect era progression.
+`townLandmarks.js` owns eleven spacious monument sites, one introduced in each era.
+Monuments are optional: they give no economic bonus, never gate an era and can be
+built at any time once their site opens. **A site's first monument is permanent.**
+No other design can replace it, on the client or in the server replay.
 
-The third-era parcel is Monument Square. Five permanent architectural models have
-separate prices: Founders' Arch (6,000), Crystal Spire (8,000), Guardian of the
-Hollow (10,000), World Tree (12,000), Celestial Sphere (15,000). Every player in
-Industrial or later may build one. A replacement costs the full listed price of
-the new monument, with no refund; buying the currently selected monument is
-rejected. Monuments have no upgrades and ignore era, crest and paint changes.
-The first successful monument purchase earns the single gold Town Honour **A Lasting
-Legacy**, regardless of the selected model. Replacements preserve its original award;
-older monument-owning saves receive it through honours generation 2 catch-up. The server
-verifies ownership from the paid landmark replay before publishing this distinction.
-These are initial prices for playtesting; normal landmark upgrade prices are the
-base price multiplied by the relative era tier.
+Monument sites follow the same interaction as every other building:
 
-`areas` stores one selected ID per parcel and `areaLevels` its purchased stage.
+- Each unlocked site without a monument shows an open-site marker in the town (a
+  gravel court, kerb stones, survey stakes and an empty plinth) and a dashed gold map
+  label. Tapping the marker or label opens the site's card (`TownMonumentSite.vue`).
+  The default overview frames every unlocked site.
+- The card lists the site's designs with artwork, description and price. Choosing
+  one previews it on the site in the town, even when the player cannot afford it
+  yet. Nothing is spent until the player confirms a second, explicit "for good"
+  step that explains the choice is permanent.
+- A built monument keeps its label and card. Ordinary sites grow by three paid
+  stages per era (through the current final era, with no hardcoded completion era);
+  each stage adds detail and never changes the design. Upgrades are one tap, like
+  building improvements.
+- The Build tab lists every unlocked site under **Monuments** (open sites with their
+  starting price, built ones with their stage or next upgrade price) and names the
+  next site to open. Personalise only points to monument sites; it no longer sells
+  them.
+- Visitors see built monuments and can open a read-only card; open sites have no
+  label for them.
+
+The third-era site is Monument Square. Its five timeless models have separate
+prices: Founders' Arch (6,000), Crystal Spire (8,000), Guardian of the Hollow
+(10,000), World Tree (12,000), Celestial Sphere (15,000). Every player in Industrial
+or later may build one. Timeless monuments have no upgrades and ignore era, crest
+and paint changes. The first monument purchase earns the single gold Town Honour
+**A Lasting Legacy**, regardless of the model; older monument-owning saves receive
+it through honours generation 2 catch-up. The server verifies ownership from the
+paid landmark replay before publishing this distinction. Saves that replaced their
+monument before replacements were removed keep the monument they own now.
+
+`areas` stores one selected ID per site and `areaLevels` its purchased stage.
 Commands include expected previous choice/stage, preventing duplicate or stale
 purchases. The campaign store atomically commits the debit and journal receipt.
 The server replays `landmark-buy` against its exported prices and compares both
-coins and landmark ownership/stages. Cosmetic save edits cannot acquire a free
-monument. Existing checkpoint/retry semantics apply to these receipts.
+coins and landmark ownership/stages, rejecting any replacement. Cosmetic save edits
+cannot acquire a free monument. Existing checkpoint/retry semantics apply to these
+receipts.
 
 ## Extending and checking
 
@@ -67,8 +85,8 @@ silhouette, and provide matching menu artwork and French labels. Export
 are shared with terrain reservation, navigation obstacles and camera framing.
 
 Regression coverage checks all choices and upgrade stages, parcel/river/building
-clearances, timeless monument geometry, full-price replacement, insufficient
-funds, stale commands, save normalization, visitors, shared paint and individual outfits
+clearances, open-site markers for unlocked eras only, timeless monument geometry,
+rejected replacements in every later era, insufficient funds, stale commands, save normalization, visitors, shared paint and individual outfits
 across eras. Actual frontend purchase flows for every parcel are replayed by
 `backend/tests/save-integrity.php`. Keep the ordinary chapter progression tests,
 including unlimited moves, alongside these checks.

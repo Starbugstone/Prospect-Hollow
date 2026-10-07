@@ -63,7 +63,7 @@ A rank without its own name uses the family name; the metal is always shown besi
 
 The monument family has exactly one rank, `monument-gold`: **A Lasting Legacy**.
 Any of the five Monument Square choices earns it on the first successful purchase.
-Replacements never add ranks or repeat the award, and the original award stays permanent.
+Monuments cannot be replaced; older saves that replaced one keep their original award.
 Older saves with a monument catch up in honours generation 2. The badge can be showcased
 and displayed on buildings like other Town Honours; it grants no coins or progression.
 

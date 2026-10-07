@@ -178,24 +178,24 @@ foreach ($schema['personalisation']['areas'] as $area) {
         TownPersonalisation::purchase($poor, $command, $schema['eras']) === null,
         'insufficient funds rejected',
     );
+    // A built monument is permanent: no other design replaces it, even in later eras.
+    $later = $next;
+    $later['era'] = end($schema['eras']);
+    foreach (array_slice($area['choices'], 1) as $choice) {
+        $command['expectedChoice'] = $next['personalisation']['areas'][$area['id']][0];
+        $command['expectedLevel'] = $next['personalisation']['areaLevels'][$area['id']];
+        $command['value'] = $choice;
+        checkPersonalisation(
+            TownPersonalisation::purchase($later, $command, $schema['eras']) === null,
+            'monument replacement rejected',
+        );
+    }
     if ($area['timeless']) {
-        foreach (array_slice($area['choices'], 1) as $choice) {
-            $command['expectedChoice'] = $next['personalisation']['areas'][$area['id']][0];
-            $command['expectedLevel'] = 1;
-            $command['value'] = $choice;
-            $before = $next['coins'];
-            $next = TownPersonalisation::purchase($next, $command, $schema['eras']);
-            $price = array_values(
-                array_filter(
-                    $schema['personalisation']['landmarks'],
-                    fn($o) => $o['id'] === $choice,
-                ),
-            )[0]['price'];
-            checkPersonalisation(
-                $next['coins'] === $before - $price,
-                'replacement full price without refund',
-            );
-        }
+        $command['value'] = $area['choices'][0];
+        checkPersonalisation(
+            TownPersonalisation::purchase($later, $command, $schema['eras']) === null,
+            'timeless monument never grows',
+        );
     }
 }
 $honours = new App\Honours($schema['honours']);

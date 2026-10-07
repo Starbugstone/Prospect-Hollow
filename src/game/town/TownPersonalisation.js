@@ -2,7 +2,12 @@ import { paintBuilding } from './TownPaint';
 import { buildLandmark } from './TownLandmarks';
 import { Box3, CanvasTexture, DoubleSide, MeshStandardMaterial, SRGBColorSpace } from 'three';
 import { CREST_BY_ID, crestOutline, crestPattern } from '../../data/townCrests';
-import { PERSONAL_AREAS, areaStage, DEFAULT_EMBLEM_COLOUR } from '../../data/townPersonalisation';
+import {
+  PERSONAL_AREAS,
+  areaStage,
+  areaUnlocked,
+  DEFAULT_EMBLEM_COLOUR,
+} from '../../data/townPersonalisation';
 import { HONOURS } from '../../data/honours';
 import { distinctionBadge } from '../../data/playerDistinctions';
 import { groundHeight } from './TownLandscape';
@@ -198,25 +203,48 @@ function addEmblemPanel(d, root, crest, width, height, position, art) {
   return face;
 }
 
+const STONE = '#ddd1b5';
+// An open monument site: a gravel court ringed by kerb stones, survey stakes and an
+// empty plinth. It reads as reserved ground; its map label invites the choice.
+function addMonumentSite(d, g, radius) {
+  const court = radius * 0.72;
+  d.mesh(g, 'cylinder', [court, 0.06, court], [0, 0.03, 0], '#d8cfae');
+  for (let n = 0; n < 16; n++) {
+    const a = (n * Math.PI) / 8;
+    const kerb = d.box(g, 1.1, 0.22, 0.45, Math.cos(a) * court, 0.11, Math.sin(a) * court, STONE);
+    kerb.rotation.y = -a + Math.PI / 2;
+  }
+  for (let n = 0; n < 4; n++) {
+    const a = Math.PI / 4 + (n * Math.PI) / 2,
+      x = Math.cos(a) * court * 0.8,
+      z = Math.sin(a) * court * 0.8;
+    d.rod(g, [x, 0, z], [x, 1.5, z], 0.08, '#8a6a46');
+    d.box(g, 0.55, 0.32, 0.04, x + 0.28, 1.32, z, '#d9734f');
+  }
+  d.mesh(g, 'cylinder', [1.3, 0.35, 1.3], [0, 0.18, 0], STONE);
+  d.mesh(g, 'cylinder', [0.95, 0.35, 0.95], [0, 0.52, 0], '#b9ab8c');
+  walkObstacle(g, 0, 0, 1.4, 1);
+}
+
+// Built monuments and the open sites of every unlocked era. Each site root carries
+// `monumentSite`, so a tap on it opens that site's card.
 export function buildPersonalAreas(d, town) {
-  if (
-    !PERSONAL_AREAS.some(
-      (area) =>
-        areaStage(town, area) &&
-        town.personalisation?.areas?.[area.id]?.some((choice) => area.choices.includes(choice)),
-    )
-  )
-    return null;
+  if (!PERSONAL_AREAS.some((area) => areaUnlocked(town, area))) return null;
   const root = d.group(d.world);
-  root.name = 'Personal town gardens';
+  root.name = 'Monument sites';
   root.userData.static = true;
   for (const area of PERSONAL_AREAS) {
+    if (!areaUnlocked(town, area)) continue;
     const stage = areaStage(town, area);
-    if (!stage) continue;
     area.positions.forEach(([x, z], slot) => {
       const choice = town.personalisation?.areas?.[area.id]?.[slot];
-      if (!area.choices.includes(choice)) return;
       const g = d.group(root, x, groundHeight(x, z), z);
+      g.userData.monumentSite = area.id;
+      if (!stage || !area.choices.includes(choice)) {
+        g.name = `${area.id} ${slot}: open site`;
+        addMonumentSite(d, g, area.radius);
+        return;
+      }
       g.name = `${area.id} ${slot}: ${choice} stage ${stage}`;
       walkObstacle(g, 0, 0, area.radius, 14);
       buildLandmark(d, g, choice, stage, area.timeless);

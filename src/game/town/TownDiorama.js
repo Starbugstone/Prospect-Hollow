@@ -60,6 +60,7 @@ import { TownRaid } from './TownActivity';
 import { TownEraIncident } from './TownEraIncident';
 import { eventKind } from '../../data/townEvents';
 import { plotUnlocked } from './TownRules';
+import { PERSONAL_AREAS, areaUnlocked } from '../../data/townLandmarks';
 import { spaceHelmetAt } from './TownSpaceHelmet';
 import { buildLandscape, keepCameraAboveTerrain } from './TownLandscape';
 
@@ -400,10 +401,15 @@ export class TownDiorama extends TownPrimitives {
       ),
       this.camera,
     );
-    const hit = this.raycaster.intersectObjects(this.targets, true)[0];
+    // Monument sites are scenery; a tap on one opens its card like a plot.
+    const sites = this.staticScenery?.entries.get('personal-areas')?.group;
+    const hit = this.raycaster.intersectObjects(
+      sites ? [...this.targets, sites] : this.targets,
+      true,
+    )[0];
     let object = hit?.object;
-    while (object && !object.userData.plot) object = object.parent;
-    if (object) this.onSelect(object.userData.plot);
+    while (object && !object.userData.plot && !object.userData.monumentSite) object = object.parent;
+    if (object) this.onSelect(object.userData.plot ?? object.userData.monumentSite);
     else {
       const ground = this.raycaster.ray.intersectPlane(
         new THREE.Plane(point(0, 1, 0), -0.08),
@@ -418,9 +424,16 @@ export class TownDiorama extends TownPrimitives {
           Math.abs(ground.z - z) < 1.4
         ) {
           this.onSelect(id);
-          break;
+          return;
         }
       }
+      const site = PERSONAL_AREAS.find(
+        (area) =>
+          areaUnlocked(this.town, area) &&
+          Math.hypot(ground.x - area.positions[0][0], ground.z - area.positions[0][1]) <
+            area.radius * 0.75,
+      );
+      if (site) this.onSelect(site.id);
     }
   }
   resize() {

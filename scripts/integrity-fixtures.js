@@ -450,7 +450,7 @@ export function createIntegrityFixtures() {
     );
     for (const area of PERSONAL_AREAS)
       fixture(
-        `optional landmark ${area.id}: construction, upgrades and replacement`,
+        `optional landmark ${area.id}: construction and upgrades`,
         (profile) => {
           develop(profile, 'riverlight');
           profile.town.coins = 10000000;
@@ -473,10 +473,8 @@ export function createIntegrityFixtures() {
             );
           };
           buy(area.choices[0]);
-          if (area.timeless) for (const choice of area.choices.slice(1)) buy(choice);
-          else
-            while (areaStage(campaign.town, area) < areaMaximum(campaign.town, area))
-              buy(area.choices[0]);
+          while (areaStage(campaign.town, area) < areaMaximum(campaign.town, area))
+            buy(area.choices[0]);
         },
       );
     return { version: 1, fixtures };

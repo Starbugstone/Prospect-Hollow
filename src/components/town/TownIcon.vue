@@ -59,6 +59,13 @@
     </template>
     <template v-else-if="name === 'arrow'"><path d="M4 12h16m-6-6 6 6-6 6" /></template>
     <template v-else-if="name === 'check'"><path d="m5 12 4 4L19 6" /></template>
+    <template v-else-if="name === 'monument'">
+      <path d="M9.5 18V7.5L12 3l2.5 4.5V18M6.5 21v-3h11v3M4 21h16" />
+    </template>
+    <template v-else-if="name === 'lock'">
+      <rect x="5" y="11" width="14" height="10" rx="2" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </template>
     <template v-else-if="name === 'sun'">
       <circle cx="12" cy="12" r="4" />
       <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2" />

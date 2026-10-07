@@ -210,7 +210,7 @@ try {
     );
 
     // The paid-landmark replay is the proof, not an uploaded honour claim.
-    $monumentFlow = flow('optional landmark monument: construction, upgrades and replacement');
+    $monumentFlow = flow('optional landmark monument: construction and upgrades');
     $monumentClock = $monumentFlow->after->integrity->clientAt;
     $monumentBase = $validator->accept(
         $monumentFlow->before,
@@ -236,7 +236,7 @@ try {
     $monumentSaved = $catalog->keep($monumentSaved, $monumentBase, $noSocial);
     check(
         in_array('monument-gold', $monumentSaved->honours->verified, true),
-        'paid construction and replacements verify the single monument distinction',
+        'a paid monument verifies the single monument distinction',
     );
     $monumentAgain = $validator->accept(
         $monumentFlow->after,

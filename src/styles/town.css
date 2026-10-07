@@ -448,6 +448,23 @@
 .town-scene-labels button:hover {
   box-shadow: 0 4px 14px #534a3044;
 }
+/* Monument sites: an open site is a dashed gold invitation, a built monument a
+   regular label with its emblem. */
+.town-scene-labels button.monument-label svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  color: #8a6427;
+}
+.town-scene-labels button.open-site {
+  border: 2px dashed #b48a3c;
+  background: #fbefcfee;
+  color: #5b4520;
+}
+.town-scene-labels button.open-site small {
+  color: #8a6427;
+  font-weight: 700;
+}
 /* Keep the mine entrance visible below its label at every camera distance. */
 .town-scene-labels .scene-mine-button {
   margin-top: -56px;
@@ -1929,4 +1946,35 @@ html:has(.town-museum[open]) {
 }
 .town-cinematic::backdrop {
   background: transparent;
+}
+
+/* Optional monuments in the Build tab, below the era's buildings. */
+.town-monument-list {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #e1e2d2;
+}
+.town-monument-list h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 4px;
+  font:
+    700 17px Georgia,
+    serif;
+  color: #3d5446;
+}
+.town-monument-list h3 svg {
+  width: 20px;
+  height: 20px;
+  color: #8a6427;
+}
+.town-monument-list h3 small {
+  font: 600 10px var(--font-body);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #8a856a;
+}
+.town-monument-list .town-building-list {
+  margin-top: 14px;
 }

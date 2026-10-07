@@ -171,11 +171,10 @@ final class TownPersonalisation
         ) {
             return null;
         }
+        // A site keeps its first monument: no replacement, and timeless monuments never grow.
         if (
             $current &&
-            ($area['timeless']
-                ? $current === $choice
-                : $current !== $choice || $stage >= 3 * (1 + $now - $intro))
+            ($area['timeless'] || $current !== $choice || $stage >= 3 * (1 + $now - $intro))
         ) {
             return null;
         }
@@ -189,8 +188,7 @@ final class TownPersonalisation
         if (!$definition) {
             return null;
         }
-        $price =
-            $definition['price'] * ($current && !$area['timeless'] ? 1 + intdiv($level - 1, 3) : 1);
+        $price = $definition['price'] * ($current ? 1 + intdiv($level - 1, 3) : 1);
         if ($town['coins'] < $price) {
             return null;
         }

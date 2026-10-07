@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { Box3, Group, Scene } from 'three';
 import { createTown } from '../src/data/town';
-import { landmarkOffer, areaMaximum, LANDMARK_BY_ID } from '../src/data/townLandmarks';
+import { landmarkOffer, areaChoice, areaMaximum, LANDMARK_BY_ID } from '../src/data/townLandmarks';
 import { buildLandmark } from '../src/game/town/TownLandmarks';
 import { isEraComplete } from '../src/game/town/TownEras';
 import { riverDistance, RIVER } from '../src/game/town/TownRiver';
@@ -198,14 +198,14 @@ describe('Personalisation save and progression contract', () => {
       expect(areaUnlocked(town, area)).toBe(false);
     },
   );
-  it('charges full monument prices, rejects stale submissions and never refunds replacements', () => {
-    const area = PERSONAL_AREAS.find((a) => a.timeless);
-    let town = createTown();
-    town.era = 'industrial';
-    town.coins = 100000;
-    for (const choice of area.choices) {
-      const before = town.coins,
-        offer = landmarkOffer(town, area, choice);
+  it.each(PERSONAL_AREAS.find((a) => a.timeless).choices)(
+    'charges the full price of monument %s once, rejects stale submissions and never replaces it',
+    (choice) => {
+      const area = PERSONAL_AREAS.find((a) => a.timeless);
+      let town = createTown();
+      town.era = 'industrial';
+      town.coins = 100000;
+      const offer = landmarkOffer(town, area, choice);
       const command = {
         kind: 'area',
         id: area.id,
@@ -216,12 +216,30 @@ describe('Personalisation save and progression contract', () => {
       };
       expect(edit({ ...town, coins: offer.price - 1 }, command)).toBeNull();
       town = edit(town, command);
-      expect(town.coins).toBe(before - LANDMARK_BY_ID[choice].price);
+      expect(town.coins).toBe(100000 - LANDMARK_BY_ID[choice].price);
+      expect(areaChoice(town, area)).toBe(choice);
       expect(edit(town, command)).toBeNull();
-      expect(buy(town, area, choice)).toBeNull();
+      for (const other of area.choices) expect(buy(town, area, other)).toBeNull();
+      town.era = ERAS.at(-1).id;
+      for (const other of area.choices) expect(landmarkOffer(town, area, other)).toBeNull();
       expect(areaStage(town, area)).toBe(1);
-    }
-  });
+    },
+  );
+  it.each(PERSONAL_AREAS.filter((a) => !a.timeless))(
+    'keeps the first monument built on $id through every later era',
+    (area) => {
+      let town = createTown();
+      town.era = area.era;
+      town.coins = 1e9;
+      town = buy(town, area, area.choices[1]);
+      for (const era of ERAS.slice(ERAS.findIndex((e) => e.id === area.era))) {
+        town.era = era.id;
+        for (const other of area.choices.filter((c) => c !== area.choices[1]))
+          expect(buy(town, area, other)).toBeNull();
+      }
+      expect(areaChoice(town, area)).toBe(area.choices[1]);
+    },
+  );
   it('extends landmark upgrade capacity through a newly registered era', () => {
     const area = PERSONAL_AREAS[0],
       town = createTown();
@@ -434,13 +452,40 @@ describe('Personalisation rendering', () => {
         town.personalisation.areas[area.id] = [choice];
         const d = fixture(town),
           root = buildPersonalAreas(d, town);
-        const obstacles = sceneryObstacles(root);
+        const [ax, az] = area.positions[0];
+        const obstacles = sceneryObstacles(root).filter(
+          (o) => Math.hypot(o.x - ax, o.z - az) < area.radius,
+        );
         expect(obstacles).toHaveLength(1);
+        expect(obstacles[0].radius).toBe(area.radius);
         for (const obstacle of obstacles)
           for (const [x, z] of Object.values(PLOTS))
             expect(Math.hypot(x - obstacle.x, z - obstacle.z)).toBeGreaterThan(5);
-        expect(root.children).toHaveLength(1);
+        expect(root.children.map((g) => g.userData.monumentSite)).toEqual(
+          PERSONAL_AREAS.filter((a) => areaUnlocked(town, a)).map((a) => a.id),
+        );
       }
+  });
+  it('marks every open monument site of an unlocked era, and no site of a later era', () => {
+    for (const era of ERAS) {
+      const town = createTown();
+      town.era = era.id;
+      const d = fixture(town),
+        root = buildPersonalAreas(d, town);
+      const open = PERSONAL_AREAS.filter((a) => areaUnlocked(town, a));
+      if (!open.length) {
+        expect(root).toBeNull();
+        continue;
+      }
+      expect(root.children.map((g) => g.userData.monumentSite)).toEqual(open.map((a) => a.id));
+      for (const site of root.children) {
+        const area = PERSONAL_AREAS.find((a) => a.id === site.userData.monumentSite);
+        expect(site.name).toBe(`${area.id} 0: open site`);
+        // A small plinth: walkers keep using the open court.
+        expect(sceneryObstacles(site).every((o) => o.radius < 2)).toBe(true);
+        expect(new Box3().setFromObject(site).max.y - site.position.y).toBeLessThan(2);
+      }
+    }
   });
   it('keeps all new parcels clear of one another, the river and existing buildings', () => {
     for (const area of PERSONAL_AREAS) {

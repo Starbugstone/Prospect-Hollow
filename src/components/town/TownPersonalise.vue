@@ -134,7 +134,7 @@
       <p class="personal-note">
         {{
           t(
-            'Your palette follows all buildings as they grow, including new buildings and landmark plots. Monuments keep their own colours.',
+            'Your palette follows all buildings as they grow, including new buildings and monuments. The Monument Square monument keeps its own colours.',
           )
         }}
       </p>
@@ -148,125 +148,53 @@
     </div>
 
     <div v-else-if="section === 'buildings'" class="personal-section">
-      <div class="personal-segments">
-        <button :aria-pressed="buildingTab === 'familiar'" @click="buildingTab = 'familiar'">
-          {{ t('Familiar places') }}</button
-        ><button :aria-pressed="buildingTab === 'gardens'" @click="buildingTab = 'gardens'">
-          {{ t('Landmark plots') }}
+      <label class="personal-field"
+        >{{ t('Choose a building')
+        }}<select v-model="choiceBuilding" @change="$emit('focus', choiceBuilding)">
+          <option v-for="building in choiceBuildings" :key="building.id" :value="building.id">
+            {{ t(building.name) }}
+          </option>
+        </select></label
+      >
+      <p class="personal-note">
+        {{
+          t(
+            choiceLocked(town, choiceBuilding)
+              ? 'This place is already settled. Keep its character here, or try another design in a new town.'
+              : 'Choose its character before construction begins. The design stays as it grows.',
+          )
+        }}
+      </p>
+      <div class="personal-designs">
+        <button
+          v-for="choice in BUILDING_CHOICES[choiceBuilding]"
+          :key="choice"
+          :disabled="choiceLocked(town, choiceBuilding)"
+          :aria-pressed="(p.choices[choiceBuilding] || 'original') === choice"
+          @click="change({ kind: 'choice', id: choiceBuilding, value: choice })"
+        >
+          <TownDesignPreview :choice="choice" /><span>{{ t(CHOICE_LABELS[choice]) }}</span
+          ><small v-if="(p.choices[choiceBuilding] || 'original') === choice">{{
+            t('Selected')
+          }}</small>
         </button>
       </div>
-      <template v-if="buildingTab === 'familiar'">
-        <label class="personal-field"
-          >{{ t('Choose a building')
-          }}<select v-model="choiceBuilding" @change="$emit('focus', choiceBuilding)">
-            <option v-for="building in choiceBuildings" :key="building.id" :value="building.id">
-              {{ t(building.name) }}
-            </option>
-          </select></label
-        >
-        <p class="personal-note">
-          {{
-            t(
-              choiceLocked(town, choiceBuilding)
-                ? 'This place is already settled. Keep its character here, or try another design in a new town.'
-                : 'Choose its character before construction begins. The design stays as it grows.',
-            )
-          }}
-        </p>
-        <div class="personal-designs">
-          <button
-            v-for="choice in BUILDING_CHOICES[choiceBuilding]"
-            :key="choice"
-            :disabled="choiceLocked(town, choiceBuilding)"
-            :aria-pressed="(p.choices[choiceBuilding] || 'original') === choice"
-            @click="change({ kind: 'choice', id: choiceBuilding, value: choice })"
-          >
-            <TownDesignPreview :choice="choice" /><span>{{ t(CHOICE_LABELS[choice]) }}</span
-            ><small v-if="(p.choices[choiceBuilding] || 'original') === choice">{{
-              t('Selected')
-            }}</small>
+      <aside class="personal-monuments">
+        <TownIcon name="monument" />
+        <div>
+          <strong>{{ t('Looking for monuments?') }}</strong>
+          <p>
+            {{
+              t(
+                'Each era opens a monument site in town. Tap its marker on the map, or find it in Build.',
+              )
+            }}
+          </p>
+          <button class="personal-text-button" @click="$emit('monuments')">
+            {{ t('See monument sites') }}
           </button>
         </div>
-      </template>
-      <template v-else>
-        <p>
-          {{
-            t(
-              'One special place in every era. Choose its character, then develop it through the ages. All landmark plots are optional.',
-            )
-          }}
-        </p>
-        <label class="personal-field"
-          >{{ t('Choose a landmark plot') }}
-          <select v-model="landmarkAreaId">
-            <option v-for="area in PERSONAL_AREAS" :key="area.id" :value="area.id">
-              {{ t(ERA_BY_ID[area.era].label) }} · {{ t(area.label) }}
-            </option>
-          </select>
-        </label>
-        <article
-          v-for="area in PERSONAL_AREAS.filter((a) => a.id === landmarkAreaId)"
-          :key="area.id"
-          class="personal-area"
-        >
-          <header>
-            <h3>{{ t(area.label) }}</h3>
-            <span>{{ t(ERA_BY_ID[area.era].label) }}</span>
-          </header>
-          <p v-if="!areaUnlocked(town, area)" class="personal-note">
-            {{ t('Opens in {era}', { era: t(ERA_BY_ID[area.era].label) }) }}
-          </p>
-          <template v-else>
-            <p class="personal-note">
-              {{
-                t(
-                  area.timeless
-                    ? 'A timeless monument. Replace it for the new monument’s full price, with no refund.'
-                    : 'Three stages per era, with upgrades through Riverlight. Your building choice is permanent.',
-                )
-              }}
-            </p>
-            <div class="personal-designs">
-              <button
-                v-for="choice in area.choices"
-                :key="choice"
-                :disabled="!area.timeless && !!town.personalisation?.areas?.[area.id]?.[0]"
-                :aria-pressed="p.areas[area.id]?.[0] === choice"
-                @click="chooseArea(area, 0, choice)"
-              >
-                <TownLandmarkPreview :choice="choice" />
-                <span>{{ t(LANDMARK_BY_ID[choice].label) }}</span>
-                <small>{{ t(LANDMARK_BY_ID[choice].detail) }}</small>
-                <strong>{{
-                  t('{coins} coins', { coins: LANDMARK_BY_ID[choice].price.toLocaleString() })
-                }}</strong>
-                <small v-if="p.areas[area.id]?.[0] === choice">{{ t('Selected') }}</small>
-              </button>
-            </div>
-            <template v-if="!area.timeless && town.personalisation?.areas?.[area.id]?.[0]">
-              <p>
-                {{
-                  t('Stage {stage} of {maximum}', {
-                    stage: areaStage(draft, area),
-                    maximum: areaMaximum(town, area),
-                  })
-                }}
-              </p>
-              <button
-                v-if="upgradeFor(area)"
-                class="town-primary"
-                :disabled="draft.coins < upgradeFor(area).price || pendingArea(area)"
-                @click="chooseArea(area, 0, town.personalisation.areas[area.id][0])"
-              >
-                {{
-                  t('Upgrade · {coins} coins', { coins: upgradeFor(area).price.toLocaleString() })
-                }}
-              </button>
-              <p v-else class="personal-note">{{ t('Fully developed for this era.') }}</p>
-            </template>
-          </template>
-        </article>
-      </template>
+      </aside>
     </div>
 
     <div v-else class="personal-section">
@@ -309,25 +237,6 @@
       </div>
     </div>
 
-    <div v-if="confirmAreas" class="personal-confirm" role="alert">
-      <strong>{{ t('Make these places part of your town?') }}</strong>
-      <p>
-        {{
-          t(
-            'Building choices are permanent. Monuments can be replaced at full price with no refund.',
-          )
-        }}
-      </p>
-      <button class="town-primary" @click="save(true)">
-        {{
-          t('Confirm purchase · {coins} coins', {
-            coins: (town.coins - draft.coins).toLocaleString(),
-          })
-        }}</button
-      ><button class="town-secondary" @click="confirmAreas = false">
-        {{ t('Keep choosing') }}
-      </button>
-    </div>
     <footer class="personal-save">
       <p v-if="error" class="personal-note" role="alert">{{ error }}</p>
       <span role="status">{{
@@ -338,7 +247,7 @@
       <div>
         <button class="town-secondary" :disabled="!commands.length" @click="discard">
           {{ t('Undo changes') }}</button
-        ><button class="town-primary" :disabled="!commands.length" @click="save(false)">
+        ><button class="town-primary" :disabled="!commands.length" @click="save">
           {{ t('Save changes') }}
         </button>
       </div>
@@ -346,12 +255,9 @@
   </section>
 </template>
 <script setup>
-import TownLandmarkPreview from './TownLandmarkPreview.vue';
-import { LANDMARK_BY_ID, landmarkOffer, areaMaximum } from '../../data/townLandmarks';
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import { t } from '../../i18n';
 import { BUILDINGS } from '../../data/town';
-import { ERA_BY_ID } from '../../data/eras';
 import { HONOURS } from '../../data/honours';
 import { distinctionBadge } from '../../data/playerDistinctions';
 import { CREST_EMBLEMS, CREST_EMBLEM_IDS } from '../../data/townCrests';
@@ -363,7 +269,6 @@ import {
   CREST_SHAPES,
   PAINT_GROUPS,
   PERSONAL_AREAS,
-  areaStage,
   areaUnlocked,
   choiceLocked,
   normalizePersonalisation,
@@ -376,6 +281,7 @@ import TownBuilding from './TownBuilding.vue';
 import TownCrest from './TownCrest.vue';
 import TownColourPicker from './TownColourPicker.vue';
 import TownDesignPreview from './TownDesignPreview.vue';
+import TownIcon from './TownIcon.vue';
 
 const props = defineProps({
   town: { type: Object, required: true },
@@ -384,7 +290,7 @@ const props = defineProps({
   initialBuilding: String,
   commit: { type: Function, required: true },
 });
-const emit = defineEmits(['preview', 'focus']);
+const emit = defineEmits(['preview', 'focus', 'monuments']);
 const sections = [
   { id: 'crest', label: 'Crest', icon: 'spark' },
   { id: 'colours', label: 'Colours', icon: 'color-wand' },
@@ -399,8 +305,7 @@ const section = ref(
     : 'crest',
 );
 const commands = ref([]),
-  saved = ref(false),
-  confirmAreas = ref(false);
+  saved = ref(false);
 const earned = computed(() => [
   ...Object.keys(props.honours.earned),
   ...Object.keys(props.received),
@@ -475,11 +380,7 @@ const choiceBuilding = ref(
     : choiceBuildings.value[0]?.id || 'home',
 );
 const plaqueBuilding = ref(builtBuildings.value[0]?.id || 'well');
-const paintGroup = ref('walls'),
-  buildingTab = ref(props.initialBuilding ? 'familiar' : 'gardens');
-const landmarkAreaId = ref(
-  PERSONAL_AREAS.filter((a) => areaUnlocked(props.town, a)).at(-1)?.id || PERSONAL_AREAS[0].id,
-);
+const paintGroup = ref('walls');
 const badges = computed(() => [
   ...HONOURS.families.flatMap((family) =>
     family.ranks.filter((rank) => props.honours.earned[rank.id]).slice(-1),
@@ -504,7 +405,6 @@ function change(command) {
     command,
   ];
   saved.value = false;
-  confirmAreas.value = false;
   emit('preview', commands.value);
 }
 function changeCrest(patch) {
@@ -514,58 +414,14 @@ watch(section, async () => {
   await nextTick();
   document.querySelector('.town-dialog')?.scrollTo({ top: 0 });
 });
-watch(confirmAreas, async (value) => {
-  if (value) {
-    await nextTick();
-    document
-      .querySelector('.personal-confirm')
-      ?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-  }
-});
 const error = ref('');
-const pendingArea = (area) => commands.value.some((c) => c.kind === 'area' && c.id === area.id);
-const upgradeFor = (area) =>
-  landmarkOffer(props.town, area, props.town.personalisation?.areas?.[area.id]?.[0]);
-function chooseArea(area, slot, value) {
-  // A preview can be changed until Save settles the plot.
-  commands.value = commands.value.filter(
-    (c) => !(c.kind === 'area' && c.id === area.id && c.slot === slot),
-  );
-  const offer = landmarkOffer(draft.value, area, value);
-  if (!offer) {
-    emit('preview', commands.value);
-    return;
-  }
-  if (draft.value.coins < offer.price) {
-    error.value = t('You need {coins} more coins.', {
-      coins: (offer.price - draft.value.coins).toLocaleString(),
-    });
-    emit('preview', commands.value);
-    return;
-  }
-  error.value = '';
-  change({
-    kind: 'area',
-    id: area.id,
-    slot,
-    value,
-    expectedChoice: offer.expectedChoice,
-    expectedLevel: offer.expectedLevel,
-  });
-  nextTick(() => emit('focus', area.id));
-}
 function discard() {
   commands.value = [];
   error.value = '';
-  confirmAreas.value = false;
   saved.value = false;
   emit('preview', []);
 }
-function save(confirmed) {
-  if (!confirmed && commands.value.some((c) => c.kind === 'area')) {
-    confirmAreas.value = true;
-    return;
-  }
+function save() {
   if (props.commit(commands.value)) {
     discard();
     saved.value = true;
@@ -884,22 +740,25 @@ onBeforeUnmount(() => {
   width: 100%;
   max-height: 100px;
 }
-.personal-area {
-  padding: 16px;
-  border: 1px solid #d4d6c3;
-  border-radius: 14px;
-}
-.personal-area header {
+.personal-monuments {
   display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  align-items: baseline;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px;
+  border-radius: 14px;
+  background: #f4ead0;
 }
-.personal-area header span {
-  font-size: 11px;
+.personal-monuments > svg {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  color: #8a6427;
 }
-.personal-area h4 {
-  font-size: 12px;
+.personal-monuments p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #657365;
 }
 .personal-badges {
   display: grid;
@@ -933,16 +792,6 @@ onBeforeUnmount(() => {
 }
 .personal-save button {
   flex: 1;
-}
-.personal-confirm {
-  background: #f3e7c7;
-  border: 1px solid #c8b789;
-  border-radius: 12px;
-  padding: 18px;
-  margin-top: 20px;
-}
-.personal-confirm button {
-  margin: 5px;
 }
 .town-personalise button:focus-visible,
 .town-personalise input:focus-visible,

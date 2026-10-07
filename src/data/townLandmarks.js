@@ -1,7 +1,8 @@
 import { ERAS } from './eras';
 
-// One optional destination per era. Saved IDs and prices are authoritative for
-// both clients and the server (export-public-content). No landmark gates an era.
+// One optional monument site per era. A site's first monument is permanent. Saved
+// IDs and prices are authoritative for both clients and the server
+// (export-public-content). No monument gates an era.
 const option = (id, label, form, colour, price, detail) => ({
   id,
   label,
@@ -334,19 +335,22 @@ export const areaStage = (town, area) =>
   areaUnlocked(town, area) && town.personalisation?.areas?.[area.id]?.[0]
     ? town.personalisation.areaLevels?.[area.id] || 1
     : 0;
+export const AREA_BY_ID = Object.fromEntries(PERSONAL_AREAS.map((a) => [a.id, a]));
+// The monument standing on a site, or null while the site waits for one.
+export const areaChoice = (town, area) => {
+  const choice = town.personalisation?.areas?.[area.id]?.[0];
+  return area.choices.includes(choice) ? choice : null;
+};
+// Every site keeps the monument first built there. Timeless monuments never grow;
+// the others take three stages per era without ever becoming another design.
 export function landmarkOffer(town, area, choice) {
   if (!area || !areaUnlocked(town, area) || !area.choices.includes(choice)) return null;
   const current = town.personalisation?.areas?.[area.id]?.[0];
   const stage = areaStage(town, area);
-  if (
-    current &&
-    (area.timeless ? current === choice : current !== choice || stage >= areaMaximum(town, area))
-  )
+  if (current && (area.timeless || current !== choice || stage >= areaMaximum(town, area)))
     return null;
   const level = area.timeless ? 1 : stage + 1;
-  const price =
-    LANDMARK_BY_ID[choice].price *
-    (current && !area.timeless ? 1 + Math.floor((level - 1) / 3) : 1);
+  const price = LANDMARK_BY_ID[choice].price * (current ? 1 + Math.floor((level - 1) / 3) : 1);
   return { choice, level, price, expectedChoice: current || null, expectedLevel: stage };
 }
 export function purchaseLandmark(town, command) {

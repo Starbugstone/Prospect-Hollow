@@ -19,7 +19,7 @@ export const CAMERA_MIN_DISTANCE = 7;
 export function frameTown(d) {
   if (d.eventCamera) return;
   if (!d.anchors?.length) return;
-  if (Object.keys(d.town?.personalisation?.areas ?? {}).length)
+  if (d.town && PERSONAL_AREAS.some((area) => areaUnlocked(d.town, area)))
     d.controls.maxDistance = Math.max(d.controls.maxDistance, 180);
   const bounds = new THREE.Box3();
   const corners = [];
@@ -34,6 +34,8 @@ export function frameTown(d) {
       )
     : d.anchors;
   for (const { id } of framing) {
+    // Monument site labels are framed with their sites below.
+    if (!PLOTS[id]) continue;
     const [x, z] = PLOTS[id];
     if (id === 'airport') {
       for (const dx of [-10, 10])
@@ -55,8 +57,8 @@ export function frameTown(d) {
   }
   for (const area of PERSONAL_AREAS) {
     if (!d.town || !areaUnlocked(d.town, area)) continue;
-    area.positions.forEach(([x, z], slot) => {
-      if (!area.choices.includes(d.town.personalisation?.areas?.[area.id]?.[slot])) return;
+    // Open sites are framed too: their markers invite a monument.
+    area.positions.forEach(([x, z]) => {
       for (const dx of [-area.radius, area.radius])
         for (const dz of [-area.radius, area.radius]) {
           const corner = point(x + dx, 14, z + dz);

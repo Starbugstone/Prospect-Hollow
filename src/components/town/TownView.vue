@@ -199,9 +199,11 @@
                   })
                 : dialogMode === 'personalise'
                   ? 'Personalise your town'
-                  : dialogMode === 'more'
-                    ? 'More'
-                    : 'Your town',
+                  : dialogMode === 'monument'
+                    ? 'Monument site'
+                    : dialogMode === 'more'
+                      ? 'More'
+                      : 'Your town',
         )
       "
       close-label="Close building details"
@@ -368,6 +370,44 @@
           @mine="goMining"
           @advance-era="beginEra"
         />
+        <section
+          v-if="monumentSites.length"
+          class="town-monument-list"
+          aria-labelledby="town-monuments-heading"
+        >
+          <h3 id="town-monuments-heading">
+            <TownIcon name="monument" />{{ t('Monuments') }}<small>{{ t('Optional') }}</small>
+          </h3>
+          <p class="town-directory-hint">
+            {{
+              t(
+                'Each era opens one monument site. Choose its monument whenever you like: the choice is permanent, and monuments never affect era progress.',
+              )
+            }}
+          </p>
+          <div class="town-building-list">
+            <button v-for="site in monumentSites" :key="site.id" @click="openMonument(site.id)">
+              <span class="building-list-dot" :style="{ background: site.colour }"></span>
+              <span
+                >{{ t(site.name) }}<small>{{ site.status }}</small></span
+              >
+              <span v-if="site.price" class="town-plot-price">
+                <TownIcon name="coin" />{{
+                  site.from ? t('from {coins}', { coins: number(site.price) }) : number(site.price)
+                }}
+              </span>
+              <span v-else class="town-plot-price"><TownIcon name="check" /></span>
+            </button>
+          </div>
+          <p v-if="nextMonumentSite" class="town-directory-hint">
+            {{
+              t('Next monument site: {site}, opening in {era}.', {
+                site: t(nextMonumentSite.label),
+                era: t(ERA_BY_ID[nextMonumentSite.era].label),
+              })
+            }}
+          </p>
+        </section>
         <p v-if="town.era === 'industrial'" class="town-service">
           {{
             t(
@@ -444,6 +484,15 @@
         :commit="savePersonalisation"
         @preview="personalCommands = $event"
         @focus="focusPersonalBuilding"
+        @monuments="openTab('build')"
+      />
+      <TownMonumentSite
+        v-else-if="dialogMode === 'monument'"
+        :id="monumentSite"
+        :key="monumentSite"
+        :town="town"
+        :commit="buildMonument"
+        @preview="monumentPreview = $event ? { id: monumentSite, choice: $event } : null"
       />
       <TownMoreMenu
         v-else-if="dialogMode === 'more'"
@@ -562,6 +611,17 @@
 </template>
 <script setup>
 import TownPersonalise from './TownPersonalise.vue';
+import TownMonumentSite from './TownMonumentSite.vue';
+import {
+  AREA_BY_ID,
+  LANDMARK_BY_ID,
+  PERSONAL_AREAS,
+  areaChoice,
+  areaMaximum,
+  areaStage,
+  areaUnlocked,
+  landmarkOffer,
+} from '../../data/townLandmarks';
 import { BUILDING_CHOICES, personaliseTown } from '../../data/townPersonalisation';
 import { CREST_EMBLEM_IDS } from '../../data/townCrests';
 import { performanceMark } from '../../game/PresentationWork';
@@ -802,15 +862,84 @@ function focusPersonalBuilding(id) {
 function savePersonalisation(commands) {
   return campaign.personalise(commands, personalDistinctions.value);
 }
+// Monument sites open from the map, the Build list or Personalise.
+const monumentSite = ref(PERSONAL_AREAS[0].id),
+  monumentPreview = ref(null);
+function openMonument(id) {
+  if (!AREA_BY_ID[id]) return;
+  museumOpen.value = false;
+  monumentSite.value = id;
+  dialogMode.value = 'monument';
+  nextTick(() => {
+    document.querySelector('.town-dialog')?.scrollTo({ top: 0 });
+    townScene.value?.focusPlace(id);
+  });
+}
+function buildMonument(command) {
+  monumentPreview.value = null;
+  if (!campaign.personalise([command], personalDistinctions.value)) return false;
+  game.audioManager?.playArcadeCue?.('coin');
+  const name = t(LANDMARK_BY_ID[command.value].label);
+  announcement.value = command.expectedChoice
+    ? t('{monument} grew to stage {stage}', { monument: name, stage: command.expectedLevel + 1 })
+    : t('{monument} built', { monument: name });
+  nextTick(() => townScene.value?.focusPlace(command.id));
+  return true;
+}
+const monumentSites = computed(() =>
+  PERSONAL_AREAS.filter((area) => areaUnlocked(town.value, area)).map((area) => {
+    const choice = areaChoice(town.value, area);
+    if (!choice) {
+      const prices = area.choices.map((id) => LANDMARK_BY_ID[id].price);
+      return {
+        id: area.id,
+        name: area.label,
+        colour: '#c9a35a',
+        status: t('Open site · {count} designs', { count: area.choices.length }),
+        price: Math.min(...prices),
+        from: new Set(prices).size > 1,
+      };
+    }
+    const upgrade = landmarkOffer(town.value, area, choice);
+    return {
+      id: area.id,
+      name: LANDMARK_BY_ID[choice].label,
+      colour: LANDMARK_BY_ID[choice].colour,
+      status: area.timeless
+        ? t(area.label)
+        : t('{site} · Stage {stage} of {maximum}', {
+            site: t(area.label),
+            stage: areaStage(town.value, area),
+            maximum: areaMaximum(town.value, area),
+          }),
+      price: upgrade?.price ?? 0,
+      from: false,
+    };
+  }),
+);
+const nextMonumentSite = computed(() =>
+  PERSONAL_AREAS.find((area) => !areaUnlocked(town.value, area)),
+);
 const sceneTown = computed(() => {
   const earned = [
     ...Object.keys(campaign.honours.earned),
     ...Object.keys(personalDistinctions.value),
   ];
-  const preview = personalCommands.value.reduce(
+  let preview = personalCommands.value.reduce(
     (value, command) => personaliseTown(value, command, CREST_EMBLEM_IDS, earned) ?? value,
     town.value,
   );
+  // A design being considered for an open monument site stands there before it is bought.
+  const site = monumentPreview.value;
+  if (site && AREA_BY_ID[site.id] && !areaChoice(preview, AREA_BY_ID[site.id]))
+    preview = {
+      ...preview,
+      personalisation: {
+        ...preview.personalisation,
+        areas: { ...preview.personalisation?.areas, [site.id]: [site.choice] },
+        areaLevels: { ...preview.personalisation?.areaLevels, [site.id]: 1 },
+      },
+    };
   return {
     ...preview,
     displayHonours: campaign.honours,
@@ -1132,6 +1261,10 @@ function showCollection(resource, amount, buildingId) {
   };
 }
 async function selectBuilding(id) {
+  if (AREA_BY_ID[id]) {
+    openMonument(id);
+    return;
+  }
   if (!Object.hasOwn(BUILDING_BY_ID, id)) return;
   selected.value = id;
   if (constructionReady(town.value.projects[id])) {

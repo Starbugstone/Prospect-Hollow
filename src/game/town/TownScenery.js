@@ -1,5 +1,5 @@
 import { buildPersonalAreas, buildTownBanner } from './TownPersonalisation';
-import { PERSONAL_AREAS, areaStage } from '../../data/townPersonalisation';
+import { PERSONAL_AREAS, areaStage, areaUnlocked } from '../../data/townPersonalisation';
 import { buildMineHillside } from './TownMineHillside';
 import { groundHeight, landscapeColor } from './TownLandscape';
 import { RAIL_EDGE } from './TownLayout';
@@ -46,7 +46,7 @@ export class TownScenery {
           town.displayHonours,
           town.displayDistinctions,
           town.personalisation?.crest,
-          PERSONAL_AREAS.map((area) => areaStage(town, area)),
+          PERSONAL_AREAS.map((area) => [areaUnlocked(town, area), areaStage(town, area)]),
         ]),
         () => buildPersonalAreas(view, town),
       ],
