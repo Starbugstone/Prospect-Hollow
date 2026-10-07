@@ -219,6 +219,23 @@ const WARDROBES = {
       ['#8fd0cb', '#2f3a5c', '#f5d77e', '#d6dae6', '#9c86d0'],
     ],
   },
+  // Homecoming: soft knit jackets in valley teal and moon silver, gold pins.
+  twin: {
+    skirtLength: 0.38,
+    crown: 'none',
+    hat: 'none',
+    trousers: '#55607a',
+    boots: '#f1eee6',
+    coat: 0.4,
+    patrol: true,
+    resident: 'garden',
+    guest: ['#a2486a', '#3a3550', '#f2c6d4', '#faf4ec', '#7fc4c0'],
+    palettes: [
+      ['#3f8f8a', '#55607a', '#f0c45a', '#f1eee6', '#bcdde4'],
+      ['#d9dbe4', '#4d6283', '#3f8f8a', '#e9e2d2', '#f0c45a'],
+      ['#f0c45a', '#5b6f73', '#d9dbe4', '#f1eee6', '#8db383'],
+    ],
+  },
   // Homestead flight suits: patched work jackets, gold visors and barn-red scarves.
   moonward: {
     skirtLength: 0.32,

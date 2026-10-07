@@ -21,7 +21,7 @@ import * as THREE from 'three';
 
 import { addConstructionPlot, addWell } from './buildings/frontierParts';
 import { WATERMILL_WHEEL } from './buildings/watermill';
-import { ELEVATOR_CLIMBERS, moveClimbers } from './buildings/future';
+import { ELEVATOR_CLIMBERS, elevatorMotion } from './buildings/future';
 
 import { BUILDING_BY_ID } from '../../data/town';
 
@@ -141,11 +141,7 @@ export function buildPlot(d, id, group, town, labels) {
         };
       const climbers = group.getObjectByName(ELEVATOR_CLIMBERS);
       if (climbers)
-        movingPart = {
-          rotor: climbers,
-          update: (time) => moveClimbers(climbers, time),
-          solid: false,
-        };
+        movingPart = { rotor: climbers, update: elevatorMotion(d, climbers), solid: false };
       if (project) addScaffolding(d, group, kind, stage, constructionVisual(project));
     }
   }
@@ -200,8 +196,10 @@ export function prepareConstructionCue(d) {
 }
 
 export function beginConstructionCue(d, id) {
+  // Moon buildings have no valley lot; their work is shown on the Moon map.
+  if (!PLOTS[id]) return;
   d.prepareConstructionCue();
-  const [x, z] = PLOTS[id] ?? [0, 0];
+  const [x, z] = PLOTS[id];
   d.cue.position.set(x + 1.4, 0.4, z + 1.8);
   d.cue.rotation.z = -0.65;
   d.cue.visible = true;
@@ -512,6 +510,8 @@ export function tryActivatePlot(d) {
   if (previous.movingPart) {
     previous.movingPart.rotor.removeFromParent();
     d.motions = d.motions.filter((m) => m !== previous.movingPart.update);
+    if (previous.movingPart.rotor.name === ELEVATOR_CLIMBERS)
+      d.visitorTransports?.delete('spaceElevator');
   }
   group.visible = true;
   group.userData.activation = construction ? 'temporary-reveal' : 'completed';

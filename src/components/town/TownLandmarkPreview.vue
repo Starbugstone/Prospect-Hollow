@@ -208,6 +208,59 @@
         <ellipse cx="80" cy="27" rx="25" ry="8" />
         <ellipse cx="80" cy="64" rx="27" ry="8" fill="none" stroke-width="4" />
       </template>
+      <template v-else-if="form === 'orbits'">
+        <ellipse cx="80" cy="102" rx="56" ry="10" fill="#8caf80" />
+        <path d="M80 102V40" stroke-width="4" />
+        <circle cx="80" cy="34" r="12" fill="#cc954f" />
+        <ellipse cx="80" cy="46" rx="44" ry="10" fill="none" stroke-width="2" />
+        <circle cx="122" cy="48" r="6" fill="#9c86d0" />
+        <circle cx="44" cy="44" r="5" fill="#5fb8a8" />
+      </template>
+      <template v-else-if="form === 'comet'">
+        <path d="M40 110V64a40 40 0 0 1 80 0v46h-12V64a28 28 0 0 0-56 0v46Z" />
+        <circle cx="116" cy="20" r="9" fill="#fff3c8" />
+        <circle
+          v-for="n in 5"
+          :key="n"
+          :cx="116 - n * 11"
+          :cy="20 + n * 4"
+          :r="7 - n"
+          fill="#cc954f"
+        />
+      </template>
+      <template v-else-if="form === 'aurora'">
+        <path d="M34 110V92h92v18Z" :fill="paint.walls || '#ddd1b5'" />
+        <path d="M38 92a42 40 0 0 1 84 0Z" fill="#a0ccc4" />
+        <path
+          d="M44 40q16-30 30 0M70 30q16-30 30 0M96 40q16-30 30 0"
+          fill="none"
+          stroke-width="7"
+        />
+      </template>
+      <template v-else-if="form === 'lantern-walk'">
+        <g v-for="x in [42, 66, 94, 118]" :key="x">
+          <path :d="`M${x} 110V54`" stroke-width="3" />
+          <circle :cx="x - 5" cy="52" r="5" />
+          <circle :cx="x + 5" cy="52" r="5" fill="#f0c45a" />
+        </g>
+        <path d="M40 44q40-34 80 0" fill="none" stroke-width="5" />
+      </template>
+      <template v-else-if="form === 'globes'">
+        <ellipse cx="80" cy="100" rx="50" ry="12" :fill="paint.walls || '#ddd1b5'" />
+        <ellipse cx="80" cy="96" rx="44" ry="9" fill="#7fc0d0" />
+        <path d="M62 96V56M104 96V66" stroke-width="4" />
+        <circle cx="62" cy="40" r="16" />
+        <path d="M54 34q8-6 14 2" fill="none" stroke="#8caf80" stroke-width="5" />
+        <circle cx="104" cy="56" r="11" fill="#f1eee6" />
+      </template>
+      <template v-else-if="form === 'welcome-arch'">
+        <path d="M34 110V28h14v82ZM112 110V28h14v82Z" :fill="paint.walls || '#ddd1b5'" />
+        <path d="M28 20h104v14H28Z" />
+        <path d="M50 54h4v26h-4ZM106 54h4v26h-4Z" />
+        <circle cx="72" cy="12" r="7" fill="#4f8fc7" />
+        <circle cx="88" cy="12" r="5" fill="#f1eee6" />
+        <path d="M60 106h40v-8H60Z" fill="#b88757" />
+      </template>
       <template v-else>
         <path
           d="M54 112V77h52v35ZM59 77V48h42v29ZM64 48V22h32v26Z"

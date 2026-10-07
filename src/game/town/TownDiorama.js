@@ -348,6 +348,16 @@ export class TownDiorama extends TownPrimitives {
     this.availablePlots = new Set(ids);
     this.render();
   }
+  /** Where a far sky direction sits on screen, in percent, and how much the camera faces it. */
+  skyPoint(dx, dz) {
+    const direction = new THREE.Vector3(dx, 0, dz).normalize();
+    const forward = this.camera.getWorldDirection(new THREE.Vector3());
+    const facing =
+      (forward.x * direction.x + forward.z * direction.z) / (Math.hypot(forward.x, forward.z) || 1);
+    const point = this.camera.position.clone().addScaledVector(direction, 400).project(this.camera);
+    const distance = this.camera.position.distanceTo(this.controls.target);
+    return { x: (point.x + 1) * 50, y: (1 - point.y) * 50, facing, distance };
+  }
   select(id) {
     if (this.selected === id && this.selection?.parent === this.world) return;
     this.selected = id;
@@ -356,7 +366,13 @@ export class TownDiorama extends TownPrimitives {
       this.selection.geometry.dispose();
       this.selection.material.dispose();
     }
-    const [x, z] = PLOTS[id] ?? [0, 0];
+    // Moon buildings have no valley lot to ring.
+    if (!PLOTS[id]) {
+      this.selection = null;
+      this.render();
+      return;
+    }
+    const [x, z] = PLOTS[id];
     this.selection = new THREE.Mesh(
       new THREE.RingGeometry(1.65, 1.71, 64),
       new THREE.MeshBasicMaterial({

@@ -180,11 +180,62 @@ export const LANDMARK_OPTIONS = [
     21000,
     'Pearl petal roofs on slender columns, hung with amber lanterns.',
   ),
+  // Stargazer: Stargazers' Lawn.
+  option(
+    'orbit-garden',
+    'Orrery Garden',
+    'orbits',
+    '#3f4f84',
+    25000,
+    'A ring of hedges where brass planets circle a golden sun.',
+  ),
+  option(
+    'comet-arch',
+    'Comet Arch',
+    'comet',
+    '#9c86d0',
+    26000,
+    'A slender arch with a comet and its starry tail streaming over the lawn.',
+  ),
+  option(
+    'aurora-dome',
+    'Aurora Dome',
+    'aurora',
+    '#5fb8a8',
+    27000,
+    'A glass dome under ribbons of aurora light.',
+  ),
+  // Twin Hollows: Homecoming Green.
+  option(
+    'lantern-walk',
+    'Twin-lantern Walk',
+    'lantern-walk',
+    '#3f8f8a',
+    31000,
+    'An avenue of twin lanterns, one for the valley and one for the Moon.',
+  ),
+  option(
+    'globe-garden',
+    'Earth and Moon Garden',
+    'globes',
+    '#4f8fc7',
+    32000,
+    'A fountain garden where a little Earth and Moon share one pool.',
+  ),
+  option(
+    'welcome-arch',
+    'Family Welcome Arch',
+    'welcome-arch',
+    '#b88757',
+    33000,
+    'A homecoming arch with banners and a bench for waiting families.',
+  ),
 ];
 export const LANDMARK_BY_ID = Object.fromEntries(LANDMARK_OPTIONS.map((o) => [o.id, o]));
 // Only Monument Square stands before the town. Every other site lies beyond the
 // railway: two rows behind the mine ridge and a column west of the airport's
-// approach, clear of the space elevator and Skyward parcels across the track.
+// approach, clear of the space elevator. Stargazers' Lawn and Homecoming Green
+// sit beyond the Skyward quarter.
 const plots = [
   ['meadow', 'frontier', 'Founders’ Meadow', [-4, -60], ['headframe', 'windgarden', 'longhall']],
   [
@@ -221,6 +272,20 @@ const plots = [
     'Riverlight Court',
     [14, -80],
     ['spring-terraces', 'light-garden', 'lotus-forum'],
+  ],
+  [
+    'stargazer-lawn',
+    'stargazer',
+    'Stargazers’ Lawn',
+    [80, -80],
+    ['orbit-garden', 'comet-arch', 'aurora-dome'],
+  ],
+  [
+    'homecoming-green',
+    'twin-hollows',
+    'Homecoming Green',
+    [48, -80],
+    ['lantern-walk', 'globe-garden', 'welcome-arch'],
   ],
 ];
 export const PERSONAL_AREAS = plots.map(([id, era, label, position, choices]) => ({

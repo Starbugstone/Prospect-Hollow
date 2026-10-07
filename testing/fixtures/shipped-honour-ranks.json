@@ -427,6 +427,15 @@
     },
     "version": 1
   },
+  "ages-diamond": {
+    "goal": 29,
+    "measure": {
+      "kind": "era",
+      "era": "twin-hollows",
+      "complete": true
+    },
+    "version": 1
+  },
   "guardian-bronze": {
     "goal": 5,
     "measure": {

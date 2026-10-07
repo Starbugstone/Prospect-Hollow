@@ -31,18 +31,21 @@ tapping the plaque names the honour or distinction above it until the next tap.
 
 ## Monument sites
 
-`townLandmarks.js` owns six spacious monument sites. A site opens every other era
-(Frontier, Industrial, Motor Age, Music & Television, Tomorrow City and Riverlight),
+`townLandmarks.js` owns eight spacious monument sites. A site opens every other era
+(Frontier, Industrial, Motor Age, Music & Television, Tomorrow City, Riverlight,
+Stargazer and Twin Hollows),
 so the town gets variety without a monument for every era. Each era site offers
 three designs drawn from what that era brings to the town:
 
-| Era                | Site             | Designs                                                 |
-| ------------------ | ---------------- | ------------------------------------------------------- |
-| Frontier           | Founders' Meadow | Prospectors' Headframe, Wind Garden, Founders' Longhall |
-| Motor Age          | Promenade        | Sunburst Filling Station, Chrome Diner, Terminus Clock  |
-| Music & Television | Arts Quarter     | Music Shell, Big Screen, Signal Spire                   |
-| Tomorrow City      | Horizon Park     | Orbit House, Solar Crown, Maglev Loop                   |
-| Riverlight         | Riverlight Court | Warm Spring Terraces, Garden of Light, Lotus Pavilion   |
+| Era                | Site             | Designs                                                       |
+| ------------------ | ---------------- | ------------------------------------------------------------- |
+| Frontier           | Founders' Meadow | Prospectors' Headframe, Wind Garden, Founders' Longhall       |
+| Motor Age          | Promenade        | Sunburst Filling Station, Chrome Diner, Terminus Clock        |
+| Music & Television | Arts Quarter     | Music Shell, Big Screen, Signal Spire                         |
+| Tomorrow City      | Horizon Park     | Orbit House, Solar Crown, Maglev Loop                         |
+| Riverlight         | Riverlight Court | Warm Spring Terraces, Garden of Light, Lotus Pavilion         |
+| Stargazer          | Stargazers’ Lawn | Orrery Garden, Comet Arch, Aurora Dome                        |
+| Twin Hollows       | Homecoming Green | Twin-lantern Walk, Earth and Moon Garden, Family Welcome Arch |
 
 Every design has its own silhouette (`form`) and card artwork; no two designs share
 one. A later era with a site skips at least one era after the previous site, and its

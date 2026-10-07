@@ -201,11 +201,34 @@
         class="moon"
         :aria-label="moonLabel"
         :title="moonLabel"
-        @click="emit('inspect', 'spaceElevator')"
+        @click="openMoon"
       >
         <TownMoon :lights="moon.lights" /><span>{{ moon.homesteads }}</span>
       </button>
     </div>
+    <button
+      v-if="skyMoon && !moonOpen"
+      type="button"
+      class="town-sky-moon"
+      :style="{ left: `${skyMoon.x}%`, top: `${skyMoon.y}%` }"
+      :aria-label="moonLabel"
+      :title="moonLabel"
+      @pointerdown.stop
+      @pointerup.stop
+      @click="openMoon"
+    >
+      <TownMoon :lights="moon.lights" :light-size="0.5" />
+    </button>
+    <TownMoonView
+      v-if="moonOpen"
+      ref="moonView"
+      :town="town"
+      :active="active"
+      :paused="paused"
+      :reduced-motion="reducedMotion"
+      @inspect="emit('inspect', $event)"
+      @close="closeMoon"
+    />
   </div>
 </template>
 <script setup>
@@ -219,10 +242,11 @@ import { useSettingsStore } from '../../stores/settingsStore';
 import GameIcon from '../GameIcon.vue';
 import TownIcon from './TownIcon.vue';
 import TownMoon from './TownMoon.vue';
+import TownMoonView from './TownMoonView.vue';
 import { moonSettlement } from '../../data/moonSettlement';
 import GameViewStatus from '../GameViewStatus.vue';
 import { TOWN_ACTIONS } from '../../data/townIndicators';
-import { eraBuildingLevel } from '../../game/town/TownEras';
+import { eraBuildingLevel, plotInEra } from '../../game/town/TownEras';
 import {
   computed,
   inject,
@@ -240,7 +264,7 @@ import {
   trackElement,
   updateLabels,
 } from '../../game/town/TownLabels';
-import { BUILDING_BY_ID, BUILDINGS } from '../../data/town';
+import { BUILDING_BY_ID, EARTH_BUILDINGS, MOON_BUILDINGS } from '../../data/town';
 import { dressSpaceHelmet } from '../../game/town/TownSpaceHelmet';
 import {
   constructionRuns,
@@ -277,9 +301,47 @@ const props = defineProps({
 });
 // New Hollow's homesteads on the Moon, supplied by the space elevator.
 const moon = computed(() => moonSettlement(props.town));
-const moonLabel = computed(() =>
-  t('New Hollow on the Moon: {count} homesteads', { count: moon.value.homesteads }),
+const moonReachable = computed(() =>
+  MOON_BUILDINGS.some((building) => plotInEra(props.town, building.id)),
 );
+const moonLabel = computed(() =>
+  t(
+    moonReachable.value
+      ? 'Visit New Hollow on the Moon: {count} homesteads'
+      : 'New Hollow on the Moon: {count} homesteads',
+    { count: moon.value.homesteads },
+  ),
+);
+// The Moon map opens over the valley once the town can build there; before that
+// the chip shows the space elevator. The valley rests while the Moon is open.
+const moonOpen = ref(false);
+function openMoon() {
+  if (!moonReachable.value) return emit('inspect', 'spaceElevator');
+  moonOpen.value = true;
+}
+function closeMoon() {
+  moonOpen.value = false;
+}
+watch(moonOpen, () => scene?.setMotion(motionEnabled()));
+watch(moonReachable, (reachable) => {
+  if (!reachable) moonOpen.value = false;
+});
+// The Moon hangs in the valley sky to the north-west, above the mine and the
+// elevator. It drifts across the sky as the camera turns and opens New Hollow.
+const skyMoon = ref(null);
+function placeSkyMoon() {
+  if (!scene?.skyPoint || !moon.value.homesteads) return (skyMoon.value = null);
+  const { x, y, facing, distance } = scene.skyPoint(-0.55, -1);
+  // Sky shows at the top of the frame once the view is wide (the land fades into the
+  // sky) or tilted until the horizon is in view; close up, the frame is all town.
+  const skyInView = distance > 95 || y > 8;
+  skyMoon.value =
+    skyInView && facing > 0.3 && x > 6 && x < 94
+      ? { x, y: Math.min(Math.max(y - 9, 13), 34) }
+      : null;
+}
+watch(() => moon.value.homesteads, placeSkyMoon);
+const motionEnabled = () => props.active && !document.hidden && !props.paused && !moonOpen.value;
 // The building that would fix a shortage says so on its label.
 const NEED_HINTS = { water: 'Water needed', food: 'Food needed', comfort: 'Comfort needed' };
 const needHints = computed(() =>
@@ -388,7 +450,16 @@ function collectionOrigin(id) {
 let presentationTime = 0;
 let cinematicProgress = 0;
 defineExpose({
-  focusPlace: (id) => scene?.focusPlace(id),
+  // Moon buildings have no valley lot: focusing one opens the Moon map instead.
+  focusPlace: (id) => {
+    if (MOON_BUILDINGS.some((building) => building.id === id)) {
+      moonOpen.value = true;
+      return true;
+    }
+    return scene?.focusPlace(id);
+  },
+  openMoon,
+  closeMoon,
   findVisitor: (id) => scene?.findVisitor(id) ?? false,
   // Camera buttons are gone: drag, pinch, wheel and keys move the view; Village resets it.
   resetView: () => scene?.cameraAction('reset'),
@@ -497,12 +568,12 @@ async function update() {
   }
   if (!scene || !props.active) return;
   const labels = Object.fromEntries(
-    BUILDINGS.map((building) => [building.id, t(building.shortName)]),
+    EARTH_BUILDINGS.map((building) => [building.id, t(building.shortName)]),
   );
   const visual =
     props.nextLevel +
     JSON.stringify(
-      BUILDINGS.map(({ id }) => [
+      EARTH_BUILDINGS.map(({ id }) => [
         id,
         props.town.buildings[id],
         constructionVisual(props.town.projects[id]),
@@ -561,7 +632,7 @@ async function update() {
   scene.setAvailable([...availableIds.value, ...(props.town.income.stored > 0 ? ['saloon'] : [])]);
   scene.setUpgradeable(props.cinematic ? [] : upgradeIds.value);
   scene.select(props.selected);
-  scene.setMotion(props.active && !document.hidden && !props.paused);
+  scene.setMotion(motionEnabled());
   scene.setPaused(props.paused);
 }
 const warmAudio = () => prepareAudio(settings);
@@ -637,6 +708,7 @@ async function initialize() {
     scene = new TownDiorama(canvas.value, {
       onSelect: choose,
       onLabels: (positions) => {
+        placeSkyMoon();
         const layout = updateLabels(anchors.value, positions, anchorLayout);
         if (layout === null) placeLabels(anchors.value, labelElements, actionElements, box);
         else {
@@ -691,7 +763,7 @@ async function initialize() {
   }
 }
 const visibilityChanged = () => {
-  scene?.setMotion(props.active && !document.hidden && !props.paused);
+  scene?.setMotion(motionEnabled());
 };
 watch(
   () => [props.liveVisitors, props.liveVisitorTownId, props.reducedMotion, locale.value],

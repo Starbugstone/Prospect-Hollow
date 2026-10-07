@@ -158,7 +158,7 @@ it.each(ERAS.flatMap((era, index) => [1, 3].map((tier) => [era.id, index, tier])
     d.landscape = buildLandscape(d);
     d.scene.add(d.landscape);
     for (const b of BUILDINGS.filter(
-      (b) => ERAS.findIndex((e) => e.id === b.introducedEra) <= eraIndex,
+      (b) => !b.settlement && ERAS.findIndex((e) => e.id === b.introducedEra) <= eraIndex,
     )) {
       const stage = tier === 3 ? b.upgrades.length : 1;
       d.town.buildings[b.id] = stage;

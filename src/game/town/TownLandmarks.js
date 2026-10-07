@@ -1,4 +1,5 @@
 import { LANDMARK_BY_ID } from '../../data/townLandmarks';
+import { futureShape } from './buildings/futureShapes';
 
 const STONE = '#ddd1b5',
   DARK = '#655343',
@@ -17,6 +18,16 @@ function ring(d, g, radius, height, colour, tilt = 0, thickness = 0.1) {
       thickness,
       colour,
     );
+  }
+}
+// A continuous arch of joined segments, from (-span, base) over to (span, base).
+function arch(d, g, span, base, rise, z, radius, colour, colours = null) {
+  let last = null;
+  for (let n = 0; n <= 14; n++) {
+    const a = (n * Math.PI) / 14;
+    const point = [-Math.cos(a) * span, base + Math.sin(a) * rise, z];
+    if (last) d.rod(g, last, point, radius, colours ? colours[n % colours.length] : colour);
+    last = point;
   }
 }
 function column(d, g, x, z, height, colour = STONE) {
@@ -369,6 +380,125 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false) {
       d.ball(petal, 0, 0.5, 2, [1.15, 0.22, 2.3], n % 2 ? '#f4ead5' : colour).rotation.x = -0.45;
     }
     d.ball(g, 0, height + 1.4, 0, [1, 1.5, 1], '#f5ddb0');
+  } else if (o.form === 'orbits') {
+    // Stargazer: brass planets circle a golden sun inside a ring of hedges.
+    for (let n = 0; n < 16; n++) {
+      const a = (n * Math.PI) / 8;
+      d.ball(g, Math.cos(a) * 5, 1.1, Math.sin(a) * 5, [0.75, 0.55, 0.75], '#8caf80');
+    }
+    d.mesh(g, 'cylinder', [0.3, height, 0.3], [0, height / 2 + 0.6, 0], DARK);
+    d.ball(g, 0, height + 1.4, 0, 1.3, GOLD, 'rock');
+    for (const [r, y, c, size] of [
+      [2, height - 0.5, colour, 0.45],
+      [3.2, height - 1.5, '#9c86d0', 0.6],
+      [4.2, height - 2.6, '#5fb8a8', 0.5],
+    ]) {
+      ring(d, g, r, y, STONE, 0, 0.06);
+      const a = r * 1.3;
+      d.rod(
+        g,
+        [Math.cos(a) * r, 0.6, Math.sin(a) * r],
+        [Math.cos(a) * r, y, Math.sin(a) * r],
+        0.07,
+        DARK,
+      );
+      d.ball(g, Math.cos(a) * r, y + size, Math.sin(a) * r, size, c, 'rock');
+    }
+  } else if (o.form === 'comet') {
+    // Stargazer: a slender arch with a comet and its tail of stars.
+    for (const x of [-4, 4]) d.box(g, 1.2, 0.8, 1.6, x, 1, 0, wall);
+    arch(d, g, 4, 1.2, height + 2, 0, 0.45, wall, [wall, wall, colour]);
+    d.ball(g, 3.2, height + 5, 0.8, 0.9, '#fff3c8', 'rock');
+    for (let n = 1; n <= 6; n++)
+      d.ball(
+        g,
+        3.2 - n * 0.95,
+        height + 5 - n * 0.35,
+        0.8 - n * 0.1,
+        0.75 - n * 0.1,
+        n % 2 ? colour : GOLD,
+        'rock',
+      );
+  } else if (o.form === 'aurora') {
+    // Stargazer: a glass dome under ribbons of aurora light.
+    d.mesh(g, 'cylinder', [3.8, 1.6, 3.8], [0, 1.4, 0], wall);
+    d.mesh(g, futureShape(d, 'dome'), [3.7, 3.2, 3.7], [0, 2.2, 0], GLASS);
+    d.ball(g, 0, 5.6, 0, 0.5, GOLD, 'rock');
+    // Aurora curtains: wavy rows of thin slats in teal, green and violet.
+    for (const [z, y, c] of [
+      [-3.2, height + 3.4, '#5fb8a8'],
+      [-2.2, height + 4.4, colour],
+      [-1.2, height + 3.8, '#9c86d0'],
+    ])
+      for (let n = 0; n < 11; n++) {
+        const x = -4 + n * 0.8,
+          h = 1.6 + Math.sin(n * 0.9 + z) * 0.9 + 1;
+        const slat = d.box(
+          g,
+          0.55,
+          h,
+          0.06,
+          x,
+          y + Math.sin(n * 0.7 + z * 2) * 0.6,
+          z + Math.sin(n * 0.6) * 0.5,
+          c,
+        );
+        slat.rotation.y = Math.sin(n * 0.6) * 0.5;
+      }
+  } else if (o.form === 'lantern-walk') {
+    // Twin Hollows: an avenue of twin lanterns under homecoming arbors.
+    for (const z of [-3.6, -1.2, 1.2, 3.6])
+      for (const side of [-1, 1]) {
+        d.rod(g, [side * 2.2, 0.6, z], [side * 2.2, height - 0.5, z], 0.12, DARK);
+        d.ball(g, side * 2.2 - 0.3, height - 0.7, z, [0.28, 0.36, 0.28], colour, 'rock');
+        d.ball(g, side * 2.2 + 0.3, height - 0.7, z, [0.28, 0.36, 0.28], '#f0c45a', 'rock');
+      }
+    for (const z of [-2.4, 2.4]) arch(d, g, 2.2, height - 0.5, 1.6, z, 0.12, colour);
+    for (const side of [-1, 1]) d.box(g, 0.8, 0.5, 2.4, side * 3.6, 0.85, 0, '#b88757');
+  } else if (o.form === 'globes') {
+    // Twin Hollows: a little Earth and Moon share one fountain pool.
+    d.mesh(g, 'cylinder', [4.4, 0.7, 4.4], [0, 0.95, 0], wall);
+    d.mesh(g, 'cylinder', [3.9, 0.12, 3.9], [0, 1.32, 0], '#7fc0d0');
+    for (const [x, r, c, h] of [
+      [-1.6, 1.3, colour, height - 0.6],
+      [2, 0.85, '#f1eee6', height - 1.6],
+    ]) {
+      // Slender gold stands with a little cup under each globe.
+      d.mesh(g, 'cylinder', [0.12, h, 0.12], [x, h / 2 + 1, 0], GOLD);
+      d.mesh(g, 'cylinder', [0.45, 0.16, 0.45], [x, h + 1, 0], GOLD);
+      d.ball(g, x, h + 1.1 + r, 0, r, c);
+    }
+    // Continents on the little Earth, facing the path.
+    for (const [dx, dy, dz, sx] of [
+      [-0.35, 0.3, 1.02, 0.55],
+      [0.45, -0.2, 0.95, 0.4],
+      [0.1, 0.75, 0.75, 0.35],
+    ])
+      d.ball(g, -1.6 + dx, height + 1.8 + dy, dz, [sx, sx * 0.7, 0.25], '#8caf80', 'rock');
+    for (let n = 1; n <= 4; n++)
+      d.ball(g, -0.6 + n * 0.55, height + 1.6 + Math.sin(n * 0.8) * 0.6, 0, 0.18, '#a6d8e6');
+  } else if (o.form === 'welcome-arch') {
+    // Twin Hollows: a homecoming arch with banners and a family bench.
+    for (const side of [-1, 1]) {
+      d.box(g, 0.9, height + 2, 0.9, side * 3.4, (height + 2) / 2 + 0.6, 0, wall);
+      d.box(g, 1.2, 0.3, 1.2, side * 3.4, height + 2.75, 0, DARK);
+      d.box(g, 0.08, 2.2, 1.1, side * 3.4 + side * 0.5, height - 0.4, 0, colour);
+      d.ball(
+        g,
+        side * 2.6,
+        height + 2.2,
+        0.6,
+        [0.25, 0.32, 0.25],
+        side < 0 ? '#3f8f8a' : '#f0c45a',
+        'rock',
+      );
+    }
+    d.box(g, 7.6, 0.8, 1, 0, height + 3.3, 0, colour);
+    d.box(g, 4.6, 0.5, 0.15, 0, height + 3.3, 0.58, '#f4efe4');
+    d.ball(g, -0.5, height + 4.3, 0, 0.5, '#4f8fc7');
+    d.ball(g, 0.6, height + 4.2, 0, 0.35, '#f1eee6');
+    d.box(g, 2.8, 0.25, 0.8, 0, 1.05, 2.6, '#b88757');
+    d.box(g, 2.8, 0.7, 0.15, 0, 1.4, 2.95, '#b88757');
   } else {
     // The stepped Art Deco clock tower.
     const towerHeight = height + 3.5;

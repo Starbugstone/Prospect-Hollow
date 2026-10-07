@@ -2,6 +2,11 @@
 // text are English keys for t(); add the French text to src/i18n/fr.json.
 const UPDATES = [
   {
+    date: '2026-10-08',
+    title: 'Twin Hollows: a new frontier on the Moon',
+    text: 'Ride the ribbon to New Hollow and build a Moon settlement: settler domes, crater ice, a greenhouse lit by Earth and a Willowkin garden under glass. Back in the valley, a few homecoming landmarks light twin lanterns, Moon guests ride down the elevator, and visitors to your shared town can see your Moon too.',
+  },
+  {
     date: '2026-10-07',
     title: 'Three new eras: Skysail, Stargazer and Moonward',
     text: 'Raise sailcloth roofs and floating orchards, turn every street toward the stars, then build a space elevator beside the old mine. Cross the railway to the new Skyward quarter, and watch homestead lights appear on the Moon as you send up supplies.',

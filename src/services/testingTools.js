@@ -6,7 +6,7 @@ import { chapterLevelIds } from '../data/chapters';
 import { queueCampaignPresentations } from '../data/townPresentations';
 import { ERAS, FRONTIER_ERA } from '../data/eras';
 import { BUILDINGS, BANDIT_EVENT } from '../data/town';
-import { ERA_BUILDING_LEVELS, eraGate, plotInEra } from '../game/town/TownEras';
+import { ERA_BUILDING_LEVELS, eraGate, finishEra, plotInEra } from '../game/town/TownEras';
 import { normalizeTown, settleSaloonIncome } from '../game/town/TownRules';
 import { townFrameStats, townTimings } from '../game/town/TownProfiler';
 import { runRegisteredTestingMutation } from './localIntegrity';
@@ -71,7 +71,7 @@ export function createTestingTools(pinia) {
       for (const building of BUILDINGS) {
         const visible = plotInEra(town, building.id);
         town.buildings[building.id] = visible ? building.upgrades.length : 0;
-        town.buildingEras[building.id] = visible ? era : FRONTIER_ERA;
+        town.buildingEras[building.id] = visible ? finishEra(building.id, era) : FRONTIER_ERA;
         town.buildingEraLevels[building.id] =
           visible && era !== FRONTIER_ERA
             ? building.introducedEra === era

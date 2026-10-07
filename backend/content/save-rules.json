@@ -19,7 +19,8 @@
     "riverlight",
     "skysail",
     "stargazer",
-    "moonward"
+    "moonward",
+    "twin-hollows"
   ],
   "eras": {
     "frontier": {
@@ -39,6 +40,7 @@
         0
       ],
       "chestCoinCap": 4000,
+      "modernizes": null,
       "buildingOffers": {
         "well": {
           "normal": [
@@ -789,6 +791,7 @@
         15
       ],
       "chestCoinCap": 4000,
+      "modernizes": null,
       "buildingOffers": {
         "well": {
           "normal": [
@@ -2241,6 +2244,7 @@
         30
       ],
       "chestCoinCap": 4000,
+      "modernizes": null,
       "buildingOffers": {
         "well": {
           "normal": [
@@ -4011,6 +4015,7 @@
         39
       ],
       "chestCoinCap": 4000,
+      "modernizes": null,
       "buildingOffers": {
         "well": {
           "normal": [
@@ -6006,6 +6011,7 @@
         63
       ],
       "chestCoinCap": 4000,
+      "modernizes": null,
       "buildingOffers": {
         "well": {
           "normal": [
@@ -8235,6 +8241,7 @@
         81
       ],
       "chestCoinCap": 4000,
+      "modernizes": null,
       "buildingOffers": {
         "well": {
           "normal": [
@@ -10629,6 +10636,7 @@
         99
       ],
       "chestCoinCap": 4000,
+      "modernizes": null,
       "buildingOffers": {
         "well": {
           "normal": [
@@ -13155,6 +13163,7 @@
         123
       ],
       "chestCoinCap": 4500,
+      "modernizes": null,
       "buildingOffers": {
         "well": {
           "normal": [
@@ -15894,6 +15903,7 @@
         132
       ],
       "chestCoinCap": 5300,
+      "modernizes": null,
       "buildingOffers": {
         "well": {
           "normal": [
@@ -18828,6 +18838,7 @@
         138
       ],
       "chestCoinCap": 6100,
+      "modernizes": null,
       "buildingOffers": {
         "well": {
           "normal": [
@@ -21915,6 +21926,7 @@
         156
       ],
       "chestCoinCap": 7000,
+      "modernizes": null,
       "buildingOffers": {
         "well": {
           "normal": [
@@ -25155,6 +25167,7 @@
         174
       ],
       "chestCoinCap": 7900,
+      "modernizes": null,
       "buildingOffers": {
         "well": {
           "normal": [
@@ -28548,6 +28561,7 @@
         192
       ],
       "chestCoinCap": 8800,
+      "modernizes": null,
       "buildingOffers": {
         "well": {
           "normal": [
@@ -32094,6 +32108,7 @@
         210
       ],
       "chestCoinCap": 9700,
+      "modernizes": null,
       "buildingOffers": {
         "well": {
           "normal": [
@@ -35775,6 +35790,2720 @@
           ]
         }
       }
+    },
+    "twin-hollows": {
+      "enabled": true,
+      "style": "city",
+      "requiresPower": false,
+      "electricity": true,
+      "incident": "storm-cleanup",
+      "waterworks": [
+        265,
+        281,
+        297
+      ],
+      "farmCapacity": [
+        226,
+        242,
+        258
+      ],
+      "chestCoinCap": 10500,
+      "modernizes": [
+        "square",
+        "well",
+        "farm",
+        "railDepot",
+        "spaceElevator",
+        "moonpost"
+      ],
+      "buildingOffers": {
+        "well": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 75,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 210,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 390,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 18400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 4,
+              "cost": 21000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 5,
+              "cost": 23600,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "twin-hollows"
+            }
+          ]
+        },
+        "farm": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 75,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 255,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 450,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 18400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 4,
+              "cost": 21000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 5,
+              "cost": 23600,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "twin-hollows"
+            }
+          ]
+        },
+        "home": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 75,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 225,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 420,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "saloon": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 330,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 525,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 3,
+              "cost": 1050,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 4,
+              "cost": 2625,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "stable": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 315,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 495,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "sheriff": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 345,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 540,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 3,
+              "cost": 1080,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 4,
+              "cost": 2700,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "museum": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 180,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 315,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 495,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "armory": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 180,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 330,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 525,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "bank": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 345,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 540,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 3,
+              "cost": 1080,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 4,
+              "cost": 2700,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "shop": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 330,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 525,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "square": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 120,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 240,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 480,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 3,
+              "cost": 960,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 4,
+              "cost": 2400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 5,
+              "cost": 18400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 6,
+              "cost": 21000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 7,
+              "cost": 23600,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "twin-hollows"
+            }
+          ]
+        },
+        "watermill": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 270,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 450,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "fisherman": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 270,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 435,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "blacksmith": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 180,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 330,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 525,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 3,
+              "cost": 1050,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 4,
+              "cost": 2625,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "school": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 180,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 315,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 495,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "doctor": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 180,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 315,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 495,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "bridge": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "riverPort": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "railDepot": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 18400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 4,
+              "cost": 21000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 5,
+              "cost": 23600,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "twin-hollows"
+            }
+          ]
+        },
+        "post": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "warehouse": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "hotel": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "home5": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "market": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "powerHouse": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 1400,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 1850,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 2300,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "fireStation": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 1850,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 2300,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "rowHouses": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 1400,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 1850,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 2300,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "mill": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 1400,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 1850,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 2300,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "garage": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 6480,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 9000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 11880,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "busDepot": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 6480,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 9000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 11880,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "gardenCourt": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 6480,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 9000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 11880,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "diner": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 6480,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 9000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 11880,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "teaHouse": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 17250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 21000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 24750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "blossomAtelier": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 17250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 21000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 24750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "orchardCottages": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 17250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 21000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 24750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "glassworks": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 20250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 24000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 27750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "springsRetreat": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 20250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 24000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 27750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "riverlightPavilion": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 20250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 24000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 27750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "airport": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 15000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 18750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 22500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "radioTower": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "concertHall": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "television": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "skyline": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 15000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 18750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 22500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "cityHall": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 4500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 6000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 7500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "apartments": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 4500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 6000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 7500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "supermarket": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 4500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 6000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 7500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "waterPlant": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 4500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 6000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 7500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "transitHub": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "library": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "crystalLab": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "cityHomes": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 15000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 18750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 22500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "riverPark": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "skyPods": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 18750,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 23438,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 28125,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "biodome": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 18750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 22500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "maglevStation": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 18750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 22500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "skyHarbour": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 23250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 27000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 30750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "cloudOrchard": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 23250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 27000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 30750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "windsongLofts": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 23250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 27000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 30750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "greatTelescope": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 26250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 30000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 33750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "dewlightGardens": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 26250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 30000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 33750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "starlightTerraces": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 26250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 30000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 33750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "spaceElevator": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 36563,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 41250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 45938,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 23000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 4,
+              "cost": 26250,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 5,
+              "cost": 29500,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "twin-hollows"
+            }
+          ]
+        },
+        "moonpost": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 29250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 33000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 36750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 18400,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 4,
+              "cost": 21000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 5,
+              "cost": 23600,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "twin-hollows"
+            }
+          ]
+        },
+        "missionHomesteads": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 29250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 33000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 36750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "homecomingHall": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 31500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 35250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 39000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "ribbonLanding": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 39375,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 44063,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 48750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "settlerDomes": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 31500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 35250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 39000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "craterIceWell": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 31500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 35250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 39000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "earthlightGreenhouse": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 31500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 35250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 39000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "willowkinDome": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 31500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 35250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 39000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "newHollowCommons": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 31500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 35250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 39000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "craterHomesteads": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 31500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 35250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 39000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "moonstoneWorkshop": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 31500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 35250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 39000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "roverBarn": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 31500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 35250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 39000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "earthriseLookout": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 31500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 35250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 39000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "horseField": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 1850,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 2300,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "park": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 6480,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 9000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 11880,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "home2": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 113,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 338,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 630,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "home3": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 450,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 840,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "home4": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 188,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 563,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 1050,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "well2": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 113,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 315,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 585,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "farm2": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 113,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 383,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 675,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "farm3": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 510,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 900,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        }
+      }
     }
   },
   "buildings": {
@@ -38352,6 +41081,446 @@
         }
       ]
     },
+    "homecomingHall": {
+      "kind": "homecomingHall",
+      "introducedEra": "twin-hollows",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "bridge",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "upgrades": [
+        {
+          "cost": 31500,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 35250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 39000,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "ribbonLanding": {
+      "kind": "ribbonLanding",
+      "introducedEra": "twin-hollows",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "spaceElevator",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "upgrades": [
+        {
+          "cost": 39375,
+          "runs": 2,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 44063,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 48750,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "settlerDomes": {
+      "kind": "settlerDomes",
+      "introducedEra": "twin-hollows",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "spaceElevator",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "upgrades": [
+        {
+          "cost": 31500,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 35250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 39000,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "craterIceWell": {
+      "kind": "craterIceWell",
+      "introducedEra": "twin-hollows",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "spaceElevator",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "upgrades": [
+        {
+          "cost": 31500,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 35250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 39000,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "earthlightGreenhouse": {
+      "kind": "earthlightGreenhouse",
+      "introducedEra": "twin-hollows",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "spaceElevator",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "upgrades": [
+        {
+          "cost": 31500,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 35250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 39000,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "willowkinDome": {
+      "kind": "willowkinDome",
+      "introducedEra": "twin-hollows",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "spaceElevator",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "upgrades": [
+        {
+          "cost": 31500,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 35250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 39000,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "newHollowCommons": {
+      "kind": "newHollowCommons",
+      "introducedEra": "twin-hollows",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "spaceElevator",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "upgrades": [
+        {
+          "cost": 31500,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 35250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 39000,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "craterHomesteads": {
+      "kind": "craterHomesteads",
+      "introducedEra": "twin-hollows",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "spaceElevator",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "upgrades": [
+        {
+          "cost": 31500,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 35250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 39000,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "moonstoneWorkshop": {
+      "kind": "moonstoneWorkshop",
+      "introducedEra": "twin-hollows",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "spaceElevator",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "upgrades": [
+        {
+          "cost": 31500,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 35250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 39000,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "roverBarn": {
+      "kind": "roverBarn",
+      "introducedEra": "twin-hollows",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "spaceElevator",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "upgrades": [
+        {
+          "cost": 31500,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 35250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 39000,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "earthriseLookout": {
+      "kind": "earthriseLookout",
+      "introducedEra": "twin-hollows",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "spaceElevator",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "upgrades": [
+        {
+          "cost": 31500,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 35250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 39000,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
     "horseField": {
       "kind": "horseField",
       "introducedEra": "industrial",
@@ -39320,6 +42489,153 @@
         "per": 1,
         "ids": [
           "missionHomesteads"
+        ]
+      },
+      {
+        "stat": "visitors",
+        "per": 4,
+        "ids": [
+          "homecomingHall"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 3,
+        "ids": [
+          "homecomingHall"
+        ]
+      },
+      {
+        "stat": "visitors",
+        "per": 4,
+        "ids": [
+          "ribbonLanding"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "ribbonLanding"
+        ]
+      },
+      {
+        "stat": "housing",
+        "per": 6,
+        "ids": [
+          "settlerDomes"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "settlerDomes"
+        ]
+      },
+      {
+        "stat": "water",
+        "per": 12,
+        "ids": [
+          "craterIceWell"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "craterIceWell"
+        ]
+      },
+      {
+        "stat": "food",
+        "per": 12,
+        "ids": [
+          "earthlightGreenhouse"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "earthlightGreenhouse"
+        ]
+      },
+      {
+        "stat": "visitors",
+        "per": 2,
+        "ids": [
+          "willowkinDome"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 2,
+        "ids": [
+          "willowkinDome"
+        ]
+      },
+      {
+        "stat": "visitors",
+        "per": 2,
+        "ids": [
+          "newHollowCommons"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 2,
+        "ids": [
+          "newHollowCommons"
+        ]
+      },
+      {
+        "stat": "housing",
+        "per": 6,
+        "ids": [
+          "craterHomesteads"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "craterHomesteads"
+        ]
+      },
+      {
+        "stat": "visitors",
+        "per": 2,
+        "ids": [
+          "moonstoneWorkshop"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "moonstoneWorkshop"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 2,
+        "ids": [
+          "roverBarn"
+        ]
+      },
+      {
+        "stat": "visitors",
+        "per": 2,
+        "ids": [
+          "earthriseLookout"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 2,
+        "ids": [
+          "earthriseLookout"
         ]
       }
     ],
@@ -46327,6 +49643,10 @@
       "moonward": [
         6,
         14
+      ],
+      "twin-hollows": [
+        6,
+        14
       ]
     },
     "bountyPerCaptured": 10,
@@ -46434,6 +49754,17 @@
       "spaceElevator": "frontier",
       "moonpost": "frontier",
       "missionHomesteads": "frontier",
+      "homecomingHall": "frontier",
+      "ribbonLanding": "frontier",
+      "settlerDomes": "frontier",
+      "craterIceWell": "frontier",
+      "earthlightGreenhouse": "frontier",
+      "willowkinDome": "frontier",
+      "newHollowCommons": "frontier",
+      "craterHomesteads": "frontier",
+      "moonstoneWorkshop": "frontier",
+      "roverBarn": "frontier",
+      "earthriseLookout": "frontier",
       "horseField": "frontier",
       "park": "frontier",
       "home2": "frontier",
@@ -46508,6 +49839,17 @@
       "spaceElevator": 0,
       "moonpost": 0,
       "missionHomesteads": 0,
+      "homecomingHall": 0,
+      "ribbonLanding": 0,
+      "settlerDomes": 0,
+      "craterIceWell": 0,
+      "earthlightGreenhouse": 0,
+      "willowkinDome": 0,
+      "newHollowCommons": 0,
+      "craterHomesteads": 0,
+      "moonstoneWorkshop": 0,
+      "roverBarn": 0,
+      "earthriseLookout": 0,
       "horseField": 0,
       "park": 0,
       "home2": 0,
@@ -46589,6 +49931,17 @@
       "spaceElevator": 0,
       "moonpost": 0,
       "missionHomesteads": 0,
+      "homecomingHall": 0,
+      "ribbonLanding": 0,
+      "settlerDomes": 0,
+      "craterIceWell": 0,
+      "earthlightGreenhouse": 0,
+      "willowkinDome": 0,
+      "newHollowCommons": 0,
+      "craterHomesteads": 0,
+      "moonstoneWorkshop": 0,
+      "roverBarn": 0,
+      "earthriseLookout": 0,
       "horseField": 0,
       "park": 0,
       "home2": 0,
@@ -46736,6 +50089,17 @@
         "spaceElevator": "frontier",
         "moonpost": "frontier",
         "missionHomesteads": "frontier",
+        "homecomingHall": "frontier",
+        "ribbonLanding": "frontier",
+        "settlerDomes": "frontier",
+        "craterIceWell": "frontier",
+        "earthlightGreenhouse": "frontier",
+        "willowkinDome": "frontier",
+        "newHollowCommons": "frontier",
+        "craterHomesteads": "frontier",
+        "moonstoneWorkshop": "frontier",
+        "roverBarn": "frontier",
+        "earthriseLookout": "frontier",
         "horseField": "frontier",
         "park": "frontier",
         "home2": "frontier",
@@ -46810,6 +50174,17 @@
         "spaceElevator": 0,
         "moonpost": 0,
         "missionHomesteads": 0,
+        "homecomingHall": 0,
+        "ribbonLanding": 0,
+        "settlerDomes": 0,
+        "craterIceWell": 0,
+        "earthlightGreenhouse": 0,
+        "willowkinDome": 0,
+        "newHollowCommons": 0,
+        "craterHomesteads": 0,
+        "moonstoneWorkshop": 0,
+        "roverBarn": 0,
+        "earthriseLookout": 0,
         "horseField": 0,
         "park": 0,
         "home2": 0,
@@ -46891,6 +50266,17 @@
         "spaceElevator": 0,
         "moonpost": 0,
         "missionHomesteads": 0,
+        "homecomingHall": 0,
+        "ribbonLanding": 0,
+        "settlerDomes": 0,
+        "craterIceWell": 0,
+        "earthlightGreenhouse": 0,
+        "willowkinDome": 0,
+        "newHollowCommons": 0,
+        "craterHomesteads": 0,
+        "moonstoneWorkshop": 0,
+        "roverBarn": 0,
+        "earthriseLookout": 0,
         "horseField": 0,
         "park": 0,
         "home2": 0,
@@ -46924,7 +50310,7 @@
     "issuedRun": 0,
     "settledRun": 0,
     "honours": {
-      "version": 2,
+      "version": 3,
       "earned": {},
       "counts": {
         "gems": {},
@@ -46937,8 +50323,8 @@
       },
       "showcase": [],
       "backfilled": 0,
-      "seenGeneration": 2
+      "seenGeneration": 3
     }
   },
-  "contentDigest": "bce04133089b5e3e948afd01ab688626b7b14ec05f40a1248231e753c58a2c17"
+  "contentDigest": "3a1e1d9cf2f50a20c2064c336b94e6968b0d06d8ca9ecbd2ce14928bc22bb5d4"
 }

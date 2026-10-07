@@ -7,8 +7,8 @@
       </div>
       <span class="town-level-badge">{{
         t(town.era !== 'frontier' ? '{era} · Level {level} of {max}' : 'Level {level} / {max}', {
-          era: t(ERA_BY_ID[town.era].label),
-          level: eraBuildingLevel(town, id),
+          era: t(ERA_BY_ID[keptFinish ? town.buildingEras[id] : town.era].label),
+          level: keptFinish ? town.buildingEraLevels[id] || 3 : eraBuildingLevel(town, id),
           max: town.era !== 'frontier' ? 3 : building.upgrades.length,
         })
       }}</span>
@@ -349,7 +349,7 @@ import { ERA_BY_ID } from '../../data/eras';
 import { computed, inject } from 'vue';
 import { t } from '../../i18n';
 import { BUILDING_BY_ID } from '../../data/town';
-import { eraGate, eraBuildingLevel } from '../../game/town/TownEras';
+import { eraGate, eraBuildingLevel, modernizesInEra } from '../../game/town/TownEras';
 import { forgeProductionRuns } from '../../data/eras';
 import {
   upgradeOffer,
@@ -397,6 +397,14 @@ const cooldownSeconds = computed(() =>
   ),
 );
 const building = computed(() => BUILDING_BY_ID[props.id]);
+// A building this era leaves alone keeps showing the era of its finish.
+const keptFinish = computed(
+  () =>
+    props.town.era !== 'frontier' &&
+    building.value.introducedEra !== props.town.era &&
+    !modernizesInEra(props.town.era, props.id) &&
+    !!props.town.buildingEras[props.id],
+);
 const requirement = computed(() => plotRequirement(props.town, props.id));
 const needs = computed(() => townNeeds(props.town));
 const stage = computed(() => props.town.buildings[props.id]);

@@ -185,7 +185,7 @@ describe('The honours collection', () => {
   it('shows the town tab: eras, single-rank supplies and building links', async () => {
     const html = await collection(townState(), { tab: 'town' });
     const ages = card(html, 'ages');
-    expect(ages).toContain('Silver · 2 of 3');
+    expect(ages).toContain('Silver · 2 of 4');
     expect(ages).toContain('On the Air');
     expect(ages).toContain('Now in Connected City · next milestone: complete Riverlight Age');
     const quartermaster = card(html, 'quartermaster');

@@ -57,7 +57,10 @@ A rank without its own name uses the family name; the metal is always shown besi
   is not protection. It replaces the per-era defence medals, which depended on a random incident
   arriving at the right moment and could be missed for good.
 - Through the Ages names eras. Every other enabled era is listed in `NON_MILESTONE_ERAS`, so a new
-  era is a deliberate decision (a diamond rank or that list).
+  era is a deliberate decision (a diamond rank or that list). Its diamond rank, **Two Towns, One
+  Sky** (since honours version 3), asks to complete Twin Hollows in the valley and on the Moon
+  (goal 29: two era steps per era, plus one for completing it). Like gold, it is a milestone at the
+  end of the content, not a counted grind.
 - Village Explorer counts different players' villages visited **from this town** while signed in
   (the town chosen as the visiting town). Visiting your own other towns never counts.
 
@@ -161,6 +164,14 @@ late bound for eras. "Level N" means N completed puzzles in a straight pass.
 | Through the Ages | River & Rail at run 35     | Music & Television at run 218    | Riverlight complete ≈ run 712 (conservative)    |
 | Town Guardian    | 5 at L28 (19–69)           | 25 at L224 (186–280)             | 42.5 (37–48); 60 ≈ 1.4 campaigns                |
 | Forge            | 5 at L30                   | 100 at L221                      | 190; 250 ≈ 1.3 campaigns (spending TNT)         |
+
+Through the Ages diamond (Two Towns, One Sky), measured on 2026-10-07: one seed of the full
+402-level campaign (`node scripts/measure-campaign.mjs . 1 402`), then
+`node scripts/measure-town-progression.mjs <measurements> ordinary 1 5000`, which replays level 402 at
+its observed payout once the campaign ends. Riverlight was complete at run 438, Skysail at 483,
+Stargazer at 534, Moonward at 591 and Twin Hollows at run 612: the campaign plus 210 replays. Its
+light homecoming (a few landmarks plus New Hollow) costs about 1.36 million coins against 3.8
+million for Moonward.
 
 Mine elements per campaign: relics 242 (from chapter 10), lanterns 84 (chapter 42), survey trails
 39 (chapter 44), ore orders 73 (chapter 41), charge cores 85 (chapter 55), blast gates 89

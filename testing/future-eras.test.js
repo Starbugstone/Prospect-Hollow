@@ -31,7 +31,7 @@ import { GARDEN_PARCELS } from '../src/data/townGardenDistrict';
 import { townTracks, plotStreet } from '../src/game/town/TownLayout';
 import TownBuilding from '../src/components/town/TownBuilding.vue';
 
-const FUTURE_ERAS = ['skysail', 'stargazer', 'moonward'];
+const FUTURE_ERAS = ['skysail', 'stargazer', 'moonward', 'twin-hollows'];
 
 function diorama(era) {
   const d = Object.create(TownDiorama.prototype);
@@ -93,7 +93,9 @@ describe('Skysail, Stargazer and Moonward eras', () => {
       expect(Object.keys(FUTURE_PALETTES[style])).toEqual(keys);
       expect(new Set(Object.values(FUTURE_PALETTES[style])).size).toBe(8);
     }
-    expect(new Set(FUTURE_ARCHITECTURES.map((s) => FUTURE_PALETTES[s].roof)).size).toBe(3);
+    expect(new Set(FUTURE_ARCHITECTURES.map((s) => FUTURE_PALETTES[s].roof)).size).toBe(
+      FUTURE_ARCHITECTURES.length,
+    );
     ERA_BY_ID['future-successor'] = {
       evolution: { ...eraEvolution('skysail'), architecture: 'missing' },
     };
@@ -145,7 +147,7 @@ describe('Skysail, Stargazer and Moonward eras', () => {
           return snapshot(root);
         }),
       );
-      expect(looks.size, kind).toBe(3);
+      expect(looks.size, kind).toBe(FUTURE_ERAS.length);
     }
     dispose(d);
   });
@@ -193,7 +195,7 @@ describe('Skysail, Stargazer and Moonward eras', () => {
   it('crowns the mine portal differently in every era, in place of the petal canopy', () => {
     expect(Object.keys(FUTURE_MINE_CROWNS)).toEqual([...FUTURE_MINE_PORTALS]);
     const portals = ['riverlight', ...FUTURE_ERAS].map((era) => mineProfile(era).portal);
-    expect(new Set(portals).size).toBe(4);
+    expect(new Set(portals).size).toBe(FUTURE_ERAS.length + 1);
     const d = diorama('skysail');
     for (const era of FUTURE_ERAS) {
       const root = addMineSite(d, new Group(), era);

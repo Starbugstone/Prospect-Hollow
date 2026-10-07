@@ -11,6 +11,11 @@
       :era="era"
       :level="eraLevel"
     />
+    <TownMoonBuilding
+      v-else-if="BUILDING_BY_ID[id]?.settlement === 'moon'"
+      :kind="kind"
+      :level="stage"
+    />
     <TownFutureBuilding
       v-else-if="
         built && isFutureEra(era) && (futureForm(kind) || ['bridge', 'airport'].includes(kind))
@@ -515,6 +520,7 @@ import TownCozyBuilding from './TownCozyBuilding.vue';
 import { isCozyEra, cozyForm } from '../../data/cozyArchitecture';
 import { isFutureEra, futureForm } from '../../data/futureArchitecture';
 import TownFutureBuilding from './TownFutureBuilding.vue';
+import TownMoonBuilding from './TownMoonBuilding.vue';
 import { isRoundedEra, roundedForm } from '../../data/roundedArchitecture';
 import { BUILDING_BY_ID } from '../../data/town';
 import TownSquare from './TownSquare.vue';

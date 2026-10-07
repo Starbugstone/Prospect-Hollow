@@ -83,6 +83,16 @@
       <circle cy="-108" r="4" :fill="future.homestead.light" />
       <path v-if="grand" d="M-18-34q-8-14-2-22M18-34q8-14 2-22" v-bind="jet" />
     </template>
+    <template v-else-if="design === 'twin-globes'">
+      <ellipse cy="-20" rx="40" ry="15" :fill="future.twin.shell" />
+      <ellipse cy="-24" rx="34" ry="10" :fill="water" />
+      <path d="M-14-24v-34M16-24v-30" :stroke="future.twin.deep" stroke-width="4" />
+      <circle cx="-14" cy="-68" r="12" :fill="future.twin.flower" />
+      <path d="M-20-72q6-4 10 2" :stroke="future.twin.green" stroke-width="4" fill="none" />
+      <circle cx="16" cy="-60" r="9" :fill="future.twin.shell" stroke="#c9c4b6" stroke-width="2" />
+      <path d="M-4-74q10-14 22-4" v-bind="jet" />
+      <path v-if="grand" d="M-30-28q-8-14-2-22M30-28q8-14 2-22" v-bind="jet" />
+    </template>
     <template v-else-if="design === 'victorian-iron'">
       <polygon :points="ring(38, 16, -24, 8)" fill="#8f8c82" />
       <polygon :points="ring(38, 16, -32, 8)" fill="#c4c0b3" />

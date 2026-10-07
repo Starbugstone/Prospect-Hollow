@@ -135,6 +135,7 @@ export const MINE_PROFILES = {
   skysail: { inherits: 'riverlight', portal: 'sail-arch' },
   stargazer: { inherits: 'skysail', portal: 'dome-arch' },
   moonward: { inherits: 'stargazer', portal: 'homestead-arch' },
+  'twin-hollows': { inherits: 'moonward', portal: 'twin-arch' },
 };
 const portals = new Set(Object.values(MINE_PROFILES).map((p) => p.portal));
 const works = new Set(Object.values(MINE_PROFILES).map((p) => p.works));

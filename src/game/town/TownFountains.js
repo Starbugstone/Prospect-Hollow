@@ -598,6 +598,24 @@ function firstWell(d, g, grand) {
     }
 }
 
+// Twin Hollows: a little Earth and a little Moon share one basin and one arc of water.
+function twinGlobes(d, g, grand) {
+  const p = FUTURE_PALETTES.twin;
+  curb(d, g, 12, 0.98, 0.3, 0.22, 0.14, p.shell);
+  d.mesh(g, 'cylinder', [1, 0.04, 1], [0, 0.42, 0], p.light);
+  pool(d, g, 0.88, 0.41);
+  for (const [x, size, color] of [
+    [-0.36, 0.3, p.flower],
+    [0.4, 0.22, p.shell],
+  ]) {
+    d.mesh(g, 'cylinder', [0.07, 0.6, 0.07], [x, 0.7, 0], p.deep);
+    d.ball(g, x, 1.0 + size, 0, size, color);
+  }
+  d.ball(g, -0.3, 1.36, 0.12, [0.12, 0.05, 0.1], p.green, 'rock');
+  arc(d, g, [-0.36, 1.2, 0], [0.4, 1.12, 0], 0.32);
+  radialArcs(d, g, grand ? 6 : 4, [0.2, 0.95], [0.8, 0.45], 0.12);
+}
+
 /** One renderer for each id in FOUNTAIN_DESIGNS (src/data/fountains.js). */
 export const FOUNTAINS = Object.freeze({
   'frontier-spring': frontierSpring,
@@ -614,6 +632,7 @@ export const FOUNTAINS = Object.freeze({
   'wind-spiral': windSpiral,
   orrery,
   'first-well': firstWell,
+  'twin-globes': twinGlobes,
 });
 /** Build the central fountain for a square completed in `era`; stage 3 adds its tier. */
 export function addTownFountain(d, parent, stage, era = 'frontier') {

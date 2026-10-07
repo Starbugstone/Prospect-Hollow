@@ -5,7 +5,15 @@ import { ERAS } from '../src/data/eras';
 import { CITY_BUILDINGS, CITY_ERAS } from '../src/data/city';
 import { hasElectricity } from '../src/data/industrial';
 import { LEVEL_COUNT } from '../src/data/campaign';
-import { eraIndex, plotInEra, advanceEra, isEraComplete, eraGate } from '../src/game/town/TownEras';
+import {
+  eraIndex,
+  plotInEra,
+  advanceEra,
+  isEraComplete,
+  eraGate,
+  eraBuildingLevel,
+  modernizesInEra,
+} from '../src/game/town/TownEras';
 import {
   buildWithHammer,
   upgradeOffer,
@@ -68,6 +76,7 @@ it('orders rebuilding after Electric and before cars, with two saved, idempotent
     'skysail',
     'stargazer',
     'moonward',
+    'twin-hollows',
   ]);
   for (const from of ['industrial', 'motor-age']) {
     let c = useCampaignStore();
@@ -93,6 +102,12 @@ it.each(CITY_ERAS)(
     base.transition.pending = false;
     for (const b of BUILDINGS.filter((b) => eraIndex(b.introducedEra) < eraIndex(era))) {
       let town = structuredClone(base);
+      // An era with a `modernizes` list leaves the other buildings finished.
+      if (!modernizesInEra(era, b.id)) {
+        expect(upgradeOffer(town, b.id), b.id).toBeNull();
+        expect(eraBuildingLevel(town, b.id), b.id).toBe(3);
+        continue;
+      }
       const functional = town.buildings[b.id];
       const reads = [waterCapacity, foodCapacity, housingCapacity, visitorCapacity, happiness];
       const services = reads.map((f) => f(town));
@@ -162,6 +177,11 @@ it.each(CITY_BUILDINGS.map((b) => [b.id, b]))(
       if (!b.effects.housing && !b.effects.visitors)
         expect(happiness(town)).toBeGreaterThanOrEqual(before[4]);
       expect(benefit.after).toBeGreaterThanOrEqual(benefit.before);
+    }
+    // Moon buildings stand on the Moon map, not on a valley lot.
+    if (b.settlement) {
+      expect(visiblePlots(town).some((p) => p.id === id)).toBe(false);
+      return;
     }
     const plot = visiblePlots(town).find((p) => p.id === id);
     expect(wetBank(...plot.position)).toBe(false);
@@ -262,7 +282,9 @@ it('only finishes the entire city once every final-era plot and modernization is
   for (const b of BUILDINGS) {
     const copy = structuredClone(town);
     if (b.introducedEra === town.era) copy.buildings[b.id] = 2;
-    else copy.buildingEraLevels[b.id] = 2;
+    else if (modernizesInEra(town.era, b.id)) copy.buildingEraLevels[b.id] = 2;
+    // A building the era leaves alone only needs to stay fully built.
+    else copy.buildings[b.id] = b.upgrades.length - 1;
     expect(isEraComplete(copy), b.id).toBe(false);
   }
 });

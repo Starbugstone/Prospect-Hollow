@@ -9,12 +9,18 @@ import { futureShape } from './futureShapes';
 import { sailKit } from './future/sail';
 import { observatoryKit } from './future/observatory';
 import { homesteadKit } from './future/homestead';
+import { homecomingHall, twinKit } from './future/twin';
 
 // The eras after Riverlight share one set of archetypes. Each architecture's kit
 // draws its own walls, roofs, doors, annex and finishing flourish, so a family
 // keeps its massing while every era gives it a distinct silhouette. Geometry is
 // built once per plot purchase from shared primitives and merged by material.
-const KITS = { sail: sailKit, observatory: observatoryKit, homestead: homesteadKit };
+const KITS = {
+  sail: sailKit,
+  observatory: observatoryKit,
+  homestead: homesteadKit,
+  twin: twinKit,
+};
 const TAU = Math.PI * 2;
 
 // A rectangular building: body, roof and front door. Returns its crown.
@@ -331,6 +337,9 @@ const FORMS = {
     }
     return { landmark: true };
   },
+  homecomingHall(d, g, s) {
+    return homecomingHall(d, g, s, house);
+  },
   spaceElevator(d, g, s) {
     return renderSpaceElevator(d, g, s);
   },
@@ -486,7 +495,22 @@ function climber(d, parent, s, y) {
   g.traverse((part) => (part.castShadow = false));
 }
 export const ELEVATOR_CLIMBERS = 'Space elevator climbers';
-const CLIMB = { bottom: 6.6, top: 64, period: 46 };
+const CLIMB = { bottom: 6.6, top: 64, period: 46, dwell: 3.5 };
+/** The first climber reaches the docks once per trip; Moon guests step off then. */
+export function elevatorArrival(time) {
+  const since = ((time % CLIMB.period) + CLIMB.period) % CLIMB.period;
+  return {
+    arrived: since < CLIMB.dwell,
+    sinceArrival: since,
+    visit: Math.floor(time / CLIMB.period),
+  };
+}
+/** The elevator's per-frame motion: climbers ride the ribbon and, each time one
+ * reaches the docks, Moon guests may step off (the climber group frames them). */
+export const elevatorMotion = (d, climbers) => (time) => {
+  moveClimbers(climbers, time);
+  d.visitorTransports?.set('spaceElevator', { ...elevatorArrival(time), root: climbers });
+};
 /** Climbers rise with supplies and glide back down, evenly spaced along the ribbon. */
 export function moveClimbers(group, time) {
   const climbers = group.children;

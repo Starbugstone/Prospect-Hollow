@@ -4,7 +4,15 @@ import { BoxGeometry, Group, MeshBasicMaterial, Scene } from 'three';
 import { BUILDINGS, createTown } from '../src/data/town';
 import { ERAS } from '../src/data/eras';
 import { buildingServiceLevel } from '../src/data/buildingProgression';
-import { advanceEra, eraIndex, eraBuildingLevel, isEraComplete } from '../src/game/town/TownEras';
+import {
+  advanceEra,
+  eraIndex,
+  eraBuildingLevel,
+  finishEra,
+  isEraComplete,
+  modernizesInEra,
+} from '../src/game/town/TownEras';
+import { renderMoonBuilding } from '../src/game/town/buildings/moon';
 import { buildWithHammer, plotUnlocked, upgradeOffer } from '../src/game/town/TownRules';
 import { visiblePlots } from '../src/game/town/TownLayout';
 import { buildTownSquare } from '../src/game/town/TownSquare';
@@ -59,6 +67,13 @@ it('every plot begins in its own era, advances through every later playable era,
     }
     expect(isEraComplete(town), era.id).toBe(true);
     for (const b of available) {
+      // An era with a `modernizes` list leaves its other buildings in their last finish.
+      if (era.id !== 'frontier' && b.introducedEra !== era.id && !modernizesInEra(era.id, b.id)) {
+        expect(town.buildingEras[b.id], b.id).toBe(finishEra(b.id, era.id));
+        expect(eraBuildingLevel(town, b.id), b.id).toBe(3);
+        expect(upgradeOffer(town, b.id), b.id).toBeNull();
+        continue;
+      }
       expect(town.buildingEras[b.id], b.id).toBe(era.id);
       expect(eraBuildingLevel(town, b.id), b.id).toBe(
         era.id === 'frontier' ? b.upgrades.length : 3,
@@ -70,7 +85,8 @@ it('every plot begins in its own era, advances through every later playable era,
           kind = b.kind;
         const stage = buildingServiceLevel(b.id, town.buildings[b.id]);
         const service = b.introducedEra === era.id && era.id !== 'frontier' ? level : stage;
-        if (kind === 'bridge') {
+        if (b.settlement === 'moon') renderMoonBuilding(d, root, kind, level);
+        else if (kind === 'bridge') {
           renderBuilding({ town: d, parent: root, kind, level: service, label: b.name });
           renderModernization(d, root, kind, era.id, level);
         } else if (!renderEraLandmark(d, root, kind, b.name, level, era.id, service)) {

@@ -21,7 +21,7 @@ import { PERSONAL_AREAS } from './townLandmarks';
 // The saved block's shape and the catch-up generation: saves from an older generation
 // are re-evaluated once on load. It is not a requirement version (see `version` on a
 // rank) and a new rank or family raises it so existing saves earn what they prove.
-export const HONOURS_VERSION = 2;
+export const HONOURS_VERSION = 3;
 // Ranks in ladder order. A family may stop early; new ranks only ever append.
 export const RANK_METALS = Object.freeze(['bronze', 'silver', 'gold', 'diamond']);
 const METAL_DIFFICULTY = Object.freeze({
@@ -422,6 +422,17 @@ export function honourFamilies({
           'Finish every required building and modernization in {era}.',
           '{era} complete',
         ),
+        {
+          ...era(
+            'diamond',
+            'twin-hollows',
+            true,
+            'Two Towns, One Sky',
+            'Finish {era} in the valley and on the Moon.',
+            'Two towns, one sky',
+          ),
+          since: 3,
+        },
       ],
     },
     {
