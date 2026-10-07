@@ -1,7 +1,9 @@
 import { ERAS } from './eras';
 
-// One optional monument site per era. A site's first monument is permanent. Saved
-// IDs and prices are authoritative for both clients and the server
+// Optional monument sites open every other era, alongside the timeless Monument
+// Square. Each era site offers three designs drawn from what that era brings to the
+// town, and every design has its own silhouette. A site's first monument is
+// permanent. Saved IDs and prices are authoritative for both clients and the server
 // (export-public-content). No monument gates an era.
 const option = (id, label, form, colour, price, detail) => ({
   id,
@@ -12,21 +14,22 @@ const option = (id, label, form, colour, price, detail) => ({
   detail,
 });
 export const LANDMARK_OPTIONS = [
+  // Frontier: the mine, the first farms and the founders' settlement.
   option(
-    'roundhouse',
-    'Timber Roundhouse',
-    'rotunda',
-    '#b77839',
+    'headframe',
+    'Prospectors’ Headframe',
+    'headframe',
+    '#8a5a34',
     600,
-    'A broad timber hall with a crown of lanterns.',
+    'A timber headframe and winding wheel above a cart of the first crystals.',
   ),
   option(
     'windgarden',
     'Wind Garden',
-    'windmill',
+    'windpump',
     '#658c68',
     800,
-    'A tall wind tower surrounded by terraced gardens.',
+    'A many-bladed windpump lifting water for the first farm gardens.',
   ),
   option(
     'longhall',
@@ -36,30 +39,7 @@ export const LANDMARK_OPTIONS = [
     700,
     'Twin gables, deep porches and a welcoming courtyard.',
   ),
-  option(
-    'tideclock',
-    'Tide Clock',
-    'clock',
-    '#367673',
-    1600,
-    'A copper clock tower with riverside arcades.',
-  ),
-  option(
-    'exchange',
-    'Merchant Exchange',
-    'arcade',
-    '#b77839',
-    1800,
-    'An open market court beneath striped vaulted roofs.',
-  ),
-  option(
-    'beacon',
-    'River Beacon',
-    'beacon',
-    '#41658f',
-    2000,
-    'A white stepped lighthouse with a brilliant lantern.',
-  ),
+  // Monument Square: timeless designs for the heart of the Hollow.
   option(
     'founders-arch',
     'Founders’ Arch',
@@ -100,78 +80,32 @@ export const LANDMARK_OPTIONS = [
     15000,
     'Golden orbital rings suspended above a star court.',
   ),
+  // Motor Age: the bus, roadside treats and the open road.
   option(
-    'amphitheatre',
-    'Sunrise Amphitheatre',
-    'theatre',
-    '#bd705f',
-    2800,
-    'Sweeping tiers around an open performance stage.',
-  ),
-  option(
-    'conservatory',
-    'Grand Conservatory',
-    'glass',
-    '#367673',
-    3000,
-    'Three glass domes connected by planted galleries.',
-  ),
-  option(
-    'library-hall',
-    'Lantern Library',
-    'hall',
-    '#7b6caa',
-    3200,
-    'A tall reading hall with luminous bay windows.',
-  ),
-  option(
-    'starlight',
-    'Starlight Rotunda',
-    'rotunda',
+    'filling-station',
+    'Sunburst Filling Station',
+    'station',
     '#bd705f',
     4000,
-    'A circular landmark with a bold tiered crown.',
+    'Art Deco pumps beneath a canopy crowned with a golden sunburst.',
   ),
   option(
     'autocourt',
-    'Chrome Pavilion',
-    'arcade',
+    'Chrome Diner',
+    'diner',
     '#367673',
     4300,
-    'Long streamlined canopies around a sunken court.',
+    'A streamlined roadside diner with chrome bands and a tall neon pylon.',
   ),
   option(
     'clock-gardens',
-    'Clock Gardens',
+    'Terminus Clock',
     'clock',
     '#cc954f',
     4500,
-    'An elegant clock above geometric garden terraces.',
+    'A stepped Art Deco clock tower where the first bus line turns for home.',
   ),
-  option(
-    'skyhall',
-    'Sky Hall',
-    'wing',
-    '#41658f',
-    5500,
-    'A wing-shaped roof rising above an open concourse.',
-  ),
-  option(
-    'planetarium',
-    'Star Dome',
-    'dome',
-    '#7b6caa',
-    5800,
-    'A deep blue dome with a slender telescope tower.',
-  ),
-  option(
-    'sky-beacon',
-    'Sky Beacon',
-    'beacon',
-    '#367673',
-    6000,
-    'A sculptural observation tower with stacked viewing decks.',
-  ),
+  // Music & Television: the concert hall, the studios and the bright screens.
   option(
     'music-shell',
     'Music Shell',
@@ -181,116 +115,70 @@ export const LANDMARK_OPTIONS = [
     'A fan-shaped concert shell and broad audience terraces.',
   ),
   option(
+    'big-screen',
+    'Big Screen',
+    'screen',
+    '#41658f',
+    7200,
+    'A giant outdoor television in colour, flanked by speaker stacks.',
+  ),
+  option(
     'broadcast-spire',
     'Signal Spire',
     'spire',
     '#41658f',
     7500,
-    'An open lattice tower crowned with signal rings.',
+    'An open lattice broadcast mast crowned with signal rings.',
   ),
-  option(
-    'arts-forum',
-    'Arts Forum',
-    'arcade',
-    '#9b91c4',
-    7200,
-    'Colourful exhibition halls around a sculpture court.',
-  ),
-  option(
-    'wave-centre',
-    'Wave Centre',
-    'wing',
-    '#52948e',
-    9000,
-    'Overlapping wave roofs above tall glass walls.',
-  ),
-  option(
-    'city-atrium',
-    'City Atrium',
-    'glass',
-    '#41658f',
-    9500,
-    'A great glazed winter garden with three luminous domes.',
-  ),
-  option(
-    'garden-steps',
-    'Terrace House',
-    'terraces',
-    '#658c68',
-    10000,
-    'A stepped civic garden with planted roof terraces.',
-  ),
+  // Tomorrow City: solar domes, maglev pods and garden rings.
   option(
     'orbit-house',
     'Orbit House',
     'dome',
-    '#9b91c4',
+    '#41658f',
     12000,
-    'Floating circular galleries around a star dome.',
+    'A solar dome with a slender telescope above its colonnade.',
   ),
   option(
     'solar-crown',
     'Solar Crown',
-    'spire',
+    'solar',
     '#cc954f',
     12500,
-    'A slender solar tower with a wide radiant crown.',
+    'A slender tower opening a wide crown of solar petals over a garden ring.',
   ),
   option(
-    'future-forum',
-    'Horizon Forum',
-    'rotunda',
+    'maglev-loop',
+    'Maglev Loop',
+    'loop',
     '#52948e',
     13000,
-    'A circular colonnade topped by a suspended halo.',
+    'A glowing test loop where a quiet maglev pod is on show.',
   ),
+  // Riverlight: crystal glass, warm springs and soft lanterns.
   option(
-    'living-tower',
-    'Living Tower',
-    'terraces',
-    '#658c68',
-    15000,
-    'Generous garden terraces climbing towards the sky.',
-  ),
-  option(
-    'canopy-house',
-    'Canopy Hall',
-    'wing',
-    '#8caf80',
-    16000,
-    'Three leaf-shaped roofs shelter an open garden hall.',
-  ),
-  option(
-    'seed-vault',
-    'Seed Cathedral',
-    'glass',
-    '#b77839',
-    15500,
-    'A luminous glass sanctuary of domes and planted aisles.',
-  ),
-  option(
-    'river-palace',
-    'River Palace',
-    'hall',
-    '#367673',
+    'spring-terraces',
+    'Warm Spring Terraces',
+    'springs',
+    '#76b0a6',
     19000,
-    'Copper towers and water-blue roofs above a grand entrance.',
+    'Round pools of warm spring water stepping down between lanterns.',
   ),
   option(
     'light-garden',
     'Garden of Light',
-    'spire',
+    'glass',
     '#9b91c4',
     20000,
-    'Crystal towers joined by floating luminous rings.',
+    'Lavender crystal-glass domes that gather daylight over a winter garden.',
   ),
   option(
     'lotus-forum',
-    'Lotus Forum',
-    'rotunda',
+    'Lotus Pavilion',
+    'lotus',
     '#bd705f',
     21000,
-    'A petal-coloured civic rotunda with a generous open court.',
+    'Pearl petal roofs on slender columns, hung with amber lanterns.',
   ),
 ];
 export const LANDMARK_BY_ID = Object.fromEntries(LANDMARK_OPTIONS.map((o) => [o.id, o]));
@@ -298,27 +186,47 @@ export const LANDMARK_BY_ID = Object.fromEntries(LANDMARK_OPTIONS.map((o) => [o.
 // railway: two rows behind the mine ridge and a column west of the airport's
 // approach, clear of the space elevator and Skyward parcels across the track.
 const plots = [
-  ['meadow', 'Founders’ Meadow', [-4, -60], ['roundhouse', 'windgarden', 'longhall']],
-  ['river-court', 'River Court', [14, -60], ['tideclock', 'exchange', 'beacon']],
+  ['meadow', 'frontier', 'Founders’ Meadow', [-4, -60], ['headframe', 'windgarden', 'longhall']],
   [
     'monument',
+    'industrial',
     'Monument Square',
     [-6, 61],
     ['founders-arch', 'crystal-spire', 'guardian', 'world-tree', 'celestial-sphere'],
   ],
-  ['commons', 'Civic Commons', [-39, -60], ['amphitheatre', 'conservatory', 'library-hall']],
-  ['motor-court', 'Promenade', [-70, -40], ['starlight', 'autocourt', 'clock-gardens']],
-  ['outlook', 'Sky Outlook', [-70, -60], ['skyhall', 'planetarium', 'sky-beacon']],
-  ['arts-court', 'Arts Quarter', [-4, -80], ['music-shell', 'broadcast-spire', 'arts-forum']],
-  ['city-court', 'City Gardens', [-22, -80], ['wave-centre', 'city-atrium', 'garden-steps']],
-  ['horizon', 'Horizon Park', [-39, -80], ['orbit-house', 'solar-crown', 'future-forum']],
-  ['canopy-court', 'Canopy Grove', [-70, -80], ['living-tower', 'canopy-house', 'seed-vault']],
-  ['light-court', 'Riverlight Court', [14, -80], ['river-palace', 'light-garden', 'lotus-forum']],
+  [
+    'motor-court',
+    'motor-age',
+    'Promenade',
+    [-70, -40],
+    ['filling-station', 'autocourt', 'clock-gardens'],
+  ],
+  [
+    'arts-court',
+    'broadcast',
+    'Arts Quarter',
+    [-4, -80],
+    ['music-shell', 'big-screen', 'broadcast-spire'],
+  ],
+  [
+    'horizon',
+    'tomorrow',
+    'Horizon Park',
+    [-39, -80],
+    ['orbit-house', 'solar-crown', 'maglev-loop'],
+  ],
+  [
+    'light-court',
+    'riverlight',
+    'Riverlight Court',
+    [14, -80],
+    ['spring-terraces', 'light-garden', 'lotus-forum'],
+  ],
 ];
-export const PERSONAL_AREAS = plots.map(([id, label, position, choices], index) => ({
+export const PERSONAL_AREAS = plots.map(([id, era, label, position, choices]) => ({
   id,
   label,
-  era: ERAS[index].id,
+  era,
   positions: [position],
   choices,
   radius: id === 'monument' ? 9 : 7,
@@ -326,17 +234,18 @@ export const PERSONAL_AREAS = plots.map(([id, label, position, choices], index) 
 }));
 export const areaUnlocked = (town, area) =>
   ERAS.findIndex((e) => e.id === town.era) >= ERAS.findIndex((e) => e.id === area.era);
+// A monument is built once and then takes one upgrade in each later era.
 export const areaMaximum = (town, area) =>
   areaUnlocked(town, area)
     ? area.timeless
       ? 1
-      : 3 *
-        (1 + ERAS.findIndex((e) => e.id === town.era) - ERAS.findIndex((e) => e.id === area.era))
+      : 1 + ERAS.findIndex((e) => e.id === town.era) - ERAS.findIndex((e) => e.id === area.era)
     : 0;
 export const areaCapacity = (area) => areaMaximum({ era: ERAS.at(-1)?.id }, area);
+// Saves from the old three-stages-per-era rule show no more than the era allows.
 export const areaStage = (town, area) =>
   areaUnlocked(town, area) && town.personalisation?.areas?.[area.id]?.[0]
-    ? town.personalisation.areaLevels?.[area.id] || 1
+    ? Math.min(town.personalisation.areaLevels?.[area.id] || 1, areaMaximum(town, area))
     : 0;
 export const AREA_BY_ID = Object.fromEntries(PERSONAL_AREAS.map((a) => [a.id, a]));
 // The monument standing on a site, or null while the site waits for one.
@@ -345,7 +254,8 @@ export const areaChoice = (town, area) => {
   return area.choices.includes(choice) ? choice : null;
 };
 // Every site keeps the monument first built there. Timeless monuments never grow;
-// the others take three stages per era without ever becoming another design.
+// the others grow one stage per era without ever becoming another design. Stage n
+// costs n times the design's price.
 export function landmarkOffer(town, area, choice) {
   if (!area || !areaUnlocked(town, area) || !area.choices.includes(choice)) return null;
   const current = town.personalisation?.areas?.[area.id]?.[0];
@@ -353,7 +263,7 @@ export function landmarkOffer(town, area, choice) {
   if (current && (area.timeless || current !== choice || stage >= areaMaximum(town, area)))
     return null;
   const level = area.timeless ? 1 : stage + 1;
-  const price = LANDMARK_BY_ID[choice].price * (current ? 1 + Math.floor((level - 1) / 3) : 1);
+  const price = LANDMARK_BY_ID[choice].price * level;
   return { choice, level, price, expectedChoice: current || null, expectedLevel: stage };
 }
 export function purchaseLandmark(town, command) {

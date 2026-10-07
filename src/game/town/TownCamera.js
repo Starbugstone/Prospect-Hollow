@@ -34,7 +34,6 @@ export function frameTown(d) {
       )
     : d.anchors;
   for (const { id } of framing) {
-    // Monument site labels are framed with their sites below.
     if (!PLOTS[id]) continue;
     const [x, z] = PLOTS[id];
     if (id === 'airport') {

@@ -31,7 +31,22 @@ tapping the plaque names the honour or distinction above it until the next tap.
 
 ## Monument sites
 
-`townLandmarks.js` owns eleven spacious monument sites, one introduced in each era.
+`townLandmarks.js` owns six spacious monument sites. A site opens every other era
+(Frontier, Industrial, Motor Age, Music & Television, Tomorrow City and Riverlight),
+so the town gets variety without a monument for every era. Each era site offers
+three designs drawn from what that era brings to the town:
+
+| Era                | Site             | Designs                                                 |
+| ------------------ | ---------------- | ------------------------------------------------------- |
+| Frontier           | Founders' Meadow | Prospectors' Headframe, Wind Garden, Founders' Longhall |
+| Motor Age          | Promenade        | Sunburst Filling Station, Chrome Diner, Terminus Clock  |
+| Music & Television | Arts Quarter     | Music Shell, Big Screen, Signal Spire                   |
+| Tomorrow City      | Horizon Park     | Orbit House, Solar Crown, Maglev Loop                   |
+| Riverlight         | Riverlight Court | Warm Spring Terraces, Garden of Light, Lotus Pavilion   |
+
+Every design has its own silhouette (`form`) and card artwork; no two designs share
+one. A later era with a site skips at least one era after the previous site, and its
+designs must come from that era's own story and buildings.
 Only the timeless Monument Square stands in front of the town. Every other site lies
 beyond the railway, in two rows behind the mine ridge and a column west of the
 airport's approach. That leaves the space elevator and Skyward parcels room across the
@@ -44,24 +59,24 @@ No other design can replace it, on the client or in the server replay.
 Monument sites follow the same interaction as every other building:
 
 - Each unlocked site without a monument shows an open-site marker in the town (a
-  gravel court, kerb stones, survey stakes and an empty plinth) and a dashed gold map
-  label. Tapping the marker or label opens the site's card (`TownMonumentSite.vue`).
-  The default overview frames every unlocked site.
+  gravel court, kerb stones, survey stakes and an empty plinth). Monument sites have
+  no map labels. Tapping the marker or monument opens the site's card
+  (`TownMonumentSite.vue`). The default overview frames every unlocked site.
 - The card lists the site's designs with artwork, description and price. Choosing
   one previews it on the site in the town, even when the player cannot afford it
   yet. Nothing is spent until the player confirms a second, explicit "for good"
   step that explains the choice is permanent.
-- A built monument keeps its label and card. Ordinary sites grow by three paid
-  stages per era (through the current final era, with no hardcoded completion era);
-  each stage adds detail and never changes the design. Upgrades are one tap, like
-  building improvements.
+- A built monument keeps its card. Ordinary sites take one paid upgrade per era
+  (through the current final era, with no hardcoded completion era); stage n costs n
+  times the design's price. Each stage adds detail and never changes the design.
+  Saves from the former three-stages-per-era rule show no more stages than the
+  current era allows. Upgrades are one tap, like building improvements.
 - The Build tab lists every unlocked site under **Monuments** (open sites with their
   starting price, built ones with their stage or next upgrade price) and names the
   next site to open. Monument purchases are separate from Personalise.
-- Visitors see built monuments and can open a read-only card; open sites have no
-  label for them.
+- Visitors see built monuments and can open a read-only card.
 
-The third-era site is Monument Square. Its five timeless models have separate
+The Industrial site is Monument Square. Its five timeless models have separate
 prices: Founders' Arch (6,000), Crystal Spire (8,000), Guardian of the Hollow
 (10,000), World Tree (12,000), Celestial Sphere (15,000). Every player in Industrial
 or later may build one. Timeless monuments have no upgrades and retain their authored appearance. The first monument purchase earns the single gold Town Honour

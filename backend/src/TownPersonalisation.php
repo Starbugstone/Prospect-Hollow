@@ -72,7 +72,7 @@ final class TownPersonalisation
                     ? 1
                     : (is_int($level) &&
                     $level >= 1 &&
-                    $level <= 3 * (count($c['eras']) - array_search($area['era'], $c['eras'], true))
+                    $level <= count($c['eras']) - array_search($area['era'], $c['eras'], true)
                         ? $level
                         : 1);
             }
@@ -120,9 +120,10 @@ final class TownPersonalisation
             return null;
         }
         // A site keeps its first monument: no replacement, and timeless monuments never grow.
+        // Other monuments take one upgrade per era.
         if (
             $current &&
-            ($area['timeless'] || $current !== $choice || $stage >= 3 * (1 + $now - $intro))
+            ($area['timeless'] || $current !== $choice || $stage >= 1 + $now - $intro)
         ) {
             return null;
         }
@@ -136,7 +137,7 @@ final class TownPersonalisation
         if (!$definition) {
             return null;
         }
-        $price = $definition['price'] * ($current ? 1 + intdiv($level - 1, 3) : 1);
+        $price = $definition['price'] * $level;
         if ($town['coins'] < $price) {
             return null;
         }

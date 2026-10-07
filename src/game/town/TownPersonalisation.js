@@ -129,7 +129,7 @@ function addEmblemPanel(d, root, crest, width, height, position, cloth = false) 
 
 const STONE = '#ddd1b5';
 // An open monument site: a gravel court ringed by kerb stones, survey stakes and an
-// empty plinth. It reads as reserved ground; its map label invites the choice.
+// empty plinth. It reads as reserved ground; a tap on it opens the choice.
 function addMonumentSite(d, g, radius) {
   const court = radius * 0.72;
   d.mesh(g, 'cylinder', [court, 0.06, court], [0, 0.03, 0], '#d8cfae');

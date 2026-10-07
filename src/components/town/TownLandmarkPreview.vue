@@ -58,23 +58,32 @@
         </g>
         <circle cx="127" cy="36" r="6" :fill="paint.accent || '#cc954f'" />
       </template>
-      <template v-else-if="['rotunda', 'dome'].includes(form)">
-        <path d="M35 109V61h90v48Z" :fill="paint.walls || '#ddd1b5'" />
-        <path v-if="form === 'rotunda'" d="m24 62 56-39 56 39Z" />
-        <path v-else d="M27 62a53 42 0 0 1 106 0Z" />
-        <path
-          d="M39 64v45M56 64v49M80 64v51M104 64v49M121 64v45"
-          stroke="#91785e"
-          stroke-width="5"
-        />
-        <path
-          v-if="form === 'dome'"
-          d="m89 33 21-18"
-          :stroke="paint.trim || '#655343'"
-          stroke-width="8"
-        />
+      <template v-else-if="form === 'headframe'">
+        <path d="M20 110V82h30v28Z" :fill="paint.walls || '#ddd1b5'" />
+        <path d="m15 84 20-15 20 15Z" fill="#655343" />
+        <path d="M50 110 73 26h14l23 84" fill="none" :stroke="option.colour" stroke-width="7" />
+        <path d="M64 110 77 46m19 64L83 46" fill="none" :stroke="option.colour" stroke-width="4" />
+        <circle cx="80" cy="24" r="15" fill="none" stroke="#655343" stroke-width="4" />
+        <path d="M80 9v30M65 24h30" stroke="#cc954f" stroke-width="2" />
+        <path d="M108 108V93h34v15Z" fill="#655343" />
+        <circle cx="117" cy="89" r="5" fill="#9b91c4" />
+        <circle cx="126" cy="87" r="6" fill="#76b0a6" />
+        <circle cx="135" cy="90" r="5" fill="#cc954f" />
       </template>
-      <template v-else-if="['hall', 'arcade'].includes(form)">
+      <template v-else-if="form === 'windpump'">
+        <path d="M64 111 76 40h8l12 71M68 88h24M72 64h16" fill="none" stroke-width="4" />
+        <path
+          d="M80 34V12m0 22 16-16m-16 16h22m-22 0 16 16m-16-16v22m0-22L64 50m16-16H58m22 0L64 18"
+          :stroke="option.colour"
+          stroke-width="7"
+        />
+        <circle cx="80" cy="34" r="23" fill="none" stroke-width="3" />
+        <path d="M86 30h36l-6 8H86Z" />
+        <path d="M108 111V80h28v31Z" fill="#9c6a3c" />
+        <path d="M18 111v-8h36v8Z" fill="#8a5a34" />
+        <path d="M22 103a5 5 0 0 1 10 0m2 0a5 5 0 0 1 10 0m2 0a5 5 0 0 1 8 0" fill="#8caf80" />
+      </template>
+      <template v-else-if="form === 'hall'">
         <path d="M19 108V56h47v49M94 105V56h47v52" :fill="paint.walls || '#ddd1b5'" />
         <path d="m13 58 29-29 30 29ZM88 58l30-29 30 29Z" />
         <path d="M14 85h132v10H14Z" />
@@ -83,6 +92,71 @@
           d="M27 62h11v16H27ZM47 62h11v16H47ZM102 62h11v16h-11ZM122 62h11v16h-11Z"
           fill="#a0ccc4"
         />
+      </template>
+      <template v-else-if="form === 'station'">
+        <path
+          d="M80 54V22M80 54 57 31m23 23 23-23M80 54H48m32 0h32"
+          stroke="#cc954f"
+          stroke-width="3"
+        />
+        <path d="M58 54a22 22 0 0 1 44 0Z" fill="#cc954f" />
+        <path d="M14 54h132v12H14Z" />
+        <path d="M28 66v45m104-45v45" stroke="#ddd1b5" stroke-width="5" />
+        <path d="M52 111V86h12v25ZM96 111V86h12v25Z" />
+        <path d="M74 111V86h12v25Z" fill="#41658f" />
+        <circle cx="58" cy="81" r="5" fill="#f5ddb0" />
+        <circle cx="80" cy="81" r="5" fill="#f5ddb0" />
+        <circle cx="102" cy="81" r="5" fill="#f5ddb0" />
+      </template>
+      <template v-else-if="form === 'diner'">
+        <path d="M134 111V36" stroke-width="5" />
+        <circle cx="134" cy="30" r="12" fill="#bd705f" />
+        <rect x="14" y="66" width="108" height="42" rx="21" />
+        <path d="M26 82h84" stroke="#a0ccc4" stroke-width="11" />
+        <path d="M17 96h102" stroke="#d9dee2" stroke-width="4" />
+        <path d="M8 62h120v6H8Z" fill="#ddd1b5" />
+        <path d="M48 48h40v14H48Z" fill="#bd705f" />
+      </template>
+      <template v-else-if="form === 'screen'">
+        <path d="M38 111V70m84 41V70" stroke-width="6" />
+        <rect x="24" y="16" width="112" height="58" rx="3" fill="#393c43" />
+        <path d="M30 22h17v46H30Z" fill="#f5ddb0" />
+        <path d="M47 22h17v46H47Z" fill="#e8bf79" />
+        <path d="M64 22h16v46H64Z" fill="#52948e" />
+        <path d="M80 22h16v46H80Z" fill="#8caf80" />
+        <path d="M96 22h17v46H96Z" fill="#bd705f" />
+        <path d="M113 22h17v46h-17Z" />
+        <path d="M40 111v-9h80v9Z" :fill="paint.walls || '#ddd1b5'" />
+        <path d="M6 111V80h22v31Zm126 0V80h22v31Z" fill="#393c43" />
+      </template>
+      <template v-else-if="form === 'dome'">
+        <path d="M35 109V61h90v48Z" :fill="paint.walls || '#ddd1b5'" />
+        <path d="M27 62a53 42 0 0 1 106 0Z" />
+        <path
+          d="M39 64v45M56 64v49M80 64v51M104 64v49M121 64v45"
+          stroke="#91785e"
+          stroke-width="5"
+        />
+        <path d="m89 33 21-18" :stroke="paint.trim || '#655343'" stroke-width="8" />
+      </template>
+      <template v-else-if="form === 'solar'">
+        <ellipse cx="80" cy="108" rx="54" ry="7" fill="none" stroke="#8caf80" stroke-width="6" />
+        <path d="M76 111V40h8v71Z" :fill="paint.walls || '#ddd1b5'" />
+        <path d="m64 111 16-18 16 18Z" :fill="paint.walls || '#ddd1b5'" />
+        <g fill="#41658f">
+          <path d="m80 40-54-8 6 13ZM80 40l54-8-6 13ZM80 40 50 8l-2 14ZM80 40l30-32 2 14Z" />
+        </g>
+        <g fill="#52948e">
+          <path d="m80 40-46-26 2 14ZM80 40l46-26-2 14ZM80 40 72 2l-8 12ZM80 40l8-38 8 12Z" />
+        </g>
+        <circle cx="80" cy="40" r="7" />
+      </template>
+      <template v-else-if="form === 'loop'">
+        <path d="M10 108h140" :stroke="option.colour" stroke-width="7" />
+        <circle cx="80" cy="60" r="44" fill="none" :stroke="option.colour" stroke-width="10" />
+        <circle cx="80" cy="60" r="36" fill="none" stroke="#f5ddb0" stroke-width="3" />
+        <ellipse cx="114" cy="26" rx="18" ry="9" transform="rotate(45 114 26)" fill="#ddd1b5" />
+        <ellipse cx="114" cy="26" rx="11" ry="5" transform="rotate(45 114 26)" fill="#a0ccc4" />
       </template>
       <template v-else-if="form === 'glass'">
         <path d="M18 109V69h34v40M108 109V69h34v40M50 111V52h60v59" fill="#a0ccc4" />
@@ -100,45 +174,47 @@
         />
         <path d="M48 74h64v10H48Z" fill="#91785e" />
       </template>
-      <template v-else-if="form === 'wing'">
-        <path d="M29 111V60h102v51Z" fill="#a0ccc4" />
-        <path d="m14 41 42 18V46l48 7 42-24-11 38-36 7-47-10-30 4Z" />
-        <path d="M32 67v44M80 69v45M128 70v41" stroke-width="4" />
-      </template>
-      <template v-else-if="form === 'terraces'">
+      <template v-else-if="form === 'springs'">
+        <path d="M14 110V96h132v14Z" :fill="paint.walls || '#ddd1b5'" />
+        <ellipse cx="80" cy="96" rx="66" ry="9" />
+        <path d="M34 92V80h92v12Z" :fill="paint.walls || '#ddd1b5'" />
+        <ellipse cx="80" cy="80" rx="46" ry="7" />
+        <path d="M52 77V66h56v11Z" :fill="paint.walls || '#ddd1b5'" />
+        <ellipse cx="80" cy="66" rx="28" ry="5" />
         <path
-          d="M22 110V85h116v25ZM35 84V61h90v23ZM48 60V39h64v21ZM60 38V18h40v20Z"
-          :fill="paint.walls || '#ddd1b5'"
+          d="M70 58q-6-8 0-16t0-16M90 58q-6-8 0-16t0-16"
+          fill="none"
+          stroke="#f4f1ea"
+          stroke-width="4"
         />
-        <path d="M18 85h124M31 61h98M44 39h72M56 18h48" stroke-width="6" :stroke="option.colour" />
-        <path d="M23 78h15v7H23ZM116 78h15v7h-15ZM38 54h13v7H38ZM109 54h13v7h-13Z" fill="#8caf80" />
+        <path d="M8 104V72m144 32V72" stroke-width="2" />
+        <circle cx="8" cy="69" r="5" fill="#e8bf79" />
+        <circle cx="152" cy="69" r="5" fill="#e8bf79" />
+      </template>
+      <template v-else-if="form === 'lotus'">
+        <path d="M26 112v-7h108v7Z" :fill="paint.walls || '#ddd1b5'" />
+        <path d="M44 105V64m18 41V62m36 43V62m18 43V64" stroke="#f4ead5" stroke-width="5" />
+        <path d="M80 62C60 50 30 52 16 64c24 4 46 2 64-2Zm0 0c20-12 50-10 64 2-24 4-46 2-64-2Z" />
+        <path
+          d="M80 62C66 46 56 30 58 16c13 10 22 26 22 46Zm0 0c14-16 24-32 22-46-13 10-22 26-22 46Z"
+          fill="#f4ead5"
+        />
+        <ellipse cx="80" cy="46" rx="8" ry="15" fill="#f5ddb0" />
+        <circle cx="53" cy="74" r="4" fill="#e8bf79" />
+        <circle cx="107" cy="74" r="4" fill="#e8bf79" />
+      </template>
+      <template v-else-if="form === 'spire'">
+        <path d="m48 113 26-95h12l26 95M59 80h42M67 51h26" fill="none" stroke-width="5" />
+        <ellipse cx="80" cy="27" rx="25" ry="8" />
+        <ellipse cx="80" cy="64" rx="27" ry="8" fill="none" stroke-width="4" />
       </template>
       <template v-else>
         <path
-          v-if="form === 'spire'"
-          d="m48 113 26-95h12l26 95M59 80h42M67 51h26"
-          fill="none"
-          stroke-width="5"
-        />
-        <path
-          v-else
           d="M54 112V77h52v35ZM59 77V48h42v29ZM64 48V22h32v26Z"
           :fill="paint.walls || '#ddd1b5'"
         />
-        <template v-if="form === 'clock'">
-          <circle cx="80" cy="36" r="12" fill="#fff8e8" />
-          <path d="M80 27v10l7 4" fill="none" />
-        </template>
-        <path
-          v-else-if="form === 'windmill'"
-          d="m53 14 54 54M53 68l54-54"
-          stroke="#91785e"
-          stroke-width="8"
-        />
-        <template v-else>
-          <ellipse cx="80" cy="27" rx="25" ry="8" />
-          <ellipse cx="80" cy="64" rx="27" ry="8" fill="none" stroke-width="4" />
-        </template>
+        <circle cx="80" cy="36" r="12" fill="#fff8e8" />
+        <path d="M80 27v10l7 4" fill="none" />
         <path d="m57 22 23-15 23 15Z" />
       </template>
     </g>

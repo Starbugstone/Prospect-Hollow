@@ -112,13 +112,11 @@
         :key="anchor.id"
         :ref="(element) => trackElement(labelElements, anchor.id, element)"
         :data-town-plot="anchor.id"
-        v-show="anchor.visible && !(readOnly && openSite(anchor.id))"
+        v-show="anchor.visible"
         :style="{ translate: labelTranslate(anchor) }"
         :class="{
           'scene-mine-button': anchor.id === 'mine',
           'quiet-plot': quietPlot(anchor.id),
-          'monument-label': !!AREA_BY_ID[anchor.id],
-          'open-site': openSite(anchor.id),
           'suggested-plot': anchor.id === suggestedId,
           selected: anchor.id === selected,
           'is-ready': constructionReady(town.projects[anchor.id]),
@@ -129,19 +127,15 @@
         }"
         :aria-label="plotLabel(anchor.id)"
         :title="placeName(anchor.id)"
-        :aria-pressed="
-          anchor.id === 'mine' || AREA_BY_ID[anchor.id] ? undefined : anchor.id === selected
-        "
+        :aria-pressed="anchor.id === 'mine' ? undefined : anchor.id === selected"
         @focus="anchor.id === 'mine' && prefetchBoard()"
         @pointerenter="anchor.id === 'mine' && prefetchBoard()"
         @pointerdown="anchor.id === 'mine' && prefetchBoard()"
         @click="chooseLabel(anchor.id, $event)"
       >
         <span v-if="quietPlot(anchor.id)" class="quiet-plot-plus" aria-hidden="true">+</span>
-        <TownIcon v-else-if="AREA_BY_ID[anchor.id]" name="monument" />
         <span class="plot-name">{{ placeName(anchor.id) }}</span>
-        <small v-if="AREA_BY_ID[anchor.id]">{{ siteNote(anchor.id) }}</small>
-        <template v-else-if="readOnly">
+        <template v-if="readOnly">
           <small v-if="town.buildings[anchor.id]">{{
             t('Lv. {level}', { level: eraBuildingLevel(town, anchor.id) })
           }}</small>
@@ -218,7 +212,6 @@ import TownIcon from './TownIcon.vue';
 import GameViewStatus from '../GameViewStatus.vue';
 import { TOWN_ACTIONS } from '../../data/townIndicators';
 import { eraBuildingLevel } from '../../game/town/TownEras';
-import { AREA_BY_ID, LANDMARK_BY_ID, areaChoice, areaStage } from '../../data/townLandmarks';
 import {
   computed,
   inject,
@@ -311,7 +304,6 @@ const canvas = ref(null),
 const suggestedId = computed(() => nextGoal(props.town)?.id);
 const quietPlot = (id) =>
   id !== 'mine' &&
-  !AREA_BY_ID[id] &&
   id !== suggestedId.value &&
   !props.town.buildings[id] &&
   !props.town.projects[id];
@@ -358,27 +350,8 @@ const actionLabel = (id) =>
   props.readOnly
     ? t('Collect the saloon takings for the mayor')
     : ACTION_LABELS[indicators.value[id]](id);
-// Monument sites share the plot labels: an open site invites a choice, a built
-// one shows its monument and, outside Monument Square, its stage.
-const openSite = (id) => !!AREA_BY_ID[id] && !areaChoice(props.town, AREA_BY_ID[id]);
-const placeName = (id) => {
-  if (id === 'mine') return t('Mine');
-  const area = AREA_BY_ID[id];
-  if (!area) return t(BUILDING_BY_ID[id].shortName);
-  const choice = areaChoice(props.town, area);
-  return t(choice ? LANDMARK_BY_ID[choice].label : area.label);
-};
-const siteNote = (id) => {
-  const area = AREA_BY_ID[id];
-  if (!areaChoice(props.town, area)) return t('Monument site');
-  return area.timeless ? t('Monument') : t('Stage {stage}', { stage: areaStage(props.town, area) });
-};
+const placeName = (id) => t(id === 'mine' ? 'Mine' : BUILDING_BY_ID[id].shortName);
 const plotLabel = (id) => {
-  const area = AREA_BY_ID[id];
-  if (area)
-    return openSite(id)
-      ? t('Choose a monument for {site}', { site: t(area.label) })
-      : t('View {monument}', { monument: placeName(id) });
   if (props.readOnly) return t(id === 'mine' ? 'Mine' : BUILDING_BY_ID[id].name);
   return id === 'mine'
     ? t('Enter the mine: play level {level}', { level: props.nextLevel })
