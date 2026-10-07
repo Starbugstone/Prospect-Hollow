@@ -128,6 +128,7 @@
           @camera-distance="cameraDistance = $event"
           @vip-spend="collectVipSpending"
           @guest-vip="campaign.markGuestSeen"
+          @helmet="findHelmet"
         />
         <TownResourceCollection
           v-if="collection"
@@ -658,6 +659,7 @@ const {
   enqueue: enqueueVisitorNotice,
 } = useTownVisitors(() => props.active, {
   collectSaloon: (at) => (campaign.readOnly ? null : campaign.collectSaloonForVisitor(at)),
+  redeemHelmet: (find) => (campaign.readOnly ? null : campaign.redeemHelmetVisit(find)),
   recordSocial: (counts) => !campaign.readOnly && campaign.recordTownSocial(counts),
 });
 async function findVisitor(id) {
@@ -1101,6 +1103,17 @@ function collectVipSpending(receipt) {
     serial: ++collectionSerial,
     origin: townScene.value?.collectionOrigin(receipt.building),
   });
+}
+// The space-helmet wearer pays an hour of saloon takings once per completed puzzle.
+function findHelmet(origin) {
+  if (campaign.readOnly) return;
+  const coins = campaign.findSpaceHelmet();
+  if (!coins) {
+    enqueueVisitorNotice([{ kind: coins === null ? 'helmet-found' : 'helmet-empty' }]);
+    return;
+  }
+  closeDialog();
+  collection.value = { resource: 'coins', amount: coins, serial: ++collectionSerial, origin };
 }
 function collectIncome() {
   collectionNow.value = Date.now();

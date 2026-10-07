@@ -62,6 +62,8 @@ import {
   normalizeTown,
   saloonIncomeRate,
   settleSaloonIncome,
+  spaceHelmetFindable,
+  spaceHelmetReward,
   collectionCooldownRemaining,
   raidBounty,
   miningPayout,
@@ -672,6 +674,40 @@ export const useCampaignStore = defineStore('campaign', {
         kind: 'saloon-visitor',
         data: { at: now, visitAt: at },
       })
+        ? coins
+        : null;
+    },
+    // Finding the space-helmet wearer pays an hour of saloon takings, once per completed
+    // puzzle. Returns the coins (0 without saloon takings), or null when already found.
+    findSpaceHelmet(now = Date.now()) {
+      if (!Number.isSafeInteger(now) || !spaceHelmetFindable(this.town)) return null;
+      const town = this.town,
+        run = town.completedRuns,
+        coins = Math.min(spaceHelmetReward(town, 'owner'), Number.MAX_SAFE_INTEGER - town.coins);
+      return this.commit(
+        { town: { ...town, coins: town.coins + coins, helmetRun: run } },
+        { kind: 'helmet-find', data: { at: now, run } },
+      )
+        ? coins
+        : null;
+    },
+    // A space helmet this player found in another town, redeemed here with the server's
+    // signed receipt for half an hour of this town's saloon takings. Older finds than the
+    // last one redeemed are ignored, so every poll may offer the same list again.
+    redeemHelmetVisit(find, now = Date.now()) {
+      if (
+        !Number.isSafeInteger(find?.at) ||
+        find.at <= this.town.helmetVisitAt ||
+        typeof find.receipt !== 'string' ||
+        !Number.isSafeInteger(now)
+      )
+        return null;
+      const town = this.town,
+        coins = Math.min(spaceHelmetReward(town, 'visitor'), Number.MAX_SAFE_INTEGER - town.coins);
+      return this.commit(
+        { town: { ...town, coins: town.coins + coins, helmetVisitAt: find.at } },
+        { kind: 'helmet-visitor', data: { at: now, foundAt: find.at, receipt: find.receipt } },
+      )
         ? coins
         : null;
     },

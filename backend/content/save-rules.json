@@ -35182,7 +35182,12 @@
       "well",
       "farm",
       "home"
-    ]
+    ],
+    "spaceHelmetDebut": "tomorrow",
+    "spaceHelmetRewardHours": {
+      "owner": 1,
+      "visitor": 0.5
+    }
   },
   "honours": {
     "gems": [
@@ -35431,6 +35436,8 @@
       "blacksmith": null
     },
     "saloonVisitAt": 0,
+    "helmetRun": 0,
+    "helmetVisitAt": 0,
     "guestVip": null,
     "progressionVersion": 1
   },
@@ -35707,6 +35714,8 @@
         "blacksmith": null
       },
       "saloonVisitAt": 0,
+      "helmetRun": 0,
+      "helmetVisitAt": 0,
       "guestVip": null,
       "progressionVersion": 1
     },
@@ -35730,5 +35739,5 @@
       "seenGeneration": 2
     }
   },
-  "contentDigest": "3bf8ee114128a05ead49b44eac4bcb8fd078df32bd1d7af8d494c1a8f313b68c"
+  "contentDigest": "97aada2421ddbc29bd35c4c240ddf45c6110bb79c061763799ef490fde1c4c7d"
 }

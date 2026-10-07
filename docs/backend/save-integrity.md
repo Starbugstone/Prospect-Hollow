@@ -155,7 +155,12 @@ upload; acknowledgment clears it while keeping any later local progress.
 The journal covers run start, normal completion, continuous-play earnings, chest
 claims, item consumption, shop purchases, building purchase/completion, builder
 hammers, forge production, saloon collections, visitor collections, VIP receipts,
-raid outcomes and era advancement. Continuous play records economic changes only;
+space-helmet finds, raid outcomes and era advancement. A `helmet-find` pays the town's
+hourly saloon rate once per completed puzzle (`completedRuns` above `helmetRun`) from
+Tomorrow City on. A `helmet-visitor` pays half that rate (`spaceHelmetRewardHours` in the save rules) for a find
+made while visiting another town, only with the server's receipt for this town and a find time
+after `helmetVisitAt`.
+Both count as new earnings in the money estimate. Continuous play records economic changes only;
 after the existing lifetime coin reward is exhausted, further matches remain
 playable without adding a journal entry for every score update. Statistics do not
 become completion gates.

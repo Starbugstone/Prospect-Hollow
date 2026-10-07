@@ -18,6 +18,10 @@ $db->executeStatement('DELETE FROM admin_sessions WHERE expires_at<? OR used_at<
     time(),
     time() - 3600,
 ]);
+// Space-helmet finds are redeemed within this window and only rest the finder for 12 hours.
+$db->executeStatement('DELETE FROM helmet_finds WHERE found_at<?', [
+    time() - App\PublicTown::HELMET_KEEP,
+]);
 // Daily active-player marks feed the admin charts; keep 90 days.
 $db->executeStatement('DELETE FROM activity_days WHERE day<?', [intdiv(time(), 86400) - 90]);
 // The admin activity log keeps its retention (three months unless changed in the panel).

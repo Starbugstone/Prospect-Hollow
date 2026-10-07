@@ -20,6 +20,9 @@ final class Database
         17 => '/schema-distinction-revocations',
         // Admin settings, starting with how long the activity log is kept.
         18 => '/schema-admin-settings',
+        // Space helmets found while visiting, redeemed by the finder's own town. Version 19
+        // is reserved for the player-data migration on its own branch.
+        20 => '/schema-helmet-finds',
     ];
     private ?Connection $connection = null;
     public static function latestVersion(): int

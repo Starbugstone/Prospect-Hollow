@@ -28,6 +28,7 @@ import { SHOP_ITEMS, shopSlots } from '../src/data/shop.js';
 import { VIP_SPEND, vipVisitBuildings } from '../src/data/vipVisits.js';
 import { INCIDENT_TARGETS, fireProtection } from '../src/data/townEvents.js';
 import { generateLevelConfigs } from '../src/game/engine/LevelGenerator.js';
+import { SPACE_HELMET } from '../src/data/townAnimals.js';
 import { COMBO_COIN_STEP, MULTI_MATCH_COIN_STEP } from '../src/game/engine/MatchRewards.js';
 import {
   BONUS_GEM_COINS,
@@ -354,6 +355,10 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
       }),
       banditEvent: BANDIT_EVENT,
       introOrder: INTRO_ORDER,
+      // The first era with a space-helmet wearer to find, and the hours of saloon takings
+      // a find pays the owner and a visitor.
+      spaceHelmetDebut: SPACE_HELMET.debut,
+      spaceHelmetRewardHours: SPACE_HELMET.rewardHours,
     },
     // The keys a victory receipt's Town Honours claim may credit (gem types, fusions).
     honours: { gems: GEM_TYPES, fusions: Object.keys(FUSION_STYLES) },

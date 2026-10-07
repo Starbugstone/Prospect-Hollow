@@ -29,7 +29,9 @@ import { visitorLabel } from '../../data/liveVisitors';
 import { t } from '../../i18n';
 
 const props = defineProps({ villageId: { type: String, required: true } });
-const emit = defineEmits(['presence']);
+// `town` is the player's own town they visit as, which receives visit rewards, `{ own: true }`
+// on one of their own towns, or null.
+const emit = defineEmits(['presence', 'town']);
 const profile = ref(null),
   towns = ref([]),
   townId = ref(null),
@@ -40,6 +42,11 @@ const identity = computed(() => ({
   name: profile.value?.displayName ?? '',
   townName: towns.value.find((town) => town.townId === townId.value)?.name,
 }));
+watch(
+  () => [ownTown.value, townId.value, identity.value.townName],
+  ([own, id, name]) => emit('town', own ? { own } : id ? { townId: id, name } : null),
+  { immediate: true },
+);
 const browserToken = visitorBrowserToken();
 let presence,
   generation = 0,

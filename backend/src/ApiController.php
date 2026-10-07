@@ -170,6 +170,10 @@ final class ApiController
             SaveService::keys($b, []);
             return $this->directory->favourite($r, $m[1], $r->isMethod('PUT'));
         }
+        if ($r->isMethod('POST') && preg_match('~^villages/([a-f0-9]{32})/helmet$~D', $path, $m)) {
+            SaveService::keys($b, ['townId']);
+            return $this->public->findHelmet($r, $m[1], $b);
+        }
         if ($r->isMethod('POST') && preg_match('~^villages/([a-f0-9]{32})/saloon$~D', $path, $m)) {
             SaveService::keys($b, []);
             return $this->public->tapSaloon($r, $m[1]);

@@ -6,6 +6,8 @@ $directory = sys_get_temp_dir() . '/' . $prefix;
 mkdir($directory . '/src', 0700, true);
 $source = file_get_contents(dirname(__DIR__) . '/src/Database.php');
 $names = [
+    'helmet_finds_town',
+    'helmet_finds',
     'admin_settings',
     'player_distinction_revocations',
     'player_distinctions',
@@ -98,6 +100,11 @@ $revocations = $mysql
 file_put_contents(
     $directory . '/' . $revocations,
     $rewrite(file_get_contents(dirname(__DIR__) . '/' . $revocations)),
+);
+$helmets = $mysql ? 'schema-helmet-finds.sql' : 'schema-helmet-finds-postgresql.sql';
+file_put_contents(
+    $directory . '/' . $helmets,
+    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $helmets)),
 );
 try {
     $statements = explode(';', $schema);
@@ -199,9 +206,14 @@ try {
         $connection->createSchemaManager()->tablesExist([$prefix . 'admin_settings']),
         'admin settings installed',
     );
+    check(
+        $connection->createSchemaManager()->tablesExist([$prefix . 'helmet_finds']),
+        'space-helmet finds installed',
+    );
 } finally {
     foreach (
         [
+            'helmet_finds',
             'admin_settings',
             'player_distinction_revocations',
             'player_distinctions',
@@ -239,6 +251,7 @@ try {
     @unlink($directory . '/' . $distinctions);
     @unlink($directory . '/' . $revocations);
     @unlink($directory . '/' . $settings);
+    @unlink($directory . '/' . $helmets);
     unlink($directory . '/src/Database.php');
     rmdir($directory . '/src');
     rmdir($directory);

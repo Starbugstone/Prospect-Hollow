@@ -640,6 +640,10 @@ export const createTown = () => ({
   lastCollections: { saloon: null, blacksmith: null },
   // Share-link events: the last visitor saloon collection applied, and the latest guest.
   saloonVisitAt: 0,
+  // Space-helmet finds: the completed puzzle count whose wearer the owner found, and the
+  // latest find while visiting another town that this town has redeemed.
+  helmetRun: 0,
+  helmetVisitAt: 0,
   guestVip: null,
   progressionVersion: 1,
 });

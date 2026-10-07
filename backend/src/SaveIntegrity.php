@@ -11,6 +11,8 @@ namespace App;
 final class SaveIntegrity
 {
     private array $rules;
+    // The town being replayed: a space-helmet receipt is only valid for its own town.
+    private string $townId = '';
     private const CLOCK_SKEW_MS = 300000;
     public function __construct(?array $rules = null)
     {
@@ -255,7 +257,7 @@ final class SaveIntegrity
         if (($p['settledRun'] ?? 0) > ($p['issuedRun'] ?? 0)) {
             self::invalid('settledRun');
         }
-        foreach (['completedRuns', 'saloonVisitAt'] as $key) {
+        foreach (['completedRuns', 'saloonVisitAt', 'helmetRun', 'helmetVisitAt'] as $key) {
             if (array_key_exists($key, $town) && !self::integer($town[$key])) {
                 self::invalid('town.' . $key);
             }
@@ -556,6 +558,8 @@ final class SaveIntegrity
                 'completedRuns',
                 'forge',
                 'saloonVisitAt',
+                'helmetRun',
+                'helmetVisitAt',
                 'income',
                 'lastCollections',
                 'events',
@@ -680,6 +684,8 @@ final class SaveIntegrity
                 'completedRuns',
                 'forge',
                 'saloonVisitAt',
+                'helmetRun',
+                'helmetVisitAt',
                 'income',
                 'lastCollections',
                 'events',
@@ -827,6 +833,7 @@ final class SaveIntegrity
         ?int $previousServerAt = null,
     ): object {
         $this->validate($profile);
+        $this->townId = $townId;
         $incoming = self::arrayOf($profile);
         $journal = $this->journal($incoming['integrity'] ?? null);
         $old = $previous ? self::arrayOf($previous) : null;
@@ -1248,8 +1255,14 @@ final class SaveIntegrity
         $reserved = 0;
         $cost = 0.0;
         $multiplier = 1;
-        if (in_array($kind, ['victory', 'continuous', 'vip-spend'], true)) {
-            if ($kind !== 'vip-spend') {
+        if (
+            in_array(
+                $kind,
+                ['victory', 'continuous', 'vip-spend', 'helmet-find', 'helmet-visitor'],
+                true,
+            )
+        ) {
+            if (in_array($kind, ['victory', 'continuous'], true)) {
                 $multiplier = max(1, $this->rules['levels'][$data['levelId']]['miningMultiplier']);
             }
             // These actions only add wallet money. Unlike a batch wallet delta,
@@ -1434,6 +1447,7 @@ final class SaveIntegrity
             'chest-claim' => ['chestId'],
             'vip-spend' => ['key', 'buildingId'],
             'era-advance' => ['expectedEra'],
+            'helmet-visitor' => ['receipt'],
             default => [],
         };
         foreach ($stringFields as $key) {
@@ -1659,6 +1673,34 @@ final class SaveIntegrity
                     $s['town']['income']['stored'] -= $coins;
                 }
                 $s['town']['saloonVisitAt'] = $visit;
+                break;
+            case 'helmet-find':
+                // Once per completed puzzle, the run that moved the helmet to its wearer.
+                $this->clock($d['at'] ?? null, $context, $now);
+                $run = $this->count($d['run'] ?? null, 'run');
+                if (
+                    !$this->spaceHelmetOut($s['town']['era']) ||
+                    $run !== $s['town']['completedRuns'] ||
+                    $run <= $s['town']['helmetRun']
+                ) {
+                    self::mismatch('helmet-find');
+                }
+                $this->addCoins($s, $this->helmetReward($s['town'], 'owner'));
+                $s['town']['helmetRun'] = $run;
+                break;
+            case 'helmet-visitor':
+                // A find in another town: only the server's receipt for this town proves it.
+                $this->clock($d['at'] ?? null, $context, $now);
+                $found = $this->count($d['foundAt'] ?? null, 'foundAt');
+                if (
+                    $found <= $s['town']['helmetVisitAt'] ||
+                    $this->townId === '' ||
+                    !hash_equals(self::helmetReceipt($this->townId, $found), $d['receipt'])
+                ) {
+                    self::mismatch('helmet-visitor');
+                }
+                $this->addCoins($s, $this->helmetReward($s['town'], 'visitor'));
+                $s['town']['helmetVisitAt'] = $found;
                 break;
             case 'vip-spend':
                 $key = $d['key'] ?? null;
@@ -2058,6 +2100,38 @@ final class SaveIntegrity
                 (100 + 1.25 * $stats['happiness']) *
                 (1 + ($town['buildings']['diner'] ?? 0) * 0.05)) /
                 100,
+        );
+    }
+    /** Whether a town in this era has a space-helmet wearer to find. */
+    public function spaceHelmetOut(mixed $era): bool
+    {
+        $debut = $this->rules['economy']['spaceHelmetDebut'] ?? null;
+        $index = is_string($era) ? $this->eraIndex($era) : -1;
+        return is_string($debut) && $index >= 0 && $index >= $this->eraIndex($debut);
+    }
+    /** Mirrors spaceHelmetReward(): the finder's share of an hour of saloon takings. */
+    private function helmetReward(array $town, string $finder): int
+    {
+        $hours = $this->rules['economy']['spaceHelmetRewardHours'][$finder] ?? null;
+        if (!self::number($hours)) {
+            self::incompatible();
+        }
+        return (int) floor($this->incomeRate($town) * $hours);
+    }
+    /**
+     * Proof that a player found a space helmet while visiting, for the town they visited
+     * as, at a server time in Unix milliseconds. The owner poll hands it to that town.
+     */
+    public static function helmetReceipt(string $townId, int $foundAt): string
+    {
+        $secret = Env::get('APP_SECRET');
+        if (!is_string($secret) || strlen($secret) < 32) {
+            throw new \RuntimeException('Space-helmet receipts need the application secret.');
+        }
+        return hash_hmac(
+            'sha256',
+            'prospect-hollow:helmet-find:v1:' . $townId . ':' . $foundAt,
+            $secret,
         );
     }
     private function cooldown(array $town, string $id, int $at): bool

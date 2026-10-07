@@ -228,6 +228,67 @@ final class PublicTown
             return ['readyAt' => $now + self::SALOON_REST];
         });
     }
+    // A player finds a space helmet in another town at most once per 12 hours. The find is
+    // redeemed in the town they visit as, for half an hour of that town's own saloon takings, so
+    // visiting richer towns pays no more. Unredeemed finds are kept for 30 days.
+    public const HELMET_REST = 43200;
+    public const HELMET_KEEP = 30 * 86400;
+    public function findHelmet(Request $r, string $id, array $b): array
+    {
+        $session = $this->auth->session($r, true);
+        $this->auth->limit('helmet:' . $session['player_id'], 30, 3600);
+        $home = SaveService::uuid($b['townId'] ?? null);
+        return $this->database->get()->transactional(function ($db) use ($session, $id, $home) {
+            // The player row lock keeps two tabs from both finding within one rest.
+            $db->fetchOne('SELECT id FROM players WHERE id=? FOR UPDATE', [$session['player_id']]);
+            $this->auth->recheck($session);
+            $host = $db->fetchAssociative(
+                'SELECT id,player_id,appearance FROM towns WHERE public_id=? AND listed=1 AND deleted_at IS NULL',
+                [$id],
+            );
+            if (!$host) {
+                throw new ApiError(404, 'Town unavailable.');
+            }
+            if ($host['player_id'] === $session['player_id']) {
+                throw new ApiError(422, 'Find the astronaut in your own town from your game.', [
+                    'code' => 'own_town',
+                ]);
+            }
+            $era = json_decode($host['appearance'])->appearance->era ?? null;
+            if (!($this->rules ??= new SaveIntegrity())->spaceHelmetOut($era)) {
+                throw new ApiError(409, 'This town has no astronaut yet.', [
+                    'code' => 'no_helmet',
+                ]);
+            }
+            if (
+                !$db->fetchOne(
+                    'SELECT id FROM towns WHERE id=? AND player_id=? AND deleted_at IS NULL',
+                    [$home, $session['player_id']],
+                )
+            ) {
+                throw new ApiError(422, 'Choose one of your towns to receive the reward.', [
+                    'code' => 'no_home_town',
+                ]);
+            }
+            $now = time();
+            $last = $db->fetchOne('SELECT MAX(found_at) FROM helmet_finds WHERE player_id=?', [
+                $session['player_id'],
+            ]);
+            if ($last !== null && $last !== false && (int) $last + self::HELMET_REST > $now) {
+                throw new ApiError(409, 'You found an astronaut recently. Come back later.', [
+                    'code' => 'helmet_resting',
+                    'readyAt' => (int) $last + self::HELMET_REST,
+                ]);
+            }
+            $db->insert('helmet_finds', [
+                'player_id' => $session['player_id'],
+                'found_at' => $now,
+                'town_id' => $home,
+                'host_town_id' => $host['id'],
+            ]);
+            return ['readyAt' => $now + self::HELMET_REST];
+        });
+    }
     public static function saloonReadyAt(mixed $at): int
     {
         return $at === null || $at === false ? 0 : (int) $at + self::SALOON_REST;

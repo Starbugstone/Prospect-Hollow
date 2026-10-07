@@ -1114,6 +1114,53 @@
                 ],
             },
         },
+      '/villages/{publicId}/helmet':
+        {
+          'post':
+            {
+              'summary': "Find a shared town's space-helmet wearer; the signed-in visitor's own town earns the reward, once per 12 hours per player",
+              'description': "Body {townId}: one of the caller's own towns, which receives half an hour of its own saloon takings. The host must be shared, in Tomorrow City or a later era, and not the caller's town. Stores only the find; the rewarded town's owner poll (GET /towns/{townId}/visitors) hands it over with a signed receipt, and that town's save replay credits it once. Unredeemed finds are kept for 30 days. Signed-in mutation with CSRF.",
+              'requestBody':
+                {
+                  'required': true,
+                  'content':
+                    {
+                      'application/json':
+                        {
+                          'schema':
+                            {
+                              'type': 'object',
+                              'required': ['townId'],
+                              'additionalProperties': false,
+                              'properties': { 'townId': { 'type': 'string', 'format': 'uuid' } },
+                            },
+                        },
+                    },
+                },
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'Found; readyAt is when this player can be rewarded again (seconds)',
+                    },
+                  '401': { 'description': 'Sign in required' },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '404': { 'description': 'Town unavailable' },
+                  '409': { 'description': 'no_helmet, or helmet_resting with readyAt (seconds)' },
+                  '422': { 'description': 'Invalid request, own_town or no_home_town' },
+                  '429': { 'description': 'Rate limited' },
+                },
+              'parameters':
+                [
+                  {
+                    'name': 'publicId',
+                    'in': 'path',
+                    'required': true,
+                    'schema': { 'type': 'string', 'pattern': '^[a-f0-9]{32}$' },
+                  },
+                ],
+            },
+        },
       '/villages/{publicId}/saloon':
         {
           'post':
@@ -1282,6 +1329,17 @@
                     {
                       'type': 'integer',
                       'description': 'Owner endpoint only. Last visitor collection in Unix milliseconds, or zero.',
+                    },
+                  'helmetFinds':
+                    {
+                      'type': 'array',
+                      'description': 'Owner endpoint only. Space helmets the owner found in the last 30 days while visiting as this town, oldest first, each {at: Unix milliseconds, receipt: the signed proof its save replay checks}. The game redeems each newer than its last redeemed find once.',
+                      'items':
+                        {
+                          'type': 'object',
+                          'properties':
+                            { 'at': { 'type': 'integer' }, 'receipt': { 'type': 'string' } },
+                        },
                     },
                   'distinctions':
                     {

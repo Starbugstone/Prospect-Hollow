@@ -3178,5 +3178,17 @@
   "A Lasting Legacy": "Un héritage durable",
   "{value} / {goal} monument built": "{value} / {goal} monument construit",
   "Build your first monument.": "Construisez votre premier monument.",
-  "Your first monument stands in the Hollow": "Votre premier monument se dresse dans le vallon"
+  "Your first monument stands in the Hollow": "Votre premier monument se dresse dans le vallon",
+  "You found an astronaut while visiting another town: {coins} coins.": "Vous avez trouvé un astronaute en visitant une autre ville : {coins} pièces.",
+  "You already found the astronaut. It moves to another animal after your next puzzle.": "Vous avez déjà trouvé l’astronaute. Il passe à un autre animal après votre prochain puzzle.",
+  "You found the astronaut! Its reward is an hour of your saloon takings.": "Vous avez trouvé l’astronaute ! Sa récompense vaut une heure de recette de votre saloon.",
+  "You found the astronaut! {town} receives half an hour of its saloon takings.": "Vous avez trouvé l’astronaute ! {town} reçoit une demi-heure de recette de son saloon.",
+  "This is your own town: find its astronaut from your game for your reward.": "C’est votre propre ville : trouvez son astronaute depuis votre partie pour votre récompense.",
+  "You found the astronaut! Sign in with a town of your own to earn its reward.": "Vous avez trouvé l’astronaute ! Connectez-vous avec une ville à vous pour gagner sa récompense.",
+  "You found an astronaut recently. Your next reward is ready in {hours} h.": "Vous avez trouvé un astronaute récemment. Votre prochaine récompense sera prête dans {hours} h.",
+  "Find the animal in a space helmet: your own town earns half an hour of saloon takings.": "Trouvez l’animal au casque spatial : votre propre ville gagne une demi-heure de recette du saloon.",
+  "Find the astronaut in your own town from your game.": "Trouvez l’astronaute de votre propre ville depuis votre partie.",
+  "This town has no astronaut yet.": "Cette ville n’a pas encore d’astronaute.",
+  "Choose one of your towns to receive the reward.": "Choisissez l’une de vos villes pour recevoir la récompense.",
+  "You found an astronaut recently. Come back later.": "Vous avez trouvé un astronaute récemment. Revenez plus tard."
 }
