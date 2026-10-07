@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { Box3, Group, Scene } from 'three';
+import { Box3, Group, PerspectiveCamera, Scene } from 'three';
 import { createTown } from '../src/data/town';
 import { landmarkOffer, areaChoice, areaMaximum, LANDMARK_BY_ID } from '../src/data/townLandmarks';
 import { buildLandmark } from '../src/game/town/TownLandmarks';
@@ -31,6 +31,7 @@ import { TownScenery } from '../src/game/town/TownScenery';
 import { TownStatics } from '../src/game/town/TownStatics';
 import { sceneryObstacles } from '../src/game/town/TownNavigation';
 import { PLOTS } from '../src/game/town/TownLayout';
+import { projectPlaque } from '../src/game/town/TownLabelProjection';
 import { villageAppearance } from '../src/services/publicVillage';
 import { useCampaignStore } from '../src/stores/campaignStore';
 import { HONOURS } from '../src/data/honours';
@@ -492,6 +493,30 @@ describe('Personalisation rendering', () => {
     expect(plaque.position.z).toBeGreaterThan(PLOTS.mine[1] - 1);
     expect(plaque.rotation.x).toBeLessThan(0);
     expect(plaque.userData.distinction).toBe('player-alpha');
+    expect(plaque.userData.distinctionName).toBe('Alpha Player');
+  });
+  it('names the tapped plaque above it until the plaque is replaced', () => {
+    const town = edit(createTown(), { kind: 'plaque', id: 'mine', value: 'player-alpha' }, [
+      'player-alpha',
+    ]);
+    town.displayDistinctions = { 'player-alpha': { at: 1 } };
+    const d = fixture(town);
+    const plaque = buildMinePlaque(d, town);
+    d.camera = new PerspectiveCamera(50, 1, 0.1, 500);
+    d.camera.position.set(0, 8, PLOTS.mine[1] + 20);
+    d.camera.lookAt(0, 3, PLOTS.mine[1]);
+    d.camera.updateMatrixWorld();
+    d.world.updateMatrixWorld(true);
+    const labels = [];
+    d.onPlaqueLabel = (label) => labels.push(label);
+    d.namedPlaque = plaque;
+    projectPlaque(d);
+    expect(labels.at(-1)).toMatchObject({ name: 'Alpha Player' });
+    expect(labels.at(-1).x).toBeCloseTo(50, 0);
+    plaque.removeFromParent();
+    projectPlaque(d);
+    expect(labels.at(-1)).toBeNull();
+    expect(d.namedPlaque).toBeNull();
   });
   it('flutters only the cloth and retires its animation and geometry when replaced or removed', () => {
     const town = edit(createTown(), { kind: 'crest', value: crest });

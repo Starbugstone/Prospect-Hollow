@@ -90,6 +90,25 @@ export function projectLabelPositions(d) {
   }
   d.onLabels(projected);
   projectVillager(d);
+  projectPlaque(d);
+}
+
+// A tapped mine plaque names its honour or distinction until the next tap.
+export function projectPlaque(d) {
+  const root = d.namedPlaque;
+  if (root?.parent !== d.world) d.namedPlaque = null;
+  if (!d.namedPlaque || d.raid || d.cinematic) {
+    d.onPlaqueLabel?.(null);
+    return;
+  }
+  const p = screen.setFromMatrixPosition(root.matrixWorld);
+  p.y += 0.9;
+  p.project(d.camera);
+  d.onPlaqueLabel?.(
+    inFront(p) && Math.abs(p.x) <= 1 && Math.abs(p.y) <= 1
+      ? { name: root.userData.distinctionName, x: (p.x + 1) * 50, y: (1 - p.y) * 50 }
+      : null,
+  );
 }
 
 // The named villager's tag follows them; it hides when they go indoors or off screen.

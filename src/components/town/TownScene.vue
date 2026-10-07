@@ -71,6 +71,13 @@
       ><template v-if="!villagerLabel.live">{{ t('VIP visitor') }} · </template
       >{{ villagerLabel.name }}</span
     >
+    <span
+      v-if="plaqueLabel"
+      class="villager-name"
+      role="status"
+      :style="{ left: `${plaqueLabel.x}%`, top: `${plaqueLabel.y}%` }"
+      >{{ t(plaqueLabel.name) }}</span
+    >
     <div class="town-action-icons">
       <button
         v-for="anchor in actionAnchors"
@@ -414,7 +421,8 @@ let scene,
 const pointers = new Map();
 // A named villager moves every frame; Vue re-renders only when the name changes.
 const villagerLabel = shallowRef(null),
-  villagerElement = ref(null);
+  villagerElement = ref(null),
+  plaqueLabel = shallowRef(null);
 function showVillagerLabel(label) {
   const current = villagerLabel.value;
   if (!label || !current || label.name !== current.name || label.live !== current.live) {
@@ -653,6 +661,9 @@ async function initialize() {
       onGuestVip: (at) => emit('guest-vip', at),
       onHelmet: (origin) => emit('helmet', origin),
       onVillagerLabel: showVillagerLabel,
+      onPlaqueLabel: (label) => {
+        plaqueLabel.value = label;
+      },
       onEventInset: (view) => {
         eventInset.value = view;
       },

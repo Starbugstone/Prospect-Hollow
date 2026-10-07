@@ -25,7 +25,9 @@ The distinction plaque sits on the central mine rock face above the sunken shaft
 It has its own scenery cache entry, so changing it or the crest never rebuilds
 ordinary buildings. Public player plaques are verified against the owner's current
 distinctions; Town Honours come from server-verified honours. Hidden or unearned
-IDs are never rendered as earned plaques.
+IDs are never rendered as earned plaques. The plate shows the badge exactly as the
+honours list draws it (`honourBadgeImage.js` renders `HonourBadge` to a texture), and
+tapping the plaque names the honour or distinction above it until the next tap.
 
 ## Monument sites
 
