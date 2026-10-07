@@ -155,7 +155,7 @@ $adminAudit = 'honours-test-' . bin2hex(random_bytes(4));
 try {
     // ---------- Shared definitions ----------
     check(
-        $schema['honours']['version'] === 2 &&
+        $schema['honours']['version'] === 3 &&
             $schema['honours']['showcaseSlots'] === 3 &&
             $schema['honours']['counters'] === [
                 'gems' => 'map',
@@ -906,7 +906,7 @@ try {
         check(
             str_contains(
                 $public->projection($odd, 'Odd', 'honours'),
-                '"honours":{"version":2,"earned":{},"showcase":[]}',
+                '"honours":{"version":3,"earned":{},"showcase":[]}',
             ),
             'garbage still projects an empty object',
         );
