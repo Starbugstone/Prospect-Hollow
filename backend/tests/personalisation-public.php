@@ -11,6 +11,7 @@ try {
             'emblem' => 'otter',
             'primary' => '#367673',
             'secondary' => '#e8bf79',
+            'emblemColour' => '#123456',
         ],
         'clothing' => (object) ['shirt' => '#123456'],
         'paint' => (object) ['well' => (object) ['walls' => '#abcdef']],
@@ -38,11 +39,11 @@ try {
         'visitors see the saved crest',
     );
     check(
-        $appearance['personalisation']['clothing']['shirt'] === '#123456',
-        'visitors see resident clothing',
+        !isset($appearance['personalisation']['clothing']),
+        'visitors keep individual resident outfits',
     );
     check(
-        $appearance['personalisation']['paint']['well']['walls'] === '#abcdef',
+        $appearance['personalisation']['paint']['all']['walls'] === '#abcdef',
         'visitors see paint',
     );
     check(
@@ -58,6 +59,10 @@ try {
     check(
         isset($appearance['plaqueDistinctions']['player-alpha']),
         'renderer receives server-verified plaque artwork data without a showcase',
+    );
+    check(
+        $appearance['personalisation']['crest']['emblemColour'] === '#123456',
+        'public emblem colour retained',
     );
     $cards = status(200, callApi('GET', 'account', null, $owner), 'crest town summary')['towns'];
     check($cards[0]['summary']['crest']['emblem'] === 'otter', 'saved-town card carries the crest');

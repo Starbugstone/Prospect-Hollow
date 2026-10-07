@@ -98,7 +98,7 @@ export function buildPlot(d, id, group, town, labels) {
           town.buildingEraLevels[id] || stage,
         );
       if (stage) {
-        paintBuilding(d, group, town.personalisation?.paint?.[id], town.buildingEras[id]);
+        paintBuilding(d, group, town.personalisation?.paint?.all, town.buildingEras[id]);
         addBuildingPlaque(d, group, town, id);
       }
       if (project) addScaffolding(d, group, kind, stage, constructionVisual(project));
@@ -148,7 +148,7 @@ export function buildPlot(d, id, group, town, labels) {
         town.personalisation?.choices?.[id],
         town.buildingEraLevels[id] || stage,
       );
-      paintBuilding(d, group, town.personalisation?.paint?.[id], town.buildingEras[id]);
+      paintBuilding(d, group, town.personalisation?.paint?.all, town.buildingEras[id]);
       addBuildingPlaque(d, group, town, id);
       if (project) addScaffolding(d, group, kind, stage, constructionVisual(project));
     }
@@ -163,7 +163,7 @@ export function plotSignatures(d, town, labels) {
       id,
       JSON.stringify([
         labels[id],
-        town.personalisation?.paint?.[id],
+        town.personalisation?.paint?.all,
         town.personalisation?.choices?.[id],
         town.personalisation?.plaques?.[id],
         town.displayHonours,
@@ -183,7 +183,6 @@ function topologyParts(d, town, labels) {
   return Object.fromEntries(
     Object.entries({
       era: town.era,
-      personalisation: town.personalisation?.clothing,
       plots: visiblePlots(town).map(({ id }) => id),
       tracks: townTracks(town),
       rails: railEdges(town),

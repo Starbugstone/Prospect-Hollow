@@ -41,10 +41,8 @@ export class TownScenery {
         'personal-areas',
         JSON.stringify([
           town.personalisation?.areas,
-          PERSONAL_AREAS.map((a) => [
-            town.personalisation?.paint?.[a.id],
-            town.personalisation?.plaques?.[a.id],
-          ]),
+          town.personalisation?.paint?.all,
+          PERSONAL_AREAS.map((a) => town.personalisation?.plaques?.[a.id]),
           town.displayHonours,
           town.displayDistinctions,
           town.personalisation?.crest,

@@ -2,7 +2,7 @@ import { paintBuilding } from './TownPaint';
 import { buildLandmark } from './TownLandmarks';
 import { Box3, CanvasTexture, DoubleSide, MeshStandardMaterial, SRGBColorSpace } from 'three';
 import { CREST_BY_ID, crestOutline, crestPattern } from '../../data/townCrests';
-import { PERSONAL_AREAS, areaStage } from '../../data/townPersonalisation';
+import { PERSONAL_AREAS, areaStage, DEFAULT_EMBLEM_COLOUR } from '../../data/townPersonalisation';
 import { HONOURS } from '../../data/honours';
 import { distinctionBadge } from '../../data/playerDistinctions';
 import { groundHeight } from './TownLandscape';
@@ -148,7 +148,7 @@ function addEmblemPanel(d, root, crest, width, height, position, art) {
   ctx.fill();
   ctx.translate(22, 25);
   ctx.scale(56 / 24, 56 / 24);
-  ctx.strokeStyle = '#393c43';
+  ctx.strokeStyle = crest.emblemColour || DEFAULT_EMBLEM_COLOUR;
   ctx.lineWidth = 1.5;
   ctx.lineJoin = ctx.lineCap = 'round';
   ctx.stroke(new Path2D(CREST_BY_ID[crest.emblem]?.path ?? CREST_BY_ID.crystal.path));
@@ -221,7 +221,7 @@ export function buildPersonalAreas(d, town) {
       walkObstacle(g, 0, 0, area.radius, 14);
       buildLandmark(d, g, choice, stage, area.timeless);
       if (!area.timeless) {
-        paintBuilding(d, g, town.personalisation?.paint?.[area.id], town.era);
+        paintBuilding(d, g, town.personalisation?.paint?.all, town.era);
         addBuildingPlaque(d, g, town, area.id);
       }
     });

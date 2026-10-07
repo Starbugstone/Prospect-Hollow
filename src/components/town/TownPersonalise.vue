@@ -17,7 +17,10 @@
     </nav>
 
     <div v-if="section === 'crest'" class="personal-section">
-      <div class="personal-hero">
+      <div class="personal-floating-crest" aria-hidden="true">
+        <TownCrest v-show="showFloatingCrest" :crest="crest" />
+      </div>
+      <div ref="crestHero" class="personal-hero">
         <TownCrest :crest="crest" />
         <div>
           <h3>{{ t('Your town crest') }}</h3>
@@ -87,126 +90,61 @@
         ><button :aria-pressed="crestColour === 'secondary'" @click="crestColour = 'secondary'">
           {{ t('Pattern colour') }}
         </button>
+        <button
+          :aria-pressed="crestColour === 'emblemColour'"
+          @click="crestColour = 'emblemColour'"
+        >
+          {{ t('Emblem colour') }}
+        </button>
       </div>
       <TownColourPicker
-        :label="t(crestColour === 'primary' ? 'Main colour' : 'Pattern colour')"
+        :label="t(crestColourLabels[crestColour])"
         :model-value="crest[crestColour]"
         @update:model-value="changeCrest({ [crestColour]: $event })"
       />
     </div>
 
     <div v-else-if="section === 'colours'" class="personal-section">
-      <div class="personal-segments">
-        <button :aria-pressed="colourTarget === 'buildings'" @click="colourTarget = 'buildings'">
-          {{ t('Buildings') }}</button
-        ><button :aria-pressed="colourTarget === 'people'" @click="colourTarget = 'people'">
-          {{ t('People') }}
-        </button>
-      </div>
-      <template v-if="colourTarget === 'buildings'">
-        <label class="personal-field"
-          >{{ t('Choose a building')
-          }}<select v-model="buildingId" @change="$emit('focus', buildingId)">
-            <option v-for="building in availableBuildings" :key="building.id" :value="building.id">
-              {{ t(building.name) }}
-            </option>
-          </select></label
-        >
-        <div class="personal-building-preview">
-          <TownLandmarkPreview
-            v-if="PERSONAL_AREAS.some((a) => a.id === buildingId)"
-            :choice="
-              p.areas[buildingId]?.[0] || PERSONAL_AREAS.find((a) => a.id === buildingId).choices[0]
-            "
-            :paint="p.paint[buildingId]"
+      <div class="personal-building-preview">
+        <svg viewBox="-180 -255 360 300" :aria-label="t('Colour preview')" role="img">
+          <TownBuilding
+            id="home"
+            :stage="Math.max(1, town.buildings.home || 0)"
+            :era="town.era"
+            :era-level="town.buildingEraLevels.home || 1"
+            :paint="p.paint.all"
           />
-          <svg v-else viewBox="-180 -255 360 300" :aria-label="t('Colour preview')" role="img">
-            <TownBuilding
-              :id="buildingId"
-              :stage="Math.max(1, town.buildings[buildingId] || 0)"
-              :era="town.buildingEras[buildingId]"
-              :era-level="town.buildingEraLevels[buildingId] || 1"
-              :paint="p.paint[buildingId]"
-            /></svg
-          ><small>{{ t('Preview · colours stay with this building as it grows') }}</small>
-        </div>
-        <label class="personal-field"
-          >{{ t('Building element')
-          }}<select v-model="paintGroup">
-            <option v-for="group in PAINT_GROUPS" :key="group.id" :value="group.id">
-              {{ t(group.label) }}
-            </option>
-          </select></label
-        >
-        <TownColourPicker
-          :label="t(PAINT_GROUPS.find((g) => g.id === paintGroup).label)"
-          :model-value="p.paint[buildingId]?.[paintGroup]"
-          resettable
-          @update:model-value="
-            change({ kind: 'paint', id: buildingId, group: paintGroup, value: $event })
-          "
-        />
-        <p class="personal-note">
-          {{
-            t(
-              'Some elements appear as the building develops. Glass, plants and signs keep their original colours.',
-            )
-          }}
-        </p>
-      </template>
-      <template v-else>
-        <div class="personal-people-preview">
-          <svg viewBox="0 0 180 100" role="img" :aria-label="t('Resident clothing preview')">
-            <g v-for="(x, index) in [35, 90, 145]" :key="x" :transform="`translate(${x} 0)`">
-              <path
-                d="M-8 65v26M8 65v26"
-                :stroke="p.clothing.trousers || '#566873'"
-                stroke-width="11"
-              />
-              <path
-                d="M-17 42-23 67M17 42 23 67"
-                :stroke="p.clothing.shirt || '#76b0a6'"
-                stroke-width="10"
-                stroke-linecap="round"
-              />
-              <path
-                :d="index === 1 ? 'M-14 36H14L21 72H-21Z' : 'M-14 36H14V68H-14Z'"
-                :fill="p.clothing.shirt || '#76b0a6'"
-              />
-              <circle cy="23" r="13" fill="#cda082" />
-              <path
-                d="M-18 15H18M-10 13V5H10V13"
-                :stroke="p.clothing.hat || '#91785e'"
-                stroke-width="7"
-              />
-              <path
-                d="M-12 39H12V45H3V58"
-                :stroke="p.clothing.accent || '#e8bf79'"
-                stroke-width="5"
-                fill="none"
-              />
-            </g>
-          </svg>
-          <p>{{ t('Dress your neighbours in your town colours.') }}</p>
-        </div>
-        <label class="personal-field"
-          >{{ t('Clothing element')
-          }}<select v-model="clothingGroup">
-            <option v-for="group in CLOTHING_GROUPS" :key="group.id" :value="group.id">
-              {{ t(group.label) }}
-            </option>
-          </select></label
-        >
-        <TownColourPicker
-          :label="t(CLOTHING_GROUPS.find((g) => g.id === clothingGroup).label)"
-          :model-value="p.clothing[clothingGroup]"
-          resettable
-          @update:model-value="change({ kind: 'clothing', group: clothingGroup, value: $event })"
-        />
-        <p class="personal-note">
-          {{ t('Outfits follow each era. Uniforms and visiting guests keep their own identity.') }}
-        </p>
-      </template>
+        </svg>
+        <small>{{ t('Example building · these colours apply throughout your town') }}</small>
+      </div>
+      <label class="personal-field"
+        >{{ t('Building element')
+        }}<select v-model="paintGroup">
+          <option v-for="group in PAINT_GROUPS" :key="group.id" :value="group.id">
+            {{ t(group.label) }}
+          </option>
+        </select></label
+      >
+      <TownColourPicker
+        :label="t(PAINT_GROUPS.find((g) => g.id === paintGroup).label)"
+        :model-value="p.paint.all[paintGroup]"
+        resettable
+        @update:model-value="change({ kind: 'paint', group: paintGroup, value: $event })"
+      />
+      <p class="personal-note">
+        {{
+          t(
+            'Your palette follows all buildings as they grow, including new buildings and landmark plots. Monuments keep their own colours.',
+          )
+        }}
+      </p>
+      <p class="personal-note">
+        {{
+          t(
+            'Some elements appear as the building develops. Glass, plants and signs keep their original colours.',
+          )
+        }}
+      </p>
     </div>
 
     <div v-else-if="section === 'buildings'" class="personal-section">
@@ -420,7 +358,7 @@ import { CREST_EMBLEMS, CREST_EMBLEM_IDS } from '../../data/townCrests';
 import {
   BUILDING_CHOICES,
   CHOICE_LABELS,
-  CLOTHING_GROUPS,
+  DEFAULT_EMBLEM_COLOUR,
   CREST_PATTERNS,
   CREST_SHAPES,
   PAINT_GROUPS,
@@ -484,6 +422,7 @@ const crest = computed(
       emblem: 'fox',
       primary: '#367673',
       secondary: '#e8bf79',
+      emblemColour: DEFAULT_EMBLEM_COLOUR,
     },
 );
 const shapeLabels = {
@@ -499,6 +438,11 @@ const patternLabels = {
   quartered: 'Quartered',
   stripes: 'Stripes',
   cross: 'Cross',
+};
+const crestColourLabels = {
+  primary: 'Main colour',
+  secondary: 'Pattern colour',
+  emblemColour: 'Emblem colour',
 };
 const emblemCategory = ref('All'),
   search = ref(''),
@@ -525,7 +469,6 @@ const builtBuildings = computed(() =>
 const choiceBuildings = computed(() =>
   availableBuildings.value.filter((b) => BUILDING_CHOICES[b.id]),
 );
-const buildingId = ref(props.initialBuilding || availableBuildings.value[0]?.id || 'well');
 const choiceBuilding = ref(
   BUILDING_CHOICES[props.initialBuilding]
     ? props.initialBuilding
@@ -533,8 +476,6 @@ const choiceBuilding = ref(
 );
 const plaqueBuilding = ref(builtBuildings.value[0]?.id || 'well');
 const paintGroup = ref('walls'),
-  clothingGroup = ref('shirt'),
-  colourTarget = ref('buildings'),
   buildingTab = ref(props.initialBuilding ? 'familiar' : 'gardens');
 const landmarkAreaId = ref(
   PERSONAL_AREAS.filter((a) => areaUnlocked(props.town, a)).at(-1)?.id || PERSONAL_AREAS[0].id,
@@ -630,7 +571,30 @@ function save(confirmed) {
     saved.value = true;
   } else error.value = t('Your town changed. Undo the preview and try again.');
 }
-onBeforeUnmount(() => emit('preview', []));
+const crestHero = ref(null);
+const showFloatingCrest = ref(false);
+let crestObserver;
+watch(
+  crestHero,
+  (hero) => {
+    crestObserver?.disconnect();
+    showFloatingCrest.value = false;
+    if (!hero) return;
+    crestObserver = new IntersectionObserver(
+      ([entry]) => {
+        showFloatingCrest.value =
+          !entry.isIntersecting && entry.boundingClientRect.top < entry.rootBounds.top;
+      },
+      { root: hero.closest('.town-dialog'), rootMargin: '-61px 0px 0px 0px' },
+    );
+    crestObserver.observe(hero);
+  },
+  { flush: 'post' },
+);
+onBeforeUnmount(() => {
+  crestObserver?.disconnect();
+  emit('preview', []);
+});
 </script>
 <style>
 .town-personalise {
@@ -683,6 +647,25 @@ onBeforeUnmount(() => emit('preview', []));
 .personal-section h3,
 .personal-section h4 {
   margin: 0 0 8px;
+}
+.personal-floating-crest {
+  position: sticky;
+  top: 72px;
+  z-index: 1;
+  height: 0;
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+.personal-floating-crest > svg {
+  flex-shrink: 0;
+  width: 58px;
+  height: 70px;
+  padding: 8px;
+  border: 1px solid #dbd2bb;
+  border-radius: 12px;
+  background: #fffdf4;
+  box-shadow: 0 4px 16px #253b3433;
 }
 .personal-hero {
   display: flex;
@@ -860,8 +843,7 @@ onBeforeUnmount(() => emit('preview', []));
   font: inherit;
   font-size: 13px;
 }
-.personal-building-preview,
-.personal-people-preview {
+.personal-building-preview {
   text-align: center;
   border-radius: 15px;
   padding: 14px;
@@ -875,10 +857,6 @@ onBeforeUnmount(() => emit('preview', []));
   display: block;
   font-size: 11px;
   color: #657365;
-}
-.personal-people-preview > svg {
-  height: 150px;
-  max-width: 100%;
 }
 .personal-designs {
   display: grid;

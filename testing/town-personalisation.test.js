@@ -12,6 +12,7 @@ import {
   BUILDING_CHOICES,
   PERSONAL_AREAS,
   PAINT_GROUPS,
+  DEFAULT_EMBLEM_COLOUR,
   areaStage,
   areaUnlocked,
   choiceLocked,
@@ -63,6 +64,7 @@ const crest = {
   emblem: 'otter',
   primary: '#367673',
   secondary: '#e8bf79',
+  emblemColour: '#9f4f48',
 };
 const views = [];
 function fixture(town = createTown()) {
@@ -118,9 +120,9 @@ describe('Personalisation save and progression contract', () => {
     const p = normalizePersonalisation(saved, town, CREST_EMBLEM_IDS);
     expect(p.crest).toBeNull();
     expect(p.paint.unknown).toBeUndefined();
-    expect(p.clothing.skin).toBeUndefined();
-    expect(p.paint.home?.walls).toBeUndefined();
-    expect(p.paint.home?.extra).toBeUndefined();
+    expect(p.clothing).toBeUndefined();
+    expect(p.paint.all?.walls).toBeUndefined();
+    expect(p.paint.all?.extra).toBeUndefined();
     expect(normalizePersonalisation(p, town, CREST_EMBLEM_IDS)).toEqual(p);
   });
   it.each(Object.entries(BUILDING_CHOICES))(
@@ -242,6 +244,41 @@ describe('Personalisation save and progression contract', () => {
       ERAS.pop();
     }
   });
+  it('migrates legacy paint to one palette, drops clothing and keeps resets on reload', () => {
+    const town = createTown();
+    town.personalisation = {
+      version: 1,
+      crest: { ...crest, emblemColour: undefined },
+      paint: {
+        home: { walls: '#ABCDEF' },
+        well: { walls: '#112233', roof: '#445566' },
+        unknown: { trim: '#123456' },
+      },
+      clothing: { shirt: '#123456' },
+    };
+    const loaded = normalizeTown(town);
+    expect(loaded.personalisation.paint).toEqual({ all: { walls: '#abcdef', roof: '#445566' } });
+    expect(loaded.personalisation.crest.emblemColour).toBe(DEFAULT_EMBLEM_COLOUR);
+    expect(loaded.personalisation.clothing).toBeUndefined();
+    expect(edit(loaded, { kind: 'clothing', group: 'shirt', value: '#123456' })).toBeNull();
+    const reset = edit(loaded, { kind: 'paint', group: 'walls', value: null });
+    expect(normalizeTown(reset).personalisation.paint.all).toEqual({ roof: '#445566' });
+    const empty = edit(reset, { kind: 'paint', group: 'roof', value: null });
+    expect(normalizeTown(empty).personalisation.paint).toEqual({ all: {} });
+  });
+  it('bounds the emblem colour and preserves it independently from both banner colours', () => {
+    const town = edit(createTown(), {
+      kind: 'crest',
+      value: { ...crest, emblemColour: '#ABCDEF' },
+    });
+    expect(normalizeTown(town).personalisation.crest).toEqual({
+      ...crest,
+      emblemColour: '#abcdef',
+    });
+    expect(edit(town, { kind: 'crest', value: { ...crest, emblemColour: 'url(bad)' } })).toBeNull();
+    town.personalisation.crest.emblemColour = 'bad';
+    expect(normalizeTown(town).personalisation.crest.emblemColour).toBe(DEFAULT_EMBLEM_COLOUR);
+  });
   it('rejects an invalid crest command without silently removing the existing banner', () => {
     const town = edit(createTown(), { kind: 'crest', value: crest });
     expect(edit(town, { kind: 'crest', value: { ...crest, emblem: 'unknown' } })).toBeNull();
@@ -249,14 +286,13 @@ describe('Personalisation save and progression contract', () => {
   });
   it('publishes the same cosmetic render state without mutating the owner or visiting player', () => {
     let town = edit(createTown(), { kind: 'crest', value: crest });
-    town = edit(town, { kind: 'paint', id: 'home', group: 'walls', value: '#112233' });
-    town = edit(town, { kind: 'clothing', group: 'shirt', value: '#334455' });
+    town = edit(town, { kind: 'paint', group: 'walls', value: '#112233' });
     town.coins = 10000;
     town = buy(town, PERSONAL_AREAS[0]);
     const visit = villageAppearance({ appearance: JSON.parse(JSON.stringify(town)) });
     expect(visit.personalisation).toEqual(town.personalisation);
-    visit.personalisation.paint.home.walls = '#ffffff';
-    expect(town.personalisation.paint.home.walls).toBe('#112233');
+    visit.personalisation.paint.all.walls = '#ffffff';
+    expect(town.personalisation.paint.all.walls).toBe('#112233');
   });
   it('saves all edits atomically through the campaign store and restores them', () => {
     const values = new Map();
@@ -277,17 +313,44 @@ describe('Personalisation save and progression contract', () => {
     expect(
       campaign.personalise([
         { kind: 'crest', value: crest },
-        { kind: 'clothing', group: 'hat', value: '#abcdef' },
+        { kind: 'paint', group: 'roof', value: '#abcdef' },
       ]),
     ).toBe(true);
     setActivePinia(createPinia());
     const restored = useCampaignStore();
     expect(restored.town.personalisation.crest).toEqual(crest);
-    expect(restored.town.personalisation.clothing.hat).toBe('#abcdef');
+    expect(restored.town.personalisation.paint.all.roof).toBe('#abcdef');
   });
 });
 
 describe('Personalisation rendering', () => {
+  it('applies one palette to existing and newly built places and ordinary landmarks', () => {
+    let town = createTown();
+    for (const { id: group } of PAINT_GROUPS)
+      town = edit(town, { kind: 'paint', group, value: '#ab1234' });
+    // Add buildings after choosing the palette, just as future construction does.
+    town.buildings.home = town.buildings.well = 1;
+    town.buildingEras.home = town.buildingEras.well = town.era;
+    const hasPaint = (root) => {
+      const matches = [];
+      root.traverse((mesh) => {
+        if (mesh.isMesh && mesh.material.color?.getHexString() === 'ab1234') matches.push(mesh);
+      });
+      return matches.length > 0;
+    };
+    for (const id of ['home', 'well']) {
+      const root = new Group();
+      buildPlot(fixture(town), id, root, town, { home: 'Home', well: 'Well' });
+      expect(hasPaint(root), id).toBe(true);
+    }
+    town.coins = 10000;
+    town = buy(town, PERSONAL_AREAS[0]);
+    expect(hasPaint(buildPersonalAreas(fixture(town), town))).toBe(true);
+    town.buildings.futureWorkshop = 1;
+    expect(normalizeTown(town).personalisation.paint.all).toEqual(
+      Object.fromEntries(PAINT_GROUPS.map(({ id }) => [id, '#ab1234'])),
+    );
+  });
   it.each(ERAS.filter((e) => e.enabled).map((e) => e.id))(
     'paints a home in %s without editing geometry or shared materials',
     (era) => {
@@ -441,6 +504,22 @@ describe('Personalisation rendering', () => {
     town.personalisation.crest = crest;
     expect(buildTownBanner(d, town).getObjectByName('Crest emblem: otter')).toBeTruthy();
   });
+  it('uses the chosen emblem ink in the hill banner texture', () => {
+    const ctx = Object.fromEntries(
+      ['scale', 'clip', 'fillRect', 'fill', 'beginPath', 'arc', 'translate', 'stroke'].map(
+        (name) => [name, vi.fn()],
+      ),
+    );
+    vi.stubGlobal('Path2D', class {});
+    vi.stubGlobal('document', { createElement: () => ({ getContext: () => ctx }) });
+    const town = edit(createTown(), { kind: 'crest', value: crest });
+    const banner = buildTownBanner(fixture(town), town);
+    expect(ctx.stroke).toHaveBeenCalledOnce();
+    expect(ctx.strokeStyle).toBe(crest.emblemColour);
+    const material = banner.getObjectByName('Crest emblem: otter').material;
+    material.map.dispose();
+    material.dispose();
+  });
   it('only displays earned town honours or verified player distinctions', () => {
     const town = createTown(),
       rank = HONOURS.definitions[0];
@@ -453,17 +532,17 @@ describe('Personalisation rendering', () => {
     town.displayDistinctions = { 'player-alpha': { at: 1 } };
     expect(plaqueDefinition(town, 'home').id).toBe('player-alpha');
   });
-  it('invalidates a painted plot without invalidating a neighbour', () => {
+  it('invalidates every painted plot when the shared palette changes', () => {
     const town = createTown();
     town.buildings.home = town.buildings.well = 1;
     const before = plotSignatures({}, town, {});
-    town.personalisation.paint.home = { roof: '#123456' };
+    town.personalisation.paint.all = { roof: '#123456' };
     const after = plotSignatures({}, town, {});
     expect(before.get('home')).not.toBe(after.get('home'));
-    expect(before.get('well')).toBe(after.get('well'));
+    expect(before.get('well')).not.toBe(after.get('well'));
   });
   it.each(ERAS.filter((e) => e.enabled).map((e) => e.id))(
-    'uses town clothing for residents in %s, preserving skin and uniforms',
+    'ignores legacy clothing overrides and preserves individual outfits in %s',
     (era) => {
       const town = createTown();
       town.era = era;
@@ -486,10 +565,15 @@ describe('Personalisation rendering', () => {
         manual: true,
       };
       const resident = addPerson(d, args);
-      expect(resident.shirt.material.color.getHexString()).toBe('123456');
-      expect(
-        resident.clothing.trousers.every((m) => m.material.color.getHexString() === '234567'),
-      ).toBe(true);
+      const originalTown = createTown();
+      originalTown.era = era;
+      const original = addPerson(fixture(originalTown), args);
+      expect(resident.shirt.material.color.getHexString()).toBe(
+        original.shirt.material.color.getHexString(),
+      );
+      expect(resident.clothing.trousers.map((m) => m.material.color.getHexString())).toEqual(
+        original.clothing.trousers.map((m) => m.material.color.getHexString()),
+      );
       const officer = addPerson(d, { ...args, sheriff: true });
       expect(officer.shirt.material.color.getHexString()).not.toBe('123456');
       expect([...d.materials.keys()]).toContain('#ca9876');

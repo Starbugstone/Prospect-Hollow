@@ -344,7 +344,7 @@ it('saves personalisation and paid monument replacements through the production 
   profile.town.era = 'industrial';
   profile.town.coins = 30000;
   const campaign = open(profile);
-  expect(campaign.personalise([{ kind: 'clothing', group: 'shirt', value: '#123456' }])).toBe(true);
+  expect(campaign.personalise([{ kind: 'paint', group: 'walls', value: '#123456' }])).toBe(true);
   const purchase = {
     kind: 'area',
     id: 'monument',
@@ -367,7 +367,7 @@ it('saves personalisation and paid monument replacements through the production 
   expect(campaign.town.coins).toBe(12000);
   const saved = JSON.parse(values.get(SAVE_KEY));
   expect(saved.town.personalisation.areas.monument).toEqual(['guardian']);
-  expect(saved.town.personalisation.clothing.shirt).toBe('#123456');
+  expect(saved.town.personalisation.paint.all.walls).toBe('#123456');
   const restored = open(saved);
   expect(restored.town.coins).toBe(12000);
   expect(restored.honours.earned['monument-gold']).toEqual(distinction);

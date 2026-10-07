@@ -106,20 +106,30 @@
       <g v-if="kind === 'well'">
         <path d="M-64 3 5 32 86-8 16-38Z" :fill="built ? '#c2b28b' : '#bbae95'" />
         <ellipse cy="-10" rx="45" ry="21" fill="#aa9374" />
-        <path d="M-45-12V13Q0 43 45 13V-12" fill="#c3ae8e" stroke="#9a8567" stroke-width="3" />
+        <path
+          data-paint="wall"
+          d="M-45-12V13Q0 43 45 13V-12"
+          fill="#c3ae8e"
+          stroke="#9a8567"
+          stroke-width="3"
+        />
         <path
           d="M-40 3Q0 28 40 3M-23-4v20M3 4v20M28-1v18"
           fill="none"
           stroke="#9a8567"
           stroke-width="2"
         />
-        <ellipse cy="-12" rx="43" ry="20" fill="#dfceb0" />
+        <ellipse data-paint="wall" cy="-12" rx="43" ry="20" fill="#dfceb0" />
         <ellipse cy="-12" rx="31" ry="12" :fill="built ? '#6ca8aa' : '#726556'" />
         <path v-if="built" d="M-17-12q16 6 32-1" fill="none" stroke="#c6e2d6" stroke-width="3" />
-        <path d="M-48 0V-105M49-17V-123" stroke="#775339" stroke-width="9" />
-        <path d="M-45-85 48-102" stroke="#a5764e" stroke-width="8" />
-        <path d="M-75-104-16-151 79-126 21-80Z" :fill="built ? '#6c9191' : '#898579'" />
-        <path d="m-16-151 35 66 60-41" :fill="built ? '#496f72' : '#676c63'" />
+        <path data-paint="frame" d="M-48 0V-105M49-17V-123" stroke="#775339" stroke-width="9" />
+        <path data-paint="frame" d="M-45-85 48-102" stroke="#a5764e" stroke-width="8" />
+        <path
+          data-paint="roof"
+          d="M-75-104-16-151 79-126 21-80Z"
+          :fill="built ? '#6c9191' : '#898579'"
+        />
+        <path data-paint="roof" d="m-16-151 35 66 60-41" :fill="built ? '#496f72' : '#676c63'" />
         <path d="m-75-104 96 24 58-46" fill="none" stroke="#3c5b60" stroke-width="7" />
         <path
           d="m-55-110 87 23m-71-36 86 23m-70-37 81 23"

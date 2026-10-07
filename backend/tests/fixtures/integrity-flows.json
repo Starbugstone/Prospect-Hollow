@@ -31,10 +31,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -348,10 +347,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -622,10 +620,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -899,10 +896,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -1173,10 +1169,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -1489,10 +1484,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -1763,10 +1757,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -2079,10 +2072,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -2353,10 +2345,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -2630,10 +2621,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -2904,10 +2894,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -3223,10 +3212,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -3497,10 +3485,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -3780,10 +3767,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -4054,10 +4040,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -4337,10 +4322,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -4611,10 +4595,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -4914,10 +4897,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -5202,10 +5184,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -5517,10 +5498,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -5793,10 +5773,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -6070,10 +6049,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -6344,10 +6322,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -6621,10 +6598,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -6895,10 +6871,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -7178,10 +7153,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -7452,10 +7426,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -7732,10 +7705,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -8009,10 +7981,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -8304,10 +8275,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -8592,10 +8562,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -8893,10 +8862,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -9180,10 +9148,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -9469,10 +9436,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -9743,10 +9709,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -10020,10 +9985,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -10294,10 +10258,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -10571,10 +10534,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -10853,10 +10815,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -11157,10 +11118,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -11434,10 +11394,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -11711,10 +11670,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -11985,10 +11943,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -12292,10 +12249,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -12578,10 +12534,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -12861,10 +12816,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -13135,10 +13089,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -13418,10 +13371,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -13692,10 +13644,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -13977,10 +13928,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -14314,10 +14264,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -14757,10 +14706,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -15051,10 +14999,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -15920,10 +15867,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": { "meadow": ["roundhouse"] },
             "areaLevels": { "meadow": 33 },
@@ -16198,10 +16144,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -17013,10 +16958,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": { "river-court": ["tideclock"] },
             "areaLevels": { "river-court": 30 },
@@ -17291,10 +17235,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -17656,10 +17599,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": { "monument": ["celestial-sphere"] },
             "areaLevels": { "monument": 1 },
@@ -17940,10 +17882,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -18647,10 +18588,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": { "commons": ["amphitheatre"] },
             "areaLevels": { "commons": 24 },
@@ -18925,10 +18865,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -19578,10 +19517,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": { "motor-court": ["starlight"] },
             "areaLevels": { "motor-court": 21 },
@@ -19856,10 +19794,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -20455,10 +20392,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": { "outlook": ["skyhall"] },
             "areaLevels": { "outlook": 18 },
@@ -20733,10 +20669,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -21278,10 +21213,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": { "arts-court": ["music-shell"] },
             "areaLevels": { "arts-court": 15 },
@@ -21556,10 +21490,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -22047,10 +21980,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": { "city-court": ["wave-centre"] },
             "areaLevels": { "city-court": 12 },
@@ -22325,10 +22257,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -22762,10 +22693,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": { "horizon": ["orbit-house"] },
             "areaLevels": { "horizon": 9 },
@@ -23040,10 +22970,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -23423,10 +23352,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": { "canopy-court": ["living-tower"] },
             "areaLevels": { "canopy-court": 6 },
@@ -23701,10 +23629,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": {},
             "areaLevels": {},
@@ -24030,10 +23957,9 @@
         "seenTips": [],
         "town": {
           "personalisation": {
-            "version": 1,
+            "version": 2,
             "crest": null,
-            "paint": {},
-            "clothing": {},
+            "paint": { "all": {} },
             "choices": {},
             "areas": { "light-court": ["river-palace"] },
             "areaLevels": { "light-court": 3 },

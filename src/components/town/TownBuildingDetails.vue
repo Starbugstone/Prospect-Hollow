@@ -29,7 +29,7 @@
             :era-level="town.buildingEraLevels[id] || stage"
           />
           <TownBuilding
-            :paint="town.personalisation?.paint?.[id]"
+            :paint="town.personalisation?.paint?.all"
             v-else
             :id="id"
             :stage="offer && offer.type !== 'modernization' ? stage + 1 : stage"

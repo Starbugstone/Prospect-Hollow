@@ -10,15 +10,25 @@ the total cost. Public visits use the same normalized appearance and renderer.
 `town.personalisation` is versioned and bounded by `townPersonalisation.js`.
 Missing data means original artwork, outfits and no banner or plaques. The crest
 catalog contains 60 authored animal/symbol vectors; its shape, pattern and colours
-are shared by the menu, hill banner and village cards. Five material roles control
-building paint; four clothing roles leave skin, uniforms and visiting guests alone.
+are shared by the menu, hill banner and village cards. The emblem has an independent
+colour; a small floating crest preview stays visible when the editor scrolls past
+the main preview. Five material roles control one shared building palette, shown
+on an example home. Residents always keep their individual era outfits.
 Material references are replaced without modifying cached materials.
 
 Existing buildings can receive permanent frontage choices before construction.
-Already-built legacy buildings retain their original design. Paint, clothing,
+Already-built legacy buildings retain their original design. Paint,
 crest and earned plaques remain editable. Public player plaques are verified
 against the owner's current distinctions; Town Honours come from server-verified
 honours. Hidden or unearned distinction IDs are never rendered as earned plaques.
+
+Appearance version 2 stores the shared palette in `paint.all`, including for future
+buildings and ordinary landmarks. Monuments retain their authored colours. Legacy
+per-building paint is migrated by preferring the home's colour for each role,
+then the first saved colour in building/landmark catalog order. An explicitly empty
+shared palette preserves a reset. Legacy clothing overrides are discarded. Missing
+or invalid `crest.emblemColour` uses the original dark ink. PHP normalization and
+public town projection follow the same rules.
 
 ## Optional landmark plots
 
@@ -58,7 +68,7 @@ are shared with terrain reservation, navigation obstacles and camera framing.
 
 Regression coverage checks all choices and upgrade stages, parcel/river/building
 clearances, timeless monument geometry, full-price replacement, insufficient
-funds, stale commands, save normalization, visitors, paint isolation and clothing
+funds, stale commands, save normalization, visitors, shared paint and individual outfits
 across eras. Actual frontend purchase flows for every parcel are replayed by
 `backend/tests/save-integrity.php`. Keep the ordinary chapter progression tests,
 including unlimited moves, alongside these checks.

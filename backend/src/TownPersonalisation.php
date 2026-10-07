@@ -37,10 +37,9 @@ final class TownPersonalisation
         $c = $catalog ?? self::catalog();
         $saved = is_object($saved) ? $saved : new \stdClass();
         $result = (object) [
-            'version' => 1,
+            'version' => 2,
             'crest' => null,
-            'paint' => new \stdClass(),
-            'clothing' => self::colours($saved->clothing ?? null, $c['clothing']),
+            'paint' => (object) ['all' => new \stdClass()],
             'choices' => new \stdClass(),
             'areas' => new \stdClass(),
             'areaLevels' => new \stdClass(),
@@ -61,13 +60,25 @@ final class TownPersonalisation
                 'emblem' => $crest->emblem,
                 'primary' => strtolower($crest->primary),
                 'secondary' => strtolower($crest->secondary),
+                'emblemColour' => self::colour($crest->emblemColour ?? null)
+                    ? strtolower($crest->emblemColour)
+                    : $c['defaultEmblemColour'],
             ];
         }
-        foreach ($c['buildings'] as $id) {
-            $paint = self::colours($saved->paint->$id ?? null, $c['paint']);
-            if (count((array) $paint)) {
-                $result->paint->$id = $paint;
+        // Match the client migration: home first, then catalog order, per paint role.
+        if (is_object($saved->paint ?? null) && property_exists($saved->paint, 'all')) {
+            $result->paint->all = self::colours($saved->paint->all, $c['paint']);
+        } else {
+            foreach (['home', ...$c['buildings']] as $id) {
+                foreach (
+                    self::colours($saved->paint->$id ?? null, $c['paint'])
+                    as $role => $colour
+                ) {
+                    $result->paint->all->$role ??= $colour;
+                }
             }
+        }
+        foreach ($c['buildings'] as $id) {
             if (isset($c['choices'][$id])) {
                 $choice = $saved->choices->$id ?? null;
                 if ($choice !== 'original' && in_array($choice, $c['choices'][$id], true)) {

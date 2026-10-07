@@ -3329,5 +3329,8 @@
   "You found an astronaut recently. Come back later.": "Vous avez trouvé un astronaute récemment. Revenez plus tard.",
   "Astronauts you found in other towns": "Astronautes que vous avez trouvés dans d’autres villes",
   "To give the reward to your own town and allow one find every 12 hours.": "Pour remettre la récompense à votre propre ville et n’autoriser qu’une trouvaille toutes les 12 heures.",
-  "{helmetFinds}, or until you delete your account": "{helmetFinds}, ou jusqu’à la suppression de votre compte"
+  "{helmetFinds}, or until you delete your account": "{helmetFinds}, ou jusqu’à la suppression de votre compte",
+  "Emblem colour": "Couleur de l’emblème",
+  "Example building · these colours apply throughout your town": "Bâtiment d’exemple · ces couleurs s’appliquent dans toute votre ville",
+  "Your palette follows all buildings as they grow, including new buildings and landmark plots. Monuments keep their own colours.": "Votre palette accompagne tous les bâtiments au fil de leur évolution, y compris les nouvelles constructions et les lieux remarquables. Les monuments conservent leurs propres couleurs."
 }

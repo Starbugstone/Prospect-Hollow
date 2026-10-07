@@ -9,12 +9,7 @@ export const PAINT_GROUPS = [
   { id: 'trim', label: 'Frames and trim' },
   { id: 'accent', label: 'Doors and accents' },
 ];
-export const CLOTHING_GROUPS = [
-  { id: 'shirt', label: 'Tops and dresses' },
-  { id: 'trousers', label: 'Trousers' },
-  { id: 'hat', label: 'Hats' },
-  { id: 'accent', label: 'Scarves and aprons' },
-];
+export const DEFAULT_EMBLEM_COLOUR = '#393c43';
 export const PAINT_COLOURS = [
   '#f4ead5',
   '#ddd1b5',
@@ -112,10 +107,9 @@ export const CHOICE_LABELS = {
   teahouse: 'Tea cottage',
 };
 export const createPersonalisation = () => ({
-  version: 1,
+  version: 2,
   crest: null,
-  paint: {},
-  clothing: {},
+  paint: { all: {} },
   choices: {},
   areas: {},
   areaLevels: {},
@@ -148,21 +142,30 @@ export function normalizePersonalisation(saved, town, emblemIds) {
       emblem: saved.crest.emblem,
       primary: saved.crest.primary.toLowerCase(),
       secondary: saved.crest.secondary.toLowerCase(),
+      emblemColour: validPaint(saved.crest.emblemColour)
+        ? saved.crest.emblemColour.toLowerCase()
+        : DEFAULT_EMBLEM_COLOUR,
     };
   }
-  for (const id of [
+  const buildingIds = [
     ...Object.keys(town.buildings ?? {}),
     ...PERSONAL_AREAS.filter((a) => !a.timeless).map((a) => a.id),
-  ]) {
-    const paint = colours(saved.paint?.[id], PAINT_GROUPS);
-    if (Object.keys(paint).length) result.paint[id] = paint;
+  ];
+  // Old per-building paint becomes one palette: prefer the home, then the first
+  // saved colour for each role. An explicit shared palette (even empty) wins.
+  result.paint.all = Object.hasOwn(object(saved.paint), 'all')
+    ? colours(saved.paint.all, PAINT_GROUPS)
+    : ['home', ...buildingIds].reduce(
+        (palette, id) => ({ ...colours(saved.paint?.[id], PAINT_GROUPS), ...palette }),
+        {},
+      );
+  for (const id of buildingIds) {
     const choices = BUILDING_CHOICES[id];
     if (choices?.includes(saved.choices?.[id]) && saved.choices[id] !== 'original')
       result.choices[id] = saved.choices[id];
     const plaque = saved.plaques?.[id];
     if (typeof plaque === 'string' && /^[a-z0-9-]{1,80}$/.test(plaque)) result.plaques[id] = plaque;
   }
-  result.clothing = colours(saved.clothing, CLOTHING_GROUPS);
   for (const area of PERSONAL_AREAS) {
     const slots = area.positions.map((_, slot) =>
       area.choices.includes(saved.areas?.[area.id]?.[slot]) ? saved.areas[area.id][slot] : null,
@@ -194,22 +197,14 @@ export function personaliseTown(town, command, emblemIds, earned = []) {
         !CREST_PATTERNS.includes(value.pattern) ||
         !emblemIds.includes(value.emblem) ||
         !validPaint(value.primary) ||
-        !validPaint(value.secondary))
+        !validPaint(value.secondary) ||
+        (value.emblemColour !== undefined && !validPaint(value.emblemColour)))
     )
       return null;
     p.crest = value;
-  } else if (
-    kind === 'paint' &&
-    (Object.hasOwn(town.buildings, id) || PERSONAL_AREAS.some((a) => !a.timeless && a.id === id)) &&
-    PAINT_GROUPS.some((g) => g.id === group)
-  ) {
-    p.paint[id] = { ...p.paint[id] };
-    if (value === null) delete p.paint[id][group];
-    else if (validPaint(value)) p.paint[id][group] = value;
-    else return null;
-  } else if (kind === 'clothing' && CLOTHING_GROUPS.some((g) => g.id === group)) {
-    if (value === null) delete p.clothing[group];
-    else if (validPaint(value)) p.clothing[group] = value;
+  } else if (kind === 'paint' && PAINT_GROUPS.some((g) => g.id === group)) {
+    if (value === null) delete p.paint.all[group];
+    else if (validPaint(value)) p.paint.all[group] = value;
     else return null;
   } else if (
     kind === 'choice' &&

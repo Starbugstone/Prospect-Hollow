@@ -3,7 +3,7 @@ import { writeFileSync } from 'node:fs';
 const result = await build({
   stdin: {
     contents:
-      "export { LANDMARK_OPTIONS } from './src/data/townLandmarks.js'; export { PAINT_GROUPS, CLOTHING_GROUPS, CREST_SHAPES, CREST_PATTERNS, BUILDING_CHOICES, PERSONAL_AREAS } from './src/data/townPersonalisation.js'; export { CREST_EMBLEM_IDS } from './src/data/townCrests.js'; export { BUILDINGS } from './src/data/town.js'; export { ERAS } from './src/data/eras.js'; export { LEVEL_COUNT } from './src/data/campaign.js'; export { COUNTERS, HONOURS, HONOURS_VERSION, SHOWCASE_SLOTS } from './src/data/honours.js'; export { PLAYER_DISTINCTIONS } from './src/data/playerDistinctions.js';",
+      "export { LANDMARK_OPTIONS } from './src/data/townLandmarks.js'; export { PAINT_GROUPS, DEFAULT_EMBLEM_COLOUR, CREST_SHAPES, CREST_PATTERNS, BUILDING_CHOICES, PERSONAL_AREAS } from './src/data/townPersonalisation.js'; export { CREST_EMBLEM_IDS } from './src/data/townCrests.js'; export { BUILDINGS } from './src/data/town.js'; export { ERAS } from './src/data/eras.js'; export { LEVEL_COUNT } from './src/data/campaign.js'; export { COUNTERS, HONOURS, HONOURS_VERSION, SHOWCASE_SLOTS } from './src/data/honours.js'; export { PLAYER_DISTINCTIONS } from './src/data/playerDistinctions.js';",
     resolveDir: process.cwd(),
   },
   bundle: true,
@@ -14,7 +14,7 @@ const result = await build({
 const {
   LANDMARK_OPTIONS,
   PAINT_GROUPS,
-  CLOTHING_GROUPS,
+  DEFAULT_EMBLEM_COLOUR,
   CREST_SHAPES,
   CREST_PATTERNS,
   BUILDING_CHOICES,
@@ -53,7 +53,7 @@ const schema = {
   personalisation: {
     eras: ERAS.map((e) => e.id),
     paint: PAINT_GROUPS.map((g) => g.id),
-    clothing: CLOTHING_GROUPS.map((g) => g.id),
+    defaultEmblemColour: DEFAULT_EMBLEM_COLOUR,
     shapes: CREST_SHAPES,
     patterns: CREST_PATTERNS,
     emblems: CREST_EMBLEM_IDS,

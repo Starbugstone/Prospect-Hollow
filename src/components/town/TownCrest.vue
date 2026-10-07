@@ -11,7 +11,7 @@
         :d="CREST_BY_ID[crest.emblem]?.path"
         transform="translate(22 25) scale(2.3333)"
         fill="none"
-        stroke="#393c43"
+        :stroke="crest.emblemColour || DEFAULT_EMBLEM_COLOUR"
         stroke-width="1.5"
         stroke-linecap="round"
         stroke-linejoin="round"
@@ -22,6 +22,7 @@
 </template>
 <script setup>
 import { useId } from 'vue';
+import { DEFAULT_EMBLEM_COLOUR } from '../../data/townPersonalisation';
 import { t } from '../../i18n';
 import { CREST_BY_ID, crestOutline, crestPattern } from '../../data/townCrests';
 defineProps({ crest: { type: Object, required: true } });

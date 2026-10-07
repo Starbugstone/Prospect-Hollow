@@ -47,6 +47,7 @@ $town->personalisation = (object) [
         'emblem' => 'otter',
         'primary' => '#ABCDEF',
         'secondary' => '#123456',
+        'emblemColour' => '#AB1234',
         'url' => 'private',
     ],
     'paint' => (object) [
@@ -64,18 +65,39 @@ checkPersonalisation(
     'crest bounded to catalog fields',
 );
 checkPersonalisation(
-    !isset($p->paint->home->roof, $p->paint->home->extra, $p->paint->unknown),
+    !isset($p->paint->all->roof, $p->paint->all->extra, $p->paint->unknown),
     'invalid colours and plots removed',
 );
-checkPersonalisation(
-    $p->clothing->shirt === '#abcdef' && !isset($p->clothing->skin),
-    'only clothing colours accepted',
-);
+checkPersonalisation(!isset($p->clothing), 'legacy clothing overrides removed');
 checkPersonalisation(
     $p->choices->home === 'garden' && !isset($p->choices->saloon),
     'unknown choices default to original',
 );
 checkPersonalisation($p->areas->meadow === ['roundhouse'], 'only one authored landmark choice');
+
+checkPersonalisation($p->crest->emblemColour === '#ab1234', 'emblem colour normalized');
+checkPersonalisation($p->paint->all->walls === '#123456', 'legacy paint migrated');
+$legacyPalette = copyPersonalisation($town->personalisation);
+$legacyPalette->paint->well = (object) ['walls' => '#112233', 'roof' => '#AABBCC'];
+$legacyPalette->crest->emblemColour = 'url(bad)';
+$migrated = TownPersonalisation::normalize($legacyPalette, $town);
+checkPersonalisation(
+    $migrated->paint->all->walls === '#123456' && $migrated->paint->all->roof === '#aabbcc',
+    'home takes precedence, other saved roles fill the shared palette',
+);
+checkPersonalisation(
+    $migrated->crest->emblemColour === '#393c43',
+    'invalid emblem colour defaults',
+);
+$legacyPalette->paint->all = new stdClass();
+checkPersonalisation(
+    count((array) TownPersonalisation::normalize($legacyPalette, $town)->paint->all) === 0,
+    'explicit empty palette does not resurrect old paint',
+);
+checkPersonalisation(
+    json_encode($migrated) === json_encode(TownPersonalisation::normalize($migrated, $town)),
+    'migration is idempotent',
+);
 
 foreach ($schema['personalisation']['choices'] as $id => $choices) {
     foreach ($choices as $choice) {

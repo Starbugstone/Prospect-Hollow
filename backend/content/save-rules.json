@@ -35209,10 +35209,11 @@
   },
   "defaultTown": {
     "personalisation": {
-      "version": 1,
+      "version": 2,
       "crest": null,
-      "paint": {},
-      "clothing": {},
+      "paint": {
+        "all": {}
+      },
       "choices": {},
       "areas": {},
       "areaLevels": {},
@@ -35487,10 +35488,11 @@
     "seenTips": [],
     "town": {
       "personalisation": {
-        "version": 1,
+        "version": 2,
         "crest": null,
-        "paint": {},
-        "clothing": {},
+        "paint": {
+          "all": {}
+        },
         "choices": {},
         "areas": {},
         "areaLevels": {},
@@ -35739,5 +35741,5 @@
       "seenGeneration": 2
     }
   },
-  "contentDigest": "97aada2421ddbc29bd35c4c240ddf45c6110bb79c061763799ef490fde1c4c7d"
+  "contentDigest": "f85d98020dcd1e8bbd1bfb1eeeed89ee63db08c860e5a036e84f1dabff56f712"
 }
