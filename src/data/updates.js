@@ -2,6 +2,11 @@
 // text are English keys for t(); add the French text to src/i18n/fr.json.
 const UPDATES = [
   {
+    date: '2026-10-07',
+    title: 'Your data, your choice',
+    text: 'Open the Mayor’s Office from Settings to see what we keep about you, download it, change your email or delete your account for good. Turn on private visits to sign guestbooks without your name, and read the new privacy notice from the home page.',
+  },
+  {
     date: '2026-10-06',
     title: 'Earn Town Honours',
     text: 'Earn bronze, silver and gold honours for mine puzzles, town milestones and visits between towns, then pick three for your showcase beside your town name. Player distinctions such as Alpha Player mark your time in Prospect Hollow.',

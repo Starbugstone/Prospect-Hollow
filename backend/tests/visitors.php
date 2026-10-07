@@ -100,7 +100,11 @@ try {
         'save public profile',
     );
     check(
-        $saved['profile'] === ['displayName' => 'Camille Rose', 'visitingTownId' => $originId],
+        $saved['profile'] === [
+            'displayName' => 'Camille Rose',
+            'visitingTownId' => $originId,
+            'anonymousVisits' => false,
+        ],
         'profile is normalized and persisted',
     );
     $token = bin2hex(random_bytes(32));
@@ -186,6 +190,7 @@ try {
             'townName',
             'era',
             'publicId',
+            'townGone',
             'arrivedAt',
             'lastSeenAt',
             'departedAt',

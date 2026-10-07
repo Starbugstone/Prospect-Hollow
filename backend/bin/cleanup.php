@@ -11,6 +11,21 @@ $db = (new App\Database())->get();
 $db->executeStatement('DELETE FROM limits WHERE until_at<?', [time()]);
 $db->executeStatement('DELETE FROM login_intents WHERE expires_at<?', [time()]);
 $db->executeStatement('DELETE FROM sessions WHERE expires_at<?', [time()]);
+$db->executeStatement('DELETE FROM email_changes WHERE expires_at<?', [time()]);
+// Identity rows only serialize sign-ins. Keep those of current accounts; one left by an
+// account deleted before deletion removed it would otherwise outlive the email.
+$auth = new App\Auth(new App\Database());
+$current = array_flip(
+    array_map(
+        fn($email) => $auth->identityHash($email),
+        $db->fetchFirstColumn('SELECT email FROM players'),
+    ),
+);
+foreach ($db->fetchFirstColumn('SELECT email_hash FROM identities') as $hash) {
+    if (!isset($current[$hash])) {
+        $db->executeStatement('DELETE FROM identities WHERE email_hash=?', [$hash]);
+    }
+}
 $db->executeStatement('DELETE FROM towns WHERE deleted_at IS NOT NULL AND deleted_at<?', [
     time() - 30 * 86400,
 ]);

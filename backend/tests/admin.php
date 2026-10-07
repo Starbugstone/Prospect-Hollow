@@ -497,6 +497,8 @@ try {
             'name' => $guestName,
             'origin_town_id' => $origin,
             'era' => 'frontier',
+            // Live presence marks every visit made while signed in.
+            'signed_in' => $guestName !== '' || $origin !== null ? 1 : 0,
             'arrived_at' => time() - 3600,
             'last_seen_at' => time() - 3500,
             'departed_at' => time() - 3400,
@@ -1137,6 +1139,71 @@ try {
         'purge rejects unknown fields',
     );
     $db->get()->update('admin_settings', ['value' => '90'], ['name' => 'audit_retention_days']);
+
+    // The privacy contact is set in the panel and shown to everyone on /privacy.
+    $db->get()->delete('admin_settings', ['name' => 'privacy_contact']);
+    $publicContact = fn() => status(200, callApi('GET', 'privacy'), 'public contact')['contact'];
+    check(
+        status(200, adminCall('GET', 'settings', null, $s), 'settings')['privacyContact'] === '' &&
+            $publicContact() === null,
+        'no privacy contact until an admin sets one',
+    );
+    status(401, adminCall('GET', 'settings', null, []), 'settings need an admin');
+    status(
+        401,
+        adminCall('PATCH', 'settings/privacy', ['privacyContact' => 'x@example.test'], []),
+        'changing the contact needs an admin',
+    );
+    foreach (['not an address', 42, null] as $bad) {
+        status(
+            422,
+            adminCall('PATCH', 'settings/privacy', ['privacyContact' => $bad], $s),
+            'invalid privacy contact',
+        );
+    }
+    status(
+        422,
+        adminCall('PATCH', 'settings/privacy', ['contact' => 'x@example.test'], $s),
+        'unknown settings field',
+    );
+    check(
+        status(
+            200,
+            adminCall(
+                'PATCH',
+                'settings/privacy',
+                ['privacyContact' => '  Privacy@Example.test '],
+                $s,
+            ),
+            'set contact',
+        )['privacyContact'] === 'privacy@example.test' &&
+            $publicContact() === 'privacy@example.test' &&
+            status(200, adminCall('GET', 'settings', null, $s), 'settings')['privacyContact'] ===
+                'privacy@example.test',
+        'the contact is normalised, stored and published',
+    );
+    $changes = array_values(
+        array_filter($audit()['entries'], fn($e) => $e['action'] === 'privacy_contact_changed'),
+    );
+    check(
+        count($changes) === 1 && $changes[0]['detail'] === 'none → privacy@example.test',
+        'changing the contact is logged',
+    );
+    check(
+        App\SiteSettings::contactHint($db->get()) === 'write to privacy@example.test',
+        'account emails point to the contact',
+    );
+    status(
+        200,
+        adminCall('PATCH', 'settings/privacy', ['privacyContact' => ''], $s),
+        'clear contact',
+    );
+    check(
+        $publicContact() === null &&
+            App\SiteSettings::contactHint($db->get()) === 'reply to this email' &&
+            !$db->get()->fetchOne("SELECT value FROM admin_settings WHERE name='privacy_contact'"),
+        'an empty contact removes the setting',
+    );
 
     // Sign-in brute force is limited per client address.
     $ip = '10.' . random_int(0, 255) . '.' . random_int(0, 255) . '.' . random_int(1, 254);

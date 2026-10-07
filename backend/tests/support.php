@@ -65,7 +65,8 @@ function status(int $expected, array $result, string $label): array
     );
     return $result['data'];
 }
-function account(): array
+// Headers such as REMOTE_ADDR give a test its own sign-in rate limit.
+function account(array $headers = []): array
 {
     global $db, $auth, $accounts;
     $email = 'test-' . bin2hex(random_bytes(8)) . '@example.test';
@@ -75,7 +76,7 @@ function account(): array
         'email' => $email,
         'expires_at' => time() + 900,
     ]);
-    $result = callApi('POST', 'auth/confirm', ['token' => $token]);
+    $result = callApi('POST', 'auth/confirm', ['token' => $token], [], $headers);
     $data = status(200, $result, 'sign in');
     $accounts[] = $data['account']['id'];
     $cookie = $result['response']->headers->getCookies()[0]->getValue();

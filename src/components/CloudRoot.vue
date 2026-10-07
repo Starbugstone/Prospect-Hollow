@@ -136,11 +136,13 @@
   <AccountPanel
     v-if="accountOpen"
     :login-link="loginLink"
+    :email-link="emailLink"
     :section="accountSection"
     :writable="ready"
     @close="accountOpen = false"
     @changed="reload"
     @signed-in="loginLink = ''"
+    @email-confirmed="emailLink = ''"
     @recovery="
       accountOpen = false;
       recoveryOpen = true;
@@ -202,6 +204,7 @@ const accountOpen = ref(false),
   communityOpen = ref(false),
   viewVersion = ref(0),
   loginLink = ref(''),
+  emailLink = ref(''),
   ready = ref(false),
   opening = ref(true),
   blocked = ref(false),
@@ -269,6 +272,11 @@ provide('cloudAccount', {
   canReview: computed(() => ready.value && !handingOver.value && !game.sessionActive),
   sync: () => syncNow({ retryRejected: true }),
   open: () => {
+    accountOpen.value = true;
+  },
+  // The player's profile, data, devices and account deletion.
+  openOffice: () => {
+    accountSection.value = 'office';
     accountOpen.value = true;
   },
   openRecovery: () => {
@@ -536,10 +544,14 @@ function start() {
       else cloud.status = 'offline';
     });
 }
+// Sign-in (#login=) and email change (#email=) links open the account panel.
 function readLink() {
-  const token = new URLSearchParams(location.hash.slice(1)).get('login');
-  if (!token) return;
-  loginLink.value = token;
+  const hash = new URLSearchParams(location.hash.slice(1));
+  const login = hash.get('login'),
+    email = hash.get('email');
+  if (!login && !email) return;
+  if (login) loginLink.value = login;
+  if (email) emailLink.value = email;
   accountOpen.value = true;
   history.replaceState(null, '', location.pathname + location.search);
 }
