@@ -1,5 +1,13 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { Box3, Group, MeshBasicMaterial, Raycaster, Scene, Vector3 } from 'three';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  Box3,
+  Group,
+  MeshBasicMaterial,
+  PerspectiveCamera,
+  Raycaster,
+  Scene,
+  Vector3,
+} from 'three';
 import { createSSRApp, h } from 'vue';
 import { renderToString } from 'vue/server-renderer';
 import { TownDiorama } from '../src/game/town/TownDiorama';
@@ -36,6 +44,11 @@ import { homesteadKit } from '../src/game/town/buildings/future/homestead';
 import { twinKit } from '../src/game/town/buildings/future/twin';
 import { townTracks, plotStreet } from '../src/game/town/TownLayout';
 import TownBuilding from '../src/components/town/TownBuilding.vue';
+import { MoonScene } from '../src/game/town/moon/MoonScene';
+import { TownFramePacer } from '../src/game/town/TownFramePacer';
+import { TownPrimitives } from '../src/game/town/TownPrimitives';
+import { TownStatics } from '../src/game/town/TownStatics';
+import { renderMoonBuilding } from '../src/game/town/buildings/moon';
 
 const FUTURE_ERAS = ['skysail', 'stargazer', 'moonward', 'twin-hollows'];
 
@@ -375,6 +388,42 @@ describe('Skysail, Stargazer and Moonward eras', () => {
     dispose(d);
   });
 
+  it('keeps the elevator ribbon, halo and climbers out of the shadow pass once batched', () => {
+    const top = (mesh) => {
+      mesh.geometry.computeBoundingBox();
+      return mesh.geometry.boundingBox.max.y;
+    };
+    // In the valley the plot joins the static batch; its climbers ride as instances.
+    const d = diorama('moonward');
+    const root = d.group(d.scene, 40, 0.08, -60);
+    renderFutureBuilding(d, root, 'spaceElevator', 'Space elevator', 3, 'moonward');
+    root.getObjectByName(ELEVATOR_CLIMBERS).removeFromParent();
+    const statics = new TownStatics(d.scene);
+    statics.sync([root]);
+    const batch = statics.batches.get(root);
+    const [shadowless] = batch.children;
+    expect(batch.castShadow).toBe(true);
+    expect(shadowless.castShadow).toBe(false);
+    // The 140-unit ribbon and the halo at 17 cast nothing; the anchor and docks still do.
+    expect(top(shadowless)).toBeGreaterThan(140);
+    expect(top(batch)).toBeLessThan(10);
+    statics.dispose();
+    dispose(d);
+    // On the Moon the merged settlement keeps the landing's ribbon, climber and halo apart.
+    const moon = new TownPrimitives(),
+      landing = new Group();
+    renderMoonBuilding(moon, landing, 'ribbonLanding', 3);
+    moon.batch(landing);
+    const merged = [];
+    landing.traverse((part) => part.isMesh && merged.push(part));
+    const casting = merged.filter((mesh) => mesh.castShadow);
+    expect(casting.length).toBeLessThan(merged.length);
+    expect(Math.max(...casting.map(top))).toBeLessThan(6);
+    expect(Math.max(...merged.filter((mesh) => !mesh.castShadow).map(top))).toBeGreaterThan(140);
+    merged.forEach((mesh) => mesh.geometry.dispose());
+    moon.disposePrimitives();
+  });
+
   it('extends through capability definitions without renderer changes', () => {
     ERA_BY_ID['future-successor'] = defineEra({
       ...ERA_BY_ID.stargazer,
@@ -460,5 +509,52 @@ describe('New Hollow on the Moon', () => {
     expect(lights).toHaveLength(MOON_SETTLEMENT_LIMIT);
     for (const { x, y } of lights) expect(Math.hypot(x, y)).toBeLessThan(0.85);
     expect(moonSettlement(town({ spaceElevator: 1 })).lights).toEqual(lights.slice(0, 2));
+  });
+
+  it('draws the Moon at the valley pace, only when something moves or the view changes', () => {
+    const frames = [];
+    vi.stubGlobal('requestAnimationFrame', (draw) => frames.push(draw));
+    const camera = new PerspectiveCamera(48, 1, 0.1, 600);
+    camera.position.set(0, 26, 66);
+    camera.lookAt(0, 0, 4);
+    const moon = Object.assign(Object.create(MoonScene.prototype), {
+      d: new TownPrimitives(),
+      scene: new Scene(),
+      camera,
+      renderer: { render: vi.fn(), setAnimationLoop: vi.fn() },
+      lots: [{ id: 'ribbonLanding', position: new Vector3(0, 3.4, -8) }],
+      onLabels: vi.fn(),
+      walkers: [],
+      elapsed: 0,
+      pacer: new TownFramePacer(),
+    });
+    moon.tick = moon.tick.bind(moon);
+    const run = (from, seconds, hz = 120) => {
+      for (let n = 0; n < seconds * hz; n++) moon.tick(from + (n * 1000) / hz);
+    };
+    moon.setMotion(true);
+    expect(moon.renderer.setAnimationLoop).toHaveBeenLastCalledWith(moon.tick);
+    // A 120 Hz display still draws about 60 frames a second, and a still camera
+    // leaves the lot labels alone.
+    run(1000, 1);
+    expect(moon.renderer.render.mock.calls.length).toBeGreaterThanOrEqual(59);
+    expect(moon.renderer.render.mock.calls.length).toBeLessThanOrEqual(61);
+    expect(moon.onLabels).not.toHaveBeenCalled();
+    // A camera move while animating is drawn by the next frame, not a second render.
+    moon.requestFrame();
+    expect(frames).toHaveLength(0);
+    run(2000, 0.05);
+    expect(moon.onLabels).toHaveBeenCalledOnce();
+    // Nothing moves with reduced motion: only requested frames draw.
+    moon.reducedMotion = true;
+    moon.renderer.render.mockClear();
+    run(3000, 1);
+    expect(moon.renderer.render).not.toHaveBeenCalled();
+    moon.requestFrame();
+    frames.splice(0).forEach((draw) => draw());
+    expect(moon.renderer.render).toHaveBeenCalledOnce();
+    moon.streak?.material.dispose();
+    moon.d.disposePrimitives();
+    vi.unstubAllGlobals();
   });
 });

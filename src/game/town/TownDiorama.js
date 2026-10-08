@@ -69,6 +69,9 @@ import { PLOTS } from './TownLayout';
 
 export { PLOTS } from './TownLayout';
 const point = (x, y, z) => new THREE.Vector3(x, y, z);
+const skyDirection = new THREE.Vector3(),
+  skyForward = new THREE.Vector3(),
+  skyTarget = new THREE.Vector3();
 
 // Original geometry shares static scenery batches and animated actor instances.
 export class TownDiorama extends TownPrimitives {
@@ -214,6 +217,7 @@ export class TownDiorama extends TownPrimitives {
       const cull = this.camera && !this.eventInsetVisible;
       if (cull) this.camera.updateMatrixWorld();
       this.actorRenderer?.update(this.scene, cull ? [this.camera] : null);
+      this.staticScenery?.movingParts?.update(this.scene);
       this.frameCache.render(this.scene, this.camera, refresh);
       renderEventInset(this);
       return true;
@@ -348,13 +352,15 @@ export class TownDiorama extends TownPrimitives {
     this.availablePlots = new Set(ids);
     this.render();
   }
-  /** Where a far sky direction sits on screen, in percent, and how much the camera faces it. */
+  /** Where a far sky direction sits on screen, in percent, and how much the camera faces it.
+   * Runs on every camera frame, so it reuses scratch vectors. */
   skyPoint(dx, dz) {
-    const direction = new THREE.Vector3(dx, 0, dz).normalize();
-    const forward = this.camera.getWorldDirection(new THREE.Vector3());
+    const direction = skyDirection.set(dx, 0, dz).normalize();
+    const forward = this.camera.getWorldDirection(skyForward);
     const facing =
       (forward.x * direction.x + forward.z * direction.z) / (Math.hypot(forward.x, forward.z) || 1);
-    const point = this.camera.position.clone().addScaledVector(direction, 400).project(this.camera);
+    const point = skyTarget.copy(this.camera.position).addScaledVector(direction, 400);
+    point.project(this.camera);
     const distance = this.camera.position.distanceTo(this.controls.target);
     return { x: (point.x + 1) * 50, y: (1 - point.y) * 50, facing, distance };
   }

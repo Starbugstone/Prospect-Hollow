@@ -147,6 +147,8 @@ it('re-merges a replaced drop container without preparing retained drops again',
   const drop = (x) => {
     const group = new Group();
     const mesh = new Mesh(geometry, material);
+    // Like the real service drops (built with d.rod), each wire casts a shadow.
+    mesh.castShadow = true;
     mesh.position.x = x;
     group.add(mesh);
     return group;

@@ -125,6 +125,8 @@ export function addMineSite(d, parent, era, growth = mineGrowth(d.mineProgress ?
       dynamic.set(node, null);
     }
   });
+  // In the village, TownScenery draws these as shared instances (see buildLandmark).
+  root.userData.movingParts = [...dynamic.keys()];
   for (let frame = 0; frame <= 32; frame++) {
     allMotions.forEach((motion) => motion(frame / 2));
     root.updateMatrixWorld(true);

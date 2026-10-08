@@ -27,6 +27,13 @@ function noise(x, z) {
   );
 }
 
+const RIDGES = [
+  [-38, -42, 11],
+  [32, -45, 14],
+  [55, 4, 12],
+  [-45, 28, 9],
+  [5, 58, 11],
+];
 // A level clearing for foundations blends into rolling prairie in every direction.
 export function groundHeight(x, z) {
   const distance = Math.hypot(x, z);
@@ -35,32 +42,25 @@ export function groundHeight(x, z) {
     noise(x * 0.048, z * 0.048) * 6.5 +
     Math.sin(x * 0.065 + z * 0.027) * 1.9 +
     noise(x * 0.14, z * 0.14) * 0.7;
-  const ridges = [
-    [-38, -42, 11],
-    [32, -45, 14],
-    [55, 4, 12],
-    [-45, 28, 9],
-    [5, 58, 11],
-  ].reduce(
-    (height, [hx, hz, rise]) => height + rise * Math.exp(-((x - hx) ** 2 + (z - hz) ** 2) / 440),
-    0,
-  );
-  const personalClearing = Math.min(
-    ...PERSONAL_AREAS.flatMap((area) =>
-      area.positions.map(([px, pz]) =>
-        Math.hypot(
-          Math.max(0, Math.abs(x - px) - area.radius),
-          Math.max(0, Math.abs(z - pz) - area.radius),
-        ),
-      ),
-    ),
-  );
+  let ridges = 0;
+  for (const [hx, hz, rise] of RIDGES)
+    ridges += rise * Math.exp(-((x - hx) ** 2 + (z - hz) ** 2) / 440);
+  // Sampled for every terrain vertex and by camera and animal motion: plain loops
+  // keep this allocation-free.
+  let personalClearing = Infinity;
+  for (const { positions, radius } of PERSONAL_AREAS)
+    for (const [px, pz] of positions)
+      personalClearing = Math.min(
+        personalClearing,
+        Math.hypot(Math.max(0, Math.abs(x - px) - radius), Math.max(0, Math.abs(z - pz) - radius)),
+      );
   const eastClearing = Math.hypot(Math.max(37 - x, 0, x - 70), Math.max(-17 - z, 0, z - 33));
-  const gardenClearing = Math.min(
-    ...PARCEL_CLEARINGS.map(({ minX, maxX, minZ, maxZ }) =>
+  let gardenClearing = Infinity;
+  for (const { minX, maxX, minZ, maxZ } of PARCEL_CLEARINGS)
+    gardenClearing = Math.min(
+      gardenClearing,
       Math.hypot(Math.max(minX - x, 0, x - maxX), Math.max(minZ - z, 0, z - maxZ)),
-    ),
-  );
+    );
   const westClearing = Math.hypot(Math.max(-59 - x, 0, x + 28), Math.max(-18 - z, 0, z - 26));
   // Low rolling hills leave room for orbiting and a north/south flight corridor.
   const flightCorridor = smoothBetween(4, 13, Math.abs(x + 53));
@@ -258,7 +258,7 @@ export function buildLandscape(town) {
   geometry.computeVertexNormals();
   geometry.userData.owned = true;
   const ground = new THREE.Mesh(geometry, terrainMaterial({ vertexColors: true }));
-  ground.receiveShadow = true;
+  ground.castShadow = ground.receiveShadow = true;
   landscape.add(ground);
   buildRiver(town, landscape);
   addMineCliff(town, landscape);

@@ -527,6 +527,45 @@ describe('Personalisation rendering', () => {
     scenery.dispose(d);
     expect(d.motions).not.toContain(motion);
   });
+  it('draws moving monument and mine parts as a few shared instances, never stale ones', () => {
+    const town = createTown();
+    town.era = 'industrial';
+    for (const area of PERSONAL_AREAS.filter((a) => areaUnlocked(town, a))) {
+      town.personalisation.areas[area.id] = [area.choices.at(-1)];
+      town.personalisation.areaLevels[area.id] = area.timeless ? 1 : 5;
+    }
+    const d = fixture(town),
+      scenery = new TownScenery();
+    scenery.update(d, town);
+    const parts = (root) => {
+      const meshes = [];
+      for (const part of root.userData.movingParts)
+        part.traverse((mesh) => mesh.isMesh && !mesh.isInstancedMesh && meshes.push(mesh));
+      return meshes;
+    };
+    const moving = () =>
+      ['personal-areas', 'mine-works'].flatMap((id) => parts(scenery.entries.get(id).group));
+    const instanced = () => scenery.movingParts.buckets.flatMap((bucket) => bucket.objects);
+    const monuments = scenery.entries.get('personal-areas').group;
+    expect(parts(monuments).length).toBeGreaterThan(40);
+    expect(parts(scenery.entries.get('mine-works').group).length).toBeGreaterThan(0);
+    expect(new Set(instanced())).toEqual(new Set(moving()));
+    expect(instanced()).toHaveLength(moving().length);
+    // Dozens of parts share their primitive shapes: a handful of draw calls in all.
+    expect(scenery.movingParts.buckets.length).toBeLessThanOrEqual(8);
+    for (const mesh of moving()) expect(mesh.layers.mask).toBe(1 << 1);
+    // A changed monument replaces its instances instead of drawing the old parts.
+    const old = parts(monuments);
+    town.personalisation.areas.meadow = [PERSONAL_AREAS[0].choices[0]];
+    scenery.update(d, town);
+    expect(scenery.entries.get('personal-areas').group).not.toBe(monuments);
+    expect(new Set(instanced())).toEqual(new Set(moving()));
+    expect(instanced().some((mesh) => old.includes(mesh))).toBe(false);
+    const group = scenery.movingParts.group;
+    scenery.dispose(d);
+    expect(scenery.movingParts).toBeNull();
+    expect(group.parent).toBeNull();
+  });
   it('keeps moving mechanisms out of static batches and honors reduced motion', () => {
     const preference = { matches: false };
     vi.stubGlobal('matchMedia', () => preference);

@@ -668,15 +668,15 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false) {
   g.userData.sceneryUpdate = (time) => {
     for (const update of motions) update(time);
   };
-  const movingGroups = [];
-  g.traverse((node) => {
-    if (node.userData.animated && node.isGroup) movingGroups.push(node);
-  });
-  // Rings and turbines animate as a handful of material batches, not dozens of rods.
-  for (const node of movingGroups) d.batch(node);
-  g.traverse((node) => {
-    if (node.userData.animated) node.traverse((part) => part.layers.set(2));
-  });
-  g.userData.landmarkMotionCount = motions.length;
+  // Moving parts keep their shared primitive shapes: the town draws them as instances
+  // (TownScenery), a few draw calls for every monument rather than one per part.
+  const movingParts = [];
+  const collect = (node) => {
+    if (!node.userData.animated) return node.children.forEach(collect);
+    movingParts.push(node);
+    node.traverse((part) => part.layers.set(2));
+  };
+  collect(g);
+  g.userData.movingParts = movingParts;
   return g;
 }

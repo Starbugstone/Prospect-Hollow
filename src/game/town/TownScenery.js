@@ -1,4 +1,9 @@
-import { buildPersonalAreas, buildTownBanner, buildMinePlaque } from './TownPersonalisation';
+import {
+  buildPersonalAreas,
+  buildTownBanner,
+  buildMinePlaque,
+  plaqueDefinition,
+} from './TownPersonalisation';
 import { PERSONAL_AREAS, areaStage, areaUnlocked } from '../../data/townPersonalisation';
 import { buildMineHillside } from './TownMineHillside';
 import { groundHeight, landscapeColor } from './TownLandscape';
@@ -13,6 +18,7 @@ import { addMineSite } from './mine/addMineSite';
 import { addElectricLighting } from './buildings/industrial';
 import { addEraStreetscape, addPowerGrid, pavedTown } from './TownEvolution';
 import { addRailroad } from './TownEraActivity';
+import { TownActors } from './TownActors';
 
 // Elevated decorations never change walkable space or animal habitats.
 export const sceneryAffectsNavigation = (id) => id !== 'town-banner' && id !== 'mine-plaque';
@@ -50,15 +56,8 @@ export class TownScenery {
         ]),
         () => buildPersonalAreas(view, town),
       ],
-      [
-        'mine-plaque',
-        JSON.stringify([
-          town.personalisation?.plaques?.mine,
-          town.displayHonours,
-          town.displayDistinctions,
-        ]),
-        () => buildMinePlaque(view, town),
-      ],
+      // Only the displayed badge matters, not every other honour the town holds.
+      ['mine-plaque', JSON.stringify(plaqueDefinition(town)), () => buildMinePlaque(view, town)],
       [
         'mine-hillside',
         !!railEdges(town).length,
@@ -115,7 +114,19 @@ export class TownScenery {
         if (motion && !view.motions.includes(motion)) view.motions.push(motion);
       }
     }
+    if (changed.length) this.syncMovingParts(view);
     return changed;
+  }
+  // Roots may list moving parts (`userData.movingParts`, e.g. monument centerpieces).
+  // They share instanced draws, drawn each frame by `drawFrame`, instead of one draw
+  // call per part over the cached town.
+  syncMovingParts(view) {
+    const roots = [...this.entries.values()].flatMap(
+      ({ group }) => group?.userData.movingParts ?? [],
+    );
+    if (!roots.length && !this.movingParts) return;
+    this.movingParts ??= new TownActors(view.scene);
+    this.movingParts.rebuild(roots);
   }
   dispose(view) {
     for (const { group } of this.entries.values()) {
@@ -124,5 +135,7 @@ export class TownScenery {
       view.clearGroup(group);
     }
     this.entries.clear();
+    this.movingParts?.dispose();
+    this.movingParts = null;
   }
 }

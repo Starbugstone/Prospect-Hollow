@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TownPrimitives } from '../TownPrimitives';
+import { TownFramePacer } from '../TownFramePacer';
+import { TownRenderQuality } from '../TownRenderQuality';
 import { renderMoonBuilding } from '../buildings/moon';
 import { MOON_PALETTE as p } from '../../../data/futureArchitecture';
 import { MOON_LOTS, MOON_RING_ROAD } from '../../../data/moonSettlement';
@@ -242,6 +244,8 @@ function rover(d, parent) {
   return g;
 }
 
+const labelPoint = new THREE.Vector3();
+
 export class MoonScene {
   constructor(canvas, { onLabels = () => {}, onEarth = () => {}, reducedMotion = false } = {}) {
     this.canvas = canvas;
@@ -255,7 +259,8 @@ export class MoonScene {
     this.camera = new THREE.PerspectiveCamera(48, 1, 0.1, 600);
     this.camera.position.set(0, 26, 66);
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
-    this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    // The valley's measured drawing-buffer tier, so the Moon costs no more to fill.
+    this.renderer.setPixelRatio(new TownRenderQuality(window.devicePixelRatio || 1).ratio);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -334,6 +339,8 @@ export class MoonScene {
     surface.addEventListener('pointermove', this.onPointerMove);
     this.elapsed = 0;
     this.signature = '';
+    this.pacer = new TownFramePacer();
+    this.tick = this.tick.bind(this);
     this.observer = new ResizeObserver(() => this.resize());
     this.observer.observe(canvas);
     this.resize();
@@ -354,8 +361,9 @@ export class MoonScene {
       lot.rotation.y = Math.atan2(-x, -(z - MOON_LOTS.ribbonLanding[1])) + Math.PI;
       if (id === 'ribbonLanding') lot.rotation.y = 0;
       renderMoonBuilding(this.d, lot, id, levels[n]);
-      this.d.batch(lot);
     });
+    // The whole settlement draws as one merged mesh per palette colour.
+    this.d.batch(this.buildings);
     this.populate(town);
     this.requestFrame();
   }
@@ -430,21 +438,28 @@ export class MoonScene {
     this.streak.material.opacity = 1 - phase / 0.22;
   }
   setMotion(enabled) {
-    this.renderer.setAnimationLoop(enabled ? (now) => this.tick(now) : null);
+    this.animating = enabled;
+    this.pacer.reset();
+    this.renderer.setAnimationLoop(enabled ? this.tick : null);
     if (!enabled) this.requestFrame();
   }
+  // Paced like the valley: a fast display does not draw more than 60 frames a second.
   tick(now) {
+    if (!this.pacer.due(now)) return;
     const delta = this.lastNow ? Math.min(0.1, (now - this.lastNow) / 1000) : 0;
     this.lastNow = now;
-    if (!this.reducedMotion) {
-      this.elapsed += delta;
-      this.move(this.elapsed);
-      this.meteor(this.elapsed);
-    }
+    // Nothing moves: camera, resize and lot changes request their own frames.
+    if (this.reducedMotion) return;
+    this.elapsed += delta;
+    this.move(this.elapsed);
+    this.meteor(this.elapsed);
     this.render();
   }
+  // Camera, resize and lot changes come through here; only they move the lot labels.
   requestFrame() {
-    if (this.frame) return;
+    this.viewChanged = true;
+    // A running animation draws the latest pose on its next frame anyway.
+    if (this.frame || (this.animating && !this.reducedMotion)) return;
     this.frame = requestAnimationFrame(() => {
       this.frame = null;
       this.render();
@@ -452,10 +467,12 @@ export class MoonScene {
   }
   render() {
     this.renderer.render(this.scene, this.camera);
+    if (!this.viewChanged) return;
+    this.viewChanged = false;
     this.projectLabels();
   }
   projectLabels() {
-    const point = new THREE.Vector3();
+    const point = labelPoint;
     const labels = this.lots.map(({ id, position }) => {
       point.copy(position).project(this.camera);
       return {

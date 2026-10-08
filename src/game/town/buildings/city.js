@@ -31,10 +31,7 @@ const FUTURE = {
  * returning false leaves that kind to the shared Blender shells (e.g. the airport).
  * Optional hooks dress the airport lounge, airport grounds and bridge approaches. */
 const ARCHITECTURES = {
-  rounded: {
-    render: renderRoundedBuilding,
-    lounge: (d, g, x, floor, z) => addRoundedLounge(d, g, x, floor, z),
-  },
+  rounded: { render: renderRoundedBuilding, lounge: addRoundedLounge },
   cozy: {
     render: renderCozyBuilding,
     lounge: addCozyLounge,
