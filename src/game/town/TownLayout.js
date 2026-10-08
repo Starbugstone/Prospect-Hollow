@@ -6,6 +6,7 @@ import { SQUARE_POSITION } from '../../data/townSquare';
 import { BUILDING_BY_ID } from '../../data/town';
 import { plotUnlocked } from './TownRules';
 import { BRIDGE, riverPath } from './TownRiver';
+import { TOWN_EDGE } from './TownAtmosphere';
 // Stable positions are shared by WebGL, the SVG map and route connections.
 export const PLOTS = {
   airport: [-48, 4],
@@ -166,8 +167,8 @@ const CROSSING = {
 };
 export const RAIL_EDGE = {
   id: 'station-railroad',
-  from: [-140, -23],
-  to: [140, -23],
+  from: [-TOWN_EDGE, -23],
+  to: [TOWN_EDGE, -23],
   width: 1.1,
   modes: ['train'],
   plot: 'railDepot',

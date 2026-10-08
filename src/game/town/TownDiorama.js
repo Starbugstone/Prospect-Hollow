@@ -90,7 +90,8 @@ export class TownDiorama extends TownPrimitives {
     // drawFrame() updates world matrices once for all of a frame's render calls.
     this.scene.matrixWorldAutoUpdate = false;
     setTownAtmosphere(this.scene);
-    this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 400);
+    // Reach the full fog on the far side of the town from the widest orbit (360).
+    this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 600);
     this.camera.position.set(12, 12, 25);
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
     this.renderQuality = new TownRenderQuality(window.devicePixelRatio || 1);

@@ -1,6 +1,7 @@
 import { MINE_SHAFT } from '../../data/mineSite';
 import * as THREE from 'three';
 import { WATERMILL_SITE } from '../../data/watermill';
+import { TOWN_EDGE } from './TownAtmosphere';
 
 // One curved side channel drives the terrain cut and the water mesh. Keeping it
 // in the landscape also avoids rebuilding the river on every mill improvement.
@@ -66,19 +67,23 @@ export function millraceHeight(x, z, waterHeight) {
 }
 
 // Terrain lattice: 1.25-unit cells where the town, river, railway cutting and mine
-// ridge need detail, then 2.5 and 5 units toward the fogged horizon. Every detailed
-// height feature lies inside the fine core or varies only along the coarse axis.
+// ridge need detail, then 2.5 and 5 units out to ±130 and 20 within the fog. Every
+// detailed height feature lies inside the fine core or varies only along the coarse axis.
 const LATTICE = [
+  [-TOWN_EDGE, -130, 20],
   [-130, -95, 5],
   [-95, -62.5, 2.5],
   [-62.5, 62.5, 1.25],
   [62.5, 95, 2.5],
   [95, 130, 5],
+  [130, TOWN_EDGE, 20],
 ];
 const latticeAxis = (extra) => {
   const values = new Set(extra);
-  for (const [from, to, step] of LATTICE)
-    for (let i = 0; from + i * step <= to; i++) values.add(from + i * step);
+  for (const [from, to, step] of LATTICE) {
+    for (let i = 0; from + i * step < to; i++) values.add(from + i * step);
+    values.add(to);
+  }
   return [...values].sort((a, b) => a - b);
 };
 const fineAxis = (min, max) =>
@@ -211,7 +216,10 @@ export function landscapeGeometry() {
   geometry.setAttribute(
     'uv',
     new THREE.Float32BufferAttribute(
-      points.flatMap(([x, z]) => [(x + 130) / 260, (130 - z) / 260]),
+      points.flatMap(([x, z]) => [
+        (x + TOWN_EDGE) / (2 * TOWN_EDGE),
+        (TOWN_EDGE - z) / (2 * TOWN_EDGE),
+      ]),
       2,
     ),
   );

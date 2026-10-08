@@ -202,6 +202,15 @@ None of these change gameplay, rewards or the unlimited-moves rule.
 | Label projection           | `TownLabelProjection.js`                                                                                                                     | Scratch vectors instead of clones, label ranks computed once per frame, the villager tag checks its parent instead of scanning the world, and mouse hover is evaluated once per frame.                                                                             |
 | Diorama split              | `TownPrimitives`, `TownPeople`, `buildings/frontierParts`, `TownPlots`, `TownCamera`, `TownLabelProjection`, `TownPopulation`, `TownWalkers` | TownDiorama went from about 2,600 to about 700 lines; it keeps thin delegating methods. The full rebuild and the in-place swap share one rotor attachment (the swap had skipped the rotor's animal bounds), and waiting plot changes live in one `plotWork` queue. |
 
+## Round horizon (October 2026)
+
+The fog is measured by horizontal distance from the town center (`TownAtmosphere.js`), so the
+horizon is round instead of square. It starts at 128 units, past the farthest monument site, and
+reaches full fog at 215. The terrain, river and railway now run to `TOWN_EDGE` (±225 instead of
+±130), and the main camera's far plane is 600 so the widest orbit still reaches full fog. The
+terrain lattice keeps its inner bands and uses 20-unit cells beyond ±130, inside the fog: the
+ground mesh goes from 42,990 to 48,870 triangles, within the 50,000 test budget.
+
 ## Proposed next steps (not implemented)
 
 - **B1 (rest).** Stop the ground casting shadows. Kept for now because the mine hillside inside the

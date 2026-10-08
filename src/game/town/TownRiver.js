@@ -1,4 +1,4 @@
-import { horizonMaterial } from './TownAtmosphere';
+import { TOWN_EDGE, horizonMaterial } from './TownAtmosphere';
 import * as THREE from 'three';
 import { MILLRACE, millraceWaterEdge } from './TownMillrace';
 
@@ -43,7 +43,7 @@ export function crossesRiver(a, b) {
   }
   return false;
 }
-export const riverPath = (from = -130, to = 130, step = 1) =>
+export const riverPath = (from = -TOWN_EDGE, to = TOWN_EDGE, step = 1) =>
   Array.from({ length: Math.ceil((to - from) / step) + 1 }, (_, i) => {
     const z = Math.min(to, from + i * step);
     return [riverCenterX(z), z];

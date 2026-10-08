@@ -3,11 +3,12 @@ import { railHeight, trainJourney } from '../src/game/town/TownEraActivity';
 import { PLOTS, RAIL_EDGE } from '../src/game/town/TownLayout';
 import { RIVER, riverCenterX, bridgeDeckHeight } from '../src/game/town/TownRiver';
 import { groundHeight } from '../src/game/town/TownLandscape';
+import { TOWN_EDGE } from '../src/game/town/TownAtmosphere';
 
 describe('through traffic with room above and beside it', () => {
   it('keeps a full train above the terrain across both map edges and the river', () => {
-    expect(RAIL_EDGE.from[0]).toBeLessThan(-130);
-    expect(RAIL_EDGE.to[0]).toBeGreaterThan(130);
+    expect(RAIL_EDGE.from[0]).toBeLessThanOrEqual(-TOWN_EDGE);
+    expect(RAIL_EDGE.to[0]).toBeGreaterThanOrEqual(TOWN_EDGE);
     for (let x = RAIL_EDGE.from[0]; x <= RAIL_EDGE.to[0]; x += 0.5)
       for (const wheelOffset of [-4.5, -3.5, -2.7, -1.7, -0.6, 0.6])
         for (const side of [-0.6, 0.6])
@@ -20,7 +21,7 @@ describe('through traffic with room above and beside it', () => {
     let paused = 0,
       crossedRiver = false,
       exitedEast = false;
-    for (let t = 0; t < 84; t += 0.1) {
+    for (let t = 0; t < 110; t += 0.1) {
       const pose = trainJourney(t);
       if (pose.visible && previous?.visible) expect(pose.x).toBeGreaterThanOrEqual(previous.x);
       if (pose.visible && !pose.moving) {
@@ -28,7 +29,7 @@ describe('through traffic with room above and beside it', () => {
         paused++;
       }
       crossedRiver ||= pose.visible && pose.x > riverCenterX(-23);
-      exitedEast ||= pose.x > 140;
+      exitedEast ||= pose.x > RAIL_EDGE.to[0];
       previous = pose;
     }
     expect(paused).toBeGreaterThan(80);

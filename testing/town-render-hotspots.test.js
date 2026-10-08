@@ -12,6 +12,7 @@ import {
   Scene,
 } from 'three';
 import { MILLRACE, landscapeGeometry } from '../src/game/town/TownMillrace';
+import { TOWN_EDGE } from '../src/game/town/TownAtmosphere';
 import { MINE_SHAFT } from '../src/data/mineSite';
 import { TownNavigation } from '../src/game/town/TownNavigation';
 import { TownStatics } from '../src/game/town/TownStatics';
@@ -453,14 +454,14 @@ it('keeps the terrain crack-free and complete with local millrace refinement', (
     }
   }
   const hole = 2 * MINE_SHAFT.bankWidth * (MINE_SHAFT.rampStartZ - MINE_SHAFT.portalZ);
-  expect(area).toBeCloseTo(260 * 260 - hole, 3);
+  expect(area).toBeCloseTo((2 * TOWN_EDGE) ** 2 - hole, 3);
   // Open edges exist only on the map border and around the shaft opening.
   for (const [key, uses] of edges) {
     expect(uses).toBeLessThanOrEqual(2);
     if (uses === 2) continue;
     const [u, w] = key.split(',').map(Number);
     const onBorder = [u, w].every(
-      (i) => Math.max(Math.abs(p.getX(i)), Math.abs(p.getZ(i))) === 130,
+      (i) => Math.max(Math.abs(p.getX(i)), Math.abs(p.getZ(i))) === TOWN_EDGE,
     );
     // Positions are float32, so compare the shaft limits with a small tolerance.
     const onShaft = [u, w].every(

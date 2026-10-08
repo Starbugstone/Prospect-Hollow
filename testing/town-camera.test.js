@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { Scene, Vector3 } from 'three';
-import { setTownAtmosphere } from '../src/game/town/TownAtmosphere';
+import { MeshStandardMaterial, Scene, Vector3 } from 'three';
+import { TOWN_EDGE, horizonMaterial, setTownAtmosphere } from '../src/game/town/TownAtmosphere';
 import { landscapeGeometry } from '../src/game/town/TownMillrace';
+import { RAIL_EDGE } from '../src/game/town/TownLayout';
+import { riverPath } from '../src/game/town/TownRiver';
+import { PERSONAL_AREAS } from '../src/data/townPersonalisation';
 import {
   groundHeight,
   cameraTerrainHeight,
@@ -68,7 +71,7 @@ it('only lifts a camera that intersects the actual hillside, with no repeated up
   expect(position.equals(corrected)).toBe(true);
 });
 
-it('keeps every village plot clear and reaches full fog before any terrain edge', () => {
+it('keeps every plot and monument site clear and reaches full fog before any terrain edge', () => {
   const scene = new Scene();
   setTownAtmosphere(scene);
   const geometry = landscapeGeometry();
@@ -76,16 +79,35 @@ it('keeps every village plot clear and reaches full fog before any terrain edge'
     geometry.computeBoundingBox();
     const { min, max } = geometry.boundingBox;
     expect(scene.fog.color.equals(scene.background)).toBe(true);
-    expect(scene.fog.near).toBeLessThan(scene.fog.far);
+    // A wide ring keeps the fade gradual rather than a hard wall.
+    expect(scene.fog.far - scene.fog.near).toBeGreaterThanOrEqual(60);
     for (const [id, [x, z]] of Object.entries(PLOTS)) {
       const halfWidth = id === 'airport' ? 10 : 6;
       const halfDepth = id === 'airport' ? 20 : 6;
-      expect(Math.abs(x) + halfWidth, `${id} remains outside the fog`).toBeLessThan(scene.fog.near);
-      expect(Math.abs(z) + halfDepth, `${id} remains outside the fog`).toBeLessThan(scene.fog.near);
+      expect(
+        Math.hypot(Math.abs(x) + halfWidth, Math.abs(z) + halfDepth),
+        `${id} remains outside the fog`,
+      ).toBeLessThan(scene.fog.near);
     }
-    for (const edge of [min.x, max.x, min.z, max.z])
-      expect(scene.fog.far).toBeLessThan(Math.abs(edge));
+    for (const { id, positions, radius } of PERSONAL_AREAS)
+      for (const [x, z] of positions)
+        expect(Math.hypot(x, z) + radius, `${id} has room before the fog`).toBeLessThan(
+          scene.fog.near - 5,
+        );
+    // The fog is round, so the square terrain only has to reach its radius on each axis.
+    for (const edge of [min.x, max.x, min.z, max.z]) expect(Math.abs(edge)).toBe(TOWN_EDGE);
+    expect(scene.fog.far).toBeLessThan(TOWN_EDGE);
+    // The river and railway run on into full fog instead of stopping in view.
+    for (const [x, z] of [riverPath()[0], riverPath().at(-1), RAIL_EDGE.from, RAIL_EDGE.to])
+      expect(Math.hypot(x, z)).toBeGreaterThan(scene.fog.far);
   } finally {
     geometry.dispose();
   }
+});
+it('measures fog by horizontal distance from the town center, giving a round horizon', () => {
+  const material = horizonMaterial(new MeshStandardMaterial());
+  const shader = { vertexShader: '#include <fog_vertex>', fragmentShader: '' };
+  material.onBeforeCompile(shader);
+  expect(shader.vertexShader).toContain('vFogDepth = length(horizonPosition.xz);');
+  material.dispose();
 });
