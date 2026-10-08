@@ -64,9 +64,11 @@ export function helmetStay(animal, dt) {
 }
 
 // Screen pixels a world unit must span at an animal before its helmet can be found.
-// Farther out every animal is a speck, so tapping across the town would find the
-// wearer by chance; there, a tap on any animal asks the player to zoom in instead.
-export const HELMET_FIND_SCALE = 40;
+// Farther out every animal is a speck, and tapping across the town would find the
+// wearer by chance. The helmet is an easter egg, so a far-off animal answers nothing;
+// only just short of the find zoom (`HELMET_HINT_SCALE`) may a tap ask to zoom in.
+export const HELMET_FIND_SCALE = 40,
+  HELMET_HINT_SCALE = 30;
 
 const feet = new Vector3(),
   head = new Vector3(),
@@ -103,21 +105,22 @@ function animalOnScreen(d, animal, rect, clientX, clientY) {
  * What a click means for the space-helmet game, or null when it is not for it. Close
  * enough (`HELMET_FIND_SCALE`), a click on the wearer finds it and gives its place on
  * the canvas in percent; the hit area reaches past the body because animals are small
- * and keep moving. Farther out, a click on any animal, wearer or not, gives
- * `{ zoom: true }`, so scanning taps cannot tell the wearer apart. An animal changing
- * outfits or hidden on its wild visits cannot be found, and Willowkin are not animals.
+ * and keep moving. Just short of that zoom, a click on the body of any animal, wearer
+ * or not, gives `{ zoom: true }`, so taps cannot tell the wearer apart; the caller
+ * shows it only when nothing else answers the click. Farther out it gives nothing. An
+ * animal changing outfits or hidden on its wild visits cannot be found, and Willowkin
+ * are not animals.
  */
 export function spaceHelmetTap(d, clientX, clientY) {
   if (!spaceHelmetOut(d.helmetTown ?? d.town)) return null;
   const rect = d.canvas.getBoundingClientRect();
-  let far = false;
+  let near = false;
   for (const animal of d.animals ?? []) {
     if (animal.companion) continue;
     const spot = animalOnScreen(d, animal, rect, clientX, clientY);
-    if (!spot) continue;
+    if (!spot || spot.scale < HELMET_HINT_SCALE) continue;
     if (spot.scale < HELMET_FIND_SCALE) {
-      // Only the body counts here, so taps on nearby buildings still open them.
-      far ||= spot.gap <= Math.max(12, spot.size / 2 + 6);
+      near ||= spot.gap <= Math.max(12, spot.size / 2 + 6);
       continue;
     }
     if (animal.costume !== COSTUME || animal.dressing) continue;
@@ -127,7 +130,7 @@ export function spaceHelmetTap(d, clientX, clientY) {
         y: ((spot.y - rect.top) / rect.height) * 100,
       };
   }
-  return far ? { zoom: true } : null;
+  return near ? { zoom: true } : null;
 }
 
 // Rebuilds one animal's model with or without the costume, in place on its walk.

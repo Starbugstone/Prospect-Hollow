@@ -135,11 +135,14 @@ town.
 
 It has to be found up close. The wearer only counts once a world unit spans at least
 `HELMET_FIND_SCALE` (40) screen pixels where it stands, about the zoom of a few streets
-around the town square on a laptop. Farther out every animal is a speck, and tapping across
-the town would hit the wearer by chance, so a tap on any animal's body, wearer or not, says
-to zoom in closer and nothing tells the wearer apart. The scale is measured in pixels at the
-animal, so every screen size needs an equally visible animal, and an animal at the back of a
-tilted view needs a closer look than one in front.
+around the town square on a laptop; tapping across a zoomed-out town would otherwise hit it
+by chance. The helmet is an easter egg, so farther out animals answer nothing and every tap
+works as usual. Only just short of the find zoom, down to `HELMET_HINT_SCALE` (30), a tap on
+the body of any animal, wearer or not, says to zoom in closer, so the hint never tells the
+wearer apart; it shows only when nothing else answers the tap, so a villager, building or
+plot under the finger still opens as before. The scale is measured in pixels at the animal,
+so every screen size needs an equally visible animal, and an animal at the back of a tilted
+view needs a closer look than one in front.
 
 Signed-in visitors can find it in shared Tomorrow City towns too. Their reward goes to the
 town they visit as and is worth half an hour of that town's own saloon takings, so visiting richer

@@ -410,15 +410,15 @@ export class TownDiorama extends TownPrimitives {
     this.render();
   }
   pick(clientX, clientY) {
-    // Animals are small and easily covered, so a tap for the space-helmet game wins over
-    // people and plots: it finds the wearer, or asks to zoom in to look for it.
+    // The space-helmet wearer is small and easily covered, so finding it wins over people
+    // and plots. Asking to zoom in never does: only a tap nothing else answers shows it.
     const helmet = spaceHelmetTap(this, clientX, clientY);
-    if (helmet) {
-      if (helmet.zoom) this.onHelmetZoom?.();
-      else this.onHelmet?.(helmet);
-      return;
-    }
-    if (this.showVillager(clientX, clientY, true)) return;
+    if (helmet && !helmet.zoom) this.onHelmet?.(helmet);
+    else if (!this.pickTown(clientX, clientY) && helmet?.zoom) this.onHelmetZoom?.();
+  }
+  // Names a villager or opens a plot, site or plaque under the tap; false when none.
+  pickTown(clientX, clientY) {
+    if (this.showVillager(clientX, clientY, true)) return true;
     const rect = this.canvas.getBoundingClientRect();
     this.raycaster.setFromCamera(
       new THREE.Vector2(
@@ -444,33 +444,38 @@ export class TownDiorama extends TownPrimitives {
     const plaque = object?.userData.distinction ? object : null;
     this.namedPlaque = plaque && this.namedPlaque !== plaque ? plaque : null;
     projectPlaque(this);
-    if (plaque) this.render();
-    else if (object) this.onSelect(object.userData.plot ?? object.userData.monumentSite);
-    else {
-      const ground = this.raycaster.ray.intersectPlane(
-        new THREE.Plane(point(0, 1, 0), -0.08),
-        new THREE.Vector3(),
-      );
-      if (!ground) return;
-      for (const [id, [x, z]] of Object.entries(PLOTS)) {
-        if (
-          id !== 'mine' &&
-          plotUnlocked(this.town, id) &&
-          Math.abs(ground.x - x) < 1.55 &&
-          Math.abs(ground.z - z) < 1.4
-        ) {
-          this.onSelect(id);
-          return;
-        }
-      }
-      const site = PERSONAL_AREAS.find(
-        (area) =>
-          areaUnlocked(this.town, area) &&
-          Math.hypot(ground.x - area.positions[0][0], ground.z - area.positions[0][1]) <
-            area.radius * 0.75,
-      );
-      if (site) this.onSelect(site.id);
+    if (plaque) {
+      this.render();
+      return true;
     }
+    if (object) {
+      this.onSelect(object.userData.plot ?? object.userData.monumentSite);
+      return true;
+    }
+    const ground = this.raycaster.ray.intersectPlane(
+      new THREE.Plane(point(0, 1, 0), -0.08),
+      new THREE.Vector3(),
+    );
+    if (!ground) return false;
+    for (const [id, [x, z]] of Object.entries(PLOTS)) {
+      if (
+        id !== 'mine' &&
+        plotUnlocked(this.town, id) &&
+        Math.abs(ground.x - x) < 1.55 &&
+        Math.abs(ground.z - z) < 1.4
+      ) {
+        this.onSelect(id);
+        return true;
+      }
+    }
+    const site = PERSONAL_AREAS.find(
+      (area) =>
+        areaUnlocked(this.town, area) &&
+        Math.hypot(ground.x - area.positions[0][0], ground.z - area.positions[0][1]) <
+          area.radius * 0.75,
+    );
+    if (site) this.onSelect(site.id);
+    return !!site;
   }
   resize() {
     const width = this.canvas.clientWidth,

@@ -71,8 +71,8 @@ motion swaps them at once.
 ## Finding the astronaut
 
 From Tomorrow City onwards the shared town shows the owner's space-helmet wearer. A signed-in
-visitor who taps it close enough to see it (zoomed out, every animal says to zoom in, as in
-the owner's town) earns a reward for their own town: the town chosen in “Visiting as”
+visitor who taps it close enough to see it (just short of that zoom, any animal says to zoom
+in, as in the owner's town) earns a reward for their own town: the town chosen in “Visiting as”
 receives half an hour of its own saloon takings, at most once per 12 hours per player, whichever
 town they find it in. Each town's helmet can also be found by only one visitor per 12 hours,
 however many visit: the next visitor is told when it can be found again, and the visit page
