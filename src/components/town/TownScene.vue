@@ -73,6 +73,7 @@
     >
     <span
       v-if="plaqueLabel"
+      ref="plaqueElement"
       class="villager-name"
       role="status"
       :style="{ left: `${plaqueLabel.x}%`, top: `${plaqueLabel.y}%` }"
@@ -208,6 +209,7 @@
     </div>
     <button
       v-if="skyMoon && !moonOpen"
+      ref="skyMoonElement"
       type="button"
       class="town-sky-moon"
       :style="{ left: `${skyMoon.x}%`, top: `${skyMoon.y}%` }"
@@ -328,17 +330,21 @@ watch(moonReachable, (reachable) => {
 });
 // The Moon hangs in the valley sky to the north-west, above the mine and the
 // elevator. It drifts across the sky as the camera turns and opens New Hollow.
-const skyMoon = ref(null);
+const skyMoon = shallowRef(null),
+  skyMoonElement = ref(null);
 function placeSkyMoon() {
-  if (!scene?.skyPoint || !moon.value.homesteads) return (skyMoon.value = null);
+  if (!scene?.skyPoint || !moon.value.homesteads) return followLabel(skyMoon, skyMoonElement);
   const { x, y, facing, distance } = scene.skyPoint(-0.55, -1);
   // Sky shows at the top of the frame once the view is wide (the land fades into the
   // sky) or tilted until the horizon is in view; close up, the frame is all town.
   const skyInView = distance > 95 || y > 8;
-  skyMoon.value =
+  followLabel(
+    skyMoon,
+    skyMoonElement,
     skyInView && facing > 0.3 && x > 6 && x < 94
       ? { x, y: Math.min(Math.max(y - 9, 13), 34) }
-      : null;
+      : null,
+  );
 }
 watch(() => moon.value.homesteads, placeSkyMoon);
 const motionEnabled = () => props.active && !document.hidden && !props.paused && !moonOpen.value;
@@ -428,7 +434,7 @@ const actionLabel = (id) =>
   props.readOnly
     ? t('Collect the saloon takings for the mayor')
     : ACTION_LABELS[indicators.value[id]](id);
-const placeName = (id) => t(id === 'mine' ? 'Mine' : BUILDING_BY_ID[id].shortName);
+const placeName = (id) => (id === 'mine' ? t('Mine') : buildingName(id));
 const plotLabel = (id) => {
   if (props.readOnly) return t(id === 'mine' ? 'Mine' : BUILDING_BY_ID[id].name);
   return id === 'mine'
@@ -479,23 +485,34 @@ let scene,
   disposed = false,
   dragged = false;
 const pointers = new Map();
-// A named villager moves every frame; Vue re-renders only when the name changes.
-const villagerLabel = shallowRef(null),
-  villagerElement = ref(null),
-  plaqueLabel = shallowRef(null);
-function showVillagerLabel(label) {
-  const current = villagerLabel.value;
-  if (!label || !current || label.name !== current.name || label.live !== current.live) {
-    villagerLabel.value = label;
+// The named villager, a tapped plaque's name and the sky Moon move on every camera
+// frame. Vue re-renders only when one appears, disappears or changes its text; in
+// between, the frame moves its element directly.
+function followLabel(state, element, label = null, sameText = () => true) {
+  const current = state.value;
+  if (!label || !current || !sameText(label, current)) {
+    state.value = label;
     return;
   }
   Object.assign(current, label);
-  const element = villagerElement.value;
-  if (element) {
-    element.style.left = `${label.x}%`;
-    element.style.top = `${label.y}%`;
+  if (element.value) {
+    element.value.style.left = `${label.x}%`;
+    element.value.style.top = `${label.y}%`;
   }
 }
+const villagerLabel = shallowRef(null),
+  villagerElement = ref(null),
+  plaqueLabel = shallowRef(null),
+  plaqueElement = ref(null);
+const showVillagerLabel = (label) =>
+  followLabel(
+    villagerLabel,
+    villagerElement,
+    label,
+    (next, current) => next.name === current.name && next.live === current.live,
+  );
+const showPlaqueLabel = (label) =>
+  followLabel(plaqueLabel, plaqueElement, label, (next, current) => next.name === current.name);
 const choose = (id) => {
   if (!props.readOnly) id === 'mine' ? emit('mine') : emit('select', id);
   // A visitor may collect what visitorTaps allows; any other tap only looks at the building.
@@ -724,9 +741,7 @@ async function initialize() {
       onGuestVip: (at) => emit('guest-vip', at),
       onHelmet: (origin) => emit('helmet', origin),
       onVillagerLabel: showVillagerLabel,
-      onPlaqueLabel: (label) => {
-        plaqueLabel.value = label;
-      },
+      onPlaqueLabel: showPlaqueLabel,
       onEventInset: (view) => {
         eventInset.value = view;
       },

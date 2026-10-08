@@ -186,26 +186,7 @@
       v-if="active && dialogMode"
       :key="tabSheet ? 'sheet' : 'dialog'"
       :sheet="tabSheet"
-      :title="
-        t(
-          dialogMode === 'projects'
-            ? 'Town projects'
-            : dialogMode === 'story'
-              ? 'Village story'
-              : dialogMode === 'build'
-                ? t('Available plots · {built}/{total} built', {
-                    built,
-                    total: currentEraPlots.length,
-                  })
-                : dialogMode === 'personalise'
-                  ? 'Personalise your town'
-                  : dialogMode === 'monument'
-                    ? 'Monument site'
-                    : dialogMode === 'more'
-                      ? 'More'
-                      : 'Your town',
-        )
-      "
+      :title="dialogTitle"
       close-label="Close building details"
       @close="closeDialog"
     >
@@ -977,6 +958,22 @@ let collectionClock;
 const currentEraPlots = computed(() => BUILDINGS.filter(({ id }) => plotInEra(town.value, id)));
 const built = computed(
   () => currentEraPlots.value.filter(({ id }) => town.value.buildings[id]).length,
+);
+// Panel headings; building cards and the village summary read 'Your town'.
+const DIALOG_TITLES = {
+  projects: 'Town projects',
+  story: 'Village story',
+  personalise: 'Personalise your town',
+  monument: 'Monument site',
+  more: 'More',
+};
+const dialogTitle = computed(() =>
+  dialogMode.value === 'build'
+    ? t('Available plots · {built}/{total} built', {
+        built: built.value,
+        total: currentEraPlots.value.length,
+      })
+    : t(DIALOG_TITLES[dialogMode.value] ?? 'Your town'),
 );
 const villageStats = computed(() => {
   const { water, food, happiness: happy } = needs.value;

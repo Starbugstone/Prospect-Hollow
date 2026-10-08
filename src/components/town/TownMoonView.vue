@@ -66,7 +66,7 @@
   </section>
 </template>
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import { BUILDING_BY_ID } from '../../data/town';
 import {
   MOON_LOTS,
@@ -91,7 +91,8 @@ const props = defineProps({
 const emit = defineEmits(['inspect', 'close']);
 const canvas = ref(null);
 const unavailable = ref(false);
-const labels = ref([]);
+// Replaced whole on camera frames that move a label, so it needs no deep reactivity.
+const labels = shallowRef([]);
 let scene = null,
   disposed = false;
 
@@ -145,9 +146,11 @@ async function start() {
     unavailable.value = true;
   }
 }
+// The Moon scene draws only building levels: watching the whole town deeply would
+// walk its honours and every other field on each change.
 watch(
-  () => props.town,
-  (town) => scene?.update(town),
+  () => props.town.buildings,
+  () => scene?.update(props.town),
   { deep: true },
 );
 watch(() => [props.active, props.paused], updateMotion);

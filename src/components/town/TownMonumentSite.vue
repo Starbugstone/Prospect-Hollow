@@ -18,7 +18,7 @@
 
     <template v-else-if="built">
       <figure class="monument-hero">
-        <TownLandmarkPreview :choice="built" :stage="stage" :paint="area.timeless ? {} : paint" />
+        <TownLandmarkPreview :choice="built" :stage="stage" :paint="paint" />
         <figcaption>
           <strong>{{ t(LANDMARK_BY_ID[built].label) }}</strong>
           <span>{{ t(LANDMARK_BY_ID[built].detail) }}</span>
@@ -53,12 +53,12 @@
       </ol>
       <div v-if="!readOnly && !area.timeless" class="town-detail-offer">
         <h3>
-          {{ t('Stage {stage} of {maximum}', { stage, maximum: areaMaximum(town, area) }) }}
+          {{ t('Stage {stage} of {maximum}', { stage, maximum }) }}
         </h3>
         <progress
           class="monument-progress"
           :value="stage"
-          :max="areaMaximum(town, area)"
+          :max="maximum"
           :aria-label="t('Monument stage')"
         />
         <button
@@ -102,7 +102,7 @@
           :aria-checked="picked === choice"
           @click="pick(choice)"
         >
-          <TownLandmarkPreview :choice="choice" :paint="area.timeless ? {} : paint" />
+          <TownLandmarkPreview :choice="choice" :paint="paint" />
           <span class="monument-choice-text">
             <strong>{{ t(LANDMARK_BY_ID[choice].label) }}</strong>
             <small>{{ t(LANDMARK_BY_ID[choice].detail) }}</small>
@@ -207,7 +207,11 @@ const era = computed(() => ERA_BY_ID[area.value.era]);
 const unlocked = computed(() => areaUnlocked(props.town, area.value));
 const built = computed(() => areaChoice(props.town, area.value));
 const stage = computed(() => areaStage(props.town, area.value));
-const paint = computed(() => props.town.personalisation?.paint?.all ?? {});
+// A timeless centerpiece keeps its own colours; other monuments wear the town's paint.
+const paint = computed(() =>
+  area.value.timeless ? {} : (props.town.personalisation?.paint?.all ?? {}),
+);
+const maximum = computed(() => areaMaximum(props.town, area.value));
 const upgrade = computed(() =>
   built.value ? landmarkOffer(props.town, area.value, built.value) : null,
 );
@@ -220,7 +224,7 @@ const badge = computed(() =>
         ? t('Monument')
         : t('Stage {stage} of {maximum}', {
             stage: stage.value,
-            maximum: areaMaximum(props.town, area.value),
+            maximum: maximum.value,
           }),
 );
 

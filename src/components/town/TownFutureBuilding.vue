@@ -262,8 +262,8 @@ const parts = computed(() => {
       break;
     case 'water':
       result.towers.push(
-        tower(-30, 32, kind() === 'well' ? 46 : 78),
-        ...(kind() === 'well' ? [] : [tower(42, 24, 60, { accent: true })]),
+        tower(-30, 32, props.kind === 'well' ? 46 : 78),
+        ...(props.kind === 'well' ? [] : [tower(42, 24, 60, { accent: true })]),
       );
       break;
     case 'culture':
@@ -350,7 +350,6 @@ const parts = computed(() => {
   if (form.value === 'airport') result.props = level >= 3 ? [-118, 118] : level >= 2 ? [-118] : [];
   return result;
 });
-const kind = () => props.kind;
 
 // ---------- Style-aware pieces ----------
 const PORT = (x, y, p, r = 5) => [
