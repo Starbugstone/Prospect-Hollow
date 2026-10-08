@@ -109,6 +109,7 @@ const ACTIONS = {
   town_sync_forced: 'Set town to accept next sync',
   town_sync_force_cleared: 'Cleared accept next sync',
   town_sync_reset: 'Reset town after a blocked sync',
+  town_corrected: 'Corrected town coins or inventory',
 };
 export const actionLabel = (action) => ACTIONS[action] ?? action.replaceAll('_', ' ');
 // Why the save protection rejected an upload, from its error code.

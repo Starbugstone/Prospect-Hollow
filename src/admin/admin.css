@@ -469,6 +469,28 @@ td.admin-actions {
 .admin-sync-edited input {
   outline: 2px solid var(--accent);
 }
+.admin-correction {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+}
+.admin-correction label {
+  display: grid;
+  gap: 0.3rem;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+.admin-correction small {
+  font-weight: 400;
+  color: var(--muted);
+}
+.admin-correction-changed input {
+  outline: 2px solid var(--accent);
+}
+.admin-correction input[aria-invalid='true'] {
+  outline: 2px solid var(--danger);
+}
 .admin-sync-flag {
   margin-right: 0.3rem;
   color: var(--danger);

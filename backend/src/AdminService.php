@@ -456,6 +456,8 @@ final class AdminService
         } catch (\Throwable) {
             $appearance = null;
         }
+        $integrity = new SaveIntegrity();
+        $state = $profile instanceof \stdClass ? $integrity->comparable($profile) : null;
         return [
             'town' => self::town($row) + [
                 'uniqueVisitors' => $social('visitors'),
@@ -475,6 +477,20 @@ final class AdminService
             ],
             'appearance' => $appearance,
             'profile' => $profile,
+            // What support can correct (see correctTown), with powers by ID; null when unreadable.
+            'inventory' =>
+                $state === null
+                    ? null
+                    : [
+                        'coins' => $state['town']['coins'],
+                        'builderHammers' => $state['builderHammers'],
+                        'powers' => (object) $state['powers'],
+                        'limits' => [
+                            'coins' => self::MAX_COINS,
+                            'builderHammers' => self::MAX_GRANTED_HAMMERS,
+                            'powers' => $integrity->bonusCapacity($state),
+                        ],
+                    ],
             'syncRejections' => SyncRejections::list($db, $id),
             'history' => array_map(
                 fn($h) => [
@@ -630,44 +646,16 @@ final class AdminService
             if ($state === null) {
                 throw new ApiError(422, 'This save cannot be read for editing.');
             }
-            $now = (int) floor(microtime(true) * 1000);
-            $latest = json_decode($row['profile'], false, 64, JSON_THROW_ON_ERROR);
-            $saved = Honours::load(fn() => $integrity)->keep(
-                $integrity->adminReset(
-                    SyncRejections::edit($state, $body['changes'] ?? []),
-                    $latest,
-                    $now,
-                    $row['id'],
-                    (int) $row['saved_at'] * 1000,
-                ),
-                $latest,
-                Honours::social($db, 'id', $row['id']),
-            );
-            $profile = json_encode($saved, JSON_THROW_ON_ERROR);
-            SaveService::archive($db, $row);
-            $changes = [
-                'profile' => $profile,
-                'revision' => (int) $row['revision'] + 1,
-                'saved_at' => intdiv($now, 1000),
-                'upload_id' => SaveService::ADMIN_RESET . bin2hex(random_bytes(12)),
-                'upload_hash' => hash('sha256', $profile),
-                'force_sync' => 0,
-            ];
-            if ($row['listed']) {
-                $changes['appearance'] = $this->public->projection(
-                    $saved,
-                    $row['name'],
-                    $row['public_id'],
-                );
-            }
-            $db->update('towns', $changes, ['id' => $row['id']]);
-            $this->admins->audit(
+            $this->saveEdited(
+                $db,
+                $row,
+                $integrity,
+                SyncRejections::edit($state, $body['changes'] ?? []),
                 $actor,
                 'town_sync_reset',
-                $row['id'],
                 sprintf(
                     'revision %d from the %s, %d value(s) edited',
-                    $changes['revision'],
+                    (int) $row['revision'] + 1,
                     $body['base'] === 'cloud' ? 'cloud save' : 'rejected upload',
                     count($body['changes'] ?? []),
                 ),
@@ -675,6 +663,133 @@ final class AdminService
             return [];
         });
         return $this->townDetail($id);
+    }
+    /** Builder hammers support may hand out, past the cap that limits what play earns. */
+    public const MAX_GRANTED_HAMMERS = 99;
+    /** The most coins a save holds (JavaScript's largest safe integer). */
+    private const MAX_COINS = 9007199254740991;
+    /**
+     * Support's correction after a bug: sets the coins, stored bonuses and builder hammers of
+     * the cloud save the admin is looking at. Saved like a reset, so the owner's game loads it
+     * on its next sync and keeps its own copy as a recovery backup.
+     */
+    public function correctTown(string $actor, string $id, array $body): array
+    {
+        SaveService::keys($body, ['revision', 'coins', 'builderHammers', 'powers']);
+        if (!is_int($body['revision'] ?? null)) {
+            throw new ApiError(422, 'Send the revision you corrected.');
+        }
+        if (array_key_exists('powers', $body) && !($body['powers'] instanceof \stdClass)) {
+            throw new ApiError(422, 'Send the bonuses by ID.');
+        }
+        $this->locked($id, function ($db, $row) use ($actor, $body) {
+            if ((int) $row['revision'] !== $body['revision']) {
+                throw new ApiError(409, 'This town saved again. Reload it and check the values.');
+            }
+            $integrity = new SaveIntegrity();
+            $save = self::decode($row['profile']);
+            $state = $save instanceof \stdClass ? $integrity->comparable($save) : null;
+            if ($state === null) {
+                throw new ApiError(422, 'This save cannot be read for editing.');
+            }
+            $edits = [];
+            if (array_key_exists('coins', $body)) {
+                $edits[] = ['coins', ['town', 'coins'], $body['coins'], self::MAX_COINS];
+            }
+            if (array_key_exists('builderHammers', $body)) {
+                $edits[] = [
+                    'builder hammers',
+                    ['builderHammers'],
+                    $body['builderHammers'],
+                    self::MAX_GRANTED_HAMMERS,
+                ];
+            }
+            $capacity = $integrity->bonusCapacity($state);
+            foreach ((array) ($body['powers'] ?? []) as $power => $quantity) {
+                if (!array_key_exists($power, $state['powers'])) {
+                    throw new ApiError(422, 'This game has no bonus called ' . $power . '.');
+                }
+                $edits[] = [(string) $power, ['powers', $power], $quantity, $capacity];
+            }
+            $changed = [];
+            foreach ($edits as [$label, $path, $value, $maximum]) {
+                if (!is_int($value) || $value < 0 || $value > $maximum) {
+                    throw new ApiError(
+                        422,
+                        sprintf('Set %s to a whole number from 0 to %d.', $label, $maximum),
+                    );
+                }
+                $target = &$state;
+                foreach ($path as $key) {
+                    $target = &$target[$key];
+                }
+                if ($target !== $value) {
+                    $changed[] = sprintf('%s %d → %d', $label, $target, $value);
+                    $target = $value;
+                }
+                unset($target);
+            }
+            if (!$changed) {
+                throw new ApiError(422, 'Change a value first.');
+            }
+            $this->saveEdited(
+                $db,
+                $row,
+                $integrity,
+                $state,
+                $actor,
+                'town_corrected',
+                sprintf('revision %d: %s', (int) $row['revision'] + 1, implode(', ', $changed)),
+            );
+            return [];
+        });
+        return $this->townDetail($id);
+    }
+    /**
+     * Saves a state an admin edited (in the replay's comparable form) as the town's next
+     * revision. The owner's game loads it on its next sync without asking.
+     */
+    private function saveEdited(
+        Connection $db,
+        array $row,
+        SaveIntegrity $integrity,
+        array $state,
+        string $actor,
+        string $action,
+        string $detail,
+    ): void {
+        $now = (int) floor(microtime(true) * 1000);
+        $latest = json_decode($row['profile'], false, 64, JSON_THROW_ON_ERROR);
+        $saved = Honours::load(fn() => $integrity)->keep(
+            $integrity->adminReset(
+                $state,
+                $latest,
+                $now,
+                $row['id'],
+                (int) $row['saved_at'] * 1000,
+            ),
+            $latest,
+            Honours::social($db, 'id', $row['id']),
+        );
+        $profile = json_encode($saved, JSON_THROW_ON_ERROR);
+        SaveService::archive($db, $row);
+        $changes = [
+            'profile' => $profile,
+            'revision' => (int) $row['revision'] + 1,
+            'saved_at' => intdiv($now, 1000),
+            'upload_id' => SaveService::ADMIN_RESET . bin2hex(random_bytes(12)),
+            'upload_hash' => hash('sha256', $profile),
+            'force_sync' => 0,
+        ];
+        if ($row['listed']) {
+            $changes['appearance'] = $this->public->projection(
+                $saved,
+                $row['name'],
+                $row['public_id'],
+            );
+        }
+        $db->update('towns', $changes, ['id' => $row['id']]);
+        $this->admins->audit($actor, $action, $row['id'], $detail);
     }
     public function deleteTown(string $actor, string $id, array $body): array
     {

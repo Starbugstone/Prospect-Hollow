@@ -174,13 +174,14 @@ final class AdminController
                 default => throw new ApiError(405, 'Method is not allowed.'),
             };
         }
-        if (preg_match('~^towns/([a-f0-9-]{36})(?:/(restore|sync))?$~D', $path, $m)) {
+        if (preg_match('~^towns/([a-f0-9-]{36})(?:/(restore|sync|inventory))?$~D', $path, $m)) {
             return match ($method . ' ' . ($m[2] ?? '')) {
                 'GET ' => $this->service->townDetail($m[1]),
                 'PATCH ' => $this->service->updateTown($actor, $m[1], $body),
                 'DELETE ' => $this->service->deleteTown($actor, $m[1], $body),
                 'POST restore' => $this->service->restoreTown($actor, $m[1], $body),
                 'PATCH sync' => $this->service->setForceSync($actor, $m[1], $body),
+                'PATCH inventory' => $this->service->correctTown($actor, $m[1], $body),
                 default => throw new ApiError(405, 'Method is not allowed.'),
             };
         }

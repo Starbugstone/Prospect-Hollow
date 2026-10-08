@@ -14,6 +14,13 @@ import {
 import { parseRoute } from '../src/admin/routes';
 import { compareRows, editedValues, savedField } from '../src/admin/syncCompare';
 import { buildingLabel, eraLabel, LEVEL_COUNT, powerLabel } from '../src/admin/labels';
+import {
+  correctionBody,
+  correctionSummary,
+  inventoryFields,
+  validValue,
+} from '../src/admin/inventory';
+import { HAMMER_CAPACITY } from '../src/data/rewards';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -236,5 +243,49 @@ describe('sync comparison', () => {
       'Progress did not match the replayed actions',
     );
     expect(codeLabel('save_future_check')).toBe('save future check');
+  });
+});
+
+describe('admin coin and inventory correction', () => {
+  const inventory = {
+    coins: 120,
+    builderHammers: 2,
+    powers: { tnt: 1, 'clear-row': 0 },
+    limits: { coins: Number.MAX_SAFE_INTEGER, builderHammers: 99, powers: 3 },
+  };
+  const fields = inventoryFields(inventory);
+  const start = () => Object.fromEntries(fields.map((field) => [field.key, field.current]));
+
+  it('lists coins, every bonus by ID and builder hammers with their limits', () => {
+    expect(fields.map((field) => [field.key, field.current, field.max])).toEqual([
+      ['coins', 120, Number.MAX_SAFE_INTEGER],
+      ['powers.tnt', 1, 3],
+      ['powers.clear-row', 0, 3],
+      ['builderHammers', 2, 99],
+    ]);
+    expect(fields[1].label).toBe(powerLabel('tnt'));
+  });
+
+  it('allows builder hammers past the cap play earns up to, but bonuses only to storage', () => {
+    const [, tnt, , hammers] = fields;
+    expect(validValue(hammers, HAMMER_CAPACITY + 3)).toBe(true);
+    expect(validValue(tnt, 4)).toBe(false);
+    expect(validValue(tnt, -1)).toBe(false);
+    expect(validValue(tnt, 1.5)).toBe(false);
+    expect(validValue(tnt, '')).toBe(false);
+  });
+
+  it('sends only changed values, with bonuses by ID and the revision corrected', () => {
+    expect(correctionBody(fields, start(), 7)).toEqual({ revision: 7 });
+    const values = { ...start(), coins: 500, 'powers.clear-row': 3, builderHammers: 8 };
+    expect(correctionBody(fields, values, 7)).toEqual({
+      revision: 7,
+      coins: 500,
+      powers: { 'clear-row': 3 },
+      builderHammers: 8,
+    });
+    expect(correctionSummary(fields, values)).toBe(
+      `Coins 120 → 500, ${powerLabel('clear-row')} 0 → 3, Builder hammers 2 → 8`,
+    );
   });
 });

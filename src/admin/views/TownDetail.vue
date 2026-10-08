@@ -167,6 +167,23 @@
           </div>
         </div>
 
+        <template v-if="data.inventory && !town.deletedAt">
+          <h2>Correct coins and inventory</h2>
+          <p class="admin-muted">
+            Put right what a bug took or gave. The corrected save becomes a new revision, and the
+            current one stays in the cloud history. Bonuses fit this town’s storage; builder hammers
+            may go past the cap that play earns up to.
+          </p>
+          <InventoryCorrection
+            :key="town.revision"
+            :town-id="town.id"
+            :revision="town.revision"
+            :inventory="data.inventory"
+            @saved="afterCorrection"
+          />
+          <p v-if="inventoryNotice" class="admin-notice" role="status">{{ inventoryNotice }}</p>
+        </template>
+
         <h2>Cloud sync <SyncBlocked :town="town" /></h2>
         <p class="admin-muted">
           Uploads the save protection rejected, newest first (the latest five, kept 30 days).
@@ -330,6 +347,7 @@ import TownHonours from '../components/TownHonours.vue';
 import SyncBlocked from '../components/SyncBlocked.vue';
 import SyncCompare from '../components/SyncCompare.vue';
 import ForceSyncToggle from '../components/ForceSyncToggle.vue';
+import InventoryCorrection from '../components/InventoryCorrection.vue';
 const tabs = [
   { id: 'overview', label: 'Overview' },
   { id: 'achievements', label: 'Achievements' },
@@ -353,7 +371,8 @@ const data = ref(null),
   name = ref(''),
   busy = ref(false),
   comparing = ref(''),
-  syncNotice = ref('');
+  syncNotice = ref(''),
+  inventoryNotice = ref('');
 const town = computed(() => data.value.town);
 const stats = computed(() => data.value.town.stats);
 const profile = computed(() => data.value.profile ?? {});
@@ -442,6 +461,10 @@ async function afterReset(result) {
   comparing.value = '';
   await load(result);
   syncNotice.value = `Saved as revision ${town.value.revision}. The owner’s game loads it on its next sync.`;
+}
+async function afterCorrection(result) {
+  await load(result);
+  inventoryNotice.value = `Saved as revision ${town.value.revision}. The owner’s game loads it on its next sync.`;
 }
 onMounted(() => load());
 </script>

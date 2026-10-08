@@ -1147,6 +1147,82 @@ try {
         'the reset notice ends with the next accepted save',
     );
 
+    // Support corrects coins, stored bonuses and builder hammers after a bug.
+    $inventoryPath = 'towns/' . $syncId . '/inventory';
+    $before = status(200, adminCall('GET', 'towns/' . $syncId, null, $s), 'before correcting');
+    $at = $before['town']['revision'];
+    check(
+        $before['inventory']['coins'] === $before['profile']['town']['coins'] &&
+            $before['inventory']['powers']['tnt'] === 3 &&
+            $before['inventory']['limits']['powers'] === 3 &&
+            $before['inventory']['limits']['builderHammers'] === AdminService::MAX_GRANTED_HAMMERS,
+        'the town detail lists what support can correct and its limits',
+    );
+    foreach (
+        [
+            ['coins' => 5],
+            ['revision' => $at, 'coins' => -1],
+            ['revision' => $at, 'coins' => 1.5],
+            ['revision' => $at, 'builderHammers' => AdminService::MAX_GRANTED_HAMMERS + 1],
+            ['revision' => $at, 'powers' => ['nowhere' => 1]],
+            ['revision' => $at, 'powers' => ['tnt' => 99]],
+            ['revision' => $at, 'powers' => [1]],
+            ['revision' => $at, 'lives' => 3],
+            ['revision' => $at, 'coins' => $before['profile']['town']['coins']],
+        ]
+        as $body
+    ) {
+        status(422, adminCall('PATCH', $inventoryPath, $body, $s), 'correct ' . json_encode($body));
+    }
+    status(
+        409,
+        adminCall('PATCH', $inventoryPath, ['revision' => $at - 1, 'coins' => 5], $s),
+        'a correction made on an older revision',
+    );
+    $corrected = status(
+        200,
+        adminCall(
+            'PATCH',
+            $inventoryPath,
+            [
+                'revision' => $at,
+                'coins' => 1234,
+                'builderHammers' => 8,
+                'powers' => ['tnt' => 2, 'clear-row' => 1],
+            ],
+            $s,
+        ),
+        'correct coins, bonuses and hammers',
+    );
+    $quantities = array_column($corrected['profile']['powers'], 'quantity', 'id');
+    check(
+        $corrected['town']['revision'] === $at + 1 &&
+            $corrected['profile']['town']['coins'] === 1234 &&
+            $corrected['profile']['builderHammers'] === 8 &&
+            $quantities['tnt'] === 2 &&
+            $quantities['clear-row'] === 1 &&
+            $corrected['profile']['integrity']['status'] === 'baseline' &&
+            $corrected['history'][0]['revision'] === $at,
+        'the correction is a new sealed revision, hammers past the cap included',
+    );
+    $owned = json_decode(
+        callApi('GET', 'towns/' . $syncId, null, $syncPlayer)['response']->getContent(),
+    );
+    check(
+        $owned->adminReset === true && $owned->profile->builderHammers === 8,
+        'the owner game is told to load the correction',
+    );
+    status(
+        200,
+        callApi(
+            'PUT',
+            'towns/' . $syncId,
+            ['baseRevision' => $at + 1, 'uploadId' => uuid(), 'profile' => $owned->profile],
+            $syncPlayer,
+        ),
+        'the game syncs on from the correction, keeping its hammers',
+    );
+
     // Deletion, sign-out and account removal.
     status(
         422,
@@ -1338,6 +1414,7 @@ try {
             'town_sync_forced',
             'town_sync_force_cleared',
             'town_sync_reset',
+            'town_corrected',
             'town_deleted',
             'player_signed_out',
             'player_deleted',
