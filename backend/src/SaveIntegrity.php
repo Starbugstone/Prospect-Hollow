@@ -493,8 +493,8 @@ final class SaveIntegrity
         foreach ($profile['powers'] ?? [] as $power) {
             $powers[$power['id'] === 'hammer' ? 'tnt' : $power['id']] = $power['quantity'];
         }
-        $overflow = max(0, $p['builderHammers'] - $this->rules['rewards']['hammerCapacity']);
-        $p['builderHammers'] = min($p['builderHammers'], $this->rules['rewards']['hammerCapacity']);
+        // The hammer cap limits what play earns, not what a save holds: support can grant more.
+        $overflow = 0;
         $capacity = $this->powerCapacity($p['town']);
         foreach ($powers as &$quantity) {
             $overflow += max(0, $quantity - $capacity);
@@ -1469,6 +1469,12 @@ final class SaveIntegrity
         if ($cost > 0) {
             $sources['maxMultiplier'] = max($sources['maxMultiplier'], $multiplier);
         }
+    }
+    /** How many of each bonus a save's town can store. */
+    public function bonusCapacity(array $state): int
+    {
+        $this->ready();
+        return $this->powerCapacity($state['town']);
     }
     private function powerCapacity(array $town): int
     {
