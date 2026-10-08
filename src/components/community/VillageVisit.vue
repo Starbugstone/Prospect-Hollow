@@ -58,6 +58,7 @@
         @visit="collectSaloon"
         @inspect="inspect"
         @helmet="findHelmet"
+        @helmet-zoom="zoomForHelmet"
       />
       <TownResourceCollection
         v-if="helmetBurst"
@@ -264,6 +265,7 @@ onMounted(() => {
 });
 onBeforeUnmount(() => {
   clearInterval(clock);
+  clearTimeout(zoomTimer);
   poller.stop();
   document.removeEventListener('visibilitychange', resume);
   document.removeEventListener('keydown', leaveFullscreen);
@@ -293,8 +295,11 @@ const homeTown = ref(null),
   townHelmetReadyAt = ref((props.village.helmetReadyAt ?? 0) * 1000),
   helmetBusy = ref(false),
   helmetNote = ref(null),
-  helmetBurst = ref(null);
-let burstSerial = 0;
+  helmetBurst = ref(null),
+  // An animal tapped from too far away asks to zoom in for a moment.
+  helmetZoom = ref(false);
+let burstSerial = 0,
+  zoomTimer = 0;
 // The coins a find brings the town visited as, counted from its copy in this browser; that
 // town redeems it later from its own takings. Null when this browser holds no copy.
 function helmetCoins(townId) {
@@ -304,6 +309,7 @@ function helmetCoins(townId) {
 const hasHelmet = computed(() => spaceHelmetOut(town.value));
 const helmetMessage = computed(() => {
   if (!hasHelmet.value) return '';
+  if (helmetZoom.value) return t('Zoom in closer to the animals to find the astronaut.');
   const note = helmetNote.value;
   if (note?.kind === 'found')
     return t('You found the astronaut! {town} receives half an hour of its saloon takings.', {
@@ -326,7 +332,14 @@ const helmetMessage = computed(() => {
     'Find the animal in a space helmet: your own town earns half an hour of saloon takings.',
   );
 });
+function zoomForHelmet() {
+  helmetZoom.value = true;
+  clearTimeout(zoomTimer);
+  zoomTimer = setTimeout(() => (helmetZoom.value = false), 6000);
+}
 async function findHelmet(origin) {
+  helmetZoom.value = false;
+  clearTimeout(zoomTimer);
   now.value = Date.now();
   if (helmetBusy.value) return;
   if (homeTown.value?.own) {

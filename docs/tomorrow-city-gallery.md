@@ -125,13 +125,21 @@ but a wild wearer stays out for as long as it has the helmet, so the helmet is a
 ### Finding the astronaut
 
 The space animal is the town's Where's Wally, and finding it pays. Tapping the wearer in your
-own town (`spaceHelmetAt()` in `TownSpaceHelmet.js` hit-tests it before people and plots)
+own town (`spaceHelmetTap()` in `TownSpaceHelmet.js` hit-tests it before people and plots)
 earns an hour of the saloon's takings (`spaceHelmetReward()`), once per completed puzzle:
 `town.helmetRun` keeps the completed-puzzle count whose wearer was found, so the next reward
 comes after the next puzzle moves the helmet. The coins fly from the animal like a saloon
 collection; tapping it again says it moves after your next puzzle. The find is the journaled
 `helmet-find` action, and the server's replay pays the same amount from its own copy of the
 town.
+
+It has to be found up close. The wearer only counts once a world unit spans at least
+`HELMET_FIND_SCALE` (40) screen pixels where it stands, about the zoom of a few streets
+around the town square on a laptop. Farther out every animal is a speck, and tapping across
+the town would hit the wearer by chance, so a tap on any animal's body, wearer or not, says
+to zoom in closer and nothing tells the wearer apart. The scale is measured in pixels at the
+animal, so every screen size needs an equally visible animal, and an animal at the back of a
+tilted view needs a closer look than one in front.
 
 Signed-in visitors can find it in shared Tomorrow City towns too. Their reward goes to the
 town they visit as and is worth half an hour of that town's own saloon takings, so visiting richer

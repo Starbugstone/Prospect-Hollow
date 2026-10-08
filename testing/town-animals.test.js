@@ -1,4 +1,4 @@
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { Group, MeshBasicMaterial, PerspectiveCamera, Scene, Vector3 } from 'three';
 import { TownActors } from '../src/game/town/TownActors';
 import { updateTownLocomotion } from '../src/game/town/TownLocomotion';
@@ -7,7 +7,8 @@ import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { addTownAnimals, animalHabitats, animalKey } from '../src/game/town/TownAnimals';
 import {
   dressSpaceHelmet,
-  spaceHelmetAt,
+  HELMET_FIND_SCALE,
+  spaceHelmetTap,
   spaceHelmetWearer,
 } from '../src/game/town/TownSpaceHelmet';
 import { addPowerGrid, addEraStreetscape } from '../src/game/town/TownEvolution';
@@ -778,31 +779,97 @@ it('finds the space-helmet wearer where it stands on the map', () => {
   wearer.root.scale.setScalar(1);
   wearer.root.position.set(2, 0, 3);
   d.camera = new PerspectiveCamera(40, 2, 0.1, 400);
-  d.camera.position.set(2, 8, 15);
+  d.camera.position.set(2, 6, 11);
   d.camera.lookAt(2, 0, 3);
   d.camera.updateMatrixWorld();
   // The camera looks at the wearer's feet, in the middle of this canvas.
   d.canvas = { getBoundingClientRect: () => ({ left: 100, top: 50, width: 800, height: 400 }) };
-  const hit = spaceHelmetAt(d, 500, 245);
+  const hit = spaceHelmetTap(d, 500, 245);
   expect(hit.x).toBeCloseTo(50, 5);
   expect(hit.y).toBeLessThan(50);
-  expect(spaceHelmetAt(d, 500, 250)).toEqual(hit);
-  expect(spaceHelmetAt(d, 700, 250)).toBeNull();
+  expect(spaceHelmetTap(d, 500, 250)).toEqual(hit);
+  expect(spaceHelmetTap(d, 700, 250)).toBeNull();
   // Nobody else wears the helmet, so no other animal can be found.
   wearer.root.position.set(40, 0, 3);
-  expect(spaceHelmetAt(d, 500, 250)).toBeNull();
+  expect(spaceHelmetTap(d, 500, 250)).toBeNull();
   wearer.root.position.set(2, 0, 3);
   // Not while it changes outfits, nor while a wild wearer is away.
   wearer.dressing = { costume: null, start: null, swapped: false };
-  expect(spaceHelmetAt(d, 500, 250)).toBeNull();
+  expect(spaceHelmetTap(d, 500, 250)).toBeNull();
   wearer.dressing = null;
   wearer.root.visible = false;
-  expect(spaceHelmetAt(d, 500, 250)).toBeNull();
+  expect(spaceHelmetTap(d, 500, 250)).toBeNull();
   // A town without a helmet has nothing to find.
   dressSpaceHelmet(d, { ...d.town, era: 'contemporary' });
   wearer.root.visible = true;
   expect(helmeted(d)).toEqual([]);
-  expect(spaceHelmetAt(d, 500, 250)).toBeNull();
+  expect(spaceHelmetTap(d, 500, 250)).toBeNull();
+});
+
+// Zoomed out, every animal is a speck: a tap on any of them asks to zoom in, the same
+// for the wearer as for the others, so scanning taps cannot find it by chance.
+it('only finds the space-helmet wearer close enough to see it', () => {
+  const d = fixture('tomorrow');
+  Object.assign(d, { rebuildActors() {}, render() {} });
+  d.town.completedRuns = 5;
+  addTownAnimals(d, d.town);
+  const [wearer] = helmeted(d);
+  const other = d.animals.find((a) => a !== wearer && !a.companion && !a.wild);
+  for (const animal of [wearer, other]) {
+    animal.root.visible = true;
+    animal.root.scale.setScalar(1);
+    animal.root.position.set(40, 0, 40);
+  }
+  d.camera = new PerspectiveCamera(40, 2, 0.1, 400);
+  const rect = { left: 100, top: 50, width: 800, height: 400 };
+  d.canvas = { getBoundingClientRect: () => rect };
+  // Looks at (2, 0, 3) from this many units away, from the same angle each time.
+  const look = (distance) => {
+    const way = new Vector3(0, 6, 8).normalize().multiplyScalar(distance);
+    d.camera.position.set(2 + way.x, way.y, 3 + way.z);
+    d.camera.lookAt(2, 0, 3);
+    d.camera.updateMatrixWorld();
+  };
+  // Where a world unit spans HELMET_FIND_SCALE pixels in the middle of the canvas.
+  const edge = rect.height / 2 / Math.tan((d.camera.fov * Math.PI) / 360) / HELMET_FIND_SCALE,
+    near = edge * 0.95,
+    far = edge * 1.05;
+  for (const animal of [wearer, other]) animal.root.position.set(2, 0, 3);
+  for (const animal of [wearer, other]) {
+    for (const each of [wearer, other]) each.root.visible = each === animal;
+    look(near);
+    const close = spaceHelmetTap(d, 500, 248);
+    if (animal === wearer) expect(close).toMatchObject({ x: expect.any(Number) });
+    // Close up, another animal is left to people and buildings as before.
+    else expect(close).toBeNull();
+    look(far);
+    expect(spaceHelmetTap(d, 500, 248), animal.species).toEqual({ zoom: true });
+    // Far out only a tap on the body asks, so buildings beside an animal still open.
+    expect(spaceHelmetTap(d, 535, 235)).toBeNull();
+    look(60);
+    expect(spaceHelmetTap(d, 500, 249)).toEqual({ zoom: true });
+  }
+  // The pick hands each answer to its own callback before people and plots.
+  const found = vi.fn(),
+    zoom = vi.fn();
+  Object.assign(d, { onHelmet: found, onHelmetZoom: zoom });
+  wearer.root.visible = true;
+  look(far);
+  d.pick(500, 248);
+  expect([found.mock.calls.length, zoom.mock.calls.length]).toEqual([0, 1]);
+  look(near);
+  d.pick(500, 248);
+  expect(found).toHaveBeenCalledWith(expect.objectContaining({ x: expect.any(Number) }));
+  expect(zoom).toHaveBeenCalledTimes(1);
+  // Willowkin are not animals, and towns before the helmet ask nothing.
+  wearer.root.visible = false;
+  look(far);
+  other.companion = true;
+  expect(spaceHelmetTap(d, 500, 248)).toBeNull();
+  delete other.companion;
+  expect(spaceHelmetTap(d, 500, 248)).toEqual({ zoom: true });
+  d.helmetTown = { ...d.town, era: 'contemporary' };
+  expect(spaceHelmetTap(d, 500, 248)).toBeNull();
 });
 
 it('brings a wild wearer out for a visitor and lets it go back to its visits', () => {

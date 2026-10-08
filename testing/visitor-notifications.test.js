@@ -190,6 +190,34 @@ it('announces and credits a collection once across live polls and cached account
   expect(visitors.notice.value).toBeNull();
 });
 
+// Every tap on a far-off animal asks to zoom in; the hint waits once, not once per tap.
+it('queues a repeated tap hint once while it waits', async () => {
+  await vi.advanceTimersByTimeAsync(0);
+  visitors.enqueue([{ kind: 'helmet-zoom' }]);
+  visitors.enqueue([{ kind: 'helmet-zoom' }]);
+  expect(visitors.notice.value).toEqual({ kind: 'helmet-zoom' });
+  visitors.dismissNotice();
+  expect(visitors.notice.value).toBeNull();
+  visitors.enqueue([{ kind: 'helmet-zoom' }]);
+  expect(visitors.notice.value).toEqual({ kind: 'helmet-zoom' });
+  // Notices with their own details still queue each time.
+  visitors.enqueue([{ kind: 'collection', coins: 120 }]);
+  visitors.enqueue([{ kind: 'collection', coins: 120 }]);
+  visitors.dismissNotice();
+  visitors.dismissNotice();
+  expect(visitors.notice.value).toEqual({ kind: 'collection', coins: 120 });
+  for (const [language, text] of [
+    ['en', 'Zoom in closer to the animals to find the astronaut.'],
+    ['fr', 'Zoomez plus près des animaux pour trouver l’astronaute.'],
+  ]) {
+    setLocale(language);
+    const html = await renderToString(
+      createSSRApp(TownVisitorNotice, { notice: { kind: 'helmet-zoom' } }),
+    );
+    expect(html).toContain(text);
+  }
+});
+
 it('renders a collection notification in French', async () => {
   setLocale('fr');
   const html = await renderToString(

@@ -62,7 +62,7 @@ import { TownEraIncident } from './TownEraIncident';
 import { eventKind } from '../../data/townEvents';
 import { plotUnlocked } from './TownRules';
 import { PERSONAL_AREAS, areaUnlocked } from '../../data/townLandmarks';
-import { spaceHelmetAt } from './TownSpaceHelmet';
+import { spaceHelmetTap } from './TownSpaceHelmet';
 import { buildLandscape, keepCameraAboveTerrain } from './TownLandscape';
 
 import { PLOTS } from './TownLayout';
@@ -77,7 +77,7 @@ const skyDirection = new THREE.Vector3(),
 export class TownDiorama extends TownPrimitives {
   // `options` holds the owner's callbacks (onSelect, onLabels, onCameraDistance,
   // onUnavailable, onVillagerLabel, onEventInset, onVipSpend, onGuestVip, onHelmet,
-  // onFirstFrame)
+  // onHelmetZoom, onFirstFrame)
   // and `vipsHidden` for a read-only shared town.
   constructor(canvas, options = {}) {
     super();
@@ -410,10 +410,12 @@ export class TownDiorama extends TownPrimitives {
     this.render();
   }
   pick(clientX, clientY) {
-    // The space-helmet wearer is small and easily covered, so it wins over people and plots.
-    const helmet = spaceHelmetAt(this, clientX, clientY);
+    // Animals are small and easily covered, so a tap for the space-helmet game wins over
+    // people and plots: it finds the wearer, or asks to zoom in to look for it.
+    const helmet = spaceHelmetTap(this, clientX, clientY);
     if (helmet) {
-      this.onHelmet?.(helmet);
+      if (helmet.zoom) this.onHelmetZoom?.();
+      else this.onHelmet?.(helmet);
       return;
     }
     if (this.showVillager(clientX, clientY, true)) return;

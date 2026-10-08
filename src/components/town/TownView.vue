@@ -129,6 +129,7 @@
           @vip-spend="collectVipSpending"
           @guest-vip="campaign.markGuestSeen"
           @helmet="findHelmet"
+          @helmet-zoom="zoomForHelmet"
         />
         <TownResourceCollection
           v-if="collection"
@@ -1238,6 +1239,10 @@ function findHelmet(origin) {
     serial: ++collectionSerial,
     origin,
   };
+}
+// An animal tapped from far away: the wearer is only found close enough to see it.
+function zoomForHelmet() {
+  if (!campaign.readOnly) enqueueVisitorNotice([{ kind: 'helmet-zoom' }]);
 }
 function collectIncome() {
   collectionNow.value = Date.now();

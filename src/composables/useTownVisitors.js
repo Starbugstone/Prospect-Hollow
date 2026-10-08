@@ -24,6 +24,11 @@ export function useTownVisitors(
   });
   let poller, noticeTimer;
   function enqueue(changes) {
+    // A tap hint that is still waiting to be read is not queued again for every tap.
+    changes = changes.filter(
+      (change) =>
+        Object.keys(change).length > 1 || !notices.value.some((n) => n.kind === change.kind),
+    );
     if (!changes.length) return;
     const wasEmpty = notices.value.length === 0;
     notices.value = [...notices.value, ...changes];

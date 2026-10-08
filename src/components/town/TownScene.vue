@@ -370,6 +370,8 @@ const emit = defineEmits([
   'guest-vip',
   // The space-helmet wearer was tapped, with its position on the map in percent.
   'helmet',
+  // An animal was tapped from too far away to tell whether it wears the helmet.
+  'helmet-zoom',
   'presentation-ready',
   'presentation-unavailable',
   'cinematic-ready',
@@ -740,6 +742,7 @@ async function initialize() {
       onVipSpend: (receipt) => emit('vip-spend', receipt),
       onGuestVip: (at) => emit('guest-vip', at),
       onHelmet: (origin) => emit('helmet', origin),
+      onHelmetZoom: () => emit('helmet-zoom'),
       onVillagerLabel: showVillagerLabel,
       onPlaqueLabel: showPlaqueLabel,
       onEventInset: (view) => {

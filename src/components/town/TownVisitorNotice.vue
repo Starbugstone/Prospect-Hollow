@@ -40,6 +40,8 @@ const message = computed(() => {
       );
     case 'helmet-empty':
       return t('You found the astronaut! Its reward is an hour of your saloon takings.');
+    case 'helmet-zoom':
+      return t('Zoom in closer to the animals to find the astronaut.');
     case 'unavailable':
       return t(
         'This visitor is no longer visible. Check the guestbook for the latest visit details.',

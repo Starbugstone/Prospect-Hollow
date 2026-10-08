@@ -63,18 +63,19 @@ export function helmetStay(animal, dt) {
   return smooth01(animal.helmetStay);
 }
 
+// Screen pixels a world unit must span at an animal before its helmet can be found.
+// Farther out every animal is a speck, so tapping across the town would find the
+// wearer by chance; there, a tap on any animal asks the player to zoom in instead.
+export const HELMET_FIND_SCALE = 40;
+
 const feet = new Vector3(),
-  head = new Vector3();
-/**
- * Where the helmet wearer is on the canvas, in percent, when a click lands on it; else
- * null. Animals are small and keep moving, so the hit area reaches past the body. An
- * animal still changing outfits or hidden on its wild visits cannot be found.
- */
-export function spaceHelmetAt(d, clientX, clientY) {
-  const animal = d.animals?.find((a) => a.costume === COSTUME && !a.dressing);
-  const root = animal?.root;
+  head = new Vector3(),
+  view = new Vector3();
+// An animal's middle on the screen and how far the tap is from it, or null when
+// hidden or off screen. `scale` is the pixels per world unit at its feet.
+function animalOnScreen(d, animal, rect, clientX, clientY) {
+  const root = animal.root;
   if (!root?.visible || root.scale.x < 0.5) return null;
-  const rect = d.canvas.getBoundingClientRect();
   const toScreen = (p) => [
     rect.left + ((p.x + 1) * rect.width) / 2,
     rect.top + ((1 - p.y) * rect.height) / 2,
@@ -88,12 +89,45 @@ export function spaceHelmetAt(d, clientX, clientY) {
     [hx, hy] = toScreen(head);
   const x = (fx + hx) / 2,
     y = (fy + hy) / 2,
-    reach = Math.max(28, Math.hypot(hx - fx, hy - fy) / 2 + 14);
-  if (Math.hypot(clientX - x, clientY - y) > reach) return null;
+    depth = -view.copy(root.position).applyMatrix4(d.camera.matrixWorldInverse).z;
   return {
-    x: ((x - rect.left) / rect.width) * 100,
-    y: ((y - rect.top) / rect.height) * 100,
+    x,
+    y,
+    size: Math.hypot(hx - fx, hy - fy),
+    gap: Math.hypot(clientX - x, clientY - y),
+    scale: (rect.height / 2) * (d.camera.projectionMatrix.elements[5] / depth),
   };
+}
+
+/**
+ * What a click means for the space-helmet game, or null when it is not for it. Close
+ * enough (`HELMET_FIND_SCALE`), a click on the wearer finds it and gives its place on
+ * the canvas in percent; the hit area reaches past the body because animals are small
+ * and keep moving. Farther out, a click on any animal, wearer or not, gives
+ * `{ zoom: true }`, so scanning taps cannot tell the wearer apart. An animal changing
+ * outfits or hidden on its wild visits cannot be found, and Willowkin are not animals.
+ */
+export function spaceHelmetTap(d, clientX, clientY) {
+  if (!spaceHelmetOut(d.helmetTown ?? d.town)) return null;
+  const rect = d.canvas.getBoundingClientRect();
+  let far = false;
+  for (const animal of d.animals ?? []) {
+    if (animal.companion) continue;
+    const spot = animalOnScreen(d, animal, rect, clientX, clientY);
+    if (!spot) continue;
+    if (spot.scale < HELMET_FIND_SCALE) {
+      // Only the body counts here, so taps on nearby buildings still open them.
+      far ||= spot.gap <= Math.max(12, spot.size / 2 + 6);
+      continue;
+    }
+    if (animal.costume !== COSTUME || animal.dressing) continue;
+    if (spot.gap <= Math.max(28, spot.size / 2 + 14))
+      return {
+        x: ((spot.x - rect.left) / rect.width) * 100,
+        y: ((spot.y - rect.top) / rect.height) * 100,
+      };
+  }
+  return far ? { zoom: true } : null;
 }
 
 // Rebuilds one animal's model with or without the costume, in place on its walk.
