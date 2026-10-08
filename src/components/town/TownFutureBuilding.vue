@@ -18,14 +18,19 @@
       <path d="M-155-15H155M-155 28H155" :stroke="p.deep" stroke-width="4" />
     </template>
     <template v-else-if="form === 'airport'">
-      <TownCityBuilding :kind="kind" :era="era" :level="level" :service-level="3" />
+      <TownCityBuilding
+        :kind="kind"
+        :era="era"
+        :level="stages.structureLevel"
+        :service-level="serviceLevel"
+      />
     </template>
 
     <!-- Landmark extras drawn behind the buildings. -->
     <template v-if="form === 'spaceElevator'">
       <path d="M0-60V-330" :stroke="p.glass" stroke-width="4" />
       <ellipse
-        v-if="level >= 3"
+        v-if="stages.structureLevel >= 3"
         cy="-250"
         rx="62"
         ry="12"
@@ -54,7 +59,9 @@
     <template v-if="form === 'skyHarbour'">
       <path d="M-78-40v-150" :stroke="p.timber" stroke-width="10" />
       <g :transform="`translate(20 ${-170})`"><Airship :p="p" /></g>
-      <g v-if="level >= 2" transform="translate(-10 -230) scale(0.6)"><Airship :p="p" /></g>
+      <g v-if="stages.structureLevel >= 2" transform="translate(-10 -230) scale(0.6)"
+        ><Airship :p="p"
+      /></g>
     </template>
     <template v-if="form === 'cloudOrchard'">
       <g v-for="([x, y], n) in islands" :key="n">
@@ -78,7 +85,7 @@
       <g v-if="level >= 2">
         <circle v-for="x in [-50, 0, 50]" :key="x" :cx="x" cy="-6" r="6" :fill="p.light" />
       </g>
-      <g v-for="x in level >= 3 ? [-80, 80, 0] : [-80, 80]" :key="x">
+      <g v-for="x in stages.structureLevel >= 3 ? [-80, 80, 0] : [-80, 80]" :key="x">
         <rect :x="x - 11" y="-150" width="22" height="150" :fill="p.glass" />
         <Cap :style-id="style" :p="p" :x="x" :y="-150" :r="16" />
       </g>
@@ -128,6 +135,13 @@
       <path d="M-30-116 6-106-30-96Z" :fill="p.light" />
     </template>
     <Crown v-if="parts.crown" :style-id="style" :p="p" v-bind="parts.crown" :variant="tone" />
+    <g v-if="gardenLandmark && level >= 2">
+      <g v-for="x in [-92, 92]" :key="x">
+        <rect :x="x - 10" y="-9" width="20" height="12" :fill="p.timber" />
+        <circle :cx="x" cy="-14" r="10" :fill="p.green" />
+        <circle :cx="x" cy="-21" r="4" :fill="p.flower" />
+      </g>
+    </g>
     <Prop v-for="x in parts.props" :key="`p${x}`" :style-id="style" :p="p" :x="x" />
     <path
       v-if="form === 'spaceElevator'"
@@ -139,18 +153,33 @@
 </template>
 <script setup>
 import { computed, h } from 'vue';
-import { futureAppearance, futureForm, FUTURE_LANDMARKS } from '../../data/futureArchitecture';
+import {
+  futureAppearance,
+  futureForm,
+  FUTURE_LANDMARKS,
+  futureBuildingStages,
+} from '../../data/futureArchitecture';
 import { cityAppearance } from '../../data/cityAppearance';
+import { COZY_LANDMARKS } from '../../data/cozyArchitecture';
 import TownCityBuilding from './TownCityBuilding.vue';
 import TownLeisureBuilding from './TownLeisureBuilding.vue';
 import TownSquare from './TownSquare.vue';
 
-const props = defineProps({ kind: String, era: String, level: Number });
+const props = defineProps({
+  kind: String,
+  era: String,
+  level: Number,
+  serviceLevel: { type: Number, default: 3 },
+});
+const stages = computed(() =>
+  futureBuildingStages(props.kind, props.era, props.level, props.serviceLevel),
+);
 const appearance = computed(() => futureAppearance(props.era));
 const style = computed(() => appearance.value.style);
 const p = computed(() => appearance.value.palette);
 const form = computed(() => futureForm(props.kind) ?? props.kind);
 const landmark = computed(() => !!FUTURE_LANDMARKS[props.kind]);
+const gardenLandmark = computed(() => !!COZY_LANDMARKS[props.kind]);
 // The same stable choice the 3D sail kit makes for its cloth and crown.
 const tone = computed(() =>
   [...(props.kind ?? '')].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7),
@@ -160,9 +189,11 @@ const islands = computed(() =>
     [40, -130],
     [-40, -165],
     [86, -180],
-  ].slice(0, props.level >= 3 ? 3 : props.level >= 2 ? 2 : 1),
+  ].slice(0, stages.value.structureLevel),
 );
-const climbers = computed(() => [-170, -230, -290].slice(0, Math.max(1, props.level)));
+const climbers = computed(() =>
+  [-170, -230, -290].slice(0, Math.max(1, stages.value.structureLevel)),
+);
 
 // Front-view massing for each archetype: rectangular blocks, round towers, the
 // level-three crown and the street props. Units follow the cozy drawings.
@@ -171,8 +202,37 @@ const tower = (x, r, h, extra = {}) => ({ x, r, h, door: false, ...extra });
 const parts = computed(() => {
   const { identity, height = 3 } = cityAppearance(props.era, props.kind);
   const level = props.level;
+  const structureLevel = stages.value.structureLevel;
   const result = { blocks: [], towers: [], crown: null, props: [] };
   switch (form.value) {
+    case 'teahouse':
+      result.blocks.push(block(0, 190, 100));
+      break;
+    case 'atelier':
+      result.blocks.push(
+        block(-90, 76, 88, { door: false, accent: true }),
+        block(90, 76, 88, { door: false, accent: true }),
+        block(0, 92, 116),
+      );
+      break;
+    case 'orchard':
+      result.blocks.push(
+        block(0, 78, 116),
+        block(-84, 72, 94, { accent: true }),
+        block(84, 72, 94, { accent: true }),
+      );
+      break;
+    case 'glassworks':
+      result.blocks.push(block(-30, 126, 108), block(82, 72, 84, { accent: true }));
+      result.towers.push(tower(-72, 15, 174));
+      break;
+    case 'springs':
+      result.blocks.push(block(90, 70, 116), block(-102, 50, 76, { accent: true }));
+      result.towers.push(tower(-18, 68, 36), tower(-14, 48, 78));
+      break;
+    case 'pavilion':
+      result.blocks.push(block(0, 230, 108));
+      break;
     case 'homes':
       if (['row', 'court'].includes(identity))
         result.blocks.push(
@@ -243,45 +303,51 @@ const parts = computed(() => {
       break;
     case 'windsongLofts':
       result.blocks.push(block(-66, 56, 110), block(4, 56, 140, { accent: true }));
-      if (level >= 2) result.blocks.push(block(72, 56, 90));
+      if (structureLevel >= 2) result.blocks.push(block(72, 56, 90));
       break;
     case 'greatTelescope':
       result.towers.push(tower(0, 80, 90, { door: true }));
-      if (level >= 2) result.blocks.push(block(-104, 56, 62, { door: false }));
+      if (structureLevel >= 2) result.blocks.push(block(-104, 56, 62, { door: false }));
       break;
     case 'dewlightGardens':
       result.blocks.push(block(96, 44, 52));
       break;
     case 'starlightTerraces':
       result.blocks.push(block(-66, 58, 82), block(0, 58, 118));
-      if (level >= 2) result.blocks.push(block(66, 58, 82));
+      if (structureLevel >= 2) result.blocks.push(block(66, 58, 82));
       break;
     case 'moonpost':
       result.blocks.push(block(0, 122, 90));
-      if (level >= 2) result.blocks.push(block(-88, 48, 52, { door: false }));
-      if (level >= 3) result.towers.push(tower(-50, 15, 150));
+      if (structureLevel >= 2) result.blocks.push(block(-88, 48, 52, { door: false }));
+      if (structureLevel >= 3) result.towers.push(tower(-50, 15, 150));
       break;
     case 'missionHomesteads':
       result.blocks.push(block(-66, 60, 78), block(10, 60, 90));
-      if (level >= 2) result.blocks.push(block(82, 60, 74));
+      if (structureLevel >= 2) result.blocks.push(block(82, 60, 74));
       break;
     case 'homecomingHall':
       result.blocks.push(block(0, 140, 90));
-      if (level >= 2) result.blocks.unshift(block(-104, 44, 56, { door: false, accent: true }));
+      if (structureLevel >= 2)
+        result.blocks.unshift(block(-104, 44, 56, { door: false, accent: true }));
       break;
     case 'spaceElevator':
       result.blocks.push(block(-92, 60, 62, { door: true }), block(92, 60, 62, { door: false }));
       break;
   }
   if (!landmark.value && !['square', 'garden', 'bridge', 'airport'].includes(form.value)) {
-    if (level >= 2) result.blocks.unshift(block(-104, 40, 52, { door: false, accent: true }));
+    if (structureLevel >= 2)
+      result.blocks.unshift(block(-104, 40, 52, { door: false, accent: true }));
+    if (stages.value.modernizing && level === 2) result.props = [-92];
     if (level >= 3) {
       const main = result.blocks.at(-1) ?? result.towers[0];
       const top = main ? (main.h ?? 0) + (main.w ? main.w * 0.32 : main.r) : 90;
-      result.crown = { x: main?.x ?? 0, y: -top };
+      result.crown = { x: main?.x ?? 0, y: -top, baseY: -(main?.h ?? 70) };
       result.props = [-92, 92];
     }
   } else if (landmark.value && level >= 3) result.props = [-118, 118];
+  if (landmark.value && !gardenLandmark.value && stages.value.modernizing && level === 2)
+    result.props = [-118];
+  if (form.value === 'airport') result.props = level >= 3 ? [-118, 118] : level >= 2 ? [-118] : [];
   return result;
 });
 const kind = () => props.kind;
@@ -378,7 +444,7 @@ const Roof = ({ styleId: s, p, x, w, top, accent, tone }) => {
         'stroke-width': 1.5,
       }),
       h('path', {
-        d: `M${x - w / 2 - 12} ${top}v-62M${x + w / 2 + 12} ${top}v-44`,
+        d: `M${x - w / 2 - 12} 0V${top - 62}M${x + w / 2 + 12} 0V${top - 44}`,
         stroke: p.timber,
         'stroke-width': 3,
       }),
@@ -511,7 +577,7 @@ const Airship = ({ p }) =>
     h('path', { d: 'M-62 0l-14-14v28Z', fill: p.deep }),
     h('rect', { x: -14, y: 24, width: 30, height: 10, rx: 3, fill: p.timber }),
   ]);
-const Crown = ({ styleId: s, p, x, y, variant }) => {
+const Crown = ({ styleId: s, p, x, y, baseY = y + 40, variant }) => {
   if (s === 'sail')
     return variant % 5 > 1
       ? h('g', [
@@ -548,9 +614,21 @@ const Crown = ({ styleId: s, p, x, y, variant }) => {
       }),
       h('circle', { cx: x + 44, cy: y + 2, r: 4, fill: p.light }),
     ]);
+  if (s === 'twin')
+    return h('g', [
+      h('path', {
+        d: `M${x - 28} ${baseY}L${x - 16} ${y - 28}H${x + 16}L${x + 28} ${baseY}M${x - 9} ${y - 28}v-10M${x + 9} ${y - 28}v-10`,
+        fill: 'none',
+        stroke: p.deep,
+        'stroke-width': 3,
+      }),
+      h('circle', { cx: x - 9, cy: y - 38, r: 8, fill: p.flower }),
+      h('circle', { cx: x + 9, cy: y - 38, r: 6, fill: p.shell }),
+    ]);
   return h('g', [
-    h('path', { d: `M${x + 20} ${y + 6}v-40`, stroke: p.deep, 'stroke-width': 2.5 }),
+    h('path', { d: `M${x + 20} ${baseY}V${y - 34}`, stroke: p.deep, 'stroke-width': 2.5 }),
     h('circle', { cx: x + 20, cy: y - 36, r: 5, fill: p.light }),
+    h('path', { d: `M${x - 14} ${baseY}V${y - 3}`, stroke: p.deep, 'stroke-width': 2.5 }),
     h('path', {
       d: `M${x - 26} ${y - 6}a12 6 0 0 0 24 0`,
       fill: p.shell,
@@ -591,6 +669,6 @@ Cap.props = ['styleId', 'p', 'x', 'y', 'r', 'accent', 'tone'];
 Door.props = ['styleId', 'p', 'x'];
 Island.props = ['p', 'x', 'y'];
 Airship.props = ['p'];
-Crown.props = ['styleId', 'p', 'x', 'y', 'variant'];
+Crown.props = ['styleId', 'p', 'x', 'y', 'baseY', 'variant'];
 Prop.props = ['styleId', 'p', 'x'];
 </script>

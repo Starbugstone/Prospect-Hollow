@@ -10,6 +10,14 @@
         <h1>{{ town.name }} <TownState :town="town" /> <SyncBlocked :town="town" /></h1>
         <p class="admin-muted">Town {{ town.id }} · revision {{ town.revision }}</p>
       </header>
+      <div v-if="risk.stale" class="admin-warning" role="alert">
+        <p>
+          The player’s game saved revision {{ status.revision }}
+          {{ relativeTime(status.savedAt, now) }}. This page still shows revision
+          {{ town.revision }}.
+        </p>
+        <button type="button" class="admin-button" @click="load()">Load the latest save</button>
+      </div>
       <div class="admin-town-layout">
         <TownPreview
           v-if="data.appearance"
@@ -22,10 +30,13 @@
             <dt>Era</dt>
             <dd>{{ eraLabel(stats.era) }}</dd>
           </div>
-          <div>
-            <dt>Coins</dt>
-            <dd>{{ whole(stats.coins) }}</dd>
-          </div>
+          <EditableFact
+            label="Coins"
+            :value="fieldFor('coins')?.current ?? stats.coins"
+            :field="fieldFor('coins')"
+            :before-edit="beforeEdit"
+            :save="correct"
+          />
           <div>
             <dt>Buildings built</dt>
             <dd>{{ stats.buildings }}</dd>
@@ -153,7 +164,25 @@
           </div>
           <div>
             <h2>Inventory</h2>
-            <dl class="admin-facts admin-facts-column">
+            <template v-if="editable">
+              <p class="admin-muted">
+                ✎ corrects a value after a bug. Each fix saves a new revision, with the previous one
+                kept in the cloud history; the player’s game loads it on its next sync. Builder
+                hammers may go past the cap that play earns up to.
+              </p>
+              <dl class="admin-facts admin-facts-column">
+                <EditableFact
+                  v-for="field in inventoryFacts"
+                  :key="field.key"
+                  :label="field.label"
+                  :value="field.current"
+                  :field="field"
+                  :before-edit="beforeEdit"
+                  :save="correct"
+                />
+              </dl>
+            </template>
+            <dl v-else class="admin-facts admin-facts-column">
               <div v-for="power in powers" :key="power.id">
                 <dt>{{ power.label }}</dt>
                 <dd>{{ power.quantity }}</dd>
@@ -173,26 +202,6 @@
             </template>
           </div>
         </div>
-
-        <template v-if="data.inventory && !town.deletedAt">
-          <h2>Correct coins and inventory</h2>
-          <p class="admin-muted">
-            Put right what a bug took or gave. The corrected save becomes a new revision, and the
-            current one stays in the cloud history. Bonuses fit this town’s storage; builder hammers
-            may go past the cap that play earns up to.
-          </p>
-          <InventoryCorrection
-            :key="town.revision"
-            :town-id="town.id"
-            :revision="town.revision"
-            :saved-at="town.savedAt"
-            :owner-seen-at="town.ownerSeenAt"
-            :inventory="data.inventory"
-            @saved="afterCorrection"
-            @reload="load()"
-          />
-          <p v-if="inventoryNotice" class="admin-notice" role="status">{{ inventoryNotice }}</p>
-        </template>
 
         <h2>Cloud sync <SyncBlocked :town="town" /></h2>
         <p class="admin-muted">
@@ -340,11 +349,12 @@
           <pre>{{ JSON.stringify(profile, null, 2) }}</pre>
         </details>
       </div>
+      <OnlineWarning ref="warning" :seen-at="status?.ownerSeenAt ?? town.ownerSeenAt" />
     </template>
   </section>
 </template>
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { adminApi } from '../api';
 import { go, shownEmail } from '../state';
 import { codeLabel, dateTime, isOnline, relativeTime, whole } from '../format';
@@ -357,7 +367,9 @@ import TownHonours from '../components/TownHonours.vue';
 import SyncBlocked from '../components/SyncBlocked.vue';
 import SyncCompare from '../components/SyncCompare.vue';
 import ForceSyncToggle from '../components/ForceSyncToggle.vue';
-import InventoryCorrection from '../components/InventoryCorrection.vue';
+import EditableFact from '../components/EditableFact.vue';
+import OnlineWarning from '../components/OnlineWarning.vue';
+import { correctionBody, editingRisk, inventoryFields, STATUS_POLL_MS } from '../inventory';
 const tabs = [
   { id: 'overview', label: 'Overview' },
   { id: 'achievements', label: 'Achievements' },
@@ -381,8 +393,7 @@ const data = ref(null),
   name = ref(''),
   busy = ref(false),
   comparing = ref(''),
-  syncNotice = ref(''),
-  inventoryNotice = ref('');
+  syncNotice = ref('');
 const town = computed(() => data.value.town);
 const stats = computed(() => data.value.town.stats);
 const profile = computed(() => data.value.profile ?? {});
@@ -439,6 +450,7 @@ async function load(result) {
   try {
     data.value = result ?? (await adminApi('GET', `towns/${props.id}`));
     name.value = data.value.town.name;
+    status.value = null;
   } catch (e) {
     error.value = e.message;
   }
@@ -472,9 +484,57 @@ async function afterReset(result) {
   await load(result);
   syncNotice.value = `Saved as revision ${town.value.revision}. The owner’s game loads it on its next sync.`;
 }
-async function afterCorrection(result) {
-  await load(result);
-  inventoryNotice.value = `Saved as revision ${town.value.revision}. The owner’s game loads it on its next sync.`;
+// Quick fixes after a bug: coins, stored bonuses and builder hammers, one value at a time.
+const editable = computed(() =>
+  data.value.inventory && !town.value.deletedAt ? inventoryFields(data.value.inventory) : null,
+);
+const fieldFor = (key) => editable.value?.find((field) => field.key === key) ?? null;
+const inventoryFacts = computed(() => editable.value?.filter((field) => field.key !== 'coins'));
+// Polled while the page is open, so a sync from the player's game shows up during an edit.
+const status = ref(null),
+  now = ref(Date.now() / 1000);
+const risk = computed(() =>
+  editingRisk(town.value.revision, status.value ?? town.value, now.value),
+);
+async function poll() {
+  now.value = Date.now() / 1000;
+  if (document.hidden || !data.value) return;
+  try {
+    status.value = await adminApi('GET', `towns/${props.id}/status`);
+  } catch {
+    /* The last known status stands; saving still checks the revision. */
+  }
 }
-onMounted(() => load());
+// The first edit while the player is online asks before going on.
+const warning = ref(null);
+let warned = false;
+async function beforeEdit() {
+  await poll();
+  if (warned || !risk.value.online) return true;
+  warned = await warning.value.ask();
+  return warned;
+}
+async function correct(field, value) {
+  try {
+    await load(
+      await adminApi('PATCH', `towns/${props.id}/inventory`, {
+        body: correctionBody(field, value, town.value.revision),
+      }),
+    );
+  } catch (e) {
+    if (e.status !== 409) throw e;
+    await load();
+    const latest = fieldFor(field.key);
+    throw new Error(
+      `The player’s game saved meanwhile${latest ? `; this is now ${whole(latest.current)}` : ''}. Save again to keep your value.`,
+      { cause: e },
+    );
+  }
+}
+let timer;
+onMounted(() => {
+  load();
+  timer = setInterval(poll, STATUS_POLL_MS);
+});
+onBeforeUnmount(() => clearInterval(timer));
 </script>

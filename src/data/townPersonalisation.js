@@ -1,4 +1,4 @@
-import { PERSONAL_AREAS, areaCapacity, purchaseLandmark } from './townLandmarks';
+import { PERSONAL_AREAS, LANDMARK_PROGRESSION, purchaseLandmark } from './townLandmarks';
 export { PERSONAL_AREAS, areaStage, areaUnlocked } from './townLandmarks';
 
 export const DEFAULT_EMBLEM_COLOUR = '#393c43';
@@ -110,7 +110,7 @@ export function normalizePersonalisation(saved, emblemIds) {
       const level = saved.areaLevels?.[area.id];
       result.areaLevels[area.id] = area.timeless
         ? 1
-        : Number.isInteger(level) && level > 0 && level <= areaCapacity(area)
+        : Number.isInteger(level) && level > 0 && level <= LANDMARK_PROGRESSION.legacyLimit
           ? level
           : 1;
     }

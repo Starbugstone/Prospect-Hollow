@@ -55,7 +55,7 @@ function module(d, g, x, z, w, dep, h, turn = 0) {
   return m;
 }
 function solarFin(d, g, x, z, turn = 0) {
-  d.rod(g, [x, 0.2, z], [x, 1.25, z], 0.04, p.deep);
+  d.rod(g, [x, 0.2, z], [x, 1.3, z], 0.04, p.deep);
   const fin = d.box(g, 1.1, 0.05, 0.55, x, 1.3, z, p.roof);
   fin.rotation.set(-0.5, turn, 0);
 }
@@ -249,6 +249,8 @@ const FORMS = {
     for (const dx of [-0.4, 0, 0.4]) d.ball(g, 1.9 + dx, 0.88, 1.2, 0.13, p.glass, 'rock');
     if (level >= 2) dome(d, g, 2.2, -1.4, 0.8, 0.6);
     if (level >= 3) {
+      d.rod(g, [-0.6, 1.65, -0.8], [-0.6, 2.75, -0.8], 0.08, p.deep).name =
+        'Moonstone beacon mount';
       const crystal = d.ball(g, -0.6, 2.75, -0.8, [0.28, 0.5, 0.28], p.glass, 'rock');
       crystal.name = 'Moonstone beacon';
       lamp(d, g, -3, 1.6, 0.25);
@@ -260,7 +262,7 @@ const FORMS = {
     rover(d, g, 1.9, 1.6, -0.5);
     if (level >= 2) rover(d, g, -1.6, 2, 0.6);
     if (level >= 3) {
-      for (const x of [2.4, 3.4]) d.rod(g, [x, 0.25, -1.8], [x, 1.8, -1.8], 0.05, p.deep);
+      for (const x of [2.4, 3.4]) d.rod(g, [x, 0.25, -1.8], [x, 1.85, -1.8], 0.05, p.deep);
       d.box(g, 1.5, 0.06, 1.2, 2.9, 1.85, -1.8, p.roof);
     }
   },
@@ -271,7 +273,12 @@ const FORMS = {
     for (const x of [-1.4, 1.4])
       for (const z of [-1.4, 0.6]) d.box(g, 0.14, 1.5, 0.14, x, 0.85, z, p.deep);
     d.rod(g, [0.6, 1.7, -0.4], [1.1, 2.6, -1.3], 0.12, p.light);
-    if (level >= 2) for (const z of [-1.55, 0.75]) d.box(g, 3.2, 0.06, 0.06, 0, 2.2, z, p.deep);
+    if (level >= 2)
+      for (const z of [-1.55, 0.75]) {
+        d.box(g, 3.2, 0.06, 0.06, 0, 2.2, z, p.deep);
+        for (const x of [-1.4, 1.4])
+          d.rod(g, [x, 1.6, z], [x, 2.2, z], 0.035, p.deep).name = 'Lookout railing post';
+      }
     if (level >= 3) {
       dome(d, g, -2.4, 1.8, 0.8, 0.5);
       d.box(g, 1.4, 0.16, 0.4, 1.2, 0.45, 2.2, p.timber);

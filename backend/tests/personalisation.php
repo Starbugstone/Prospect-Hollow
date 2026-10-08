@@ -164,6 +164,77 @@ foreach ($schema['personalisation']['areas'] as $area) {
         );
     }
 }
+// New purchases have a fixed ceiling in the opening era; historical receipts
+// retain their old price/ceiling, so pending offline journals still verify.
+foreach ($schema['personalisation']['areas'] as $area) {
+    if ($area['timeless']) {
+        continue;
+    }
+    $state = json_decode(json_encode($rules->defaultTown), true);
+    $state['era'] = $area['era'];
+    $state['coins'] = 10000000;
+    $choice = $area['choices'][0];
+    $base = array_values(
+        array_filter($schema['personalisation']['landmarks'], fn($o) => $o['id'] === $choice),
+    )[0]['price'];
+    foreach ($schema['personalisation']['monumentProgression']['levels'] as $index => $milestone) {
+        $command = [
+            'id' => $area['id'],
+            'slot' => 0,
+            'value' => $choice,
+            'expectedChoice' => $index ? $choice : null,
+            'expectedLevel' => $index,
+            'monumentVersion' => 2,
+        ];
+        $next = TownPersonalisation::purchase($state, $command, $schema['eras']);
+        checkPersonalisation(
+            $next !== null && $state['coins'] - $next['coins'] === $base * $milestone['multiplier'],
+            'fixed milestone price',
+        );
+        $poor = $state;
+        $poor['coins'] = $base * $milestone['multiplier'] - 1;
+        checkPersonalisation(
+            TownPersonalisation::purchase($poor, $command, $schema['eras']) === null,
+            'cannot underpay milestone',
+        );
+        $state = $next;
+    }
+    $command['expectedChoice'] = $choice;
+    $command['expectedLevel'] = 5;
+    $state['era'] = end($schema['eras']);
+    checkPersonalisation(
+        TownPersonalisation::purchase($state, $command, $schema['eras']) === null,
+        'future eras add no sixth level',
+    );
+}
+$legacy = (object) [
+    'areas' => (object) ['meadow' => ['headframe']],
+    'areaLevels' => (object) ['meadow' => 11],
+];
+checkPersonalisation(
+    TownPersonalisation::normalize($legacy)->areaLevels->meadow === 11,
+    'historical paid levels survive normalization',
+);
+$state = json_decode(json_encode($rules->defaultTown), true);
+$state['era'] = 'industrial';
+$state['coins'] = 10000;
+$state['personalisation']['areas']['meadow'] = ['headframe'];
+$state['personalisation']['areaLevels']['meadow'] = 1;
+$legacyCommand = [
+    'id' => 'meadow',
+    'slot' => 0,
+    'value' => 'headframe',
+    'expectedChoice' => 'headframe',
+    'expectedLevel' => 1,
+];
+$next = TownPersonalisation::purchase($state, $legacyCommand, $schema['eras']);
+checkPersonalisation($next['coins'] === 8800, 'old offline receipt retains its original price');
+$legacyCommand['monumentVersion'] = 999;
+checkPersonalisation(
+    TownPersonalisation::purchase($state, $legacyCommand, $schema['eras']) === null,
+    'unsupported monument price version rejected',
+);
+
 $honours = new App\Honours($schema['honours']);
 foreach (
     [

@@ -69,11 +69,18 @@ Monument sites follow the same interaction as every other building:
   one previews it on the site in the town, even when the player cannot afford it
   yet. Nothing is spent until the player confirms a second, explicit "for good"
   step that explains the choice is permanent.
-- A built monument keeps its card. Ordinary sites take one paid upgrade per era
-  (through the current final era, with no hardcoded completion era); stage n costs n
-  times the design's price. Each stage adds detail and never changes the design.
-  Saves from the former three-stages-per-era rule show no more stages than the
-  current era allows. Upgrades are one tap, like building improvements.
+- A built monument has five permanent levels, available as soon as its site opens:
+  Foundation, Grand court, Living landmark, Great monument and Town wonder.
+  Prices are 1×, 4×, 10×, 20× and 35× the design's base price. These optional
+  long-term projects never gate progression and future eras add no extra levels.
+  Level two adds pavilions, three introduces motion and fountain displays, four
+  adds a grand colonnade, and five completes the ceremonial entrance and fountains.
+  Main structures rise substantially through the five levels. Moving mechanisms
+  remain specific to the design (winding wheels, solar petals, pods, planets, etc.).
+- Existing paid stage numbers stay in saves and verified receipts; models above
+  five display the complete wonder. No purchased choice or honour is removed.
+  New receipts carry `monumentVersion: 2`; unversioned receipts replay the old
+  era ceilings and prices, preserving offline purchases and existing checkpoints.
 - The Build tab lists every unlocked site under **Monuments** (open sites with their
   starting price, built ones with their stage or next upgrade price) and names the
   next site to open. Monument purchases are separate from Personalise.
@@ -82,7 +89,7 @@ Monument sites follow the same interaction as every other building:
 The Industrial site is Monument Square. Its five timeless models have separate
 prices: Founders' Arch (6,000), Crystal Spire (8,000), Guardian of the Hollow
 (10,000), World Tree (12,000), Celestial Sphere (15,000). Every player in Industrial
-or later may build one. Timeless monuments have no upgrades and retain their authored appearance. The first monument purchase earns the single gold Town Honour
+or later may build one. Timeless monuments have no upgrades and retain their identity. All five animate immediately: a sunwheel, crystal motes, mechanical owl wings, hanging tree ornaments or orbital rings, with a fountain court. The first monument purchase earns the single gold Town Honour
 **A Lasting Legacy**, regardless of the model; older monument-owning saves receive
 it through honours generation 2 catch-up. The server verifies ownership from the
 paid landmark replay before publishing this distinction. Saves that replaced their
@@ -111,3 +118,8 @@ and resource cleanup, and individual outfits across eras. Actual frontend purcha
 flows for every parcel are replayed by
 `backend/tests/save-integrity.php`. Keep the ordinary chapter progression tests,
 including unlimited moves, alongside these checks.
+
+Monument movement uses the existing `TownScenery` lifecycle. Only moving groups
+are excluded from static batching; updates reuse geometry/materials and are
+removed on rebuild/disposal. Reduced-motion preference freezes the authored pose.
+The SVG cards show purchased stages and disable their animation for reduced motion.

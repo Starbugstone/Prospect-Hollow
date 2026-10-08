@@ -8,6 +8,7 @@ import {
   areaMaximum,
   LANDMARK_BY_ID,
   LANDMARK_OPTIONS,
+  LANDMARK_PROGRESSION,
 } from '../src/data/townLandmarks';
 import { buildLandmark } from '../src/game/town/TownLandmarks';
 import { isEraComplete } from '../src/game/town/TownEras';
@@ -209,47 +210,41 @@ describe('Personalisation save and progression contract', () => {
     expect(new Set(LANDMARK_OPTIONS.map((o) => o.form)).size).toBe(LANDMARK_OPTIONS.length);
   });
   it.each(PERSONAL_AREAS.filter((a) => !a.timeless))(
-    'grows $id by one stage per era, stage n costing n times its price',
+    'offers five fixed milestones for $id immediately after its site opens',
     (area) => {
-      let town = createTown();
-      town.coins = 1e9;
-      const intro = ERAS.findIndex((era) => era.id === area.era);
-      for (const [step, era] of ERAS.slice(intro).entries()) {
-        town.era = era.id;
-        expect(areaMaximum(town, area)).toBe(step + 1);
+      let town = { ...createTown(), era: area.era, coins: 1e9 };
+      for (const [index, milestone] of LANDMARK_PROGRESSION.levels.entries()) {
+        expect(areaMaximum(town, area)).toBe(5);
         const offer = landmarkOffer(town, area, area.choices[0]);
-        expect(offer.level).toBe(step + 1);
-        expect(offer.price).toBe(LANDMARK_BY_ID[area.choices[0]].price * (step + 1));
+        expect(offer.level).toBe(index + 1);
+        expect(offer.price).toBe(LANDMARK_BY_ID[area.choices[0]].price * milestone.multiplier);
+        expect(buy({ ...town, coins: offer.price - 1 }, area)).toBeNull();
         town = buy(town, area);
-        expect(buy(town, area)).toBeNull();
       }
+      expect(buy(town, area)).toBeNull();
+      town.era = ERAS.at(-1).id;
+      expect(buy(town, area)).toBeNull();
     },
   );
-  it('shows a stage from the old three-per-era rule as the most the era allows', () => {
-    const area = PERSONAL_AREAS.find((a) => !a.timeless),
-      town = createTown();
-    town.era = area.era;
-    town.personalisation.areas[area.id] = [area.choices[0]];
-    town.personalisation.areaLevels[area.id] = 3;
-    expect(areaStage(town, area)).toBe(1);
-    expect(landmarkOffer(town, area, area.choices[0])).toBeNull();
-  });
-  it('extends landmark upgrade capacity through a newly registered era', () => {
+  it('preserves historical paid levels but displays the completed wonder', () => {
     const area = PERSONAL_AREAS[0],
       town = createTown();
-    town.era = ERAS.at(-1).id;
-    town.coins = 1000000;
     town.personalisation.areas[area.id] = [area.choices[0]];
-    town.personalisation.areaLevels[area.id] = areaMaximum(town, area);
-    const previous = areaStage(town, area);
+    town.personalisation.areaLevels[area.id] = 11;
+    expect(normalizeTown(town).personalisation.areaLevels[area.id]).toBe(11);
+    expect(areaStage(town, area)).toBe(5);
+    expect(landmarkOffer(town, area, area.choices[0])).toBeNull();
+  });
+  it('does not add monument bills when a new era is registered', () => {
+    const area = PERSONAL_AREAS[0],
+      town = createTown();
+    town.personalisation.areas[area.id] = [area.choices[0]];
+    town.personalisation.areaLevels[area.id] = 5;
     ERAS.push({ ...ERAS.at(-1), id: 'personalisation-future-era' });
     try {
       town.era = 'personalisation-future-era';
-      expect(areaMaximum(town, area)).toBe(previous + 1);
-      const upgraded = buy(town, area);
-      expect(
-        normalizePersonalisation(upgraded.personalisation, CREST_EMBLEM_IDS).areaLevels[area.id],
-      ).toBe(previous + 1);
+      expect(areaMaximum(town, area)).toBe(5);
+      expect(buy(town, area)).toBeNull();
     } finally {
       ERAS.pop();
     }
@@ -473,6 +468,92 @@ describe('Personalisation rendering', () => {
         }
         expect(stages.size).toBe(areaMaximum({ era: ERAS.at(-1).id }, area));
       }
+  });
+  it('animates every choice from level three, and timeless masterpieces immediately', () => {
+    const d = fixture();
+    for (const area of PERSONAL_AREAS)
+      for (const choice of area.choices) {
+        for (const stage of area.timeless ? [1] : [1, 2, 3, 4, 5]) {
+          const root = buildLandmark(d, new Group(), choice, stage, area.timeless);
+          const moving = [];
+          root.traverse((node) => {
+            if (node.userData.animated) moving.push(node);
+          });
+          expect(moving.length > 0, `${choice} ${stage}`).toBe(area.timeless || stage >= 3);
+          const pose = () =>
+            JSON.stringify(
+              moving.map((node) => [
+                node.position.toArray(),
+                node.rotation.toArray(),
+                node.scale.toArray(),
+              ]),
+            );
+          const initial = pose();
+          for (const node of moving) node.traverse((part) => expect(part.layers.mask).toBe(1 << 2));
+          root.userData.sceneryUpdate(4);
+          if (moving.length) expect(pose(), choice).not.toBe(initial);
+          root.userData.sceneryUpdate(0);
+          expect(pose()).toBe(initial);
+          for (const time of [0, 2, 8, 20]) {
+            root.userData.sceneryUpdate(time);
+            const bounds = new Box3().setFromObject(root);
+            expect(
+              Math.max(
+                Math.abs(bounds.min.x),
+                Math.abs(bounds.max.x),
+                Math.abs(bounds.min.z),
+                Math.abs(bounds.max.z),
+              ),
+              `${choice} motion bounds`,
+            ).toBeLessThanOrEqual(area.radius);
+          }
+        }
+      }
+  });
+  it('reuses monument motion on scenery refresh and removes it on disposal', () => {
+    const town = createTown();
+    town.personalisation.areas.meadow = ['windgarden'];
+    town.personalisation.areaLevels.meadow = 3;
+    const d = fixture(town),
+      scenery = new TownScenery();
+    d.motions = [];
+    scenery.update(d, town);
+    const root = scenery.entries.get('personal-areas').group;
+    const motion = root.userData.sceneryUpdate;
+    expect(d.motions.filter((m) => m === motion)).toHaveLength(1);
+    scenery.update(d, town);
+    expect(scenery.entries.get('personal-areas').group).toBe(root);
+    expect(d.motions.filter((m) => m === motion)).toHaveLength(1);
+    scenery.dispose(d);
+    expect(d.motions).not.toContain(motion);
+  });
+  it('keeps moving mechanisms out of static batches and honors reduced motion', () => {
+    const preference = { matches: false };
+    vi.stubGlobal('matchMedia', () => preference);
+    const town = createTown();
+    town.personalisation.areas.meadow = ['windgarden'];
+    town.personalisation.areaLevels.meadow = 3;
+    const d = fixture(town),
+      root = buildPersonalAreas(d, town);
+    const renderer = new TownStatics(d.scene);
+    renderer.sync([root]);
+    const parts = [];
+    root.traverse((node) => {
+      if (node.userData.animated) parts.push(node);
+    });
+    const pose = () =>
+      JSON.stringify(parts.map((node) => [node.rotation.toArray(), node.scale.toArray()]));
+    const initial = pose();
+    root.userData.sceneryUpdate(5);
+    expect(pose()).not.toBe(initial);
+    for (const node of parts) {
+      expect(node.matrixAutoUpdate).toBe(true);
+      expect(node.visible).toBe(true);
+    }
+    preference.matches = true;
+    root.userData.sceneryUpdate(8);
+    expect(pose()).toBe(initial);
+    renderer.dispose();
   });
   it('keeps a blank hill for legacy towns and builds an identified banner when chosen', () => {
     const town = createTown(),

@@ -1,5 +1,6 @@
-import { CITY_FAMILIES } from './city';
-import { eraEvolution } from './eras';
+import { CITY_BUILDINGS, CITY_FAMILIES } from './city';
+import { COZY_LANDMARKS } from './cozyArchitecture';
+import { ERAS, eraEvolution } from './eras';
 
 // The three eras after Riverlight share one set of building archetypes; each
 // architecture supplies its own walls, roofs and finishing flourish. Palettes use
@@ -90,6 +91,9 @@ const FORMS = Object.freeze({
 
 // Landmarks introduced by these eras draw their own bespoke forms.
 export const FUTURE_LANDMARKS = Object.freeze({
+  // Established garden landmarks retain their identity and parcel scale when
+  // modernized. Successor kits supply the new architecture for these forms too.
+  ...COZY_LANDMARKS,
   skyHarbour: Object.freeze({ form: 'skyHarbour', scale: 1.35 }),
   cloudOrchard: Object.freeze({ form: 'cloudOrchard', scale: 1.4 }),
   windsongLofts: Object.freeze({ form: 'windsongLofts', scale: 1.3 }),
@@ -112,6 +116,23 @@ export const FUTURE_MINE_PORTALS = Object.freeze([
 ]);
 
 export const isFutureEra = (era) => FUTURE_ARCHITECTURES.includes(eraEvolution(era).architecture);
+
+/** Construction survives a new finish. Synthetic successors inherit the stage
+ * rules of their architecture; incomplete/unknown definitions keep native tiers. */
+export function futureBuildingStages(kind, era, level, serviceLevel = 3) {
+  const architecture = eraEvolution(era).architecture;
+  const index = ERAS.findIndex((entry) => entry.id === era);
+  const target =
+    index >= 0 ? index : ERAS.findIndex((entry) => entry.evolution.architecture === architecture);
+  const introduced = CITY_BUILDINGS.find((building) => building.kind === kind)?.introducedEra;
+  const native = ERAS.findIndex((entry) => entry.id === introduced);
+  const firstFuture = ERAS.findIndex((entry) => isFutureEra(entry.id));
+  const modernizing = isFutureEra(era) && target > Math.max(native, firstFuture);
+  return {
+    modernizing,
+    structureLevel: modernizing ? Math.max(level, Math.min(3, serviceLevel)) : level,
+  };
+}
 
 /** An unsupported architecture safely falls back to the Skysail palette. */
 export function futureAppearance(era) {

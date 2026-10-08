@@ -196,6 +196,29 @@ plots, prices, benefit previews and the SVG forms.
 
 ### Future archetypes: Skysail, Stargazer and Moonward
 
+The six established eastern garden landmarks retain their named forms and scales
+from `COZY_LANDMARKS` in `FUTURE_LANDMARKS`. Their shared successor layouts live in
+`buildings/future/gardenLandmarks.js` and use each era's building kit. The first
+modernization preserves the mature campus, including the orchard's three homes
+and the retreat's terraced pools; later tiers add gardens and rooftop details.
+Do not route these landmarks back through ordinary city-family forms.
+`testing/future-eras.test.js` compares every successor tier with mature Riverlight
+dimensions and checks parcel frontage, art budgets and synthetic successors.
+Skysail's sail corners have supports reaching the local ground; rooftop crowns
+attach to the saddle centre rather than the height of its raised corners.
+
+Later future modernizations use `futureBuildingStages()` in both the WebGL and
+SVG renderers. The new finish tier controls decorations, while `structureLevel`
+retains completed construction: annexes, homes, islands, dew towers, harbour
+berths, airport wings/lounge and space-elevator equipment. Native construction
+still reveals these in its original tiers. Synthetic successor definitions inherit
+their architecture's stage rules; unknown definitions keep native behavior.
+Rooftop kits receive both the roof peak and `baseY` (its eave), so offset masts,
+dishes and arches extend into the roof instead of hovering over a slope. Airport
+crowns are built on the lounge itself. Lunar lookout rails and the workshop beacon
+also have structural mounts. Regression coverage checks retained structure counts,
+roof intersections, lunar mounts, budgets and distinct upgrade illustrations.
+
 The eras after Riverlight share one set of archetypes and swap a small kit per
 architecture (`sail`, `observatory`, `homestead`): walls, roof, round body, cap,
 door, a level-two wing, a level-three crown and a street prop. The renderer

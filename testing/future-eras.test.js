@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { Box3, Group, MeshBasicMaterial, Scene } from 'three';
+import { Box3, Group, MeshBasicMaterial, Raycaster, Scene, Vector3 } from 'three';
 import { createSSRApp, h } from 'vue';
 import { renderToString } from 'vue/server-renderer';
 import { TownDiorama } from '../src/game/town/TownDiorama';
@@ -20,6 +20,7 @@ import {
   FUTURE_PALETTES,
   futureAppearance,
   futureForm,
+  futureBuildingStages,
   isFutureEra,
 } from '../src/data/futureArchitecture';
 import { MOON_SETTLEMENT_LIMIT, moonSettlement } from '../src/data/moonSettlement';
@@ -28,6 +29,11 @@ import { mineProfile } from '../src/data/mineEvolution';
 import { FUTURE_MINE_CROWNS } from '../src/game/town/mine/MineFutureArchitecture';
 import { addMineSite } from '../src/game/town/mine/addMineSite';
 import { GARDEN_PARCELS } from '../src/data/townGardenDistrict';
+import { COZY_LANDMARKS } from '../src/data/cozyArchitecture';
+import { sailKit } from '../src/game/town/buildings/future/sail';
+import { observatoryKit } from '../src/game/town/buildings/future/observatory';
+import { homesteadKit } from '../src/game/town/buildings/future/homestead';
+import { twinKit } from '../src/game/town/buildings/future/twin';
 import { townTracks, plotStreet } from '../src/game/town/TownLayout';
 import TownBuilding from '../src/components/town/TownBuilding.vue';
 
@@ -169,6 +175,148 @@ describe('Skysail, Stargazer and Moonward eras', () => {
     }
   });
 
+  it.each(FUTURE_ERAS)(
+    'preserves mature eastern landmarks from the first %s modernization',
+    (era) => {
+      const d = diorama(era);
+      for (const [kind, landmark] of Object.entries(COZY_LANDMARKS)) {
+        expect(futureForm(kind), kind).toBe(landmark.form);
+        const previous = new Group();
+        renderCityBuilding(d, previous, kind, kind, 3, 'riverlight', 3);
+        const matureSize = new Box3().setFromObject(previous, true).getSize(new Vector3());
+        for (const level of [1, 2, 3]) {
+          const root = new Group();
+          renderCityBuilding(d, root, kind, kind, level, era, 3);
+          const bounds = new Box3().setFromObject(root, true);
+          const size = bounds.getSize(new Vector3());
+          // Allow differently shaped eaves, but never reset a campus to a tiny
+          // generic house. Check tier 1 against the previous fully upgraded model.
+          for (const axis of ['x', 'z'])
+            expect(size[axis], `${era} ${kind} L${level} ${axis}`).toBeGreaterThan(
+              matureSize[axis] * 0.9,
+            );
+          const parcel = GARDEN_PARCELS[kind];
+          expect(bounds.min.x, kind).toBeGreaterThanOrEqual(-parcel.halfWidth);
+          expect(bounds.max.x, kind).toBeLessThanOrEqual(parcel.halfWidth);
+          expect(bounds.min.z, kind).toBeGreaterThanOrEqual(-parcel.halfDepth);
+          expect(bounds.max.z, kind).toBeLessThan(parcel.entranceZ - 0.35);
+        }
+      }
+      dispose(d);
+    },
+  );
+
+  it('grounds every sail support and attaches rooftop crowns to the cloth', () => {
+    const d = diorama('skysail');
+    const s = { ...futureAppearance('skysail'), kind: 'doctor' };
+    for (const [w, dep, y] of [
+      [1.3, 1.9, 2.3],
+      [3.6, 2.4, 2.3],
+      [6.2, 5.6, 2.8],
+    ]) {
+      const root = new Group();
+      const top = sailKit.roof(d, root, s, { x: 1.2, z: -0.7, w, dep, y });
+      root.updateMatrixWorld(true);
+      const supports = root.children.filter((mesh) => mesh.geometry === d.geometries.cylinder);
+      expect(supports).toHaveLength(4);
+      for (const support of supports)
+        expect(new Box3().setFromObject(support).min.y).toBeCloseTo(0);
+      const cloth = root.children.find((mesh) => mesh.geometry === d.geometries['future-hypar']);
+      const centerHeight = cloth.position.y + cloth.scale.y / 2;
+      expect(top).toBeCloseTo(centerHeight);
+    }
+    dispose(d);
+  });
+
+  it('retains completed structures when a later finish returns to tier one', () => {
+    const d = diorama('moonward');
+    const cases = [
+      ['skyHarbour', 'skysail', 'stargazer', 'Future harbour airship', 2],
+      ['cloudOrchard', 'skysail', 'stargazer', 'Future orchard island', 3],
+      ['windsongLofts', 'skysail', 'stargazer', 'Future building block', 3],
+      ['greatTelescope', 'stargazer', 'moonward', 'Future building tower', 2],
+      ['starlightTerraces', 'stargazer', 'moonward', 'Future building block', 3],
+    ];
+    for (const [kind, beforeEra, afterEra, name, count] of cases) {
+      for (const [era, level] of [
+        [beforeEra, 3],
+        [afterEra, 1],
+        [afterEra, 2],
+        [afterEra, 3],
+      ]) {
+        const root = new Group();
+        renderFutureBuilding(d, root, kind, kind, level, era, 3);
+        let actual = 0;
+        root.traverse((part) => {
+          if (part.name === name) actual++;
+        });
+        expect(actual, `${kind} ${era} L${level}`).toBe(count);
+      }
+    }
+    for (const level of [1, 2, 3]) {
+      const root = new Group();
+      renderFutureBuilding(d, root, 'spaceElevator', '', level, 'twin-hollows', 3);
+      expect(root.getObjectByName(ELEVATOR_CLIMBERS).children).toHaveLength(3);
+      expect(root.getObjectByName('Space elevator halo')).toBeTruthy();
+      const airport = new Group();
+      renderCityBuilding(d, airport, 'airport', '', level, 'moonward', 3);
+      expect(airport.getObjectByName('Airport rooftop observation lounge')).toBeTruthy();
+    }
+    dispose(d);
+  });
+
+  it('keeps native construction tiers, supplied partial structures and successor fallbacks', () => {
+    expect(futureBuildingStages('spaceElevator', 'moonward', 1, 3)).toEqual({
+      modernizing: false,
+      structureLevel: 1,
+    });
+    expect(futureBuildingStages('spaceElevator', 'twin-hollows', 1, 2).structureLevel).toBe(2);
+    expect(futureBuildingStages('home', 'unknown', 1, 3)).toEqual({
+      modernizing: false,
+      structureLevel: 1,
+    });
+    ERA_BY_ID['future-successor'] = { evolution: { ...eraEvolution('stargazer') } };
+    expect(futureBuildingStages('cloudOrchard', 'future-successor', 1, 3).structureLevel).toBe(3);
+  });
+
+  it.each([
+    ['stargazer', observatoryKit, 1],
+    ['moonward', homesteadKit, 2],
+    ['twin-hollows', twinKit, 2],
+  ])('mounts %s rooftop equipment through the roof surface', (era, kit, mountCount) => {
+    const d = diorama(era),
+      s = { ...futureAppearance(era), kind: 'home' };
+    for (const round of [false, true])
+      for (const r of [0.42, 1.1, 1.75]) {
+        const roof = new Group(),
+          decoration = new Group(),
+          baseY = 2.4;
+        const y = round
+          ? kit.cap(d, roof, s, { r, y: baseY })
+          : kit.roof(d, roof, s, { w: r * 2, dep: r * 2, y: baseY });
+        const mounts = [],
+          rod = d.rod;
+        d.rod = function (parent, a, b, radius, color) {
+          if (a[1] === baseY) mounts.push([a, b]);
+          return rod.call(this, parent, a, b, radius, color);
+        };
+        kit.crown(d, decoration, s, { r, y, baseY });
+        d.rod = rod;
+        expect(mounts, `${era} radius ${r}`).toHaveLength(mountCount);
+        roof.updateMatrixWorld(true);
+        for (const [a, b] of mounts) {
+          // Sample the sloped support at the height of the roof's base. It must
+          // enter a real roof, not end above it or beside its edge.
+          const ray = new Raycaster(new Vector3(a[0], y + 5, a[2]), new Vector3(0, -1, 0));
+          const hit = ray.intersectObject(roof, true)[0];
+          expect(hit, `${era} ${round ? 'cap' : 'gable'} radius ${r}`).toBeTruthy();
+          expect(a[1]).toBeLessThanOrEqual(hit.point.y + 1e-6);
+          expect(b[1]).toBeGreaterThan(a[1]);
+        }
+      }
+    dispose(d);
+  });
+
   it('reaches the Skyward quarter over the railway and the elevator by its own road', () => {
     const town = { ...createTown(), era: 'moonward' };
     for (const building of CITY_BUILDINGS) town.buildings[building.id] = 3;
@@ -234,7 +382,7 @@ describe('Skysail, Stargazer and Moonward eras', () => {
       evolution: { ...eraEvolution('stargazer') },
     });
     const d = diorama('stargazer');
-    for (const kind of ['home', 'greatTelescope', 'skyPods']) {
+    for (const kind of ['home', 'greatTelescope', 'skyPods', ...Object.keys(COZY_LANDMARKS)]) {
       const before = new Group(),
         after = new Group();
       renderCityBuilding(d, before, kind, kind, 3, 'stargazer');
@@ -252,6 +400,7 @@ describe('Skysail, Stargazer and Moonward eras', () => {
         'museum',
         'skyPods',
         'bridge',
+        'airport',
         ...Object.keys(FUTURE_LANDMARKS),
       ]) {
         const stages = new Set();

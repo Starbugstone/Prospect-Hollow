@@ -23,6 +23,7 @@
       :kind="kind"
       :era="era"
       :level="eraLevel"
+      :service-level="stage"
     />
     <TownCozyBuilding
       v-else-if="

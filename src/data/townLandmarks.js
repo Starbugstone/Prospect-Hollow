@@ -299,15 +299,44 @@ export const PERSONAL_AREAS = plots.map(([id, era, label, position, choices]) =>
 }));
 export const areaUnlocked = (town, area) =>
   ERAS.findIndex((e) => e.id === town.era) >= ERAS.findIndex((e) => e.id === area.era);
-// A monument is built once and then takes one upgrade in each later era.
-export const areaMaximum = (town, area) =>
-  areaUnlocked(town, area)
-    ? area.timeless
-      ? 1
-      : 1 + ERAS.findIndex((e) => e.id === town.era) - ERAS.findIndex((e) => e.id === area.era)
-    : 0;
-export const areaCapacity = (area) => areaMaximum({ era: ERAS.at(-1)?.id }, area);
-// Saves from the old three-stages-per-era rule show no more than the era allows.
+// Five permanent milestones; era growth never adds another bill.
+export const LANDMARK_PROGRESSION = Object.freeze({
+  version: 2,
+  animationLevel: 3,
+  // Preserve historical paid levels in saves/receipts, while displaying at most five.
+  legacyLimit: 45,
+  levels: [
+    { label: 'Foundation', multiplier: 1, detail: 'Establish the monument on its stone court.' },
+    {
+      label: 'Grand court',
+      multiplier: 4,
+      detail: 'Raise the main structure and build its flanking pavilions.',
+    },
+    {
+      label: 'Living landmark',
+      multiplier: 10,
+      detail: 'Unveil the working centerpiece and ceremonial lamps.',
+    },
+    {
+      label: 'Great monument',
+      multiplier: 20,
+      detail: 'Add a monumental colonnade and a taller silhouette.',
+    },
+    {
+      label: 'Town wonder',
+      multiplier: 35,
+      detail: 'Complete the grand entrance, golden finials and fountain court.',
+    },
+  ],
+});
+export const landmarkLevel = (stage) =>
+  LANDMARK_PROGRESSION.levels[
+    Math.max(0, Math.min(LANDMARK_PROGRESSION.levels.length - 1, stage - 1))
+  ];
+// A monument is built once and retains its selected design.
+export const areaMaximum = (town, area) => (areaUnlocked(town, area) ? areaCapacity(area) : 0);
+const areaCapacity = (area) => (area.timeless ? 1 : LANDMARK_PROGRESSION.levels.length);
+// Historical paid stages remain saved; their visible model caps at the final milestone.
 export const areaStage = (town, area) =>
   areaUnlocked(town, area) && town.personalisation?.areas?.[area.id]?.[0]
     ? Math.min(town.personalisation.areaLevels?.[area.id] || 1, areaMaximum(town, area))
@@ -318,9 +347,7 @@ export const areaChoice = (town, area) => {
   const choice = town.personalisation?.areas?.[area.id]?.[0];
   return area.choices.includes(choice) ? choice : null;
 };
-// Every site keeps the monument first built there. Timeless monuments never grow;
-// the others grow one stage per era without ever becoming another design. Stage n
-// costs n times the design's price.
+// Each site keeps its first choice. Timeless masterpieces are complete on purchase.
 export function landmarkOffer(town, area, choice) {
   if (!area || !areaUnlocked(town, area) || !area.choices.includes(choice)) return null;
   const current = town.personalisation?.areas?.[area.id]?.[0];
@@ -328,7 +355,8 @@ export function landmarkOffer(town, area, choice) {
   if (current && (area.timeless || current !== choice || stage >= areaMaximum(town, area)))
     return null;
   const level = area.timeless ? 1 : stage + 1;
-  const price = LANDMARK_BY_ID[choice].price * level;
+  const price =
+    LANDMARK_BY_ID[choice].price * (area.timeless ? 1 : landmarkLevel(level).multiplier);
   return { choice, level, price, expectedChoice: current || null, expectedLevel: stage };
 }
 export function purchaseLandmark(town, command) {

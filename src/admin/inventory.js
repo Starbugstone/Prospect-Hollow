@@ -1,8 +1,8 @@
-// Support's correction of a town's coins, stored bonuses and builder hammers after a bug.
+// Support's quick fixes to a town's coins, stored bonuses and builder hammers after a bug.
 // The server sends the current values and limits; powers are keyed by ID.
 import { HAMMER_CAPACITY } from '../data/rewards';
 import { powerLabel } from './labels';
-import { isOnline, whole } from './format';
+import { isOnline } from './format';
 
 export function inventoryFields(inventory) {
   const { limits } = inventory;
@@ -27,27 +27,16 @@ export function inventoryFields(inventory) {
 }
 export const validValue = (field, value) =>
   Number.isSafeInteger(value) && value >= 0 && value <= field.max;
-export const changedFields = (fields, values) =>
-  fields.filter(
-    (field) => validValue(field, values[field.key]) && values[field.key] !== field.current,
-  );
-// The PATCH body: only the values that changed.
-export function correctionBody(fields, values, revision) {
-  const body = { revision };
-  for (const field of changedFields(fields, values)) {
-    if (field.power) (body.powers ??= {})[field.power] = values[field.key];
-    else body[field.key] = values[field.key];
-  }
-  return body;
-}
-export const correctionSummary = (fields, values) =>
-  changedFields(fields, values)
-    .map((field) => `${field.label} ${whole(field.current)} → ${whole(values[field.key])}`)
-    .join(', ');
+// What an admin types: digits only, so "1,5" or "2e3" never become another number.
+export const typedValue = (text) => (/^\s*\d+\s*$/.test(String(text)) ? Number(text) : NaN);
+// The PATCH body for one corrected value, checked against the revision the admin saw.
+export const correctionBody = (field, value, revision) =>
+  field.power ? { revision, powers: { [field.power]: value } } : { revision, [field.key]: value };
+
 // The owner's game may sync while support edits. The page polls the town meanwhile: a newer
-// revision makes the edit stale, and an online owner gets a warning first.
+// revision means the values shown are out of date, and an online owner gets a warning first.
 export const STATUS_POLL_MS = 15000;
 export const editingRisk = (revision, status, now = Date.now() / 1000) => ({
   online: isOnline(status.ownerSeenAt, now),
-  stale: status.revision !== revision,
+  stale: status.revision > revision,
 });

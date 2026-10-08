@@ -102,14 +102,16 @@ export const homesteadKit = {
     homesteadKit.roof(d, g, s, { x, z, w, dep, y: top });
   },
   // A landing-light mast, a dish turned to the Moon and a pair of solar fins.
-  crown(d, g, s, { x = 0, z = 0, y, r = 1 }) {
+  crown(d, g, s, { x = 0, z = 0, y, baseY = y - 1, r = 1 }) {
     const p = s.palette,
       mx = x + r * 0.55;
-    d.rod(g, [mx, y - 0.4, z - 0.2], [mx, y + 1.3, z - 0.2], 0.04, p.deep);
+    d.rod(g, [mx, baseY, z - 0.2], [mx, y + 1.3, z - 0.2], 0.04, p.deep);
     d.ball(g, mx, y + 1.38, z - 0.2, 0.12, p.light, 'rock');
     const dish = d.ball(g, x - r * 0.4, y + 0.05, z - 0.3, [0.42, 0.13, 0.42], p.shell);
     dish.rotation.set(-0.7, 0, 0.3);
-    d.rod(g, [x - r * 0.4, y - 0.4, z - 0.3], [x - r * 0.4, y, z - 0.3], 0.035, p.deep);
+    d.rod(g, [x - r * 0.4, baseY, z - 0.3], [x - r * 0.4, y, z - 0.3], 0.035, p.deep);
+    // Solar fins bolt to a crossbar rather than hovering beside the mast.
+    d.rod(g, [mx - 0.42, y + 0.55, z - 0.2], [mx + 0.42, y + 0.55, z - 0.2], 0.035, p.deep);
     for (const side of [-1, 1]) {
       const fin = d.box(g, 0.62, 0.04, 0.34, mx + side * 0.42, y + 0.55, z - 0.2, p.roof);
       fin.rotation.z = side * 0.25;

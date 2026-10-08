@@ -51,6 +51,7 @@ export const FUTURE_MINE_CROWNS = {
     const p = FUTURE_PALETTES.twin;
     const gable = d.mesh(entry, futureShape(d, 'gable'), [3.4, 0.7, 1.15], [0, 2.78, 0.12], p.roof);
     gable.name = 'Mine homecoming gable';
+    for (const x of [-0.55, 0.55]) d.rod(entry, [x, 2.78, 0.2], [x, 3.75, 0.2], 0.04, p.deep);
     d.box(entry, 1.4, 0.06, 0.06, 0, 3.75, 0.2, p.deep);
     d.ball(entry, -0.45, 3.95, 0.2, 0.2, p.flower, 'rock');
     d.ball(entry, 0.45, 3.92, 0.2, 0.15, p.shell, 'rock');

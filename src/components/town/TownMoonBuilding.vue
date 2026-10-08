@@ -29,8 +29,19 @@
         <path d="M-50 0v-48M50 0v-48" :stroke="p.deep" stroke-width="5" />
         <path d="M-64-48h128v-7H-64Z" :fill="p.timber" />
         <path d="M20-56 44-86" :stroke="p.light" stroke-width="8" />
-        <path v-if="level >= 2" d="M-64-70h128" :stroke="p.deep" stroke-width="2" />
+        <path
+          v-if="level >= 2"
+          d="M-64-70h128M-56-48v-22M56-48v-22"
+          :stroke="p.deep"
+          stroke-width="2"
+        />
       </g>
+      <path
+        v-if="kind === 'moonstoneWorkshop' && level >= 3"
+        d="M-24-52V-84"
+        :stroke="p.deep"
+        stroke-width="4"
+      />
       <g v-for="(part, n) in parts" :key="n">
         <template v-if="part.type === 'dome'">
           <path :d="drum(part.x, part.r, part.h)" :fill="p.shell" />

@@ -55,9 +55,21 @@ export const sailKit = {
       [x, y + 0.32, z],
       cloth(s, accent),
     );
-    mast(d, g, x - (w + 0.7) / 2, z + (dep + 0.7) / 2, y, y + lift + 0.75, p);
-    mast(d, g, x + (w + 0.7) / 2, z - (dep + 0.7) / 2, y, y + lift + 0.75, p);
-    return y + lift + 0.3;
+    // The cloth overhangs the deck: its freestanding supports must reach the
+    // ground, not stop in mid-air beside the upper wall. Support low corners too.
+    for (const side of [-1, 1]) {
+      const mx = x + (side * (w + 0.7)) / 2;
+      mast(d, g, mx, z - (side * (dep + 0.7)) / 2, 0, y + lift + 0.75, p);
+      d.rod(
+        g,
+        [mx, 0, z + (side * (dep + 0.7)) / 2],
+        [mx, y + 0.32, z + (side * (dep + 0.7)) / 2],
+        0.055,
+        p.timber,
+      );
+    }
+    // Crowns attach at the saddle's centre, below its high corners.
+    return y + 0.32 + lift / 2;
   },
   round(d, g, s, { x = 0, z = 0, r, h }) {
     const p = s.palette;

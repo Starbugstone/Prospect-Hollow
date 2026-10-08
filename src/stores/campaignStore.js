@@ -1,3 +1,4 @@
+import { LANDMARK_PROGRESSION } from '../data/townLandmarks';
 import { personaliseTown } from '../data/townPersonalisation';
 import { CREST_EMBLEM_IDS } from '../data/townCrests';
 import {
@@ -727,7 +728,12 @@ export const useCampaignStore = defineStore('campaign', {
         next = personaliseTown(next, command, CREST_EMBLEM_IDS, earned);
         if (!next) return false;
       }
-      const purchases = commands.filter((c) => c.kind === 'area');
+      const purchases = commands
+        .filter((c) => c.kind === 'area')
+        .map((command) => ({
+          ...command,
+          monumentVersion: LANDMARK_PROGRESSION.version,
+        }));
       return this.commit(
         { town: next },
         purchases.length ? { kind: 'landmark-buy', data: { purchases, at: Date.now() } } : null,

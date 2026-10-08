@@ -72,7 +72,7 @@ final class TownPersonalisation
                     ? 1
                     : (is_int($level) &&
                     $level >= 1 &&
-                    $level <= count($c['eras']) - array_search($area['era'], $c['eras'], true)
+                    $level <= $c['monumentProgression']['legacyLimit']
                         ? $level
                         : 1);
             }
@@ -119,12 +119,15 @@ final class TownPersonalisation
         ) {
             return null;
         }
-        // A site keeps its first monument: no replacement, and timeless monuments never grow.
-        // Other monuments take one upgrade per era.
-        if (
-            $current &&
-            ($area['timeless'] || $current !== $choice || $stage >= 1 + $now - $intro)
-        ) {
+        // Unversioned offline receipts retain the original prices and era ceilings.
+        $version = $command['monumentVersion'] ?? 1;
+        $progression = $catalog['monumentProgression'];
+        if (!in_array($version, [1, $progression['version']], true)) {
+            return null;
+        }
+        $maximum = $version === 1 ? 1 + $now - $intro : count($progression['levels']);
+        // A site keeps its first monument; timeless masterpieces are complete.
+        if ($current && ($area['timeless'] || $current !== $choice || $stage >= $maximum)) {
             return null;
         }
         $level = $area['timeless'] ? 1 : $stage + 1;
@@ -137,7 +140,11 @@ final class TownPersonalisation
         if (!$definition) {
             return null;
         }
-        $price = $definition['price'] * $level;
+        $multiplier =
+            $version === 1 || $area['timeless']
+                ? $level
+                : $progression['levels'][$level - 1]['multiplier'];
+        $price = $definition['price'] * $multiplier;
         if ($town['coins'] < $price) {
             return null;
         }

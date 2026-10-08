@@ -18338,7 +18338,8 @@
                     "slot": 0,
                     "value": "headframe",
                     "expectedChoice": null,
-                    "expectedLevel": 0
+                    "expectedLevel": 0,
+                    "monumentVersion": 2
                   }
                 ],
                 "at": 1780000000000
@@ -18356,7 +18357,8 @@
                     "slot": 0,
                     "value": "headframe",
                     "expectedChoice": "headframe",
-                    "expectedLevel": 1
+                    "expectedLevel": 1,
+                    "monumentVersion": 2
                   }
                 ],
                 "at": 1780000000000
@@ -18374,7 +18376,8 @@
                     "slot": 0,
                     "value": "headframe",
                     "expectedChoice": "headframe",
-                    "expectedLevel": 2
+                    "expectedLevel": 2,
+                    "monumentVersion": 2
                   }
                 ],
                 "at": 1780000000000
@@ -18392,7 +18395,8 @@
                     "slot": 0,
                     "value": "headframe",
                     "expectedChoice": "headframe",
-                    "expectedLevel": 3
+                    "expectedLevel": 3,
+                    "monumentVersion": 2
                   }
                 ],
                 "at": 1780000000000
@@ -18410,115 +18414,8 @@
                     "slot": 0,
                     "value": "headframe",
                     "expectedChoice": "headframe",
-                    "expectedLevel": 4
-                  }
-                ],
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000139",
-              "kind": "landmark-buy",
-              "data": {
-                "purchases": [
-                  {
-                    "kind": "area",
-                    "id": "meadow",
-                    "slot": 0,
-                    "value": "headframe",
-                    "expectedChoice": "headframe",
-                    "expectedLevel": 5
-                  }
-                ],
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000140",
-              "kind": "landmark-buy",
-              "data": {
-                "purchases": [
-                  {
-                    "kind": "area",
-                    "id": "meadow",
-                    "slot": 0,
-                    "value": "headframe",
-                    "expectedChoice": "headframe",
-                    "expectedLevel": 6
-                  }
-                ],
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000141",
-              "kind": "landmark-buy",
-              "data": {
-                "purchases": [
-                  {
-                    "kind": "area",
-                    "id": "meadow",
-                    "slot": 0,
-                    "value": "headframe",
-                    "expectedChoice": "headframe",
-                    "expectedLevel": 7
-                  }
-                ],
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000142",
-              "kind": "landmark-buy",
-              "data": {
-                "purchases": [
-                  {
-                    "kind": "area",
-                    "id": "meadow",
-                    "slot": 0,
-                    "value": "headframe",
-                    "expectedChoice": "headframe",
-                    "expectedLevel": 8
-                  }
-                ],
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000143",
-              "kind": "landmark-buy",
-              "data": {
-                "purchases": [
-                  {
-                    "kind": "area",
-                    "id": "meadow",
-                    "slot": 0,
-                    "value": "headframe",
-                    "expectedChoice": "headframe",
-                    "expectedLevel": 9
-                  }
-                ],
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000144",
-              "kind": "landmark-buy",
-              "data": {
-                "purchases": [
-                  {
-                    "kind": "area",
-                    "id": "meadow",
-                    "slot": 0,
-                    "value": "headframe",
-                    "expectedChoice": "headframe",
-                    "expectedLevel": 10
+                    "expectedLevel": 4,
+                    "monumentVersion": 2
                   }
                 ],
                 "at": 1780000000000
@@ -18548,7 +18445,7 @@
             "version": 3,
             "crest": null,
             "areas": { "meadow": ["headframe"] },
-            "areaLevels": { "meadow": 11 },
+            "areaLevels": { "meadow": 5 },
             "plaques": {}
           },
           "era": "riverlight",
@@ -18724,7 +18621,7 @@
           },
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
-          "coins": 9960400,
+          "coins": 9958000,
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -18856,7 +18753,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000145",
+          "epoch": "00000000-0000-4000-8000-000000000139",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -19187,13 +19084,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000145",
+          "epoch": "00000000-0000-4000-8000-000000000139",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000148",
+              "id": "00000000-0000-4000-8000-000000000142",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19203,7 +19100,8 @@
                     "slot": 0,
                     "value": "founders-arch",
                     "expectedChoice": null,
-                    "expectedLevel": 0
+                    "expectedLevel": 0,
+                    "monumentVersion": 2
                   }
                 ],
                 "at": 1780000000000
@@ -19547,7 +19445,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000149",
+          "epoch": "00000000-0000-4000-8000-000000000143",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -19878,13 +19776,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000149",
+          "epoch": "00000000-0000-4000-8000-000000000143",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000152",
+              "id": "00000000-0000-4000-8000-000000000146",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19894,7 +19792,8 @@
                     "slot": 0,
                     "value": "filling-station",
                     "expectedChoice": null,
-                    "expectedLevel": 0
+                    "expectedLevel": 0,
+                    "monumentVersion": 2
                   }
                 ],
                 "at": 1780000000000
@@ -19902,7 +19801,7 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000153",
+              "id": "00000000-0000-4000-8000-000000000147",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19912,7 +19811,8 @@
                     "slot": 0,
                     "value": "filling-station",
                     "expectedChoice": "filling-station",
-                    "expectedLevel": 1
+                    "expectedLevel": 1,
+                    "monumentVersion": 2
                   }
                 ],
                 "at": 1780000000000
@@ -19920,7 +19820,7 @@
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000154",
+              "id": "00000000-0000-4000-8000-000000000148",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19930,7 +19830,8 @@
                     "slot": 0,
                     "value": "filling-station",
                     "expectedChoice": "filling-station",
-                    "expectedLevel": 2
+                    "expectedLevel": 2,
+                    "monumentVersion": 2
                   }
                 ],
                 "at": 1780000000000
@@ -19938,7 +19839,7 @@
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000155",
+              "id": "00000000-0000-4000-8000-000000000149",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19948,7 +19849,8 @@
                     "slot": 0,
                     "value": "filling-station",
                     "expectedChoice": "filling-station",
-                    "expectedLevel": 3
+                    "expectedLevel": 3,
+                    "monumentVersion": 2
                   }
                 ],
                 "at": 1780000000000
@@ -19956,7 +19858,7 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000156",
+              "id": "00000000-0000-4000-8000-000000000150",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19966,43 +19868,8 @@
                     "slot": 0,
                     "value": "filling-station",
                     "expectedChoice": "filling-station",
-                    "expectedLevel": 4
-                  }
-                ],
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000157",
-              "kind": "landmark-buy",
-              "data": {
-                "purchases": [
-                  {
-                    "kind": "area",
-                    "id": "motor-court",
-                    "slot": 0,
-                    "value": "filling-station",
-                    "expectedChoice": "filling-station",
-                    "expectedLevel": 5
-                  }
-                ],
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000158",
-              "kind": "landmark-buy",
-              "data": {
-                "purchases": [
-                  {
-                    "kind": "area",
-                    "id": "motor-court",
-                    "slot": 0,
-                    "value": "filling-station",
-                    "expectedChoice": "filling-station",
-                    "expectedLevel": 6
+                    "expectedLevel": 4,
+                    "monumentVersion": 2
                   }
                 ],
                 "at": 1780000000000
@@ -20032,7 +19899,7 @@
             "version": 3,
             "crest": null,
             "areas": { "motor-court": ["filling-station"] },
-            "areaLevels": { "motor-court": 7 },
+            "areaLevels": { "motor-court": 5 },
             "plaques": {}
           },
           "era": "riverlight",
@@ -20208,7 +20075,7 @@
           },
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
-          "coins": 9888000,
+          "coins": 9720000,
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -20336,6 +20203,768 @@
     },
     {
       "name": "optional landmark arts-court: construction and upgrades",
+      "before": {
+        "schemaVersion": 2,
+        "integrity": {
+          "version": 1,
+          "epoch": "00000000-0000-4000-8000-000000000151",
+          "clientAt": 1780000000000,
+          "baseSequence": 0,
+          "actions": []
+        },
+        "records": {},
+        "continuousRecords": {},
+        "powers": [
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 0 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 0 },
+          { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
+          { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 0 },
+          { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
+        ],
+        "builderHammers": 0,
+        "chestsWithoutBuilderHammer": 0,
+        "pendingChests": [],
+        "shopStock": [],
+        "shopVisit": 0,
+        "vipReceipts": [],
+        "seenObstacles": [],
+        "seenTips": [],
+        "town": {
+          "personalisation": {
+            "version": 3,
+            "crest": null,
+            "areas": {},
+            "areaLevels": {},
+            "plaques": {}
+          },
+          "era": "riverlight",
+          "buildingEras": {
+            "well": "riverlight",
+            "farm": "riverlight",
+            "home": "riverlight",
+            "saloon": "riverlight",
+            "stable": "riverlight",
+            "sheriff": "riverlight",
+            "museum": "riverlight",
+            "armory": "riverlight",
+            "bank": "riverlight",
+            "shop": "riverlight",
+            "square": "riverlight",
+            "watermill": "riverlight",
+            "fisherman": "riverlight",
+            "blacksmith": "riverlight",
+            "school": "riverlight",
+            "doctor": "riverlight",
+            "bridge": "riverlight",
+            "riverPort": "riverlight",
+            "railDepot": "riverlight",
+            "post": "riverlight",
+            "warehouse": "riverlight",
+            "hotel": "riverlight",
+            "home5": "riverlight",
+            "market": "riverlight",
+            "powerHouse": "riverlight",
+            "fireStation": "riverlight",
+            "rowHouses": "riverlight",
+            "mill": "riverlight",
+            "garage": "riverlight",
+            "busDepot": "riverlight",
+            "gardenCourt": "riverlight",
+            "diner": "riverlight",
+            "teaHouse": "riverlight",
+            "blossomAtelier": "riverlight",
+            "orchardCottages": "riverlight",
+            "glassworks": "riverlight",
+            "springsRetreat": "riverlight",
+            "riverlightPavilion": "riverlight",
+            "airport": "riverlight",
+            "radioTower": "riverlight",
+            "concertHall": "riverlight",
+            "television": "riverlight",
+            "skyline": "riverlight",
+            "cityHall": "riverlight",
+            "apartments": "riverlight",
+            "supermarket": "riverlight",
+            "waterPlant": "riverlight",
+            "transitHub": "riverlight",
+            "library": "riverlight",
+            "crystalLab": "riverlight",
+            "cityHomes": "riverlight",
+            "riverPark": "riverlight",
+            "skyPods": "riverlight",
+            "biodome": "riverlight",
+            "maglevStation": "riverlight",
+            "skyHarbour": "frontier",
+            "cloudOrchard": "frontier",
+            "windsongLofts": "frontier",
+            "greatTelescope": "frontier",
+            "dewlightGardens": "frontier",
+            "starlightTerraces": "frontier",
+            "spaceElevator": "frontier",
+            "moonpost": "frontier",
+            "missionHomesteads": "frontier",
+            "homecomingHall": "frontier",
+            "ribbonLanding": "frontier",
+            "settlerDomes": "frontier",
+            "craterIceWell": "frontier",
+            "earthlightGreenhouse": "frontier",
+            "willowkinDome": "frontier",
+            "newHollowCommons": "frontier",
+            "craterHomesteads": "frontier",
+            "moonstoneWorkshop": "frontier",
+            "roverBarn": "frontier",
+            "earthriseLookout": "frontier",
+            "horseField": "riverlight",
+            "park": "riverlight",
+            "home2": "riverlight",
+            "home3": "riverlight",
+            "home4": "riverlight",
+            "well2": "riverlight",
+            "farm2": "riverlight",
+            "farm3": "riverlight"
+          },
+          "buildingEraLevels": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 3,
+            "stable": 3,
+            "sheriff": 3,
+            "museum": 3,
+            "armory": 3,
+            "bank": 3,
+            "shop": 3,
+            "square": 3,
+            "watermill": 3,
+            "fisherman": 3,
+            "blacksmith": 3,
+            "school": 3,
+            "doctor": 3,
+            "bridge": 3,
+            "riverPort": 3,
+            "railDepot": 3,
+            "post": 3,
+            "warehouse": 3,
+            "hotel": 3,
+            "home5": 3,
+            "market": 3,
+            "powerHouse": 3,
+            "fireStation": 3,
+            "rowHouses": 3,
+            "mill": 3,
+            "garage": 3,
+            "busDepot": 3,
+            "gardenCourt": 3,
+            "diner": 3,
+            "teaHouse": 3,
+            "blossomAtelier": 3,
+            "orchardCottages": 3,
+            "glassworks": 3,
+            "springsRetreat": 3,
+            "riverlightPavilion": 3,
+            "airport": 3,
+            "radioTower": 3,
+            "concertHall": 3,
+            "television": 3,
+            "skyline": 3,
+            "cityHall": 3,
+            "apartments": 3,
+            "supermarket": 3,
+            "waterPlant": 3,
+            "transitHub": 3,
+            "library": 3,
+            "crystalLab": 3,
+            "cityHomes": 3,
+            "riverPark": 3,
+            "skyPods": 3,
+            "biodome": 3,
+            "maglevStation": 3,
+            "skyHarbour": 0,
+            "cloudOrchard": 0,
+            "windsongLofts": 0,
+            "greatTelescope": 0,
+            "dewlightGardens": 0,
+            "starlightTerraces": 0,
+            "spaceElevator": 0,
+            "moonpost": 0,
+            "missionHomesteads": 0,
+            "homecomingHall": 0,
+            "ribbonLanding": 0,
+            "settlerDomes": 0,
+            "craterIceWell": 0,
+            "earthlightGreenhouse": 0,
+            "willowkinDome": 0,
+            "newHollowCommons": 0,
+            "craterHomesteads": 0,
+            "moonstoneWorkshop": 0,
+            "roverBarn": 0,
+            "earthriseLookout": 0,
+            "horseField": 3,
+            "park": 3,
+            "home2": 3,
+            "home3": 3,
+            "home4": 3,
+            "well2": 3,
+            "farm2": 3,
+            "farm3": 3
+          },
+          "firstLightsSeen": false,
+          "forge": { "progress": 0, "charge": 0 },
+          "coins": 10000000,
+          "tourSeen": false,
+          "buildings": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 5,
+            "stable": 3,
+            "sheriff": 5,
+            "museum": 3,
+            "armory": 3,
+            "bank": 5,
+            "shop": 3,
+            "square": 5,
+            "watermill": 3,
+            "fisherman": 3,
+            "blacksmith": 5,
+            "school": 3,
+            "doctor": 3,
+            "bridge": 3,
+            "riverPort": 3,
+            "railDepot": 3,
+            "post": 3,
+            "warehouse": 3,
+            "hotel": 3,
+            "home5": 3,
+            "market": 3,
+            "powerHouse": 3,
+            "fireStation": 3,
+            "rowHouses": 3,
+            "mill": 3,
+            "garage": 3,
+            "busDepot": 3,
+            "gardenCourt": 3,
+            "diner": 3,
+            "teaHouse": 3,
+            "blossomAtelier": 3,
+            "orchardCottages": 3,
+            "glassworks": 3,
+            "springsRetreat": 3,
+            "riverlightPavilion": 3,
+            "airport": 3,
+            "radioTower": 3,
+            "concertHall": 3,
+            "television": 3,
+            "skyline": 3,
+            "cityHall": 3,
+            "apartments": 3,
+            "supermarket": 3,
+            "waterPlant": 3,
+            "transitHub": 3,
+            "library": 3,
+            "crystalLab": 3,
+            "cityHomes": 3,
+            "riverPark": 3,
+            "skyPods": 3,
+            "biodome": 3,
+            "maglevStation": 3,
+            "skyHarbour": 0,
+            "cloudOrchard": 0,
+            "windsongLofts": 0,
+            "greatTelescope": 0,
+            "dewlightGardens": 0,
+            "starlightTerraces": 0,
+            "spaceElevator": 0,
+            "moonpost": 0,
+            "missionHomesteads": 0,
+            "homecomingHall": 0,
+            "ribbonLanding": 0,
+            "settlerDomes": 0,
+            "craterIceWell": 0,
+            "earthlightGreenhouse": 0,
+            "willowkinDome": 0,
+            "newHollowCommons": 0,
+            "craterHomesteads": 0,
+            "moonstoneWorkshop": 0,
+            "roverBarn": 0,
+            "earthriseLookout": 0,
+            "horseField": 3,
+            "park": 3,
+            "home2": 3,
+            "home3": 3,
+            "home4": 3,
+            "well2": 3,
+            "farm2": 3,
+            "farm3": 3
+          },
+          "events": {},
+          "presentations": {},
+          "projects": {},
+          "completedRuns": 0,
+          "nextRaidRun": null,
+          "income": { "at": null, "remainder": 0, "stored": 0 },
+          "lastCollections": { "saloon": null, "blacksmith": null },
+          "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
+          "guestVip": null,
+          "progressionVersion": 1
+        },
+        "townProjectFocus": "",
+        "issuedRun": 0,
+        "settledRun": 0,
+        "honours": {
+          "version": 4,
+          "earned": {
+            "ages-bronze": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
+            "ages-silver": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
+            "ages-gold": { "at": 1780000000000, "version": 1, "seen": false, "announced": false }
+          },
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
+          "showcase": [],
+          "backfilled": 0,
+          "seenGeneration": 4
+        }
+      },
+      "after": {
+        "schemaVersion": 2,
+        "integrity": {
+          "version": 1,
+          "epoch": "00000000-0000-4000-8000-000000000151",
+          "clientAt": 1780000000000,
+          "baseSequence": 0,
+          "actions": [
+            {
+              "sequence": 1,
+              "id": "00000000-0000-4000-8000-000000000154",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "arts-court",
+                    "slot": 0,
+                    "value": "music-shell",
+                    "expectedChoice": null,
+                    "expectedLevel": 0,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 2,
+              "id": "00000000-0000-4000-8000-000000000155",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "arts-court",
+                    "slot": 0,
+                    "value": "music-shell",
+                    "expectedChoice": "music-shell",
+                    "expectedLevel": 1,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 3,
+              "id": "00000000-0000-4000-8000-000000000156",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "arts-court",
+                    "slot": 0,
+                    "value": "music-shell",
+                    "expectedChoice": "music-shell",
+                    "expectedLevel": 2,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 4,
+              "id": "00000000-0000-4000-8000-000000000157",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "arts-court",
+                    "slot": 0,
+                    "value": "music-shell",
+                    "expectedChoice": "music-shell",
+                    "expectedLevel": 3,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 5,
+              "id": "00000000-0000-4000-8000-000000000158",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "arts-court",
+                    "slot": 0,
+                    "value": "music-shell",
+                    "expectedChoice": "music-shell",
+                    "expectedLevel": 4,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            }
+          ]
+        },
+        "records": {},
+        "continuousRecords": {},
+        "powers": [
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 0 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 0 },
+          { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
+          { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 0 },
+          { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
+        ],
+        "builderHammers": 0,
+        "chestsWithoutBuilderHammer": 0,
+        "pendingChests": [],
+        "shopStock": [],
+        "shopVisit": 0,
+        "vipReceipts": [],
+        "seenObstacles": [],
+        "seenTips": [],
+        "town": {
+          "personalisation": {
+            "version": 3,
+            "crest": null,
+            "areas": { "arts-court": ["music-shell"] },
+            "areaLevels": { "arts-court": 5 },
+            "plaques": {}
+          },
+          "era": "riverlight",
+          "buildingEras": {
+            "well": "riverlight",
+            "farm": "riverlight",
+            "home": "riverlight",
+            "saloon": "riverlight",
+            "stable": "riverlight",
+            "sheriff": "riverlight",
+            "museum": "riverlight",
+            "armory": "riverlight",
+            "bank": "riverlight",
+            "shop": "riverlight",
+            "square": "riverlight",
+            "watermill": "riverlight",
+            "fisherman": "riverlight",
+            "blacksmith": "riverlight",
+            "school": "riverlight",
+            "doctor": "riverlight",
+            "bridge": "riverlight",
+            "riverPort": "riverlight",
+            "railDepot": "riverlight",
+            "post": "riverlight",
+            "warehouse": "riverlight",
+            "hotel": "riverlight",
+            "home5": "riverlight",
+            "market": "riverlight",
+            "powerHouse": "riverlight",
+            "fireStation": "riverlight",
+            "rowHouses": "riverlight",
+            "mill": "riverlight",
+            "garage": "riverlight",
+            "busDepot": "riverlight",
+            "gardenCourt": "riverlight",
+            "diner": "riverlight",
+            "teaHouse": "riverlight",
+            "blossomAtelier": "riverlight",
+            "orchardCottages": "riverlight",
+            "glassworks": "riverlight",
+            "springsRetreat": "riverlight",
+            "riverlightPavilion": "riverlight",
+            "airport": "riverlight",
+            "radioTower": "riverlight",
+            "concertHall": "riverlight",
+            "television": "riverlight",
+            "skyline": "riverlight",
+            "cityHall": "riverlight",
+            "apartments": "riverlight",
+            "supermarket": "riverlight",
+            "waterPlant": "riverlight",
+            "transitHub": "riverlight",
+            "library": "riverlight",
+            "crystalLab": "riverlight",
+            "cityHomes": "riverlight",
+            "riverPark": "riverlight",
+            "skyPods": "riverlight",
+            "biodome": "riverlight",
+            "maglevStation": "riverlight",
+            "skyHarbour": "frontier",
+            "cloudOrchard": "frontier",
+            "windsongLofts": "frontier",
+            "greatTelescope": "frontier",
+            "dewlightGardens": "frontier",
+            "starlightTerraces": "frontier",
+            "spaceElevator": "frontier",
+            "moonpost": "frontier",
+            "missionHomesteads": "frontier",
+            "homecomingHall": "frontier",
+            "ribbonLanding": "frontier",
+            "settlerDomes": "frontier",
+            "craterIceWell": "frontier",
+            "earthlightGreenhouse": "frontier",
+            "willowkinDome": "frontier",
+            "newHollowCommons": "frontier",
+            "craterHomesteads": "frontier",
+            "moonstoneWorkshop": "frontier",
+            "roverBarn": "frontier",
+            "earthriseLookout": "frontier",
+            "horseField": "riverlight",
+            "park": "riverlight",
+            "home2": "riverlight",
+            "home3": "riverlight",
+            "home4": "riverlight",
+            "well2": "riverlight",
+            "farm2": "riverlight",
+            "farm3": "riverlight"
+          },
+          "buildingEraLevels": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 3,
+            "stable": 3,
+            "sheriff": 3,
+            "museum": 3,
+            "armory": 3,
+            "bank": 3,
+            "shop": 3,
+            "square": 3,
+            "watermill": 3,
+            "fisherman": 3,
+            "blacksmith": 3,
+            "school": 3,
+            "doctor": 3,
+            "bridge": 3,
+            "riverPort": 3,
+            "railDepot": 3,
+            "post": 3,
+            "warehouse": 3,
+            "hotel": 3,
+            "home5": 3,
+            "market": 3,
+            "powerHouse": 3,
+            "fireStation": 3,
+            "rowHouses": 3,
+            "mill": 3,
+            "garage": 3,
+            "busDepot": 3,
+            "gardenCourt": 3,
+            "diner": 3,
+            "teaHouse": 3,
+            "blossomAtelier": 3,
+            "orchardCottages": 3,
+            "glassworks": 3,
+            "springsRetreat": 3,
+            "riverlightPavilion": 3,
+            "airport": 3,
+            "radioTower": 3,
+            "concertHall": 3,
+            "television": 3,
+            "skyline": 3,
+            "cityHall": 3,
+            "apartments": 3,
+            "supermarket": 3,
+            "waterPlant": 3,
+            "transitHub": 3,
+            "library": 3,
+            "crystalLab": 3,
+            "cityHomes": 3,
+            "riverPark": 3,
+            "skyPods": 3,
+            "biodome": 3,
+            "maglevStation": 3,
+            "skyHarbour": 0,
+            "cloudOrchard": 0,
+            "windsongLofts": 0,
+            "greatTelescope": 0,
+            "dewlightGardens": 0,
+            "starlightTerraces": 0,
+            "spaceElevator": 0,
+            "moonpost": 0,
+            "missionHomesteads": 0,
+            "homecomingHall": 0,
+            "ribbonLanding": 0,
+            "settlerDomes": 0,
+            "craterIceWell": 0,
+            "earthlightGreenhouse": 0,
+            "willowkinDome": 0,
+            "newHollowCommons": 0,
+            "craterHomesteads": 0,
+            "moonstoneWorkshop": 0,
+            "roverBarn": 0,
+            "earthriseLookout": 0,
+            "horseField": 3,
+            "park": 3,
+            "home2": 3,
+            "home3": 3,
+            "home4": 3,
+            "well2": 3,
+            "farm2": 3,
+            "farm3": 3
+          },
+          "firstLightsSeen": false,
+          "forge": { "progress": 0, "charge": 0 },
+          "coins": 9510000,
+          "tourSeen": false,
+          "buildings": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 5,
+            "stable": 3,
+            "sheriff": 5,
+            "museum": 3,
+            "armory": 3,
+            "bank": 5,
+            "shop": 3,
+            "square": 5,
+            "watermill": 3,
+            "fisherman": 3,
+            "blacksmith": 5,
+            "school": 3,
+            "doctor": 3,
+            "bridge": 3,
+            "riverPort": 3,
+            "railDepot": 3,
+            "post": 3,
+            "warehouse": 3,
+            "hotel": 3,
+            "home5": 3,
+            "market": 3,
+            "powerHouse": 3,
+            "fireStation": 3,
+            "rowHouses": 3,
+            "mill": 3,
+            "garage": 3,
+            "busDepot": 3,
+            "gardenCourt": 3,
+            "diner": 3,
+            "teaHouse": 3,
+            "blossomAtelier": 3,
+            "orchardCottages": 3,
+            "glassworks": 3,
+            "springsRetreat": 3,
+            "riverlightPavilion": 3,
+            "airport": 3,
+            "radioTower": 3,
+            "concertHall": 3,
+            "television": 3,
+            "skyline": 3,
+            "cityHall": 3,
+            "apartments": 3,
+            "supermarket": 3,
+            "waterPlant": 3,
+            "transitHub": 3,
+            "library": 3,
+            "crystalLab": 3,
+            "cityHomes": 3,
+            "riverPark": 3,
+            "skyPods": 3,
+            "biodome": 3,
+            "maglevStation": 3,
+            "skyHarbour": 0,
+            "cloudOrchard": 0,
+            "windsongLofts": 0,
+            "greatTelescope": 0,
+            "dewlightGardens": 0,
+            "starlightTerraces": 0,
+            "spaceElevator": 0,
+            "moonpost": 0,
+            "missionHomesteads": 0,
+            "homecomingHall": 0,
+            "ribbonLanding": 0,
+            "settlerDomes": 0,
+            "craterIceWell": 0,
+            "earthlightGreenhouse": 0,
+            "willowkinDome": 0,
+            "newHollowCommons": 0,
+            "craterHomesteads": 0,
+            "moonstoneWorkshop": 0,
+            "roverBarn": 0,
+            "earthriseLookout": 0,
+            "horseField": 3,
+            "park": 3,
+            "home2": 3,
+            "home3": 3,
+            "home4": 3,
+            "well2": 3,
+            "farm2": 3,
+            "farm3": 3
+          },
+          "events": {},
+          "presentations": {},
+          "projects": {},
+          "completedRuns": 0,
+          "nextRaidRun": null,
+          "income": { "at": null, "remainder": 0, "stored": 0 },
+          "lastCollections": { "saloon": null, "blacksmith": null },
+          "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
+          "guestVip": null,
+          "progressionVersion": 1
+        },
+        "townProjectFocus": "",
+        "issuedRun": 0,
+        "settledRun": 0,
+        "honours": {
+          "version": 4,
+          "earned": {
+            "ages-bronze": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
+            "ages-silver": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
+            "ages-gold": { "at": 1780000000000, "version": 1, "seen": false, "announced": false }
+          },
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
+          "showcase": [],
+          "backfilled": 0,
+          "seenGeneration": 4
+        }
+      },
+      "serverNow": 1780000000000
+    },
+    {
+      "name": "optional landmark horizon: construction and upgrades",
       "before": {
         "schemaVersion": 2,
         "integrity": {
@@ -20683,11 +21312,12 @@
                 "purchases": [
                   {
                     "kind": "area",
-                    "id": "arts-court",
+                    "id": "horizon",
                     "slot": 0,
-                    "value": "music-shell",
+                    "value": "orbit-house",
                     "expectedChoice": null,
-                    "expectedLevel": 0
+                    "expectedLevel": 0,
+                    "monumentVersion": 2
                   }
                 ],
                 "at": 1780000000000
@@ -20701,11 +21331,12 @@
                 "purchases": [
                   {
                     "kind": "area",
-                    "id": "arts-court",
+                    "id": "horizon",
                     "slot": 0,
-                    "value": "music-shell",
-                    "expectedChoice": "music-shell",
-                    "expectedLevel": 1
+                    "value": "orbit-house",
+                    "expectedChoice": "orbit-house",
+                    "expectedLevel": 1,
+                    "monumentVersion": 2
                   }
                 ],
                 "at": 1780000000000
@@ -20719,11 +21350,12 @@
                 "purchases": [
                   {
                     "kind": "area",
-                    "id": "arts-court",
+                    "id": "horizon",
                     "slot": 0,
-                    "value": "music-shell",
-                    "expectedChoice": "music-shell",
-                    "expectedLevel": 2
+                    "value": "orbit-house",
+                    "expectedChoice": "orbit-house",
+                    "expectedLevel": 2,
+                    "monumentVersion": 2
                   }
                 ],
                 "at": 1780000000000
@@ -20737,11 +21369,12 @@
                 "purchases": [
                   {
                     "kind": "area",
-                    "id": "arts-court",
+                    "id": "horizon",
                     "slot": 0,
-                    "value": "music-shell",
-                    "expectedChoice": "music-shell",
-                    "expectedLevel": 3
+                    "value": "orbit-house",
+                    "expectedChoice": "orbit-house",
+                    "expectedLevel": 3,
+                    "monumentVersion": 2
                   }
                 ],
                 "at": 1780000000000
@@ -20755,11 +21388,12 @@
                 "purchases": [
                   {
                     "kind": "area",
-                    "id": "arts-court",
+                    "id": "horizon",
                     "slot": 0,
-                    "value": "music-shell",
-                    "expectedChoice": "music-shell",
-                    "expectedLevel": 4
+                    "value": "orbit-house",
+                    "expectedChoice": "orbit-house",
+                    "expectedLevel": 4,
+                    "monumentVersion": 2
                   }
                 ],
                 "at": 1780000000000
@@ -20788,8 +21422,8 @@
           "personalisation": {
             "version": 3,
             "crest": null,
-            "areas": { "arts-court": ["music-shell"] },
-            "areaLevels": { "arts-court": 5 },
+            "areas": { "horizon": ["orbit-house"] },
+            "areaLevels": { "horizon": 5 },
             "plaques": {}
           },
           "era": "riverlight",
@@ -20965,7 +21599,7 @@
           },
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
-          "coins": 9895000,
+          "coins": 9160000,
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -21092,7 +21726,7 @@
       "serverNow": 1780000000000
     },
     {
-      "name": "optional landmark horizon: construction and upgrades",
+      "name": "optional landmark light-court: construction and upgrades",
       "before": {
         "schemaVersion": 2,
         "integrity": {
@@ -21440,11 +22074,12 @@
                 "purchases": [
                   {
                     "kind": "area",
-                    "id": "horizon",
+                    "id": "light-court",
                     "slot": 0,
-                    "value": "orbit-house",
+                    "value": "spring-terraces",
                     "expectedChoice": null,
-                    "expectedLevel": 0
+                    "expectedLevel": 0,
+                    "monumentVersion": 2
                   }
                 ],
                 "at": 1780000000000
@@ -21458,11 +22093,12 @@
                 "purchases": [
                   {
                     "kind": "area",
-                    "id": "horizon",
+                    "id": "light-court",
                     "slot": 0,
-                    "value": "orbit-house",
-                    "expectedChoice": "orbit-house",
-                    "expectedLevel": 1
+                    "value": "spring-terraces",
+                    "expectedChoice": "spring-terraces",
+                    "expectedLevel": 1,
+                    "monumentVersion": 2
                   }
                 ],
                 "at": 1780000000000
@@ -21476,686 +22112,20 @@
                 "purchases": [
                   {
                     "kind": "area",
-                    "id": "horizon",
+                    "id": "light-court",
                     "slot": 0,
-                    "value": "orbit-house",
-                    "expectedChoice": "orbit-house",
-                    "expectedLevel": 2
+                    "value": "spring-terraces",
+                    "expectedChoice": "spring-terraces",
+                    "expectedLevel": 2,
+                    "monumentVersion": 2
                   }
                 ],
                 "at": 1780000000000
               }
-            }
-          ]
-        },
-        "records": {},
-        "continuousRecords": {},
-        "powers": [
-          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 0 },
-          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 0 },
-          { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
-          { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 0 },
-          { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
-        ],
-        "builderHammers": 0,
-        "chestsWithoutBuilderHammer": 0,
-        "pendingChests": [],
-        "shopStock": [],
-        "shopVisit": 0,
-        "vipReceipts": [],
-        "seenObstacles": [],
-        "seenTips": [],
-        "town": {
-          "personalisation": {
-            "version": 3,
-            "crest": null,
-            "areas": { "horizon": ["orbit-house"] },
-            "areaLevels": { "horizon": 3 },
-            "plaques": {}
-          },
-          "era": "riverlight",
-          "buildingEras": {
-            "well": "riverlight",
-            "farm": "riverlight",
-            "home": "riverlight",
-            "saloon": "riverlight",
-            "stable": "riverlight",
-            "sheriff": "riverlight",
-            "museum": "riverlight",
-            "armory": "riverlight",
-            "bank": "riverlight",
-            "shop": "riverlight",
-            "square": "riverlight",
-            "watermill": "riverlight",
-            "fisherman": "riverlight",
-            "blacksmith": "riverlight",
-            "school": "riverlight",
-            "doctor": "riverlight",
-            "bridge": "riverlight",
-            "riverPort": "riverlight",
-            "railDepot": "riverlight",
-            "post": "riverlight",
-            "warehouse": "riverlight",
-            "hotel": "riverlight",
-            "home5": "riverlight",
-            "market": "riverlight",
-            "powerHouse": "riverlight",
-            "fireStation": "riverlight",
-            "rowHouses": "riverlight",
-            "mill": "riverlight",
-            "garage": "riverlight",
-            "busDepot": "riverlight",
-            "gardenCourt": "riverlight",
-            "diner": "riverlight",
-            "teaHouse": "riverlight",
-            "blossomAtelier": "riverlight",
-            "orchardCottages": "riverlight",
-            "glassworks": "riverlight",
-            "springsRetreat": "riverlight",
-            "riverlightPavilion": "riverlight",
-            "airport": "riverlight",
-            "radioTower": "riverlight",
-            "concertHall": "riverlight",
-            "television": "riverlight",
-            "skyline": "riverlight",
-            "cityHall": "riverlight",
-            "apartments": "riverlight",
-            "supermarket": "riverlight",
-            "waterPlant": "riverlight",
-            "transitHub": "riverlight",
-            "library": "riverlight",
-            "crystalLab": "riverlight",
-            "cityHomes": "riverlight",
-            "riverPark": "riverlight",
-            "skyPods": "riverlight",
-            "biodome": "riverlight",
-            "maglevStation": "riverlight",
-            "skyHarbour": "frontier",
-            "cloudOrchard": "frontier",
-            "windsongLofts": "frontier",
-            "greatTelescope": "frontier",
-            "dewlightGardens": "frontier",
-            "starlightTerraces": "frontier",
-            "spaceElevator": "frontier",
-            "moonpost": "frontier",
-            "missionHomesteads": "frontier",
-            "homecomingHall": "frontier",
-            "ribbonLanding": "frontier",
-            "settlerDomes": "frontier",
-            "craterIceWell": "frontier",
-            "earthlightGreenhouse": "frontier",
-            "willowkinDome": "frontier",
-            "newHollowCommons": "frontier",
-            "craterHomesteads": "frontier",
-            "moonstoneWorkshop": "frontier",
-            "roverBarn": "frontier",
-            "earthriseLookout": "frontier",
-            "horseField": "riverlight",
-            "park": "riverlight",
-            "home2": "riverlight",
-            "home3": "riverlight",
-            "home4": "riverlight",
-            "well2": "riverlight",
-            "farm2": "riverlight",
-            "farm3": "riverlight"
-          },
-          "buildingEraLevels": {
-            "well": 3,
-            "farm": 3,
-            "home": 3,
-            "saloon": 3,
-            "stable": 3,
-            "sheriff": 3,
-            "museum": 3,
-            "armory": 3,
-            "bank": 3,
-            "shop": 3,
-            "square": 3,
-            "watermill": 3,
-            "fisherman": 3,
-            "blacksmith": 3,
-            "school": 3,
-            "doctor": 3,
-            "bridge": 3,
-            "riverPort": 3,
-            "railDepot": 3,
-            "post": 3,
-            "warehouse": 3,
-            "hotel": 3,
-            "home5": 3,
-            "market": 3,
-            "powerHouse": 3,
-            "fireStation": 3,
-            "rowHouses": 3,
-            "mill": 3,
-            "garage": 3,
-            "busDepot": 3,
-            "gardenCourt": 3,
-            "diner": 3,
-            "teaHouse": 3,
-            "blossomAtelier": 3,
-            "orchardCottages": 3,
-            "glassworks": 3,
-            "springsRetreat": 3,
-            "riverlightPavilion": 3,
-            "airport": 3,
-            "radioTower": 3,
-            "concertHall": 3,
-            "television": 3,
-            "skyline": 3,
-            "cityHall": 3,
-            "apartments": 3,
-            "supermarket": 3,
-            "waterPlant": 3,
-            "transitHub": 3,
-            "library": 3,
-            "crystalLab": 3,
-            "cityHomes": 3,
-            "riverPark": 3,
-            "skyPods": 3,
-            "biodome": 3,
-            "maglevStation": 3,
-            "skyHarbour": 0,
-            "cloudOrchard": 0,
-            "windsongLofts": 0,
-            "greatTelescope": 0,
-            "dewlightGardens": 0,
-            "starlightTerraces": 0,
-            "spaceElevator": 0,
-            "moonpost": 0,
-            "missionHomesteads": 0,
-            "homecomingHall": 0,
-            "ribbonLanding": 0,
-            "settlerDomes": 0,
-            "craterIceWell": 0,
-            "earthlightGreenhouse": 0,
-            "willowkinDome": 0,
-            "newHollowCommons": 0,
-            "craterHomesteads": 0,
-            "moonstoneWorkshop": 0,
-            "roverBarn": 0,
-            "earthriseLookout": 0,
-            "horseField": 3,
-            "park": 3,
-            "home2": 3,
-            "home3": 3,
-            "home4": 3,
-            "well2": 3,
-            "farm2": 3,
-            "farm3": 3
-          },
-          "firstLightsSeen": false,
-          "forge": { "progress": 0, "charge": 0 },
-          "coins": 9928000,
-          "tourSeen": false,
-          "buildings": {
-            "well": 3,
-            "farm": 3,
-            "home": 3,
-            "saloon": 5,
-            "stable": 3,
-            "sheriff": 5,
-            "museum": 3,
-            "armory": 3,
-            "bank": 5,
-            "shop": 3,
-            "square": 5,
-            "watermill": 3,
-            "fisherman": 3,
-            "blacksmith": 5,
-            "school": 3,
-            "doctor": 3,
-            "bridge": 3,
-            "riverPort": 3,
-            "railDepot": 3,
-            "post": 3,
-            "warehouse": 3,
-            "hotel": 3,
-            "home5": 3,
-            "market": 3,
-            "powerHouse": 3,
-            "fireStation": 3,
-            "rowHouses": 3,
-            "mill": 3,
-            "garage": 3,
-            "busDepot": 3,
-            "gardenCourt": 3,
-            "diner": 3,
-            "teaHouse": 3,
-            "blossomAtelier": 3,
-            "orchardCottages": 3,
-            "glassworks": 3,
-            "springsRetreat": 3,
-            "riverlightPavilion": 3,
-            "airport": 3,
-            "radioTower": 3,
-            "concertHall": 3,
-            "television": 3,
-            "skyline": 3,
-            "cityHall": 3,
-            "apartments": 3,
-            "supermarket": 3,
-            "waterPlant": 3,
-            "transitHub": 3,
-            "library": 3,
-            "crystalLab": 3,
-            "cityHomes": 3,
-            "riverPark": 3,
-            "skyPods": 3,
-            "biodome": 3,
-            "maglevStation": 3,
-            "skyHarbour": 0,
-            "cloudOrchard": 0,
-            "windsongLofts": 0,
-            "greatTelescope": 0,
-            "dewlightGardens": 0,
-            "starlightTerraces": 0,
-            "spaceElevator": 0,
-            "moonpost": 0,
-            "missionHomesteads": 0,
-            "homecomingHall": 0,
-            "ribbonLanding": 0,
-            "settlerDomes": 0,
-            "craterIceWell": 0,
-            "earthlightGreenhouse": 0,
-            "willowkinDome": 0,
-            "newHollowCommons": 0,
-            "craterHomesteads": 0,
-            "moonstoneWorkshop": 0,
-            "roverBarn": 0,
-            "earthriseLookout": 0,
-            "horseField": 3,
-            "park": 3,
-            "home2": 3,
-            "home3": 3,
-            "home4": 3,
-            "well2": 3,
-            "farm2": 3,
-            "farm3": 3
-          },
-          "events": {},
-          "presentations": {},
-          "projects": {},
-          "completedRuns": 0,
-          "nextRaidRun": null,
-          "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
-          "saloonVisitAt": 0,
-          "helmetRun": 0,
-          "helmetVisitAt": 0,
-          "guestVip": null,
-          "progressionVersion": 1
-        },
-        "townProjectFocus": "",
-        "issuedRun": 0,
-        "settledRun": 0,
-        "honours": {
-          "version": 4,
-          "earned": {
-            "ages-bronze": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
-            "ages-silver": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
-            "ages-gold": { "at": 1780000000000, "version": 1, "seen": false, "announced": false }
-          },
-          "counts": {
-            "gems": {},
-            "mine": {},
-            "fusions": {},
-            "forge": 0,
-            "guardian": 0,
-            "visitors": 0,
-            "travels": 0
-          },
-          "showcase": [],
-          "backfilled": 0,
-          "seenGeneration": 4
-        }
-      },
-      "serverNow": 1780000000000
-    },
-    {
-      "name": "optional landmark light-court: construction and upgrades",
-      "before": {
-        "schemaVersion": 2,
-        "integrity": {
-          "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000173",
-          "clientAt": 1780000000000,
-          "baseSequence": 0,
-          "actions": []
-        },
-        "records": {},
-        "continuousRecords": {},
-        "powers": [
-          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 0 },
-          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 0 },
-          { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
-          { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 0 },
-          { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
-        ],
-        "builderHammers": 0,
-        "chestsWithoutBuilderHammer": 0,
-        "pendingChests": [],
-        "shopStock": [],
-        "shopVisit": 0,
-        "vipReceipts": [],
-        "seenObstacles": [],
-        "seenTips": [],
-        "town": {
-          "personalisation": {
-            "version": 3,
-            "crest": null,
-            "areas": {},
-            "areaLevels": {},
-            "plaques": {}
-          },
-          "era": "riverlight",
-          "buildingEras": {
-            "well": "riverlight",
-            "farm": "riverlight",
-            "home": "riverlight",
-            "saloon": "riverlight",
-            "stable": "riverlight",
-            "sheriff": "riverlight",
-            "museum": "riverlight",
-            "armory": "riverlight",
-            "bank": "riverlight",
-            "shop": "riverlight",
-            "square": "riverlight",
-            "watermill": "riverlight",
-            "fisherman": "riverlight",
-            "blacksmith": "riverlight",
-            "school": "riverlight",
-            "doctor": "riverlight",
-            "bridge": "riverlight",
-            "riverPort": "riverlight",
-            "railDepot": "riverlight",
-            "post": "riverlight",
-            "warehouse": "riverlight",
-            "hotel": "riverlight",
-            "home5": "riverlight",
-            "market": "riverlight",
-            "powerHouse": "riverlight",
-            "fireStation": "riverlight",
-            "rowHouses": "riverlight",
-            "mill": "riverlight",
-            "garage": "riverlight",
-            "busDepot": "riverlight",
-            "gardenCourt": "riverlight",
-            "diner": "riverlight",
-            "teaHouse": "riverlight",
-            "blossomAtelier": "riverlight",
-            "orchardCottages": "riverlight",
-            "glassworks": "riverlight",
-            "springsRetreat": "riverlight",
-            "riverlightPavilion": "riverlight",
-            "airport": "riverlight",
-            "radioTower": "riverlight",
-            "concertHall": "riverlight",
-            "television": "riverlight",
-            "skyline": "riverlight",
-            "cityHall": "riverlight",
-            "apartments": "riverlight",
-            "supermarket": "riverlight",
-            "waterPlant": "riverlight",
-            "transitHub": "riverlight",
-            "library": "riverlight",
-            "crystalLab": "riverlight",
-            "cityHomes": "riverlight",
-            "riverPark": "riverlight",
-            "skyPods": "riverlight",
-            "biodome": "riverlight",
-            "maglevStation": "riverlight",
-            "skyHarbour": "frontier",
-            "cloudOrchard": "frontier",
-            "windsongLofts": "frontier",
-            "greatTelescope": "frontier",
-            "dewlightGardens": "frontier",
-            "starlightTerraces": "frontier",
-            "spaceElevator": "frontier",
-            "moonpost": "frontier",
-            "missionHomesteads": "frontier",
-            "homecomingHall": "frontier",
-            "ribbonLanding": "frontier",
-            "settlerDomes": "frontier",
-            "craterIceWell": "frontier",
-            "earthlightGreenhouse": "frontier",
-            "willowkinDome": "frontier",
-            "newHollowCommons": "frontier",
-            "craterHomesteads": "frontier",
-            "moonstoneWorkshop": "frontier",
-            "roverBarn": "frontier",
-            "earthriseLookout": "frontier",
-            "horseField": "riverlight",
-            "park": "riverlight",
-            "home2": "riverlight",
-            "home3": "riverlight",
-            "home4": "riverlight",
-            "well2": "riverlight",
-            "farm2": "riverlight",
-            "farm3": "riverlight"
-          },
-          "buildingEraLevels": {
-            "well": 3,
-            "farm": 3,
-            "home": 3,
-            "saloon": 3,
-            "stable": 3,
-            "sheriff": 3,
-            "museum": 3,
-            "armory": 3,
-            "bank": 3,
-            "shop": 3,
-            "square": 3,
-            "watermill": 3,
-            "fisherman": 3,
-            "blacksmith": 3,
-            "school": 3,
-            "doctor": 3,
-            "bridge": 3,
-            "riverPort": 3,
-            "railDepot": 3,
-            "post": 3,
-            "warehouse": 3,
-            "hotel": 3,
-            "home5": 3,
-            "market": 3,
-            "powerHouse": 3,
-            "fireStation": 3,
-            "rowHouses": 3,
-            "mill": 3,
-            "garage": 3,
-            "busDepot": 3,
-            "gardenCourt": 3,
-            "diner": 3,
-            "teaHouse": 3,
-            "blossomAtelier": 3,
-            "orchardCottages": 3,
-            "glassworks": 3,
-            "springsRetreat": 3,
-            "riverlightPavilion": 3,
-            "airport": 3,
-            "radioTower": 3,
-            "concertHall": 3,
-            "television": 3,
-            "skyline": 3,
-            "cityHall": 3,
-            "apartments": 3,
-            "supermarket": 3,
-            "waterPlant": 3,
-            "transitHub": 3,
-            "library": 3,
-            "crystalLab": 3,
-            "cityHomes": 3,
-            "riverPark": 3,
-            "skyPods": 3,
-            "biodome": 3,
-            "maglevStation": 3,
-            "skyHarbour": 0,
-            "cloudOrchard": 0,
-            "windsongLofts": 0,
-            "greatTelescope": 0,
-            "dewlightGardens": 0,
-            "starlightTerraces": 0,
-            "spaceElevator": 0,
-            "moonpost": 0,
-            "missionHomesteads": 0,
-            "homecomingHall": 0,
-            "ribbonLanding": 0,
-            "settlerDomes": 0,
-            "craterIceWell": 0,
-            "earthlightGreenhouse": 0,
-            "willowkinDome": 0,
-            "newHollowCommons": 0,
-            "craterHomesteads": 0,
-            "moonstoneWorkshop": 0,
-            "roverBarn": 0,
-            "earthriseLookout": 0,
-            "horseField": 3,
-            "park": 3,
-            "home2": 3,
-            "home3": 3,
-            "home4": 3,
-            "well2": 3,
-            "farm2": 3,
-            "farm3": 3
-          },
-          "firstLightsSeen": false,
-          "forge": { "progress": 0, "charge": 0 },
-          "coins": 10000000,
-          "tourSeen": false,
-          "buildings": {
-            "well": 3,
-            "farm": 3,
-            "home": 3,
-            "saloon": 5,
-            "stable": 3,
-            "sheriff": 5,
-            "museum": 3,
-            "armory": 3,
-            "bank": 5,
-            "shop": 3,
-            "square": 5,
-            "watermill": 3,
-            "fisherman": 3,
-            "blacksmith": 5,
-            "school": 3,
-            "doctor": 3,
-            "bridge": 3,
-            "riverPort": 3,
-            "railDepot": 3,
-            "post": 3,
-            "warehouse": 3,
-            "hotel": 3,
-            "home5": 3,
-            "market": 3,
-            "powerHouse": 3,
-            "fireStation": 3,
-            "rowHouses": 3,
-            "mill": 3,
-            "garage": 3,
-            "busDepot": 3,
-            "gardenCourt": 3,
-            "diner": 3,
-            "teaHouse": 3,
-            "blossomAtelier": 3,
-            "orchardCottages": 3,
-            "glassworks": 3,
-            "springsRetreat": 3,
-            "riverlightPavilion": 3,
-            "airport": 3,
-            "radioTower": 3,
-            "concertHall": 3,
-            "television": 3,
-            "skyline": 3,
-            "cityHall": 3,
-            "apartments": 3,
-            "supermarket": 3,
-            "waterPlant": 3,
-            "transitHub": 3,
-            "library": 3,
-            "crystalLab": 3,
-            "cityHomes": 3,
-            "riverPark": 3,
-            "skyPods": 3,
-            "biodome": 3,
-            "maglevStation": 3,
-            "skyHarbour": 0,
-            "cloudOrchard": 0,
-            "windsongLofts": 0,
-            "greatTelescope": 0,
-            "dewlightGardens": 0,
-            "starlightTerraces": 0,
-            "spaceElevator": 0,
-            "moonpost": 0,
-            "missionHomesteads": 0,
-            "homecomingHall": 0,
-            "ribbonLanding": 0,
-            "settlerDomes": 0,
-            "craterIceWell": 0,
-            "earthlightGreenhouse": 0,
-            "willowkinDome": 0,
-            "newHollowCommons": 0,
-            "craterHomesteads": 0,
-            "moonstoneWorkshop": 0,
-            "roverBarn": 0,
-            "earthriseLookout": 0,
-            "horseField": 3,
-            "park": 3,
-            "home2": 3,
-            "home3": 3,
-            "home4": 3,
-            "well2": 3,
-            "farm2": 3,
-            "farm3": 3
-          },
-          "events": {},
-          "presentations": {},
-          "projects": {},
-          "completedRuns": 0,
-          "nextRaidRun": null,
-          "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
-          "saloonVisitAt": 0,
-          "helmetRun": 0,
-          "helmetVisitAt": 0,
-          "guestVip": null,
-          "progressionVersion": 1
-        },
-        "townProjectFocus": "",
-        "issuedRun": 0,
-        "settledRun": 0,
-        "honours": {
-          "version": 4,
-          "earned": {
-            "ages-bronze": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
-            "ages-silver": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
-            "ages-gold": { "at": 1780000000000, "version": 1, "seen": false, "announced": false }
-          },
-          "counts": {
-            "gems": {},
-            "mine": {},
-            "fusions": {},
-            "forge": 0,
-            "guardian": 0,
-            "visitors": 0,
-            "travels": 0
-          },
-          "showcase": [],
-          "backfilled": 0,
-          "seenGeneration": 4
-        }
-      },
-      "after": {
-        "schemaVersion": 2,
-        "integrity": {
-          "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000173",
-          "clientAt": 1780000000000,
-          "baseSequence": 0,
-          "actions": [
+            },
             {
-              "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000176",
+              "sequence": 4,
+              "id": "00000000-0000-4000-8000-000000000173",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22164,8 +22134,28 @@
                     "id": "light-court",
                     "slot": 0,
                     "value": "spring-terraces",
-                    "expectedChoice": null,
-                    "expectedLevel": 0
+                    "expectedChoice": "spring-terraces",
+                    "expectedLevel": 3,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 5,
+              "id": "00000000-0000-4000-8000-000000000174",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "light-court",
+                    "slot": 0,
+                    "value": "spring-terraces",
+                    "expectedChoice": "spring-terraces",
+                    "expectedLevel": 4,
+                    "monumentVersion": 2
                   }
                 ],
                 "at": 1780000000000
@@ -22195,7 +22185,7 @@
             "version": 3,
             "crest": null,
             "areas": { "light-court": ["spring-terraces"] },
-            "areaLevels": { "light-court": 1 },
+            "areaLevels": { "light-court": 5 },
             "plaques": {}
           },
           "era": "riverlight",
@@ -22371,7 +22361,7 @@
           },
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
-          "coins": 9981000,
+          "coins": 8670000,
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -22503,7 +22493,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000177",
+          "epoch": "00000000-0000-4000-8000-000000000175",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -22834,13 +22824,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000177",
+          "epoch": "00000000-0000-4000-8000-000000000175",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000180",
+              "id": "00000000-0000-4000-8000-000000000178",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22850,7 +22840,84 @@
                     "slot": 0,
                     "value": "orbit-garden",
                     "expectedChoice": null,
-                    "expectedLevel": 0
+                    "expectedLevel": 0,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 2,
+              "id": "00000000-0000-4000-8000-000000000179",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "stargazer-lawn",
+                    "slot": 0,
+                    "value": "orbit-garden",
+                    "expectedChoice": "orbit-garden",
+                    "expectedLevel": 1,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 3,
+              "id": "00000000-0000-4000-8000-000000000180",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "stargazer-lawn",
+                    "slot": 0,
+                    "value": "orbit-garden",
+                    "expectedChoice": "orbit-garden",
+                    "expectedLevel": 2,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 4,
+              "id": "00000000-0000-4000-8000-000000000181",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "stargazer-lawn",
+                    "slot": 0,
+                    "value": "orbit-garden",
+                    "expectedChoice": "orbit-garden",
+                    "expectedLevel": 3,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 5,
+              "id": "00000000-0000-4000-8000-000000000182",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "stargazer-lawn",
+                    "slot": 0,
+                    "value": "orbit-garden",
+                    "expectedChoice": "orbit-garden",
+                    "expectedLevel": 4,
+                    "monumentVersion": 2
                   }
                 ],
                 "at": 1780000000000
@@ -22880,7 +22947,7 @@
             "version": 3,
             "crest": null,
             "areas": { "stargazer-lawn": ["orbit-garden"] },
-            "areaLevels": { "stargazer-lawn": 1 },
+            "areaLevels": { "stargazer-lawn": 5 },
             "plaques": {}
           },
           "era": "stargazer",
@@ -23056,7 +23123,7 @@
           },
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
-          "coins": 9975000,
+          "coins": 8250000,
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -23188,7 +23255,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000181",
+          "epoch": "00000000-0000-4000-8000-000000000183",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -23520,13 +23587,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000181",
+          "epoch": "00000000-0000-4000-8000-000000000183",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000184",
+              "id": "00000000-0000-4000-8000-000000000186",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -23536,7 +23603,84 @@
                     "slot": 0,
                     "value": "lantern-walk",
                     "expectedChoice": null,
-                    "expectedLevel": 0
+                    "expectedLevel": 0,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 2,
+              "id": "00000000-0000-4000-8000-000000000187",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "homecoming-green",
+                    "slot": 0,
+                    "value": "lantern-walk",
+                    "expectedChoice": "lantern-walk",
+                    "expectedLevel": 1,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 3,
+              "id": "00000000-0000-4000-8000-000000000188",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "homecoming-green",
+                    "slot": 0,
+                    "value": "lantern-walk",
+                    "expectedChoice": "lantern-walk",
+                    "expectedLevel": 2,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 4,
+              "id": "00000000-0000-4000-8000-000000000189",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "homecoming-green",
+                    "slot": 0,
+                    "value": "lantern-walk",
+                    "expectedChoice": "lantern-walk",
+                    "expectedLevel": 3,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 5,
+              "id": "00000000-0000-4000-8000-000000000190",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "homecoming-green",
+                    "slot": 0,
+                    "value": "lantern-walk",
+                    "expectedChoice": "lantern-walk",
+                    "expectedLevel": 4,
+                    "monumentVersion": 2
                   }
                 ],
                 "at": 1780000000000
@@ -23566,7 +23710,7 @@
             "version": 3,
             "crest": null,
             "areas": { "homecoming-green": ["lantern-walk"] },
-            "areaLevels": { "homecoming-green": 1 },
+            "areaLevels": { "homecoming-green": 5 },
             "plaques": {}
           },
           "era": "twin-hollows",
@@ -23742,7 +23886,7 @@
           },
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
-          "coins": 9969000,
+          "coins": 7830000,
           "tourSeen": false,
           "buildings": {
             "well": 3,

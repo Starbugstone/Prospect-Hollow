@@ -18,7 +18,7 @@
 
     <template v-else-if="built">
       <figure class="monument-hero">
-        <TownLandmarkPreview :choice="built" :paint="area.timeless ? {} : paint" />
+        <TownLandmarkPreview :choice="built" :stage="stage" :paint="area.timeless ? {} : paint" />
         <figcaption>
           <strong>{{ t(LANDMARK_BY_ID[built].label) }}</strong>
           <span>{{ t(LANDMARK_BY_ID[built].detail) }}</span>
@@ -36,11 +36,21 @@
         <TownIcon name="lock" />{{
           t(
             area.timeless
-              ? 'A timeless monument. It stays exactly as built, through every era.'
-              : 'A permanent monument. It grows with each era but always keeps its design.',
+              ? 'Your town’s timeless centerpiece, alive from the moment it is built.'
+              : 'Five lasting levels. Grand architecture, with moving parts from level three.',
           )
         }}
       </p>
+      <ol v-if="!area.timeless" class="monument-milestones" :aria-label="t('Monument levels')">
+        <li
+          v-for="(milestone, index) in LANDMARK_PROGRESSION.levels"
+          :key="milestone.label"
+          :class="{ 'is-complete': stage > index }"
+        >
+          <strong>{{ index + 1 }} · {{ t(milestone.label) }}</strong>
+          <span>{{ t(milestone.detail) }}</span>
+        </li>
+      </ol>
       <div v-if="!readOnly && !area.timeless" class="town-detail-offer">
         <h3>
           {{ t('Stage {stage} of {maximum}', { stage, maximum: areaMaximum(town, area) }) }}
@@ -67,10 +77,10 @@
         <p class="town-purchase-hint">
           {{
             !upgrade
-              ? t('Fully grown for this era. The next era adds three more stages.')
+              ? t('A completed town wonder. Future eras keep all five levels.')
               : town.coins < upgrade.price
                 ? t('You need {coins} more coins.', { coins: number(upgrade.price - town.coins) })
-                : t('Each stage adds new detail. The design never changes.')
+                : t(landmarkLevel(upgrade.level).detail)
           }}
         </p>
       </div>
@@ -172,11 +182,13 @@ import { ERA_BY_ID } from '../../data/eras';
 import {
   AREA_BY_ID,
   LANDMARK_BY_ID,
+  LANDMARK_PROGRESSION,
   areaChoice,
   areaMaximum,
   areaStage,
   areaUnlocked,
   landmarkOffer,
+  landmarkLevel,
 } from '../../data/townLandmarks';
 import TownIcon from './TownIcon.vue';
 import TownLandmarkPreview from './TownLandmarkPreview.vue';
@@ -326,6 +338,25 @@ onBeforeUnmount(() => emit('preview', null));
   color: #4c3d1c;
   font-weight: 600;
   font-size: 13px;
+}
+.monument-milestones {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+.monument-milestones li {
+  display: grid;
+  gap: 3px;
+  border-left: 3px solid #d6d3bd;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: #657365;
+}
+.monument-milestones li.is-complete {
+  border-color: #9f7938;
+  color: #344c40;
 }
 .monument-progress {
   width: 100%;

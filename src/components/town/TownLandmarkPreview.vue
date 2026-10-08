@@ -9,7 +9,20 @@
     <rect width="160" height="130" rx="12" :fill="`url(#${gradient})`" />
     <ellipse cx="80" cy="114" rx="69" ry="10" fill="#bac7af" />
     <path d="M19 108 80 95 142 108 80 125Z" :fill="paint.walls || '#ddd1b5'" stroke="#91785e" />
+    <g v-if="!timeless && level >= 4" fill="#ddd1b5" stroke="#91785e" stroke-width="2">
+      <path d="M12 112V44h8v68M38 112V44h8v68M114 112V44h8v68M140 112V44h8v68M8 38h144v8H8Z" />
+      <path d="M8 36h144" stroke="#cc954f" stroke-width="4" />
+    </g>
+    <g v-if="!timeless && level >= 2" :fill="option.colour" stroke="#655343" stroke-width="2">
+      <path d="M9 110V82h26v28M125 110V82h26v28M6 78h32v5H6ZM122 78h32v5h-32Z" />
+    </g>
     <g
+      :transform="
+        timeless
+          ? undefined
+          : `translate(80 112) scale(${0.76 + level * 0.048}) translate(-80 -112)`
+      "
+      :class="{ 'landmark-active': active }"
       :fill="option.colour"
       :stroke="paint.trim || '#655343'"
       stroke-width="1.5"
@@ -18,16 +31,21 @@
       <template v-if="form === 'arch'">
         <path d="M35 109V48h20v61ZM105 109V48h20v61Z" />
         <path d="M47 50a33 33 0 0 1 66 0H99a19 19 0 0 0-38 0Z" />
-        <circle cx="80" cy="17" r="8" :fill="paint.accent || '#cc954f'" />
+        <circle class="landmark-glint" cx="80" cy="17" r="8" :fill="paint.accent || '#cc954f'" />
       </template>
       <template v-else-if="form === 'crystal'">
         <path
           d="m70 109-7-72 17-27 17 27-7 72ZM39 109 27 65 40 48 53 69 58 114ZM103 111l-2-57 16-17 15 24-10 48Z"
         />
-        <path d="M80 10v101M40 48l8 64M117 37l-5 73" fill="none" stroke="#ded4f0" />
+        <path
+          class="landmark-glint"
+          d="M80 10v101M40 48l8 64M117 37l-5 73"
+          fill="none"
+          stroke="#ded4f0"
+        />
       </template>
       <template v-else-if="form === 'guardian'">
-        <path d="M59 100 25 47l10-13 30 21M101 100l34-53-10-13-30 21" />
+        <path class="landmark-wing" d="M59 100 25 47l10-13 30 21M101 100l34-53-10-13-30 21" />
         <path d="M58 95 51 46 54 22l20 15h12l20-15 3 24-7 49Z" />
         <circle cx="66" cy="53" r="12" fill="#f4ead5" />
         <circle cx="94" cy="53" r="12" fill="#f4ead5" />
@@ -43,15 +61,15 @@
           stroke="#b77839"
           stroke-width="9"
         />
-        <ellipse cx="45" cy="41" rx="30" ry="20" />
-        <ellipse cx="111" cy="44" rx="29" ry="23" />
+        <ellipse class="landmark-bough" cx="45" cy="41" rx="30" ry="20" />
+        <ellipse class="landmark-bough" cx="111" cy="44" rx="29" ry="23" />
         <ellipse cx="80" cy="25" rx="30" ry="21" />
         <path d="M39 115h82" stroke="#cc954f" stroke-width="5" />
       </template>
       <template v-else-if="form === 'orrery'">
         <path d="M54 112V86h52v26" :fill="paint.walls || '#ddd1b5'" />
         <circle cx="80" cy="54" r="18" />
-        <g fill="none" stroke="#cc954f" stroke-width="4">
+        <g class="landmark-orbits" fill="none" stroke="#cc954f" stroke-width="4">
           <ellipse cx="80" cy="54" rx="51" ry="19" transform="rotate(-28 80 54)" />
           <ellipse cx="80" cy="54" rx="21" ry="49" transform="rotate(-25 80 54)" />
           <ellipse cx="80" cy="54" rx="48" ry="30" transform="rotate(33 80 54)" />
@@ -271,13 +289,32 @@
         <path d="m57 22 23-15 23 15Z" />
       </template>
     </g>
+    <g v-if="active" class="landmark-fountain">
+      <ellipse cx="80" cy="119" :rx="timeless ? 20 : 13" ry="5" fill="#ddd1b5" stroke="#91785e" />
+      <ellipse cx="80" cy="117" :rx="timeless ? 17 : 10" ry="3" fill="#a0ccc4" />
+      <path
+        class="landmark-water"
+        d="M72 115q-3-20 8-22 11 2 8 22M80 116V90"
+        fill="none"
+        stroke="#80bebd"
+        stroke-width="2"
+      />
+    </g>
+    <path
+      v-if="!timeless && level >= 5"
+      d="M38 117V92q42-24 84 0v25M38 94V84M122 94V84"
+      fill="none"
+      stroke="#cc954f"
+      stroke-width="3"
+    />
   </svg>
 </template>
 <script setup>
 import { computed, useId } from 'vue';
-import { LANDMARK_BY_ID } from '../../data/townLandmarks';
+import { LANDMARK_BY_ID, PERSONAL_AREAS, LANDMARK_PROGRESSION } from '../../data/townLandmarks';
 const props = defineProps({
   choice: { type: String, required: true },
+  stage: { type: Number, default: 1 },
   paint: { type: Object, default: () => ({}) },
 });
 const option = computed(() => ({
@@ -285,5 +322,60 @@ const option = computed(() => ({
   colour: props.paint?.roof || LANDMARK_BY_ID[props.choice].colour,
 }));
 const form = computed(() => option.value.form);
+const timeless = computed(
+  () => PERSONAL_AREAS.find((area) => area.choices.includes(props.choice))?.timeless,
+);
+const level = computed(() =>
+  Math.max(1, Math.min(LANDMARK_PROGRESSION.levels.length, props.stage)),
+);
+const active = computed(() => timeless.value || level.value >= LANDMARK_PROGRESSION.animationLevel);
 const gradient = useId();
 </script>
+
+<style scoped>
+.landmark-active .landmark-orbits {
+  transform-origin: 80px 54px;
+  animation: monument-orbit 18s linear infinite;
+}
+.landmark-active .landmark-wing {
+  transform-origin: 80px 55px;
+  animation: monument-sway 5s ease-in-out infinite alternate;
+}
+.landmark-active .landmark-bough {
+  transform-box: fill-box;
+  transform-origin: bottom center;
+  animation: monument-sway 4s ease-in-out infinite alternate;
+}
+.landmark-active .landmark-glint {
+  animation: monument-glint 3s ease-in-out infinite alternate;
+}
+.landmark-water {
+  transform-origin: 80px 117px;
+  animation: monument-water 2.4s ease-in-out infinite alternate;
+}
+@keyframes monument-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes monument-sway {
+  to {
+    transform: rotate(5deg);
+  }
+}
+@keyframes monument-glint {
+  to {
+    opacity: 0.45;
+  }
+}
+@keyframes monument-water {
+  to {
+    transform: scaleY(0.65);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .personal-design-art * {
+    animation: none !important;
+  }
+}
+</style>

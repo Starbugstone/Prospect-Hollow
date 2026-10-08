@@ -156,6 +156,11 @@ export function buildPersonalAreas(d, town) {
   if (!PERSONAL_AREAS.some((area) => areaUnlocked(town, area))) return null;
   const root = d.group(d.world);
   root.name = 'Monument sites';
+  const motions = [];
+  const reducedMotion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
+  root.userData.sceneryUpdate = (time) => {
+    for (const update of motions) update(reducedMotion?.matches ? 0 : time);
+  };
   root.userData.static = true;
   for (const area of PERSONAL_AREAS) {
     if (!areaUnlocked(town, area)) continue;
@@ -171,7 +176,8 @@ export function buildPersonalAreas(d, town) {
       }
       g.name = `${area.id} ${slot}: ${choice} stage ${stage}`;
       walkObstacle(g, 0, 0, area.radius, 14);
-      buildLandmark(d, g, choice, stage, area.timeless);
+      const monument = buildLandmark(d, g, choice, stage, area.timeless);
+      motions.push(monument.userData.sceneryUpdate);
     });
   }
   return root;
