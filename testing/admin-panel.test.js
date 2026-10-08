@@ -16,9 +16,9 @@ import { compareRows, editedValues, savedField } from '../src/admin/syncCompare'
 import { buildingLabel, eraLabel, LEVEL_COUNT, powerLabel } from '../src/admin/labels';
 import {
   correctionBody,
-  correctionSummary,
   editingRisk,
   inventoryFields,
+  typedValue,
   validValue,
 } from '../src/admin/inventory';
 import { HAMMER_CAPACITY } from '../src/data/rewards';
@@ -247,7 +247,7 @@ describe('sync comparison', () => {
   });
 });
 
-describe('admin coin and inventory correction', () => {
+describe('admin coin and inventory quick fixes', () => {
   const inventory = {
     coins: 120,
     builderHammers: 2,
@@ -255,7 +255,6 @@ describe('admin coin and inventory correction', () => {
     limits: { coins: Number.MAX_SAFE_INTEGER, builderHammers: 99, powers: 3 },
   };
   const fields = inventoryFields(inventory);
-  const start = () => Object.fromEntries(fields.map((field) => [field.key, field.current]));
 
   it('lists coins, every bonus by ID and builder hammers with their limits', () => {
     expect(fields.map((field) => [field.key, field.current, field.max])).toEqual([
@@ -267,30 +266,25 @@ describe('admin coin and inventory correction', () => {
     expect(fields[1].label).toBe(powerLabel('tnt'));
   });
 
-  it('allows builder hammers past the cap play earns up to, but bonuses only to storage', () => {
+  it('accepts only typed whole numbers, hammers past the cap and bonuses within storage', () => {
     const [, tnt, , hammers] = fields;
+    expect(typedValue(' 42 ')).toBe(42);
+    for (const text of ['', '1.5', '1,5', '2e3', '-1', 'ten']) expect(typedValue(text)).toBeNaN();
     expect(validValue(hammers, HAMMER_CAPACITY + 3)).toBe(true);
+    expect(validValue(hammers, 100)).toBe(false);
+    expect(validValue(tnt, 3)).toBe(true);
     expect(validValue(tnt, 4)).toBe(false);
-    expect(validValue(tnt, -1)).toBe(false);
-    expect(validValue(tnt, 1.5)).toBe(false);
-    expect(validValue(tnt, '')).toBe(false);
+    expect(validValue(tnt, typedValue('x'))).toBe(false);
   });
 
-  it('sends only changed values, with bonuses by ID and the revision corrected', () => {
-    expect(correctionBody(fields, start(), 7)).toEqual({ revision: 7 });
-    const values = { ...start(), coins: 500, 'powers.clear-row': 3, builderHammers: 8 };
-    expect(correctionBody(fields, values, 7)).toEqual({
-      revision: 7,
-      coins: 500,
-      powers: { 'clear-row': 3 },
-      builderHammers: 8,
-    });
-    expect(correctionSummary(fields, values)).toBe(
-      `Coins 120 → 500, ${powerLabel('clear-row')} 0 → 3, Builder hammers 2 → 8`,
-    );
+  it('sends one value, bonuses by ID, against the revision shown', () => {
+    const [coins, tnt, , hammers] = fields;
+    expect(correctionBody(coins, 500, 7)).toEqual({ revision: 7, coins: 500 });
+    expect(correctionBody(tnt, 3, 7)).toEqual({ revision: 7, powers: { tnt: 3 } });
+    expect(correctionBody(hammers, 8, 7)).toEqual({ revision: 7, builderHammers: 8 });
   });
 
-  it('warns while the owner is online and blocks an edit once their game saves again', () => {
+  it('warns while the owner is online and flags a newer save from their game', () => {
     const now = 1_000_000;
     expect(editingRisk(7, { revision: 7, ownerSeenAt: now - 60 }, now)).toEqual({
       online: true,
@@ -302,5 +296,7 @@ describe('admin coin and inventory correction', () => {
     });
     expect(editingRisk(7, { revision: 7, ownerSeenAt: null }, now).online).toBe(false);
     expect(editingRisk(7, { revision: 8, ownerSeenAt: now - 60 }, now).stale).toBe(true);
+    // A poll answered before the admin's own fix landed is not a newer save.
+    expect(editingRisk(8, { revision: 7, ownerSeenAt: null }, now).stale).toBe(false);
   });
 });
