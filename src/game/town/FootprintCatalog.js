@@ -15,8 +15,8 @@ export async function loadFootprints(town) {
         pending.set(
           era,
           footprintLoaders[era]()
-            .then((module) => {
-              ready.set(era, module.default);
+            .then((catalog) => {
+              ready.set(era, catalog);
             })
             .finally(() => pending.delete(era)),
         );

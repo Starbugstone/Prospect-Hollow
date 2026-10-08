@@ -575,8 +575,12 @@ in `startLevel`, preserving the entry gesture, and renderer recovery does not
 restart it. Physical mobile and deployed cache-header checks require their actual
 environments.
 
-Hashed `/assets/*` get immutable hosting headers; the shell revalidates. CI fails
-for JavaScript chunks above 2 MB or static mesh-catalog imports.
+Phaser, Three and the startup libraries have their own chunks (`vite.config.js`),
+so a game release does not invalidate them. Lazy data ships as fetched assets, not
+JavaScript: mesh catalogs as packed binaries and footprints as JSON. French text is
+its own chunk, loaded before startup only for French players. CI fails when a game
+chunk exceeds 500 kB, a library exceeds its budget, the first screen loads Phaser
+or Three, or a mesh catalog is imported statically (`scripts/check-bundle-budget.mjs`).
 
 ### Footprints and construction
 
