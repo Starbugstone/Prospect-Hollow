@@ -1,5 +1,12 @@
 import { cityAppearance } from '../../../data/cityAppearance';
-import { FUTURE_LANDMARKS, futureAppearance, futureForm } from '../../../data/futureArchitecture';
+import {
+  FUTURE_LANDMARKS,
+  futureAppearance,
+  futureForm,
+  futureBuildingStages,
+} from '../../../data/futureArchitecture';
+import { COZY_LANDMARKS } from '../../../data/cozyArchitecture';
+import { GARDEN_PARCELS } from '../../../data/townGardenDistrict';
 import { addSquareModernization, buildTownSquare } from '../TownSquare';
 import { addFishingDock } from './river';
 import { leisureModel } from '../LeisureAssets';
@@ -26,6 +33,8 @@ const TAU = Math.PI * 2;
 
 // A rectangular building: body, roof and front door. Returns its crown.
 function house(d, g, s, { x = 0, z = -0.35, w, dep, h, accent = false, door = true }) {
+  g = d.group(g);
+  g.name = 'Future building block';
   const k = s.kit;
   const top = k.block(d, g, s, { x, z, w, dep, h });
   const peak = k.roof(d, g, s, { x, z, w, dep, y: top, accent });
@@ -34,6 +43,8 @@ function house(d, g, s, { x = 0, z = -0.35, w, dep, h, accent = false, door = tr
 }
 // A round building: drum and cap. Returns its crown.
 function tower(d, g, s, { x = 0, z = -0.35, r, h, accent = false, door = true }) {
+  g = d.group(g);
+  g.name = 'Future building tower';
   const k = s.kit;
   const top = k.round(d, g, s, { x, z, r, h });
   const peak = k.cap(d, g, s, { x, z, r, y: top, accent });
@@ -208,7 +219,7 @@ const FORMS = {
     d.mesh(g, 'cylinder', [0.95, 0.12, 0.95], [-0.9, top + 0.05, -0.6], p.timber);
     airship(d, g, s, 1.2, top - 0.2, -0.6, 1);
     house(d, g, s, { x: 1.1, z: 0.5, w: 1.6, dep: 1.2, h: 1.5, door: true });
-    if (s.level >= 2) {
+    if (s.structureLevel >= 2) {
       const second = s.kit.round(d, g, s, { x: 2.2, z: -1.4, r: 0.35, h: 3.2 });
       s.kit.cap(d, g, s, { x: 2.2, z: -1.4, r: 0.5, y: second });
       airship(d, g, s, 0.3, second + 1.3, -2.1, 0.7);
@@ -223,7 +234,7 @@ const FORMS = {
       [1.2, 3.1, 0.2, 1.05],
       [-0.6, 4, -1.4, 0.85],
       [2.1, 4.4, -1.6, 0.75],
-    ].slice(0, s.level >= 3 ? 3 : s.level >= 2 ? 2 : 1);
+    ].slice(0, s.structureLevel >= 3 ? 3 : s.structureLevel >= 2 ? 2 : 1);
     for (const [x, y, z, r] of islands) island(d, g, s, x, y, z, r, true);
     if (s.level >= 3) s.kit.prop(d, g, s, 2.3, 1.4);
     return { landmark: true };
@@ -233,7 +244,7 @@ const FORMS = {
       [-1.5, -0.9, 3],
       [0.6, -1.4, 3.8],
       [1.8, 0.4, 2.4],
-    ].slice(0, s.level >= 2 ? 3 : 2);
+    ].slice(0, s.structureLevel >= 2 ? 3 : 2);
     const crowns = lofts.map(([x, z, h], n) =>
       house(d, g, s, { x, z, w: 1.5, dep: 1.4, h, accent: n === 1 }),
     );
@@ -249,7 +260,8 @@ const FORMS = {
         s.palette.timber,
       );
     }
-    if (s.level >= 3) s.kit.crown(d, g, s, { x: 0.6, z: -1.4, y: crowns[1].top, r: 1 });
+    if (s.level >= 3)
+      s.kit.crown(d, g, s, { x: 0.6, z: -1.4, y: crowns[1].top, baseY: crowns[1].eave, r: 1 });
     return { landmark: true };
   },
 
@@ -260,7 +272,7 @@ const FORMS = {
     // The great tube points through the dome toward the Moon.
     d.rod(g, [0, crown.eave + 0.7, -0.6], [0.6, crown.eave + 3.4, 1.0], 0.36, p.timber);
     d.ball(g, 0.6, crown.eave + 3.4, 1.0, [0.38, 0.1, 0.38], p.glass);
-    if (s.level >= 2) {
+    if (s.structureLevel >= 2) {
       house(d, g, s, { x: -2.4, z: 0.2, w: 1.6, dep: 1.6, h: 1.7, door: false });
       tower(d, g, s, { x: 2.5, z: 0.2, r: 0.8, h: 1.3, door: false });
     }
@@ -284,7 +296,7 @@ const FORMS = {
       [-1.9, -1.5],
       [1.9, -1.5],
       [0, -2.2],
-    ].slice(0, s.level >= 3 ? 3 : 2);
+    ].slice(0, s.structureLevel >= 3 ? 3 : 2);
     for (const [x, z] of towers) {
       // Tall glass dew towers gather the night mist into the beds below.
       d.mesh(g, 'cylinder', [0.38, 3, 0.38], [x, 1.5, z], p.glass);
@@ -306,9 +318,10 @@ const FORMS = {
       [0, -1.6, 3.2],
       [1.7, -1.2, 2.2],
     ];
-    for (const [x, z, h] of steps.slice(0, s.level >= 2 ? 3 : 2)) {
+    for (const [x, z, h] of steps.slice(0, s.structureLevel >= 2 ? 3 : 2)) {
       const crown = house(d, g, s, { x, z, w: 1.5, dep: 1.6, h });
-      if (s.level >= 3 && x === 0) s.kit.crown(d, g, s, { ...crown, y: crown.top, r: 0.8 });
+      if (s.level >= 3 && x === 0)
+        s.kit.crown(d, g, s, { ...crown, y: crown.top, baseY: crown.eave, r: 0.8 });
     }
     if (s.level >= 3) for (const x of [-2.3, 2.3]) s.kit.prop(d, g, s, x, 1.3);
     return { landmark: true };
@@ -321,8 +334,8 @@ const FORMS = {
     // A parcel rail points a little capsule toward the Moon.
     d.rod(g, [1.9, 0.2, 0.6], [2.6, 2.6, -1.3], 0.07, p.deep);
     d.box(g, 0.3, 0.3, 0.6, 2.45, 2.1, -0.9, p.light, true).rotation.x = 0.9;
-    if (s.level >= 2) s.kit.wing(d, g, s, { x: -2.1, z: -1.3 });
-    if (s.level >= 3) {
+    if (s.structureLevel >= 2) s.kit.wing(d, g, s, { x: -2.1, z: -1.3 });
+    if (s.structureLevel >= 3) {
       const top = s.kit.round(d, g, s, { x: -1.3, z: -1.5, r: 0.4, h: 4 });
       s.kit.cap(d, g, s, { x: -1.3, z: -1.5, r: 0.45, y: top });
       d.mesh(g, 'cylinder', [0.3, 0.06, 0.3], [-1.3, 3.4, -1.08], p.light).rotation.x = Math.PI / 2;
@@ -334,7 +347,7 @@ const FORMS = {
       [-1.8, -1, 2.1],
       [0.4, -1.5, 2.4],
       [2.2, 0.2, 2],
-    ].slice(0, s.level >= 2 ? 3 : 2);
+    ].slice(0, s.structureLevel >= 2 ? 3 : 2);
     for (const [x, z, h] of homes) house(d, g, s, { x, z, w: 1.6, dep: 1.6, h });
     if (s.level >= 3) {
       // A shared flagpole with the mission's moon pennant.
@@ -353,6 +366,8 @@ const FORMS = {
 };
 
 function island(d, g, s, x, y, z, r, orchard = false) {
+  g = d.group(g);
+  g.name = 'Future orchard island';
   const p = s.palette;
   d.rod(g, [x, 0.15, z], [x, y - r * 0.6, z], 0.02, p.deep);
   const rock = d.ball(g, x, y - r * 0.32, z, [r, r * 0.8, r * 0.92], p.timber, 'rock');
@@ -369,6 +384,8 @@ function island(d, g, s, x, y, z, r, orchard = false) {
   }
 }
 function airship(d, g, s, x, y, z, scale = 1) {
+  g = d.group(g);
+  g.name = 'Future harbour airship';
   const p = s.palette;
   d.ball(g, x, y, z, [1.55 * scale, 0.62 * scale, 0.62 * scale], p.shell);
   d.mesh(
@@ -416,7 +433,7 @@ function airship(d, g, s, x, y, z, scale = 1) {
 const RIBBON_HEIGHT = 140;
 function renderSpaceElevator(d, g, s) {
   const p = s.palette,
-    level = s.level;
+    level = s.structureLevel;
   d.mesh(g, futureShape(d, 'octagon'), [6.2, 0.3, 6.2], [0, 0.15, 0], p.deep);
   d.mesh(g, futureShape(d, 'octagon'), [5.6, 0.12, 5.6], [0, 0.34, 0], p.shell);
   d.mesh(g, futureShape(d, 'hoop'), [5.65, 5.65, 2.2], [0, 0.4, 0], p.light).rotation.x =
@@ -472,6 +489,7 @@ function renderSpaceElevator(d, g, s) {
   if (level >= 3) {
     // The halo station rides the ribbon high above the valley.
     const halo = d.mesh(g, futureShape(d, 'hoop'), [3.2, 3.2, 3.2], [0, 17, 0], p.shell);
+    halo.name = 'Space elevator halo';
     halo.rotation.x = Math.PI / 2;
     halo.castShadow = false;
     d.mesh(g, 'cylinder', [0.9, 0.7, 0.9], [0, 17, 0], p.light).castShadow = false;
@@ -535,6 +553,7 @@ export function renderFutureBuilding(d, parent, kind, label, level, era, service
   const s = {
     ...cityAppearance(era, kind),
     ...appearance,
+    ...futureBuildingStages(kind, era, level, serviceLevel),
     kit: KITS[appearance.style],
     kind,
     era,
@@ -551,13 +570,15 @@ export function renderFutureBuilding(d, parent, kind, label, level, era, service
   const crown = FORMS[form](d, root, s);
   if (!landmark && crown) {
     // A rear annex alters the outline without using the front sidewalk.
-    if (level >= 2)
+    if (s.structureLevel >= 2)
       s.kit.wing(d, root, s, { x: -Math.min(1.75, (s.width ?? 3.4) / 2 - 0.1), z: -1.35 });
+    if (s.modernizing && level === 2) s.kit.prop(d, root, s, -1.45, 1.5);
     if (level >= 3) {
       s.kit.crown(d, root, s, {
         x: crown.x ?? 0,
         z: crown.z ?? -0.35,
         y: crown.top,
+        baseY: crown.eave,
         r: crown.radius,
       });
       const sides = kind === 'busDepot' ? [-1.85, 1.85] : [-1.45, 1.45];
@@ -566,6 +587,15 @@ export function renderFutureBuilding(d, parent, kind, label, level, era, service
   } else if (form === 'garden') {
     if (level >= 2) s.kit.prop(d, root, s, 1.4, -1.6);
     if (level >= 3) for (const x of [-1.5, 1.5]) s.kit.prop(d, root, s, x, 1.55);
+  }
+  if (landmark && !COZY_LANDMARKS[kind] && s.modernizing && level >= 2) {
+    // New-era lamps mark paid finish tiers without demolishing completed wings,
+    // homes or elevator equipment. Keep them on the rear edge of the parcel.
+    const parcel = GARDEN_PARCELS[kind];
+    const x = parcel.halfWidth / landmark.scale - 0.65;
+    const z = -parcel.halfDepth / landmark.scale + 0.65;
+    s.kit.prop(d, root, s, -x, z);
+    if (level >= 3) s.kit.prop(d, root, s, x, z);
   }
   if (['stable', 'garage', 'busDepot'].includes(kind)) {
     const vehicle = parkedVehicle(d, d.group(root, 0, 0, 1.4), kind, era);
@@ -577,12 +607,13 @@ export function renderFutureBuilding(d, parent, kind, label, level, era, service
 }
 
 /** Rooftop lounge in the era's own style; the runway and exits stay clear. */
-export function addFutureLounge(d, g, x, floor, z, era) {
+export function addFutureLounge(d, g, x, floor, z, era, level = 3) {
   const appearance = futureAppearance(era),
     s = { ...appearance, kit: KITS[appearance.style], era };
   const group = d.group(g, x, floor, z);
   const top = s.kit.block(d, group, s, { w: 3.6, dep: 2.2, h: 1.4 });
-  s.kit.roof(d, group, s, { w: 3.6, dep: 2.2, y: top });
+  const peak = s.kit.roof(d, group, s, { w: 3.6, dep: 2.2, y: top });
+  if (level >= 3) s.kit.crown(d, group, s, { y: peak, baseY: top, r: 1 });
 }
 
 export function addFutureAirportDetails(d, g, era, level) {
@@ -590,7 +621,6 @@ export function addFutureAirportDetails(d, g, era, level) {
     s = { ...appearance, kit: KITS[appearance.style], era };
   s.kit.prop(d, g, s, 2.3, -4.5);
   if (level >= 2) s.kit.prop(d, g, s, 6.7, -4.5);
-  if (level >= 3) s.kit.crown(d, g, s, { x: 4.4, z: -2.7, y: 3.5, r: 1 });
 }
 
 /** Approach furniture sits beside the bridge; the road and boat channel stay open. */

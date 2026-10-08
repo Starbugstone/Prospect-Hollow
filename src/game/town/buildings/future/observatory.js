@@ -79,9 +79,9 @@ export const observatoryKit = {
     observatoryKit.cap(d, g, s, { x, z, r, y: top });
   },
   // A copper telescope points through the slit and a violet orbit ring circles it.
-  crown(d, g, s, { x = 0, z = 0, y, r = 1 }) {
+  crown(d, g, s, { x = 0, z = 0, y, r = 1, baseY = y - r }) {
     const p = s.palette;
-    const base = [x, y - r * 0.35, z + 0.1],
+    const base = [x, baseY, z + 0.1],
       tip = [x + 0.25, y + r * 0.85, z + r * 0.95];
     d.rod(g, base, tip, 0.15, p.timber);
     d.ball(g, ...tip, [0.17, 0.06, 0.17], p.glass, 'rock');
@@ -99,7 +99,7 @@ export const observatoryKit = {
   prop(d, g, s, x, z, y = 0) {
     const p = s.palette;
     d.mesh(g, futureShape(d, 'octagon'), [0.2, 0.2, 0.2], [x, y + 0.1, z], p.roof);
-    d.rod(g, [x, y + 0.15, z], [x, y + 1.45, z], 0.04, p.deep);
+    d.rod(g, [x, y + 0.15, z], [x, y + 1.5, z], 0.04, p.deep);
     d.mesh(g, futureShape(d, 'octagon'), [0.15, 0.04, 0.15], [x, y + 1.5, z], p.timber);
     const star = d.ball(g, x, y + 1.62, z, [0.13, 0.13, 0.05], p.light, 'rock');
     star.rotation.z = TAU / 10;

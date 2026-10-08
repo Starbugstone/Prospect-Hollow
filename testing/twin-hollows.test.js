@@ -50,6 +50,29 @@ function diorama() {
   });
   return d;
 }
+it('supports the lunar lookout rails and moonstone beacon', () => {
+  const d = diorama();
+  const workshop = new Group(),
+    lookout = new Group();
+  renderMoonBuilding(d, workshop, 'moonstoneWorkshop', 3);
+  renderMoonBuilding(d, lookout, 'earthriseLookout', 2);
+  const mount = new Box3().setFromObject(workshop.getObjectByName('Moonstone beacon mount'));
+  const beacon = new Box3().setFromObject(workshop.getObjectByName('Moonstone beacon'));
+  expect(mount.min.y).toBeCloseTo(1.65);
+  expect(mount.intersectsBox(beacon)).toBe(true);
+  let posts = 0;
+  lookout.traverse((part) => {
+    if (part.name !== 'Lookout railing post') return;
+    const bounds = new Box3().setFromObject(part);
+    expect(bounds.min.y).toBeCloseTo(1.6);
+    expect(bounds.max.y).toBeCloseTo(2.2);
+    posts++;
+  });
+  expect(posts).toBe(4);
+  Object.values(d.geometries).forEach((geometry) => geometry.dispose());
+  d.materials.forEach((material) => material.dispose());
+  d.contactShadowMaterial.dispose();
+});
 function snapshot(root) {
   const parts = [];
   root.updateMatrixWorld(true);

@@ -3,6 +3,7 @@ import { parkedVehicle } from '../TownVehicles';
 import { addSquareModernization } from '../TownSquare';
 import { ERAS, eraEvolution } from '../../../data/eras';
 import { resolveCityAsset } from '../../../data/eraDefinitions';
+import { futureBuildingStages, isFutureEra } from '../../../data/futureArchitecture';
 import { airportAppearance } from '../../../data/airport';
 import airportLayout from '../../../data/airportLayout.json';
 import { addCityLandmarkDetails } from './CityLandmarkDetails';
@@ -101,11 +102,14 @@ export function renderCityBuilding(
     const asset = family === 'airport' ? airportAppearance(era).asset : family;
     futureModel(d, root, asset);
     if (family === 'airport') {
+      const structureLevel = isFutureEra(era)
+        ? futureBuildingStages(kind, era, level, serviceLevel).structureLevel
+        : level;
       const apron = airportLayout.passengerApron;
       d.box(root, apron.width, 0.05, apron.depth, apron.x, 0.115, apron.z, '#9baba2').name =
         'Passenger arrival apron';
-      if (level >= 2) futureModel(d, root, `${asset}-wing`);
-      if (level >= 3) {
+      if (structureLevel >= 2) futureModel(d, root, `${asset}-wing`);
+      if (structureLevel >= 3) {
         futureModel(d, root, `${asset}-finish`);
         const a = airportAppearance(era);
         const floor = a.clerestory ? 4.25 : a.skylights ? 3.45 : 3.2;
@@ -113,7 +117,7 @@ export function renderCityBuilding(
         lounge.name = 'Airport rooftop observation lounge';
         d.box(lounge, 4.8, 0.18, 3.2, 4.5, floor, -2.8, a.roof);
         const style = ARCHITECTURES[profile.architecture];
-        if (style?.lounge) style.lounge(d, lounge, 4.5, floor, -2.8, era);
+        if (style?.lounge) style.lounge(d, lounge, 4.5, floor, -2.8, era, level);
         else {
           d.box(lounge, 4.4, 1.6, 2.8, 4.5, floor + 0.85, -2.8, '#85b8c8');
           d.box(lounge, 4.9, 0.18, 3.3, 4.5, floor + 1.75, -2.8, a.roof);

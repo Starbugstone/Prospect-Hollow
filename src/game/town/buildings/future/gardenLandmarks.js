@@ -11,7 +11,13 @@ export function gardenLandmarkForms(house, tower) {
   function finish(d, g, s, crown, sides, z) {
     if (s.level >= 2) for (const x of sides) garden(d, g, s, x, z);
     if (s.level >= 3)
-      s.kit.crown(d, g, s, { x: crown.x, z: crown.z, y: crown.top, r: crown.radius });
+      s.kit.crown(d, g, s, {
+        x: crown.x,
+        z: crown.z,
+        y: crown.top,
+        baseY: crown.eave,
+        r: crown.radius,
+      });
     return { landmark: true };
   }
   return {
@@ -79,7 +85,7 @@ export function gardenLandmarkForms(house, tower) {
       s.kit.block(d, g, s, { w: 3.8, dep: 3.2, h: 2.8, z: -0.7 });
       s.kit.door(d, g, s, 0, 0.92);
       const top = s.kit.roof(d, g, s, { w: 6.2, dep: 6, y: 2.8, z: -0.35 });
-      const crown = { x: 0, z: -0.35, top, radius: 1.5 };
+      const crown = { x: 0, z: -0.35, top, eave: 2.8, radius: 1.5 };
       for (const x of [-2.8, 2.8])
         for (const z of [-2.5, 1.8]) d.rod(g, [x, 0.3, z], [x, 2.8, z], 0.1, p.deep);
       for (const x of [-2.1, 2.1]) d.box(g, 1.3, 0.18, 0.38, x, 0.48, 1.8, p.timber);

@@ -1,6 +1,6 @@
-import { CITY_FAMILIES } from './city';
+import { CITY_BUILDINGS, CITY_FAMILIES } from './city';
 import { COZY_LANDMARKS } from './cozyArchitecture';
-import { eraEvolution } from './eras';
+import { ERAS, eraEvolution } from './eras';
 
 // The three eras after Riverlight share one set of building archetypes; each
 // architecture supplies its own walls, roofs and finishing flourish. Palettes use
@@ -116,6 +116,23 @@ export const FUTURE_MINE_PORTALS = Object.freeze([
 ]);
 
 export const isFutureEra = (era) => FUTURE_ARCHITECTURES.includes(eraEvolution(era).architecture);
+
+/** Construction survives a new finish. Synthetic successors inherit the stage
+ * rules of their architecture; incomplete/unknown definitions keep native tiers. */
+export function futureBuildingStages(kind, era, level, serviceLevel = 3) {
+  const architecture = eraEvolution(era).architecture;
+  const index = ERAS.findIndex((entry) => entry.id === era);
+  const target =
+    index >= 0 ? index : ERAS.findIndex((entry) => entry.evolution.architecture === architecture);
+  const introduced = CITY_BUILDINGS.find((building) => building.kind === kind)?.introducedEra;
+  const native = ERAS.findIndex((entry) => entry.id === introduced);
+  const firstFuture = ERAS.findIndex((entry) => isFutureEra(entry.id));
+  const modernizing = isFutureEra(era) && target > Math.max(native, firstFuture);
+  return {
+    modernizing,
+    structureLevel: modernizing ? Math.max(level, Math.min(3, serviceLevel)) : level,
+  };
+}
 
 /** An unsupported architecture safely falls back to the Skysail palette. */
 export function futureAppearance(era) {

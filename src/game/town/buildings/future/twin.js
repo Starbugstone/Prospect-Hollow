@@ -19,13 +19,13 @@ export const twinKit = {
     d.box(g, w * 0.7, 0.12, 0.3, x, 0.42, z + dep / 2 + 0.35, s.palette.timber);
   },
   // A homecoming arch over the roof, carrying the Earth and the Moon.
-  crown(d, g, s, { x = 0, z = 0, y, r = 1 }) {
+  crown(d, g, s, { x = 0, z = 0, y, baseY = y - 1, r = 1 }) {
     const p = s.palette,
-      span = Math.min(1.1, r);
+      span = Math.min(1.1, r * 0.8);
     for (const side of [-1, 1])
       d.rod(
         g,
-        [x + side * span, y - 0.35, z - 0.2],
+        [x + side * span, baseY, z - 0.2],
         [x + side * span * 0.55, y + 0.9, z - 0.2],
         0.05,
         p.deep,
@@ -37,9 +37,18 @@ export const twinKit = {
       0.05,
       p.deep,
     );
-    d.ball(g, x - 0.28, y + 1.22, z - 0.2, 0.24, p.flower);
-    d.ball(g, x - 0.22, y + 1.3, z - 0.1, [0.1, 0.06, 0.08], p.green, 'rock');
-    d.ball(g, x + 0.3, y + 1.18, z - 0.2, 0.17, p.shell);
+    const offset = Math.min(0.28, span * 0.4);
+    for (const side of [-1, 1])
+      d.rod(
+        g,
+        [x + side * offset, y + 0.9, z - 0.2],
+        [x + side * offset, y + 1.18, z - 0.2],
+        0.04,
+        p.deep,
+      );
+    d.ball(g, x - offset, y + 1.22, z - 0.2, 0.24, p.flower);
+    d.ball(g, x - offset + 0.06, y + 1.3, z - 0.1, [0.1, 0.06, 0.08], p.green, 'rock');
+    d.ball(g, x + offset, y + 1.18, z - 0.2, 0.17, p.shell);
   },
   prop(d, g, s, x, z, y = 0) {
     twinLanterns(d, g, s.palette, x, z, y);
@@ -50,15 +59,16 @@ export const twinKit = {
 // finally, a welcome arch where crews step off the ribbon road.
 export function homecomingHall(d, g, s, house) {
   const p = s.palette;
-  house(d, g, s, { z: -0.6, w: 3.4, dep: 2.2, h: 2.4 });
+  const crown = house(d, g, s, { z: -0.6, w: 3.4, dep: 2.2, h: 2.4 });
   // Moonstone keepsakes from New Hollow on a glass-topped display.
   d.box(g, 1.3, 0.55, 0.6, 1.9, 0.28, 0.9, p.timber);
   d.mesh(g, futureShape(d, 'lowDome'), [0.5, 0.35, 0.25], [1.9, 0.56, 0.9], p.glass);
   for (const dx of [-0.3, 0, 0.3]) d.ball(g, 1.9 + dx, 0.62, 0.9, 0.08, p.shell, 'rock');
-  if (s.level >= 2) {
+  if (s.structureLevel >= 2) {
     s.kit.wing(d, g, s, { x: -2.3, z: -1.2 });
     for (const x of [-2.4, 2.4]) twinLanterns(d, g, p, x, 1.6);
   }
-  if (s.level >= 3) s.kit.crown(d, g, s, { x: 0, z: -0.6, y: 3.3, r: 1.3 });
+  if (s.level >= 3)
+    s.kit.crown(d, g, s, { x: 0, z: -0.6, y: crown.top, baseY: crown.eave, r: 1.3 });
   return { landmark: true };
 }
