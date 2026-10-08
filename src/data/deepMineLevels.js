@@ -261,10 +261,22 @@ const PLANS = [
 // 1–4 mark solid four-piece fossils. k/m/n are root knots; K/M/N are
 // their connected vines. h/v are row/column spore relays, o is a brazier.
 // _ is permanent void; B/D are one/two-hit blast-only rock gates.
-export function parseDeepMineBoard(board, { fossilLayers = 2, knotHealth = 1 } = {}) {
+export const parseDeepMineBoard = (board, options = {}) =>
+  parseMineBoard(board, { ...options, cols: COLS, rows: ROWS });
+
+// The shared mine-board grammar. Later chapters add their own symbols on top
+// (see hollowMineLevels.js) and may author taller boards.
+export function parseMineBoard(
+  board,
+  { fossilLayers = 2, knotHealth = 1, cols = COLS, rows: rowCount = ROWS, extra = /$^/ } = {},
+) {
   const rows = board.trim().split(/[\s/]+/);
-  if (rows.length !== ROWS || rows.some((row) => row.length !== COLS))
-    throw new Error('Deep mine boards must be 7 × 9');
+  if (rows.length !== rowCount || rows.some((row) => row.length !== cols))
+    throw new Error(
+      cols === COLS && rowCount === ROWS
+        ? 'Deep mine boards must be 7 × 9'
+        : `Mine boards must be ${cols} × ${rowCount}`,
+    );
   const cells = [...rows.join('')];
   const cores = [];
   const signals = [];
@@ -287,7 +299,7 @@ export function parseDeepMineBoard(board, { fossilLayers = 2, knotHealth = 1 } =
     else if (symbol === 'l') signals.push(index);
     else if (symbol === 'h' || symbol === 'v')
       spores.push({ index, axis: symbol === 'h' ? 'row' : 'column' });
-    else if (/[.#XcrbgRE_BD]/.test(symbol)) return symbol;
+    else if (/[.#XcrbgRE_BD]/.test(symbol) || extra.test(symbol)) return symbol;
     else throw new Error(`Unknown deep mine board symbol: ${symbol}`);
     return '.';
   });
@@ -295,8 +307,8 @@ export function parseDeepMineBoard(board, { fossilLayers = 2, knotHealth = 1 } =
     const [start] = footprint;
     if (
       footprint.length !== 4 ||
-      start % COLS === COLS - 1 ||
-      footprint.some((cell, part) => cell !== start + (part % 2) + Math.floor(part / 2) * COLS)
+      start % cols === cols - 1 ||
+      footprint.some((cell, part) => cell !== start + (part % 2) + Math.floor(part / 2) * cols)
     )
       throw new Error('Fossil footprints must be connected 2 × 2 squares');
     return { id: `fossil-${id}`, cells: footprint, layers: fossilLayers, encased: true };
@@ -307,8 +319,8 @@ export function parseDeepMineBoard(board, { fossilLayers = 2, knotHealth = 1 } =
       !root.bindings.length ||
       root.bindings.some(
         (cell) =>
-          Math.abs((cell % COLS) - (root.knot % COLS)) +
-            Math.abs(Math.floor(cell / COLS) - Math.floor(root.knot / COLS)) !==
+          Math.abs((cell % cols) - (root.knot % cols)) +
+            Math.abs(Math.floor(cell / cols) - Math.floor(root.knot / cols)) !==
           1,
       )
     )
@@ -316,8 +328,8 @@ export function parseDeepMineBoard(board, { fossilLayers = 2, knotHealth = 1 } =
     return { ...root, knotHealth, bindingHealth: 1 };
   });
   return {
-    map: Array.from({ length: ROWS }, (_, row) =>
-      map.slice(row * COLS, row * COLS + COLS).join(''),
+    map: Array.from({ length: rowCount }, (_, row) =>
+      map.slice(row * cols, row * cols + cols).join(''),
     ).join('/'),
     cores,
     signals,

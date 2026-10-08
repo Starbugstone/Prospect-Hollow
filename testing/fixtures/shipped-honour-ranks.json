@@ -547,5 +547,158 @@
       "area": "monument"
     },
     "version": 1
+  },
+  "gem-ruby-diamond": {
+    "goal": 40000,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "ruby"
+    },
+    "version": 1
+  },
+  "gem-sapphire-diamond": {
+    "goal": 40000,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "sapphire"
+    },
+    "version": 1
+  },
+  "gem-emerald-diamond": {
+    "goal": 40000,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "emerald"
+    },
+    "version": 1
+  },
+  "gem-topaz-diamond": {
+    "goal": 22000,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "topaz"
+    },
+    "version": 1
+  },
+  "gem-peridot-bronze": {
+    "goal": 500,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "peridot"
+    },
+    "version": 1
+  },
+  "gem-peridot-silver": {
+    "goal": 4500,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "peridot"
+    },
+    "version": 1
+  },
+  "gem-peridot-gold": {
+    "goal": 9000,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "peridot"
+    },
+    "version": 1
+  },
+  "gem-starmetal-bronze": {
+    "goal": 500,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "starmetal"
+    },
+    "version": 1
+  },
+  "gem-starmetal-silver": {
+    "goal": 4000,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "starmetal"
+    },
+    "version": 1
+  },
+  "gem-starmetal-gold": {
+    "goal": 7800,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "starmetal"
+    },
+    "version": 1
+  },
+  "mine-relics-diamond": {
+    "goal": 650,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "relics"
+    },
+    "version": 1
+  },
+  "mine-lanterns-diamond": {
+    "goal": 275,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "lanterns"
+    },
+    "version": 1
+  },
+  "mine-ore-orders-diamond": {
+    "goal": 340,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "oreOrders"
+    },
+    "version": 1
+  },
+  "mine-cores-diamond": {
+    "goal": 190,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "cores"
+    },
+    "version": 1
+  },
+  "mine-gates-diamond": {
+    "goal": 300,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "gates"
+    },
+    "version": 1
+  },
+  "gem-amethyst-diamond": {
+    "goal": 20000,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "amethyst"
+    },
+    "version": 1
+  },
+  "gem-moonstone-diamond": {
+    "goal": 21000,
+    "measure": {
+      "kind": "count",
+      "counter": "gems",
+      "key": "moonstone"
+    },
+    "version": 1
   }
 }

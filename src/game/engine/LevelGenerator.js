@@ -58,6 +58,7 @@ const createBoard = (layout, rng) => {
     const placement = layout.initialTilePlacements.find((cell) => cell.x === x && cell.y === y);
     if (placement) {
       board[i] = createGem(placement.type);
+      if (placement.float) board[i].float = true;
       continue;
     }
     const forbidden = new Set();
@@ -230,10 +231,18 @@ const createExpansionLevel = (id) => {
     if (symbol === '_') {
       tile.type = 'void';
       layout.blockedCells.push(cell);
-    } else if (['#', 'X', 'B', 'D'].includes(symbol)) {
+    } else if (symbol === '-' || symbol === '=') {
+      // A sealed chamber cell: unplayable until its cracked wall breaks.
+      Object.assign(tile, { sealed: true, chamber: symbol === '-' ? 'a' : 'b' });
+      layout.blockedCells.push(cell);
+    } else if (['#', 'X', 'B', 'D', '*', '+', 'W', 'Y', 'w'].includes(symbol)) {
       tile.type = 'blocker';
-      tile.health = tile.maxHealth = symbol === 'X' || symbol === 'D' ? 2 : 1;
-      if (symbol === 'B' || symbol === 'D') tile.bonusOnly = true;
+      tile.health = tile.maxHealth = ['X', 'D', '+', 'Y'].includes(symbol) ? 2 : 1;
+      if (!['#', 'X'].includes(symbol)) tile.bonusOnly = true;
+      // The cracked wall (W/Y) of chamber a, or (w) of chamber b.
+      if (['W', 'Y', 'w'].includes(symbol)) tile.waist = symbol === 'w' ? 'b' : 'a';
+      // Starglass only breaks under a beam turned by a lens.
+      if (symbol === '*' || symbol === '+') tile.lensOnly = true;
       layout.blockedCells.push(cell);
     } else if (symbol === 'c') {
       tile.chainHealth = tile.maxChainHealth = 1;
@@ -245,13 +254,62 @@ const createExpansionLevel = (id) => {
       layout.initialTilePlacements.push({ ...cell, type: 'relic' });
     } else if (symbol === 'E') {
       tile.exit = true;
+    } else if (symbol === 'q' || symbol === 'Q') {
+      // A gravity switch: a moon lock flips gravity once, a moon dial on every blast.
+      tile.gravitySwitch = symbol === 'q' ? 'lock' : 'dial';
+    } else if (symbol === 'f') {
+      // A frozen gem on ice: a neighbouring clear thaws it.
+      tile.state = 'FROZEN';
+      tile.health = tile.maxHealth = 1;
+    } else if (symbol === 'z' || symbol === 'Z') {
+      // Phase seal: changes its gem after every move; z takes one match, Z two.
+      tile.phaseSeal = true;
+      tile.health = tile.maxHealth = symbol === 'Z' ? 2 : 1;
     }
     return tile;
   });
+  // Relics held by a chain from the start (the chain itself comes from the map).
+  for (const index of spec.relics ?? [])
+    layout.initialTilePlacements.push({
+      x: index % cols,
+      y: Math.floor(index / cols),
+      type: 'relic',
+    });
+  // Sealed chambers: every cell in the listed rows (and columns) waits behind its wall.
+  for (const {
+    id = 'a',
+    rows: [first, last],
+    cols: [left, right] = [0, cols - 1],
+  } of spec.chambers ?? [])
+    for (let index = first * cols; index < (last + 1) * cols; index++) {
+      const tile = tiles[index];
+      if (index % cols < left || index % cols > right) continue;
+      if (!tile || tile.type === 'void' || tile.waist === id) continue;
+      Object.assign(tile, { sealed: true, chamber: id });
+      layout.blockedCells.push({ x: index % cols, y: Math.floor(index / cols) });
+    }
+  // Portals hand gems falling out of the entrance to the paired exit cell.
+  for (const [pair, { from, to }] of (spec.portals ?? []).entries()) {
+    Object.assign(tiles[from], { portalTo: to, portalPair: pair });
+    tiles[to].portalExit = pair;
+  }
+  // Lens mirrors are fixtures on edge voids; `out` is the way a turned beam leaves.
+  for (const { index, out } of spec.lenses ?? []) if (tiles[index]) tiles[index].lens = out;
+  // Floatstones are relics that rise; a chain or root vine may hold one in place.
+  for (const index of spec.floats ?? []) {
+    layout.initialTilePlacements.push({
+      x: index % cols,
+      y: Math.floor(index / cols),
+      type: 'relic',
+      float: true,
+    });
+    tiles[index].floatStart = true;
+  }
   for (const [order, index] of (spec.signals ?? []).entries()) {
     tiles[index].signalHealth = 1;
     tiles[index].signal = spec.survey ? 'survey' : 'lantern';
-    if (spec.survey) tiles[index].surveyOrder = order + 1;
+    // A trail may number its markers out of reading order (`surveyOrder`).
+    if (spec.survey) tiles[index].surveyOrder = spec.surveyOrder?.[order] ?? order + 1;
   }
   // Charge cores cycle through their authored rewards (cross, then bomb, by default).
   for (const [order, index] of (spec.cores ?? []).entries())
@@ -281,6 +339,8 @@ const createExpansionLevel = (id) => {
   if (spec.orders?.length) tiles[0].oreOrderGuide = true;
   const iceCells = tiles.flatMap((tile, index) =>
     tile.type === 'standard' &&
+    !tile.health &&
+    !tile.phaseSeal &&
     !fossilCells.has(index) &&
     !sporeCells.has(index) &&
     (!spec.openExitRows || index < cols * (rows - spec.openExitRows)) &&
@@ -311,27 +371,50 @@ const createExpansionLevel = (id) => {
       }
     }
   }
+  // Low gravity: the whole cavern falls up, or the rows above the seam do.
+  if (spec.gravity === 'up' || spec.gravity === 'split')
+    for (const [index, tile] of tiles.entries())
+      if (
+        isPlayableCell(tile) &&
+        (spec.gravity === 'up' || Math.floor(index / cols) < (spec.seam ?? Math.floor(rows / 2)))
+      )
+        tile.fall = 'up';
   const totalLayers = tiles.reduce((sum, tile) => sum + layerCount(tile), 0);
   const relicCount = layout.initialTilePlacements.length;
+  const floatCount = layout.initialTilePlacements.filter((cell) => cell.float).length;
+  // Top-row exits receive rising cargo: floatstones, or relics in low gravity.
+  if (floatCount || tiles.some((tile) => tile.fall === 'up'))
+    for (const tile of tiles.slice(0, cols)) if (tile.exit) tile.hatch = true;
+  // Sky hatches that only ever receive floatstones are not relic baskets.
+  if (floatCount && floatCount === relicCount)
+    for (const tile of tiles) if (tile.exit) tile.floatExit = true;
   const board = createPlayableBoard(layout, rng, { minMoves: DEFAULT_MIN_STARTING_MOVES, tiles });
+  // Each phase seal shows the colour its gem will become after the first move.
+  for (const [index, tile] of tiles.entries())
+    if (tile.phaseSeal) {
+      const choices = layout.gemTypes.filter((type) => type !== board[index]?.type);
+      tile.phaseNext = choices[Math.floor(rng() * choices.length)];
+    }
   // Reward targets follow each puzzle's workload, including the chapter breathers.
   const chestTarget =
     spec.chestTarget ?? Math.ceil((totalLayers * 380 + relicCount * 1500) / 500) * 500;
-  const layerLabel = spec.fossils?.length
-    ? 'Tiles and buried fossils'
-    : spec.roots?.length
-      ? 'Tiles and linked roots'
-      : spec.spores?.length
-        ? 'Tiles and spore relays'
-        : spec.cores?.length
-          ? 'Tiles and charge cores'
-          : spec.signals?.length
-            ? 'Tiles and light markers'
-            : tiles.some((tile) => tile.sealColor)
-              ? 'Ice, stone & seals'
-              : tiles.some((tile) => tile.chainHealth)
-                ? 'Ice, stone & chains'
-                : 'Ice & stone';
+  const layerLabel = spec.goalLabel
+    ? spec.goalLabel
+    : spec.fossils?.length
+      ? 'Tiles and buried fossils'
+      : spec.roots?.length
+        ? 'Tiles and linked roots'
+        : spec.spores?.length
+          ? 'Tiles and spore relays'
+          : spec.cores?.length
+            ? 'Tiles and charge cores'
+            : spec.signals?.length
+              ? 'Tiles and light markers'
+              : tiles.some((tile) => tile.sealColor)
+                ? 'Ice, stone & seals'
+                : tiles.some((tile) => tile.chainHealth)
+                  ? 'Ice, stone & chains'
+                  : 'Ice & stone';
   return assembleLevelConfig({
     id,
     chapter,
@@ -351,7 +434,12 @@ const createExpansionLevel = (id) => {
             {
               id: `relics-${id}`,
               type: 'collect-relics',
-              label: 'Collect relics',
+              label:
+                floatCount === relicCount
+                  ? 'Raise floatstones'
+                  : floatCount
+                    ? 'Deliver relics and floatstones'
+                    : 'Collect relics',
               target: relicCount,
               progress: 0,
             },

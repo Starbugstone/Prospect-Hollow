@@ -1,6 +1,7 @@
 import { LATE_CHAPTERS } from './lateLevels.js';
 import { TOMORROW_CHAPTERS } from './tomorrowLevels.js';
 import { DEEP_MINE_CHAPTERS } from './deepMineLevels.js';
+import { HOLLOW_MINE_CHAPTERS } from './hollowMineLevels.js';
 // A chapter owns its board dimensions and active jewel count. Two-level seams
 // rotate identities only; larger boards introduce the fifth color at level 13.
 import { CITY_CHAPTERS } from './cityLevels.js';
@@ -156,6 +157,7 @@ export const CHAPTERS = [
   ...LATE_CHAPTERS,
   ...TOMORROW_CHAPTERS,
   ...DEEP_MINE_CHAPTERS,
+  ...HOLLOW_MINE_CHAPTERS,
 ].map(withBoardDefaults);
 export const LEVEL_COUNT = CHAPTERS.length * LEVELS_PER_CHAPTER;
 

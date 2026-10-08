@@ -1,6 +1,7 @@
 // A missing tile retains the rectangular-board fallback. Permanent voids are
-// authored cells, not temporarily empty sockets or breakable stone.
-export const isPlayableCell = (tile) => tile?.type !== 'void';
+// authored cells, not temporarily empty sockets or breakable stone. A sealed cell
+// belongs to a chamber that has not been broken into yet (see Breakthroughs.js).
+export const isPlayableCell = (tile) => tile?.type !== 'void' && !tile?.sealed;
 
 export function gravityDestination(tiles, index, cols, rows) {
   if (
@@ -12,6 +13,16 @@ export function gravityDestination(tiles, index, cols, rows) {
     !isPlayableCell(tiles[index])
   )
     return -1;
+  // A portal hands its falling gem to the paired exit cell, wherever it is.
+  const portal = tiles[index]?.portalTo;
+  if (
+    Number.isInteger(portal) &&
+    portal >= 0 &&
+    portal < cols * rows &&
+    portal !== index &&
+    isPlayableCell(tiles[portal])
+  )
+    return portal;
   const row = Math.floor(index / cols);
   if (row + 1 >= rows) return -1;
   const flow = tiles[index]?.flowTo;
@@ -39,12 +50,25 @@ export function incomingGravity(tiles, cols, rows) {
 
 export function gravityPath(tiles, index, cols, rows) {
   const path = [];
-  while (index >= 0 && index < cols * rows && isPlayableCell(tiles[index])) {
+  // Portals may jump upwards, so a misauthored loop must still end.
+  while (
+    index >= 0 &&
+    index < cols * rows &&
+    isPlayableCell(tiles[index]) &&
+    !path.includes(index)
+  ) {
     path.push(index);
     index = gravityDestination(tiles, index, cols, rows);
   }
   return path;
 }
+
+// Boards whose gravity is routed (shaped walls, diagonal flow or portals).
+export const isRoutedBoard = (tiles) =>
+  tiles.some(
+    (tile) =>
+      !isPlayableCell(tile) || Number.isInteger(tile?.flowTo) || Number.isInteger(tile?.portalTo),
+  );
 
 // A relic here can still fall to a collection exit on the bottom row. Breakable
 // anchors on the way only delay it; permanent voids end the route.

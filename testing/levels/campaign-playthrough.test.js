@@ -29,17 +29,9 @@ const playLevel = (id, level) => {
     // The appended late campaign permits occasional harder layouts; its
     // aggregate median/p90 are guarded below. This is diagnostic only.
     // Shaped endgame boards require earned specials at bottlenecks; their
-    // separate held-out pacing regression guards levels 373–402.
+    // separate held-out pacing regressions guard levels 373–402 and 403 onwards.
     expect(turns).toBeLessThanOrEqual(
-      id >= 373 && id <= 402
-        ? 200
-        : id > 240
-          ? 80
-          : id <= 12
-            ? 30
-            : reviewedLayouts.has(id)
-              ? 70
-              : 60,
+      id >= 373 ? 200 : id > 240 ? 80 : id <= 12 ? 30 : reviewedLayouts.has(id) ? 70 : 60,
     );
     turnCounts.push(turns);
     expect(shuffles).toBeLessThanOrEqual(id <= 12 ? 0 : 3);

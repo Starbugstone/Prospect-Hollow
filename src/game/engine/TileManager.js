@@ -1,5 +1,5 @@
 import { MatchEngine } from './MatchEngine.js';
-import { createGem, randomGemType, GEM_TYPES } from './GemFactory.js';
+import { BASE_GEM_TYPES, createGem, randomGemType, GEM_TYPES } from './GemFactory.js';
 import { detectBonusFromMatches } from './MatchPatterns.js';
 import { isAnchored, neighborsOf } from './TileRules.js';
 import { BonusActivator } from './BonusActivator.js';
@@ -10,9 +10,21 @@ import {
   coreReleaseTarget,
 } from './ChapterMechanics.js';
 import { collectFinishedFossils, releaseCutRoots } from './DeepMineMechanics.js';
-import { incomingGravity, isPlayableCell } from './BoardTopology.js';
+import { bentBeams, blastLog, hasLenses } from './LensBeams.js';
+import { hasPhaseSeals, shiftPhases } from './PhaseSeals.js';
+import { hasSealedChambers, openBreakthroughs } from './Breakthroughs.js';
+import { gravityPath, incomingGravity, isPlayableCell, isRoutedBoard } from './BoardTopology.js';
+import {
+  applyFrameGravity,
+  cargoCollects,
+  flipGravity,
+  gravityFrames,
+  isGravitySwitch,
+  usesGravityFrames,
+} from './GravityFrames.js';
 
 const matchEngine = new MatchEngine();
+const NONE = new Set();
 const bonusActivator = new BonusActivator();
 
 export class TileManager {
@@ -24,7 +36,7 @@ export class TileManager {
     rows,
     bonuses = [],
     pendingBonus = null,
-    gemTypes = GEM_TYPES,
+    gemTypes = BASE_GEM_TYPES,
   }) {
     if (!matches?.length) {
       return { board, steps: [] };
@@ -58,6 +70,9 @@ export class TileManager {
     const chargedCores = new Set();
     let relicsCollected = 0;
     let queuedSpores = [];
+    let phased = false;
+    // A gravity switch flips at most once per move, however many blasts reach it.
+    let flipped = false;
 
     while (pendingMatches.length) {
       if (iteration >= 128) throw new Error('Cascade did not settle after 128 steps');
@@ -67,6 +82,10 @@ export class TileManager {
       const cascadeBonuses = [];
       const fusion = pendingMatches.find((match) => match.fusion)?.fusion;
       const fusionTargets = new Set(fusion?.targets ?? []);
+      // Starglass only breaks under a beam that a lens has turned.
+      const bentHit = (index) =>
+        pendingMatches.some((match) => match.blasts?.lenses?.bent.has(index));
+      const lensBeams = pendingMatches.flatMap((match) => match.blasts?.lenses?.beams ?? []);
       // Blast-only obstacles take one hit from each separate bonus blast that
       // reaches them, so a cross that fires a bomb hits a crate in range of both.
       const extraBlastHits = (index) =>
@@ -146,6 +165,7 @@ export class TileManager {
         ...(pendingMatches.some((match) => match.sporeBursts)
           ? { sporeBursts: pendingMatches.flatMap((match) => match.sporeBursts ?? []) }
           : {}),
+        ...(lensBeams.length ? { lensBeams } : {}),
       };
 
       for (const index of hasSignals
@@ -162,10 +182,18 @@ export class TileManager {
         step.tileUpdates.push({ index, signalHealth: tiles[index].signalHealth });
         if (tiles[index].signal === 'spore') {
           const axis = tiles[index].sporeAxis === 'column' ? 'column' : 'row';
+          const line = {
+            axis,
+            index: axis === 'column' ? index % totalCols : Math.floor(index / totalCols),
+          };
+          const bent = hasLenses(tiles)
+            ? bentBeams(tiles, totalCols, totalRows, [line])
+            : { cells: [], beams: [] };
           queuedSpores.push({
             index,
             axis,
-            targets: sporeTargets(tiles, index, axis, totalCols, totalRows),
+            targets: [...sporeTargets(tiles, index, axis, totalCols, totalRows), ...bent.cells],
+            ...(bent.beams.length ? { bent } : {}),
           });
         }
         if (!core || tiles[index].signalHealth) continue;
@@ -186,7 +214,7 @@ export class TileManager {
         step.bonuses.push({ type: gem.type, index: target, gem, core: index });
       }
       damageTargets.forEach((index) => {
-        if (fusionTargets.has(index)) {
+        if (fusionTargets.has(index) && (!tiles[index]?.lensOnly || bentHit(index))) {
           totalLayersCleared += this.applyFusionHit(
             workingBoard,
             tiles,
@@ -215,10 +243,11 @@ export class TileManager {
               (match.type === tile.sealColor || !GEM_TYPES.includes(match.type)),
           );
         const specialHit =
-          !tile?.bonusOnly ||
-          pendingMatches.some(
-            (match) => !GEM_TYPES.includes(match.type) && match.indices.includes(index),
-          );
+          (!tile?.bonusOnly ||
+            pendingMatches.some(
+              (match) => !GEM_TYPES.includes(match.type) && match.indices.includes(index),
+            )) &&
+          (!tile?.lensOnly || bentHit(index));
         if (tile && tile.health > 0 && sealHit && specialHit) {
           const before = tile.health;
           tile.health = Math.max(0, tile.health - 1 - extraBlastHits(index));
@@ -242,6 +271,20 @@ export class TileManager {
       });
       if (hasRoots) totalLayersCleared += releaseCutRoots(tiles, step);
       if (hasFossils) collectFinishedFossils(tiles, step);
+      if (hasSealedChambers(tiles)) openBreakthroughs(tiles, step);
+      if (!flipped) {
+        const switchIndex = [...impacted].find(
+          (index) =>
+            isGravitySwitch(tiles[index]) &&
+            pendingMatches.some(
+              (match) => !GEM_TYPES.includes(match.type) && match.indices.includes(index),
+            ),
+        );
+        if (switchIndex !== undefined) {
+          flipped = true;
+          flipGravity(tiles, switchIndex, step);
+        }
+      }
       // A fusion can break through an anchor and remove its gem in the same step.
       step.cleared = [...cleared].sort((a, b) => a - b);
 
@@ -272,7 +315,7 @@ export class TileManager {
         // Both phases belong to the same cascade tier.
         steps.push(step);
         const { swap, fusion, swapGems } = pendingBonus;
-        const blasts = new Map();
+        const blasts = blastLog();
         const indices = bonusActivator.activate(
           workingBoard,
           totalCols,
@@ -296,7 +339,11 @@ export class TileManager {
         steps.push(step);
         const bursts = queuedSpores;
         queuedSpores = [];
-        const blasts = new Map();
+        const blasts = blastLog();
+        for (const burst of bursts) {
+          for (const cell of burst.bent?.cells ?? []) blasts.lenses.bent.add(cell);
+          blasts.lenses.beams.push(...(burst.bent?.beams ?? []));
+        }
         const indices = bonusActivator.resolveChain(workingBoard, totalCols, totalRows, {
           tiles,
           targets: bursts.flatMap((burst) => burst.targets),
@@ -313,10 +360,17 @@ export class TileManager {
       // A separate step lets the renderer finish the fall before the collection.
       while (true) {
         const collectedRelics = [];
-        for (let index = (totalRows - 1) * totalCols; index < workingBoard.length; index++) {
+        // Framed boards also collect floatstones and up-falling relics on the top row.
+        const framed = usesGravityFrames(workingBoard, tiles);
+        for (
+          let index = framed ? 0 : (totalRows - 1) * totalCols;
+          index < workingBoard.length;
+          index++
+        ) {
           if (
-            tiles[index]?.exit &&
-            workingBoard[index]?.type === 'relic' &&
+            (framed
+              ? cargoCollects(workingBoard[index], tiles[index], index, totalCols, totalRows)
+              : tiles[index]?.exit && workingBoard[index]?.type === 'relic') &&
             !isAnchored(tiles[index])
           ) {
             collectedRelics.push({ index, gem: workingBoard[index] });
@@ -348,6 +402,16 @@ export class TileManager {
       }
 
       pendingMatches = matchEngine.findMatches(workingBoard, totalCols, totalRows, tiles);
+      // Once the move has settled, each phase seal changes its gem. A change that
+      // lines up a match continues the cascade with its usual bonuses.
+      if (!pendingMatches.length && !phased && hasPhaseSeals(tiles)) {
+        phased = true;
+        const shift = shiftPhases(workingBoard, tiles, gemTypes, iteration);
+        if (shift) {
+          steps.push(shift);
+          pendingMatches = matchEngine.findMatches(workingBoard, totalCols, totalRows, tiles);
+        }
+      }
       iteration += 1;
     }
 
@@ -408,10 +472,68 @@ export class TileManager {
   }
 
   applyGravity(workingBoard, tiles, totalCols, totalRows, gemTypes, iteration, step) {
-    if (tiles.some((tile) => !isPlayableCell(tile) || Number.isInteger(tile?.flowTo))) {
+    if (usesGravityFrames(workingBoard, tiles)) {
+      this.applyFramedGravity(workingBoard, tiles, totalCols, totalRows, gemTypes, iteration, step);
+      return;
+    }
+    if (isRoutedBoard(tiles)) {
       this.applyShapedGravity(workingBoard, tiles, totalCols, totalRows, gemTypes, iteration, step);
       return;
     }
+    this.applyColumnGravity(workingBoard, tiles, totalCols, totalRows, gemTypes, iteration, step);
+  }
+
+  // Low-gravity frames and floatstones reuse the column and shaped routines on a
+  // mirrored view of each frame. Floatstones stay pinned while gems pass them.
+  applyFramedGravity(board, tiles, cols, rows, gemTypes, iteration, step) {
+    const shaped = isRoutedBoard(tiles);
+    for (const frame of gravityFrames(tiles, cols, rows)) {
+      const receipts = applyFrameGravity(
+        board,
+        tiles,
+        cols,
+        rows,
+        frame,
+        (vBoard, vTiles, vCols, vRows, vStep, pinned) =>
+          shaped
+            ? this.applyShapedGravity(
+                vBoard,
+                vTiles,
+                vCols,
+                vRows,
+                gemTypes,
+                iteration,
+                vStep,
+                pinned,
+              )
+            : this.applyColumnGravity(
+                vBoard,
+                vTiles,
+                vCols,
+                vRows,
+                gemTypes,
+                iteration,
+                vStep,
+                pinned,
+              ),
+        isAnchored,
+      );
+      step.drops.push(...receipts.drops);
+      step.spawns.push(...receipts.spawns);
+    }
+  }
+
+  applyColumnGravity(
+    workingBoard,
+    tiles,
+    totalCols,
+    totalRows,
+    gemTypes,
+    iteration,
+    step,
+    pinned = NONE,
+  ) {
+    const held = (index) => isAnchored(tiles[index]) || pinned.has(index);
     for (let col = 0; col < totalCols; col += 1) {
       let writeRow = totalRows - 1;
       for (let row = totalRows - 1; row >= 0; row -= 1) {
@@ -419,9 +541,10 @@ export class TileManager {
         // A chained gem stays pinned to its tile, but gems can fall past it.
         // Stone and frozen cells still separate the column into segments.
         if (
-          tiles[index]?.chainHealth > 0 &&
-          tiles[index]?.state !== 'FROZEN' &&
-          tiles[index]?.type !== 'blocker'
+          pinned.has(index) ||
+          (tiles[index]?.chainHealth > 0 &&
+            tiles[index]?.state !== 'FROZEN' &&
+            tiles[index]?.type !== 'blocker')
         )
           continue;
         // Existing gems below a barrier can fall within their segment, but
@@ -432,7 +555,7 @@ export class TileManager {
         }
         const gem = workingBoard[index];
         if (gem) {
-          while (writeRow >= 0 && isAnchored(tiles[writeRow * totalCols + col])) writeRow--;
+          while (writeRow >= 0 && held(writeRow * totalCols + col)) writeRow--;
           const targetIndex = writeRow * totalCols + col;
           if (targetIndex !== index) {
             workingBoard[targetIndex] = gem;
@@ -445,7 +568,7 @@ export class TileManager {
 
       for (let spawnRow = writeRow; spawnRow >= 0; spawnRow -= 1) {
         const index = spawnRow * totalCols + col;
-        if (isAnchored(tiles[index])) continue;
+        if (held(index)) continue;
         const newGem = createGem(
           this.refillType(workingBoard, index, totalCols, gemTypes, iteration),
         );
@@ -479,7 +602,7 @@ export class TileManager {
     );
   }
 
-  applyShapedGravity(board, tiles, cols, rows, gemTypes, iteration, step) {
+  applyShapedGravity(board, tiles, cols, rows, gemTypes, iteration, step, pinned = NONE) {
     const incoming = incomingGravity(tiles, cols, rows);
     for (let index = 0; index < board.length; index++)
       if (!isPlayableCell(tiles[index])) board[index] = null;
@@ -493,7 +616,8 @@ export class TileManager {
       )
         return [];
       const path = [index, ...suffix];
-      if (board[index] && !(tile?.chainHealth > 0)) return [{ from: index, path, choices }];
+      if (board[index] && !(tile?.chainHealth > 0) && !pinned.has(index))
+        return [{ from: index, path, choices }];
       const parents = incoming[index];
       if (!parents.length) return [{ entry: index, path, choices }];
       const cursor =
@@ -513,8 +637,15 @@ export class TileManager {
     // A relic that can reach the cell falls first, then other upstream pieces,
     // then refill. Rotating merge choices prevents perpetual center refill from
     // starving either pearl arm and keeps relics from several arms taking turns.
-    for (let index = board.length - 1; index >= 0; index--) {
-      if (board[index] || isAnchored(tiles[index])) continue;
+    // Fill each cell before the cells that feed it. Downward flow means bottom first;
+    // a portal can hand gems to a higher cell, so then order by route length to the end.
+    const order = Array.from({ length: board.length }, (_, index) => board.length - 1 - index);
+    if (tiles.some((tile) => Number.isInteger(tile?.portalTo))) {
+      const remaining = order.map((_, index) => gravityPath(tiles, index, cols, rows).length);
+      order.sort((a, b) => remaining[a] - remaining[b] || b - a);
+    }
+    for (const index of order) {
+      if (board[index] || isAnchored(tiles[index]) || pinned.has(index)) continue;
       const candidates = candidatesAbove(index);
       const chosen =
         candidates.find((candidate) => board[candidate.from]?.type === 'relic') ??

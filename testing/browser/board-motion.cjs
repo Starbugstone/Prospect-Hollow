@@ -84,6 +84,7 @@ async function playMoves({ moves, frame }) {
             sprite.x / animator.cellSize,
             sprite.y / animator.cellSize,
             sprite.alpha,
+            !!sprite.__float,
           ]),
       );
     sample();
@@ -101,7 +102,7 @@ async function playMoves({ moves, frame }) {
 }
 
 // Gems drawn on top of each other. The swapped pair crosses on purpose; a fading
-// gem is on its way out.
+// gem is on its way out; gems sink past a rising floatstone, which is drawn in front.
 function overlaps({ swapped, frames }) {
   const found = [];
   frames.forEach((gems, frame) => {
@@ -109,6 +110,7 @@ function overlaps({ swapped, frames }) {
     for (let a = 0; a < solid.length; a++)
       for (let b = a + 1; b < solid.length; b++) {
         if (swapped.includes(solid[a][0]) && swapped.includes(solid[b][0])) continue;
+        if (solid[a][4] || solid[b][4]) continue;
         const gap = Math.hypot(solid[a][1] - solid[b][1], solid[a][2] - solid[b][2]);
         if (gap < MIN_GAP) found.push({ frame, gems: [solid[a][0], solid[b][0]], gap });
       }
@@ -122,7 +124,9 @@ function overlaps({ swapped, frames }) {
 function stutters({ frames }) {
   const tracks = new Map();
   frames.forEach((gems, frame) => {
-    for (const [id, x, y] of gems) {
+    // A hidden gem (crossing a portal or still inside the seam) cannot visibly stutter.
+    for (const [id, x, y, alpha] of gems) {
+      if (alpha < 0.9) continue;
       if (!tracks.has(id)) tracks.set(id, []);
       tracks.get(id).push({ frame, x, y });
     }

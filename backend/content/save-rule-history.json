@@ -2859,6 +2859,1014 @@
         "starScoreTarget": 51600,
         "speedTargetMs": 236000
       }
+    ],
+    "403": [
+      {
+        "chestTarget": 22500,
+        "starScoreTarget": 28200,
+        "speedTargetMs": 87000
+      }
+    ],
+    "404": [
+      {
+        "chestTarget": 42500,
+        "starScoreTarget": 53200,
+        "speedTargetMs": 200000
+      }
+    ],
+    "405": [
+      {
+        "chestTarget": 50500,
+        "starScoreTarget": 63200,
+        "speedTargetMs": 90000
+      }
+    ],
+    "406": [
+      {
+        "chestTarget": 53500,
+        "starScoreTarget": 67200,
+        "speedTargetMs": 193000
+      }
+    ],
+    "407": [
+      {
+        "chestTarget": 33500,
+        "starScoreTarget": 42400,
+        "speedTargetMs": 89000
+      }
+    ],
+    "408": [
+      {
+        "chestTarget": 63500,
+        "starScoreTarget": 79800,
+        "speedTargetMs": 113000
+      }
+    ],
+    "409": [
+      {
+        "chestTarget": 32500,
+        "starScoreTarget": 39400,
+        "speedTargetMs": 95000
+      }
+    ],
+    "410": [
+      {
+        "chestTarget": 36500,
+        "starScoreTarget": 45200,
+        "speedTargetMs": 115000
+      }
+    ],
+    "411": [
+      {
+        "chestTarget": 48000,
+        "starScoreTarget": 60000,
+        "speedTargetMs": 119000
+      }
+    ],
+    "412": [
+      {
+        "chestTarget": 46500,
+        "starScoreTarget": 58400,
+        "speedTargetMs": 139000
+      }
+    ],
+    "413": [
+      {
+        "chestTarget": 16500,
+        "starScoreTarget": 17200,
+        "speedTargetMs": 115000
+      }
+    ],
+    "414": [
+      {
+        "chestTarget": 58000,
+        "starScoreTarget": 72600,
+        "speedTargetMs": 142000
+      }
+    ],
+    "415": [
+      {
+        "chestTarget": 32500,
+        "starScoreTarget": 41000,
+        "speedTargetMs": 180000
+      }
+    ],
+    "416": [
+      {
+        "chestTarget": 42500,
+        "starScoreTarget": 53600,
+        "speedTargetMs": 183000
+      }
+    ],
+    "417": [
+      {
+        "chestTarget": 43500,
+        "starScoreTarget": 54800,
+        "speedTargetMs": 182000
+      }
+    ],
+    "418": [
+      {
+        "chestTarget": 51000,
+        "starScoreTarget": 64200,
+        "speedTargetMs": 181000
+      }
+    ],
+    "419": [
+      {
+        "chestTarget": 23500,
+        "starScoreTarget": 29400,
+        "speedTargetMs": 133000
+      }
+    ],
+    "420": [
+      {
+        "chestTarget": 51000,
+        "starScoreTarget": 63800,
+        "speedTargetMs": 171000
+      }
+    ],
+    "421": [
+      {
+        "chestTarget": 24000,
+        "starScoreTarget": 30400,
+        "speedTargetMs": 115000
+      }
+    ],
+    "422": [
+      {
+        "chestTarget": 38000,
+        "starScoreTarget": 47400,
+        "speedTargetMs": 115000
+      }
+    ],
+    "423": [
+      {
+        "chestTarget": 45000,
+        "starScoreTarget": 56200,
+        "speedTargetMs": 161000
+      }
+    ],
+    "424": [
+      {
+        "chestTarget": 40000,
+        "starScoreTarget": 50400,
+        "speedTargetMs": 184000
+      }
+    ],
+    "425": [
+      {
+        "chestTarget": 26500,
+        "starScoreTarget": 33200,
+        "speedTargetMs": 135000
+      }
+    ],
+    "426": [
+      {
+        "chestTarget": 67500,
+        "starScoreTarget": 84800,
+        "speedTargetMs": 221000
+      }
+    ],
+    "427": [
+      {
+        "chestTarget": 23500,
+        "starScoreTarget": 29000,
+        "speedTargetMs": 99000
+      }
+    ],
+    "428": [
+      {
+        "chestTarget": 37000,
+        "starScoreTarget": 46400,
+        "speedTargetMs": 123000
+      }
+    ],
+    "429": [
+      {
+        "chestTarget": 41000,
+        "starScoreTarget": 51600,
+        "speedTargetMs": 125000
+      }
+    ],
+    "430": [
+      {
+        "chestTarget": 41500,
+        "starScoreTarget": 51800,
+        "speedTargetMs": 184000
+      }
+    ],
+    "431": [
+      {
+        "chestTarget": 25000,
+        "starScoreTarget": 31600,
+        "speedTargetMs": 119000
+      }
+    ],
+    "432": [
+      {
+        "chestTarget": 45000,
+        "starScoreTarget": 56200,
+        "speedTargetMs": 173000
+      }
+    ],
+    "433": [
+      {
+        "chestTarget": 27000,
+        "starScoreTarget": 34200,
+        "speedTargetMs": 105000
+      }
+    ],
+    "434": [
+      {
+        "chestTarget": 25000,
+        "starScoreTarget": 31400,
+        "speedTargetMs": 127000
+      }
+    ],
+    "435": [
+      {
+        "chestTarget": 43000,
+        "starScoreTarget": 54000,
+        "speedTargetMs": 150000
+      }
+    ],
+    "436": [
+      {
+        "chestTarget": 47000,
+        "starScoreTarget": 59000,
+        "speedTargetMs": 212000
+      }
+    ],
+    "437": [
+      {
+        "chestTarget": 22500,
+        "starScoreTarget": 28000,
+        "speedTargetMs": 120000
+      }
+    ],
+    "438": [
+      {
+        "chestTarget": 67000,
+        "starScoreTarget": 83800,
+        "speedTargetMs": 213000
+      }
+    ],
+    "439": [
+      {
+        "chestTarget": 24000,
+        "starScoreTarget": 30000,
+        "speedTargetMs": 80000
+      }
+    ],
+    "440": [
+      {
+        "chestTarget": 42000,
+        "starScoreTarget": 52600,
+        "speedTargetMs": 93000
+      }
+    ],
+    "441": [
+      {
+        "chestTarget": 42500,
+        "starScoreTarget": 53600,
+        "speedTargetMs": 82000
+      }
+    ],
+    "442": [
+      {
+        "chestTarget": 48500,
+        "starScoreTarget": 60800,
+        "speedTargetMs": 90000
+      }
+    ],
+    "443": [
+      {
+        "chestTarget": 21500,
+        "starScoreTarget": 26400,
+        "speedTargetMs": 80000
+      }
+    ],
+    "444": [
+      {
+        "chestTarget": 73000,
+        "starScoreTarget": 91600,
+        "speedTargetMs": 96000
+      }
+    ],
+    "445": [
+      {
+        "chestTarget": 32000,
+        "starScoreTarget": 40400,
+        "speedTargetMs": 168000
+      }
+    ],
+    "446": [
+      {
+        "chestTarget": 36000,
+        "starScoreTarget": 45400,
+        "speedTargetMs": 188000
+      }
+    ],
+    "447": [
+      {
+        "chestTarget": 37500,
+        "starScoreTarget": 47200,
+        "speedTargetMs": 190000
+      }
+    ],
+    "448": [
+      {
+        "chestTarget": 43500,
+        "starScoreTarget": 54600,
+        "speedTargetMs": 195000
+      }
+    ],
+    "449": [
+      {
+        "chestTarget": 34000,
+        "starScoreTarget": 42800,
+        "speedTargetMs": 191000
+      }
+    ],
+    "450": [
+      {
+        "chestTarget": 66000,
+        "starScoreTarget": 82800,
+        "speedTargetMs": 189000
+      }
+    ],
+    "451": [
+      {
+        "chestTarget": 41500,
+        "starScoreTarget": 48400,
+        "speedTargetMs": 190000
+      }
+    ],
+    "452": [
+      {
+        "chestTarget": 37000,
+        "starScoreTarget": 46800,
+        "speedTargetMs": 193000
+      }
+    ],
+    "453": [
+      {
+        "chestTarget": 52000,
+        "starScoreTarget": 65400,
+        "speedTargetMs": 189000
+      }
+    ],
+    "454": [
+      {
+        "chestTarget": 36500,
+        "starScoreTarget": 46200,
+        "speedTargetMs": 191000
+      }
+    ],
+    "455": [
+      {
+        "chestTarget": 29500,
+        "starScoreTarget": 37400,
+        "speedTargetMs": 152000
+      }
+    ],
+    "456": [
+      {
+        "chestTarget": 78500,
+        "starScoreTarget": 98400,
+        "speedTargetMs": 189000
+      }
+    ],
+    "457": [
+      {
+        "chestTarget": 29000,
+        "starScoreTarget": 31600,
+        "speedTargetMs": 152000
+      }
+    ],
+    "458": [
+      {
+        "chestTarget": 47000,
+        "starScoreTarget": 59200,
+        "speedTargetMs": 192000
+      }
+    ],
+    "459": [
+      {
+        "chestTarget": 43500,
+        "starScoreTarget": 54800,
+        "speedTargetMs": 188000
+      }
+    ],
+    "460": [
+      {
+        "chestTarget": 52000,
+        "starScoreTarget": 65400,
+        "speedTargetMs": 193000
+      }
+    ],
+    "461": [
+      {
+        "chestTarget": 27500,
+        "starScoreTarget": 34000,
+        "speedTargetMs": 166000
+      }
+    ],
+    "462": [
+      {
+        "chestTarget": 64000,
+        "starScoreTarget": 80400,
+        "speedTargetMs": 191000
+      }
+    ],
+    "463": [
+      {
+        "chestTarget": 26000,
+        "starScoreTarget": 31600,
+        "speedTargetMs": 141000
+      }
+    ],
+    "464": [
+      {
+        "chestTarget": 42500,
+        "starScoreTarget": 53600,
+        "speedTargetMs": 184000
+      }
+    ],
+    "465": [
+      {
+        "chestTarget": 38000,
+        "starScoreTarget": 48000,
+        "speedTargetMs": 185000
+      }
+    ],
+    "466": [
+      {
+        "chestTarget": 53500,
+        "starScoreTarget": 67400,
+        "speedTargetMs": 186000
+      }
+    ],
+    "467": [
+      {
+        "chestTarget": 27000,
+        "starScoreTarget": 34000,
+        "speedTargetMs": 159000
+      }
+    ],
+    "468": [
+      {
+        "chestTarget": 62000,
+        "starScoreTarget": 78000,
+        "speedTargetMs": 177000
+      }
+    ],
+    "469": [
+      {
+        "chestTarget": 31000,
+        "starScoreTarget": 39200,
+        "speedTargetMs": 198000
+      }
+    ],
+    "470": [
+      {
+        "chestTarget": 52000,
+        "starScoreTarget": 65200,
+        "speedTargetMs": 199000
+      }
+    ],
+    "471": [
+      {
+        "chestTarget": 44000,
+        "starScoreTarget": 55200,
+        "speedTargetMs": 200000
+      }
+    ],
+    "472": [
+      {
+        "chestTarget": 60000,
+        "starScoreTarget": 75200,
+        "speedTargetMs": 203000
+      }
+    ],
+    "473": [
+      {
+        "chestTarget": 28000,
+        "starScoreTarget": 35600,
+        "speedTargetMs": 175000
+      }
+    ],
+    "474": [
+      {
+        "chestTarget": 79500,
+        "starScoreTarget": 99400,
+        "speedTargetMs": 206000
+      }
+    ],
+    "475": [
+      {
+        "chestTarget": 31500,
+        "starScoreTarget": 39600,
+        "speedTargetMs": 95000
+      }
+    ],
+    "476": [
+      {
+        "chestTarget": 47000,
+        "starScoreTarget": 58800,
+        "speedTargetMs": 115000
+      }
+    ],
+    "477": [
+      {
+        "chestTarget": 42500,
+        "starScoreTarget": 53400,
+        "speedTargetMs": 118000
+      }
+    ],
+    "478": [
+      {
+        "chestTarget": 55500,
+        "starScoreTarget": 69800,
+        "speedTargetMs": 137000
+      }
+    ],
+    "479": [
+      {
+        "chestTarget": 29000,
+        "starScoreTarget": 36600,
+        "speedTargetMs": 96000
+      }
+    ],
+    "480": [
+      {
+        "chestTarget": 69000,
+        "starScoreTarget": 86600,
+        "speedTargetMs": 163000
+      }
+    ],
+    "481": [
+      {
+        "chestTarget": 25500,
+        "starScoreTarget": 30400,
+        "speedTargetMs": 95000
+      }
+    ],
+    "482": [
+      {
+        "chestTarget": 36500,
+        "starScoreTarget": 45800,
+        "speedTargetMs": 115000
+      }
+    ],
+    "483": [
+      {
+        "chestTarget": 38000,
+        "starScoreTarget": 47400,
+        "speedTargetMs": 115000
+      }
+    ],
+    "484": [
+      {
+        "chestTarget": 48500,
+        "starScoreTarget": 61200,
+        "speedTargetMs": 158000
+      }
+    ],
+    "485": [
+      {
+        "chestTarget": 21000,
+        "starScoreTarget": 25400,
+        "speedTargetMs": 95000
+      }
+    ],
+    "486": [
+      {
+        "chestTarget": 50500,
+        "starScoreTarget": 63400,
+        "speedTargetMs": 163000
+      }
+    ],
+    "487": [
+      {
+        "chestTarget": 14500,
+        "starScoreTarget": 18200,
+        "speedTargetMs": 82000
+      }
+    ],
+    "488": [
+      {
+        "chestTarget": 42500,
+        "starScoreTarget": 51000,
+        "speedTargetMs": 139000
+      }
+    ],
+    "489": [
+      {
+        "chestTarget": 37000,
+        "starScoreTarget": 44800,
+        "speedTargetMs": 84000
+      }
+    ],
+    "490": [
+      {
+        "chestTarget": 50000,
+        "starScoreTarget": 62800,
+        "speedTargetMs": 201000
+      }
+    ],
+    "491": [
+      {
+        "chestTarget": 20500,
+        "starScoreTarget": 25600,
+        "speedTargetMs": 119000
+      }
+    ],
+    "492": [
+      {
+        "chestTarget": 57500,
+        "starScoreTarget": 70400,
+        "speedTargetMs": 139000
+      }
+    ],
+    "493": [
+      {
+        "chestTarget": 24000,
+        "starScoreTarget": 30000,
+        "speedTargetMs": 135000
+      }
+    ],
+    "494": [
+      {
+        "chestTarget": 40500,
+        "starScoreTarget": 51000,
+        "speedTargetMs": 158000
+      }
+    ],
+    "495": [
+      {
+        "chestTarget": 37500,
+        "starScoreTarget": 47000,
+        "speedTargetMs": 174000
+      }
+    ],
+    "496": [
+      {
+        "chestTarget": 64500,
+        "starScoreTarget": 79000,
+        "speedTargetMs": 205000
+      }
+    ],
+    "497": [
+      {
+        "chestTarget": 33000,
+        "starScoreTarget": 41800,
+        "speedTargetMs": 152000
+      }
+    ],
+    "498": [
+      {
+        "chestTarget": 64000,
+        "starScoreTarget": 80400,
+        "speedTargetMs": 203000
+      }
+    ],
+    "499": [
+      {
+        "chestTarget": 25500,
+        "starScoreTarget": 31800,
+        "speedTargetMs": 96000
+      }
+    ],
+    "500": [
+      {
+        "chestTarget": 39000,
+        "starScoreTarget": 42200,
+        "speedTargetMs": 116000
+      }
+    ],
+    "501": [
+      {
+        "chestTarget": 37000,
+        "starScoreTarget": 46400,
+        "speedTargetMs": 118000
+      }
+    ],
+    "502": [
+      {
+        "chestTarget": 45500,
+        "starScoreTarget": 57400,
+        "speedTargetMs": 141000
+      }
+    ],
+    "503": [
+      {
+        "chestTarget": 21000,
+        "starScoreTarget": 26000,
+        "speedTargetMs": 95000
+      }
+    ],
+    "504": [
+      {
+        "chestTarget": 63000,
+        "starScoreTarget": 79200,
+        "speedTargetMs": 161000
+      }
+    ],
+    "505": [
+      {
+        "chestTarget": 21500,
+        "starScoreTarget": 27200,
+        "speedTargetMs": 82000
+      }
+    ],
+    "506": [
+      {
+        "chestTarget": 44500,
+        "starScoreTarget": 56000,
+        "speedTargetMs": 98000
+      }
+    ],
+    "507": [
+      {
+        "chestTarget": 36500,
+        "starScoreTarget": 46000,
+        "speedTargetMs": 129000
+      }
+    ],
+    "508": [
+      {
+        "chestTarget": 67500,
+        "starScoreTarget": 84400,
+        "speedTargetMs": 210000
+      }
+    ],
+    "509": [
+      {
+        "chestTarget": 26000,
+        "starScoreTarget": 28400,
+        "speedTargetMs": 98000
+      }
+    ],
+    "510": [
+      {
+        "chestTarget": 86000,
+        "starScoreTarget": 107600,
+        "speedTargetMs": 131000
+      }
+    ],
+    "511": [
+      {
+        "chestTarget": 25000,
+        "starScoreTarget": 31800,
+        "speedTargetMs": 165000
+      }
+    ],
+    "512": [
+      {
+        "chestTarget": 46500,
+        "starScoreTarget": 58200,
+        "speedTargetMs": 117000
+      }
+    ],
+    "513": [
+      {
+        "chestTarget": 50000,
+        "starScoreTarget": 62400,
+        "speedTargetMs": 115000
+      }
+    ],
+    "514": [
+      {
+        "chestTarget": 52000,
+        "starScoreTarget": 65400,
+        "speedTargetMs": 157000
+      }
+    ],
+    "515": [
+      {
+        "chestTarget": 21500,
+        "starScoreTarget": 26400,
+        "speedTargetMs": 143000
+      }
+    ],
+    "516": [
+      {
+        "chestTarget": 88500,
+        "starScoreTarget": 110800,
+        "speedTargetMs": 187000
+      }
+    ],
+    "517": [
+      {
+        "chestTarget": 25500,
+        "starScoreTarget": 32400,
+        "speedTargetMs": 145000
+      }
+    ],
+    "518": [
+      {
+        "chestTarget": 31500,
+        "starScoreTarget": 38600,
+        "speedTargetMs": 115000
+      }
+    ],
+    "519": [
+      {
+        "chestTarget": 40000,
+        "starScoreTarget": 50000,
+        "speedTargetMs": 81000
+      }
+    ],
+    "520": [
+      {
+        "chestTarget": 57000,
+        "starScoreTarget": 71600,
+        "speedTargetMs": 159000
+      }
+    ],
+    "521": [
+      {
+        "chestTarget": 24000,
+        "starScoreTarget": 30200,
+        "speedTargetMs": 139000
+      }
+    ],
+    "522": [
+      {
+        "chestTarget": 61500,
+        "starScoreTarget": 76800,
+        "speedTargetMs": 185000
+      }
+    ],
+    "523": [
+      {
+        "chestTarget": 26000,
+        "starScoreTarget": 32800,
+        "speedTargetMs": 148000
+      }
+    ],
+    "524": [
+      {
+        "chestTarget": 26500,
+        "starScoreTarget": 33600,
+        "speedTargetMs": 171000
+      }
+    ],
+    "525": [
+      {
+        "chestTarget": 44000,
+        "starScoreTarget": 55000,
+        "speedTargetMs": 189000
+      }
+    ],
+    "526": [
+      {
+        "chestTarget": 54000,
+        "starScoreTarget": 68000,
+        "speedTargetMs": 191000
+      }
+    ],
+    "527": [
+      {
+        "chestTarget": 31000,
+        "starScoreTarget": 38800,
+        "speedTargetMs": 160000
+      }
+    ],
+    "528": [
+      {
+        "chestTarget": 64500,
+        "starScoreTarget": 81000,
+        "speedTargetMs": 193000
+      }
+    ],
+    "529": [
+      {
+        "chestTarget": 33000,
+        "starScoreTarget": 41600,
+        "speedTargetMs": 95000
+      }
+    ],
+    "530": [
+      {
+        "chestTarget": 44500,
+        "starScoreTarget": 56200,
+        "speedTargetMs": 115000
+      }
+    ],
+    "531": [
+      {
+        "chestTarget": 41000,
+        "starScoreTarget": 51200,
+        "speedTargetMs": 117000
+      }
+    ],
+    "532": [
+      {
+        "chestTarget": 56000,
+        "starScoreTarget": 70200,
+        "speedTargetMs": 157000
+      }
+    ],
+    "533": [
+      {
+        "chestTarget": 32000,
+        "starScoreTarget": 38800,
+        "speedTargetMs": 95000
+      }
+    ],
+    "534": [
+      {
+        "chestTarget": 49500,
+        "starScoreTarget": 61800,
+        "speedTargetMs": 161000
+      }
+    ],
+    "535": [
+      {
+        "chestTarget": 32500,
+        "starScoreTarget": 40800,
+        "speedTargetMs": 87000
+      }
+    ],
+    "536": [
+      {
+        "chestTarget": 31500,
+        "starScoreTarget": 39800,
+        "speedTargetMs": 121000
+      }
+    ],
+    "537": [
+      {
+        "chestTarget": 37000,
+        "starScoreTarget": 46800,
+        "speedTargetMs": 87000
+      }
+    ],
+    "538": [
+      {
+        "chestTarget": 49000,
+        "starScoreTarget": 61400,
+        "speedTargetMs": 161000
+      }
+    ],
+    "539": [
+      {
+        "chestTarget": 25500,
+        "starScoreTarget": 32000,
+        "speedTargetMs": 83000
+      }
+    ],
+    "540": [
+      {
+        "chestTarget": 67000,
+        "starScoreTarget": 84000,
+        "speedTargetMs": 111000
+      }
+    ],
+    "541": [
+      {
+        "chestTarget": 25000,
+        "starScoreTarget": 30800,
+        "speedTargetMs": 115000
+      }
+    ],
+    "542": [
+      {
+        "chestTarget": 57000,
+        "starScoreTarget": 71200,
+        "speedTargetMs": 155000
+      }
+    ],
+    "543": [
+      {
+        "chestTarget": 62500,
+        "starScoreTarget": 78200,
+        "speedTargetMs": 157000
+      }
+    ],
+    "544": [
+      {
+        "chestTarget": 62500,
+        "starScoreTarget": 78600,
+        "speedTargetMs": 195000
+      }
+    ],
+    "545": [
+      {
+        "chestTarget": 27500,
+        "starScoreTarget": 34400,
+        "speedTargetMs": 95000
+      }
+    ],
+    "546": [
+      {
+        "chestTarget": 63500,
+        "starScoreTarget": 79400,
+        "speedTargetMs": 202000
+      }
     ]
   }
 }

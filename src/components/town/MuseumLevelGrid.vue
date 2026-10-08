@@ -39,7 +39,7 @@
             :title="t(element.label)"
           />
         </span>
-        <img :src="`/art/${gems[index % gems.length]}.svg`" alt="" />
+        <img :src="`/art/${cardGem(id, index)}.svg`" alt="" />
         <strong>{{ t(LEVEL_NAMES[id - 1]) }}</strong>
         <span v-if="continuous" class="museum-stars">∞</span>
         <span
@@ -62,7 +62,7 @@
 <script setup>
 import { computed, useId } from 'vue';
 import { t } from '../../i18n';
-import { CHAPTERS, LEVEL_COUNT } from '../../data/campaign';
+import { CHAPTERS, LEVEL_COUNT, getLevelGemTypes } from '../../data/campaign';
 import { chapterLevelIds } from '../../data/chapters';
 import { LEVEL_NAMES } from '../../data/levelNames';
 import { MINE_ELEMENTS, elementArt } from '../../data/honours';
@@ -84,6 +84,9 @@ const chapters = computed(() => {
   })).filter(({ ids }) => ids.length);
 });
 const gems = ['emerald', 'sapphire', 'topaz', 'amethyst', 'ruby', 'moonstone'];
+// From the floating seam on, a card shows one of the level's own later gems.
+const cardGem = (id, index) =>
+  id > 402 ? getLevelGemTypes(id)[3 + (index % 2)] : gems[index % gems.length];
 // Mine mastery elements per level, in registry order, from the generated index.
 const ELEMENTS = MINE_ELEMENTS.map((element) => ({ ...element, art: elementArt(element) }));
 const elements = computed(() =>

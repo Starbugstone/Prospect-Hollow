@@ -1,6 +1,7 @@
 import { LATE_LEVEL_NAMES } from './lateLevels.js';
 import { TOMORROW_LEVEL_NAMES } from './tomorrowLevels.js';
 import { DEEP_MINE_LEVEL_NAMES } from './deepMineLevels.js';
+import { HOLLOW_MINE_LEVEL_NAMES } from './hollowMineLevels.js';
 import { CITY_LEVEL_NAMES } from './cityLevels.js';
 export const LEVEL_NAMES = [
   'First light',
@@ -151,4 +152,5 @@ export const LEVEL_NAMES = [
   ...LATE_LEVEL_NAMES,
   ...TOMORROW_LEVEL_NAMES,
   ...DEEP_MINE_LEVEL_NAMES,
+  ...HOLLOW_MINE_LEVEL_NAMES,
 ];

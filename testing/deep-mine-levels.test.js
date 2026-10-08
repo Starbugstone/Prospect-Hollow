@@ -24,7 +24,7 @@ import { simulateCampaignLevel } from './helpers/campaignSimulation';
 
 const FIRST = 373;
 const levels = generateLevelConfigs();
-const deep = levels.slice(FIRST - 1);
+const deep = levels.slice(FIRST - 1, 402);
 const themed = (theme) => deep.filter((level) => level.theme === theme);
 const firstOfTheme = (theme) => themed(theme)[0];
 const introductions = ['fossil-beds', 'root-bound-vault'].map(firstOfTheme);
@@ -56,9 +56,9 @@ describe('append-only deep mine campaign', () => {
     );
   });
 
-  it('adds exactly five named six-puzzle groups, ending at level 402', () => {
-    expect(LEVEL_COUNT).toBe(402);
-    expect(CHAPTERS.slice(62)).toEqual(DEEP_MINE_CHAPTERS);
+  it('adds exactly five named six-puzzle groups, levels 373–402', () => {
+    expect(LEVEL_COUNT).toBeGreaterThanOrEqual(402);
+    expect(CHAPTERS.slice(62, 67)).toEqual(DEEP_MINE_CHAPTERS);
     expect(DEEP_MINE_CHAPTERS.map(({ id }) => id)).toEqual([
       'geothermal-forge',
       'fossil-beds',

@@ -793,5 +793,477 @@
   "402": {
     "relics": 5,
     "gates": 4
+  },
+  "403": {
+    "lanterns": 12,
+    "oreOrders": 1
+  },
+  "405": {
+    "lanterns": 8,
+    "oreOrders": 2
+  },
+  "406": {
+    "oreOrders": 2
+  },
+  "407": {
+    "lanterns": 9,
+    "oreOrders": 1
+  },
+  "408": {
+    "lanterns": 10,
+    "oreOrders": 2,
+    "cores": 2,
+    "gates": 13
+  },
+  "409": {
+    "relics": 1,
+    "oreOrders": 1
+  },
+  "410": {
+    "relics": 2,
+    "oreOrders": 2
+  },
+  "411": {
+    "relics": 2,
+    "oreOrders": 2
+  },
+  "412": {
+    "relics": 3,
+    "oreOrders": 2
+  },
+  "413": {
+    "relics": 2
+  },
+  "414": {
+    "relics": 3,
+    "oreOrders": 2,
+    "gates": 3
+  },
+  "417": {
+    "oreOrders": 2
+  },
+  "418": {
+    "oreOrders": 2,
+    "gates": 4
+  },
+  "420": {
+    "gates": 4
+  },
+  "421": {
+    "relics": 2,
+    "oreOrders": 1
+  },
+  "422": {
+    "relics": 2,
+    "oreOrders": 2
+  },
+  "423": {
+    "relics": 4,
+    "oreOrders": 2
+  },
+  "424": {
+    "relics": 5,
+    "gates": 2
+  },
+  "425": {
+    "relics": 3,
+    "oreOrders": 1
+  },
+  "426": {
+    "relics": 7,
+    "gates": 3
+  },
+  "427": {
+    "relics": 1,
+    "oreOrders": 1
+  },
+  "428": {
+    "relics": 2,
+    "oreOrders": 2
+  },
+  "429": {
+    "relics": 2,
+    "oreOrders": 2
+  },
+  "430": {
+    "relics": 5,
+    "oreOrders": 2
+  },
+  "431": {
+    "relics": 2,
+    "oreOrders": 1
+  },
+  "432": {
+    "relics": 4,
+    "gates": 2
+  },
+  "433": {
+    "relics": 1,
+    "oreOrders": 1,
+    "cores": 2,
+    "gates": 1
+  },
+  "434": {
+    "relics": 2,
+    "cores": 2,
+    "gates": 2
+  },
+  "435": {
+    "relics": 3,
+    "oreOrders": 2,
+    "cores": 2,
+    "gates": 3
+  },
+  "436": {
+    "relics": 6,
+    "cores": 2,
+    "gates": 3
+  },
+  "437": {
+    "relics": 2,
+    "oreOrders": 1,
+    "cores": 1,
+    "gates": 1
+  },
+  "438": {
+    "relics": 6,
+    "oreOrders": 2,
+    "cores": 2,
+    "gates": 4
+  },
+  "439": {
+    "surveys": 1,
+    "oreOrders": 1
+  },
+  "440": {
+    "lanterns": 14,
+    "oreOrders": 1
+  },
+  "441": {
+    "surveys": 1,
+    "oreOrders": 2
+  },
+  "442": {
+    "surveys": 1,
+    "oreOrders": 1
+  },
+  "443": {
+    "lanterns": 5,
+    "oreOrders": 1
+  },
+  "444": {
+    "surveys": 1,
+    "oreOrders": 2,
+    "cores": 2,
+    "gates": 4
+  },
+  "447": {
+    "cores": 1
+  },
+  "448": {
+    "oreOrders": 2,
+    "cores": 1,
+    "gates": 2
+  },
+  "450": {
+    "oreOrders": 2,
+    "cores": 1,
+    "gates": 2
+  },
+  "452": {
+    "cores": 1
+  },
+  "453": {
+    "oreOrders": 2
+  },
+  "454": {
+    "cores": 1,
+    "gates": 2
+  },
+  "456": {
+    "oreOrders": 2,
+    "cores": 1,
+    "gates": 2
+  },
+  "459": {
+    "oreOrders": 2
+  },
+  "460": {
+    "oreOrders": 2,
+    "gates": 2
+  },
+  "462": {
+    "oreOrders": 2,
+    "gates": 3
+  },
+  "466": {
+    "oreOrders": 2
+  },
+  "468": {
+    "oreOrders": 2,
+    "gates": 1
+  },
+  "470": {
+    "oreOrders": 1,
+    "cores": 1
+  },
+  "472": {
+    "oreOrders": 1,
+    "cores": 1
+  },
+  "474": {
+    "oreOrders": 2,
+    "cores": 1
+  },
+  "475": {
+    "relics": 1,
+    "oreOrders": 1
+  },
+  "476": {
+    "relics": 2,
+    "oreOrders": 2
+  },
+  "477": {
+    "relics": 2,
+    "oreOrders": 2
+  },
+  "478": {
+    "relics": 3,
+    "oreOrders": 2,
+    "gates": 2
+  },
+  "479": {
+    "relics": 1,
+    "oreOrders": 1
+  },
+  "480": {
+    "relics": 4,
+    "oreOrders": 2,
+    "gates": 2
+  },
+  "481": {
+    "relics": 1,
+    "oreOrders": 1
+  },
+  "482": {
+    "relics": 2,
+    "oreOrders": 1
+  },
+  "483": {
+    "relics": 2,
+    "oreOrders": 2
+  },
+  "484": {
+    "relics": 4,
+    "oreOrders": 2,
+    "gates": 2
+  },
+  "485": {
+    "relics": 1,
+    "oreOrders": 1
+  },
+  "486": {
+    "relics": 4,
+    "oreOrders": 3,
+    "gates": 2
+  },
+  "487": {
+    "lanterns": 4
+  },
+  "489": {
+    "surveys": 1,
+    "oreOrders": 2
+  },
+  "492": {
+    "relics": 3,
+    "oreOrders": 2
+  },
+  "493": {
+    "cores": 2
+  },
+  "494": {
+    "cores": 2
+  },
+  "495": {
+    "cores": 1
+  },
+  "496": {
+    "oreOrders": 2,
+    "cores": 2
+  },
+  "497": {
+    "cores": 1
+  },
+  "498": {
+    "oreOrders": 2,
+    "cores": 2,
+    "gates": 2
+  },
+  "499": {
+    "relics": 1,
+    "oreOrders": 1,
+    "gates": 1
+  },
+  "500": {
+    "relics": 2,
+    "oreOrders": 2,
+    "gates": 1
+  },
+  "501": {
+    "relics": 2,
+    "oreOrders": 2,
+    "gates": 3
+  },
+  "502": {
+    "relics": 3,
+    "gates": 3
+  },
+  "503": {
+    "relics": 1,
+    "oreOrders": 1
+  },
+  "504": {
+    "relics": 4,
+    "gates": 3
+  },
+  "505": {
+    "lanterns": 4
+  },
+  "506": {
+    "relics": 1,
+    "oreOrders": 2
+  },
+  "507": {
+    "relics": 2,
+    "oreOrders": 2,
+    "cores": 2
+  },
+  "508": {
+    "oreOrders": 2,
+    "cores": 1
+  },
+  "510": {
+    "relics": 2,
+    "oreOrders": 2,
+    "cores": 2
+  },
+  "512": {
+    "relics": 2,
+    "oreOrders": 2
+  },
+  "513": {
+    "relics": 2,
+    "oreOrders": 2
+  },
+  "514": {
+    "relics": 4,
+    "oreOrders": 2
+  },
+  "516": {
+    "relics": 5,
+    "oreOrders": 2,
+    "cores": 2,
+    "gates": 3
+  },
+  "518": {
+    "relics": 2,
+    "oreOrders": 2
+  },
+  "519": {
+    "lanterns": 6,
+    "oreOrders": 2
+  },
+  "520": {
+    "relics": 4,
+    "oreOrders": 2,
+    "gates": 4
+  },
+  "522": {
+    "relics": 5,
+    "oreOrders": 2,
+    "gates": 6
+  },
+  "525": {
+    "oreOrders": 2
+  },
+  "526": {
+    "oreOrders": 2,
+    "gates": 2
+  },
+  "528": {
+    "oreOrders": 2,
+    "gates": 4
+  },
+  "529": {
+    "relics": 1,
+    "oreOrders": 1
+  },
+  "530": {
+    "relics": 2,
+    "oreOrders": 2
+  },
+  "531": {
+    "relics": 2,
+    "oreOrders": 2
+  },
+  "532": {
+    "relics": 4,
+    "oreOrders": 2,
+    "gates": 2
+  },
+  "533": {
+    "relics": 1,
+    "oreOrders": 1
+  },
+  "534": {
+    "relics": 4,
+    "gates": 3
+  },
+  "535": {
+    "lanterns": 8,
+    "oreOrders": 1
+  },
+  "536": {
+    "relics": 2,
+    "oreOrders": 2
+  },
+  "537": {
+    "lanterns": 6,
+    "oreOrders": 2
+  },
+  "538": {
+    "relics": 4,
+    "lanterns": 2,
+    "oreOrders": 2
+  },
+  "539": {
+    "lanterns": 6,
+    "oreOrders": 1
+  },
+  "540": {
+    "relics": 1,
+    "lanterns": 5,
+    "oreOrders": 2
+  },
+  "541": {
+    "relics": 2
+  },
+  "542": {
+    "relics": 4
+  },
+  "543": {
+    "relics": 4,
+    "gates": 2
+  },
+  "544": {
+    "relics": 6
+  },
+  "545": {
+    "relics": 1,
+    "oreOrders": 1
+  },
+  "546": {
+    "relics": 6,
+    "gates": 3
   }
 }

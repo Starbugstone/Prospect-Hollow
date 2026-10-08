@@ -17,14 +17,16 @@ export function boardEdges(tiles, cols, rows) {
 }
 
 // The cells a falling gem passes through, in grid units: `lead` cells queued straight
-// above its entry cell, then every cell of its gravity path. One point per cell lets a
-// single tween carry the gem through bends at an even pace, without stopping.
-export function fallRoute(path, cols, lead = 0) {
+// above its entry cell (below it when the cavern falls up), then every cell of its
+// gravity path. One point per cell lets a single tween carry the gem through bends at
+// an even pace, without stopping.
+export function fallRoute(path, cols, lead = 0, rise = false) {
   const entry = path[0];
   const col = entry % cols,
     row = Math.floor(entry / cols);
+  const side = rise ? 1 : -1;
   return [
-    ...Array.from({ length: lead }, (_, step) => ({ col, row: row - lead + step })),
+    ...Array.from({ length: lead }, (_, step) => ({ col, row: row + side * (lead - step) })),
     ...path.map((index) => ({ col: index % cols, row: Math.floor(index / cols) })),
   ];
 }
