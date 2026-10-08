@@ -10,7 +10,7 @@ import { mineSignalAppearance, mineRelicAppearance } from '../../data/mineThemes
 import { BonusEffects } from './BonusEffects';
 import { isPlayableCell, gravityDestination } from '../engine/BoardTopology';
 import { isDiagonalLens, isLens, lensGeometry } from '../engine/LensBeams';
-import { boardEdges, fallRoute } from './BoardGeometry';
+import { boardEdges, fallDelays, fallMotion, fallRoute } from './BoardGeometry';
 import { glyphImage } from './TextGlyphs';
 import {
   cascadeTier,
@@ -137,7 +137,8 @@ export class BoardAnimator {
 
   // Whether any motion still needs frames (see BoardLoop).
   isAnimating() {
-    if (this.pending.size || this.scene?.tweens?.getTweens?.().length) return true;
+    // Read the live tween list: `getTweens()` copies it, and this runs on every frame.
+    if (this.pending.size || this.scene?.tweens?.tweens?.length) return true;
     if (this.particles?.alive?.() || this.scene?.cameras?.main?.shakeEffect?.isRunning) return true;
     for (const sprite of this.gemSprites.values()) if (sprite.anims?.isPlaying) return true;
     return false;
@@ -499,17 +500,22 @@ export class BoardAnimator {
       if (generation !== this.generation) return;
       // Drop existing gems and fill empty cells in the same phase.
       const falls = [];
+      // Shaped-board falls start together; see fallTogether.
+      const routed = [];
       for (const { from, gem } of step.drops)
         if (this.indexToGemId[from] === gem.id) this.indexToGemId[from] = null;
-      for (const { from, to, gem, path } of step.drops) {
+      for (const { from, to, gem, path, rise } of step.drops) {
         const sprite = this.gemSprites.get(gem.id);
         this.indexToGemId[to] = gem.id;
-        if (sprite)
-          falls.push(
-            path
-              ? this.fallAlong(sprite, fallRoute(path, this.boardCols))
-              : this.fall(sprite, to, Math.ceil((to - from) / this.boardCols)),
-          );
+        if (!sprite) continue;
+        if (path)
+          routed.push({
+            sprite,
+            route: fallRoute(path, this.boardCols),
+            rise,
+            passes: !!gem.float,
+          });
+        else falls.push(this.fall(sprite, to, Math.ceil((to - from) / this.boardCols)));
       }
       const columnCounts = new Map();
       for (const { index, path } of step.spawns)
@@ -527,13 +533,19 @@ export class BoardAnimator {
         if (path) {
           const lead = (queued.get(path[0]) ?? 0) + 1;
           queued.set(path[0], lead);
-          falls.push(this.fallAlong(sprite, fallRoute(path, this.boardCols, lead, rise), frame));
+          routed.push({
+            sprite,
+            route: fallRoute(path, this.boardCols, lead, rise),
+            rise,
+            frame: this.refillFrame(path[0], lead, rise, frame),
+          });
           continue;
         }
         const distance = columnCounts.get(index % this.boardCols);
         sprite.y -= distance * this.cellSize;
         falls.push(this.fall(sprite, index, distance));
       }
+      falls.push(...this.fallTogether(routed));
       await Promise.all(falls);
     }
   }
@@ -550,61 +562,75 @@ export class BoardAnimator {
     });
   }
 
+  // A refill queues above its entry cell. Below a wall or a hole shallower than the
+  // queue, that reaches back over the board's own cells: the refill stays hidden there
+  // and comes into view out of the hole, as one entering at a twin-gravity seam does.
+  refillFrame(entry, lead, rise, frame) {
+    const col = entry % this.boardCols,
+      row = Math.floor(entry / this.boardCols),
+      side = rise ? 1 : -1;
+    let covered = null;
+    for (let step = 1; step <= lead && covered === null; step++) {
+      const over = row + side * step;
+      if (over < 0 || over >= this.boardRows) break;
+      if (isPlayableCell(this.tiles[over * this.boardCols + col])) covered = over;
+    }
+    if (covered === null) return frame;
+    const [start, end] = frame ?? [-Infinity, Infinity];
+    return rise ? [start, Math.min(end, covered)] : [Math.max(start, covered + 1), end];
+  }
+
+  // Shaped-board falls all start at once, except that a gem waits behind the deeper gem
+  // it would otherwise run into where their routes merge (see fallDelays).
+  fallTogether(falls) {
+    const delays =
+      this.reducedMotion || falls.length < 2
+        ? []
+        : fallDelays(
+            falls.map(({ route, rise, frame, passes }) => ({
+              route,
+              duration: this.fallDuration(route.length - 1),
+              motion: fallMotion(route, { rise, frame }),
+              passes,
+            })),
+          );
+    return falls.map(({ sprite, route, rise, frame }, index) =>
+      this.fallAlong(sprite, route, { rise, frame, delay: delays[index] ?? 0 }),
+    );
+  }
+
   // A shaped-board fall is one tween through every cell of its route, eased like a
   // straight fall, so gems flow around bends instead of pausing at each one.
-  fallAlong(sprite, route, frame = null) {
-    const points = route.map(({ col, row }) => ({
-      x: (col + 0.5) * this.cellSize,
-      y: (row + 0.5) * this.cellSize,
-    }));
-    sprite.setPosition(points[0].x, points[0].y);
-    const end = points.at(-1);
-    if (this.reducedMotion) return this.tween(sprite, { ...end, duration: this.fallDuration() });
-    // A portal jump costs no extra time, so portal gems keep pace with the rest of the
-    // fall: the gem is simply hidden while it crosses from the entrance to the exit.
-    const jump = route.findIndex(
-      (cell, step) =>
-        step > 0 &&
-        Math.max(
-          Math.abs(cell.col - route[step - 1].col),
-          Math.abs(cell.row - route[step - 1].row),
-        ) > 1,
-    );
-    // A refill entering at a twin-gravity seam is hidden until it is inside its own half.
-    const outside = frame
-      ? () => {
-          const row = sprite.y / this.cellSize - 0.5;
-          return row < frame[0] - 0.01 || row > frame[1] - 0.99;
-        }
-      : () => false;
-    const hidden =
-      jump > 0 || frame
-        ? () => {
-            if (outside()) {
-              sprite.setAlpha(0);
-              return;
-            }
-            if (jump <= 0) {
-              sprite.setAlpha(1);
-              return;
-            }
-            const [from, to] = [points[jump - 1], points[jump]];
-            const dx = to.x - from.x,
-              dy = to.y - from.y;
-            const t = ((sprite.x - from.x) * dx + (sprite.y - from.y) * dy) / (dx * dx + dy * dy);
-            const off =
-              Math.abs((sprite.x - from.x) * dy - (sprite.y - from.y) * dx) / Math.hypot(dx, dy);
-            sprite.setAlpha(t > 0.05 && t < 0.95 && off < this.cellSize * 0.1 ? 0 : 1);
-          }
-        : undefined;
-    hidden?.();
+  fallAlong(sprite, route, { rise = false, frame = null, delay = 0 } = {}) {
+    const pixels = (cells) => (cells + 0.5) * this.cellSize;
+    sprite.setPosition(pixels(route[0].col), pixels(route[0].row));
+    const end = route.at(-1);
+    if (this.reducedMotion)
+      return this.tween(sprite, {
+        x: pixels(end.col),
+        y: pixels(end.row),
+        duration: this.fallDuration(),
+      });
+    const motion = fallMotion(route, { rise, frame });
+    const duration = this.fallDuration(route.length - 1);
+    // The wait is part of the tween: a Phaser delay only ends on a frame boundary, and
+    // gems waiting behind one another must keep to the planned time exactly.
+    const total = delay + duration;
+    const place = () => {
+      const { col, row, hidden } = motion(
+        Math.max(0, sprite.fallProgress * total - delay) / duration,
+      );
+      sprite.setPosition(pixels(col), pixels(row));
+      if (motion.hides) sprite.setAlpha(hidden ? 0 : 1);
+    };
+    // Phaser skips tween properties that start with an underscore.
+    sprite.fallProgress = 0;
+    place();
     return this.tween(sprite, {
-      x: points.map(({ x }) => x),
-      y: points.map(({ y }) => y),
-      interpolation: 'linear',
-      duration: this.fallDuration(points.length - 1),
-      ease: 'Bounce.easeOut',
-      ...(hidden ? { onUpdate: hidden } : {}),
+      fallProgress: 1,
+      duration: total,
+      ease: 'Linear',
+      onUpdate: place,
     });
   }
 
@@ -645,6 +671,7 @@ export class BoardAnimator {
 
   // Each gem on a phase seal shrinks, takes its new colour and pops back.
   async playPhaseShifts(shifts) {
+    const generation = this.generation;
     await Promise.all(
       shifts.map(async ({ index, gem }) => {
         const sprite = this.gemSprites.get(gem.id);
@@ -659,6 +686,8 @@ export class BoardAnimator {
           displayHeight: size * 0.2,
           duration: 110,
         });
+        // Leaving the level (or a renderer reset) destroys the sprite mid-shrink.
+        if (generation !== this.generation) return;
         this.configureGem(sprite, gem.type);
         sprite.setDisplaySize(size * 0.2, size * 0.2);
         this.particles?.emitBurst(this.position(index), GEM_COLORS[gem.type], 6);
@@ -1078,7 +1107,7 @@ export class BoardAnimator {
       : Number.isInteger(tile?.portalExit)
         ? { pair: tile.portalExit }
         : null;
-    const key = `${layers}-${frozen}-${sealColor ?? ''}-${chained}-${!!exit}-${!!tile?.hatch}-${tile?.signal ?? ''}-${tile?.signalHealth}-${tile?.surveyOrder}-${tile?.rootGroup ?? ''}-${tile?.bonusOnly}-${tile?.sporeAxis}-${tile?.health}-${tile?.maxHealth}-${phase ?? ''}-${portal ? `${tile.portalTo ?? 'x'}:${portal.pair}` : ''}-${gravitySwitch ?? ''}:${tile?.fall ?? ''}-${this.theme}-${this.cellSize}`;
+    const key = `${layers}-${frozen}-${sealColor ?? ''}-${chained}-${!!exit}-${!!tile?.hatch}-${tile?.signal ?? ''}-${tile?.signalHealth}-${tile?.surveyOrder}-${tile?.rootGroup ?? ''}-${tile?.bonusOnly}-${tile?.sporeAxis}-${tile?.health}-${tile?.maxHealth}-${phase ?? ''}-${portal ? `${tile.portalTo ?? 'x'}:${portal.pair}` : ''}-${gravitySwitch ?? ''}:${gravitySwitch === 'dial' ? (tile.fall ?? '') : ''}-${this.theme}-${this.cellSize}`;
     let overlay = this.tileOverlays.get(index);
     if (overlay?.__tileKey === key) return;
     overlay?.destroy();

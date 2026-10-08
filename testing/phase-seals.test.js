@@ -3,6 +3,7 @@ import { createGem } from '../src/game/engine/GemFactory';
 import { TileManager } from '../src/game/engine/TileManager';
 import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
 import { HOLLOW_MINE_CHAPTERS } from '../src/data/hollowMineLevels';
+import { BoardAnimator } from '../src/game/phaser/BoardAnimator';
 
 const COLS = 5;
 const ROWS = 5;
@@ -87,5 +88,23 @@ describe('phase seals', () => {
         expect(tile.health).toBeGreaterThan(0);
       }
     expect(seals).toBeGreaterThan(20);
+  });
+
+  it('abandon the shift animation when the board is cleared mid-shrink', async () => {
+    const animator = new BoardAnimator({ settings: { reducedMotion: false } });
+    Object.assign(animator, { boardCols: COLS, cellSize: 40 });
+    animator.gemSprites.set('seal-gem', {});
+    let finish;
+    animator.tween = vi.fn(() => new Promise((resolve) => (finish = resolve)));
+    animator.configureGem = vi.fn();
+    const shifting = animator.playPhaseShifts([
+      { index: 0, gem: { id: 'seal-gem', type: 'ruby' } },
+    ]);
+    // Leaving the level settles the shrink tween and destroys its sprite.
+    animator.generation++;
+    finish();
+    await shifting;
+    expect(animator.configureGem).not.toHaveBeenCalled();
+    expect(animator.tween).toHaveBeenCalledOnce();
   });
 });
