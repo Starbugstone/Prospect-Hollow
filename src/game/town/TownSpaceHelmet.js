@@ -122,7 +122,8 @@ export function dressSpaceHelmet(d, town, { animate = false, rebuild = true } = 
   d.helmetTown = town;
   const animals = d.animals ?? [];
   const species = spaceHelmetWearer(town, new Set(animals.map((a) => a.species)));
-  const wearer = animals.find((a) => a.species === species);
+  const candidates = animals.filter((a) => a.species === species);
+  const wearer = candidates[hash(runs(town) + 43) % candidates.length];
   let changed = false;
   for (const animal of animals) {
     const costume = animal === wearer ? COSTUME : null;

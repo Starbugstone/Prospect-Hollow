@@ -271,6 +271,8 @@ export function animalNavigation(base = new TownNavigation(), space) {
     safePoint,
     routeClearSteps,
     clear: (p, radius, height = 1) => clear(p, radius, height),
+    segment: (a, b, radius, height = 1) =>
+      base.segment(a, b, radius) && space.segment(a, b, radius, height),
     planSteps,
     routeSteps,
     plan: (points, radius, height) => finishWork(planSteps(points, radius, height)),

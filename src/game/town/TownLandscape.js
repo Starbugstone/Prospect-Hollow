@@ -1,3 +1,4 @@
+import { EXTERIOR_HABITATS } from '../../data/townAnimals';
 import { PERSONAL_AREAS } from '../../data/townPersonalisation';
 import { terrainMaterial } from './TownAtmosphere';
 import { addMineExcavation } from './TownMineShaft';
@@ -14,6 +15,9 @@ import { TOWN_TRACKS, PLOTS, RAIL_EDGE, segmentDistance, gardenConnections } fro
 import { RIVER, riverDistance, wetBank, buildRiver } from './TownRiver';
 import { hash01, smoothBetween } from './TownMath';
 import { addCactus } from './buildings/frontierParts';
+
+// Level grassy verges support wildlife and visitors around the distant courts.
+const wildlifeClearings = [...PERSONAL_AREAS, ...Object.values(EXTERIOR_HABITATS)];
 
 function noise(x, z) {
   const ix = Math.floor(x),
@@ -48,11 +52,14 @@ export function groundHeight(x, z) {
   // Sampled for every terrain vertex and by camera and animal motion: plain loops
   // keep this allocation-free.
   let personalClearing = Infinity;
-  for (const { positions, radius } of PERSONAL_AREAS)
+  for (const { positions, radius } of wildlifeClearings)
     for (const [px, pz] of positions)
       personalClearing = Math.min(
         personalClearing,
-        Math.hypot(Math.max(0, Math.abs(x - px) - radius), Math.max(0, Math.abs(z - pz) - radius)),
+        Math.hypot(
+          Math.max(0, Math.abs(x - px) - radius - 3),
+          Math.max(0, Math.abs(z - pz) - radius - 3),
+        ),
       );
   const eastClearing = Math.hypot(Math.max(37 - x, 0, x - 70), Math.max(-17 - z, 0, z - 33));
   let gardenClearing = Infinity;
@@ -118,8 +125,8 @@ export function landscapeGroundHeight(x, z) {
 }
 
 const reservedGround = (x, z) =>
-  PERSONAL_AREAS.some((area) =>
-    area.positions.some(([px, pz]) => Math.hypot(x - px, z - pz) < area.radius + 2),
+  wildlifeClearings.some((area) =>
+    area.positions.some(([px, pz]) => Math.hypot(x - px, z - pz) < area.radius + 4),
   ) ||
   (z < PLOTS.mine[1] && z > PLOTS.mine[1] - 13 && Math.abs(x) < 12) ||
   millraceDistance(x, z) < MILLRACE.bankWidth + 0.4 ||

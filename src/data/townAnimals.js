@@ -52,6 +52,33 @@ export const TOWN_ANIMALS = {
     model: 'garden',
     seed: 343,
   },
+  hare: {
+    name: 'Meadow hare',
+    speed: 0.95,
+    radius: 0.8,
+    height: 1.4,
+    rest: 5,
+    idle: 'listening',
+    model: 'garden',
+  },
+  squirrel: {
+    name: 'Woodland squirrel',
+    speed: 0.85,
+    radius: 0.65,
+    height: 0.95,
+    rest: 5,
+    idle: 'foraging',
+    model: 'garden',
+  },
+  badger: {
+    name: 'Woodland badger',
+    speed: 0.5,
+    radius: 0.75,
+    height: 0.85,
+    rest: 7,
+    idle: 'sniffing',
+    model: 'garden',
+  },
   willowkin: {
     name: 'Willowkin sapling',
     speed: 0.5,
@@ -80,7 +107,19 @@ export const TOWN_ANIMALS = {
 // Every wearer is a ground species the era casts keep; the list wraps around.
 export const SPACE_HELMET = {
   debut: 'tomorrow',
-  wearers: ['dog', 'cat', 'fox', 'raccoon', 'hedgehog', 'otter', 'deer', 'hen'],
+  wearers: [
+    'dog',
+    'cat',
+    'fox',
+    'raccoon',
+    'hedgehog',
+    'otter',
+    'deer',
+    'hen',
+    'hare',
+    'squirrel',
+    'badger',
+  ],
   // Suit colors for wearers whose own coat would hide the white suit.
   suits: { hen: '#e5873a' },
   // Finding the wearer pays this share of an hour of saloon takings: a full hour in the
@@ -91,7 +130,7 @@ export const SPACE_HELMET = {
 // Each profile adds to the previous cast. Stable species seeds keep existing
 // visitors and birds when another era introduces a new neighbor.
 const standard = {
-  birds: [{ species: 'pigeon', count: 3, seed: 71 }],
+  birds: [{ species: 'pigeon', count: 3, maxCount: 8, seed: 71 }],
   garden: [],
   companions: null,
 };
@@ -100,7 +139,7 @@ const riverside = { ...meadow, garden: [...meadow.garden, 'otter'] };
 const neighborhood = { ...riverside, garden: [...riverside.garden, 'hedgehog'] };
 const songbirds = {
   ...neighborhood,
-  birds: [...neighborhood.birds, { species: 'bluebird', count: 2, seed: 211 }],
+  birds: [...neighborhood.birds, { species: 'bluebird', count: 2, maxCount: 5, seed: 211 }],
 };
 export const TOWN_FAUNA = {
   standard,
@@ -139,3 +178,13 @@ export const ANIMAL_HABITATS = [
   { building: 'farm', point: [-0.8, 0.07, 3.1], feeding: true },
   { building: 'home', point: [0.7, 0.07, 3.2], feeding: true },
 ];
+
+// Wild species living on the quiet verges around monument courts.
+export const MONUMENT_WILDLIFE = ['hare', 'squirrel', 'badger'];
+
+// Original wildlife also explores separate outer habitats, not a shared southern lane.
+export const EXTERIOR_HABITATS = {
+  fox: { id: 'western-verge', positions: [[-63, 14]], radius: 3 },
+  raccoon: { id: 'eastern-verge', positions: [[76, 17]], radius: 3 },
+  hedgehog: { id: 'northern-verge', positions: [[-25, -24]], radius: 3 },
+};

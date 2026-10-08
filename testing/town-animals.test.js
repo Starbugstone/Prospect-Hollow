@@ -22,6 +22,8 @@ import { defineEra } from '../src/data/eraDefinitions';
 import { PLOTS } from '../src/game/town/TownLayout';
 import { COMPANION_NEIGHBORHOODS } from '../src/data/townCompanions';
 import { SPACE_HELMET, townFauna } from '../src/data/townAnimals';
+import { birdPopulation } from '../src/game/town/TownBirdHabitats';
+import { monumentCast } from '../src/game/town/TownMonumentLife';
 
 const views = [];
 function fixture(
@@ -81,7 +83,7 @@ it('introduces animals only with inhabited buildings and uses completed outdoor 
   expect(empty.motions).toHaveLength(0);
   const d = fixture();
   addTownAnimals(d, d.town);
-  expect(d.animals.map((a) => a.species)).toEqual([
+  expect(d.animals.filter((a) => !a.monumentSite).map((a) => a.species)).toEqual([
     'dog',
     'cat',
     'hen',
@@ -94,7 +96,9 @@ it('introduces animals only with inhabited buildings and uses completed outdoor 
     'raccoon',
     'deer',
   ]);
-  expect(d.animalHabitats.map((h) => h.building)).toEqual(['square', 'farm', 'home']);
+  expect(d.animalHabitats.map((h) => h.building)).toEqual(
+    expect.arrayContaining(['square', 'farm', 'home']),
+  );
   expect(d.animals.every((a) => a.root.userData.animated)).toBe(true);
 });
 
@@ -106,20 +110,32 @@ it.each(['canopy', 'riverlight'])(
     addTownAnimals(d, d.town);
     for (const species of ['otter', 'deer', 'hedgehog'])
       expect(
-        d.animals.filter((a) => a.species === species),
+        d.animals.filter((a) => a.species === species && !a.monumentSite),
         species,
       ).toHaveLength(1);
-    expect(d.animals.filter((a) => a.species === 'bluebird')).toHaveLength(2);
-    expect(d.animals.filter((a) => a.species === 'pigeon')).toHaveLength(3);
+    for (const definition of townFauna(eraEvolution(era)).birds)
+      expect(d.animals.filter((a) => a.species === definition.species)).toHaveLength(
+        birdPopulation(
+          definition,
+          d.animalHabitats.filter((h) => h.kind === 'ground'),
+        ),
+      );
+
+    const birds = d.animals.filter((a) => a.habitat);
+    expect(new Set(birds.map((a) => a.habitat.building)).size).toBeGreaterThanOrEqual(5);
+    const xs = birds.map((a) => a.habitat.point[0]);
+    expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(60);
     expect(d.animals.find((a) => a.species === 'dog').costume).toBeUndefined();
-    const companions = d.animals.filter((a) => a.companion);
+    const companions = d.animals.filter((a) => a.companion && !a.monumentSite);
     expect(companions).toHaveLength(3);
     expect(companions.map((a) => a.neighborhood)).toEqual(COMPANION_NEIGHBORHOODS.map((n) => n.id));
     expect(
       companions.every((a) => a.species === townFauna(eraEvolution(era)).companions.species),
     ).toBe(true);
     expect(new Set(companions.map((a) => a.seed)).size).toBe(3);
-    expect(d.animals).toHaveLength(18);
+    expect(d.animals.length).toBeLessThanOrEqual(
+      26 + monumentCast(d.town, townFauna(eraEvolution(era))).length,
+    );
     const roots = d.animals.map((a) => a.root),
       plans = d.navigation.plans;
     advance(d, 40);
@@ -148,16 +164,16 @@ it('adds wildlife without replacing existing animals or duplicating them on refr
     d.repairAnimalLife();
     expect(d.animals).toEqual(retained);
   }
-  expect(d.animals).toHaveLength(15);
+  expect(d.animals.filter((a) => !a.monumentSite)).toHaveLength(15);
 });
 
 it('evolves all three companions into neighbors and retains their accepted street routes on refresh', () => {
   const d = fixture('canopy', Object.fromEntries(BUILDINGS.map((b) => [b.id, b.upgrades.length])));
   addTownAnimals(d, d.town);
-  const saplings = d.animals.filter((a) => a.companion);
+  const saplings = d.animals.filter((a) => a.companion && !a.monumentSite);
   d.town.era = 'riverlight';
   d.repairAnimalLife();
-  const neighbors = d.animals.filter((a) => a.companion);
+  const neighbors = d.animals.filter((a) => a.companion && !a.monumentSite);
   expect(neighbors).toHaveLength(3);
   expect(neighbors.map((a) => a.seed)).toEqual(saplings.map((a) => a.seed));
   expect(neighbors.every((a) => a.resident && a.species === 'willowkinResident')).toBe(true);
@@ -166,14 +182,12 @@ it('evolves all three companions into neighbors and retains their accepted stree
   const paths = neighbors.map((a) => a.path),
     positions = neighbors.map((a) => a.root.position.clone());
   d.repairAnimalLife();
-  expect(d.animals.filter((a) => a.companion)).toEqual(neighbors);
+  expect(d.animals.filter((a) => a.companion && !a.monumentSite)).toEqual(neighbors);
   neighbors.forEach((a, i) => {
     expect(a.path).toBe(paths[i]);
     expect(a.root.position.distanceTo(positions[i])).toBeLessThan(1e-6);
   });
-  expect(d.world.children.filter((o) => o.userData.species === 'willowkinResident')).toHaveLength(
-    3,
-  );
+  expect(d.world.children.filter((o) => neighbors.some((a) => a.root === o))).toHaveLength(3);
 });
 
 it.each([...ERAS.map((era) => era.id), 'unknown-animal-era'])(
@@ -201,7 +215,7 @@ it.each([...ERAS.map((era) => era.id), 'unknown-animal-era'])(
     ]) {
       const unlocked = eraIndex >= ERAS.findIndex((e) => e.id === firstEra);
       expect(
-        d.animals.filter((a) => a.species === species),
+        d.animals.filter((a) => a.species === species && !a.monumentSite),
         species,
       ).toHaveLength(unlocked ? count : 0);
     }
@@ -303,8 +317,8 @@ it('roams beyond the old tiny orbits, idles, flies and lands without growing or 
   for (const a of d.animals.filter((a) => a.wild)) {
     expect(seen.get(a).visible).toBeGreaterThan(0);
     expect(seen.get(a).hidden).toBeGreaterThan(0);
-    if (['fox', 'raccoon'].includes(a.species))
-      expect(a.path.points.every((p) => p[2] >= 29)).toBe(true);
+    if (a.exteriorHabitat === 'fox') expect(a.path.points.every((p) => p[0] < -55)).toBe(true);
+    if (a.exteriorHabitat === 'raccoon') expect(a.path.points.every((p) => p[0] > 68)).toBe(true);
   }
   expect(d.navigation.plans).toBe(plans);
   expect(d.world.children).toHaveLength(count);
@@ -952,4 +966,18 @@ it('plans again only the animal route that a new building now blocks', () => {
   expect(untouched.length).toBeGreaterThan(0);
   for (const [key, path] of untouched)
     expect(d.animals.find((a) => `${a.species}:${a.seed}` === key).path).toBe(path);
+});
+
+it('lets both original and monument wildlife wear the single cosmonaut outfit', () => {
+  const d = fixture(ERAS.at(-1).id);
+  addTownAnimals(d, d.town);
+  const seen = new Set();
+  for (let completedRuns = 0; completedRuns < 180; completedRuns++) {
+    dressSpaceHelmet(d, { ...d.town, completedRuns }, { rebuild: false });
+    const wearers = helmeted(d);
+    expect(wearers).toHaveLength(1);
+    seen.add(animalKey(wearers[0]));
+  }
+  for (const animal of d.animals.filter((a) => SPACE_HELMET.wearers.includes(a.species)))
+    expect(seen.has(animalKey(animal)), animalKey(animal)).toBe(true);
 });

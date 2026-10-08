@@ -504,7 +504,7 @@ manual actor routes, cache reuse and scenery removal.
 habitats. `TownAnimals` shares roaming, resting, feeding, flight and disturbance
 handling; `TownAnimalModels` supplies articulated, instanced animal meshes. Dogs
 and cats follow prepared street routes, hens forage around the farm entrance,
-and occasional foxes and raccoons stay along the southern village outskirts.
+and occasional foxes and raccoons explore separate western and eastern verges.
 Ground animals share pedestrian obstacle and traffic clearance. Wildlife turns
 away from nearby people; pigeons take flight when people, pets or traffic approach.
 
@@ -712,8 +712,8 @@ locomotion lifecycle. Street neighbors use sidewalks and normal traffic yielding
 they do not flee pedestrians or eat bird seed. The whole model's height and radius
 are checked during route planning, closure, retention and spawn adjustment.
 Neighborhood routes stay on their own riverbank. Bluebirds reuse the bird flight
-and feeding lifecycle; deer and hedgehogs visit the flat southern verge and the
-otter visits the riverbank.
+and feeding lifecycle; deer visit the southern meadow, hedgehogs the northern
+verge, and otters the riverbank.
 
 Cozy models use cached primitives plus two cached faceted roof surfaces. Ordinary
 buildings stay below 4,000 triangles, larger landmarks below 6,000 and each plot
@@ -728,7 +728,29 @@ landscape clearance tests require every unlocked species to have a usable habita
 in every era, keep Canopy saplings outside roads and certify Riverlight street
 loops. `testing/town-animals.test.js` checks the staggered unlocks, persistence into
 later eras and animal retention as the cast grows. The flying cast stays bounded
-at five birds, using the same flight and feeding lifecycle.
+at eight pigeons and five bluebirds, using the same flight and feeding lifecycle.
+`TownBirdHabitats` selects geographically separated grounds beside completed
+buildings and increases the flock with occupied districts. Birds start spread
+across these grounds, prefer unoccupied destinations and occasionally fly across
+districts. Only nearby birds detour to the feeder, so feeding does not pull the
+whole town's flock into the square.
+
+`TownMonumentLife` adds one wild visitor at each unlocked monument site, mixing
+hares, squirrels and badgers with the established foxes, raccoons, deer and
+hedgehogs. Two extra Willowkin visit these grounds only when the fauna profile
+selects a resident species; Canopy saplings remain in their gardens. Site IDs and
+stable seeds preserve identities across rebuilds. `EXTERIOR_HABITATS` defines
+separate outer lands for the original fox, raccoon and hedgehog. Terrain reserves
+level grassy verges around these habitats and monument courts. Prepared routes
+follow clear perimeter arcs, returning along the same safe arc if scenery blocks
+a full circuit; shared roaming adds certified branches within each habitat.
+`testing/monument-wildlife.test.js` checks unlocks, built and unbuilt monument
+clearance, new models and their cosmonaut outfits, and bird distribution.
+
+All three new species join `SPACE_HELMET.wearers`. When a species has multiple
+animals, the existing deterministic puzzle-count selection also picks its
+individual wearer, allowing monument visitors to wear the outfit. There is still
+exactly one wearer, with the same visibility, finding and reward lifecycle.
 
 `townGardenDistrict.js` owns the six larger eastern parcels: position, reserved
 width/depth, street offset, entrance anchor and pedestrian approach points. The

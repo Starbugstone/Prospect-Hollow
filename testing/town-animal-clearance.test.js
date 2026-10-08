@@ -195,7 +195,7 @@ it.each(ERAS.flatMap((era, index) => [1, 3].map((tier) => [era.id, index, tier])
       expect(animal.path.total).toBeGreaterThan(2);
     }
     const companionProfile = townFauna(eraEvolution(era)).companions;
-    const companions = d.animals.filter((a) => a.companion);
+    const companions = d.animals.filter((a) => a.companion && !a.monumentSite);
     expect(companions).toHaveLength(companionProfile ? 3 : 0);
     for (const companion of companions) {
       expect(companion.path.total).toBeGreaterThan(companion.resident ? 20 : 2);
