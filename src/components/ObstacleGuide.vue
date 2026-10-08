@@ -30,7 +30,26 @@
         <div>
           <h3>{{ t(obstacle.name) }}</h3>
           <div class="obstacle-demo" aria-hidden="true">
-            <template v-if="['relic', 'pearl'].includes(obstacle.id)">
+            <template v-if="['lens', 'starglass'].includes(obstacle.id)">
+              <img src="/art/bonuses/cross.svg" alt="" /><b>→</b
+              ><img src="/art/obstacles/lens-mirror.svg" alt="" /><b>↘</b
+              ><img src="/art/obstacles/starglass.svg" alt="" /><b class="demo-check">✓</b>
+            </template>
+            <template v-else-if="obstacle.id === 'floatstone'">
+              <span class="demo-matches"
+                ><img src="/art/ruby.svg" alt="" /><img src="/art/ruby.svg" alt="" /><img
+                  src="/art/ruby.svg"
+                  alt=""
+              /></span>
+              <img :src="obstacle.art" alt="" /><b>↑</b
+              ><img src="/art/obstacles/hatch.svg" alt="" /><b class="demo-check">✓</b>
+            </template>
+            <template v-else-if="obstacle.id === 'portal'">
+              <img src="/art/ruby.svg" alt="" /><b>↓</b><img :src="obstacle.art" alt="" /><b>→</b
+              ><img src="/art/obstacles/portal-out.svg" alt="" /><b>↓</b
+              ><img src="/art/ruby.svg" alt="" />
+            </template>
+            <template v-else-if="['relic', 'pearl', 'moon-gem'].includes(obstacle.id)">
               <img :src="obstacle.art" alt="" /><b>↓</b
               ><img
                 :src="

@@ -2,7 +2,7 @@
   "version": 1,
   "profileSchemaVersion": 2,
   "maxSafeInteger": 9007199254740991,
-  "levelCount": 402,
+  "levelCount": 546,
   "levelsPerChapter": 6,
   "eraBuildingLevels": 3,
   "eraOrder": [
@@ -48852,6 +48852,2348 @@
         "relics": 5,
         "gates": 4
       }
+    },
+    "403": {
+      "id": 403,
+      "chapterIndex": 67,
+      "chestTarget": 22500,
+      "starScoreTarget": 28200,
+      "speedTargetMs": 87000,
+      "miningMultiplier": 68,
+      "chestCoins": {
+        "1": 34000,
+        "2": 4000,
+        "3": 17750
+      },
+      "honourElements": {
+        "lanterns": 12,
+        "oreOrders": 1
+      }
+    },
+    "404": {
+      "id": 404,
+      "chapterIndex": 67,
+      "chestTarget": 42500,
+      "starScoreTarget": 53200,
+      "speedTargetMs": 200000,
+      "miningMultiplier": 68,
+      "chestCoins": {
+        "1": 34000,
+        "2": 4000,
+        "3": 17750
+      }
+    },
+    "405": {
+      "id": 405,
+      "chapterIndex": 67,
+      "chestTarget": 50500,
+      "starScoreTarget": 63200,
+      "speedTargetMs": 90000,
+      "miningMultiplier": 68,
+      "chestCoins": {
+        "1": 34000,
+        "2": 4000,
+        "3": 17750
+      },
+      "honourElements": {
+        "lanterns": 8,
+        "oreOrders": 2
+      }
+    },
+    "406": {
+      "id": 406,
+      "chapterIndex": 67,
+      "chestTarget": 53500,
+      "starScoreTarget": 67200,
+      "speedTargetMs": 193000,
+      "miningMultiplier": 68,
+      "chestCoins": {
+        "1": 34000,
+        "2": 4000,
+        "3": 17750
+      },
+      "honourElements": {
+        "oreOrders": 2
+      }
+    },
+    "407": {
+      "id": 407,
+      "chapterIndex": 67,
+      "chestTarget": 33500,
+      "starScoreTarget": 42400,
+      "speedTargetMs": 89000,
+      "miningMultiplier": 68,
+      "chestCoins": {
+        "1": 34000,
+        "2": 4000,
+        "3": 17750
+      },
+      "honourElements": {
+        "lanterns": 9,
+        "oreOrders": 1
+      }
+    },
+    "408": {
+      "id": 408,
+      "chapterIndex": 67,
+      "chestTarget": 63500,
+      "starScoreTarget": 79800,
+      "speedTargetMs": 113000,
+      "miningMultiplier": 68,
+      "chestCoins": {
+        "1": 34000,
+        "2": 4000,
+        "3": 17750
+      },
+      "honourElements": {
+        "lanterns": 10,
+        "oreOrders": 2,
+        "cores": 2,
+        "gates": 13
+      }
+    },
+    "409": {
+      "id": 409,
+      "chapterIndex": 68,
+      "chestTarget": 32500,
+      "starScoreTarget": 39400,
+      "speedTargetMs": 95000,
+      "miningMultiplier": 69,
+      "chestCoins": {
+        "1": 34500,
+        "2": 4000,
+        "3": 18000
+      },
+      "honourElements": {
+        "relics": 1,
+        "oreOrders": 1
+      }
+    },
+    "410": {
+      "id": 410,
+      "chapterIndex": 68,
+      "chestTarget": 36500,
+      "starScoreTarget": 45200,
+      "speedTargetMs": 115000,
+      "miningMultiplier": 69,
+      "chestCoins": {
+        "1": 34500,
+        "2": 4000,
+        "3": 18000
+      },
+      "honourElements": {
+        "relics": 2,
+        "oreOrders": 2
+      }
+    },
+    "411": {
+      "id": 411,
+      "chapterIndex": 68,
+      "chestTarget": 23000,
+      "starScoreTarget": 25000,
+      "speedTargetMs": 119000,
+      "miningMultiplier": 69,
+      "chestCoins": {
+        "1": 34500,
+        "2": 4000,
+        "3": 18000
+      },
+      "honourElements": {
+        "relics": 2
+      }
+    },
+    "412": {
+      "id": 412,
+      "chapterIndex": 68,
+      "chestTarget": 46500,
+      "starScoreTarget": 58400,
+      "speedTargetMs": 139000,
+      "miningMultiplier": 69,
+      "chestCoins": {
+        "1": 34500,
+        "2": 4000,
+        "3": 18000
+      },
+      "honourElements": {
+        "relics": 3,
+        "oreOrders": 2
+      }
+    },
+    "413": {
+      "id": 413,
+      "chapterIndex": 68,
+      "chestTarget": 16500,
+      "starScoreTarget": 17200,
+      "speedTargetMs": 115000,
+      "miningMultiplier": 69,
+      "chestCoins": {
+        "1": 34500,
+        "2": 4000,
+        "3": 18000
+      },
+      "honourElements": {
+        "relics": 2
+      }
+    },
+    "414": {
+      "id": 414,
+      "chapterIndex": 68,
+      "chestTarget": 58000,
+      "starScoreTarget": 72600,
+      "speedTargetMs": 142000,
+      "miningMultiplier": 69,
+      "chestCoins": {
+        "1": 34500,
+        "2": 4000,
+        "3": 18000
+      },
+      "honourElements": {
+        "relics": 3,
+        "oreOrders": 2,
+        "gates": 3
+      }
+    },
+    "415": {
+      "id": 415,
+      "chapterIndex": 69,
+      "chestTarget": 32500,
+      "starScoreTarget": 41000,
+      "speedTargetMs": 180000,
+      "miningMultiplier": 70,
+      "chestCoins": {
+        "1": 35000,
+        "2": 4000,
+        "3": 18250
+      }
+    },
+    "416": {
+      "id": 416,
+      "chapterIndex": 69,
+      "chestTarget": 42500,
+      "starScoreTarget": 53600,
+      "speedTargetMs": 183000,
+      "miningMultiplier": 70,
+      "chestCoins": {
+        "1": 35000,
+        "2": 4000,
+        "3": 18250
+      }
+    },
+    "417": {
+      "id": 417,
+      "chapterIndex": 69,
+      "chestTarget": 43500,
+      "starScoreTarget": 54800,
+      "speedTargetMs": 182000,
+      "miningMultiplier": 70,
+      "chestCoins": {
+        "1": 35000,
+        "2": 4000,
+        "3": 18250
+      },
+      "honourElements": {
+        "oreOrders": 2
+      }
+    },
+    "418": {
+      "id": 418,
+      "chapterIndex": 69,
+      "chestTarget": 51000,
+      "starScoreTarget": 64200,
+      "speedTargetMs": 181000,
+      "miningMultiplier": 70,
+      "chestCoins": {
+        "1": 35000,
+        "2": 4000,
+        "3": 18250
+      },
+      "honourElements": {
+        "oreOrders": 2,
+        "gates": 4
+      }
+    },
+    "419": {
+      "id": 419,
+      "chapterIndex": 69,
+      "chestTarget": 23500,
+      "starScoreTarget": 29400,
+      "speedTargetMs": 133000,
+      "miningMultiplier": 70,
+      "chestCoins": {
+        "1": 35000,
+        "2": 4000,
+        "3": 18250
+      }
+    },
+    "420": {
+      "id": 420,
+      "chapterIndex": 69,
+      "chestTarget": 51000,
+      "starScoreTarget": 63800,
+      "speedTargetMs": 171000,
+      "miningMultiplier": 70,
+      "chestCoins": {
+        "1": 35000,
+        "2": 4000,
+        "3": 18250
+      },
+      "honourElements": {
+        "gates": 4
+      }
+    },
+    "421": {
+      "id": 421,
+      "chapterIndex": 70,
+      "chestTarget": 24000,
+      "starScoreTarget": 30400,
+      "speedTargetMs": 115000,
+      "miningMultiplier": 71,
+      "chestCoins": {
+        "1": 35500,
+        "2": 4000,
+        "3": 18500
+      },
+      "honourElements": {
+        "relics": 2,
+        "oreOrders": 1
+      }
+    },
+    "422": {
+      "id": 422,
+      "chapterIndex": 70,
+      "chestTarget": 38000,
+      "starScoreTarget": 47400,
+      "speedTargetMs": 115000,
+      "miningMultiplier": 71,
+      "chestCoins": {
+        "1": 35500,
+        "2": 4000,
+        "3": 18500
+      },
+      "honourElements": {
+        "relics": 2,
+        "oreOrders": 2
+      }
+    },
+    "423": {
+      "id": 423,
+      "chapterIndex": 70,
+      "chestTarget": 45000,
+      "starScoreTarget": 56200,
+      "speedTargetMs": 161000,
+      "miningMultiplier": 71,
+      "chestCoins": {
+        "1": 35500,
+        "2": 4000,
+        "3": 18500
+      },
+      "honourElements": {
+        "relics": 4,
+        "oreOrders": 2
+      }
+    },
+    "424": {
+      "id": 424,
+      "chapterIndex": 70,
+      "chestTarget": 40000,
+      "starScoreTarget": 50400,
+      "speedTargetMs": 184000,
+      "miningMultiplier": 71,
+      "chestCoins": {
+        "1": 35500,
+        "2": 4000,
+        "3": 18500
+      },
+      "honourElements": {
+        "relics": 5,
+        "gates": 2
+      }
+    },
+    "425": {
+      "id": 425,
+      "chapterIndex": 70,
+      "chestTarget": 26500,
+      "starScoreTarget": 33200,
+      "speedTargetMs": 135000,
+      "miningMultiplier": 71,
+      "chestCoins": {
+        "1": 35500,
+        "2": 4000,
+        "3": 18500
+      },
+      "honourElements": {
+        "relics": 3,
+        "oreOrders": 1
+      }
+    },
+    "426": {
+      "id": 426,
+      "chapterIndex": 70,
+      "chestTarget": 67500,
+      "starScoreTarget": 84800,
+      "speedTargetMs": 221000,
+      "miningMultiplier": 71,
+      "chestCoins": {
+        "1": 35500,
+        "2": 4000,
+        "3": 18500
+      },
+      "honourElements": {
+        "relics": 7,
+        "gates": 3
+      }
+    },
+    "427": {
+      "id": 427,
+      "chapterIndex": 71,
+      "chestTarget": 23500,
+      "starScoreTarget": 29000,
+      "speedTargetMs": 99000,
+      "miningMultiplier": 72,
+      "chestCoins": {
+        "1": 36000,
+        "2": 4000,
+        "3": 18750
+      },
+      "honourElements": {
+        "relics": 1,
+        "oreOrders": 1
+      }
+    },
+    "428": {
+      "id": 428,
+      "chapterIndex": 71,
+      "chestTarget": 37000,
+      "starScoreTarget": 46400,
+      "speedTargetMs": 123000,
+      "miningMultiplier": 72,
+      "chestCoins": {
+        "1": 36000,
+        "2": 4000,
+        "3": 18750
+      },
+      "honourElements": {
+        "relics": 2,
+        "oreOrders": 2
+      }
+    },
+    "429": {
+      "id": 429,
+      "chapterIndex": 71,
+      "chestTarget": 18000,
+      "starScoreTarget": 17800,
+      "speedTargetMs": 127000,
+      "miningMultiplier": 72,
+      "chestCoins": {
+        "1": 36000,
+        "2": 4000,
+        "3": 18750
+      },
+      "honourElements": {
+        "relics": 2
+      }
+    },
+    "430": {
+      "id": 430,
+      "chapterIndex": 71,
+      "chestTarget": 41500,
+      "starScoreTarget": 51800,
+      "speedTargetMs": 184000,
+      "miningMultiplier": 72,
+      "chestCoins": {
+        "1": 36000,
+        "2": 4000,
+        "3": 18750
+      },
+      "honourElements": {
+        "relics": 5,
+        "oreOrders": 2
+      }
+    },
+    "431": {
+      "id": 431,
+      "chapterIndex": 71,
+      "chestTarget": 25000,
+      "starScoreTarget": 31600,
+      "speedTargetMs": 119000,
+      "miningMultiplier": 72,
+      "chestCoins": {
+        "1": 36000,
+        "2": 4000,
+        "3": 18750
+      },
+      "honourElements": {
+        "relics": 2,
+        "oreOrders": 1
+      }
+    },
+    "432": {
+      "id": 432,
+      "chapterIndex": 71,
+      "chestTarget": 45000,
+      "starScoreTarget": 56200,
+      "speedTargetMs": 173000,
+      "miningMultiplier": 72,
+      "chestCoins": {
+        "1": 36000,
+        "2": 4000,
+        "3": 18750
+      },
+      "honourElements": {
+        "relics": 4,
+        "gates": 2
+      }
+    },
+    "433": {
+      "id": 433,
+      "chapterIndex": 72,
+      "chestTarget": 27000,
+      "starScoreTarget": 34200,
+      "speedTargetMs": 105000,
+      "miningMultiplier": 73,
+      "chestCoins": {
+        "1": 36500,
+        "2": 4000,
+        "3": 19000
+      },
+      "honourElements": {
+        "relics": 1,
+        "oreOrders": 1,
+        "cores": 2,
+        "gates": 1
+      }
+    },
+    "434": {
+      "id": 434,
+      "chapterIndex": 72,
+      "chestTarget": 25000,
+      "starScoreTarget": 31400,
+      "speedTargetMs": 127000,
+      "miningMultiplier": 73,
+      "chestCoins": {
+        "1": 36500,
+        "2": 4000,
+        "3": 19000
+      },
+      "honourElements": {
+        "relics": 2,
+        "cores": 2,
+        "gates": 2
+      }
+    },
+    "435": {
+      "id": 435,
+      "chapterIndex": 72,
+      "chestTarget": 43000,
+      "starScoreTarget": 54000,
+      "speedTargetMs": 150000,
+      "miningMultiplier": 73,
+      "chestCoins": {
+        "1": 36500,
+        "2": 4000,
+        "3": 19000
+      },
+      "honourElements": {
+        "relics": 3,
+        "oreOrders": 2,
+        "cores": 2,
+        "gates": 3
+      }
+    },
+    "436": {
+      "id": 436,
+      "chapterIndex": 72,
+      "chestTarget": 47000,
+      "starScoreTarget": 59000,
+      "speedTargetMs": 212000,
+      "miningMultiplier": 73,
+      "chestCoins": {
+        "1": 36500,
+        "2": 4000,
+        "3": 19000
+      },
+      "honourElements": {
+        "relics": 6,
+        "cores": 2,
+        "gates": 3
+      }
+    },
+    "437": {
+      "id": 437,
+      "chapterIndex": 72,
+      "chestTarget": 22500,
+      "starScoreTarget": 28000,
+      "speedTargetMs": 120000,
+      "miningMultiplier": 73,
+      "chestCoins": {
+        "1": 36500,
+        "2": 4000,
+        "3": 19000
+      },
+      "honourElements": {
+        "relics": 2,
+        "oreOrders": 1,
+        "cores": 1,
+        "gates": 1
+      }
+    },
+    "438": {
+      "id": 438,
+      "chapterIndex": 72,
+      "chestTarget": 67000,
+      "starScoreTarget": 83800,
+      "speedTargetMs": 213000,
+      "miningMultiplier": 73,
+      "chestCoins": {
+        "1": 36500,
+        "2": 4000,
+        "3": 19000
+      },
+      "honourElements": {
+        "relics": 6,
+        "oreOrders": 2,
+        "cores": 2,
+        "gates": 4
+      }
+    },
+    "439": {
+      "id": 439,
+      "chapterIndex": 73,
+      "chestTarget": 24000,
+      "starScoreTarget": 30000,
+      "speedTargetMs": 80000,
+      "miningMultiplier": 74,
+      "chestCoins": {
+        "1": 37000,
+        "2": 4000,
+        "3": 19250
+      },
+      "honourElements": {
+        "surveys": 1,
+        "oreOrders": 1
+      }
+    },
+    "440": {
+      "id": 440,
+      "chapterIndex": 73,
+      "chestTarget": 42000,
+      "starScoreTarget": 52600,
+      "speedTargetMs": 93000,
+      "miningMultiplier": 74,
+      "chestCoins": {
+        "1": 37000,
+        "2": 4000,
+        "3": 19250
+      },
+      "honourElements": {
+        "lanterns": 14,
+        "oreOrders": 1
+      }
+    },
+    "441": {
+      "id": 441,
+      "chapterIndex": 73,
+      "chestTarget": 42500,
+      "starScoreTarget": 53600,
+      "speedTargetMs": 82000,
+      "miningMultiplier": 74,
+      "chestCoins": {
+        "1": 37000,
+        "2": 4000,
+        "3": 19250
+      },
+      "honourElements": {
+        "surveys": 1,
+        "oreOrders": 2
+      }
+    },
+    "442": {
+      "id": 442,
+      "chapterIndex": 73,
+      "chestTarget": 48500,
+      "starScoreTarget": 60800,
+      "speedTargetMs": 90000,
+      "miningMultiplier": 74,
+      "chestCoins": {
+        "1": 37000,
+        "2": 4000,
+        "3": 19250
+      },
+      "honourElements": {
+        "surveys": 1,
+        "oreOrders": 1
+      }
+    },
+    "443": {
+      "id": 443,
+      "chapterIndex": 73,
+      "chestTarget": 21500,
+      "starScoreTarget": 26400,
+      "speedTargetMs": 80000,
+      "miningMultiplier": 74,
+      "chestCoins": {
+        "1": 37000,
+        "2": 4000,
+        "3": 19250
+      },
+      "honourElements": {
+        "lanterns": 5,
+        "oreOrders": 1
+      }
+    },
+    "444": {
+      "id": 444,
+      "chapterIndex": 73,
+      "chestTarget": 73000,
+      "starScoreTarget": 91600,
+      "speedTargetMs": 96000,
+      "miningMultiplier": 74,
+      "chestCoins": {
+        "1": 37000,
+        "2": 4000,
+        "3": 19250
+      },
+      "honourElements": {
+        "surveys": 1,
+        "oreOrders": 2,
+        "cores": 2,
+        "gates": 4
+      }
+    },
+    "445": {
+      "id": 445,
+      "chapterIndex": 74,
+      "chestTarget": 32000,
+      "starScoreTarget": 40400,
+      "speedTargetMs": 168000,
+      "miningMultiplier": 75,
+      "chestCoins": {
+        "1": 37500,
+        "2": 4000,
+        "3": 19500
+      }
+    },
+    "446": {
+      "id": 446,
+      "chapterIndex": 74,
+      "chestTarget": 36000,
+      "starScoreTarget": 45400,
+      "speedTargetMs": 188000,
+      "miningMultiplier": 75,
+      "chestCoins": {
+        "1": 37500,
+        "2": 4000,
+        "3": 19500
+      }
+    },
+    "447": {
+      "id": 447,
+      "chapterIndex": 74,
+      "chestTarget": 37500,
+      "starScoreTarget": 47200,
+      "speedTargetMs": 190000,
+      "miningMultiplier": 75,
+      "chestCoins": {
+        "1": 37500,
+        "2": 4000,
+        "3": 19500
+      },
+      "honourElements": {
+        "cores": 1
+      }
+    },
+    "448": {
+      "id": 448,
+      "chapterIndex": 74,
+      "chestTarget": 43500,
+      "starScoreTarget": 54600,
+      "speedTargetMs": 195000,
+      "miningMultiplier": 75,
+      "chestCoins": {
+        "1": 37500,
+        "2": 4000,
+        "3": 19500
+      },
+      "honourElements": {
+        "oreOrders": 2,
+        "cores": 1,
+        "gates": 2
+      }
+    },
+    "449": {
+      "id": 449,
+      "chapterIndex": 74,
+      "chestTarget": 34000,
+      "starScoreTarget": 42800,
+      "speedTargetMs": 191000,
+      "miningMultiplier": 75,
+      "chestCoins": {
+        "1": 37500,
+        "2": 4000,
+        "3": 19500
+      }
+    },
+    "450": {
+      "id": 450,
+      "chapterIndex": 74,
+      "chestTarget": 66000,
+      "starScoreTarget": 82800,
+      "speedTargetMs": 189000,
+      "miningMultiplier": 75,
+      "chestCoins": {
+        "1": 37500,
+        "2": 4000,
+        "3": 19500
+      },
+      "honourElements": {
+        "oreOrders": 2,
+        "cores": 1,
+        "gates": 2
+      }
+    },
+    "451": {
+      "id": 451,
+      "chapterIndex": 75,
+      "chestTarget": 41500,
+      "starScoreTarget": 48400,
+      "speedTargetMs": 190000,
+      "miningMultiplier": 76,
+      "chestCoins": {
+        "1": 38000,
+        "2": 4000,
+        "3": 19750
+      }
+    },
+    "452": {
+      "id": 452,
+      "chapterIndex": 75,
+      "chestTarget": 37000,
+      "starScoreTarget": 46800,
+      "speedTargetMs": 193000,
+      "miningMultiplier": 76,
+      "chestCoins": {
+        "1": 38000,
+        "2": 4000,
+        "3": 19750
+      },
+      "honourElements": {
+        "cores": 1
+      }
+    },
+    "453": {
+      "id": 453,
+      "chapterIndex": 75,
+      "chestTarget": 52000,
+      "starScoreTarget": 65400,
+      "speedTargetMs": 189000,
+      "miningMultiplier": 76,
+      "chestCoins": {
+        "1": 38000,
+        "2": 4000,
+        "3": 19750
+      },
+      "honourElements": {
+        "oreOrders": 2
+      }
+    },
+    "454": {
+      "id": 454,
+      "chapterIndex": 75,
+      "chestTarget": 36500,
+      "starScoreTarget": 46200,
+      "speedTargetMs": 191000,
+      "miningMultiplier": 76,
+      "chestCoins": {
+        "1": 38000,
+        "2": 4000,
+        "3": 19750
+      },
+      "honourElements": {
+        "cores": 1,
+        "gates": 2
+      }
+    },
+    "455": {
+      "id": 455,
+      "chapterIndex": 75,
+      "chestTarget": 29500,
+      "starScoreTarget": 37400,
+      "speedTargetMs": 152000,
+      "miningMultiplier": 76,
+      "chestCoins": {
+        "1": 38000,
+        "2": 4000,
+        "3": 19750
+      }
+    },
+    "456": {
+      "id": 456,
+      "chapterIndex": 75,
+      "chestTarget": 78500,
+      "starScoreTarget": 98400,
+      "speedTargetMs": 189000,
+      "miningMultiplier": 76,
+      "chestCoins": {
+        "1": 38000,
+        "2": 4000,
+        "3": 19750
+      },
+      "honourElements": {
+        "oreOrders": 2,
+        "cores": 1,
+        "gates": 2
+      }
+    },
+    "457": {
+      "id": 457,
+      "chapterIndex": 76,
+      "chestTarget": 29000,
+      "starScoreTarget": 31600,
+      "speedTargetMs": 152000,
+      "miningMultiplier": 77,
+      "chestCoins": {
+        "1": 38500,
+        "2": 4000,
+        "3": 20000
+      }
+    },
+    "458": {
+      "id": 458,
+      "chapterIndex": 76,
+      "chestTarget": 47000,
+      "starScoreTarget": 59200,
+      "speedTargetMs": 192000,
+      "miningMultiplier": 77,
+      "chestCoins": {
+        "1": 38500,
+        "2": 4000,
+        "3": 20000
+      }
+    },
+    "459": {
+      "id": 459,
+      "chapterIndex": 76,
+      "chestTarget": 43500,
+      "starScoreTarget": 54800,
+      "speedTargetMs": 188000,
+      "miningMultiplier": 77,
+      "chestCoins": {
+        "1": 38500,
+        "2": 4000,
+        "3": 20000
+      },
+      "honourElements": {
+        "oreOrders": 2
+      }
+    },
+    "460": {
+      "id": 460,
+      "chapterIndex": 76,
+      "chestTarget": 52000,
+      "starScoreTarget": 65400,
+      "speedTargetMs": 193000,
+      "miningMultiplier": 77,
+      "chestCoins": {
+        "1": 38500,
+        "2": 4000,
+        "3": 20000
+      },
+      "honourElements": {
+        "oreOrders": 2,
+        "gates": 2
+      }
+    },
+    "461": {
+      "id": 461,
+      "chapterIndex": 76,
+      "chestTarget": 27500,
+      "starScoreTarget": 34000,
+      "speedTargetMs": 166000,
+      "miningMultiplier": 77,
+      "chestCoins": {
+        "1": 38500,
+        "2": 4000,
+        "3": 20000
+      }
+    },
+    "462": {
+      "id": 462,
+      "chapterIndex": 76,
+      "chestTarget": 64000,
+      "starScoreTarget": 80400,
+      "speedTargetMs": 191000,
+      "miningMultiplier": 77,
+      "chestCoins": {
+        "1": 38500,
+        "2": 4000,
+        "3": 20000
+      },
+      "honourElements": {
+        "oreOrders": 2,
+        "gates": 3
+      }
+    },
+    "463": {
+      "id": 463,
+      "chapterIndex": 77,
+      "chestTarget": 26000,
+      "starScoreTarget": 31600,
+      "speedTargetMs": 141000,
+      "miningMultiplier": 78,
+      "chestCoins": {
+        "1": 39000,
+        "2": 4000,
+        "3": 20250
+      }
+    },
+    "464": {
+      "id": 464,
+      "chapterIndex": 77,
+      "chestTarget": 42500,
+      "starScoreTarget": 53600,
+      "speedTargetMs": 184000,
+      "miningMultiplier": 78,
+      "chestCoins": {
+        "1": 39000,
+        "2": 4000,
+        "3": 20250
+      }
+    },
+    "465": {
+      "id": 465,
+      "chapterIndex": 77,
+      "chestTarget": 38000,
+      "starScoreTarget": 48000,
+      "speedTargetMs": 185000,
+      "miningMultiplier": 78,
+      "chestCoins": {
+        "1": 39000,
+        "2": 4000,
+        "3": 20250
+      }
+    },
+    "466": {
+      "id": 466,
+      "chapterIndex": 77,
+      "chestTarget": 53500,
+      "starScoreTarget": 67400,
+      "speedTargetMs": 186000,
+      "miningMultiplier": 78,
+      "chestCoins": {
+        "1": 39000,
+        "2": 4000,
+        "3": 20250
+      },
+      "honourElements": {
+        "oreOrders": 2
+      }
+    },
+    "467": {
+      "id": 467,
+      "chapterIndex": 77,
+      "chestTarget": 27000,
+      "starScoreTarget": 34000,
+      "speedTargetMs": 159000,
+      "miningMultiplier": 78,
+      "chestCoins": {
+        "1": 39000,
+        "2": 4000,
+        "3": 20250
+      }
+    },
+    "468": {
+      "id": 468,
+      "chapterIndex": 77,
+      "chestTarget": 62000,
+      "starScoreTarget": 78000,
+      "speedTargetMs": 177000,
+      "miningMultiplier": 78,
+      "chestCoins": {
+        "1": 39000,
+        "2": 4000,
+        "3": 20250
+      },
+      "honourElements": {
+        "oreOrders": 2,
+        "gates": 1
+      }
+    },
+    "469": {
+      "id": 469,
+      "chapterIndex": 78,
+      "chestTarget": 31000,
+      "starScoreTarget": 39200,
+      "speedTargetMs": 198000,
+      "miningMultiplier": 79,
+      "chestCoins": {
+        "1": 39500,
+        "2": 4000,
+        "3": 20500
+      }
+    },
+    "470": {
+      "id": 470,
+      "chapterIndex": 78,
+      "chestTarget": 52000,
+      "starScoreTarget": 65200,
+      "speedTargetMs": 199000,
+      "miningMultiplier": 79,
+      "chestCoins": {
+        "1": 39500,
+        "2": 4000,
+        "3": 20500
+      },
+      "honourElements": {
+        "oreOrders": 1,
+        "cores": 1
+      }
+    },
+    "471": {
+      "id": 471,
+      "chapterIndex": 78,
+      "chestTarget": 44000,
+      "starScoreTarget": 55200,
+      "speedTargetMs": 200000,
+      "miningMultiplier": 79,
+      "chestCoins": {
+        "1": 39500,
+        "2": 4000,
+        "3": 20500
+      }
+    },
+    "472": {
+      "id": 472,
+      "chapterIndex": 78,
+      "chestTarget": 60000,
+      "starScoreTarget": 75200,
+      "speedTargetMs": 203000,
+      "miningMultiplier": 79,
+      "chestCoins": {
+        "1": 39500,
+        "2": 4000,
+        "3": 20500
+      },
+      "honourElements": {
+        "oreOrders": 1,
+        "cores": 1
+      }
+    },
+    "473": {
+      "id": 473,
+      "chapterIndex": 78,
+      "chestTarget": 28000,
+      "starScoreTarget": 35600,
+      "speedTargetMs": 175000,
+      "miningMultiplier": 79,
+      "chestCoins": {
+        "1": 39500,
+        "2": 4000,
+        "3": 20500
+      }
+    },
+    "474": {
+      "id": 474,
+      "chapterIndex": 78,
+      "chestTarget": 79500,
+      "starScoreTarget": 99400,
+      "speedTargetMs": 206000,
+      "miningMultiplier": 79,
+      "chestCoins": {
+        "1": 39500,
+        "2": 4000,
+        "3": 20500
+      },
+      "honourElements": {
+        "oreOrders": 2,
+        "cores": 1
+      }
+    },
+    "475": {
+      "id": 475,
+      "chapterIndex": 79,
+      "chestTarget": 31500,
+      "starScoreTarget": 39600,
+      "speedTargetMs": 95000,
+      "miningMultiplier": 80,
+      "chestCoins": {
+        "1": 40000,
+        "2": 4000,
+        "3": 20750
+      },
+      "honourElements": {
+        "relics": 1,
+        "oreOrders": 1
+      }
+    },
+    "476": {
+      "id": 476,
+      "chapterIndex": 79,
+      "chestTarget": 47000,
+      "starScoreTarget": 58800,
+      "speedTargetMs": 115000,
+      "miningMultiplier": 80,
+      "chestCoins": {
+        "1": 40000,
+        "2": 4000,
+        "3": 20750
+      },
+      "honourElements": {
+        "relics": 2,
+        "oreOrders": 2
+      }
+    },
+    "477": {
+      "id": 477,
+      "chapterIndex": 79,
+      "chestTarget": 42500,
+      "starScoreTarget": 53400,
+      "speedTargetMs": 118000,
+      "miningMultiplier": 80,
+      "chestCoins": {
+        "1": 40000,
+        "2": 4000,
+        "3": 20750
+      },
+      "honourElements": {
+        "relics": 2,
+        "oreOrders": 2
+      }
+    },
+    "478": {
+      "id": 478,
+      "chapterIndex": 79,
+      "chestTarget": 55500,
+      "starScoreTarget": 69800,
+      "speedTargetMs": 137000,
+      "miningMultiplier": 80,
+      "chestCoins": {
+        "1": 40000,
+        "2": 4000,
+        "3": 20750
+      },
+      "honourElements": {
+        "relics": 3,
+        "oreOrders": 2,
+        "gates": 2
+      }
+    },
+    "479": {
+      "id": 479,
+      "chapterIndex": 79,
+      "chestTarget": 29000,
+      "starScoreTarget": 36600,
+      "speedTargetMs": 96000,
+      "miningMultiplier": 80,
+      "chestCoins": {
+        "1": 40000,
+        "2": 4000,
+        "3": 20750
+      },
+      "honourElements": {
+        "relics": 1,
+        "oreOrders": 1
+      }
+    },
+    "480": {
+      "id": 480,
+      "chapterIndex": 79,
+      "chestTarget": 69000,
+      "starScoreTarget": 86600,
+      "speedTargetMs": 163000,
+      "miningMultiplier": 80,
+      "chestCoins": {
+        "1": 40000,
+        "2": 4000,
+        "3": 20750
+      },
+      "honourElements": {
+        "relics": 4,
+        "oreOrders": 2,
+        "gates": 2
+      }
+    },
+    "481": {
+      "id": 481,
+      "chapterIndex": 80,
+      "chestTarget": 25500,
+      "starScoreTarget": 30400,
+      "speedTargetMs": 95000,
+      "miningMultiplier": 81,
+      "chestCoins": {
+        "1": 40500,
+        "2": 4000,
+        "3": 21000
+      },
+      "honourElements": {
+        "relics": 1,
+        "oreOrders": 1
+      }
+    },
+    "482": {
+      "id": 482,
+      "chapterIndex": 80,
+      "chestTarget": 36500,
+      "starScoreTarget": 45800,
+      "speedTargetMs": 115000,
+      "miningMultiplier": 81,
+      "chestCoins": {
+        "1": 40500,
+        "2": 4000,
+        "3": 21000
+      },
+      "honourElements": {
+        "relics": 2,
+        "oreOrders": 1
+      }
+    },
+    "483": {
+      "id": 483,
+      "chapterIndex": 80,
+      "chestTarget": 38000,
+      "starScoreTarget": 47400,
+      "speedTargetMs": 115000,
+      "miningMultiplier": 81,
+      "chestCoins": {
+        "1": 40500,
+        "2": 4000,
+        "3": 21000
+      },
+      "honourElements": {
+        "relics": 2,
+        "oreOrders": 2
+      }
+    },
+    "484": {
+      "id": 484,
+      "chapterIndex": 80,
+      "chestTarget": 48500,
+      "starScoreTarget": 61200,
+      "speedTargetMs": 158000,
+      "miningMultiplier": 81,
+      "chestCoins": {
+        "1": 40500,
+        "2": 4000,
+        "3": 21000
+      },
+      "honourElements": {
+        "relics": 4,
+        "oreOrders": 2,
+        "gates": 2
+      }
+    },
+    "485": {
+      "id": 485,
+      "chapterIndex": 80,
+      "chestTarget": 21000,
+      "starScoreTarget": 25400,
+      "speedTargetMs": 95000,
+      "miningMultiplier": 81,
+      "chestCoins": {
+        "1": 40500,
+        "2": 4000,
+        "3": 21000
+      },
+      "honourElements": {
+        "relics": 1,
+        "oreOrders": 1
+      }
+    },
+    "486": {
+      "id": 486,
+      "chapterIndex": 80,
+      "chestTarget": 50500,
+      "starScoreTarget": 63400,
+      "speedTargetMs": 163000,
+      "miningMultiplier": 81,
+      "chestCoins": {
+        "1": 40500,
+        "2": 4000,
+        "3": 21000
+      },
+      "honourElements": {
+        "relics": 4,
+        "oreOrders": 3,
+        "gates": 2
+      }
+    },
+    "487": {
+      "id": 487,
+      "chapterIndex": 81,
+      "chestTarget": 14500,
+      "starScoreTarget": 18200,
+      "speedTargetMs": 82000,
+      "miningMultiplier": 82,
+      "chestCoins": {
+        "1": 41000,
+        "2": 4000,
+        "3": 21250
+      },
+      "honourElements": {
+        "lanterns": 4
+      }
+    },
+    "488": {
+      "id": 488,
+      "chapterIndex": 81,
+      "chestTarget": 42500,
+      "starScoreTarget": 51000,
+      "speedTargetMs": 139000,
+      "miningMultiplier": 82,
+      "chestCoins": {
+        "1": 41000,
+        "2": 4000,
+        "3": 21250
+      }
+    },
+    "489": {
+      "id": 489,
+      "chapterIndex": 81,
+      "chestTarget": 37000,
+      "starScoreTarget": 44800,
+      "speedTargetMs": 84000,
+      "miningMultiplier": 82,
+      "chestCoins": {
+        "1": 41000,
+        "2": 4000,
+        "3": 21250
+      },
+      "honourElements": {
+        "surveys": 1,
+        "oreOrders": 2
+      }
+    },
+    "490": {
+      "id": 490,
+      "chapterIndex": 81,
+      "chestTarget": 50000,
+      "starScoreTarget": 62800,
+      "speedTargetMs": 201000,
+      "miningMultiplier": 82,
+      "chestCoins": {
+        "1": 41000,
+        "2": 4000,
+        "3": 21250
+      }
+    },
+    "491": {
+      "id": 491,
+      "chapterIndex": 81,
+      "chestTarget": 20500,
+      "starScoreTarget": 25600,
+      "speedTargetMs": 119000,
+      "miningMultiplier": 82,
+      "chestCoins": {
+        "1": 41000,
+        "2": 4000,
+        "3": 21250
+      }
+    },
+    "492": {
+      "id": 492,
+      "chapterIndex": 81,
+      "chestTarget": 57500,
+      "starScoreTarget": 70400,
+      "speedTargetMs": 139000,
+      "miningMultiplier": 82,
+      "chestCoins": {
+        "1": 41000,
+        "2": 4000,
+        "3": 21250
+      },
+      "honourElements": {
+        "relics": 3,
+        "oreOrders": 2
+      }
+    },
+    "493": {
+      "id": 493,
+      "chapterIndex": 82,
+      "chestTarget": 24000,
+      "starScoreTarget": 30000,
+      "speedTargetMs": 135000,
+      "miningMultiplier": 83,
+      "chestCoins": {
+        "1": 41500,
+        "2": 4000,
+        "3": 21500
+      },
+      "honourElements": {
+        "cores": 2
+      }
+    },
+    "494": {
+      "id": 494,
+      "chapterIndex": 82,
+      "chestTarget": 40500,
+      "starScoreTarget": 51000,
+      "speedTargetMs": 158000,
+      "miningMultiplier": 83,
+      "chestCoins": {
+        "1": 41500,
+        "2": 4000,
+        "3": 21500
+      },
+      "honourElements": {
+        "cores": 2
+      }
+    },
+    "495": {
+      "id": 495,
+      "chapterIndex": 82,
+      "chestTarget": 37500,
+      "starScoreTarget": 47000,
+      "speedTargetMs": 174000,
+      "miningMultiplier": 83,
+      "chestCoins": {
+        "1": 41500,
+        "2": 4000,
+        "3": 21500
+      },
+      "honourElements": {
+        "cores": 1
+      }
+    },
+    "496": {
+      "id": 496,
+      "chapterIndex": 82,
+      "chestTarget": 64500,
+      "starScoreTarget": 79000,
+      "speedTargetMs": 205000,
+      "miningMultiplier": 83,
+      "chestCoins": {
+        "1": 41500,
+        "2": 4000,
+        "3": 21500
+      },
+      "honourElements": {
+        "oreOrders": 2,
+        "cores": 2
+      }
+    },
+    "497": {
+      "id": 497,
+      "chapterIndex": 82,
+      "chestTarget": 33000,
+      "starScoreTarget": 41800,
+      "speedTargetMs": 152000,
+      "miningMultiplier": 83,
+      "chestCoins": {
+        "1": 41500,
+        "2": 4000,
+        "3": 21500
+      },
+      "honourElements": {
+        "cores": 1
+      }
+    },
+    "498": {
+      "id": 498,
+      "chapterIndex": 82,
+      "chestTarget": 64000,
+      "starScoreTarget": 80400,
+      "speedTargetMs": 203000,
+      "miningMultiplier": 83,
+      "chestCoins": {
+        "1": 41500,
+        "2": 4000,
+        "3": 21500
+      },
+      "honourElements": {
+        "oreOrders": 2,
+        "cores": 2,
+        "gates": 2
+      }
+    },
+    "499": {
+      "id": 499,
+      "chapterIndex": 83,
+      "chestTarget": 25500,
+      "starScoreTarget": 31800,
+      "speedTargetMs": 96000,
+      "miningMultiplier": 84,
+      "chestCoins": {
+        "1": 42000,
+        "2": 4000,
+        "3": 21750
+      },
+      "honourElements": {
+        "relics": 1,
+        "oreOrders": 1,
+        "gates": 1
+      }
+    },
+    "500": {
+      "id": 500,
+      "chapterIndex": 83,
+      "chestTarget": 39000,
+      "starScoreTarget": 42200,
+      "speedTargetMs": 116000,
+      "miningMultiplier": 84,
+      "chestCoins": {
+        "1": 42000,
+        "2": 4000,
+        "3": 21750
+      },
+      "honourElements": {
+        "relics": 2,
+        "oreOrders": 2,
+        "gates": 1
+      }
+    },
+    "501": {
+      "id": 501,
+      "chapterIndex": 83,
+      "chestTarget": 37000,
+      "starScoreTarget": 46400,
+      "speedTargetMs": 118000,
+      "miningMultiplier": 84,
+      "chestCoins": {
+        "1": 42000,
+        "2": 4000,
+        "3": 21750
+      },
+      "honourElements": {
+        "relics": 2,
+        "oreOrders": 2,
+        "gates": 3
+      }
+    },
+    "502": {
+      "id": 502,
+      "chapterIndex": 83,
+      "chestTarget": 45500,
+      "starScoreTarget": 57400,
+      "speedTargetMs": 141000,
+      "miningMultiplier": 84,
+      "chestCoins": {
+        "1": 42000,
+        "2": 4000,
+        "3": 21750
+      },
+      "honourElements": {
+        "relics": 3,
+        "gates": 3
+      }
+    },
+    "503": {
+      "id": 503,
+      "chapterIndex": 83,
+      "chestTarget": 21000,
+      "starScoreTarget": 26000,
+      "speedTargetMs": 95000,
+      "miningMultiplier": 84,
+      "chestCoins": {
+        "1": 42000,
+        "2": 4000,
+        "3": 21750
+      },
+      "honourElements": {
+        "relics": 1,
+        "oreOrders": 1
+      }
+    },
+    "504": {
+      "id": 504,
+      "chapterIndex": 83,
+      "chestTarget": 63000,
+      "starScoreTarget": 79200,
+      "speedTargetMs": 161000,
+      "miningMultiplier": 84,
+      "chestCoins": {
+        "1": 42000,
+        "2": 4000,
+        "3": 21750
+      },
+      "honourElements": {
+        "relics": 4,
+        "gates": 3
+      }
+    },
+    "505": {
+      "id": 505,
+      "chapterIndex": 84,
+      "chestTarget": 21500,
+      "starScoreTarget": 27200,
+      "speedTargetMs": 82000,
+      "miningMultiplier": 85,
+      "chestCoins": {
+        "1": 42500,
+        "2": 4000,
+        "3": 22000
+      },
+      "honourElements": {
+        "lanterns": 4
+      }
+    },
+    "506": {
+      "id": 506,
+      "chapterIndex": 84,
+      "chestTarget": 44500,
+      "starScoreTarget": 56000,
+      "speedTargetMs": 98000,
+      "miningMultiplier": 85,
+      "chestCoins": {
+        "1": 42500,
+        "2": 4000,
+        "3": 22000
+      },
+      "honourElements": {
+        "relics": 1,
+        "oreOrders": 2
+      }
+    },
+    "507": {
+      "id": 507,
+      "chapterIndex": 84,
+      "chestTarget": 36500,
+      "starScoreTarget": 46000,
+      "speedTargetMs": 129000,
+      "miningMultiplier": 85,
+      "chestCoins": {
+        "1": 42500,
+        "2": 4000,
+        "3": 22000
+      },
+      "honourElements": {
+        "relics": 2,
+        "oreOrders": 2,
+        "cores": 2
+      }
+    },
+    "508": {
+      "id": 508,
+      "chapterIndex": 84,
+      "chestTarget": 67500,
+      "starScoreTarget": 84400,
+      "speedTargetMs": 210000,
+      "miningMultiplier": 85,
+      "chestCoins": {
+        "1": 42500,
+        "2": 4000,
+        "3": 22000
+      },
+      "honourElements": {
+        "oreOrders": 2,
+        "cores": 1
+      }
+    },
+    "509": {
+      "id": 509,
+      "chapterIndex": 84,
+      "chestTarget": 26000,
+      "starScoreTarget": 28400,
+      "speedTargetMs": 98000,
+      "miningMultiplier": 85,
+      "chestCoins": {
+        "1": 42500,
+        "2": 4000,
+        "3": 22000
+      }
+    },
+    "510": {
+      "id": 510,
+      "chapterIndex": 84,
+      "chestTarget": 86000,
+      "starScoreTarget": 107600,
+      "speedTargetMs": 131000,
+      "miningMultiplier": 85,
+      "chestCoins": {
+        "1": 42500,
+        "2": 4000,
+        "3": 22000
+      },
+      "honourElements": {
+        "relics": 2,
+        "oreOrders": 2,
+        "cores": 2
+      }
+    },
+    "511": {
+      "id": 511,
+      "chapterIndex": 85,
+      "chestTarget": 25000,
+      "starScoreTarget": 31800,
+      "speedTargetMs": 165000,
+      "miningMultiplier": 86,
+      "chestCoins": {
+        "1": 43000,
+        "2": 4000,
+        "3": 22250
+      }
+    },
+    "512": {
+      "id": 512,
+      "chapterIndex": 85,
+      "chestTarget": 46500,
+      "starScoreTarget": 58200,
+      "speedTargetMs": 117000,
+      "miningMultiplier": 86,
+      "chestCoins": {
+        "1": 43000,
+        "2": 4000,
+        "3": 22250
+      },
+      "honourElements": {
+        "relics": 2,
+        "oreOrders": 2
+      }
+    },
+    "513": {
+      "id": 513,
+      "chapterIndex": 85,
+      "chestTarget": 50000,
+      "starScoreTarget": 62400,
+      "speedTargetMs": 115000,
+      "miningMultiplier": 86,
+      "chestCoins": {
+        "1": 43000,
+        "2": 4000,
+        "3": 22250
+      },
+      "honourElements": {
+        "relics": 2,
+        "oreOrders": 2
+      }
+    },
+    "514": {
+      "id": 514,
+      "chapterIndex": 85,
+      "chestTarget": 52000,
+      "starScoreTarget": 65400,
+      "speedTargetMs": 157000,
+      "miningMultiplier": 86,
+      "chestCoins": {
+        "1": 43000,
+        "2": 4000,
+        "3": 22250
+      },
+      "honourElements": {
+        "relics": 4,
+        "oreOrders": 2
+      }
+    },
+    "515": {
+      "id": 515,
+      "chapterIndex": 85,
+      "chestTarget": 21500,
+      "starScoreTarget": 26400,
+      "speedTargetMs": 143000,
+      "miningMultiplier": 86,
+      "chestCoins": {
+        "1": 43000,
+        "2": 4000,
+        "3": 22250
+      }
+    },
+    "516": {
+      "id": 516,
+      "chapterIndex": 85,
+      "chestTarget": 88500,
+      "starScoreTarget": 110800,
+      "speedTargetMs": 187000,
+      "miningMultiplier": 86,
+      "chestCoins": {
+        "1": 43000,
+        "2": 4000,
+        "3": 22250
+      },
+      "honourElements": {
+        "relics": 5,
+        "oreOrders": 2,
+        "cores": 2,
+        "gates": 3
+      }
+    },
+    "517": {
+      "id": 517,
+      "chapterIndex": 86,
+      "chestTarget": 25500,
+      "starScoreTarget": 32400,
+      "speedTargetMs": 145000,
+      "miningMultiplier": 87,
+      "chestCoins": {
+        "1": 43500,
+        "2": 4000,
+        "3": 22500
+      }
+    },
+    "518": {
+      "id": 518,
+      "chapterIndex": 86,
+      "chestTarget": 31500,
+      "starScoreTarget": 38600,
+      "speedTargetMs": 115000,
+      "miningMultiplier": 87,
+      "chestCoins": {
+        "1": 43500,
+        "2": 4000,
+        "3": 22500
+      },
+      "honourElements": {
+        "relics": 2,
+        "oreOrders": 2
+      }
+    },
+    "519": {
+      "id": 519,
+      "chapterIndex": 86,
+      "chestTarget": 40000,
+      "starScoreTarget": 50000,
+      "speedTargetMs": 81000,
+      "miningMultiplier": 87,
+      "chestCoins": {
+        "1": 43500,
+        "2": 4000,
+        "3": 22500
+      },
+      "honourElements": {
+        "lanterns": 6,
+        "oreOrders": 2
+      }
+    },
+    "520": {
+      "id": 520,
+      "chapterIndex": 86,
+      "chestTarget": 57000,
+      "starScoreTarget": 71600,
+      "speedTargetMs": 159000,
+      "miningMultiplier": 87,
+      "chestCoins": {
+        "1": 43500,
+        "2": 4000,
+        "3": 22500
+      },
+      "honourElements": {
+        "relics": 4,
+        "oreOrders": 2,
+        "gates": 4
+      }
+    },
+    "521": {
+      "id": 521,
+      "chapterIndex": 86,
+      "chestTarget": 24000,
+      "starScoreTarget": 30200,
+      "speedTargetMs": 139000,
+      "miningMultiplier": 87,
+      "chestCoins": {
+        "1": 43500,
+        "2": 4000,
+        "3": 22500
+      }
+    },
+    "522": {
+      "id": 522,
+      "chapterIndex": 86,
+      "chestTarget": 61500,
+      "starScoreTarget": 76800,
+      "speedTargetMs": 185000,
+      "miningMultiplier": 87,
+      "chestCoins": {
+        "1": 43500,
+        "2": 4000,
+        "3": 22500
+      },
+      "honourElements": {
+        "relics": 5,
+        "oreOrders": 2,
+        "gates": 6
+      }
+    },
+    "523": {
+      "id": 523,
+      "chapterIndex": 87,
+      "chestTarget": 26000,
+      "starScoreTarget": 32800,
+      "speedTargetMs": 148000,
+      "miningMultiplier": 88,
+      "chestCoins": {
+        "1": 44000,
+        "2": 4000,
+        "3": 22750
+      }
+    },
+    "524": {
+      "id": 524,
+      "chapterIndex": 87,
+      "chestTarget": 26500,
+      "starScoreTarget": 33600,
+      "speedTargetMs": 171000,
+      "miningMultiplier": 88,
+      "chestCoins": {
+        "1": 44000,
+        "2": 4000,
+        "3": 22750
+      }
+    },
+    "525": {
+      "id": 525,
+      "chapterIndex": 87,
+      "chestTarget": 44000,
+      "starScoreTarget": 55000,
+      "speedTargetMs": 189000,
+      "miningMultiplier": 88,
+      "chestCoins": {
+        "1": 44000,
+        "2": 4000,
+        "3": 22750
+      },
+      "honourElements": {
+        "oreOrders": 2
+      }
+    },
+    "526": {
+      "id": 526,
+      "chapterIndex": 87,
+      "chestTarget": 54000,
+      "starScoreTarget": 68000,
+      "speedTargetMs": 191000,
+      "miningMultiplier": 88,
+      "chestCoins": {
+        "1": 44000,
+        "2": 4000,
+        "3": 22750
+      },
+      "honourElements": {
+        "oreOrders": 2,
+        "gates": 2
+      }
+    },
+    "527": {
+      "id": 527,
+      "chapterIndex": 87,
+      "chestTarget": 31000,
+      "starScoreTarget": 38800,
+      "speedTargetMs": 160000,
+      "miningMultiplier": 88,
+      "chestCoins": {
+        "1": 44000,
+        "2": 4000,
+        "3": 22750
+      }
+    },
+    "528": {
+      "id": 528,
+      "chapterIndex": 87,
+      "chestTarget": 64500,
+      "starScoreTarget": 81000,
+      "speedTargetMs": 193000,
+      "miningMultiplier": 88,
+      "chestCoins": {
+        "1": 44000,
+        "2": 4000,
+        "3": 22750
+      },
+      "honourElements": {
+        "oreOrders": 2,
+        "gates": 4
+      }
+    },
+    "529": {
+      "id": 529,
+      "chapterIndex": 88,
+      "chestTarget": 33000,
+      "starScoreTarget": 41600,
+      "speedTargetMs": 95000,
+      "miningMultiplier": 89,
+      "chestCoins": {
+        "1": 44500,
+        "2": 4000,
+        "3": 23000
+      },
+      "honourElements": {
+        "relics": 1,
+        "oreOrders": 1
+      }
+    },
+    "530": {
+      "id": 530,
+      "chapterIndex": 88,
+      "chestTarget": 44500,
+      "starScoreTarget": 56200,
+      "speedTargetMs": 115000,
+      "miningMultiplier": 89,
+      "chestCoins": {
+        "1": 44500,
+        "2": 4000,
+        "3": 23000
+      },
+      "honourElements": {
+        "relics": 2,
+        "oreOrders": 2
+      }
+    },
+    "531": {
+      "id": 531,
+      "chapterIndex": 88,
+      "chestTarget": 41000,
+      "starScoreTarget": 51200,
+      "speedTargetMs": 117000,
+      "miningMultiplier": 89,
+      "chestCoins": {
+        "1": 44500,
+        "2": 4000,
+        "3": 23000
+      },
+      "honourElements": {
+        "relics": 2,
+        "oreOrders": 2
+      }
+    },
+    "532": {
+      "id": 532,
+      "chapterIndex": 88,
+      "chestTarget": 56000,
+      "starScoreTarget": 70200,
+      "speedTargetMs": 157000,
+      "miningMultiplier": 89,
+      "chestCoins": {
+        "1": 44500,
+        "2": 4000,
+        "3": 23000
+      },
+      "honourElements": {
+        "relics": 4,
+        "oreOrders": 2,
+        "gates": 2
+      }
+    },
+    "533": {
+      "id": 533,
+      "chapterIndex": 88,
+      "chestTarget": 32000,
+      "starScoreTarget": 38800,
+      "speedTargetMs": 95000,
+      "miningMultiplier": 89,
+      "chestCoins": {
+        "1": 44500,
+        "2": 4000,
+        "3": 23000
+      },
+      "honourElements": {
+        "relics": 1,
+        "oreOrders": 1
+      }
+    },
+    "534": {
+      "id": 534,
+      "chapterIndex": 88,
+      "chestTarget": 49500,
+      "starScoreTarget": 61800,
+      "speedTargetMs": 161000,
+      "miningMultiplier": 89,
+      "chestCoins": {
+        "1": 44500,
+        "2": 4000,
+        "3": 23000
+      },
+      "honourElements": {
+        "relics": 4,
+        "gates": 3
+      }
+    },
+    "535": {
+      "id": 535,
+      "chapterIndex": 89,
+      "chestTarget": 32500,
+      "starScoreTarget": 40800,
+      "speedTargetMs": 87000,
+      "miningMultiplier": 90,
+      "chestCoins": {
+        "1": 45000,
+        "2": 4000,
+        "3": 23250
+      },
+      "honourElements": {
+        "lanterns": 8,
+        "oreOrders": 1
+      }
+    },
+    "536": {
+      "id": 536,
+      "chapterIndex": 89,
+      "chestTarget": 31500,
+      "starScoreTarget": 39800,
+      "speedTargetMs": 121000,
+      "miningMultiplier": 90,
+      "chestCoins": {
+        "1": 45000,
+        "2": 4000,
+        "3": 23250
+      },
+      "honourElements": {
+        "relics": 2,
+        "oreOrders": 2
+      }
+    },
+    "537": {
+      "id": 537,
+      "chapterIndex": 89,
+      "chestTarget": 37000,
+      "starScoreTarget": 46800,
+      "speedTargetMs": 87000,
+      "miningMultiplier": 90,
+      "chestCoins": {
+        "1": 45000,
+        "2": 4000,
+        "3": 23250
+      },
+      "honourElements": {
+        "lanterns": 6,
+        "oreOrders": 2
+      }
+    },
+    "538": {
+      "id": 538,
+      "chapterIndex": 89,
+      "chestTarget": 49000,
+      "starScoreTarget": 61400,
+      "speedTargetMs": 161000,
+      "miningMultiplier": 90,
+      "chestCoins": {
+        "1": 45000,
+        "2": 4000,
+        "3": 23250
+      },
+      "honourElements": {
+        "relics": 4,
+        "lanterns": 2,
+        "oreOrders": 2
+      }
+    },
+    "539": {
+      "id": 539,
+      "chapterIndex": 89,
+      "chestTarget": 25500,
+      "starScoreTarget": 32000,
+      "speedTargetMs": 83000,
+      "miningMultiplier": 90,
+      "chestCoins": {
+        "1": 45000,
+        "2": 4000,
+        "3": 23250
+      },
+      "honourElements": {
+        "lanterns": 6,
+        "oreOrders": 1
+      }
+    },
+    "540": {
+      "id": 540,
+      "chapterIndex": 89,
+      "chestTarget": 67000,
+      "starScoreTarget": 84000,
+      "speedTargetMs": 111000,
+      "miningMultiplier": 90,
+      "chestCoins": {
+        "1": 45000,
+        "2": 4000,
+        "3": 23250
+      },
+      "honourElements": {
+        "relics": 1,
+        "lanterns": 5,
+        "oreOrders": 2
+      }
+    },
+    "541": {
+      "id": 541,
+      "chapterIndex": 90,
+      "chestTarget": 25000,
+      "starScoreTarget": 30800,
+      "speedTargetMs": 115000,
+      "miningMultiplier": 91,
+      "chestCoins": {
+        "1": 45500,
+        "2": 4000,
+        "3": 23500
+      },
+      "honourElements": {
+        "relics": 2
+      }
+    },
+    "542": {
+      "id": 542,
+      "chapterIndex": 90,
+      "chestTarget": 57000,
+      "starScoreTarget": 71200,
+      "speedTargetMs": 155000,
+      "miningMultiplier": 91,
+      "chestCoins": {
+        "1": 45500,
+        "2": 4000,
+        "3": 23500
+      },
+      "honourElements": {
+        "relics": 4
+      }
+    },
+    "543": {
+      "id": 543,
+      "chapterIndex": 90,
+      "chestTarget": 62500,
+      "starScoreTarget": 78200,
+      "speedTargetMs": 157000,
+      "miningMultiplier": 91,
+      "chestCoins": {
+        "1": 45500,
+        "2": 4000,
+        "3": 23500
+      },
+      "honourElements": {
+        "relics": 4,
+        "gates": 2
+      }
+    },
+    "544": {
+      "id": 544,
+      "chapterIndex": 90,
+      "chestTarget": 62500,
+      "starScoreTarget": 78600,
+      "speedTargetMs": 195000,
+      "miningMultiplier": 91,
+      "chestCoins": {
+        "1": 45500,
+        "2": 4000,
+        "3": 23500
+      },
+      "honourElements": {
+        "relics": 6
+      }
+    },
+    "545": {
+      "id": 545,
+      "chapterIndex": 90,
+      "chestTarget": 27500,
+      "starScoreTarget": 34400,
+      "speedTargetMs": 95000,
+      "miningMultiplier": 91,
+      "chestCoins": {
+        "1": 45500,
+        "2": 4000,
+        "3": 23500
+      },
+      "honourElements": {
+        "relics": 1,
+        "oreOrders": 1
+      }
+    },
+    "546": {
+      "id": 546,
+      "chapterIndex": 90,
+      "chestTarget": 63500,
+      "starScoreTarget": 79400,
+      "speedTargetMs": 202000,
+      "miningMultiplier": 91,
+      "chestCoins": {
+        "1": 45500,
+        "2": 4000,
+        "3": 23500
+      },
+      "honourElements": {
+        "relics": 6,
+        "gates": 3
+      }
     }
   },
   "chapters": [
@@ -49524,6 +51866,246 @@
         "quantity": 1
       },
       "overflowCoins": 6700
+    },
+    {
+      "index": 67,
+      "id": "riverglass-seams",
+      "gift": {
+        "id": "tile-breaker",
+        "kind": "power",
+        "quantity": 1
+      },
+      "overflowCoins": 6800
+    },
+    {
+      "index": 68,
+      "id": "floatstone-shafts",
+      "gift": {
+        "id": "tnt",
+        "kind": "power",
+        "quantity": 1
+      },
+      "overflowCoins": 6900
+    },
+    {
+      "index": 69,
+      "id": "glowing-fossils",
+      "gift": {
+        "id": "color-wand",
+        "kind": "power",
+        "quantity": 1
+      },
+      "overflowCoins": 7000
+    },
+    {
+      "index": 70,
+      "id": "rising-and-falling",
+      "gift": {
+        "id": "clear-row",
+        "kind": "power",
+        "quantity": 1
+      },
+      "overflowCoins": 7100
+    },
+    {
+      "index": 71,
+      "id": "rigging-vault",
+      "gift": {
+        "id": "tile-breaker",
+        "kind": "power",
+        "quantity": 1
+      },
+      "overflowCoins": 7200
+    },
+    {
+      "index": 72,
+      "id": "brazier-chimney",
+      "gift": {
+        "id": "tnt",
+        "kind": "power",
+        "quantity": 1
+      },
+      "overflowCoins": 7300
+    },
+    {
+      "index": 73,
+      "id": "starlit-survey",
+      "gift": {
+        "id": "color-wand",
+        "kind": "power",
+        "quantity": 1
+      },
+      "overflowCoins": 7400
+    },
+    {
+      "index": 74,
+      "id": "lens-gallery",
+      "gift": {
+        "id": "clear-row",
+        "kind": "power",
+        "quantity": 1
+      },
+      "overflowCoins": 7500
+    },
+    {
+      "index": 75,
+      "id": "spore-observatory",
+      "gift": {
+        "id": "tile-breaker",
+        "kind": "power",
+        "quantity": 1
+      },
+      "overflowCoins": 7600
+    },
+    {
+      "index": 76,
+      "id": "phase-vault",
+      "gift": {
+        "id": "tnt",
+        "kind": "power",
+        "quantity": 1
+      },
+      "overflowCoins": 7700
+    },
+    {
+      "index": 77,
+      "id": "comet-frost",
+      "gift": {
+        "id": "color-wand",
+        "kind": "power",
+        "quantity": 1
+      },
+      "overflowCoins": 7800
+    },
+    {
+      "index": 78,
+      "id": "lens-vault",
+      "gift": {
+        "id": "clear-row",
+        "kind": "power",
+        "quantity": 1
+      },
+      "overflowCoins": 7900
+    },
+    {
+      "index": 79,
+      "id": "portal-sidings",
+      "gift": {
+        "id": "tile-breaker",
+        "kind": "power",
+        "quantity": 1
+      },
+      "overflowCoins": 8000
+    },
+    {
+      "index": 80,
+      "id": "moon-gem-freight",
+      "gift": {
+        "id": "tnt",
+        "kind": "power",
+        "quantity": 1
+      },
+      "overflowCoins": 8100
+    },
+    {
+      "index": 81,
+      "id": "breakthrough",
+      "gift": {
+        "id": "color-wand",
+        "kind": "power",
+        "quantity": 1
+      },
+      "overflowCoins": 8200
+    },
+    {
+      "index": 82,
+      "id": "elevator-foundations",
+      "gift": {
+        "id": "clear-row",
+        "kind": "power",
+        "quantity": 1
+      },
+      "overflowCoins": 8300
+    },
+    {
+      "index": 83,
+      "id": "portal-pearls",
+      "gift": {
+        "id": "tile-breaker",
+        "kind": "power",
+        "quantity": 1
+      },
+      "overflowCoins": 8400
+    },
+    {
+      "index": 84,
+      "id": "ribbon-foundry",
+      "gift": {
+        "id": "tnt",
+        "kind": "power",
+        "quantity": 1
+      },
+      "overflowCoins": 8500
+    },
+    {
+      "index": 85,
+      "id": "upside-hollow",
+      "gift": {
+        "id": "color-wand",
+        "kind": "power",
+        "quantity": 1
+      },
+      "overflowCoins": 8600
+    },
+    {
+      "index": 86,
+      "id": "twin-gravity",
+      "gift": {
+        "id": "clear-row",
+        "kind": "power",
+        "quantity": 1
+      },
+      "overflowCoins": 8700
+    },
+    {
+      "index": 87,
+      "id": "moondust-beds",
+      "gift": {
+        "id": "tile-breaker",
+        "kind": "power",
+        "quantity": 1
+      },
+      "overflowCoins": 8800
+    },
+    {
+      "index": 88,
+      "id": "moon-lock",
+      "gift": {
+        "id": "tnt",
+        "kind": "power",
+        "quantity": 1
+      },
+      "overflowCoins": 8900
+    },
+    {
+      "index": 89,
+      "id": "willowkin-float-grove",
+      "gift": {
+        "id": "color-wand",
+        "kind": "power",
+        "quantity": 1
+      },
+      "overflowCoins": 9000
+    },
+    {
+      "index": 90,
+      "id": "starfall-cavern",
+      "gift": {
+        "id": "clear-row",
+        "kind": "power",
+        "quantity": 1
+      },
+      "overflowCoins": 9100
     }
   ],
   "economy": {
@@ -49669,7 +52251,9 @@
       "emerald",
       "topaz",
       "amethyst",
-      "moonstone"
+      "moonstone",
+      "peridot",
+      "starmetal"
     ],
     "fusions": [
       "bomb+bomb",
@@ -50310,7 +52894,7 @@
     "issuedRun": 0,
     "settledRun": 0,
     "honours": {
-      "version": 3,
+      "version": 4,
       "earned": {},
       "counts": {
         "gems": {},
@@ -50323,8 +52907,8 @@
       },
       "showcase": [],
       "backfilled": 0,
-      "seenGeneration": 3
+      "seenGeneration": 4
     }
   },
-  "contentDigest": "3a1e1d9cf2f50a20c2064c336b94e6968b0d06d8ca9ecbd2ce14928bc22bb5d4"
+  "contentDigest": "e3a1b8933c707fcd0335f70fdc1446792aefb8b2013a8a8dda67d426c453402b"
 }

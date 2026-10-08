@@ -5,6 +5,8 @@ import { DEEP_MINE_SPRITES } from '../src/data/mineThemes.js';
 const output = new URL('../src/assets/board/', import.meta.url);
 await mkdir(output, { recursive: true });
 const types = ['ruby', 'sapphire', 'emerald', 'topaz', 'amethyst', 'moonstone'];
+// Later gems have only the classic cut.
+const laterTypes = ['peridot', 'starmetal'];
 const groups = {
   'board-core': [
     ['gem-relic', 'relic.svg', 160],
@@ -30,7 +32,7 @@ const groups = {
   ],
 };
 for (const finish of ['classic', 'cut', 'geode'])
-  groups[`gems-${finish}`] = types.map((t) => [
+  groups[`gems-${finish}`] = (finish === 'classic' ? [...types, ...laterTypes] : types).map((t) => [
     `gem-${finish === 'classic' ? '' : finish + '-'}${t}`,
     finish === 'classic' ? `${t}.svg` : `gems/${finish}/${t}.svg`,
     160,

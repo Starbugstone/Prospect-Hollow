@@ -3,6 +3,11 @@
 const UPDATES = [
   {
     date: '2026-10-08',
+    title: 'The floating seam: 144 new mine puzzles',
+    text: 'The campaign now reaches level 546. Lift floatstones to sky hatches, bend beams with lens mirrors, ride portals, break into sealed chambers and turn whole caverns upside down with moon locks and dials. Peridot and starmetal join the gems, and moves stay unlimited.',
+  },
+  {
+    date: '2026-10-08',
     title: 'Twin Hollows: a new frontier on the Moon',
     text: 'Ride the ribbon to New Hollow and build a Moon settlement: settler domes, crater ice, a greenhouse lit by Earth and a Willowkin garden under glass. Back in the valley, a few homecoming landmarks light twin lanterns, Moon guests ride down the elevator, and visitors to your shared town can see your Moon too.',
   },

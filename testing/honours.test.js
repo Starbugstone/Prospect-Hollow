@@ -4,6 +4,7 @@ import {
   COUNTERS,
   FUSION_MASTER_KEYS,
   GEM_GOALS,
+  GEM_DIAMONDS,
   HONOURS,
   HONOURS_VERSION,
   HONOUR_ID,
@@ -132,7 +133,9 @@ describe('The honours registry', () => {
         `gem-${gem}-bronze`,
         `gem-${gem}-silver`,
         `gem-${gem}-gold`,
+        ...(GEM_DIAMONDS[gem] ? [`gem-${gem}-diamond`] : []),
       ]);
+      if (GEM_DIAMONDS[gem]) expect(GEM_DIAMONDS[gem]).toBeGreaterThan(GEM_GOALS[gem][2]);
     }
   });
 
@@ -166,17 +169,20 @@ describe('The honours registry', () => {
     );
     expect(honourLevels).toEqual(live);
     expect(levelHonourElements(247)).toEqual({ lanterns: 2 });
-    expect(elementLevels('lanterns')).toMatchObject({ pieces: 84, chapters: [42, 62] });
+    expect(elementLevels('lanterns')).toMatchObject({ pieces: 183, chapters: [42, 90] });
   });
 
-  it('sets mine silver within one campaign and gold near one and a half campaigns', () => {
+  it('sets mine silver within one campaign and the top rank near one and a half campaigns', () => {
+    // Shipped goals never move; when the campaign outgrows gold, a diamond rank is added.
     for (const element of MINE_ELEMENTS) {
       const perCampaign = elementLevels(element.id).pieces;
       const [bronze, silver, gold] = element.goals;
+      const top = element.diamond?.goal ?? gold;
       expect(bronze, element.id).toBeLessThan(silver);
       expect(silver, element.id).toBeLessThanOrEqual(perCampaign);
-      expect(gold / perCampaign, element.id).toBeGreaterThan(1.3);
-      expect(gold / perCampaign, element.id).toBeLessThan(1.7);
+      if (element.diamond) expect(element.diamond.goal, element.id).toBeGreaterThan(gold);
+      expect(top / perCampaign, element.id).toBeGreaterThan(1.3);
+      expect(top / perCampaign, element.id).toBeLessThan(1.7);
     }
   });
 
@@ -216,7 +222,11 @@ describe('Measures', () => {
       target: target(id),
     });
     expect(added(at(10, id - 1))).toEqual([]);
-    expect(bestScoreRun({ 500: { score: 1e9, stars: 3 } }, SCORE_FROM_LEVEL, 500)).toBeNull();
+    // A level past the campaign has no star target, so it never counts.
+    const beyond = LEVEL_COUNT + 1;
+    expect(
+      bestScoreRun({ [beyond]: { score: 1e9, stars: 3 } }, SCORE_FROM_LEVEL, beyond),
+    ).toBeNull();
   });
 
   it('announces only the highest new rank of a family', () => {

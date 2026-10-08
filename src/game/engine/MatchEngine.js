@@ -1,4 +1,5 @@
 import { BonusActivator } from './BonusActivator.js';
+import { blastLog } from './LensBeams.js';
 import { applyBonuses, detectBonusFromMatches } from './MatchPatterns.js';
 import { BOARD_BONUSES, canSwapCells, canSwapGem, isAdjacent } from './TileRules.js';
 import { getBonusFusion } from './BonusFusion.js';
@@ -23,7 +24,7 @@ export class MatchEngine {
       !canSwapGem(board[index], tiles[index])
     )
       return noMatch(board, cols, rows);
-    const blasts = new Map();
+    const blasts = blastLog();
     const indices = bonusActivator.activate(
       board,
       cols,
@@ -70,7 +71,7 @@ export class MatchEngine {
         : null;
     // Remember the original pair before a matched jewel becomes a new bonus.
     const pendingBonus = matches.length && usesBonus ? { swap, fusion, swapGems } : null;
-    const blasts = new Map();
+    const blasts = blastLog();
     const bonusClear = pendingBonus
       ? []
       : bonusActivator.activate(nextBoard, cols, rows, swap, fusion, null, tiles, blasts);

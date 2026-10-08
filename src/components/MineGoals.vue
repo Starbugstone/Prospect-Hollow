@@ -32,7 +32,22 @@ const groups = [
     id: 'blast-gate',
     label: 'Blast gates',
     art: '/art/obstacles/blast-gate.svg',
-    value: (tile) => (tile.bonusOnly && tile.fossilGroup == null ? tile.health : 0),
+    value: (tile) =>
+      tile.bonusOnly && tile.fossilGroup == null && !tile.lensOnly && tile.waist == null
+        ? tile.health
+        : 0,
+  },
+  {
+    id: 'cracked-wall',
+    label: 'Cracked walls',
+    art: '/art/obstacles/cracked-wall.svg',
+    value: (tile) => (tile.waist != null ? tile.health : 0),
+  },
+  {
+    id: 'starglass',
+    label: 'Starglass',
+    art: '/art/obstacles/starglass.svg',
+    value: (tile) => (tile.lensOnly ? tile.health : 0),
   },
   {
     id: 'lantern',
@@ -57,9 +72,15 @@ const groups = [
     label: 'Ice',
     art: '/art/ice/frost.svg',
     value: (tile) =>
-      tile.type !== 'blocker' && !tile.sealColor && tile.fossilGroup == null
+      tile.type !== 'blocker' && !tile.sealColor && !tile.phaseSeal && tile.fossilGroup == null
         ? (tile.health ?? 0)
         : 0,
+  },
+  {
+    id: 'phase-seal',
+    label: 'Phase seals',
+    art: '/art/obstacles/phase-seal.svg',
+    value: (tile) => (tile.phaseSeal ? (tile.health ?? 0) : 0),
   },
   {
     id: 'stone',
@@ -81,6 +102,8 @@ const groups = [
     value: (tile) => (tile.sealColor ? tile.health : 0),
   },
 ];
+const cargo = (board, float) =>
+  (board ?? []).filter((gem) => gem?.type === 'relic' && !!gem.float === float).length;
 const goals = computed(() => {
   const theme = game.currentLevel?.config.theme;
   const initial = deepMineProgress(props.initialTiles);
@@ -117,17 +140,30 @@ const goals = computed(() => {
         total: props.initialTiles.reduce((sum, tile) => sum + g.value(tile), 0),
         count: game.tiles.reduce((sum, tile) => sum + g.value(tile), 0),
       })),
-    ...(game.totalRelics
-      ? [
-          {
-            id: 'relic',
-            label: delivery.goalLabel,
-            art: delivery.art,
-            count: game.remainingRelics,
-            total: game.totalRelics,
-          },
-        ]
-      : []),
+    // Floatstones rise to sky hatches; other relics travel to their baskets.
+    ...[
+      {
+        id: 'relic',
+        label: delivery.goalLabel,
+        art: delivery.art,
+        float: false,
+      },
+      {
+        id: 'floatstone',
+        label: 'Floatstones',
+        art: '/art/obstacles/floatstone.svg',
+        float: true,
+      },
+    ]
+      .map(({ float, ...goal }) => {
+        const floats = cargo(game.currentLevel?.config.board, true);
+        return {
+          ...goal,
+          total: float ? floats : game.totalRelics - floats,
+          count: cargo(game.board, float),
+        };
+      })
+      .filter((goal) => goal.total > 0),
   ];
 });
 </script>

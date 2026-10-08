@@ -177,7 +177,7 @@ describe('The honours collection', () => {
     const sapphire = card(html, 'gem-sapphire');
     expect(sapphire).toContain('is-locked');
     expect(sapphire).toContain('honour-badge-locked');
-    expect(sapphire).toContain('No rank yet · 0 of 3');
+    expect(sapphire).toContain('No rank yet · 0 of 4');
     expect(sapphire).toContain('330 / 500 sapphires collected');
     expect(sapphire).toMatch(/Sapphire Laureate<span class="town-sr-only"> · Not yet earned/);
   });
@@ -221,7 +221,7 @@ describe('The honours collection', () => {
     const html = await collection(state, { tab: 'mine' });
     const lanterns = elementLevels('lanterns');
     const lamplighter = card(html, 'mine-lanterns');
-    expect(lamplighter).toContain('Bronze · 1 of 3');
+    expect(lamplighter).toContain('Bronze · 1 of 4');
     expect(lamplighter).toContain('42 / 50 lanterns lit');
     expect(lamplighter).toContain(
       `${lanterns.levels.length} levels · chapters ${lanterns.chapters[0]}–${lanterns.chapters[1]}`,
@@ -335,7 +335,7 @@ describe('The honours collection', () => {
     expect(card(html, 'score')).toContain(
       'Rang suivant · Or · Légende du score — Trois fois l’objectif des étoiles',
     );
-    expect(card(html, 'gem-sapphire')).toContain('Aucun rang · 0 sur 3');
+    expect(card(html, 'gem-sapphire')).toContain('Aucun rang · 0 sur 4');
     const town = await collection(townState(), { tab: 'town' });
     expect(card(town, 'ages')).toContain(
       'Ère actuelle : Ville connectée · prochaine étape : terminer « L’ère des lumières douces »',
@@ -395,8 +395,9 @@ describe('The honour detail', () => {
 
   it('lays out every rank as a ladder with its metal, date and progress on the next', async () => {
     const html = await detail('mine-lanterns');
-    const [bronze, silver, gold] = rungs(html);
-    expect(rungs(html)).toHaveLength(3);
+    const [bronze, silver, gold, diamond] = rungs(html);
+    // Lamplighter gained a diamond rank with levels 403–546.
+    expect(rungs(html)).toHaveLength(4);
     expect(bronze).toContain('is-earned');
     expect(bronze).toContain('Bronze · Easy');
     expect(bronze).toContain('Light 10 lanterns in completed puzzles.');
@@ -410,7 +411,8 @@ describe('The honour detail', () => {
     expect(gold).toContain('Light 125 lanterns in completed puzzles.');
     expect(gold).toContain('Not yet earned');
     expect(gold).not.toContain('progressbar');
-    expect(html).toContain('Bronze · 1 of 3');
+    expect(diamond).toContain('Light 275 lanterns in completed puzzles.');
+    expect(html).toContain('Bronze · 1 of 4');
     expect(html).toContain('Where to make progress');
     expect(html).toMatch(/<button[^>]*>\s*Add to showcase/);
     expect(html).not.toMatch(/<button[^>]*disabled[^>]*>\s*Add to showcase/);
@@ -447,7 +449,7 @@ describe('The honour detail', () => {
   it('keeps a locked honour off the showcase', async () => {
     const html = await detail('gem-sapphire');
     expect(html).toContain('honour-badge-locked');
-    expect(html).toContain('No rank yet · 0 of 3');
+    expect(html).toContain('No rank yet · 0 of 4');
     expect(html).toMatch(/<button[^>]*disabled[^>]*>\s*Add to showcase/);
     expect(html).toContain('Earn this honour to show it to visitors.');
   });

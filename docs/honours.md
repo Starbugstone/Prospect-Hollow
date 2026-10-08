@@ -50,6 +50,26 @@ with the content (see [Extending content](#extending-content)).
 
 A rank without its own name uses the family name; the metal is always shown beside it.
 
+**Floating seam additions (honours version 4).** Levels 403–546 added two gems and outgrew
+several shipped gold goals, so these ranks were appended (shipped goals are unchanged):
+
+| Family                   | Bronze | Silver | Gold   | Diamond (new) |
+| ------------------------ | ------ | ------ | ------ | ------------- |
+| Ruby, Sapphire, Emerald  | 500    | 10,000 | 25,000 | 40,000        |
+| Topaz Laureate           | 500    | 6,000  | 16,000 | 22,000        |
+| Amethyst Laureate        | 500    | 6,000  | 16,000 | 20,000        |
+| Moonstone Laureate       | 500    | 6,000  | 16,000 | 21,000        |
+| Peridot Laureate (new)   | 500    | 4,500  | 9,000  | —             |
+| Starmetal Laureate (new) | 500    | 4,000  | 7,800  | —             |
+| Relic Keeper             | 10     | 125    | 360    | 650           |
+| Lamplighter              | 10     | 50     | 125    | 275           |
+| Ore Merchant             | 10     | 40     | 110    | 340           |
+| Core Engineer            | 10     | 50     | 125    | 190           |
+| Gate Breaker             | 10     | 50     | 130    | 300           |
+
+Floatstones count as relics; starglass, lenses, phase seals, portals, cracked walls and the
+moon lock and dial are `NON_MASTERY_ELEMENTS`.
+
 - Fusion Master lists its six fusions (`FUSION_MASTER_KEYS`); a later fusion joins a new rank or
   `LATER_FUSIONS`, never that list.
 - Town Guardian counts any incident kind in any era: a bandit raid, cargo theft, workshop fire or
@@ -176,6 +196,19 @@ million for Moonward.
 Mine elements per campaign: relics 242 (from chapter 10), lanterns 84 (chapter 42), survey trails
 39 (chapter 44), ore orders 73 (chapter 41), charge cores 85 (chapter 55), blast gates 89
 (chapter 63). Their silver goals fall shortly after the element's content, gold at about 1.5×.
+
+Re-measured on 2026-10-08 for the 546-level campaign, after the new levels were tuned to the
+deep-mine effort (`src/data/honourLevels.json`): relics 430, lanterns 183, survey trails 44,
+ore orders 227, charge cores 125, blast gates 202. Gold fell below 1.3 campaigns for all but
+survey trails, so each of those families gained a diamond rank at about 1.5 campaigns (table
+above); `testing/honours.test.js` now checks a family's top rank. A 30-seed pass over levels
+403–546 (`node scripts/measure-campaign.mjs . 30 546 403,…,546`) collected per pass (median per
+level, summed): ruby 9,212, sapphire 9,196, emerald 9,154, topaz 3,212, amethyst 1,421,
+moonstone 2,200, peridot 5,922 and starmetal 5,199. Added to the 402-level figures above, the
+common gems reach about 27,000 per campaign, topaz 15,000, amethyst 13,200 and moonstone
+14,000, so every gem gained a diamond at about 1.5 campaigns. Peridot appears from level 403
+and starmetal from 439; their silver sits inside one pass of those levels and gold at about
+1.5 passes.
 Visitor and explorer goals are social choices (1/5/15 and 5/15/30), not simulated.
 
 Monument milestone checked on 2026-10-06 with
