@@ -232,6 +232,12 @@ describe('Player data services', () => {
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36 Edg/129.0',
       ),
     ).toBe('Edge on Windows');
+    // The same table as the admin panel: Edge on Android names itself EdgA.
+    expect(
+      describeBrowser(
+        'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Mobile Safari/537.36 EdgA/129.0',
+      ),
+    ).toBe('Edge on Android');
     expect(describeBrowser(null)).toBe('');
     expect(describeBrowser('curl/8.0')).toBe('curl/8.0');
     setLocale('fr');

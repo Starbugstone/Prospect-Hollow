@@ -1,3 +1,5 @@
+import { userAgentParts } from '../services/userAgent';
+
 // Display helpers for the admin panel. Times from the API are Unix seconds.
 export function relativeTime(seconds, now = Date.now() / 1000) {
   if (!seconds) return 'never';
@@ -33,24 +35,7 @@ export const whole = (value) => (Number(value) || 0).toLocaleString('en-US');
 // A short "Browser on OS" name; the raw user agent stays available on hover.
 export function describeAgent(agent) {
   if (!agent) return 'Unknown';
-  const browser =
-    [
-      [/EdgA?\//, 'Edge'],
-      [/SamsungBrowser\//, 'Samsung Internet'],
-      [/OPR\//, 'Opera'],
-      [/Firefox\/|FxiOS\//, 'Firefox'],
-      [/Chrome\/|CriOS\//, 'Chrome'],
-      [/Safari\//, 'Safari'],
-    ].find(([pattern]) => pattern.test(agent))?.[1] ?? 'Other browser';
-  const system =
-    [
-      [/Android/, 'Android'],
-      [/iPhone|iPad|iPod/, 'iOS'],
-      [/Windows/, 'Windows'],
-      [/Mac OS X|Macintosh/, 'macOS'],
-      [/CrOS/, 'ChromeOS'],
-      [/Linux/, 'Linux'],
-    ].find(([pattern]) => pattern.test(agent))?.[1] ?? '';
+  const { browser = 'Other browser', system } = userAgentParts(agent);
   return system ? `${browser} on ${system}` : browser;
 }
 

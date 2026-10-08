@@ -15,7 +15,6 @@ import {
   MOON_BUILDINGS,
   createTown,
 } from '../src/data/town';
-import { isMoonBuilding } from '../src/data/city';
 import {
   MOON_CRATER_RADIUS,
   MOON_LOTS,
@@ -157,15 +156,17 @@ describe('New Hollow buildings', () => {
     expect(EARTH_BUILDINGS.length + MOON_BUILDINGS.length).toBe(BUILDINGS.length);
     const town = twinTown();
     for (const b of MOON_BUILDINGS) {
-      expect(isMoonBuilding(b.id)).toBe(true);
+      expect(b.settlement).toBe('moon');
       expect(PLOTS[b.id], b.id).toBeUndefined();
       expect(MOON_LOTS[b.id], b.id).toBeTruthy();
       expect(b.introducedEra).toBe('twin-hollows');
       expect(b.unlock).toEqual([{ id: 'spaceElevator', level: 1 }]);
     }
-    expect(visiblePlots(town).some(({ id }) => isMoonBuilding(id))).toBe(false);
+    expect(visiblePlots(town).some(({ id }) => BUILDING_BY_ID[id]?.settlement === 'moon')).toBe(
+      false,
+    );
     expect(PLOTS.homecomingHall).toBeTruthy();
-    expect(isMoonBuilding('homecomingHall')).toBe(false);
+    expect(BUILDING_BY_ID.homecomingHall.settlement).toBeUndefined();
   });
 
   it('keeps every lot inside the crater, off the ring road and apart from its neighbors', () => {

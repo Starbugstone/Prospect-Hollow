@@ -51,7 +51,7 @@
   </div>
 </template>
 <script setup>
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref } from 'vue';
 import { whole } from '../format';
 import { typedValue, validValue } from '../inventory';
 // A fact with a pencil for support's quick fixes; without a field it is read only.
@@ -70,6 +70,7 @@ const editing = ref(false),
   saved = ref(false),
   input = ref(null);
 let savedTimer;
+onBeforeUnmount(() => clearTimeout(savedTimer));
 // The coin ceiling is technical, not a limit worth showing.
 const shownMax = computed(() => (props.field.max < 1e6 ? whole(props.field.max) : ''));
 const hint = computed(() =>

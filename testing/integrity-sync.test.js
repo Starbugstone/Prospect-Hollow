@@ -175,6 +175,26 @@ it('loads a support reset over a blocked upload without asking, keeping a backup
   expect([...preserved.values()].map((saved) => saved.profile.town.coins)).toEqual([11]);
 });
 
+it('marks a blocked town missing once the cloud no longer has it, without failing the sync', async () => {
+  advance();
+  request.mockImplementation(async (_path, body) => {
+    if (!body) return copy(remote);
+    throw Object.assign(new Error('Your local save is kept.'), {
+      status: 422,
+      data: { code: 'save_integrity_mismatch' },
+    });
+  });
+  await expect(service.sync()).rejects.toThrow('Your local save is kept.');
+  request.mockImplementation(async (_path, body) => {
+    if (body) throw new Error('A blocked town must not upload.');
+    throw Object.assign(new Error('Not found'), { status: 404 });
+  });
+  await service.sync();
+  const local = storage.active();
+  expect(local.meta.missing).toBe(true);
+  expect(local.profile.town.coins).toBe(11);
+});
+
 it.each(['sequence', 'epoch'])(
   'retains an immutable retry when the server acknowledgment has an invalid %s',
   async (field) => {

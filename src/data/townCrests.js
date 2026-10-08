@@ -173,19 +173,25 @@ export const CREST_EMBLEMS = Object.entries({ ...animals, ...symbols }).map(
 );
 export const CREST_EMBLEM_IDS = CREST_EMBLEMS.map(({ id }) => id);
 export const CREST_BY_ID = Object.fromEntries(CREST_EMBLEMS.map((entry) => [entry.id, entry]));
+// Crest outlines and two-colour patterns on a 100 × 120 view box. Their keys are the
+// saved shape and pattern IDs, in the editor's order.
+const OUTLINES = {
+  shield: 'M2 2H98V70Q95 98 50 118Q5 98 2 70Z',
+  swallowtail: 'M2 2H98V118L50 92 2 118Z',
+  pennant: 'M2 2H98V68L50 118 2 68Z',
+  square: 'M2 2H98V118H2Z',
+};
+const PATTERNS = {
+  plain: '',
+  split: 'M50 0H100V120H50Z',
+  diagonal: 'M0 0H100L0 120Z',
+  quartered: 'M0 0H50V60H0ZM50 60H100V120H50Z',
+  stripes: 'M0 20H100V40H0ZM0 60H100V80H0ZM0 100H100V120H0Z',
+  cross: 'M40 0H60V120H40ZM0 45H100V65H0Z',
+};
+export const CREST_SHAPES = Object.keys(OUTLINES);
+export const CREST_PATTERNS = Object.keys(PATTERNS);
 export const crestOutline = (shape) =>
-  ({
-    shield: 'M2 2H98V70Q95 98 50 118Q5 98 2 70Z',
-    swallowtail: 'M2 2H98V118L50 92 2 118Z',
-    pennant: 'M2 2H98V68L50 118 2 68Z',
-    square: 'M2 2H98V118H2Z',
-  })[shape] ?? 'M2 2H98V118H2Z';
+  Object.hasOwn(OUTLINES, shape) ? OUTLINES[shape] : OUTLINES.square;
 export const crestPattern = (pattern) =>
-  ({
-    plain: '',
-    split: 'M50 0H100V120H50Z',
-    diagonal: 'M0 0H100L0 120Z',
-    quartered: 'M0 0H50V60H0ZM50 60H100V120H50Z',
-    stripes: 'M0 20H100V40H0ZM0 60H100V80H0ZM0 100H100V120H0Z',
-    cross: 'M40 0H60V120H40ZM0 45H100V65H0Z',
-  })[pattern] ?? '';
+  Object.hasOwn(PATTERNS, pattern) ? PATTERNS[pattern] : '';

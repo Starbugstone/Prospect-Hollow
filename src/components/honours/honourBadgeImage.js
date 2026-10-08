@@ -11,9 +11,10 @@ function inline(href) {
         .then((response) => (response.ok ? response.blob() : Promise.reject()))
         .then(
           (blob) =>
-            new Promise((resolve) => {
+            new Promise((resolve, reject) => {
               const reader = new FileReader();
               reader.onload = () => resolve(reader.result);
+              reader.onerror = reject;
               reader.readAsDataURL(blob);
             }),
         )

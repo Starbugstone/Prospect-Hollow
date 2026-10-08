@@ -1,5 +1,7 @@
 import { PERSONAL_AREAS, LANDMARK_PROGRESSION, purchaseLandmark } from './townLandmarks';
+import { CREST_PATTERNS, CREST_SHAPES } from './townCrests';
 export { PERSONAL_AREAS, areaStage, areaUnlocked } from './townLandmarks';
+export { CREST_PATTERNS, CREST_SHAPES } from './townCrests';
 
 export const DEFAULT_EMBLEM_COLOUR = '#393c43';
 export const CREST_COLOURS = [
@@ -64,9 +66,6 @@ export const CREST_COLOURS = [
   '#697480',
   '#424c59',
 ];
-export const CREST_SHAPES = ['shield', 'swallowtail', 'pennant', 'square'];
-export const CREST_PATTERNS = ['plain', 'split', 'diagonal', 'quartered', 'stripes', 'cross'];
-
 export const createPersonalisation = () => ({
   version: 3,
   crest: null,

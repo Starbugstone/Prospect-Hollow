@@ -296,10 +296,24 @@ export function createSyncService({
         await recoveries.removeUpload(pending.body.uploadId, owner, id).catch(() => {});
     }
   }
+  // The cloud copy, or null once the server no longer has the town.
+  async function readCloud(id, owner) {
+    try {
+      return await request(`towns/${id}`);
+    } catch (error) {
+      if (error.status !== 404) throw error;
+      if (current(owner))
+        storage.mutate(id, owner, (r) => {
+          r.meta.missing = true;
+        });
+      return null;
+    }
+  }
   async function replaceBlocked(id, owner) {
-    const remote = await request(`towns/${id}`);
+    const remote = await readCloud(id, owner);
     const local = entry(id, owner);
-    if (!current(owner) || !local || !eligible(id, owner) || !uploadBlocked(local.meta)) return;
+    if (!remote || !current(owner) || !local || !eligible(id, owner) || !uploadBlocked(local.meta))
+      return;
     if (remote.townId !== id) throw new Error(WRONG_TOWN);
     if (remote.revision > local.meta.baseRevision) await conflict(id, owner, remote);
   }
@@ -313,20 +327,8 @@ export function createSyncService({
       return upload(id, owner, local.meta.pending, local.meta.pending.resolve);
     if (local.meta.conflict && !canApply(id)) return;
     if (!local.meta.conflict && !pull && !local.meta.dirty) return;
-    let remote;
-    try {
-      remote = await request(`towns/${id}`);
-    } catch (error) {
-      if (error.status === 404) {
-        if (current(owner))
-          storage.mutate(id, owner, (r) => {
-            r.meta.missing = true;
-          });
-        return;
-      }
-      throw error;
-    }
-    if (!current(owner)) return;
+    const remote = await readCloud(id, owner);
+    if (!remote || !current(owner)) return;
     local = entry(id, owner);
     if (!local || !eligible(id, owner)) return;
     // A separate worker may have staged a durable retry while the GET waited.

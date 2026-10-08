@@ -29,7 +29,7 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import { adminApi } from '../api';
-import { privacyUrl } from '../../services/appRoute';
+import { privacyUrl } from '../../services/publicLinks';
 const contact = ref(''),
   saved = ref(''),
   loaded = ref(false),

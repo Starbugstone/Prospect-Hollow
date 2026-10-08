@@ -2,6 +2,7 @@ import { request } from './cloudProfile';
 import { recoveryStore } from './recoveryStore';
 import { downloadSaveFile } from './saveTransfer';
 import { privacyUrl } from './appRoute';
+import { userAgentParts } from './userAgent';
 import { t } from '../i18n';
 
 // The contact address an admin set for privacy requests, or null; no account needed.
@@ -16,26 +17,9 @@ export const confirmEmailChange = (token) =>
   request('account/email/confirm', { token }, 'POST', true);
 
 // "Firefox on Windows" for the last connection, so players recognise their own device.
-const BROWSERS = [
-  ['Edge', /Edg\//],
-  ['Opera', /OPR\//],
-  ['Samsung Internet', /SamsungBrowser\//],
-  ['Firefox', /Firefox\/|FxiOS\//],
-  ['Chrome', /Chrome\/|CriOS\//],
-  ['Safari', /Safari\//],
-];
-const SYSTEMS = [
-  ['Android', /Android/],
-  ['iOS', /iPhone|iPad|iPod/],
-  ['Windows', /Windows/],
-  ['macOS', /Mac OS X|Macintosh/],
-  ['ChromeOS', /CrOS/],
-  ['Linux', /Linux/],
-];
 export function describeBrowser(agent) {
   if (!agent) return '';
-  const browser = BROWSERS.find(([, pattern]) => pattern.test(agent))?.[0];
-  const system = SYSTEMS.find(([, pattern]) => pattern.test(agent))?.[0];
+  const { browser, system } = userAgentParts(agent);
   if (browser && system) return t('{browser} on {system}', { browser, system });
   return browser ?? system ?? agent.slice(0, 60);
 }

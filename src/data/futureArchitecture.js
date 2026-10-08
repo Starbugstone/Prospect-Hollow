@@ -2,7 +2,7 @@ import { CITY_BUILDINGS, CITY_FAMILIES } from './city';
 import { COZY_LANDMARKS } from './cozyArchitecture';
 import { ERAS, eraEvolution } from './eras';
 
-// The three eras after Riverlight share one set of building archetypes; each
+// The eras after Riverlight share one set of building archetypes; each
 // architecture supplies its own walls, roofs and finishing flourish. Palettes use
 // the cozy colour roles, so paint, watermill, mine and SVG consumers read the same
 // keys. Eight opaque colours keep every batched plot to eight materials or fewer.

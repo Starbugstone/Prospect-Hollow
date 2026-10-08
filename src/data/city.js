@@ -414,9 +414,6 @@ const twinBuildings = [
     : { settlement: 'moon', unlock: [{ id: 'spaceElevator', level: 1 }] }),
 }));
 for (const building of twinBuildings) CITY_FAMILIES[building.kind] = building.family;
-/** Whether a building stands on the Moon map instead of a valley lot. */
-export const isMoonBuilding = (id) =>
-  twinBuildings.some((building) => building.id === id && building.settlement === 'moon');
 
 // Each level's benefit line follows the building's effects, so a balance change
 // can never leave an outdated number in the text.

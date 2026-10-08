@@ -2,11 +2,11 @@ import { continueSupplyTiers, defineEra } from './eraDefinitions';
 // Every era after Tomorrow shares these city services and lifecycles; each one
 // supplies its own architecture, prices, content and appearance. Their airport,
 // station, port and traffic keep Tomorrow's sky saucer, solar express, hover ferry
-// and hover pods.
+// and hover pods, and their Willowkin neighbors walk the streets (`garden-town`).
 const FUTURE_CITY_EVOLUTION = {
   style: 'city',
   transportStyle: 'rounded',
-  wildlife: 'garden',
+  wildlife: 'garden-town',
   cityAssets: 'contemporary',
   detailAsset: 'digital-detail',
   airportStyle: 'connected',
@@ -235,6 +235,8 @@ export const ERAS = continueSupplyTiers(
         ...FUTURE_CITY_EVOLUTION,
         architecture: 'cozy',
         cozyStyle: 'canopy',
+        // The first Willowkin saplings stay in the gardens.
+        wildlife: 'garden',
         prices: [10400, 12200, 14000],
         wardrobe: 'canopy',
         newBuildingPrices: [11500, 14000, 16500],
@@ -264,7 +266,6 @@ export const ERAS = continueSupplyTiers(
         ...FUTURE_CITY_EVOLUTION,
         architecture: 'cozy',
         cozyStyle: 'riverlight',
-        wildlife: 'garden-town',
         prices: [12000, 14000, 16000],
         wardrobe: 'riverlight',
         newBuildingPrices: [13500, 16000, 18500],
@@ -291,7 +292,6 @@ export const ERAS = continueSupplyTiers(
       evolution: {
         ...FUTURE_CITY_EVOLUTION,
         architecture: 'sail',
-        wildlife: 'garden-town',
         waterworks: [195, 201, 207],
         farmCapacity: [162, 168, 174],
         prices: [13600, 15800, 18000],
@@ -320,7 +320,6 @@ export const ERAS = continueSupplyTiers(
       evolution: {
         ...FUTURE_CITY_EVOLUTION,
         architecture: 'observatory',
-        wildlife: 'garden-town',
         waterworks: [213, 219, 225],
         farmCapacity: [180, 186, 192],
         prices: [15200, 17600, 20000],
@@ -349,7 +348,6 @@ export const ERAS = continueSupplyTiers(
       evolution: {
         ...FUTURE_CITY_EVOLUTION,
         architecture: 'homestead',
-        wildlife: 'garden-town',
         waterworks: [233, 241, 249],
         farmCapacity: [198, 204, 210],
         prices: [16800, 19400, 22000],
@@ -379,7 +377,6 @@ export const ERAS = continueSupplyTiers(
       evolution: {
         ...FUTURE_CITY_EVOLUTION,
         architecture: 'twin',
-        wildlife: 'garden-town',
         waterworks: [265, 281, 297],
         farmCapacity: [226, 242, 258],
         prices: [18400, 21000, 23600],
