@@ -1150,7 +1150,8 @@ const { playRaidCue } = useTownAudio(() => ({
   cameraDistance: cameraDistance.value,
   population: people.value,
   construction: activeProjects.value.length > 0,
-  buildCue: construction.value?.serial,
+  // Builds from the build list swap silently.
+  buildCue: construction.value?.instant ? null : construction.value?.serial,
   stable: town.value.buildings.stable > 0 && !motorTraffic(town.value),
   river: true,
   railDepot: town.value.buildings.railDepot > 0 && !modernTransport(town.value, 'railDepot'),
