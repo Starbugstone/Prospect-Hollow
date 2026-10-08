@@ -275,3 +275,5 @@ Act IV · The hollow below (≈ Twin Hollows)
   lantern and cargo levels. Completion verified with 100 hint-led seeds per level, a random
   player and the real game store; targets, honours (ore orders 227 per campaign; every gem now
   has a diamond) and catalogs were recalibrated.
+- 2026-10-08: levels 411 and 429 became six-color boards (amethyst added) in place of their
+  ore orders, after an experiment showed six colors roughly double a board's effort.

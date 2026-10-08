@@ -2918,8 +2918,8 @@
     ],
     "411": [
       {
-        "chestTarget": 48000,
-        "starScoreTarget": 60000,
+        "chestTarget": 23000,
+        "starScoreTarget": 25000,
         "speedTargetMs": 119000
       }
     ],
@@ -3044,9 +3044,9 @@
     ],
     "429": [
       {
-        "chestTarget": 41000,
-        "starScoreTarget": 51600,
-        "speedTargetMs": 125000
+        "chestTarget": 18000,
+        "starScoreTarget": 17800,
+        "speedTargetMs": 127000
       }
     ],
     "430": [

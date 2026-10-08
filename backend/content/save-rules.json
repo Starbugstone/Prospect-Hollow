@@ -48989,8 +48989,8 @@
     "411": {
       "id": 411,
       "chapterIndex": 68,
-      "chestTarget": 48000,
-      "starScoreTarget": 60000,
+      "chestTarget": 23000,
+      "starScoreTarget": 25000,
       "speedTargetMs": 119000,
       "miningMultiplier": 69,
       "chestCoins": {
@@ -48999,8 +48999,7 @@
         "3": 18000
       },
       "honourElements": {
-        "relics": 2,
-        "oreOrders": 2
+        "relics": 2
       }
     },
     "412": {
@@ -49281,9 +49280,9 @@
     "429": {
       "id": 429,
       "chapterIndex": 71,
-      "chestTarget": 41000,
-      "starScoreTarget": 51600,
-      "speedTargetMs": 125000,
+      "chestTarget": 18000,
+      "starScoreTarget": 17800,
+      "speedTargetMs": 127000,
       "miningMultiplier": 72,
       "chestCoins": {
         "1": 36000,
@@ -49291,8 +49290,7 @@
         "3": 18750
       },
       "honourElements": {
-        "relics": 2,
-        "oreOrders": 2
+        "relics": 2
       }
     },
     "430": {
@@ -52912,5 +52910,5 @@
       "seenGeneration": 4
     }
   },
-  "contentDigest": "28e2bd338dfc1be6ce97ad5895a730ca3a41efc851fe7e82136aa2670f37407f"
+  "contentDigest": "e3a1b8933c707fcd0335f70fdc1446792aefb8b2013a8a8dda67d426c453402b"
 }

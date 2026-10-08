@@ -3512,7 +3512,6 @@
   "Three pearls down, four floatstones up. Blast the chains and gates, and every piece finds its way home.": "Trois perles vers le bas, quatre pierres flottantes vers le haut. Faites sauter chaînes et barrières, et chaque pièce trouve son chemin.",
   "A root knot holds the floatstone down. Match right beside the knot to cut every vine at once, then lift the floatstone.": "Un nœud de racines retient la pierre flottante. Faites une combinaison juste à côté du nœud pour couper toutes ses lianes d’un coup, puis faites monter la pierre.",
   "Two knots, two moored floatstones. Cut each knot with a match beside it, or hit it with a bonus.": "Deux nœuds, deux pierres flottantes amarrées. Coupez chaque nœud avec une combinaison à côté, ou touchez-le avec un bonus.",
-  "Thick knots take two hits. Break the stone above each knot so the floatstones have a clear way up.": "Les nœuds épais demandent deux coups. Brisez la pierre au-dessus de chaque nœud pour dégager la montée des pierres flottantes.",
   "Three knots hold three floatstones while two pearls wait above. Cut the knots and send the pearls down past them.": "Trois nœuds retiennent trois pierres flottantes, tandis que deux perles attendent au-dessus. Coupez les nœuds et faites descendre les perles en les croisant.",
   "Slack ropes. Two easy knots, then let the floatstones drift away.": "Cordes lâches. Deux nœuds faciles, puis laissez les pierres flottantes s’envoler.",
   "Cast off every line. Thick knots, a chained floatstone and rock gates: plan bonuses that hit several at once.": "Larguez toutes les amarres. Nœuds épais, pierre flottante enchaînée et barrières rocheuses : prévoyez des bonus qui en touchent plusieurs à la fois.",
@@ -3787,5 +3786,6 @@
   "Level ground: one brazier, one thin floor and a floor of ice.": "Terrain plat : un brasero, un sol mince et un sol de glace.",
   "A drifting rest. Chained gems and a field of ice in the upside-down cavern.": "Une pause à la dérive. Des gemmes enchaînées et un champ de glace dans la caverne renversée.",
   "A rest by the seam. Two chains and a field of ice.": "Une pause près de la jointure. Deux chaînes et un champ de glace.",
-  "Two prisms, two diagonals. The thick starglass in the middle sits where both beams cross; the charge core gives a cross for a second shot.": "Deux prismes, deux diagonales. Le verre d’étoile épais du milieu se trouve là où les deux rayons se croisent ; le noyau de charge donne une croix pour un second tir."
+  "Two prisms, two diagonals. The thick starglass in the middle sits where both beams cross; the charge core gives a cross for a second shot.": "Deux prismes, deux diagonales. Le verre d’étoile épais du milieu se trouve là où les deux rayons se croisent ; le noyau de charge donne une croix pour un second tir.",
+  "Thick knots and banded stone both take two hits. Break the stone above each knot so the floatstones have a clear way up.": "Les nœuds épais et la pierre cerclée demandent deux coups chacun. Brisez la pierre au-dessus de chaque nœud pour dégager la montée des pierres flottantes."
 }

@@ -170,8 +170,11 @@ export const getLevelGemTypes = (id) => {
   const chapterIndex = chapterIndexOf(id);
   const chapter = CHAPTERS[chapterIndex];
   const seam = Math.floor(chapterSlotOf(id) / 2);
+  // A level may add one more color to its seam's set (a six-color board).
+  const extra = chapter.extraColors?.[chapterSlotOf(id)];
   const palettes = chapter.palettes ?? FIVE_COLOR_SEAMS;
-  return [...palettes[(seam + (chapter.palettes ? 0 : chapterIndex)) % palettes.length]];
+  const set = [...palettes[(seam + (chapter.palettes ? 0 : chapterIndex)) % palettes.length]];
+  return extra ? [...set, extra] : set;
 };
 
 export const POWERS = [

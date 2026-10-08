@@ -117,3 +117,12 @@ that picks a random legal move without hints (10 seeds per level) also finished 
 so no layout can be soft-locked. `testing/levels/hollow-store-completion.test.js` plays every
 new level through the real game store beyond 100 moves and after the speed target. Chest and
 star targets were recalibrated after tuning.
+
+## Six-color boards
+
+Two ice-free levels use six colors instead of large ore orders: 411 (Floatstone shafts:
+Stone ceiling) and 429 (Rigging vault: Behind the rigging, now with banded stone). A level's
+`extraColor` adds one gem to its seam's set (amethyst here, since starmetal only appears
+from 439). With 100 hint-led seeds, 411 takes a median of 29 moves (it was 31 with orders)
+and 429 a median of 25 (29.5); both finished every run. Six colors roughly double the effort
+of a board, so they suit only levels that would otherwise need heavy collection goals.

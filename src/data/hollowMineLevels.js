@@ -160,11 +160,8 @@ const PLANS = [
       {
         board: '..E.E../......./..X.X../......./......./......./......./..F.F../.......',
         ice: 0,
-        orders: [
-          ['ruby', 72],
-          ['sapphire', 72],
-        ],
-        chestTarget: 48000,
+        extraColor: 'amethyst',
+        chestTarget: 23000,
         tip: 'Banded stone blocks the way up and takes two hits. Match beside it to break it, then lift the floatstones through.',
       },
       {
@@ -348,15 +345,12 @@ const PLANS = [
         tip: 'Two knots, two moored floatstones. Cut each knot with a match beside it, or hit it with a bonus.',
       },
       {
-        board: '.E...E./......./......./.#...#./Kk...mM/.5...6./......./......./.......',
+        board: '.E...E./......./......./.X...X./Kk...mM/.5...6./......./......./.......',
         ice: 0,
-        orders: [
-          ['ruby', 60],
-          ['sapphire', 60],
-        ],
-        chestTarget: 41000,
+        extraColor: 'amethyst',
+        chestTarget: 18000,
         knotHealth: 2,
-        tip: 'Thick knots take two hits. Break the stone above each knot so the floatstones have a clear way up.',
+        tip: 'Thick knots and banded stone both take two hits. Break the stone above each knot so the floatstones have a clear way up.',
       },
       {
         board: '.E.E.E./......./.R...R./......./.5.6.7./.k.m.n./.K.M.N./......./.E...E.',
@@ -1651,15 +1645,22 @@ const chapterPalettes = (chapter) =>
   ]);
 
 export const HOLLOW_MINE_CHAPTERS = PLANS.map(
-  ({ id, name, cols = COLS, rows = ROWS }, chapter) => ({
-    id,
-    name,
-    theme: id,
-    cols,
-    rows,
-    gemTypeCount: 5,
-    palettes: chapterPalettes(chapter),
-  }),
+  ({ id, name, cols = COLS, rows = ROWS, levels }, chapter) => {
+    // Six-color boards: a level's `extraColor` joins its seam's set.
+    const extraColors = Object.fromEntries(
+      levels.flatMap((level, slot) => (level.extraColor ? [[slot, level.extraColor]] : [])),
+    );
+    return {
+      id,
+      name,
+      theme: id,
+      cols,
+      rows,
+      gemTypeCount: 5,
+      palettes: chapterPalettes(chapter),
+      ...(Object.keys(extraColors).length ? { extraColors } : {}),
+    };
+  },
 );
 export const HOLLOW_MINE_LEVEL_NAMES = PLANS.flatMap(({ name, stops }) =>
   stops.map((stop) => `${name}: ${stop}`),

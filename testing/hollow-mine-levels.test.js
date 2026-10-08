@@ -124,6 +124,15 @@ describe('append-only floating seam chapters', () => {
     }
   });
 
+  it('keeps five colors per board except the chosen six-color levels', () => {
+    const six = hollow
+      .filter((level) => level.boardLayout.gemTypes.length === 6)
+      .map(({ id }) => id);
+    expect(six).toEqual([411, 429]);
+    for (const level of hollow)
+      expect(new Set(level.boardLayout.gemTypes).size).toBe(level.boardLayout.gemTypes.length);
+  });
+
   it('only asks for colors that the level can drop', () => {
     for (const level of hollow) {
       const colors = level.boardLayout.gemTypes;
