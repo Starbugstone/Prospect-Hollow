@@ -206,8 +206,18 @@ export function beginConstructionCue(d, id) {
   d.drawFrame();
 }
 
-export function changeTown(d, town, labels, mineProgress, constructionId, reducedMotion = false) {
+// `instant` (a purchase or finish from the build list) swaps the plot at once: no
+// reveal, and anyone on the site steps off immediately instead of being waited for.
+export function changeTown(
+  d,
+  town,
+  labels,
+  mineProgress,
+  constructionId,
+  { reducedMotion = false, instant = false } = {},
+) {
   const started = performance.now();
+  const reveal = !reducedMotion && !instant;
   d.mineProgress = mineProgress;
   const works = d.staticScenery?.entries.get('mine-works')?.group;
   if (works) updateMineGrowth(works, mineGrowth(mineProgress));
@@ -270,9 +280,10 @@ export function changeTown(d, town, labels, mineProgress, constructionId, reduce
     const queue = [
       ...ids.filter((id) => id !== constructionId),
       ...ids.filter((id) => id === constructionId),
-    ].map((id) => ({ id, town, labels, construction: id === constructionId && !reducedMotion }));
+    ].map((id) => ({ id, town, labels, construction: id === constructionId && reveal }));
     try {
-      if (queue.length > 1) work.queue = queue;
+      if (instant) for (const { id } of queue) swapPlot(d, id, town, labels, { immediate: true });
+      else if (queue.length > 1) work.queue = queue;
       else swapPlot(d, queue[0].id, town, labels, { construction: queue[0].construction });
       record('swap');
       return;
@@ -314,13 +325,14 @@ export function changeTown(d, town, labels, mineProgress, constructionId, reduce
       town,
       labels,
       mineProgress,
-      constructionId: reducedMotion ? null : constructionId,
+      constructionId: reveal ? constructionId : null,
       prepared: { id: constructionId, group: probe, movingPart, footprint },
+      immediate: instant,
     };
     record('prepared-update');
     if (!d.tryActivatePlot()) return;
   } else {
-    d.update(town, labels, mineProgress, reducedMotion ? null : constructionId);
+    d.update(town, labels, mineProgress, reveal ? constructionId : null);
     record('update');
   }
   if (d.cue) d.cue.visible = false;
@@ -340,7 +352,7 @@ export function discardPlotWork(d) {
   plotWork(d).active = null;
 }
 
-function swapPlot(d, id, town, labels, { construction = false } = {}) {
+function swapPlot(d, id, town, labels, { construction = false, immediate = false } = {}) {
   d.finishConstruction();
   invalidatePresentationWork(d);
   d.discardPlotWork();
@@ -366,6 +378,7 @@ function swapPlot(d, id, town, labels, { construction = false } = {}) {
     entries,
     signature,
     construction,
+    immediate,
     parts: timeTown('construction-parts', () => constructionParts(group, partKeys)),
     partKeys,
   };
@@ -406,7 +419,7 @@ export function plotVacant(d, pending) {
   // Anyone still on the site after the grace period, boxed in or held by a
   // crowd, steps off it. The build must not wait on them, or every later
   // build queued behind it keeps its scaffolding and never plays its reveal.
-  if (occupants.length && now - pending.waitStarted < SITE_CLEAR_SECONDS) {
+  if (occupants.length && !pending.immediate && now - pending.waitStarted < SITE_CLEAR_SECONDS) {
     showConstructionGate(d, pending.id);
     for (const actor of occupants) {
       if (actor.motion?.exitTarget) continue;
