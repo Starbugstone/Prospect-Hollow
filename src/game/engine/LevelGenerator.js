@@ -222,12 +222,13 @@ const createExpansionLevel = (id) => {
   const spec = EXPANSION_LEVELS[id - EARLY_LEVEL_COUNT - 1];
   const chapter = chapterIndexOf(id);
   const { cols, rows } = CHAPTERS[chapter];
+  const cellAt = (index) => ({ x: index % cols, y: Math.floor(index / cols) });
   const rng = createSeededRng(id * 1337);
   const layout = new BoardLayout(`level_${id}`, 'RECTANGLE', { cols, rows }, getLevelGemTypes(id));
   const seals = { r: 'ruby', b: 'sapphire', g: 'emerald' };
   const tiles = [...spec.map.replaceAll('/', '')].map((symbol, index) => {
     const tile = { type: 'standard', health: 0, maxHealth: 0 };
-    const cell = { x: index % cols, y: Math.floor(index / cols) };
+    const cell = cellAt(index);
     if (symbol === '_') {
       tile.type = 'void';
       layout.blockedCells.push(cell);
@@ -270,11 +271,7 @@ const createExpansionLevel = (id) => {
   });
   // Relics held by a chain from the start (the chain itself comes from the map).
   for (const index of spec.relics ?? [])
-    layout.initialTilePlacements.push({
-      x: index % cols,
-      y: Math.floor(index / cols),
-      type: 'relic',
-    });
+    layout.initialTilePlacements.push({ ...cellAt(index), type: 'relic' });
   // Sealed chambers: every cell in the listed rows (and columns) waits behind its wall.
   for (const {
     id = 'a',
@@ -286,7 +283,7 @@ const createExpansionLevel = (id) => {
       if (index % cols < left || index % cols > right) continue;
       if (!tile || tile.type === 'void' || tile.waist === id) continue;
       Object.assign(tile, { sealed: true, chamber: id });
-      layout.blockedCells.push({ x: index % cols, y: Math.floor(index / cols) });
+      layout.blockedCells.push(cellAt(index));
     }
   // Portals hand gems falling out of the entrance to the paired exit cell.
   for (const [pair, { from, to }] of (spec.portals ?? []).entries()) {
@@ -297,12 +294,7 @@ const createExpansionLevel = (id) => {
   for (const { index, out } of spec.lenses ?? []) if (tiles[index]) tiles[index].lens = out;
   // Floatstones are relics that rise; a chain or root vine may hold one in place.
   for (const index of spec.floats ?? []) {
-    layout.initialTilePlacements.push({
-      x: index % cols,
-      y: Math.floor(index / cols),
-      type: 'relic',
-      float: true,
-    });
+    layout.initialTilePlacements.push({ ...cellAt(index), type: 'relic', float: true });
     tiles[index].floatStart = true;
   }
   for (const [order, index] of (spec.signals ?? []).entries()) {
@@ -326,14 +318,13 @@ const createExpansionLevel = (id) => {
   for (const root of spec.roots ?? []) {
     if (!Number.isInteger(root.knot) || !tiles[root.knot]) continue;
     tiles[root.knot].type = 'blocker';
-    layout.blockedCells.push({ x: root.knot % cols, y: Math.floor(root.knot / cols) });
+    layout.blockedCells.push(cellAt(root.knot));
   }
   const fossilCells = new Set((spec.fossils ?? []).flatMap((fossil) => fossil.cells ?? []));
   for (const fossil of spec.fossils ?? []) {
     if (!fossil.encased) continue;
     for (const index of fossil.cells ?? [])
-      if (tiles[index] && isPlayableCell(tiles[index]))
-        layout.blockedCells.push({ x: index % cols, y: Math.floor(index / cols) });
+      if (tiles[index] && isPlayableCell(tiles[index])) layout.blockedCells.push(cellAt(index));
   }
   const sporeCells = new Set((spec.spores ?? []).map((spore) => spore.index));
   if (spec.orders?.length) tiles[0].oreOrderGuide = true;

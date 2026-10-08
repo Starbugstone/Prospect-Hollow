@@ -486,7 +486,7 @@ export class TileManager {
   // Low-gravity frames and floatstones reuse the column and shaped routines on a
   // mirrored view of each frame. Floatstones stay pinned while gems pass them.
   applyFramedGravity(board, tiles, cols, rows, gemTypes, iteration, step) {
-    const shaped = isRoutedBoard(tiles);
+    const gravity = isRoutedBoard(tiles) ? this.applyShapedGravity : this.applyColumnGravity;
     for (const frame of gravityFrames(tiles, cols, rows)) {
       const receipts = applyFrameGravity(
         board,
@@ -495,27 +495,7 @@ export class TileManager {
         rows,
         frame,
         (vBoard, vTiles, vCols, vRows, vStep, pinned) =>
-          shaped
-            ? this.applyShapedGravity(
-                vBoard,
-                vTiles,
-                vCols,
-                vRows,
-                gemTypes,
-                iteration,
-                vStep,
-                pinned,
-              )
-            : this.applyColumnGravity(
-                vBoard,
-                vTiles,
-                vCols,
-                vRows,
-                gemTypes,
-                iteration,
-                vStep,
-                pinned,
-              ),
+          gravity.call(this, vBoard, vTiles, vCols, vRows, gemTypes, iteration, vStep, pinned),
         isAnchored,
       );
       step.drops.push(...receipts.drops);
@@ -641,7 +621,10 @@ export class TileManager {
     // a portal can hand gems to a higher cell, so then order by route length to the end.
     const order = Array.from({ length: board.length }, (_, index) => board.length - 1 - index);
     if (tiles.some((tile) => Number.isInteger(tile?.portalTo))) {
-      const remaining = order.map((_, index) => gravityPath(tiles, index, cols, rows).length);
+      const remaining = Array.from(
+        { length: board.length },
+        (_, index) => gravityPath(tiles, index, cols, rows).length,
+      );
       order.sort((a, b) => remaining[a] - remaining[b] || b - a);
     }
     for (const index of order) {

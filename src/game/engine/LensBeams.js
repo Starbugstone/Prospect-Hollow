@@ -92,5 +92,7 @@ export function lensGeometry(index, direction, cols, rows) {
   return { out, angle };
 }
 
+// The cells lens-turned beams reach and the turned segments, filled by `activateBonus`.
+export const lensLog = () => ({ bent: new Set(), beams: [] });
 // A blast ledger (cell → separate blast count) that also records lens-turned beams.
-export const blastLog = () => Object.assign(new Map(), { lenses: { bent: new Set(), beams: [] } });
+export const blastLog = () => Object.assign(new Map(), { lenses: lensLog() });

@@ -109,6 +109,7 @@ const goals = computed(() => {
   const initial = deepMineProgress(props.initialTiles);
   const progress = deepMineProgress(game.tiles);
   const delivery = mineRelicAppearance(theme);
+  const floats = cargo(game.currentLevel?.config.board, true);
   return [
     ...[
       { id: 'fossils', label: 'Fossils', art: '/art/obstacles/fossil.svg' },
@@ -155,14 +156,11 @@ const goals = computed(() => {
         float: true,
       },
     ]
-      .map(({ float, ...goal }) => {
-        const floats = cargo(game.currentLevel?.config.board, true);
-        return {
-          ...goal,
-          total: float ? floats : game.totalRelics - floats,
-          count: cargo(game.board, float),
-        };
-      })
+      .map(({ float, ...goal }) => ({
+        ...goal,
+        total: float ? floats : game.totalRelics - floats,
+        count: cargo(game.board, float),
+      }))
       .filter((goal) => goal.total > 0),
   ];
 });

@@ -113,7 +113,7 @@ export function applyFrameGravity(board, tiles, cols, rows, frame, gravity, anch
     vBoard[target] = gem;
     const path = [];
     for (let cell = v; cell >= target; cell -= cols) path.push(cell);
-    vStep.drops.push({ from: v, to: target, gem, path, float: true });
+    vStep.drops.push({ from: v, to: target, gem, path });
   }
 
   gravity(vBoard, vTiles, cols, vrows, vStep, pinned);
@@ -128,32 +128,25 @@ export function applyFrameGravity(board, tiles, cols, rows, frame, gravity, anch
     for (let cell = from; cell <= to; cell += cols) path.push(cell);
     return path;
   };
+  // Refills that enter at an inner seam stay hidden until they reach their own frame.
+  const seam = rise ? frame.end < rows : frame.start > 0;
   // Pinned floatstones never move again in the gravity pass, so every piece
-  // keeps exactly one receipt. Rectangular receipts gain their straight route.
-  const drops = vStep.drops.map((drop) => ({
-    ...drop,
-    path: drop.path ?? straight(drop.from, drop.to),
-  }));
-  // Rectangular refills enter at the frame's far edge, deepest first.
-  const spawns = vStep.spawns.map((spawn) => ({
-    ...spawn,
-    path: spawn.path ?? straight(spawn.index % cols, spawn.index),
-  }));
+  // keeps exactly one receipt. Rectangular receipts gain their straight route;
+  // rectangular refills enter at the frame's far edge, deepest first.
   return {
-    drops: drops.map((drop) => ({
+    drops: vStep.drops.map((drop) => ({
       ...drop,
       from: real(drop.from),
       to: real(drop.to),
-      path: drop.path.map(real),
+      path: (drop.path ?? straight(drop.from, drop.to)).map(real),
       ...(rise ? { rise } : {}),
     })),
-    spawns: spawns.map((spawn) => ({
+    spawns: vStep.spawns.map((spawn) => ({
       ...spawn,
       index: real(spawn.index),
-      path: spawn.path.map(real),
+      path: (spawn.path ?? straight(spawn.index % cols, spawn.index)).map(real),
       ...(rise ? { rise } : {}),
-      // Refills that enter at an inner seam stay hidden until they reach their own frame.
-      ...((rise ? frame.end < rows : frame.start > 0) ? { frame: [frame.start, frame.end] } : {}),
+      ...(seam ? { frame: [frame.start, frame.end] } : {}),
     })),
   };
 }

@@ -5,6 +5,7 @@ import { detectBonusFromMatches } from './MatchPatterns.js';
 import { signalTargets } from './ChapterMechanics.js';
 import { isPlayableCell, isRoutedBoard } from './BoardTopology.js';
 import { cargoPath, flipGain, isGravitySwitch, usesGravityFrames } from './GravityFrames.js';
+import { lensLog } from './LensBeams.js';
 const bonusActivator = new BonusActivator();
 
 const SPECIAL = new Set(BOARD_BONUSES);
@@ -82,25 +83,24 @@ export class HintEngine {
         : 0;
       // Sealed beds and throat gates need deliberately aimed bonuses. Reward
       // a useful earned bonus too, rather than firing every blast at easy dust.
-      const planned = { bent: new Set(), beams: [] };
-      const plannedBlastHits =
-        hasBlastTargets && evaluation?.bonuses.length
-          ? new Set(
-              evaluation.bonuses
-                .flatMap(({ type, index }) =>
-                  bonusActivator.activateBonus(type, evaluation.board, cols, rows, index, {
-                    tiles,
-                    lenses: planned,
-                  }),
-                )
-                .filter(
-                  (index) =>
-                    tiles[index]?.bonusOnly &&
-                    tiles[index].health > 0 &&
-                    (!tiles[index].lensOnly || planned.bent.has(index)),
-                ),
-            ).size
-          : 0;
+      const planned = hasBlastTargets && evaluation?.bonuses.length ? lensLog() : null;
+      const plannedBlastHits = planned
+        ? new Set(
+            evaluation.bonuses
+              .flatMap(({ type, index }) =>
+                bonusActivator.activateBonus(type, evaluation.board, cols, rows, index, {
+                  tiles,
+                  lenses: planned,
+                }),
+              )
+              .filter(
+                (index) =>
+                  tiles[index]?.bonusOnly &&
+                  tiles[index].health > 0 &&
+                  (!tiles[index].lensOnly || planned.bent.has(index)),
+              ),
+          ).size
+        : 0;
       const relicPaths = indices.filter((index) =>
         routed
           ? relicRoutes.some((route) => route.has(index))
@@ -169,7 +169,7 @@ export class HintEngine {
         let ordinaryMatches = evaluation?.matches ?? [];
         let indices = [...new Set(evaluation?.matches.flatMap((match) => match.indices) ?? [a, b])];
         const usesFusion = SPECIAL.has(board[a].type) && SPECIAL.has(board[b].type);
-        const lenses = { bent: new Set(), beams: [] };
+        const lenses = usesBonus && !usesFusion ? lensLog() : null;
         if (usesFusion) {
           indices = bonusActivator.previewSwap(board, cols, rows, { aIndex: a, bIndex: b }, tiles);
         } else if (usesBonus) {
@@ -209,7 +209,7 @@ export class HintEngine {
           ordinaryMatches,
           evaluation,
           swap: { aIndex: a, bIndex: b },
-          bent: lenses.bent,
+          bent: lenses?.bent,
         });
         const candidate = {
           swap: { aIndex: a, bIndex: b },
@@ -227,7 +227,7 @@ export class HintEngine {
       for (let index = 0; index < board.length; index++) {
         if (!SPECIAL.has(board[index]?.type) || !canSwapGem(board[index], tiles[index])) continue;
         // Preview the guaranteed hit without rolling the double-tap's extra crates.
-        const lenses = { bent: new Set(), beams: [] };
+        const lenses = lensLog();
         const indices = bonusActivator.previewBonus(
           board[index].type,
           board,
