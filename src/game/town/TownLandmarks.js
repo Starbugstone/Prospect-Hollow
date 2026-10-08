@@ -1,4 +1,5 @@
-import { LANDMARK_BY_ID } from '../../data/townLandmarks';
+import { landmarkMotion } from './TownLandmarkMotion';
+import { LANDMARK_BY_ID, LANDMARK_PROGRESSION } from '../../data/townLandmarks';
 import { futureShape } from './buildings/futureShapes';
 
 const STONE = '#ddd1b5',
@@ -19,6 +20,7 @@ function ring(d, g, radius, height, colour, tilt = 0, thickness = 0.1) {
       colour,
     );
   }
+  return r;
 }
 // A continuous arch of joined segments, from (-span, base) over to (span, base).
 function arch(d, g, span, base, rise, z, radius, colour, colours = null) {
@@ -73,21 +75,23 @@ function tree(d, g, x, z, height, colour) {
   }
 }
 
-// Silhouettes belong to choices, not eras. Upgrades add wings, crowns and material
-// detail without turning one chosen destination into another. Monument geometry
-// depends only on its ID: era, stage, paint and crest cannot change it.
+// Each choice keeps its identity while five authored milestones transform its court.
 export function buildLandmark(d, parent, choice, stage = 1, timeless = false) {
   const o = LANDMARK_BY_ID[choice];
   if (!o) return null;
   const g = d.group(parent);
   g.name = o.label;
-  // One stage per era: the second adds side pavilions, the third lanterns, and each
-  // stage after the first raises the monument and lays another band at its foot.
-  const tier = timeless ? 1 : Math.min(stage, 3);
-  const age = timeless ? 0 : stage - 1;
+  const tier = timeless ? 1 : Math.max(1, Math.min(stage, LANDMARK_PROGRESSION.levels.length));
+  const active = timeless || tier >= LANDMARK_PROGRESSION.animationLevel;
+  const motions = [];
+  const move = (node, kind, axis, speed, amount, phase) =>
+    active ? landmarkMotion(motions, node, kind, axis, speed, amount, phase) : node;
   const colour = o.colour,
-    height = 4.5 + Math.min(age, 10) * 0.23;
-  const wall = age >= 5 ? '#f4ead5' : STONE;
+    height = [4.5, 5.8, 7.2, 8.6, 10][tier - 1];
+  const wall = tier >= 4 ? '#f4ead5' : STONE;
+  if (timeless) g.scale.y = 1.15;
+  else if (['diner', 'screen', 'springs', 'aurora', 'globes'].includes(o.form))
+    g.scale.y = [1, 1.1, 1.2, 1.35, 1.5][tier - 1];
   pedestal(d, g, timeless ? 7.5 : 5.8);
   if (o.form === 'arch') {
     for (const x of [-4, 4]) {
@@ -101,7 +105,14 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false) {
       const stone = d.box(g, 0.98, 1.4, 2.6, Math.cos(a) * 3, 6.4 + Math.sin(a) * 3, 0, STONE);
       stone.rotation.z = a - Math.PI / 2;
     }
-    d.ball(g, 0, 10.2, 0, [0.9, 0.9, 0.3], GOLD, 'rock');
+    const sun = d.group(g, 0, 10.2, 0);
+    d.ball(sun, 0, 0, 0, [0.9, 0.9, 0.3], GOLD, 'rock');
+    for (let n = 0; n < 12; n++) {
+      const ray = d.group(sun);
+      ray.rotation.z = (n * Math.PI) / 6;
+      d.box(ray, 0.16, 0.65, 0.2, 0, 1.22, 0, GOLD);
+    }
+    move(sun, 'turn', 'z', 0.14);
   } else if (o.form === 'crystal') {
     for (const [x, z, h, c] of [
       [0, 0, 12, colour],
@@ -114,12 +125,32 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false) {
       crystal.rotation.z = x * -0.06;
     }
     ring(d, g, 5.4, 0.7, GOLD);
+    const sparks = d.group(g, 0, 6, 0);
+    for (let n = 0; n < 7; n++) {
+      const a = (n * Math.PI * 2) / 7;
+      const spark = d.ball(
+        sparks,
+        Math.cos(a) * 4.7,
+        Math.sin(a * 2) * 1.4,
+        Math.sin(a) * 4.7,
+        [0.2, 0.5, 0.2],
+        GOLD,
+        'rock',
+      );
+      move(spark, 'lift', 'y', 1.2, 0.35, a);
+    }
+    move(sparks, 'turn', 'y', 0.2);
   } else if (o.form === 'guardian') {
     d.box(g, 4, 2.2, 3.5, 0, 1.6, 0, DARK);
     d.ball(g, 0, 5.4, 0, [2.8, 3.2, 2.1], GOLD, 'rock');
     for (const side of [-1, 1]) {
-      const wing = d.ball(g, side * 3, 5.8, 0, [1.6, 3.3, 0.7], '#b77839', 'rock');
+      const hinge = d.group(g, side * 2, 6.4, 0);
+      const wing = d.ball(hinge, side, -0.6, 0, [1.6, 3.3, 0.7], '#b77839', 'rock');
       wing.rotation.z = -side * 0.55;
+      for (let n = 0; n < 4; n++)
+        d.box(hinge, 0.18, 2.4, 0.12, side * (0.5 + n * 0.35), -0.8, 0.65, GOLD).rotation.z =
+          -side * 0.55;
+      move(hinge, 'swing', 'z', 0.7, side * 0.15);
       d.mesh(g, 'cone', [0.6, 1.6, 0.6], [side * 1.7, 9, 0], GOLD);
       d.ball(g, side * 1.05, 7.4, 1.8, [1, 1.1, 0.35], STONE);
       d.ball(g, side * 1.05, 7.4, 2.15, [0.4, 0.5, 0.12], DARK);
@@ -134,17 +165,22 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false) {
       d.ball(g, side * 3.5, 7.3, 1.5, [2.5, 1.7, 2.1], '#8caf80', 'rock');
     }
     ring(d, g, 5.7, 0.75, GOLD);
+    for (let n = 0; n < 9; n++) {
+      const a = (n * Math.PI * 2) / 9;
+      const bough = d.group(g, Math.cos(a) * 3.8, 7.8, Math.sin(a) * 2.8);
+      d.rod(bough, [0, 0, 0], [0, -1.6, 0], 0.025, GOLD);
+      d.ball(bough, 0, -1.75, 0, [0.2, 0.35, 0.2], GOLD, 'rock');
+      move(bough, 'swing', 'z', 1, 0.18, a);
+    }
   } else if (o.form === 'orrery') {
     for (let n = 0; n < 4; n++)
       column(d, g, Math.cos((n * Math.PI) / 2) * 2.5, Math.sin((n * Math.PI) / 2) * 2.5, 3.8);
     d.ball(g, 0, 7, 0, 1.8, colour, 'rock');
-    for (let n = 0; n < 3; n++) ring(d, g, 4 + n * 0.35, 7, GOLD, n * 0.8 + 0.35, 0.13);
-    for (const [x, y, z] of [
-      [4, 7, 0],
-      [-3, 9, 1],
-      [0, 5, 4],
-    ])
-      d.ball(g, x, y, z, 0.6, '#e8bf79', 'rock');
+    for (let n = 0; n < 3; n++) {
+      const orbit = ring(d, g, 4 + n * 0.35, 7, GOLD, n * 0.8 + 0.35, 0.13);
+      d.ball(orbit, 4 + n * 0.35, 0, 0, 0.6, '#e8bf79', 'rock');
+      move(orbit, 'turn', 'y', (n % 2 ? -1 : 1) * (0.16 + n * 0.06));
+    }
   } else if (o.form === 'headframe') {
     // Timber legs and back braces carry the winding wheel above the shaft.
     const top = height + 4;
@@ -154,11 +190,13 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false) {
       d.rod(g, [side * 1.7, 2.6, 0.95], [side * 1.6, 2.6, -2.2], 0.14, DARK);
     }
     d.box(g, 2.2, 0.35, 0.8, 0, top - 0.2, 0, DARK);
-    d.mesh(g, 'ring', [1.5, 1.5, 1.5], [0, top + 0.6, 0], DARK);
+    const wheel = d.group(g, 0, top + 0.6, 0);
+    move(wheel, 'turn', 'z', 0.7);
+    d.mesh(wheel, 'ring', [1.5, 1.5, 1.5], [0, 0, 0], DARK);
     for (let n = 0; n < 4; n++)
-      d.box(g, 0.14, 2.8, 0.14, 0, top + 0.6, 0, GOLD).rotation.z = (n * Math.PI) / 4;
+      d.box(wheel, 0.14, 2.8, 0.14, 0, 0, 0, GOLD).rotation.z = (n * Math.PI) / 4;
     d.box(g, 3.2, 2.2, 2.4, 0, 1.7, -3.4, colour);
-    roof(d, g, 3.6, 2.8, 3.1, DARK);
+    roof(d, d.group(g, 0, 0, -3.4), 3.6, 2.8, 3.1, DARK);
     for (const z of [-0.4, 0.4]) d.box(g, 8.5, 0.12, 0.14, 0, 0.7, 3 + z, DARK);
     d.box(g, 1.8, 1, 1.2, 2.4, 1.3, 3, DARK);
     for (const [x, c] of [
@@ -174,6 +212,7 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false) {
       for (const z of [-1.6, 1.6]) d.rod(g, [x, 0.6, z], [x * 0.2, top, z * 0.2], 0.14, DARK);
     for (const y of [2.4, 4.4]) d.box(g, 3.2 - y * 0.35, 0.12, 3.2 - y * 0.35, 0, y, 0, DARK);
     const wheel = d.group(g, 0, top, 0.7);
+    move(wheel, 'turn', 'z', 0.9);
     d.mesh(wheel, 'ring', [1.9, 1.9, 1.2], [0, 0, 0], DARK);
     for (let n = 0; n < 16; n++) {
       const blade = d.group(wheel);
@@ -257,7 +296,9 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false) {
       column(d, g, Math.cos(a) * 4.3, Math.sin(a) * 4.3, height);
     }
     d.ball(g, 0, height + 0.5, 0, [4.1, 2.5, 4.1], colour);
-    d.rod(g, [0, height + 2, 0], [2.6, height + 4, 2.6], 0.35, DARK);
+    const telescope = d.group(g, 0, height + 0.5, 0);
+    d.rod(telescope, [0, 0, 0], [2.6, 3.5, 2.6], 0.35, DARK);
+    move(telescope, 'swing', 'y', 0.22, 0.5);
   } else if (o.form === 'solar') {
     // A slender stem opens a crown of solar petals above a garden ring.
     const top = height + 5;
@@ -266,6 +307,7 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false) {
     for (let n = 0; n < 12; n++) {
       const petal = d.group(g, 0, top, 0);
       petal.rotation.y = (n * Math.PI) / 6;
+      move(petal, 'swing', 'z', 0.55, 0.13, n * 0.2);
       d.box(petal, 2.4, 0.1, 0.95, 1.6, 0.45, 0, n % 2 ? '#41658f' : '#52948e').rotation.z = 0.4;
     }
     d.mesh(g, 'cylinder', [1, 0.3, 1], [0, top, 0], colour);
@@ -285,6 +327,7 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false) {
     d.box(g, 9, 0.35, 0.8, 0, 0.95, 0, colour);
     const pod = d.group(g, 0, middle, 0);
     pod.rotation.z = Math.PI / 4;
+    move(pod, 'turn', 'z', 0.45);
     d.ball(pod, 0, radius + 0.55, 0, [1.4, 0.65, 0.8], STONE);
     d.ball(pod, 0, radius + 0.7, 0, [1, 0.38, 0.84], GLASS);
   } else if (o.form === 'glass') {
@@ -358,7 +401,7 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false) {
       [0.6, 5.3, -1],
       [-0.2, 6, -0.4],
     ])
-      d.ball(g, x, y, z, [0.8, 0.45, 0.7], '#f4f1ea');
+      move(d.ball(g, x, y, z, [0.8, 0.45, 0.7], '#f4f1ea'), 'lift', 'y', 0.8, 0.5, y);
     for (let n = 0; n < 6; n++) {
       const a = (n * Math.PI) / 3;
       const x = Math.cos(a) * 5,
@@ -377,6 +420,7 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false) {
     for (let n = 0; n < 8; n++) {
       const petal = d.group(g, 0, height + 0.6, 0);
       petal.rotation.y = (n * Math.PI) / 4;
+      move(petal, 'swing', 'x', 0.65, 0.1, n * 0.15);
       d.ball(petal, 0, 0.5, 2, [1.15, 0.22, 2.3], n % 2 ? '#f4ead5' : colour).rotation.x = -0.45;
     }
     d.ball(g, 0, height + 1.4, 0, [1, 1.5, 1], '#f5ddb0');
@@ -394,15 +438,11 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false) {
       [4.2, height - 2.6, '#5fb8a8', 0.5],
     ]) {
       ring(d, g, r, y, STONE, 0, 0.06);
-      const a = r * 1.3;
-      d.rod(
-        g,
-        [Math.cos(a) * r, 0.6, Math.sin(a) * r],
-        [Math.cos(a) * r, y, Math.sin(a) * r],
-        0.07,
-        DARK,
-      );
-      d.ball(g, Math.cos(a) * r, y + size, Math.sin(a) * r, size, c, 'rock');
+      const orbit = d.group(g, 0, y, 0);
+      orbit.rotation.y = r * 1.3;
+      d.rod(orbit, [0, 0, 0], [r, 0, 0], 0.07, GOLD);
+      d.ball(orbit, r, size, 0, size, c, 'rock');
+      move(orbit, 'turn', 'y', 0.5 / r);
     }
   } else if (o.form === 'comet') {
     // Stargazer: a slender arch with a comet and its tail of stars.
@@ -444,6 +484,7 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false) {
           c,
         );
         slat.rotation.y = Math.sin(n * 0.6) * 0.5;
+        move(slat, 'lift', 'y', 0.8, 0.35, n * 0.45 + z);
       }
   } else if (o.form === 'lantern-walk') {
     // Twin Hollows: an avenue of twin lanterns under homecoming arbors.
@@ -466,15 +507,18 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false) {
       // Slender gold stands with a little cup under each globe.
       d.mesh(g, 'cylinder', [0.12, h, 0.12], [x, h / 2 + 1, 0], GOLD);
       d.mesh(g, 'cylinder', [0.45, 0.16, 0.45], [x, h + 1, 0], GOLD);
-      d.ball(g, x, h + 1.1 + r, 0, r, c);
+      const globe = d.group(g, x, h + 1.1 + r, 0);
+      d.ball(globe, 0, 0, 0, r, c);
+      if (x < 0) {
+        for (const [dx, dy, dz, sx] of [
+          [-0.35, 0.3, 1.02, 0.55],
+          [0.45, -0.2, 0.95, 0.4],
+          [0.1, 0.75, 0.75, 0.35],
+        ])
+          d.ball(globe, dx, dy, dz, [sx, sx * 0.7, 0.25], '#8caf80', 'rock');
+      }
+      move(globe, 'turn', 'y', x < 0 ? 0.25 : 0.1);
     }
-    // Continents on the little Earth, facing the path.
-    for (const [dx, dy, dz, sx] of [
-      [-0.35, 0.3, 1.02, 0.55],
-      [0.45, -0.2, 0.95, 0.4],
-      [0.1, 0.75, 0.75, 0.35],
-    ])
-      d.ball(g, -1.6 + dx, height + 1.8 + dy, dz, [sx, sx * 0.7, 0.25], '#8caf80', 'rock');
     for (let n = 1; n <= 4; n++)
       d.ball(g, -0.6 + n * 0.55, height + 1.6 + Math.sin(n * 0.8) * 0.6, 0, 0.18, '#a6d8e6');
   } else if (o.form === 'welcome-arch') {
@@ -517,25 +561,122 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false) {
       d.box(g, w + 0.4, 0.3, w + 0.4, 0, 0.6 + ((n + 1) * towerHeight) / 3, 0, DARK);
     }
     d.ball(g, 0, towerHeight - 0.4, 1.65, [1, 1, 0.1], '#fff8e8');
-    d.rod(g, [0, towerHeight - 0.4, 1.8], [0, towerHeight + 0.25, 1.8], 0.06, DARK);
-    d.rod(g, [0, towerHeight - 0.4, 1.8], [0.5, towerHeight - 0.65, 1.8], 0.06, DARK);
+    for (const [length, speed] of [
+      [0.75, -0.18],
+      [0.5, -0.015],
+    ]) {
+      const hand = d.group(g, 0, towerHeight - 0.4, 1.8);
+      d.rod(hand, [0, 0, 0], [0, length, 0], 0.06, DARK);
+      move(hand, 'turn', 'z', speed);
+    }
     d.mesh(g, 'cone', [2.3, 1.6, 2.3], [0, towerHeight + 1.4, 0], colour);
   }
   if (!timeless) {
-    // Every paid stage adds visible architecture. Later-era bands introduce new
-    // materials and elevation while all models stay within their reserved parcel.
-    if (tier >= 2)
+    // Large architectural changes stay inside the reserved court.
+    if (tier >= 2) {
+      const court = d.group(g);
+      court.name = 'Monument flanking pavilions';
       for (const side of [-1, 1]) {
-        d.box(g, 1.5, 1.1, 2.8, side * 4.5, 1.15, -2.5, colour);
-        tree(d, g, side * 4.5, -2.5, 2, '#8caf80');
+        d.box(court, 1.8, 2.4, 2.6, side * 4.65, 1.8, -2.8, wall);
+        d.box(court, 2.2, 0.3, 3, side * 4.65, 3.15, -2.8, colour);
+        d.box(court, 0.8, 1.6, 0.12, side * 4.65, 1.9, -1.45, DARK);
       }
+    }
     if (tier >= 3)
       for (const side of [-1, 1]) {
-        column(d, g, side * 3.8, 4.2, 2.5, colour);
-        d.ball(g, side * 3.8, 3.15, 4.2, 0.4, '#f5ddb0');
+        column(d, g, side * 4.7, 3.8, 3.8, colour);
+        d.ball(g, side * 4.7, 4.5, 3.8, 0.48, '#f5ddb0');
       }
-    for (let n = 0; n < age; n++)
-      d.box(g, 0.6, 0.09, 0.7, (n - (age - 1) / 2) * 0.85, 0.65, 4.8, n % 2 ? colour : GOLD);
+    if (tier >= 4) {
+      const colonnade = d.group(g);
+      colonnade.name = 'Monument grand colonnade';
+      for (const x of [-4.5, -2.25, 0, 2.25, 4.5]) column(d, colonnade, x, -4.6, 5.3, wall);
+      d.box(colonnade, 10.4, 0.6, 1.1, 0, 6, -4.6, colour);
+      d.box(colonnade, 10.8, 0.18, 1.3, 0, 6.4, -4.6, GOLD);
+    }
+    if (tier >= 5) {
+      const crown = d.group(g);
+      crown.name = 'Monument signature crown';
+      if (['headframe', 'windpump', 'spire', 'solar', 'clock'].includes(o.form)) {
+        // A second working crown announces the completed engineering monument.
+        const top =
+          o.form === 'clock' ? height + 6 : o.form === 'spire' ? height + 5.5 : height + 4.5;
+        d.rod(crown, [0, top - 2, 0], [0, top + 1.1, 0], 0.12, GOLD);
+        const turbine = d.group(crown, 0, top + 1.1, 0);
+        d.mesh(turbine, 'ring', [1.25, 1.25, 1.25], [0, 0, 0], GOLD);
+        for (let n = 0; n < 8; n++) {
+          const blade = d.group(turbine);
+          blade.rotation.z = (n * Math.PI) / 4;
+          d.box(blade, 0.24, 0.95, 0.12, 0, 0.65, 0, colour);
+        }
+        move(turbine, 'turn', 'z', 0.35);
+      } else if (
+        ['dome', 'glass', 'orbits', 'aurora', 'comet', 'globes', 'loop'].includes(o.form)
+      ) {
+        // An illuminated armillary carried by the rear colonnade.
+        d.rod(crown, [0, 6.4, -4.6], [0, 9.3, -4.6], 0.18, GOLD);
+        const orb = d.group(crown, 0, 9.3, -4.6);
+        d.ball(orb, 0, 0, 0, 0.7, GOLD, 'rock');
+        const orbit = ring(d, orb, 1.65, 0, colour, 0.65, 0.09);
+        d.ball(orbit, 1.65, 0, 0, 0.28, GLASS, 'rock');
+        move(orbit, 'turn', 'y', 0.35);
+      } else {
+        // A broad fan of gilded rays crowns the cultural and garden courts.
+        const fan = d.group(crown, 0, 6.4, -4.6);
+        for (let n = 0; n <= 8; n++) {
+          const a = (n * Math.PI) / 8;
+          d.rod(fan, [0, 0, 0], [Math.cos(a) * 3.2, Math.sin(a) * 3.2, 0], 0.1, GOLD);
+        }
+        d.ball(fan, 0, 0.5, 0, [0.7, 0.7, 0.25], colour, 'rock');
+      }
+      const entrance = d.group(g);
+      entrance.name = 'Monument wonder entrance';
+      for (const x of [-3, 3]) {
+        column(d, entrance, x, 5.3, 4.8, wall);
+        d.mesh(entrance, 'cone', [0.4, 1.7, 0.4], [x, 6.15, 5.3], GOLD);
+      }
+      arch(d, entrance, 3, 5.2, 1.2, 5.3, 0.2, GOLD);
+    }
   }
+  // Public halls and gardens have a fountain performance; engineering monuments
+  // additionally run their own machinery. The centerpiece gets it immediately.
+  if (timeless || tier >= 3) {
+    const fountain = d.group(g, 0, 0, timeless ? 5.7 : 4.8);
+    fountain.name = 'Monument fountain court';
+    d.mesh(
+      fountain,
+      'cylinder',
+      [timeless ? 1.5 : 0.9, 0.5, timeless ? 1.5 : 0.9],
+      [0, 0.85, 0],
+      STONE,
+    );
+    d.mesh(
+      fountain,
+      'cylinder',
+      [timeless ? 1.25 : 0.7, 0.06, timeless ? 1.25 : 0.7],
+      [0, 1.13, 0],
+      GLASS,
+    );
+    for (let n = 0; n < (timeless || tier === 5 ? 7 : 3); n++) {
+      const a = (n * Math.PI * 2) / (timeless || tier === 5 ? 7 : 3);
+      const jet = d.group(fountain, Math.cos(a) * 0.45, 1.15, Math.sin(a) * 0.45);
+      d.rod(jet, [0, 0, 0], [0, 1.25 + (n % 2) * 0.35, 0], 0.035, GLASS);
+      d.ball(jet, 0, 1.3 + (n % 2) * 0.35, 0, 0.08, '#e3f7ef');
+      move(jet, 'pulse', 'y', 1.3, 0.28, a);
+    }
+  }
+  g.userData.sceneryUpdate = (time) => {
+    for (const update of motions) update(time);
+  };
+  const movingGroups = [];
+  g.traverse((node) => {
+    if (node.userData.animated && node.isGroup) movingGroups.push(node);
+  });
+  // Rings and turbines animate as a handful of material batches, not dozens of rods.
+  for (const node of movingGroups) d.batch(node);
+  g.traverse((node) => {
+    if (node.userData.animated) node.traverse((part) => part.layers.set(2));
+  });
+  g.userData.landmarkMotionCount = motions.length;
   return g;
 }
