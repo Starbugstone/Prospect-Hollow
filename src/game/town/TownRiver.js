@@ -97,9 +97,18 @@ export function buildRiver(town, parent) {
         float ripple = smoothstep(.94, 1., sin(riverUv.y * 3. + sin(across * 20.) - time * .45));
         vec3 color = mix(vec3(.17, .38, .39), vec3(.30, .53, .50), sin(across * 3.14159));
         gl_FragColor = vec4(color + ripple * .035, 1.);
+        // Fog in linear light before tone mapping, as the cached prairie is, so the
+        // river fades into the same horizon. On screen (tone mapped) three supplies
+        // fogColor in sRGB; offscreen it is already linear.
+        #ifdef USE_FOG
+          vec3 horizon = fogColor;
+          #ifdef TONE_MAPPING
+            horizon = sRGBTransferEOTF(vec4(fogColor, 1.)).rgb;
+          #endif
+          gl_FragColor.rgb = mix(gl_FragColor.rgb, horizon, smoothstep(fogNear, fogFar, vFogDepth));
+        #endif
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
-        #include <fog_fragment>
       }`,
   });
   horizonMaterial(material);

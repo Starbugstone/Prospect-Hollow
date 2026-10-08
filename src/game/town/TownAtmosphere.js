@@ -1,9 +1,10 @@
 import { Color, Fog, MeshStandardMaterial } from 'three';
 
-// A round horizon centred on the town. The farthest monument site ends about
-// 121 units out; fog starts beyond it and thickens gently over a wide ring.
-// World-space fog stays consistent when the mobile overview zooms out.
-const TOWN_HORIZON = Object.freeze({ color: '#e9e8da', near: 128, far: 215 });
+// A round, distant horizon centred on the town. The farthest monument site ends
+// about 121 units out; open prairie runs on beyond it before the fog thickens
+// gently over a wide ring. World-space fog stays consistent when the mobile
+// overview zooms out.
+const TOWN_HORIZON = Object.freeze({ color: '#e9e8da', near: 170, far: 320 });
 // The prairie, river and railway run on past full fog, so none of them ends in view.
 export const TOWN_EDGE = TOWN_HORIZON.far + 10;
 export function setTownAtmosphere(scene) {

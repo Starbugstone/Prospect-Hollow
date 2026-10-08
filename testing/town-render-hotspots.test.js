@@ -13,6 +13,7 @@ import {
 } from 'three';
 import { MILLRACE, landscapeGeometry } from '../src/game/town/TownMillrace';
 import { TOWN_EDGE } from '../src/game/town/TownAtmosphere';
+import { addRailroad } from '../src/game/town/TownEraActivity';
 import { MINE_SHAFT } from '../src/data/mineSite';
 import { TownNavigation } from '../src/game/town/TownNavigation';
 import { TownStatics } from '../src/game/town/TownStatics';
@@ -428,6 +429,29 @@ it('updates world matrices once per drawn frame and still places detached actors
   renderer.dispose();
   geometry.dispose();
   material.dispose();
+});
+
+it('lays the railway out to the horizon within its triangle budget', () => {
+  const d = Object.create(TownDiorama.prototype);
+  Object.assign(d, {
+    world: new Group(),
+    materials: new Map(),
+    geometries: createTownGeometries(),
+    contactShadowMaterial: new MeshBasicMaterial(),
+    sign() {},
+  });
+  const town = createTown();
+  Object.assign(town, { era: 'river-rail', buildings: { ...town.buildings, railDepot: 1 } });
+  let triangles = 0;
+  addRailroad(d, town, { batch: false }).traverse((part) => {
+    if (part.isMesh)
+      triangles += (part.geometry.index?.count ?? part.geometry.attributes.position.count) / 3;
+  });
+  // Sleepers are laid one per unit; rails beyond the station are welded lengths.
+  expect(triangles).toBeLessThan(25000);
+  Object.values(d.geometries).forEach((geometry) => geometry.dispose());
+  d.materials.forEach((material) => material.dispose());
+  d.contactShadowMaterial.dispose();
 });
 
 it('keeps the terrain crack-free and complete with local millrace refinement', () => {

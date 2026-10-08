@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { railHeight, trainJourney } from '../src/game/town/TownEraActivity';
+import { RAIL_JOINTED, railHeight, trainJourney } from '../src/game/town/TownEraActivity';
 import { PLOTS, RAIL_EDGE } from '../src/game/town/TownLayout';
 import { RIVER, riverCenterX, bridgeDeckHeight } from '../src/game/town/TownRiver';
 import { groundHeight } from '../src/game/town/TownLandscape';
@@ -16,12 +16,23 @@ describe('through traffic with room above and beside it', () => {
             railHeight(x + wheelOffset) - groundHeight(x + wheelOffset, RAIL_EDGE.from[1] + side),
           ).toBeGreaterThan(0.1);
   });
+  it('lays one welded length only where the line is level', () => {
+    const [west, east] = RAIL_JOINTED;
+    for (let x = RAIL_EDGE.from[0]; x <= west; x += 0.5)
+      expect(railHeight(x)).toBe(railHeight(west));
+    for (let x = east; x <= RAIL_EDGE.to[0]; x += 0.5) expect(railHeight(x)).toBe(railHeight(east));
+    // The bridge grade needs its one-unit lengths.
+    expect(Math.abs(riverCenterX(RAIL_EDGE.from[1]) - west)).toBeGreaterThan(16);
+    expect(Math.abs(riverCenterX(RAIL_EDGE.from[1]) - east)).toBeGreaterThan(16);
+  });
   it('stops at the station and then continues east without reversing on screen', () => {
     let previous;
     let paused = 0,
       crossedRiver = false,
       exitedEast = false;
-    for (let t = 0; t < 110; t += 0.1) {
+    // One full run from the west edge, the station stop and out past the east edge.
+    const run = (RAIL_EDGE.to[0] - RAIL_EDGE.from[0] + 14) / 4 + 9;
+    for (let t = 0; t < run; t += 0.1) {
       const pose = trainJourney(t);
       if (pose.visible && previous?.visible) expect(pose.x).toBeGreaterThanOrEqual(previous.x);
       if (pose.visible && !pose.moving) {
