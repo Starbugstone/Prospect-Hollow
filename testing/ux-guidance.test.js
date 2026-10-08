@@ -84,6 +84,29 @@ it('introduces bonus and fusion rules only when applicable, without wrapping row
   expect(mineTip(game, campaign)?.id).toBe('powers');
   expect(fr[mineTip(game, campaign).text]).toBeTruthy();
 });
+it('points to the ore orders once they are all that keeps a level open', () => {
+  const campaign = useCampaignStore();
+  const game = {
+    sessionActive: true,
+    currentLevelId: 403,
+    moves: 40,
+    boardCols: 3,
+    board: [{ type: 'ruby' }],
+    totalLayers: 12,
+    totalRelics: 0,
+    remainingLayers: 1,
+    remainingRelics: 0,
+    remainingOre: 14,
+  };
+  expect(mineTip(game, campaign)).toBe(null);
+  game.remainingLayers = 0;
+  expect(mineTip(game, campaign)?.id).toBe('orders');
+  expect(fr[mineTip(game, campaign).text]).toBeTruthy();
+  // A level whose only goal is an order says nothing: the order is the whole level.
+  expect(mineTip({ ...game, totalLayers: 0 }, campaign)).toBe(null);
+  campaign.markTipSeen('orders');
+  expect(mineTip(game, campaign)).toBe(null);
+});
 it('keeps objective labels tied to the initial board after obstacles are cleared', () => {
   const game = useGameStore();
   game.bootstrap();

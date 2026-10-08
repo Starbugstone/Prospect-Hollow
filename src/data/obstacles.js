@@ -54,7 +54,7 @@ export const OBSTACLES = [
     name: 'Lanterns',
     art: '/art/obstacles/lantern.svg',
     instruction:
-      'Light every lantern by matching on or beside it. Bonuses can light them too; gems pass freely.',
+      'Light every lantern by matching on it. Bonuses that hit it light it too; gems pass freely.',
     present: (tile) => tile.signal === 'lantern',
   },
   {

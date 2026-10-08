@@ -3,7 +3,7 @@
     <span
       v-for="goal in goals"
       :key="goal.id"
-      :class="{ complete: goal.count === 0 }"
+      :class="{ complete: goal.count === 0, 'last-goal': ordersLeft && goal.count > 0 }"
       :aria-label="`${t(goal.label)}: ${goal.total - goal.count} / ${goal.total}`"
       :title="`${t(goal.label)}: ${goal.total - goal.count} / ${goal.total}`"
     >
@@ -164,6 +164,13 @@ const goals = computed(() => {
       .filter((goal) => goal.total > 0),
   ];
 });
+// Once the board's own goals are done, the ore orders still due stand out: the level
+// finishes only when they are full.
+const ordersLeft = computed(() => {
+  const open = goals.value.filter((goal) => goal.count > 0);
+  const ore = (goal) => goal.id.startsWith('ore-');
+  return open.length > 0 && open.every(ore) && goals.value.some((goal) => !ore(goal));
+});
 </script>
 <style scoped>
 .mine-visual-goals {
@@ -192,6 +199,21 @@ const goals = computed(() => {
 .mine-visual-goals .complete {
   color: #b8eaae;
   opacity: 0.75;
+}
+.mine-visual-goals .last-goal img {
+  border-color: #ffd36a;
+  box-shadow: 0 0 0 2px #ffd36a80;
+  animation: last-goal 1.4s ease-in-out infinite alternate;
+}
+@keyframes last-goal {
+  to {
+    transform: scale(1.14);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mine-visual-goals .last-goal img {
+    animation: none;
+  }
 }
 @media (max-width: 600px) {
   .mine-visual-goals {

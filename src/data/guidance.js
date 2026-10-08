@@ -9,6 +9,7 @@ export const TIP_IDS = [
   'bonus',
   'fusion',
   'powers',
+  'orders',
 ];
 const tips = {
   well: 'Build a well — your first building is free.',
@@ -20,6 +21,7 @@ const tips = {
   bonus: 'You made a bonus gem! Swipe it or double-tap it to set it off.',
   fusion: 'Swap neighboring bonus gems to combine their effects.',
   powers: 'Your power-ups are below the board. Choose one to use it.',
+  orders: 'Only the ore orders are left. Collect the pictured gems to finish the level.',
 };
 const firstUnseen = (ids, seen = []) => {
   const id = ids.find((id) => id && !seen.includes(id));
@@ -56,6 +58,11 @@ export function mineTip(game, campaign) {
         game.moves === 0 &&
         !campaign.seenObstacles.includes('ice') &&
         'ice',
+      game.remainingOre > 0 &&
+        game.totalLayers + game.totalRelics > 0 &&
+        !game.remainingLayers &&
+        !game.remainingRelics &&
+        'orders',
       game.board.some((_, i) => bonus(i)) && 'bonus',
       adjacent && 'fusion',
       campaign.powers.some((power) => power.quantity > 0) && 'powers',

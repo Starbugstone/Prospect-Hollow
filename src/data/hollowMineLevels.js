@@ -79,7 +79,7 @@ const PLANS = [
         ice: 0,
         orders: [['sapphire', 36]],
         chestTarget: 22500,
-        tip: 'A glint of strange glass below the reservoir. Match on or beside each lantern to light it; the edges take a little planning.',
+        tip: 'A glint of strange glass below the reservoir. Match on each lantern to light it and fill the sapphire order; the edges take a little planning.',
       },
       {
         board: '......./.c...../..c..../...c.../....c../.....c./......./.c...c./.......',
@@ -95,7 +95,7 @@ const PLANS = [
           ['sapphire', 72],
         ],
         chestTarget: 50500,
-        tip: 'Three lanterns are walled in by stone along the floor. Match beside the stone to break in, then light each lantern.',
+        tip: 'Three lanterns are walled in by stone along the floor. Match beside the stone to break in, match on each lantern to light it and fill both orders.',
       },
       {
         board: '......./..r.b../......./.cX.Xc./......./..c.c../......./.g...g./.......',

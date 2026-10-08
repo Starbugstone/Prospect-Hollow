@@ -44,7 +44,8 @@ afterEach(() => {
 
 describe('append-only floating seam chapters', () => {
   it('preserves every one of the first 402 levels, names, stars and chapters', () => {
-    // Captured on preprod before this append. Normalize random gem ids only.
+    // Captured on preprod before this append. Normalize random gem ids only. Updated once
+    // since, for the lantern tip: lanterns light only from a match or blast on their cell.
     const original = generateLevelConfigs(402).map(({ board, ...level }) => ({
       ...level,
       board: board.map((gem) => (gem ? gem.type : null)),
@@ -56,7 +57,7 @@ describe('append-only floating seam chapters', () => {
       chapters: CHAPTERS.slice(0, 67),
     });
     expect(createHash('sha256').update(payload).digest('hex')).toBe(
-      'e11ba3d4525f3367f0c5a5c343b2c125bdcbf5ab950749ddeee67e7379aa88eb',
+      '69be7b22838fdfd47583c55c1e177be8af928c7e0ad6be556356ae5825ca8614',
     );
   });
 
