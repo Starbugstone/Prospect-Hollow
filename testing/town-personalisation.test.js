@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { Box3, Group, PerspectiveCamera, Scene } from 'three';
+import { Box3, Group, PerspectiveCamera, Scene, Vector3 } from 'three';
 import { createTown } from '../src/data/town';
 import {
   landmarkOffer,
@@ -9,6 +9,7 @@ import {
   LANDMARK_BY_ID,
   LANDMARK_OPTIONS,
   LANDMARK_PROGRESSION,
+  siteYaw,
 } from '../src/data/townLandmarks';
 import { buildLandmark } from '../src/game/town/TownLandmarks';
 import { isEraComplete } from '../src/game/town/TownEras';
@@ -412,6 +413,34 @@ describe('Personalisation rendering', () => {
         expect(sceneryObstacles(site).every((o) => o.radius < 2)).toBe(true);
         expect(new Box3().setFromObject(site).max.y - site.position.y).toBeLessThan(2);
       }
+    }
+  });
+  it('turns every site, open or built, so its monument fronts the declared direction', () => {
+    const town = createTown();
+    town.era = ERAS.at(-1).id;
+    const open = buildPersonalAreas(fixture(town), town);
+    for (const area of PERSONAL_AREAS) {
+      town.personalisation.areas[area.id] = [area.choices.at(-1)];
+      town.personalisation.areaLevels[area.id] = area.timeless ? 1 : 5;
+    }
+    const built = buildPersonalAreas(fixture(town), town);
+    for (const root of [open, built])
+      expect(root.children.map((site) => site.rotation.y)).toEqual(PERSONAL_AREAS.map(siteYaw));
+    built.updateMatrixWorld(true);
+    for (const site of built.children) {
+      const area = PERSONAL_AREAS.find((a) => a.id === site.userData.monumentSite);
+      // The fountain court and entrance stand at the front of every design.
+      const fountain = site.getObjectByName('Monument fountain court');
+      const offset = fountain
+        .getWorldPosition(new Vector3())
+        .sub(site.position)
+        .setY(0)
+        .normalize();
+      expect(offset.x, area.id).toBeCloseTo(Math.sin(siteYaw(area)));
+      expect(offset.z, area.id).toBeCloseTo(Math.cos(siteYaw(area)));
+      expect(sceneryObstacles(site)).toEqual([
+        expect.objectContaining({ x: site.position.x, z: site.position.z, radius: area.radius }),
+      ]);
     }
   });
   it('keeps all new parcels clear of one another, the river and existing buildings', () => {

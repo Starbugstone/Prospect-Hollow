@@ -232,12 +232,34 @@ export const LANDMARK_OPTIONS = [
   ),
 ];
 export const LANDMARK_BY_ID = Object.fromEntries(LANDMARK_OPTIONS.map((o) => [o.id, o]));
+// The way a site's front faces, as a turn about its centre. Every monument is
+// authored with its entrance, fountain court and porches on +z (south, toward the
+// old town); a site turns as a whole to face what lies beside it. +x is east, the
+// river side of the old town.
+export const SITE_FACINGS = Object.freeze({
+  south: 0,
+  east: Math.PI / 2,
+  north: Math.PI,
+  west: -Math.PI / 2,
+});
+// Sites without a facing, or with one this build does not know, face south.
+export const siteYaw = (area) =>
+  Object.hasOwn(SITE_FACINGS, area?.facing ?? '') ? SITE_FACINGS[area.facing] : SITE_FACINGS.south;
 // Only Monument Square stands before the town. Every other site lies beyond the
 // railway: two rows behind the mine ridge and a column west of the airport's
-// approach, clear of the space elevator. Stargazers' Lawn and Homecoming Green
-// sit beyond the Skyward quarter.
+// approach, clear of the space elevator. Founders' Meadow sits on the west bank
+// beyond the ridge and faces the river. Stargazers' Lawn and Homecoming Green sit
+// beyond the Skyward quarter.
+// [id, era, label, position, choices, facing = 'south']
 const plots = [
-  ['meadow', 'frontier', 'Founders’ Meadow', [-4, -60], ['headframe', 'windgarden', 'longhall']],
+  [
+    'meadow',
+    'frontier',
+    'Founders’ Meadow',
+    [17, -60],
+    ['headframe', 'windgarden', 'longhall'],
+    'east',
+  ],
   [
     'monument',
     'industrial',
@@ -288,11 +310,12 @@ const plots = [
     ['lantern-walk', 'globe-garden', 'welcome-arch'],
   ],
 ];
-export const PERSONAL_AREAS = plots.map(([id, era, label, position, choices]) => ({
+export const PERSONAL_AREAS = plots.map(([id, era, label, position, choices, facing]) => ({
   id,
   label,
   era,
   positions: [position],
+  facing: facing ?? 'south',
   choices,
   radius: id === 'monument' ? 9 : 7,
   timeless: id === 'monument',

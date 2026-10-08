@@ -14,6 +14,7 @@ import {
   areaUnlocked,
   DEFAULT_EMBLEM_COLOUR,
 } from '../../data/townPersonalisation';
+import { siteYaw } from '../../data/townLandmarks';
 import { HONOURS } from '../../data/honours';
 import { distinctionBadge } from '../../data/playerDistinctions';
 import { groundHeight } from './TownLandscape';
@@ -151,7 +152,8 @@ function addMonumentSite(d, g, radius) {
 }
 
 // Built monuments and the open sites of every unlocked era. Each site root carries
-// `monumentSite`, so a tap on it opens that site's card.
+// `monumentSite`, so a tap on it opens that site's card, and turns the whole site
+// (marker or monument) to face its declared direction.
 export function buildPersonalAreas(d, town) {
   if (!PERSONAL_AREAS.some((area) => areaUnlocked(town, area))) return null;
   const root = d.group(d.world);
@@ -169,6 +171,7 @@ export function buildPersonalAreas(d, town) {
     area.positions.forEach(([x, z], slot) => {
       const choice = town.personalisation?.areas?.[area.id]?.[slot];
       const g = d.group(root, x, groundHeight(x, z), z);
+      g.rotation.y = siteYaw(area);
       g.userData.monumentSite = area.id;
       if (!stage || !area.choices.includes(choice)) {
         g.name = `${area.id} ${slot}: open site`;

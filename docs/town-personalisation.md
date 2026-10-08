@@ -52,9 +52,16 @@ one. A later era with a site skips at least one era after the previous site, and
 designs must come from that era's own story and buildings.
 Only the timeless Monument Square stands in front of the town. Every other site lies
 beyond the railway, in two rows behind the mine ridge and a column west of the
-airport's approach. That leaves the space elevator and Skyward parcels room across the
-track. `testing/monument-site-layout.test.js` keeps new sites behind the railway, on
-level ground and out of the approach.
+airport's approach. Founders' Meadow sits on the river's west bank beyond the ridge.
+That leaves the space elevator and Skyward parcels room across the track.
+`testing/monument-site-layout.test.js` keeps new sites behind the railway, on level
+ground, off the river banks, roads and parcels and out of the approach.
+
+Every design is authored with its entrance, fountain court and porches facing south
+(+z, toward the town). A site may declare a `facing` (`south`, `east`, `north` or
+`west`) in the `plots` table; `buildPersonalAreas` turns the whole site, open marker or
+monument, to face it. Founders' Meadow faces east, across the river. Missing or unknown
+facings face south.
 Monuments are optional: they give no economic bonus, never gate an era and can be
 built at any time once their site opens. **A site's first monument is permanent.**
 No other design can replace it, on the client or in the server replay.
