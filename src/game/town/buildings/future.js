@@ -10,6 +10,7 @@ import { sailKit } from './future/sail';
 import { observatoryKit } from './future/observatory';
 import { homesteadKit } from './future/homestead';
 import { homecomingHall, twinKit } from './future/twin';
+import { gardenLandmarkForms } from './future/gardenLandmarks';
 
 // The eras after Riverlight share one set of archetypes. Each architecture's kit
 // draws its own walls, roofs, doors, annex and finishing flourish, so a family
@@ -50,12 +51,16 @@ function beds(d, g, s, x, z, w, rows = 3) {
 }
 
 const FORMS = {
+  ...gardenLandmarkForms(house, tower),
   homes(d, g, s) {
     const h = Math.max(2.4, s.height ?? 3);
     if (['row', 'court'].includes(s.identity)) {
-      for (const x of [-1.45, 0, 1.45])
-        house(d, g, s, { x, w: 1.3, dep: 1.9, h: x ? 1.9 : 2.3, accent: !x });
-      return { top: 3.2, eave: 2.3, radius: 0.7, x: 0, z: -0.35 };
+      let crown;
+      for (const x of [-1.45, 0, 1.45]) {
+        const roof = house(d, g, s, { x, w: 1.3, dep: 1.9, h: x ? 1.9 : 2.3, accent: !x });
+        if (!x) crown = roof;
+      }
+      return crown;
     }
     if (['twin', 'pods', 'balconies', 'hotel'].includes(s.identity)) {
       const towers =
@@ -229,7 +234,9 @@ const FORMS = {
       [0.6, -1.4, 3.8],
       [1.8, 0.4, 2.4],
     ].slice(0, s.level >= 2 ? 3 : 2);
-    lofts.forEach(([x, z, h], n) => house(d, g, s, { x, z, w: 1.5, dep: 1.4, h, accent: n === 1 }));
+    const crowns = lofts.map(([x, z, h], n) =>
+      house(d, g, s, { x, z, w: 1.5, dep: 1.4, h, accent: n === 1 }),
+    );
     // Rope bridges join neighbors high above the lane.
     for (let n = 1; n < lofts.length; n++) {
       const [ax, az, ah] = lofts[n - 1],
@@ -242,7 +249,7 @@ const FORMS = {
         s.palette.timber,
       );
     }
-    if (s.level >= 3) s.kit.crown(d, g, s, { x: 0.6, z: -1.4, y: 5.4, r: 1 });
+    if (s.level >= 3) s.kit.crown(d, g, s, { x: 0.6, z: -1.4, y: crowns[1].top, r: 1 });
     return { landmark: true };
   },
 

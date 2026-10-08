@@ -128,6 +128,13 @@
       <path d="M-30-116 6-106-30-96Z" :fill="p.light" />
     </template>
     <Crown v-if="parts.crown" :style-id="style" :p="p" v-bind="parts.crown" :variant="tone" />
+    <g v-if="gardenLandmark && level >= 2">
+      <g v-for="x in [-92, 92]" :key="x">
+        <rect :x="x - 10" y="-9" width="20" height="12" :fill="p.timber" />
+        <circle :cx="x" cy="-14" r="10" :fill="p.green" />
+        <circle :cx="x" cy="-21" r="4" :fill="p.flower" />
+      </g>
+    </g>
     <Prop v-for="x in parts.props" :key="`p${x}`" :style-id="style" :p="p" :x="x" />
     <path
       v-if="form === 'spaceElevator'"
@@ -141,6 +148,7 @@
 import { computed, h } from 'vue';
 import { futureAppearance, futureForm, FUTURE_LANDMARKS } from '../../data/futureArchitecture';
 import { cityAppearance } from '../../data/cityAppearance';
+import { COZY_LANDMARKS } from '../../data/cozyArchitecture';
 import TownCityBuilding from './TownCityBuilding.vue';
 import TownLeisureBuilding from './TownLeisureBuilding.vue';
 import TownSquare from './TownSquare.vue';
@@ -151,6 +159,7 @@ const style = computed(() => appearance.value.style);
 const p = computed(() => appearance.value.palette);
 const form = computed(() => futureForm(props.kind) ?? props.kind);
 const landmark = computed(() => !!FUTURE_LANDMARKS[props.kind]);
+const gardenLandmark = computed(() => !!COZY_LANDMARKS[props.kind]);
 // The same stable choice the 3D sail kit makes for its cloth and crown.
 const tone = computed(() =>
   [...(props.kind ?? '')].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7),
@@ -173,6 +182,34 @@ const parts = computed(() => {
   const level = props.level;
   const result = { blocks: [], towers: [], crown: null, props: [] };
   switch (form.value) {
+    case 'teahouse':
+      result.blocks.push(block(0, 190, 100));
+      break;
+    case 'atelier':
+      result.blocks.push(
+        block(-90, 76, 88, { door: false, accent: true }),
+        block(90, 76, 88, { door: false, accent: true }),
+        block(0, 92, 116),
+      );
+      break;
+    case 'orchard':
+      result.blocks.push(
+        block(0, 78, 116),
+        block(-84, 72, 94, { accent: true }),
+        block(84, 72, 94, { accent: true }),
+      );
+      break;
+    case 'glassworks':
+      result.blocks.push(block(-30, 126, 108), block(82, 72, 84, { accent: true }));
+      result.towers.push(tower(-72, 15, 174));
+      break;
+    case 'springs':
+      result.blocks.push(block(90, 70, 116), block(-102, 50, 76, { accent: true }));
+      result.towers.push(tower(-18, 68, 36), tower(-14, 48, 78));
+      break;
+    case 'pavilion':
+      result.blocks.push(block(0, 230, 108));
+      break;
     case 'homes':
       if (['row', 'court'].includes(identity))
         result.blocks.push(
@@ -378,7 +415,7 @@ const Roof = ({ styleId: s, p, x, w, top, accent, tone }) => {
         'stroke-width': 1.5,
       }),
       h('path', {
-        d: `M${x - w / 2 - 12} ${top}v-62M${x + w / 2 + 12} ${top}v-44`,
+        d: `M${x - w / 2 - 12} 0V${top - 62}M${x + w / 2 + 12} 0V${top - 44}`,
         stroke: p.timber,
         'stroke-width': 3,
       }),

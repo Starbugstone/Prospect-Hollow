@@ -196,6 +196,17 @@ plots, prices, benefit previews and the SVG forms.
 
 ### Future archetypes: Skysail, Stargazer and Moonward
 
+The six established eastern garden landmarks retain their named forms and scales
+from `COZY_LANDMARKS` in `FUTURE_LANDMARKS`. Their shared successor layouts live in
+`buildings/future/gardenLandmarks.js` and use each era's building kit. The first
+modernization preserves the mature campus, including the orchard's three homes
+and the retreat's terraced pools; later tiers add gardens and rooftop details.
+Do not route these landmarks back through ordinary city-family forms.
+`testing/future-eras.test.js` compares every successor tier with mature Riverlight
+dimensions and checks parcel frontage, art budgets and synthetic successors.
+Skysail's sail corners have supports reaching the local ground; rooftop crowns
+attach to the saddle centre rather than the height of its raised corners.
+
 The eras after Riverlight share one set of archetypes and swap a small kit per
 architecture (`sail`, `observatory`, `homestead`): walls, roof, round body, cap,
 door, a level-two wing, a level-three crown and a street prop. The renderer

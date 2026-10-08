@@ -1,4 +1,5 @@
 import { CITY_FAMILIES } from './city';
+import { COZY_LANDMARKS } from './cozyArchitecture';
 import { eraEvolution } from './eras';
 
 // The three eras after Riverlight share one set of building archetypes; each
@@ -90,6 +91,9 @@ const FORMS = Object.freeze({
 
 // Landmarks introduced by these eras draw their own bespoke forms.
 export const FUTURE_LANDMARKS = Object.freeze({
+  // Established garden landmarks retain their identity and parcel scale when
+  // modernized. Successor kits supply the new architecture for these forms too.
+  ...COZY_LANDMARKS,
   skyHarbour: Object.freeze({ form: 'skyHarbour', scale: 1.35 }),
   cloudOrchard: Object.freeze({ form: 'cloudOrchard', scale: 1.4 }),
   windsongLofts: Object.freeze({ form: 'windsongLofts', scale: 1.3 }),

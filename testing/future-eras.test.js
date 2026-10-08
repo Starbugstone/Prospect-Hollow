@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { Box3, Group, MeshBasicMaterial, Scene } from 'three';
+import { Box3, Group, MeshBasicMaterial, Scene, Vector3 } from 'three';
 import { createSSRApp, h } from 'vue';
 import { renderToString } from 'vue/server-renderer';
 import { TownDiorama } from '../src/game/town/TownDiorama';
@@ -28,6 +28,8 @@ import { mineProfile } from '../src/data/mineEvolution';
 import { FUTURE_MINE_CROWNS } from '../src/game/town/mine/MineFutureArchitecture';
 import { addMineSite } from '../src/game/town/mine/addMineSite';
 import { GARDEN_PARCELS } from '../src/data/townGardenDistrict';
+import { COZY_LANDMARKS } from '../src/data/cozyArchitecture';
+import { sailKit } from '../src/game/town/buildings/future/sail';
 import { townTracks, plotStreet } from '../src/game/town/TownLayout';
 import TownBuilding from '../src/components/town/TownBuilding.vue';
 
@@ -169,6 +171,59 @@ describe('Skysail, Stargazer and Moonward eras', () => {
     }
   });
 
+  it.each(FUTURE_ERAS)(
+    'preserves mature eastern landmarks from the first %s modernization',
+    (era) => {
+      const d = diorama(era);
+      for (const [kind, landmark] of Object.entries(COZY_LANDMARKS)) {
+        expect(futureForm(kind), kind).toBe(landmark.form);
+        const previous = new Group();
+        renderCityBuilding(d, previous, kind, kind, 3, 'riverlight', 3);
+        const matureSize = new Box3().setFromObject(previous, true).getSize(new Vector3());
+        for (const level of [1, 2, 3]) {
+          const root = new Group();
+          renderCityBuilding(d, root, kind, kind, level, era, 3);
+          const bounds = new Box3().setFromObject(root, true);
+          const size = bounds.getSize(new Vector3());
+          // Allow differently shaped eaves, but never reset a campus to a tiny
+          // generic house. Check tier 1 against the previous fully upgraded model.
+          for (const axis of ['x', 'z'])
+            expect(size[axis], `${era} ${kind} L${level} ${axis}`).toBeGreaterThan(
+              matureSize[axis] * 0.9,
+            );
+          const parcel = GARDEN_PARCELS[kind];
+          expect(bounds.min.x, kind).toBeGreaterThanOrEqual(-parcel.halfWidth);
+          expect(bounds.max.x, kind).toBeLessThanOrEqual(parcel.halfWidth);
+          expect(bounds.min.z, kind).toBeGreaterThanOrEqual(-parcel.halfDepth);
+          expect(bounds.max.z, kind).toBeLessThan(parcel.entranceZ - 0.35);
+        }
+      }
+      dispose(d);
+    },
+  );
+
+  it('grounds every sail support and attaches rooftop crowns to the cloth', () => {
+    const d = diorama('skysail');
+    const s = { ...futureAppearance('skysail'), kind: 'doctor' };
+    for (const [w, dep, y] of [
+      [1.3, 1.9, 2.3],
+      [3.6, 2.4, 2.3],
+      [6.2, 5.6, 2.8],
+    ]) {
+      const root = new Group();
+      const top = sailKit.roof(d, root, s, { x: 1.2, z: -0.7, w, dep, y });
+      root.updateMatrixWorld(true);
+      const supports = root.children.filter((mesh) => mesh.geometry === d.geometries.cylinder);
+      expect(supports).toHaveLength(4);
+      for (const support of supports)
+        expect(new Box3().setFromObject(support).min.y).toBeCloseTo(0);
+      const cloth = root.children.find((mesh) => mesh.geometry === d.geometries['future-hypar']);
+      const centerHeight = cloth.position.y + cloth.scale.y / 2;
+      expect(top).toBeCloseTo(centerHeight);
+    }
+    dispose(d);
+  });
+
   it('reaches the Skyward quarter over the railway and the elevator by its own road', () => {
     const town = { ...createTown(), era: 'moonward' };
     for (const building of CITY_BUILDINGS) town.buildings[building.id] = 3;
@@ -234,7 +289,7 @@ describe('Skysail, Stargazer and Moonward eras', () => {
       evolution: { ...eraEvolution('stargazer') },
     });
     const d = diorama('stargazer');
-    for (const kind of ['home', 'greatTelescope', 'skyPods']) {
+    for (const kind of ['home', 'greatTelescope', 'skyPods', ...Object.keys(COZY_LANDMARKS)]) {
       const before = new Group(),
         after = new Group();
       renderCityBuilding(d, before, kind, kind, 3, 'stargazer');
