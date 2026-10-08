@@ -279,6 +279,19 @@ select {
   color: var(--ink);
   border-left: 4px solid var(--danger);
 }
+.admin-warning {
+  margin: 0.8rem 0;
+  padding: 0.55rem 0.8rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+  border-left: 4px solid var(--warn);
+}
+.admin-warning p {
+  margin: 0 0 0.5rem;
+}
+.admin-warning p:last-child {
+  margin-bottom: 0;
+}
 .admin-notice {
   margin: 0.8rem 0;
   padding: 0.55rem 0.8rem;

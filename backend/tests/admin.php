@@ -1158,6 +1158,28 @@ try {
             $before['inventory']['limits']['builderHammers'] === AdminService::MAX_GRANTED_HAMMERS,
         'the town detail lists what support can correct and its limits',
     );
+    $polled = status(
+        200,
+        adminCall('GET', 'towns/' . $syncId . '/status', null, $s),
+        'town status while editing',
+    );
+    check(
+        $polled['revision'] === $at &&
+            $polled['savedAt'] === $before['town']['savedAt'] &&
+            is_int($polled['ownerSeenAt']) &&
+            $polled['ownerSeenAt'] === $before['town']['ownerSeenAt'],
+        'the town page can poll for a sync and the owner being online',
+    );
+    status(
+        405,
+        adminCall('POST', 'towns/' . $syncId . '/status', (object) [], $s),
+        'town status is read only',
+    );
+    status(
+        404,
+        adminCall('GET', 'towns/' . '00000000-0000-4000-8000-000000000000' . '/status', null, $s),
+        'status of an unknown town',
+    );
     foreach (
         [
             ['coins' => 5],
@@ -1221,6 +1243,13 @@ try {
             $syncPlayer,
         ),
         'the game syncs on from the correction, keeping its hammers',
+    );
+    check(
+        status(200, adminCall('GET', 'towns/' . $syncId . '/status', null, $s), 'status after')[
+            'revision'
+        ] ===
+            $at + 2,
+        'the poll sees the game sync after the correction',
     );
 
     // Deletion, sign-out and account removal.

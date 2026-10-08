@@ -440,7 +440,7 @@ final class AdminService
         $row = $db->fetchAssociative(
             'SELECT t.*,' .
                 SyncRejections::BLOCKED_AT .
-                ' AS sync_blocked_at,p.email,s.collected_at AS saloon_at,g.name AS guest_name,g.visited_at AS guest_at FROM towns t JOIN players p ON p.id=t.player_id LEFT JOIN saloon_collections s ON s.town_id=t.id LEFT JOIN town_guests g ON g.town_id=t.id WHERE t.id=?',
+                ' AS sync_blocked_at,p.email,a.seen_at AS owner_seen_at,s.collected_at AS saloon_at,g.name AS guest_name,g.visited_at AS guest_at FROM towns t JOIN players p ON p.id=t.player_id LEFT JOIN player_activity a ON a.player_id=t.player_id LEFT JOIN saloon_collections s ON s.town_id=t.id LEFT JOIN town_guests g ON g.town_id=t.id WHERE t.id=?',
             [$id],
         );
         if (!$row) {
@@ -463,6 +463,7 @@ final class AdminService
                 'uniqueVisitors' => $social('visitors'),
                 'townsVisited' => $social('travels'),
                 'saloonCollectedAt' => self::time($row['saloon_at']),
+                'ownerSeenAt' => self::time($row['owner_seen_at']),
                 // The owner's player distinctions (milliseconds), for the showcase slot.
                 'ownerDistinctions' =>
                     (object) (PlayerDistinctions::load()->received(
@@ -503,6 +504,24 @@ final class AdminService
                     [$id],
                 ),
             ),
+        ];
+    }
+    /** A light poll for the town page: whether the town saved again and its owner is online. */
+    public function townStatus(string $id): array
+    {
+        $row = $this->database
+            ->get()
+            ->fetchAssociative(
+                'SELECT t.revision,t.saved_at,a.seen_at FROM towns t LEFT JOIN player_activity a ON a.player_id=t.player_id WHERE t.id=?',
+                [$id],
+            );
+        if (!$row) {
+            throw new ApiError(404, 'No town has that ID.');
+        }
+        return [
+            'revision' => (int) $row['revision'],
+            'savedAt' => (int) $row['saved_at'],
+            'ownerSeenAt' => self::time($row['seen_at']),
         ];
     }
     // Same lock order as the owner's saves: the account row, then the live town.

@@ -2,7 +2,7 @@
 // The server sends the current values and limits; powers are keyed by ID.
 import { HAMMER_CAPACITY } from '../data/rewards';
 import { powerLabel } from './labels';
-import { whole } from './format';
+import { isOnline, whole } from './format';
 
 export function inventoryFields(inventory) {
   const { limits } = inventory;
@@ -44,3 +44,10 @@ export const correctionSummary = (fields, values) =>
   changedFields(fields, values)
     .map((field) => `${field.label} ${whole(field.current)} → ${whole(values[field.key])}`)
     .join(', ');
+// The owner's game may sync while support edits. The page polls the town meanwhile: a newer
+// revision makes the edit stale, and an online owner gets a warning first.
+export const STATUS_POLL_MS = 15000;
+export const editingRisk = (revision, status, now = Date.now() / 1000) => ({
+  online: isOnline(status.ownerSeenAt, now),
+  stale: status.revision !== revision,
+});

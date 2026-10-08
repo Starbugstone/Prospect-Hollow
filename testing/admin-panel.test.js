@@ -17,6 +17,7 @@ import { buildingLabel, eraLabel, LEVEL_COUNT, powerLabel } from '../src/admin/l
 import {
   correctionBody,
   correctionSummary,
+  editingRisk,
   inventoryFields,
   validValue,
 } from '../src/admin/inventory';
@@ -287,5 +288,19 @@ describe('admin coin and inventory correction', () => {
     expect(correctionSummary(fields, values)).toBe(
       `Coins 120 → 500, ${powerLabel('clear-row')} 0 → 3, Builder hammers 2 → 8`,
     );
+  });
+
+  it('warns while the owner is online and blocks an edit once their game saves again', () => {
+    const now = 1_000_000;
+    expect(editingRisk(7, { revision: 7, ownerSeenAt: now - 60 }, now)).toEqual({
+      online: true,
+      stale: false,
+    });
+    expect(editingRisk(7, { revision: 7, ownerSeenAt: now - 3600 }, now)).toEqual({
+      online: false,
+      stale: false,
+    });
+    expect(editingRisk(7, { revision: 7, ownerSeenAt: null }, now).online).toBe(false);
+    expect(editingRisk(7, { revision: 8, ownerSeenAt: now - 60 }, now).stale).toBe(true);
   });
 });

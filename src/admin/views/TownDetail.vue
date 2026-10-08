@@ -46,6 +46,13 @@
             <dt>Last cloud save</dt>
             <dd>{{ dateTime(town.savedAt) }}</dd>
           </div>
+          <div>
+            <dt>Owner last seen</dt>
+            <dd :title="dateTime(town.ownerSeenAt)">
+              <span v-if="isOnline(town.ownerSeenAt)" class="admin-online">Online</span>
+              <template v-else>{{ relativeTime(town.ownerSeenAt) }}</template>
+            </dd>
+          </div>
           <div v-if="town.deletedAt">
             <dt>Deleted</dt>
             <dd>{{ dateTime(town.deletedAt) }}</dd>
@@ -178,8 +185,11 @@
             :key="town.revision"
             :town-id="town.id"
             :revision="town.revision"
+            :saved-at="town.savedAt"
+            :owner-seen-at="town.ownerSeenAt"
             :inventory="data.inventory"
             @saved="afterCorrection"
+            @reload="load()"
           />
           <p v-if="inventoryNotice" class="admin-notice" role="status">{{ inventoryNotice }}</p>
         </template>
@@ -337,7 +347,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { adminApi } from '../api';
 import { go, shownEmail } from '../state';
-import { codeLabel, dateTime, relativeTime, whole } from '../format';
+import { codeLabel, dateTime, isOnline, relativeTime, whole } from '../format';
 import { downloadJson } from '../download';
 import { BUILDINGS, LEVEL_COUNT, buildingLabel, eraLabel, powerLabel } from '../labels';
 import ConfirmAction from '../components/ConfirmAction.vue';
