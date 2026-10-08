@@ -107,6 +107,12 @@ final class AdminService
             'isPublic' => (bool) $row['listed'],
             'publicId' => $row['public_id'],
             'deletedAt' => self::time($row['deleted_at']),
+            'forceSync' => (bool) $row['force_sync'],
+            // The latest upload the save protection rejected since the last accepted save.
+            'syncBlockedAt' =>
+                $row['sync_blocked_at'] === null
+                    ? null
+                    : intdiv((int) $row['sync_blocked_at'], 1000),
         ] +
             (isset($row['email'])
                 ? ['owner' => ['id' => $row['player_id'], 'email' => $row['email']]]
@@ -308,7 +314,9 @@ final class AdminService
             'towns' => array_map(
                 fn($t) => self::town($t),
                 $db->fetchAllAssociative(
-                    'SELECT id,name,revision,saved_at,listed,public_id,deleted_at,profile FROM towns WHERE player_id=? ORDER BY (deleted_at IS NOT NULL),name,id',
+                    'SELECT t.id,t.name,t.revision,t.saved_at,t.listed,t.public_id,t.deleted_at,t.force_sync,' .
+                        SyncRejections::BLOCKED_AT .
+                        ' AS sync_blocked_at,t.profile FROM towns t WHERE t.player_id=? ORDER BY (t.deleted_at IS NOT NULL),t.name,t.id',
                     [$id],
                 ),
             ),
@@ -391,6 +399,9 @@ final class AdminService
                 'live' => 't.deleted_at IS NULL',
                 'public' => 't.listed=1 AND t.deleted_at IS NULL',
                 'deleted' => 't.deleted_at IS NOT NULL',
+                'blocked' => 't.deleted_at IS NULL AND ' .
+                    SyncRejections::BLOCKED_AT .
+                    ' IS NOT NULL',
                 default => throw new ApiError(422, 'Invalid filter.'),
             },
         ];
@@ -402,7 +413,9 @@ final class AdminService
         $from = 'FROM towns t JOIN players p ON p.id=t.player_id WHERE ' . implode(' AND ', $where);
         $total = (int) $db->fetchOne('SELECT COUNT(*) ' . $from, $params);
         $rows = $db->fetchAllAssociative(
-            'SELECT t.id,t.name,t.player_id,p.email,t.revision,t.saved_at,t.listed,t.public_id,t.deleted_at,t.profile ' .
+            'SELECT t.id,t.name,t.player_id,p.email,t.revision,t.saved_at,t.listed,t.public_id,t.deleted_at,t.force_sync,' .
+                SyncRejections::BLOCKED_AT .
+                ' AS sync_blocked_at,t.profile ' .
                 $from .
                 ' ORDER BY t.saved_at DESC,t.id LIMIT ' .
                 self::PAGE .
@@ -425,7 +438,9 @@ final class AdminService
     {
         $db = $this->database->get();
         $row = $db->fetchAssociative(
-            'SELECT t.*,p.email,s.collected_at AS saloon_at,g.name AS guest_name,g.visited_at AS guest_at FROM towns t JOIN players p ON p.id=t.player_id LEFT JOIN saloon_collections s ON s.town_id=t.id LEFT JOIN town_guests g ON g.town_id=t.id WHERE t.id=?',
+            'SELECT t.*,' .
+                SyncRejections::BLOCKED_AT .
+                ' AS sync_blocked_at,p.email,a.seen_at AS owner_seen_at,s.collected_at AS saloon_at,g.name AS guest_name,g.visited_at AS guest_at FROM towns t JOIN players p ON p.id=t.player_id LEFT JOIN player_activity a ON a.player_id=t.player_id LEFT JOIN saloon_collections s ON s.town_id=t.id LEFT JOIN town_guests g ON g.town_id=t.id WHERE t.id=?',
             [$id],
         );
         if (!$row) {
@@ -441,11 +456,14 @@ final class AdminService
         } catch (\Throwable) {
             $appearance = null;
         }
+        $integrity = new SaveIntegrity();
+        $state = $profile instanceof \stdClass ? $integrity->comparable($profile) : null;
         return [
             'town' => self::town($row) + [
                 'uniqueVisitors' => $social('visitors'),
                 'townsVisited' => $social('travels'),
                 'saloonCollectedAt' => self::time($row['saloon_at']),
+                'ownerSeenAt' => self::time($row['owner_seen_at']),
                 // The owner's player distinctions (milliseconds), for the showcase slot.
                 'ownerDistinctions' =>
                     (object) (PlayerDistinctions::load()->received(
@@ -460,6 +478,21 @@ final class AdminService
             ],
             'appearance' => $appearance,
             'profile' => $profile,
+            // What support can correct (see correctTown), with powers by ID; null when unreadable.
+            'inventory' =>
+                $state === null
+                    ? null
+                    : [
+                        'coins' => $state['town']['coins'],
+                        'builderHammers' => $state['builderHammers'],
+                        'powers' => (object) $state['powers'],
+                        'limits' => [
+                            'coins' => self::MAX_COINS,
+                            'builderHammers' => self::MAX_GRANTED_HAMMERS,
+                            'powers' => $integrity->bonusCapacity($state),
+                        ],
+                    ],
+            'syncRejections' => SyncRejections::list($db, $id),
             'history' => array_map(
                 fn($h) => [
                     'revision' => (int) $h['revision'],
@@ -471,6 +504,24 @@ final class AdminService
                     [$id],
                 ),
             ),
+        ];
+    }
+    /** A light poll for the town page: whether the town saved again and its owner is online. */
+    public function townStatus(string $id): array
+    {
+        $row = $this->database
+            ->get()
+            ->fetchAssociative(
+                'SELECT t.revision,t.saved_at,a.seen_at FROM towns t LEFT JOIN player_activity a ON a.player_id=t.player_id WHERE t.id=?',
+                [$id],
+            );
+        if (!$row) {
+            throw new ApiError(404, 'No town has that ID.');
+        }
+        return [
+            'revision' => (int) $row['revision'],
+            'savedAt' => (int) $row['saved_at'],
+            'ownerSeenAt' => self::time($row['seen_at']),
         ];
     }
     // Same lock order as the owner's saves: the account row, then the live town.
@@ -539,6 +590,225 @@ final class AdminService
             return [];
         });
         return $this->townDetail($id);
+    }
+    // Support for a false desync: the town's next upload skips the integrity replay
+    // once and is re-baselined, then the flag clears itself.
+    public function setForceSync(string $actor, string $id, array $body): array
+    {
+        SaveService::keys($body, ['forceSync']);
+        if (!is_bool($body['forceSync'] ?? null)) {
+            throw new ApiError(422, 'Choose whether to accept the next sync.');
+        }
+        return $this->locked($id, function ($db, $row) use ($actor, $body) {
+            if ((bool) $row['force_sync'] !== $body['forceSync']) {
+                $db->update(
+                    'towns',
+                    ['force_sync' => (int) $body['forceSync']],
+                    ['id' => $row['id']],
+                );
+                $this->admins->audit(
+                    $actor,
+                    $body['forceSync'] ? 'town_sync_forced' : 'town_sync_force_cleared',
+                    $row['id'],
+                    $row['name'],
+                );
+            }
+            return ['forceSync' => $body['forceSync']];
+        });
+    }
+    /**
+     * One rejected upload beside the cloud save it was compared with and the state the
+     * server replayed from it, all in the replay's comparable form (powers by ID).
+     */
+    public function syncRejection(string $id, string $rejection): array
+    {
+        $db = $this->database->get();
+        $row = SyncRejections::find($db, $id, $rejection);
+        $revision = $db->fetchOne('SELECT revision FROM towns WHERE id=? AND deleted_at IS NULL', [
+            $id,
+        ]);
+        $integrity = new SaveIntegrity();
+        $comparable = fn(string $json) => ($save = self::decode($json)) instanceof \stdClass
+            ? $integrity->comparable($save) ?? $save
+            : null;
+        return [
+            'rejection' => SyncRejections::summary($row),
+            // Edits apply only while the town is still at the rejected revision.
+            'current' => $revision !== false && (int) $revision === (int) $row['revision'],
+            'cloud' => $comparable($row['cloud']),
+            'upload' => $comparable($row['upload']),
+            'expected' => $row['expected'] === null ? null : self::decode($row['expected']),
+        ];
+    }
+    /**
+     * After comparing a blocked upload: saves the cloud save or the upload, with the admin's
+     * edits, as a new revision. The owner's game loads it on its next sync without asking,
+     * keeping its own copy as a recovery backup, then syncs from it normally.
+     */
+    public function resetTown(string $actor, string $id, string $rejection, array $body): array
+    {
+        SaveService::keys($body, ['base', 'changes']);
+        if (!in_array($body['base'] ?? null, ['cloud', 'upload'], true)) {
+            throw new ApiError(422, 'Start from the cloud save or the upload.');
+        }
+        $this->locked($id, function ($db, $row) use ($actor, $rejection, $body) {
+            $rejected = SyncRejections::find($db, $row['id'], $rejection);
+            if ((int) $rejected['revision'] !== (int) $row['revision']) {
+                throw new ApiError(
+                    409,
+                    'This town saved again since this rejection. Compare its latest one.',
+                );
+            }
+            $integrity = new SaveIntegrity();
+            $base = self::decode($body['base'] === 'cloud' ? $row['profile'] : $rejected['upload']);
+            $state = $base instanceof \stdClass ? $integrity->comparable($base) : null;
+            if ($state === null) {
+                throw new ApiError(422, 'This save cannot be read for editing.');
+            }
+            $this->saveEdited(
+                $db,
+                $row,
+                $integrity,
+                SyncRejections::edit($state, $body['changes'] ?? []),
+                $actor,
+                'town_sync_reset',
+                sprintf(
+                    'revision %d from the %s, %d value(s) edited',
+                    (int) $row['revision'] + 1,
+                    $body['base'] === 'cloud' ? 'cloud save' : 'rejected upload',
+                    count($body['changes'] ?? []),
+                ),
+            );
+            return [];
+        });
+        return $this->townDetail($id);
+    }
+    /** Builder hammers support may hand out, past the cap that limits what play earns. */
+    public const MAX_GRANTED_HAMMERS = 99;
+    /** The most coins a save holds (JavaScript's largest safe integer). */
+    private const MAX_COINS = 9007199254740991;
+    /**
+     * Support's correction after a bug: sets the coins, stored bonuses and builder hammers of
+     * the cloud save the admin is looking at. Saved like a reset, so the owner's game loads it
+     * on its next sync and keeps its own copy as a recovery backup.
+     */
+    public function correctTown(string $actor, string $id, array $body): array
+    {
+        SaveService::keys($body, ['revision', 'coins', 'builderHammers', 'powers']);
+        if (!is_int($body['revision'] ?? null)) {
+            throw new ApiError(422, 'Send the revision you corrected.');
+        }
+        if (array_key_exists('powers', $body) && !($body['powers'] instanceof \stdClass)) {
+            throw new ApiError(422, 'Send the bonuses by ID.');
+        }
+        $this->locked($id, function ($db, $row) use ($actor, $body) {
+            if ((int) $row['revision'] !== $body['revision']) {
+                throw new ApiError(409, 'This town saved again. Reload it and check the values.');
+            }
+            $integrity = new SaveIntegrity();
+            $save = self::decode($row['profile']);
+            $state = $save instanceof \stdClass ? $integrity->comparable($save) : null;
+            if ($state === null) {
+                throw new ApiError(422, 'This save cannot be read for editing.');
+            }
+            $edits = [];
+            if (array_key_exists('coins', $body)) {
+                $edits[] = ['coins', ['town', 'coins'], $body['coins'], self::MAX_COINS];
+            }
+            if (array_key_exists('builderHammers', $body)) {
+                $edits[] = [
+                    'builder hammers',
+                    ['builderHammers'],
+                    $body['builderHammers'],
+                    self::MAX_GRANTED_HAMMERS,
+                ];
+            }
+            $capacity = $integrity->bonusCapacity($state);
+            foreach ((array) ($body['powers'] ?? []) as $power => $quantity) {
+                if (!array_key_exists($power, $state['powers'])) {
+                    throw new ApiError(422, 'This game has no bonus called ' . $power . '.');
+                }
+                $edits[] = [(string) $power, ['powers', $power], $quantity, $capacity];
+            }
+            $changed = [];
+            foreach ($edits as [$label, $path, $value, $maximum]) {
+                if (!is_int($value) || $value < 0 || $value > $maximum) {
+                    throw new ApiError(
+                        422,
+                        sprintf('Set %s to a whole number from 0 to %d.', $label, $maximum),
+                    );
+                }
+                $target = &$state;
+                foreach ($path as $key) {
+                    $target = &$target[$key];
+                }
+                if ($target !== $value) {
+                    $changed[] = sprintf('%s %d → %d', $label, $target, $value);
+                    $target = $value;
+                }
+                unset($target);
+            }
+            if (!$changed) {
+                throw new ApiError(422, 'Change a value first.');
+            }
+            $this->saveEdited(
+                $db,
+                $row,
+                $integrity,
+                $state,
+                $actor,
+                'town_corrected',
+                sprintf('revision %d: %s', (int) $row['revision'] + 1, implode(', ', $changed)),
+            );
+            return [];
+        });
+        return $this->townDetail($id);
+    }
+    /**
+     * Saves a state an admin edited (in the replay's comparable form) as the town's next
+     * revision. The owner's game loads it on its next sync without asking.
+     */
+    private function saveEdited(
+        Connection $db,
+        array $row,
+        SaveIntegrity $integrity,
+        array $state,
+        string $actor,
+        string $action,
+        string $detail,
+    ): void {
+        $now = (int) floor(microtime(true) * 1000);
+        $latest = json_decode($row['profile'], false, 64, JSON_THROW_ON_ERROR);
+        $saved = Honours::load(fn() => $integrity)->keep(
+            $integrity->adminReset(
+                $state,
+                $latest,
+                $now,
+                $row['id'],
+                (int) $row['saved_at'] * 1000,
+            ),
+            $latest,
+            Honours::social($db, 'id', $row['id']),
+        );
+        $profile = json_encode($saved, JSON_THROW_ON_ERROR);
+        SaveService::archive($db, $row);
+        $changes = [
+            'profile' => $profile,
+            'revision' => (int) $row['revision'] + 1,
+            'saved_at' => intdiv($now, 1000),
+            'upload_id' => SaveService::ADMIN_RESET . bin2hex(random_bytes(12)),
+            'upload_hash' => hash('sha256', $profile),
+            'force_sync' => 0,
+        ];
+        if ($row['listed']) {
+            $changes['appearance'] = $this->public->projection(
+                $saved,
+                $row['name'],
+                $row['public_id'],
+            );
+        }
+        $db->update('towns', $changes, ['id' => $row['id']]);
+        $this->admins->audit($actor, $action, $row['id'], $detail);
     }
     public function deleteTown(string $actor, string $id, array $body): array
     {

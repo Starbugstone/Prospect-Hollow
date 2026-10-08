@@ -44,7 +44,6 @@ import { createSaveFile, parseSaveFile } from '../services/saveTransfer';
 import {
   bonusCapacity,
   CONTINUOUS_COIN_CAP,
-  HAMMER_CAPACITY,
   OVERFLOW_COINS,
   grantReward,
   rollChestReward,
@@ -199,12 +198,10 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
       }
     }
     state.town = queueCampaignPresentations(state.town, state.records);
+    // The hammer cap limits what play earns, not what a save holds: support can grant more.
     if (Number.isSafeInteger(saved?.builderHammers) && saved.builderHammers >= 0)
-      state.builderHammers = Math.min(HAMMER_CAPACITY, saved.builderHammers);
-    let overflow = Math.max(
-      0,
-      (Number.isSafeInteger(saved?.builderHammers) ? saved.builderHammers : 0) - HAMMER_CAPACITY,
-    );
+      state.builderHammers = saved.builderHammers;
+    let overflow = 0;
     state.powers.forEach((power) => {
       const savedPower =
         saved?.powers?.find?.((entry) => entry.id === power.id) ??

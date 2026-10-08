@@ -476,8 +476,7 @@ $historical['powers'][0]['quantity'] = 7;
 $historical['builderHammers'] = 8;
 $migrated = $historical;
 $migrated['powers'][0]['quantity'] = 3;
-$migrated['builderHammers'] = 5;
-$migrated['town']['coins'] = 170;
+$migrated['town']['coins'] = 140;
 $migrated['integrity'] = [
     'version' => 1,
     'epoch' => integrityUuid(777),
@@ -488,8 +487,8 @@ $migrated['integrity'] = [
 assertIntegrity(
     $validator->accept(integrityObject($migrated), $baseline, $now, true, [
         integrityObject($historical),
-    ])->town->coins === 170,
-    'known legacy inventory overflow converts once during verified historical recovery',
+    ])->town->coins === 140,
+    'known legacy bonus overflow converts once during verified historical recovery; hammers past the cap stay',
 );
 $historical = integrityData($before);
 unset($historical['integrity'], $historical['town']['progressionVersion']);

@@ -106,5 +106,19 @@ const ACTIONS = {
   town_unshared: 'Stopped sharing town',
   town_deleted: 'Deleted town',
   town_restored: 'Restored town revision',
+  town_sync_forced: 'Set town to accept next sync',
+  town_sync_force_cleared: 'Cleared accept next sync',
+  town_sync_reset: 'Reset town after a blocked sync',
+  town_corrected: 'Corrected town coins or inventory',
 };
 export const actionLabel = (action) => ACTIONS[action] ?? action.replaceAll('_', ' ');
+// Why the save protection rejected an upload, from its error code.
+const CODES = {
+  save_integrity_mismatch: 'Progress did not match the replayed actions',
+  save_integrity_invalid: 'The save is out of range or malformed',
+  save_clock_mismatch: 'The device clock was ahead of the cloud checkpoint',
+  save_money_review: 'Earnings exceeded the money estimate',
+  save_rules_unsupported: 'The game rules were not compatible',
+  save_integrity_unsupported: 'The journal version was not compatible',
+};
+export const codeLabel = (code) => CODES[code] ?? code.replaceAll('_', ' ');

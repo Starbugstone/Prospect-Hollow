@@ -591,7 +591,9 @@ async function update() {
   const newConstruction = props.construction?.serial !== lastConstruction;
   if (visual !== lastVisual || newConstruction) {
     const constructionId = newConstruction ? props.construction?.id : null;
-    if (constructionId) {
+    // A build from the list swaps the building at once, without the hammer cue.
+    const instant = newConstruction && !!props.construction?.instant;
+    if (constructionId && !instant) {
       scene.beginConstructionCue(constructionId);
       await new Promise((resolve) => afterPaint(resolve));
       if (disposed || generation !== updateGeneration || !props.active) return;
@@ -610,7 +612,7 @@ async function update() {
       { ...labels, mine: t('Mine') },
       Math.max(0, (props.nextLevel ?? 1) - 1),
       constructionId,
-      props.reducedMotion,
+      { reducedMotion: props.reducedMotion, instant },
     );
     lastVisual = visual;
     lastConstruction = props.construction?.serial;

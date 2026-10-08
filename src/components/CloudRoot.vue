@@ -41,12 +41,18 @@
         t(
           activeMeta.conflict
             ? 'You played {town} on another device. That save will load when you return to the village.'
-            : 'You played {town} on another device, so we loaded that save.',
+            : activeMeta.desyncNotice === 'support'
+              ? 'Support updated {town} in the cloud, so we loaded that save. Your previous progress is kept as a backup.'
+              : 'You played {town} on another device, so we loaded that save.',
           { town: townName },
         )
       }}
     </p>
-    <button v-if="!activeMeta.conflict" class="save-recovery-compare" @click="recoveryOpen = true">
+    <button
+      v-if="!activeMeta.conflict && activeMeta.desyncNotice !== 'support'"
+      class="save-recovery-compare"
+      @click="recoveryOpen = true"
+    >
       {{ t('Compare saves') }}
     </button>
     <button
@@ -495,10 +501,11 @@ function resume() {
   )
     return;
   scheduler.resume();
-  // A clean town may have changed on another device. Check only on return,
-  // at most once per minute, never on every local checkpoint or storage event.
+  // A clean town may have changed on another device, and a blocked one may have been
+  // reset by support. Check only on return, at most once per minute, never on every
+  // local checkpoint or storage event.
   const meta = townStorage.active()?.meta;
-  if (!meta?.dirty && !meta?.pending && Date.now() - lastResume > 60000) {
+  if ((!meta?.dirty || uploadBlocked(meta)) && !meta?.pending && Date.now() - lastResume > 60000) {
     lastResume = Date.now();
     syncNow();
   }

@@ -24,6 +24,9 @@ final class Database
         19 => '/schema-player-data',
         // Space helmets found while visiting, redeemed by the finder's own town.
         20 => '/schema-helmet-finds',
+        // Uploads the save protection rejected, for the admin sync log, and the admin's
+        // one-shot acceptance of a town's next upload.
+        21 => '/schema-force-sync',
     ];
     private ?Connection $connection = null;
     public static function latestVersion(): int

@@ -2342,6 +2342,7 @@
   "You played on another device, so we loaded that save. The save from this device was kept. Pick the one to keep playing.": "Vous avez joué sur un autre appareil : cette sauvegarde a été chargée. Celle de cet appareil est conservée. Choisissez celle avec laquelle continuer.",
   "You played this town on another device. Compare both saves and pick one.": "Vous avez joué cette ville sur un autre appareil. Comparez les deux sauvegardes et choisissez-en une.",
   "You played {town} on another device, so we loaded that save.": "Vous avez joué {town} sur un autre appareil : cette sauvegarde a été chargée.",
+  "Support updated {town} in the cloud, so we loaded that save. Your previous progress is kept as a backup.": "L’assistance a mis à jour {town} en ligne : cette sauvegarde a été chargée. Votre progression précédente est conservée en copie de secours.",
   "You played {town} on another device. That save will load when you return to the village.": "Vous avez joué {town} sur un autre appareil. Cette sauvegarde se chargera à votre retour au village.",
   "Your account is full. This town stays playable here. Delete a cloud town to free a slot.": "Votre compte est plein. Cette ville reste jouable ici. Supprimez une ville en ligne pour libérer un emplacement.",
   "Your existing save has been kept. Close other game tabs and try again.": "Votre sauvegarde est conservée. Fermez les autres onglets du jeu et réessayez.",

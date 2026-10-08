@@ -1150,7 +1150,8 @@ const { playRaidCue } = useTownAudio(() => ({
   cameraDistance: cameraDistance.value,
   population: people.value,
   construction: activeProjects.value.length > 0,
-  buildCue: construction.value?.serial,
+  // Builds from the build list swap silently.
+  buildCue: construction.value?.instant ? null : construction.value?.serial,
   stable: town.value.buildings.stable > 0 && !motorTraffic(town.value),
   river: true,
   railDepot: town.value.buildings.railDepot > 0 && !modernTransport(town.value, 'railDepot'),
@@ -1377,7 +1378,12 @@ function startWork(stage, keepDirectory = false) {
 function showConstruction(keepDirectory = false) {
   if (pendingPresentation(town.value)) keepDirectory = false;
   if (!keepDirectory) closeDialog();
-  construction.value = { id: selected.value, serial: (construction.value?.serial ?? 0) + 1 };
+  // The build list stays open: its builds swap in place without a reveal.
+  construction.value = {
+    id: selected.value,
+    serial: (construction.value?.serial ?? 0) + 1,
+    instant: keepDirectory,
+  };
   if (!keepDirectory) mapFrame.value?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
   // Moon work happens on the Moon map.
   if (!keepDirectory && BUILDING_BY_ID[selected.value]?.settlement === 'moon')

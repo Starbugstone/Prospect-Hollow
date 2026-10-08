@@ -194,8 +194,11 @@ export function createSyncService({
           ...cloudMeta(cloud),
           dirty: r.profile !== cloud.profile,
           conflict: null,
+          // The cloud save replaced the progress the server had rejected.
+          uploadError: null,
           sequence: r.meta.sequence + 1,
-          desyncNotice: r.meta.recovery?.reason === 'desync',
+          // Support edited this save after a blocked sync: load it, without a choice.
+          desyncNotice: cloud.adminReset ? 'support' : r.meta.recovery?.reason === 'desync',
         };
         replaced = true;
       });
@@ -293,10 +296,19 @@ export function createSyncService({
         await recoveries.removeUpload(pending.body.uploadId, owner, id).catch(() => {});
     }
   }
+  async function replaceBlocked(id, owner) {
+    const remote = await request(`towns/${id}`);
+    const local = entry(id, owner);
+    if (!current(owner) || !local || !eligible(id, owner) || !uploadBlocked(local.meta)) return;
+    if (remote.townId !== id) throw new Error(WRONG_TOWN);
+    if (remote.revision > local.meta.baseRevision) await conflict(id, owner, remote);
+  }
   async function syncTown(id, owner, pull) {
     let local = entry(id, owner);
     if (!local || local.meta.missing || !current(owner) || !eligible(id, owner)) return;
-    if (uploadBlocked(local.meta)) return;
+    // A rejected upload waits, but a newer cloud save (support's reset, another device)
+    // still replaces the progress the server would not take.
+    if (uploadBlocked(local.meta)) return pull && replaceBlocked(id, owner);
     if (local.meta.pending)
       return upload(id, owner, local.meta.pending, local.meta.pending.resolve);
     if (local.meta.conflict && !canApply(id)) return;

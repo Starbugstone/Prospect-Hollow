@@ -11,7 +11,9 @@ import {
   chestCoinsEarned,
   CHEST_DROPS,
   CONTINUOUS_COIN_CAP,
+  grantReward,
   HAMMER_CAPACITY,
+  OVERFLOW_COINS,
   rollChestReward,
   shuffleChestDrops,
 } from '../src/data/rewards';
@@ -275,18 +277,32 @@ describe('Bounded, saved chest rewards', () => {
     expect(campaign.finishConstruction('armory', 1)).toBe(true);
     expect(campaign.bonusLimit).toBe(5);
   });
-  it('migrates over-cap saved inventory once, preserving its value as coins', () => {
+  it('migrates over-cap saved bonuses once, preserving their value as coins', () => {
     saved.set(
       SAVE_KEY,
       JSON.stringify({ powers: [{ id: 'tnt', quantity: 20 }], builderHammers: 8 }),
     );
     const campaign = useCampaignStore();
-    expect(campaign.town.coins).toBe(200);
+    expect(campaign.town.coins).toBe(170);
     expect(campaign.inventoryNotice).toBeTruthy();
     campaign.save();
     setActivePinia(createPinia());
-    expect(useCampaignStore().town.coins).toBe(200);
-    expect(useCampaignStore().builderHammers).toBe(5);
+    expect(useCampaignStore().town.coins).toBe(170);
+    // Support can grant hammers past the cap; play stops earning them until they are spent.
+    expect(useCampaignStore().builderHammers).toBe(8);
+  });
+  it('keeps support-granted hammers past the cap and spends them down', () => {
+    saved.set(SAVE_KEY, JSON.stringify({ builderHammers: HAMMER_CAPACITY + 3 }));
+    const campaign = useCampaignStore();
+    expect(campaign.builderHammers).toBe(HAMMER_CAPACITY + 3);
+    expect(campaign.inventoryNotice).toBeFalsy();
+    expect(availableChestDrops(campaign).some((drop) => drop.kind === 'builder-hammer')).toBe(
+      false,
+    );
+    const coins = campaign.town.coins;
+    grantReward(campaign, { kind: 'builder-hammer', quantity: 1 });
+    expect(campaign.builderHammers).toBe(HAMMER_CAPACITY + 3);
+    expect(campaign.town.coins).toBe(coins + OVERFLOW_COINS);
   });
 });
 
