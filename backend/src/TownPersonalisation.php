@@ -7,13 +7,7 @@ final class TownPersonalisation
 {
     public static function catalog(): array
     {
-        static $catalog;
-        return $catalog ??= json_decode(
-            file_get_contents(dirname(__DIR__) . '/content/public-schema.json'),
-            true,
-            64,
-            JSON_THROW_ON_ERROR,
-        )['personalisation'];
+        return PublicTown::schema()['personalisation'];
     }
     private static function colour(mixed $value): bool
     {

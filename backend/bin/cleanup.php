@@ -7,24 +7,30 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 if (is_file(dirname(__DIR__) . '/.env.local')) {
     (new Symfony\Component\Dotenv\Dotenv())->load(dirname(__DIR__) . '/.env.local');
 }
-$db = (new App\Database())->get();
+$database = new App\Database();
+$db = $database->get();
 $db->executeStatement('DELETE FROM limits WHERE until_at<?', [time()]);
 $db->executeStatement('DELETE FROM login_intents WHERE expires_at<?', [time()]);
 $db->executeStatement('DELETE FROM sessions WHERE expires_at<?', [time()]);
 $db->executeStatement('DELETE FROM email_changes WHERE expires_at<?', [time()]);
 // Identity rows only serialize sign-ins. Keep those of current accounts; one left by an
-// account deleted before deletion removed it would otherwise outlive the email.
-$auth = new App\Auth(new App\Database());
-$current = array_flip(
+// account deleted before deletion removed it would otherwise outlive the email. Reading
+// the identities first keeps a sign-in that commits in between.
+$auth = new App\Auth($database);
+$identities = $db->fetchFirstColumn('SELECT email_hash FROM identities');
+$stale = array_diff(
+    $identities,
     array_map(
         fn($email) => $auth->identityHash($email),
         $db->fetchFirstColumn('SELECT email FROM players'),
     ),
 );
-foreach ($db->fetchFirstColumn('SELECT email_hash FROM identities') as $hash) {
-    if (!isset($current[$hash])) {
-        $db->executeStatement('DELETE FROM identities WHERE email_hash=?', [$hash]);
-    }
+foreach (array_chunk($stale, 500) as $hashes) {
+    $db->executeStatement(
+        'DELETE FROM identities WHERE email_hash IN (?)',
+        [$hashes],
+        [Doctrine\DBAL\ArrayParameterType::STRING],
+    );
 }
 $db->executeStatement('DELETE FROM towns WHERE deleted_at IS NOT NULL AND deleted_at<?', [
     time() - 30 * 86400,

@@ -26,6 +26,16 @@ final class PlayerData
         return $seconds === null ? null : gmdate('Y-m-d\TH:i:s\Z', (int) $seconds);
     }
 
+    /** The new address of a change whose link is still valid, if any. */
+    private static function pendingEmail(Connection $db, string $player): ?string
+    {
+        return $db->fetchOne('SELECT email FROM email_changes WHERE player_id=? AND expires_at>?', [
+            $player,
+            time(),
+        ]) ?:
+            null;
+    }
+
     /** Counts and the latest connection details, for the "Your data" overview. */
     public function summary(Request $r): array
     {
@@ -92,12 +102,7 @@ final class PlayerData
                     [$key],
                 ),
                 'favourites' => $count('SELECT COUNT(*) FROM town_favourites WHERE player_id=?'),
-                'pendingEmail' =>
-                    $db->fetchOne(
-                        'SELECT email FROM email_changes WHERE player_id=? AND expires_at>?',
-                        [$id, time()],
-                    ) ?:
-                    null,
+                'pendingEmail' => self::pendingEmail($db, $id),
             ];
         });
     }
@@ -122,10 +127,26 @@ final class PlayerData
                     [$id],
                 ) ?:
                 null;
-            $visitors = Honours::visitorCounts(
-                $db,
-                $db->fetchFirstColumn('SELECT id FROM towns WHERE player_id=?', [$id]),
+            // One query each for the towns, their earlier saves and their visitor counts.
+            $rows = $db->fetchAllAssociative(
+                'SELECT t.*,s.collected_at,(SELECT COUNT(*) FROM town_travels r WHERE r.origin_town_id=t.id) AS travels FROM towns t LEFT JOIN saloon_collections s ON s.town_id=t.id WHERE t.player_id=? ORDER BY t.saved_at DESC,t.id',
+                [$id],
             );
+            $earlier = [];
+            foreach (
+                $db->iterateAssociative(
+                    'SELECT h.town_id,h.revision,h.saved_at,h.profile FROM town_history h JOIN towns t ON t.id=h.town_id WHERE t.player_id=? ORDER BY h.town_id,h.revision DESC',
+                    [$id],
+                )
+                as $entry
+            ) {
+                $earlier[$entry['town_id']][] = [
+                    'revision' => (int) $entry['revision'],
+                    'savedAt' => $time($entry['saved_at']),
+                    'save' => json_decode($entry['profile']),
+                ];
+            }
+            $visitors = Honours::visitorCounts($db, array_column($rows, 'id'));
             $towns = array_map(
                 fn($town) => [
                     'townId' => $town['id'],
@@ -136,28 +157,12 @@ final class PlayerData
                     'savedAt' => $time($town['saved_at']),
                     'deletedAt' => $time($town['deleted_at']),
                     'saloonCollectedByVisitorAt' => $time($town['collected_at']),
-                    'differentSignedInVisitors' => $visitors[$town['id']] ?? 0,
-                    'otherPlayersTownsVisited' => (int) $db->fetchOne(
-                        'SELECT COUNT(*) FROM town_travels WHERE origin_town_id=?',
-                        [$town['id']],
-                    ),
+                    'differentSignedInVisitors' => $visitors[$town['id']],
+                    'otherPlayersTownsVisited' => (int) $town['travels'],
                     'save' => json_decode($town['profile']),
-                    'earlierSaves' => array_map(
-                        fn($entry) => [
-                            'revision' => (int) $entry['revision'],
-                            'savedAt' => $time($entry['saved_at']),
-                            'save' => json_decode($entry['profile']),
-                        ],
-                        $db->fetchAllAssociative(
-                            'SELECT revision,saved_at,profile FROM town_history WHERE town_id=? ORDER BY revision DESC',
-                            [$town['id']],
-                        ),
-                    ),
+                    'earlierSaves' => $earlier[$town['id']] ?? [],
                 ],
-                $db->fetchAllAssociative(
-                    'SELECT t.*,s.collected_at FROM towns t LEFT JOIN saloon_collections s ON s.town_id=t.id WHERE t.player_id=? ORDER BY t.saved_at DESC,t.id',
-                    [$id],
-                ),
+                $rows,
             );
             $distinctions = [];
             foreach ((array) PlayerDistinctions::owned($db, $id) as $distinction => $state) {
@@ -169,12 +174,7 @@ final class PlayerData
                     'id' => $id,
                     'email' => $a['email'],
                     'createdAt' => $time($a['created_at']),
-                    'pendingEmailChange' =>
-                        $db->fetchOne(
-                            'SELECT email FROM email_changes WHERE player_id=? AND expires_at>?',
-                            [$id, time()],
-                        ) ?:
-                        null,
+                    'pendingEmailChange' => self::pendingEmail($db, $id),
                 ],
                 'publicProfile' => [
                     'publicName' => $profile['display_name'] ?? '',

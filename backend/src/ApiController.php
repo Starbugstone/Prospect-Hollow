@@ -80,10 +80,16 @@ final class ApiController
                 }
                 $ip = $r->getClientIp() ?? 'unknown';
                 $this->auth->limit('http:' . $ip, 600, 60);
+                // Routes that mail an address or prove a mailed token share one per-IP limit.
                 if (
                     in_array(
                         $path,
-                        ['auth/login-link', 'auth/confirm', 'account/email/confirm'],
+                        [
+                            'auth/login-link',
+                            'auth/confirm',
+                            'account/email',
+                            'account/email/confirm',
+                        ],
                         true,
                     )
                 ) {

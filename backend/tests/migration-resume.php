@@ -11,6 +11,7 @@ $names = [
     'town_travels',
     'email_changes_player',
     'email_changes',
+    'helmet_finds_host',
     'helmet_finds_town',
     'helmet_finds',
     'admin_settings',
@@ -120,6 +121,11 @@ $forceSync = $mysql ? 'schema-force-sync.sql' : 'schema-force-sync-postgresql.sq
 file_put_contents(
     $directory . '/' . $forceSync,
     $rewrite(file_get_contents(dirname(__DIR__) . '/' . $forceSync)),
+);
+$helmetHost = $mysql ? 'schema-helmet-host.sql' : 'schema-helmet-host-postgresql.sql';
+file_put_contents(
+    $directory . '/' . $helmetHost,
+    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $helmetHost)),
 );
 try {
     $statements = explode(';', $schema);
@@ -234,8 +240,13 @@ try {
         'email changes and signed-in visits installed, also when the migration is repeated',
     );
     check(
-        $connection->createSchemaManager()->tablesExist([$prefix . 'helmet_finds']),
-        'space-helmet finds installed',
+        $connection->createSchemaManager()->tablesExist([$prefix . 'helmet_finds']) &&
+            isset(
+                $connection->createSchemaManager()->listTableIndexes($prefix . 'helmet_finds')[
+                    $prefix . 'helmet_finds_host'
+                ],
+            ),
+        'space-helmet finds installed with their host index, also when the migration is repeated',
     );
 } finally {
     foreach (
@@ -284,6 +295,7 @@ try {
     @unlink($directory . '/' . $playerData);
     @unlink($directory . '/' . $helmets);
     @unlink($directory . '/' . $forceSync);
+    @unlink($directory . '/' . $helmetHost);
     unlink($directory . '/src/Database.php');
     rmdir($directory . '/src');
     rmdir($directory);

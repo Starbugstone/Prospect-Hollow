@@ -5,6 +5,21 @@ use Symfony\Component\HttpFoundation\Request;
 final class PublicTown
 {
     private ?SaveIntegrity $rules = null;
+    /** @var array<string, mixed>|null */
+    private static ?array $schema = null;
+    /**
+     * The exported public content (eras, buildings, honours, personalisation), decoded
+     * once per request. Empty when the content has not been exported.
+     *
+     * @return array<string, mixed>
+     */
+    public static function schema(): array
+    {
+        $path = dirname(__DIR__) . '/content/public-schema.json';
+        return self::$schema ??= is_file($path)
+            ? json_decode(file_get_contents($path), true, 64, JSON_THROW_ON_ERROR)
+            : [];
+    }
     public function __construct(
         private Database $database,
         private Auth $auth,
@@ -33,12 +48,7 @@ final class PublicTown
     }
     public function projection(object $profile, string $name, string $publicId): string
     {
-        $schema = json_decode(
-            file_get_contents(dirname(__DIR__) . '/content/public-schema.json'),
-            true,
-            32,
-            JSON_THROW_ON_ERROR,
-        );
+        $schema = self::schema();
         $town = $profile->town;
         $era = in_array($town->era, $schema['eras'], true) ? $town->era : $schema['eras'][0];
         $appearance = [

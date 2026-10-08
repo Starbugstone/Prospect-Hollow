@@ -137,13 +137,7 @@ final class VisitorService
 
     private function era(mixed $era): string
     {
-        static $eras;
-        $eras ??= json_decode(
-            file_get_contents(dirname(__DIR__) . '/content/public-schema.json'),
-            true,
-            32,
-            JSON_THROW_ON_ERROR,
-        )['eras'];
+        $eras = PublicTown::schema()['eras'];
         return in_array($era, $eras, true) ? $era : $eras[0];
     }
 

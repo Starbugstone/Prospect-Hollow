@@ -68,10 +68,7 @@ final class Honours
     /** @param (\Closure(): SaveIntegrity)|null $rules */
     public static function load(?\Closure $rules = null): self
     {
-        $path = dirname(__DIR__) . '/content/public-schema.json';
-        $schema = is_file($path)
-            ? json_decode(file_get_contents($path), true, 32, JSON_THROW_ON_ERROR)
-            : [];
+        $schema = PublicTown::schema();
         return new self(is_array($schema['honours'] ?? null) ? $schema['honours'] : [], $rules);
     }
 

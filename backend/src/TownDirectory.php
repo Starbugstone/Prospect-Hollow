@@ -52,7 +52,7 @@ final class TownDirectory
                     ' OFFSET ' .
                     ($page - 1) * self::DRAW_SIZE,
                 [
-                    $this->visitorKey($session),
+                    $this->auth->visitorKey($session['player_id']),
                     $dealt,
                     $session['player_id'],
                     $dealt - self::ACTIVE_SECONDS,
@@ -183,12 +183,6 @@ final class TownDirectory
             });
     }
 
-    // Live presence records signed-in visits under this key (see VisitorService::presence).
-    private function visitorKey(array $session): string
-    {
-        return $this->auth->visitorKey($session['player_id']);
-    }
-
     // A list card carries what helps choose a town. "visited" covers every visit this player
     // made while signed in, on any device; "visitors" counts people present now, as the
     // guestbook does.
@@ -211,7 +205,7 @@ final class TownDirectory
         $visited = array_flip(
             $db->fetchFirstColumn(
                 'SELECT DISTINCT town_id FROM visitor_visits WHERE visitor_key=? AND town_id IN (?)',
-                [$this->visitorKey($session), $ids],
+                [$this->auth->visitorKey($session['player_id']), $ids],
                 [1 => ArrayParameterType::STRING],
             ),
         );

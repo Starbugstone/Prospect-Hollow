@@ -27,6 +27,8 @@ final class Database
         // Uploads the save protection rejected, for the admin sync log, and the admin's
         // one-shot acceptance of a town's next upload.
         21 => '/schema-force-sync',
+        // The share-link view and a find check a host town's latest helmet find.
+        22 => '/schema-helmet-host',
     ];
     private ?Connection $connection = null;
     public static function latestVersion(): int

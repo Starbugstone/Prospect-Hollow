@@ -16,11 +16,13 @@ final class SaveIntegrity
     // The replayed state a rejected upload was compared with, for the admin sync log.
     private ?array $expected = null;
     private const CLOCK_SKEW_MS = 300000;
+    // The exported catalog is large: decode it once per request, not once per instance.
+    private static ?array $catalog = null;
     public function __construct(?array $rules = null)
     {
         if ($rules === null) {
             $path = dirname(__DIR__) . '/content/save-rules.json';
-            $rules = is_file($path)
+            $rules = self::$catalog ??= is_file($path)
                 ? json_decode(file_get_contents($path), true, 64, JSON_THROW_ON_ERROR)
                 : [];
         }
@@ -2696,6 +2698,8 @@ final class SaveIntegrity
         if ($index < 0) {
             return false;
         }
+        // An era with a `modernizes` list leaves every other building finished.
+        $modernizes = $this->rules['eras'][$town['era']]['modernizes'] ?? null;
         foreach ($this->rules['buildings'] as $id => $definition) {
             if (
                 !$definition['requiredForEraCompletion'] ||
@@ -2706,8 +2710,6 @@ final class SaveIntegrity
             // Normalized replay state is already clamped; older saves keep legacy levels.
             $level = $town['buildings'][$id] ?? 0;
             $level = is_int($level) ? min($definition['maxLevel'], $level) : 0;
-            // An era with a `modernizes` list leaves every other building finished.
-            $modernizes = $this->rules['eras'][$town['era']]['modernizes'] ?? null;
             $eraLevel =
                 $town['era'] === 'frontier' || $definition['introducedEra'] === $town['era']
                     ? $level

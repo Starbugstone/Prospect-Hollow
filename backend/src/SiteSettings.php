@@ -10,6 +10,7 @@ use Doctrine\DBAL\Connection;
  */
 final class SiteSettings
 {
+    public const AUDIT_RETENTION = 'audit_retention_days';
     public const PRIVACY_CONTACT = 'privacy_contact';
 
     public static function get(Connection $db, string $name): ?string
@@ -18,13 +19,21 @@ final class SiteSettings
         return is_string($value) ? $value : null;
     }
 
-    /** Stores a value, or removes the setting when it is null. */
+    /**
+     * Stores a value, or removes the setting when it is null. MySQL counts an unchanged
+     * row as unaffected, so the stored value decides between insert and update.
+     */
     public static function set(Connection $db, string $name, ?string $value): void
     {
         if ($value === null) {
             $db->delete('admin_settings', ['name' => $name]);
-        } elseif (!$db->update('admin_settings', ['value' => $value], ['name' => $name])) {
+            return;
+        }
+        $stored = self::get($db, $name);
+        if ($stored === null) {
             $db->insert('admin_settings', ['name' => $name, 'value' => $value]);
+        } elseif ($stored !== $value) {
+            $db->update('admin_settings', ['value' => $value], ['name' => $name]);
         }
     }
 

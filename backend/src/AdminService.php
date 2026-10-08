@@ -8,7 +8,6 @@ use Doctrine\DBAL\Connection;
 final class AdminService
 {
     public const PAGE = 25;
-    private ?array $eras = null;
     public function __construct(
         private Database $database,
         private AdminAuth $admins,
@@ -16,15 +15,6 @@ final class AdminService
         private PublicTown $public,
     ) {}
 
-    private function eras(): array
-    {
-        return $this->eras ??= json_decode(
-            file_get_contents(dirname(__DIR__) . '/content/public-schema.json'),
-            true,
-            32,
-            JSON_THROW_ON_ERROR,
-        )['eras'];
-    }
     private static function decode(?string $json): mixed
     {
         try {
@@ -183,7 +173,7 @@ final class AdminService
                 $daily[(int) $row['day']]['active'] = (int) $row['n'];
             }
         }
-        $eras = array_fill_keys($this->eras(), 0);
+        $eras = array_fill_keys(PublicTown::schema()['eras'], 0);
         $levels = [];
         foreach (
             $db->iterateAssociative('SELECT profile FROM towns WHERE deleted_at IS NULL')
@@ -250,7 +240,7 @@ final class AdminService
                 $towns[$town['player_id']][] = self::stats(self::decode($town['profile']));
             }
         }
-        $rank = array_flip($this->eras());
+        $rank = array_flip(PublicTown::schema()['eras']);
         return [
             'total' => $total,
             'page' => $page,
@@ -790,15 +780,31 @@ final class AdminService
             $latest,
             Honours::social($db, 'id', $row['id']),
         );
+        $this->storeRevision($db, $row, $saved, $now, SaveService::ADMIN_RESET, [
+            'force_sync' => 0,
+        ]);
+        $this->admins->audit($actor, $action, $row['id'], $detail);
+    }
+    /**
+     * Stores a save an admin made as the town's next revision, the replaced one going to
+     * history, under a new upload ID with this prefix. Returns the new revision.
+     */
+    private function storeRevision(
+        Connection $db,
+        array $row,
+        object $saved,
+        int $now,
+        string $upload,
+        array $changes = [],
+    ): int {
         $profile = json_encode($saved, JSON_THROW_ON_ERROR);
         SaveService::archive($db, $row);
-        $changes = [
+        $changes += [
             'profile' => $profile,
             'revision' => (int) $row['revision'] + 1,
             'saved_at' => intdiv($now, 1000),
-            'upload_id' => SaveService::ADMIN_RESET . bin2hex(random_bytes(12)),
+            'upload_id' => $upload . bin2hex(random_bytes(12)),
             'upload_hash' => hash('sha256', $profile),
-            'force_sync' => 0,
         ];
         if ($row['listed']) {
             $changes['appearance'] = $this->public->projection(
@@ -808,7 +814,7 @@ final class AdminService
             );
         }
         $db->update('towns', $changes, ['id' => $row['id']]);
-        $this->admins->audit($actor, $action, $row['id'], $detail);
+        return $changes['revision'];
     }
     public function deleteTown(string $actor, string $id, array $body): array
     {
@@ -853,28 +859,12 @@ final class AdminService
                 $latest,
                 Honours::social($db, 'id', $row['id']),
             );
-            $profile = json_encode($restored, JSON_THROW_ON_ERROR);
-            SaveService::archive($db, $row);
-            $changes = [
-                'profile' => $profile,
-                'revision' => (int) $row['revision'] + 1,
-                'saved_at' => intdiv($now, 1000),
-                'upload_id' => 'admin-restore-' . bin2hex(random_bytes(12)),
-                'upload_hash' => hash('sha256', $profile),
-            ];
-            if ($row['listed']) {
-                $changes['appearance'] = $this->public->projection(
-                    $restored,
-                    $row['name'],
-                    $row['public_id'],
-                );
-            }
-            $db->update('towns', $changes, ['id' => $row['id']]);
+            $revision = $this->storeRevision($db, $row, $restored, $now, 'admin-restore-');
             $this->admins->audit(
                 $actor,
                 'town_restored',
                 $row['id'],
-                'revision ' . $old['revision'] . ' saved as revision ' . $changes['revision'],
+                'revision ' . $old['revision'] . ' saved as revision ' . $revision,
             );
             return [];
         });
@@ -887,7 +877,7 @@ final class AdminService
     public const AUDIT_RETENTION_CHOICES = [30, 90, 180, 365, 730];
     public static function auditRetention(Connection $db): int
     {
-        $days = SiteSettings::get($db, 'audit_retention_days');
+        $days = SiteSettings::get($db, SiteSettings::AUDIT_RETENTION);
         return is_numeric($days) && in_array((int) $days, self::AUDIT_RETENTION_CHOICES, true)
             ? (int) $days
             : self::AUDIT_RETENTION_DAYS;
@@ -937,7 +927,7 @@ final class AdminService
         }
         return $this->database->get()->transactional(function ($db) use ($actor, $days) {
             $before = self::auditRetention($db);
-            SiteSettings::set($db, 'audit_retention_days', (string) $days);
+            SiteSettings::set($db, SiteSettings::AUDIT_RETENTION, (string) $days);
             if ($before !== $days) {
                 $this->admins->audit(
                     $actor,

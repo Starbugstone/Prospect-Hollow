@@ -283,7 +283,7 @@
           'get':
             {
               'summary': 'Account, CSRF token and up to three owned town cards',
-              'description': 'Each town contains townId, name, revision, updatedAt, isPublic, publicId and summary {era, coins, buildings}. Buildings counts positive numeric building levels. saloonCollectedAt is the last time a share-link visitor collected the saloon (milliseconds, 0 if never); the owner game moves its reserved coins once per collection. guest {name, at} | null is the latest signed-in viewer, named after one of their towns after sanitising; the owner game saves it as a VIP and then deletes it. The list never includes full profiles; GET /towns/{id} loads a playable save. Summaries are private to the authenticated owner. account.distinctions maps each player distinction the caller holds now to {at, tenure?} (PlayerDistinction without id): event grants and the time step, both decided by the server; the game only shows them.',
+              'description': 'Each town contains townId, name, revision, updatedAt, isPublic, publicId and summary {era, crest?, coins, buildings, honours}; crest is the town’s validated crest when it has one. Buildings counts positive numeric building levels. saloonCollectedAt is the last time a share-link visitor collected the saloon (milliseconds, 0 if never); the owner game moves its reserved coins once per collection. guest {name, at} | null is the latest signed-in viewer, named after one of their towns after sanitising; the owner game saves it as a VIP and then deletes it. The list never includes full profiles; GET /towns/{id} loads a playable save. Summaries are private to the authenticated owner. account.distinctions maps each player distinction the caller holds now to {at, tenure?} (PlayerDistinction without id): event grants and the time step, both decided by the server; the game only shows them.',
               'responses':
                 {
                   '200': { 'description': 'Success' },
@@ -835,7 +835,7 @@
           'post':
             {
               'summary': 'Email a confirmation link to a new address',
-              'description': 'Nothing changes until the link (/#email=<token>, valid for one hour) is confirmed. Only the latest request stays valid. The new address shares the sign-in link rate limit.',
+              'description': 'Nothing changes until the link (/#email=<token>, valid for one hour) is confirmed. Only the latest request stays valid. The new address shares the sign-in link rate limit, and requests share the per-IP sign-in limit (30 per 15 minutes).',
               'parameters':
                 [
                   {
@@ -1431,7 +1431,16 @@
                     },
                   'townName': { 'type': ['string', 'null'] },
                   'era': { 'type': ['string', 'null'] },
-                  'publicId': { 'type': ['string', 'null'] },
+                  'publicId':
+                    {
+                      'type': ['string', 'null'],
+                      'description': 'Only for a named home town that is still shared; never for a private visit.',
+                    },
+                  'townGone':
+                    {
+                      'type': 'boolean',
+                      'description': 'The named home town was deleted since the visit; its name stays until the visitor’s account is erased.',
+                    },
                   'arrivedAt': { 'type': 'integer', 'description': 'Unix milliseconds' },
                   'lastSeenAt': { 'type': 'integer', 'description': 'Unix milliseconds' },
                   'departedAt': { 'type': ['integer', 'null'] },
@@ -1739,6 +1748,12 @@
                     {
                       'type': 'object',
                       'description': "Owner load and save replies: the caller's player distinctions now, as in GET /account (PlayerDistinction without id, by ID), so a new time step or an admin change reaches the game without a new session.",
+                    },
+                  'adminReset':
+                    {
+                      'type': 'boolean',
+                      'const': true,
+                      'description': 'Present while the current revision is one an admin saved from a sync comparison or an inventory correction: the owner game loads it without asking, keeping its own copy as a recovery backup.',
                     },
                   'profile': { '$ref': '#/components/schemas/Profile' },
                   'integrity': { '$ref': '#/components/schemas/IntegrityReceipt' },

@@ -1496,6 +1496,11 @@ try {
             $kept() === 1,
         'a longer retention keeps newer entries and removes older ones at once',
     );
+    status(
+        200,
+        adminCall('PATCH', 'audit/settings', ['retentionDays' => 180], $s),
+        'keep the same retention again',
+    );
     $db->get()->update('admin_settings', ['value' => '30'], ['name' => 'audit_retention_days']);
     check(
         App\AdminService::expireAudit($db->get()) >= 1 && $kept() === 0,
@@ -1566,6 +1571,12 @@ try {
             status(200, adminCall('GET', 'settings', null, $s), 'settings')['privacyContact'] ===
                 'privacy@example.test',
         'the contact is normalised, stored and published',
+    );
+    // MySQL reports no affected row for an unchanged value; saving it again must not fail.
+    status(
+        200,
+        adminCall('PATCH', 'settings/privacy', ['privacyContact' => 'privacy@example.test'], $s),
+        'save the same contact again',
     );
     $changes = array_values(
         array_filter($audit()['entries'], fn($e) => $e['action'] === 'privacy_contact_changed'),
