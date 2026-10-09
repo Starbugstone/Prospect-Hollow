@@ -18,15 +18,15 @@ scripts run with `blender --background --python <script>`.
 
 ## Game art and audio
 
-| Script                                                                              | Purpose                                                                                                                  |
-| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `generate-gems.mjs`, `generate-bonus-art.mjs`                                       | Regenerate the SVG gems, bonus atlas, powers and ice (`npm run assets`).                                                 |
-| `generate-board-atlas.mjs`                                                          | Rasterizes the board art into PNG atlases (`npm run assets:board`).                                                      |
-| `generate-mining-music.mjs`                                                         | Renders the original “Lanterns Below” mine loop; needs `FFMPEG`.                                                         |
-| `generate-era-audio.mjs`                                                            | Synthesizes the river, train and steamboat loops in `public/sound/village`.                                              |
-| `prepare-village-audio.mjs`, `prepare-raid-audio.mjs`, `prepare-incident-audio.mjs` | Rebuild the licensed village, raid and incident recordings listed in `public/sound/village/credits.html`; need `FFMPEG`. |
-| `blender_assets.py`, `city_primitives.py`, `city_identity.py`                       | Shared Blender helpers for the asset packs below.                                                                        |
-| `create-city-assets.py`, `create-future-assets.py`, `create-leisure-assets.py`      | Author and export the city, aviation-to-connected and leisure meshes.                                                    |
+| Script                                                                                                            | Purpose                                                                                                                                                   |
+| ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `generate-gems.mjs`, `generate-bonus-art.mjs`                                                                     | Regenerate the SVG gems, bonus atlas, powers and ice (`npm run assets`).                                                                                  |
+| `generate-board-atlas.mjs`                                                                                        | Rasterizes the board art into PNG atlases (`npm run assets:board`).                                                                                       |
+| `generate-mining-music.mjs`                                                                                       | Renders the original “Lanterns Below” mine loop; needs `FFMPEG`.                                                                                          |
+| `generate-era-audio.mjs`                                                                                          | Synthesizes the river, train and steamboat loops in `public/sound/village`.                                                                               |
+| `prepare-village-audio.mjs`, `prepare-raid-audio.mjs`, `prepare-incident-audio.mjs`, `prepare-monument-music.mjs` | Rebuild the licensed village, raid and incident recordings and the monument unveiling music listed in `public/sound/village/credits.html`; need `FFMPEG`. |
+| `blender_assets.py`, `city_primitives.py`, `city_identity.py`                                                     | Shared Blender helpers for the asset packs below.                                                                                                         |
+| `create-city-assets.py`, `create-future-assets.py`, `create-leisure-assets.py`                                    | Author and export the city, aviation-to-connected and leisure meshes.                                                                                     |
 
 ## Balance measurements
 
