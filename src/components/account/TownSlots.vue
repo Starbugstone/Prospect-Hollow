@@ -94,23 +94,24 @@
           <GameIcon name="more" />
         </button>
         <div v-if="menu === town.townId" class="town-slot-menu" role="menu">
-          <template v-if="isCurrent(town)">
-            <button role="menuitem" @click="manage('sharing')">
-              <GameIcon name="share" />{{ t('Share & rename') }}
-            </button>
-            <button role="menuitem" @click="manage('history')">
-              <GameIcon name="history" />{{ t('Save history') }}
-            </button>
-          </template>
+          <button
+            role="menuitem"
+            :disabled="busy || (!isCurrent(town) && game.sessionActive)"
+            @click="manage(town, 'sharing')"
+          >
+            <GameIcon name="share" />{{ t('Share & rename') }}
+          </button>
+          <button
+            role="menuitem"
+            :disabled="busy || (!isCurrent(town) && game.sessionActive)"
+            @click="manage(town, 'history')"
+          >
+            <GameIcon name="history" />{{ t('Save history') }}
+          </button>
           <a role="menuitem" :href="townUrl(town.townId)" target="_blank" rel="noopener"
             ><GameIcon name="external" />{{ t('Open in a new tab') }}</a
           >
-          <button
-            v-if="isCurrent(town)"
-            role="menuitem"
-            class="is-danger"
-            @click="manage('delete')"
-          >
+          <button role="menuitem" class="is-danger" :disabled="busy" @click="remove(town)">
             <GameIcon name="trash" />{{ t('Delete from the cloud…') }}
           </button>
         </div>
@@ -173,6 +174,12 @@
         </button>
       </li>
     </ul>
+    <TownDeleteDialog
+      v-if="deleting"
+      :town="deleting"
+      @close="deleting = null"
+      @deleted="deleted"
+    />
     <footer class="account-towns-footer">
       <button class="account-link" @click="community()">
         <GameIcon name="eye" />{{ t('Visit shared towns') }}<GameIcon name="arrow" />
@@ -190,7 +197,7 @@ import {
   attachLocal,
   cacheTown,
 } from '../../services/cloudProfile';
-import { townStorage } from '../../services/townStorage';
+import { townStorage, townKey } from '../../services/townStorage';
 import { cardSummary, profileSummary } from '../../services/townSummary';
 import { receivedDistinctions } from '../../data/playerDistinctions';
 import { timeAgo } from '../../services/saveStatus';
@@ -199,20 +206,22 @@ import { useGameStore } from '../../stores/gameStore';
 import { useAccountContext, eraName } from './accountContext';
 import GameIcon from '../GameIcon.vue';
 import TownCardArt from '../TownCardArt.vue';
+import TownDeleteDialog from './TownDeleteDialog.vue';
 import HonourCardRow from '../honours/HonourCardRow.vue';
 import { townUrl } from '../../services/appRoute';
 import { t, number } from '../../i18n';
 const SLOT_LIMIT = 3;
 const props = defineProps({ writable: Boolean });
 const emit = defineEmits(['manage']);
-const { busy, act, changed, close, community } = useAccountContext();
+const { busy, message, act, changed, close, community } = useAccountContext();
 const account = inject('cloudAccount', null);
 const game = useGameStore(),
   menu = ref(null),
   creating = ref(null),
   name = ref(''),
   copyName = ref(''),
-  nameInput = ref(null);
+  nameInput = ref(null),
+  deleting = ref(null);
 const active = computed(() => {
   void cloud.storageVersion;
   return townStorage.active();
@@ -258,9 +267,24 @@ const savedAgo = (town) => {
   const ago = timeAgo(town.updatedAt * 1000);
   return ago ? t('Saved {time}', { time: ago }) : t('Not synced yet');
 };
-function manage(section) {
+// Another town's settings open once that town is the one being played.
+async function manage(town, section) {
   menu.value = null;
+  if (!isCurrent(town)) {
+    if (game.sessionActive) return;
+    await act(() => switchTown(town));
+    await nextTick();
+    if (townStorage.selectedKey() !== townKey(town.townId, cloud.account.id)) return;
+  }
   emit('manage', section);
+}
+function remove(town) {
+  menu.value = null;
+  deleting.value = town;
+}
+function deleted() {
+  message.value = t('“{town}” was deleted from your account.', { town: deleting.value.name });
+  deleting.value = null;
 }
 async function startCreating(slot) {
   creating.value = slot;
@@ -274,12 +298,16 @@ async function submit() {
   creating.value = null;
   name.value = '';
 }
-async function openTown(town) {
+async function switchTown(town) {
   if (game.sessionActive) return;
   await cacheTown(town);
   if (props.writable) await syncNow({ pull: false });
   townStorage.select(town.townId, cloud.account.id);
   changed();
+}
+async function openTown(town) {
+  if (game.sessionActive) return;
+  await switchTown(town);
   close();
 }
 async function createTown() {

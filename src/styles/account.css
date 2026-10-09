@@ -732,7 +732,8 @@
 .account-panel details > :not(summary) + :not(summary) {
   margin-top: 0.75rem;
 }
-.account-danger summary {
+.account-danger summary,
+.account-panel .account-danger h2 {
   color: #a53a2a;
 }
 .account-identity {

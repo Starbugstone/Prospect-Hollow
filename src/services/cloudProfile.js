@@ -379,6 +379,31 @@ export async function deleteCachedTown(id) {
     cloud.storageVersion++;
   });
 }
+// Deletes a cloud town at the revision the player reviewed: the town being played
+// deletes at its own base revision, any other at the revision its card shows. A device
+// copy is kept but marked missing, so it stays playable and is never uploaded again.
+export async function deleteAccountTown(town, confirmation) {
+  return townAction(town.townId, async () => {
+    const owner = cloud.account.id;
+    const selected = townStorage.selectedKey() === townKey(town.townId, owner);
+    const baseRevision = selected
+      ? townStorage.get(town.townId, owner).meta.baseRevision
+      : town.revision;
+    try {
+      await request(`towns/${town.townId}`, { baseRevision, confirmation }, 'DELETE');
+    } catch (error) {
+      // The town changed elsewhere: show its latest card before another attempt.
+      if (error.status === 409) await refreshAccount().catch(() => {});
+      throw error;
+    }
+    townStorage.mutate(town.townId, owner, (r) => {
+      r.meta.missing = true;
+      r.meta.conflict = null;
+    });
+    cloud.storageVersion++;
+    await refreshAccount();
+  });
+}
 export async function deleteAccount(confirmation) {
   const owner = cloud.account.id;
   await request('account', { confirmation }, 'DELETE');

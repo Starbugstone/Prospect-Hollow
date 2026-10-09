@@ -3800,5 +3800,16 @@
   "Unveil the working centerpiece and ceremonial lamps.": "Dévoilez le cœur animé du monument et ses lampes cérémonielles.",
   "Add a monumental colonnade and a taller silhouette.": "Ajoutez une colonnade monumentale et une silhouette plus haute.",
   "Complete the grand entrance, golden finials and fountain court.": "Achevez la grande entrée, les pinacles dorés et la cour des fontaines.",
-  "Monument levels": "Niveaux du monument"
+  "Monument levels": "Niveaux du monument",
+  "Delete “{town}”?": "Supprimer « {town} » ?",
+  "This cannot be undone.": "Cette action est irréversible.",
+  "The town leaves your account with its cloud saves and save history. Its public page and share link stop working, and its name becomes free for other players.": "La ville quitte votre compte avec ses sauvegardes en ligne et leur historique. Sa page publique et son lien de partage cessent de fonctionner, et son nom devient libre pour les autres joueurs.",
+  "This device keeps a copy you can still play, but it will no longer be backed up.": "Cet appareil garde une copie toujours jouable, mais elle ne sera plus sauvegardée en ligne.",
+  "This device has no copy of this town. Save a backup file first if you might want it back.": "Cet appareil n’a aucune copie de cette ville. Enregistrez d’abord une sauvegarde si vous pourriez vouloir la récupérer.",
+  "Leave the mine before deleting the town you are playing.": "Quittez la mine avant de supprimer la ville en cours.",
+  "Delete this town forever": "Supprimer cette ville définitivement",
+  "“{town}” was deleted from your account.": "« {town} » a été supprimée de votre compte.",
+  "This town changed. Review it again before deleting.": "Cette ville a changé. Vérifiez-la de nouveau avant de la supprimer.",
+  "Type the town name to confirm deletion.": "Saisissez le nom de la ville pour confirmer la suppression.",
+  "Save this progress as a new account town": "Enregistrer cette progression comme nouvelle ville du compte"
 }
