@@ -76,13 +76,14 @@ function tree(d, g, x, z, height, colour) {
 }
 
 // Each choice keeps its identity while five authored milestones transform its court.
-export function buildLandmark(d, parent, choice, stage = 1, timeless = false) {
+// A `still` monument (one under construction) keeps every mechanism at rest.
+export function buildLandmark(d, parent, choice, stage = 1, timeless = false, still = false) {
   const o = LANDMARK_BY_ID[choice];
   if (!o) return null;
   const g = d.group(parent);
   g.name = o.label;
   const tier = timeless ? 1 : Math.max(1, Math.min(stage, LANDMARK_PROGRESSION.levels.length));
-  const active = timeless || tier >= LANDMARK_PROGRESSION.animationLevel;
+  const active = !still && (timeless || tier >= LANDMARK_PROGRESSION.animationLevel);
   const motions = [];
   const move = (node, kind, axis, speed, amount, phase) =>
     active ? landmarkMotion(motions, node, kind, axis, speed, amount, phase) : node;

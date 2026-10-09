@@ -304,6 +304,11 @@
       stroke="#cc954f"
       stroke-width="3"
     />
+    <g v-if="scaffold" class="landmark-scaffold" fill="none" stroke-linecap="round">
+      <path d="M26 116V22M54 116V22M106 116V22M134 116V22" stroke="#9a754c" stroke-width="2.5" />
+      <path d="M22 96h116M22 74h116M22 52h116M22 30h116" stroke="#c2a16b" stroke-width="3.5" />
+      <path d="M26 96 54 74M106 74l28-22M54 52 26 30M134 30l-28 22" stroke="#a8835a" />
+    </g>
   </svg>
 </template>
 <script setup>
@@ -313,6 +318,8 @@ const props = defineProps({
   choice: { type: String, required: true },
   stage: { type: Number, default: 1 },
   paint: { type: Object, default: () => ({}) },
+  // A level still under construction stands inside scaffolding.
+  scaffold: Boolean,
 });
 const option = computed(() => ({
   ...LANDMARK_BY_ID[props.choice],

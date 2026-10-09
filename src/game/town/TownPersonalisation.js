@@ -14,7 +14,8 @@ import {
   areaUnlocked,
   DEFAULT_EMBLEM_COLOUR,
 } from '../../data/townPersonalisation';
-import { siteYaw } from '../../data/townLandmarks';
+import { monumentWork, siteYaw } from '../../data/townLandmarks';
+import { buildMonumentWorks } from './TownMonumentWorks';
 import { HONOURS } from '../../data/honours';
 import { distinctionBadge } from '../../data/playerDistinctions';
 import { groundHeight } from './TownLandscape';
@@ -178,8 +179,14 @@ export function buildPersonalAreas(d, town) {
         addMonumentSite(d, g, area.radius);
         return;
       }
-      g.name = `${area.id} ${slot}: ${choice} stage ${stage}`;
       walkObstacle(g, 0, 0, area.radius, 14);
+      const work = monumentWork(town, area);
+      if (work) {
+        g.name = `${area.id} ${slot}: ${choice} stage ${work.level} under construction`;
+        buildMonumentWorks(d, g, choice, work, area, town.era);
+        return;
+      }
+      g.name = `${area.id} ${slot}: ${choice} stage ${stage}`;
       const monument = buildLandmark(d, g, choice, stage, area.timeless);
       motions.push(monument.userData.sceneryUpdate);
       root.userData.movingParts.push(...monument.userData.movingParts);

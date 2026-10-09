@@ -89,9 +89,46 @@ Monument sites follow the same interaction as every other building:
   New receipts carry `monumentVersion: 2`; unversioned receipts replay the old
   era ceilings and prices, preserving offline purchases and existing checkpoints.
 - The Build tab lists every unlocked site under **Monuments** (open sites with their
-  starting price, built ones with their stage or next upgrade price) and names the
-  next site to open. Monument purchases are separate from Personalise.
-- Visitors see built monuments and can open a read-only card.
+  starting price, built ones with their stage, construction progress or next upgrade
+  price) and names the next site to open. Monument purchases are separate from
+  Personalise.
+- Visitors see built monuments, including any scaffolding, and can open a read-only card.
+
+### Construction and unveiling
+
+Like a wonder in Civilization, every paid monument level is built over completed
+puzzles and then unveiled. The puzzle counts live in `LANDMARK_PROGRESSION.levels`
+(`puzzles`: 3, 2, 2, 2, 3); timeless monuments build like a foundation (3).
+
+- Any completed puzzle counts, replays included, and advances every monument under
+  construction by one step (`advanceMonumentWorks`, in the same completion transaction
+  as building projects). The victory screen reports each monument's progress and
+  names any that are ready to unveil. Construction is a duration in completed puzzles,
+  never a move or time limit, and never gates an era, reward or puzzle.
+- The paid level counts at once: price, honours (A Lasting Legacy) and `areaLevels`
+  never wait for construction. One level is built at a time; the next upgrade is
+  offered once the current one is unveiled.
+- The town shows a new step after every puzzle (`TownMonumentWorks.js`). A first level
+  rises from its foundation in courses inside scaffolding, with building materials
+  and a crane. A later level keeps the standing monument inside growing scaffolding.
+  A ready level stands complete, still and wrapped, with bunting and an opening
+  ribbon. Steel scaffolding replaces timber from the industrial era.
+- The player unveils a ready level from its card (`unveilMonument`). The commit comes
+  first, then `monumentPresentation` plays through the shared town presentation
+  pipeline (`TownMonumentUnveiling`): the scaffolding comes down around the real
+  monument, the ribbon is cut and townsfolk gather, Willowkin among them once they
+  live in town, under confetti. The first level, the town wonder and every timeless
+  monument get the 16-second grand version; levels two to four get a 7-second reveal.
+  The scene is skippable, honours reduced motion, and can be replayed from the card.
+- The unveiling plays “Thaxted (Holst)” by Kevin MacLeod (CC BY 4.0, credited in
+  `public/sound/village/credits.html`, prepared by `scripts/prepare-monument-music.mjs`)
+  in place of the village music. It is never loaded while music is muted.
+- `personalisation.construction` stores `{ [site]: { level, wins } }`. It is cosmetic:
+  the server keeps it through the same normalization as the client
+  (`TownPersonalisation::normalize`) and publishes it to visitors, but does not replay
+  it. Only the latest paid level of a built site, up to the fifth, can be under
+  construction; any other entry, and every monument bought before construction
+  existed, shows the finished monument.
 
 The Industrial site is Monument Square. Its five timeless models have separate
 prices: Founders' Arch (6,000), Crystal Spire (8,000), Guardian of the Hollow
@@ -121,10 +158,14 @@ Regression coverage checks all choices and upgrade stages, parcel/river/building
 clearances, open-site markers for unlocked eras only, timeless monument geometry,
 rejected replacements in every later era, insufficient funds, stale commands, save
 normalization, visitors, removal of retired cosmetics, mine-only badges, flag motion
-and resource cleanup, and individual outfits across eras. Actual frontend purchase
-flows for every parcel are replayed by
-`backend/tests/save-integrity.php`. Keep the ordinary chapter progression tests,
-including unlimited moves, alongside these checks.
+and resource cleanup, and individual outfits across eras.
+`testing/monument-construction.test.js` covers the puzzle counts of every level, one
+level at a time, damaged or legacy construction, progress and unveiling through the
+campaign store and a reload, every construction step of every design staying on its
+site, the unveiling scene and its cleanup, and the cards. Actual frontend purchase
+flows for every parcel, with the puzzles that build each level and its unveiling,
+are replayed by `backend/tests/save-integrity.php`. Keep the ordinary chapter
+progression tests, including unlimited moves, alongside these checks.
 
 Monument movement uses the existing `TownScenery` lifecycle. Only moving groups
 are excluded from static batching; updates reuse geometry/materials and are

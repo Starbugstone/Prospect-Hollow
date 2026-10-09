@@ -30,6 +30,7 @@ const NORMAL_ACTIONS = new Set([
   'upgradeBuilding',
   'personalise',
   'finishConstruction',
+  'unveilMonument',
   'useBuilderHammer',
   'resolveBandits',
   'ringTownBell',

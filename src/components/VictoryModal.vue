@@ -102,22 +102,29 @@
         <strong>{{ t('Ready to finish') }} →</strong>
       </button>
       <div
-        v-for="project in construction.filter((project) => !project.ready)"
-        :key="project.id"
+        v-for="project in construction.filter((project) => !project.ready || project.monument)"
+        :key="project.monument ? `monument:${project.id}` : project.id"
         class="town-construction-reward"
         role="status"
       >
         <strong>{{
           t(
-            project.ready
-              ? 'Ready · Tap the building in your village to finish'
+            project.monument
+              ? project.ready
+                ? 'Ready · Unveil it at its monument site'
+                : 'Your monument is taking shape'
               : 'Your building is taking shape',
           )
         }}</strong>
         <span
-          >{{ t(BUILDING_BY_ID[project.id].shortName) }} · {{ project.wins }}/{{
-            project.required
-          }}</span
+          >{{
+            t(
+              project.monument
+                ? LANDMARK_BY_ID[project.monument].label
+                : BUILDING_BY_ID[project.id].shortName,
+            )
+          }}
+          · {{ project.wins }}/{{ project.required }}</span
         >
       </div>
       <div v-if="campaign.lastChapterReward" class="chapter-gift" role="status">
@@ -190,6 +197,7 @@
 <script setup>
 import { t, number } from '../i18n';
 import { BUILDING_BY_ID } from '../data/town';
+import { LANDMARK_BY_ID } from '../data/townLandmarks';
 import { computed, nextTick, onMounted, ref } from 'vue';
 import GameIcon from './GameIcon.vue';
 import TownBuilding from './town/TownBuilding.vue';

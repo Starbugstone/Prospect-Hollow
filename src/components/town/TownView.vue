@@ -474,6 +474,8 @@
         :town="town"
         :commit="buildMonument"
         @preview="monumentPreview = $event ? { id: monumentSite, choice: $event } : null"
+        @unveil="unveilMonument"
+        @replay="replayUnveiling"
       />
       <TownMoreMenu
         v-else-if="dialogMode === 'more'"
@@ -567,7 +569,7 @@
     </TownDialog>
     <TownPresentationCinematic
       v-if="active && openingPresentation && presentationReady"
-      :key="openingPresentation.id"
+      :key="monumentShow?.serial ?? openingPresentation.id"
       :definition="openingPresentation"
       :ready="presentationReady"
       :reduced-motion="settings.reducedMotion || presentationFallback"
@@ -601,6 +603,7 @@ import {
   areaStage,
   areaUnlocked,
   landmarkOffer,
+  monumentWork,
 } from '../../data/townLandmarks';
 import { personaliseTown } from '../../data/townPersonalisation';
 import { CREST_EMBLEM_IDS } from '../../data/townCrests';
@@ -611,7 +614,7 @@ import TownGuestbook from './TownGuestbook.vue';
 import TownVisitorNotice from './TownVisitorNotice.vue';
 import { useTownVisitors } from '../../composables/useTownVisitors';
 import TownPresentationCinematic from './TownPresentationCinematic.vue';
-import { pendingPresentation } from '../../data/townPresentations';
+import { monumentPresentation, pendingPresentation } from '../../data/townPresentations';
 
 import { motorTraffic, modernTransport } from '../../game/town/TownEvolution';
 import { civicIncident } from '../../data/townEvents';
@@ -854,11 +857,34 @@ function buildMonument(command) {
   if (!campaign.personalise([command], personalDistinctions.value)) return false;
   game.audioManager?.playArcadeCue?.('coin');
   const name = t(LANDMARK_BY_ID[command.value].label);
-  announcement.value = command.expectedChoice
-    ? t('{monument} grew to stage {stage}', { monument: name, stage: command.expectedLevel + 1 })
-    : t('{monument} built', { monument: name });
+  const work = monumentWork(town.value, AREA_BY_ID[command.id]);
+  announcement.value = t('Work on the {monument} has begun: {count} puzzles to go.', {
+    monument: name,
+    count: work?.required ?? 0,
+  });
   nextTick(() => townScene.value?.focusPlace(command.id));
   return true;
+}
+// A finished monument level is unveiled by the player: the scaffolding comes down
+// in its cinematic, which the monument's card can replay at any time.
+const monumentShow = ref(null);
+let monumentShows = 0;
+function showMonument(id, level) {
+  const definition = monumentPresentation(id, areaChoice(town.value, AREA_BY_ID[id]), level);
+  if (definition) monumentShow.value = { definition, serial: `monument-${++monumentShows}` };
+}
+function unveilMonument(id) {
+  const work = monumentWork(town.value, AREA_BY_ID[id]);
+  if (!work || !campaign.unveilMonument(id, work.level)) return;
+  announcement.value = t('The {monument} is unveiled!', {
+    monument: t(LANDMARK_BY_ID[areaChoice(town.value, AREA_BY_ID[id])].label),
+  });
+  showMonument(id, work.level);
+}
+function replayUnveiling(id) {
+  const area = AREA_BY_ID[id];
+  if (area && !monumentWork(town.value, area))
+    showMonument(id, Math.min(areaStage(town.value, area), areaMaximum(town.value, area)));
 }
 const monumentSites = computed(() =>
   PERSONAL_AREAS.filter((area) => areaUnlocked(town.value, area)).map((area) => {
@@ -875,17 +901,26 @@ const monumentSites = computed(() =>
       };
     }
     const upgrade = landmarkOffer(town.value, area, choice);
+    const work = monumentWork(town.value, area);
     return {
       id: area.id,
       name: LANDMARK_BY_ID[choice].label,
       colour: LANDMARK_BY_ID[choice].colour,
-      status: area.timeless
-        ? t(area.label)
-        : t('{site} · Stage {stage} of {maximum}', {
-            site: t(area.label),
-            stage: areaStage(town.value, area),
-            maximum: areaMaximum(town.value, area),
-          }),
+      status: work?.ready
+        ? t('{site} · Ready to unveil', { site: t(area.label) })
+        : work
+          ? t('{site} · Building: {wins} of {required} puzzles', {
+              site: t(area.label),
+              wins: work.wins,
+              required: work.required,
+            })
+          : area.timeless
+            ? t(area.label)
+            : t('{site} · Stage {stage} of {maximum}', {
+                site: t(area.label),
+                stage: areaStage(town.value, area),
+                maximum: areaMaximum(town.value, area),
+              }),
       price: upgrade?.price ?? 0,
       from: false,
     };
@@ -1124,7 +1159,9 @@ const activeRaid = ref(null),
 const presentationReady = ref(false);
 const presentationFallback = ref(false);
 const openingPresentation = computed(() =>
-  !activeRaid.value && !town.value.transition?.pending ? pendingPresentation(town.value) : null,
+  !activeRaid.value && !town.value.transition?.pending
+    ? (monumentShow.value?.definition ?? pendingPresentation(town.value))
+    : null,
 );
 watch(
   openingPresentation,
@@ -1140,14 +1177,23 @@ watch(
   { immediate: true },
 );
 function completePresentation() {
-  if (openingPresentation.value) campaign.acknowledgePresentation(openingPresentation.value.id);
+  if (monumentShow.value) monumentShow.value = null;
+  else if (openingPresentation.value)
+    campaign.acknowledgePresentation(openingPresentation.value.id);
 }
 const cameraDistance = ref(55);
 const { playRaidCue } = useTownAudio(() => ({
   active: props.active,
   cameraDistance: cameraDistance.value,
   population: people.value,
-  construction: activeProjects.value.length > 0,
+  construction:
+    activeProjects.value.length > 0 ||
+    PERSONAL_AREAS.some((area) => {
+      const work = monumentWork(town.value, area);
+      return work && !work.ready;
+    }),
+  // A monument's unveiling replaces the village music with its own fanfare.
+  fanfare: monumentShow.value?.serial ?? null,
   // Builds from the build list swap silently.
   buildCue: construction.value?.instant ? null : construction.value?.serial,
   stable: town.value.buildings.stable > 0 && !motorTraffic(town.value),

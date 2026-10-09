@@ -3,6 +3,7 @@ import {
   landmarkOffer,
   areaMaximum,
   areaStage,
+  monumentWork,
 } from '../src/data/townLandmarks.js';
 import { createPinia, setActivePinia } from 'pinia';
 import { freshProfile, useCampaignStore } from '../src/stores/campaignStore.js';
@@ -473,9 +474,18 @@ export function createIntegrityFixtures() {
               'landmark purchase',
             );
           };
+          // Completed puzzles build each level; the player unveils it before the next.
+          const build = () => {
+            const work = monumentWork(campaign.town, area);
+            for (let n = work.wins; n < work.required; n++) victory(campaign);
+            expectSuccess(campaign.unveilMonument(area.id, work.level), 'monument unveiling');
+          };
           buy(area.choices[0]);
-          while (areaStage(campaign.town, area) < areaMaximum(campaign.town, area))
+          build();
+          while (areaStage(campaign.town, area) < areaMaximum(campaign.town, area)) {
             buy(area.choices[0]);
+            build();
+          }
         },
       );
     return { version: 1, fixtures };

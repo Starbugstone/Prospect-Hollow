@@ -52270,6 +52270,7 @@
       "crest": null,
       "areas": {},
       "areaLevels": {},
+      "construction": {},
       "plaques": {}
     },
     "era": "frontier",
@@ -52605,6 +52606,7 @@
         "crest": null,
         "areas": {},
         "areaLevels": {},
+        "construction": {},
         "plaques": {}
       },
       "era": "frontier",
@@ -52910,5 +52912,5 @@
       "seenGeneration": 4
     }
   },
-  "contentDigest": "e3a1b8933c707fcd0335f70fdc1446792aefb8b2013a8a8dda67d426c453402b"
+  "contentDigest": "d33f1cb339d40c1c1f364a2f70e38affacb9f9ba9df558c6d12bd881319fd4b5"
 }

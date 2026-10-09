@@ -8,7 +8,7 @@
     <div class="presentation-shade" aria-hidden="true"></div>
     <div class="presentation-caption" aria-live="polite">
       <p class="presentation-kicker">{{ t(definition.title) }}</p>
-      <h2>{{ t(chapter.text) }}</h2>
+      <h2>{{ t(chapter.text, names(chapter.params)) }}</h2>
       <button v-if="finished" ref="continueButton" @click="finish">{{ t('Continue') }} →</button>
     </div>
     <button v-if="!finished" ref="skipButton" class="presentation-skip" @click="finish">
@@ -43,6 +43,9 @@ const { dialog, elapsed, finished, start, complete } = useCinematic({
   onFinish: () => nextTick(() => continueButton.value?.focus()),
 });
 const seconds = computed(() => elapsed.value / 1000);
+// Caption parameters are catalog names (a monument, its site), shown translated.
+const names = (params = {}) =>
+  Object.fromEntries(Object.entries(params).map(([key, value]) => [key, t(value)]));
 const chapter = computed(() =>
   props.definition.chapters.filter((c) => c.at <= seconds.value).at(-1),
 );

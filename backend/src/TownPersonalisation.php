@@ -22,6 +22,7 @@ final class TownPersonalisation
             'crest' => null,
             'areas' => new \stdClass(),
             'areaLevels' => new \stdClass(),
+            'construction' => new \stdClass(),
             'plaques' => new \stdClass(),
         ];
         $crest = $saved->crest ?? null;
@@ -69,6 +70,23 @@ final class TownPersonalisation
                     $level <= $c['monumentProgression']['legacyLimit']
                         ? $level
                         : 1);
+                // Cosmetic construction of the latest paid level, as the client keeps it.
+                $shown = $result->areaLevels->$id;
+                $levels = $c['monumentProgression']['levels'];
+                $work = $saved->construction->$id ?? null;
+                if (
+                    is_object($work) &&
+                    ($work->level ?? null) === $shown &&
+                    $shown <= ($area['timeless'] ? 1 : count($levels)) &&
+                    is_int($work->wins ?? null) &&
+                    $work->wins >= 0 &&
+                    $work->wins <= $levels[$shown - 1]['puzzles']
+                ) {
+                    $result->construction->$id = (object) [
+                        'level' => $shown,
+                        'wins' => $work->wins,
+                    ];
+                }
             }
         }
         return $result;

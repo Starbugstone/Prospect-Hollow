@@ -235,6 +235,75 @@ checkPersonalisation(
     'unsupported monument price version rejected',
 );
 
+// Construction of the latest paid level is cosmetic and kept exactly as the client keeps
+// it; anything damaged, stale or historical shows the finished monument instead.
+$building = (object) [
+    'areas' => (object) ['meadow' => ['headframe'], 'monument' => ['guardian']],
+    'areaLevels' => (object) ['meadow' => 2, 'monument' => 1],
+    'construction' => (object) [
+        'meadow' => (object) ['level' => 2, 'wins' => 1],
+        'monument' => (object) ['level' => 1, 'wins' => 3],
+    ],
+];
+$built = TownPersonalisation::normalize($building);
+checkPersonalisation(
+    json_encode($built->construction) ===
+        '{"meadow":{"level":2,"wins":1},"monument":{"level":1,"wins":3}}',
+    'construction of the latest paid level is kept',
+);
+checkPersonalisation(
+    json_encode($built) === json_encode(TownPersonalisation::normalize($built)),
+    'construction normalization is idempotent',
+);
+foreach (
+    [
+        (object) ['level' => 1, 'wins' => 0],
+        (object) ['level' => 2, 'wins' => 3],
+        (object) ['level' => 2, 'wins' => -1],
+        (object) ['level' => 2, 'wins' => 1.5],
+        (object) ['level' => 2, 'wins' => '1'],
+        (object) ['level' => 2],
+        'building',
+        null,
+    ]
+    as $damaged
+) {
+    $copy = copyPersonalisation($building);
+    $copy->construction->meadow = $damaged;
+    checkPersonalisation(
+        !isset(TownPersonalisation::normalize($copy)->construction->meadow),
+        'damaged construction shows the finished monument',
+    );
+}
+$copy = copyPersonalisation($building);
+$copy->construction = (object) [
+    'monument' => (object) ['level' => 2, 'wins' => 0],
+    'motor-court' => (object) ['level' => 1, 'wins' => 0],
+    'unknown' => (object) ['level' => 1, 'wins' => 0],
+];
+checkPersonalisation(
+    (array) TownPersonalisation::normalize($copy)->construction === [],
+    'construction needs the paid level of a known, built site',
+);
+$copy->areaLevels->meadow = 11;
+$copy->construction = (object) ['meadow' => (object) ['level' => 11, 'wins' => 0]];
+checkPersonalisation(
+    (array) TownPersonalisation::normalize($copy)->construction === [],
+    'historical paid levels are never rebuilt',
+);
+$copy->construction = 'scaffolding';
+checkPersonalisation(
+    (array) TownPersonalisation::normalize($copy)->construction === [],
+    'malformed construction is ignored',
+);
+checkPersonalisation(
+    json_encode(
+        TownPersonalisation::publish((object) ['personalisation' => $building], null, $schema)
+            ->construction,
+    ) === json_encode($built->construction),
+    'visitors see the same construction as the owner',
+);
+
 $honours = new App\Honours($schema['honours']);
 foreach (
     [

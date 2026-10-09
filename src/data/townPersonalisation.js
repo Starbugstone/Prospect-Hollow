@@ -1,4 +1,9 @@
-import { PERSONAL_AREAS, LANDMARK_PROGRESSION, purchaseLandmark } from './townLandmarks';
+import {
+  PERSONAL_AREAS,
+  LANDMARK_PROGRESSION,
+  landmarkLevel,
+  purchaseLandmark,
+} from './townLandmarks';
 import { CREST_PATTERNS, CREST_SHAPES } from './townCrests';
 export { PERSONAL_AREAS, areaStage, areaUnlocked } from './townLandmarks';
 export { CREST_PATTERNS, CREST_SHAPES } from './townCrests';
@@ -71,6 +76,8 @@ export const createPersonalisation = () => ({
   crest: null,
   areas: {},
   areaLevels: {},
+  // Paid levels still being built: { [site]: { level, wins } }.
+  construction: {},
   plaques: {},
 });
 const validColour = (value) => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value);
@@ -112,6 +119,18 @@ export function normalizePersonalisation(saved, emblemIds) {
         : Number.isInteger(level) && level > 0 && level <= LANDMARK_PROGRESSION.legacyLimit
           ? level
           : 1;
+      // Only the latest paid level can be under construction. Anything else is
+      // treated as finished, so a damaged entry never hides a monument.
+      const work = saved.construction?.[area.id];
+      const shown = result.areaLevels[area.id];
+      if (
+        work?.level === shown &&
+        shown <= (area.timeless ? 1 : LANDMARK_PROGRESSION.levels.length) &&
+        Number.isInteger(work.wins) &&
+        work.wins >= 0 &&
+        work.wins <= landmarkLevel(shown).puzzles
+      )
+        result.construction[area.id] = { level: shown, wins: work.wins };
     }
   }
   return result;

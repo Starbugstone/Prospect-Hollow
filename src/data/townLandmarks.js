@@ -322,32 +322,48 @@ export const PERSONAL_AREAS = plots.map(([id, era, label, position, choices, fac
 }));
 export const areaUnlocked = (town, area) =>
   ERAS.findIndex((e) => e.id === town.era) >= ERAS.findIndex((e) => e.id === area.era);
-// Five permanent milestones; era growth never adds another bill.
+// Five permanent milestones; era growth never adds another bill. Each paid level is
+// built over `puzzles` completed puzzles (any puzzle, replays too), then unveiled with
+// a `grand` cinematic or a short `reveal`. Timeless monuments build like a foundation.
 export const LANDMARK_PROGRESSION = Object.freeze({
   version: 2,
   animationLevel: 3,
   // Preserve historical paid levels in saves/receipts, while displaying at most five.
   legacyLimit: 45,
   levels: [
-    { label: 'Foundation', multiplier: 1, detail: 'Establish the monument on its stone court.' },
+    {
+      label: 'Foundation',
+      multiplier: 1,
+      puzzles: 3,
+      unveiling: 'grand',
+      detail: 'Establish the monument on its stone court.',
+    },
     {
       label: 'Grand court',
       multiplier: 4,
+      puzzles: 2,
+      unveiling: 'reveal',
       detail: 'Raise the main structure and build its flanking pavilions.',
     },
     {
       label: 'Living landmark',
       multiplier: 10,
+      puzzles: 2,
+      unveiling: 'reveal',
       detail: 'Unveil the working centerpiece and ceremonial lamps.',
     },
     {
       label: 'Great monument',
       multiplier: 20,
+      puzzles: 2,
+      unveiling: 'reveal',
       detail: 'Add a monumental colonnade and a taller silhouette.',
     },
     {
       label: 'Town wonder',
       multiplier: 35,
+      puzzles: 3,
+      unveiling: 'grand',
       detail: 'Complete the grand entrance, golden finials and fountain court.',
     },
   ],
@@ -370,12 +386,58 @@ export const areaChoice = (town, area) => {
   const choice = town.personalisation?.areas?.[area.id]?.[0];
   return area.choices.includes(choice) ? choice : null;
 };
-// Each site keeps its first choice. Timeless masterpieces are complete on purchase.
+// A paid level under construction: `{ level, wins, required, ready }`, or null once
+// the standing monument is complete. Construction is cosmetic; the paid stage, its
+// price and honours never wait for it.
+export function monumentWork(town, area) {
+  const work = town.personalisation?.construction?.[area?.id];
+  const level = town.personalisation?.areaLevels?.[area?.id];
+  if (!work || !areaChoice(town, area) || work.level !== level || level > areaCapacity(area))
+    return null;
+  const required = landmarkLevel(level).puzzles;
+  const wins = Math.min(required, Number.isInteger(work.wins) ? Math.max(0, work.wins) : 0);
+  return { level, wins, required, ready: wins >= required };
+}
+// The level standing on the site: the previous one while the next is being built.
+export const areaShownStage = (town, area) =>
+  Math.max(0, areaStage(town, area) - (monumentWork(town, area) ? 1 : 0));
+// Every completed puzzle moves each unfinished monument one step on.
+export function advanceMonumentWorks(town) {
+  const construction = town.personalisation?.construction ?? {};
+  let changed = false;
+  const next = Object.fromEntries(
+    Object.entries(construction).map(([id, entry]) => {
+      const work = AREA_BY_ID[id] && monumentWork(town, AREA_BY_ID[id]);
+      if (!work || work.ready) return [id, entry];
+      changed = true;
+      return [id, { ...entry, wins: work.wins + 1 }];
+    }),
+  );
+  return changed
+    ? { ...town, personalisation: { ...town.personalisation, construction: next } }
+    : town;
+}
+// Removing the scaffolding of a finished level; the cinematic follows the commit.
+export function unveilLandmark(town, id, level) {
+  const area = AREA_BY_ID[id];
+  const work = area && monumentWork(town, area);
+  if (!work?.ready || work.level !== level) return null;
+  const construction = { ...town.personalisation.construction };
+  delete construction[id];
+  return { ...town, personalisation: { ...town.personalisation, construction } };
+}
+// Each site keeps its first choice and builds one level at a time.
 export function landmarkOffer(town, area, choice) {
   if (!area || !areaUnlocked(town, area) || !area.choices.includes(choice)) return null;
   const current = town.personalisation?.areas?.[area.id]?.[0];
   const stage = areaStage(town, area);
-  if (current && (area.timeless || current !== choice || stage >= areaMaximum(town, area)))
+  if (
+    current &&
+    (area.timeless ||
+      current !== choice ||
+      stage >= areaMaximum(town, area) ||
+      monumentWork(town, area))
+  )
     return null;
   const level = area.timeless ? 1 : stage + 1;
   const price =
@@ -400,6 +462,10 @@ export function purchaseLandmark(town, command) {
       ...town.personalisation,
       areas: { ...town.personalisation?.areas, [area.id]: [offer.choice] },
       areaLevels: { ...town.personalisation?.areaLevels, [area.id]: offer.level },
+      construction: {
+        ...town.personalisation?.construction,
+        [area.id]: { level: offer.level, wins: 0 },
+      },
     },
   };
 }

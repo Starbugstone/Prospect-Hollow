@@ -18,20 +18,50 @@
 
     <template v-else-if="built">
       <figure class="monument-hero">
-        <TownLandmarkPreview :choice="built" :stage="stage" :paint="paint" />
+        <TownLandmarkPreview :choice="built" :stage="stage" :paint="paint" :scaffold="!!work" />
         <figcaption>
           <strong>{{ t(LANDMARK_BY_ID[built].label) }}</strong>
           <span>{{ t(LANDMARK_BY_ID[built].detail) }}</span>
         </figcaption>
       </figure>
-      <p v-if="justBuilt" class="monument-celebration" role="status">
+      <p v-if="justBuilt && work" class="monument-celebration" role="status">
         <TownIcon name="spark" />{{
-          t('The {monument} now stands in {site}.', {
+          t('Work on the {monument} has begun in {site}.', {
             monument: t(LANDMARK_BY_ID[built].label),
             site: t(area.label),
           })
         }}
       </p>
+      <div v-if="work" class="town-detail-offer monument-works">
+        <h3>{{ t(work.ready ? 'Ready to unveil' : 'Under construction') }}</h3>
+        <progress
+          class="monument-progress"
+          :value="work.wins"
+          :max="work.required"
+          :aria-label="t('Construction progress')"
+        />
+        <p class="town-purchase-hint">
+          {{
+            work.ready
+              ? t('The work is done. Take down the scaffolding and celebrate with the town.')
+              : t(
+                  '{wins} of {required} puzzles complete. Every completed puzzle builds it, replays included.',
+                  { wins: work.wins, required: work.required },
+                )
+          }}
+        </p>
+        <button
+          v-if="work.ready && !readOnly"
+          class="town-primary town-purchase"
+          @click="emit('unveil', area.id)"
+        >
+          <span
+            ><TownIcon name="spark" />{{
+              t('Unveil the {monument}', { monument: t(LANDMARK_BY_ID[built].label) })
+            }}</span
+          >
+        </button>
+      </div>
       <p class="monument-note">
         <TownIcon name="lock" />{{
           t(
@@ -45,13 +75,16 @@
         <li
           v-for="(milestone, index) in LANDMARK_PROGRESSION.levels"
           :key="milestone.label"
-          :class="{ 'is-complete': stage > index }"
+          :class="{
+            'is-complete': shownStage > index,
+            'is-building': work?.level === index + 1,
+          }"
         >
           <strong>{{ index + 1 }} · {{ t(milestone.label) }}</strong>
           <span>{{ t(milestone.detail) }}</span>
         </li>
       </ol>
-      <div v-if="!readOnly && !area.timeless" class="town-detail-offer">
+      <div v-if="!readOnly && !area.timeless && !work" class="town-detail-offer">
         <h3>
           {{ t('Stage {stage} of {maximum}', { stage, maximum }) }}
         </h3>
@@ -80,10 +113,20 @@
               ? t('A completed town wonder. Future eras keep all five levels.')
               : town.coins < upgrade.price
                 ? t('You need {coins} more coins.', { coins: number(upgrade.price - town.coins) })
-                : t(landmarkLevel(upgrade.level).detail)
+                : t('{detail} Built over {count} puzzles.', {
+                    detail: t(landmarkLevel(upgrade.level).detail),
+                    count: landmarkLevel(upgrade.level).puzzles,
+                  })
           }}
         </p>
       </div>
+      <button
+        v-if="!readOnly && !work"
+        class="town-secondary monument-replay"
+        @click="emit('replay', area.id)"
+      >
+        <TownIcon name="spark" />{{ t('Watch the unveiling again') }}
+      </button>
     </template>
 
     <template v-else>
@@ -166,7 +209,10 @@
                   ? t('You need {coins} more coins. The site will wait for you.', {
                       coins: number(offer.price - town.coins),
                     })
-                  : t('Previewing in your town. Nothing is spent until you confirm.')
+                  : t(
+                      'Previewing in your town. Nothing is spent until you confirm. Building it takes {count} completed puzzles.',
+                      { count: landmarkLevel(1).puzzles },
+                    )
             }}
           </p>
         </template>
@@ -187,8 +233,10 @@ import {
   areaMaximum,
   areaStage,
   areaUnlocked,
+  areaShownStage,
   landmarkOffer,
   landmarkLevel,
+  monumentWork,
 } from '../../data/townLandmarks';
 import TownIcon from './TownIcon.vue';
 import TownLandmarkPreview from './TownLandmarkPreview.vue';
@@ -200,13 +248,16 @@ const props = defineProps({
   // Commits one landmark purchase command; returns whether the town accepted it.
   commit: Function,
 });
-// `preview` names the design shown on the open site, or null.
-const emit = defineEmits(['preview']);
+// `preview` names the design shown on the open site, or null. `unveil` takes down the
+// scaffolding of a finished level; `replay` shows a standing monument's unveiling again.
+const emit = defineEmits(['preview', 'unveil', 'replay']);
 const area = computed(() => AREA_BY_ID[props.id]);
 const era = computed(() => ERA_BY_ID[area.value.era]);
 const unlocked = computed(() => areaUnlocked(props.town, area.value));
 const built = computed(() => areaChoice(props.town, area.value));
 const stage = computed(() => areaStage(props.town, area.value));
+const work = computed(() => monumentWork(props.town, area.value));
+const shownStage = computed(() => areaShownStage(props.town, area.value));
 // A timeless centerpiece keeps its own colours; other monuments wear the town's paint.
 const paint = computed(() =>
   area.value.timeless ? {} : (props.town.personalisation?.paint?.all ?? {}),
@@ -220,12 +271,14 @@ const badge = computed(() =>
     ? t('Opens in {era}', { era: t(era.value.label) })
     : !built.value
       ? t('Open site · optional')
-      : area.value.timeless
-        ? t('Monument')
-        : t('Stage {stage} of {maximum}', {
-            stage: stage.value,
-            maximum: maximum.value,
-          }),
+      : work.value
+        ? t(work.value.ready ? 'Ready to unveil' : 'Under construction')
+        : area.value.timeless
+          ? t('Monument')
+          : t('Stage {stage} of {maximum}', {
+              stage: stage.value,
+              maximum: maximum.value,
+            }),
 );
 
 const picked = ref(null),
@@ -361,6 +414,17 @@ onBeforeUnmount(() => emit('preview', null));
 .monument-milestones li.is-complete {
   border-color: #9f7938;
   color: #344c40;
+}
+.monument-milestones li.is-building {
+  border-left-style: dashed;
+  border-color: #c8953f;
+  color: #344c40;
+}
+.monument-replay {
+  justify-self: start;
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
 }
 .monument-progress {
   width: 100%;

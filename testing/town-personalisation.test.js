@@ -9,7 +9,10 @@ import {
   LANDMARK_BY_ID,
   LANDMARK_OPTIONS,
   LANDMARK_PROGRESSION,
+  advanceMonumentWorks,
+  monumentWork,
   siteYaw,
+  unveilLandmark,
 } from '../src/data/townLandmarks';
 import { buildLandmark } from '../src/game/town/TownLandmarks';
 import { isEraComplete } from '../src/game/town/TownEras';
@@ -58,6 +61,13 @@ const buy = (town, area, choice = area.choices[0]) => {
     expectedLevel: offer?.expectedLevel,
   });
 };
+// Completed puzzles finish the level under construction, then the player unveils it.
+const finish = (town, area) => {
+  const work = monumentWork(town, area);
+  for (let n = 0; n < work.required; n++) town = advanceMonumentWorks(town);
+  return unveilLandmark(town, area.id, work.level);
+};
+const buyBuilt = (town, area, choice) => finish(buy(town, area, choice), area);
 const crest = {
   shape: 'swallowtail',
   pattern: 'quartered',
@@ -138,6 +148,9 @@ describe('Personalisation save and progression contract', () => {
       town = buy(town, area);
       expect(isEraComplete(town)).toBe(gate);
       expect(areaStage(town, area)).toBe(1);
+      // The level being built never gates the era either.
+      town = finish(town, area);
+      expect(isEraComplete(town)).toBe(gate);
       if (area.timeless) return;
       expect(buy(town, area, area.choices[1])).toBeNull();
       for (const era of ERAS.slice(intro)) {
@@ -145,7 +158,7 @@ describe('Personalisation save and progression contract', () => {
         while (areaStage(town, area) < areaMaximum(town, area)) {
           const before = town.coins,
             offer = landmarkOffer(town, area, area.choices[0]);
-          town = buy(town, area);
+          town = buyBuilt(town, area);
           expect(before - town.coins).toBe(offer.price);
           expect(normalizeTown(JSON.parse(JSON.stringify(town))).personalisation).toEqual(
             town.personalisation,
@@ -221,6 +234,9 @@ describe('Personalisation save and progression contract', () => {
         expect(offer.price).toBe(LANDMARK_BY_ID[area.choices[0]].price * milestone.multiplier);
         expect(buy({ ...town, coins: offer.price - 1 }, area)).toBeNull();
         town = buy(town, area);
+        // One level at a time: the next is offered once this one is unveiled.
+        expect(landmarkOffer(town, area, area.choices[0])).toBeNull();
+        town = finish(town, area);
       }
       expect(buy(town, area)).toBeNull();
       town.era = ERAS.at(-1).id;
@@ -270,6 +286,8 @@ describe('Personalisation save and progression contract', () => {
         crest: { ...crest, emblemColour: DEFAULT_EMBLEM_COLOUR },
         areas: { meadow: ['headframe'] },
         areaLevels: { meadow: 2 },
+        // Monuments bought before construction existed stand complete.
+        construction: {},
         plaques: { mine: 'player-alpha' },
       });
       expect(normalizeTown(loaded)).toEqual(loaded);

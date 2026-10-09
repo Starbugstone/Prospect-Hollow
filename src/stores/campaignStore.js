@@ -1,4 +1,11 @@
-import { LANDMARK_PROGRESSION } from '../data/townLandmarks';
+import {
+  AREA_BY_ID,
+  LANDMARK_PROGRESSION,
+  advanceMonumentWorks,
+  areaChoice,
+  monumentWork,
+  unveilLandmark,
+} from '../data/townLandmarks';
 import { personaliseTown } from '../data/townPersonalisation';
 import { CREST_EMBLEM_IDS } from '../data/townCrests';
 import {
@@ -422,6 +429,11 @@ export const useCampaignStore = defineStore('campaign', {
       const earned = { ...this.honours.earned };
       for (const id of changed) earned[id] = { ...earned[id], [flag]: true };
       return this.commit({ honours: { ...this.honours, earned, seenGeneration } });
+    },
+    // The player removes a finished monument's scaffolding; the unveiling plays after.
+    unveilMonument(id, level) {
+      const next = unveilLandmark(this.town, id, level);
+      return !!next && this.commit({ town: next });
     },
     acknowledgePresentation(id) {
       const next = acknowledgePresentation(this.town, id);
@@ -980,7 +992,11 @@ export const useCampaignStore = defineStore('campaign', {
       const projects = Object.values(this.town.projects).filter(
         (project) => !constructionReady(project),
       );
+      const monuments = Object.keys(this.town.personalisation?.construction ?? {}).filter(
+        (id) => monumentWork(this.town, AREA_BY_ID[id])?.ready === false,
+      );
       this.town = advanceConstruction(this.town);
+      this.town = advanceMonumentWorks(this.town);
       this.town = advanceForge(this.town);
       this.endRun(runId);
       this.ensureShopStock(true, false);
@@ -991,6 +1007,19 @@ export const useCampaignStore = defineStore('campaign', {
         required: constructionRuns(project),
         ready: constructionReady(this.town.projects[project.id]),
       }));
+      // Monuments report the same progress shape, named by their design.
+      for (const id of monuments) {
+        const work = monumentWork(this.town, AREA_BY_ID[id]);
+        if (work)
+          this.lastConstruction.push({
+            id,
+            monument: areaChoice(this.town, AREA_BY_ID[id]),
+            stage: work.level,
+            wins: work.wins,
+            required: work.required,
+            ready: work.ready,
+          });
+      }
       this.lastChapterReward =
         this.mineStage > previousChapter
           ? { chapter: this.mineStage, gift: grantChapterGift(this, this.mineStage) }
