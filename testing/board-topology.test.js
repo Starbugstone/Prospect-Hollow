@@ -9,7 +9,8 @@ import {
 import { BonusActivator } from '../src/game/engine/BonusActivator';
 import { recoverBoard } from '../src/game/engine/BoardRecovery';
 import { applyDeepMineSpec, deepMineProgress } from '../src/game/engine/DeepMineMechanics';
-import { createGem, GEM_TYPES } from '../src/game/engine/GemFactory';
+import { createGem, BASE_GEM_TYPES as GEM_TYPES } from '../src/game/engine/GemFactory';
+// These fixtures color boards from the original six-gem palette.
 import { MatchEngine } from '../src/game/engine/MatchEngine';
 import { HintEngine } from '../src/game/engine/HintEngine';
 import { TileManager } from '../src/game/engine/TileManager';

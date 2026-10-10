@@ -68,7 +68,16 @@
       class="villager-name"
       role="status"
       :style="{ left: `${villagerLabel.x}%`, top: `${villagerLabel.y}%` }"
-      >{{ t(villagerLabel.live ? 'Town visitor' : 'VIP visitor') }} · {{ villagerLabel.name }}</span
+      ><template v-if="!villagerLabel.live">{{ t('VIP visitor') }} · </template
+      >{{ villagerLabel.name }}</span
+    >
+    <span
+      v-if="plaqueLabel"
+      ref="plaqueElement"
+      class="villager-name"
+      role="status"
+      :style="{ left: `${plaqueLabel.x}%`, top: `${plaqueLabel.y}%` }"
+      >{{ t(plaqueLabel.name) }}</span
     >
     <div class="town-action-icons">
       <button
@@ -100,7 +109,7 @@
       :aria-label="t(readOnly ? 'Village buildings' : 'Choose a plot or enter the mine')"
     >
       <button
-        v-for="anchor in anchors"
+        v-for="anchor in plotAnchors"
         :key="anchor.id"
         :ref="(element) => trackElement(labelElements, anchor.id, element)"
         :data-town-plot="anchor.id"
@@ -118,7 +127,7 @@
           'has-action-icon': !!TOWN_ACTIONS[indicators[anchor.id]],
         }"
         :aria-label="plotLabel(anchor.id)"
-        :title="t(anchor.id === 'mine' ? 'Mine' : BUILDING_BY_ID[anchor.id].shortName)"
+        :title="placeName(anchor.id)"
         :aria-pressed="anchor.id === 'mine' ? undefined : anchor.id === selected"
         @focus="anchor.id === 'mine' && prefetchBoard()"
         @pointerenter="anchor.id === 'mine' && prefetchBoard()"
@@ -126,9 +135,7 @@
         @click="chooseLabel(anchor.id, $event)"
       >
         <span v-if="quietPlot(anchor.id)" class="quiet-plot-plus" aria-hidden="true">+</span>
-        <span class="plot-name">{{
-          t(anchor.id === 'mine' ? 'Mine' : BUILDING_BY_ID[anchor.id].shortName)
-        }}</span>
+        <span class="plot-name">{{ placeName(anchor.id) }}</span>
         <template v-if="readOnly">
           <small v-if="town.buildings[anchor.id]">{{
             t('Lv. {level}', { level: eraBuildingLevel(town, anchor.id) })
@@ -173,7 +180,7 @@
       </button>
     </div>
     <div
-      v-if="needChips.length"
+      v-if="needChips.length || moon.homesteads"
       class="town-map-needs"
       role="group"
       :aria-label="t('Basic town needs')"
@@ -190,7 +197,40 @@
       >
         <TownIcon :name="chip.icon" /><span>{{ chip.value }}</span>
       </button>
+      <button
+        v-if="moon.homesteads"
+        class="moon"
+        :aria-label="moonLabel"
+        :title="moonLabel"
+        @click="openMoon"
+      >
+        <TownMoon :lights="moon.lights" /><span>{{ moon.homesteads }}</span>
+      </button>
     </div>
+    <button
+      v-if="skyMoon && !moonOpen"
+      ref="skyMoonElement"
+      type="button"
+      class="town-sky-moon"
+      :style="{ left: `${skyMoon.x}%`, top: `${skyMoon.y}%` }"
+      :aria-label="moonLabel"
+      :title="moonLabel"
+      @pointerdown.stop
+      @pointerup.stop
+      @click="openMoon"
+    >
+      <TownMoon :lights="moon.lights" :light-size="0.5" />
+    </button>
+    <TownMoonView
+      v-if="moonOpen"
+      ref="moonView"
+      :town="town"
+      :active="active"
+      :paused="paused"
+      :reduced-motion="reducedMotion"
+      @inspect="emit('inspect', $event)"
+      @close="closeMoon"
+    />
   </div>
 </template>
 <script setup>
@@ -203,9 +243,12 @@ import { prepareAudio } from '../../composables/useAudio';
 import { useSettingsStore } from '../../stores/settingsStore';
 import GameIcon from '../GameIcon.vue';
 import TownIcon from './TownIcon.vue';
+import TownMoon from './TownMoon.vue';
+import TownMoonView from './TownMoonView.vue';
+import { moonSettlement } from '../../data/moonSettlement';
 import GameViewStatus from '../GameViewStatus.vue';
 import { TOWN_ACTIONS } from '../../data/townIndicators';
-import { eraBuildingLevel } from '../../game/town/TownEras';
+import { eraBuildingLevel, plotInEra } from '../../game/town/TownEras';
 import {
   computed,
   inject,
@@ -223,7 +266,8 @@ import {
   trackElement,
   updateLabels,
 } from '../../game/town/TownLabels';
-import { BUILDING_BY_ID, BUILDINGS } from '../../data/town';
+import { BUILDING_BY_ID, EARTH_BUILDINGS, MOON_BUILDINGS } from '../../data/town';
+import { AREA_BY_ID, LANDMARK_BY_ID, areaChoice } from '../../data/townLandmarks';
 import { dressSpaceHelmet } from '../../game/town/TownSpaceHelmet';
 import {
   constructionRuns,
@@ -249,6 +293,8 @@ const props = defineProps({
   forgeCollectible: Boolean,
   now: { type: Number, default: Date.now },
   selected: String,
+  // The plot the village tutorial points at: framed on phones and always labelled.
+  coachPlot: String,
   reducedMotion: Boolean,
   paused: Boolean,
   nextLevel: Number,
@@ -258,6 +304,53 @@ const props = defineProps({
   // Water, food and happiness against the town's size, always visible on the map.
   needChips: { type: Array, default: () => [] },
 });
+// New Hollow's homesteads on the Moon, supplied by the space elevator.
+const moon = computed(() => moonSettlement(props.town));
+const moonReachable = computed(() =>
+  MOON_BUILDINGS.some((building) => plotInEra(props.town, building.id)),
+);
+const moonLabel = computed(() =>
+  t(
+    moonReachable.value
+      ? 'Visit New Hollow on the Moon: {count} homesteads'
+      : 'New Hollow on the Moon: {count} homesteads',
+    { count: moon.value.homesteads },
+  ),
+);
+// The Moon map opens over the valley once the town can build there; before that
+// the chip shows the space elevator. The valley rests while the Moon is open.
+const moonOpen = ref(false);
+function openMoon() {
+  if (!moonReachable.value) return emit('inspect', 'spaceElevator');
+  moonOpen.value = true;
+}
+function closeMoon() {
+  moonOpen.value = false;
+}
+watch(moonOpen, () => scene?.setMotion(motionEnabled()));
+watch(moonReachable, (reachable) => {
+  if (!reachable) moonOpen.value = false;
+});
+// The Moon hangs in the valley sky to the north-west, above the mine and the
+// elevator. It drifts across the sky as the camera turns and opens New Hollow.
+const skyMoon = shallowRef(null),
+  skyMoonElement = ref(null);
+function placeSkyMoon() {
+  if (!scene?.skyPoint || !moon.value.homesteads) return followLabel(skyMoon, skyMoonElement);
+  const { x, y, facing, distance } = scene.skyPoint(-0.55, -1);
+  // Sky shows at the top of the frame once the view is wide (the land fades into the
+  // sky) or tilted until the horizon is in view; close up, the frame is all town.
+  const skyInView = distance > 95 || y > 8;
+  followLabel(
+    skyMoon,
+    skyMoonElement,
+    skyInView && facing > 0.3 && x > 6 && x < 94
+      ? { x, y: Math.min(Math.max(y - 9, 13), 34) }
+      : null,
+  );
+}
+watch(() => moon.value.homesteads, placeSkyMoon);
+const motionEnabled = () => props.active && !document.hidden && !props.paused && !moonOpen.value;
 // The building that would fix a shortage says so on its label.
 const NEED_HINTS = { water: 'Water needed', food: 'Food needed', comfort: 'Comfort needed' };
 const needHints = computed(() =>
@@ -278,6 +371,10 @@ const emit = defineEmits([
   'camera-distance',
   'vip-spend',
   'guest-vip',
+  // The space-helmet wearer was tapped, with its position on the map in percent.
+  'helmet',
+  // An animal was tapped from too far away to tell whether it wears the helmet.
+  'helmet-zoom',
   'presentation-ready',
   'presentation-unavailable',
   'cinematic-ready',
@@ -325,6 +422,8 @@ const availableIds = computed(() =>
 const upgradeIds = computed(() =>
   Object.keys(indicators.value).filter((id) => indicators.value[id] === 'upgrade'),
 );
+// Monument sites carry an action icon but never a label.
+const plotAnchors = computed(() => anchors.value.filter((anchor) => !anchor.site));
 const actionAnchors = computed(() =>
   anchors.value.filter(
     (anchor) => TOWN_ACTIONS[indicators.value[anchor.id]] && anchor.collection.visible,
@@ -332,7 +431,12 @@ const actionAnchors = computed(() =>
 );
 const buildingName = (id) => t(BUILDING_BY_ID[id].shortName);
 const ACTION_LABELS = {
-  ready: (id) => t('Finish {building}', { building: buildingName(id) }),
+  ready: (id) =>
+    AREA_BY_ID[id]
+      ? t('Unveil the {monument}', {
+          monument: t(LANDMARK_BY_ID[areaChoice(props.town, AREA_BY_ID[id])].label),
+        })
+      : t('Finish {building}', { building: buildingName(id) }),
   coins: () => t('Collect {coins} coins', { coins: props.town.income.stored }),
   tnt: () => t('Collect 1 TNT'),
   bell: () => t('Ring town bell · halve the loss'),
@@ -342,6 +446,7 @@ const actionLabel = (id) =>
   props.readOnly
     ? t('Collect the saloon takings for the mayor')
     : ACTION_LABELS[indicators.value[id]](id);
+const placeName = (id) => (id === 'mine' ? t('Mine') : buildingName(id));
 const plotLabel = (id) => {
   if (props.readOnly) return t(id === 'mine' ? 'Mine' : BUILDING_BY_ID[id].name);
   return id === 'mine'
@@ -363,6 +468,16 @@ function collectionOrigin(id) {
 let presentationTime = 0;
 let cinematicProgress = 0;
 defineExpose({
+  // Moon buildings have no valley lot: focusing one opens the Moon map instead.
+  focusPlace: (id) => {
+    if (MOON_BUILDINGS.some((building) => building.id === id)) {
+      moonOpen.value = true;
+      return true;
+    }
+    return scene?.focusPlace(id);
+  },
+  openMoon,
+  closeMoon,
   findVisitor: (id) => scene?.findVisitor(id) ?? false,
   // Camera buttons are gone: drag, pinch, wheel and keys move the view; Village resets it.
   resetView: () => scene?.cameraAction('reset'),
@@ -382,22 +497,34 @@ let scene,
   disposed = false,
   dragged = false;
 const pointers = new Map();
-// A named villager moves every frame; Vue re-renders only when the name changes.
-const villagerLabel = shallowRef(null),
-  villagerElement = ref(null);
-function showVillagerLabel(label) {
-  const current = villagerLabel.value;
-  if (!label || !current || label.name !== current.name || label.live !== current.live) {
-    villagerLabel.value = label;
+// The named villager, a tapped plaque's name and the sky Moon move on every camera
+// frame. Vue re-renders only when one appears, disappears or changes its text; in
+// between, the frame moves its element directly.
+function followLabel(state, element, label = null, sameText = () => true) {
+  const current = state.value;
+  if (!label || !current || !sameText(label, current)) {
+    state.value = label;
     return;
   }
   Object.assign(current, label);
-  const element = villagerElement.value;
-  if (element) {
-    element.style.left = `${label.x}%`;
-    element.style.top = `${label.y}%`;
+  if (element.value) {
+    element.value.style.left = `${label.x}%`;
+    element.value.style.top = `${label.y}%`;
   }
 }
+const villagerLabel = shallowRef(null),
+  villagerElement = ref(null),
+  plaqueLabel = shallowRef(null),
+  plaqueElement = ref(null);
+const showVillagerLabel = (label) =>
+  followLabel(
+    villagerLabel,
+    villagerElement,
+    label,
+    (next, current) => next.name === current.name && next.live === current.live,
+  );
+const showPlaqueLabel = (label) =>
+  followLabel(plaqueLabel, plaqueElement, label, (next, current) => next.name === current.name);
 const choose = (id) => {
   if (!props.readOnly) id === 'mine' ? emit('mine') : emit('select', id);
   // A visitor may collect what visitorTaps allows; any other tap only looks at the building.
@@ -470,12 +597,12 @@ async function update() {
   }
   if (!scene || !props.active) return;
   const labels = Object.fromEntries(
-    BUILDINGS.map((building) => [building.id, t(building.shortName)]),
+    EARTH_BUILDINGS.map((building) => [building.id, t(building.shortName)]),
   );
   const visual =
     props.nextLevel +
     JSON.stringify(
-      BUILDINGS.map(({ id }) => [
+      EARTH_BUILDINGS.map(({ id }) => [
         id,
         props.town.buildings[id],
         constructionVisual(props.town.projects[id]),
@@ -484,11 +611,18 @@ async function update() {
         props.town.buildingEraLevels?.[id],
       ]),
     ) +
-    props.town.era;
+    props.town.era +
+    JSON.stringify([
+      props.town.personalisation,
+      props.town.displayHonours,
+      props.town.displayDistinctions,
+    ]);
   const newConstruction = props.construction?.serial !== lastConstruction;
   if (visual !== lastVisual || newConstruction) {
     const constructionId = newConstruction ? props.construction?.id : null;
-    if (constructionId) {
+    // A build from the list swaps the building at once, without the hammer cue.
+    const instant = newConstruction && !!props.construction?.instant;
+    if (constructionId && !instant) {
       scene.beginConstructionCue(constructionId);
       await new Promise((resolve) => afterPaint(resolve));
       if (disposed || generation !== updateGeneration || !props.active) return;
@@ -507,7 +641,7 @@ async function update() {
       { ...labels, mine: t('Mine') },
       Math.max(0, (props.nextLevel ?? 1) - 1),
       constructionId,
-      props.reducedMotion,
+      { reducedMotion: props.reducedMotion, instant },
     );
     lastVisual = visual;
     lastConstruction = props.construction?.serial;
@@ -529,7 +663,8 @@ async function update() {
   scene.setAvailable([...availableIds.value, ...(props.town.income.stored > 0 ? ['saloon'] : [])]);
   scene.setUpgradeable(props.cinematic ? [] : upgradeIds.value);
   scene.select(props.selected);
-  scene.setMotion(props.active && !document.hidden && !props.paused);
+  scene.setCoachPlot(props.coachPlot);
+  scene.setMotion(motionEnabled());
   scene.setPaused(props.paused);
 }
 const warmAudio = () => prepareAudio(settings);
@@ -605,6 +740,7 @@ async function initialize() {
     scene = new TownDiorama(canvas.value, {
       onSelect: choose,
       onLabels: (positions) => {
+        placeSkyMoon();
         const layout = updateLabels(anchors.value, positions, anchorLayout);
         if (layout === null) placeLabels(anchors.value, labelElements, actionElements, box);
         else {
@@ -616,7 +752,10 @@ async function initialize() {
       onUnavailable: recoverGraphics,
       onVipSpend: (receipt) => emit('vip-spend', receipt),
       onGuestVip: (at) => emit('guest-vip', at),
+      onHelmet: (origin) => emit('helmet', origin),
+      onHelmetZoom: () => emit('helmet-zoom'),
       onVillagerLabel: showVillagerLabel,
+      onPlaqueLabel: showPlaqueLabel,
       onEventInset: (view) => {
         eventInset.value = view;
       },
@@ -655,7 +794,7 @@ async function initialize() {
   }
 }
 const visibilityChanged = () => {
-  scene?.setMotion(props.active && !document.hidden && !props.paused);
+  scene?.setMotion(motionEnabled());
 };
 watch(
   () => [props.liveVisitors, props.liveVisitorTownId, props.reducedMotion, locale.value],
@@ -735,6 +874,12 @@ watch(
 watch(upgradeIds, (ids) => {
   if (props.active) scene?.setUpgradeable(props.cinematic ? [] : ids);
 });
+watch(
+  () => props.coachPlot,
+  (id) => {
+    if (props.active) scene?.setCoachPlot(id);
+  },
+);
 watch(
   () => props.raid,
   (raid, previous) => {

@@ -21,8 +21,10 @@ import * as THREE from 'three';
 
 import { addConstructionPlot, addWell } from './buildings/frontierParts';
 import { WATERMILL_WHEEL } from './buildings/watermill';
+import { ELEVATOR_CLIMBERS, elevatorMotion } from './buildings/future';
 
 import { BUILDING_BY_ID } from '../../data/town';
+import { modelLevel } from '../../data/buildingProgression';
 
 import { walkers } from './TownWalkers';
 import { TownConstruction, constructionParts } from './TownConstruction';
@@ -39,11 +41,13 @@ import { addScaffolding, addImprovements } from './TownImprovements';
 import { constructionVisual, nextGoal, roadLevel } from './TownRules';
 
 import { addServiceDrops } from './TownEvolution';
-import { TownScenery } from './TownScenery';
+import { TownScenery, sceneryAffectsNavigation } from './TownScenery';
 
 import { PLOTS, visiblePlots } from './TownLayout';
 import { updateTownShadowCoverage } from './TownShadows';
 import { GARDEN_PARCELS } from '../../data/townGardenDistrict';
+import { PERSONAL_AREAS, areaUnlocked } from '../../data/townLandmarks';
+import { groundHeight } from './TownLandscape';
 
 // The plot lifecycle: building a plot's model, swapping changed plots one per frame,
 // holding a finished building until its site is clear, the construction reveal and
@@ -63,11 +67,14 @@ const plotWork = (d) => (d.plotWork ??= { queue: [], active: null });
 // A rotor (windmill sails, watermill wheel) keeps turning while the rest of its plot
 // is batched: it moves into the world as an animated actor with its motion, and
 // animals treat its swept sphere as solid.
-function attachMovingPart(d, group, { rotor, update }) {
+function attachMovingPart(d, group, { rotor, update, solid = true }) {
   group.updateMatrixWorld(true);
   rotor.updateWorldMatrix(true, false);
   d.world.attach(rotor);
   rotor.userData.animated = true;
+  d.motions.push(update);
+  // Parts high above the ground (elevator climbers) never obstruct animals.
+  if (!solid) return;
   const center = rotor.getWorldPosition(new THREE.Vector3());
   const bounds = new THREE.Box3().setFromObject(rotor);
   const radius = Math.max(center.distanceTo(bounds.min), center.distanceTo(bounds.max));
@@ -75,7 +82,6 @@ function attachMovingPart(d, group, { rotor, update }) {
     center,
     new THREE.Vector3().setScalar(radius * 2),
   );
-  d.motions.push(update);
 }
 
 export function buildPlot(d, id, group, town, labels) {
@@ -83,6 +89,7 @@ export function buildPlot(d, id, group, town, labels) {
   if (id === 'mine') d.mine(group, labels.mine);
   else {
     const stage = town.buildings[id],
+      level = modelLevel(id, stage),
       project = town.projects[id],
       kind = BUILDING_BY_ID[id].kind;
     if (kind === 'bridge') {
@@ -105,21 +112,21 @@ export function buildPlot(d, id, group, town, labels) {
         labels[id],
         town.buildingEraLevels[id] || 1,
         town.buildingEras[id],
-        stage,
+        level,
       );
       if (!industrial) {
         if (kind === 'square')
           buildTownSquare(
             d,
             group,
-            stage,
+            level,
             town.buildingEras[id] === 'frontier',
             town.buildingEras[id],
           );
         else if (kind === 'well') addWell(d, group);
-        else d.building(group, kind, stage, labels[id]);
+        else d.building(group, kind, level, labels[id]);
       }
-      if (!industrial) movingPart = addImprovements(d, group, kind, stage, town.buildingEras[id]);
+      if (!industrial) movingPart = addImprovements(d, group, kind, level, town.buildingEras[id]);
       if (!industrial)
         renderModernization(
           d,
@@ -136,6 +143,9 @@ export function buildPlot(d, id, group, town, labels) {
             wheel.rotation.x = time * 0.45;
           },
         };
+      const climbers = group.getObjectByName(ELEVATOR_CLIMBERS);
+      if (climbers)
+        movingPart = { rotor: climbers, update: elevatorMotion(d, climbers), solid: false };
       if (project) addScaffolding(d, group, kind, stage, constructionVisual(project));
     }
   }
@@ -190,16 +200,28 @@ export function prepareConstructionCue(d) {
 }
 
 export function beginConstructionCue(d, id) {
+  // Moon buildings have no valley lot; their work is shown on the Moon map.
+  if (!PLOTS[id]) return;
   d.prepareConstructionCue();
-  const [x, z] = PLOTS[id] ?? [0, 0];
+  const [x, z] = PLOTS[id];
   d.cue.position.set(x + 1.4, 0.4, z + 1.8);
   d.cue.rotation.z = -0.65;
   d.cue.visible = true;
   d.drawFrame();
 }
 
-export function changeTown(d, town, labels, mineProgress, constructionId, reducedMotion = false) {
+// `instant` (a purchase or finish from the build list) swaps the plot at once: no
+// reveal, and anyone on the site steps off immediately instead of being waited for.
+export function changeTown(
+  d,
+  town,
+  labels,
+  mineProgress,
+  constructionId,
+  { reducedMotion = false, instant = false } = {},
+) {
   const started = performance.now();
+  const reveal = !reducedMotion && !instant;
   d.mineProgress = mineProgress;
   const works = d.staticScenery?.entries.get('mine-works')?.group;
   if (works) updateMineGrowth(works, mineGrowth(mineProgress));
@@ -220,7 +242,16 @@ export function changeTown(d, town, labels, mineProgress, constructionId, reduce
   const work = plotWork(d);
   work.queue = [];
   if (!changed.length && sameTopology) {
+    const expanded =
+      JSON.stringify(d.town?.personalisation?.areas) !==
+      JSON.stringify(town.personalisation?.areas);
     d.town = town;
+    const sceneryChanges = refreshScenery(d);
+    if (sceneryChanges.length) {
+      d.buildingRenderer.sync(d.world.children.filter((child) => child.userData.static));
+      if (sceneryChanges.some(sceneryAffectsNavigation)) d.repairAnimalLife();
+    }
+    if (expanded && d.overview) d.frameTown();
     // No plot will activate to retire a construction cue shown for this change.
     if (d.cue) d.cue.visible = false;
     d.render();
@@ -253,9 +284,10 @@ export function changeTown(d, town, labels, mineProgress, constructionId, reduce
     const queue = [
       ...ids.filter((id) => id !== constructionId),
       ...ids.filter((id) => id === constructionId),
-    ].map((id) => ({ id, town, labels, construction: id === constructionId && !reducedMotion }));
+    ].map((id) => ({ id, town, labels, construction: id === constructionId && reveal }));
     try {
-      if (queue.length > 1) work.queue = queue;
+      if (instant) for (const { id } of queue) swapPlot(d, id, town, labels, { immediate: true });
+      else if (queue.length > 1) work.queue = queue;
       else swapPlot(d, queue[0].id, town, labels, { construction: queue[0].construction });
       record('swap');
       return;
@@ -297,13 +329,14 @@ export function changeTown(d, town, labels, mineProgress, constructionId, reduce
       town,
       labels,
       mineProgress,
-      constructionId: reducedMotion ? null : constructionId,
+      constructionId: reveal ? constructionId : null,
       prepared: { id: constructionId, group: probe, movingPart, footprint },
+      immediate: instant,
     };
     record('prepared-update');
     if (!d.tryActivatePlot()) return;
   } else {
-    d.update(town, labels, mineProgress, reducedMotion ? null : constructionId);
+    d.update(town, labels, mineProgress, reveal ? constructionId : null);
     record('update');
   }
   if (d.cue) d.cue.visible = false;
@@ -323,7 +356,7 @@ export function discardPlotWork(d) {
   plotWork(d).active = null;
 }
 
-function swapPlot(d, id, town, labels, { construction = false } = {}) {
+function swapPlot(d, id, town, labels, { construction = false, immediate = false } = {}) {
   d.finishConstruction();
   invalidatePresentationWork(d);
   d.discardPlotWork();
@@ -349,6 +382,7 @@ function swapPlot(d, id, town, labels, { construction = false } = {}) {
     entries,
     signature,
     construction,
+    immediate,
     parts: timeTown('construction-parts', () => constructionParts(group, partKeys)),
     partKeys,
   };
@@ -389,7 +423,7 @@ export function plotVacant(d, pending) {
   // Anyone still on the site after the grace period, boxed in or held by a
   // crowd, steps off it. The build must not wait on them, or every later
   // build queued behind it keeps its scaffolding and never plays its reveal.
-  if (occupants.length && now - pending.waitStarted < SITE_CLEAR_SECONDS) {
+  if (occupants.length && !pending.immediate && now - pending.waitStarted < SITE_CLEAR_SECONDS) {
     showConstructionGate(d, pending.id);
     for (const actor of occupants) {
       if (actor.motion?.exitTarget) continue;
@@ -493,6 +527,8 @@ export function tryActivatePlot(d) {
   if (previous.movingPart) {
     previous.movingPart.rotor.removeFromParent();
     d.motions = d.motions.filter((m) => m !== previous.movingPart.update);
+    if (previous.movingPart.rotor.name === ELEVATOR_CLIMBERS)
+      d.visitorTransports?.delete('spaceElevator');
   }
   group.visible = true;
   group.userData.activation = construction ? 'temporary-reveal' : 'completed';
@@ -590,6 +626,7 @@ function refreshScenery(d) {
   if (!d.staticScenery) return [];
   const changed = d.staticScenery.update(d, d.town);
   for (const id of changed) {
+    if (!sceneryAffectsNavigation(id)) continue;
     const group = d.staticScenery.entries.get(id).group;
     d.navigation?.replaceOwner(`scenery:${id}`, group ? sceneryObstacles(group) : []);
   }
@@ -766,6 +803,13 @@ export function rebuildTown(
     if (id === constructionId)
       d.construction = new TownConstruction(d, group, movingPart?.rotor, previousParts, partKeys);
     d.plotCache.set(id, { signature: signatures.get(id), group, movingPart, parts });
+  }
+  // Monument sites have no label, only an action icon over the middle of the site.
+  for (const area of PERSONAL_AREAS) {
+    if (!areaUnlocked(town, area)) continue;
+    const [x, z] = area.positions[0];
+    const centre = point(x, groundHeight(x, z) + 2, z);
+    d.anchors.push({ id: area.id, site: true, width: 0, position: centre, collection: centre });
   }
   if (prepared && prepared !== adopted) d.clearGroup(prepared.group);
   // Model preparation can be expensive. Start the reveal clock on its first visible frame.

@@ -333,3 +333,47 @@ it('a rejected account deletion does not remove cached progress', async () => {
   expect(townStorage.active()).toEqual(before);
   expect(cleanupArchive).not.toHaveBeenCalled();
 });
+it('deletes any cloud town at the revision the player reviewed and keeps its device copy', async () => {
+  const account = { id: 'account-a' },
+    ownId = crypto.randomUUID(),
+    otherId = crypto.randomUUID();
+  const town = { name: 'Cached Town', revision: 3, profile: townStorage.active().profile };
+  townStorage.account(account);
+  townStorage.remember({ ...town, townId: ownId }, account.id);
+  townStorage.remember({ ...town, townId: otherId }, account.id);
+  townStorage.select(ownId, account.id);
+  configureSync({});
+  const { deleteAccountTown } = await import('../src/services/cloudProfile');
+  let rejectDelete = false;
+  fetch.mockImplementation(async (url, options) => ({
+    ok: !(rejectDelete && options.method === 'DELETE'),
+    status: rejectDelete && options.method === 'DELETE' ? 409 : 200,
+    json: async () =>
+      url.endsWith('/account')
+        ? { account, towns: [] }
+        : rejectDelete
+          ? { error: 'This town changed. Review it again before deleting.' }
+          : { ok: true },
+  }));
+  const deletes = () =>
+    fetch.mock.calls
+      .filter(([, options]) => options.method === 'DELETE')
+      .map(([url, options]) => [url.split('/').pop(), JSON.parse(options.body)]);
+
+  // A town that is not being played deletes at the revision its card shows.
+  await deleteAccountTown({ townId: otherId, name: 'Cached Town', revision: 7 }, 'Cached Town');
+  expect(deletes()).toEqual([[otherId, { baseRevision: 7, confirmation: 'Cached Town' }]]);
+  expect(townStorage.get(otherId, account.id).meta.missing).toBe(true);
+  expect(fetch.mock.calls.at(-1)[0]).toMatch(/\/account$/);
+
+  // A changed town is refused, refreshes its card and stays backed up.
+  rejectDelete = true;
+  fetch.mockClear();
+  await expect(
+    deleteAccountTown({ townId: ownId, name: 'Cached Town', revision: 9 }, 'Cached Town'),
+  ).rejects.toMatchObject({ status: 409 });
+  // The town being played deletes at its own base revision, not the listing's.
+  expect(deletes()).toEqual([[ownId, { baseRevision: 3, confirmation: 'Cached Town' }]]);
+  expect(townStorage.get(ownId, account.id).meta.missing).toBeFalsy();
+  expect(fetch.mock.calls.at(-1)[0]).toMatch(/\/account$/);
+});

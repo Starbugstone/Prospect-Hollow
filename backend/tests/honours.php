@@ -155,7 +155,7 @@ $adminAudit = 'honours-test-' . bin2hex(random_bytes(4));
 try {
     // ---------- Shared definitions ----------
     check(
-        $schema['honours']['version'] === 1 &&
+        $schema['honours']['version'] === 4 &&
             $schema['honours']['showcaseSlots'] === 3 &&
             $schema['honours']['counters'] === [
                 'gems' => 'map',
@@ -168,7 +168,7 @@ try {
             ],
         'the public schema exports the honours constants and counters from the registry',
     );
-    $kinds = ['stars', 'score', 'era', 'count', 'distinct', 'powers', 'social'];
+    $kinds = ['stars', 'score', 'era', 'count', 'distinct', 'powers', 'social', 'landmark'];
     foreach ($definitions as $id => $definition) {
         check(
             array_keys($definition) === ['family', 'rank', 'metal', 'tab', 'goal', 'measure'] &&
@@ -197,6 +197,8 @@ try {
             'topaz',
             'amethyst',
             'moonstone',
+            'peridot',
+            'starmetal',
         ] &&
             in_array('rainbow+rainbow', $rules['honours']['fusions'], true) &&
             count($elements) > 100 &&
@@ -207,6 +209,55 @@ try {
             ),
         'save rules export claimable keys and each level’s mine elements ' .
             json_encode(array_slice($elements, 0, 3, true)),
+    );
+
+    // The paid-landmark replay is the proof, not an uploaded honour claim.
+    $monumentFlow = flow('optional landmark monument: construction and upgrades');
+    $monumentClock = $monumentFlow->after->integrity->clientAt;
+    $monumentBase = $validator->accept(
+        $monumentFlow->before,
+        null,
+        $monumentClock,
+        false,
+        [],
+        'monument-town',
+    );
+    $monumentBase = $catalog->keep($monumentBase, null, $noSocial);
+    check(
+        !in_array('monument-gold', $monumentBase->honours->verified, true),
+        'no monument, no distinction',
+    );
+    $monumentSaved = $validator->accept(
+        $monumentFlow->after,
+        $monumentBase,
+        $monumentClock,
+        false,
+        [],
+        'monument-town',
+    );
+    $monumentSaved = $catalog->keep($monumentSaved, $monumentBase, $noSocial);
+    check(
+        in_array('monument-gold', $monumentSaved->honours->verified, true),
+        'a paid monument verifies the single monument distinction',
+    );
+    $monumentAgain = $validator->accept(
+        $monumentFlow->after,
+        $monumentSaved,
+        $monumentClock,
+        false,
+        [],
+        'monument-town',
+    );
+    $monumentAgain = $catalog->keep($monumentAgain, $monumentSaved, $noSocial);
+    check(
+        $monumentAgain->honours->earned->{'monument-gold'} ==
+            $monumentSaved->honours->earned->{'monument-gold'},
+        'receipt retries keep the first award',
+    );
+    $monumentPublic = published($monumentSaved);
+    check(
+        isset($monumentPublic['earned']['monument-gold']),
+        'visitors see the verified monument distinction',
     );
 
     // ---------- Storage bounds ----------
@@ -380,7 +431,8 @@ try {
         'bounding an already bounded block changes nothing',
     );
     check(
-        kept([], ['honours' => ['earned' => []]])['seenGeneration'] === 1,
+        kept([], ['honours' => ['earned' => []]])['seenGeneration'] ===
+            $schema['honours']['version'],
         'a block from before generations has seen the current generation, as on the client',
     );
 
@@ -856,7 +908,7 @@ try {
         check(
             str_contains(
                 $public->projection($odd, 'Odd', 'honours'),
-                '"honours":{"version":1,"earned":{},"showcase":[]}',
+                '"honours":{"version":4,"earned":{},"showcase":[]}',
             ),
             'garbage still projects an empty object',
         );
@@ -950,10 +1002,32 @@ try {
             'origin_town_id' => $origin,
             'town_name' => $origin === null ? null : 'Somewhere',
             'era' => 'frontier',
+            // Live presence marks every visit made while signed in.
+            'signed_in' => $name !== '' || $origin !== null ? 1 : 0,
             'arrived_at' => 1000 + $visitNumber,
             'last_seen_at' => 1000 + $visitNumber,
             'departed_at' => 1000 + $visitNumber,
         ]);
+        // Presence records a travel for a home town visiting another player's village.
+        $owner = fn($town) => $db
+            ->get()
+            ->fetchOne('SELECT player_id FROM towns WHERE id=?', [$town]);
+        if (
+            $origin !== null &&
+            $owner($host) !== $owner($origin) &&
+            !$db
+                ->get()
+                ->fetchOne(
+                    'SELECT host_town_id FROM town_travels WHERE origin_town_id=? AND host_town_id=?',
+                    [$origin, $host],
+                )
+        ) {
+            $db->get()->insert('town_travels', [
+                'origin_town_id' => $origin,
+                'host_town_id' => $host,
+                'visited_at' => 1000 + $visitNumber,
+            ]);
+        }
     };
     $hostProfile = tracked();
     $hostProfile->honours = asObject([
@@ -1050,15 +1124,15 @@ try {
         'social ranks verify at save time from the server counts ' .
             json_encode($hostSave['profile']['honours']['verified']),
     );
-    // The visitors and one visited village disappear; verified honours stay published.
+    // The visitors and one visited village disappear; verified honours stay published and
+    // the village keeps counting, since travels belong to the visiting town.
     $db->get()->executeStatement('DELETE FROM visitor_visits WHERE town_id=?', [$hostId]);
     $db->get()->executeStatement('DELETE FROM towns WHERE id=?', [$others[1]]);
     check(
         status(200, callApi('GET', 'towns/' . $hostId . '/visitors', null, $owner), 'later')[
             'townsVisited'
-        ] ===
-            $travelGoal - 1,
-        'a deleted village no longer counts as visited',
+        ] === $travelGoal,
+        'a deleted village still counts as visited',
     );
     $visit = status(200, callApi('GET', 'villages/' . $hostPublic), 'visit host');
     check(

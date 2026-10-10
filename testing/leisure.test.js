@@ -100,8 +100,8 @@ it('adds new empty plots to an existing modern save without moving its era, wall
 it('caps happiness at 100 even with both completed leisure plots', () => {
   const town = createTown();
   Object.assign(town.buildings, {
-    square: 5,
-    saloon: 5,
+    square: 3,
+    saloon: 3,
     museum: 3,
     school: 3,
     horseField: 3,

@@ -50,19 +50,35 @@ describe('light marker resolution', () => {
     vi.spyOn(MatchEngine.prototype, 'findMatches').mockReturnValue([]);
   });
 
-  it('lights a lantern once when simultaneous matches touch it from several sides', () => {
+  it('lights a lantern once when simultaneous matches cross on its cell', () => {
     const state = makeBoard();
     state.tiles[12] = signal();
     const result = manager.getResolution({
       ...state,
       matches: [
-        { type: 'ruby', indices: [6, 7, 8] },
-        { type: 'emerald', indices: [11, 16, 21] },
+        { type: 'ruby', indices: [10, 11, 12] },
+        { type: 'emerald', indices: [2, 7, 12] },
       ],
     });
     expect(state.tiles[12].signalHealth).toBe(0);
     expect(result.layersCleared).toBe(1);
     expect(result.steps[0].tileUpdates).toEqual([{ index: 12, signalHealth: 0 }]);
+  });
+
+  it('lights a lantern only from its own cell, while a survey marker also lights beside', () => {
+    const matches = [
+      { type: 'ruby', indices: [6, 7, 8] },
+      { type: 'emerald', indices: [11, 16, 21] },
+    ];
+    const lantern = makeBoard();
+    lantern.tiles[12] = signal();
+    const unlit = manager.getResolution({ ...lantern, matches });
+    expect(lantern.tiles[12].signalHealth).toBe(1);
+    expect(unlit.layersCleared).toBe(0);
+    const survey = makeBoard();
+    survey.tiles[12] = signal(1);
+    manager.getResolution({ ...survey, matches });
+    expect(survey.tiles[12].signalHealth).toBe(0);
   });
 
   it('does not light diagonally or wrap an edge match onto the next row', () => {
@@ -142,7 +158,7 @@ describe('light marker resolution', () => {
     state.tiles[5] = signal(1);
     state.tiles[19] = signal(2);
     state.tiles[18] = signal();
-    const result = resolveHits(state, [19], 'tile-breaker');
+    const result = resolveHits(state, [18, 19], 'tile-breaker');
     expect(state.tiles[5].signalHealth).toBe(1);
     expect(state.tiles[19].signalHealth).toBe(1);
     expect(state.tiles[18].signalHealth).toBe(0);

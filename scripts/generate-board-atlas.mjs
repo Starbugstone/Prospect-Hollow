@@ -1,10 +1,10 @@
 import sharp from 'sharp';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { DEEP_MINE_SPRITES } from '../src/data/mineThemes.js';
+import { BASE_GEM_TYPES, GEM_TYPES } from '../src/game/engine/GemFactory.js';
 
 const output = new URL('../src/assets/board/', import.meta.url);
 await mkdir(output, { recursive: true });
-const types = ['ruby', 'sapphire', 'emerald', 'topaz', 'amethyst', 'moonstone'];
 const groups = {
   'board-core': [
     ['gem-relic', 'relic.svg', 160],
@@ -29,8 +29,9 @@ const groups = {
     ...DEEP_MINE_SPRITES.map(([id, file]) => [id, file, 160]),
   ],
 };
+// Later gems have only the classic cut.
 for (const finish of ['classic', 'cut', 'geode'])
-  groups[`gems-${finish}`] = types.map((t) => [
+  groups[`gems-${finish}`] = (finish === 'classic' ? GEM_TYPES : BASE_GEM_TYPES).map((t) => [
     `gem-${finish === 'classic' ? '' : finish + '-'}${t}`,
     finish === 'classic' ? `${t}.svg` : `gems/${finish}/${t}.svg`,
     160,

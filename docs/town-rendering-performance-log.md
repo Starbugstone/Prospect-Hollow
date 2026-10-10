@@ -202,6 +202,24 @@ None of these change gameplay, rewards or the unlimited-moves rule.
 | Label projection           | `TownLabelProjection.js`                                                                                                                     | Scratch vectors instead of clones, label ranks computed once per frame, the villager tag checks its parent instead of scanning the world, and mouse hover is evaluated once per frame.                                                                             |
 | Diorama split              | `TownPrimitives`, `TownPeople`, `buildings/frontierParts`, `TownPlots`, `TownCamera`, `TownLabelProjection`, `TownPopulation`, `TownWalkers` | TownDiorama went from about 2,600 to about 700 lines; it keeps thin delegating methods. The full rebuild and the in-place swap share one rotor attachment (the swap had skipped the rotor's animal bounds), and waiting plot changes live in one `plotWork` queue. |
 
+## Round, distant horizon (October 2026)
+
+The fog is measured by horizontal distance from the town center (`TownAtmosphere.js`), so the
+horizon is round instead of square. It starts at 170 units, leaving open prairie beyond the
+farthest monument site (about 121), and reaches full fog at 320. The terrain, river and railway run
+to `TOWN_EDGE` (±330 instead of ±130), and the main camera's far plane is 700 so the widest orbit
+still reaches full fog.
+
+| Change           | Where                                      | Cost                                                                                                                                                                                                                                                                                                                                                                  |
+| ---------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Far terrain ring | `landscapeGeometry()` in `TownMillrace.js` | The core lattice stops at ±130. Beyond it a separate 20-unit lattice stays fine only across the river valley, the trail, the flight corridor and the railway cutting, and fans around the core's border vertices like the millrace patch. The ground mesh is 47,968 triangles (42,990 at ±130); running the core's rows and columns out to ±330 would cost about 55k. |
+| Welded railway   | `addRailroad()` in `TownEraActivity.js`    | One-unit rails and ballast only within `RAIL_JOINTED` (±60: the bridge grade and the opening's build wave); one welded length per side beyond it, with a sleeper per unit throughout. The railway is 22,428 triangles (34,932 at ±140, 80,748 if jointed out to ±330).                                                                                                |
+| River fog        | `buildRiver()` in `TownRiver.js`           | The live river blends its fog in linear light before tone mapping, like the cached prairie, so its far end fades into the same horizon color instead of showing a pale tip.                                                                                                                                                                                           |
+
+Tests: `testing/town-render-hotspots.test.js` (terrain and railway triangle budgets, crack-free
+terrain), `testing/town-camera.test.js` (round fog, clearance, open river and cutting on the far
+terrain) and `testing/river-transport.test.js` (welded lengths only on level line).
+
 ## Proposed next steps (not implemented)
 
 - **B1 (rest).** Stop the ground casting shadows. Kept for now because the mine hillside inside the

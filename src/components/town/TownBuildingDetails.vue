@@ -7,8 +7,8 @@
       </div>
       <span class="town-level-badge">{{
         t(town.era !== 'frontier' ? '{era} · Level {level} of {max}' : 'Level {level} / {max}', {
-          era: t(ERA_BY_ID[town.era].label),
-          level: eraBuildingLevel(town, id),
+          era: t(ERA_BY_ID[keptFinish ? town.buildingEras[id] : town.era].label),
+          level: keptFinish ? town.buildingEraLevels[id] || 3 : eraBuildingLevel(town, id),
           max: town.era !== 'frontier' ? 3 : building.upgrades.length,
         })
       }}</span>
@@ -199,7 +199,7 @@
         {{
           t('Normal puzzles: {count}/{required}', {
             count: town.forge.progress,
-            required: forgeProductionRuns(stage),
+            required: forgeProductionRuns(buildingServiceLevel('blacksmith', stage)),
           })
         }}
       </p>
@@ -291,7 +291,7 @@
       <p>
         {{
           t(
-            'At level 4, the town square gains a warning bell. During a raid, tap the square, its bell icon, or the raid bell button to halve the remaining coin loss. The bell works once per raid and is only needed when coins are at risk.',
+            'At level 3, the town square gains a warning bell. During a raid, tap the square, its bell icon, or the raid bell button to halve the remaining coin loss. The bell works once per raid and is only needed when coins are at risk.',
           )
         }}
       </p>
@@ -323,7 +323,7 @@
       </p>
       <small>{{
         t(
-          'The bank and sheriff each protect up to half the coins at risk. At level 5, both together stop all raid losses. Finish their construction during a raid to apply the new protection immediately. Your last 50 coins are always safe.',
+          'The bank and sheriff each protect up to half the coins at risk. At level 3, both together stop all raid losses. Finish their construction during a raid to apply the new protection immediately. Your last 50 coins are always safe.',
         )
       }}</small>
     </section>
@@ -349,8 +349,9 @@ import { ERA_BY_ID } from '../../data/eras';
 import { computed, inject } from 'vue';
 import { t } from '../../i18n';
 import { BUILDING_BY_ID } from '../../data/town';
-import { eraGate, eraBuildingLevel } from '../../game/town/TownEras';
+import { eraGate, eraBuildingLevel, modernizesInEra } from '../../game/town/TownEras';
 import { forgeProductionRuns } from '../../data/eras';
+import { buildingServiceLevel } from '../../data/buildingProgression';
 import {
   upgradeOffer,
   constructionRuns,
@@ -397,6 +398,14 @@ const cooldownSeconds = computed(() =>
   ),
 );
 const building = computed(() => BUILDING_BY_ID[props.id]);
+// A building this era leaves alone keeps showing the era of its finish.
+const keptFinish = computed(
+  () =>
+    props.town.era !== 'frontier' &&
+    building.value.introducedEra !== props.town.era &&
+    !modernizesInEra(props.town.era, props.id) &&
+    !!props.town.buildingEras[props.id],
+);
 const requirement = computed(() => plotRequirement(props.town, props.id));
 const needs = computed(() => townNeeds(props.town));
 const stage = computed(() => props.town.buildings[props.id]);

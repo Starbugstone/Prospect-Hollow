@@ -44,9 +44,28 @@ const ACTIVE = {
     ]),
   ),
   relic: { type: 'standard', health: 0, exit: true },
+  floatstone: { type: 'standard', health: 0, floatStart: true },
+  starglass: { type: 'blocker', bonusOnly: true, lensOnly: true, health: 2, maxHealth: 2 },
+  lens: { type: 'void', health: 0, lens: 'se' },
+  portal: { type: 'standard', health: 0, portalTo: 0, portalPair: 0 },
+  'cracked-wall': { type: 'blocker', bonusOnly: true, waist: 'a', health: 2, maxHealth: 2 },
+  'moon-lock': { type: 'standard', health: 0, gravitySwitch: 'lock' },
+  'moon-dial': { type: 'standard', health: 0, gravitySwitch: 'dial', fall: 'up' },
+  'phase-seal': {
+    type: 'standard',
+    health: 2,
+    maxHealth: 2,
+    phaseSeal: true,
+    phaseNext: 'sapphire',
+  },
 };
-// Ore orders are shown in the goal panel, not on a cell.
-const OFF_BOARD = new Set(['ore-orders']);
+// Lens mirrors, portals and moon dials are fixtures the player uses, never completes
+// (agreed with the user, like permanent voids). A dial leaves with the exits once the
+// last cargo is delivered.
+const FIXTURES = new Set(['lens', 'portal', 'moon-dial']);
+// Ore orders are shown in the goal panel, not on a cell. Floatstones are pieces
+// rather than cell markers; their sky hatches follow the relic exit sample.
+const OFF_BOARD = new Set(['ore-orders', 'floatstone']);
 const PLAIN = { type: 'standard', health: 0 };
 
 // The tile as the engine leaves it once completed. Relic exits are complete
@@ -59,6 +78,7 @@ const complete = (tile) => ({
   ...(tile.signal ? { signalHealth: 0 } : {}),
   ...(tile.fossilGroup != null ? { fossilCollected: true } : {}),
   ...(tile.state === 'FROZEN' ? { state: 'PLAYABLE' } : {}),
+  ...(tile.gravitySwitch === 'lock' ? { gravitySwitch: null } : {}),
 });
 
 function renderer() {
@@ -134,14 +154,21 @@ it('has a completion sample for every board obstacle', () => {
   for (const { id, present } of OBSTACLES) expect(present(ACTIVE[id]), id).toBe(true);
 });
 
-it.each(OBSTACLES.map(({ id }) => id))('removes every trace of %s once completed', (id) => {
-  const animator = renderer();
-  animator.tiles = [PLAIN, ACTIVE[id]];
-  animator.drawCells();
-  if (!OFF_BOARD.has(id)) expect(look(animator, 1)).not.toEqual(look(animator, 0));
-  animator.updateTiles([PLAIN, complete(ACTIVE[id])]);
-  animator.syncToBoard([null, null]);
-  expect(look(animator, 1)).toEqual(look(animator, 0));
+it.each(OBSTACLES.map(({ id }) => id).filter((id) => !FIXTURES.has(id)))(
+  'removes every trace of %s once completed',
+  (id) => {
+    const animator = renderer();
+    animator.tiles = [PLAIN, ACTIVE[id]];
+    animator.drawCells();
+    if (!OFF_BOARD.has(id)) expect(look(animator, 1)).not.toEqual(look(animator, 0));
+    animator.updateTiles([PLAIN, complete(ACTIVE[id])]);
+    animator.syncToBoard([null, null]);
+    expect(look(animator, 1)).toEqual(look(animator, 0));
+  },
+);
+
+it('only exempts fixtures that are never completed', () => {
+  for (const id of FIXTURES) expect(complete(ACTIVE[id])).toEqual(ACTIVE[id]);
 });
 
 it('keeps a relic exit while a relic is on the board', () => {

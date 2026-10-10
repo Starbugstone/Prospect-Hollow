@@ -1,3 +1,5 @@
+import { userAgentParts } from '../services/userAgent';
+
 // Display helpers for the admin panel. Times from the API are Unix seconds.
 export function relativeTime(seconds, now = Date.now() / 1000) {
   if (!seconds) return 'never';
@@ -33,24 +35,7 @@ export const whole = (value) => (Number(value) || 0).toLocaleString('en-US');
 // A short "Browser on OS" name; the raw user agent stays available on hover.
 export function describeAgent(agent) {
   if (!agent) return 'Unknown';
-  const browser =
-    [
-      [/EdgA?\//, 'Edge'],
-      [/SamsungBrowser\//, 'Samsung Internet'],
-      [/OPR\//, 'Opera'],
-      [/Firefox\/|FxiOS\//, 'Firefox'],
-      [/Chrome\/|CriOS\//, 'Chrome'],
-      [/Safari\//, 'Safari'],
-    ].find(([pattern]) => pattern.test(agent))?.[1] ?? 'Other browser';
-  const system =
-    [
-      [/Android/, 'Android'],
-      [/iPhone|iPad|iPod/, 'iOS'],
-      [/Windows/, 'Windows'],
-      [/Mac OS X|Macintosh/, 'macOS'],
-      [/CrOS/, 'ChromeOS'],
-      [/Linux/, 'Linux'],
-    ].find(([pattern]) => pattern.test(agent))?.[1] ?? '';
+  const { browser = 'Other browser', system } = userAgentParts(agent);
   return system ? `${browser} on ${system}` : browser;
 }
 
@@ -101,9 +86,24 @@ const ACTIONS = {
   distinction_removed: 'Removed player distinction',
   audit_retention_changed: 'Changed activity log retention',
   audit_purged: 'Purged activity log',
+  privacy_contact_changed: 'Changed privacy contact',
   town_renamed: 'Renamed town',
   town_unshared: 'Stopped sharing town',
   town_deleted: 'Deleted town',
   town_restored: 'Restored town revision',
+  town_sync_forced: 'Set town to accept next sync',
+  town_sync_force_cleared: 'Cleared accept next sync',
+  town_sync_reset: 'Reset town after a blocked sync',
+  town_corrected: 'Corrected town coins or inventory',
 };
 export const actionLabel = (action) => ACTIONS[action] ?? action.replaceAll('_', ' ');
+// Why the save protection rejected an upload, from its error code.
+const CODES = {
+  save_integrity_mismatch: 'Progress did not match the replayed actions',
+  save_integrity_invalid: 'The save is out of range or malformed',
+  save_clock_mismatch: 'The device clock was ahead of the cloud checkpoint',
+  save_money_review: 'Earnings exceeded the money estimate',
+  save_rules_unsupported: 'The game rules were not compatible',
+  save_integrity_unsupported: 'The journal version was not compatible',
+};
+export const codeLabel = (code) => CODES[code] ?? code.replaceAll('_', ' ');

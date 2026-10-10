@@ -168,6 +168,21 @@ assertIntegrity(
     $validator->accept(integrityObject($legacy), null, $now)->town->buildings->well === 5,
     'legacy support tiers remain usable before normalized migration',
 );
+// Version 2 shortened Frontier's saloon, sheriff, bank, square and blacksmith to three stages.
+$versionOne = integrityData($baseline);
+$versionOne['town']['progressionVersion'] = 1;
+$versionOne['town']['buildings']['saloon'] = 5;
+assertIntegrity(
+    $validator->accept(integrityObject($versionOne), null, $now)->town->buildings->saloon === 5,
+    'version-1 five-level services remain usable before normalized migration',
+);
+$forged = integrityData($baseline);
+$forged['town']['buildings']['saloon'] = 5;
+integrityDenied(
+    fn() => $validator->accept(integrityObject($forged), $baseline, $now),
+    'save_integrity_invalid',
+    'a fifth service stage in a version-2 town',
+);
 $forged = integrityData($baseline);
 $forged['town']['buildings']['unreleased-plot'] = 1;
 integrityDenied(
@@ -476,8 +491,7 @@ $historical['powers'][0]['quantity'] = 7;
 $historical['builderHammers'] = 8;
 $migrated = $historical;
 $migrated['powers'][0]['quantity'] = 3;
-$migrated['builderHammers'] = 5;
-$migrated['town']['coins'] = 170;
+$migrated['town']['coins'] = 140;
 $migrated['integrity'] = [
     'version' => 1,
     'epoch' => integrityUuid(777),
@@ -488,8 +502,8 @@ $migrated['integrity'] = [
 assertIntegrity(
     $validator->accept(integrityObject($migrated), $baseline, $now, true, [
         integrityObject($historical),
-    ])->town->coins === 170,
-    'known legacy inventory overflow converts once during verified historical recovery',
+    ])->town->coins === 140,
+    'known legacy bonus overflow converts once during verified historical recovery; hammers past the cap stay',
 );
 $historical = integrityData($before);
 unset($historical['integrity'], $historical['town']['progressionVersion']);
@@ -518,6 +532,35 @@ assertIntegrity(
     ])->town->coins === $migrated['town']['coins'],
     'known already paid redundant legacy stage refunds once during recovery',
 );
+$historical = integrityData($before);
+unset($historical['integrity']);
+$historical['town']['progressionVersion'] = 1;
+$historical['town']['coins'] = 100;
+$historical['town']['buildings']['saloon'] = 4;
+$historical['town']['projects']['saloon'] = [
+    'id' => 'saloon',
+    'stage' => 5,
+    'required' => 1,
+    'wins' => 0,
+];
+$migrated = $historical;
+$migrated['town']['buildings']['saloon'] = 3;
+$migrated['town']['projects'] = [];
+$migrated['town']['progressionVersion'] = 2;
+$migrated['town']['coins'] = 100 + $rules['buildings']['saloon']['legacyUpgradeCosts'][4];
+$migrated['integrity'] = [
+    'version' => 1,
+    'epoch' => integrityUuid(779),
+    'baseSequence' => 0,
+    'actions' => [],
+    'clientAt' => $now,
+];
+assertIntegrity(
+    $validator->accept(integrityObject($migrated), $baseline, $now, true, [
+        integrityObject($historical),
+    ])->town->coins === $migrated['town']['coins'],
+    'a paid fifth service stage from version 1 refunds once during recovery',
+);
 $extended = $rules;
 $lastEra = end($rules['eraOrder']);
 $extended['eraOrder'][] = 'orbital';
@@ -540,6 +583,29 @@ assertIntegrity(
     $extendedValidator->accept(integrityObject($next), $futureAnchor, $now)->town->era ===
         'orbital',
     'server era lifecycle extends from one authoritative catalog without a hardcoded chronological list',
+);
+// An era with a `modernizes` list leaves its other buildings in their earlier finish.
+$modernizes = $rules['eras'][$lastEra]['modernizes'] ?? null;
+$previousEra = $rules['eraOrder'][count($rules['eraOrder']) - 2];
+assertIntegrity(
+    is_array($modernizes) && in_array('square', $modernizes, true),
+    'the latest era lists the landmarks it modernizes',
+);
+$kept = $future;
+foreach ($rules['buildings'] as $id => $definition) {
+    if ($definition['introducedEra'] !== $lastEra && !in_array($id, $modernizes, true)) {
+        $kept['town']['buildingEras'][$id] = $previousEra;
+    }
+}
+assertIntegrity(
+    $validator->eraComplete($kept['town']),
+    'buildings an era leaves alone count as finished in their earlier finish',
+);
+$unfinished = $kept;
+$unfinished['town']['buildingEras']['square'] = $previousEra;
+assertIntegrity(
+    !$validator->eraComplete($unfinished['town']),
+    'a listed landmark still needs the new era modernization',
 );
 $incomplete = $extended;
 unset($incomplete['eras']['orbital']['buildingOffers']);
@@ -587,6 +653,50 @@ foreach ($fixtures->fixtures as $fixture) {
         'save_integrity_mismatch',
         $fixture->name . ' cannot hide an extra coin in a legitimate batch',
     );
+    if (str_starts_with($fixture->name, 'optional landmark ')) {
+        $free = integrityData($fixture->after);
+        $free['town']['coins'] = $fixture->before->town->coins;
+        integrityDenied(
+            fn() => $validator->accept(integrityObject($free), $starting, $clock),
+            'save_integrity_mismatch',
+            'landmark ownership cannot keep the purchase money',
+        );
+        $unpaid = integrityData($fixture->after);
+        $unpaid['integrity']['actions'] = [];
+        $unpaid['town']['coins'] = $fixture->before->town->coins;
+        integrityDenied(
+            fn() => $validator->accept(integrityObject($unpaid), $starting, $clock),
+            'save_integrity_mismatch',
+            'cosmetic edits cannot forge landmark ownership',
+        );
+        $retry = $validator->accept($fixture->after, $result, $clock);
+        assertIntegrity(
+            $retry->town->coins === $result->town->coins,
+            'lost-response retry never charges twice',
+        );
+    }
+    if ($fixture->name === 'finishing the last starter-project building grants a builder hammer') {
+        // A receipt from a client before the reward carries no flag: no hammer is granted.
+        $legacy = integrityData($fixture->after);
+        unset($legacy['integrity']['actions'][0]['data']['projectRewards']);
+        $legacy['builderHammers'] = $fixture->before->builderHammers;
+        assertIntegrity(
+            $validator->accept(integrityObject($legacy), $starting, $clock)->builderHammers ===
+                $fixture->before->builderHammers,
+            'an unflagged receipt replays without the starter-project hammer',
+        );
+        // The flag alone pays nothing: a finish that completes no project keeps the count.
+        $early = integrityData($fixture->before);
+        $early['town']['buildings']['well'] = 2;
+        $earlyStart = $validator->accept(integrityObject($early), null, $clock);
+        $earlyAfter = integrityData($fixture->after);
+        $earlyAfter['town']['buildings']['well'] = 2;
+        integrityDenied(
+            fn() => $validator->accept(integrityObject($earlyAfter), $earlyStart, $clock),
+            'save_integrity_mismatch',
+            'an unfinished starter project cannot claim its hammer',
+        );
+    }
     if ($fixture->name === 'victory after 175 moves and an expired speed target') {
         $middle = integrityData($fixture->before);
         $firstAction = integrityData($fixture->after)['integrity']['actions'][0];
@@ -600,6 +710,182 @@ foreach ($fixtures->fixtures as $fixture) {
         );
     }
 }
+
+// The space helmet pays an hour of saloon takings once per completed puzzle. A find while
+// visiting another town needs the server's receipt for exactly this town and time.
+$helmet = null;
+foreach ($fixtures->fixtures as $fixture) {
+    if ($fixture->name === 'space helmet found once for its completed puzzle') {
+        $helmet = $fixture;
+    }
+}
+if ($helmet === null) {
+    throw new RuntimeException('The frontend parity fixtures need a space-helmet find.');
+}
+$clock = $helmet->serverNow;
+$helmetTown = integrityUuid(900);
+$helmetStart = $validator->accept($helmet->before, null, $clock, false, [], $helmetTown);
+$helmetFound = integrityData($helmet->after);
+$helmetAction = $helmetFound['integrity']['actions'][0];
+$hourOfTakings = $helmetFound['town']['coins'] - $helmet->before->town->coins;
+assertIntegrity(
+    $hourOfTakings > 1 &&
+        $validator->accept($helmet->after, $helmetStart, $clock, false, [], $helmetTown)->town
+            ->helmetRun === 12,
+    'the helmet wearer pays an hour of saloon takings for its completed puzzle',
+);
+$twice = $helmetFound;
+$twice['integrity']['actions'][] = array_replace($helmetAction, [
+    'sequence' => 2,
+    'id' => integrityUuid(901),
+]);
+$twice['town']['coins'] += $hourOfTakings;
+integrityDenied(
+    fn() => $validator->accept(
+        integrityObject($twice),
+        $helmetStart,
+        $clock,
+        false,
+        [],
+        $helmetTown,
+    ),
+    'save_integrity_mismatch',
+    'the helmet pays once per completed puzzle',
+);
+$ahead = $helmetFound;
+$ahead['integrity']['actions'][0]['data']['run'] = 13;
+$ahead['town']['helmetRun'] = 13;
+integrityDenied(
+    fn() => $validator->accept(
+        integrityObject($ahead),
+        $helmetStart,
+        $clock,
+        false,
+        [],
+        $helmetTown,
+    ),
+    'save_integrity_mismatch',
+    'the helmet cannot be found for a puzzle not yet completed',
+);
+$debut = array_search('tomorrow', $rules['eraOrder'], true);
+assertIntegrity(
+    $debut > 0 &&
+        $validator->spaceHelmetOut('tomorrow') &&
+        $validator->spaceHelmetOut(end($rules['eraOrder'])) &&
+        !$validator->spaceHelmetOut($rules['eraOrder'][$debut - 1]) &&
+        !$validator->spaceHelmetOut('no-such-era') &&
+        !$validator->spaceHelmetOut(null),
+    'there is a helmet to find from its debut era on',
+);
+// A visitor's find pays half an hour of this town's own takings.
+$halfHour = intdiv($hourOfTakings, 2);
+$visited = function (array $finds) use ($helmet, $helmetAction, $halfHour): object {
+    $profile = integrityData($helmet->before);
+    $profile['integrity']['actions'] = [];
+    foreach ($finds as $n => [$foundAt, $receipt]) {
+        $profile['integrity']['actions'][] = [
+            'sequence' => $n + 1,
+            'id' => integrityUuid(910 + $n),
+            'kind' => 'helmet-visitor',
+            'data' => [
+                'at' => $helmetAction['data']['at'],
+                'foundAt' => $foundAt,
+                'receipt' => $receipt,
+            ],
+        ];
+        $profile['town']['coins'] += $halfHour;
+        $profile['town']['helmetVisitAt'] = $foundAt;
+    }
+    return integrityObject($profile);
+};
+$foundAt = $clock - 3600000;
+$receipt = SaveIntegrity::helmetReceipt($helmetTown, $foundAt);
+$redeemed = $validator->accept(
+    $visited([[$foundAt, $receipt]]),
+    $helmetStart,
+    $clock,
+    false,
+    [],
+    $helmetTown,
+);
+assertIntegrity(
+    $redeemed->town->helmetVisitAt === $foundAt &&
+        $redeemed->town->coins === $helmet->before->town->coins + $halfHour,
+    'a find while visiting redeems half an hour of this town\'s saloon takings',
+);
+$fullHour = integrityData($visited([[$foundAt, $receipt]]));
+$fullHour['town']['coins'] += $hourOfTakings - $halfHour;
+integrityDenied(
+    fn() => $validator->accept(
+        integrityObject($fullHour),
+        $helmetStart,
+        $clock,
+        false,
+        [],
+        $helmetTown,
+    ),
+    'save_integrity_mismatch',
+    'a visitor\'s find cannot pay the owner\'s full hour',
+);
+$later = $clock - 1000;
+assertIntegrity(
+    $validator->accept(
+        $visited([
+            [$foundAt, $receipt],
+            [$later, SaveIntegrity::helmetReceipt($helmetTown, $later)],
+        ]),
+        $helmetStart,
+        $clock,
+        false,
+        [],
+        $helmetTown,
+    )->town->helmetVisitAt === $later,
+    'several finds since the last redemption each pay once, oldest first',
+);
+foreach (
+    [
+        'a forged receipt' => [[$foundAt, str_repeat('0', 64)]],
+        'another town\'s receipt' => [
+            [$foundAt, SaveIntegrity::helmetReceipt(integrityUuid(902), $foundAt)],
+        ],
+        'a receipt for another time' => [[$later, $receipt]],
+        'the same find twice' => [[$foundAt, $receipt], [$foundAt, $receipt]],
+    ]
+    as $label => $finds
+) {
+    integrityDenied(
+        fn() => $validator->accept($visited($finds), $helmetStart, $clock, false, [], $helmetTown),
+        'save_integrity_mismatch',
+        $label . ' pays no helmet reward',
+    );
+}
+$again = integrityData($redeemed);
+$again['integrity']['actions'] = [
+    [
+        'sequence' => $again['integrity']['baseSequence'] + 1,
+        'id' => integrityUuid(920),
+        'kind' => 'helmet-visitor',
+        'data' => ['at' => $clock, 'foundAt' => $foundAt, 'receipt' => $receipt],
+    ],
+];
+$again['town']['coins'] += $halfHour;
+$next = $again;
+$next['integrity']['actions'][0]['data']['foundAt'] = $later;
+$next['integrity']['actions'][0]['data']['receipt'] = SaveIntegrity::helmetReceipt(
+    $helmetTown,
+    $later,
+);
+$next['town']['helmetVisitAt'] = $later;
+assertIntegrity(
+    $validator->accept(integrityObject($next), $redeemed, $clock, false, [], $helmetTown)->town
+        ->helmetVisitAt === $later,
+    'a later find redeems after an earlier one',
+);
+integrityDenied(
+    fn() => $validator->accept(integrityObject($again), $redeemed, $clock, false, [], $helmetTown),
+    'save_integrity_mismatch',
+    'a redeemed find cannot be redeemed again later',
+);
 
 // A signed older checkpoint authenticates the economic branch, while an archived
 // complete target tuple identifies the actual old board's reward thresholds.
@@ -1301,8 +1587,11 @@ $event = [
     'id' => 1,
     'atRun' => $freshRaid['town']['completedRuns'],
     'gangSize' => $riders,
-    'sheriffLevel' => $freshRaid['town']['buildings']['sheriff'],
-    'bankLevel' => $freshRaid['town']['buildings']['bank'],
+    // Receipts keep service levels: a finished three-stage sheriff serves at level five.
+    'sheriffLevel' =>
+        $rules['buildings']['sheriff']['serviceLevels'][$freshRaid['town']['buildings']['sheriff']],
+    'bankLevel' =>
+        $rules['buildings']['bank']['serviceLevels'][$freshRaid['town']['buildings']['bank']],
     'outcome' => 'protected',
     'loss' => 0,
     'seen' => false,
@@ -1339,22 +1628,31 @@ assertIntegrity(
 );
 // Finishing a defence while a raid waits to be seen refunds the loss it now prevents.
 // Full cover is an even integer division, yet it must replay as the client's 'protected'.
+// Each case is the building's stage, the service level it reaches, and the waiting raid;
+// a sheriff finishing its third stage serves at level five.
 foreach (
     [
-        'sheriff' => ['gangSize' => 10, 'sheriffLevel' => 4, 'bankLevel' => 5, 'loss' => 5],
+        'sheriff' => [
+            2,
+            5,
+            ['gangSize' => 10, 'sheriffLevel' => 2, 'bankLevel' => 5, 'loss' => 15],
+        ],
         'fireStation' => [
-            'kind' => 'workshop-fire',
-            'fireStationLevel' => 2,
-            'gangSize' => 10,
-            'sheriffLevel' => 0,
-            'bankLevel' => 0,
-            'loss' => 9,
+            2,
+            3,
+            [
+                'kind' => 'workshop-fire',
+                'fireStationLevel' => 2,
+                'gangSize' => 10,
+                'sheriffLevel' => 0,
+                'bankLevel' => 0,
+                'loss' => 9,
+            ],
         ],
     ]
-    as $defense => $raid
+    as $defense => [$level, $served, $raid]
 ) {
     $levelKey = $defense === 'sheriff' ? 'sheriffLevel' : 'fireStationLevel';
-    $level = $raid[$levelKey];
     $start = $freshRaid;
     $start['town']['buildings']['shop'] = 0;
     $start['town']['buildings'][$defense] = $level;
@@ -1379,7 +1677,7 @@ foreach (
     $finished['town']['income']['at'] = $moneyClock;
     $finished['town']['events']['dusty-trail-visitors'] = [
         ...$event,
-        $levelKey => $level + 1,
+        $levelKey => $served,
         'loss' => 0,
         'outcome' => 'protected',
     ];
@@ -1396,6 +1694,65 @@ foreach (
         $reinforced->town->events->{'dusty-trail-visitors'}->outcome === 'protected',
         $defense . ' completing full cover replays the waiting raid as protected',
     );
+}
+// Console testing tools re-baseline a tracked town only where the server allows them.
+$cheated = integrityData($midAnchor);
+$cheated['town']['coins'] += 100000;
+$cheated['builderHammers'] = 5;
+$cheated['integrity']['actions'] = [
+    integrityAction(3, 'testing', ['command' => 'grant', 'at' => $now]),
+];
+$origin = $_ENV['APP_ORIGIN'] ?? null;
+$_ENV['APP_ORIGIN'] = 'https://prospecthollow.starbugstone.com';
+unset($_ENV['SAVE_TESTING_TOOLS']);
+assertIntegrity(!SaveIntegrity::testingToolsAllowed(), 'production does not allow testing tools');
+integrityDenied(
+    fn() => $validator->accept(integrityObject($cheated), $midAnchor, $now),
+    'save_integrity_mismatch',
+    'testing receipt on a production server',
+);
+$_ENV['SAVE_TESTING_TOOLS'] = 'true';
+assertIntegrity(
+    $validator->accept(integrityObject($cheated), $midAnchor, $now)->town->coins === 100003,
+    'an explicitly flagged server accepts testing receipts',
+);
+unset($_ENV['SAVE_TESTING_TOOLS']);
+$_ENV['APP_ORIGIN'] = 'https://preprod.prospecthollow.starbugstone.com';
+$cheatAnchor = $validator->accept(integrityObject($cheated), $midAnchor, $now);
+$cheatReceipt = SaveIntegrity::receipt($cheatAnchor);
+assertIntegrity(
+    $cheatAnchor->town->coins === 100003 &&
+        $cheatAnchor->builderHammers === 5 &&
+        $cheatReceipt['status'] === 'baseline' &&
+        $cheatReceipt['ackSequence'] === 3,
+    'preprod accepts a testing receipt as a new unverified baseline',
+);
+$afterCheat = integrityData($cheatAnchor);
+$afterCheat['town']['coins'] = 100005;
+$afterCheat['continuousRecords'][1] = ['coins' => 5, 'score' => 500];
+$afterCheat['integrity']['actions'] = [
+    integrityAction(4, 'continuous', [
+        'runId' => 1,
+        'levelId' => 1,
+        'jewels' => 50,
+        'score' => 500,
+    ]),
+];
+assertIntegrity(
+    $validator->accept(integrityObject($afterCheat), $cheatAnchor, $now)->town->coins === 100005,
+    'a puzzle in progress keeps its run and credit across a testing baseline',
+);
+$forged = integrityData($cheatAnchor);
+$forged['town']['coins'] += 1;
+integrityDenied(
+    fn() => $validator->accept(integrityObject($forged), $cheatAnchor, $now),
+    'save_integrity_mismatch',
+    'direct coin injection after a testing baseline',
+);
+if ($origin === null) {
+    unset($_ENV['APP_ORIGIN']);
+} else {
+    $_ENV['APP_ORIGIN'] = $origin;
 }
 unset($_ENV['SAVE_MONEY_GUARD_MODE']);
 echo "Save integrity checks passed ($count assertions).\n";

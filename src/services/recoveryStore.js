@@ -120,6 +120,21 @@ function createRecoveryStore(indexedDB = () => globalThis.indexedDB) {
       if (await this.get(id, owner, townId))
         await transaction('readwrite', (store) => store.delete(id));
     },
+    // Every preserved save and pending upload on this device, for "Download this device's data".
+    async all() {
+      const [copies, uploads] = await Promise.all(
+        ['copies', 'uploads'].map((bucket) =>
+          transaction(
+            'readonly',
+            (store, done) => {
+              store.getAll().onsuccess = (event) => done(event.target.result);
+            },
+            bucket,
+          ),
+        ),
+      );
+      return { copies, uploads };
+    },
     clearOwner: (owner) => clear('owner', owner),
     clearTown: (owner, townId) => clear('town', [owner, townId]),
   };

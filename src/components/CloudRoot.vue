@@ -41,12 +41,18 @@
         t(
           activeMeta.conflict
             ? 'You played {town} on another device. That save will load when you return to the village.'
-            : 'You played {town} on another device, so we loaded that save.',
+            : activeMeta.desyncNotice === 'support'
+              ? 'Support updated {town} in the cloud, so we loaded that save. Your previous progress is kept as a backup.'
+              : 'You played {town} on another device, so we loaded that save.',
           { town: townName },
         )
       }}
     </p>
-    <button v-if="!activeMeta.conflict" class="save-recovery-compare" @click="recoveryOpen = true">
+    <button
+      v-if="!activeMeta.conflict && activeMeta.desyncNotice !== 'support'"
+      class="save-recovery-compare"
+      @click="recoveryOpen = true"
+    >
       {{ t('Compare saves') }}
     </button>
     <button
@@ -136,11 +142,13 @@
   <AccountPanel
     v-if="accountOpen"
     :login-link="loginLink"
+    :email-link="emailLink"
     :section="accountSection"
     :writable="ready"
     @close="accountOpen = false"
     @changed="reload"
     @signed-in="loginLink = ''"
+    @email-confirmed="emailLink = ''"
     @recovery="
       accountOpen = false;
       recoveryOpen = true;
@@ -202,6 +210,7 @@ const accountOpen = ref(false),
   communityOpen = ref(false),
   viewVersion = ref(0),
   loginLink = ref(''),
+  emailLink = ref(''),
   ready = ref(false),
   opening = ref(true),
   blocked = ref(false),
@@ -269,6 +278,11 @@ provide('cloudAccount', {
   canReview: computed(() => ready.value && !handingOver.value && !game.sessionActive),
   sync: () => syncNow({ retryRejected: true }),
   open: () => {
+    accountOpen.value = true;
+  },
+  // The player's profile, data, devices and account deletion.
+  openOffice: () => {
+    accountSection.value = 'office';
     accountOpen.value = true;
   },
   openRecovery: () => {
@@ -487,10 +501,11 @@ function resume() {
   )
     return;
   scheduler.resume();
-  // A clean town may have changed on another device. Check only on return,
-  // at most once per minute, never on every local checkpoint or storage event.
+  // A clean town may have changed on another device, and a blocked one may have been
+  // reset by support. Check only on return, at most once per minute, never on every
+  // local checkpoint or storage event.
   const meta = townStorage.active()?.meta;
-  if (!meta?.dirty && !meta?.pending && Date.now() - lastResume > 60000) {
+  if ((!meta?.dirty || uploadBlocked(meta)) && !meta?.pending && Date.now() - lastResume > 60000) {
     lastResume = Date.now();
     syncNow();
   }
@@ -536,10 +551,14 @@ function start() {
       else cloud.status = 'offline';
     });
 }
+// Sign-in (#login=) and email change (#email=) links open the account panel.
 function readLink() {
-  const token = new URLSearchParams(location.hash.slice(1)).get('login');
-  if (!token) return;
-  loginLink.value = token;
+  const hash = new URLSearchParams(location.hash.slice(1));
+  const login = hash.get('login'),
+    email = hash.get('email');
+  if (!login && !email) return;
+  if (login) loginLink.value = login;
+  if (email) emailLink.value = email;
   accountOpen.value = true;
   history.replaceState(null, '', location.pathname + location.search);
 }

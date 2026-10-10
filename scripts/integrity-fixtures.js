@@ -1,9 +1,17 @@
+import {
+  PERSONAL_AREAS,
+  landmarkOffer,
+  areaMaximum,
+  areaStage,
+  monumentWork,
+} from '../src/data/townLandmarks.js';
 import { createPinia, setActivePinia } from 'pinia';
 import { freshProfile, useCampaignStore } from '../src/stores/campaignStore.js';
 import { useGameStore } from '../src/stores/gameStore.js';
 import { useInventoryStore } from '../src/stores/inventoryStore.js';
 import { generateLevelConfigs } from '../src/game/engine/LevelGenerator.js';
 import { BUILDINGS, BANDIT_EVENT } from '../src/data/town.js';
+import { SPACE_HELMET } from '../src/data/townAnimals.js';
 import { ERAS } from '../src/data/eras.js';
 import { eraIndex } from '../src/game/town/TownEras.js';
 import { HOUR_MS, projectRuns } from '../src/game/town/TownRules.js';
@@ -207,6 +215,42 @@ export function createIntegrityFixtures() {
       },
       (campaign) => expectSuccess(campaign.useBuilderHammer('home', 1), 'hammer house'),
     );
+    const starterHomes = (profile, hammers) => {
+      Object.assign(profile.town.buildings, { well: 3, farm: 3, home: 2 });
+      profile.town.coins = 1000;
+      profile.builderHammers = hammers;
+    };
+    fixture(
+      'finishing the last starter-project building grants a builder hammer',
+      (profile) => {
+        starterHomes(profile, 0);
+        profile.town.projects.home = { id: 'home', stage: 3, wins: 1, required: 1 };
+      },
+      (campaign) => {
+        expectSuccess(campaign.finishConstruction('home', 3), 'finish the starter homes');
+        if (campaign.builderHammers !== 1) throw new Error('The starter project paid no hammer.');
+      },
+    );
+    fixture(
+      'a hammer that finishes a starter project is paid back',
+      (profile) => starterHomes(profile, 1),
+      (campaign) => {
+        expectSuccess(campaign.useBuilderHammer('home', 2), 'hammer the starter homes');
+        if (campaign.builderHammers !== 1) throw new Error('The starter project paid no hammer.');
+      },
+    );
+    fixture(
+      'a starter project pays its hammer past the hammer limit',
+      (profile) => {
+        starterHomes(profile, HAMMER_CAPACITY);
+        profile.town.projects.home = { id: 'home', stage: 3, wins: 1, required: 1 };
+      },
+      (campaign) => {
+        expectSuccess(campaign.finishConstruction('home', 3), 'finish at the hammer limit');
+        if (campaign.builderHammers !== HAMMER_CAPACITY + 1)
+          throw new Error('The starter project hammer stopped at the limit.');
+      },
+    );
     fixture(
       'modernization purchase uses its era price',
       (profile) => {
@@ -259,6 +303,18 @@ export function createIntegrityFixtures() {
       )
         throw new Error('VIP did not spend the ordinary reward.');
     });
+    fixture(
+      'space helmet found once for its completed puzzle',
+      (profile) => {
+        develop(profile, SPACE_HELMET.debut);
+        profile.town.completedRuns = 12;
+        profile.town.helmetRun = 11;
+      },
+      (campaign) => {
+        if (!(campaign.findSpaceHelmet() > 0)) throw new Error('The helmet paid nothing.');
+        if (campaign.findSpaceHelmet() !== null) throw new Error('The helmet paid twice.');
+      },
+    );
     fixture(
       'raid bell refund and ordinary raid acknowledgment',
       (profile) => {
@@ -349,14 +405,15 @@ export function createIntegrityFixtures() {
       (profile) => {
         incident(profile, false);
         const event = profile.town.events[BANDIT_EVENT];
-        Object.assign(event, { sheriffLevel: 4, bankLevel: 5, outcome: 'stolen', loss: 5 });
-        profile.town.buildings.sheriff = 4;
+        // Receipts keep service levels: a level-2 sheriff covers 4 riders, a finished one 10.
+        Object.assign(event, { sheriffLevel: 2, bankLevel: 5, outcome: 'stolen', loss: 15 });
+        profile.town.buildings.sheriff = 2;
         profile.town.income.at = serverNow;
-        const required = projectRuns('sheriff', 5);
-        profile.town.projects.sheriff = { id: 'sheriff', stage: 5, wins: required, required };
+        const required = projectRuns('sheriff', 3);
+        profile.town.projects.sheriff = { id: 'sheriff', stage: 3, wins: required, required };
       },
       (campaign) => {
-        expectSuccess(campaign.finishConstruction('sheriff', 5), 'sheriff');
+        expectSuccess(campaign.finishConstruction('sheriff', 3), 'sheriff');
         if (campaign.town.events[BANDIT_EVENT].outcome !== 'protected')
           throw new Error('Full cover did not protect the waiting raid.');
       },
@@ -429,6 +486,45 @@ export function createIntegrityFixtures() {
         );
       },
     );
+    for (const area of PERSONAL_AREAS)
+      fixture(
+        `optional landmark ${area.id}: construction and upgrades`,
+        (profile) => {
+          // Earlier landmarks keep their Riverlight fixture; later ones need their own era.
+          develop(profile, eraIndex(area.era) > eraIndex('riverlight') ? area.era : 'riverlight');
+          profile.town.coins = 10000000;
+        },
+        (campaign) => {
+          const buy = (choice) => {
+            const offer = landmarkOffer(campaign.town, area, choice);
+            expectSuccess(
+              campaign.personalise([
+                {
+                  kind: 'area',
+                  id: area.id,
+                  slot: 0,
+                  value: choice,
+                  expectedChoice: offer.expectedChoice,
+                  expectedLevel: offer.expectedLevel,
+                },
+              ]),
+              'landmark purchase',
+            );
+          };
+          // Completed puzzles build each level; the player unveils it before the next.
+          const build = () => {
+            const work = monumentWork(campaign.town, area);
+            for (let n = work.wins; n < work.required; n++) victory(campaign);
+            expectSuccess(campaign.unveilMonument(area.id, work.level), 'monument unveiling');
+          };
+          buy(area.choices[0]);
+          build();
+          while (areaStage(campaign.town, area) < areaMaximum(campaign.town, area)) {
+            buy(area.choices[0]);
+            build();
+          }
+        },
+      );
     return { version: 1, fixtures };
   } finally {
     Date.now = original.now;

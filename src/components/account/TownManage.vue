@@ -165,25 +165,25 @@
       <p v-if="saveError" role="alert" class="account-hint">{{ t(saveError) }}</p>
       <p v-if="saveStatus" role="status" class="account-hint">{{ t(saveStatus) }}</p>
     </section>
-    <details ref="deleteSection" class="account-danger" :open="focus === 'delete'">
-      <summary>
-        <GameIcon name="trash" />{{ t('Delete {town} from the cloud…', { town: meta.name }) }}
-      </summary>
-      <p>
+    <section ref="deleteSection" class="account-section account-danger">
+      <h2>{{ t('Delete from the cloud…') }}</h2>
+      <p class="account-hint">
         {{
           t('This frees an account slot and removes the public listing. The local copy is kept.')
         }}
       </p>
-      <label class="account-field"
-        >{{ t('Type the town name to confirm') }}<input v-model="deleteName" /></label
-      ><button
-        class="account-destructive"
-        :disabled="busy || game.sessionActive || deleteName !== meta.name"
-        @click="act(deleteTown)"
-      >
-        {{ t('Delete cloud town') }}
-      </button>
-    </details>
+      <p>
+        <button class="account-destructive" :disabled="busy" @click="deleting = true">
+          <GameIcon name="trash" />{{ t('Delete {town} from the cloud…', { town: meta.name }) }}
+        </button>
+      </p>
+    </section>
+    <TownDeleteDialog
+      v-if="deleting"
+      :town="deleteTarget"
+      @close="deleting = false"
+      @deleted="deleted"
+    />
   </div>
 </template>
 <script setup>
@@ -205,13 +205,15 @@ import { useGameStore } from '../../stores/gameStore';
 import { useAccountContext, townSummary } from './accountContext';
 import GameIcon from '../GameIcon.vue';
 import HonourAccountSection from '../honours/HonourAccountSection.vue';
+import TownDeleteDialog from './TownDeleteDialog.vue';
+import { profileSummary } from '../../services/townSummary';
 import { t, locale } from '../../i18n';
 const props = defineProps({ active: { type: Object, required: true }, focus: String });
-const { busy, act, recovery, changed } = useAccountContext();
+const { busy, message, act, recovery, changed } = useAccountContext();
 const campaign = useCampaignStore(),
   game = useGameStore(),
   editName = ref(''),
-  deleteName = ref(''),
+  deleting = ref(false),
   history = ref([]),
   loadingHistory = ref(false),
   historyLoaded = ref(false),
@@ -271,21 +273,16 @@ async function restoreHistory() {
   choice.value = null;
   await loadHistory();
 }
-function deleteTown() {
-  const local = props.active;
-  return townAction(local.meta.id, async () => {
-    await request(
-      `towns/${local.meta.id}`,
-      { baseRevision: local.meta.baseRevision, confirmation: deleteName.value },
-      'DELETE',
-    );
-    townStorage.mutate(local.meta.id, cloud.account.id, (r) => {
-      r.meta.missing = true;
-      r.meta.conflict = null;
-    });
-    deleteName.value = '';
-    await refreshAccount();
-  });
+// The delete dialog takes the same town card as the town list.
+const deleteTarget = computed(() => ({
+  townId: meta.value.id,
+  name: meta.value.name,
+  revision: meta.value.baseRevision,
+  card: profileSummary(props.active.profile),
+}));
+function deleted() {
+  message.value = t('“{town}” was deleted from your account.', { town: deleteTarget.value.name });
+  deleting.value = false;
 }
 // The sharing switch, scrolled into view and focused, for every "Share my town" link.
 function showSharing() {

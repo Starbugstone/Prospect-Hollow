@@ -1,3 +1,11 @@
+import {
+  buildPersonalAreas,
+  buildTownBanner,
+  buildMinePlaque,
+  plaqueDefinition,
+} from './TownPersonalisation';
+import { PERSONAL_AREAS, areaStage, areaUnlocked } from '../../data/townPersonalisation';
+import { monumentWork } from '../../data/townLandmarks';
 import { buildMineHillside } from './TownMineHillside';
 import { groundHeight, landscapeColor } from './TownLandscape';
 import { RAIL_EDGE } from './TownLayout';
@@ -11,6 +19,12 @@ import { addMineSite } from './mine/addMineSite';
 import { addElectricLighting } from './buildings/industrial';
 import { addEraStreetscape, addPowerGrid, pavedTown } from './TownEvolution';
 import { addRailroad } from './TownEraActivity';
+import { TownActors } from './TownActors';
+
+// Elevated decorations never change walkable space or animal habitats.
+export const sceneryAffectsNavigation = (id) => id !== 'town-banner' && id !== 'mine-plaque';
+
+const motionFor = (group) => group?.userData.sceneryUpdate ?? group?.userData.mineUpdate;
 
 // Infrastructure changes with access and services, not with every scaffold or
 // building tier. Its roots also serve as stable keys for the static GPU batches.
@@ -30,6 +44,25 @@ export class TownScenery {
     // completed plots. Earlier roads keep their batch when a new building opens.
     const overhead = hasElectricity(town) && !!eraEvolution(town.era).overheadPower;
     const definitions = [
+      [
+        'town-banner',
+        JSON.stringify(town.personalisation?.crest),
+        () => buildTownBanner(view, town),
+      ],
+      [
+        'personal-areas',
+        JSON.stringify([
+          town.personalisation?.areas,
+          PERSONAL_AREAS.map((area) => [
+            areaUnlocked(town, area),
+            areaStage(town, area),
+            monumentWork(town, area),
+          ]),
+        ]),
+        () => buildPersonalAreas(view, town),
+      ],
+      // Only the displayed badge matters, not every other honour the town holds.
+      ['mine-plaque', JSON.stringify(plaqueDefinition(town)), () => buildMinePlaque(view, town)],
       [
         'mine-hillside',
         !!railEdges(town).length,
@@ -72,8 +105,8 @@ export class TownScenery {
     for (const [id, signature, build] of definitions) {
       let cached = this.entries.get(id);
       if (!cached || cached.signature !== signature) {
-        if (cached?.group?.userData.mineUpdate)
-          view.motions = view.motions.filter((m) => m !== cached.group.userData.mineUpdate);
+        const previousMotion = motionFor(cached?.group);
+        if (previousMotion) view.motions = view.motions.filter((m) => m !== previousMotion);
         view.clearGroup(cached?.group);
         cached = { signature, group: build() };
         if (cached.group) cached.group.userData.navigationOwner = `scenery:${id}`;
@@ -82,17 +115,32 @@ export class TownScenery {
       }
       if (cached.group) {
         view.world.add(cached.group);
-        if (
-          cached.group.userData.mineUpdate &&
-          !view.motions.includes(cached.group.userData.mineUpdate)
-        )
-          view.motions.push(cached.group.userData.mineUpdate);
+        const motion = motionFor(cached.group);
+        if (motion && !view.motions.includes(motion)) view.motions.push(motion);
       }
     }
+    if (changed.length) this.syncMovingParts(view);
     return changed;
   }
+  // Roots may list moving parts (`userData.movingParts`, e.g. monument centerpieces).
+  // They share instanced draws, drawn each frame by `drawFrame`, instead of one draw
+  // call per part over the cached town.
+  syncMovingParts(view) {
+    const roots = [...this.entries.values()].flatMap(
+      ({ group }) => group?.userData.movingParts ?? [],
+    );
+    if (!roots.length && !this.movingParts) return;
+    this.movingParts ??= new TownActors(view.scene);
+    this.movingParts.rebuild(roots);
+  }
   dispose(view) {
-    for (const { group } of this.entries.values()) view.clearGroup(group);
+    for (const { group } of this.entries.values()) {
+      const motion = motionFor(group);
+      if (motion) view.motions = view.motions.filter((m) => m !== motion);
+      view.clearGroup(group);
+    }
     this.entries.clear();
+    this.movingParts?.dispose();
+    this.movingParts = null;
   }
 }

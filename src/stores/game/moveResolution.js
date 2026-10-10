@@ -2,12 +2,13 @@ import { toRaw } from 'vue';
 import { advanceOreOrders } from '../../game/engine/ChapterMechanics';
 import { recoverBoard } from '../../game/engine/BoardRecovery';
 import { isPlayableCell } from '../../game/engine/BoardTopology';
-import { GEM_TYPES } from '../../game/engine/GemFactory';
+import { BASE_GEM_TYPES } from '../../game/engine/GemFactory';
 import { MatchEngine } from '../../game/engine/MatchEngine';
 import { cascadeTier, clearScore, simultaneousMatchCount } from '../../game/engine/MatchRewards';
 import { TileManager } from '../../game/engine/TileManager';
 import { BonusActivator } from '../../game/engine/BonusActivator';
 import { HintEngine } from '../../game/engine/HintEngine';
+import { blastLog } from '../../game/engine/LensBeams';
 import { applyBonuses, detectBonusFromMatches } from '../../game/engine/MatchPatterns';
 import {
   BOARD_BONUSES,
@@ -37,7 +38,7 @@ const boardCenterIndex = (cols, rows) => {
 
 function resolveMatches(store, { board, tiles, matches, bonuses, pendingBonus }) {
   return tileManager.getResolution({
-    gemTypes: store.currentBoardLayout?.gemTypes ?? GEM_TYPES,
+    gemTypes: store.currentBoardLayout?.gemTypes ?? BASE_GEM_TYPES,
     board,
     tiles,
     matches,
@@ -149,7 +150,7 @@ export async function activatePower(store, bonusName, index, consume = false) {
     'Error activating bonus:',
     async (session) => {
       const board = boardOf(store);
-      const blasts = new Map();
+      const blasts = blastLog();
       const clearedIndices = rescue
         ? board.map((_, i) => i)
         : bonusActivator.activatePower(

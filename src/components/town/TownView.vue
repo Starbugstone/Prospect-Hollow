@@ -30,6 +30,25 @@
             /><strong>{{ campaign.builderHammers }}</strong>
           </template>
         </div>
+        <button
+          v-if="projectGoal && !activeRaid"
+          class="town-project-goal"
+          :aria-label="
+            t('{project}: {count}/{total}. Finish it for a builder hammer.', {
+              project: t(projectGoal.title),
+              count: projectGoal.done,
+              total: projectGoal.total,
+            })
+          "
+          @click="dialogMode = 'projects'"
+        >
+          <img src="/art/rewards/builder-hammer.svg" alt="" />
+          <span
+            ><small>{{ t(projectGoal.title) }}</small
+            ><progress :value="projectGoal.done" :max="projectGoal.total"></progress
+          ></span>
+          <b>{{ projectGoal.done }}/{{ projectGoal.total }}</b>
+        </button>
         <p
           v-if="(campaign.saveWarning || campaign.inventoryNotice) && !activeRaid"
           role="status"
@@ -102,6 +121,7 @@
           :forge-collectible="forgeCollectible"
           :builder-hammers="campaign.builderHammers"
           :selected="selected"
+          :coach-plot="coaching ? tutorial.target.plot : null"
           :reduced-motion="settings.reducedMotion"
           :paused="
             !active ||
@@ -128,6 +148,8 @@
           @camera-distance="cameraDistance = $event"
           @vip-spend="collectVipSpending"
           @guest-vip="campaign.markGuestSeen"
+          @helmet="findHelmet"
+          @helmet-zoom="zoomForHelmet"
         />
         <TownResourceCollection
           v-if="collection"
@@ -175,6 +197,7 @@
           :build-count="directoryPlots.length"
           :build-nudge="buildNudge"
           :mine-label="mineLabel"
+          :simple="!!tutorial"
           @select="openTab"
           @height="tabHeight = $event"
         />
@@ -185,22 +208,7 @@
       v-if="active && dialogMode"
       :key="tabSheet ? 'sheet' : 'dialog'"
       :sheet="tabSheet"
-      :title="
-        t(
-          dialogMode === 'projects'
-            ? 'Town projects'
-            : dialogMode === 'story'
-              ? 'Village story'
-              : dialogMode === 'build'
-                ? t('Available plots · {built}/{total} built', {
-                    built,
-                    total: currentEraPlots.length,
-                  })
-                : dialogMode === 'more'
-                  ? 'More'
-                  : 'Your town',
-        )
-      "
+      :title="dialogTitle"
       close-label="Close building details"
       @close="closeDialog"
     >
@@ -320,13 +328,23 @@
         <p class="town-kicker">
           {{ t(ERA_BY_ID[town.era].label) }} · {{ t('Current era available') }}
         </p>
+        <TownNextStep
+          class="town-build-next"
+          :town="town"
+          :hammers="campaign.builderHammers"
+          @select="selectBuilding"
+          @inspect="inspectBuilding"
+          @build-free="buildFree"
+          @mine="goMining"
+          @advance-era="beginEra"
+        />
         <p v-if="!directoryPlots.length" role="status">
           {{
             t('No purchases available. Earn coins in the mine or finish your current construction.')
           }}
         </p>
         <section class="town-building-list" :aria-label="t('Available buildings')">
-          <button v-for="place in directoryPlots" :key="place.id" @click="selectParcel(place.id)">
+          <button v-for="place in buildList" :key="place.id" @click="selectParcel(place.id)">
             <span class="building-list-dot" :style="{ background: place.color }"></span>
             <span
               >{{ t(place.shortName) }}<small>{{ plotStatus(place) }}</small></span
@@ -355,16 +373,51 @@
             </span>
           </button>
         </section>
-        <TownNextStep
-          class="town-build-next"
-          :town="town"
-          :hammers="campaign.builderHammers"
-          @select="selectBuilding"
-          @inspect="inspectBuilding"
-          @build-free="buildFree"
-          @mine="goMining"
-          @advance-era="beginEra"
-        />
+        <button
+          v-if="buildList.length < directoryPlots.length"
+          class="town-secondary town-show-all"
+          @click="showAllPlots = true"
+        >
+          {{ t('Show all buildings ({count})', { count: directoryPlots.length }) }}
+        </button>
+        <section
+          v-if="monumentSites.length && !tutorial"
+          class="town-monument-list"
+          aria-labelledby="town-monuments-heading"
+        >
+          <h3 id="town-monuments-heading">
+            <TownIcon name="monument" />{{ t('Monuments') }}<small>{{ t('Optional') }}</small>
+          </h3>
+          <p class="town-directory-hint">
+            {{
+              t(
+                'Each era opens one monument site. Choose its monument whenever you like: the choice is permanent, and monuments never affect era progress.',
+              )
+            }}
+          </p>
+          <div class="town-building-list">
+            <button v-for="site in monumentSites" :key="site.id" @click="openMonument(site.id)">
+              <span class="building-list-dot" :style="{ background: site.colour }"></span>
+              <span
+                >{{ t(site.name) }}<small>{{ site.status }}</small></span
+              >
+              <span v-if="site.price" class="town-plot-price">
+                <TownIcon name="coin" />{{
+                  site.from ? t('from {coins}', { coins: number(site.price) }) : number(site.price)
+                }}
+              </span>
+              <span v-else class="town-plot-price"><TownIcon name="check" /></span>
+            </button>
+          </div>
+          <p v-if="nextMonumentSite" class="town-directory-hint">
+            {{
+              t('Next monument site: {site}, opening in {era}.', {
+                site: t(nextMonumentSite.label),
+                era: t(ERA_BY_ID[nextMonumentSite.era].label),
+              })
+            }}
+          </p>
+        </section>
         <p v-if="town.era === 'industrial'" class="town-service">
           {{
             t(
@@ -375,35 +428,38 @@
         <p v-if="town.era === 'frontier'">
           {{ t('The east-bank district and railway station open in the River & Rail era.') }}
         </p>
-        <p class="town-directory-hint">
-          {{
-            t(
-              'Select a row to finish construction or buy with the coins or hammer shown. This list stays open. Collect resources by tapping buildings in the town.',
-            )
-          }}
-        </p>
-        <p class="town-directory-hint">
-          {{
-            t(
-              'Finish upgrading each well, farm or house to level 2 to unlock the next plot of its type. Farm II must reach level 2 before Farm III, and the same rule applies to extra houses. Other buildings have one plot each.',
-            )
-          }}
-        </p>
-        <p class="town-service">
-          {{
-            t(
-              isCityEra(town.era)
-                ? 'Every city building has 3 levels. Existing services stay open during modernization.'
-                : town.era === 'motor-age'
-                  ? 'Every Motor Age building has 3 levels. Each construction takes at most 2 mining runs.'
-                  : town.era === 'industrial'
-                    ? 'Every Industrial building has 3 levels. Finish all upgrades to complete the era.'
-                    : town.era === 'river-rail'
-                      ? 'Every River & Rail building has 3 levels. Each construction takes at most 2 mining runs.'
-                      : 'Supporting buildings finish at level 3 with their full benefits. The town square, sheriff, bank, saloon and blacksmith have 5 levels.',
-            )
-          }}
-        </p>
+        <details class="town-service town-build-rules">
+          <summary>{{ t('How building works') }}</summary>
+          <p class="town-directory-hint">
+            {{
+              t(
+                'Select a row to finish construction or buy with the coins or hammer shown. This list stays open. Collect resources by tapping buildings in the town.',
+              )
+            }}
+          </p>
+          <p class="town-directory-hint">
+            {{
+              t(
+                'Finish upgrading each well, farm or house to level 2 to unlock the next plot of its type. Farm II must reach level 2 before Farm III, and the same rule applies to extra houses. Other buildings have one plot each.',
+              )
+            }}
+          </p>
+          <p class="town-service">
+            {{
+              t(
+                isCityEra(town.era)
+                  ? 'Every city building has 3 levels. Existing services stay open during modernization.'
+                  : town.era === 'motor-age'
+                    ? 'Every Motor Age building has 3 levels. Each construction takes at most 2 mining runs.'
+                    : town.era === 'industrial'
+                      ? 'Every Industrial building has 3 levels. Finish all upgrades to complete the era.'
+                      : town.era === 'river-rail'
+                        ? 'Every River & Rail building has 3 levels. Each construction takes at most 2 mining runs.'
+                        : 'Every Frontier building finishes at level 3 with its full benefits.',
+              )
+            }}
+          </p>
+        </details>
         <details class="town-service">
           <summary>{{ t('All current-era plots') }}</summary>
           <section class="town-building-list" :aria-label="t('All current-era plots')">
@@ -432,6 +488,26 @@
           </section>
         </details>
       </template>
+      <TownPersonalise
+        v-else-if="dialogMode === 'personalise'"
+        :town="town"
+        :honours="campaign.honours"
+        :received="personalDistinctions"
+        :commit="savePersonalisation"
+        @preview="personalCommands = $event"
+        @focus="focusPersonalBuilding"
+        @saved="closeDialog"
+      />
+      <TownMonumentSite
+        v-else-if="dialogMode === 'monument'"
+        :id="monumentSite"
+        :key="monumentSite"
+        :town="town"
+        :commit="buildMonument"
+        @preview="monumentPreview = $event ? { id: monumentSite, choice: $event } : null"
+        @unveil="unveilMonument"
+        @replay="replayUnveiling"
+      />
       <TownMoreMenu
         v-else-if="dialogMode === 'more'"
         :can-replay="campaign.canReplay"
@@ -471,11 +547,20 @@
       v-if="active && tourOpen"
       :level="campaign.nextLevel"
       :era="campaign.town.era"
-      @close="finishTour"
+      @close="tourOpen = false"
       @build="
-        finishTour();
+        tourOpen = false;
         selectBuilding(goal?.id ?? 'well');
       "
+    />
+    <TownCoach
+      v-if="coaching"
+      :step="tutorial"
+      :card="dialogMode === 'building' ? selected : ''"
+      :sheet-open="!!dialogMode"
+      :bottom="tabHeight"
+      @locate="townScene?.focusPlace($event)"
+      @skip="campaign.finishTownTour()"
     />
     <TownMuseum
       v-if="active && museumOpen && campaign.canReplay"
@@ -524,7 +609,7 @@
     </TownDialog>
     <TownPresentationCinematic
       v-if="active && openingPresentation && presentationReady"
-      :key="openingPresentation.id"
+      :key="monumentShow?.serial ?? openingPresentation.id"
       :definition="openingPresentation"
       :ready="presentationReady"
       :reduced-motion="settings.reducedMotion || presentationFallback"
@@ -547,6 +632,21 @@
   </main>
 </template>
 <script setup>
+import TownPersonalise from './TownPersonalise.vue';
+import TownMonumentSite from './TownMonumentSite.vue';
+import {
+  AREA_BY_ID,
+  LANDMARK_BY_ID,
+  PERSONAL_AREAS,
+  areaChoice,
+  areaMaximum,
+  areaStage,
+  areaUnlocked,
+  landmarkOffer,
+  monumentWork,
+} from '../../data/townLandmarks';
+import { personaliseTown } from '../../data/townPersonalisation';
+import { CREST_EMBLEM_IDS } from '../../data/townCrests';
 import { performanceMark } from '../../game/PresentationWork';
 import { isCityEra } from '../../data/city';
 import TownProjects from './TownProjects.vue';
@@ -554,7 +654,7 @@ import TownGuestbook from './TownGuestbook.vue';
 import TownVisitorNotice from './TownVisitorNotice.vue';
 import { useTownVisitors } from '../../composables/useTownVisitors';
 import TownPresentationCinematic from './TownPresentationCinematic.vue';
-import { pendingPresentation } from '../../data/townPresentations';
+import { monumentPresentation, pendingPresentation } from '../../data/townPresentations';
 
 import { motorTraffic, modernTransport } from '../../game/town/TownEvolution';
 import { civicIncident } from '../../data/townEvents';
@@ -602,6 +702,10 @@ import { HAMMER_CAPACITY } from '../../data/rewards';
 import { LEVEL_COUNT } from '../../data/campaign';
 import TownMuseum from './TownMuseum.vue';
 import TownTour from './TownTour.vue';
+import TownCoach from './TownCoach.vue';
+import { TOWN_PROJECTS } from '../../data/townProjects';
+import { townProjects } from '../../game/town/TownProjects';
+import { villageTutorial } from '../../data/guidance';
 import SaveStatusPill from '../SaveStatusPill.vue';
 import { useTownAudio } from '../../composables/useTownAudio';
 import TownScene from './TownScene.vue';
@@ -642,6 +746,7 @@ const {
   enqueue: enqueueVisitorNotice,
 } = useTownVisitors(() => props.active, {
   collectSaloon: (at) => (campaign.readOnly ? null : campaign.collectSaloonForVisitor(at)),
+  redeemHelmet: (find) => (campaign.readOnly ? null : campaign.redeemHelmetVisit(find)),
   recordSocial: (counts) => !campaign.readOnly && campaign.recordTownSocial(counts),
 });
 async function findVisitor(id) {
@@ -655,10 +760,6 @@ const tourOpen = ref(false),
   fullscreen = ref(false),
   mapFrame = ref(null);
 let previousOverflow;
-function finishTour() {
-  tourOpen.value = false;
-  campaign.finishTownTour();
-}
 watch(fullscreen, (open) => {
   if (open) {
     previousOverflow = document.body.style.overflow;
@@ -669,20 +770,27 @@ watch(fullscreen, (open) => {
 // The tab bar: Village, Build (available plots), Mine, Story and More.
 const currentTab = computed(
   () =>
-    ({ build: 'build', story: 'story', more: 'more', projects: 'more' })[dialogMode.value] ??
-    'village',
+    ({
+      personalise: 'personalise',
+      build: 'build',
+      story: 'story',
+      more: 'more',
+      projects: 'more',
+    })[dialogMode.value] ?? 'village',
 );
 const mineLabel = computed(() =>
   campaign.completedCount < LEVEL_COUNT
     ? t('Mine · {level}', { level: campaign.nextLevel })
     : t('Museum'),
 );
-// New players and finished constructions are pointed to Build.
+// A new town follows the tutorial; outside it, an empty town and finished constructions
+// are pointed to Build.
+const tutorial = computed(() => villageTutorial(campaign));
 const buildNudge = computed(
   () =>
-    !town.value.tourSeen ||
-    !Object.values(town.value.buildings).some(Boolean) ||
-    Object.values(town.value.projects).some(constructionReady),
+    !tutorial.value &&
+    (!Object.values(town.value.buildings).some(Boolean) ||
+      Object.values(town.value.projects).some(constructionReady)),
 );
 const muted = computed(() => settings.musicVolume === 0 && settings.sfxVolume === 0);
 // While the tab bar shows, every village panel opens as a sheet above it, so the
@@ -690,6 +798,8 @@ const muted = computed(() => settings.musicVolume === 0 && settings.sfxVolume ==
 const tabHeight = ref(0);
 const tabSheet = computed(() => tabHeight.value > 0);
 function openTab(tab) {
+  // The tutorial ends by showing where the next step always waits.
+  if (tab === 'build' && tutorial.value?.id === 'next') campaign.finishTownTour();
   if (tab === 'mine') goMining();
   // Tapping the open tab again closes its panel.
   else if (tab !== 'village' && currentTab.value === tab) closeDialog();
@@ -761,15 +871,156 @@ const activeProjects = computed(() => Object.values(town.value.projects));
 const goal = computed(() => nextGoal(town.value));
 const gate = computed(() => eraGate(town.value));
 const directoryPlots = computed(() => availableParcels(town.value, campaign.builderHammers));
+// During the tutorial Build lists only the next building and finished constructions, so a
+// new player meets one clear choice instead of a column of free plots.
+const showAllPlots = ref(false);
+// After the tutorial, the next starter project and its builder hammer stay on screen as a
+// near-term goal: the one the player follows, otherwise the first unfinished one.
+const projectGoal = computed(() => {
+  if (tutorial.value) return null;
+  const open = townProjects(town.value).filter((project) => project.hammers && !project.complete);
+  return open.find((project) => project.id === campaign.townProjectFocus) ?? open[0] ?? null;
+});
+const buildList = computed(() => {
+  const next = tutorial.value?.target.plot ?? goal.value?.id;
+  return tutorial.value && !showAllPlots.value
+    ? directoryPlots.value.filter((place) => place.ready || place.id === next)
+    : directoryPlots.value;
+});
 const townScene = ref(null);
 const eraRevealed = ref(false);
 const eraReady = ref(false);
 const eraFallback = ref(false);
-const sceneTown = computed(() =>
-  town.value.transition?.pending && !eraRevealed.value
-    ? { ...town.value, era: town.value.transition.from }
-    : town.value,
+const personalCommands = ref([]);
+function focusPersonalBuilding(id) {
+  if (BUILDING_BY_ID[id]) selected.value = id;
+  nextTick(() => townScene.value?.focusPlace(id));
+}
+function savePersonalisation(commands) {
+  return campaign.personalise(commands, personalDistinctions.value);
+}
+// Monument sites open from the map or the Build list.
+const monumentSite = ref(PERSONAL_AREAS[0].id),
+  monumentPreview = ref(null);
+function openMonument(id) {
+  if (!AREA_BY_ID[id]) return;
+  museumOpen.value = false;
+  monumentSite.value = id;
+  dialogMode.value = 'monument';
+  nextTick(() => {
+    document.querySelector('.town-dialog')?.scrollTo({ top: 0 });
+    townScene.value?.focusPlace(id);
+  });
+}
+function buildMonument(command) {
+  monumentPreview.value = null;
+  if (!campaign.personalise([command], personalDistinctions.value)) return false;
+  game.audioManager?.playArcadeCue?.('coin');
+  const name = t(LANDMARK_BY_ID[command.value].label);
+  const work = monumentWork(town.value, AREA_BY_ID[command.id]);
+  announcement.value = t(
+    work?.required === 1
+      ? 'Work on the {monument} has begun: one puzzle to go.'
+      : 'Work on the {monument} has begun: {count} puzzles to go.',
+    { monument: name, count: work?.required ?? 0 },
+  );
+  nextTick(() => townScene.value?.focusPlace(command.id));
+  return true;
+}
+// A finished monument level is unveiled by the player: the scaffolding comes down
+// in its cinematic, which the monument's card can replay at any time.
+const monumentShow = ref(null);
+let monumentShows = 0;
+function showMonument(id, level) {
+  const definition = monumentPresentation(id, areaChoice(town.value, AREA_BY_ID[id]), level);
+  if (definition) monumentShow.value = { definition, serial: `monument-${++monumentShows}` };
+}
+function unveilMonument(id) {
+  const work = monumentWork(town.value, AREA_BY_ID[id]);
+  if (!work || !campaign.unveilMonument(id, work.level)) return;
+  announcement.value = t('The {monument} is unveiled!', {
+    monument: t(LANDMARK_BY_ID[areaChoice(town.value, AREA_BY_ID[id])].label),
+  });
+  showMonument(id, work.level);
+}
+function replayUnveiling(id) {
+  const area = AREA_BY_ID[id];
+  if (area && !monumentWork(town.value, area))
+    showMonument(id, Math.min(areaStage(town.value, area), areaMaximum(town.value, area)));
+}
+const monumentSites = computed(() =>
+  PERSONAL_AREAS.filter((area) => areaUnlocked(town.value, area)).map((area) => {
+    const choice = areaChoice(town.value, area);
+    if (!choice) {
+      const prices = area.choices.map((id) => LANDMARK_BY_ID[id].price);
+      return {
+        id: area.id,
+        name: area.label,
+        colour: '#c9a35a',
+        status: t('Open site · {count} designs', { count: area.choices.length }),
+        price: Math.min(...prices),
+        from: new Set(prices).size > 1,
+      };
+    }
+    const upgrade = landmarkOffer(town.value, area, choice);
+    const work = monumentWork(town.value, area);
+    return {
+      id: area.id,
+      name: LANDMARK_BY_ID[choice].label,
+      colour: LANDMARK_BY_ID[choice].colour,
+      status: work?.ready
+        ? t('{site} · Ready to unveil', { site: t(area.label) })
+        : work
+          ? t(
+              work.required === 1
+                ? '{site} · Building: finished by the next puzzle'
+                : '{site} · Building: {wins} of {required} puzzles',
+              { site: t(area.label), wins: work.wins, required: work.required },
+            )
+          : area.timeless
+            ? t(area.label)
+            : t('{site} · Stage {stage} of {maximum}', {
+                site: t(area.label),
+                stage: areaStage(town.value, area),
+                maximum: areaMaximum(town.value, area),
+              }),
+      price: upgrade?.price ?? 0,
+      from: false,
+    };
+  }),
 );
+const nextMonumentSite = computed(() =>
+  PERSONAL_AREAS.find((area) => !areaUnlocked(town.value, area)),
+);
+const sceneTown = computed(() => {
+  const earned = [
+    ...Object.keys(campaign.honours.earned),
+    ...Object.keys(personalDistinctions.value),
+  ];
+  let preview = personalCommands.value.reduce(
+    (value, command) => personaliseTown(value, command, CREST_EMBLEM_IDS, earned) ?? value,
+    town.value,
+  );
+  // A design being considered for an open monument site stands there before it is bought.
+  const site = monumentPreview.value;
+  if (site && AREA_BY_ID[site.id] && !areaChoice(preview, AREA_BY_ID[site.id]))
+    preview = {
+      ...preview,
+      personalisation: {
+        ...preview.personalisation,
+        areas: { ...preview.personalisation?.areas, [site.id]: [site.choice] },
+        areaLevels: { ...preview.personalisation?.areaLevels, [site.id]: 1 },
+      },
+    };
+  return {
+    ...preview,
+    displayHonours: campaign.honours,
+    displayDistinctions: personalDistinctions.value,
+    ...(town.value.transition?.pending && !eraRevealed.value
+      ? { era: town.value.transition.from }
+      : {}),
+  };
+});
 watch(
   () => town.value.transition?.id,
   () => {
@@ -806,6 +1057,22 @@ let collectionClock;
 const currentEraPlots = computed(() => BUILDINGS.filter(({ id }) => plotInEra(town.value, id)));
 const built = computed(
   () => currentEraPlots.value.filter(({ id }) => town.value.buildings[id]).length,
+);
+// Panel headings; building cards and the village summary read 'Your town'.
+const DIALOG_TITLES = {
+  projects: 'Town projects',
+  story: 'Village story',
+  personalise: 'Personalise your town',
+  monument: 'Monument site',
+  more: 'More',
+};
+const dialogTitle = computed(() =>
+  dialogMode.value === 'build'
+    ? t('Available plots · {built}/{total} built', {
+        built: built.value,
+        total: currentEraPlots.value.length,
+      })
+    : t(DIALOG_TITLES[dialogMode.value] ?? 'Your town'),
 );
 const villageStats = computed(() => {
   const { water, food, happiness: happy } = needs.value;
@@ -894,7 +1161,9 @@ const collectionOpen = computed(
     !town.value.transition?.pending &&
     !openingPresentation.value,
 );
-const { unseen: unseenDistinctions } = usePlayerDistinctions({ campaign });
+const { unseen: unseenDistinctions, showcaseable: personalDistinctions } = usePlayerDistinctions({
+  campaign,
+});
 // New player distinctions (Alpha Player, a new time step) light the same marker.
 const honourMenu = computed(() => {
   const summary = honourSummary(campaign.honours);
@@ -953,7 +1222,9 @@ const activeRaid = ref(null),
 const presentationReady = ref(false);
 const presentationFallback = ref(false);
 const openingPresentation = computed(() =>
-  !activeRaid.value && !town.value.transition?.pending ? pendingPresentation(town.value) : null,
+  !activeRaid.value && !town.value.transition?.pending
+    ? (monumentShow.value?.definition ?? pendingPresentation(town.value))
+    : null,
 );
 watch(
   openingPresentation,
@@ -969,15 +1240,25 @@ watch(
   { immediate: true },
 );
 function completePresentation() {
-  if (openingPresentation.value) campaign.acknowledgePresentation(openingPresentation.value.id);
+  if (monumentShow.value) monumentShow.value = null;
+  else if (openingPresentation.value)
+    campaign.acknowledgePresentation(openingPresentation.value.id);
 }
 const cameraDistance = ref(55);
 const { playRaidCue } = useTownAudio(() => ({
   active: props.active,
   cameraDistance: cameraDistance.value,
   population: people.value,
-  construction: activeProjects.value.length > 0,
-  buildCue: construction.value?.serial,
+  construction:
+    activeProjects.value.length > 0 ||
+    PERSONAL_AREAS.some((area) => {
+      const work = monumentWork(town.value, area);
+      return work && !work.ready;
+    }),
+  // A monument's unveiling replaces the village music with its own fanfare.
+  fanfare: monumentShow.value?.serial ?? null,
+  // Builds from the build list swap silently.
+  buildCue: construction.value?.instant ? null : construction.value?.serial,
   stable: town.value.buildings.stable > 0 && !motorTraffic(town.value),
   river: true,
   railDepot: town.value.buildings.railDepot > 0 && !modernTransport(town.value, 'railDepot'),
@@ -1028,6 +1309,20 @@ const moment = computed(
 watch(museumOpen, (open) => {
   if (props.active) emit('museum-change', open);
 });
+// The tutorial waits for raids, cinematics and full-screen panels to finish.
+const coaching = computed(
+  () =>
+    props.active &&
+    !!tutorial.value &&
+    !activeRaid.value &&
+    !town.value.transition?.pending &&
+    !openingPresentation.value &&
+    !firstLightsOpen.value &&
+    !tourOpen.value &&
+    !museumOpen.value &&
+    !collectionOpen.value &&
+    !props.mineEntryPending,
+);
 watch(
   () => props.openMuseum,
   (open) => {
@@ -1052,6 +1347,26 @@ function collectVipSpending(receipt) {
     origin: townScene.value?.collectionOrigin(receipt.building),
   });
 }
+// The space-helmet wearer pays an hour of saloon takings once per completed puzzle.
+function findHelmet(origin) {
+  if (campaign.readOnly) return;
+  const coins = campaign.findSpaceHelmet();
+  if (!coins) {
+    enqueueVisitorNotice([{ kind: coins === null ? 'helmet-found' : 'helmet-empty' }]);
+    return;
+  }
+  closeDialog();
+  collection.value = {
+    resource: 'helmet-coins',
+    amount: coins,
+    serial: ++collectionSerial,
+    origin,
+  };
+}
+// An animal tapped from far away: the wearer is only found close enough to see it.
+function zoomForHelmet() {
+  if (!campaign.readOnly) enqueueVisitorNotice([{ kind: 'helmet-zoom' }]);
+}
 function collectIncome() {
   collectionNow.value = Date.now();
   const coins = campaign.collectSaloonIncome(collectionNow.value);
@@ -1069,6 +1384,12 @@ function showCollection(resource, amount, buildingId) {
   };
 }
 async function selectBuilding(id) {
+  if (AREA_BY_ID[id]) {
+    // A finished level is unveiled by its hammer, like a finished building.
+    if (monumentWork(town.value, AREA_BY_ID[id])?.ready) unveilMonument(id);
+    else openMonument(id);
+    return;
+  }
   if (!Object.hasOwn(BUILDING_BY_ID, id)) return;
   selected.value = id;
   if (constructionReady(town.value.projects[id])) {
@@ -1154,6 +1475,7 @@ function plotStatus(place) {
 function startWork(stage, keepDirectory = false) {
   if (!campaign.upgradeBuilding(selected.value, stage)) return;
   showConstruction(keepDirectory);
+  celebrateProject();
   const complete = !town.value.projects[selected.value];
   const puzzles = town.value.projects[selected.value]?.required ?? 0;
   announcement.value = t(
@@ -1184,8 +1506,16 @@ function startWork(stage, keepDirectory = false) {
 function showConstruction(keepDirectory = false) {
   if (pendingPresentation(town.value)) keepDirectory = false;
   if (!keepDirectory) closeDialog();
-  construction.value = { id: selected.value, serial: (construction.value?.serial ?? 0) + 1 };
+  // The build list stays open: its builds swap in place without a reveal.
+  construction.value = {
+    id: selected.value,
+    serial: (construction.value?.serial ?? 0) + 1,
+    instant: keepDirectory,
+  };
   if (!keepDirectory) mapFrame.value?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+  // Moon work happens on the Moon map.
+  if (!keepDirectory && BUILDING_BY_ID[selected.value]?.settlement === 'moon')
+    nextTick(() => townScene.value?.openMoon());
 }
 function finishBuilding(id, keepDirectory = false) {
   performanceMark('build-tap');
@@ -1195,6 +1525,27 @@ function finishBuilding(id, keepDirectory = false) {
   selected.value = id;
   showConstruction(keepDirectory);
   celebrateBuilding();
+  celebrateProject();
+}
+// A finished starter project pays its builder hammer with a celebration of its own.
+function celebrateProject() {
+  const reward = campaign.lastProjectReward;
+  if (!reward) return;
+  const project = TOWN_PROJECTS.find(({ id }) => id === reward.projects[0]);
+  collection.value = {
+    resource: 'project-hammer',
+    amount: reward.hammers,
+    serial: ++collectionSerial,
+    origin: townScene.value?.collectionOrigin(selected.value),
+  };
+  announcement.value = t('Project complete: {project}. The town gives you a builder hammer.', {
+    project: t(project.title),
+  });
+  latestMoment.value = {
+    speaker: CARETAKER,
+    title: 'Project complete!',
+    text: 'Everyone pitched in, so here is a builder hammer from the town. It builds or improves any open building instantly.',
+  };
 }
 function celebrateBuilding() {
   const upgrade = BUILDING_BY_ID[selected.value].upgrades[town.value.buildings[selected.value] - 1];
@@ -1211,6 +1562,7 @@ function useHammer(stage, keepDirectory = false) {
   if (!campaign.useBuilderHammer(selected.value, stage)) return;
   showConstruction(keepDirectory);
   celebrateBuilding();
+  celebrateProject();
 }
 
 function finishRaid() {

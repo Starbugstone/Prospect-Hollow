@@ -38,7 +38,7 @@ describe('Era town square fountains', () => {
     d.town = town;
     d.sign = vi.fn();
     town.era = era;
-    town.buildings.square = 5;
+    town.buildings.square = 3;
     town.buildingEras.square = era;
     town.buildingEraLevels.square = 3;
     d.buildPlot('square', root, town, { square: 'Town square' });
@@ -75,6 +75,10 @@ describe('Era town square fountains', () => {
       'orbital-rings',
       'canopy-bloom',
       'riverlight-crystal',
+      'wind-spiral',
+      'orrery',
+      'first-well',
+      'twin-globes',
     ]);
   });
 

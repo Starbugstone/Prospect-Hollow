@@ -14,6 +14,7 @@
   --brand-ink: #fff7df;
   --accent: #1c5cab;
   --danger: #b42f2f;
+  --warn: #9a5b00;
   --good: #006300;
   --wash: #eef3fa;
   font-family:
@@ -38,6 +39,7 @@
     --series: #3987e5;
     --brand: #10261f;
     --accent: #86b6ef;
+    --warn: #f0a841;
     --danger: #e66767;
     --good: #0ca30c;
     --wash: #1d2633;
@@ -277,6 +279,19 @@ select {
   color: var(--ink);
   border-left: 4px solid var(--danger);
 }
+.admin-warning {
+  margin: 0.8rem 0;
+  padding: 0.55rem 0.8rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+  border-left: 4px solid var(--warn);
+}
+.admin-warning p {
+  margin: 0 0 0.5rem;
+}
+.admin-warning p:last-child {
+  margin-bottom: 0;
+}
 .admin-notice {
   margin: 0.8rem 0;
   padding: 0.55rem 0.8rem;
@@ -391,6 +406,86 @@ td.admin-actions {
   background: color-mix(in srgb, var(--danger) 18%, transparent);
   color: var(--ink);
 }
+.admin-badge.blocked {
+  background: color-mix(in srgb, var(--warn) 22%, transparent);
+  color: var(--ink);
+}
+
+/* Sync log and comparison */
+.admin-check {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.9rem;
+}
+.admin-sync-compare {
+  margin: 1rem 0 1.6rem;
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px var(--ring);
+}
+.admin-sync-compare-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.admin-sync-compare-heading h3 {
+  margin: 0;
+}
+.admin-sync-reason {
+  padding: 0.55rem 0.8rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border-left: 4px solid var(--danger);
+}
+.admin-sync-table {
+  table-layout: fixed;
+}
+.admin-sync-table th[scope='row'] {
+  text-transform: none;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+.admin-sync-table td {
+  overflow-wrap: anywhere;
+}
+.admin-sync-table input {
+  width: 100%;
+  font-family: ui-monospace, monospace;
+}
+.admin-sync-value {
+  width: 100%;
+  padding: 0.15rem 0.3rem;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font:
+    0.85rem ui-monospace,
+    monospace;
+  text-align: left;
+  cursor: copy;
+}
+.admin-sync-value:hover {
+  background: var(--wash);
+}
+/* The value the server rejected stands out at a glance. */
+.admin-sync-rejected {
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  box-shadow: inset 4px 0 0 var(--danger);
+  font-weight: 600;
+}
+.admin-sync-mismatch {
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+}
+.admin-sync-edited input {
+  outline: 2px solid var(--accent);
+}
+.admin-sync-flag {
+  margin-right: 0.3rem;
+  color: var(--danger);
+}
 .admin-online {
   font-weight: 600;
   color: var(--good);
@@ -450,6 +545,73 @@ td.admin-actions {
   display: block;
   font-weight: 400;
   color: var(--muted);
+}
+.admin-editable dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+.admin-editable dd > small {
+  flex-basis: 100%;
+  font-weight: 400;
+  color: var(--muted);
+}
+.admin-editable dd > .admin-editable-saved {
+  flex-basis: auto;
+  color: var(--good);
+}
+.admin-editable dd > .admin-editable-error {
+  color: var(--danger);
+}
+.admin-editable-form {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.admin-editable-form input {
+  width: 9rem;
+  padding: 0.25rem 0.5rem;
+  font-weight: 600;
+}
+.admin-editable-form input[aria-invalid='true'] {
+  outline: 2px solid var(--danger);
+}
+.admin-icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  padding: 0;
+  border: 1px solid var(--baseline);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.admin-editable dd > .admin-icon-button {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: -0.15rem 0 -0.15rem auto;
+  font-size: 0.85rem;
+  border-color: transparent;
+  opacity: 0.6;
+}
+.admin-editable:hover dd > .admin-icon-button,
+.admin-icon-button:focus-visible {
+  opacity: 1;
+  border-color: var(--baseline);
+}
+.admin-icon-button.confirm {
+  background: var(--brand);
+  border-color: transparent;
+  color: var(--brand-ink);
+}
+.admin-icon-button:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 .admin-facts-column {
   grid-template-columns: 1fr;

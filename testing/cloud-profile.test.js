@@ -653,7 +653,8 @@ it.each([413, 422])(
     expect(townStorage.active().meta.uploadError.status).toBe(status);
     const calls = api.mock.calls.length;
     await sync.sync();
-    expect(api).toHaveBeenCalledTimes(calls);
+    // Only a read for a newer cloud save; the rejected snapshot is not resent.
+    expect(api.mock.calls.slice(calls).every(([, body]) => !body)).toBe(true);
     townStorage.save(profile(11));
     api.mockImplementation(async (_, body) =>
       body ? remote(2, body.profile.town.coins) : remote(1),
@@ -679,7 +680,7 @@ it('does not repeatedly submit an unsupported format as the player continues off
   const calls = api.mock.calls.length;
   townStorage.save(profile(11));
   await sync.sync();
-  expect(api).toHaveBeenCalledTimes(calls);
+  expect(api.mock.calls.slice(calls).every(([, body]) => !body)).toBe(true);
   expect(townStorage.active().profile.town.coins).toBe(11);
 });
 it('refreshes metadata at an unchanged gameplay revision without replacing local progress', async () => {

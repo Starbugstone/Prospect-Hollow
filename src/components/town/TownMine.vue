@@ -113,10 +113,41 @@
         :stroke="appearance.roof"
         stroke-width="10"
       />
+      <g v-if="profile.portal === 'sail-arch'" :stroke="future.sail.timber" stroke-width="3">
+        <path d="M-58-40v-56M58-40v-56" />
+        <path d="M-60-58 60-70 56-52-56-44Z" :fill="future.sail.flower" />
+        <path d="M-58-96l16 5-16 5ZM58-96l16 5-16 5Z" :fill="future.sail.flower" />
+      </g>
+      <g v-if="profile.portal === 'dome-arch'">
+        <path d="M-22-40a22 22 0 0 1 44 0Z" :fill="future.observatory.shell" />
+        <path d="M-25-40H25" :stroke="future.observatory.timber" stroke-width="5" />
+        <path d="M0-50 12-72" :stroke="future.observatory.timber" stroke-width="7" />
+      </g>
+      <g v-if="profile.portal === 'homestead-arch'">
+        <path d="M-64-38 0-70 64-38Z" :fill="future.homestead.roof" />
+        <path
+          d="M-64-38 0-70 64-38"
+          fill="none"
+          :stroke="future.homestead.light"
+          stroke-width="3"
+        />
+        <path d="M54-40v-50" :stroke="future.homestead.deep" stroke-width="3" />
+        <circle cx="54" cy="-92" r="5" :fill="future.homestead.light" />
+      </g>
+      <g v-if="profile.portal === 'twin-arch'">
+        <path d="M-62-38 0-64 62-38Z" :fill="future.twin.roof" />
+        <path d="M-28-74H28" :stroke="future.twin.deep" stroke-width="3" />
+        <circle cx="-12" cy="-80" r="8" :fill="future.twin.flower" />
+        <circle cx="12" cy="-79" r="6" :fill="future.twin.shell" />
+      </g>
       <g v-if="profile.portal === 'rounded-arch'">
         <path d="M-60-16a60 34 0 0 1 120 0Z" fill="#a6d3d4" stroke="#6d9f98" stroke-width="5" />
       </g>
-      <g v-if="appearance.cozyStyle" :stroke="appearance.palette.timber" stroke-width="3">
+      <g
+        v-if="appearance.cozyStyle && !FUTURE_MINE_PORTALS.includes(profile.portal)"
+        :stroke="appearance.palette.timber"
+        stroke-width="3"
+      >
         <path d="M-61-16Q-46-46 0-36Q46-46 61-16Q35-9 0-21Q-35-9-61-16Z" :fill="appearance.roof" />
         <path
           d="M-25-20Q-12-49 0-40Q12-49 25-20Q0-8-25-20Z"
@@ -199,6 +230,7 @@
 <script setup>
 import { computed } from 'vue';
 import { mineAppearance, mineProfile } from '../../data/mineEvolution';
+import { FUTURE_MINE_PORTALS, FUTURE_PALETTES as future } from '../../data/futureArchitecture';
 import { mineGrowth } from '../../data/mineGrowth';
 import { t } from '../../i18n';
 const props = defineProps({

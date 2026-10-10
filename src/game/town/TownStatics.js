@@ -51,8 +51,7 @@ export class TownStatics {
     for (const [root, mesh] of this.batches) {
       if (retained.has(root)) continue;
       if (mesh) {
-        mesh.removeFromParent();
-        mesh.geometry.dispose();
+        releaseMesh(mesh);
         this.meshes.splice(this.meshes.indexOf(mesh), 1);
       }
       this.batches.delete(root);
@@ -95,8 +94,10 @@ export class TownStatics {
     return mesh;
   }
   // Read-only preparation: source meshes move to the picking layer only when placed.
+  // Sources marked `castShadow = false` merge apart, so they stay out of the shadow map.
   *prepare(roots) {
     const geometries = [],
+      shadowless = [],
       signs = new Map(),
       shared = new Set(),
       objects = [],
@@ -115,12 +116,16 @@ export class TownStatics {
               piece = yield* this.prepare([child]);
               this.pieces.set(child, piece);
             }
-            if (piece.geometry) {
-              geometries.push(piece.geometry);
-              shared.add(piece.geometry);
-            }
-            for (const [material, geometry] of piece.signs) {
-              addSign(material, geometry);
+            for (const [list, geometry] of [
+              [geometries, piece.geometry],
+              [shadowless, piece.shadowless],
+            ])
+              if (geometry) {
+                list.push(geometry);
+                shared.add(geometry);
+              }
+            for (const [key, geometry] of piece.signs) {
+              addSign(key, geometry);
               shared.add(geometry);
             }
             objects.push(...piece.objects);
@@ -144,8 +149,12 @@ export class TownStatics {
         for (const object of sources) {
           const geometry = object.geometry.clone();
           geometry.applyMatrix4(object.matrixWorld);
-          if (object.material.userData.signAtlas) addSign(object.material, geometry);
-          else geometries.push(colored(geometry, object.material.color));
+          if (object.material.userData.signAtlas)
+            addSign(signKey(object.material, object.castShadow), geometry);
+          else
+            (object.castShadow ? geometries : shadowless).push(
+              colored(geometry, object.material.color),
+            );
           objects.push(object);
           yield;
         }
@@ -153,23 +162,33 @@ export class TownStatics {
       }
       // Merged copies: each batch owns its sign geometry, pieces keep their own.
       const merged = new Map();
-      for (const [material, parts] of signs) merged.set(material, mergeGeometries(parts, false));
-      const geometry = geometries.length ? mergeGeometries(geometries, false) : null;
-      return { geometry, signs: merged, objects, owned, roots };
+      for (const [key, parts] of signs) merged.set(key, mergeGeometries(parts, false));
+      const merge = (list) => (list.length ? mergeGeometries(list, false) : null);
+      return {
+        geometry: merge(geometries),
+        shadowless: merge(shadowless),
+        signs: merged,
+        objects,
+        owned,
+        roots,
+      };
     } finally {
-      geometries.forEach((geometry) => shared.has(geometry) || geometry.dispose());
+      for (const geometry of [...geometries, ...shadowless])
+        if (!shared.has(geometry)) geometry.dispose();
       for (const parts of signs.values())
         parts.forEach((geometry) => shared.has(geometry) || geometry.dispose());
     }
   }
-  place({ geometry, signs, objects, owned, roots = [] }) {
+  place({ geometry, shadowless, signs, objects, owned, roots = [] }) {
     for (const object of objects) object.layers.set(1);
     for (const [owner, sources] of owned) hideSources(owner, sources);
     roots.forEach(freezeStatic);
     if (signs.size) this.signParts.set(roots[0], signs);
-    if (!geometry) return;
-    this.mesh = new THREE.Mesh(geometry, this.material);
-    this.mesh.castShadow = this.mesh.receiveShadow = true;
+    if (!geometry && !shadowless) return;
+    // A root's parts that cast no shadow ride along as a child batch, so they share
+    // its visibility and disposal while staying out of the shadow pass.
+    this.mesh = batchMesh(geometry ?? shadowless, this.material, !!geometry);
+    if (geometry && shadowless) this.mesh.add(batchMesh(shadowless, this.material, false));
     this.scene.add(this.mesh);
     this.meshes.push(this.mesh);
     return this.mesh;
@@ -183,37 +202,34 @@ export class TownStatics {
     const parts = new Map();
     for (const [root, signs] of this.signParts) {
       if (!root.visible) continue;
-      for (const [material, geometry] of signs) {
-        if (!parts.has(material)) parts.set(material, []);
-        parts.get(material).push(geometry);
+      for (const [key, geometry] of signs) {
+        if (!parts.has(key)) parts.set(key, []);
+        parts.get(key).push(geometry);
       }
     }
-    for (const [material, mesh] of this.signMeshes)
-      if (!parts.has(material)) {
-        mesh.removeFromParent();
-        mesh.geometry.dispose();
-        this.signMeshes.delete(material);
+    for (const [key, mesh] of this.signMeshes)
+      if (!parts.has(key)) {
+        releaseMesh(mesh);
+        this.signMeshes.delete(key);
       }
-    for (const [material, geometries] of parts) {
+    for (const [key, geometries] of parts) {
       const geometry = mergeGeometries(geometries, false);
-      let mesh = this.signMeshes.get(material);
+      let mesh = this.signMeshes.get(key);
       if (mesh) {
         mesh.geometry.dispose();
         mesh.geometry = geometry;
       } else {
-        mesh = new THREE.Mesh(geometry, material);
-        mesh.castShadow = mesh.receiveShadow = true;
+        mesh = key.isMaterial
+          ? batchMesh(geometry, key, true)
+          : batchMesh(geometry, key.material, false);
         mesh.matrixAutoUpdate = false;
         this.scene.add(mesh);
-        this.signMeshes.set(material, mesh);
+        this.signMeshes.set(key, mesh);
       }
     }
   }
   clear() {
-    for (const mesh of this.meshes) {
-      mesh.removeFromParent();
-      mesh.geometry.dispose();
-    }
+    for (const mesh of this.meshes) releaseMesh(mesh);
     for (const root of [...this.signParts.keys()]) this.dropSigns(root);
     this.composeSigns();
     this.meshes = [];
@@ -244,7 +260,26 @@ function colored(geometry, color) {
 }
 function disposeBatch(batch) {
   batch?.geometry?.dispose();
+  batch?.shadowless?.dispose();
   batch?.signs?.forEach((geometry) => geometry.dispose());
+}
+function batchMesh(geometry, material, castShadow) {
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.castShadow = castShadow;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+// Releases a batch mesh and its child batch of parts that cast no shadow.
+function releaseMesh(mesh) {
+  mesh.removeFromParent();
+  mesh.traverse((part) => part.geometry?.dispose());
+}
+// Sign faces group by atlas page; those that cast no shadow get a page batch of their own.
+const shadowlessSigns = new WeakMap();
+function signKey(material, castShadow) {
+  if (castShadow) return material;
+  if (!shadowlessSigns.has(material)) shadowlessSigns.set(material, { material });
+  return shadowlessSigns.get(material);
 }
 // Batched source meshes leave the drawn scene graph but stay in the model.
 function hideSources(owner, sources) {

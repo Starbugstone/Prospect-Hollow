@@ -21,7 +21,7 @@ afterEach(() => vi.restoreAllMocks());
 function readyTown() {
   const c = useCampaignStore();
   c.town = createTown();
-  Object.assign(c.town.buildings, { saloon: 5, blacksmith: 5, home: 5, farm: 5, well: 5 });
+  Object.assign(c.town.buildings, { saloon: 3, blacksmith: 3, home: 3, farm: 3, well: 3 });
   c.town.income = { at: 1000, stored: 10, remainder: 0 };
   c.town.forge = { charge: 1, progress: 0 };
   return c;

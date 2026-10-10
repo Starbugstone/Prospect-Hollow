@@ -2,6 +2,31 @@
 // text are English keys for t(); add the French text to src/i18n/fr.json.
 const UPDATES = [
   {
+    date: '2026-10-10',
+    title: 'A friendlier start in the village',
+    text: 'Every new town now has a short guided start: Ada points at the next thing to tap, from the first well to your first finished saloon. Frontier buildings all finish at level 3 with their full benefits, so the first era is quicker, and each of its two starter projects gives you a builder hammer. Monument upgrades take a single puzzle, and you can enter the mine by tapping anywhere on its buildings or hill.',
+  },
+  {
+    date: '2026-10-08',
+    title: 'The floating seam: 144 new mine puzzles',
+    text: 'The campaign now reaches level 546. Lift floatstones to sky hatches, bend beams with lens mirrors, ride portals, break into sealed chambers and turn whole caverns upside down with moon locks and dials. Peridot and starmetal join the gems, and moves stay unlimited.',
+  },
+  {
+    date: '2026-10-08',
+    title: 'Twin Hollows: a new frontier on the Moon',
+    text: 'Ride the ribbon to New Hollow and build a Moon settlement: settler domes, crater ice, a greenhouse lit by Earth and a Willowkin garden under glass. Back in the valley, a few homecoming landmarks light twin lanterns, Moon guests ride down the elevator, and visitors to your shared town can see your Moon too.',
+  },
+  {
+    date: '2026-10-07',
+    title: 'Three new eras: Skysail, Stargazer and Moonward',
+    text: 'Raise sailcloth roofs and floating orchards, turn every street toward the stars, then build a space elevator beside the old mine. Cross the railway to the new Skyward quarter, and watch homestead lights appear on the Moon as you send up supplies.',
+  },
+  {
+    date: '2026-10-07',
+    title: 'Your data, your choice',
+    text: 'Open the Mayor’s Office from Settings to see what we keep about you, download it, change your email or delete your account for good. Turn on private visits to sign guestbooks without your name, and read the new privacy notice from the home page.',
+  },
+  {
     date: '2026-10-06',
     title: 'Earn Town Honours',
     text: 'Earn bronze, silver and gold honours for mine puzzles, town milestones and visits between towns, then pick three for your showcase beside your town name. Player distinctions such as Alpha Player mark your time in Prospect Hollow.',

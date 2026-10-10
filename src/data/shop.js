@@ -3,7 +3,7 @@ import { purchasePrice } from './economy';
 import { POWERS } from './campaign';
 import { bonusCapacity } from './rewards';
 
-// Builder hammers are earned exclusively from mine chests.
+// Builder hammers come from mine chests and Frontier's starter projects, never the shop.
 export const SHOP_ITEMS = POWERS.map((power) => ({
   id: power.id,
   label: power.label,

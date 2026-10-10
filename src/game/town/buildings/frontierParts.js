@@ -93,6 +93,7 @@ export function addWell(d, parent, phase = 'done') {
         n % 3 ? '#c8b597' : '#ad9b7e',
         true,
       );
+      stone.name = 'Well wall';
       stone.rotation.y = -angle;
     }
   if (phase === 'foundation') return;
@@ -103,8 +104,9 @@ export function addWell(d, parent, phase = 'done') {
     [0, 0.2, 0],
     phase === 'done' ? '#6bacae' : '#77684d',
   );
-  for (const x of [-0.86, 0.86]) d.box(parent, 0.14, 2.0, 0.14, x, 1.05, 0, '#ac8551');
-  d.rod(parent, [-0.95, 1.7, 0], [0.95, 1.7, 0], 0.07, '#86613d');
+  for (const x of [-0.86, 0.86])
+    d.box(parent, 0.14, 2.0, 0.14, x, 1.05, 0, '#ac8551').name = 'Well frame';
+  d.rod(parent, [-0.95, 1.7, 0], [0.95, 1.7, 0], 0.07, '#86613d').name = 'Well frame';
   for (const side of [-1, 1]) {
     const roof = d.box(
       parent,
@@ -116,6 +118,7 @@ export function addWell(d, parent, phase = 'done') {
       0,
       phase === 'done' ? '#5f8a89' : '#b69a6c',
     );
+    roof.name = 'Well roof';
     roof.rotation.z = -side * 0.4;
   }
   if (phase !== 'done') return;

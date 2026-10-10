@@ -20,6 +20,15 @@ final class Database
         17 => '/schema-distinction-revocations',
         // Admin settings, starting with how long the activity log is kept.
         18 => '/schema-admin-settings',
+        // Signed-in visits recorded as such, private visits and confirmed email changes.
+        19 => '/schema-player-data',
+        // Space helmets found while visiting, redeemed by the finder's own town.
+        20 => '/schema-helmet-finds',
+        // Uploads the save protection rejected, for the admin sync log, and the admin's
+        // one-shot acceptance of a town's next upload.
+        21 => '/schema-force-sync',
+        // The share-link view and a find check a host town's latest helmet find.
+        22 => '/schema-helmet-host',
     ];
     private ?Connection $connection = null;
     public static function latestVersion(): int
@@ -79,10 +88,17 @@ final class Database
                         continue;
                     }
                     // MySQL can commit DDL before an interrupted install records its version.
-                    // Tables are idempotent; indexes need a portable existence check.
+                    // Tables are idempotent; indexes and added columns need a portable
+                    // existence check.
                     if (preg_match('/^CREATE INDEX (\w+) ON (\w+)\(/i', $statement, $index)) {
                         $indexes = $db->createSchemaManager()->listTableIndexes($index[2]);
                         if (isset($indexes[strtolower($index[1])])) {
+                            continue;
+                        }
+                    }
+                    if (preg_match('/^ALTER TABLE (\w+) ADD COLUMN (\w+) /i', $statement, $add)) {
+                        $columns = $db->createSchemaManager()->listTableColumns($add[1]);
+                        if (isset(array_change_key_case($columns)[strtolower($add[2])])) {
                             continue;
                         }
                     }

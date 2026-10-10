@@ -16,11 +16,12 @@ import { OBSTACLES } from './obstacles';
 import { isPlayerDistinction } from './playerDistinctions';
 import { getLevelStarTarget } from './starRating';
 import { BANDIT_EVENT } from './town';
+import { PERSONAL_AREAS } from './townLandmarks';
 
 // The saved block's shape and the catch-up generation: saves from an older generation
 // are re-evaluated once on load. It is not a requirement version (see `version` on a
 // rank) and a new rank or family raises it so existing saves earn what they prove.
-export const HONOURS_VERSION = 1;
+export const HONOURS_VERSION = 4;
 // Ranks in ladder order. A family may stop early; new ranks only ever append.
 export const RANK_METALS = Object.freeze(['bronze', 'silver', 'gold', 'diamond']);
 const METAL_DIFFICULTY = Object.freeze({
@@ -59,6 +60,20 @@ export const GEM_GOALS = Object.freeze({
   topaz: [500, 6000, 16000],
   amethyst: [500, 6000, 16000],
   moonstone: [500, 6000, 16000],
+  // Later gems join the color sets of levels 403 onwards (see docs/honours.md).
+  peridot: [500, 4500, 9000],
+  starmetal: [500, 4000, 7800],
+});
+// Gem families added after the first honours release, by the version that added them.
+const GEM_SINCE = Object.freeze({ peridot: 4, starmetal: 4 });
+// Diamond ranks added when levels 403–546 took these gems past ~1.3 campaigns of gold.
+export const GEM_DIAMONDS = Object.freeze({
+  ruby: 40000,
+  sapphire: 40000,
+  emerald: 40000,
+  topaz: 22000,
+  amethyst: 20000,
+  moonstone: 21000,
 });
 const GEM_TEXT = Object.freeze({
   ruby: ['Ruby Laureate', 'Collect {goal} rubies in completed puzzles.', '{goal} rubies collected'],
@@ -83,6 +98,16 @@ const GEM_TEXT = Object.freeze({
     'Collect {goal} moonstones in completed puzzles.',
     '{goal} moonstones collected',
   ],
+  peridot: [
+    'Peridot Laureate',
+    'Collect {goal} peridots in completed puzzles.',
+    '{goal} peridots collected',
+  ],
+  starmetal: [
+    'Starmetal Laureate',
+    'Collect {goal} starmetal in completed puzzles.',
+    '{goal} starmetal collected',
+  ],
 });
 // The bonus fusions Fusion Master asks for, fixed when it shipped. A later fusion joins a
 // new rank or LATER_FUSIONS, never this list.
@@ -105,6 +130,7 @@ export const MINE_ELEMENTS = Object.freeze([
     id: 'relics',
     name: 'Relic Keeper',
     goals: [10, 125, 360],
+    diamond: { goal: 650, since: 4 },
     obstacle: 'relic',
     art: '/art/relic.svg',
     label: 'Relics',
@@ -116,6 +142,7 @@ export const MINE_ELEMENTS = Object.freeze([
     id: 'lanterns',
     name: 'Lamplighter',
     goals: [10, 50, 125],
+    diamond: { goal: 275, since: 4 },
     obstacle: 'lantern',
     label: 'Lanterns',
     requirement: 'Light {goal} lanterns in completed puzzles.',
@@ -136,6 +163,7 @@ export const MINE_ELEMENTS = Object.freeze([
     id: 'oreOrders',
     name: 'Ore Merchant',
     goals: [10, 40, 110],
+    diamond: { goal: 340, since: 4 },
     obstacle: 'ore-orders',
     label: 'Ore orders',
     requirement: 'Fill {goal} ore orders.',
@@ -146,6 +174,7 @@ export const MINE_ELEMENTS = Object.freeze([
     id: 'cores',
     name: 'Core Engineer',
     goals: [10, 50, 125],
+    diamond: { goal: 190, since: 4 },
     obstacle: 'charge-core',
     label: 'Charge cores',
     requirement: 'Release {goal} charge cores.',
@@ -155,6 +184,7 @@ export const MINE_ELEMENTS = Object.freeze([
     id: 'gates',
     name: 'Gate Breaker',
     goals: [10, 50, 130],
+    diamond: { goal: 300, since: 4 },
     obstacle: 'blast-gate',
     label: 'Blast gates',
     requirement: 'Break {goal} blast gates.',
@@ -177,6 +207,20 @@ export const NON_MASTERY_ELEMENTS = Object.freeze([
   'seal-ruby',
   'seal-sapphire',
   'seal-emerald',
+  // Floatstones are relics: delivering one counts towards Relic Keeper.
+  'floatstone',
+  // Starglass appears in a handful of lens chapters; lenses are fixtures, never consumed.
+  'starglass',
+  'lens',
+  // Phase seals wear down like ice and appear in a few chapters.
+  'phase-seal',
+  // Portals are fixtures, never consumed.
+  'portal',
+  // Breakthrough walls open one chamber in a handful of levels.
+  'cracked-wall',
+  // Gravity switches turn the cavern over; they are tools, not a tally.
+  'moon-lock',
+  'moon-dial',
 ]);
 // Through the Ages names its eras. Every other enabled era is listed here, so a new era
 // is a deliberate decision: a new rank (diamond and beyond) or an entry in this list.
@@ -189,6 +233,9 @@ export const NON_MILESTONE_ERAS = Object.freeze([
   'contemporary',
   'tomorrow',
   'canopy',
+  'skysail',
+  'stargazer',
+  'moonward',
 ]);
 function obstacle(id) {
   return OBSTACLES.find((entry) => entry.id === id) ?? { present: () => false };
@@ -243,6 +290,13 @@ const MEASURES = Object.freeze({
     },
   },
   era: { value: (state, measure, content) => townEraStep(state.town, content.eras) },
+  landmark: {
+    value: (state, measure) => {
+      const area = PERSONAL_AREAS.find((area) => area.id === measure.area);
+      const slots = state.town?.personalisation?.areas?.[measure.area];
+      return Number(!!area && Array.isArray(slots) && area.choices.includes(slots[0]));
+    },
+  },
   // One counter, or the total of a counter map when no key is named.
   count: {
     value: (state, measure) => {
@@ -372,7 +426,14 @@ export function honourFamilies({
         requirement,
         popup,
         // A gem without calibrated goals is listed with no ranks, so it cannot be earned.
-        ranks: (GEM_GOALS[gem] ?? []).map((goal, index) => ({ metal: RANK_METALS[index], goal })),
+        ranks: [
+          ...(GEM_GOALS[gem] ?? []).map((goal, index) => ({
+            metal: RANK_METALS[index],
+            goal,
+            ...(GEM_SINCE[gem] ? { since: GEM_SINCE[gem] } : {}),
+          })),
+          ...(GEM_DIAMONDS[gem] ? [{ metal: 'diamond', goal: GEM_DIAMONDS[gem], since: 4 }] : []),
+        ],
       };
     }),
     ...mineElements.map((element) => ({
@@ -386,7 +447,14 @@ export function honourFamilies({
       measure: { kind: 'count', counter: 'mine', key: element.id },
       requirement: element.requirement,
       popup: element.popup,
-      ranks: element.goals.map((goal, index) => ({ metal: RANK_METALS[index], goal })),
+      // Diamond ranks arrived with the floating seam (levels 403–546), when the longer
+      // campaign passed the shipped gold goals. Shipped goals never change.
+      ranks: [
+        ...element.goals.map((goal, index) => ({ metal: RANK_METALS[index], goal })),
+        ...(element.diamond
+          ? [{ metal: 'diamond', goal: element.diamond.goal, since: element.diamond.since }]
+          : []),
+      ],
     })),
     {
       id: 'ages',
@@ -411,6 +479,17 @@ export function honourFamilies({
           'Finish every required building and modernization in {era}.',
           '{era} complete',
         ),
+        {
+          ...era(
+            'diamond',
+            'twin-hollows',
+            true,
+            'Two Towns, One Sky',
+            'Finish {era} in the valley and on the Moon.',
+            'Two towns, one sky',
+          ),
+          since: 3,
+        },
       ],
     },
     {
@@ -492,6 +571,17 @@ export function honourFamilies({
         { metal: 'silver', goal: 15, name: 'Seasoned Traveller' },
         { metal: 'gold', goal: 30 },
       ],
+    },
+    {
+      id: 'monument',
+      tab: 'town',
+      name: 'A Lasting Legacy',
+      art: { image: '/art/rewards/monument.svg' },
+      measure: { kind: 'landmark', area: 'monument' },
+      progress: '{value} / {goal} monument built',
+      requirement: 'Build your first monument.',
+      popup: 'Your first monument stands in the Hollow',
+      ranks: [{ metal: 'gold', goal: 1, since: 2 }],
     },
   ];
 }

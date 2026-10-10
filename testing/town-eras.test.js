@@ -199,14 +199,13 @@ describe('Collecting Forge TNT into inventory', () => {
     setActivePinia(createPinia());
     expect(useCampaignStore().town.forge.charge).toBe(1);
   });
+  // The third and final stage keeps the old level-five forge cycle.
   it.each([
     [1, 6],
     [2, 5],
-    [3, 4],
-    [4, 3],
-    [5, 2],
+    [3, 2],
   ])(
-    'stores one TNT at level %i and restarts its %i-puzzle cycle after collection',
+    'stores one TNT at stage %i and restarts its %i-puzzle cycle after collection',
     (level, runs) => {
       // Keep the newly guaranteed completion chest separate from forge output.
       vi.spyOn(Math, 'random').mockReturnValue(0.8);
@@ -255,7 +254,7 @@ describe('Collecting Forge TNT into inventory', () => {
     town.forge.progress = 19;
     expect(normalizeTown(town).forge).toEqual({ charge: 1, progress: 0 });
     const ready = advanceForge(normalizeTown(town));
-    ready.buildings.blacksmith = 5;
+    ready.buildings.blacksmith = 3;
     expect(normalizeTown(ready).forge).toEqual({ charge: 1, progress: 0 });
   });
   it('does not charge a closed or ready blacksmith or Continuous play', () => {
@@ -377,6 +376,10 @@ describe('Two eras and explicit modernization', () => {
       'tomorrow',
       'canopy',
       'riverlight',
+      'skysail',
+      'stargazer',
+      'moonward',
+      'twin-hollows',
     ]);
   });
   it('saves the transition before presenting it and cannot advance twice across reload', () => {
@@ -398,24 +401,24 @@ describe('Two eras and explicit modernization', () => {
     let town = advanceEra(frontier(), 'frontier');
     const rate = saloonIncomeRate(town);
     expect(isEraComplete(town)).toBe(false);
-    town = purchase(town, 'saloon', 5);
+    town = purchase(town, 'saloon', 3);
     expect(town.projects.saloon).toMatchObject({
       type: 'modernization',
-      stage: 5,
+      stage: 3,
       required: 2,
       cost: 800,
     });
     expect(town.buildingEras.saloon).toBe('frontier');
     expect(saloonIncomeRate(town)).toBe(rate);
-    expect(purchase(town, 'saloon', 5)).toBeNull();
+    expect(purchase(town, 'saloon', 3)).toBeNull();
     town = normalizeTown(advanceConstruction(town));
-    expect(finishConstruction(town, 'saloon', 5)).toBeNull();
-    town = finishConstruction(advanceConstruction(town), 'saloon', 5);
-    expect(town.buildings.saloon).toBe(5);
+    expect(finishConstruction(town, 'saloon', 3)).toBeNull();
+    town = finishConstruction(advanceConstruction(town), 'saloon', 3);
+    expect(town.buildings.saloon).toBe(3);
     expect(town.buildingEras.saloon).toBe('river-rail');
     expect(saloonIncomeRate(town)).toBe(rate);
     expect(upgradeOffer(town, 'saloon')).toMatchObject({ eraLevel: 2, cost: 1200 });
-    expect(finishConstruction(town, 'saloon', 5)).toBeNull();
+    expect(finishConstruction(town, 'saloon', 3)).toBeNull();
   });
   it('builds the station and railway in one receipt and enables both only on its first finish', () => {
     let town = frontier();

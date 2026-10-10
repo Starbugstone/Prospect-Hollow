@@ -194,6 +194,51 @@ per-building budget (under 4,000 triangles, at most eight materials), the whole-
 comparison, level-by-level visible changes, a synthetic rounded successor era, the new
 plots, prices, benefit previews and the SVG forms.
 
+### Future archetypes: Skysail, Stargazer and Moonward
+
+The six established eastern garden landmarks retain their named forms and scales
+from `COZY_LANDMARKS` in `FUTURE_LANDMARKS`. Their shared successor layouts live in
+`buildings/future/gardenLandmarks.js` and use each era's building kit. The first
+modernization preserves the mature campus, including the orchard's three homes
+and the retreat's terraced pools; later tiers add gardens and rooftop details.
+Do not route these landmarks back through ordinary city-family forms.
+`testing/future-eras.test.js` compares every successor tier with mature Riverlight
+dimensions and checks parcel frontage, art budgets and synthetic successors.
+Skysail's sail corners have supports reaching the local ground; rooftop crowns
+attach to the saddle centre rather than the height of its raised corners.
+
+Later future modernizations use `futureBuildingStages()` in both the WebGL and
+SVG renderers. The new finish tier controls decorations, while `structureLevel`
+retains completed construction: annexes, homes, islands, dew towers, harbour
+berths, airport wings/lounge and space-elevator equipment. Native construction
+still reveals these in its original tiers. Synthetic successor definitions inherit
+their architecture's stage rules; unknown definitions keep native behavior.
+Rooftop kits receive both the roof peak and `baseY` (its eave), so offset masts,
+dishes and arches extend into the roof instead of hovering over a slope. Airport
+crowns are built on the lounge itself. Lunar lookout rails and the workshop beacon
+also have structural mounts. Regression coverage checks retained structure counts,
+roof intersections, lunar mounts, budgets and distinct upgrade illustrations.
+
+The eras after Riverlight share one set of archetypes and swap a small kit per
+architecture (`sail`, `observatory`, `homestead`): walls, roof, round body, cap,
+door, a level-two wing, a level-three crown and a street prop. The renderer
+registry in `buildings/city.js` maps each architecture to its building, airport
+lounge, airport grounds and bridge hooks, so a new architecture registers once
+instead of adding conditionals. Large parcels may declare an `access` road instead
+of joining the garden lane; shadow coverage grows only with the clearings that
+hold a visible parcel. See [the future eras guide](future-eras.md).
+
+### Partial modernization: `modernizes`
+
+An era may list the building ids it modernizes (`modernizes` in its evolution
+profile; `null`, the default, modernizes every building). Every other building
+keeps the finish of the latest era that did modernize it (`finishEra()`), offers
+no modernization and counts as complete for the era gate. The save rules export
+the list per era and the server's era-complete check reads it. Twin Hollows uses
+it so that, on Earth, only a few homecoming landmarks change while the Moon
+settlement is built. A building may also declare `settlement: 'moon'`: it shares
+every lifecycle but stands on the Moon map instead of a valley lot.
+
 ## Regression evidence
 
 `testing/era-definitions.test.js` covers invalid definitions, immutable shared
@@ -459,7 +504,7 @@ manual actor routes, cache reuse and scenery removal.
 habitats. `TownAnimals` shares roaming, resting, feeding, flight and disturbance
 handling; `TownAnimalModels` supplies articulated, instanced animal meshes. Dogs
 and cats follow prepared street routes, hens forage around the farm entrance,
-and occasional foxes and raccoons stay along the southern village outskirts.
+and occasional foxes and raccoons explore separate western and eastern verges.
 Ground animals share pedestrian obstacle and traffic clearance. Wildlife turns
 away from nearby people; pigeons take flight when people, pets or traffic approach.
 
@@ -530,8 +575,12 @@ in `startLevel`, preserving the entry gesture, and renderer recovery does not
 restart it. Physical mobile and deployed cache-header checks require their actual
 environments.
 
-Hashed `/assets/*` get immutable hosting headers; the shell revalidates. CI fails
-for JavaScript chunks above 2 MB or static mesh-catalog imports.
+Phaser, Three and the startup libraries have their own chunks (`vite.config.js`),
+so a game release does not invalidate them. Lazy data ships as fetched assets, not
+JavaScript: mesh catalogs as packed binaries and footprints as JSON. French text is
+its own chunk, loaded before startup only for French players. CI fails when a game
+chunk exceeds 500 kB, a library exceeds its budget, the first screen loads Phaser
+or Three, or a mesh catalog is imported statically (`scripts/check-bundle-budget.mjs`).
 
 ### Footprints and construction
 
@@ -663,8 +712,8 @@ locomotion lifecycle. Street neighbors use sidewalks and normal traffic yielding
 they do not flee pedestrians or eat bird seed. The whole model's height and radius
 are checked during route planning, closure, retention and spawn adjustment.
 Neighborhood routes stay on their own riverbank. Bluebirds reuse the bird flight
-and feeding lifecycle; deer and hedgehogs visit the flat southern verge and the
-otter visits the riverbank.
+and feeding lifecycle; deer visit the southern meadow, hedgehogs the northern
+verge, and otters the riverbank.
 
 Cozy models use cached primitives plus two cached faceted roof surfaces. Ordinary
 buildings stay below 4,000 triangles, larger landmarks below 6,000 and each plot
@@ -679,7 +728,29 @@ landscape clearance tests require every unlocked species to have a usable habita
 in every era, keep Canopy saplings outside roads and certify Riverlight street
 loops. `testing/town-animals.test.js` checks the staggered unlocks, persistence into
 later eras and animal retention as the cast grows. The flying cast stays bounded
-at five birds, using the same flight and feeding lifecycle.
+at eight pigeons and five bluebirds, using the same flight and feeding lifecycle.
+`TownBirdHabitats` selects geographically separated grounds beside completed
+buildings and increases the flock with occupied districts. Birds start spread
+across these grounds, prefer unoccupied destinations and occasionally fly across
+districts. Only nearby birds detour to the feeder, so feeding does not pull the
+whole town's flock into the square.
+
+`TownMonumentLife` adds one wild visitor at each unlocked monument site, mixing
+hares, squirrels and badgers with the established foxes, raccoons, deer and
+hedgehogs. Two extra Willowkin visit these grounds only when the fauna profile
+selects a resident species; Canopy saplings remain in their gardens. Site IDs and
+stable seeds preserve identities across rebuilds. `EXTERIOR_HABITATS` defines
+separate outer lands for the original fox, raccoon and hedgehog. Terrain reserves
+level grassy verges around these habitats and monument courts. Prepared routes
+follow clear perimeter arcs, returning along the same safe arc if scenery blocks
+a full circuit; shared roaming adds certified branches within each habitat.
+`testing/monument-wildlife.test.js` checks unlocks, built and unbuilt monument
+clearance, new models and their cosmonaut outfits, and bird distribution.
+
+All three new species join `SPACE_HELMET.wearers`. When a species has multiple
+animals, the existing deterministic puzzle-count selection also picks its
+individual wearer, allowing monument visitors to wear the outfit. There is still
+exactly one wearer, with the same visibility, finding and reward lifecycle.
 
 `townGardenDistrict.js` owns the six larger eastern parcels: position, reserved
 width/depth, street offset, entrance anchor and pedestrian approach points. The

@@ -127,6 +127,9 @@ export const latestVillage = (id) =>
 // Any visitor may collect a shared town's saloon for its owner, once per hour per town.
 export const tapSaloon = (id) =>
   request(`villages/${encodeURIComponent(id)}/saloon`, {}, 'POST', true);
+// A signed-in visitor found the space helmet; `townId` is their own town to reward.
+export const tapHelmet = (id, townId) =>
+  request(`villages/${encodeURIComponent(id)}/helmet`, { townId }, 'POST');
 // Once the owner's save holds the latest guest, the server forgets that visitor.
 export const clearGuest = (id, guestAt) => request(`towns/${id}/guest`, { guestAt }, 'DELETE');
 export function refreshAccount() {
@@ -374,6 +377,31 @@ export async function deleteCachedTown(id) {
     await recoveryStore.clearTown(owner, id);
     townStorage.forget(id, owner);
     cloud.storageVersion++;
+  });
+}
+// Deletes a cloud town at the revision the player reviewed: the town being played
+// deletes at its own base revision, any other at the revision its card shows. A device
+// copy is kept but marked missing, so it stays playable and is never uploaded again.
+export async function deleteAccountTown(town, confirmation) {
+  return townAction(town.townId, async () => {
+    const owner = cloud.account.id;
+    const selected = townStorage.selectedKey() === townKey(town.townId, owner);
+    const baseRevision = selected
+      ? townStorage.get(town.townId, owner).meta.baseRevision
+      : town.revision;
+    try {
+      await request(`towns/${town.townId}`, { baseRevision, confirmation }, 'DELETE');
+    } catch (error) {
+      // The town changed elsewhere: show its latest card before another attempt.
+      if (error.status === 409) await refreshAccount().catch(() => {});
+      throw error;
+    }
+    townStorage.mutate(town.townId, owner, (r) => {
+      r.meta.missing = true;
+      r.meta.conflict = null;
+    });
+    cloud.storageVersion++;
+    await refreshAccount();
   });
 }
 export async function deleteAccount(confirmation) {

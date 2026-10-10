@@ -421,3 +421,74 @@ it('smoothly increases ambience with zoom while keeping music level and voices s
   expect(sources).toHaveLength(count);
   expect(player.play).toHaveBeenCalledOnce();
 });
+
+describe('Monument unveiling fanfare', () => {
+  const players = [];
+  const media = () => {
+    const player = {
+      paused: true,
+      ended: false,
+      currentTime: 0,
+      play: vi.fn(async () => {
+        player.paused = false;
+      }),
+      pause: vi.fn(() => {
+        player.paused = true;
+      }),
+      removeAttribute: vi.fn(),
+      load: vi.fn(),
+    };
+    players.push(player);
+    return player;
+  };
+  afterEach(() => players.splice(0));
+  const lastLevel = (audio) => audio.music.gain.setTargetAtTime.mock.calls.at(-1)[0];
+
+  it('replaces the village music with one fanfare per unveiling and resumes after a pause', async () => {
+    const { audio, update } = setup({ mediaFactory: media });
+    await audio.unlock();
+    await flush();
+    // Nothing is loaded for the fanfare until a monument is unveiled.
+    expect(players).toHaveLength(1);
+    update({ fanfare: 'monument-1' });
+    const fanfare = players[1];
+    expect(fanfare.src).toBe(VILLAGE_AUDIO.fanfare.src);
+    expect(fanfare.loop).toBe(false);
+    expect(fanfare.play).toHaveBeenCalledOnce();
+    expect(lastLevel(audio)).toBe(0);
+    fanfare.currentTime = 9;
+    update({ paused: true });
+    expect(fanfare.paused).toBe(true);
+    update({ paused: false });
+    expect(fanfare.currentTime).toBe(9);
+    expect(fanfare.play).toHaveBeenCalledTimes(2);
+    // A replay starts from the top.
+    update({ fanfare: 'monument-2' });
+    expect(fanfare.currentTime).toBe(0);
+    update({ fanfare: null });
+    expect(lastLevel(audio)).toBeCloseTo(0.6 * VILLAGE_AUDIO.music.volume);
+    expect(fanfare.paused).toBe(false);
+    vi.advanceTimersByTime(1500);
+    expect(fanfare.paused).toBe(true);
+    // A finished fanfare stays finished while the unveiling's last caption is read.
+    update({ fanfare: 'monument-3' });
+    fanfare.paused = true;
+    fanfare.ended = true;
+    update({ population: 5 });
+    expect(fanfare.play).toHaveBeenCalledTimes(3);
+    audio.dispose();
+    expect(fanfare.removeAttribute).toHaveBeenCalledWith('src');
+  });
+  it('never loads the fanfare while music is muted', async () => {
+    const { audio, update } = setup({ mediaFactory: media });
+    update({ musicVolume: 0 });
+    await audio.unlock();
+    update({ fanfare: 'monument-1' });
+    expect(players).toHaveLength(0);
+  });
+  it('ships a credited recording for the fanfare', () => {
+    const credits = readFileSync('public/sound/village/credits.html', 'utf8');
+    expect(existsSync('public/sound/village/monument-unveiling.mp3')).toBe(true);
+    expect(credits).toContain('monument-unveiling.mp3');
+  });
+});

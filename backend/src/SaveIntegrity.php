@@ -11,12 +11,18 @@ namespace App;
 final class SaveIntegrity
 {
     private array $rules;
+    // The town being replayed: a space-helmet receipt is only valid for its own town.
+    private string $townId = '';
+    // The replayed state a rejected upload was compared with, for the admin sync log.
+    private ?array $expected = null;
     private const CLOCK_SKEW_MS = 300000;
+    // The exported catalog is large: decode it once per request, not once per instance.
+    private static ?array $catalog = null;
     public function __construct(?array $rules = null)
     {
         if ($rules === null) {
             $path = dirname(__DIR__) . '/content/save-rules.json';
-            $rules = is_file($path)
+            $rules = self::$catalog ??= is_file($path)
                 ? json_decode(file_get_contents($path), true, 64, JSON_THROW_ON_ERROR)
                 : [];
         }
@@ -195,7 +201,7 @@ final class SaveIntegrity
             if (!$definition) {
                 self::incompatible();
             }
-            $maximum = empty($town['progressionVersion'])
+            $maximum = $this->keepsLegacyLevels($id, $town['progressionVersion'] ?? null)
                 ? $definition['legacyMaxLevel']
                 : $definition['maxLevel'];
             if (!self::integer($level, 0, $maximum)) {
@@ -255,7 +261,7 @@ final class SaveIntegrity
         if (($p['settledRun'] ?? 0) > ($p['issuedRun'] ?? 0)) {
             self::invalid('settledRun');
         }
-        foreach (['completedRuns', 'saloonVisitAt'] as $key) {
+        foreach (['completedRuns', 'saloonVisitAt', 'helmetRun', 'helmetVisitAt'] as $key) {
             if (array_key_exists($key, $town) && !self::integer($town[$key])) {
                 self::invalid('town.' . $key);
             }
@@ -458,39 +464,41 @@ final class SaveIntegrity
                 $p['town']['buildings'][$id] ?? 0,
             );
         }
-        if (empty($profile['town']['progressionVersion'])) {
-            foreach ($p['town']['projects'] as $id => $project) {
-                $building = $this->rules['buildings'][$id];
-                if ($building['legacyMaxLevel'] === $building['maxLevel']) {
-                    continue;
-                }
-                if (($project['type'] ?? null) === 'modernization') {
-                    $p['town']['projects'][$id]['stage'] = min(
-                        $project['stage'],
-                        $building['maxLevel'],
-                    );
-                } elseif (
-                    $project['stage'] > $building['maxLevel'] &&
-                    $project['stage'] <= $building['legacyMaxLevel'] &&
-                    $project['stage'] === ($profile['town']['buildings'][$id] ?? 0) + 1 &&
-                    $project['required'] === 1 &&
-                    self::integer($project['wins'], 0, 1)
-                ) {
-                    $p['town']['coins'] = (int) min(
-                        9007199254740991,
-                        $p['town']['coins'] +
-                            ($building['legacyUpgradeCosts'][$project['stage'] - 1] ?? 0),
-                    );
-                    unset($p['town']['projects'][$id]);
-                }
+        // Mirrors normalizeTown(): buildings shortened after the save's progression version
+        // move down to their final stage, and a paid redundant tier is refunded once.
+        $version = $profile['town']['progressionVersion'] ?? null;
+        foreach ($p['town']['projects'] as $id => $project) {
+            $building = $this->rules['buildings'][$id];
+            if (!$this->keepsLegacyLevels($id, $version)) {
+                continue;
+            }
+            if (($project['type'] ?? null) === 'modernization') {
+                // A modernization starts from the finished building, so it moves with it.
+                $p['town']['projects'][$id]['stage'] =
+                    $project['stage'] -
+                    max(0, ($profile['town']['buildings'][$id] ?? 0) - $building['maxLevel']);
+            } elseif (
+                $project['stage'] > $building['maxLevel'] &&
+                $project['stage'] <= $building['legacyMaxLevel'] &&
+                $project['stage'] === ($profile['town']['buildings'][$id] ?? 0) + 1 &&
+                $project['required'] === 1 &&
+                self::integer($project['wins'], 0, 1)
+            ) {
+                $p['town']['coins'] = (int) min(
+                    9007199254740991,
+                    $p['town']['coins'] +
+                        ($building['legacyUpgradeCosts'][$project['stage'] - 1] ?? 0),
+                );
+                unset($p['town']['projects'][$id]);
             }
         }
+        $p['town']['progressionVersion'] = $defaults['town']['progressionVersion'];
         $powers = array_fill_keys($this->rules['powers'], 0);
         foreach ($profile['powers'] ?? [] as $power) {
             $powers[$power['id'] === 'hammer' ? 'tnt' : $power['id']] = $power['quantity'];
         }
-        $overflow = max(0, $p['builderHammers'] - $this->rules['rewards']['hammerCapacity']);
-        $p['builderHammers'] = min($p['builderHammers'], $this->rules['rewards']['hammerCapacity']);
+        // The hammer cap limits what play earns, not what a save holds: support can grant more.
+        $overflow = 0;
         $capacity = $this->powerCapacity($p['town']);
         foreach ($powers as &$quantity) {
             $overflow += max(0, $quantity - $capacity);
@@ -556,6 +564,8 @@ final class SaveIntegrity
                 'completedRuns',
                 'forge',
                 'saloonVisitAt',
+                'helmetRun',
+                'helmetVisitAt',
                 'income',
                 'lastCollections',
                 'events',
@@ -565,6 +575,10 @@ final class SaveIntegrity
         ) {
             $result['town'][$key] = $p['town'][$key];
         }
+        $result['town']['landmarks'] = [
+            'areas' => $p['town']['personalisation']['areas'] ?? [],
+            'levels' => $p['town']['personalisation']['areaLevels'] ?? [],
+        ];
         return $result;
     }
     private function journal(mixed $value): ?array
@@ -676,6 +690,8 @@ final class SaveIntegrity
                 'completedRuns',
                 'forge',
                 'saloonVisitAt',
+                'helmetRun',
+                'helmetVisitAt',
                 'income',
                 'lastCollections',
                 'events',
@@ -783,10 +799,23 @@ final class SaveIntegrity
             $ack,
             $townId,
         );
-        // PHP's associative decode loses the distinction between {} and []. Keep
-        // the wire schema explicit so an untouched cloud backup can upload again.
+        $json = json_encode(self::wire($incoming), JSON_THROW_ON_ERROR);
+        if (strlen($json) > 1048576) {
+            throw new ApiError(
+                413,
+                'A town save including its recovery checkpoint must be smaller than 1 MB. Your local copy is safe.',
+            );
+        }
+        return json_decode($json, false, 64, JSON_THROW_ON_ERROR);
+    }
+    /**
+     * PHP's associative decode loses the distinction between {} and []. Keep the wire
+     * schema explicit so an untouched cloud backup can upload again.
+     */
+    private static function wire(array $profile): array
+    {
         foreach (['records', 'continuousRecords'] as $key) {
-            $incoming[$key] = (object) $incoming[$key];
+            $profile[$key] = (object) $profile[$key];
         }
         foreach (
             [
@@ -799,18 +828,159 @@ final class SaveIntegrity
             ]
             as $key
         ) {
-            if (isset($incoming['town'][$key])) {
-                $incoming['town'][$key] = (object) $incoming['town'][$key];
+            if (isset($profile['town'][$key])) {
+                $profile['town'][$key] = (object) $profile['town'][$key];
             }
         }
-        $json = json_encode($incoming, JSON_THROW_ON_ERROR);
-        if (strlen($json) > 1048576) {
-            throw new ApiError(
-                413,
-                'A town save including its recovery checkpoint must be smaller than 1 MB. Your local copy is safe.',
-            );
+        return $profile;
+    }
+    /** The replayed state the last rejected upload was compared with, if it got that far. */
+    public function expected(): ?array
+    {
+        return $this->expected;
+    }
+    /** A save as the replay compares it, with powers by ID; null when it cannot be read. */
+    public function comparable(object $profile): ?array
+    {
+        try {
+            $this->ready();
+            return $this->normalized(self::arrayOf($profile));
+        } catch (\Throwable) {
+            return null;
         }
-        return json_decode($json, false, 64, JSON_THROW_ON_ERROR);
+    }
+    /**
+     * Seals a save an admin edited from a sync comparison (a comparable state) as an
+     * unverified baseline on the latest checkpoint's journal, so the owner's game loads
+     * it and keeps syncing from there. Money is observed, never held.
+     */
+    public function adminReset(
+        array $state,
+        object $latest,
+        int $now,
+        string $townId,
+        ?int $previousServerAt = null,
+    ): object {
+        $this->ready();
+        $state['powers'] = array_map(
+            fn($id, $quantity) => ['id' => $id, 'quantity' => $quantity],
+            array_keys($state['powers']),
+            array_values($state['powers']),
+        );
+        $anchor = $this->journal(self::arrayOf($latest)['integrity'] ?? null);
+        unset($state['integrity']);
+        $profile = json_decode(
+            json_encode(self::wire($state), JSON_THROW_ON_ERROR),
+            false,
+            64,
+            JSON_THROW_ON_ERROR,
+        );
+        $this->validate($profile);
+        if (!$anchor) {
+            return $profile;
+        }
+        $this->townId = $townId;
+        $context = $this->honourCounters(
+            $anchor['context'] ?? [],
+            $state['town'],
+            $anchor['context'] ?? [],
+        );
+        $context = $this->moneyContext(
+            $context,
+            $anchor['context'] ?? [],
+            $now,
+            $previousServerAt,
+            [],
+            new MoneyBudget('observe'),
+        );
+        return $this->seal(
+            self::arrayOf($profile),
+            $context,
+            $anchor['epoch'],
+            $anchor['baseSequence'],
+            'baseline',
+            $townId,
+        );
+    }
+    /** Console testing tools exist on preprod and explicitly flagged servers only. */
+    public static function testingToolsAllowed(): bool
+    {
+        if (Env::get('SAVE_TESTING_TOOLS') === 'true') {
+            return true;
+        }
+        $host = parse_url((string) Env::get('APP_ORIGIN'), PHP_URL_HOST);
+        return is_string($host) && str_starts_with($host, 'preprod.');
+    }
+    /**
+     * Seals the uploaded town as an unverified baseline without replaying its rewards.
+     * Run identity and continuous credit survive pruning so the next normal receipt can
+     * still reconcile; Town Honours counters never fall below the latest cloud save's.
+     */
+    private function baseline(
+        array $incoming,
+        array $journal,
+        array $context,
+        int $now,
+        string $townId,
+        ?array $latest = null,
+        ?int $previousServerAt = null,
+        ?MoneyBudget $budget = null,
+    ): object {
+        // Enrollment may happen during an offline puzzle, and a testing upload during a run.
+        foreach ($journal['actions'] as $action) {
+            $data = $action['data'];
+            if (
+                $action['kind'] === 'run-start' &&
+                self::integer($data['runId'] ?? null, 1) &&
+                in_array($data['mode'] ?? null, ['normal', 'continuous'], true)
+            ) {
+                $context['run'] = [
+                    'runId' => $data['runId'],
+                    'mode' => $data['mode'],
+                    'levelId' => $data['levelId'] ?? null,
+                    'credited' => 0,
+                ];
+            } elseif (
+                $action['kind'] === 'continuous' &&
+                isset($context['run']) &&
+                $context['run']['runId'] === ($data['runId'] ?? null) &&
+                self::integer($data['levelId'] ?? null, 1) &&
+                isset($this->rules['levels'][$data['levelId']]) &&
+                self::integer($data['jewels'] ?? null)
+            ) {
+                $context['run']['credited'] = max(
+                    $context['run']['credited'],
+                    min(
+                        $this->rules['rewards']['continuousCoinCap'],
+                        floor($data['jewels'] / 10) *
+                            $this->rules['levels'][$data['levelId']]['miningMultiplier'],
+                    ),
+                );
+            } elseif (
+                $action['kind'] === 'victory' &&
+                isset($context['run']) &&
+                $context['run']['runId'] === ($data['runId'] ?? null)
+            ) {
+                unset($context['run']);
+            }
+        }
+        if (
+            isset($context['run']) &&
+            ($context['run']['runId'] !== ($incoming['issuedRun'] ?? 0) ||
+                $context['run']['runId'] <= ($incoming['settledRun'] ?? 0))
+        ) {
+            unset($context['run']);
+        }
+        $context = $this->honourCounters($context, $incoming['town'], $latest);
+        $context = $this->moneyContext($context, $latest, $now, $previousServerAt, [], $budget);
+        return $this->seal(
+            $incoming,
+            $context,
+            $journal['epoch'],
+            $journal['baseSequence'] + count($journal['actions']),
+            'baseline',
+            $townId,
+        );
     }
     /** The caller holds the account transaction lock before comparing checkpoints. */
     public function accept(
@@ -823,6 +993,7 @@ final class SaveIntegrity
         ?int $previousServerAt = null,
     ): object {
         $this->validate($profile);
+        $this->townId = $townId;
         $incoming = self::arrayOf($profile);
         $journal = $this->journal($incoming['integrity'] ?? null);
         $old = $previous ? self::arrayOf($previous) : null;
@@ -831,64 +1002,31 @@ final class SaveIntegrity
             if (!$journal) {
                 return $profile;
             }
-            $ack = $journal['baseSequence'] + count($journal['actions']);
             $clientAt = self::integer($journal['clientAt'] ?? null) ? $journal['clientAt'] : $now;
             // clientAt is stamped when the upload is queued, so a delayed delivery looks
             // like a slow clock. Only a device ahead of the server needs an allowance.
-            $context = ['clockOffset' => max(0, $clientAt - $now)];
-            // Enrollment may happen during an offline puzzle. Its existing rewards
-            // form the unverified baseline, while run identity and continuous credit
-            // must survive pruning so the next normal receipt can still reconcile.
-            foreach ($journal['actions'] as $action) {
-                $data = $action['data'];
-                if (
-                    $action['kind'] === 'run-start' &&
-                    self::integer($data['runId'] ?? null, 1) &&
-                    in_array($data['mode'] ?? null, ['normal', 'continuous'], true)
-                ) {
-                    $context['run'] = [
-                        'runId' => $data['runId'],
-                        'mode' => $data['mode'],
-                        'levelId' => $data['levelId'] ?? null,
-                        'credited' => 0,
-                    ];
-                } elseif (
-                    $action['kind'] === 'continuous' &&
-                    isset($context['run']) &&
-                    $context['run']['runId'] === ($data['runId'] ?? null) &&
-                    self::integer($data['levelId'] ?? null, 1) &&
-                    isset($this->rules['levels'][$data['levelId']]) &&
-                    self::integer($data['jewels'] ?? null)
-                ) {
-                    $context['run']['credited'] = max(
-                        $context['run']['credited'],
-                        min(
-                            $this->rules['rewards']['continuousCoinCap'],
-                            floor($data['jewels'] / 10) *
-                                $this->rules['levels'][$data['levelId']]['miningMultiplier'],
-                        ),
-                    );
-                } elseif (
-                    $action['kind'] === 'victory' &&
-                    isset($context['run']) &&
-                    $context['run']['runId'] === ($data['runId'] ?? null)
-                ) {
-                    unset($context['run']);
-                }
-            }
-            if (
-                isset($context['run']) &&
-                ($context['run']['runId'] !== ($incoming['issuedRun'] ?? 0) ||
-                    $context['run']['runId'] <= ($incoming['settledRun'] ?? 0))
-            ) {
-                unset($context['run']);
-            }
             // Town Honours counters start from the client's own, like the rest of this
             // unverified historical baseline; later credit comes from the replay.
-            $context['honours'] = $incoming['honours']['counts'] ?? null;
-            $context = $this->honourCounters($context, $incoming['town']);
-            $context = $this->moneyContext($context, null, $now, null, []);
-            return $this->seal($incoming, $context, $journal['epoch'], $ack, 'baseline', $townId);
+            return $this->baseline(
+                $incoming,
+                $journal,
+                [
+                    'clockOffset' => max(0, $clientAt - $now),
+                    'honours' => $incoming['honours']['counts'] ?? null,
+                ],
+                $now,
+                $townId,
+            );
+        }
+        // Registered console testing tools change the town outside the game rules. On a
+        // server that allows them, their upload re-baselines the town like enrollment,
+        // keeping the latest clock, run, honours and money context; elsewhere it never
+        // reconciles. Nothing in the client can grant itself this exception.
+        if ($journal && in_array('testing', array_column($journal['actions'], 'kind'), true)) {
+            if (!self::testingToolsAllowed()) {
+                self::mismatch('integrity.testing');
+            }
+            return $this->rebaseline($incoming, $journal, $anchor, $now, $previousServerAt);
         }
         if (!$journal) {
             if ($resolve) {
@@ -1075,6 +1213,7 @@ final class SaveIntegrity
         $expected = $this->protected($state);
         foreach ($expected as $field => $value) {
             if (!self::same($actual[$field], $value)) {
+                $this->expected = array_diff_key($state, ['integrity' => true]);
                 self::mismatch(self::difference($value, $actual[$field], $field));
             }
         }
@@ -1096,6 +1235,57 @@ final class SaveIntegrity
             $historical ? $ack : max($anchor['baseSequence'], $ack),
             'tracked',
             $townId,
+        );
+    }
+    /**
+     * Accepts one upload an admin let through after a false desync: the town is
+     * re-baselined like a testing-tools upload instead of replayed, keeping the latest
+     * clock, run, honours and money context. Money is observed, never held. A save that
+     * is not tracked on both sides takes the normal path.
+     */
+    public function acceptOverride(
+        object $profile,
+        object $previous,
+        int $now,
+        string $townId,
+        ?int $previousServerAt = null,
+    ): object {
+        $this->validate($profile);
+        $this->townId = $townId;
+        $incoming = self::arrayOf($profile);
+        $journal = $this->journal($incoming['integrity'] ?? null);
+        $anchor = $this->journal(self::arrayOf($previous)['integrity'] ?? null);
+        if (!$journal || !$anchor) {
+            return $this->accept($profile, $previous, $now, false, [], $townId, $previousServerAt);
+        }
+        return $this->rebaseline(
+            $incoming,
+            $journal,
+            $anchor,
+            $now,
+            $previousServerAt,
+            new MoneyBudget('observe'),
+        );
+    }
+    private function rebaseline(
+        array $incoming,
+        array $journal,
+        array $anchor,
+        int $now,
+        ?int $previousServerAt,
+        ?MoneyBudget $budget = null,
+    ): object {
+        $context = $anchor['context'] ?? [];
+        $context['honours'] = $incoming['honours']['counts'] ?? null;
+        return $this->baseline(
+            $incoming,
+            $journal,
+            $context,
+            $now,
+            $this->townId,
+            $anchor['context'] ?? [],
+            $previousServerAt,
+            $budget,
         );
     }
     /** Only for a historical row selected by an authorized server-side operation. */
@@ -1244,8 +1434,14 @@ final class SaveIntegrity
         $reserved = 0;
         $cost = 0.0;
         $multiplier = 1;
-        if (in_array($kind, ['victory', 'continuous', 'vip-spend'], true)) {
-            if ($kind !== 'vip-spend') {
+        if (
+            in_array(
+                $kind,
+                ['victory', 'continuous', 'vip-spend', 'helmet-find', 'helmet-visitor'],
+                true,
+            )
+        ) {
+            if (in_array($kind, ['victory', 'continuous'], true)) {
                 $multiplier = max(1, $this->rules['levels'][$data['levelId']]['miningMultiplier']);
             }
             // These actions only add wallet money. Unlike a batch wallet delta,
@@ -1277,6 +1473,12 @@ final class SaveIntegrity
         if ($cost > 0) {
             $sources['maxMultiplier'] = max($sources['maxMultiplier'], $multiplier);
         }
+    }
+    /** How many of each bonus a save's town can store. */
+    public function bonusCapacity(array $state): int
+    {
+        $this->ready();
+        return $this->powerCapacity($state['town']);
     }
     private function powerCapacity(array $town): int
     {
@@ -1430,6 +1632,7 @@ final class SaveIntegrity
             'chest-claim' => ['chestId'],
             'vip-spend' => ['key', 'buildingId'],
             'era-advance' => ['expectedEra'],
+            'helmet-visitor' => ['receipt'],
             default => [],
         };
         foreach ($stringFields as $key) {
@@ -1460,6 +1663,29 @@ final class SaveIntegrity
             }
         }
         switch ($kind) {
+            case 'landmark-buy':
+                if (
+                    !is_array($d['purchases'] ?? null) ||
+                    !array_is_list($d['purchases']) ||
+                    count($d['purchases']) < 1 ||
+                    count($d['purchases']) > 11
+                ) {
+                    self::mismatch('landmark-buy.purchases');
+                }
+                foreach ($d['purchases'] as $purchase) {
+                    $next = is_array($purchase)
+                        ? TownPersonalisation::purchase(
+                            $s['town'],
+                            $purchase,
+                            $this->rules['eraOrder'],
+                        )
+                        : null;
+                    if ($next === null) {
+                        self::mismatch('landmark-buy');
+                    }
+                    $s['town'] = $next;
+                }
+                break;
             case 'run-start':
                 $run = $this->count($d['runId'] ?? null, 'runId');
                 $mode = $d['mode'] ?? 'normal';
@@ -1633,6 +1859,34 @@ final class SaveIntegrity
                 }
                 $s['town']['saloonVisitAt'] = $visit;
                 break;
+            case 'helmet-find':
+                // Once per completed puzzle, the run that moved the helmet to its wearer.
+                $this->clock($d['at'] ?? null, $context, $now);
+                $run = $this->count($d['run'] ?? null, 'run');
+                if (
+                    !$this->spaceHelmetOut($s['town']['era']) ||
+                    $run !== $s['town']['completedRuns'] ||
+                    $run <= $s['town']['helmetRun']
+                ) {
+                    self::mismatch('helmet-find');
+                }
+                $this->addCoins($s, $this->helmetReward($s['town'], 'owner'));
+                $s['town']['helmetRun'] = $run;
+                break;
+            case 'helmet-visitor':
+                // A find in another town: only the server's receipt for this town proves it.
+                $this->clock($d['at'] ?? null, $context, $now);
+                $found = $this->count($d['foundAt'] ?? null, 'foundAt');
+                if (
+                    $found <= $s['town']['helmetVisitAt'] ||
+                    $this->townId === '' ||
+                    !hash_equals(self::helmetReceipt($this->townId, $found), $d['receipt'])
+                ) {
+                    self::mismatch('helmet-visitor');
+                }
+                $this->addCoins($s, $this->helmetReward($s['town'], 'visitor'));
+                $s['town']['helmetVisitAt'] = $found;
+                break;
             case 'vip-spend':
                 $key = $d['key'] ?? null;
                 $id = $d['buildingId'] ?? '';
@@ -1666,7 +1920,7 @@ final class SaveIntegrity
                     $event['seen'] ||
                     !empty($event['bellRung']) ||
                     $event['loss'] <= 0 ||
-                    $s['town']['buildings']['square'] < 4
+                    $this->service($s['town'], 'square') < 4
                 ) {
                     self::mismatch('raid-bell');
                 }
@@ -1961,6 +2215,12 @@ final class SaveIntegrity
                 $income['stored'] + $earned >= $capacity ? 0 : (int) fmod($credit, $e['hourMs']),
         ];
     }
+    /** A save from an older progression version still holds this building's longer levels. */
+    private function keepsLegacyLevels(string $id, mixed $version): bool
+    {
+        $since = $this->rules['buildings'][$id]['shortSince'] ?? 0;
+        return $since > 0 && (is_int($version) ? $version : 0) < $since;
+    }
     private function service(array $town, string $id): int
     {
         return $this->rules['buildings'][$id]['serviceLevels'][$town['buildings'][$id] ?? 0] ?? 0;
@@ -2026,11 +2286,43 @@ final class SaveIntegrity
         $stats = $this->populationStats($town);
         return (int) floor(
             (2.25 *
-                ($town['buildings']['saloon'] ?? 0) *
+                $this->service($town, 'saloon') *
                 $stats['population'] *
                 (100 + 1.25 * $stats['happiness']) *
                 (1 + ($town['buildings']['diner'] ?? 0) * 0.05)) /
                 100,
+        );
+    }
+    /** Whether a town in this era has a space-helmet wearer to find. */
+    public function spaceHelmetOut(mixed $era): bool
+    {
+        $debut = $this->rules['economy']['spaceHelmetDebut'] ?? null;
+        $index = is_string($era) ? $this->eraIndex($era) : -1;
+        return is_string($debut) && $index >= 0 && $index >= $this->eraIndex($debut);
+    }
+    /** Mirrors spaceHelmetReward(): the finder's share of an hour of saloon takings. */
+    private function helmetReward(array $town, string $finder): int
+    {
+        $hours = $this->rules['economy']['spaceHelmetRewardHours'][$finder] ?? null;
+        if (!self::number($hours)) {
+            self::incompatible();
+        }
+        return (int) floor($this->incomeRate($town) * $hours);
+    }
+    /**
+     * Proof that a player found a space helmet while visiting, for the town they visited
+     * as, at a server time in Unix milliseconds. The owner poll hands it to that town.
+     */
+    public static function helmetReceipt(string $townId, int $foundAt): string
+    {
+        $secret = Env::get('APP_SECRET');
+        if (!is_string($secret) || strlen($secret) < 32) {
+            throw new \RuntimeException('Space-helmet receipts need the application secret.');
+        }
+        return hash_hmac(
+            'sha256',
+            'prospect-hollow:helmet-find:v1:' . $townId . ':' . $foundAt,
+            $secret,
         );
     }
     private function cooldown(array $town, string $id, int $at): bool
@@ -2046,7 +2338,7 @@ final class SaveIntegrity
         $town['forge']['progress']++;
         if (
             $town['forge']['progress'] >=
-            ($this->rules['economy']['forgeRuns'][$town['buildings']['blacksmith'] - 1] ?? 6)
+            ($this->rules['economy']['forgeRuns'][$this->service($town, 'blacksmith') - 1] ?? 6)
         ) {
             $town['forge'] = ['progress' => 0, 'charge' => 1];
         }
@@ -2109,6 +2401,7 @@ final class SaveIntegrity
         }
         $this->accrue($s, $context, $d['at'] ?? null, $now);
         $town = &$s['town'];
+        $finished = $this->finishedProjects($town);
         if ($kind === 'building-finish') {
             $project = $town['projects'][$id] ?? null;
             if (
@@ -2130,6 +2423,7 @@ final class SaveIntegrity
             unset($town['projects'][$id]);
             $this->reinforce($s);
             $this->settleForge($town);
+            $this->rewardProjects($s, $finished, $d);
             $this->stock($s, $d['shopStock'] ?? null, $d['shopVisit'] ?? null, false);
             return;
         }
@@ -2178,6 +2472,7 @@ final class SaveIntegrity
                 ];
             }
         }
+        $this->rewardProjects($s, $finished, $d);
         $this->stock($s, $d['shopStock'] ?? null, $d['shopVisit'] ?? null, false);
     }
     private function settleForge(array &$town): void
@@ -2186,7 +2481,7 @@ final class SaveIntegrity
             $town['buildings']['blacksmith'] &&
             !$town['forge']['charge'] &&
             $town['forge']['progress'] >=
-                ($this->rules['economy']['forgeRuns'][$town['buildings']['blacksmith'] - 1] ?? 6)
+                ($this->rules['economy']['forgeRuns'][$this->service($town, 'blacksmith') - 1] ?? 6)
         ) {
             $town['forge'] = ['progress' => 0, 'charge' => 1];
         }
@@ -2238,15 +2533,26 @@ final class SaveIntegrity
         $s['shopStock'] = $stock;
         $s['shopVisit'] = $visit;
     }
-    private function protection(array $town, int $riders, string $kind): float
+    /** @return array{sheriff: int, bank: int, fireStation: int} */
+    private function defenses(array $town): array
+    {
+        return [
+            'sheriff' => $this->service($town, 'sheriff'),
+            'bank' => $this->service($town, 'bank'),
+            'fireStation' => $town['buildings']['fireStation'] ?? 0,
+        ];
+    }
+    /** @param array<string, int> $levels defense service levels, as raid receipts keep them */
+    private function protection(array $levels, int $riders, string $kind): float
     {
         if (in_array($kind, ['workshop-fire', 'storm-cleanup'], true)) {
             return $this->rules['economy']['fireProtectionByLevel'][
-                min(3, max(0, $town['buildings']['fireStation'] ?? 0))
+                min(3, max(0, $levels['fireStation'] ?? 0))
             ];
         }
-        return (min($riders, ($town['buildings']['sheriff'] ?? 0) * 2) +
-            min($riders, ($town['buildings']['bank'] ?? 0) * 2)) /
+        // Each sheriff or bank service level covers two riders; receipts keep these levels.
+        return (min($riders, ($levels['sheriff'] ?? 0) * 2) +
+            min($riders, ($levels['bank'] ?? 0) * 2)) /
             ($riders * 2);
     }
     private function encounter(array &$s, array &$context, array $d, int $now): void
@@ -2278,7 +2584,7 @@ final class SaveIntegrity
                             : ($development >= 16
                                 ? 4
                                 : 2)));
-            $protection = $this->protection($town, $riders, $kind);
+            $protection = $this->protection($this->defenses($town), $riders, $kind);
             $loss =
                 $protection === 1.0
                     ? 0
@@ -2292,8 +2598,8 @@ final class SaveIntegrity
                 'id' => ($prior['id'] ?? 0) + 1,
                 'atRun' => $town['completedRuns'],
                 'gangSize' => $riders,
-                'sheriffLevel' => $built['sheriff'],
-                'bankLevel' => $built['bank'],
+                'sheriffLevel' => $this->service($town, 'sheriff'),
+                'bankLevel' => $this->service($town, 'bank'),
                 'outcome' => $protection === 1.0 ? 'protected' : ($loss ? 'stolen' : 'harmless'),
                 'loss' => (int) $loss,
                 'seen' => false,
@@ -2357,8 +2663,8 @@ final class SaveIntegrity
             $event['fireStationLevel'] = $level;
             $defenses = ['fireStation' => $level];
         } else {
-            $sheriff = max($event['sheriffLevel'], $town['buildings']['sheriff']);
-            $bank = max($event['bankLevel'] ?? 0, $town['buildings']['bank']);
+            $sheriff = max($event['sheriffLevel'], $this->service($town, 'sheriff'));
+            $bank = max($event['bankLevel'] ?? 0, $this->service($town, 'bank'));
             if ($sheriff === $event['sheriffLevel'] && $bank === ($event['bankLevel'] ?? 0)) {
                 return;
             }
@@ -2368,7 +2674,7 @@ final class SaveIntegrity
         }
         // The shared calculation returns a float: PHP divides evenly divisible integers
         // to int 1, and full cover must still equal 1.0 for a 'protected' outcome.
-        $protection = $this->protection(['buildings' => $defenses], $event['gangSize'], $kind);
+        $protection = $this->protection($defenses, $event['gangSize'], $kind);
         $remaining = ceil(5 * $event['gangSize'] * (1 - $protection));
         $loss = min(
             $event['loss'],
@@ -2424,13 +2730,7 @@ final class SaveIntegrity
             // Normalized replay state is already clamped; older saves keep legacy levels.
             $level = $town['buildings'][$id] ?? 0;
             $level = is_int($level) ? min($definition['maxLevel'], $level) : 0;
-            $eraLevel =
-                $town['era'] === 'frontier' || $definition['introducedEra'] === $town['era']
-                    ? $level
-                    : (($town['buildingEras'][$id] ?? null) === $town['era']
-                        ? ($town['buildingEraLevels'][$id] ?? 0 ?:
-                        1)
-                        : 0);
+            $eraLevel = $this->eraLevel($town, $id);
             if (
                 $level !== $definition['maxLevel'] ||
                 isset($town['projects'][$id]) ||
@@ -2440,6 +2740,71 @@ final class SaveIntegrity
             }
         }
         return true;
+    }
+    /** A building's level within the town's era, as eraBuildingLevel() in TownEras.js. */
+    private function eraLevel(array $town, string $id): int
+    {
+        $definition = $this->rules['buildings'][$id];
+        $level = $town['buildings'][$id] ?? 0;
+        $level = is_int($level) ? min($definition['maxLevel'], $level) : 0;
+        if ($town['era'] === 'frontier' || $definition['introducedEra'] === $town['era']) {
+            return $level;
+        }
+        // An era with a `modernizes` list leaves every other building finished.
+        $modernizes = $this->rules['eras'][$town['era']]['modernizes'] ?? null;
+        if (is_array($modernizes) && !in_array($id, $modernizes, true)) {
+            return $this->rules['eraBuildingLevels'];
+        }
+        return ($town['buildingEras'][$id] ?? null) === $town['era']
+            ? ($town['buildingEraLevels'][$id] ?? 0 ?:
+                1)
+            : 0;
+    }
+    /**
+     * Rewarded starter projects this town's era has finished, as finishedRewardProjects()
+     * in TownProjects.js.
+     *
+     * @return list<string>
+     */
+    private function finishedProjects(array $town): array
+    {
+        $finished = [];
+        foreach ($this->rules['rewards']['townProjects'] ?? [] as $project) {
+            if ($project['era'] !== $town['era']) {
+                continue;
+            }
+            foreach ($project['buildings'] as $id) {
+                if ($this->eraLevel($town, $id) < $this->rules['rewards']['projectStages']) {
+                    continue 2;
+                }
+            }
+            $finished[] = $project['id'];
+        }
+        return $finished;
+    }
+    /**
+     * A building action that finishes a starter project grants its builder hammers, past
+     * the chest limit. Receipts from clients before the reward carry no flag and get none.
+     *
+     * @param list<string> $before
+     */
+    private function rewardProjects(array &$s, array $before, array $d): void
+    {
+        if (($d['projectRewards'] ?? null) !== 1) {
+            return;
+        }
+        $after = $this->finishedProjects($s['town']);
+        foreach ($this->rules['rewards']['townProjects'] ?? [] as $project) {
+            if (
+                in_array($project['id'], $after, true) &&
+                !in_array($project['id'], $before, true)
+            ) {
+                $s['builderHammers'] = (int) min(
+                    9007199254740991,
+                    $s['builderHammers'] + $project['hammers'],
+                );
+            }
+        }
     }
     /**
      * Town Honours era progress, as eraStep() in honours.js: two steps per era, the

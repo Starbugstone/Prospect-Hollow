@@ -1,7 +1,15 @@
+import { normalizePersonalisation } from '../../data/townPersonalisation';
+import { PERSONAL_AREAS, areaUnlocked, monumentWork } from '../../data/townLandmarks';
+import { CREST_EMBLEM_IDS } from '../../data/townCrests';
 import { normalizePresentations } from '../../data/townPresentations';
 import { normalizeGuestVip } from '../../data/guestVip';
 import { RIVER_RAIL_LEVEL_PRICES } from '../../data/economy';
-import { hasShortProgression } from '../../data/buildingProgression';
+import {
+  LEGACY_MAX_LEVEL,
+  MAX_SERVICE_LEVEL,
+  keepsLegacyLevels,
+  serviceLevel,
+} from '../../data/buildingProgression';
 import { t } from '../../i18n';
 import { miningDepthBonus } from '../../data/economy';
 import { isMajorCityBuilding } from '../../data/city';
@@ -16,7 +24,8 @@ import {
 } from '../../data/townEvents';
 import { forgeProductionRuns } from '../../data/eras';
 import { needProviders, townNeeds, townSupply } from './TownNeeds';
-import { plotInEra, modernization, normalizeEraState, eraGate } from './TownEras';
+import { plotInEra, modernization, normalizeEraState, eraGate, eraIndex } from './TownEras';
+import { SPACE_HELMET } from '../../data/townAnimals';
 import { BUILDINGS, BUILDING_BY_ID, INTRO_ORDER, BANDIT_EVENT, createTown } from '../../data/town';
 import {
   COMBO_COIN_STEP,
@@ -62,7 +71,7 @@ function normalizeRaidEvent(event, town) {
     !intIn(event.id, 1) ||
     !intIn(event.atRun, 0, town.completedRuns) ||
     ![2, 4, 6, 8, 10].includes(event.gangSize) ||
-    !intIn(event.sheriffLevel, 0, BUILDING_BY_ID.sheriff.upgrades.length)
+    !intIn(event.sheriffLevel, 0, MAX_SERVICE_LEVEL)
   )
     return null;
   const receipt = {
@@ -70,7 +79,7 @@ function normalizeRaidEvent(event, town) {
     atRun: event.atRun,
     gangSize: event.gangSize,
     sheriffLevel: event.sheriffLevel,
-    bankLevel: intIn(event.bankLevel, 0, BUILDING_BY_ID.bank.upgrades.length) ? event.bankLevel : 0,
+    bankLevel: intIn(event.bankLevel, 0, MAX_SERVICE_LEVEL) ? event.bankLevel : 0,
     outcome: event.outcome,
     loss: event.loss,
     seen: event.seen === true,
@@ -95,7 +104,8 @@ export function normalizeTown(saved) {
     const at = saved?.lastCollections?.[id];
     if (intIn(at, 0)) town.lastCollections[id] = at;
   }
-  if (intIn(saved?.saloonVisitAt, 1)) town.saloonVisitAt = saved.saloonVisitAt;
+  for (const key of ['saloonVisitAt', 'helmetRun', 'helmetVisitAt'])
+    if (intIn(saved?.[key], 1)) town[key] = saved[key];
   town.guestVip = normalizeGuestVip(saved?.guestVip);
   // Missing or malformed additions leave existing v3 receipts intact.
   const forge = saved?.forge;
@@ -105,8 +115,9 @@ export function normalizeTown(saved) {
   if (intIn(saved?.coins, 0)) town.coins = saved.coins;
   for (const building of BUILDINGS) {
     const stage = saved?.buildings?.[building.id];
-    const highest =
-      hasShortProgression(building.id) && !saved?.progressionVersion ? 5 : building.upgrades.length;
+    const highest = keepsLegacyLevels(building.id, saved?.progressionVersion)
+      ? LEGACY_MAX_LEVEL
+      : building.upgrades.length;
     if (intIn(stage, 0, highest))
       town.buildings[building.id] = Math.min(stage, building.upgrades.length);
   }
@@ -124,13 +135,18 @@ export function normalizeTown(saved) {
   if (raid) town.events[BANDIT_EVENT] = raid;
   for (const { id, upgrades } of BUILDINGS) {
     let project = saved?.projects?.[id];
-    if (!saved?.progressionVersion && hasShortProgression(id)) {
-      if (project?.type === 'modernization')
-        project = { ...project, stage: Math.min(project.stage, upgrades.length) };
-      else if (
+    if (keepsLegacyLevels(id, saved?.progressionVersion)) {
+      // A modernization starts from the finished building, so it moves down with it.
+      if (project?.type === 'modernization') {
+        const level = saved.buildings?.[id];
+        project = {
+          ...project,
+          stage: project.stage - (intIn(level, 0) ? Math.max(0, level - upgrades.length) : 0),
+        };
+      } else if (
         project?.id === id &&
         project.stage > upgrades.length &&
-        project.stage <= 5 &&
+        project.stage <= LEGACY_MAX_LEVEL &&
         project.stage === saved.buildings[id] + 1 &&
         project.required === 1 &&
         intIn(project.wins, 0, 1)
@@ -190,6 +206,7 @@ export function normalizeTown(saved) {
       };
     }
   }
+  town.personalisation = normalizePersonalisation(saved?.personalisation, CREST_EMBLEM_IDS);
   town.tourSeen = saved?.tourSeen === true;
   town.presentations = normalizePresentations(saved?.presentations, town);
   return settleForgeProduction(town);
@@ -278,7 +295,7 @@ export function settleForgeProduction(town) {
   if (
     !town.buildings.blacksmith ||
     town.forge.charge ||
-    town.forge.progress < forgeProductionRuns(town.buildings.blacksmith)
+    town.forge.progress < forgeProductionRuns(serviceLevel(town, 'blacksmith'))
   )
     return town;
   return { ...town, forge: { progress: 0, charge: 1 } };
@@ -321,12 +338,23 @@ export const saloonHappinessBonus = (town) => 1.25 * happiness(town);
 export const saloonIncomeRate = (town) =>
   Math.floor(
     (2.25 *
-      town.buildings.saloon *
+      serviceLevel(town, 'saloon') *
       population(town) *
       (100 + saloonHappinessBonus(town)) *
       (1 + (town.buildings.diner ?? 0) * 0.05)) /
       100,
   );
+// The space helmet is out from its debut era on. Finding its wearer pays saloon takings
+// (`SPACE_HELMET.rewardHours`), once each time a completed puzzle moves the helmet.
+export const spaceHelmetOut = (town) => {
+  const index = eraIndex(town?.era);
+  return index >= 0 && index >= eraIndex(SPACE_HELMET.debut);
+};
+export const spaceHelmetFindable = (town) =>
+  spaceHelmetOut(town) && town.completedRuns > town.helmetRun;
+// The coins a find pays this town, for the owner's own find or a find while visiting.
+export const spaceHelmetReward = (town, finder) =>
+  Math.floor(saloonIncomeRate(town) * SPACE_HELMET.rewardHours[finder]);
 // Remainder is stored as coin-milliseconds, avoiding rounding loss between visits.
 // Settle BEFORE changing buildings, so their new rates never apply to old time.
 export function settleSaloonIncome(town, now) {
@@ -424,6 +452,9 @@ export function buildingIndicators(
     )
       indicators[id] = 'tnt';
   }
+  // A finished monument level waits for its unveiling, like a finished building.
+  for (const area of PERSONAL_AREAS)
+    if (areaUnlocked(town, area) && monumentWork(town, area)?.ready) indicators[area.id] = 'ready';
   if (eraGate(town).available) indicators.square = 'era';
   if (canRingTownBell(town) && !constructionReady(town.projects.square)) indicators.square = 'bell';
   return indicators;
@@ -507,8 +538,10 @@ export function nextGoal(town) {
   // Put essential services and balanced defenses ahead of optional expansion.
   // An active project already covers its need; suggest another useful project.
   const defense = ['sheriff', 'bank']
-    .filter((id) => available.some((b) => b.id === id) && town.buildings[id] * 2 < gangSize(town))
-    .sort((a, b) => town.buildings[a] - town.buildings[b])[0];
+    .filter(
+      (id) => available.some((b) => b.id === id) && serviceLevel(town, id) * 2 < gangSize(town),
+    )
+    .sort((a, b) => serviceLevel(town, a) - serviceLevel(town, b))[0];
   const id =
     INTRO_ORDER.find((key) => available.some((b) => b.id === key) && !town.buildings[key]) ??
     (need ? needFixes(town, need, offers)[0]?.id : null) ??
@@ -612,17 +645,18 @@ export const raidBounty = (event) =>
   !civicIncident(eventKind(event)) && event?.outcome === 'protected' && event.loss === 0
     ? Math.min(event.gangSize, event.sheriffLevel * 2) * CAPTURE_BOUNTY
     : 0;
+// Each sheriff or bank service level covers two riders; raid receipts keep these levels.
+const banditProtection = (riders, sheriff, bank) =>
+  (Math.min(riders, sheriff * 2) + Math.min(riders, bank * 2)) / (riders * 2);
 export const raidProtection = (town, riders = gangSize(town), kind = eraEventKind(town.era)) =>
   civicIncident(kind)
     ? fireProtection(town.buildings.fireStation)
-    : (Math.min(riders, town.buildings.sheriff * 2) +
-        Math.min(riders, (town.buildings.bank ?? 0) * 2)) /
-      (riders * 2);
+    : banditProtection(riders, serviceLevel(town, 'sheriff'), serviceLevel(town, 'bank'));
 
 export function canRingTownBell(town) {
   const event = town.events[BANDIT_EVENT];
   return !!(
-    town.buildings.square >= 4 &&
+    serviceLevel(town, 'square') >= 4 &&
     event &&
     !event.seen &&
     !event.bellRung &&
@@ -646,8 +680,8 @@ export function ringTownBell(town, raidId) {
 export function banditEncounter(town, random = Math.random) {
   if (!raidReady(town)) return null;
   const riders = gangSize(town),
-    sheriffLevel = town.buildings.sheriff;
-  const bankLevel = town.buildings.bank ?? 0;
+    sheriffLevel = serviceLevel(town, 'sheriff');
+  const bankLevel = serviceLevel(town, 'bank');
   const kind = eraEventKind(town.era);
   const protection = raidProtection(town, riders, kind);
   const protectedTown = protection === 1;
@@ -709,13 +743,10 @@ export function reinforceRaid(town) {
     if (level === event.fireStationLevel) return town;
     return reviseRaid(town, event, fireProtection(level), { fireStationLevel: level });
   }
-  const sheriffLevel = Math.max(event.sheriffLevel, town.buildings.sheriff);
-  const bankLevel = Math.max(event.bankLevel ?? 0, town.buildings.bank);
+  const sheriffLevel = Math.max(event.sheriffLevel, serviceLevel(town, 'sheriff'));
+  const bankLevel = Math.max(event.bankLevel ?? 0, serviceLevel(town, 'bank'));
   if (sheriffLevel === event.sheriffLevel && bankLevel === (event.bankLevel ?? 0)) return town;
-  const protection = raidProtection(
-    { buildings: { sheriff: sheriffLevel, bank: bankLevel } },
-    event.gangSize,
-  );
+  const protection = banditProtection(event.gangSize, sheriffLevel, bankLevel);
   return reviseRaid(town, event, protection, { sheriffLevel, bankLevel });
 }
 

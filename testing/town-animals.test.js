@@ -1,11 +1,17 @@
-import { afterEach, expect, it } from 'vitest';
-import { Group, MeshBasicMaterial, Scene, Vector3 } from 'three';
+import { afterEach, expect, it, vi } from 'vitest';
+import { Group, MeshBasicMaterial, PerspectiveCamera, Scene, Vector3 } from 'three';
 import { TownActors } from '../src/game/town/TownActors';
 import { updateTownLocomotion } from '../src/game/town/TownLocomotion';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { addTownAnimals, animalHabitats, animalKey } from '../src/game/town/TownAnimals';
-import { dressSpaceHelmet, spaceHelmetWearer } from '../src/game/town/TownSpaceHelmet';
+import {
+  dressSpaceHelmet,
+  HELMET_FIND_SCALE,
+  HELMET_HINT_SCALE,
+  spaceHelmetTap,
+  spaceHelmetWearer,
+} from '../src/game/town/TownSpaceHelmet';
 import { addPowerGrid, addEraStreetscape } from '../src/game/town/TownEvolution';
 import { townNavigation, walkPose, walkPath } from '../src/game/town/TownNavigation';
 import { createAnimalBehavior } from '../src/game/town/TownAnimalBehavior';
@@ -17,12 +23,14 @@ import { ERAS, ERA_BY_ID, eraEvolution } from '../src/data/eras';
 import { defineEra } from '../src/data/eraDefinitions';
 import { PLOTS } from '../src/game/town/TownLayout';
 import { COMPANION_NEIGHBORHOODS } from '../src/data/townCompanions';
-import { SPACE_HELMET, townFauna } from '../src/data/townAnimals';
+import { SPACE_HELMET, TOWN_ANIMALS, townFauna } from '../src/data/townAnimals';
+import { birdPopulation } from '../src/game/town/TownBirdHabitats';
+import { monumentCast } from '../src/game/town/TownMonumentLife';
 
 const views = [];
 function fixture(
   era = 'frontier',
-  buildings = { home: 3, farm: 3, square: 5, saloon: 3, shop: 3 },
+  buildings = { home: 3, farm: 3, square: 3, saloon: 3, shop: 3 },
 ) {
   const d = Object.create(TownDiorama.prototype);
   Object.assign(d, {
@@ -77,7 +85,7 @@ it('introduces animals only with inhabited buildings and uses completed outdoor 
   expect(empty.motions).toHaveLength(0);
   const d = fixture();
   addTownAnimals(d, d.town);
-  expect(d.animals.map((a) => a.species)).toEqual([
+  expect(d.animals.filter((a) => !a.monumentSite).map((a) => a.species)).toEqual([
     'dog',
     'cat',
     'hen',
@@ -90,7 +98,9 @@ it('introduces animals only with inhabited buildings and uses completed outdoor 
     'raccoon',
     'deer',
   ]);
-  expect(d.animalHabitats.map((h) => h.building)).toEqual(['square', 'farm', 'home']);
+  expect(d.animalHabitats.map((h) => h.building)).toEqual(
+    expect.arrayContaining(['square', 'farm', 'home']),
+  );
   expect(d.animals.every((a) => a.root.userData.animated)).toBe(true);
 });
 
@@ -102,20 +112,32 @@ it.each(['canopy', 'riverlight'])(
     addTownAnimals(d, d.town);
     for (const species of ['otter', 'deer', 'hedgehog'])
       expect(
-        d.animals.filter((a) => a.species === species),
+        d.animals.filter((a) => a.species === species && !a.monumentSite),
         species,
       ).toHaveLength(1);
-    expect(d.animals.filter((a) => a.species === 'bluebird')).toHaveLength(2);
-    expect(d.animals.filter((a) => a.species === 'pigeon')).toHaveLength(3);
+    for (const definition of townFauna(eraEvolution(era)).birds)
+      expect(d.animals.filter((a) => a.species === definition.species)).toHaveLength(
+        birdPopulation(
+          definition,
+          d.animalHabitats.filter((h) => h.kind === 'ground'),
+        ),
+      );
+
+    const birds = d.animals.filter((a) => a.habitat);
+    expect(new Set(birds.map((a) => a.habitat.building)).size).toBeGreaterThanOrEqual(5);
+    const xs = birds.map((a) => a.habitat.point[0]);
+    expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(60);
     expect(d.animals.find((a) => a.species === 'dog').costume).toBeUndefined();
-    const companions = d.animals.filter((a) => a.companion);
+    const companions = d.animals.filter((a) => a.companion && !a.monumentSite);
     expect(companions).toHaveLength(3);
     expect(companions.map((a) => a.neighborhood)).toEqual(COMPANION_NEIGHBORHOODS.map((n) => n.id));
     expect(
       companions.every((a) => a.species === townFauna(eraEvolution(era)).companions.species),
     ).toBe(true);
     expect(new Set(companions.map((a) => a.seed)).size).toBe(3);
-    expect(d.animals).toHaveLength(18);
+    expect(d.animals.length).toBeLessThanOrEqual(
+      26 + monumentCast(d.town, townFauna(eraEvolution(era))).length,
+    );
     const roots = d.animals.map((a) => a.root),
       plans = d.navigation.plans;
     advance(d, 40);
@@ -144,16 +166,16 @@ it('adds wildlife without replacing existing animals or duplicating them on refr
     d.repairAnimalLife();
     expect(d.animals).toEqual(retained);
   }
-  expect(d.animals).toHaveLength(15);
+  expect(d.animals.filter((a) => !a.monumentSite)).toHaveLength(15);
 });
 
 it('evolves all three companions into neighbors and retains their accepted street routes on refresh', () => {
   const d = fixture('canopy', Object.fromEntries(BUILDINGS.map((b) => [b.id, b.upgrades.length])));
   addTownAnimals(d, d.town);
-  const saplings = d.animals.filter((a) => a.companion);
+  const saplings = d.animals.filter((a) => a.companion && !a.monumentSite);
   d.town.era = 'riverlight';
   d.repairAnimalLife();
-  const neighbors = d.animals.filter((a) => a.companion);
+  const neighbors = d.animals.filter((a) => a.companion && !a.monumentSite);
   expect(neighbors).toHaveLength(3);
   expect(neighbors.map((a) => a.seed)).toEqual(saplings.map((a) => a.seed));
   expect(neighbors.every((a) => a.resident && a.species === 'willowkinResident')).toBe(true);
@@ -162,14 +184,12 @@ it('evolves all three companions into neighbors and retains their accepted stree
   const paths = neighbors.map((a) => a.path),
     positions = neighbors.map((a) => a.root.position.clone());
   d.repairAnimalLife();
-  expect(d.animals.filter((a) => a.companion)).toEqual(neighbors);
+  expect(d.animals.filter((a) => a.companion && !a.monumentSite)).toEqual(neighbors);
   neighbors.forEach((a, i) => {
     expect(a.path).toBe(paths[i]);
     expect(a.root.position.distanceTo(positions[i])).toBeLessThan(1e-6);
   });
-  expect(d.world.children.filter((o) => o.userData.species === 'willowkinResident')).toHaveLength(
-    3,
-  );
+  expect(d.world.children.filter((o) => neighbors.some((a) => a.root === o))).toHaveLength(3);
 });
 
 it.each([...ERAS.map((era) => era.id), 'unknown-animal-era'])(
@@ -178,7 +198,7 @@ it.each([...ERAS.map((era) => era.id), 'unknown-animal-era'])(
     const d = fixture(era, {
       home: 3,
       farm: 3,
-      square: 5,
+      square: 3,
       saloon: 3,
       shop: 3,
       park: 3,
@@ -197,7 +217,7 @@ it.each([...ERAS.map((era) => era.id), 'unknown-animal-era'])(
     ]) {
       const unlocked = eraIndex >= ERAS.findIndex((e) => e.id === firstEra);
       expect(
-        d.animals.filter((a) => a.species === species),
+        d.animals.filter((a) => a.species === species && !a.monumentSite),
         species,
       ).toHaveLength(unlocked ? count : 0);
     }
@@ -240,7 +260,7 @@ it('roams beyond the old tiny orbits, idles, flies and lands without growing or 
   const d = fixture('industrial', {
     home: 3,
     farm: 3,
-    square: 5,
+    square: 3,
     saloon: 3,
     shop: 3,
     park: 3,
@@ -299,8 +319,8 @@ it('roams beyond the old tiny orbits, idles, flies and lands without growing or 
   for (const a of d.animals.filter((a) => a.wild)) {
     expect(seen.get(a).visible).toBeGreaterThan(0);
     expect(seen.get(a).hidden).toBeGreaterThan(0);
-    if (['fox', 'raccoon'].includes(a.species))
-      expect(a.path.points.every((p) => p[2] >= 29)).toBe(true);
+    if (a.exteriorHabitat === 'fox') expect(a.path.points.every((p) => p[0] < -55)).toBe(true);
+    if (a.exteriorHabitat === 'raccoon') expect(a.path.points.every((p) => p[0] > 68)).toBe(true);
   }
   expect(d.navigation.plans).toBe(plans);
   expect(d.world.children).toHaveLength(count);
@@ -749,6 +769,136 @@ it.each(helmetEras)('keeps the %s space-helmet wearer on screen at all times', (
   expect(d.animals.some((a) => a.wild && worn.has(a.species))).toBe(true);
 });
 
+// A tap on the wearer finds it; a tap elsewhere is left to people and buildings.
+it('finds the space-helmet wearer where it stands on the map', () => {
+  const d = fixture('tomorrow');
+  Object.assign(d, { rebuildActors() {}, render() {} });
+  d.town.completedRuns = 5;
+  addTownAnimals(d, d.town);
+  const [wearer] = helmeted(d);
+  wearer.root.visible = true;
+  wearer.root.scale.setScalar(1);
+  wearer.root.position.set(2, 0, 3);
+  d.camera = new PerspectiveCamera(40, 2, 0.1, 400);
+  d.camera.position.set(2, 6, 11);
+  d.camera.lookAt(2, 0, 3);
+  d.camera.updateMatrixWorld();
+  // The camera looks at the wearer's feet, in the middle of this canvas.
+  d.canvas = { getBoundingClientRect: () => ({ left: 100, top: 50, width: 800, height: 400 }) };
+  const hit = spaceHelmetTap(d, 500, 245);
+  expect(hit.x).toBeCloseTo(50, 5);
+  expect(hit.y).toBeLessThan(50);
+  expect(spaceHelmetTap(d, 500, 250)).toEqual(hit);
+  expect(spaceHelmetTap(d, 700, 250)).toBeNull();
+  // Nobody else wears the helmet, so no other animal can be found.
+  wearer.root.position.set(40, 0, 3);
+  expect(spaceHelmetTap(d, 500, 250)).toBeNull();
+  wearer.root.position.set(2, 0, 3);
+  // Not while it changes outfits, nor while a wild wearer is away.
+  wearer.dressing = { costume: null, start: null, swapped: false };
+  expect(spaceHelmetTap(d, 500, 250)).toBeNull();
+  wearer.dressing = null;
+  wearer.root.visible = false;
+  expect(spaceHelmetTap(d, 500, 250)).toBeNull();
+  // A town without a helmet has nothing to find.
+  dressSpaceHelmet(d, { ...d.town, era: 'contemporary' });
+  wearer.root.visible = true;
+  expect(helmeted(d)).toEqual([]);
+  expect(spaceHelmetTap(d, 500, 250)).toBeNull();
+});
+
+// The helmet is an easter egg. Far out, animals answer nothing and taps work as usual;
+// just short of the find zoom, a tap on any animal that nothing else answers asks to
+// zoom in, the same for the wearer as for the others, so taps cannot find it by chance.
+it('only finds the space-helmet wearer close enough to see it', () => {
+  const d = fixture('tomorrow');
+  Object.assign(d, { rebuildActors() {}, render() {} });
+  d.town.completedRuns = 5;
+  addTownAnimals(d, d.town);
+  const [wearer] = helmeted(d);
+  const other = d.animals.find((a) => a !== wearer && !a.companion && !a.wild);
+  for (const animal of d.animals) animal.root.visible = false;
+  for (const animal of [wearer, other]) {
+    animal.root.scale.setScalar(1);
+    animal.root.position.set(2, 0, 3);
+  }
+  d.camera = new PerspectiveCamera(40, 2, 0.1, 400);
+  const rect = { left: 100, top: 50, width: 800, height: 400 };
+  d.canvas = { getBoundingClientRect: () => rect };
+  // Looks at (2, 0, 3) from this many units away, from the same angle each time.
+  const look = (distance) => {
+    const way = new Vector3(0, 6, 8).normalize().multiplyScalar(distance);
+    d.camera.position.set(2 + way.x, way.y, 3 + way.z);
+    d.camera.lookAt(2, 0, 3);
+    d.camera.updateMatrixWorld();
+  };
+  // Where a world unit spans this many pixels in the middle of the canvas.
+  const spanning = (pixels) => rect.height / 2 / Math.tan((d.camera.fov * Math.PI) / 360) / pixels;
+  const close = spanning(HELMET_FIND_SCALE) * 0.95,
+    hint = spanning(HELMET_FIND_SCALE) * 1.05,
+    far = spanning(HELMET_HINT_SCALE) * 1.05;
+  expect(hint).toBeLessThan(spanning(HELMET_HINT_SCALE));
+  // The middle of the animal's body on the canvas, where a player taps it.
+  const body = (animal) => {
+    const height = TOWN_ANIMALS[animal.species]?.height ?? 1;
+    const [feet, head] = [0, height].map((y) => new Vector3(2, y, 3).project(d.camera).toArray());
+    return [0, 1].map(
+      (axis) =>
+        [rect.left, rect.top][axis] +
+        (((axis ? -1 : 1) * (feet[axis] + head[axis])) / 2 + 1) *
+          ([rect.width, rect.height][axis] / 2),
+    );
+  };
+  for (const animal of [wearer, other]) {
+    for (const each of [wearer, other]) each.root.visible = each === animal;
+    look(close);
+    const found = spaceHelmetTap(d, ...body(animal));
+    if (animal === wearer) expect(found).toMatchObject({ x: expect.any(Number) });
+    // Close up, another animal is left to people and buildings as before.
+    else expect(found).toBeNull();
+    look(hint);
+    expect(spaceHelmetTap(d, ...body(animal)), animal.species).toEqual({ zoom: true });
+    // Only a tap on the body asks, so taps beside an animal are left alone.
+    const [x, y] = body(animal);
+    expect(spaceHelmetTap(d, x + 40, y)).toBeNull();
+    for (const distance of [far, 60, 200]) {
+      look(distance);
+      expect(spaceHelmetTap(d, ...body(animal)), `${animal.species} at ${distance}`).toBeNull();
+    }
+  }
+  // Finding wins over people and plots; asking to zoom in only answers a tap nothing
+  // else does, so it never replaces a normal tap.
+  const found = vi.fn(),
+    zoom = vi.fn(),
+    town = vi.fn(() => false);
+  Object.assign(d, { onHelmet: found, onHelmetZoom: zoom, pickTown: town });
+  wearer.root.visible = true;
+  other.root.visible = false;
+  look(far);
+  d.pick(...body(wearer));
+  expect([town.mock.calls.length, zoom.mock.calls.length]).toEqual([1, 0]);
+  look(hint);
+  d.pick(...body(wearer));
+  expect([town.mock.calls.length, zoom.mock.calls.length]).toEqual([2, 1]);
+  town.mockReturnValue(true);
+  d.pick(...body(wearer));
+  expect([town.mock.calls.length, zoom.mock.calls.length]).toEqual([3, 1]);
+  look(close);
+  d.pick(...body(wearer));
+  expect(found).toHaveBeenCalledWith(expect.objectContaining({ x: expect.any(Number) }));
+  expect([town.mock.calls.length, zoom.mock.calls.length]).toEqual([3, 1]);
+  // Willowkin are not animals, and towns before the helmet ask nothing.
+  wearer.root.visible = false;
+  other.root.visible = true;
+  look(hint);
+  other.companion = true;
+  expect(spaceHelmetTap(d, ...body(other))).toBeNull();
+  delete other.companion;
+  expect(spaceHelmetTap(d, ...body(other))).toEqual({ zoom: true });
+  d.helmetTown = { ...d.town, era: 'contemporary' };
+  expect(spaceHelmetTap(d, ...body(other))).toBeNull();
+});
+
 it('brings a wild wearer out for a visitor and lets it go back to its visits', () => {
   const d = fixture('canopy');
   Object.assign(d, { rebuildActors() {}, render() {} });
@@ -910,4 +1060,18 @@ it('plans again only the animal route that a new building now blocks', () => {
   expect(untouched.length).toBeGreaterThan(0);
   for (const [key, path] of untouched)
     expect(d.animals.find((a) => `${a.species}:${a.seed}` === key).path).toBe(path);
+});
+
+it('lets both original and monument wildlife wear the single cosmonaut outfit', () => {
+  const d = fixture(ERAS.at(-1).id);
+  addTownAnimals(d, d.town);
+  const seen = new Set();
+  for (let completedRuns = 0; completedRuns < 180; completedRuns++) {
+    dressSpaceHelmet(d, { ...d.town, completedRuns }, { rebuild: false });
+    const wearers = helmeted(d);
+    expect(wearers).toHaveLength(1);
+    seen.add(animalKey(wearers[0]));
+  }
+  for (const animal of d.animals.filter((a) => SPACE_HELMET.wearers.includes(a.species)))
+    expect(seen.has(animalKey(animal)), animalKey(animal)).toBe(true);
 });

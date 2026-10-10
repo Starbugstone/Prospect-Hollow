@@ -6,7 +6,13 @@ import { ERAS, FORGE_PRODUCTION_RUNS } from '../src/data/eras.js';
 import { defineEra } from '../src/data/eraDefinitions.js';
 import { STAR_CASCADE_TARGET, STAR_SCORE_MULTIPLIER } from '../src/data/starRating.js';
 import { BUILDINGS, BANDIT_EVENT, INTRO_ORDER, createTown } from '../src/data/town.js';
-import { buildingServiceLevel, hasShortProgression } from '../src/data/buildingProgression.js';
+import { PROJECT_MILESTONES, TOWN_PROJECTS } from '../src/data/townProjects.js';
+import {
+  LEGACY_MAX_LEVEL,
+  buildingServiceLevel,
+  hasShortProgression,
+  shortProgressionSince,
+} from '../src/data/buildingProgression.js';
 import {
   CHEST_ECONOMY_VERSION,
   chestCoinCap,
@@ -28,6 +34,7 @@ import { SHOP_ITEMS, shopSlots } from '../src/data/shop.js';
 import { VIP_SPEND, vipVisitBuildings } from '../src/data/vipVisits.js';
 import { INCIDENT_TARGETS, fireProtection } from '../src/data/townEvents.js';
 import { generateLevelConfigs } from '../src/game/engine/LevelGenerator.js';
+import { SPACE_HELMET } from '../src/data/townAnimals.js';
 import { COMBO_COIN_STEP, MULTI_MATCH_COIN_STEP } from '../src/game/engine/MatchRewards.js';
 import {
   BONUS_GEM_COINS,
@@ -243,6 +250,8 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
           waterworks: era.evolution.waterworks,
           farmCapacity: era.evolution.farmCapacity,
           chestCoinCap: chestCoinCap(era.id),
+          // Building ids this era modernizes; null modernizes every building.
+          modernizes: era.evolution.modernizes ?? null,
           buildingOffers: offersForEra(era),
         },
       ]),
@@ -254,7 +263,11 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
           kind: building.kind,
           introducedEra: building.introducedEra,
           maxLevel: building.upgrades.length,
-          legacyMaxLevel: hasShortProgression(building.id) ? 5 : building.upgrades.length,
+          legacyMaxLevel: hasShortProgression(building.id)
+            ? LEGACY_MAX_LEVEL
+            : building.upgrades.length,
+          // Saves older than this progression version still hold the longer levels.
+          shortSince: shortProgressionSince(building.id),
           legacyUpgradeCosts: building.legacyUpgradeCosts ?? [],
           requiredForEraCompletion: building.requiredForEraCompletion === true,
           unlock: building.unlock ?? [],
@@ -277,6 +290,12 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
       bonusCapacities: BONUS_CAPACITIES,
       garageCapacityPerLevel: bonusCapacity({ buildings: { armory: 0, garage: 1 } }) - garageBase,
       hammerCapacity: HAMMER_CAPACITY,
+      // Starter projects grant builder hammers once every building reaches the last
+      // project stage, past the hammer limit (finishedRewardProjects in TownProjects.js).
+      townProjects: TOWN_PROJECTS.filter((project) => project.hammers > 0).map(
+        ({ era, id, buildings, hammers }) => ({ era, id, buildings, hammers }),
+      ),
+      projectStages: PROJECT_MILESTONES.length,
       overflowCoins: OVERFLOW_COINS,
       continuousCoinCap: CONTINUOUS_COIN_CAP,
       chestEconomyVersion: CHEST_ECONOMY_VERSION,
@@ -354,6 +373,10 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
       }),
       banditEvent: BANDIT_EVENT,
       introOrder: INTRO_ORDER,
+      // The first era with a space-helmet wearer to find, and the hours of saloon takings
+      // a find pays the owner and a visitor.
+      spaceHelmetDebut: SPACE_HELMET.debut,
+      spaceHelmetRewardHours: SPACE_HELMET.rewardHours,
     },
     // The keys a victory receipt's Town Honours claim may credit (gem types, fusions).
     honours: { gems: GEM_TYPES, fusions: Object.keys(FUSION_STYLES) },

@@ -338,3 +338,53 @@ it('preserves stored income collection and prevented raid-loss refunds', () => {
   expect(campaign.town.coins).toBeLessThanOrEqual(1073);
   expect(campaign.integrity.actions.map(({ kind }) => kind)).toContain('saloon-collect');
 });
+
+it('saves personalisation and a permanent paid monument through the production mutation guard', () => {
+  const profile = freshProfile();
+  profile.town.era = 'industrial';
+  profile.town.coins = 30000;
+  const campaign = open(profile);
+  const crest = {
+    shape: 'shield',
+    pattern: 'plain',
+    emblem: 'otter',
+    primary: '#123456',
+    secondary: '#abcdef',
+  };
+  expect(campaign.personalise([{ kind: 'crest', value: crest }])).toBe(true);
+  const purchase = {
+    kind: 'area',
+    id: 'monument',
+    slot: 0,
+    value: 'crystal-spire',
+    expectedChoice: null,
+    expectedLevel: 0,
+  };
+  expect(campaign.personalise([purchase])).toBe(true);
+  expect(campaign.town.coins).toBe(22000);
+  expect(campaign.integrity.actions.at(-1).kind).toBe('landmark-buy');
+  const distinction = { ...campaign.honours.earned['monument-gold'] };
+  expect(distinction.at).toBeGreaterThan(0);
+  expect(campaign.personalise([purchase])).toBe(false);
+  expect(
+    campaign.personalise([
+      { ...purchase, value: 'guardian', expectedChoice: 'crystal-spire', expectedLevel: 1 },
+    ]),
+  ).toBe(false);
+  expect(campaign.town.coins).toBe(22000);
+  const saved = JSON.parse(values.get(SAVE_KEY));
+  expect(saved.town.personalisation.areas.monument).toEqual(['crystal-spire']);
+  expect(saved.town.personalisation.crest.primary).toBe('#123456');
+  const restored = open(saved);
+  expect(restored.town.coins).toBe(22000);
+  expect(restored.honours.earned['monument-gold']).toEqual(distinction);
+  expect(
+    restored.personalise([
+      { ...purchase, value: 'celestial-sphere', expectedChoice: 'crystal-spire', expectedLevel: 1 },
+    ]),
+  ).toBe(false);
+  expect(restored.town.personalisation.areas.monument).toEqual(['crystal-spire']);
+  // The named action authorizes its rules, never arbitrary property assignment.
+  restored.town.coins = 1e9;
+  expect(restored.town.coins).toBe(22000);
+});

@@ -1,26 +1,7 @@
 <template>
   <aside v-show="notice" class="town-visitor-notice">
-    <GameIcon :name="notice?.kind === 'collection' ? 'chest' : 'eye'" aria-hidden="true" />
-    <p role="status" aria-live="polite" aria-atomic="true">
-      {{
-        notice
-          ? notice.kind === 'collection'
-            ? t('A visitor collected {coins} coins from your saloon for you.', {
-                coins: number(notice.coins),
-              })
-            : notice.kind === 'unavailable'
-              ? t(
-                  'This visitor is no longer visible. Check the guestbook for the latest visit details.',
-                )
-              : t(
-                  notice.kind === 'arrival'
-                    ? '{name} arrived in your town.'
-                    : '{name} left your town.',
-                  { name: visitorLabel(notice.visitor) },
-                )
-          : ''
-      }}
-    </p>
+    <GameIcon :name="coinNotice ? 'chest' : 'eye'" aria-hidden="true" />
+    <p role="status" aria-live="polite" aria-atomic="true">{{ message }}</p>
     <button
       v-if="notice?.kind === 'arrival'"
       class="visitor-find"
@@ -32,11 +13,46 @@
   </aside>
 </template>
 <script setup>
+import { computed } from 'vue';
 import GameIcon from '../GameIcon.vue';
 import { visitorLabel } from '../../data/liveVisitors';
 import { t, number } from '../../i18n';
-defineProps({ notice: Object });
+const props = defineProps({ notice: Object });
 defineEmits(['dismiss', 'find']);
+const coinNotice = computed(() =>
+  ['collection', 'helmet', 'helmet-found', 'helmet-empty'].includes(props.notice?.kind),
+);
+const message = computed(() => {
+  const notice = props.notice;
+  if (!notice) return '';
+  switch (notice.kind) {
+    case 'collection':
+      return t('A visitor collected {coins} coins from your saloon for you.', {
+        coins: number(notice.coins),
+      });
+    case 'helmet':
+      return t('You found an astronaut while visiting another town: {coins} coins.', {
+        coins: number(notice.coins),
+      });
+    case 'helmet-found':
+      return t(
+        'You already found the astronaut. It moves to another animal after your next puzzle.',
+      );
+    case 'helmet-empty':
+      return t('You found the astronaut! Its reward is an hour of your saloon takings.');
+    case 'helmet-zoom':
+      return t('Zoom in closer to the animals to find the astronaut.');
+    case 'unavailable':
+      return t(
+        'This visitor is no longer visible. Check the guestbook for the latest visit details.',
+      );
+    default:
+      return t(
+        notice.kind === 'arrival' ? '{name} arrived in your town.' : '{name} left your town.',
+        { name: visitorLabel(notice.visitor) },
+      );
+  }
+});
 </script>
 <style scoped>
 .town-visitor-notice {

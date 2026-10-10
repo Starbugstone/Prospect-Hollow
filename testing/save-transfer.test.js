@@ -4,6 +4,7 @@ import { useCampaignStore, SAVE_KEY } from '../src/stores/campaignStore';
 import { MAX_SAVE_FILE_BYTES, parseSaveFile, saveFileName } from '../src/services/saveTransfer';
 import { OTHER_TOWN_BACKUP, townStorage } from '../src/services/townStorage';
 import { LEVEL_COUNT } from '../src/data/campaign';
+import { BUILDING_BY_ID } from '../src/data/town';
 import { CHEST_DROPS, chestReward } from '../src/data/rewards';
 import { useSaveImport } from '../src/composables/useSaveImport';
 import { readFileSync } from 'node:fs';
@@ -197,7 +198,15 @@ it.each(['industrial', 'contemporary'])(
     expect(loaded.nextLevel).toBe(Object.keys(old.records).length + 1);
     expect(loaded.town.era).toBe(old.town.era);
     expect(loaded.town.coins).toBeGreaterThanOrEqual(old.town.coins);
-    expect(loaded.town.buildings).toMatchObject(old.town.buildings);
+    // Buildings shortened since the old game keep every benefit at their final stage.
+    expect(loaded.town.buildings).toMatchObject(
+      Object.fromEntries(
+        Object.entries(old.town.buildings).map(([id, level]) => [
+          id,
+          Math.min(level, BUILDING_BY_ID[id].upgrades.length),
+        ]),
+      ),
+    );
     expect(loaded.builderHammers).toBe(old.builderHammers);
     // Unopened chests from the old game are paid out once instead of being lost.
     expect(loaded.pendingChests).toEqual([]);

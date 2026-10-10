@@ -122,6 +122,36 @@ Wild animals (fox, raccoon, deer, otter and hedgehog) usually only visit the tow
 but a wild wearer stays out for as long as it has the helmet, so the helmet is always on screen
 (`helmetStay()`). It comes out over two seconds and then goes back to its own visits.
 
+### Finding the astronaut
+
+The space animal is the town's Where's Wally, and finding it pays. Tapping the wearer in your
+own town (`spaceHelmetTap()` in `TownSpaceHelmet.js` hit-tests it before people and plots)
+earns an hour of the saloon's takings (`spaceHelmetReward()`), once per completed puzzle:
+`town.helmetRun` keeps the completed-puzzle count whose wearer was found, so the next reward
+comes after the next puzzle moves the helmet. The coins fly from the animal like a saloon
+collection; tapping it again says it moves after your next puzzle. The find is the journaled
+`helmet-find` action, and the server's replay pays the same amount from its own copy of the
+town.
+
+It has to be found up close. The wearer only counts once a world unit spans at least
+`HELMET_FIND_SCALE` (40) screen pixels where it stands, about the zoom of a few streets
+around the town square on a laptop; tapping across a zoomed-out town would otherwise hit it
+by chance. The helmet is an easter egg, so farther out animals answer nothing and every tap
+works as usual. Only just short of the find zoom, down to `HELMET_HINT_SCALE` (30), a tap on
+the body of any animal, wearer or not, says to zoom in closer, so the hint never tells the
+wearer apart; it shows only when nothing else answers the tap, so a villager, building or
+plot under the finger still opens as before. The scale is measured in pixels at the animal,
+so every screen size needs an equally visible animal, and an animal at the back of a tilted
+view needs a closer look than one in front.
+
+Signed-in visitors can find it in shared Tomorrow City towns too. Their reward goes to the
+town they visit as and is worth half an hour of that town's own saloon takings, so visiting richer
+towns pays no more; each player is rewarded at most once per 12 hours, and each town's
+astronaut is found by one visitor per 12 hours however many visit. The coins fly from the
+animal on the visit page too. See
+[the visitor guide](backend/visitors.md#finding-the-astronaut). None of this touches puzzles:
+it adds no move or time limit and never gates progression.
+
 ![Every animal that can wear the space helmet](images/tomorrow-city/22-space-helmet-wearers.png)
 
 _Every wearer in its fitted suit; the hedgehog's low head gets a flattened bubble._

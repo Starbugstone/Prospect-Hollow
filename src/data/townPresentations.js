@@ -1,4 +1,5 @@
 import { campaignCompletion } from './campaignCompletion';
+import { AREA_BY_ID, LANDMARK_BY_ID, landmarkLevel } from './townLandmarks';
 
 // Completion receipts are saved with the completion transaction. Presentation never
 // owns construction, rewards or progression; interrupted scenes can be resumed.
@@ -67,4 +68,44 @@ export function pendingPresentation(town) {
 export function acknowledgePresentation(town, id) {
   if (!TOWN_PRESENTATIONS[id] || town.presentations?.[id] !== 'pending') return null;
   return { ...town, presentations: { ...town.presentations, [id]: 'seen' } };
+}
+
+// A monument's unveiling, started by the player once its scaffolding is ready (or
+// replayed from its card). The first level, the town wonder and every timeless
+// monument get the grand version; the levels between get a short reveal. Captions
+// name the site and design through `params`, translated when they are shown.
+export function monumentPresentation(id, choice, level) {
+  const area = AREA_BY_ID[id],
+    design = LANDMARK_BY_ID[choice];
+  if (!area || !design || !area.choices.includes(choice)) return null;
+  const milestone = landmarkLevel(area.timeless ? 1 : level);
+  const params = { monument: design.label, site: area.label, level: milestone.label };
+  const grand = area.timeless || milestone.unveiling === 'grand';
+  return {
+    id: 'monument-unveiling',
+    area: id,
+    choice,
+    level: area.timeless ? 1 : level,
+    grand,
+    duration: grand ? 16 : 7,
+    title: grand ? 'A monument for Prospect Hollow' : 'Monument upgraded',
+    chapters: grand
+      ? [
+          { at: 0, text: 'The whole town gathers at {site}.', params },
+          { at: 3, text: 'The last of the scaffolding comes down…' },
+          { at: 7.5, text: design.detail },
+          {
+            at: 12,
+            text:
+              !area.timeless && level >= 5
+                ? 'The {monument} is now a town wonder!'
+                : 'The {monument} stands complete!',
+            params,
+          },
+        ]
+      : [
+          { at: 0, text: '{site}: {level}', params },
+          { at: 3, text: 'The {monument} grows grander.', params },
+        ],
+  };
 }

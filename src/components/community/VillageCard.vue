@@ -1,7 +1,7 @@
 <template>
   <div class="village-card">
     <button class="village-card-open" :disabled="disabled" @click="$emit('visit')">
-      <TownCardArt :era="entry.era" aria-hidden="true" />
+      <TownCardArt :era="entry.era" :crest="entry.crest" aria-hidden="true" />
       <span class="village-card-info">
         <strong>{{ entry.name }}</strong>
         <small v-if="entry.era" class="town-card-era-mobile">{{ eraName(entry.era) }}</small>

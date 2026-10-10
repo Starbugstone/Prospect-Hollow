@@ -1,3 +1,5 @@
+import { normalizePersonalisation } from '../data/townPersonalisation';
+import { CREST_EMBLEM_IDS } from '../data/townCrests';
 import { createTown } from '../data/town';
 import { LEVEL_COUNT } from '../data/campaign';
 import { HONOURS, validShowcase } from '../data/honours';
@@ -87,5 +89,8 @@ export function villageAppearance(village) {
       wins: project.visualStage,
     };
   }
+  town.personalisation = normalizePersonalisation(appearance.personalisation, CREST_EMBLEM_IDS);
+  town.displayHonours = villageHonours(village);
+  town.displayDistinctions = appearance.plaqueDistinctions ?? {};
   return town;
 }

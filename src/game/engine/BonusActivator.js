@@ -2,6 +2,7 @@ import { isAnchored } from './TileRules.js';
 import { GEM_TYPES } from './GemFactory.js';
 import { dominantGemType, getBonusFusion } from './BonusFusion.js';
 import { isPlayableCell } from './BoardTopology.js';
+import { bentBeams, hasLenses, sweepLines } from './LensBeams.js';
 
 // Board bonuses plus the toolbar powers that share their reaction rules.
 const ACTIVATABLE = new Set([
@@ -82,7 +83,7 @@ export class BonusActivator {
   }
 
   // Toolbar powers and board bonuses share the same reaction and anchor rules.
-  activatePower(type, board, cols, rows, index, tiles = [], blasts = null) {
+  activatePower(type, board, cols, rows, index, tiles = [], blasts = null, lenses = null) {
     if (
       !Number.isInteger(index) ||
       index < 0 ||
@@ -90,17 +91,27 @@ export class BonusActivator {
       !isPlayableCell(tiles[index])
     )
       return [];
-    const targets = this.activateBonus(type, board, cols, rows, index, { tiles });
-    return this.resolveChain(board, cols, rows, { targets, tiles, blasts });
+    const log = lenses ?? blasts?.lenses ?? null;
+    const targets = this.activateBonus(type, board, cols, rows, index, { tiles, lenses: log });
+    return this.resolveChain(board, cols, rows, { targets, tiles, blasts, lenses: log });
   }
 
   // `blasts`, when given, is a Map that counts how many separate blasts reach each
   // affected cell: the initial targets count as one, then one per bonus fired.
+  // `lenses` ({ bent: Set, beams: [] }, or `blasts.lenses`) records beams turned by lenses.
   resolveChain(
     board,
     cols,
     rows,
-    { targets = [], seeds = [], processed = [], tiles = [], fusion = null, blasts = null },
+    {
+      targets = [],
+      seeds = [],
+      processed = [],
+      tiles = [],
+      fusion = null,
+      blasts = null,
+      lenses = blasts?.lenses ?? null,
+    },
   ) {
     const affected = new Set();
     const visited = new Set(processed);
@@ -144,12 +155,24 @@ export class BonusActivator {
       const { index, type, context } = queue[cursor];
       if (visited.has(index) || !canFire(index)) continue;
       visited.add(index);
-      blast(this.activateBonus(type, board, cols, rows, index, { ...context, tiles }));
+      blast(this.activateBonus(type, board, cols, rows, index, { ...context, tiles, lenses }));
     }
     return [...affected];
   }
 
   activateBonus(type, board, cols, rows, index, context = {}) {
+    const indices = this.activateShape(type, board, cols, rows, index, context);
+    const lines = context.tiles && hasLenses(context.tiles) ? sweepLines(type, index, cols) : [];
+    if (!lines.length) return indices;
+    // A row or column sweep that reaches a lens turns and continues.
+    const { cells, beams } = bentBeams(context.tiles, cols, rows, lines);
+    if (!cells.length && !beams.length) return indices;
+    for (const cell of cells) context.lenses?.bent.add(cell);
+    context.lenses?.beams.push(...beams);
+    return [...new Set([...indices, ...cells])];
+  }
+
+  activateShape(type, board, cols, rows, index, context = {}) {
     switch (type) {
       case 'bomb':
         return this.activateBomb(board, cols, rows, index);
@@ -170,9 +193,9 @@ export class BonusActivator {
     }
   }
 
-  previewBonus(type, board, cols, rows, index, tiles = []) {
+  previewBonus(type, board, cols, rows, index, tiles = [], lenses = null) {
     if (!Array.isArray(board)) return [];
-    return this.activatePower(type, board, cols, rows, index, tiles);
+    return this.activatePower(type, board, cols, rows, index, tiles, null, lenses);
   }
 
   activateBomb(board, cols, rows, index) {
@@ -202,6 +225,7 @@ export class BonusActivator {
       isPlayableCell(tile) &&
       tile.type === 'blocker' &&
       tile.bonusOnly &&
+      !tile.lensOnly &&
       tile.health > 0 &&
       tile.state !== 'FROZEN'
         ? [i]

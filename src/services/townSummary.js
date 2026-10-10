@@ -20,6 +20,7 @@ export function profileSummary(profile) {
       (level) => Number.isFinite(level) && level > 0,
     ).length,
     honours: cardHonourData(profile.honours),
+    ...(profile.town.personalisation?.crest ? { crest: profile.town.personalisation.crest } : {}),
   };
 }
 export function cardSummary(town, { activeProfile, cachedProfile } = {}) {
@@ -30,6 +31,7 @@ export function cardSummary(town, { activeProfile, cachedProfile } = {}) {
       coins: amount(town.summary.coins),
       buildings: amount(town.summary.buildings),
       honours: cardHonourData(town.summary.honours),
+      ...(town.summary.crest ? { crest: town.summary.crest } : {}),
     };
   // Older servers still work; opening a town is the only full-save request.
   return profileSummary(cachedProfile);

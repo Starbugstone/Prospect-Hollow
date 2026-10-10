@@ -6,7 +6,7 @@ import { createTestingTools, debugToolsAllowed } from './services/testingTools';
 import { townStorage } from './services/townStorage';
 import CloudRoot from './components/CloudRoot.vue';
 import { useCampaignStore } from './stores/campaignStore';
-import { isPlayRoute, isVisitRoute, upgradeLegacyLink } from './services/appRoute';
+import { isPlayRoute, isPrivacyRoute, isVisitRoute, upgradeLegacyLink } from './services/appRoute';
 import './styles/base.css';
 import './styles/theme.css';
 import './styles/arcade.css';
@@ -16,8 +16,14 @@ import './styles/ux.css';
 upgradeLegacyLink();
 // A share link mounts only the read-only visit page: no game, town or sync starts.
 const visiting = isVisitRoute();
+// The privacy notice is a document: it opens even where the game cannot save.
+const privacy = isPrivacyRoute();
 const app = createApp(
-  visiting ? defineAsyncComponent(() => import('./components/community/VisitRoot.vue')) : CloudRoot,
+  privacy
+    ? defineAsyncComponent(() => import('./components/privacy/PrivacyPage.vue'))
+    : visiting
+      ? defineAsyncComponent(() => import('./components/community/VisitRoot.vue'))
+      : CloudRoot,
 );
 const pinia = createPinia();
 pinia.use(createLocalIntegrityPlugin());
@@ -42,6 +48,10 @@ app.onUnmount(() => {
   delete window.prospectDebug;
 });
 async function start() {
+  if (privacy) {
+    app.mount('#app');
+    return;
+  }
   try {
     if (navigator.locks) {
       await navigator.locks.request('prospect-storage-migration-v2', () =>

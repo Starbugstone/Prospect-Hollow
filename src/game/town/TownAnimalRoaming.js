@@ -1,4 +1,5 @@
-import { flyingAnimal } from '../../data/townAnimals';
+import { PERSONAL_AREAS } from '../../data/townLandmarks';
+import { EXTERIOR_HABITATS, flyingAnimal } from '../../data/townAnimals';
 import { PLOTS, townTracks, segmentDistance } from './TownLayout';
 import { groundHeight } from './TownLandscape';
 import { RIVER, riverCenterX, riverDistance } from './TownRiver';
@@ -13,7 +14,16 @@ const JOIN_GAP = 0.06;
 const gap2 = (a, b) => (a[0] - b[0]) ** 2 + (a[2] - b[2]) ** 2;
 const eligible = (a) =>
   !a.companion && !flyingAnimal(a.species) && (a.wild || ['dog', 'cat'].includes(a.species));
-const region = (a) => (a.species === 'otter' ? 'riverbank' : a.wild ? 'outskirts' : 'town');
+const region = (a) =>
+  a.exteriorHabitat
+    ? `exterior:${a.exteriorHabitat}`
+    : a.monumentSite
+      ? `monument:${a.monumentSite}`
+      : a.species === 'otter'
+        ? 'riverbank'
+        : a.wild
+          ? 'outskirts'
+          : 'town';
 
 function retainedAnimal(d, a) {
   const parent = Object.getPrototypeOf(d);
@@ -25,6 +35,9 @@ function retainedAnimal(d, a) {
 }
 
 function policy(d, kind, radius, height) {
+  const area =
+    PERSONAL_AREAS.find((area) => kind === `monument:${area.id}`) ??
+    EXTERIOR_HABITATS[kind.replace('exterior:', '')];
   const roads = townTracks(d.town);
   const lastRow = Math.max(
     20,
@@ -36,7 +49,12 @@ function policy(d, kind, radius, height) {
     const [x, y, z] = p;
     const ground = groundHeight(x, z);
     if (ground < -0.05 || Math.abs(y - ground - 0.07) > 0.18) return false;
-    if (kind === 'town') {
+    if (area) {
+      if (riverDistance(x, z) < RIVER.bankWidth + radius) return false;
+      const [cx, cz] = area.positions[0];
+      const distance = Math.hypot(x - cx, z - cz);
+      if (distance < area.radius + radius || distance > area.radius + 4) return false;
+    } else if (kind === 'town') {
       if (x < -28 || x > 19 || z < -20 || z > lastRow + 5.5) return false;
       if (riverDistance(x, z) < RIVER.bankWidth + radius) return false;
     } else {

@@ -14,6 +14,7 @@ import { TownLiveVisitors } from './TownLiveVisitors';
 import { vipVisitor } from '../../data/villagers';
 import { updateTownLocomotion } from './TownLocomotion';
 import { MINE_SHAFT, addMineShaft } from './TownMineShaft';
+import { mineHillsideHeight } from './TownMineHillside';
 import { TownPresentation } from './TownPresentation';
 import { ERA_CONSTRUCTION } from '../../data/mineEvolution';
 
@@ -39,9 +40,11 @@ import {
   cameraAction,
   findVisitor,
   frameTown,
+  focusTownPlace,
 } from './TownCamera';
 import {
   projectLabelPositions,
+  projectPlaque,
   projectVillager,
   selectVillager,
   showVillager,
@@ -59,17 +62,23 @@ import { TownRaid } from './TownActivity';
 import { TownEraIncident } from './TownEraIncident';
 import { eventKind } from '../../data/townEvents';
 import { plotUnlocked } from './TownRules';
+import { PERSONAL_AREAS, areaUnlocked } from '../../data/townLandmarks';
+import { spaceHelmetTap } from './TownSpaceHelmet';
 import { buildLandscape, keepCameraAboveTerrain } from './TownLandscape';
 
 import { PLOTS } from './TownLayout';
 
 export { PLOTS } from './TownLayout';
 const point = (x, y, z) => new THREE.Vector3(x, y, z);
+const skyDirection = new THREE.Vector3(),
+  skyForward = new THREE.Vector3(),
+  skyTarget = new THREE.Vector3();
 
 // Original geometry shares static scenery batches and animated actor instances.
 export class TownDiorama extends TownPrimitives {
   // `options` holds the owner's callbacks (onSelect, onLabels, onCameraDistance,
-  // onUnavailable, onVillagerLabel, onEventInset, onVipSpend, onGuestVip, onFirstFrame)
+  // onUnavailable, onVillagerLabel, onEventInset, onVipSpend, onGuestVip, onHelmet,
+  // onHelmetZoom, onFirstFrame)
   // and `vipsHidden` for a read-only shared town.
   constructor(canvas, options = {}) {
     super();
@@ -82,7 +91,8 @@ export class TownDiorama extends TownPrimitives {
     // drawFrame() updates world matrices once for all of a frame's render calls.
     this.scene.matrixWorldAutoUpdate = false;
     setTownAtmosphere(this.scene);
-    this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 400);
+    // Reach the full fog on the far side of the town from the widest orbit (360).
+    this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 700);
     this.camera.position.set(12, 12, 25);
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
     this.renderQuality = new TownRenderQuality(window.devicePixelRatio || 1);
@@ -209,6 +219,7 @@ export class TownDiorama extends TownPrimitives {
       const cull = this.camera && !this.eventInsetVisible;
       if (cull) this.camera.updateMatrixWorld();
       this.actorRenderer?.update(this.scene, cull ? [this.camera] : null);
+      this.staticScenery?.movingParts?.update(this.scene);
       this.frameCache.render(this.scene, this.camera, refresh);
       renderEventInset(this);
       return true;
@@ -291,6 +302,9 @@ export class TownDiorama extends TownPrimitives {
   projectLabelPositions() {
     projectLabelPositions(this);
   }
+  focusPlace(id) {
+    return focusTownPlace(this, id);
+  }
   frameTown() {
     frameTown(this);
   }
@@ -333,12 +347,32 @@ export class TownDiorama extends TownPrimitives {
   setUpgradeable(ids) {
     if (this.upgradeGlow.setAvailable(ids)) this.render();
   }
+  // The tutorial's plot keeps its label and joins the phone framing while the camera
+  // rests on the overview; a camera the player moved stays where it is.
+  setCoachPlot(id) {
+    if ((this.coachPlot ?? null) === (id ?? null)) return;
+    this.coachPlot = id ?? null;
+    if (this.overview) this.frameTown();
+    this.render();
+  }
   setAvailable(ids) {
     const key = ids.join(',');
     if (this.availableKey === key) return;
     this.availableKey = key;
     this.availablePlots = new Set(ids);
     this.render();
+  }
+  /** Where a far sky direction sits on screen, in percent, and how much the camera faces it.
+   * Runs on every camera frame, so it reuses scratch vectors. */
+  skyPoint(dx, dz) {
+    const direction = skyDirection.set(dx, 0, dz).normalize();
+    const forward = this.camera.getWorldDirection(skyForward);
+    const facing =
+      (forward.x * direction.x + forward.z * direction.z) / (Math.hypot(forward.x, forward.z) || 1);
+    const point = skyTarget.copy(this.camera.position).addScaledVector(direction, 400);
+    point.project(this.camera);
+    const distance = this.camera.position.distanceTo(this.controls.target);
+    return { x: (point.x + 1) * 50, y: (1 - point.y) * 50, facing, distance };
   }
   select(id) {
     if (this.selected === id && this.selection?.parent === this.world) return;
@@ -348,7 +382,13 @@ export class TownDiorama extends TownPrimitives {
       this.selection.geometry.dispose();
       this.selection.material.dispose();
     }
-    const [x, z] = PLOTS[id] ?? [0, 0];
+    // Moon buildings have no valley lot to ring.
+    if (!PLOTS[id]) {
+      this.selection = null;
+      this.render();
+      return;
+    }
+    const [x, z] = PLOTS[id];
     this.selection = new THREE.Mesh(
       new THREE.RingGeometry(1.65, 1.71, 64),
       new THREE.MeshBasicMaterial({
@@ -379,7 +419,15 @@ export class TownDiorama extends TownPrimitives {
     this.render();
   }
   pick(clientX, clientY) {
-    if (this.showVillager(clientX, clientY, true)) return;
+    // The space-helmet wearer is small and easily covered, so finding it wins over people
+    // and plots. Asking to zoom in never does: only a tap nothing else answers shows it.
+    const helmet = spaceHelmetTap(this, clientX, clientY);
+    if (helmet && !helmet.zoom) this.onHelmet?.(helmet);
+    else if (!this.pickTown(clientX, clientY) && helmet?.zoom) this.onHelmetZoom?.();
+  }
+  // Names a villager or opens a plot, site or plaque under the tap; false when none.
+  pickTown(clientX, clientY) {
+    if (this.showVillager(clientX, clientY, true)) return true;
     const rect = this.canvas.getBoundingClientRect();
     this.raycaster.setFromCamera(
       new THREE.Vector2(
@@ -388,28 +436,75 @@ export class TownDiorama extends TownPrimitives {
       ),
       this.camera,
     );
-    const hit = this.raycaster.intersectObjects(this.targets, true)[0];
-    let object = hit?.object;
-    while (object && !object.userData.plot) object = object.parent;
-    if (object) this.onSelect(object.userData.plot);
-    else {
-      const ground = this.raycaster.ray.intersectPlane(
-        new THREE.Plane(point(0, 1, 0), -0.08),
-        new THREE.Vector3(),
+    // Monument sites are scenery; a tap on one opens its card like a plot. The mine works
+    // and its hill answer for the mine, so its whole structure enters, not only the portal.
+    const mine = ['mine-works', 'mine-hillside'].map(
+      (id) => this.staticScenery?.entries.get(id)?.group,
+    );
+    const scenery = ['personal-areas', 'mine-plaque', 'mine-works', 'mine-hillside']
+      .map((id) => this.staticScenery?.entries.get(id)?.group)
+      .filter(Boolean);
+    const owner = (object) => {
+      while (
+        object &&
+        !mine.includes(object) &&
+        !object.userData.plot &&
+        !object.userData.monumentSite &&
+        !object.userData.distinction
+      )
+        object = object.parent;
+      return object;
+    };
+    let object = null;
+    for (const hit of this.raycaster.intersectObjects([...this.targets, ...scenery], true)) {
+      object = owner(hit.object);
+      // The hill blends into the plain and the valley slopes at its edges. Only the mound
+      // it raises around the portal is the mine; a tap on a slope looks past it.
+      if (
+        object !== mine[1] ||
+        mineHillsideHeight(hit.point.x, hit.point.z, PLOTS.mine[1], 0) >= 0.5
+      )
+        break;
+      object = null;
+    }
+    // A tap on the mine plaque names its honour; a second tap or any other one hides it.
+    const plaque = object?.userData.distinction ? object : null;
+    this.namedPlaque = plaque && this.namedPlaque !== plaque ? plaque : null;
+    projectPlaque(this);
+    if (plaque) {
+      this.render();
+      return true;
+    }
+    if (object) {
+      this.onSelect(
+        mine.includes(object) ? 'mine' : (object.userData.plot ?? object.userData.monumentSite),
       );
-      if (!ground) return;
-      for (const [id, [x, z]] of Object.entries(PLOTS)) {
-        if (
-          id !== 'mine' &&
-          plotUnlocked(this.town, id) &&
-          Math.abs(ground.x - x) < 1.55 &&
-          Math.abs(ground.z - z) < 1.4
-        ) {
-          this.onSelect(id);
-          break;
-        }
+      return true;
+    }
+    const ground = this.raycaster.ray.intersectPlane(
+      new THREE.Plane(point(0, 1, 0), -0.08),
+      new THREE.Vector3(),
+    );
+    if (!ground) return false;
+    for (const [id, [x, z]] of Object.entries(PLOTS)) {
+      if (
+        id !== 'mine' &&
+        plotUnlocked(this.town, id) &&
+        Math.abs(ground.x - x) < 1.55 &&
+        Math.abs(ground.z - z) < 1.4
+      ) {
+        this.onSelect(id);
+        return true;
       }
     }
+    const site = PERSONAL_AREAS.find(
+      (area) =>
+        areaUnlocked(this.town, area) &&
+        Math.hypot(ground.x - area.positions[0][0], ground.z - area.positions[0][1]) <
+          area.radius * 0.75,
+    );
+    if (site) this.onSelect(site.id);
+    return !!site;
   }
   resize() {
     const width = this.canvas.clientWidth,

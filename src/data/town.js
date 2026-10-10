@@ -1,4 +1,5 @@
-import { hasShortProgression } from './buildingProgression';
+import { createPersonalisation } from './townPersonalisation';
+import { PROGRESSION_VERSION, hasShortProgression } from './buildingProgression';
 import { purchasePrice, RIVER_RAIL_LEVEL_PRICES } from './economy';
 import { FRONTIER_BUILDINGS } from './frontier';
 import { FRONTIER_ERA, createEraState } from './eras';
@@ -613,6 +614,9 @@ export const BUILDINGS = [
   };
 });
 
+// Buildings on valley lots; Moon settlement buildings stand on the Moon map.
+export const EARTH_BUILDINGS = BUILDINGS.filter((building) => !building.settlement);
+export const MOON_BUILDINGS = BUILDINGS.filter((building) => building.settlement === 'moon');
 export const BUILDING_BY_ID = Object.fromEntries(
   BUILDINGS.map((building) => [building.id, building]),
 );
@@ -625,6 +629,7 @@ export const INITIAL_STORY = {
 };
 
 export const createTown = () => ({
+  personalisation: createPersonalisation(),
   ...createEraState(BUILDINGS.map(({ id }) => id)),
   coins: 0,
   tourSeen: false,
@@ -638,6 +643,10 @@ export const createTown = () => ({
   lastCollections: { saloon: null, blacksmith: null },
   // Share-link events: the last visitor saloon collection applied, and the latest guest.
   saloonVisitAt: 0,
+  // Space-helmet finds: the completed puzzle count whose wearer the owner found, and the
+  // latest find while visiting another town that this town has redeemed.
+  helmetRun: 0,
+  helmetVisitAt: 0,
   guestVip: null,
-  progressionVersion: 1,
+  progressionVersion: PROGRESSION_VERSION,
 });

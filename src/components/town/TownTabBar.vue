@@ -1,5 +1,10 @@
 <template>
-  <nav ref="bar" class="town-tab-bar" :aria-label="t('Village navigation')">
+  <nav
+    ref="bar"
+    class="town-tab-bar"
+    :style="{ '--town-tabs': tabs.length }"
+    :aria-label="t('Village navigation')"
+  >
     <button
       v-for="tab in tabs"
       :key="tab.id"
@@ -9,7 +14,7 @@
     >
       <GameIcon :name="tab.icon" />
       <span>{{ tab.label }}</span>
-      <i v-if="tab.badge" class="town-tab-badge" aria-hidden="true">{{ tab.badge }}</i>
+      <i v-if="tab.badge" class="town-tab-badge" aria-hidden="true"></i>
     </button>
   </nav>
 </template>
@@ -27,6 +32,8 @@ const props = defineProps({
   // Draws the eye to Build for a new player or a construction ready to finish.
   buildNudge: Boolean,
   mineLabel: { type: String, required: true },
+  // During the tutorial the bar keeps to the village, Build, the mine and More.
+  simple: Boolean,
 });
 const emit = defineEmits(['select', 'height']);
 // Sheets end at the bar, so it stays visible and usable while they are open.
@@ -42,15 +49,21 @@ onBeforeUnmount(() => {
 });
 const tabs = computed(() => [
   { id: 'village', icon: 'home', label: t('Village') },
+  // A dot says something can be built; a count only made the list feel long.
   {
     id: 'build',
     icon: 'hammer',
     label: t('Build'),
-    badge: props.buildCount > 9 ? '9+' : props.buildCount || '',
+    badge: props.buildCount > 0,
     nudge: props.buildNudge,
   },
   { id: 'mine', icon: 'pickaxe', label: props.mineLabel },
-  { id: 'story', icon: 'book', label: t('Story') },
+  ...(props.simple
+    ? []
+    : [
+        { id: 'personalise', icon: 'color-wand', label: t('Personalise') },
+        { id: 'story', icon: 'book', label: t('Story') },
+      ]),
   { id: 'more', icon: 'menu', label: t('More') },
 ]);
 </script>

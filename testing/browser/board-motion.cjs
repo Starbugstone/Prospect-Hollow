@@ -84,6 +84,7 @@ async function playMoves({ moves, frame }) {
             sprite.x / animator.cellSize,
             sprite.y / animator.cellSize,
             sprite.alpha,
+            !!sprite.__float,
           ]),
       );
     sample();
@@ -101,7 +102,7 @@ async function playMoves({ moves, frame }) {
 }
 
 // Gems drawn on top of each other. The swapped pair crosses on purpose; a fading
-// gem is on its way out.
+// gem is on its way out; gems sink past a rising floatstone, which is drawn in front.
 function overlaps({ swapped, frames }) {
   const found = [];
   frames.forEach((gems, frame) => {
@@ -109,6 +110,7 @@ function overlaps({ swapped, frames }) {
     for (let a = 0; a < solid.length; a++)
       for (let b = a + 1; b < solid.length; b++) {
         if (swapped.includes(solid[a][0]) && swapped.includes(solid[b][0])) continue;
+        if (solid[a][4] || solid[b][4]) continue;
         const gap = Math.hypot(solid[a][1] - solid[b][1], solid[a][2] - solid[b][2]);
         if (gap < MIN_GAP) found.push({ frame, gems: [solid[a][0], solid[b][0]], gap });
       }
@@ -121,22 +123,35 @@ function overlaps({ swapped, frames }) {
 // landing and rests between cascade steps are fine.
 function stutters({ frames }) {
   const tracks = new Map();
+  const seen = new Map();
   frames.forEach((gems, frame) => {
-    for (const [id, x, y] of gems) {
+    for (const [id, x, y, alpha] of gems) {
+      const before = seen.get(id);
+      seen.set(id, { frame, x, y });
+      // A hidden gem (crossing a portal or still inside the seam) cannot visibly stutter.
+      if (alpha < 0.9) continue;
       if (!tracks.has(id)) tracks.set(id, []);
-      tracks.get(id).push({ frame, x, y });
+      const track = tracks.get(id);
+      const previous = track.at(-1);
+      const speed =
+        previous?.frame === frame - 1
+          ? Math.hypot(x - previous.x, y - previous.y)
+          : previous
+            ? // Back in view out of a portal: the frames it spent hidden are not a stop.
+              previous.speed
+            : before?.frame === frame - 1
+              ? // First seen mid-fall, out of a seam or a hole: it comes into view moving.
+                Math.hypot(x - before.x, y - before.y)
+              : 0;
+      track.push({ frame, x, y, speed });
     }
   });
   const found = [];
   for (const [id, track] of tracks) {
-    const speed = track.map((point, i) =>
-      i && point.frame === track[i - 1].frame + 1
-        ? Math.hypot(point.x - track[i - 1].x, point.y - track[i - 1].y)
-        : 0,
-    );
+    const speed = track.map((point) => point.speed);
     // Split the track into movements separated by rests.
     let start = null;
-    for (let i = 1; i <= track.length; i++) {
+    for (let i = 0; i <= track.length; i++) {
       const resting =
         i === track.length || speed.slice(i, i + REST_FRAMES).every((value) => value < REST);
       if (start === null && !resting) start = i;

@@ -12,17 +12,16 @@ const nonnegativeInteger = (value) => Number.isSafeInteger(value) && value >= 0;
 /**
  * Serialize campaign progress into a versioned JSON backup without writing to storage.
  * @param {object} profile Persisted campaign fields from profileData.
+ * @param {{id: string, name: string}} [town] The town it belongs to; defaults to the active town.
  * @returns {string} Downloadable JSON containing the profile and export metadata.
  */
-export function createSaveFile(profile) {
+export function createSaveFile(profile, town = townStorage.state()?.active) {
   return JSON.stringify(
     {
       format: SAVE_KEY,
       version: 1,
       exportedAt: new Date().toISOString(),
-      town: townStorage.state()?.active
-        ? { id: townStorage.state().active.id, name: townStorage.state().active.name }
-        : undefined,
+      town: town ? { id: town.id, name: town.name } : undefined,
       profile,
     },
     null,

@@ -1,7 +1,9 @@
 // These are guides to existing construction, never additional era gates or purchases.
+// Frontier's two starter projects give a near-term goal: finishing every one of their
+// buildings grants a builder hammer (the fifth entry), even past the hammer limit.
 export const TOWN_PROJECTS = [
-  ['frontier', 'first-neighbors', 'Make room for the first neighbors', ['well', 'farm', 'home']],
-  ['frontier', 'trail-welcome', 'Welcome life along the trail', ['stable', 'shop', 'school']],
+  ['frontier', 'first-neighbors', 'Make room for the first neighbors', ['well', 'farm', 'home'], 1],
+  ['frontier', 'trail-welcome', 'Welcome life along the trail', ['stable', 'shop', 'school'], 1],
   ['river-rail', 'river-trade', 'Welcome the river trade', ['bridge', 'riverPort', 'warehouse']],
   ['river-rail', 'rail-arrival', 'Bring the railway home', ['railDepot', 'post', 'hotel']],
   ['river-rail', 'market-street', 'Open the market street', ['market', 'shop', 'square']],
@@ -76,6 +78,6 @@ export const TOWN_PROJECTS = [
     'Round out the quiet grid',
     ['powerHouse', 'waterPlant', 'crystalLab'],
   ],
-].map(([era, id, title, buildings]) => ({ era, id, title, buildings }));
+].map(([era, id, title, buildings, hammers = 0]) => ({ era, id, title, buildings, hammers }));
 
 export const PROJECT_MILESTONES = ['Open the doors', 'Make room to grow', 'Complete the project'];

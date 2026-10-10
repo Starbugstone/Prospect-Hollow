@@ -3,7 +3,7 @@
   'info':
     {
       'title': 'Prospect Hollow account saves',
-      'version': '14.0.0',
+      'version': '14.1.0',
       'description': 'Local-first single-player snapshots, public town appearances and live visitor presence. Private town operations require ownership. No gameplay action API.',
     },
   'servers': [{ 'url': '/api/v1' }],
@@ -283,7 +283,7 @@
           'get':
             {
               'summary': 'Account, CSRF token and up to three owned town cards',
-              'description': 'Each town contains townId, name, revision, updatedAt, isPublic, publicId and summary {era, coins, buildings}. Buildings counts positive numeric building levels. saloonCollectedAt is the last time a share-link visitor collected the saloon (milliseconds, 0 if never); the owner game moves its reserved coins once per collection. guest {name, at} | null is the latest signed-in viewer, named after one of their towns after sanitising; the owner game saves it as a VIP and then deletes it. The list never includes full profiles; GET /towns/{id} loads a playable save. Summaries are private to the authenticated owner. account.distinctions maps each player distinction the caller holds now to {at, tenure?} (PlayerDistinction without id): event grants and the time step, both decided by the server; the game only shows them.',
+              'description': 'Each town contains townId, name, revision, updatedAt, isPublic, publicId and summary {era, crest?, coins, buildings, honours}; crest is the town’s validated crest when it has one. Buildings counts positive numeric building levels. saloonCollectedAt is the last time a share-link visitor collected the saloon (milliseconds, 0 if never); the owner game moves its reserved coins once per collection. guest {name, at} | null is the latest signed-in viewer, named after one of their towns after sanitising; the owner game saves it as a VIP and then deletes it. The list never includes full profiles; GET /towns/{id} loads a playable save. Summaries are private to the authenticated owner. account.distinctions maps each player distinction the caller holds now to {at, tenure?} (PlayerDistinction without id): event grants and the time step, both decided by the server; the game only shows them.',
               'responses':
                 {
                   '200': { 'description': 'Success' },
@@ -296,6 +296,7 @@
           'delete':
             {
               'summary': 'Permanently delete account and live account data',
+              'description': 'Erases the account, its towns, history, sessions, profile, activity, distinctions, favourites, pending links and identity row. The player’s visits stay in other guestbooks as unnamed signed-in visits under one new random key, so hosts keep their visitor counts. A last email confirms the deletion.',
               'responses':
                 {
                   '200': { 'description': 'Success' },
@@ -795,6 +796,118 @@
                 },
             },
         },
+      '/privacy':
+        {
+          'get':
+            {
+              'summary': 'The privacy contact an admin set',
+              'security': [{}],
+              'description': 'Public. Returns {contact}: the address players write to about their data, or null when none is set.',
+              'responses': { '200': { 'description': 'Success' } },
+            },
+        },
+      '/account/data':
+        {
+          'get':
+            {
+              'summary': 'The account owner’s overview of what the server keeps',
+              'description': 'Counts and the latest connection for the Mayor’s Office: email, createdAt, publicName, anonymousVisits, lastSeenAt, lastIp, lastBrowser, platform (web|app), lastSignInAt, emailSignIns, activeDays, sessions, towns, deletedTowns, savedVersions, honours, distinctions, visits, townsVisited, favourites and pendingEmail (null or the address awaiting confirmation). Times are Unix milliseconds or null.',
+              'responses':
+                { '200': { 'description': 'Success' }, '401': { 'description': 'Sign in again' } },
+            },
+        },
+      '/account/export':
+        {
+          'get':
+            {
+              'summary': 'Everything stored about the account, as one JSON document',
+              'description': 'GDPR access and portability: account (id, email, createdAt, pendingEmailChange), publicProfile, activity (last connection, IP address, browser, email sign-ins, active days), signedInDevices (no secrets), towns with their full saves and earlier saves, visitsMade, favouriteTowns and distinctions. Times are ISO 8601 UTC. Other players are counted (differentSignedInVisitors) but never named. Limited to 10 exports per account per hour.',
+              'responses':
+                {
+                  '200': { 'description': 'Success' },
+                  '401': { 'description': 'Sign in again' },
+                  '429': { 'description': 'Rate limited' },
+                },
+            },
+        },
+      '/account/email':
+        {
+          'post':
+            {
+              'summary': 'Email a confirmation link to a new address',
+              'description': 'Nothing changes until the link (/#email=<token>, valid for one hour) is confirmed. Only the latest request stays valid. The new address shares the sign-in link rate limit, and requests share the per-IP sign-in limit (30 per 15 minutes).',
+              'parameters':
+                [
+                  {
+                    'name': 'X-CSRF-Token',
+                    'in': 'header',
+                    'required': true,
+                    'schema': { 'type': 'string' },
+                  },
+                ],
+              'requestBody':
+                {
+                  'required': true,
+                  'content':
+                    {
+                      'application/json':
+                        {
+                          'schema':
+                            {
+                              'type': 'object',
+                              'additionalProperties': false,
+                              'required': ['email'],
+                              'properties': { 'email': { 'type': 'string', 'format': 'email' } },
+                            },
+                        },
+                    },
+                },
+              'responses':
+                {
+                  '200': { 'description': 'Link sent; returns pendingEmail' },
+                  '401': { 'description': 'Sign in again' },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '422': { 'description': 'Invalid address or the current one' },
+                  '429': { 'description': 'Rate limited' },
+                  '503': { 'description': 'The confirmation email could not be sent' },
+                },
+            },
+        },
+      '/account/email/confirm':
+        {
+          'post':
+            {
+              'summary': 'Confirm an email change from the emailed link',
+              'security': [{}],
+              'description': 'The token proves the new address, so no session is needed. The old address loses its pending sign-in links and identity row and is told about the change. Returns {email}.',
+              'requestBody':
+                {
+                  'required': true,
+                  'content':
+                    {
+                      'application/json':
+                        {
+                          'schema':
+                            {
+                              'type': 'object',
+                              'additionalProperties': false,
+                              'required': ['token'],
+                              'properties':
+                                { 'token': { 'type': 'string', 'pattern': '^[a-f0-9]{64}$' } },
+                            },
+                        },
+                    },
+                },
+              'responses':
+                {
+                  '200': { 'description': 'The account now uses the new address' },
+                  '401': { 'description': 'Expired or already used link' },
+                  '409': { 'description': 'Another account already uses this address' },
+                  '422': { 'description': 'Malformed link' },
+                  '429': { 'description': 'Rate limited' },
+                },
+            },
+        },
       '/villages/{publicId}/presence':
         {
           'parameters':
@@ -1055,7 +1168,7 @@
         {
           'get':
             {
-              'summary': 'Read-only public appearance and saloonReadyAt for a share link, no account needed; no arrival side effect; 404 when private or deleted',
+              'summary': 'Read-only public appearance, saloonReadyAt and helmetReadyAt for a share link, no account needed; no arrival side effect; 404 when private or deleted',
               'description': 'Appearance includes mineLevel (the next unlocked puzzle), completedRuns (the completed puzzle count that picks the space-helmet animal) and levelRecords, a map of authored level IDs to {stars: 1–3}. Completed levels and earned stars are visible in the mine and museum. Private scores, times, inventory and rewards are omitted. Older projections are refreshed from the saved profile on visit.',
               'security': [],
               'responses':
@@ -1087,7 +1200,7 @@
         {
           'get':
             {
-              'summary': 'The same public appearance and saloonReadyAt, polled by an open visit to follow the owner progress; never records a guest; 404 once private or deleted',
+              'summary': 'The same public appearance, saloonReadyAt and helmetReadyAt, polled by an open visit to follow the owner progress; never records a guest; 404 once private or deleted',
               'security': [],
               'responses':
                 {
@@ -1101,6 +1214,56 @@
                         },
                     },
                   '404': { 'description': 'Town unavailable' },
+                  '429': { 'description': 'Rate limited' },
+                },
+              'parameters':
+                [
+                  {
+                    'name': 'publicId',
+                    'in': 'path',
+                    'required': true,
+                    'schema': { 'type': 'string', 'pattern': '^[a-f0-9]{32}$' },
+                  },
+                ],
+            },
+        },
+      '/villages/{publicId}/helmet':
+        {
+          'post':
+            {
+              'summary': "Find a shared town's space-helmet wearer; the signed-in visitor's own town earns the reward, once per 12 hours per player and once per 12 hours per host town",
+              'description': "Body {townId}: one of the caller's own towns, which receives half an hour of its own saloon takings. The host must be shared, in Tomorrow City or a later era, and not the caller's town. Stores only the find; the rewarded town's owner poll (GET /towns/{townId}/visitors) hands it over with a signed receipt, and that town's save replay credits it once. Unredeemed finds are kept for 30 days. Signed-in mutation with CSRF.",
+              'requestBody':
+                {
+                  'required': true,
+                  'content':
+                    {
+                      'application/json':
+                        {
+                          'schema':
+                            {
+                              'type': 'object',
+                              'required': ['townId'],
+                              'additionalProperties': false,
+                              'properties': { 'townId': { 'type': 'string', 'format': 'uuid' } },
+                            },
+                        },
+                    },
+                },
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'Found; readyAt is when this player can be rewarded again (seconds)',
+                    },
+                  '401': { 'description': 'Sign in required' },
+                  '403': { 'description': 'Origin or CSRF rejected' },
+                  '404': { 'description': 'Town unavailable' },
+                  '409':
+                    {
+                      'description': "no_helmet; helmet_taken with readyAt (seconds) when another visitor found this town's helmet within 12 hours; or helmet_resting with readyAt when this player found one within 12 hours",
+                    },
+                  '422': { 'description': 'Invalid request, own_town or no_home_town' },
                   '429': { 'description': 'Rate limited' },
                 },
               'parameters':
@@ -1177,6 +1340,11 @@
                       'type': ['string', 'null'],
                       'format': 'uuid',
                       'description': 'Must belong to the current account; null enables the town fallback.',
+                    },
+                  'anonymousVisits':
+                    {
+                      'type': 'boolean',
+                      'description': 'Private visits: guestbooks show neither the public name nor the home town, but the visit still counts for the host and the visitor’s travels. Omitted keeps the stored choice.',
                     },
                 },
             },
@@ -1263,7 +1431,16 @@
                     },
                   'townName': { 'type': ['string', 'null'] },
                   'era': { 'type': ['string', 'null'] },
-                  'publicId': { 'type': ['string', 'null'] },
+                  'publicId':
+                    {
+                      'type': ['string', 'null'],
+                      'description': 'Only for a named home town that is still shared; never for a private visit.',
+                    },
+                  'townGone':
+                    {
+                      'type': 'boolean',
+                      'description': 'The named home town was deleted since the visit; its name stays until the visitor’s account is erased.',
+                    },
                   'arrivedAt': { 'type': 'integer', 'description': 'Unix milliseconds' },
                   'lastSeenAt': { 'type': 'integer', 'description': 'Unix milliseconds' },
                   'departedAt': { 'type': ['integer', 'null'] },
@@ -1282,6 +1459,17 @@
                     {
                       'type': 'integer',
                       'description': 'Owner endpoint only. Last visitor collection in Unix milliseconds, or zero.',
+                    },
+                  'helmetFinds':
+                    {
+                      'type': 'array',
+                      'description': 'Owner endpoint only. Space helmets the owner found in the last 30 days while visiting as this town, oldest first, each {at: Unix milliseconds, receipt: the signed proof its save replay checks}. The game redeems each newer than its last redeemed find once.',
+                      'items':
+                        {
+                          'type': 'object',
+                          'properties':
+                            { 'at': { 'type': 'integer' }, 'receipt': { 'type': 'string' } },
+                        },
                     },
                   'distinctions':
                     {
@@ -1307,7 +1495,7 @@
             {
               'type': 'object',
               'required': ['villageId', 'name', 'era', 'appearance'],
-              'description': 'A shared town for visitors. Browse entries use the same shape without saloonReadyAt.',
+              'description': 'A shared town for visitors. Browse entries use the same shape without saloonReadyAt and helmetReadyAt.',
               'properties':
                 {
                   'villageId': { 'type': 'string', 'pattern': '^[a-f0-9]{32}$' },
@@ -1315,6 +1503,11 @@
                   'era': { 'type': 'string' },
                   'saloonReadyAt':
                     { 'type': 'integer', 'description': 'Unix seconds; 0 when ready to collect.' },
+                  'helmetReadyAt':
+                    {
+                      'type': 'integer',
+                      'description': "Unix seconds when a visitor may next find this town's space helmet; 0 or past when findable.",
+                    },
                   'appearance':
                     {
                       'type': 'object',
@@ -1555,6 +1748,12 @@
                     {
                       'type': 'object',
                       'description': "Owner load and save replies: the caller's player distinctions now, as in GET /account (PlayerDistinction without id, by ID), so a new time step or an admin change reaches the game without a new session.",
+                    },
+                  'adminReset':
+                    {
+                      'type': 'boolean',
+                      'const': true,
+                      'description': 'Present while the current revision is one an admin saved from a sync comparison or an inventory correction: the owner game loads it without asking, keeping its own copy as a recovery backup.',
                     },
                   'profile': { '$ref': '#/components/schemas/Profile' },
                   'integrity': { '$ref': '#/components/schemas/IntegrityReceipt' },

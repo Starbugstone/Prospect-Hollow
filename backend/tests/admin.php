@@ -497,6 +497,8 @@ try {
             'name' => $guestName,
             'origin_town_id' => $origin,
             'era' => 'frontier',
+            // Live presence marks every visit made while signed in.
+            'signed_in' => $guestName !== '' || $origin !== null ? 1 : 0,
             'arrived_at' => time() - 3600,
             'last_seen_at' => time() - 3500,
             'departed_at' => time() - 3400,
@@ -874,6 +876,382 @@ try {
     );
     unset($_ENV['SAVE_MONEY_GUARD_MODE']);
 
+    // A blocked sync: the log, the compare, accept next sync and an admin reset.
+    $syncPlayer = account();
+    $syncProfile = json_decode(file_get_contents(dirname(__DIR__) . '/content/save-rules.json'))
+        ->defaultProfile;
+    $syncProfile->integrity = (object) [
+        'version' => 1,
+        'epoch' => uuid(),
+        'baseSequence' => 0,
+        'clientAt' => time() * 1000,
+        'actions' => [],
+    ];
+    $syncBody = townBody('Desync Gulch');
+    $syncBody['profile'] = $syncProfile;
+    $synced = status(200, callApi('POST', 'towns', $syncBody, $syncPlayer), 'attach desync town');
+    $syncId = $synced['townId'];
+    $desynced = json_decode(json_encode($syncProfile));
+    $desynced->integrity = json_decode(json_encode($synced['profile']['integrity']));
+    $desynced->town->coins += 500;
+    $upload = fn(int $revision) => [
+        'baseRevision' => $revision,
+        'uploadId' => uuid(),
+        'profile' => $desynced,
+    ];
+    $listed = fn(string $filter = 'live') => array_column(
+        status(
+            200,
+            adminCall('GET', 'towns?filter=' . $filter . '&q=' . $syncId, null, $s),
+            'list desync town',
+        )['towns'],
+        null,
+        'id',
+    )[$syncId] ?? null;
+    check(
+        $listed()['forceSync'] === false &&
+            $listed()['syncBlockedAt'] === null &&
+            $listed('blocked') === null,
+        'a syncing town is not flagged',
+    );
+    check(
+        status(422, callApi('PUT', 'towns/' . $syncId, $upload(1), $syncPlayer), 'desync')[
+            'code'
+        ] === 'save_integrity_mismatch',
+        'a desync blocks the upload',
+    );
+    check(
+        is_int($listed()['syncBlockedAt']) && $listed('blocked')['id'] === $syncId,
+        'the town list flags the blocked town and filters by it',
+    );
+    $detail = status(200, adminCall('GET', 'towns/' . $syncId, null, $s), 'blocked detail');
+    $log = $detail['syncRejections'];
+    check(
+        count($log) === 1 &&
+            $log[0]['code'] === 'save_integrity_mismatch' &&
+            $log[0]['field'] === 'town.coins' &&
+            $log[0]['revision'] === 1 &&
+            $log[0]['replayed'] === true &&
+            $detail['town']['syncBlockedAt'] === $log[0]['at'],
+        'the sync log names the rejected field ' . json_encode($log),
+    );
+    $compare = status(
+        200,
+        adminCall('GET', 'towns/' . $syncId . '/sync/' . $log[0]['id'], null, $s),
+        'compare',
+    );
+    check(
+        $compare['current'] === true &&
+            $compare['upload']['town']['coins'] === $desynced->town->coins &&
+            $compare['expected']['town']['coins'] === $syncProfile->town->coins &&
+            $compare['cloud']['town']['coins'] === $syncProfile->town->coins &&
+            !isset($compare['expected']['integrity']),
+        'the compare shows the cloud save, the replayed expectation and the upload',
+    );
+    status(
+        404,
+        adminCall('GET', 'towns/' . $syncId . '/sync/' . str_repeat('0', 32), null, $s),
+        'unknown rejection',
+    );
+    // Retries are kept up to a cap, newest first.
+    for ($i = 0; $i < App\SyncRejections::KEPT; $i++) {
+        status(422, callApi('PUT', 'towns/' . $syncId, $upload(1), $syncPlayer), 'desync retry');
+    }
+    check(
+        count(
+            status(200, adminCall('GET', 'towns/' . $syncId, null, $s), 'capped log')[
+                'syncRejections'
+            ],
+        ) === App\SyncRejections::KEPT,
+        'the sync log keeps the latest rejections only',
+    );
+
+    // Accept next sync lets exactly one upload through.
+    status(
+        422,
+        adminCall('PATCH', 'towns/' . $syncId . '/sync', ['forceSync' => 1], $s),
+        'accept next sync needs a boolean',
+    );
+    status(
+        422,
+        adminCall('PATCH', 'towns/' . $syncId . '/sync', ['forceSync' => true, 'name' => 'x'], $s),
+        'accept next sync takes no other field',
+    );
+    check(
+        status(
+            200,
+            adminCall('PATCH', 'towns/' . $syncId . '/sync', ['forceSync' => true], $s),
+            'set accept next sync',
+        )['forceSync'] === true && $listed()['forceSync'] === true,
+        'an admin sets accept next sync from the town list',
+    );
+    status(
+        409,
+        callApi('PUT', 'towns/' . $syncId, $upload(0), $syncPlayer),
+        'a stale revision still asks which save to keep',
+    );
+    check($listed()['forceSync'] === true, 'a rejected upload does not use up accept next sync');
+    $forcedReply = callApi('PUT', 'towns/' . $syncId, $upload(1), $syncPlayer);
+    $forced = status(200, $forcedReply, 'forced upload');
+    check(
+        $forced['revision'] === 2 &&
+            $forced['profile']['town']['coins'] === $desynced->town->coins &&
+            $forced['integrity']['status'] === 'baseline' &&
+            $listed()['forceSync'] === false &&
+            $listed()['syncBlockedAt'] === null,
+        'the next upload is re-baselined, accept next sync clears itself and so does the flag',
+    );
+    status(
+        200,
+        callApi(
+            'PUT',
+            'towns/' . $syncId,
+            [
+                'baseRevision' => 2,
+                'uploadId' => uuid(),
+                'profile' => json_decode($forcedReply['response']->getContent())->profile,
+            ],
+            $syncPlayer,
+        ),
+        'the re-baselined town keeps syncing normally',
+    );
+    $desynced->integrity = json_decode(json_encode($forced['profile']['integrity']));
+    $desynced->town->coins += 500;
+    check(
+        status(422, callApi('PUT', 'towns/' . $syncId, $upload(3), $syncPlayer), 'desync again')[
+            'code'
+        ] === 'save_integrity_mismatch',
+        'only one upload skips the desync check',
+    );
+    status(
+        200,
+        adminCall('PATCH', 'towns/' . $syncId . '/sync', ['forceSync' => true], $s),
+        'set accept next sync again',
+    );
+    check(
+        status(
+            200,
+            adminCall('PATCH', 'towns/' . $syncId . '/sync', ['forceSync' => false], $s),
+            'clear accept next sync',
+        )['forceSync'] === false && $listed()['forceSync'] === false,
+        'an admin clears accept next sync before it is used',
+    );
+
+    // An admin edits the compared save and the owner's game loads it.
+    $latest = status(200, adminCall('GET', 'towns/' . $syncId, null, $s), 'blocked again')[
+        'syncRejections'
+    ][0];
+    check($latest['revision'] === 3, 'the newest rejection is listed first');
+    $resetPath = 'towns/' . $syncId . '/sync/' . $latest['id'] . '/reset';
+    $stale = status(200, adminCall('GET', 'towns/' . $syncId, null, $s), 'older rejection')[
+        'syncRejections'
+    ];
+    status(
+        409,
+        adminCall(
+            'POST',
+            'towns/' . $syncId . '/sync/' . end($stale)['id'] . '/reset',
+            ['base' => 'cloud', 'changes' => []],
+            $s,
+        ),
+        'a rejection from an older revision cannot reset the town',
+    );
+    status(422, adminCall('POST', $resetPath, ['base' => 'x', 'changes' => []], $s), 'reset base');
+    foreach (
+        [
+            ['path' => ['integrity', 'epoch'], 'value' => 'x'],
+            ['path' => ['town', 'nowhere', 'deep'], 'value' => 1],
+            ['path' => 'town.coins', 'value' => 1],
+            ['path' => ['town', 'coins']],
+        ]
+        as $change
+    ) {
+        status(
+            422,
+            adminCall('POST', $resetPath, ['base' => 'upload', 'changes' => [$change]], $s),
+            'reset path ' . json_encode($change),
+        );
+    }
+    status(
+        422,
+        adminCall(
+            'POST',
+            $resetPath,
+            ['base' => 'upload', 'changes' => [['path' => ['town', 'coins'], 'value' => -5]]],
+            $s,
+        ),
+        'an edited save is still validated',
+    );
+    $reset = status(
+        200,
+        adminCall(
+            'POST',
+            $resetPath,
+            [
+                'base' => 'upload',
+                'changes' => [
+                    ['path' => ['town', 'coins'], 'value' => 777],
+                    ['path' => ['powers', 'tnt'], 'value' => 3],
+                ],
+            ],
+            $s,
+        ),
+        'admin reset',
+    );
+    check(
+        $reset['town']['revision'] === 4 &&
+            $reset['profile']['town']['coins'] === 777 &&
+            $reset['profile']['integrity']['status'] === 'baseline' &&
+            $reset['town']['syncBlockedAt'] === null &&
+            !$reset['town']['forceSync'] &&
+            in_array(
+                ['id' => 'tnt', 'quantity' => 3],
+                array_map(
+                    fn($power) => ['id' => $power['id'], 'quantity' => $power['quantity']],
+                    $reset['profile']['powers'],
+                ),
+                true,
+            ),
+        'the edited save is a new sealed revision and clears the flag',
+    );
+    $conflict = status(
+        409,
+        callApi('PUT', 'towns/' . $syncId, $upload(3), $syncPlayer),
+        'the blocked game meets the reset',
+    );
+    check(
+        $conflict['code'] === 'save_conflict' &&
+            $conflict['cloud']['adminReset'] === true &&
+            $conflict['cloud']['profile']['town']['coins'] === 777,
+        'the owner game is told to load the admin reset',
+    );
+    $owned = json_decode(
+        callApi('GET', 'towns/' . $syncId, null, $syncPlayer)['response']->getContent(),
+    );
+    status(
+        200,
+        callApi(
+            'PUT',
+            'towns/' . $syncId,
+            ['baseRevision' => 4, 'uploadId' => uuid(), 'profile' => $owned->profile],
+            $syncPlayer,
+        ),
+        'the game syncs from the reset',
+    );
+    check(
+        !isset(
+            status(200, callApi('GET', 'towns/' . $syncId, null, $syncPlayer), 'after')[
+                'adminReset'
+            ],
+        ),
+        'the reset notice ends with the next accepted save',
+    );
+
+    // Support corrects coins, stored bonuses and builder hammers after a bug.
+    $inventoryPath = 'towns/' . $syncId . '/inventory';
+    $before = status(200, adminCall('GET', 'towns/' . $syncId, null, $s), 'before correcting');
+    $at = $before['town']['revision'];
+    check(
+        $before['inventory']['coins'] === $before['profile']['town']['coins'] &&
+            $before['inventory']['powers']['tnt'] === 3 &&
+            $before['inventory']['limits']['powers'] === 3 &&
+            $before['inventory']['limits']['builderHammers'] === AdminService::MAX_GRANTED_HAMMERS,
+        'the town detail lists what support can correct and its limits',
+    );
+    $polled = status(
+        200,
+        adminCall('GET', 'towns/' . $syncId . '/status', null, $s),
+        'town status while editing',
+    );
+    check(
+        $polled['revision'] === $at &&
+            $polled['savedAt'] === $before['town']['savedAt'] &&
+            is_int($polled['ownerSeenAt']) &&
+            $polled['ownerSeenAt'] === $before['town']['ownerSeenAt'],
+        'the town page can poll for a sync and the owner being online',
+    );
+    status(
+        405,
+        adminCall('POST', 'towns/' . $syncId . '/status', (object) [], $s),
+        'town status is read only',
+    );
+    status(
+        404,
+        adminCall('GET', 'towns/' . '00000000-0000-4000-8000-000000000000' . '/status', null, $s),
+        'status of an unknown town',
+    );
+    foreach (
+        [
+            ['coins' => 5],
+            ['revision' => $at, 'coins' => -1],
+            ['revision' => $at, 'coins' => 1.5],
+            ['revision' => $at, 'builderHammers' => AdminService::MAX_GRANTED_HAMMERS + 1],
+            ['revision' => $at, 'powers' => ['nowhere' => 1]],
+            ['revision' => $at, 'powers' => ['tnt' => 99]],
+            ['revision' => $at, 'powers' => [1]],
+            ['revision' => $at, 'lives' => 3],
+            ['revision' => $at, 'coins' => $before['profile']['town']['coins']],
+        ]
+        as $body
+    ) {
+        status(422, adminCall('PATCH', $inventoryPath, $body, $s), 'correct ' . json_encode($body));
+    }
+    status(
+        409,
+        adminCall('PATCH', $inventoryPath, ['revision' => $at - 1, 'coins' => 5], $s),
+        'a correction made on an older revision',
+    );
+    $corrected = status(
+        200,
+        adminCall(
+            'PATCH',
+            $inventoryPath,
+            [
+                'revision' => $at,
+                'coins' => 1234,
+                'builderHammers' => 8,
+                'powers' => ['tnt' => 2, 'clear-row' => 1],
+            ],
+            $s,
+        ),
+        'correct coins, bonuses and hammers',
+    );
+    $quantities = array_column($corrected['profile']['powers'], 'quantity', 'id');
+    check(
+        $corrected['town']['revision'] === $at + 1 &&
+            $corrected['profile']['town']['coins'] === 1234 &&
+            $corrected['profile']['builderHammers'] === 8 &&
+            $quantities['tnt'] === 2 &&
+            $quantities['clear-row'] === 1 &&
+            $corrected['profile']['integrity']['status'] === 'baseline' &&
+            $corrected['history'][0]['revision'] === $at,
+        'the correction is a new sealed revision, hammers past the cap included',
+    );
+    $owned = json_decode(
+        callApi('GET', 'towns/' . $syncId, null, $syncPlayer)['response']->getContent(),
+    );
+    check(
+        $owned->adminReset === true && $owned->profile->builderHammers === 8,
+        'the owner game is told to load the correction',
+    );
+    status(
+        200,
+        callApi(
+            'PUT',
+            'towns/' . $syncId,
+            ['baseRevision' => $at + 1, 'uploadId' => uuid(), 'profile' => $owned->profile],
+            $syncPlayer,
+        ),
+        'the game syncs on from the correction, keeping its hammers',
+    );
+    check(
+        status(200, adminCall('GET', 'towns/' . $syncId . '/status', null, $s), 'status after')[
+            'revision'
+        ] ===
+            $at + 2,
+        'the poll sees the game sync after the correction',
+    );
+
     // Deletion, sign-out and account removal.
     status(
         422,
@@ -901,6 +1279,11 @@ try {
         409,
         adminCall('PATCH', 'towns/' . $town['townId'], ['name' => 'Back Again'], $s),
         'deleted town is read-only',
+    );
+    status(
+        409,
+        adminCall('PATCH', 'towns/' . $town['townId'] . '/sync', ['forceSync' => true], $s),
+        'a deleted town cannot accept a sync',
     );
     check(
         status(
@@ -1057,6 +1440,10 @@ try {
             'town_renamed',
             'town_unshared',
             'town_restored',
+            'town_sync_forced',
+            'town_sync_force_cleared',
+            'town_sync_reset',
+            'town_corrected',
             'town_deleted',
             'player_signed_out',
             'player_deleted',
@@ -1109,6 +1496,11 @@ try {
             $kept() === 1,
         'a longer retention keeps newer entries and removes older ones at once',
     );
+    status(
+        200,
+        adminCall('PATCH', 'audit/settings', ['retentionDays' => 180], $s),
+        'keep the same retention again',
+    );
     $db->get()->update('admin_settings', ['value' => '30'], ['name' => 'audit_retention_days']);
     check(
         App\AdminService::expireAudit($db->get()) >= 1 && $kept() === 0,
@@ -1137,6 +1529,77 @@ try {
         'purge rejects unknown fields',
     );
     $db->get()->update('admin_settings', ['value' => '90'], ['name' => 'audit_retention_days']);
+
+    // The privacy contact is set in the panel and shown to everyone on /privacy.
+    $db->get()->delete('admin_settings', ['name' => 'privacy_contact']);
+    $publicContact = fn() => status(200, callApi('GET', 'privacy'), 'public contact')['contact'];
+    check(
+        status(200, adminCall('GET', 'settings', null, $s), 'settings')['privacyContact'] === '' &&
+            $publicContact() === null,
+        'no privacy contact until an admin sets one',
+    );
+    status(401, adminCall('GET', 'settings', null, []), 'settings need an admin');
+    status(
+        401,
+        adminCall('PATCH', 'settings/privacy', ['privacyContact' => 'x@example.test'], []),
+        'changing the contact needs an admin',
+    );
+    foreach (['not an address', 42, null] as $bad) {
+        status(
+            422,
+            adminCall('PATCH', 'settings/privacy', ['privacyContact' => $bad], $s),
+            'invalid privacy contact',
+        );
+    }
+    status(
+        422,
+        adminCall('PATCH', 'settings/privacy', ['contact' => 'x@example.test'], $s),
+        'unknown settings field',
+    );
+    check(
+        status(
+            200,
+            adminCall(
+                'PATCH',
+                'settings/privacy',
+                ['privacyContact' => '  Privacy@Example.test '],
+                $s,
+            ),
+            'set contact',
+        )['privacyContact'] === 'privacy@example.test' &&
+            $publicContact() === 'privacy@example.test' &&
+            status(200, adminCall('GET', 'settings', null, $s), 'settings')['privacyContact'] ===
+                'privacy@example.test',
+        'the contact is normalised, stored and published',
+    );
+    // MySQL reports no affected row for an unchanged value; saving it again must not fail.
+    status(
+        200,
+        adminCall('PATCH', 'settings/privacy', ['privacyContact' => 'privacy@example.test'], $s),
+        'save the same contact again',
+    );
+    $changes = array_values(
+        array_filter($audit()['entries'], fn($e) => $e['action'] === 'privacy_contact_changed'),
+    );
+    check(
+        count($changes) === 1 && $changes[0]['detail'] === 'none → privacy@example.test',
+        'changing the contact is logged',
+    );
+    check(
+        App\SiteSettings::contactHint($db->get()) === 'write to privacy@example.test',
+        'account emails point to the contact',
+    );
+    status(
+        200,
+        adminCall('PATCH', 'settings/privacy', ['privacyContact' => ''], $s),
+        'clear contact',
+    );
+    check(
+        $publicContact() === null &&
+            App\SiteSettings::contactHint($db->get()) === 'reply to this email' &&
+            !$db->get()->fetchOne("SELECT value FROM admin_settings WHERE name='privacy_contact'"),
+        'an empty contact removes the setting',
+    );
 
     // Sign-in brute force is limited per client address.
     $ip = '10.' . random_int(0, 255) . '.' . random_int(0, 255) . '.' . random_int(1, 254);

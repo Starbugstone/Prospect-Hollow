@@ -1,4 +1,14 @@
 import {
+  AREA_BY_ID,
+  LANDMARK_PROGRESSION,
+  advanceMonumentWorks,
+  areaChoice,
+  monumentWork,
+  unveilLandmark,
+} from '../data/townLandmarks';
+import { personaliseTown } from '../data/townPersonalisation';
+import { CREST_EMBLEM_IDS } from '../data/townCrests';
+import {
   VIP_SPEND,
   VIP_RECEIPT_LIMIT,
   vipVisitBuildings,
@@ -34,6 +44,7 @@ import { chapterLevelIds } from '../data/chapters';
 import { TIP_IDS } from '../data/guidance';
 import { grantChapterGift } from '../data/journey';
 import { TOWN_PROJECTS } from '../data/townProjects';
+import { finishedRewardProjects } from '../game/town/TownProjects';
 
 import { townStorage } from '../services/townStorage';
 import { localProfile, SAVE_KEY } from '../services/localProfile';
@@ -42,7 +53,6 @@ import { createSaveFile, parseSaveFile } from '../services/saveTransfer';
 import {
   bonusCapacity,
   CONTINUOUS_COIN_CAP,
-  HAMMER_CAPACITY,
   OVERFLOW_COINS,
   grantReward,
   rollChestReward,
@@ -60,6 +70,8 @@ import {
   normalizeTown,
   saloonIncomeRate,
   settleSaloonIncome,
+  spaceHelmetFindable,
+  spaceHelmetReward,
   collectionCooldownRemaining,
   raidBounty,
   miningPayout,
@@ -99,6 +111,8 @@ const defaults = () => ({
   readOnly: false,
   lastConstruction: [],
   lastChapterReward: null,
+  // The starter projects the latest building action finished, for the village to celebrate.
+  lastProjectReward: null,
   builderHammers: 0,
   chestsWithoutBuilderHammer: 0,
   pendingChests: [],
@@ -195,12 +209,10 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
       }
     }
     state.town = queueCampaignPresentations(state.town, state.records);
+    // The hammer cap limits what play earns, not what a save holds: support can grant more.
     if (Number.isSafeInteger(saved?.builderHammers) && saved.builderHammers >= 0)
-      state.builderHammers = Math.min(HAMMER_CAPACITY, saved.builderHammers);
-    let overflow = Math.max(
-      0,
-      (Number.isSafeInteger(saved?.builderHammers) ? saved.builderHammers : 0) - HAMMER_CAPACITY,
-    );
+      state.builderHammers = saved.builderHammers;
+    let overflow = 0;
     state.powers.forEach((power) => {
       const savedPower =
         saved?.powers?.find?.((entry) => entry.id === power.id) ??
@@ -420,6 +432,11 @@ export const useCampaignStore = defineStore('campaign', {
       const earned = { ...this.honours.earned };
       for (const id of changed) earned[id] = { ...earned[id], [flag]: true };
       return this.commit({ honours: { ...this.honours, earned, seenGeneration } });
+    },
+    // The player removes a finished monument's scaffolding; the unveiling plays after.
+    unveilMonument(id, level) {
+      const next = unveilLandmark(this.town, id, level);
+      return !!next && this.commit({ town: next });
     },
     acknowledgePresentation(id) {
       const next = acknowledgePresentation(this.town, id);
@@ -673,6 +690,40 @@ export const useCampaignStore = defineStore('campaign', {
         ? coins
         : null;
     },
+    // Finding the space-helmet wearer pays an hour of saloon takings, once per completed
+    // puzzle. Returns the coins (0 without saloon takings), or null when already found.
+    findSpaceHelmet(now = Date.now()) {
+      if (!Number.isSafeInteger(now) || !spaceHelmetFindable(this.town)) return null;
+      const town = this.town,
+        run = town.completedRuns,
+        coins = Math.min(spaceHelmetReward(town, 'owner'), Number.MAX_SAFE_INTEGER - town.coins);
+      return this.commit(
+        { town: { ...town, coins: town.coins + coins, helmetRun: run } },
+        { kind: 'helmet-find', data: { at: now, run } },
+      )
+        ? coins
+        : null;
+    },
+    // A space helmet this player found in another town, redeemed here with the server's
+    // signed receipt for half an hour of this town's saloon takings. Older finds than the
+    // last one redeemed are ignored, so every poll may offer the same list again.
+    redeemHelmetVisit(find, now = Date.now()) {
+      if (
+        !Number.isSafeInteger(find?.at) ||
+        find.at <= this.town.helmetVisitAt ||
+        typeof find.receipt !== 'string' ||
+        !Number.isSafeInteger(now)
+      )
+        return null;
+      const town = this.town,
+        coins = Math.min(spaceHelmetReward(town, 'visitor'), Number.MAX_SAFE_INTEGER - town.coins);
+      return this.commit(
+        { town: { ...town, coins: town.coins + coins, helmetVisitAt: find.at } },
+        { kind: 'helmet-visitor', data: { at: now, foundAt: find.at, receipt: find.receipt } },
+      )
+        ? coins
+        : null;
+    },
     // A signed-in visitor viewed the shared town: only the latest becomes the guest VIP.
     welcomeGuest(remote) {
       const guest = newerGuest(this.town.guestVip, remote);
@@ -685,19 +736,40 @@ export const useCampaignStore = defineStore('campaign', {
       if (!guest || guest.at !== at || guest.seen) return false;
       return this.commit({ town: { ...this.town, guestVip: { ...guest, seen: true } } });
     },
+    personalise(commands, received = {}) {
+      let next = this.town;
+      const earned = [...Object.keys(this.honours.earned), ...Object.keys(received)];
+      for (const command of commands) {
+        next = personaliseTown(next, command, CREST_EMBLEM_IDS, earned);
+        if (!next) return false;
+      }
+      const purchases = commands
+        .filter((c) => c.kind === 'area')
+        .map((command) => ({
+          ...command,
+          monumentVersion: LANDMARK_PROGRESSION.version,
+        }));
+      return this.commit(
+        { town: next },
+        purchases.length ? { kind: 'landmark-buy', data: { purchases, at: Date.now() } } : null,
+      );
+    },
     upgradeBuilding(id, expectedStage) {
       const at = Date.now();
       this.accrueSaloonIncome(at);
       const next = purchase(this.town, id, expectedStage);
       if (!next) return false;
+      const hammers = this.rewardProjects(this.town, next);
       // A purchase stays usable in memory when storage fails; save() reports the warning.
       this.town = queueBuildingPresentations(this.town, next);
+      if (hammers) this.builderHammers += hammers;
       this.ensureShopStock(false, false);
       this.recordAction('building-buy', {
         buildingId: id,
         expectedStage,
         shopStock: this.shopStock,
         shopVisit: this.shopVisit,
+        projectRewards: 1,
         at,
       });
       this.save();
@@ -713,7 +785,7 @@ export const useCampaignStore = defineStore('campaign', {
           {},
           {
             kind: 'building-finish',
-            data: { buildingId: id, expectedStage, at },
+            data: { buildingId: id, expectedStage, projectRewards: 1, at },
           },
         )
       );
@@ -727,7 +799,10 @@ export const useCampaignStore = defineStore('campaign', {
         this.completeProject(
           next,
           { builderHammers: this.builderHammers - 1 },
-          { kind: 'building-hammer', data: { buildingId: id, expectedStage, at } },
+          {
+            kind: 'building-hammer',
+            data: { buildingId: id, expectedStage, projectRewards: 1, at },
+          },
         )
       );
     },
@@ -737,6 +812,12 @@ export const useCampaignStore = defineStore('campaign', {
       this.accrueSaloonIncome(receipt?.data.at ?? Date.now());
       next.coins = this.town.coins;
       next.income = this.town.income;
+      const hammers = this.rewardProjects(this.town, next);
+      if (hammers)
+        extra = {
+          ...extra,
+          builderHammers: (extra.builderHammers ?? this.builderHammers) + hammers,
+        };
       return this.transaction(['town', 'shopStock', 'shopVisit', ...Object.keys(extra)], () => {
         Object.assign(this, extra);
         this.town = queueBuildingPresentations(
@@ -751,6 +832,16 @@ export const useCampaignStore = defineStore('campaign', {
             shopVisit: this.shopVisit,
           });
       });
+    },
+    // Finishing a starter project grants its builder hammers, even past the chest limit;
+    // building receipts carry `projectRewards: 1` so the server replay grants them too.
+    rewardProjects(before, after) {
+      const projects = finishedRewardProjects(before, after);
+      const hammers = projects.reduce((sum, project) => sum + project.hammers, 0);
+      this.lastProjectReward = hammers
+        ? { projects: projects.map((project) => project.id), hammers }
+        : null;
+      return hammers;
     },
     awardReward(reward) {
       const at = Date.now();
@@ -926,7 +1017,11 @@ export const useCampaignStore = defineStore('campaign', {
       const projects = Object.values(this.town.projects).filter(
         (project) => !constructionReady(project),
       );
+      const monuments = Object.keys(this.town.personalisation?.construction ?? {}).filter(
+        (id) => monumentWork(this.town, AREA_BY_ID[id])?.ready === false,
+      );
       this.town = advanceConstruction(this.town);
+      this.town = advanceMonumentWorks(this.town);
       this.town = advanceForge(this.town);
       this.endRun(runId);
       this.ensureShopStock(true, false);
@@ -937,6 +1032,19 @@ export const useCampaignStore = defineStore('campaign', {
         required: constructionRuns(project),
         ready: constructionReady(this.town.projects[project.id]),
       }));
+      // Monuments report the same progress shape, named by their design.
+      for (const id of monuments) {
+        const work = monumentWork(this.town, AREA_BY_ID[id]);
+        if (work)
+          this.lastConstruction.push({
+            id,
+            monument: areaChoice(this.town, AREA_BY_ID[id]),
+            stage: work.level,
+            wins: work.wins,
+            required: work.required,
+            ready: work.ready,
+          });
+      }
       this.lastChapterReward =
         this.mineStage > previousChapter
           ? { chapter: this.mineStage, gift: grantChapterGift(this, this.mineStage) }

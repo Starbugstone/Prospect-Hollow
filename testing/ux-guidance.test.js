@@ -37,6 +37,9 @@ it('does not treat unrelated settings or unreadable progress as a returning vill
 });
 it('moves from the building tip to mining through actual building state', () => {
   const campaign = useCampaignStore();
+  // Tips wait for the village tutorial, then carry on after it is finished or skipped.
+  expect(townTip(campaign)).toBe(null);
+  campaign.finishTownTour();
   const coins = campaign.town.coins;
   expect(townTip(campaign)?.id).toBe('well');
   expect(campaign.upgradeBuilding('well', 0)).toBe(true);
@@ -46,7 +49,7 @@ it('moves from the building tip to mining through actual building state', () => 
   expect(townTip(campaign)).toBe(null);
   campaign.town.buildings.home = 1;
   expect(townTip(campaign)?.id).toBe('happiness');
-  campaign.town.tourSeen = true;
+  campaign.town.tourSeen = false;
   expect(townTip(campaign)).toBe(null);
 });
 it('persists individual dismissals across backups and filters unknown tip ids', () => {
@@ -83,6 +86,29 @@ it('introduces bonus and fusion rules only when applicable, without wrapping row
   campaign.powers[0].quantity = 1;
   expect(mineTip(game, campaign)?.id).toBe('powers');
   expect(fr[mineTip(game, campaign).text]).toBeTruthy();
+});
+it('points to the ore orders once they are all that keeps a level open', () => {
+  const campaign = useCampaignStore();
+  const game = {
+    sessionActive: true,
+    currentLevelId: 403,
+    moves: 40,
+    boardCols: 3,
+    board: [{ type: 'ruby' }],
+    totalLayers: 12,
+    totalRelics: 0,
+    remainingLayers: 1,
+    remainingRelics: 0,
+    remainingOre: 14,
+  };
+  expect(mineTip(game, campaign)).toBe(null);
+  game.remainingLayers = 0;
+  expect(mineTip(game, campaign)?.id).toBe('orders');
+  expect(fr[mineTip(game, campaign).text]).toBeTruthy();
+  // A level whose only goal is an order says nothing: the order is the whole level.
+  expect(mineTip({ ...game, totalLayers: 0 }, campaign)).toBe(null);
+  campaign.markTipSeen('orders');
+  expect(mineTip(game, campaign)).toBe(null);
 });
 it('keeps objective labels tied to the initial board after obstacles are cleared', () => {
   const game = useGameStore();

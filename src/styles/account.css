@@ -732,7 +732,8 @@
 .account-panel details > :not(summary) + :not(summary) {
   margin-top: 0.75rem;
 }
-.account-danger summary {
+.account-danger summary,
+.account-panel .account-danger h2 {
   color: #a53a2a;
 }
 .account-identity {
@@ -788,9 +789,11 @@
     align-self: center;
     margin: 0;
   }
+  /* Centred with margins: the global press scale replaces any transform and made it jump. */
   .account-panel .town-slot-more {
-    top: 50%;
-    transform: translateY(-50%);
+    top: 0;
+    bottom: 0;
+    margin: auto 0;
   }
   .town-slot-menu {
     top: calc(50% + 1.3rem);

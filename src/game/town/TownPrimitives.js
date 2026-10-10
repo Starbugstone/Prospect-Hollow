@@ -86,7 +86,8 @@ export class TownPrimitives {
   }
   // Merges a model's meshes into one mesh per material, keeping animated subtrees
   // articulated. Used for animated assemblies (one instanced part per material) and
-  // scenery that is replaced as a whole.
+  // scenery that is replaced as a whole. Meshes marked `castShadow = false` merge
+  // apart, so they still cast no shadow.
   batch(group) {
     finishWork(this.batchWork(group));
   }
@@ -110,28 +111,30 @@ export class TownPrimitives {
         const geometry = object.geometry
           .clone()
           .applyMatrix4(inverse.clone().multiply(object.matrixWorld));
-        if (!buckets.has(object.material)) buckets.set(object.material, []);
-        buckets.get(object.material).push(geometry);
+        const key = `${object.material.uuid}:${object.castShadow}`;
+        if (!buckets.has(key))
+          buckets.set(key, { material: object.material, castShadow: object.castShadow, parts: [] });
+        buckets.get(key).parts.push(geometry);
         yield;
       }
-      for (const [material, geometries] of buckets) {
-        const geometry = mergeGeometries(geometries);
-        geometries.forEach((item) => item.dispose());
-        buckets.delete(material);
+      for (const [key, { material, castShadow, parts }] of buckets) {
+        const geometry = mergeGeometries(parts);
+        parts.forEach((item) => item.dispose());
+        buckets.delete(key);
         geometry.userData.owned = true;
-        merged.push([geometry, material]);
+        merged.push([geometry, material, castShadow]);
         yield;
       }
       meshes.forEach((mesh) => mesh.removeFromParent());
-      for (const [geometry, material] of merged) {
+      for (const [geometry, material, castShadow] of merged) {
         const mesh = new THREE.Mesh(geometry, material);
-        mesh.castShadow = true;
+        mesh.castShadow = castShadow;
         mesh.receiveShadow = true;
         group.add(mesh);
       }
       committed = true;
     } finally {
-      for (const geometries of buckets.values()) geometries.forEach((item) => item.dispose());
+      for (const { parts } of buckets.values()) parts.forEach((item) => item.dispose());
       if (!committed) merged.forEach(([geometry]) => geometry.dispose());
     }
   }

@@ -37,20 +37,24 @@ final class Honours
     private const INCIDENT = 'dusty-trail-visitors';
     /**
      * Different signed-in players who visited a town, each account once. The owner's own
-     * signed-in visits are never recorded; signed-out visits carry neither a display name
-     * nor a home town and stay in the guestbook only. `%s` is `id` or `public_id`.
+     * signed-in visits are never recorded; signed-out visits stay in the guestbook only.
+     * A visit is marked signed in when it is recorded, so it keeps counting when the
+     * visitor hides their name, deletes their home town or erases their account (which
+     * gives all their visits one new unrelated key). `%s` is `id` or `public_id`.
      */
-    private const SIGNED_IN_VISITOR = "(v.origin_town_id IS NOT NULL OR v.name <> '')";
+    private const SIGNED_IN_VISITOR = 'v.signed_in=1';
     public const VISITORS =
         'SELECT COUNT(DISTINCT v.visitor_key) FROM visitor_visits v JOIN towns t ON t.id=v.town_id WHERE t.%s=? AND ' .
         self::SIGNED_IN_VISITOR;
     /**
      * Different other players' villages visited from a town (its home-town visits), each
-     * village once. Visits to the owner's own towns never count; a host that is later
-     * unshared or deleted still counts while its visits are kept. `%s` is the visiting
-     * town's `id` or `public_id`.
+     * village once, including private visits that hide the home town from the guestbook.
+     * Travels are recorded when the visit starts and kept with the visiting town, so a
+     * village its owner later unshares, deletes or erases with their account still counts.
+     * Visits to the owner's own towns are never recorded. `%s` is the visiting town's `id`
+     * or `public_id`.
      */
-    public const TRAVELS = 'SELECT COUNT(DISTINCT v.town_id) FROM visitor_visits v JOIN towns h ON h.id=v.town_id JOIN towns o ON o.id=v.origin_town_id WHERE o.%s=? AND h.player_id <> o.player_id';
+    public const TRAVELS = 'SELECT COUNT(*) FROM town_travels t JOIN towns o ON o.id=t.origin_town_id WHERE o.%s=?';
 
     private ?SaveIntegrity $integrity = null;
 
@@ -64,10 +68,7 @@ final class Honours
     /** @param (\Closure(): SaveIntegrity)|null $rules */
     public static function load(?\Closure $rules = null): self
     {
-        $path = dirname(__DIR__) . '/content/public-schema.json';
-        $schema = is_file($path)
-            ? json_decode(file_get_contents($path), true, 32, JSON_THROW_ON_ERROR)
-            : [];
+        $schema = PublicTown::schema();
         return new self(is_array($schema['honours'] ?? null) ? $schema['honours'] : [], $rules);
     }
 
@@ -483,6 +484,7 @@ final class Honours
             ),
             'score' => $this->bestScore($state, $measure)['ratio'] ?? 0,
             'era' => $this->rules()->eraStep($state['town']),
+            'landmark' => $this->landmark($state['town'], $measure['area'] ?? null),
             // One counter, or the total of a counter map when no key is named.
             'count' => is_array($counts)
                 ? (is_string($key)
@@ -509,6 +511,22 @@ final class Honours
             'social' => $state['social'] === null ? null : $state['social']($counter),
             default => null,
         };
+    }
+
+    /** A known, paid landmark in the validated save; the same catalog as the client. */
+    private function landmark(array $town, mixed $id): int
+    {
+        if (!is_string($id)) {
+            return 0;
+        }
+        $slots = $town['personalisation']['areas'][$id] ?? null;
+        foreach (TownPersonalisation::catalog()['areas'] as $area) {
+            if ($area['id'] === $id) {
+                return (int) (is_array($slots) &&
+                    in_array($slots[0] ?? null, $area['choices'], true));
+            }
+        }
+        return 0;
     }
 
     /**

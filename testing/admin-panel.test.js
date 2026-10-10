@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { adminApi, adminSession, adminUrl, AdminError } from '../src/admin/api';
 import {
   actionLabel,
+  codeLabel,
   describeAgent,
   isOnline,
   levelBucketSize,
@@ -11,7 +12,16 @@ import {
   relativeTime,
 } from '../src/admin/format';
 import { parseRoute } from '../src/admin/routes';
+import { compareRows, editedValues, savedField } from '../src/admin/syncCompare';
 import { buildingLabel, eraLabel, LEVEL_COUNT, powerLabel } from '../src/admin/labels';
+import {
+  correctionBody,
+  editingRisk,
+  inventoryFields,
+  typedValue,
+  validValue,
+} from '../src/admin/inventory';
+import { HAMMER_CAPACITY } from '../src/data/rewards';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -142,6 +152,8 @@ describe('admin formatting', () => {
 
   it('labels audit actions, including ones added later', () => {
     expect(actionLabel('town_restored')).toBe('Restored town revision');
+    expect(actionLabel('town_sync_forced')).toBe('Set town to accept next sync');
+    expect(actionLabel('privacy_contact_changed')).toBe('Changed privacy contact');
     expect(actionLabel('future_thing')).toBe('future thing');
   });
 });
@@ -152,6 +164,7 @@ describe('admin routes and game labels', () => {
     expect(parseRoute('#/players')).toEqual({ section: 'players', id: '' });
     expect(parseRoute('#/towns/0a1b-c')).toEqual({ section: 'towns', id: '0a1b-c' });
     expect(parseRoute('#/log')).toEqual({ section: 'log', id: '' });
+    expect(parseRoute('#/settings')).toEqual({ section: 'settings', id: '' });
     expect(parseRoute('#/nowhere/5')).toEqual({ section: 'overview', id: '' });
   });
 
@@ -162,5 +175,128 @@ describe('admin routes and game labels', () => {
     expect(buildingLabel('home2')).toBe('Willow house');
     expect(buildingLabel('moonbase')).toBe('moonbase');
     expect(powerLabel('tnt')).toBe('TNT');
+  });
+});
+
+describe('sync comparison', () => {
+  const cloud = {
+    town: { coins: 10, era: 'frontier', buildings: { well: 1 }, projects: [] },
+    powers: { tnt: 1 },
+    integrity: { epoch: 'cloud' },
+  };
+  const expected = {
+    town: { coins: 12, era: 'frontier', buildings: { well: 1 }, projects: [] },
+    powers: { tnt: 2 },
+  };
+  const upload = {
+    town: { coins: 512, era: 'frontier', buildings: { well: 1 }, projects: { well: { stage: 2 } } },
+    powers: { tnt: 2 },
+    integrity: { epoch: 'upload' },
+  };
+
+  it('puts the rejected value first, then what the server would not take', () => {
+    const rows = compareRows({ cloud, expected, upload, field: 'town.coins' });
+    expect(rows.map((row) => row.label)).toEqual([
+      'town.coins',
+      'town.projects.well.stage',
+      'powers.tnt',
+    ]);
+    expect(rows[0]).toMatchObject({ rejected: true, cloud: 10, expected: 12, upload: 512 });
+    expect(rows[1]).toMatchObject({ rejected: false, mismatch: true, cloud: undefined });
+    expect(rows[2]).toMatchObject({ rejected: false, mismatch: false, cloud: 1, upload: 2 });
+  });
+
+  it('compares with the cloud save when the server stopped before replaying', () => {
+    const rows = compareRows({ cloud, expected: null, upload, field: 'integrity.sequence' });
+    expect(rows.every((row) => row.mismatch && !row.rejected)).toBe(true);
+    expect(rows.map((row) => row.label)).not.toContain('integrity.epoch');
+  });
+
+  it('treats a missing value and an empty map or list as the same', () => {
+    const rows = compareRows({
+      cloud: { honours: { verified: [] }, town: { coins: 1 } },
+      expected: { honours: { verified: [] }, town: { coins: 1 } },
+      upload: { town: { coins: 1, projects: {} } },
+      field: null,
+    });
+    expect(rows).toEqual([]);
+  });
+
+  it('finds compared landmarks under their saved name', () => {
+    expect(savedField('town.landmarks.areas.porch')).toBe('town.personalisation.areas.porch');
+    expect(savedField('town.landmarksx')).toBe('town.landmarksx');
+    expect(savedField(null)).toBe('');
+  });
+
+  it('sends only edited values, typed as JSON or text', () => {
+    const rows = compareRows({ cloud, expected, upload, field: 'town.coins' });
+    const [coins, stage, tnt] = rows;
+    expect(
+      editedValues(rows, 'cloud', { [coins.key]: '777', [stage.key]: '', [tnt.key]: '1' }),
+    ).toEqual([{ path: ['town', 'coins'], value: 777 }]);
+    expect(editedValues(rows, 'upload', { [stage.key]: 'built' })).toEqual([
+      { path: ['town', 'projects', 'well', 'stage'], value: 'built' },
+    ]);
+  });
+
+  it('names rejection reasons, including ones added later', () => {
+    expect(codeLabel('save_integrity_mismatch')).toBe(
+      'Progress did not match the replayed actions',
+    );
+    expect(codeLabel('save_future_check')).toBe('save future check');
+  });
+});
+
+describe('admin coin and inventory quick fixes', () => {
+  const inventory = {
+    coins: 120,
+    builderHammers: 2,
+    powers: { tnt: 1, 'clear-row': 0 },
+    limits: { coins: Number.MAX_SAFE_INTEGER, builderHammers: 99, powers: 3 },
+  };
+  const fields = inventoryFields(inventory);
+
+  it('lists coins, every bonus by ID and builder hammers with their limits', () => {
+    expect(fields.map((field) => [field.key, field.current, field.max])).toEqual([
+      ['coins', 120, Number.MAX_SAFE_INTEGER],
+      ['powers.tnt', 1, 3],
+      ['powers.clear-row', 0, 3],
+      ['builderHammers', 2, 99],
+    ]);
+    expect(fields[1].label).toBe(powerLabel('tnt'));
+  });
+
+  it('accepts only typed whole numbers, hammers past the cap and bonuses within storage', () => {
+    const [, tnt, , hammers] = fields;
+    expect(typedValue(' 42 ')).toBe(42);
+    for (const text of ['', '1.5', '1,5', '2e3', '-1', 'ten']) expect(typedValue(text)).toBeNaN();
+    expect(validValue(hammers, HAMMER_CAPACITY + 3)).toBe(true);
+    expect(validValue(hammers, 100)).toBe(false);
+    expect(validValue(tnt, 3)).toBe(true);
+    expect(validValue(tnt, 4)).toBe(false);
+    expect(validValue(tnt, typedValue('x'))).toBe(false);
+  });
+
+  it('sends one value, bonuses by ID, against the revision shown', () => {
+    const [coins, tnt, , hammers] = fields;
+    expect(correctionBody(coins, 500, 7)).toEqual({ revision: 7, coins: 500 });
+    expect(correctionBody(tnt, 3, 7)).toEqual({ revision: 7, powers: { tnt: 3 } });
+    expect(correctionBody(hammers, 8, 7)).toEqual({ revision: 7, builderHammers: 8 });
+  });
+
+  it('warns while the owner is online and flags a newer save from their game', () => {
+    const now = 1_000_000;
+    expect(editingRisk(7, { revision: 7, ownerSeenAt: now - 60 }, now)).toEqual({
+      online: true,
+      stale: false,
+    });
+    expect(editingRisk(7, { revision: 7, ownerSeenAt: now - 3600 }, now)).toEqual({
+      online: false,
+      stale: false,
+    });
+    expect(editingRisk(7, { revision: 7, ownerSeenAt: null }, now).online).toBe(false);
+    expect(editingRisk(7, { revision: 8, ownerSeenAt: now - 60 }, now).stale).toBe(true);
+    // A poll answered before the admin's own fix landed is not a newer save.
+    expect(editingRisk(8, { revision: 7, ownerSeenAt: null }, now).stale).toBe(false);
   });
 });

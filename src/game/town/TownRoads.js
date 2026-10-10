@@ -36,7 +36,7 @@ export function addRoadSurfaces(d, roads, town) {
     const surface = new Mesh(geometry, d.material(style.color));
     surface.rotation.y = Math.atan2(to[0] - from[0], to[1] - from[1]);
     surface.position.set((from[0] + to[0]) / 2, 0.028 + index * 0.0002, (from[1] + to[1]) / 2);
-    surface.receiveShadow = true;
+    surface.castShadow = surface.receiveShadow = true;
     roads.add(surface);
     meshes.push(surface);
   }
@@ -50,7 +50,7 @@ export function addRoadSurfaces(d, roads, town) {
     const surface = new Mesh(geometry, d.material(color));
     surface.name = kind;
     surface.position.y = kind === 'bridge-approach' ? 0.048 : 0.054;
-    surface.receiveShadow = true;
+    surface.castShadow = surface.receiveShadow = true;
     roads.add(surface);
     meshes.push(surface);
   }
@@ -76,7 +76,7 @@ export function addRoadSurfaces(d, roads, town) {
     geometry.setIndex(data.indices);
     geometry.userData.owned = true;
     const mesh = new Mesh(geometry, d.material(color));
-    mesh.receiveShadow = true;
+    mesh.castShadow = mesh.receiveShadow = true;
     roads.add(mesh);
     meshes.push(mesh);
   }

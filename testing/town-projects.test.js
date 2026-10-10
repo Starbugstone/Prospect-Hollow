@@ -12,6 +12,7 @@ import {
 } from '../src/game/town/TownRules';
 import { useCampaignStore, SAVE_KEY } from '../src/stores/campaignStore';
 import fr from '../src/i18n/fr.json';
+import { HAMMER_CAPACITY } from '../src/data/rewards';
 let saved;
 beforeEach(() => {
   saved = new Map();
@@ -114,4 +115,42 @@ it('discards invalid or wrong-era saved focus and rolls back failed focus writes
   });
   expect(restored.focusTownProject('first-neighbors')).toBe(false);
   expect(restored.townProjectFocus).toBe('');
+});
+
+it('pays one builder hammer for each finished Frontier starter project, once and past the limit', () => {
+  const campaign = useCampaignStore();
+  expect(TOWN_PROJECTS.filter((project) => project.hammers).map((project) => project.id)).toEqual([
+    'first-neighbors',
+    'trail-welcome',
+  ]);
+  Object.assign(campaign.town.buildings, { well: 3, farm: 3, home: 2 });
+  campaign.town.coins = 10000;
+  campaign.builderHammers = HAMMER_CAPACITY;
+  expect(campaign.upgradeBuilding('home', 2)).toBe(true);
+  // Starting the last stage pays nothing; finishing it completes the project.
+  expect(campaign.builderHammers).toBe(HAMMER_CAPACITY);
+  expect(campaign.lastProjectReward).toBe(null);
+  campaign.town = advanceConstruction(campaign.town);
+  expect(campaign.finishConstruction('home', 3)).toBe(true);
+  expect(campaign.builderHammers).toBe(HAMMER_CAPACITY + 1);
+  expect(campaign.lastProjectReward).toEqual({ projects: ['first-neighbors'], hammers: 1 });
+  const receipt = campaign.integrity.actions.at(-1);
+  expect(receipt).toMatchObject({ kind: 'building-finish', data: { projectRewards: 1 } });
+  // The finished project never pays again, after a reload or another building.
+  setActivePinia(createPinia());
+  const reloaded = useCampaignStore();
+  expect(reloaded.builderHammers).toBe(HAMMER_CAPACITY + 1);
+  expect(reloaded.useBuilderHammer('stable', 0)).toBe(true);
+  expect(reloaded.lastProjectReward).toBe(null);
+  expect(reloaded.builderHammers).toBe(HAMMER_CAPACITY);
+});
+
+it('pays back the hammer that finishes a starter project', () => {
+  const campaign = useCampaignStore();
+  Object.assign(campaign.town.buildings, { stable: 3, shop: 3, school: 2, home: 2 });
+  campaign.builderHammers = 1;
+  expect(campaign.useBuilderHammer('school', 2)).toBe(true);
+  expect(campaign.builderHammers).toBe(1);
+  expect(campaign.lastProjectReward).toEqual({ projects: ['trail-welcome'], hammers: 1 });
+  expect(fr['Project complete: {project}. The town gives you a builder hammer.']).toBeTruthy();
 });

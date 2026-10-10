@@ -44,10 +44,31 @@ with the content (see [Extending content](#extending-content)).
 | Town    | Town Guardian (incidents fully protected) | 5 · Watchful Town       | 25                          | 60 · Hollow Sentinel          |
 | Town    | Forge Veteran (TNT from the forge)        | 5 · The Forge Delivers  | 100                         | 250 · Forge Master            |
 | Town    | Master Quartermaster                      | —                       | —                           | 5 powers held at 26 at once   |
+| Town    | A Lasting Legacy                          | —                       | —                           | Build your first monument     |
 | Friends | Visitors (different signed-in players)    | 1 · First Guest         | 5 · Welcoming Host          | 15 · Celebrated Town          |
 | Friends | Village Explorer (villages visited)       | 5 · Curious Neighbour   | 15 · Seasoned Traveller     | 30 · Village Explorer         |
 
 A rank without its own name uses the family name; the metal is always shown beside it.
+
+**Floating seam additions (honours version 4).** Levels 403–546 added two gems and outgrew
+several shipped gold goals, so these ranks were appended (shipped goals are unchanged):
+
+| Family                   | Bronze | Silver | Gold   | Diamond (new) |
+| ------------------------ | ------ | ------ | ------ | ------------- |
+| Ruby, Sapphire, Emerald  | 500    | 10,000 | 25,000 | 40,000        |
+| Topaz Laureate           | 500    | 6,000  | 16,000 | 22,000        |
+| Amethyst Laureate        | 500    | 6,000  | 16,000 | 20,000        |
+| Moonstone Laureate       | 500    | 6,000  | 16,000 | 21,000        |
+| Peridot Laureate (new)   | 500    | 4,500  | 9,000  | —             |
+| Starmetal Laureate (new) | 500    | 4,000  | 7,800  | —             |
+| Relic Keeper             | 10     | 125    | 360    | 650           |
+| Lamplighter              | 10     | 50     | 125    | 275           |
+| Ore Merchant             | 10     | 40     | 110    | 340           |
+| Core Engineer            | 10     | 50     | 125    | 190           |
+| Gate Breaker             | 10     | 50     | 130    | 300           |
+
+Floatstones count as relics; starglass, lenses, phase seals, portals, cracked walls and the
+moon lock and dial are `NON_MASTERY_ELEMENTS`.
 
 - Fusion Master lists its six fusions (`FUSION_MASTER_KEYS`); a later fusion joins a new rank or
   `LATER_FUSIONS`, never that list.
@@ -56,9 +77,18 @@ A rank without its own name uses the family name; the metal is always shown besi
   is not protection. It replaces the per-era defence medals, which depended on a random incident
   arriving at the right moment and could be missed for good.
 - Through the Ages names eras. Every other enabled era is listed in `NON_MILESTONE_ERAS`, so a new
-  era is a deliberate decision (a diamond rank or that list).
+  era is a deliberate decision (a diamond rank or that list). Its diamond rank, **Two Towns, One
+  Sky** (since honours version 3), asks to complete Twin Hollows in the valley and on the Moon
+  (goal 29: two era steps per era, plus one for completing it). Like gold, it is a milestone at the
+  end of the content, not a counted grind.
 - Village Explorer counts different players' villages visited **from this town** while signed in
   (the town chosen as the visiting town). Visiting your own other towns never counts.
+
+The monument family has exactly one rank, `monument-gold`: **A Lasting Legacy**.
+Any of the five Monument Square choices earns it on the first successful purchase.
+Monuments cannot be replaced; older saves that replaced one keep their original award.
+Older saves with a monument catch up in honours generation 2. The badge can be showcased
+and displayed on buildings like other Town Honours; it grants no coins or progression.
 
 ## Counting rules
 
@@ -155,10 +185,41 @@ late bound for eras. "Level N" means N completed puzzles in a straight pass.
 | Town Guardian    | 5 at L28 (19–69)           | 25 at L224 (186–280)             | 42.5 (37–48); 60 ≈ 1.4 campaigns                |
 | Forge            | 5 at L30                   | 100 at L221                      | 190; 250 ≈ 1.3 campaigns (spending TNT)         |
 
+Through the Ages diamond (Two Towns, One Sky), measured on 2026-10-07: one seed of the full
+402-level campaign (`node scripts/measure-campaign.mjs . 1 402`), then
+`node scripts/measure-town-progression.mjs <measurements> ordinary 1 5000`, which replays level 402 at
+its observed payout once the campaign ends. Riverlight was complete at run 438, Skysail at 483,
+Stargazer at 534, Moonward at 591 and Twin Hollows at run 612: the campaign plus 210 replays. Its
+light homecoming (a few landmarks plus New Hollow) costs about 1.36 million coins against 3.8
+million for Moonward.
+
 Mine elements per campaign: relics 242 (from chapter 10), lanterns 84 (chapter 42), survey trails
 39 (chapter 44), ore orders 73 (chapter 41), charge cores 85 (chapter 55), blast gates 89
 (chapter 63). Their silver goals fall shortly after the element's content, gold at about 1.5×.
+
+Re-measured on 2026-10-08 for the 546-level campaign, after the new levels were tuned to the
+deep-mine effort (`src/data/honourLevels.json`): relics 430, lanterns 183, survey trails 44,
+ore orders 227, charge cores 125, blast gates 202. Gold fell below 1.3 campaigns for all but
+survey trails, so each of those families gained a diamond rank at about 1.5 campaigns (table
+above); `testing/honours.test.js` now checks a family's top rank. A 30-seed pass over levels
+403–546 (`node scripts/measure-campaign.mjs . 30 546 403,…,546`) collected per pass (median per
+level, summed): ruby 9,212, sapphire 9,196, emerald 9,154, topaz 3,212, amethyst 1,421,
+moonstone 2,200, peridot 5,922 and starmetal 5,199. Added to the 402-level figures above, the
+common gems reach about 27,000 per campaign, topaz 15,000, amethyst 13,200 and moonstone
+14,000, so every gem gained a diamond at about 1.5 campaigns. Peridot appears from level 403
+and starmetal from 439; their silver sits inside one pass of those levels and gold at about
+1.5 passes.
 Visitor and explorer goals are social choices (1/5/15 and 5/15/30), not simulated.
+
+Monument milestone checked on 2026-10-06 with
+`node scripts/measure-campaign.mjs . 1 90` in the Node 24 Docker image: seed 1 completed
+90 puzzles, reached Industrial after run 59, and reached Post-war after run 89 with
+2,589 coins remaining under the normal progression-first spending policy. This proves
+the optional monument unlock is reachable without requiring a purchase. Its fixed goal
+is exactly one monument, irrespective of price (6,000–15,000 coins); the player chooses
+when to save for it. Purchase/replacement fixtures and honour tests cover all five
+choices, exact debits, one award, persistence and server verification. The simulator
+does not buy optional monuments or predict when players will choose to buy one.
 
 Score Legend partly rewards patience: with unlimited moves a player can stall before the final
 objective. That is accepted and never limited by moves or time. Re-measure after any change to
@@ -177,7 +238,7 @@ requirement?, popup?, since?, version? }] }`.
 - A rank definition has `id, family, tab, rank, metal, difficulty, version, since, name,
 requirement, popup, progressText, goal, measure, art, link, params(), progress(state),
 qualifies(state)`. Display strings are English keys for `t()`.
-- **Measures** (`MEASURES`, mirrored in `backend/src/Honours.php`): `stars` (three-star records),
+- **Measures** (`MEASURES`, mirrored in `backend/src/Honours.php`): `landmark` (a known option built in a named optional parcel), `stars` (three-star records),
   `score` (`fromLevel`; best ratio, evidence `{ levelId, score, target }`), `era` (`era`,
   `complete`; two steps per era), `count` (`counter`, optional `key`; a map without a key sums),
   `distinct` (`counter`, `keys`), `powers` (`quantity`) and `social` (`counter`: `visitors` or

@@ -1,7 +1,10 @@
 <template>
   <aside
     class="town-resource-collection"
-    :class="{ still: reducedMotion, 'resource-tnt': resource === 'tnt' }"
+    :class="{
+      still: reducedMotion,
+      'resource-tnt': resource === 'tnt' || resource === 'project-hammer',
+    }"
     :style="{ left: `clamp(72px, ${origin.x}%, calc(100% - 72px))`, top: `${origin.y}%` }"
     role="status"
     aria-live="polite"
@@ -26,9 +29,13 @@
         :name="appearance.icon"
         :src="appearance.image"
         alt=""
-      />+{{ number(amount) }}{{ appearance.suffix }}</strong
+      /><template v-if="amount !== null"
+        >+{{ number(amount) }}{{ appearance.suffix }}</template
+      ></strong
     >
-    <span class="town-sr-only">{{ t(appearance.message, { coins: number(amount) }) }}</span>
+    <span class="town-sr-only">{{
+      amount === null ? t(appearance.unknown) : t(appearance.message, { coins: number(amount) })
+    }}</span>
   </aside>
 </template>
 <script setup>
@@ -36,7 +43,8 @@ import { computed, onMounted, onBeforeUnmount } from 'vue';
 import { t, number } from '../../i18n';
 import TownIcon from './TownIcon.vue';
 const props = defineProps({
-  amount: { type: Number, required: true },
+  // Null when the amount is not known here, e.g. a visitor's reward that their own town counts.
+  amount: { type: Number, default: null },
   resource: { type: String, default: 'coins' },
   reducedMotion: Boolean,
   origin: { type: Object, default: () => ({ x: 50, y: 50 }) },
@@ -49,11 +57,26 @@ const resources = {
     message: 'Collected {coins} coins from the saloon!',
     suffix: '',
   },
+  'helmet-coins': {
+    icon: 'coin',
+    particles: 10,
+    cue: 'coin',
+    message: 'Found the astronaut: {coins} coins!',
+    unknown: 'Found the astronaut: coins for your town!',
+    suffix: '',
+  },
   'vip-coins': {
     icon: 'coin',
     particles: 5,
     cue: 'coin',
     message: 'A VIP spent {coins} coins in your village!',
+    suffix: '',
+  },
+  'project-hammer': {
+    image: '/art/rewards/builder-hammer.svg',
+    particles: 5,
+    cue: 'jackpot',
+    message: 'Project complete: +{coins} builder hammer',
     suffix: '',
   },
   tnt: {
@@ -70,7 +93,7 @@ const playCue = (index) => emit('cue', { name: appearance.value.cue, index });
 const timers = [];
 onMounted(() => {
   playCue(0);
-  for (let i = 1; i < Math.min(5, props.amount); i++)
+  for (let i = 1; i < Math.min(5, props.amount ?? 5); i++)
     timers.push(setTimeout(() => playCue(i), i * 110));
   timers.push(setTimeout(() => emit('close'), 1100));
 });

@@ -17,8 +17,10 @@
       :key="current.villageId"
       :village-id="current.villageId"
       @presence="ownVisitId = $event"
+      @town="homeTown = $event"
     />
     <p v-if="saloonMessage" class="village-saloon" role="status">{{ saloonMessage }}</p>
+    <p v-if="helmetMessage" class="village-saloon" role="status">{{ helmetMessage }}</p>
     <div class="community-world town-map-frame" :class="{ 'town-fullscreen': fullscreen }">
       <button
         ref="fullscreenButton"
@@ -40,7 +42,8 @@
           :earned="honours.earned"
           :received="honours.received"
           :size="28"
-        /><template v-if="saloonMessage"> · {{ saloonMessage }}</template>
+        /><template v-if="saloonMessage"> · {{ saloonMessage }}</template
+        ><template v-if="helmetMessage"> · {{ helmetMessage }}</template>
       </p>
       <p v-if="findError" class="village-find-error" role="status">{{ t(findError) }}</p>
       <TownScene
@@ -54,6 +57,17 @@
         :reduced-motion="settings.reducedMotion"
         @visit="collectSaloon"
         @inspect="inspect"
+        @helmet="findHelmet"
+        @helmet-zoom="zoomForHelmet"
+      />
+      <TownResourceCollection
+        v-if="helmetBurst"
+        :key="helmetBurst.serial"
+        resource="helmet-coins"
+        :amount="helmetBurst.amount"
+        :origin="helmetBurst.origin"
+        :reduced-motion="settings.reducedMotion"
+        @close="helmetBurst = null"
       />
     </div>
     <p class="village-hint">{{ t('Tap a building or the mine to see its details.') }}</p>
@@ -91,6 +105,7 @@
         :honours="honours ?? { earned: {}, showcase: [], received: {} }"
         :town="current.name"
       />
+      <TownMonumentSite v-else-if="AREA_BY_ID[inspected]" :id="inspected" :town="town" read-only />
       <section v-else-if="inspected === 'mine'" class="town-building-details">
         <div class="town-detail-title">
           <div>
@@ -123,7 +138,7 @@
         <p v-else class="museum-empty">{{ t('Level awards are not available yet.') }}</p>
       </section>
       <TownBuildingDetails
-        v-if="!['mine', 'guestbook', 'honours'].includes(inspected)"
+        v-if="!['mine', 'guestbook', 'honours'].includes(inspected) && !AREA_BY_ID[inspected]"
         :key="inspected"
         :id="inspected"
         :town="town"
@@ -139,15 +154,20 @@ import { useVillageVisitors } from '../../composables/useVillageVisitors';
 import TownGuestbook from '../town/TownGuestbook.vue';
 import VisitPresence from './VisitPresence.vue';
 import { villageAppearance, villageHonours, villageLevels } from '../../services/publicVillage';
-import { latestVillage, tapSaloon } from '../../services/cloudProfile';
+import { cloud, latestVillage, tapHelmet, tapSaloon } from '../../services/cloudProfile';
+import { normalizeTown, spaceHelmetOut, spaceHelmetReward } from '../../game/town/TownRules';
+import { townStorage } from '../../services/townStorage';
 import { createVillagePoller } from '../../services/villagePolling';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { ERA_BY_ID } from '../../data/eras';
 import { t } from '../../i18n';
 import TownScene from '../town/TownScene.vue';
+import TownResourceCollection from '../town/TownResourceCollection.vue';
 import GameIcon from '../GameIcon.vue';
 import TownDialog from '../town/TownDialog.vue';
 import TownBuildingDetails from '../town/TownBuildingDetails.vue';
+import TownMonumentSite from '../town/TownMonumentSite.vue';
+import { AREA_BY_ID, areaChoice } from '../../data/townLandmarks';
 import MuseumLevelGrid from '../town/MuseumLevelGrid.vue';
 import HonourGallery from '../honours/HonourGallery.vue';
 import HonourShowcaseSlots from '../honours/HonourShowcaseSlots.vue';
@@ -155,7 +175,7 @@ import { BUILDING_BY_ID } from '../../data/town';
 import '../../styles/town.css';
 // One read-only renderer for shared towns, whether opened from the list or a share link.
 // Mine and museum cards share the owner's public collection, without replay actions.
-// The only action is collecting the saloon's takings for the owner.
+// A visitor may collect the saloon's takings for the owner and find the space helmet.
 const props = defineProps({ village: { type: Object, required: true } });
 const settings = useSettingsStore();
 // The owner may still be playing: `current` follows their latest synced appearance.
@@ -194,6 +214,8 @@ const levels = computed(() => villageLevels(current.value));
 const honours = computed(() => villageHonours(current.value));
 function inspect(id) {
   if (id === 'mine' || Object.hasOwn(BUILDING_BY_ID, id)) inspected.value = id;
+  // Visitors can admire a built monument; open sites have no label for them.
+  else if (AREA_BY_ID[id] && areaChoice(town.value, AREA_BY_ID[id])) inspected.value = id;
 }
 const hasSaloon = computed(() => current.value.appearance?.buildings?.saloon > 0);
 const readyAt = ref((props.village.saloonReadyAt ?? 0) * 1000),
@@ -211,6 +233,10 @@ const poller = createVillagePoller({
     if (visual(village) !== visual(current.value)) current.value = village;
     // Another visitor may have collected meanwhile; the saloon's rest only ever moves later.
     readyAt.value = Math.max(readyAt.value, (village.saloonReadyAt ?? 0) * 1000);
+    townHelmetReadyAt.value = Math.max(
+      townHelmetReadyAt.value,
+      (village.helmetReadyAt ?? 0) * 1000,
+    );
   },
   gone: () => (unshared.value = true),
 });
@@ -239,6 +265,7 @@ onMounted(() => {
 });
 onBeforeUnmount(() => {
   clearInterval(clock);
+  clearTimeout(zoomTimer);
   poller.stop();
   document.removeEventListener('visibilitychange', resume);
   document.removeEventListener('keydown', leaveFullscreen);
@@ -260,6 +287,91 @@ const saloonMessage = computed(() => {
     });
   return t('Tap the coins over the saloon to collect its takings for the mayor.');
 });
+// Finding the space helmet rewards the visitor's own town (the one they visit as) with half
+// an hour of its saloon takings, once per 12 hours per player, and each town's helmet is
+// found by one visitor per 12 hours; the server keeps both rests.
+const homeTown = ref(null),
+  helmetReadyAt = ref(0),
+  townHelmetReadyAt = ref((props.village.helmetReadyAt ?? 0) * 1000),
+  helmetBusy = ref(false),
+  helmetNote = ref(null),
+  helmetBurst = ref(null),
+  // An animal tapped from too far away asks to zoom in for a moment.
+  helmetZoom = ref(false);
+let burstSerial = 0,
+  zoomTimer = 0;
+// The coins a find brings the town visited as, counted from its copy in this browser; that
+// town redeems it later from its own takings. Null when this browser holds no copy.
+function helmetCoins(townId) {
+  const saved = cloud.account && townStorage.get(townId, cloud.account.id)?.profile?.town;
+  return saved ? spaceHelmetReward(normalizeTown(saved), 'visitor') : null;
+}
+const hasHelmet = computed(() => spaceHelmetOut(town.value));
+const helmetMessage = computed(() => {
+  if (!hasHelmet.value) return '';
+  if (helmetZoom.value) return t('Zoom in closer to the animals to find the astronaut.');
+  const note = helmetNote.value;
+  if (note?.kind === 'found')
+    return t('You found the astronaut! {town} receives half an hour of its saloon takings.', {
+      town: note.town,
+    });
+  if (note?.kind === 'error') return t(note.message);
+  if (note?.kind === 'own')
+    return t('This is your own town: find its astronaut from your game for your reward.');
+  if (townHelmetReadyAt.value > now.value)
+    return t("A visitor found this town's astronaut recently. Come back in {hours} h.", {
+      hours: Math.ceil((townHelmetReadyAt.value - now.value) / 3_600_000),
+    });
+  if (note?.kind === 'signed-out')
+    return t('You found the astronaut! Sign in with a town of your own to earn its reward.');
+  if (helmetReadyAt.value > now.value)
+    return t('You found an astronaut recently. Your next reward is ready in {hours} h.', {
+      hours: Math.ceil((helmetReadyAt.value - now.value) / 3_600_000),
+    });
+  return t(
+    'Find the animal in a space helmet: your own town earns half an hour of saloon takings.',
+  );
+});
+function zoomForHelmet() {
+  helmetZoom.value = true;
+  clearTimeout(zoomTimer);
+  zoomTimer = setTimeout(() => (helmetZoom.value = false), 6000);
+}
+async function findHelmet(origin) {
+  helmetZoom.value = false;
+  clearTimeout(zoomTimer);
+  now.value = Date.now();
+  if (helmetBusy.value) return;
+  if (homeTown.value?.own) {
+    helmetNote.value = { kind: 'own' };
+    return;
+  }
+  // Another visitor found this town's helmet; a find of this visitor's own stays thanked.
+  if (townHelmetReadyAt.value > now.value) {
+    if (helmetNote.value?.kind !== 'found') helmetNote.value = null;
+    return;
+  }
+  if (!cloud.account || !homeTown.value) {
+    helmetNote.value = { kind: 'signed-out' };
+    return;
+  }
+  helmetNote.value = null;
+  if (helmetReadyAt.value > now.value) return;
+  helmetBusy.value = true;
+  try {
+    const town = homeTown.value;
+    const { readyAt } = await tapHelmet(props.village.villageId, town.townId);
+    helmetReadyAt.value = townHelmetReadyAt.value = readyAt * 1000;
+    helmetNote.value = { kind: 'found', town: town.name };
+    helmetBurst.value = { amount: helmetCoins(town.townId), origin, serial: ++burstSerial };
+  } catch (e) {
+    if (e.data?.code === 'helmet_taken') townHelmetReadyAt.value = e.data.readyAt * 1000;
+    else if (e.data?.readyAt) helmetReadyAt.value = e.data.readyAt * 1000;
+    else helmetNote.value = { kind: 'error', message: e.message };
+  } finally {
+    helmetBusy.value = false;
+  }
+}
 async function collectSaloon() {
   now.value = Date.now();
   if (!collectable.value) return;

@@ -11,6 +11,8 @@ import { fishingDockLayout } from './buildings/river';
 import { walkPath } from './TownNavigation';
 
 const RAIL_HEIGHT = 0.18;
+// The railway is level outside this stretch, which also spans the opening's build wave.
+export const RAIL_JOINTED = [-60, 60];
 export const railHeight = (x) => {
   const p = Math.max(0, Math.min(1, (16 - Math.abs(x - riverCenterX(RAIL_EDGE.from[1]))) / 11));
   return RAIL_HEIGHT + 2.5 * p * p * (3 - 2 * p);
@@ -250,24 +252,31 @@ export function addRailroad(d, town, { batch = true } = {}) {
   const rails = d.group(d.world);
   rails.userData.static = true;
   rails.name = 'Station connecting railroad';
-  for (let x = RAIL_EDGE.from[0]; x < RAIL_EDGE.to[0]; x++) {
-    const z = RAIL_EDGE.from[1];
+  const z = RAIL_EDGE.from[1];
+  // Rails and ballast between two points; the sleepers are laid one per unit below.
+  const track = (from, to) => {
     for (const dz of [-0.52, 0.52])
       d.rod(
         rails,
-        [x, railHeight(x), z + dz],
-        [x + 1, railHeight(x + 1), z + dz],
+        [from, railHeight(from), z + dz],
+        [to, railHeight(to), z + dz],
         0.035,
         '#6e7770',
       );
+    const fill = railHeight(from) - 0.14;
+    if (Math.abs(from - riverCenterX(z)) > RIVER.bankWidth + 1.2)
+      d.box(rails, to - from + 0.02, fill, 1.7, (from + to) / 2, fill / 2, z, '#a99d80');
+  };
+  // One-unit lengths follow the bridge grade and the opening's build wave; the
+  // level line beyond them is one welded length on each side.
+  const [west, east] = RAIL_JOINTED;
+  track(RAIL_EDGE.from[0], west);
+  for (let x = west; x < east; x++) track(x, x + 1);
+  track(east, RAIL_EDGE.to[0]);
+  for (let x = RAIL_EDGE.from[0]; x < RAIL_EDGE.to[0]; x++)
     d.box(rails, 0.17, 0.1, 1.45, x, railHeight(x) - 0.09, z, '#8b7756');
-    const fill = railHeight(x) - 0.14;
-    if (Math.abs(x - riverCenterX(z)) > RIVER.bankWidth + 1.2)
-      d.box(rails, 1.02, fill, 1.7, x + 0.5, fill / 2, z, '#a99d80');
-  }
-  const center = riverCenterX(RAIL_EDGE.from[1]),
-    span = RIVER.bankWidth + 1.2,
-    z = RAIL_EDGE.from[1];
+  const center = riverCenterX(z),
+    span = RIVER.bankWidth + 1.2;
   const bridge = d.group(rails);
   bridge.name = 'Railway river bridge';
   d.box(bridge, span * 2, 0.15, 1.8, center, railHeight(center) - 0.2, z, '#766e5d');

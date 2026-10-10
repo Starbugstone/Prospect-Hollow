@@ -121,6 +121,12 @@ final class AdminController
         if ($method . ' ' . $path === 'PATCH audit/settings') {
             return $this->service->setAuditRetention($actor, $body);
         }
+        if ($method . ' ' . $path === 'GET settings') {
+            return $this->service->settings();
+        }
+        if ($method . ' ' . $path === 'PATCH settings/privacy') {
+            return $this->service->setPrivacyContact($actor, $body);
+        }
         if ($method . ' ' . $path === 'POST audit/purge') {
             return $this->service->purgeAudit($actor, $body);
         }
@@ -161,12 +167,24 @@ final class AdminController
                 default => throw new ApiError(405, 'Method is not allowed.'),
             };
         }
-        if (preg_match('~^towns/([a-f0-9-]{36})(?:/(restore))?$~D', $path, $m)) {
+        if (preg_match('~^towns/([a-f0-9-]{36})/sync/([a-f0-9]{32})(?:/(reset))?$~D', $path, $m)) {
+            return match ($method . ' ' . ($m[3] ?? '')) {
+                'GET ' => $this->service->syncRejection($m[1], $m[2]),
+                'POST reset' => $this->service->resetTown($actor, $m[1], $m[2], $body),
+                default => throw new ApiError(405, 'Method is not allowed.'),
+            };
+        }
+        if (
+            preg_match('~^towns/([a-f0-9-]{36})(?:/(restore|sync|inventory|status))?$~D', $path, $m)
+        ) {
             return match ($method . ' ' . ($m[2] ?? '')) {
                 'GET ' => $this->service->townDetail($m[1]),
+                'GET status' => $this->service->townStatus($m[1]),
                 'PATCH ' => $this->service->updateTown($actor, $m[1], $body),
                 'DELETE ' => $this->service->deleteTown($actor, $m[1], $body),
                 'POST restore' => $this->service->restoreTown($actor, $m[1], $body),
+                'PATCH sync' => $this->service->setForceSync($actor, $m[1], $body),
+                'PATCH inventory' => $this->service->correctTown($actor, $m[1], $body),
                 default => throw new ApiError(405, 'Method is not allowed.'),
             };
         }

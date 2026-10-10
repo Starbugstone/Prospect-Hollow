@@ -52,11 +52,20 @@ it('stages obstacles while leaving a lighter fifth puzzle in every chapter', () 
   expect(levels).toHaveLength(LEVEL_COUNT);
   for (let start = 0; start < levels.length; start += 6) {
     const chapter = levels.slice(start, start + 6);
-    const workload = chapter.map((level) => level.objectives[0].target);
+    // From level 403 many goals are cargo, lanterns or orders rather than layers, so
+    // the measured chest target (from 30 simulated runs) stands for the workload.
+    const workload = chapter.map((level) =>
+      level.id > 402 ? level.chestTarget : level.objectives[0].target,
+    );
     expect(workload[4]).toBeLessThan(workload[3]);
     expect(workload[5]).toBeGreaterThan(workload[4]);
     expect(chapter[4].chestTarget).toBeLessThan(chapter[3].chestTarget);
-    if (start) expect(workload[0]).toBeLessThan(levels[start - 1].objectives[0].target);
+    if (start)
+      expect(workload[0]).toBeLessThan(
+        levels[start - 1].id > 402 || start === 402
+          ? levels[start - 1].chestTarget
+          : levels[start - 1].objectives[0].target,
+      );
   }
   for (const level of levels.slice(0, 36)) {
     const blockers = level.tiles.filter((tile) => tile.type === 'blocker');

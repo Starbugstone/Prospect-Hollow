@@ -73,7 +73,7 @@ describe('Reserved garden district shadow coverage', () => {
     expect(d.renderer.shadowMap.autoUpdate).toBe(false);
     d.renderer.shadowMap.needsUpdate = false;
     const update = vi.spyOn(d.sun.shadow.camera, 'updateProjectionMatrix');
-    expect(updateTownShadowCoverage(d, [{ id: 'teaHouse' }])).toBe(false);
+    expect(updateTownShadowCoverage(d, [...gardenPlots].reverse())).toBe(false);
     expect(update).not.toHaveBeenCalled();
     expect(d.renderer.shadowMap.needsUpdate).toBe(false);
     updateTownShadowCoverage(d, [{ id: 'home' }]);
@@ -82,5 +82,31 @@ describe('Reserved garden district shadow coverage', () => {
     expect(d.sun.shadow.camera.right).toBe(31);
     expect(d.sun.shadow.camera.far).toBe(95);
     expect(d.renderer.shadowMap.needsUpdate).toBe(true);
+  });
+
+  it('widens the frustum for the Skyward quarter and elevator only once they are visible', () => {
+    const garden = view(),
+      skyward = view();
+    updateTownShadowCoverage(garden, [{ id: 'teaHouse' }]);
+    updateTownShadowCoverage(skyward, [{ id: 'teaHouse' }, { id: 'skyHarbour' }]);
+    const width = ({ sun }) => sun.shadow.camera.right - sun.shadow.camera.left;
+    expect(width(garden)).toBeLessThan(width(skyward));
+    expect(updateTownShadowCoverage(garden, [{ id: 'teaHouse' }, { id: 'spaceElevator' }])).toBe(
+      true,
+    );
+    for (const id of ['skyHarbour', 'spaceElevator']) {
+      const d = view();
+      updateTownShadowCoverage(d, [{ id }]);
+      d.sun.shadow.updateMatrices(d.sun);
+      const { position, halfWidth, halfDepth } = GARDEN_PARCELS[id];
+      for (const dx of [-halfWidth, halfWidth])
+        for (const dz of [-halfDepth, halfDepth]) {
+          const projected = new Vector3(position[0] + dx, 0, position[1] + dz).project(
+            d.sun.shadow.camera,
+          );
+          expect(Math.abs(projected.x), id).toBeLessThan(1);
+          expect(Math.abs(projected.y), id).toBeLessThan(1);
+        }
+    }
   });
 });

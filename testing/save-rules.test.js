@@ -199,6 +199,18 @@ describe('shared save accounting catalog', () => {
       rules.buildings.well.upgrades[2].cost,
     );
     expect(rules.buildings.well.serviceLevels).toEqual([0, 1, 2, 5]);
+    expect(rules.buildings.well.shortSince).toBe(1);
+    // Frontier's five-level services were shortened in progression version 2.
+    for (const id of ['saloon', 'sheriff', 'bank', 'square', 'blacksmith']) {
+      expect(rules.buildings[id], id).toMatchObject({
+        maxLevel: 3,
+        legacyMaxLevel: 5,
+        shortSince: 2,
+        serviceLevels: [0, 1, 2, 5],
+      });
+      expect(rules.buildings[id].legacyUpgradeCosts, id).toHaveLength(5);
+    }
+    expect(rules.defaultProfile.town.progressionVersion).toBe(2);
     expect(rules.rewards.hammerCapacity).toBe(5);
     expect(rules.economy.collectionCooldownMs).toBe(30_000);
     expect(rules.economy.incomeHoursCap).toBe(5);

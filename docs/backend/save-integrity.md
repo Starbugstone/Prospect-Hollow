@@ -109,8 +109,18 @@ save formats and historical migration remain compatible.
 
 Registered `prospectDebug` commands retain their explicit local exception in
 development, preprod and builds with `VITE_DEBUG_TOOLS=true`. Enabling those tools
-does not exempt arbitrary direct mutations. Their local exception grants no
-server permission: tracked account saves still require valid resource accounting.
+does not exempt arbitrary direct mutations. Each command also records a `testing`
+receipt. A server whose `APP_ORIGIN` host starts with `preprod.`, or which sets
+`SAVE_TESTING_TOOLS=true`, accepts an upload carrying that receipt as a new
+unverified baseline, like enrollment: it keeps the latest clock offset, run in
+progress, Town Honours counters and money budget, and later uploads are replayed
+normally again. Any other server rejects the receipt as a mismatch, so production
+tracked saves still require valid resource accounting.
+
+An admin can let one upload of a town through the same re-baseline after a false
+desync (**Accept next sync**), or save an edited copy that the owner's game loads
+without asking. Rejected uploads are kept for that comparison; see
+[blocked syncs](admin.md#blocked-syncs). Nothing in the client can set either.
 
 These JavaScript checks deter straightforward console changes, not a player who
 modifies browser code. Local-only saves and first-enrollment history remain
@@ -155,7 +165,14 @@ upload; acknowledgment clears it while keeping any later local progress.
 The journal covers run start, normal completion, continuous-play earnings, chest
 claims, item consumption, shop purchases, building purchase/completion, builder
 hammers, forge production, saloon collections, visitor collections, VIP receipts,
-raid outcomes and era advancement. Continuous play records economic changes only;
+space-helmet finds, raid outcomes and era advancement. A `helmet-find` pays the town's
+hourly saloon rate once per completed puzzle (`completedRuns` above `helmetRun`) from
+Tomorrow City on. A `helmet-visitor` pays half that rate (`spaceHelmetRewardHours` in the save rules) for a find
+made while visiting another town, only with the server's receipt for this town and a find time
+after `helmetVisitAt`. A building receipt flagged `projectRewards: 1` that finishes one of the
+starter projects in `rewards.townProjects` (every building at `rewards.projectStages`) grants its
+builder hammers, past the chest limit; receipts from older clients carry no flag and get none.
+Both count as new earnings in the money estimate. Continuous play records economic changes only;
 after the existing lifetime coin reward is exhausted, further matches remain
 playable without adding a journal entry for every score update. Statistics do not
 become completion gates.

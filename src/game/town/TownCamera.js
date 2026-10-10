@@ -1,3 +1,4 @@
+import { PERSONAL_AREAS, areaUnlocked } from '../../data/townPersonalisation';
 import * as THREE from 'three';
 import { nextGoal } from './TownRules';
 import { PLOTS } from './TownLayout';
@@ -18,19 +19,22 @@ export const CAMERA_MIN_DISTANCE = 7;
 export function frameTown(d) {
   if (d.eventCamera) return;
   if (!d.anchors?.length) return;
+  if (d.town && PERSONAL_AREAS.some((area) => areaUnlocked(d.town, area)))
+    d.controls.maxDistance = Math.max(d.controls.maxDistance, 180);
   const bounds = new THREE.Box3();
   const corners = [];
   const intimate =
     d.camera.aspect < 0.8 &&
     d.town?.era === 'frontier' &&
     Object.values(d.town.buildings).filter(Boolean).length < 6;
-  const goal = intimate ? nextGoal(d.town)?.id : null;
+  const goal = intimate ? (d.coachPlot ?? nextGoal(d.town)?.id) : null;
   const framing = intimate
     ? d.anchors.filter(
         ({ id }) => id === 'mine' || id === goal || d.town.buildings[id] || d.town.projects[id],
       )
     : d.anchors;
   for (const { id } of framing) {
+    if (!PLOTS[id]) continue;
     const [x, z] = PLOTS[id];
     if (id === 'airport') {
       for (const dx of [-10, 10])
@@ -49,6 +53,23 @@ export function frameTown(d) {
     for (const dx of [-halfWidth, halfWidth])
       for (const y of [0, height])
         for (const dz of [-halfDepth, halfDepth]) corners.push(point(x + dx, y, z + dz));
+  }
+  for (const area of PERSONAL_AREAS) {
+    if (!d.town || !areaUnlocked(d.town, area)) continue;
+    // Open sites are framed too: their markers invite a monument.
+    area.positions.forEach(([x, z]) => {
+      for (const dx of [-area.radius, area.radius])
+        for (const dz of [-area.radius, area.radius]) {
+          const corner = point(x + dx, 14, z + dz);
+          bounds.expandByPoint(corner);
+          corners.push(corner);
+        }
+    });
+  }
+  if (d.town?.personalisation?.crest) {
+    const tip = point(-3.5, 13, PLOTS.mine[1] - 5);
+    bounds.expandByPoint(tip);
+    corners.push(tip);
   }
   // Include a glimpse of the near river from the first visit, without framing future land.
   if (d.town && !d.raid && !intimate) {
@@ -115,6 +136,27 @@ export function findVisitor(d, id) {
   d.overview = false;
   d.controls.update();
   selectVillager(d, actor, false);
+  d.render();
+  return true;
+}
+
+export function focusTownPlace(d, id) {
+  if (d.raid || d.cinematic || d.presentation || d.eventCamera || !d.controls.enabled) return false;
+  const area = PERSONAL_AREAS.find((a) => a.id === id);
+  const position = PLOTS[id] ?? area?.positions[0];
+  if (!position) return false;
+  const target = point(position[0], 2, position[1]);
+  const distance = area ? 32 : 19;
+  const offset = d.camera.position
+    .clone()
+    .sub(d.controls.target)
+    .normalize()
+    .multiplyScalar(distance);
+  d.controls.target.copy(target);
+  d.camera.position.copy(target).add(offset);
+  keepCameraAboveTerrain(d.camera.position, target);
+  d.overview = false;
+  d.controls.update();
   d.render();
   return true;
 }

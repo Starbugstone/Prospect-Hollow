@@ -41,7 +41,7 @@ final class VisitorService
     {
         $db = $this->database->get();
         $profile = $db->fetchAssociative(
-            'SELECT display_name,visiting_town_id FROM player_profiles WHERE player_id=?',
+            'SELECT display_name,visiting_town_id,anonymous_visits FROM player_profiles WHERE player_id=?',
             [$player],
         );
         $rows = $db->fetchAllAssociative(
@@ -66,6 +66,7 @@ final class VisitorService
             'profile' => [
                 'displayName' => $profile['display_name'] ?? '',
                 'visitingTownId' => $selected,
+                'anonymousVisits' => (bool) ($profile['anonymous_visits'] ?? false),
             ],
             'towns' => $towns,
         ];
@@ -73,7 +74,7 @@ final class VisitorService
 
     public function updateProfile(Request $r, array $body): array
     {
-        SaveService::keys($body, ['displayName', 'visitingTownId']);
+        SaveService::keys($body, ['displayName', 'visitingTownId', 'anonymousVisits']);
         $session = $this->auth->session($r, true);
         if (!is_string($body['displayName'] ?? null)) {
             throw new ApiError(422, 'Enter a public display name.');
@@ -94,41 +95,49 @@ final class VisitorService
         if ($town !== null && (!is_string($town) || !preg_match('/^[a-f0-9-]{36}$/D', $town))) {
             throw new ApiError(422, 'Choose one of your towns.');
         }
-        $this->database->get()->transactional(function ($db) use ($session, $name, $town) {
-            $db->fetchOne('SELECT id FROM players WHERE id=? FOR UPDATE', [$session['player_id']]);
-            $this->auth->recheck($session);
-            if (
-                $town !== null &&
-                !$db->fetchOne(
-                    'SELECT id FROM towns WHERE id=? AND player_id=? AND deleted_at IS NULL',
-                    [$town, $session['player_id']],
-                )
-            ) {
-                throw new ApiError(422, 'Choose one of your towns.');
-            }
-            $values = ['display_name' => $name, 'visiting_town_id' => $town];
-            if (
-                $db->fetchOne('SELECT player_id FROM player_profiles WHERE player_id=?', [
+        // Optional, so an older game that only sends the name keeps the player's choice.
+        $private = $body['anonymousVisits'] ?? null;
+        if ($private !== null && !is_bool($private)) {
+            throw new ApiError(422, 'Choose whether to visit privately.');
+        }
+        $this->database
+            ->get()
+            ->transactional(function ($db) use ($session, $name, $town, $private) {
+                $db->fetchOne('SELECT id FROM players WHERE id=? FOR UPDATE', [
                     $session['player_id'],
-                ])
-            ) {
-                $db->update('player_profiles', $values, ['player_id' => $session['player_id']]);
-            } else {
-                $db->insert('player_profiles', ['player_id' => $session['player_id']] + $values);
-            }
-        });
+                ]);
+                $this->auth->recheck($session);
+                if (
+                    $town !== null &&
+                    !$db->fetchOne(
+                        'SELECT id FROM towns WHERE id=? AND player_id=? AND deleted_at IS NULL',
+                        [$town, $session['player_id']],
+                    )
+                ) {
+                    throw new ApiError(422, 'Choose one of your towns.');
+                }
+                $values =
+                    ['display_name' => $name, 'visiting_town_id' => $town] +
+                    ($private === null ? [] : ['anonymous_visits' => (int) $private]);
+                if (
+                    $db->fetchOne('SELECT player_id FROM player_profiles WHERE player_id=?', [
+                        $session['player_id'],
+                    ])
+                ) {
+                    $db->update('player_profiles', $values, ['player_id' => $session['player_id']]);
+                } else {
+                    $db->insert(
+                        'player_profiles',
+                        ['player_id' => $session['player_id']] + $values,
+                    );
+                }
+            });
         return $this->profileData($session['player_id']);
     }
 
     private function era(mixed $era): string
     {
-        static $eras;
-        $eras ??= json_decode(
-            file_get_contents(dirname(__DIR__) . '/content/public-schema.json'),
-            true,
-            32,
-            JSON_THROW_ON_ERROR,
-        )['eras'];
+        $eras = PublicTown::schema()['eras'];
         return in_array($era, $eras, true) ? $era : $eras[0];
     }
 
@@ -228,9 +237,9 @@ final class VisitorService
                 if ($session && $session['player_id'] === $host['player_id']) {
                     return ['active' => false, 'expiresAt' => null, 'serverNow' => $now * 1000];
                 }
-                $key = $this->auth->hash(
-                    $session ? 'player:' . $session['player_id'] : 'browser:' . $browser,
-                );
+                $key = $session
+                    ? $this->auth->visitorKey($session['player_id'])
+                    : $this->auth->hash('browser:' . $browser);
                 if ($lease && $lease['visitor_key'] !== null && $lease['visitor_key'] !== $key) {
                     throw new ApiError(409, 'Start a new visit after changing account.');
                 }
@@ -277,6 +286,9 @@ final class VisitorService
                                     'departed_at' => null,
                                 ],
                         );
+                        if ($identity['origin_town_id'] !== null) {
+                            $this->recordTravel($identity['origin_town_id'], $host['id'], $now);
+                        }
                     }
                 }
                 $values = [
@@ -305,6 +317,23 @@ final class VisitorService
         return $result;
     }
 
+    /**
+     * A travel for the visitor's home town, kept with that town rather than the host's
+     * guestbook, so it still counts after the host is deleted. Presence never records a
+     * visit to the player's own town.
+     */
+    private function recordTravel(string $origin, string $host, int $at): void
+    {
+        $this->database
+            ->get()
+            ->executeStatement(
+                $this->database->isMySql()
+                    ? 'INSERT INTO town_travels(origin_town_id,host_town_id,visited_at) VALUES (?,?,?) ON DUPLICATE KEY UPDATE origin_town_id=origin_town_id'
+                    : 'INSERT INTO town_travels(origin_town_id,host_town_id,visited_at) VALUES (?,?,?) ON CONFLICT DO NOTHING',
+                [$origin, $host, $at],
+            );
+    }
+
     private function identity(?array $session, mixed $selected, array $host): array
     {
         $identity = [
@@ -312,16 +341,20 @@ final class VisitorService
             'origin_town_id' => null,
             'town_name' => null,
             'era' => $this->era(json_decode($host['appearance'])->era ?? null),
+            'signed_in' => $session ? 1 : 0,
         ];
         if (!$session) {
             return $identity;
         }
         $db = $this->database->get();
         $profile = $db->fetchAssociative(
-            'SELECT display_name,visiting_town_id FROM player_profiles WHERE player_id=?',
+            'SELECT display_name,visiting_town_id,anonymous_visits FROM player_profiles WHERE player_id=?',
             [$session['player_id']],
         );
-        if ($profile && $profile['display_name'] !== '') {
+        // A private visit still counts for the host and for the visitor's travels, but the
+        // guestbook shows neither the public name nor the home town.
+        $private = (bool) ($profile['anonymous_visits'] ?? false);
+        if ($profile && $profile['display_name'] !== '' && !$private) {
             $identity['name'] = $profile['display_name'];
         }
         if (
@@ -351,8 +384,10 @@ final class VisitorService
                 continue;
             }
             $identity['origin_town_id'] = $town['id'];
-            $identity['town_name'] = $name;
-            $identity['era'] = $this->era(json_decode($town['profile'])->town->era ?? null);
+            if (!$private) {
+                $identity['town_name'] = $name;
+                $identity['era'] = $this->era(json_decode($town['profile'])->town->era ?? null);
+            }
             break;
         }
         return $identity;
@@ -439,8 +474,16 @@ final class VisitorService
                 'name' => $row['name'],
                 'townName' => $row['town_name'],
                 'era' => $row['era'],
+                // Only a home town the guestbook names links to it, never a private visit's.
                 'publicId' =>
-                    $row['listed'] && $row['deleted_at'] === null ? $row['public_id'] : null,
+                    $row['town_name'] !== null && $row['listed'] && $row['deleted_at'] === null
+                        ? $row['public_id']
+                        : null,
+                // A deleted home town keeps its name while the visitor's account exists,
+                // marked as gone so the guestbook can say so.
+                'townGone' =>
+                    $row['town_name'] !== null &&
+                    ($row['origin_town_id'] === null || $row['deleted_at'] !== null),
                 'arrivedAt' => (int) $row['arrived_at'] * 1000,
                 'lastSeenAt' => (int) $row['last_seen_at'] * 1000,
                 'departedAt' =>
@@ -470,6 +513,18 @@ final class VisitorService
                         'SELECT collected_at FROM saloon_collections WHERE town_id=?',
                         [$town],
                     ) * 1000;
+                // Space helmets the owner found while visiting as this town, oldest first,
+                // each with the receipt its save replay checks. The town redeems newer ones.
+                $result['helmetFinds'] = array_map(
+                    fn($at) => [
+                        'at' => (int) $at * 1000,
+                        'receipt' => SaveIntegrity::helmetReceipt($town, (int) $at * 1000),
+                    ],
+                    $db->fetchFirstColumn(
+                        'SELECT found_at FROM helmet_finds WHERE town_id=? AND found_at>=? ORDER BY found_at',
+                        [$town, $now - PublicTown::HELMET_KEEP],
+                    ),
+                );
             }
             return $result;
         });

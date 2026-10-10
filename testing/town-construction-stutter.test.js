@@ -196,6 +196,43 @@ it('moves a villager who cannot leave a finished building site so the reveal sti
   view.finishConstruction();
 });
 
+// The build list stays open over a paused town: its builds must not wait on the
+// site or play a reveal, they swap the building straight away.
+it('swaps a build from the list at once, moving anyone on the site and skipping the reveal', () => {
+  const { view, town, labels } = fixture();
+  view.update(town, labels);
+  const [x, z] = PLOTS.home;
+  const stuck = { root: new Group(), radius: 0.45 };
+  stuck.root.position.set(x, 0.08, z);
+  Object.assign(view, { actors: [stuck], animals: [], vipArrivals: null });
+  const updated = built(town, { home: 3 });
+  view.changeTown(updated, labels, 0, 'home', { instant: true });
+  expect(view.plotsPending()).toBe(false);
+  expect(view.construction).toBeFalsy();
+  expect(view.constructionGate?.visible).toBeFalsy();
+  const group = view.plotCache.get('home').group;
+  expect(group.visible).toBe(true);
+  expect(group.userData.activation).toBe('completed');
+  expect(changedPlots(view, updated, labels)).toEqual([]);
+  const { x: px, z: pz } = stuck.root.position;
+  const site = group.userData.footprints;
+  expect(site.length).toBeGreaterThan(0);
+  expect(site.every((o) => footprintDistance(o, px, pz) >= stuck.radius - 1e-6)).toBe(true);
+});
+
+it('rebuilds a topology-changing build from the list at once without a reveal', () => {
+  const { view, town, labels } = fixture();
+  town.buildings.home = 1;
+  view.update(town, labels);
+  const updated = built(town, { home: 2 });
+  expect(view.topologySignature(updated, labels)).not.toBe(view.topology);
+  view.changeTown(updated, labels, 0, 'home', { instant: true });
+  expect(view.plotWork.active).toBeNull();
+  expect(view.construction).toBeFalsy();
+  expect(view.plotCache.has('home2')).toBe(true);
+  expect(view.topology).toBe(view.topologySignature(updated, labels));
+});
+
 it('retires the construction cue when the finished building is already shown', () => {
   const { view, town, labels } = fixture();
   view.update(town, labels);
@@ -377,6 +414,19 @@ it('reveals the finished building after the other changed plots swap silently', 
   for (let frame = 0; frame < changed.length; frame++) view.tryActivatePlot();
   expect(view.construction.group).toBe(view.plotCache.get(readyId).group);
   view.finishConstruction();
+});
+
+it('swaps every changed plot at once for a build from the list', () => {
+  const { view, town, labels } = fixture();
+  const started = withProjects(town);
+  view.update(started, labels);
+  const update = vi.spyOn(view, 'update');
+  const returned = advanceConstruction(started);
+  expect(changedPlots(view, returned, labels).length).toBeGreaterThan(1);
+  view.changeTown(returned, labels, 0, null, { instant: true });
+  expect(view.plotsPending()).toBe(false);
+  expect(update).not.toHaveBeenCalled();
+  expect(changedPlots(view, returned, labels)).toEqual([]);
 });
 
 it('lets a newer town change replace plots still waiting from the previous one', () => {
