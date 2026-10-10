@@ -2,6 +2,11 @@
 // text are English keys for t(); add the French text to src/i18n/fr.json.
 const UPDATES = [
   {
+    date: '2026-10-10',
+    title: 'A friendlier start in the village',
+    text: 'Every new town now has a short guided start: Ada points at the next thing to tap, from the first well to your first finished saloon. Frontier buildings all finish at level 3 with their full benefits, so the first era is quicker, and each of its two starter projects gives you a builder hammer. Monument upgrades take a single puzzle, and you can enter the mine by tapping anywhere on its buildings or hill.',
+  },
+  {
     date: '2026-10-08',
     title: 'The floating seam: 144 new mine puzzles',
     text: 'The campaign now reaches level 546. Lift floatstones to sky hatches, bend beams with lens mirrors, ride portals, break into sealed chambers and turn whole caverns upside down with moon locks and dials. Peridot and starmetal join the gems, and moves stay unlimited.',
