@@ -109,7 +109,7 @@
       :aria-label="t(readOnly ? 'Village buildings' : 'Choose a plot or enter the mine')"
     >
       <button
-        v-for="anchor in anchors"
+        v-for="anchor in plotAnchors"
         :key="anchor.id"
         :ref="(element) => trackElement(labelElements, anchor.id, element)"
         :data-town-plot="anchor.id"
@@ -267,6 +267,7 @@ import {
   updateLabels,
 } from '../../game/town/TownLabels';
 import { BUILDING_BY_ID, EARTH_BUILDINGS, MOON_BUILDINGS } from '../../data/town';
+import { AREA_BY_ID, LANDMARK_BY_ID, areaChoice } from '../../data/townLandmarks';
 import { dressSpaceHelmet } from '../../game/town/TownSpaceHelmet';
 import {
   constructionRuns,
@@ -419,6 +420,8 @@ const availableIds = computed(() =>
 const upgradeIds = computed(() =>
   Object.keys(indicators.value).filter((id) => indicators.value[id] === 'upgrade'),
 );
+// Monument sites carry an action icon but never a label.
+const plotAnchors = computed(() => anchors.value.filter((anchor) => !anchor.site));
 const actionAnchors = computed(() =>
   anchors.value.filter(
     (anchor) => TOWN_ACTIONS[indicators.value[anchor.id]] && anchor.collection.visible,
@@ -426,7 +429,12 @@ const actionAnchors = computed(() =>
 );
 const buildingName = (id) => t(BUILDING_BY_ID[id].shortName);
 const ACTION_LABELS = {
-  ready: (id) => t('Finish {building}', { building: buildingName(id) }),
+  ready: (id) =>
+    AREA_BY_ID[id]
+      ? t('Unveil the {monument}', {
+          monument: t(LANDMARK_BY_ID[areaChoice(props.town, AREA_BY_ID[id])].label),
+        })
+      : t('Finish {building}', { building: buildingName(id) }),
   coins: () => t('Collect {coins} coins', { coins: props.town.income.stored }),
   tnt: () => t('Collect 1 TNT'),
   bell: () => t('Ring town bell · halve the loss'),

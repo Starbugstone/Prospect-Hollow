@@ -28,7 +28,7 @@ export function projectLabelPositions(d) {
   const width = d.canvas.clientWidth,
     height = d.canvas.clientHeight,
     town = d.town;
-  const projected = d.anchors.map(({ id, position, width: labelWidth, collection }) => {
+  const projected = d.anchors.map(({ id, site, position, width: labelWidth, collection }) => {
     const reward = screen.copy(collection).project(d.camera);
     const icon = {
       x: (reward.x + 1) * 50,
@@ -42,6 +42,7 @@ export function projectLabelPositions(d) {
     const p = screen.copy(position).project(d.camera);
     return {
       id,
+      site,
       x: (p.x + 1) * 50,
       y: (1 - p.y) * 50,
       collection: icon,
@@ -50,6 +51,7 @@ export function projectLabelPositions(d) {
       inView: inFront(p) && Math.abs(p.x) < 0.95 && Math.abs(p.y) < 0.9,
       width: labelWidth,
       visible:
+        !site &&
         !overlapsEventInset(d, ((p.x + 1) * width) / 2, ((1 - p.y) * height) / 2, labelWidth) &&
         d.plotCache?.get(id)?.group.visible !== false &&
         (id === 'mine' ||

@@ -22,7 +22,9 @@ import {
 import { normalizePersonalisation, personaliseTown } from '../src/data/townPersonalisation';
 import { monumentPresentation } from '../src/data/townPresentations';
 import { isEraComplete } from '../src/game/town/TownEras';
-import { normalizeTown } from '../src/game/town/TownRules';
+import { buildingIndicators, normalizeTown } from '../src/game/town/TownRules';
+import { projectLabelPositions } from '../src/game/town/TownLabelProjection';
+import { TOWN_ACTIONS } from '../src/data/townIndicators';
 import { TownPrimitives } from '../src/game/town/TownPrimitives';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { TownScenery } from '../src/game/town/TownScenery';
@@ -396,6 +398,31 @@ describe('Monument unveiling', () => {
     d.materials.forEach((m) => m.dispose());
     d.contactShadowMaterial.dispose();
   }
+  it('shows the builder hammer over a monument ready to unveil, without a site label', () => {
+    let town = buy(rich('frontier'), meadow, 'windgarden');
+    expect(buildingIndicators(town).meadow).toBeUndefined();
+    town = puzzles(town, 3);
+    expect(TOWN_ACTIONS[buildingIndicators(town).meadow].icon).toContain('builder-hammer');
+    expect(buildingIndicators(unveilLandmark(town, 'meadow', 1)).meadow).toBeUndefined();
+    const d = diorama(town);
+    try {
+      // Only unlocked sites get an anchor: the Frontier opens Founders' Meadow alone.
+      expect(d.anchors.filter((anchor) => anchor.site).map(({ id }) => id)).toEqual(['meadow']);
+      const [x, z] = meadow.positions[0];
+      d.controls.target.set(x, 0.7, z);
+      d.camera.position.set(x, 30, z + 40);
+      d.camera.lookAt(d.controls.target);
+      d.camera.updateMatrixWorld();
+      d.canvas = { clientWidth: 1280, clientHeight: 800 };
+      d.onLabels = vi.fn();
+      projectLabelPositions(d);
+      const site = d.onLabels.mock.lastCall[0].find(({ id }) => id === 'meadow');
+      expect(site).toMatchObject({ site: true, visible: false, collection: { visible: true } });
+      expect(site.collection.x).toBeCloseTo(50, 0);
+    } finally {
+      release(d);
+    }
+  });
   it.each(['frontier', 'riverlight'])(
     'takes the scaffolding down around the real monument while %s gathers, then cleans up',
     (era) => {

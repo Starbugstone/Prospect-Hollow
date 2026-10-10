@@ -1,4 +1,5 @@
 import { normalizePersonalisation } from '../../data/townPersonalisation';
+import { PERSONAL_AREAS, areaUnlocked, monumentWork } from '../../data/townLandmarks';
 import { CREST_EMBLEM_IDS } from '../../data/townCrests';
 import { normalizePresentations } from '../../data/townPresentations';
 import { normalizeGuestVip } from '../../data/guestVip';
@@ -440,6 +441,9 @@ export function buildingIndicators(
     )
       indicators[id] = 'tnt';
   }
+  // A finished monument level waits for its unveiling, like a finished building.
+  for (const area of PERSONAL_AREAS)
+    if (areaUnlocked(town, area) && monumentWork(town, area)?.ready) indicators[area.id] = 'ready';
   if (eraGate(town).available) indicators.square = 'era';
   if (canRingTownBell(town) && !constructionReady(town.projects.square)) indicators.square = 'bell';
   return indicators;

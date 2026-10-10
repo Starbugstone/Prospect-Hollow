@@ -1308,7 +1308,9 @@ function showCollection(resource, amount, buildingId) {
 }
 async function selectBuilding(id) {
   if (AREA_BY_ID[id]) {
-    openMonument(id);
+    // A finished level is unveiled by its hammer, like a finished building.
+    if (monumentWork(town.value, AREA_BY_ID[id])?.ready) unveilMonument(id);
+    else openMonument(id);
     return;
   }
   if (!Object.hasOwn(BUILDING_BY_ID, id)) return;
