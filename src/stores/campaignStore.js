@@ -44,6 +44,7 @@ import { chapterLevelIds } from '../data/chapters';
 import { TIP_IDS } from '../data/guidance';
 import { grantChapterGift } from '../data/journey';
 import { TOWN_PROJECTS } from '../data/townProjects';
+import { finishedRewardProjects } from '../game/town/TownProjects';
 
 import { townStorage } from '../services/townStorage';
 import { localProfile, SAVE_KEY } from '../services/localProfile';
@@ -110,6 +111,8 @@ const defaults = () => ({
   readOnly: false,
   lastConstruction: [],
   lastChapterReward: null,
+  // The starter projects the latest building action finished, for the village to celebrate.
+  lastProjectReward: null,
   builderHammers: 0,
   chestsWithoutBuilderHammer: 0,
   pendingChests: [],
@@ -756,14 +759,17 @@ export const useCampaignStore = defineStore('campaign', {
       this.accrueSaloonIncome(at);
       const next = purchase(this.town, id, expectedStage);
       if (!next) return false;
+      const hammers = this.rewardProjects(this.town, next);
       // A purchase stays usable in memory when storage fails; save() reports the warning.
       this.town = queueBuildingPresentations(this.town, next);
+      if (hammers) this.builderHammers += hammers;
       this.ensureShopStock(false, false);
       this.recordAction('building-buy', {
         buildingId: id,
         expectedStage,
         shopStock: this.shopStock,
         shopVisit: this.shopVisit,
+        projectRewards: 1,
         at,
       });
       this.save();
@@ -779,7 +785,7 @@ export const useCampaignStore = defineStore('campaign', {
           {},
           {
             kind: 'building-finish',
-            data: { buildingId: id, expectedStage, at },
+            data: { buildingId: id, expectedStage, projectRewards: 1, at },
           },
         )
       );
@@ -793,7 +799,10 @@ export const useCampaignStore = defineStore('campaign', {
         this.completeProject(
           next,
           { builderHammers: this.builderHammers - 1 },
-          { kind: 'building-hammer', data: { buildingId: id, expectedStage, at } },
+          {
+            kind: 'building-hammer',
+            data: { buildingId: id, expectedStage, projectRewards: 1, at },
+          },
         )
       );
     },
@@ -803,6 +812,12 @@ export const useCampaignStore = defineStore('campaign', {
       this.accrueSaloonIncome(receipt?.data.at ?? Date.now());
       next.coins = this.town.coins;
       next.income = this.town.income;
+      const hammers = this.rewardProjects(this.town, next);
+      if (hammers)
+        extra = {
+          ...extra,
+          builderHammers: (extra.builderHammers ?? this.builderHammers) + hammers,
+        };
       return this.transaction(['town', 'shopStock', 'shopVisit', ...Object.keys(extra)], () => {
         Object.assign(this, extra);
         this.town = queueBuildingPresentations(
@@ -817,6 +832,16 @@ export const useCampaignStore = defineStore('campaign', {
             shopVisit: this.shopVisit,
           });
       });
+    },
+    // Finishing a starter project grants its builder hammers, even past the chest limit;
+    // building receipts carry `projectRewards: 1` so the server replay grants them too.
+    rewardProjects(before, after) {
+      const projects = finishedRewardProjects(before, after);
+      const hammers = projects.reduce((sum, project) => sum + project.hammers, 0);
+      this.lastProjectReward = hammers
+        ? { projects: projects.map((project) => project.id), hammers }
+        : null;
+      return hammers;
     },
     awardReward(reward) {
       const at = Date.now();

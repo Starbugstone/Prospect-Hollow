@@ -43,6 +43,15 @@
           >
         </li>
       </ol>
+      <p v-if="selected.hammers" class="project-reward" :class="{ finished: selected.complete }">
+        <img src="/art/rewards/builder-hammer.svg" alt="" />{{
+          t(
+            selected.complete
+              ? 'Reward received: a builder hammer.'
+              : 'Reward: a builder hammer when every building reaches project stage 3.',
+          )
+        }}
+      </p>
       <p v-if="selected.complete" role="status" class="project-complete">
         {{ t('A new chapter in the town’s story. Your finished buildings are the reward.') }}
       </p>
@@ -168,6 +177,16 @@ svg {
   width: 22px;
   height: 22px;
   flex-shrink: 0;
+}
+.project-reward {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+.project-reward img {
+  width: 24px;
+  height: 24px;
 }
 .finished,
 .project-complete {

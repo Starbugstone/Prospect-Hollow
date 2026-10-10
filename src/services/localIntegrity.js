@@ -53,6 +53,7 @@ const INTERNAL_ACTIONS = new Set([
   'commit',
   'recordAction',
   'completeProject',
+  'rewardProjects',
   'awardReward',
   'updateEarnedHonours',
 ]);

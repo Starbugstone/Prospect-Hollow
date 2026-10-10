@@ -215,6 +215,42 @@ export function createIntegrityFixtures() {
       },
       (campaign) => expectSuccess(campaign.useBuilderHammer('home', 1), 'hammer house'),
     );
+    const starterHomes = (profile, hammers) => {
+      Object.assign(profile.town.buildings, { well: 3, farm: 3, home: 2 });
+      profile.town.coins = 1000;
+      profile.builderHammers = hammers;
+    };
+    fixture(
+      'finishing the last starter-project building grants a builder hammer',
+      (profile) => {
+        starterHomes(profile, 0);
+        profile.town.projects.home = { id: 'home', stage: 3, wins: 1, required: 1 };
+      },
+      (campaign) => {
+        expectSuccess(campaign.finishConstruction('home', 3), 'finish the starter homes');
+        if (campaign.builderHammers !== 1) throw new Error('The starter project paid no hammer.');
+      },
+    );
+    fixture(
+      'a hammer that finishes a starter project is paid back',
+      (profile) => starterHomes(profile, 1),
+      (campaign) => {
+        expectSuccess(campaign.useBuilderHammer('home', 2), 'hammer the starter homes');
+        if (campaign.builderHammers !== 1) throw new Error('The starter project paid no hammer.');
+      },
+    );
+    fixture(
+      'a starter project pays its hammer past the hammer limit',
+      (profile) => {
+        starterHomes(profile, HAMMER_CAPACITY);
+        profile.town.projects.home = { id: 'home', stage: 3, wins: 1, required: 1 };
+      },
+      (campaign) => {
+        expectSuccess(campaign.finishConstruction('home', 3), 'finish at the hammer limit');
+        if (campaign.builderHammers !== HAMMER_CAPACITY + 1)
+          throw new Error('The starter project hammer stopped at the limit.');
+      },
+    );
     fixture(
       'modernization purchase uses its era price',
       (profile) => {

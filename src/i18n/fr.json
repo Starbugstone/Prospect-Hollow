@@ -2552,7 +2552,7 @@
   "Tap Mine at the bottom to play the next puzzle. Each completed puzzle earns coins and prepares every construction in progress; then tap each scaffolded building in the village to finish it. Each completed chapter gives the mine a free visual upgrade.": "Touchez Mine en bas de l’écran pour jouer le puzzle suivant. Chaque puzzle terminé rapporte des pièces et fait avancer chaque chantier en cours ; touchez ensuite chaque bâtiment en échafaudage pour le terminer. Chaque chapitre terminé offre à la mine une amélioration visuelle gratuite.",
   "Families need water, food, and room. The water, food and happiness readings at the top show what runs short; tap one to open the building that helps. Existing services stay open during upgrades; level 2 unlocks extra plots.": "Les familles ont besoin d’eau, de nourriture et de place. Les indicateurs d’eau, de nourriture et de bonheur en haut de l’écran montrent ce qui manque ; touchez-en un pour ouvrir le bâtiment qui aide. Les services restent ouverts pendant les travaux ; le niveau 2 débloque d’autres parcelles.",
   "The town square adds comfort and gains a raid warning bell at level 3. Happiness grows with comfort for the size of the town and falls when water or food run short; a happy town welcomes more visitors and earns more at the saloon.": "La place apporte du confort et reçoit une cloche d’alerte au niveau 3. Le bonheur grandit avec le confort offert pour la taille de la ville et baisse quand l’eau ou la nourriture manquent ; une ville heureuse accueille plus de visiteurs et rapporte davantage au saloon.",
-  "The saloon stores up to five hours of earnings. Tap it to collect your coins. Open More to visit the museum and replay old puzzles. Rare builder hammers come only from mine bonus chests and build or improve an unlocked building instantly for free.": "Le saloon garde jusqu’à cinq heures de recettes. Touchez-le pour récupérer vos pièces. Ouvrez Plus pour visiter le musée et rejouer d’anciens puzzles. Les rares marteaux de bâtisseur viennent uniquement des coffres bonus de la mine et construisent ou améliorent gratuitement et instantanément un bâtiment débloqué.",
+  "The saloon stores up to five hours of earnings. Tap it to collect your coins. Open More to visit the museum and replay old puzzles. Rare builder hammers come from mine bonus chests and Frontier’s two starter projects, and build or improve an unlocked building instantly for free.": "Le saloon garde jusqu’à cinq heures de recettes. Touchez-le pour récupérer vos pièces. Ouvrez Plus pour visiter le musée et rejouer d’anciens puzzles. Les rares marteaux de bâtisseur viennent des coffres bonus de la mine et des deux projets de départ de la Frontière, et construisent ou améliorent gratuitement et instantanément un bâtiment débloqué.",
   "Village navigation": "Navigation du village",
   "Story": "Histoire",
   "More": "Plus",
@@ -3848,5 +3848,12 @@
   "Work on the {monument} has begun: one puzzle to go.": "Les travaux commencent : {monument}. Encore un puzzle.",
   "{site} · Building: finished by the next puzzle": "{site} · Travaux : terminés au prochain puzzle",
   "The next completed puzzle finishes it, replays included.": "Le prochain puzzle terminé l’achève, niveaux rejoués compris.",
-  "{detail} Built in one puzzle.": "{detail} Construction en un puzzle."
+  "{detail} Built in one puzzle.": "{detail} Construction en un puzzle.",
+  "{project}: {count}/{total}. Finish it for a builder hammer.": "{project} : {count}/{total}. Terminez-le pour un marteau de bâtisseur.",
+  "Project complete: {project}. The town gives you a builder hammer.": "Projet terminé : {project}. La ville vous offre un marteau de bâtisseur.",
+  "Project complete!": "Projet terminé !",
+  "Everyone pitched in, so here is a builder hammer from the town. It builds or improves any open building instantly.": "Tout le monde a mis la main à la pâte : voici un marteau de bâtisseur offert par la ville. Il construit ou améliore instantanément n’importe quel bâtiment ouvert.",
+  "Project complete: +{coins} builder hammer": "Projet terminé : +{coins} marteau de bâtisseur",
+  "Reward received: a builder hammer.": "Récompense reçue : un marteau de bâtisseur.",
+  "Reward: a builder hammer when every building reaches project stage 3.": "Récompense : un marteau de bâtisseur quand chaque bâtiment atteint l’étape 3 du projet."
 }

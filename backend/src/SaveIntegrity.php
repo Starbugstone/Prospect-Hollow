@@ -2401,6 +2401,7 @@ final class SaveIntegrity
         }
         $this->accrue($s, $context, $d['at'] ?? null, $now);
         $town = &$s['town'];
+        $finished = $this->finishedProjects($town);
         if ($kind === 'building-finish') {
             $project = $town['projects'][$id] ?? null;
             if (
@@ -2422,6 +2423,7 @@ final class SaveIntegrity
             unset($town['projects'][$id]);
             $this->reinforce($s);
             $this->settleForge($town);
+            $this->rewardProjects($s, $finished, $d);
             $this->stock($s, $d['shopStock'] ?? null, $d['shopVisit'] ?? null, false);
             return;
         }
@@ -2470,6 +2472,7 @@ final class SaveIntegrity
                 ];
             }
         }
+        $this->rewardProjects($s, $finished, $d);
         $this->stock($s, $d['shopStock'] ?? null, $d['shopVisit'] ?? null, false);
     }
     private function settleForge(array &$town): void
@@ -2717,8 +2720,6 @@ final class SaveIntegrity
         if ($index < 0) {
             return false;
         }
-        // An era with a `modernizes` list leaves every other building finished.
-        $modernizes = $this->rules['eras'][$town['era']]['modernizes'] ?? null;
         foreach ($this->rules['buildings'] as $id => $definition) {
             if (
                 !$definition['requiredForEraCompletion'] ||
@@ -2729,15 +2730,7 @@ final class SaveIntegrity
             // Normalized replay state is already clamped; older saves keep legacy levels.
             $level = $town['buildings'][$id] ?? 0;
             $level = is_int($level) ? min($definition['maxLevel'], $level) : 0;
-            $eraLevel =
-                $town['era'] === 'frontier' || $definition['introducedEra'] === $town['era']
-                    ? $level
-                    : (is_array($modernizes) && !in_array($id, $modernizes, true)
-                        ? $this->rules['eraBuildingLevels']
-                        : (($town['buildingEras'][$id] ?? null) === $town['era']
-                            ? ($town['buildingEraLevels'][$id] ?? 0 ?:
-                            1)
-                            : 0));
+            $eraLevel = $this->eraLevel($town, $id);
             if (
                 $level !== $definition['maxLevel'] ||
                 isset($town['projects'][$id]) ||
@@ -2747,6 +2740,71 @@ final class SaveIntegrity
             }
         }
         return true;
+    }
+    /** A building's level within the town's era, as eraBuildingLevel() in TownEras.js. */
+    private function eraLevel(array $town, string $id): int
+    {
+        $definition = $this->rules['buildings'][$id];
+        $level = $town['buildings'][$id] ?? 0;
+        $level = is_int($level) ? min($definition['maxLevel'], $level) : 0;
+        if ($town['era'] === 'frontier' || $definition['introducedEra'] === $town['era']) {
+            return $level;
+        }
+        // An era with a `modernizes` list leaves every other building finished.
+        $modernizes = $this->rules['eras'][$town['era']]['modernizes'] ?? null;
+        if (is_array($modernizes) && !in_array($id, $modernizes, true)) {
+            return $this->rules['eraBuildingLevels'];
+        }
+        return ($town['buildingEras'][$id] ?? null) === $town['era']
+            ? ($town['buildingEraLevels'][$id] ?? 0 ?:
+                1)
+            : 0;
+    }
+    /**
+     * Rewarded starter projects this town's era has finished, as finishedRewardProjects()
+     * in TownProjects.js.
+     *
+     * @return list<string>
+     */
+    private function finishedProjects(array $town): array
+    {
+        $finished = [];
+        foreach ($this->rules['rewards']['townProjects'] ?? [] as $project) {
+            if ($project['era'] !== $town['era']) {
+                continue;
+            }
+            foreach ($project['buildings'] as $id) {
+                if ($this->eraLevel($town, $id) < $this->rules['rewards']['projectStages']) {
+                    continue 2;
+                }
+            }
+            $finished[] = $project['id'];
+        }
+        return $finished;
+    }
+    /**
+     * A building action that finishes a starter project grants its builder hammers, past
+     * the chest limit. Receipts from clients before the reward carry no flag and get none.
+     *
+     * @param list<string> $before
+     */
+    private function rewardProjects(array &$s, array $before, array $d): void
+    {
+        if (($d['projectRewards'] ?? null) !== 1) {
+            return;
+        }
+        $after = $this->finishedProjects($s['town']);
+        foreach ($this->rules['rewards']['townProjects'] ?? [] as $project) {
+            if (
+                in_array($project['id'], $after, true) &&
+                !in_array($project['id'], $before, true)
+            ) {
+                $s['builderHammers'] = (int) min(
+                    9007199254740991,
+                    $s['builderHammers'] + $project['hammers'],
+                );
+            }
+        }
     }
     /**
      * Town Honours era progress, as eraStep() in honours.js: two steps per era, the

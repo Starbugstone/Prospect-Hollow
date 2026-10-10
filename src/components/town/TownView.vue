@@ -30,6 +30,25 @@
             /><strong>{{ campaign.builderHammers }}</strong>
           </template>
         </div>
+        <button
+          v-if="projectGoal && !activeRaid"
+          class="town-project-goal"
+          :aria-label="
+            t('{project}: {count}/{total}. Finish it for a builder hammer.', {
+              project: t(projectGoal.title),
+              count: projectGoal.done,
+              total: projectGoal.total,
+            })
+          "
+          @click="dialogMode = 'projects'"
+        >
+          <img src="/art/rewards/builder-hammer.svg" alt="" />
+          <span
+            ><small>{{ t(projectGoal.title) }}</small
+            ><progress :value="projectGoal.done" :max="projectGoal.total"></progress
+          ></span>
+          <b>{{ projectGoal.done }}/{{ projectGoal.total }}</b>
+        </button>
         <p
           v-if="(campaign.saveWarning || campaign.inventoryNotice) && !activeRaid"
           role="status"
@@ -684,6 +703,8 @@ import { LEVEL_COUNT } from '../../data/campaign';
 import TownMuseum from './TownMuseum.vue';
 import TownTour from './TownTour.vue';
 import TownCoach from './TownCoach.vue';
+import { TOWN_PROJECTS } from '../../data/townProjects';
+import { townProjects } from '../../game/town/TownProjects';
 import { villageTutorial } from '../../data/guidance';
 import SaveStatusPill from '../SaveStatusPill.vue';
 import { useTownAudio } from '../../composables/useTownAudio';
@@ -853,6 +874,13 @@ const directoryPlots = computed(() => availableParcels(town.value, campaign.buil
 // During the tutorial Build lists only the next building and finished constructions, so a
 // new player meets one clear choice instead of a column of free plots.
 const showAllPlots = ref(false);
+// After the tutorial, the next starter project and its builder hammer stay on screen as a
+// near-term goal: the one the player follows, otherwise the first unfinished one.
+const projectGoal = computed(() => {
+  if (tutorial.value) return null;
+  const open = townProjects(town.value).filter((project) => project.hammers && !project.complete);
+  return open.find((project) => project.id === campaign.townProjectFocus) ?? open[0] ?? null;
+});
 const buildList = computed(() => {
   const next = tutorial.value?.target.plot ?? goal.value?.id;
   return tutorial.value && !showAllPlots.value
@@ -1447,6 +1475,7 @@ function plotStatus(place) {
 function startWork(stage, keepDirectory = false) {
   if (!campaign.upgradeBuilding(selected.value, stage)) return;
   showConstruction(keepDirectory);
+  celebrateProject();
   const complete = !town.value.projects[selected.value];
   const puzzles = town.value.projects[selected.value]?.required ?? 0;
   announcement.value = t(
@@ -1496,6 +1525,27 @@ function finishBuilding(id, keepDirectory = false) {
   selected.value = id;
   showConstruction(keepDirectory);
   celebrateBuilding();
+  celebrateProject();
+}
+// A finished starter project pays its builder hammer with a celebration of its own.
+function celebrateProject() {
+  const reward = campaign.lastProjectReward;
+  if (!reward) return;
+  const project = TOWN_PROJECTS.find(({ id }) => id === reward.projects[0]);
+  collection.value = {
+    resource: 'project-hammer',
+    amount: reward.hammers,
+    serial: ++collectionSerial,
+    origin: townScene.value?.collectionOrigin(selected.value),
+  };
+  announcement.value = t('Project complete: {project}. The town gives you a builder hammer.', {
+    project: t(project.title),
+  });
+  latestMoment.value = {
+    speaker: CARETAKER,
+    title: 'Project complete!',
+    text: 'Everyone pitched in, so here is a builder hammer from the town. It builds or improves any open building instantly.',
+  };
 }
 function celebrateBuilding() {
   const upgrade = BUILDING_BY_ID[selected.value].upgrades[town.value.buildings[selected.value] - 1];
@@ -1512,6 +1562,7 @@ function useHammer(stage, keepDirectory = false) {
   if (!campaign.useBuilderHammer(selected.value, stage)) return;
   showConstruction(keepDirectory);
   celebrateBuilding();
+  celebrateProject();
 }
 
 function finishRaid() {

@@ -41658,6 +41658,29 @@
     ],
     "garageCapacityPerLevel": 2,
     "hammerCapacity": 5,
+    "townProjects": [
+      {
+        "era": "frontier",
+        "id": "first-neighbors",
+        "buildings": [
+          "well",
+          "farm",
+          "home"
+        ],
+        "hammers": 1
+      },
+      {
+        "era": "frontier",
+        "id": "trail-welcome",
+        "buildings": [
+          "stable",
+          "shop",
+          "school"
+        ],
+        "hammers": 1
+      }
+    ],
+    "projectStages": 3,
     "overflowCoins": 10,
     "continuousCoinCap": 25,
     "chestEconomyVersion": 3,
@@ -51907,5 +51930,5 @@
       "seenGeneration": 4
     }
   },
-  "contentDigest": "d96e04663bd045468b8c635cb45bbb118ad7b09f07538c544933b9aa077f1c0d"
+  "contentDigest": "e03330b6b11ff1474f216ff56b85555de2dbe83a7fd58b88f0adc992199c11ef"
 }

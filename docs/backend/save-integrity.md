@@ -169,7 +169,9 @@ space-helmet finds, raid outcomes and era advancement. A `helmet-find` pays the 
 hourly saloon rate once per completed puzzle (`completedRuns` above `helmetRun`) from
 Tomorrow City on. A `helmet-visitor` pays half that rate (`spaceHelmetRewardHours` in the save rules) for a find
 made while visiting another town, only with the server's receipt for this town and a find time
-after `helmetVisitAt`.
+after `helmetVisitAt`. A building receipt flagged `projectRewards: 1` that finishes one of the
+starter projects in `rewards.townProjects` (every building at `rewards.projectStages`) grants its
+builder hammers, past the chest limit; receipts from older clients carry no flag and get none.
 Both count as new earnings in the money estimate. Continuous play records economic changes only;
 after the existing lifetime coin reward is exhausted, further matches remain
 playable without adding a journal entry for every score update. Statistics do not

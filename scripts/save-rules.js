@@ -6,6 +6,7 @@ import { ERAS, FORGE_PRODUCTION_RUNS } from '../src/data/eras.js';
 import { defineEra } from '../src/data/eraDefinitions.js';
 import { STAR_CASCADE_TARGET, STAR_SCORE_MULTIPLIER } from '../src/data/starRating.js';
 import { BUILDINGS, BANDIT_EVENT, INTRO_ORDER, createTown } from '../src/data/town.js';
+import { PROJECT_MILESTONES, TOWN_PROJECTS } from '../src/data/townProjects.js';
 import {
   LEGACY_MAX_LEVEL,
   buildingServiceLevel,
@@ -289,6 +290,12 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
       bonusCapacities: BONUS_CAPACITIES,
       garageCapacityPerLevel: bonusCapacity({ buildings: { armory: 0, garage: 1 } }) - garageBase,
       hammerCapacity: HAMMER_CAPACITY,
+      // Starter projects grant builder hammers once every building reaches the last
+      // project stage, past the hammer limit (finishedRewardProjects in TownProjects.js).
+      townProjects: TOWN_PROJECTS.filter((project) => project.hammers > 0).map(
+        ({ era, id, buildings, hammers }) => ({ era, id, buildings, hammers }),
+      ),
+      projectStages: PROJECT_MILESTONES.length,
       overflowCoins: OVERFLOW_COINS,
       continuousCoinCap: CONTINUOUS_COIN_CAP,
       chestEconomyVersion: CHEST_ECONOMY_VERSION,

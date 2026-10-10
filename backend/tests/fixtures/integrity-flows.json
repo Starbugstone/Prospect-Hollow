@@ -3801,6 +3801,7 @@
                 "expectedStage": 0,
                 "shopStock": [],
                 "shopVisit": 0,
+                "projectRewards": 1,
                 "at": 1780000000000
               }
             },
@@ -3813,6 +3814,7 @@
                 "expectedStage": 0,
                 "shopStock": [],
                 "shopVisit": 0,
+                "projectRewards": 1,
                 "at": 1780000000000
               }
             },
@@ -3825,6 +3827,7 @@
                 "expectedStage": 0,
                 "shopStock": [],
                 "shopVisit": 0,
+                "projectRewards": 1,
                 "at": 1780000000000
               }
             },
@@ -3837,6 +3840,7 @@
                 "expectedStage": 1,
                 "shopStock": [],
                 "shopVisit": 0,
+                "projectRewards": 1,
                 "at": 1780000000000
               }
             }
@@ -4508,6 +4512,7 @@
               "data": {
                 "buildingId": "home",
                 "expectedStage": 2,
+                "projectRewards": 1,
                 "at": 1780000000000,
                 "shopStock": [],
                 "shopVisit": 0
@@ -5181,6 +5186,7 @@
               "data": {
                 "buildingId": "home",
                 "expectedStage": 1,
+                "projectRewards": 1,
                 "at": 1780000000000,
                 "shopStock": [],
                 "shopVisit": 0
@@ -5510,12 +5516,2034 @@
       "serverNow": 1780000000000
     },
     {
-      "name": "modernization purchase uses its era price",
+      "name": "finishing the last starter-project building grants a builder hammer",
       "before": {
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000043",
+          "clientAt": 1780000000000,
+          "baseSequence": 0,
+          "actions": []
+        },
+        "records": {},
+        "continuousRecords": {},
+        "powers": [
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 0 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 0 },
+          { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
+          { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 0 },
+          { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
+        ],
+        "builderHammers": 0,
+        "chestsWithoutBuilderHammer": 0,
+        "pendingChests": [],
+        "shopStock": [],
+        "shopVisit": 0,
+        "vipReceipts": [],
+        "seenObstacles": [],
+        "seenTips": [],
+        "town": {
+          "personalisation": {
+            "version": 3,
+            "crest": null,
+            "areas": {},
+            "areaLevels": {},
+            "construction": {},
+            "plaques": {}
+          },
+          "era": "frontier",
+          "buildingEras": {
+            "well": "frontier",
+            "farm": "frontier",
+            "home": "frontier",
+            "saloon": "frontier",
+            "stable": "frontier",
+            "sheriff": "frontier",
+            "museum": "frontier",
+            "armory": "frontier",
+            "bank": "frontier",
+            "shop": "frontier",
+            "square": "frontier",
+            "watermill": "frontier",
+            "fisherman": "frontier",
+            "blacksmith": "frontier",
+            "school": "frontier",
+            "doctor": "frontier",
+            "bridge": "frontier",
+            "riverPort": "frontier",
+            "railDepot": "frontier",
+            "post": "frontier",
+            "warehouse": "frontier",
+            "hotel": "frontier",
+            "home5": "frontier",
+            "market": "frontier",
+            "powerHouse": "frontier",
+            "fireStation": "frontier",
+            "rowHouses": "frontier",
+            "mill": "frontier",
+            "garage": "frontier",
+            "busDepot": "frontier",
+            "gardenCourt": "frontier",
+            "diner": "frontier",
+            "teaHouse": "frontier",
+            "blossomAtelier": "frontier",
+            "orchardCottages": "frontier",
+            "glassworks": "frontier",
+            "springsRetreat": "frontier",
+            "riverlightPavilion": "frontier",
+            "airport": "frontier",
+            "radioTower": "frontier",
+            "concertHall": "frontier",
+            "television": "frontier",
+            "skyline": "frontier",
+            "cityHall": "frontier",
+            "apartments": "frontier",
+            "supermarket": "frontier",
+            "waterPlant": "frontier",
+            "transitHub": "frontier",
+            "library": "frontier",
+            "crystalLab": "frontier",
+            "cityHomes": "frontier",
+            "riverPark": "frontier",
+            "skyPods": "frontier",
+            "biodome": "frontier",
+            "maglevStation": "frontier",
+            "skyHarbour": "frontier",
+            "cloudOrchard": "frontier",
+            "windsongLofts": "frontier",
+            "greatTelescope": "frontier",
+            "dewlightGardens": "frontier",
+            "starlightTerraces": "frontier",
+            "spaceElevator": "frontier",
+            "moonpost": "frontier",
+            "missionHomesteads": "frontier",
+            "homecomingHall": "frontier",
+            "ribbonLanding": "frontier",
+            "settlerDomes": "frontier",
+            "craterIceWell": "frontier",
+            "earthlightGreenhouse": "frontier",
+            "willowkinDome": "frontier",
+            "newHollowCommons": "frontier",
+            "craterHomesteads": "frontier",
+            "moonstoneWorkshop": "frontier",
+            "roverBarn": "frontier",
+            "earthriseLookout": "frontier",
+            "horseField": "frontier",
+            "park": "frontier",
+            "home2": "frontier",
+            "home3": "frontier",
+            "home4": "frontier",
+            "well2": "frontier",
+            "farm2": "frontier",
+            "farm3": "frontier"
+          },
+          "buildingEraLevels": {
+            "well": 0,
+            "farm": 0,
+            "home": 0,
+            "saloon": 0,
+            "stable": 0,
+            "sheriff": 0,
+            "museum": 0,
+            "armory": 0,
+            "bank": 0,
+            "shop": 0,
+            "square": 0,
+            "watermill": 0,
+            "fisherman": 0,
+            "blacksmith": 0,
+            "school": 0,
+            "doctor": 0,
+            "bridge": 0,
+            "riverPort": 0,
+            "railDepot": 0,
+            "post": 0,
+            "warehouse": 0,
+            "hotel": 0,
+            "home5": 0,
+            "market": 0,
+            "powerHouse": 0,
+            "fireStation": 0,
+            "rowHouses": 0,
+            "mill": 0,
+            "garage": 0,
+            "busDepot": 0,
+            "gardenCourt": 0,
+            "diner": 0,
+            "teaHouse": 0,
+            "blossomAtelier": 0,
+            "orchardCottages": 0,
+            "glassworks": 0,
+            "springsRetreat": 0,
+            "riverlightPavilion": 0,
+            "airport": 0,
+            "radioTower": 0,
+            "concertHall": 0,
+            "television": 0,
+            "skyline": 0,
+            "cityHall": 0,
+            "apartments": 0,
+            "supermarket": 0,
+            "waterPlant": 0,
+            "transitHub": 0,
+            "library": 0,
+            "crystalLab": 0,
+            "cityHomes": 0,
+            "riverPark": 0,
+            "skyPods": 0,
+            "biodome": 0,
+            "maglevStation": 0,
+            "skyHarbour": 0,
+            "cloudOrchard": 0,
+            "windsongLofts": 0,
+            "greatTelescope": 0,
+            "dewlightGardens": 0,
+            "starlightTerraces": 0,
+            "spaceElevator": 0,
+            "moonpost": 0,
+            "missionHomesteads": 0,
+            "homecomingHall": 0,
+            "ribbonLanding": 0,
+            "settlerDomes": 0,
+            "craterIceWell": 0,
+            "earthlightGreenhouse": 0,
+            "willowkinDome": 0,
+            "newHollowCommons": 0,
+            "craterHomesteads": 0,
+            "moonstoneWorkshop": 0,
+            "roverBarn": 0,
+            "earthriseLookout": 0,
+            "horseField": 0,
+            "park": 0,
+            "home2": 0,
+            "home3": 0,
+            "home4": 0,
+            "well2": 0,
+            "farm2": 0,
+            "farm3": 0
+          },
+          "firstLightsSeen": false,
+          "forge": { "progress": 0, "charge": 0 },
+          "coins": 1000,
+          "tourSeen": false,
+          "buildings": {
+            "well": 3,
+            "farm": 3,
+            "home": 2,
+            "saloon": 0,
+            "stable": 0,
+            "sheriff": 0,
+            "museum": 0,
+            "armory": 0,
+            "bank": 0,
+            "shop": 0,
+            "square": 0,
+            "watermill": 0,
+            "fisherman": 0,
+            "blacksmith": 0,
+            "school": 0,
+            "doctor": 0,
+            "bridge": 0,
+            "riverPort": 0,
+            "railDepot": 0,
+            "post": 0,
+            "warehouse": 0,
+            "hotel": 0,
+            "home5": 0,
+            "market": 0,
+            "powerHouse": 0,
+            "fireStation": 0,
+            "rowHouses": 0,
+            "mill": 0,
+            "garage": 0,
+            "busDepot": 0,
+            "gardenCourt": 0,
+            "diner": 0,
+            "teaHouse": 0,
+            "blossomAtelier": 0,
+            "orchardCottages": 0,
+            "glassworks": 0,
+            "springsRetreat": 0,
+            "riverlightPavilion": 0,
+            "airport": 0,
+            "radioTower": 0,
+            "concertHall": 0,
+            "television": 0,
+            "skyline": 0,
+            "cityHall": 0,
+            "apartments": 0,
+            "supermarket": 0,
+            "waterPlant": 0,
+            "transitHub": 0,
+            "library": 0,
+            "crystalLab": 0,
+            "cityHomes": 0,
+            "riverPark": 0,
+            "skyPods": 0,
+            "biodome": 0,
+            "maglevStation": 0,
+            "skyHarbour": 0,
+            "cloudOrchard": 0,
+            "windsongLofts": 0,
+            "greatTelescope": 0,
+            "dewlightGardens": 0,
+            "starlightTerraces": 0,
+            "spaceElevator": 0,
+            "moonpost": 0,
+            "missionHomesteads": 0,
+            "homecomingHall": 0,
+            "ribbonLanding": 0,
+            "settlerDomes": 0,
+            "craterIceWell": 0,
+            "earthlightGreenhouse": 0,
+            "willowkinDome": 0,
+            "newHollowCommons": 0,
+            "craterHomesteads": 0,
+            "moonstoneWorkshop": 0,
+            "roverBarn": 0,
+            "earthriseLookout": 0,
+            "horseField": 0,
+            "park": 0,
+            "home2": 0,
+            "home3": 0,
+            "home4": 0,
+            "well2": 0,
+            "farm2": 0,
+            "farm3": 0
+          },
+          "events": {},
+          "presentations": {},
+          "projects": { "home": { "id": "home", "stage": 3, "wins": 1, "required": 1 } },
+          "completedRuns": 0,
+          "nextRaidRun": null,
+          "income": { "at": null, "remainder": 0, "stored": 0 },
+          "lastCollections": { "saloon": null, "blacksmith": null },
+          "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
+          "guestVip": null,
+          "progressionVersion": 2
+        },
+        "townProjectFocus": "",
+        "issuedRun": 0,
+        "settledRun": 0,
+        "honours": {
+          "version": 4,
+          "earned": {},
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
+          "showcase": [],
+          "backfilled": 0,
+          "seenGeneration": 4
+        }
+      },
+      "after": {
+        "schemaVersion": 2,
+        "integrity": {
+          "version": 1,
+          "epoch": "00000000-0000-4000-8000-000000000043",
+          "clientAt": 1780000000000,
+          "baseSequence": 0,
+          "actions": [
+            {
+              "sequence": 1,
+              "id": "00000000-0000-4000-8000-000000000046",
+              "kind": "building-finish",
+              "data": {
+                "buildingId": "home",
+                "expectedStage": 3,
+                "projectRewards": 1,
+                "at": 1780000000000,
+                "shopStock": [],
+                "shopVisit": 0
+              }
+            }
+          ]
+        },
+        "records": {},
+        "continuousRecords": {},
+        "powers": [
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 0 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 0 },
+          { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
+          { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 0 },
+          { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
+        ],
+        "builderHammers": 1,
+        "chestsWithoutBuilderHammer": 0,
+        "pendingChests": [],
+        "shopStock": [],
+        "shopVisit": 0,
+        "vipReceipts": [],
+        "seenObstacles": [],
+        "seenTips": [],
+        "town": {
+          "personalisation": {
+            "version": 3,
+            "crest": null,
+            "areas": {},
+            "areaLevels": {},
+            "construction": {},
+            "plaques": {}
+          },
+          "era": "frontier",
+          "buildingEras": {
+            "well": "frontier",
+            "farm": "frontier",
+            "home": "frontier",
+            "saloon": "frontier",
+            "stable": "frontier",
+            "sheriff": "frontier",
+            "museum": "frontier",
+            "armory": "frontier",
+            "bank": "frontier",
+            "shop": "frontier",
+            "square": "frontier",
+            "watermill": "frontier",
+            "fisherman": "frontier",
+            "blacksmith": "frontier",
+            "school": "frontier",
+            "doctor": "frontier",
+            "bridge": "frontier",
+            "riverPort": "frontier",
+            "railDepot": "frontier",
+            "post": "frontier",
+            "warehouse": "frontier",
+            "hotel": "frontier",
+            "home5": "frontier",
+            "market": "frontier",
+            "powerHouse": "frontier",
+            "fireStation": "frontier",
+            "rowHouses": "frontier",
+            "mill": "frontier",
+            "garage": "frontier",
+            "busDepot": "frontier",
+            "gardenCourt": "frontier",
+            "diner": "frontier",
+            "teaHouse": "frontier",
+            "blossomAtelier": "frontier",
+            "orchardCottages": "frontier",
+            "glassworks": "frontier",
+            "springsRetreat": "frontier",
+            "riverlightPavilion": "frontier",
+            "airport": "frontier",
+            "radioTower": "frontier",
+            "concertHall": "frontier",
+            "television": "frontier",
+            "skyline": "frontier",
+            "cityHall": "frontier",
+            "apartments": "frontier",
+            "supermarket": "frontier",
+            "waterPlant": "frontier",
+            "transitHub": "frontier",
+            "library": "frontier",
+            "crystalLab": "frontier",
+            "cityHomes": "frontier",
+            "riverPark": "frontier",
+            "skyPods": "frontier",
+            "biodome": "frontier",
+            "maglevStation": "frontier",
+            "skyHarbour": "frontier",
+            "cloudOrchard": "frontier",
+            "windsongLofts": "frontier",
+            "greatTelescope": "frontier",
+            "dewlightGardens": "frontier",
+            "starlightTerraces": "frontier",
+            "spaceElevator": "frontier",
+            "moonpost": "frontier",
+            "missionHomesteads": "frontier",
+            "homecomingHall": "frontier",
+            "ribbonLanding": "frontier",
+            "settlerDomes": "frontier",
+            "craterIceWell": "frontier",
+            "earthlightGreenhouse": "frontier",
+            "willowkinDome": "frontier",
+            "newHollowCommons": "frontier",
+            "craterHomesteads": "frontier",
+            "moonstoneWorkshop": "frontier",
+            "roverBarn": "frontier",
+            "earthriseLookout": "frontier",
+            "horseField": "frontier",
+            "park": "frontier",
+            "home2": "frontier",
+            "home3": "frontier",
+            "home4": "frontier",
+            "well2": "frontier",
+            "farm2": "frontier",
+            "farm3": "frontier"
+          },
+          "buildingEraLevels": {
+            "well": 0,
+            "farm": 0,
+            "home": 0,
+            "saloon": 0,
+            "stable": 0,
+            "sheriff": 0,
+            "museum": 0,
+            "armory": 0,
+            "bank": 0,
+            "shop": 0,
+            "square": 0,
+            "watermill": 0,
+            "fisherman": 0,
+            "blacksmith": 0,
+            "school": 0,
+            "doctor": 0,
+            "bridge": 0,
+            "riverPort": 0,
+            "railDepot": 0,
+            "post": 0,
+            "warehouse": 0,
+            "hotel": 0,
+            "home5": 0,
+            "market": 0,
+            "powerHouse": 0,
+            "fireStation": 0,
+            "rowHouses": 0,
+            "mill": 0,
+            "garage": 0,
+            "busDepot": 0,
+            "gardenCourt": 0,
+            "diner": 0,
+            "teaHouse": 0,
+            "blossomAtelier": 0,
+            "orchardCottages": 0,
+            "glassworks": 0,
+            "springsRetreat": 0,
+            "riverlightPavilion": 0,
+            "airport": 0,
+            "radioTower": 0,
+            "concertHall": 0,
+            "television": 0,
+            "skyline": 0,
+            "cityHall": 0,
+            "apartments": 0,
+            "supermarket": 0,
+            "waterPlant": 0,
+            "transitHub": 0,
+            "library": 0,
+            "crystalLab": 0,
+            "cityHomes": 0,
+            "riverPark": 0,
+            "skyPods": 0,
+            "biodome": 0,
+            "maglevStation": 0,
+            "skyHarbour": 0,
+            "cloudOrchard": 0,
+            "windsongLofts": 0,
+            "greatTelescope": 0,
+            "dewlightGardens": 0,
+            "starlightTerraces": 0,
+            "spaceElevator": 0,
+            "moonpost": 0,
+            "missionHomesteads": 0,
+            "homecomingHall": 0,
+            "ribbonLanding": 0,
+            "settlerDomes": 0,
+            "craterIceWell": 0,
+            "earthlightGreenhouse": 0,
+            "willowkinDome": 0,
+            "newHollowCommons": 0,
+            "craterHomesteads": 0,
+            "moonstoneWorkshop": 0,
+            "roverBarn": 0,
+            "earthriseLookout": 0,
+            "horseField": 0,
+            "park": 0,
+            "home2": 0,
+            "home3": 0,
+            "home4": 0,
+            "well2": 0,
+            "farm2": 0,
+            "farm3": 0
+          },
+          "firstLightsSeen": false,
+          "forge": { "progress": 0, "charge": 0 },
+          "coins": 1000,
+          "tourSeen": false,
+          "buildings": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 0,
+            "stable": 0,
+            "sheriff": 0,
+            "museum": 0,
+            "armory": 0,
+            "bank": 0,
+            "shop": 0,
+            "square": 0,
+            "watermill": 0,
+            "fisherman": 0,
+            "blacksmith": 0,
+            "school": 0,
+            "doctor": 0,
+            "bridge": 0,
+            "riverPort": 0,
+            "railDepot": 0,
+            "post": 0,
+            "warehouse": 0,
+            "hotel": 0,
+            "home5": 0,
+            "market": 0,
+            "powerHouse": 0,
+            "fireStation": 0,
+            "rowHouses": 0,
+            "mill": 0,
+            "garage": 0,
+            "busDepot": 0,
+            "gardenCourt": 0,
+            "diner": 0,
+            "teaHouse": 0,
+            "blossomAtelier": 0,
+            "orchardCottages": 0,
+            "glassworks": 0,
+            "springsRetreat": 0,
+            "riverlightPavilion": 0,
+            "airport": 0,
+            "radioTower": 0,
+            "concertHall": 0,
+            "television": 0,
+            "skyline": 0,
+            "cityHall": 0,
+            "apartments": 0,
+            "supermarket": 0,
+            "waterPlant": 0,
+            "transitHub": 0,
+            "library": 0,
+            "crystalLab": 0,
+            "cityHomes": 0,
+            "riverPark": 0,
+            "skyPods": 0,
+            "biodome": 0,
+            "maglevStation": 0,
+            "skyHarbour": 0,
+            "cloudOrchard": 0,
+            "windsongLofts": 0,
+            "greatTelescope": 0,
+            "dewlightGardens": 0,
+            "starlightTerraces": 0,
+            "spaceElevator": 0,
+            "moonpost": 0,
+            "missionHomesteads": 0,
+            "homecomingHall": 0,
+            "ribbonLanding": 0,
+            "settlerDomes": 0,
+            "craterIceWell": 0,
+            "earthlightGreenhouse": 0,
+            "willowkinDome": 0,
+            "newHollowCommons": 0,
+            "craterHomesteads": 0,
+            "moonstoneWorkshop": 0,
+            "roverBarn": 0,
+            "earthriseLookout": 0,
+            "horseField": 0,
+            "park": 0,
+            "home2": 0,
+            "home3": 0,
+            "home4": 0,
+            "well2": 0,
+            "farm2": 0,
+            "farm3": 0
+          },
+          "events": {},
+          "presentations": {},
+          "projects": {},
+          "completedRuns": 0,
+          "nextRaidRun": null,
+          "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
+          "lastCollections": { "saloon": null, "blacksmith": null },
+          "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
+          "guestVip": null,
+          "progressionVersion": 2
+        },
+        "townProjectFocus": "",
+        "issuedRun": 0,
+        "settledRun": 0,
+        "honours": {
+          "version": 4,
+          "earned": {},
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
+          "showcase": [],
+          "backfilled": 0,
+          "seenGeneration": 4
+        }
+      },
+      "serverNow": 1780000000000
+    },
+    {
+      "name": "a hammer that finishes a starter project is paid back",
+      "before": {
+        "schemaVersion": 2,
+        "integrity": {
+          "version": 1,
+          "epoch": "00000000-0000-4000-8000-000000000047",
+          "clientAt": 1780000000000,
+          "baseSequence": 0,
+          "actions": []
+        },
+        "records": {},
+        "continuousRecords": {},
+        "powers": [
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 0 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 0 },
+          { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
+          { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 0 },
+          { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
+        ],
+        "builderHammers": 1,
+        "chestsWithoutBuilderHammer": 0,
+        "pendingChests": [],
+        "shopStock": [],
+        "shopVisit": 0,
+        "vipReceipts": [],
+        "seenObstacles": [],
+        "seenTips": [],
+        "town": {
+          "personalisation": {
+            "version": 3,
+            "crest": null,
+            "areas": {},
+            "areaLevels": {},
+            "construction": {},
+            "plaques": {}
+          },
+          "era": "frontier",
+          "buildingEras": {
+            "well": "frontier",
+            "farm": "frontier",
+            "home": "frontier",
+            "saloon": "frontier",
+            "stable": "frontier",
+            "sheriff": "frontier",
+            "museum": "frontier",
+            "armory": "frontier",
+            "bank": "frontier",
+            "shop": "frontier",
+            "square": "frontier",
+            "watermill": "frontier",
+            "fisherman": "frontier",
+            "blacksmith": "frontier",
+            "school": "frontier",
+            "doctor": "frontier",
+            "bridge": "frontier",
+            "riverPort": "frontier",
+            "railDepot": "frontier",
+            "post": "frontier",
+            "warehouse": "frontier",
+            "hotel": "frontier",
+            "home5": "frontier",
+            "market": "frontier",
+            "powerHouse": "frontier",
+            "fireStation": "frontier",
+            "rowHouses": "frontier",
+            "mill": "frontier",
+            "garage": "frontier",
+            "busDepot": "frontier",
+            "gardenCourt": "frontier",
+            "diner": "frontier",
+            "teaHouse": "frontier",
+            "blossomAtelier": "frontier",
+            "orchardCottages": "frontier",
+            "glassworks": "frontier",
+            "springsRetreat": "frontier",
+            "riverlightPavilion": "frontier",
+            "airport": "frontier",
+            "radioTower": "frontier",
+            "concertHall": "frontier",
+            "television": "frontier",
+            "skyline": "frontier",
+            "cityHall": "frontier",
+            "apartments": "frontier",
+            "supermarket": "frontier",
+            "waterPlant": "frontier",
+            "transitHub": "frontier",
+            "library": "frontier",
+            "crystalLab": "frontier",
+            "cityHomes": "frontier",
+            "riverPark": "frontier",
+            "skyPods": "frontier",
+            "biodome": "frontier",
+            "maglevStation": "frontier",
+            "skyHarbour": "frontier",
+            "cloudOrchard": "frontier",
+            "windsongLofts": "frontier",
+            "greatTelescope": "frontier",
+            "dewlightGardens": "frontier",
+            "starlightTerraces": "frontier",
+            "spaceElevator": "frontier",
+            "moonpost": "frontier",
+            "missionHomesteads": "frontier",
+            "homecomingHall": "frontier",
+            "ribbonLanding": "frontier",
+            "settlerDomes": "frontier",
+            "craterIceWell": "frontier",
+            "earthlightGreenhouse": "frontier",
+            "willowkinDome": "frontier",
+            "newHollowCommons": "frontier",
+            "craterHomesteads": "frontier",
+            "moonstoneWorkshop": "frontier",
+            "roverBarn": "frontier",
+            "earthriseLookout": "frontier",
+            "horseField": "frontier",
+            "park": "frontier",
+            "home2": "frontier",
+            "home3": "frontier",
+            "home4": "frontier",
+            "well2": "frontier",
+            "farm2": "frontier",
+            "farm3": "frontier"
+          },
+          "buildingEraLevels": {
+            "well": 0,
+            "farm": 0,
+            "home": 0,
+            "saloon": 0,
+            "stable": 0,
+            "sheriff": 0,
+            "museum": 0,
+            "armory": 0,
+            "bank": 0,
+            "shop": 0,
+            "square": 0,
+            "watermill": 0,
+            "fisherman": 0,
+            "blacksmith": 0,
+            "school": 0,
+            "doctor": 0,
+            "bridge": 0,
+            "riverPort": 0,
+            "railDepot": 0,
+            "post": 0,
+            "warehouse": 0,
+            "hotel": 0,
+            "home5": 0,
+            "market": 0,
+            "powerHouse": 0,
+            "fireStation": 0,
+            "rowHouses": 0,
+            "mill": 0,
+            "garage": 0,
+            "busDepot": 0,
+            "gardenCourt": 0,
+            "diner": 0,
+            "teaHouse": 0,
+            "blossomAtelier": 0,
+            "orchardCottages": 0,
+            "glassworks": 0,
+            "springsRetreat": 0,
+            "riverlightPavilion": 0,
+            "airport": 0,
+            "radioTower": 0,
+            "concertHall": 0,
+            "television": 0,
+            "skyline": 0,
+            "cityHall": 0,
+            "apartments": 0,
+            "supermarket": 0,
+            "waterPlant": 0,
+            "transitHub": 0,
+            "library": 0,
+            "crystalLab": 0,
+            "cityHomes": 0,
+            "riverPark": 0,
+            "skyPods": 0,
+            "biodome": 0,
+            "maglevStation": 0,
+            "skyHarbour": 0,
+            "cloudOrchard": 0,
+            "windsongLofts": 0,
+            "greatTelescope": 0,
+            "dewlightGardens": 0,
+            "starlightTerraces": 0,
+            "spaceElevator": 0,
+            "moonpost": 0,
+            "missionHomesteads": 0,
+            "homecomingHall": 0,
+            "ribbonLanding": 0,
+            "settlerDomes": 0,
+            "craterIceWell": 0,
+            "earthlightGreenhouse": 0,
+            "willowkinDome": 0,
+            "newHollowCommons": 0,
+            "craterHomesteads": 0,
+            "moonstoneWorkshop": 0,
+            "roverBarn": 0,
+            "earthriseLookout": 0,
+            "horseField": 0,
+            "park": 0,
+            "home2": 0,
+            "home3": 0,
+            "home4": 0,
+            "well2": 0,
+            "farm2": 0,
+            "farm3": 0
+          },
+          "firstLightsSeen": false,
+          "forge": { "progress": 0, "charge": 0 },
+          "coins": 1000,
+          "tourSeen": false,
+          "buildings": {
+            "well": 3,
+            "farm": 3,
+            "home": 2,
+            "saloon": 0,
+            "stable": 0,
+            "sheriff": 0,
+            "museum": 0,
+            "armory": 0,
+            "bank": 0,
+            "shop": 0,
+            "square": 0,
+            "watermill": 0,
+            "fisherman": 0,
+            "blacksmith": 0,
+            "school": 0,
+            "doctor": 0,
+            "bridge": 0,
+            "riverPort": 0,
+            "railDepot": 0,
+            "post": 0,
+            "warehouse": 0,
+            "hotel": 0,
+            "home5": 0,
+            "market": 0,
+            "powerHouse": 0,
+            "fireStation": 0,
+            "rowHouses": 0,
+            "mill": 0,
+            "garage": 0,
+            "busDepot": 0,
+            "gardenCourt": 0,
+            "diner": 0,
+            "teaHouse": 0,
+            "blossomAtelier": 0,
+            "orchardCottages": 0,
+            "glassworks": 0,
+            "springsRetreat": 0,
+            "riverlightPavilion": 0,
+            "airport": 0,
+            "radioTower": 0,
+            "concertHall": 0,
+            "television": 0,
+            "skyline": 0,
+            "cityHall": 0,
+            "apartments": 0,
+            "supermarket": 0,
+            "waterPlant": 0,
+            "transitHub": 0,
+            "library": 0,
+            "crystalLab": 0,
+            "cityHomes": 0,
+            "riverPark": 0,
+            "skyPods": 0,
+            "biodome": 0,
+            "maglevStation": 0,
+            "skyHarbour": 0,
+            "cloudOrchard": 0,
+            "windsongLofts": 0,
+            "greatTelescope": 0,
+            "dewlightGardens": 0,
+            "starlightTerraces": 0,
+            "spaceElevator": 0,
+            "moonpost": 0,
+            "missionHomesteads": 0,
+            "homecomingHall": 0,
+            "ribbonLanding": 0,
+            "settlerDomes": 0,
+            "craterIceWell": 0,
+            "earthlightGreenhouse": 0,
+            "willowkinDome": 0,
+            "newHollowCommons": 0,
+            "craterHomesteads": 0,
+            "moonstoneWorkshop": 0,
+            "roverBarn": 0,
+            "earthriseLookout": 0,
+            "horseField": 0,
+            "park": 0,
+            "home2": 0,
+            "home3": 0,
+            "home4": 0,
+            "well2": 0,
+            "farm2": 0,
+            "farm3": 0
+          },
+          "events": {},
+          "presentations": {},
+          "projects": {},
+          "completedRuns": 0,
+          "nextRaidRun": null,
+          "income": { "at": null, "remainder": 0, "stored": 0 },
+          "lastCollections": { "saloon": null, "blacksmith": null },
+          "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
+          "guestVip": null,
+          "progressionVersion": 2
+        },
+        "townProjectFocus": "",
+        "issuedRun": 0,
+        "settledRun": 0,
+        "honours": {
+          "version": 4,
+          "earned": {},
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
+          "showcase": [],
+          "backfilled": 0,
+          "seenGeneration": 4
+        }
+      },
+      "after": {
+        "schemaVersion": 2,
+        "integrity": {
+          "version": 1,
+          "epoch": "00000000-0000-4000-8000-000000000047",
+          "clientAt": 1780000000000,
+          "baseSequence": 0,
+          "actions": [
+            {
+              "sequence": 1,
+              "id": "00000000-0000-4000-8000-000000000050",
+              "kind": "building-hammer",
+              "data": {
+                "buildingId": "home",
+                "expectedStage": 2,
+                "projectRewards": 1,
+                "at": 1780000000000,
+                "shopStock": [],
+                "shopVisit": 0
+              }
+            }
+          ]
+        },
+        "records": {},
+        "continuousRecords": {},
+        "powers": [
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 0 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 0 },
+          { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
+          { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 0 },
+          { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
+        ],
+        "builderHammers": 1,
+        "chestsWithoutBuilderHammer": 0,
+        "pendingChests": [],
+        "shopStock": [],
+        "shopVisit": 0,
+        "vipReceipts": [],
+        "seenObstacles": [],
+        "seenTips": [],
+        "town": {
+          "personalisation": {
+            "version": 3,
+            "crest": null,
+            "areas": {},
+            "areaLevels": {},
+            "construction": {},
+            "plaques": {}
+          },
+          "era": "frontier",
+          "buildingEras": {
+            "well": "frontier",
+            "farm": "frontier",
+            "home": "frontier",
+            "saloon": "frontier",
+            "stable": "frontier",
+            "sheriff": "frontier",
+            "museum": "frontier",
+            "armory": "frontier",
+            "bank": "frontier",
+            "shop": "frontier",
+            "square": "frontier",
+            "watermill": "frontier",
+            "fisherman": "frontier",
+            "blacksmith": "frontier",
+            "school": "frontier",
+            "doctor": "frontier",
+            "bridge": "frontier",
+            "riverPort": "frontier",
+            "railDepot": "frontier",
+            "post": "frontier",
+            "warehouse": "frontier",
+            "hotel": "frontier",
+            "home5": "frontier",
+            "market": "frontier",
+            "powerHouse": "frontier",
+            "fireStation": "frontier",
+            "rowHouses": "frontier",
+            "mill": "frontier",
+            "garage": "frontier",
+            "busDepot": "frontier",
+            "gardenCourt": "frontier",
+            "diner": "frontier",
+            "teaHouse": "frontier",
+            "blossomAtelier": "frontier",
+            "orchardCottages": "frontier",
+            "glassworks": "frontier",
+            "springsRetreat": "frontier",
+            "riverlightPavilion": "frontier",
+            "airport": "frontier",
+            "radioTower": "frontier",
+            "concertHall": "frontier",
+            "television": "frontier",
+            "skyline": "frontier",
+            "cityHall": "frontier",
+            "apartments": "frontier",
+            "supermarket": "frontier",
+            "waterPlant": "frontier",
+            "transitHub": "frontier",
+            "library": "frontier",
+            "crystalLab": "frontier",
+            "cityHomes": "frontier",
+            "riverPark": "frontier",
+            "skyPods": "frontier",
+            "biodome": "frontier",
+            "maglevStation": "frontier",
+            "skyHarbour": "frontier",
+            "cloudOrchard": "frontier",
+            "windsongLofts": "frontier",
+            "greatTelescope": "frontier",
+            "dewlightGardens": "frontier",
+            "starlightTerraces": "frontier",
+            "spaceElevator": "frontier",
+            "moonpost": "frontier",
+            "missionHomesteads": "frontier",
+            "homecomingHall": "frontier",
+            "ribbonLanding": "frontier",
+            "settlerDomes": "frontier",
+            "craterIceWell": "frontier",
+            "earthlightGreenhouse": "frontier",
+            "willowkinDome": "frontier",
+            "newHollowCommons": "frontier",
+            "craterHomesteads": "frontier",
+            "moonstoneWorkshop": "frontier",
+            "roverBarn": "frontier",
+            "earthriseLookout": "frontier",
+            "horseField": "frontier",
+            "park": "frontier",
+            "home2": "frontier",
+            "home3": "frontier",
+            "home4": "frontier",
+            "well2": "frontier",
+            "farm2": "frontier",
+            "farm3": "frontier"
+          },
+          "buildingEraLevels": {
+            "well": 0,
+            "farm": 0,
+            "home": 0,
+            "saloon": 0,
+            "stable": 0,
+            "sheriff": 0,
+            "museum": 0,
+            "armory": 0,
+            "bank": 0,
+            "shop": 0,
+            "square": 0,
+            "watermill": 0,
+            "fisherman": 0,
+            "blacksmith": 0,
+            "school": 0,
+            "doctor": 0,
+            "bridge": 0,
+            "riverPort": 0,
+            "railDepot": 0,
+            "post": 0,
+            "warehouse": 0,
+            "hotel": 0,
+            "home5": 0,
+            "market": 0,
+            "powerHouse": 0,
+            "fireStation": 0,
+            "rowHouses": 0,
+            "mill": 0,
+            "garage": 0,
+            "busDepot": 0,
+            "gardenCourt": 0,
+            "diner": 0,
+            "teaHouse": 0,
+            "blossomAtelier": 0,
+            "orchardCottages": 0,
+            "glassworks": 0,
+            "springsRetreat": 0,
+            "riverlightPavilion": 0,
+            "airport": 0,
+            "radioTower": 0,
+            "concertHall": 0,
+            "television": 0,
+            "skyline": 0,
+            "cityHall": 0,
+            "apartments": 0,
+            "supermarket": 0,
+            "waterPlant": 0,
+            "transitHub": 0,
+            "library": 0,
+            "crystalLab": 0,
+            "cityHomes": 0,
+            "riverPark": 0,
+            "skyPods": 0,
+            "biodome": 0,
+            "maglevStation": 0,
+            "skyHarbour": 0,
+            "cloudOrchard": 0,
+            "windsongLofts": 0,
+            "greatTelescope": 0,
+            "dewlightGardens": 0,
+            "starlightTerraces": 0,
+            "spaceElevator": 0,
+            "moonpost": 0,
+            "missionHomesteads": 0,
+            "homecomingHall": 0,
+            "ribbonLanding": 0,
+            "settlerDomes": 0,
+            "craterIceWell": 0,
+            "earthlightGreenhouse": 0,
+            "willowkinDome": 0,
+            "newHollowCommons": 0,
+            "craterHomesteads": 0,
+            "moonstoneWorkshop": 0,
+            "roverBarn": 0,
+            "earthriseLookout": 0,
+            "horseField": 0,
+            "park": 0,
+            "home2": 0,
+            "home3": 0,
+            "home4": 0,
+            "well2": 0,
+            "farm2": 0,
+            "farm3": 0
+          },
+          "firstLightsSeen": false,
+          "forge": { "progress": 0, "charge": 0 },
+          "coins": 1000,
+          "tourSeen": false,
+          "buildings": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 0,
+            "stable": 0,
+            "sheriff": 0,
+            "museum": 0,
+            "armory": 0,
+            "bank": 0,
+            "shop": 0,
+            "square": 0,
+            "watermill": 0,
+            "fisherman": 0,
+            "blacksmith": 0,
+            "school": 0,
+            "doctor": 0,
+            "bridge": 0,
+            "riverPort": 0,
+            "railDepot": 0,
+            "post": 0,
+            "warehouse": 0,
+            "hotel": 0,
+            "home5": 0,
+            "market": 0,
+            "powerHouse": 0,
+            "fireStation": 0,
+            "rowHouses": 0,
+            "mill": 0,
+            "garage": 0,
+            "busDepot": 0,
+            "gardenCourt": 0,
+            "diner": 0,
+            "teaHouse": 0,
+            "blossomAtelier": 0,
+            "orchardCottages": 0,
+            "glassworks": 0,
+            "springsRetreat": 0,
+            "riverlightPavilion": 0,
+            "airport": 0,
+            "radioTower": 0,
+            "concertHall": 0,
+            "television": 0,
+            "skyline": 0,
+            "cityHall": 0,
+            "apartments": 0,
+            "supermarket": 0,
+            "waterPlant": 0,
+            "transitHub": 0,
+            "library": 0,
+            "crystalLab": 0,
+            "cityHomes": 0,
+            "riverPark": 0,
+            "skyPods": 0,
+            "biodome": 0,
+            "maglevStation": 0,
+            "skyHarbour": 0,
+            "cloudOrchard": 0,
+            "windsongLofts": 0,
+            "greatTelescope": 0,
+            "dewlightGardens": 0,
+            "starlightTerraces": 0,
+            "spaceElevator": 0,
+            "moonpost": 0,
+            "missionHomesteads": 0,
+            "homecomingHall": 0,
+            "ribbonLanding": 0,
+            "settlerDomes": 0,
+            "craterIceWell": 0,
+            "earthlightGreenhouse": 0,
+            "willowkinDome": 0,
+            "newHollowCommons": 0,
+            "craterHomesteads": 0,
+            "moonstoneWorkshop": 0,
+            "roverBarn": 0,
+            "earthriseLookout": 0,
+            "horseField": 0,
+            "park": 0,
+            "home2": 0,
+            "home3": 0,
+            "home4": 0,
+            "well2": 0,
+            "farm2": 0,
+            "farm3": 0
+          },
+          "events": {},
+          "presentations": {},
+          "projects": {},
+          "completedRuns": 0,
+          "nextRaidRun": null,
+          "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
+          "lastCollections": { "saloon": null, "blacksmith": null },
+          "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
+          "guestVip": null,
+          "progressionVersion": 2
+        },
+        "townProjectFocus": "",
+        "issuedRun": 0,
+        "settledRun": 0,
+        "honours": {
+          "version": 4,
+          "earned": {},
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
+          "showcase": [],
+          "backfilled": 0,
+          "seenGeneration": 4
+        }
+      },
+      "serverNow": 1780000000000
+    },
+    {
+      "name": "a starter project pays its hammer past the hammer limit",
+      "before": {
+        "schemaVersion": 2,
+        "integrity": {
+          "version": 1,
+          "epoch": "00000000-0000-4000-8000-000000000051",
+          "clientAt": 1780000000000,
+          "baseSequence": 0,
+          "actions": []
+        },
+        "records": {},
+        "continuousRecords": {},
+        "powers": [
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 0 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 0 },
+          { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
+          { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 0 },
+          { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
+        ],
+        "builderHammers": 5,
+        "chestsWithoutBuilderHammer": 0,
+        "pendingChests": [],
+        "shopStock": [],
+        "shopVisit": 0,
+        "vipReceipts": [],
+        "seenObstacles": [],
+        "seenTips": [],
+        "town": {
+          "personalisation": {
+            "version": 3,
+            "crest": null,
+            "areas": {},
+            "areaLevels": {},
+            "construction": {},
+            "plaques": {}
+          },
+          "era": "frontier",
+          "buildingEras": {
+            "well": "frontier",
+            "farm": "frontier",
+            "home": "frontier",
+            "saloon": "frontier",
+            "stable": "frontier",
+            "sheriff": "frontier",
+            "museum": "frontier",
+            "armory": "frontier",
+            "bank": "frontier",
+            "shop": "frontier",
+            "square": "frontier",
+            "watermill": "frontier",
+            "fisherman": "frontier",
+            "blacksmith": "frontier",
+            "school": "frontier",
+            "doctor": "frontier",
+            "bridge": "frontier",
+            "riverPort": "frontier",
+            "railDepot": "frontier",
+            "post": "frontier",
+            "warehouse": "frontier",
+            "hotel": "frontier",
+            "home5": "frontier",
+            "market": "frontier",
+            "powerHouse": "frontier",
+            "fireStation": "frontier",
+            "rowHouses": "frontier",
+            "mill": "frontier",
+            "garage": "frontier",
+            "busDepot": "frontier",
+            "gardenCourt": "frontier",
+            "diner": "frontier",
+            "teaHouse": "frontier",
+            "blossomAtelier": "frontier",
+            "orchardCottages": "frontier",
+            "glassworks": "frontier",
+            "springsRetreat": "frontier",
+            "riverlightPavilion": "frontier",
+            "airport": "frontier",
+            "radioTower": "frontier",
+            "concertHall": "frontier",
+            "television": "frontier",
+            "skyline": "frontier",
+            "cityHall": "frontier",
+            "apartments": "frontier",
+            "supermarket": "frontier",
+            "waterPlant": "frontier",
+            "transitHub": "frontier",
+            "library": "frontier",
+            "crystalLab": "frontier",
+            "cityHomes": "frontier",
+            "riverPark": "frontier",
+            "skyPods": "frontier",
+            "biodome": "frontier",
+            "maglevStation": "frontier",
+            "skyHarbour": "frontier",
+            "cloudOrchard": "frontier",
+            "windsongLofts": "frontier",
+            "greatTelescope": "frontier",
+            "dewlightGardens": "frontier",
+            "starlightTerraces": "frontier",
+            "spaceElevator": "frontier",
+            "moonpost": "frontier",
+            "missionHomesteads": "frontier",
+            "homecomingHall": "frontier",
+            "ribbonLanding": "frontier",
+            "settlerDomes": "frontier",
+            "craterIceWell": "frontier",
+            "earthlightGreenhouse": "frontier",
+            "willowkinDome": "frontier",
+            "newHollowCommons": "frontier",
+            "craterHomesteads": "frontier",
+            "moonstoneWorkshop": "frontier",
+            "roverBarn": "frontier",
+            "earthriseLookout": "frontier",
+            "horseField": "frontier",
+            "park": "frontier",
+            "home2": "frontier",
+            "home3": "frontier",
+            "home4": "frontier",
+            "well2": "frontier",
+            "farm2": "frontier",
+            "farm3": "frontier"
+          },
+          "buildingEraLevels": {
+            "well": 0,
+            "farm": 0,
+            "home": 0,
+            "saloon": 0,
+            "stable": 0,
+            "sheriff": 0,
+            "museum": 0,
+            "armory": 0,
+            "bank": 0,
+            "shop": 0,
+            "square": 0,
+            "watermill": 0,
+            "fisherman": 0,
+            "blacksmith": 0,
+            "school": 0,
+            "doctor": 0,
+            "bridge": 0,
+            "riverPort": 0,
+            "railDepot": 0,
+            "post": 0,
+            "warehouse": 0,
+            "hotel": 0,
+            "home5": 0,
+            "market": 0,
+            "powerHouse": 0,
+            "fireStation": 0,
+            "rowHouses": 0,
+            "mill": 0,
+            "garage": 0,
+            "busDepot": 0,
+            "gardenCourt": 0,
+            "diner": 0,
+            "teaHouse": 0,
+            "blossomAtelier": 0,
+            "orchardCottages": 0,
+            "glassworks": 0,
+            "springsRetreat": 0,
+            "riverlightPavilion": 0,
+            "airport": 0,
+            "radioTower": 0,
+            "concertHall": 0,
+            "television": 0,
+            "skyline": 0,
+            "cityHall": 0,
+            "apartments": 0,
+            "supermarket": 0,
+            "waterPlant": 0,
+            "transitHub": 0,
+            "library": 0,
+            "crystalLab": 0,
+            "cityHomes": 0,
+            "riverPark": 0,
+            "skyPods": 0,
+            "biodome": 0,
+            "maglevStation": 0,
+            "skyHarbour": 0,
+            "cloudOrchard": 0,
+            "windsongLofts": 0,
+            "greatTelescope": 0,
+            "dewlightGardens": 0,
+            "starlightTerraces": 0,
+            "spaceElevator": 0,
+            "moonpost": 0,
+            "missionHomesteads": 0,
+            "homecomingHall": 0,
+            "ribbonLanding": 0,
+            "settlerDomes": 0,
+            "craterIceWell": 0,
+            "earthlightGreenhouse": 0,
+            "willowkinDome": 0,
+            "newHollowCommons": 0,
+            "craterHomesteads": 0,
+            "moonstoneWorkshop": 0,
+            "roverBarn": 0,
+            "earthriseLookout": 0,
+            "horseField": 0,
+            "park": 0,
+            "home2": 0,
+            "home3": 0,
+            "home4": 0,
+            "well2": 0,
+            "farm2": 0,
+            "farm3": 0
+          },
+          "firstLightsSeen": false,
+          "forge": { "progress": 0, "charge": 0 },
+          "coins": 1000,
+          "tourSeen": false,
+          "buildings": {
+            "well": 3,
+            "farm": 3,
+            "home": 2,
+            "saloon": 0,
+            "stable": 0,
+            "sheriff": 0,
+            "museum": 0,
+            "armory": 0,
+            "bank": 0,
+            "shop": 0,
+            "square": 0,
+            "watermill": 0,
+            "fisherman": 0,
+            "blacksmith": 0,
+            "school": 0,
+            "doctor": 0,
+            "bridge": 0,
+            "riverPort": 0,
+            "railDepot": 0,
+            "post": 0,
+            "warehouse": 0,
+            "hotel": 0,
+            "home5": 0,
+            "market": 0,
+            "powerHouse": 0,
+            "fireStation": 0,
+            "rowHouses": 0,
+            "mill": 0,
+            "garage": 0,
+            "busDepot": 0,
+            "gardenCourt": 0,
+            "diner": 0,
+            "teaHouse": 0,
+            "blossomAtelier": 0,
+            "orchardCottages": 0,
+            "glassworks": 0,
+            "springsRetreat": 0,
+            "riverlightPavilion": 0,
+            "airport": 0,
+            "radioTower": 0,
+            "concertHall": 0,
+            "television": 0,
+            "skyline": 0,
+            "cityHall": 0,
+            "apartments": 0,
+            "supermarket": 0,
+            "waterPlant": 0,
+            "transitHub": 0,
+            "library": 0,
+            "crystalLab": 0,
+            "cityHomes": 0,
+            "riverPark": 0,
+            "skyPods": 0,
+            "biodome": 0,
+            "maglevStation": 0,
+            "skyHarbour": 0,
+            "cloudOrchard": 0,
+            "windsongLofts": 0,
+            "greatTelescope": 0,
+            "dewlightGardens": 0,
+            "starlightTerraces": 0,
+            "spaceElevator": 0,
+            "moonpost": 0,
+            "missionHomesteads": 0,
+            "homecomingHall": 0,
+            "ribbonLanding": 0,
+            "settlerDomes": 0,
+            "craterIceWell": 0,
+            "earthlightGreenhouse": 0,
+            "willowkinDome": 0,
+            "newHollowCommons": 0,
+            "craterHomesteads": 0,
+            "moonstoneWorkshop": 0,
+            "roverBarn": 0,
+            "earthriseLookout": 0,
+            "horseField": 0,
+            "park": 0,
+            "home2": 0,
+            "home3": 0,
+            "home4": 0,
+            "well2": 0,
+            "farm2": 0,
+            "farm3": 0
+          },
+          "events": {},
+          "presentations": {},
+          "projects": { "home": { "id": "home", "stage": 3, "wins": 1, "required": 1 } },
+          "completedRuns": 0,
+          "nextRaidRun": null,
+          "income": { "at": null, "remainder": 0, "stored": 0 },
+          "lastCollections": { "saloon": null, "blacksmith": null },
+          "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
+          "guestVip": null,
+          "progressionVersion": 2
+        },
+        "townProjectFocus": "",
+        "issuedRun": 0,
+        "settledRun": 0,
+        "honours": {
+          "version": 4,
+          "earned": {},
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
+          "showcase": [],
+          "backfilled": 0,
+          "seenGeneration": 4
+        }
+      },
+      "after": {
+        "schemaVersion": 2,
+        "integrity": {
+          "version": 1,
+          "epoch": "00000000-0000-4000-8000-000000000051",
+          "clientAt": 1780000000000,
+          "baseSequence": 0,
+          "actions": [
+            {
+              "sequence": 1,
+              "id": "00000000-0000-4000-8000-000000000054",
+              "kind": "building-finish",
+              "data": {
+                "buildingId": "home",
+                "expectedStage": 3,
+                "projectRewards": 1,
+                "at": 1780000000000,
+                "shopStock": [],
+                "shopVisit": 0
+              }
+            }
+          ]
+        },
+        "records": {},
+        "continuousRecords": {},
+        "powers": [
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 0 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 0 },
+          { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
+          { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 0 },
+          { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
+        ],
+        "builderHammers": 6,
+        "chestsWithoutBuilderHammer": 0,
+        "pendingChests": [],
+        "shopStock": [],
+        "shopVisit": 0,
+        "vipReceipts": [],
+        "seenObstacles": [],
+        "seenTips": [],
+        "town": {
+          "personalisation": {
+            "version": 3,
+            "crest": null,
+            "areas": {},
+            "areaLevels": {},
+            "construction": {},
+            "plaques": {}
+          },
+          "era": "frontier",
+          "buildingEras": {
+            "well": "frontier",
+            "farm": "frontier",
+            "home": "frontier",
+            "saloon": "frontier",
+            "stable": "frontier",
+            "sheriff": "frontier",
+            "museum": "frontier",
+            "armory": "frontier",
+            "bank": "frontier",
+            "shop": "frontier",
+            "square": "frontier",
+            "watermill": "frontier",
+            "fisherman": "frontier",
+            "blacksmith": "frontier",
+            "school": "frontier",
+            "doctor": "frontier",
+            "bridge": "frontier",
+            "riverPort": "frontier",
+            "railDepot": "frontier",
+            "post": "frontier",
+            "warehouse": "frontier",
+            "hotel": "frontier",
+            "home5": "frontier",
+            "market": "frontier",
+            "powerHouse": "frontier",
+            "fireStation": "frontier",
+            "rowHouses": "frontier",
+            "mill": "frontier",
+            "garage": "frontier",
+            "busDepot": "frontier",
+            "gardenCourt": "frontier",
+            "diner": "frontier",
+            "teaHouse": "frontier",
+            "blossomAtelier": "frontier",
+            "orchardCottages": "frontier",
+            "glassworks": "frontier",
+            "springsRetreat": "frontier",
+            "riverlightPavilion": "frontier",
+            "airport": "frontier",
+            "radioTower": "frontier",
+            "concertHall": "frontier",
+            "television": "frontier",
+            "skyline": "frontier",
+            "cityHall": "frontier",
+            "apartments": "frontier",
+            "supermarket": "frontier",
+            "waterPlant": "frontier",
+            "transitHub": "frontier",
+            "library": "frontier",
+            "crystalLab": "frontier",
+            "cityHomes": "frontier",
+            "riverPark": "frontier",
+            "skyPods": "frontier",
+            "biodome": "frontier",
+            "maglevStation": "frontier",
+            "skyHarbour": "frontier",
+            "cloudOrchard": "frontier",
+            "windsongLofts": "frontier",
+            "greatTelescope": "frontier",
+            "dewlightGardens": "frontier",
+            "starlightTerraces": "frontier",
+            "spaceElevator": "frontier",
+            "moonpost": "frontier",
+            "missionHomesteads": "frontier",
+            "homecomingHall": "frontier",
+            "ribbonLanding": "frontier",
+            "settlerDomes": "frontier",
+            "craterIceWell": "frontier",
+            "earthlightGreenhouse": "frontier",
+            "willowkinDome": "frontier",
+            "newHollowCommons": "frontier",
+            "craterHomesteads": "frontier",
+            "moonstoneWorkshop": "frontier",
+            "roverBarn": "frontier",
+            "earthriseLookout": "frontier",
+            "horseField": "frontier",
+            "park": "frontier",
+            "home2": "frontier",
+            "home3": "frontier",
+            "home4": "frontier",
+            "well2": "frontier",
+            "farm2": "frontier",
+            "farm3": "frontier"
+          },
+          "buildingEraLevels": {
+            "well": 0,
+            "farm": 0,
+            "home": 0,
+            "saloon": 0,
+            "stable": 0,
+            "sheriff": 0,
+            "museum": 0,
+            "armory": 0,
+            "bank": 0,
+            "shop": 0,
+            "square": 0,
+            "watermill": 0,
+            "fisherman": 0,
+            "blacksmith": 0,
+            "school": 0,
+            "doctor": 0,
+            "bridge": 0,
+            "riverPort": 0,
+            "railDepot": 0,
+            "post": 0,
+            "warehouse": 0,
+            "hotel": 0,
+            "home5": 0,
+            "market": 0,
+            "powerHouse": 0,
+            "fireStation": 0,
+            "rowHouses": 0,
+            "mill": 0,
+            "garage": 0,
+            "busDepot": 0,
+            "gardenCourt": 0,
+            "diner": 0,
+            "teaHouse": 0,
+            "blossomAtelier": 0,
+            "orchardCottages": 0,
+            "glassworks": 0,
+            "springsRetreat": 0,
+            "riverlightPavilion": 0,
+            "airport": 0,
+            "radioTower": 0,
+            "concertHall": 0,
+            "television": 0,
+            "skyline": 0,
+            "cityHall": 0,
+            "apartments": 0,
+            "supermarket": 0,
+            "waterPlant": 0,
+            "transitHub": 0,
+            "library": 0,
+            "crystalLab": 0,
+            "cityHomes": 0,
+            "riverPark": 0,
+            "skyPods": 0,
+            "biodome": 0,
+            "maglevStation": 0,
+            "skyHarbour": 0,
+            "cloudOrchard": 0,
+            "windsongLofts": 0,
+            "greatTelescope": 0,
+            "dewlightGardens": 0,
+            "starlightTerraces": 0,
+            "spaceElevator": 0,
+            "moonpost": 0,
+            "missionHomesteads": 0,
+            "homecomingHall": 0,
+            "ribbonLanding": 0,
+            "settlerDomes": 0,
+            "craterIceWell": 0,
+            "earthlightGreenhouse": 0,
+            "willowkinDome": 0,
+            "newHollowCommons": 0,
+            "craterHomesteads": 0,
+            "moonstoneWorkshop": 0,
+            "roverBarn": 0,
+            "earthriseLookout": 0,
+            "horseField": 0,
+            "park": 0,
+            "home2": 0,
+            "home3": 0,
+            "home4": 0,
+            "well2": 0,
+            "farm2": 0,
+            "farm3": 0
+          },
+          "firstLightsSeen": false,
+          "forge": { "progress": 0, "charge": 0 },
+          "coins": 1000,
+          "tourSeen": false,
+          "buildings": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 0,
+            "stable": 0,
+            "sheriff": 0,
+            "museum": 0,
+            "armory": 0,
+            "bank": 0,
+            "shop": 0,
+            "square": 0,
+            "watermill": 0,
+            "fisherman": 0,
+            "blacksmith": 0,
+            "school": 0,
+            "doctor": 0,
+            "bridge": 0,
+            "riverPort": 0,
+            "railDepot": 0,
+            "post": 0,
+            "warehouse": 0,
+            "hotel": 0,
+            "home5": 0,
+            "market": 0,
+            "powerHouse": 0,
+            "fireStation": 0,
+            "rowHouses": 0,
+            "mill": 0,
+            "garage": 0,
+            "busDepot": 0,
+            "gardenCourt": 0,
+            "diner": 0,
+            "teaHouse": 0,
+            "blossomAtelier": 0,
+            "orchardCottages": 0,
+            "glassworks": 0,
+            "springsRetreat": 0,
+            "riverlightPavilion": 0,
+            "airport": 0,
+            "radioTower": 0,
+            "concertHall": 0,
+            "television": 0,
+            "skyline": 0,
+            "cityHall": 0,
+            "apartments": 0,
+            "supermarket": 0,
+            "waterPlant": 0,
+            "transitHub": 0,
+            "library": 0,
+            "crystalLab": 0,
+            "cityHomes": 0,
+            "riverPark": 0,
+            "skyPods": 0,
+            "biodome": 0,
+            "maglevStation": 0,
+            "skyHarbour": 0,
+            "cloudOrchard": 0,
+            "windsongLofts": 0,
+            "greatTelescope": 0,
+            "dewlightGardens": 0,
+            "starlightTerraces": 0,
+            "spaceElevator": 0,
+            "moonpost": 0,
+            "missionHomesteads": 0,
+            "homecomingHall": 0,
+            "ribbonLanding": 0,
+            "settlerDomes": 0,
+            "craterIceWell": 0,
+            "earthlightGreenhouse": 0,
+            "willowkinDome": 0,
+            "newHollowCommons": 0,
+            "craterHomesteads": 0,
+            "moonstoneWorkshop": 0,
+            "roverBarn": 0,
+            "earthriseLookout": 0,
+            "horseField": 0,
+            "park": 0,
+            "home2": 0,
+            "home3": 0,
+            "home4": 0,
+            "well2": 0,
+            "farm2": 0,
+            "farm3": 0
+          },
+          "events": {},
+          "presentations": {},
+          "projects": {},
+          "completedRuns": 0,
+          "nextRaidRun": null,
+          "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
+          "lastCollections": { "saloon": null, "blacksmith": null },
+          "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
+          "guestVip": null,
+          "progressionVersion": 2
+        },
+        "townProjectFocus": "",
+        "issuedRun": 0,
+        "settledRun": 0,
+        "honours": {
+          "version": 4,
+          "earned": {},
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
+          "showcase": [],
+          "backfilled": 0,
+          "seenGeneration": 4
+        }
+      },
+      "serverNow": 1780000000000
+    },
+    {
+      "name": "modernization purchase uses its era price",
+      "before": {
+        "schemaVersion": 2,
+        "integrity": {
+          "version": 1,
+          "epoch": "00000000-0000-4000-8000-000000000055",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -5845,19 +7873,19 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000043",
+          "epoch": "00000000-0000-4000-8000-000000000055",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000046",
+              "id": "00000000-0000-4000-8000-000000000058",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000047",
+              "id": "00000000-0000-4000-8000-000000000059",
               "kind": "building-buy",
               "data": {
                 "buildingId": "well",
@@ -5870,6 +7898,7 @@
                   { "id": "color-wand", "sold": false }
                 ],
                 "shopVisit": 1,
+                "projectRewards": 1,
                 "at": 1780000000000
               }
             }
@@ -6222,7 +8251,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000048",
+          "epoch": "00000000-0000-4000-8000-000000000060",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -6564,23 +8593,24 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000048",
+          "epoch": "00000000-0000-4000-8000-000000000060",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000051",
+              "id": "00000000-0000-4000-8000-000000000063",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000052",
+              "id": "00000000-0000-4000-8000-000000000064",
               "kind": "building-finish",
               "data": {
                 "buildingId": "well",
                 "expectedStage": 3,
+                "projectRewards": 1,
                 "at": 1780000000000,
                 "shopStock": [
                   { "id": "clear-row", "sold": false },
@@ -6929,7 +8959,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000053",
+          "epoch": "00000000-0000-4000-8000-000000000065",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -7257,13 +9287,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000053",
+          "epoch": "00000000-0000-4000-8000-000000000065",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000056",
+              "id": "00000000-0000-4000-8000-000000000068",
               "kind": "forge-collect",
               "data": { "at": 1780000000000 }
             }
@@ -7596,7 +9626,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000057",
+          "epoch": "00000000-0000-4000-8000-000000000069",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -7924,13 +9954,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000057",
+          "epoch": "00000000-0000-4000-8000-000000000069",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000060",
+              "id": "00000000-0000-4000-8000-000000000072",
               "kind": "saloon-collect",
               "data": { "at": 1780000000000 }
             }
@@ -8263,7 +10293,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000061",
+          "epoch": "00000000-0000-4000-8000-000000000073",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -8591,19 +10621,19 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000061",
+          "epoch": "00000000-0000-4000-8000-000000000073",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000064",
+              "id": "00000000-0000-4000-8000-000000000076",
               "kind": "saloon-visitor",
               "data": { "at": 1780000000000, "visitAt": 1779999999000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000065",
+              "id": "00000000-0000-4000-8000-000000000077",
               "kind": "vip-spend",
               "data": { "key": "fixture-tour:0", "buildingId": "saloon", "at": 1780000000000 }
             }
@@ -8936,7 +10966,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000066",
+          "epoch": "00000000-0000-4000-8000-000000000078",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -9267,13 +11297,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000066",
+          "epoch": "00000000-0000-4000-8000-000000000078",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000069",
+              "id": "00000000-0000-4000-8000-000000000081",
               "kind": "helmet-find",
               "data": { "at": 1780000000000, "run": 12 }
             }
@@ -9609,7 +11639,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000070",
+          "epoch": "00000000-0000-4000-8000-000000000082",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -9949,19 +11979,19 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000070",
+          "epoch": "00000000-0000-4000-8000-000000000082",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000073",
+              "id": "00000000-0000-4000-8000-000000000085",
               "kind": "raid-bell",
               "data": { "raidId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000074",
+              "id": "00000000-0000-4000-8000-000000000086",
               "kind": "raid-seen",
               "data": { "raidId": 1, "at": 1780000000000 }
             }
@@ -10308,7 +12338,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000075",
+          "epoch": "00000000-0000-4000-8000-000000000087",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -10648,25 +12678,25 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000075",
+          "epoch": "00000000-0000-4000-8000-000000000087",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000078",
+              "id": "00000000-0000-4000-8000-000000000090",
               "kind": "raid-seen",
               "data": { "raidId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000079",
+              "id": "00000000-0000-4000-8000-000000000091",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000080",
+              "id": "00000000-0000-4000-8000-000000000092",
               "kind": "raid-encounter",
               "data": { "event": null, "nextRaidRun": 13, "at": 1780000000000 }
             }
@@ -11012,7 +13042,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000081",
+          "epoch": "00000000-0000-4000-8000-000000000093",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -11340,19 +13370,19 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000081",
+          "epoch": "00000000-0000-4000-8000-000000000093",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000084",
+              "id": "00000000-0000-4000-8000-000000000096",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "continuous", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000085",
+              "id": "00000000-0000-4000-8000-000000000097",
               "kind": "continuous",
               "data": {
                 "runId": 1,
@@ -11691,7 +13721,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000086",
+          "epoch": "00000000-0000-4000-8000-000000000098",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -12019,13 +14049,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000086",
+          "epoch": "00000000-0000-4000-8000-000000000098",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000089",
+              "id": "00000000-0000-4000-8000-000000000101",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "continuous", "levelId": 1, "at": 1780000000000 }
             }
@@ -12358,7 +14388,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000090",
+          "epoch": "00000000-0000-4000-8000-000000000102",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -12686,13 +14716,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000090",
+          "epoch": "00000000-0000-4000-8000-000000000102",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000093",
+              "id": "00000000-0000-4000-8000-000000000105",
               "kind": "era-advance",
               "data": { "expectedEra": "frontier", "at": 1780000000000 }
             }
@@ -13033,7 +15063,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000094",
+          "epoch": "00000000-0000-4000-8000-000000000106",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -13364,19 +15394,19 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000094",
+          "epoch": "00000000-0000-4000-8000-000000000106",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000097",
+              "id": "00000000-0000-4000-8000-000000000109",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000098",
+              "id": "00000000-0000-4000-8000-000000000110",
               "kind": "building-buy",
               "data": {
                 "buildingId": "teaHouse",
@@ -13389,6 +15419,7 @@
                   { "id": "color-wand", "sold": false }
                 ],
                 "shopVisit": 1,
+                "projectRewards": 1,
                 "at": 1780000000000
               }
             }
@@ -13730,7 +15761,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000099",
+          "epoch": "00000000-0000-4000-8000-000000000111",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -14058,13 +16089,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000099",
+          "epoch": "00000000-0000-4000-8000-000000000111",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000102",
+              "id": "00000000-0000-4000-8000-000000000114",
               "kind": "power-spend",
               "data": { "itemId": "tnt", "at": 1780000000000 }
             }
@@ -14397,7 +16428,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000103",
+          "epoch": "00000000-0000-4000-8000-000000000115",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -14737,17 +16768,18 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000103",
+          "epoch": "00000000-0000-4000-8000-000000000115",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000106",
+              "id": "00000000-0000-4000-8000-000000000118",
               "kind": "building-finish",
               "data": {
                 "buildingId": "sheriff",
                 "expectedStage": 3,
+                "projectRewards": 1,
                 "at": 1780000000000,
                 "shopStock": [
                   { "id": "clear-row", "sold": false },
@@ -15106,7 +17138,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000107",
+          "epoch": "00000000-0000-4000-8000-000000000119",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -15434,19 +17466,19 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000107",
+          "epoch": "00000000-0000-4000-8000-000000000119",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000110",
+              "id": "00000000-0000-4000-8000-000000000122",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "continuous", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000111",
+              "id": "00000000-0000-4000-8000-000000000123",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 2, "at": 1780000000000 }
             }
@@ -15779,7 +17811,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000112",
+          "epoch": "00000000-0000-4000-8000-000000000124",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -16107,19 +18139,19 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000112",
+          "epoch": "00000000-0000-4000-8000-000000000124",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000115",
+              "id": "00000000-0000-4000-8000-000000000127",
               "kind": "income-start",
               "data": { "at": 1779992800000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000116",
+              "id": "00000000-0000-4000-8000-000000000128",
               "kind": "saloon-collect",
               "data": { "at": 1780000000000 }
             }
@@ -16452,7 +18484,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000117",
+          "epoch": "00000000-0000-4000-8000-000000000129",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -16788,13 +18820,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000117",
+          "epoch": "00000000-0000-4000-8000-000000000129",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000120",
+              "id": "00000000-0000-4000-8000-000000000132",
               "kind": "era-advance",
               "data": { "expectedEra": "river-rail", "at": 1780000000000 }
             }
@@ -17135,7 +19167,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000121",
+          "epoch": "00000000-0000-4000-8000-000000000133",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -17530,37 +19562,37 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000121",
+          "epoch": "00000000-0000-4000-8000-000000000133",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000124",
+              "id": "00000000-0000-4000-8000-000000000136",
               "kind": "raid-seen",
               "data": { "raidId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000125",
+              "id": "00000000-0000-4000-8000-000000000137",
               "kind": "forge-collect",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000126",
+              "id": "00000000-0000-4000-8000-000000000138",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 55, "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000127",
+              "id": "00000000-0000-4000-8000-000000000139",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000128",
+              "id": "00000000-0000-4000-8000-000000000140",
               "kind": "victory",
               "data": {
                 "runId": 1,
@@ -17592,13 +19624,13 @@
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000129",
+              "id": "00000000-0000-4000-8000-000000000141",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 56, "at": 1780000000000 }
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000130",
+              "id": "00000000-0000-4000-8000-000000000142",
               "kind": "victory",
               "data": {
                 "runId": 2,
@@ -18043,7 +20075,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000131",
+          "epoch": "00000000-0000-4000-8000-000000000143",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -18375,13 +20407,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000131",
+          "epoch": "00000000-0000-4000-8000-000000000143",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000134",
+              "id": "00000000-0000-4000-8000-000000000146",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18400,19 +20432,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000135",
+              "id": "00000000-0000-4000-8000-000000000147",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000136",
+              "id": "00000000-0000-4000-8000-000000000148",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000137",
+              "id": "00000000-0000-4000-8000-000000000149",
               "kind": "victory",
               "data": {
                 "runId": 1,
@@ -18443,13 +20475,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000138",
+              "id": "00000000-0000-4000-8000-000000000150",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000139",
+              "id": "00000000-0000-4000-8000-000000000151",
               "kind": "victory",
               "data": {
                 "runId": 2,
@@ -18480,13 +20512,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000140",
+              "id": "00000000-0000-4000-8000-000000000152",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000141",
+              "id": "00000000-0000-4000-8000-000000000153",
               "kind": "victory",
               "data": {
                 "runId": 3,
@@ -18517,7 +20549,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000142",
+              "id": "00000000-0000-4000-8000-000000000154",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18536,13 +20568,13 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000143",
+              "id": "00000000-0000-4000-8000-000000000155",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000144",
+              "id": "00000000-0000-4000-8000-000000000156",
               "kind": "victory",
               "data": {
                 "runId": 4,
@@ -18573,7 +20605,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000145",
+              "id": "00000000-0000-4000-8000-000000000157",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18592,13 +20624,13 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000146",
+              "id": "00000000-0000-4000-8000-000000000158",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000147",
+              "id": "00000000-0000-4000-8000-000000000159",
               "kind": "victory",
               "data": {
                 "runId": 5,
@@ -18629,7 +20661,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000148",
+              "id": "00000000-0000-4000-8000-000000000160",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18648,13 +20680,13 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000149",
+              "id": "00000000-0000-4000-8000-000000000161",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000150",
+              "id": "00000000-0000-4000-8000-000000000162",
               "kind": "victory",
               "data": {
                 "runId": 6,
@@ -18685,7 +20717,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000151",
+              "id": "00000000-0000-4000-8000-000000000163",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18704,13 +20736,13 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000152",
+              "id": "00000000-0000-4000-8000-000000000164",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000153",
+              "id": "00000000-0000-4000-8000-000000000165",
               "kind": "victory",
               "data": {
                 "runId": 7,
@@ -19078,7 +21110,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000154",
+          "epoch": "00000000-0000-4000-8000-000000000166",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -19410,13 +21442,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000154",
+          "epoch": "00000000-0000-4000-8000-000000000166",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000157",
+              "id": "00000000-0000-4000-8000-000000000169",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19435,19 +21467,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000158",
+              "id": "00000000-0000-4000-8000-000000000170",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000159",
+              "id": "00000000-0000-4000-8000-000000000171",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000160",
+              "id": "00000000-0000-4000-8000-000000000172",
               "kind": "victory",
               "data": {
                 "runId": 1,
@@ -19478,13 +21510,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000161",
+              "id": "00000000-0000-4000-8000-000000000173",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000162",
+              "id": "00000000-0000-4000-8000-000000000174",
               "kind": "victory",
               "data": {
                 "runId": 2,
@@ -19515,13 +21547,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000163",
+              "id": "00000000-0000-4000-8000-000000000175",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000164",
+              "id": "00000000-0000-4000-8000-000000000176",
               "kind": "victory",
               "data": {
                 "runId": 3,
@@ -19895,7 +21927,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000165",
+          "epoch": "00000000-0000-4000-8000-000000000177",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -20227,13 +22259,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000165",
+          "epoch": "00000000-0000-4000-8000-000000000177",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000168",
+              "id": "00000000-0000-4000-8000-000000000180",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20252,19 +22284,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000169",
+              "id": "00000000-0000-4000-8000-000000000181",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000170",
+              "id": "00000000-0000-4000-8000-000000000182",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000171",
+              "id": "00000000-0000-4000-8000-000000000183",
               "kind": "victory",
               "data": {
                 "runId": 1,
@@ -20295,13 +22327,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000172",
+              "id": "00000000-0000-4000-8000-000000000184",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000173",
+              "id": "00000000-0000-4000-8000-000000000185",
               "kind": "victory",
               "data": {
                 "runId": 2,
@@ -20332,13 +22364,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000174",
+              "id": "00000000-0000-4000-8000-000000000186",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000175",
+              "id": "00000000-0000-4000-8000-000000000187",
               "kind": "victory",
               "data": {
                 "runId": 3,
@@ -20369,7 +22401,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000176",
+              "id": "00000000-0000-4000-8000-000000000188",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20388,13 +22420,13 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000177",
+              "id": "00000000-0000-4000-8000-000000000189",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000178",
+              "id": "00000000-0000-4000-8000-000000000190",
               "kind": "victory",
               "data": {
                 "runId": 4,
@@ -20425,7 +22457,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000179",
+              "id": "00000000-0000-4000-8000-000000000191",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20444,13 +22476,13 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000180",
+              "id": "00000000-0000-4000-8000-000000000192",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000181",
+              "id": "00000000-0000-4000-8000-000000000193",
               "kind": "victory",
               "data": {
                 "runId": 5,
@@ -20481,7 +22513,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000182",
+              "id": "00000000-0000-4000-8000-000000000194",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20500,13 +22532,13 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000183",
+              "id": "00000000-0000-4000-8000-000000000195",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000184",
+              "id": "00000000-0000-4000-8000-000000000196",
               "kind": "victory",
               "data": {
                 "runId": 6,
@@ -20537,7 +22569,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000185",
+              "id": "00000000-0000-4000-8000-000000000197",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20556,13 +22588,13 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000186",
+              "id": "00000000-0000-4000-8000-000000000198",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000187",
+              "id": "00000000-0000-4000-8000-000000000199",
               "kind": "victory",
               "data": {
                 "runId": 7,
@@ -20930,7 +22962,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000188",
+          "epoch": "00000000-0000-4000-8000-000000000200",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -21262,13 +23294,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000188",
+          "epoch": "00000000-0000-4000-8000-000000000200",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000191",
+              "id": "00000000-0000-4000-8000-000000000203",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21287,19 +23319,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000192",
+              "id": "00000000-0000-4000-8000-000000000204",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000193",
+              "id": "00000000-0000-4000-8000-000000000205",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000194",
+              "id": "00000000-0000-4000-8000-000000000206",
               "kind": "victory",
               "data": {
                 "runId": 1,
@@ -21330,13 +23362,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000195",
+              "id": "00000000-0000-4000-8000-000000000207",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000196",
+              "id": "00000000-0000-4000-8000-000000000208",
               "kind": "victory",
               "data": {
                 "runId": 2,
@@ -21367,13 +23399,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000197",
+              "id": "00000000-0000-4000-8000-000000000209",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000198",
+              "id": "00000000-0000-4000-8000-000000000210",
               "kind": "victory",
               "data": {
                 "runId": 3,
@@ -21404,7 +23436,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000199",
+              "id": "00000000-0000-4000-8000-000000000211",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21423,13 +23455,13 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000200",
+              "id": "00000000-0000-4000-8000-000000000212",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000201",
+              "id": "00000000-0000-4000-8000-000000000213",
               "kind": "victory",
               "data": {
                 "runId": 4,
@@ -21460,7 +23492,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000202",
+              "id": "00000000-0000-4000-8000-000000000214",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21479,13 +23511,13 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000203",
+              "id": "00000000-0000-4000-8000-000000000215",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000204",
+              "id": "00000000-0000-4000-8000-000000000216",
               "kind": "victory",
               "data": {
                 "runId": 5,
@@ -21516,7 +23548,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000205",
+              "id": "00000000-0000-4000-8000-000000000217",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21535,13 +23567,13 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000206",
+              "id": "00000000-0000-4000-8000-000000000218",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000207",
+              "id": "00000000-0000-4000-8000-000000000219",
               "kind": "victory",
               "data": {
                 "runId": 6,
@@ -21572,7 +23604,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000208",
+              "id": "00000000-0000-4000-8000-000000000220",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21591,13 +23623,13 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000209",
+              "id": "00000000-0000-4000-8000-000000000221",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000210",
+              "id": "00000000-0000-4000-8000-000000000222",
               "kind": "victory",
               "data": {
                 "runId": 7,
@@ -21965,7 +23997,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000211",
+          "epoch": "00000000-0000-4000-8000-000000000223",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -22297,13 +24329,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000211",
+          "epoch": "00000000-0000-4000-8000-000000000223",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000214",
+              "id": "00000000-0000-4000-8000-000000000226",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22322,19 +24354,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000215",
+              "id": "00000000-0000-4000-8000-000000000227",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000216",
+              "id": "00000000-0000-4000-8000-000000000228",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000217",
+              "id": "00000000-0000-4000-8000-000000000229",
               "kind": "victory",
               "data": {
                 "runId": 1,
@@ -22365,13 +24397,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000218",
+              "id": "00000000-0000-4000-8000-000000000230",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000219",
+              "id": "00000000-0000-4000-8000-000000000231",
               "kind": "victory",
               "data": {
                 "runId": 2,
@@ -22402,13 +24434,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000220",
+              "id": "00000000-0000-4000-8000-000000000232",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000221",
+              "id": "00000000-0000-4000-8000-000000000233",
               "kind": "victory",
               "data": {
                 "runId": 3,
@@ -22439,7 +24471,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000222",
+              "id": "00000000-0000-4000-8000-000000000234",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22458,13 +24490,13 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000223",
+              "id": "00000000-0000-4000-8000-000000000235",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000224",
+              "id": "00000000-0000-4000-8000-000000000236",
               "kind": "victory",
               "data": {
                 "runId": 4,
@@ -22495,7 +24527,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000225",
+              "id": "00000000-0000-4000-8000-000000000237",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22514,13 +24546,13 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000226",
+              "id": "00000000-0000-4000-8000-000000000238",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000227",
+              "id": "00000000-0000-4000-8000-000000000239",
               "kind": "victory",
               "data": {
                 "runId": 5,
@@ -22551,7 +24583,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000228",
+              "id": "00000000-0000-4000-8000-000000000240",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22570,13 +24602,13 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000229",
+              "id": "00000000-0000-4000-8000-000000000241",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000230",
+              "id": "00000000-0000-4000-8000-000000000242",
               "kind": "victory",
               "data": {
                 "runId": 6,
@@ -22607,7 +24639,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000231",
+              "id": "00000000-0000-4000-8000-000000000243",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22626,13 +24658,13 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000232",
+              "id": "00000000-0000-4000-8000-000000000244",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000233",
+              "id": "00000000-0000-4000-8000-000000000245",
               "kind": "victory",
               "data": {
                 "runId": 7,
@@ -23000,7 +25032,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000234",
+          "epoch": "00000000-0000-4000-8000-000000000246",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -23332,13 +25364,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000234",
+          "epoch": "00000000-0000-4000-8000-000000000246",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000237",
+              "id": "00000000-0000-4000-8000-000000000249",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -23357,19 +25389,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000238",
+              "id": "00000000-0000-4000-8000-000000000250",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000239",
+              "id": "00000000-0000-4000-8000-000000000251",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000240",
+              "id": "00000000-0000-4000-8000-000000000252",
               "kind": "victory",
               "data": {
                 "runId": 1,
@@ -23400,13 +25432,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000241",
+              "id": "00000000-0000-4000-8000-000000000253",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000242",
+              "id": "00000000-0000-4000-8000-000000000254",
               "kind": "victory",
               "data": {
                 "runId": 2,
@@ -23437,13 +25469,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000243",
+              "id": "00000000-0000-4000-8000-000000000255",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000244",
+              "id": "00000000-0000-4000-8000-000000000256",
               "kind": "victory",
               "data": {
                 "runId": 3,
@@ -23474,7 +25506,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000245",
+              "id": "00000000-0000-4000-8000-000000000257",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -23493,13 +25525,13 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000246",
+              "id": "00000000-0000-4000-8000-000000000258",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000247",
+              "id": "00000000-0000-4000-8000-000000000259",
               "kind": "victory",
               "data": {
                 "runId": 4,
@@ -23530,7 +25562,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000248",
+              "id": "00000000-0000-4000-8000-000000000260",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -23549,13 +25581,13 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000249",
+              "id": "00000000-0000-4000-8000-000000000261",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000250",
+              "id": "00000000-0000-4000-8000-000000000262",
               "kind": "victory",
               "data": {
                 "runId": 5,
@@ -23586,7 +25618,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000251",
+              "id": "00000000-0000-4000-8000-000000000263",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -23605,13 +25637,13 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000252",
+              "id": "00000000-0000-4000-8000-000000000264",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000253",
+              "id": "00000000-0000-4000-8000-000000000265",
               "kind": "victory",
               "data": {
                 "runId": 6,
@@ -23642,7 +25674,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000254",
+              "id": "00000000-0000-4000-8000-000000000266",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -23661,13 +25693,13 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000255",
+              "id": "00000000-0000-4000-8000-000000000267",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000256",
+              "id": "00000000-0000-4000-8000-000000000268",
               "kind": "victory",
               "data": {
                 "runId": 7,
@@ -24035,7 +26067,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000257",
+          "epoch": "00000000-0000-4000-8000-000000000269",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -24367,13 +26399,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000257",
+          "epoch": "00000000-0000-4000-8000-000000000269",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000260",
+              "id": "00000000-0000-4000-8000-000000000272",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -24392,19 +26424,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000261",
+              "id": "00000000-0000-4000-8000-000000000273",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000262",
+              "id": "00000000-0000-4000-8000-000000000274",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000263",
+              "id": "00000000-0000-4000-8000-000000000275",
               "kind": "victory",
               "data": {
                 "runId": 1,
@@ -24435,13 +26467,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000264",
+              "id": "00000000-0000-4000-8000-000000000276",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000265",
+              "id": "00000000-0000-4000-8000-000000000277",
               "kind": "victory",
               "data": {
                 "runId": 2,
@@ -24472,13 +26504,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000266",
+              "id": "00000000-0000-4000-8000-000000000278",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000267",
+              "id": "00000000-0000-4000-8000-000000000279",
               "kind": "victory",
               "data": {
                 "runId": 3,
@@ -24509,7 +26541,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000268",
+              "id": "00000000-0000-4000-8000-000000000280",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -24528,13 +26560,13 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000269",
+              "id": "00000000-0000-4000-8000-000000000281",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000270",
+              "id": "00000000-0000-4000-8000-000000000282",
               "kind": "victory",
               "data": {
                 "runId": 4,
@@ -24565,7 +26597,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000271",
+              "id": "00000000-0000-4000-8000-000000000283",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -24584,13 +26616,13 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000272",
+              "id": "00000000-0000-4000-8000-000000000284",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000273",
+              "id": "00000000-0000-4000-8000-000000000285",
               "kind": "victory",
               "data": {
                 "runId": 5,
@@ -24621,7 +26653,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000274",
+              "id": "00000000-0000-4000-8000-000000000286",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -24640,13 +26672,13 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000275",
+              "id": "00000000-0000-4000-8000-000000000287",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000276",
+              "id": "00000000-0000-4000-8000-000000000288",
               "kind": "victory",
               "data": {
                 "runId": 6,
@@ -24677,7 +26709,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000277",
+              "id": "00000000-0000-4000-8000-000000000289",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -24696,13 +26728,13 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000278",
+              "id": "00000000-0000-4000-8000-000000000290",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000279",
+              "id": "00000000-0000-4000-8000-000000000291",
               "kind": "victory",
               "data": {
                 "runId": 7,
@@ -25070,7 +27102,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000280",
+          "epoch": "00000000-0000-4000-8000-000000000292",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -25403,13 +27435,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000280",
+          "epoch": "00000000-0000-4000-8000-000000000292",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000283",
+              "id": "00000000-0000-4000-8000-000000000295",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -25428,19 +27460,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000284",
+              "id": "00000000-0000-4000-8000-000000000296",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000285",
+              "id": "00000000-0000-4000-8000-000000000297",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000286",
+              "id": "00000000-0000-4000-8000-000000000298",
               "kind": "victory",
               "data": {
                 "runId": 1,
@@ -25471,13 +27503,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000287",
+              "id": "00000000-0000-4000-8000-000000000299",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000288",
+              "id": "00000000-0000-4000-8000-000000000300",
               "kind": "victory",
               "data": {
                 "runId": 2,
@@ -25508,13 +27540,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000289",
+              "id": "00000000-0000-4000-8000-000000000301",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000290",
+              "id": "00000000-0000-4000-8000-000000000302",
               "kind": "victory",
               "data": {
                 "runId": 3,
@@ -25545,7 +27577,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000291",
+              "id": "00000000-0000-4000-8000-000000000303",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -25564,13 +27596,13 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000292",
+              "id": "00000000-0000-4000-8000-000000000304",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000293",
+              "id": "00000000-0000-4000-8000-000000000305",
               "kind": "victory",
               "data": {
                 "runId": 4,
@@ -25601,7 +27633,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000294",
+              "id": "00000000-0000-4000-8000-000000000306",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -25620,13 +27652,13 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000295",
+              "id": "00000000-0000-4000-8000-000000000307",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000296",
+              "id": "00000000-0000-4000-8000-000000000308",
               "kind": "victory",
               "data": {
                 "runId": 5,
@@ -25657,7 +27689,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000297",
+              "id": "00000000-0000-4000-8000-000000000309",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -25676,13 +27708,13 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000298",
+              "id": "00000000-0000-4000-8000-000000000310",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000299",
+              "id": "00000000-0000-4000-8000-000000000311",
               "kind": "victory",
               "data": {
                 "runId": 6,
@@ -25713,7 +27745,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000300",
+              "id": "00000000-0000-4000-8000-000000000312",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -25732,13 +27764,13 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000301",
+              "id": "00000000-0000-4000-8000-000000000313",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000302",
+              "id": "00000000-0000-4000-8000-000000000314",
               "kind": "victory",
               "data": {
                 "runId": 7,

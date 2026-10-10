@@ -675,6 +675,28 @@ foreach ($fixtures->fixtures as $fixture) {
             'lost-response retry never charges twice',
         );
     }
+    if ($fixture->name === 'finishing the last starter-project building grants a builder hammer') {
+        // A receipt from a client before the reward carries no flag: no hammer is granted.
+        $legacy = integrityData($fixture->after);
+        unset($legacy['integrity']['actions'][0]['data']['projectRewards']);
+        $legacy['builderHammers'] = $fixture->before->builderHammers;
+        assertIntegrity(
+            $validator->accept(integrityObject($legacy), $starting, $clock)->builderHammers ===
+                $fixture->before->builderHammers,
+            'an unflagged receipt replays without the starter-project hammer',
+        );
+        // The flag alone pays nothing: a finish that completes no project keeps the count.
+        $early = integrityData($fixture->before);
+        $early['town']['buildings']['well'] = 2;
+        $earlyStart = $validator->accept(integrityObject($early), null, $clock);
+        $earlyAfter = integrityData($fixture->after);
+        $earlyAfter['town']['buildings']['well'] = 2;
+        integrityDenied(
+            fn() => $validator->accept(integrityObject($earlyAfter), $earlyStart, $clock),
+            'save_integrity_mismatch',
+            'an unfinished starter project cannot claim its hammer',
+        );
+    }
     if ($fixture->name === 'victory after 175 moves and an expired speed target') {
         $middle = integrityData($fixture->before);
         $firstAction = integrityData($fixture->after)['integrity']['actions'][0];

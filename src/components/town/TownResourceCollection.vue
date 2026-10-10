@@ -1,7 +1,10 @@
 <template>
   <aside
     class="town-resource-collection"
-    :class="{ still: reducedMotion, 'resource-tnt': resource === 'tnt' }"
+    :class="{
+      still: reducedMotion,
+      'resource-tnt': resource === 'tnt' || resource === 'project-hammer',
+    }"
     :style="{ left: `clamp(72px, ${origin.x}%, calc(100% - 72px))`, top: `${origin.y}%` }"
     role="status"
     aria-live="polite"
@@ -67,6 +70,13 @@ const resources = {
     particles: 5,
     cue: 'coin',
     message: 'A VIP spent {coins} coins in your village!',
+    suffix: '',
+  },
+  'project-hammer': {
+    image: '/art/rewards/builder-hammer.svg',
+    particles: 5,
+    cue: 'jackpot',
+    message: 'Project complete: +{coins} builder hammer',
     suffix: '',
   },
   tnt: {
