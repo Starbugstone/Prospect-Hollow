@@ -102,6 +102,7 @@
           :forge-collectible="forgeCollectible"
           :builder-hammers="campaign.builderHammers"
           :selected="selected"
+          :coach-plot="coaching ? tutorial.target.plot : null"
           :reduced-motion="settings.reducedMotion"
           :paused="
             !active ||
@@ -177,6 +178,7 @@
           :build-count="directoryPlots.length"
           :build-nudge="buildNudge"
           :mine-label="mineLabel"
+          :simple="!!tutorial"
           @select="openTab"
           @height="tabHeight = $event"
         />
@@ -307,13 +309,23 @@
         <p class="town-kicker">
           {{ t(ERA_BY_ID[town.era].label) }} · {{ t('Current era available') }}
         </p>
+        <TownNextStep
+          class="town-build-next"
+          :town="town"
+          :hammers="campaign.builderHammers"
+          @select="selectBuilding"
+          @inspect="inspectBuilding"
+          @build-free="buildFree"
+          @mine="goMining"
+          @advance-era="beginEra"
+        />
         <p v-if="!directoryPlots.length" role="status">
           {{
             t('No purchases available. Earn coins in the mine or finish your current construction.')
           }}
         </p>
         <section class="town-building-list" :aria-label="t('Available buildings')">
-          <button v-for="place in directoryPlots" :key="place.id" @click="selectParcel(place.id)">
+          <button v-for="place in buildList" :key="place.id" @click="selectParcel(place.id)">
             <span class="building-list-dot" :style="{ background: place.color }"></span>
             <span
               >{{ t(place.shortName) }}<small>{{ plotStatus(place) }}</small></span
@@ -342,18 +354,15 @@
             </span>
           </button>
         </section>
-        <TownNextStep
-          class="town-build-next"
-          :town="town"
-          :hammers="campaign.builderHammers"
-          @select="selectBuilding"
-          @inspect="inspectBuilding"
-          @build-free="buildFree"
-          @mine="goMining"
-          @advance-era="beginEra"
-        />
+        <button
+          v-if="buildList.length < directoryPlots.length"
+          class="town-secondary town-show-all"
+          @click="showAllPlots = true"
+        >
+          {{ t('Show all buildings ({count})', { count: directoryPlots.length }) }}
+        </button>
         <section
-          v-if="monumentSites.length"
+          v-if="monumentSites.length && !tutorial"
           class="town-monument-list"
           aria-labelledby="town-monuments-heading"
         >
@@ -400,35 +409,38 @@
         <p v-if="town.era === 'frontier'">
           {{ t('The east-bank district and railway station open in the River & Rail era.') }}
         </p>
-        <p class="town-directory-hint">
-          {{
-            t(
-              'Select a row to finish construction or buy with the coins or hammer shown. This list stays open. Collect resources by tapping buildings in the town.',
-            )
-          }}
-        </p>
-        <p class="town-directory-hint">
-          {{
-            t(
-              'Finish upgrading each well, farm or house to level 2 to unlock the next plot of its type. Farm II must reach level 2 before Farm III, and the same rule applies to extra houses. Other buildings have one plot each.',
-            )
-          }}
-        </p>
-        <p class="town-service">
-          {{
-            t(
-              isCityEra(town.era)
-                ? 'Every city building has 3 levels. Existing services stay open during modernization.'
-                : town.era === 'motor-age'
-                  ? 'Every Motor Age building has 3 levels. Each construction takes at most 2 mining runs.'
-                  : town.era === 'industrial'
-                    ? 'Every Industrial building has 3 levels. Finish all upgrades to complete the era.'
-                    : town.era === 'river-rail'
-                      ? 'Every River & Rail building has 3 levels. Each construction takes at most 2 mining runs.'
-                      : 'Supporting buildings finish at level 3 with their full benefits. The town square, sheriff, bank, saloon and blacksmith have 5 levels.',
-            )
-          }}
-        </p>
+        <details class="town-service town-build-rules">
+          <summary>{{ t('How building works') }}</summary>
+          <p class="town-directory-hint">
+            {{
+              t(
+                'Select a row to finish construction or buy with the coins or hammer shown. This list stays open. Collect resources by tapping buildings in the town.',
+              )
+            }}
+          </p>
+          <p class="town-directory-hint">
+            {{
+              t(
+                'Finish upgrading each well, farm or house to level 2 to unlock the next plot of its type. Farm II must reach level 2 before Farm III, and the same rule applies to extra houses. Other buildings have one plot each.',
+              )
+            }}
+          </p>
+          <p class="town-service">
+            {{
+              t(
+                isCityEra(town.era)
+                  ? 'Every city building has 3 levels. Existing services stay open during modernization.'
+                  : town.era === 'motor-age'
+                    ? 'Every Motor Age building has 3 levels. Each construction takes at most 2 mining runs.'
+                    : town.era === 'industrial'
+                      ? 'Every Industrial building has 3 levels. Finish all upgrades to complete the era.'
+                      : town.era === 'river-rail'
+                        ? 'Every River & Rail building has 3 levels. Each construction takes at most 2 mining runs.'
+                        : 'Supporting buildings finish at level 3 with their full benefits. The town square, sheriff, bank, saloon and blacksmith have 5 levels.',
+              )
+            }}
+          </p>
+        </details>
         <details class="town-service">
           <summary>{{ t('All current-era plots') }}</summary>
           <section class="town-building-list" :aria-label="t('All current-era plots')">
@@ -516,11 +528,20 @@
       v-if="active && tourOpen"
       :level="campaign.nextLevel"
       :era="campaign.town.era"
-      @close="finishTour"
+      @close="tourOpen = false"
       @build="
-        finishTour();
+        tourOpen = false;
         selectBuilding(goal?.id ?? 'well');
       "
+    />
+    <TownCoach
+      v-if="coaching"
+      :step="tutorial"
+      :card="dialogMode === 'building' ? selected : ''"
+      :sheet-open="!!dialogMode"
+      :bottom="tabHeight"
+      @locate="townScene?.focusPlace($event)"
+      @skip="campaign.finishTownTour()"
     />
     <TownMuseum
       v-if="active && museumOpen && campaign.canReplay"
@@ -662,6 +683,8 @@ import { HAMMER_CAPACITY } from '../../data/rewards';
 import { LEVEL_COUNT } from '../../data/campaign';
 import TownMuseum from './TownMuseum.vue';
 import TownTour from './TownTour.vue';
+import TownCoach from './TownCoach.vue';
+import { villageTutorial } from '../../data/guidance';
 import SaveStatusPill from '../SaveStatusPill.vue';
 import { useTownAudio } from '../../composables/useTownAudio';
 import TownScene from './TownScene.vue';
@@ -716,10 +739,6 @@ const tourOpen = ref(false),
   fullscreen = ref(false),
   mapFrame = ref(null);
 let previousOverflow;
-function finishTour() {
-  tourOpen.value = false;
-  campaign.finishTownTour();
-}
 watch(fullscreen, (open) => {
   if (open) {
     previousOverflow = document.body.style.overflow;
@@ -743,12 +762,14 @@ const mineLabel = computed(() =>
     ? t('Mine · {level}', { level: campaign.nextLevel })
     : t('Museum'),
 );
-// New players and finished constructions are pointed to Build.
+// A new town follows the tutorial; outside it, an empty town and finished constructions
+// are pointed to Build.
+const tutorial = computed(() => villageTutorial(campaign));
 const buildNudge = computed(
   () =>
-    !town.value.tourSeen ||
-    !Object.values(town.value.buildings).some(Boolean) ||
-    Object.values(town.value.projects).some(constructionReady),
+    !tutorial.value &&
+    (!Object.values(town.value.buildings).some(Boolean) ||
+      Object.values(town.value.projects).some(constructionReady)),
 );
 const muted = computed(() => settings.musicVolume === 0 && settings.sfxVolume === 0);
 // While the tab bar shows, every village panel opens as a sheet above it, so the
@@ -756,6 +777,8 @@ const muted = computed(() => settings.musicVolume === 0 && settings.sfxVolume ==
 const tabHeight = ref(0);
 const tabSheet = computed(() => tabHeight.value > 0);
 function openTab(tab) {
+  // The tutorial ends by showing where the next step always waits.
+  if (tab === 'build' && tutorial.value?.id === 'next') campaign.finishTownTour();
   if (tab === 'mine') goMining();
   // Tapping the open tab again closes its panel.
   else if (tab !== 'village' && currentTab.value === tab) closeDialog();
@@ -827,6 +850,15 @@ const activeProjects = computed(() => Object.values(town.value.projects));
 const goal = computed(() => nextGoal(town.value));
 const gate = computed(() => eraGate(town.value));
 const directoryPlots = computed(() => availableParcels(town.value, campaign.builderHammers));
+// During the tutorial Build lists only the next building and finished constructions, so a
+// new player meets one clear choice instead of a column of free plots.
+const showAllPlots = ref(false);
+const buildList = computed(() => {
+  const next = tutorial.value?.target.plot ?? goal.value?.id;
+  return tutorial.value && !showAllPlots.value
+    ? directoryPlots.value.filter((place) => place.ready || place.id === next)
+    : directoryPlots.value;
+});
 const townScene = ref(null);
 const eraRevealed = ref(false);
 const eraReady = ref(false);
@@ -1246,6 +1278,20 @@ const moment = computed(
 watch(museumOpen, (open) => {
   if (props.active) emit('museum-change', open);
 });
+// The tutorial waits for raids, cinematics and full-screen panels to finish.
+const coaching = computed(
+  () =>
+    props.active &&
+    !!tutorial.value &&
+    !activeRaid.value &&
+    !town.value.transition?.pending &&
+    !openingPresentation.value &&
+    !firstLightsOpen.value &&
+    !tourOpen.value &&
+    !museumOpen.value &&
+    !collectionOpen.value &&
+    !props.mineEntryPending,
+);
 watch(
   () => props.openMuseum,
   (open) => {

@@ -8,11 +8,11 @@ import { forEachWalker } from './TownWalkers';
 const screen = new Vector3();
 const inFront = (p) => p.z > -1 && p.z < 1;
 
-// The label's draw order: the mine, the selection, ready builds, the guided goal,
-// then affordable plots; nearer labels win among equals.
+// The label's draw order: the mine, the tutorial's plot and the selection, ready builds,
+// the guided goal, then affordable plots; nearer labels win among equals.
 function labelRank(d, id) {
   if (id === 'mine') return 0;
-  if (id === d.selected) return 1;
+  if (id === d.coachPlot || id === d.selected) return 1;
   if (constructionReady(d.town.projects[id])) return 2;
   if (id === d.guidedPlot) return 3;
   return d.availablePlots?.has(id) ? 4 : 5;
@@ -40,6 +40,11 @@ export function projectLabelPositions(d) {
         !overlapsEventInset(d, ((reward.x + 1) * width) / 2, ((1 - reward.y) * height) / 2, 48),
     };
     const p = screen.copy(position).project(d.camera);
+    // A narrow phone screen would hide the suggested plot's wide label near an edge;
+    // while its building is on screen the label slides inward instead.
+    const edge = 1 - (labelWidth / 2 + 9) / (width / 2);
+    const guided = id === d.coachPlot || id === d.guidedPlot;
+    if (guided && Math.abs(p.x) < 0.98) p.x = Math.max(-edge, Math.min(edge, p.x));
     return {
       id,
       site,
@@ -66,6 +71,7 @@ export function projectLabelPositions(d) {
           id === 'mine' ||
           id === d.selected ||
           id === d.guidedPlot ||
+          id === d.coachPlot ||
           !!town.projects[id] ||
           (!town.buildings[id] && d.availablePlots?.has(id))),
     };

@@ -347,6 +347,14 @@ export class TownDiorama extends TownPrimitives {
   setUpgradeable(ids) {
     if (this.upgradeGlow.setAvailable(ids)) this.render();
   }
+  // The tutorial's plot keeps its label and joins the phone framing while the camera
+  // rests on the overview; a camera the player moved stays where it is.
+  setCoachPlot(id) {
+    if ((this.coachPlot ?? null) === (id ?? null)) return;
+    this.coachPlot = id ?? null;
+    if (this.overview) this.frameTown();
+    this.render();
+  }
   setAvailable(ids) {
     const key = ids.join(',');
     if (this.availableKey === key) return;

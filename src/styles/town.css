@@ -1611,7 +1611,7 @@ html:has(.town-museum[open]) {
   z-index: 5;
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--town-tabs, 6), minmax(0, 1fr));
   gap: 4px;
   padding: 6px 6px max(6px, env(safe-area-inset-bottom));
   border-top: 1px solid #c6c3a6;
@@ -1655,16 +1655,13 @@ html:has(.town-museum[open]) {
 }
 .town-tab-badge {
   position: absolute;
-  top: 3px;
-  left: calc(50% + 6px);
-  min-width: 17px;
-  height: 17px;
-  padding: 0 4px;
-  border-radius: 9px;
+  top: 5px;
+  left: calc(50% + 8px);
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
   background: #c9772e;
-  color: #fff;
-  font: 700 10px/17px system-ui;
-  font-style: normal;
+  box-shadow: 0 0 0 2px #f4efdf;
 }
 .town-tab-bar .nudge svg {
   animation: town-tab-nudge 1.6s ease-in-out infinite;
@@ -1684,7 +1681,7 @@ html:has(.town-museum[open]) {
 }
 @media (min-width: 900px) {
   .town-tab-bar {
-    grid-template-columns: repeat(6, minmax(0, 150px));
+    grid-template-columns: repeat(var(--town-tabs, 6), minmax(0, 150px));
     justify-content: center;
   }
   .town-tab-bar button {
@@ -1752,6 +1749,22 @@ html:has(.town-museum[open]) {
   border-top: 0;
   border-bottom: 1px solid #e6dfcb;
   background: none;
+}
+.town-show-all {
+  width: 100%;
+  margin: 2px 0 14px;
+}
+.town-build-rules summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+.town-build-rules[open] summary {
+  margin-bottom: 10px;
+}
+.town-build-rules > .town-service {
+  padding-block: 0;
+  border-top: 0;
 }
 .town-raid-actions .town-map-wallet {
   position: static;

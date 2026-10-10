@@ -293,6 +293,8 @@ const props = defineProps({
   forgeCollectible: Boolean,
   now: { type: Number, default: Date.now },
   selected: String,
+  // The plot the village tutorial points at: framed on phones and always labelled.
+  coachPlot: String,
   reducedMotion: Boolean,
   paused: Boolean,
   nextLevel: Number,
@@ -661,6 +663,7 @@ async function update() {
   scene.setAvailable([...availableIds.value, ...(props.town.income.stored > 0 ? ['saloon'] : [])]);
   scene.setUpgradeable(props.cinematic ? [] : upgradeIds.value);
   scene.select(props.selected);
+  scene.setCoachPlot(props.coachPlot);
   scene.setMotion(motionEnabled());
   scene.setPaused(props.paused);
 }
@@ -871,6 +874,12 @@ watch(
 watch(upgradeIds, (ids) => {
   if (props.active) scene?.setUpgradeable(props.cinematic ? [] : ids);
 });
+watch(
+  () => props.coachPlot,
+  (id) => {
+    if (props.active) scene?.setCoachPlot(id);
+  },
+);
 watch(
   () => props.raid,
   (raid, previous) => {

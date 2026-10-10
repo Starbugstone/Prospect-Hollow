@@ -27,7 +27,7 @@ export function frameTown(d) {
     d.camera.aspect < 0.8 &&
     d.town?.era === 'frontier' &&
     Object.values(d.town.buildings).filter(Boolean).length < 6;
-  const goal = intimate ? nextGoal(d.town)?.id : null;
+  const goal = intimate ? (d.coachPlot ?? nextGoal(d.town)?.id) : null;
   const framing = intimate
     ? d.anchors.filter(
         ({ id }) => id === 'mine' || id === goal || d.town.buildings[id] || d.town.projects[id],

@@ -3829,5 +3829,20 @@
   "“{town}” was deleted from your account.": "« {town} » a été supprimée de votre compte.",
   "This town changed. Review it again before deleting.": "Cette ville a changé. Vérifiez-la de nouveau avant de la supprimer.",
   "Type the town name to confirm deletion.": "Saisissez le nom de la ville pour confirmer la suppression.",
-  "Save this progress as a new account town": "Enregistrer cette progression comme nouvelle ville du compte"
+  "Save this progress as a new account town": "Enregistrer cette progression comme nouvelle ville du compte",
+  "Welcome to Prospect Hollow! Tap the well to start your town. Your first building is free.": "Bienvenue à Prospect Hollow ! Touchez le puits pour lancer votre ville. Votre premier bâtiment est gratuit.",
+  "Fresh water at last! Coins come from the mine. Tap Mine to play a puzzle.": "Enfin de l’eau fraîche ! Les pièces viennent de la mine. Touchez Mine pour jouer un puzzle.",
+  "You earned coins! Tap the farm to grow food for new neighbors.": "Vous avez gagné des pièces ! Touchez la ferme pour nourrir vos futurs voisins.",
+  "Play another puzzle to earn coins for the farm.": "Jouez un autre puzzle pour gagner les pièces de la ferme.",
+  "Now tap the house. A family moves in once there is water and food.": "Touchez maintenant la maison. Une famille s’installe dès qu’il y a de l’eau et de la nourriture.",
+  "Play another puzzle to earn coins for the house.": "Jouez un autre puzzle pour gagner les pièces de la maison.",
+  "Bigger buildings take a puzzle to build. Tap the saloon to start it.": "Les grands bâtiments se construisent en un puzzle. Touchez le saloon pour le commencer.",
+  "Play another puzzle to earn coins for the saloon.": "Jouez un autre puzzle pour gagner les pièces du saloon.",
+  "Every puzzle you finish builds what is under construction. Play one to raise the saloon.": "Chaque puzzle terminé fait avancer les chantiers. Jouez-en un pour élever le saloon.",
+  "The saloon is ready! Tap it to open its doors.": "Le saloon est prêt ! Touchez-le pour ouvrir ses portes.",
+  "Well done! Build always shows your next step. Tap it whenever you are unsure.": "Bravo ! Construire indique toujours votre prochaine étape. Touchez-le en cas de doute.",
+  "Skip tutorial": "Passer le tutoriel",
+  "Show me": "Montrez-moi",
+  "Show all buildings ({count})": "Voir tous les bâtiments ({count})",
+  "How building works": "Comment construire"
 }
