@@ -59,7 +59,7 @@ final class PublicTown
             'projects' => new \stdClass(),
         ];
         foreach ($schema['buildings'] as $id) {
-            // Frontier landmarks such as the saloon reach level 5; levels within a later era stop at 3.
+            // Each plot stops at its own level count; levels within a later era stop at 3.
             foreach (
                 ['buildings' => $schema['buildingLevels'][$id] ?? 3, 'buildingEraLevels' => 3]
                 as $key => $max

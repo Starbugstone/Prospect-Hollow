@@ -201,7 +201,7 @@ final class SaveIntegrity
             if (!$definition) {
                 self::incompatible();
             }
-            $maximum = empty($town['progressionVersion'])
+            $maximum = $this->keepsLegacyLevels($id, $town['progressionVersion'] ?? null)
                 ? $definition['legacyMaxLevel']
                 : $definition['maxLevel'];
             if (!self::integer($level, 0, $maximum)) {
@@ -464,33 +464,35 @@ final class SaveIntegrity
                 $p['town']['buildings'][$id] ?? 0,
             );
         }
-        if (empty($profile['town']['progressionVersion'])) {
-            foreach ($p['town']['projects'] as $id => $project) {
-                $building = $this->rules['buildings'][$id];
-                if ($building['legacyMaxLevel'] === $building['maxLevel']) {
-                    continue;
-                }
-                if (($project['type'] ?? null) === 'modernization') {
-                    $p['town']['projects'][$id]['stage'] = min(
-                        $project['stage'],
-                        $building['maxLevel'],
-                    );
-                } elseif (
-                    $project['stage'] > $building['maxLevel'] &&
-                    $project['stage'] <= $building['legacyMaxLevel'] &&
-                    $project['stage'] === ($profile['town']['buildings'][$id] ?? 0) + 1 &&
-                    $project['required'] === 1 &&
-                    self::integer($project['wins'], 0, 1)
-                ) {
-                    $p['town']['coins'] = (int) min(
-                        9007199254740991,
-                        $p['town']['coins'] +
-                            ($building['legacyUpgradeCosts'][$project['stage'] - 1] ?? 0),
-                    );
-                    unset($p['town']['projects'][$id]);
-                }
+        // Mirrors normalizeTown(): buildings shortened after the save's progression version
+        // move down to their final stage, and a paid redundant tier is refunded once.
+        $version = $profile['town']['progressionVersion'] ?? null;
+        foreach ($p['town']['projects'] as $id => $project) {
+            $building = $this->rules['buildings'][$id];
+            if (!$this->keepsLegacyLevels($id, $version)) {
+                continue;
+            }
+            if (($project['type'] ?? null) === 'modernization') {
+                // A modernization starts from the finished building, so it moves with it.
+                $p['town']['projects'][$id]['stage'] =
+                    $project['stage'] -
+                    max(0, ($profile['town']['buildings'][$id] ?? 0) - $building['maxLevel']);
+            } elseif (
+                $project['stage'] > $building['maxLevel'] &&
+                $project['stage'] <= $building['legacyMaxLevel'] &&
+                $project['stage'] === ($profile['town']['buildings'][$id] ?? 0) + 1 &&
+                $project['required'] === 1 &&
+                self::integer($project['wins'], 0, 1)
+            ) {
+                $p['town']['coins'] = (int) min(
+                    9007199254740991,
+                    $p['town']['coins'] +
+                        ($building['legacyUpgradeCosts'][$project['stage'] - 1] ?? 0),
+                );
+                unset($p['town']['projects'][$id]);
             }
         }
+        $p['town']['progressionVersion'] = $defaults['town']['progressionVersion'];
         $powers = array_fill_keys($this->rules['powers'], 0);
         foreach ($profile['powers'] ?? [] as $power) {
             $powers[$power['id'] === 'hammer' ? 'tnt' : $power['id']] = $power['quantity'];
@@ -1918,7 +1920,7 @@ final class SaveIntegrity
                     $event['seen'] ||
                     !empty($event['bellRung']) ||
                     $event['loss'] <= 0 ||
-                    $s['town']['buildings']['square'] < 4
+                    $this->service($s['town'], 'square') < 4
                 ) {
                     self::mismatch('raid-bell');
                 }
@@ -2213,6 +2215,12 @@ final class SaveIntegrity
                 $income['stored'] + $earned >= $capacity ? 0 : (int) fmod($credit, $e['hourMs']),
         ];
     }
+    /** A save from an older progression version still holds this building's longer levels. */
+    private function keepsLegacyLevels(string $id, mixed $version): bool
+    {
+        $since = $this->rules['buildings'][$id]['shortSince'] ?? 0;
+        return $since > 0 && (is_int($version) ? $version : 0) < $since;
+    }
     private function service(array $town, string $id): int
     {
         return $this->rules['buildings'][$id]['serviceLevels'][$town['buildings'][$id] ?? 0] ?? 0;
@@ -2278,7 +2286,7 @@ final class SaveIntegrity
         $stats = $this->populationStats($town);
         return (int) floor(
             (2.25 *
-                ($town['buildings']['saloon'] ?? 0) *
+                $this->service($town, 'saloon') *
                 $stats['population'] *
                 (100 + 1.25 * $stats['happiness']) *
                 (1 + ($town['buildings']['diner'] ?? 0) * 0.05)) /
@@ -2330,7 +2338,7 @@ final class SaveIntegrity
         $town['forge']['progress']++;
         if (
             $town['forge']['progress'] >=
-            ($this->rules['economy']['forgeRuns'][$town['buildings']['blacksmith'] - 1] ?? 6)
+            ($this->rules['economy']['forgeRuns'][$this->service($town, 'blacksmith') - 1] ?? 6)
         ) {
             $town['forge'] = ['progress' => 0, 'charge' => 1];
         }
@@ -2470,7 +2478,7 @@ final class SaveIntegrity
             $town['buildings']['blacksmith'] &&
             !$town['forge']['charge'] &&
             $town['forge']['progress'] >=
-                ($this->rules['economy']['forgeRuns'][$town['buildings']['blacksmith'] - 1] ?? 6)
+                ($this->rules['economy']['forgeRuns'][$this->service($town, 'blacksmith') - 1] ?? 6)
         ) {
             $town['forge'] = ['progress' => 0, 'charge' => 1];
         }
@@ -2522,15 +2530,26 @@ final class SaveIntegrity
         $s['shopStock'] = $stock;
         $s['shopVisit'] = $visit;
     }
-    private function protection(array $town, int $riders, string $kind): float
+    /** @return array{sheriff: int, bank: int, fireStation: int} */
+    private function defenses(array $town): array
+    {
+        return [
+            'sheriff' => $this->service($town, 'sheriff'),
+            'bank' => $this->service($town, 'bank'),
+            'fireStation' => $town['buildings']['fireStation'] ?? 0,
+        ];
+    }
+    /** @param array<string, int> $levels defense service levels, as raid receipts keep them */
+    private function protection(array $levels, int $riders, string $kind): float
     {
         if (in_array($kind, ['workshop-fire', 'storm-cleanup'], true)) {
             return $this->rules['economy']['fireProtectionByLevel'][
-                min(3, max(0, $town['buildings']['fireStation'] ?? 0))
+                min(3, max(0, $levels['fireStation'] ?? 0))
             ];
         }
-        return (min($riders, ($town['buildings']['sheriff'] ?? 0) * 2) +
-            min($riders, ($town['buildings']['bank'] ?? 0) * 2)) /
+        // Each sheriff or bank service level covers two riders; receipts keep these levels.
+        return (min($riders, ($levels['sheriff'] ?? 0) * 2) +
+            min($riders, ($levels['bank'] ?? 0) * 2)) /
             ($riders * 2);
     }
     private function encounter(array &$s, array &$context, array $d, int $now): void
@@ -2562,7 +2581,7 @@ final class SaveIntegrity
                             : ($development >= 16
                                 ? 4
                                 : 2)));
-            $protection = $this->protection($town, $riders, $kind);
+            $protection = $this->protection($this->defenses($town), $riders, $kind);
             $loss =
                 $protection === 1.0
                     ? 0
@@ -2576,8 +2595,8 @@ final class SaveIntegrity
                 'id' => ($prior['id'] ?? 0) + 1,
                 'atRun' => $town['completedRuns'],
                 'gangSize' => $riders,
-                'sheriffLevel' => $built['sheriff'],
-                'bankLevel' => $built['bank'],
+                'sheriffLevel' => $this->service($town, 'sheriff'),
+                'bankLevel' => $this->service($town, 'bank'),
                 'outcome' => $protection === 1.0 ? 'protected' : ($loss ? 'stolen' : 'harmless'),
                 'loss' => (int) $loss,
                 'seen' => false,
@@ -2641,8 +2660,8 @@ final class SaveIntegrity
             $event['fireStationLevel'] = $level;
             $defenses = ['fireStation' => $level];
         } else {
-            $sheriff = max($event['sheriffLevel'], $town['buildings']['sheriff']);
-            $bank = max($event['bankLevel'] ?? 0, $town['buildings']['bank']);
+            $sheriff = max($event['sheriffLevel'], $this->service($town, 'sheriff'));
+            $bank = max($event['bankLevel'] ?? 0, $this->service($town, 'bank'));
             if ($sheriff === $event['sheriffLevel'] && $bank === ($event['bankLevel'] ?? 0)) {
                 return;
             }
@@ -2652,7 +2671,7 @@ final class SaveIntegrity
         }
         // The shared calculation returns a float: PHP divides evenly divisible integers
         // to int 1, and full cover must still equal 1.0 for a 'protected' outcome.
-        $protection = $this->protection(['buildings' => $defenses], $event['gangSize'], $kind);
+        $protection = $this->protection($defenses, $event['gangSize'], $kind);
         $remaining = ceil(5 * $event['gangSize'] * (1 - $protection));
         $loss = min(
             $event['loss'],

@@ -369,14 +369,15 @@ export function createIntegrityFixtures() {
       (profile) => {
         incident(profile, false);
         const event = profile.town.events[BANDIT_EVENT];
-        Object.assign(event, { sheriffLevel: 4, bankLevel: 5, outcome: 'stolen', loss: 5 });
-        profile.town.buildings.sheriff = 4;
+        // Receipts keep service levels: a level-2 sheriff covers 4 riders, a finished one 10.
+        Object.assign(event, { sheriffLevel: 2, bankLevel: 5, outcome: 'stolen', loss: 15 });
+        profile.town.buildings.sheriff = 2;
         profile.town.income.at = serverNow;
-        const required = projectRuns('sheriff', 5);
-        profile.town.projects.sheriff = { id: 'sheriff', stage: 5, wins: required, required };
+        const required = projectRuns('sheriff', 3);
+        profile.town.projects.sheriff = { id: 'sheriff', stage: 3, wins: required, required };
       },
       (campaign) => {
-        expectSuccess(campaign.finishConstruction('sheriff', 5), 'sheriff');
+        expectSuccess(campaign.finishConstruction('sheriff', 3), 'sheriff');
         if (campaign.town.events[BANDIT_EVENT].outcome !== 'protected')
           throw new Error('Full cover did not protect the waiting raid.');
       },

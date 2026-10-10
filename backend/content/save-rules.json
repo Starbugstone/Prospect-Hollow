@@ -154,20 +154,6 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "frontier"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "frontier"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "frontier"
             }
           ],
           "modernization": [
@@ -225,20 +211,6 @@
             {
               "stage": 2,
               "cost": 540,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "frontier"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "frontier"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
               "runs": 1,
               "requiresPower": false,
               "targetEra": "frontier"
@@ -332,20 +304,6 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "frontier"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "frontier"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "frontier"
             }
           ],
           "modernization": [
@@ -403,20 +361,6 @@
             {
               "stage": 2,
               "cost": 480,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "frontier"
-            },
-            {
-              "stage": 3,
-              "cost": 960,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "frontier"
-            },
-            {
-              "stage": 4,
-              "cost": 2400,
               "runs": 1,
               "requiresPower": false,
               "targetEra": "frontier"
@@ -507,20 +451,6 @@
             {
               "stage": 2,
               "cost": 525,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "frontier"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "frontier"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
               "runs": 1,
               "requiresPower": false,
               "targetEra": "frontier"
@@ -968,25 +898,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "river-rail"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "river-rail"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "river-rail"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 800,
               "runs": 2,
               "requiresPower": false,
@@ -994,7 +910,7 @@
               "targetEra": "river-rail"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 1200,
               "runs": 1,
               "requiresPower": false,
@@ -1002,7 +918,7 @@
               "targetEra": "river-rail"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 1400,
               "runs": 1,
               "requiresPower": false,
@@ -1084,25 +1000,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "river-rail"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "river-rail"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "river-rail"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 800,
               "runs": 2,
               "requiresPower": false,
@@ -1110,7 +1012,7 @@
               "targetEra": "river-rail"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 1200,
               "runs": 1,
               "requiresPower": false,
@@ -1118,7 +1020,7 @@
               "targetEra": "river-rail"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 1400,
               "runs": 1,
               "requiresPower": false,
@@ -1251,25 +1153,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "river-rail"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "river-rail"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "river-rail"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 800,
               "runs": 2,
               "requiresPower": false,
@@ -1277,7 +1165,7 @@
               "targetEra": "river-rail"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 1200,
               "runs": 1,
               "requiresPower": false,
@@ -1285,7 +1173,7 @@
               "targetEra": "river-rail"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 1400,
               "runs": 1,
               "requiresPower": false,
@@ -1367,25 +1255,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "river-rail"
-            },
-            {
-              "stage": 3,
-              "cost": 960,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "river-rail"
-            },
-            {
-              "stage": 4,
-              "cost": 2400,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "river-rail"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 800,
               "runs": 2,
               "requiresPower": false,
@@ -1393,7 +1267,7 @@
               "targetEra": "river-rail"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 1200,
               "runs": 1,
               "requiresPower": false,
@@ -1401,7 +1275,7 @@
               "targetEra": "river-rail"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 1400,
               "runs": 1,
               "requiresPower": false,
@@ -1534,25 +1408,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "river-rail"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "river-rail"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "river-rail"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 800,
               "runs": 2,
               "requiresPower": false,
@@ -1560,7 +1420,7 @@
               "targetEra": "river-rail"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 1200,
               "runs": 1,
               "requiresPower": false,
@@ -1568,7 +1428,7 @@
               "targetEra": "river-rail"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 1400,
               "runs": 1,
               "requiresPower": false,
@@ -2421,25 +2281,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "industrial"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "industrial"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "industrial"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 1400,
               "runs": 2,
               "requiresPower": true,
@@ -2447,7 +2293,7 @@
               "targetEra": "industrial"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 1850,
               "runs": 1,
               "requiresPower": true,
@@ -2455,7 +2301,7 @@
               "targetEra": "industrial"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 2300,
               "runs": 1,
               "requiresPower": true,
@@ -2537,25 +2383,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "industrial"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "industrial"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "industrial"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 1400,
               "runs": 2,
               "requiresPower": true,
@@ -2563,7 +2395,7 @@
               "targetEra": "industrial"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 1850,
               "runs": 1,
               "requiresPower": true,
@@ -2571,7 +2403,7 @@
               "targetEra": "industrial"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 2300,
               "runs": 1,
               "requiresPower": true,
@@ -2704,25 +2536,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "industrial"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "industrial"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "industrial"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 1400,
               "runs": 2,
               "requiresPower": true,
@@ -2730,7 +2548,7 @@
               "targetEra": "industrial"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 1850,
               "runs": 1,
               "requiresPower": true,
@@ -2738,7 +2556,7 @@
               "targetEra": "industrial"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 2300,
               "runs": 1,
               "requiresPower": true,
@@ -2820,25 +2638,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "industrial"
-            },
-            {
-              "stage": 3,
-              "cost": 960,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "industrial"
-            },
-            {
-              "stage": 4,
-              "cost": 2400,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "industrial"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 1400,
               "runs": 2,
               "requiresPower": true,
@@ -2846,7 +2650,7 @@
               "targetEra": "industrial"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 1850,
               "runs": 1,
               "requiresPower": true,
@@ -2854,7 +2658,7 @@
               "targetEra": "industrial"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 2300,
               "runs": 1,
               "requiresPower": true,
@@ -2987,25 +2791,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "industrial"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "industrial"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "industrial"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 1400,
               "runs": 2,
               "requiresPower": true,
@@ -3013,7 +2803,7 @@
               "targetEra": "industrial"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 1850,
               "runs": 1,
               "requiresPower": true,
@@ -3021,7 +2811,7 @@
               "targetEra": "industrial"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 2300,
               "runs": 1,
               "requiresPower": true,
@@ -4192,25 +3982,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "post-war"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "post-war"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "post-war"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 2400,
               "runs": 2,
               "requiresPower": false,
@@ -4218,7 +3994,7 @@
               "targetEra": "post-war"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 2900,
               "runs": 1,
               "requiresPower": false,
@@ -4226,7 +4002,7 @@
               "targetEra": "post-war"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 3400,
               "runs": 1,
               "requiresPower": false,
@@ -4308,25 +4084,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "post-war"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "post-war"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "post-war"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 2400,
               "runs": 2,
               "requiresPower": false,
@@ -4334,7 +4096,7 @@
               "targetEra": "post-war"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 2900,
               "runs": 1,
               "requiresPower": false,
@@ -4342,7 +4104,7 @@
               "targetEra": "post-war"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 3400,
               "runs": 1,
               "requiresPower": false,
@@ -4475,25 +4237,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "post-war"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "post-war"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "post-war"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 2400,
               "runs": 2,
               "requiresPower": false,
@@ -4501,7 +4249,7 @@
               "targetEra": "post-war"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 2900,
               "runs": 1,
               "requiresPower": false,
@@ -4509,7 +4257,7 @@
               "targetEra": "post-war"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 3400,
               "runs": 1,
               "requiresPower": false,
@@ -4591,25 +4339,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "post-war"
-            },
-            {
-              "stage": 3,
-              "cost": 960,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "post-war"
-            },
-            {
-              "stage": 4,
-              "cost": 2400,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "post-war"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 2400,
               "runs": 2,
               "requiresPower": false,
@@ -4617,7 +4351,7 @@
               "targetEra": "post-war"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 2900,
               "runs": 1,
               "requiresPower": false,
@@ -4625,7 +4359,7 @@
               "targetEra": "post-war"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 3400,
               "runs": 1,
               "requiresPower": false,
@@ -4758,25 +4492,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "post-war"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "post-war"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "post-war"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 2400,
               "runs": 2,
               "requiresPower": false,
@@ -4784,7 +4504,7 @@
               "targetEra": "post-war"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 2900,
               "runs": 1,
               "requiresPower": false,
@@ -4792,7 +4512,7 @@
               "targetEra": "post-war"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 3400,
               "runs": 1,
               "requiresPower": false,
@@ -6188,25 +5908,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "motor-age"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "motor-age"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "motor-age"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 3500,
               "runs": 2,
               "requiresPower": false,
@@ -6214,7 +5920,7 @@
               "targetEra": "motor-age"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 4400,
               "runs": 1,
               "requiresPower": false,
@@ -6222,7 +5928,7 @@
               "targetEra": "motor-age"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 5300,
               "runs": 1,
               "requiresPower": false,
@@ -6304,25 +6010,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "motor-age"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "motor-age"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "motor-age"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 3500,
               "runs": 2,
               "requiresPower": false,
@@ -6330,7 +6022,7 @@
               "targetEra": "motor-age"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 4400,
               "runs": 1,
               "requiresPower": false,
@@ -6338,7 +6030,7 @@
               "targetEra": "motor-age"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 5300,
               "runs": 1,
               "requiresPower": false,
@@ -6471,25 +6163,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "motor-age"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "motor-age"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "motor-age"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 3500,
               "runs": 2,
               "requiresPower": false,
@@ -6497,7 +6175,7 @@
               "targetEra": "motor-age"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 4400,
               "runs": 1,
               "requiresPower": false,
@@ -6505,7 +6183,7 @@
               "targetEra": "motor-age"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 5300,
               "runs": 1,
               "requiresPower": false,
@@ -6587,25 +6265,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "motor-age"
-            },
-            {
-              "stage": 3,
-              "cost": 960,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "motor-age"
-            },
-            {
-              "stage": 4,
-              "cost": 2400,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "motor-age"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 3500,
               "runs": 2,
               "requiresPower": false,
@@ -6613,7 +6277,7 @@
               "targetEra": "motor-age"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 4400,
               "runs": 1,
               "requiresPower": false,
@@ -6621,7 +6285,7 @@
               "targetEra": "motor-age"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 5300,
               "runs": 1,
               "requiresPower": false,
@@ -6754,25 +6418,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "motor-age"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "motor-age"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "motor-age"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 3500,
               "runs": 2,
               "requiresPower": false,
@@ -6780,7 +6430,7 @@
               "targetEra": "motor-age"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 4400,
               "runs": 1,
               "requiresPower": false,
@@ -6788,7 +6438,7 @@
               "targetEra": "motor-age"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 5300,
               "runs": 1,
               "requiresPower": false,
@@ -8418,25 +8068,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "aviation"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "aviation"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "aviation"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 4800,
               "runs": 2,
               "requiresPower": false,
@@ -8444,7 +8080,7 @@
               "targetEra": "aviation"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 5600,
               "runs": 1,
               "requiresPower": false,
@@ -8452,7 +8088,7 @@
               "targetEra": "aviation"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 6400,
               "runs": 1,
               "requiresPower": false,
@@ -8534,25 +8170,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "aviation"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "aviation"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "aviation"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 4800,
               "runs": 2,
               "requiresPower": false,
@@ -8560,7 +8182,7 @@
               "targetEra": "aviation"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 5600,
               "runs": 1,
               "requiresPower": false,
@@ -8568,7 +8190,7 @@
               "targetEra": "aviation"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 6400,
               "runs": 1,
               "requiresPower": false,
@@ -8701,25 +8323,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "aviation"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "aviation"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "aviation"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 4800,
               "runs": 2,
               "requiresPower": false,
@@ -8727,7 +8335,7 @@
               "targetEra": "aviation"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 5600,
               "runs": 1,
               "requiresPower": false,
@@ -8735,7 +8343,7 @@
               "targetEra": "aviation"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 6400,
               "runs": 1,
               "requiresPower": false,
@@ -8817,25 +8425,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "aviation"
-            },
-            {
-              "stage": 3,
-              "cost": 960,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "aviation"
-            },
-            {
-              "stage": 4,
-              "cost": 2400,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "aviation"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 4800,
               "runs": 2,
               "requiresPower": false,
@@ -8843,7 +8437,7 @@
               "targetEra": "aviation"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 5600,
               "runs": 1,
               "requiresPower": false,
@@ -8851,7 +8445,7 @@
               "targetEra": "aviation"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 6400,
               "runs": 1,
               "requiresPower": false,
@@ -8984,25 +8578,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "aviation"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "aviation"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "aviation"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 4800,
               "runs": 2,
               "requiresPower": false,
@@ -9010,7 +8590,7 @@
               "targetEra": "aviation"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 5600,
               "runs": 1,
               "requiresPower": false,
@@ -9018,7 +8598,7 @@
               "targetEra": "aviation"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 6400,
               "runs": 1,
               "requiresPower": false,
@@ -10813,25 +10393,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "broadcast"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "broadcast"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "broadcast"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 6200,
               "runs": 2,
               "requiresPower": false,
@@ -10839,7 +10405,7 @@
               "targetEra": "broadcast"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 7000,
               "runs": 1,
               "requiresPower": false,
@@ -10847,7 +10413,7 @@
               "targetEra": "broadcast"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 7800,
               "runs": 1,
               "requiresPower": false,
@@ -10929,25 +10495,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "broadcast"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "broadcast"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "broadcast"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 6200,
               "runs": 2,
               "requiresPower": false,
@@ -10955,7 +10507,7 @@
               "targetEra": "broadcast"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 7000,
               "runs": 1,
               "requiresPower": false,
@@ -10963,7 +10515,7 @@
               "targetEra": "broadcast"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 7800,
               "runs": 1,
               "requiresPower": false,
@@ -11096,25 +10648,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "broadcast"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "broadcast"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "broadcast"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 6200,
               "runs": 2,
               "requiresPower": false,
@@ -11122,7 +10660,7 @@
               "targetEra": "broadcast"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 7000,
               "runs": 1,
               "requiresPower": false,
@@ -11130,7 +10668,7 @@
               "targetEra": "broadcast"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 7800,
               "runs": 1,
               "requiresPower": false,
@@ -11212,25 +10750,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "broadcast"
-            },
-            {
-              "stage": 3,
-              "cost": 960,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "broadcast"
-            },
-            {
-              "stage": 4,
-              "cost": 2400,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "broadcast"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 6200,
               "runs": 2,
               "requiresPower": false,
@@ -11238,7 +10762,7 @@
               "targetEra": "broadcast"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 7000,
               "runs": 1,
               "requiresPower": false,
@@ -11246,7 +10770,7 @@
               "targetEra": "broadcast"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 7800,
               "runs": 1,
               "requiresPower": false,
@@ -11379,25 +10903,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "broadcast"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "broadcast"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "broadcast"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 6200,
               "runs": 2,
               "requiresPower": false,
@@ -11405,7 +10915,7 @@
               "targetEra": "broadcast"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 7000,
               "runs": 1,
               "requiresPower": false,
@@ -11413,7 +10923,7 @@
               "targetEra": "broadcast"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 7800,
               "runs": 1,
               "requiresPower": false,
@@ -13340,25 +12850,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "contemporary"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "contemporary"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "contemporary"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 7600,
               "runs": 2,
               "requiresPower": false,
@@ -13366,7 +12862,7 @@
               "targetEra": "contemporary"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 9000,
               "runs": 1,
               "requiresPower": false,
@@ -13374,7 +12870,7 @@
               "targetEra": "contemporary"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 10400,
               "runs": 1,
               "requiresPower": false,
@@ -13456,25 +12952,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "contemporary"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "contemporary"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "contemporary"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 7600,
               "runs": 2,
               "requiresPower": false,
@@ -13482,7 +12964,7 @@
               "targetEra": "contemporary"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 9000,
               "runs": 1,
               "requiresPower": false,
@@ -13490,7 +12972,7 @@
               "targetEra": "contemporary"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 10400,
               "runs": 1,
               "requiresPower": false,
@@ -13623,25 +13105,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "contemporary"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "contemporary"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "contemporary"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 7600,
               "runs": 2,
               "requiresPower": false,
@@ -13649,7 +13117,7 @@
               "targetEra": "contemporary"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 9000,
               "runs": 1,
               "requiresPower": false,
@@ -13657,7 +13125,7 @@
               "targetEra": "contemporary"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 10400,
               "runs": 1,
               "requiresPower": false,
@@ -13739,25 +13207,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "contemporary"
-            },
-            {
-              "stage": 3,
-              "cost": 960,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "contemporary"
-            },
-            {
-              "stage": 4,
-              "cost": 2400,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "contemporary"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 7600,
               "runs": 2,
               "requiresPower": false,
@@ -13765,7 +13219,7 @@
               "targetEra": "contemporary"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 9000,
               "runs": 1,
               "requiresPower": false,
@@ -13773,7 +13227,7 @@
               "targetEra": "contemporary"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 10400,
               "runs": 1,
               "requiresPower": false,
@@ -13906,25 +13360,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "contemporary"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "contemporary"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "contemporary"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 7600,
               "runs": 2,
               "requiresPower": false,
@@ -13932,7 +13372,7 @@
               "targetEra": "contemporary"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 9000,
               "runs": 1,
               "requiresPower": false,
@@ -13940,7 +13380,7 @@
               "targetEra": "contemporary"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 10400,
               "runs": 1,
               "requiresPower": false,
@@ -16080,25 +15520,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "tomorrow"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "tomorrow"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "tomorrow"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 9000,
               "runs": 2,
               "requiresPower": false,
@@ -16106,7 +15532,7 @@
               "targetEra": "tomorrow"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 10600,
               "runs": 1,
               "requiresPower": false,
@@ -16114,7 +15540,7 @@
               "targetEra": "tomorrow"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 12200,
               "runs": 1,
               "requiresPower": false,
@@ -16196,25 +15622,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "tomorrow"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "tomorrow"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "tomorrow"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 9000,
               "runs": 2,
               "requiresPower": false,
@@ -16222,7 +15634,7 @@
               "targetEra": "tomorrow"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 10600,
               "runs": 1,
               "requiresPower": false,
@@ -16230,7 +15642,7 @@
               "targetEra": "tomorrow"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 12200,
               "runs": 1,
               "requiresPower": false,
@@ -16363,25 +15775,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "tomorrow"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "tomorrow"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "tomorrow"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 9000,
               "runs": 2,
               "requiresPower": false,
@@ -16389,7 +15787,7 @@
               "targetEra": "tomorrow"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 10600,
               "runs": 1,
               "requiresPower": false,
@@ -16397,7 +15795,7 @@
               "targetEra": "tomorrow"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 12200,
               "runs": 1,
               "requiresPower": false,
@@ -16479,25 +15877,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "tomorrow"
-            },
-            {
-              "stage": 3,
-              "cost": 960,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "tomorrow"
-            },
-            {
-              "stage": 4,
-              "cost": 2400,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "tomorrow"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 9000,
               "runs": 2,
               "requiresPower": false,
@@ -16505,7 +15889,7 @@
               "targetEra": "tomorrow"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 10600,
               "runs": 1,
               "requiresPower": false,
@@ -16513,7 +15897,7 @@
               "targetEra": "tomorrow"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 12200,
               "runs": 1,
               "requiresPower": false,
@@ -16646,25 +16030,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "tomorrow"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "tomorrow"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "tomorrow"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 9000,
               "runs": 2,
               "requiresPower": false,
@@ -16672,7 +16042,7 @@
               "targetEra": "tomorrow"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 10600,
               "runs": 1,
               "requiresPower": false,
@@ -16680,7 +16050,7 @@
               "targetEra": "tomorrow"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 12200,
               "runs": 1,
               "requiresPower": false,
@@ -19015,25 +18385,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "canopy"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "canopy"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "canopy"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 10400,
               "runs": 2,
               "requiresPower": false,
@@ -19041,7 +18397,7 @@
               "targetEra": "canopy"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 12200,
               "runs": 1,
               "requiresPower": false,
@@ -19049,7 +18405,7 @@
               "targetEra": "canopy"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 14000,
               "runs": 1,
               "requiresPower": false,
@@ -19131,25 +18487,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "canopy"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "canopy"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "canopy"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 10400,
               "runs": 2,
               "requiresPower": false,
@@ -19157,7 +18499,7 @@
               "targetEra": "canopy"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 12200,
               "runs": 1,
               "requiresPower": false,
@@ -19165,7 +18507,7 @@
               "targetEra": "canopy"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 14000,
               "runs": 1,
               "requiresPower": false,
@@ -19298,25 +18640,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "canopy"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "canopy"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "canopy"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 10400,
               "runs": 2,
               "requiresPower": false,
@@ -19324,7 +18652,7 @@
               "targetEra": "canopy"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 12200,
               "runs": 1,
               "requiresPower": false,
@@ -19332,7 +18660,7 @@
               "targetEra": "canopy"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 14000,
               "runs": 1,
               "requiresPower": false,
@@ -19414,25 +18742,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "canopy"
-            },
-            {
-              "stage": 3,
-              "cost": 960,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "canopy"
-            },
-            {
-              "stage": 4,
-              "cost": 2400,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "canopy"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 10400,
               "runs": 2,
               "requiresPower": false,
@@ -19440,7 +18754,7 @@
               "targetEra": "canopy"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 12200,
               "runs": 1,
               "requiresPower": false,
@@ -19448,7 +18762,7 @@
               "targetEra": "canopy"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 14000,
               "runs": 1,
               "requiresPower": false,
@@ -19581,25 +18895,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "canopy"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "canopy"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "canopy"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 10400,
               "runs": 2,
               "requiresPower": false,
@@ -19607,7 +18907,7 @@
               "targetEra": "canopy"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 12200,
               "runs": 1,
               "requiresPower": false,
@@ -19615,7 +18915,7 @@
               "targetEra": "canopy"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 14000,
               "runs": 1,
               "requiresPower": false,
@@ -22103,25 +21403,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "riverlight"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "riverlight"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "riverlight"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 12000,
               "runs": 2,
               "requiresPower": false,
@@ -22129,7 +21415,7 @@
               "targetEra": "riverlight"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 14000,
               "runs": 1,
               "requiresPower": false,
@@ -22137,7 +21423,7 @@
               "targetEra": "riverlight"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 16000,
               "runs": 1,
               "requiresPower": false,
@@ -22219,25 +21505,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "riverlight"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "riverlight"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "riverlight"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 12000,
               "runs": 2,
               "requiresPower": false,
@@ -22245,7 +21517,7 @@
               "targetEra": "riverlight"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 14000,
               "runs": 1,
               "requiresPower": false,
@@ -22253,7 +21525,7 @@
               "targetEra": "riverlight"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 16000,
               "runs": 1,
               "requiresPower": false,
@@ -22386,25 +21658,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "riverlight"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "riverlight"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "riverlight"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 12000,
               "runs": 2,
               "requiresPower": false,
@@ -22412,7 +21670,7 @@
               "targetEra": "riverlight"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 14000,
               "runs": 1,
               "requiresPower": false,
@@ -22420,7 +21678,7 @@
               "targetEra": "riverlight"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 16000,
               "runs": 1,
               "requiresPower": false,
@@ -22502,25 +21760,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "riverlight"
-            },
-            {
-              "stage": 3,
-              "cost": 960,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "riverlight"
-            },
-            {
-              "stage": 4,
-              "cost": 2400,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "riverlight"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 12000,
               "runs": 2,
               "requiresPower": false,
@@ -22528,7 +21772,7 @@
               "targetEra": "riverlight"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 14000,
               "runs": 1,
               "requiresPower": false,
@@ -22536,7 +21780,7 @@
               "targetEra": "riverlight"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 16000,
               "runs": 1,
               "requiresPower": false,
@@ -22669,25 +21913,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "riverlight"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "riverlight"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "riverlight"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 12000,
               "runs": 2,
               "requiresPower": false,
@@ -22695,7 +21925,7 @@
               "targetEra": "riverlight"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 14000,
               "runs": 1,
               "requiresPower": false,
@@ -22703,7 +21933,7 @@
               "targetEra": "riverlight"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 16000,
               "runs": 1,
               "requiresPower": false,
@@ -25344,25 +24574,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "skysail"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "skysail"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "skysail"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 13600,
               "runs": 2,
               "requiresPower": false,
@@ -25370,7 +24586,7 @@
               "targetEra": "skysail"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 15800,
               "runs": 1,
               "requiresPower": false,
@@ -25378,7 +24594,7 @@
               "targetEra": "skysail"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 18000,
               "runs": 1,
               "requiresPower": false,
@@ -25460,25 +24676,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "skysail"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "skysail"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "skysail"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 13600,
               "runs": 2,
               "requiresPower": false,
@@ -25486,7 +24688,7 @@
               "targetEra": "skysail"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 15800,
               "runs": 1,
               "requiresPower": false,
@@ -25494,7 +24696,7 @@
               "targetEra": "skysail"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 18000,
               "runs": 1,
               "requiresPower": false,
@@ -25627,25 +24829,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "skysail"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "skysail"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "skysail"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 13600,
               "runs": 2,
               "requiresPower": false,
@@ -25653,7 +24841,7 @@
               "targetEra": "skysail"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 15800,
               "runs": 1,
               "requiresPower": false,
@@ -25661,7 +24849,7 @@
               "targetEra": "skysail"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 18000,
               "runs": 1,
               "requiresPower": false,
@@ -25743,25 +24931,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "skysail"
-            },
-            {
-              "stage": 3,
-              "cost": 960,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "skysail"
-            },
-            {
-              "stage": 4,
-              "cost": 2400,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "skysail"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 13600,
               "runs": 2,
               "requiresPower": false,
@@ -25769,7 +24943,7 @@
               "targetEra": "skysail"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 15800,
               "runs": 1,
               "requiresPower": false,
@@ -25777,7 +24951,7 @@
               "targetEra": "skysail"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 18000,
               "runs": 1,
               "requiresPower": false,
@@ -25910,25 +25084,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "skysail"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "skysail"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "skysail"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 13600,
               "runs": 2,
               "requiresPower": false,
@@ -25936,7 +25096,7 @@
               "targetEra": "skysail"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 15800,
               "runs": 1,
               "requiresPower": false,
@@ -25944,7 +25104,7 @@
               "targetEra": "skysail"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 18000,
               "runs": 1,
               "requiresPower": false,
@@ -28738,25 +27898,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "stargazer"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "stargazer"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "stargazer"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 15200,
               "runs": 2,
               "requiresPower": false,
@@ -28764,7 +27910,7 @@
               "targetEra": "stargazer"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 17600,
               "runs": 1,
               "requiresPower": false,
@@ -28772,7 +27918,7 @@
               "targetEra": "stargazer"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 20000,
               "runs": 1,
               "requiresPower": false,
@@ -28854,25 +28000,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "stargazer"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "stargazer"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "stargazer"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 15200,
               "runs": 2,
               "requiresPower": false,
@@ -28880,7 +28012,7 @@
               "targetEra": "stargazer"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 17600,
               "runs": 1,
               "requiresPower": false,
@@ -28888,7 +28020,7 @@
               "targetEra": "stargazer"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 20000,
               "runs": 1,
               "requiresPower": false,
@@ -29021,25 +28153,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "stargazer"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "stargazer"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "stargazer"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 15200,
               "runs": 2,
               "requiresPower": false,
@@ -29047,7 +28165,7 @@
               "targetEra": "stargazer"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 17600,
               "runs": 1,
               "requiresPower": false,
@@ -29055,7 +28173,7 @@
               "targetEra": "stargazer"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 20000,
               "runs": 1,
               "requiresPower": false,
@@ -29137,25 +28255,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "stargazer"
-            },
-            {
-              "stage": 3,
-              "cost": 960,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "stargazer"
-            },
-            {
-              "stage": 4,
-              "cost": 2400,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "stargazer"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 15200,
               "runs": 2,
               "requiresPower": false,
@@ -29163,7 +28267,7 @@
               "targetEra": "stargazer"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 17600,
               "runs": 1,
               "requiresPower": false,
@@ -29171,7 +28275,7 @@
               "targetEra": "stargazer"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 20000,
               "runs": 1,
               "requiresPower": false,
@@ -29304,25 +28408,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "stargazer"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "stargazer"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "stargazer"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 15200,
               "runs": 2,
               "requiresPower": false,
@@ -29330,7 +28420,7 @@
               "targetEra": "stargazer"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 17600,
               "runs": 1,
               "requiresPower": false,
@@ -29338,7 +28428,7 @@
               "targetEra": "stargazer"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 20000,
               "runs": 1,
               "requiresPower": false,
@@ -32285,25 +31375,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "moonward"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "moonward"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "moonward"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 16800,
               "runs": 2,
               "requiresPower": false,
@@ -32311,7 +31387,7 @@
               "targetEra": "moonward"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 19400,
               "runs": 1,
               "requiresPower": false,
@@ -32319,7 +31395,7 @@
               "targetEra": "moonward"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 22000,
               "runs": 1,
               "requiresPower": false,
@@ -32401,25 +31477,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "moonward"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "moonward"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "moonward"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 16800,
               "runs": 2,
               "requiresPower": false,
@@ -32427,7 +31489,7 @@
               "targetEra": "moonward"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 19400,
               "runs": 1,
               "requiresPower": false,
@@ -32435,7 +31497,7 @@
               "targetEra": "moonward"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 22000,
               "runs": 1,
               "requiresPower": false,
@@ -32568,25 +31630,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "moonward"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "moonward"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "moonward"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 16800,
               "runs": 2,
               "requiresPower": false,
@@ -32594,7 +31642,7 @@
               "targetEra": "moonward"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 19400,
               "runs": 1,
               "requiresPower": false,
@@ -32602,7 +31650,7 @@
               "targetEra": "moonward"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 22000,
               "runs": 1,
               "requiresPower": false,
@@ -32684,25 +31732,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "moonward"
-            },
-            {
-              "stage": 3,
-              "cost": 960,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "moonward"
-            },
-            {
-              "stage": 4,
-              "cost": 2400,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "moonward"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 16800,
               "runs": 2,
               "requiresPower": false,
@@ -32710,7 +31744,7 @@
               "targetEra": "moonward"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 19400,
               "runs": 1,
               "requiresPower": false,
@@ -32718,7 +31752,7 @@
               "targetEra": "moonward"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 22000,
               "runs": 1,
               "requiresPower": false,
@@ -32851,25 +31885,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "moonward"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "moonward"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "moonward"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 16800,
               "runs": 2,
               "requiresPower": false,
@@ -32877,7 +31897,7 @@
               "targetEra": "moonward"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 19400,
               "runs": 1,
               "requiresPower": false,
@@ -32885,7 +31905,7 @@
               "targetEra": "moonward"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 22000,
               "runs": 1,
               "requiresPower": false,
@@ -35971,20 +34991,6 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "twin-hollows"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "twin-hollows"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "twin-hollows"
             }
           ],
           "modernization": [
@@ -36042,20 +35048,6 @@
             {
               "stage": 2,
               "cost": 540,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "twin-hollows"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "twin-hollows"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
               "runs": 1,
               "requiresPower": false,
               "targetEra": "twin-hollows"
@@ -36149,20 +35141,6 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "twin-hollows"
-            },
-            {
-              "stage": 3,
-              "cost": 1080,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "twin-hollows"
-            },
-            {
-              "stage": 4,
-              "cost": 2700,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "twin-hollows"
             }
           ],
           "modernization": [
@@ -36223,25 +35201,11 @@
               "runs": 1,
               "requiresPower": false,
               "targetEra": "twin-hollows"
-            },
-            {
-              "stage": 3,
-              "cost": 960,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "twin-hollows"
-            },
-            {
-              "stage": 4,
-              "cost": 2400,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "twin-hollows"
             }
           ],
           "modernization": [
             {
-              "stage": 5,
+              "stage": 3,
               "cost": 18400,
               "runs": 2,
               "requiresPower": false,
@@ -36249,7 +35213,7 @@
               "targetEra": "twin-hollows"
             },
             {
-              "stage": 6,
+              "stage": 4,
               "cost": 21000,
               "runs": 1,
               "requiresPower": false,
@@ -36257,7 +35221,7 @@
               "targetEra": "twin-hollows"
             },
             {
-              "stage": 7,
+              "stage": 5,
               "cost": 23600,
               "runs": 1,
               "requiresPower": false,
@@ -36345,20 +35309,6 @@
             {
               "stage": 2,
               "cost": 525,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "twin-hollows"
-            },
-            {
-              "stage": 3,
-              "cost": 1050,
-              "runs": 1,
-              "requiresPower": false,
-              "targetEra": "twin-hollows"
-            },
-            {
-              "stage": 4,
-              "cost": 2625,
               "runs": 1,
               "requiresPower": false,
               "targetEra": "twin-hollows"
@@ -38512,6 +37462,7 @@
       "introducedEra": "frontier",
       "maxLevel": 3,
       "legacyMaxLevel": 5,
+      "shortSince": 1,
       "legacyUpgradeCosts": [
         75,
         210,
@@ -38553,6 +37504,7 @@
       "introducedEra": "frontier",
       "maxLevel": 3,
       "legacyMaxLevel": 5,
+      "shortSince": 1,
       "legacyUpgradeCosts": [
         75,
         255,
@@ -38594,6 +37546,7 @@
       "introducedEra": "frontier",
       "maxLevel": 3,
       "legacyMaxLevel": 5,
+      "shortSince": 1,
       "legacyUpgradeCosts": [
         75,
         225,
@@ -38633,17 +37586,22 @@
     "saloon": {
       "kind": "saloon",
       "introducedEra": "frontier",
-      "maxLevel": 5,
+      "maxLevel": 3,
       "legacyMaxLevel": 5,
-      "legacyUpgradeCosts": [],
+      "shortSince": 2,
+      "legacyUpgradeCosts": [
+        150,
+        330,
+        525,
+        1050,
+        2625
+      ],
       "requiredForEraCompletion": true,
       "unlock": [],
       "serviceLevels": [
         0,
         1,
         2,
-        3,
-        4,
         5
       ],
       "upgrades": [
@@ -38664,18 +37622,6 @@
           "runs": 1,
           "requiresPower": false,
           "stage": 2
-        },
-        {
-          "cost": 1050,
-          "runs": 1,
-          "requiresPower": false,
-          "stage": 3
-        },
-        {
-          "cost": 2625,
-          "runs": 1,
-          "requiresPower": false,
-          "stage": 4
         }
       ]
     },
@@ -38684,6 +37630,7 @@
       "introducedEra": "frontier",
       "maxLevel": 3,
       "legacyMaxLevel": 5,
+      "shortSince": 1,
       "legacyUpgradeCosts": [
         150,
         315,
@@ -38723,17 +37670,22 @@
     "sheriff": {
       "kind": "sheriff",
       "introducedEra": "frontier",
-      "maxLevel": 5,
+      "maxLevel": 3,
       "legacyMaxLevel": 5,
-      "legacyUpgradeCosts": [],
+      "shortSince": 2,
+      "legacyUpgradeCosts": [
+        150,
+        345,
+        540,
+        1080,
+        2700
+      ],
       "requiredForEraCompletion": true,
       "unlock": [],
       "serviceLevels": [
         0,
         1,
         2,
-        3,
-        4,
         5
       ],
       "upgrades": [
@@ -38754,18 +37706,6 @@
           "runs": 1,
           "requiresPower": false,
           "stage": 2
-        },
-        {
-          "cost": 1080,
-          "runs": 1,
-          "requiresPower": false,
-          "stage": 3
-        },
-        {
-          "cost": 2700,
-          "runs": 1,
-          "requiresPower": false,
-          "stage": 4
         }
       ]
     },
@@ -38774,6 +37714,7 @@
       "introducedEra": "frontier",
       "maxLevel": 3,
       "legacyMaxLevel": 5,
+      "shortSince": 1,
       "legacyUpgradeCosts": [
         180,
         315,
@@ -38815,6 +37756,7 @@
       "introducedEra": "frontier",
       "maxLevel": 3,
       "legacyMaxLevel": 5,
+      "shortSince": 1,
       "legacyUpgradeCosts": [
         180,
         330,
@@ -38854,17 +37796,22 @@
     "bank": {
       "kind": "bank",
       "introducedEra": "frontier",
-      "maxLevel": 5,
+      "maxLevel": 3,
       "legacyMaxLevel": 5,
-      "legacyUpgradeCosts": [],
+      "shortSince": 2,
+      "legacyUpgradeCosts": [
+        150,
+        345,
+        540,
+        1080,
+        2700
+      ],
       "requiredForEraCompletion": true,
       "unlock": [],
       "serviceLevels": [
         0,
         1,
         2,
-        3,
-        4,
         5
       ],
       "upgrades": [
@@ -38885,18 +37832,6 @@
           "runs": 1,
           "requiresPower": false,
           "stage": 2
-        },
-        {
-          "cost": 1080,
-          "runs": 1,
-          "requiresPower": false,
-          "stage": 3
-        },
-        {
-          "cost": 2700,
-          "runs": 1,
-          "requiresPower": false,
-          "stage": 4
         }
       ]
     },
@@ -38905,6 +37840,7 @@
       "introducedEra": "frontier",
       "maxLevel": 3,
       "legacyMaxLevel": 5,
+      "shortSince": 1,
       "legacyUpgradeCosts": [
         150,
         330,
@@ -38944,17 +37880,22 @@
     "square": {
       "kind": "square",
       "introducedEra": "frontier",
-      "maxLevel": 5,
+      "maxLevel": 3,
       "legacyMaxLevel": 5,
-      "legacyUpgradeCosts": [],
+      "shortSince": 2,
+      "legacyUpgradeCosts": [
+        120,
+        240,
+        480,
+        960,
+        2400
+      ],
       "requiredForEraCompletion": true,
       "unlock": [],
       "serviceLevels": [
         0,
         1,
         2,
-        3,
-        4,
         5
       ],
       "upgrades": [
@@ -38975,18 +37916,6 @@
           "runs": 1,
           "requiresPower": false,
           "stage": 2
-        },
-        {
-          "cost": 960,
-          "runs": 1,
-          "requiresPower": false,
-          "stage": 3
-        },
-        {
-          "cost": 2400,
-          "runs": 1,
-          "requiresPower": false,
-          "stage": 4
         }
       ]
     },
@@ -38995,6 +37924,7 @@
       "introducedEra": "frontier",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -39035,6 +37965,7 @@
       "introducedEra": "frontier",
       "maxLevel": 3,
       "legacyMaxLevel": 5,
+      "shortSince": 1,
       "legacyUpgradeCosts": [
         150,
         270,
@@ -39079,9 +38010,16 @@
     "blacksmith": {
       "kind": "blacksmith",
       "introducedEra": "frontier",
-      "maxLevel": 5,
+      "maxLevel": 3,
       "legacyMaxLevel": 5,
-      "legacyUpgradeCosts": [],
+      "shortSince": 2,
+      "legacyUpgradeCosts": [
+        180,
+        330,
+        525,
+        1050,
+        2625
+      ],
       "requiredForEraCompletion": true,
       "unlock": [
         {
@@ -39093,8 +38031,6 @@
         0,
         1,
         2,
-        3,
-        4,
         5
       ],
       "upgrades": [
@@ -39115,18 +38051,6 @@
           "runs": 1,
           "requiresPower": false,
           "stage": 2
-        },
-        {
-          "cost": 1050,
-          "runs": 1,
-          "requiresPower": false,
-          "stage": 3
-        },
-        {
-          "cost": 2625,
-          "runs": 1,
-          "requiresPower": false,
-          "stage": 4
         }
       ]
     },
@@ -39135,6 +38059,7 @@
       "introducedEra": "frontier",
       "maxLevel": 3,
       "legacyMaxLevel": 5,
+      "shortSince": 1,
       "legacyUpgradeCosts": [
         180,
         315,
@@ -39181,6 +38106,7 @@
       "introducedEra": "frontier",
       "maxLevel": 3,
       "legacyMaxLevel": 5,
+      "shortSince": 1,
       "legacyUpgradeCosts": [
         180,
         315,
@@ -39227,6 +38153,7 @@
       "introducedEra": "river-rail",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [],
@@ -39262,6 +38189,7 @@
       "introducedEra": "river-rail",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [],
@@ -39297,6 +38225,7 @@
       "introducedEra": "river-rail",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [],
@@ -39332,6 +38261,7 @@
       "introducedEra": "river-rail",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [],
@@ -39367,6 +38297,7 @@
       "introducedEra": "river-rail",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -39407,6 +38338,7 @@
       "introducedEra": "river-rail",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -39447,6 +38379,7 @@
       "introducedEra": "river-rail",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -39487,6 +38420,7 @@
       "introducedEra": "river-rail",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -39527,6 +38461,7 @@
       "introducedEra": "industrial",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [],
@@ -39562,6 +38497,7 @@
       "introducedEra": "industrial",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [],
@@ -39597,6 +38533,7 @@
       "introducedEra": "industrial",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -39637,6 +38574,7 @@
       "introducedEra": "industrial",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -39681,6 +38619,7 @@
       "introducedEra": "motor-age",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [],
@@ -39716,6 +38655,7 @@
       "introducedEra": "motor-age",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -39756,6 +38696,7 @@
       "introducedEra": "motor-age",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [],
@@ -39791,6 +38732,7 @@
       "introducedEra": "motor-age",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -39831,6 +38773,7 @@
       "introducedEra": "canopy",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -39871,6 +38814,7 @@
       "introducedEra": "canopy",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -39911,6 +38855,7 @@
       "introducedEra": "canopy",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -39951,6 +38896,7 @@
       "introducedEra": "riverlight",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -39991,6 +38937,7 @@
       "introducedEra": "riverlight",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -40031,6 +38978,7 @@
       "introducedEra": "riverlight",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -40071,6 +39019,7 @@
       "introducedEra": "aviation",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [],
@@ -40106,6 +39055,7 @@
       "introducedEra": "aviation",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [],
@@ -40141,6 +39091,7 @@
       "introducedEra": "broadcast",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [],
@@ -40176,6 +39127,7 @@
       "introducedEra": "broadcast",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [],
@@ -40211,6 +39163,7 @@
       "introducedEra": "broadcast",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [],
@@ -40246,6 +39199,7 @@
       "introducedEra": "post-war",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -40286,6 +39240,7 @@
       "introducedEra": "post-war",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -40326,6 +39281,7 @@
       "introducedEra": "post-war",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -40366,6 +39322,7 @@
       "introducedEra": "post-war",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -40406,6 +39363,7 @@
       "introducedEra": "contemporary",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -40446,6 +39404,7 @@
       "introducedEra": "contemporary",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -40486,6 +39445,7 @@
       "introducedEra": "contemporary",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -40526,6 +39486,7 @@
       "introducedEra": "contemporary",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -40566,6 +39527,7 @@
       "introducedEra": "contemporary",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -40606,6 +39568,7 @@
       "introducedEra": "tomorrow",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -40646,6 +39609,7 @@
       "introducedEra": "tomorrow",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -40686,6 +39650,7 @@
       "introducedEra": "tomorrow",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -40726,6 +39691,7 @@
       "introducedEra": "skysail",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -40766,6 +39732,7 @@
       "introducedEra": "skysail",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -40806,6 +39773,7 @@
       "introducedEra": "skysail",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -40846,6 +39814,7 @@
       "introducedEra": "stargazer",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -40886,6 +39855,7 @@
       "introducedEra": "stargazer",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -40926,6 +39896,7 @@
       "introducedEra": "stargazer",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -40966,6 +39937,7 @@
       "introducedEra": "moonward",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -41006,6 +39978,7 @@
       "introducedEra": "moonward",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -41046,6 +40019,7 @@
       "introducedEra": "moonward",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -41086,6 +40060,7 @@
       "introducedEra": "twin-hollows",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -41126,6 +40101,7 @@
       "introducedEra": "twin-hollows",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -41166,6 +40142,7 @@
       "introducedEra": "twin-hollows",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -41206,6 +40183,7 @@
       "introducedEra": "twin-hollows",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -41246,6 +40224,7 @@
       "introducedEra": "twin-hollows",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -41286,6 +40265,7 @@
       "introducedEra": "twin-hollows",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -41326,6 +40306,7 @@
       "introducedEra": "twin-hollows",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -41366,6 +40347,7 @@
       "introducedEra": "twin-hollows",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -41406,6 +40388,7 @@
       "introducedEra": "twin-hollows",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -41446,6 +40429,7 @@
       "introducedEra": "twin-hollows",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -41486,6 +40470,7 @@
       "introducedEra": "twin-hollows",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -41526,6 +40511,7 @@
       "introducedEra": "industrial",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [
@@ -41566,6 +40552,7 @@
       "introducedEra": "motor-age",
       "maxLevel": 3,
       "legacyMaxLevel": 3,
+      "shortSince": 0,
       "legacyUpgradeCosts": [],
       "requiredForEraCompletion": true,
       "unlock": [],
@@ -41601,6 +40588,7 @@
       "introducedEra": "frontier",
       "maxLevel": 3,
       "legacyMaxLevel": 5,
+      "shortSince": 1,
       "legacyUpgradeCosts": [
         75,
         225,
@@ -41647,6 +40635,7 @@
       "introducedEra": "frontier",
       "maxLevel": 3,
       "legacyMaxLevel": 5,
+      "shortSince": 1,
       "legacyUpgradeCosts": [
         75,
         225,
@@ -41697,6 +40686,7 @@
       "introducedEra": "frontier",
       "maxLevel": 3,
       "legacyMaxLevel": 5,
+      "shortSince": 1,
       "legacyUpgradeCosts": [
         75,
         225,
@@ -41747,6 +40737,7 @@
       "introducedEra": "frontier",
       "maxLevel": 3,
       "legacyMaxLevel": 5,
+      "shortSince": 1,
       "legacyUpgradeCosts": [
         75,
         210,
@@ -41793,6 +40784,7 @@
       "introducedEra": "frontier",
       "maxLevel": 3,
       "legacyMaxLevel": 5,
+      "shortSince": 1,
       "legacyUpgradeCosts": [
         75,
         255,
@@ -41839,6 +40831,7 @@
       "introducedEra": "frontier",
       "maxLevel": 3,
       "legacyMaxLevel": 5,
+      "shortSince": 1,
       "legacyUpgradeCosts": [
         75,
         255,
@@ -42015,6 +41008,7 @@
       {
         "stat": "comfort",
         "per": 8,
+        "service": true,
         "ids": [
           "square"
         ]
@@ -42030,6 +41024,7 @@
       {
         "stat": "comfort",
         "per": 2,
+        "service": true,
         "ids": [
           "saloon"
         ]
@@ -52554,7 +51549,7 @@
     "helmetRun": 0,
     "helmetVisitAt": 0,
     "guestVip": null,
-    "progressionVersion": 1
+    "progressionVersion": 2
   },
   "defaultProfile": {
     "schemaVersion": 2,
@@ -52890,7 +51885,7 @@
       "helmetRun": 0,
       "helmetVisitAt": 0,
       "guestVip": null,
-      "progressionVersion": 1
+      "progressionVersion": 2
     },
     "townProjectFocus": "",
     "issuedRun": 0,
@@ -52912,5 +51907,5 @@
       "seenGeneration": 4
     }
   },
-  "contentDigest": "d33f1cb339d40c1c1f364a2f70e38affacb9f9ba9df558c6d12bd881319fd4b5"
+  "contentDigest": "d96e04663bd045468b8c635cb45bbb118ad7b09f07538c544933b9aa077f1c0d"
 }

@@ -36,7 +36,7 @@ const townWithRaid = () =>
       ...createTown(),
       coins: 600,
       nextRaidRun: 0,
-      buildings: { ...createTown().buildings, home: 1, well: 1, farm: 1, square: 4 },
+      buildings: { ...createTown().buildings, home: 1, well: 1, farm: 1, square: 3 },
     },
     () => 0,
   );
@@ -48,18 +48,17 @@ it('lets a chapter-three town complete both defenses with coins and stop the lar
     coins: 20000,
     buildings: {
       ...Object.fromEntries(BUILDINGS.map((b) => [b.id, Math.min(4, b.upgrades.length)])),
-      sheriff: 3,
-      bank: 3,
+      sheriff: 2,
+      bank: 2,
     },
   };
-  for (const id of ['sheriff', 'bank'])
-    for (const stage of [3, 4]) {
-      expect(upgradeOffer(town, id).available).toBe(true);
-      town = finishConstruction(advanceConstruction(purchase(town, id, stage)), id, stage + 1);
-    }
+  for (const id of ['sheriff', 'bank']) {
+    expect(upgradeOffer(town, id).available).toBe(true);
+    town = finishConstruction(advanceConstruction(purchase(town, id, 2)), id, 3);
+  }
   town = normalizeTown(town);
-  expect(town.buildings.sheriff).toBe(5);
-  expect(town.buildings.bank).toBe(5);
+  expect(town.buildings.sheriff).toBe(3);
+  expect(town.buildings.bank).toBe(3);
   town.nextRaidRun = 0;
   const raided = banditEncounter(town, () => 0);
   expect(raided.events[BANDIT_EVENT]).toMatchObject({
@@ -100,17 +99,17 @@ it('halves the loss once, refunds it immediately, and preserves the bell use thr
   expect(c.town.coins).toBe(595);
   expect(canRingTownBell(c.town)).toBe(false);
 });
-it('requires level four, an ongoing loss, and the current raid receipt', () => {
+it('requires level three, an ongoing loss, and the current raid receipt', () => {
   const town = townWithRaid();
   expect(ringTownBell(town, 99)).toBeNull();
-  expect(ringTownBell({ ...town, buildings: { ...town.buildings, square: 3 } }, 1)).toBeNull();
+  expect(ringTownBell({ ...town, buildings: { ...town.buildings, square: 2 } }, 1)).toBeNull();
   for (const receipt of [
     { ...town.events[BANDIT_EVENT], seen: true },
     { ...town.events[BANDIT_EVENT], loss: 0 },
   ]) {
     expect(ringTownBell({ ...town, events: { [BANDIT_EVENT]: receipt } }, 1)).toBeNull();
   }
-  expect(canRingTownBell({ ...town, buildings: { ...town.buildings, square: 5 } })).toBe(true);
+  expect(canRingTownBell({ ...town, buildings: { ...town.buildings, square: 3 } })).toBe(true);
   const odd = {
     ...town,
     coins: 599,

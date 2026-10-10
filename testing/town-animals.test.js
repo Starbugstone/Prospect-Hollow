@@ -30,7 +30,7 @@ import { monumentCast } from '../src/game/town/TownMonumentLife';
 const views = [];
 function fixture(
   era = 'frontier',
-  buildings = { home: 3, farm: 3, square: 5, saloon: 3, shop: 3 },
+  buildings = { home: 3, farm: 3, square: 3, saloon: 3, shop: 3 },
 ) {
   const d = Object.create(TownDiorama.prototype);
   Object.assign(d, {
@@ -198,7 +198,7 @@ it.each([...ERAS.map((era) => era.id), 'unknown-animal-era'])(
     const d = fixture(era, {
       home: 3,
       farm: 3,
-      square: 5,
+      square: 3,
       saloon: 3,
       shop: 3,
       park: 3,
@@ -260,7 +260,7 @@ it('roams beyond the old tiny orbits, idles, flies and lands without growing or 
   const d = fixture('industrial', {
     home: 3,
     farm: 3,
-    square: 5,
+    square: 3,
     saloon: 3,
     shop: 3,
     park: 3,

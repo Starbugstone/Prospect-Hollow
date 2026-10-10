@@ -1,5 +1,6 @@
 import { bonusCapacity } from '../../data/rewards';
 import { forgeProductionRuns } from '../../data/eras';
+import { serviceLevel } from '../../data/buildingProgression';
 import { eraBuildingLevel, modernization as modernizationOffer } from './TownEras';
 import {
   foodCapacity,
@@ -72,7 +73,8 @@ export function buildingBenefit(town, id, stage, modernization = false) {
   } else if (id === 'blacksmith') {
     icon = 'mine';
     label = 'Puzzles per TNT';
-    read = (v) => (v.buildings.blacksmith ? forgeProductionRuns(v.buildings.blacksmith) : '—');
+    read = (v) =>
+      v.buildings.blacksmith ? forgeProductionRuns(serviceLevel(v, 'blacksmith')) : '—';
   }
   return { icon, label, before: read(town), after: read(after), suffix };
 }

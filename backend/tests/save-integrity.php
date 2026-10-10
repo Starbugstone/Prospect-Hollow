@@ -168,6 +168,21 @@ assertIntegrity(
     $validator->accept(integrityObject($legacy), null, $now)->town->buildings->well === 5,
     'legacy support tiers remain usable before normalized migration',
 );
+// Version 2 shortened Frontier's saloon, sheriff, bank, square and blacksmith to three stages.
+$versionOne = integrityData($baseline);
+$versionOne['town']['progressionVersion'] = 1;
+$versionOne['town']['buildings']['saloon'] = 5;
+assertIntegrity(
+    $validator->accept(integrityObject($versionOne), null, $now)->town->buildings->saloon === 5,
+    'version-1 five-level services remain usable before normalized migration',
+);
+$forged = integrityData($baseline);
+$forged['town']['buildings']['saloon'] = 5;
+integrityDenied(
+    fn() => $validator->accept(integrityObject($forged), $baseline, $now),
+    'save_integrity_invalid',
+    'a fifth service stage in a version-2 town',
+);
 $forged = integrityData($baseline);
 $forged['town']['buildings']['unreleased-plot'] = 1;
 integrityDenied(
@@ -516,6 +531,35 @@ assertIntegrity(
         integrityObject($historical),
     ])->town->coins === $migrated['town']['coins'],
     'known already paid redundant legacy stage refunds once during recovery',
+);
+$historical = integrityData($before);
+unset($historical['integrity']);
+$historical['town']['progressionVersion'] = 1;
+$historical['town']['coins'] = 100;
+$historical['town']['buildings']['saloon'] = 4;
+$historical['town']['projects']['saloon'] = [
+    'id' => 'saloon',
+    'stage' => 5,
+    'required' => 1,
+    'wins' => 0,
+];
+$migrated = $historical;
+$migrated['town']['buildings']['saloon'] = 3;
+$migrated['town']['projects'] = [];
+$migrated['town']['progressionVersion'] = 2;
+$migrated['town']['coins'] = 100 + $rules['buildings']['saloon']['legacyUpgradeCosts'][4];
+$migrated['integrity'] = [
+    'version' => 1,
+    'epoch' => integrityUuid(779),
+    'baseSequence' => 0,
+    'actions' => [],
+    'clientAt' => $now,
+];
+assertIntegrity(
+    $validator->accept(integrityObject($migrated), $baseline, $now, true, [
+        integrityObject($historical),
+    ])->town->coins === $migrated['town']['coins'],
+    'a paid fifth service stage from version 1 refunds once during recovery',
 );
 $extended = $rules;
 $lastEra = end($rules['eraOrder']);
@@ -1521,8 +1565,11 @@ $event = [
     'id' => 1,
     'atRun' => $freshRaid['town']['completedRuns'],
     'gangSize' => $riders,
-    'sheriffLevel' => $freshRaid['town']['buildings']['sheriff'],
-    'bankLevel' => $freshRaid['town']['buildings']['bank'],
+    // Receipts keep service levels: a finished three-stage sheriff serves at level five.
+    'sheriffLevel' =>
+        $rules['buildings']['sheriff']['serviceLevels'][$freshRaid['town']['buildings']['sheriff']],
+    'bankLevel' =>
+        $rules['buildings']['bank']['serviceLevels'][$freshRaid['town']['buildings']['bank']],
     'outcome' => 'protected',
     'loss' => 0,
     'seen' => false,
@@ -1559,22 +1606,31 @@ assertIntegrity(
 );
 // Finishing a defence while a raid waits to be seen refunds the loss it now prevents.
 // Full cover is an even integer division, yet it must replay as the client's 'protected'.
+// Each case is the building's stage, the service level it reaches, and the waiting raid;
+// a sheriff finishing its third stage serves at level five.
 foreach (
     [
-        'sheriff' => ['gangSize' => 10, 'sheriffLevel' => 4, 'bankLevel' => 5, 'loss' => 5],
+        'sheriff' => [
+            2,
+            5,
+            ['gangSize' => 10, 'sheriffLevel' => 2, 'bankLevel' => 5, 'loss' => 15],
+        ],
         'fireStation' => [
-            'kind' => 'workshop-fire',
-            'fireStationLevel' => 2,
-            'gangSize' => 10,
-            'sheriffLevel' => 0,
-            'bankLevel' => 0,
-            'loss' => 9,
+            2,
+            3,
+            [
+                'kind' => 'workshop-fire',
+                'fireStationLevel' => 2,
+                'gangSize' => 10,
+                'sheriffLevel' => 0,
+                'bankLevel' => 0,
+                'loss' => 9,
+            ],
         ],
     ]
-    as $defense => $raid
+    as $defense => [$level, $served, $raid]
 ) {
     $levelKey = $defense === 'sheriff' ? 'sheriffLevel' : 'fireStationLevel';
-    $level = $raid[$levelKey];
     $start = $freshRaid;
     $start['town']['buildings']['shop'] = 0;
     $start['town']['buildings'][$defense] = $level;
@@ -1599,7 +1655,7 @@ foreach (
     $finished['town']['income']['at'] = $moneyClock;
     $finished['town']['events']['dusty-trail-visitors'] = [
         ...$event,
-        $levelKey => $level + 1,
+        $levelKey => $served,
         'loss' => 0,
         'outcome' => 'protected',
     ];

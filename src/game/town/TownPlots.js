@@ -24,6 +24,7 @@ import { WATERMILL_WHEEL } from './buildings/watermill';
 import { ELEVATOR_CLIMBERS, elevatorMotion } from './buildings/future';
 
 import { BUILDING_BY_ID } from '../../data/town';
+import { modelLevel } from '../../data/buildingProgression';
 
 import { walkers } from './TownWalkers';
 import { TownConstruction, constructionParts } from './TownConstruction';
@@ -88,6 +89,7 @@ export function buildPlot(d, id, group, town, labels) {
   if (id === 'mine') d.mine(group, labels.mine);
   else {
     const stage = town.buildings[id],
+      level = modelLevel(id, stage),
       project = town.projects[id],
       kind = BUILDING_BY_ID[id].kind;
     if (kind === 'bridge') {
@@ -110,21 +112,21 @@ export function buildPlot(d, id, group, town, labels) {
         labels[id],
         town.buildingEraLevels[id] || 1,
         town.buildingEras[id],
-        stage,
+        level,
       );
       if (!industrial) {
         if (kind === 'square')
           buildTownSquare(
             d,
             group,
-            stage,
+            level,
             town.buildingEras[id] === 'frontier',
             town.buildingEras[id],
           );
         else if (kind === 'well') addWell(d, group);
-        else d.building(group, kind, stage, labels[id]);
+        else d.building(group, kind, level, labels[id]);
       }
-      if (!industrial) movingPart = addImprovements(d, group, kind, stage, town.buildingEras[id]);
+      if (!industrial) movingPart = addImprovements(d, group, kind, level, town.buildingEras[id]);
       if (!industrial)
         renderModernization(
           d,

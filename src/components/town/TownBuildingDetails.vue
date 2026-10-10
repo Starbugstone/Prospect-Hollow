@@ -199,7 +199,7 @@
         {{
           t('Normal puzzles: {count}/{required}', {
             count: town.forge.progress,
-            required: forgeProductionRuns(stage),
+            required: forgeProductionRuns(buildingServiceLevel('blacksmith', stage)),
           })
         }}
       </p>
@@ -291,7 +291,7 @@
       <p>
         {{
           t(
-            'At level 4, the town square gains a warning bell. During a raid, tap the square, its bell icon, or the raid bell button to halve the remaining coin loss. The bell works once per raid and is only needed when coins are at risk.',
+            'At level 3, the town square gains a warning bell. During a raid, tap the square, its bell icon, or the raid bell button to halve the remaining coin loss. The bell works once per raid and is only needed when coins are at risk.',
           )
         }}
       </p>
@@ -323,7 +323,7 @@
       </p>
       <small>{{
         t(
-          'The bank and sheriff each protect up to half the coins at risk. At level 5, both together stop all raid losses. Finish their construction during a raid to apply the new protection immediately. Your last 50 coins are always safe.',
+          'The bank and sheriff each protect up to half the coins at risk. At level 3, both together stop all raid losses. Finish their construction during a raid to apply the new protection immediately. Your last 50 coins are always safe.',
         )
       }}</small>
     </section>
@@ -351,6 +351,7 @@ import { t } from '../../i18n';
 import { BUILDING_BY_ID } from '../../data/town';
 import { eraGate, eraBuildingLevel, modernizesInEra } from '../../game/town/TownEras';
 import { forgeProductionRuns } from '../../data/eras';
+import { buildingServiceLevel } from '../../data/buildingProgression';
 import {
   upgradeOffer,
   constructionRuns,

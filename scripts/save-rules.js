@@ -6,7 +6,12 @@ import { ERAS, FORGE_PRODUCTION_RUNS } from '../src/data/eras.js';
 import { defineEra } from '../src/data/eraDefinitions.js';
 import { STAR_CASCADE_TARGET, STAR_SCORE_MULTIPLIER } from '../src/data/starRating.js';
 import { BUILDINGS, BANDIT_EVENT, INTRO_ORDER, createTown } from '../src/data/town.js';
-import { buildingServiceLevel, hasShortProgression } from '../src/data/buildingProgression.js';
+import {
+  LEGACY_MAX_LEVEL,
+  buildingServiceLevel,
+  hasShortProgression,
+  shortProgressionSince,
+} from '../src/data/buildingProgression.js';
 import {
   CHEST_ECONOMY_VERSION,
   chestCoinCap,
@@ -257,7 +262,11 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
           kind: building.kind,
           introducedEra: building.introducedEra,
           maxLevel: building.upgrades.length,
-          legacyMaxLevel: hasShortProgression(building.id) ? 5 : building.upgrades.length,
+          legacyMaxLevel: hasShortProgression(building.id)
+            ? LEGACY_MAX_LEVEL
+            : building.upgrades.length,
+          // Saves older than this progression version still hold the longer levels.
+          shortSince: shortProgressionSince(building.id),
           legacyUpgradeCosts: building.legacyUpgradeCosts ?? [],
           requiredForEraCompletion: building.requiredForEraCompletion === true,
           unlock: building.unlock ?? [],

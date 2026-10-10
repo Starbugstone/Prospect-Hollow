@@ -53,10 +53,10 @@ function squarePosts(town) {
 }
 const electrified = ERAS.filter((era) => eraEvolution(era.id).electricity).map((era) => era.id);
 const cases = electrified.flatMap((era) => [
-  [era, 'frontier', 4, 1],
-  [era, 'frontier', 5, 1],
-  ...[1, 2, 3].map((level) => [era, era, 5, level]),
-  [era, 'unknown-square-era', 5, 1],
+  [era, 'frontier', 2, 1],
+  [era, 'frontier', 3, 1],
+  ...[1, 2, 3].map((level) => [era, era, 3, level]),
+  [era, 'unknown-square-era', 3, 1],
 ]);
 
 describe('Town square corner lighting', () => {
@@ -77,7 +77,7 @@ describe('Town square corner lighting', () => {
   );
 
   it('keeps the street lamps away from the square', () => {
-    const town = electrifiedTown('tomorrow', 'tomorrow', 5, 3);
+    const town = electrifiedTown('tomorrow', 'tomorrow', 3, 3);
     expect(squareLampCorners(town)).toEqual([0, 1, 2, 3]);
     expect(electricLamps(town)).toEqual([
       [-2, 6, 0],

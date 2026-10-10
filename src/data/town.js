@@ -1,5 +1,5 @@
 import { createPersonalisation } from './townPersonalisation';
-import { hasShortProgression } from './buildingProgression';
+import { PROGRESSION_VERSION, hasShortProgression } from './buildingProgression';
 import { purchasePrice, RIVER_RAIL_LEVEL_PRICES } from './economy';
 import { FRONTIER_BUILDINGS } from './frontier';
 import { FRONTIER_ERA, createEraState } from './eras';
@@ -648,5 +648,5 @@ export const createTown = () => ({
   helmetRun: 0,
   helmetVisitAt: 0,
   guestVip: null,
-  progressionVersion: 1,
+  progressionVersion: PROGRESSION_VERSION,
 });

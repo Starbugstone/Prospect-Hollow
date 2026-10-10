@@ -38,7 +38,7 @@ describe('Era town square fountains', () => {
     d.town = town;
     d.sign = vi.fn();
     town.era = era;
-    town.buildings.square = 5;
+    town.buildings.square = 3;
     town.buildingEras.square = era;
     town.buildingEraLevels.square = 3;
     d.buildPlot('square', root, town, { square: 'Town square' });

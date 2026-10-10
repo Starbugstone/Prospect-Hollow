@@ -565,9 +565,10 @@ try {
         '4' => (object) ['stars' => 2],
     ];
     $view = json_decode($public->projection($progress, 'Progress', '0'), true)['appearance'];
+    // An older save's fifth saloon stage shows as its finished third.
     check(
         $view['mineLevel'] === 3 &&
-            $view['buildings']['saloon'] === 5 &&
+            $view['buildings']['saloon'] === 3 &&
             $view['buildingEraLevels']['saloon'] === 3,
         'visit shows the next mine level and true building levels',
     );
@@ -618,7 +619,7 @@ try {
             $cozy->town->buildingEras->$building = $era;
             $cozy->town->buildingEraLevels->$building = 8;
         }
-        $cozy->town->buildings->saloon = 5;
+        $cozy->town->buildings->saloon = 3;
         $cozy->town->buildingEras->saloon = 'tomorrow';
         $projection = json_decode($public->projection($cozy, 'Garden Friends', 'cozy-view'), true);
         check(
@@ -637,7 +638,7 @@ try {
             );
         }
         check(
-            $projection['appearance']['buildings']['saloon'] === 5 &&
+            $projection['appearance']['buildings']['saloon'] === 3 &&
                 $projection['appearance']['buildingEras']['saloon'] === 'tomorrow',
             'shared ' . $era . ' preserves unfinished older-era landmarks',
         );

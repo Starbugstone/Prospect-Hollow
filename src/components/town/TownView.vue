@@ -436,7 +436,7 @@
                       ? 'Every Industrial building has 3 levels. Finish all upgrades to complete the era.'
                       : town.era === 'river-rail'
                         ? 'Every River & Rail building has 3 levels. Each construction takes at most 2 mining runs.'
-                        : 'Supporting buildings finish at level 3 with their full benefits. The town square, sheriff, bank, saloon and blacksmith have 5 levels.',
+                        : 'Every Frontier building finishes at level 3 with its full benefits.',
               )
             }}
           </p>
