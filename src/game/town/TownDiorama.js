@@ -14,6 +14,7 @@ import { TownLiveVisitors } from './TownLiveVisitors';
 import { vipVisitor } from '../../data/villagers';
 import { updateTownLocomotion } from './TownLocomotion';
 import { MINE_SHAFT, addMineShaft } from './TownMineShaft';
+import { mineHillsideHeight } from './TownMineHillside';
 import { TownPresentation } from './TownPresentation';
 import { ERA_CONSTRUCTION } from '../../data/mineEvolution';
 
@@ -427,19 +428,37 @@ export class TownDiorama extends TownPrimitives {
       ),
       this.camera,
     );
-    // Monument sites are scenery; a tap on one opens its card like a plot.
-    const scenery = ['personal-areas', 'mine-plaque']
+    // Monument sites are scenery; a tap on one opens its card like a plot. The mine works
+    // and its hill answer for the mine, so its whole structure enters, not only the portal.
+    const mine = ['mine-works', 'mine-hillside'].map(
+      (id) => this.staticScenery?.entries.get(id)?.group,
+    );
+    const scenery = ['personal-areas', 'mine-plaque', 'mine-works', 'mine-hillside']
       .map((id) => this.staticScenery?.entries.get(id)?.group)
       .filter(Boolean);
-    const hit = this.raycaster.intersectObjects([...this.targets, ...scenery], true)[0];
-    let object = hit?.object;
-    while (
-      object &&
-      !object.userData.plot &&
-      !object.userData.monumentSite &&
-      !object.userData.distinction
-    )
-      object = object.parent;
+    const owner = (object) => {
+      while (
+        object &&
+        !mine.includes(object) &&
+        !object.userData.plot &&
+        !object.userData.monumentSite &&
+        !object.userData.distinction
+      )
+        object = object.parent;
+      return object;
+    };
+    let object = null;
+    for (const hit of this.raycaster.intersectObjects([...this.targets, ...scenery], true)) {
+      object = owner(hit.object);
+      // The hill blends into the plain and the valley slopes at its edges. Only the mound
+      // it raises around the portal is the mine; a tap on a slope looks past it.
+      if (
+        object !== mine[1] ||
+        mineHillsideHeight(hit.point.x, hit.point.z, PLOTS.mine[1], 0) >= 0.5
+      )
+        break;
+      object = null;
+    }
     // A tap on the mine plaque names its honour; a second tap or any other one hides it.
     const plaque = object?.userData.distinction ? object : null;
     this.namedPlaque = plaque && this.namedPlaque !== plaque ? plaque : null;
@@ -449,7 +468,9 @@ export class TownDiorama extends TownPrimitives {
       return true;
     }
     if (object) {
-      this.onSelect(object.userData.plot ?? object.userData.monumentSite);
+      this.onSelect(
+        mine.includes(object) ? 'mine' : (object.userData.plot ?? object.userData.monumentSite),
+      );
       return true;
     }
     const ground = this.raycaster.ray.intersectPlane(
