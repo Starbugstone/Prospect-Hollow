@@ -71,6 +71,7 @@ final class TownPersonalisation
                         ? $level
                         : 1);
                 // Cosmetic construction of the latest paid level, as the client keeps it.
+                // Progress past a shortened build stays ready to unveil.
                 $shown = $result->areaLevels->$id;
                 $levels = $c['monumentProgression']['levels'];
                 $work = $saved->construction->$id ?? null;
@@ -79,12 +80,11 @@ final class TownPersonalisation
                     ($work->level ?? null) === $shown &&
                     $shown <= ($area['timeless'] ? 1 : count($levels)) &&
                     is_int($work->wins ?? null) &&
-                    $work->wins >= 0 &&
-                    $work->wins <= $levels[$shown - 1]['puzzles']
+                    $work->wins >= 0
                 ) {
                     $result->construction->$id = (object) [
                         'level' => $shown,
-                        'wins' => $work->wins,
+                        'wins' => min($work->wins, $levels[$shown - 1]['puzzles']),
                     ];
                 }
             }

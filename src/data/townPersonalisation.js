@@ -120,17 +120,20 @@ export function normalizePersonalisation(saved, emblemIds) {
           ? level
           : 1;
       // Only the latest paid level can be under construction. Anything else is
-      // treated as finished, so a damaged entry never hides a monument.
+      // treated as finished, so a damaged entry never hides a monument. Progress past a
+      // shortened build stays ready to unveil, so the player still sees its unveiling.
       const work = saved.construction?.[area.id];
       const shown = result.areaLevels[area.id];
       if (
         work?.level === shown &&
         shown <= (area.timeless ? 1 : LANDMARK_PROGRESSION.levels.length) &&
         Number.isInteger(work.wins) &&
-        work.wins >= 0 &&
-        work.wins <= landmarkLevel(shown).puzzles
+        work.wins >= 0
       )
-        result.construction[area.id] = { level: shown, wins: work.wins };
+        result.construction[area.id] = {
+          level: shown,
+          wins: Math.min(work.wins, landmarkLevel(shown).puzzles),
+        };
     }
   }
   return result;

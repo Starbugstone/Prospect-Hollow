@@ -45,7 +45,9 @@
             work.ready
               ? t('The work is done. Take down the scaffolding and celebrate with the town.')
               : t(
-                  '{wins} of {required} puzzles complete. Every completed puzzle builds it, replays included.',
+                  work.required === 1
+                    ? 'The next completed puzzle finishes it, replays included.'
+                    : '{wins} of {required} puzzles complete. Every completed puzzle builds it, replays included.',
                   { wins: work.wins, required: work.required },
                 )
           }}
@@ -113,10 +115,15 @@
               ? t('A completed town wonder. Future eras keep all five levels.')
               : town.coins < upgrade.price
                 ? t('You need {coins} more coins.', { coins: number(upgrade.price - town.coins) })
-                : t('{detail} Built over {count} puzzles.', {
-                    detail: t(landmarkLevel(upgrade.level).detail),
-                    count: landmarkLevel(upgrade.level).puzzles,
-                  })
+                : t(
+                    landmarkLevel(upgrade.level).puzzles === 1
+                      ? '{detail} Built in one puzzle.'
+                      : '{detail} Built over {count} puzzles.',
+                    {
+                      detail: t(landmarkLevel(upgrade.level).detail),
+                      count: landmarkLevel(upgrade.level).puzzles,
+                    },
+                  )
           }}
         </p>
       </div>

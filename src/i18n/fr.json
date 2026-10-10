@@ -3844,5 +3844,9 @@
   "Skip tutorial": "Passer le tutoriel",
   "Show me": "Montrez-moi",
   "Show all buildings ({count})": "Voir tous les bâtiments ({count})",
-  "How building works": "Comment construire"
+  "How building works": "Comment construire",
+  "Work on the {monument} has begun: one puzzle to go.": "Les travaux commencent : {monument}. Encore un puzzle.",
+  "{site} · Building: finished by the next puzzle": "{site} · Travaux : terminés au prochain puzzle",
+  "The next completed puzzle finishes it, replays included.": "Le prochain puzzle terminé l’achève, niveaux rejoués compris.",
+  "{detail} Built in one puzzle.": "{detail} Construction en un puzzle."
 }

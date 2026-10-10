@@ -890,10 +890,12 @@ function buildMonument(command) {
   game.audioManager?.playArcadeCue?.('coin');
   const name = t(LANDMARK_BY_ID[command.value].label);
   const work = monumentWork(town.value, AREA_BY_ID[command.id]);
-  announcement.value = t('Work on the {monument} has begun: {count} puzzles to go.', {
-    monument: name,
-    count: work?.required ?? 0,
-  });
+  announcement.value = t(
+    work?.required === 1
+      ? 'Work on the {monument} has begun: one puzzle to go.'
+      : 'Work on the {monument} has begun: {count} puzzles to go.',
+    { monument: name, count: work?.required ?? 0 },
+  );
   nextTick(() => townScene.value?.focusPlace(command.id));
   return true;
 }
@@ -941,11 +943,12 @@ const monumentSites = computed(() =>
       status: work?.ready
         ? t('{site} · Ready to unveil', { site: t(area.label) })
         : work
-          ? t('{site} · Building: {wins} of {required} puzzles', {
-              site: t(area.label),
-              wins: work.wins,
-              required: work.required,
-            })
+          ? t(
+              work.required === 1
+                ? '{site} · Building: finished by the next puzzle'
+                : '{site} · Building: {wins} of {required} puzzles',
+              { site: t(area.label), wins: work.wins, required: work.required },
+            )
           : area.timeless
             ? t(area.label)
             : t('{site} · Stage {stage} of {maximum}', {

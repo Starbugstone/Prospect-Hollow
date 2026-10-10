@@ -18574,12 +18574,31 @@
             {
               "sequence": 12,
               "id": "00000000-0000-4000-8000-000000000145",
-              "kind": "run-start",
-              "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "meadow",
+                    "slot": 0,
+                    "value": "headframe",
+                    "expectedChoice": "headframe",
+                    "expectedLevel": 2,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
             },
             {
               "sequence": 13,
               "id": "00000000-0000-4000-8000-000000000146",
+              "kind": "run-start",
+              "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
+            },
+            {
+              "sequence": 14,
+              "id": "00000000-0000-4000-8000-000000000147",
               "kind": "victory",
               "data": {
                 "runId": 5,
@@ -18609,8 +18628,8 @@
               }
             },
             {
-              "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000147",
+              "sequence": 15,
+              "id": "00000000-0000-4000-8000-000000000148",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -18620,7 +18639,7 @@
                     "slot": 0,
                     "value": "headframe",
                     "expectedChoice": "headframe",
-                    "expectedLevel": 2,
+                    "expectedLevel": 3,
                     "monumentVersion": 2
                   }
                 ],
@@ -18628,14 +18647,14 @@
               }
             },
             {
-              "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000148",
+              "sequence": 16,
+              "id": "00000000-0000-4000-8000-000000000149",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
-              "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000149",
+              "sequence": 17,
+              "id": "00000000-0000-4000-8000-000000000150",
               "kind": "victory",
               "data": {
                 "runId": 6,
@@ -18665,14 +18684,33 @@
               }
             },
             {
-              "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000150",
+              "sequence": 18,
+              "id": "00000000-0000-4000-8000-000000000151",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "meadow",
+                    "slot": 0,
+                    "value": "headframe",
+                    "expectedChoice": "headframe",
+                    "expectedLevel": 4,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 19,
+              "id": "00000000-0000-4000-8000-000000000152",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
-              "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000151",
+              "sequence": 20,
+              "id": "00000000-0000-4000-8000-000000000153",
               "kind": "victory",
               "data": {
                 "runId": 7,
@@ -18700,252 +18738,29 @@
                 "shopVisit": 7,
                 "at": 1780000000000
               }
-            },
-            {
-              "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000152",
-              "kind": "landmark-buy",
-              "data": {
-                "purchases": [
-                  {
-                    "kind": "area",
-                    "id": "meadow",
-                    "slot": 0,
-                    "value": "headframe",
-                    "expectedChoice": "headframe",
-                    "expectedLevel": 3,
-                    "monumentVersion": 2
-                  }
-                ],
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000153",
-              "kind": "run-start",
-              "data": { "runId": 8, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 21,
-              "id": "00000000-0000-4000-8000-000000000154",
-              "kind": "victory",
-              "data": {
-                "runId": 8,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "coins" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "tnt", "sold": false },
-                  { "id": "clear-row", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "shuffle", "sold": false }
-                ],
-                "shopVisit": 8,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 22,
-              "id": "00000000-0000-4000-8000-000000000155",
-              "kind": "run-start",
-              "data": { "runId": 9, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 23,
-              "id": "00000000-0000-4000-8000-000000000156",
-              "kind": "victory",
-              "data": {
-                "runId": 9,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "coins" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "clear-row", "sold": false }
-                ],
-                "shopVisit": 9,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 24,
-              "id": "00000000-0000-4000-8000-000000000157",
-              "kind": "landmark-buy",
-              "data": {
-                "purchases": [
-                  {
-                    "kind": "area",
-                    "id": "meadow",
-                    "slot": 0,
-                    "value": "headframe",
-                    "expectedChoice": "headframe",
-                    "expectedLevel": 4,
-                    "monumentVersion": 2
-                  }
-                ],
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 25,
-              "id": "00000000-0000-4000-8000-000000000158",
-              "kind": "run-start",
-              "data": { "runId": 10, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 26,
-              "id": "00000000-0000-4000-8000-000000000159",
-              "kind": "victory",
-              "data": {
-                "runId": 10,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "builder-hammer" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "clear-row", "sold": false },
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "color-wand", "sold": false }
-                ],
-                "shopVisit": 10,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 27,
-              "id": "00000000-0000-4000-8000-000000000160",
-              "kind": "run-start",
-              "data": { "runId": 11, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 28,
-              "id": "00000000-0000-4000-8000-000000000161",
-              "kind": "victory",
-              "data": {
-                "runId": 11,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "clear-row" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "clear-row", "sold": false }
-                ],
-                "shopVisit": 11,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 29,
-              "id": "00000000-0000-4000-8000-000000000162",
-              "kind": "run-start",
-              "data": { "runId": 12, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 30,
-              "id": "00000000-0000-4000-8000-000000000163",
-              "kind": "victory",
-              "data": {
-                "runId": 12,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "tnt" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "clear-row", "sold": false },
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "tile-breaker", "sold": false }
-                ],
-                "shopVisit": 12,
-                "at": 1780000000000
-              }
             }
           ]
         },
         "records": { "1": { "score": 7500, "stars": 3, "bestTimeMs": 3754000 } },
         "continuousRecords": {},
         "powers": [
-          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 6 },
-          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 2 },
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 5 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 1 },
           { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
           { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 1 },
           { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
         ],
-        "builderHammers": 1,
-        "chestsWithoutBuilderHammer": 2,
+        "builderHammers": 0,
+        "chestsWithoutBuilderHammer": 7,
         "pendingChests": [],
         "shopStock": [
-          { "id": "clear-row", "sold": false },
+          { "id": "tile-breaker", "sold": false },
           { "id": "shuffle", "sold": false },
           { "id": "tnt", "sold": false },
-          { "id": "color-wand", "sold": false },
-          { "id": "tile-breaker", "sold": false }
+          { "id": "clear-row", "sold": false },
+          { "id": "color-wand", "sold": false }
         ],
-        "shopVisit": 12,
+        "shopVisit": 7,
         "vipReceipts": [],
         "seenObstacles": [],
         "seenTips": [],
@@ -19131,7 +18946,7 @@
           },
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 1 },
-          "coins": 9962504,
+          "coins": 9960044,
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -19221,7 +19036,7 @@
           "events": {},
           "presentations": {},
           "projects": {},
-          "completedRuns": 12,
+          "completedRuns": 7,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
@@ -19232,8 +19047,8 @@
           "progressionVersion": 1
         },
         "townProjectFocus": "",
-        "issuedRun": 12,
-        "settledRun": 12,
+        "issuedRun": 7,
+        "settledRun": 7,
         "honours": {
           "version": 4,
           "earned": {
@@ -19263,7 +19078,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000164",
+          "epoch": "00000000-0000-4000-8000-000000000154",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -19595,13 +19410,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000164",
+          "epoch": "00000000-0000-4000-8000-000000000154",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000167",
+              "id": "00000000-0000-4000-8000-000000000157",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -19620,19 +19435,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000168",
+              "id": "00000000-0000-4000-8000-000000000158",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000169",
+              "id": "00000000-0000-4000-8000-000000000159",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000170",
+              "id": "00000000-0000-4000-8000-000000000160",
               "kind": "victory",
               "data": {
                 "runId": 1,
@@ -19663,13 +19478,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000171",
+              "id": "00000000-0000-4000-8000-000000000161",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000172",
+              "id": "00000000-0000-4000-8000-000000000162",
               "kind": "victory",
               "data": {
                 "runId": 2,
@@ -19700,13 +19515,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000173",
+              "id": "00000000-0000-4000-8000-000000000163",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000174",
+              "id": "00000000-0000-4000-8000-000000000164",
               "kind": "victory",
               "data": {
                 "runId": 3,
@@ -20080,7 +19895,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000175",
+          "epoch": "00000000-0000-4000-8000-000000000165",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -20412,13 +20227,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000175",
+          "epoch": "00000000-0000-4000-8000-000000000165",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000178",
+              "id": "00000000-0000-4000-8000-000000000168",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20437,19 +20252,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000179",
+              "id": "00000000-0000-4000-8000-000000000169",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000180",
+              "id": "00000000-0000-4000-8000-000000000170",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000181",
+              "id": "00000000-0000-4000-8000-000000000171",
               "kind": "victory",
               "data": {
                 "runId": 1,
@@ -20480,13 +20295,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000182",
+              "id": "00000000-0000-4000-8000-000000000172",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000183",
+              "id": "00000000-0000-4000-8000-000000000173",
               "kind": "victory",
               "data": {
                 "runId": 2,
@@ -20517,13 +20332,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000184",
+              "id": "00000000-0000-4000-8000-000000000174",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000185",
+              "id": "00000000-0000-4000-8000-000000000175",
               "kind": "victory",
               "data": {
                 "runId": 3,
@@ -20554,7 +20369,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000186",
+              "id": "00000000-0000-4000-8000-000000000176",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20573,13 +20388,13 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000187",
+              "id": "00000000-0000-4000-8000-000000000177",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000188",
+              "id": "00000000-0000-4000-8000-000000000178",
               "kind": "victory",
               "data": {
                 "runId": 4,
@@ -20610,13 +20425,32 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000189",
+              "id": "00000000-0000-4000-8000-000000000179",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "motor-court",
+                    "slot": 0,
+                    "value": "filling-station",
+                    "expectedChoice": "filling-station",
+                    "expectedLevel": 2,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 13,
+              "id": "00000000-0000-4000-8000-000000000180",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
-              "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000190",
+              "sequence": 14,
+              "id": "00000000-0000-4000-8000-000000000181",
               "kind": "victory",
               "data": {
                 "runId": 5,
@@ -20646,8 +20480,8 @@
               }
             },
             {
-              "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000191",
+              "sequence": 15,
+              "id": "00000000-0000-4000-8000-000000000182",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20657,7 +20491,7 @@
                     "slot": 0,
                     "value": "filling-station",
                     "expectedChoice": "filling-station",
-                    "expectedLevel": 2,
+                    "expectedLevel": 3,
                     "monumentVersion": 2
                   }
                 ],
@@ -20665,14 +20499,14 @@
               }
             },
             {
-              "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000192",
+              "sequence": 16,
+              "id": "00000000-0000-4000-8000-000000000183",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
-              "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000193",
+              "sequence": 17,
+              "id": "00000000-0000-4000-8000-000000000184",
               "kind": "victory",
               "data": {
                 "runId": 6,
@@ -20702,14 +20536,33 @@
               }
             },
             {
-              "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000194",
+              "sequence": 18,
+              "id": "00000000-0000-4000-8000-000000000185",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "motor-court",
+                    "slot": 0,
+                    "value": "filling-station",
+                    "expectedChoice": "filling-station",
+                    "expectedLevel": 4,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 19,
+              "id": "00000000-0000-4000-8000-000000000186",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
-              "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000195",
+              "sequence": 20,
+              "id": "00000000-0000-4000-8000-000000000187",
               "kind": "victory",
               "data": {
                 "runId": 7,
@@ -20737,252 +20590,29 @@
                 "shopVisit": 7,
                 "at": 1780000000000
               }
-            },
-            {
-              "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000196",
-              "kind": "landmark-buy",
-              "data": {
-                "purchases": [
-                  {
-                    "kind": "area",
-                    "id": "motor-court",
-                    "slot": 0,
-                    "value": "filling-station",
-                    "expectedChoice": "filling-station",
-                    "expectedLevel": 3,
-                    "monumentVersion": 2
-                  }
-                ],
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000197",
-              "kind": "run-start",
-              "data": { "runId": 8, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 21,
-              "id": "00000000-0000-4000-8000-000000000198",
-              "kind": "victory",
-              "data": {
-                "runId": 8,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "coins" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "tnt", "sold": false },
-                  { "id": "clear-row", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "shuffle", "sold": false }
-                ],
-                "shopVisit": 8,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 22,
-              "id": "00000000-0000-4000-8000-000000000199",
-              "kind": "run-start",
-              "data": { "runId": 9, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 23,
-              "id": "00000000-0000-4000-8000-000000000200",
-              "kind": "victory",
-              "data": {
-                "runId": 9,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "coins" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "clear-row", "sold": false }
-                ],
-                "shopVisit": 9,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 24,
-              "id": "00000000-0000-4000-8000-000000000201",
-              "kind": "landmark-buy",
-              "data": {
-                "purchases": [
-                  {
-                    "kind": "area",
-                    "id": "motor-court",
-                    "slot": 0,
-                    "value": "filling-station",
-                    "expectedChoice": "filling-station",
-                    "expectedLevel": 4,
-                    "monumentVersion": 2
-                  }
-                ],
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 25,
-              "id": "00000000-0000-4000-8000-000000000202",
-              "kind": "run-start",
-              "data": { "runId": 10, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 26,
-              "id": "00000000-0000-4000-8000-000000000203",
-              "kind": "victory",
-              "data": {
-                "runId": 10,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "builder-hammer" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "clear-row", "sold": false },
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "color-wand", "sold": false }
-                ],
-                "shopVisit": 10,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 27,
-              "id": "00000000-0000-4000-8000-000000000204",
-              "kind": "run-start",
-              "data": { "runId": 11, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 28,
-              "id": "00000000-0000-4000-8000-000000000205",
-              "kind": "victory",
-              "data": {
-                "runId": 11,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "clear-row" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "clear-row", "sold": false }
-                ],
-                "shopVisit": 11,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 29,
-              "id": "00000000-0000-4000-8000-000000000206",
-              "kind": "run-start",
-              "data": { "runId": 12, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 30,
-              "id": "00000000-0000-4000-8000-000000000207",
-              "kind": "victory",
-              "data": {
-                "runId": 12,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "tnt" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "clear-row", "sold": false },
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "tile-breaker", "sold": false }
-                ],
-                "shopVisit": 12,
-                "at": 1780000000000
-              }
             }
           ]
         },
         "records": { "1": { "score": 7500, "stars": 3, "bestTimeMs": 3754000 } },
         "continuousRecords": {},
         "powers": [
-          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 6 },
-          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 2 },
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 5 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 1 },
           { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
           { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 1 },
           { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
         ],
-        "builderHammers": 1,
-        "chestsWithoutBuilderHammer": 2,
+        "builderHammers": 0,
+        "chestsWithoutBuilderHammer": 7,
         "pendingChests": [],
         "shopStock": [
-          { "id": "clear-row", "sold": false },
+          { "id": "tile-breaker", "sold": false },
           { "id": "shuffle", "sold": false },
           { "id": "tnt", "sold": false },
-          { "id": "color-wand", "sold": false },
-          { "id": "tile-breaker", "sold": false }
+          { "id": "clear-row", "sold": false },
+          { "id": "color-wand", "sold": false }
         ],
-        "shopVisit": 12,
+        "shopVisit": 7,
         "vipReceipts": [],
         "seenObstacles": [],
         "seenTips": [],
@@ -21168,7 +20798,7 @@
           },
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 1 },
-          "coins": 9724504,
+          "coins": 9722044,
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -21258,7 +20888,7 @@
           "events": {},
           "presentations": {},
           "projects": {},
-          "completedRuns": 12,
+          "completedRuns": 7,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
@@ -21269,8 +20899,8 @@
           "progressionVersion": 1
         },
         "townProjectFocus": "",
-        "issuedRun": 12,
-        "settledRun": 12,
+        "issuedRun": 7,
+        "settledRun": 7,
         "honours": {
           "version": 4,
           "earned": {
@@ -21300,7 +20930,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000208",
+          "epoch": "00000000-0000-4000-8000-000000000188",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -21632,13 +21262,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000208",
+          "epoch": "00000000-0000-4000-8000-000000000188",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000211",
+              "id": "00000000-0000-4000-8000-000000000191",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21657,19 +21287,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000212",
+              "id": "00000000-0000-4000-8000-000000000192",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000213",
+              "id": "00000000-0000-4000-8000-000000000193",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000214",
+              "id": "00000000-0000-4000-8000-000000000194",
               "kind": "victory",
               "data": {
                 "runId": 1,
@@ -21700,13 +21330,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000215",
+              "id": "00000000-0000-4000-8000-000000000195",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000216",
+              "id": "00000000-0000-4000-8000-000000000196",
               "kind": "victory",
               "data": {
                 "runId": 2,
@@ -21737,13 +21367,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000217",
+              "id": "00000000-0000-4000-8000-000000000197",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000218",
+              "id": "00000000-0000-4000-8000-000000000198",
               "kind": "victory",
               "data": {
                 "runId": 3,
@@ -21774,7 +21404,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000219",
+              "id": "00000000-0000-4000-8000-000000000199",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21793,13 +21423,13 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000220",
+              "id": "00000000-0000-4000-8000-000000000200",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000221",
+              "id": "00000000-0000-4000-8000-000000000201",
               "kind": "victory",
               "data": {
                 "runId": 4,
@@ -21830,13 +21460,32 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000222",
+              "id": "00000000-0000-4000-8000-000000000202",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "arts-court",
+                    "slot": 0,
+                    "value": "music-shell",
+                    "expectedChoice": "music-shell",
+                    "expectedLevel": 2,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 13,
+              "id": "00000000-0000-4000-8000-000000000203",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
-              "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000223",
+              "sequence": 14,
+              "id": "00000000-0000-4000-8000-000000000204",
               "kind": "victory",
               "data": {
                 "runId": 5,
@@ -21866,8 +21515,8 @@
               }
             },
             {
-              "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000224",
+              "sequence": 15,
+              "id": "00000000-0000-4000-8000-000000000205",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21877,7 +21526,7 @@
                     "slot": 0,
                     "value": "music-shell",
                     "expectedChoice": "music-shell",
-                    "expectedLevel": 2,
+                    "expectedLevel": 3,
                     "monumentVersion": 2
                   }
                 ],
@@ -21885,14 +21534,14 @@
               }
             },
             {
-              "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000225",
+              "sequence": 16,
+              "id": "00000000-0000-4000-8000-000000000206",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
-              "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000226",
+              "sequence": 17,
+              "id": "00000000-0000-4000-8000-000000000207",
               "kind": "victory",
               "data": {
                 "runId": 6,
@@ -21922,14 +21571,33 @@
               }
             },
             {
-              "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000227",
+              "sequence": 18,
+              "id": "00000000-0000-4000-8000-000000000208",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "arts-court",
+                    "slot": 0,
+                    "value": "music-shell",
+                    "expectedChoice": "music-shell",
+                    "expectedLevel": 4,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 19,
+              "id": "00000000-0000-4000-8000-000000000209",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
-              "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000228",
+              "sequence": 20,
+              "id": "00000000-0000-4000-8000-000000000210",
               "kind": "victory",
               "data": {
                 "runId": 7,
@@ -21957,252 +21625,29 @@
                 "shopVisit": 7,
                 "at": 1780000000000
               }
-            },
-            {
-              "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000229",
-              "kind": "landmark-buy",
-              "data": {
-                "purchases": [
-                  {
-                    "kind": "area",
-                    "id": "arts-court",
-                    "slot": 0,
-                    "value": "music-shell",
-                    "expectedChoice": "music-shell",
-                    "expectedLevel": 3,
-                    "monumentVersion": 2
-                  }
-                ],
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000230",
-              "kind": "run-start",
-              "data": { "runId": 8, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 21,
-              "id": "00000000-0000-4000-8000-000000000231",
-              "kind": "victory",
-              "data": {
-                "runId": 8,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "coins" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "tnt", "sold": false },
-                  { "id": "clear-row", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "shuffle", "sold": false }
-                ],
-                "shopVisit": 8,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 22,
-              "id": "00000000-0000-4000-8000-000000000232",
-              "kind": "run-start",
-              "data": { "runId": 9, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 23,
-              "id": "00000000-0000-4000-8000-000000000233",
-              "kind": "victory",
-              "data": {
-                "runId": 9,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "coins" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "clear-row", "sold": false }
-                ],
-                "shopVisit": 9,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 24,
-              "id": "00000000-0000-4000-8000-000000000234",
-              "kind": "landmark-buy",
-              "data": {
-                "purchases": [
-                  {
-                    "kind": "area",
-                    "id": "arts-court",
-                    "slot": 0,
-                    "value": "music-shell",
-                    "expectedChoice": "music-shell",
-                    "expectedLevel": 4,
-                    "monumentVersion": 2
-                  }
-                ],
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 25,
-              "id": "00000000-0000-4000-8000-000000000235",
-              "kind": "run-start",
-              "data": { "runId": 10, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 26,
-              "id": "00000000-0000-4000-8000-000000000236",
-              "kind": "victory",
-              "data": {
-                "runId": 10,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "builder-hammer" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "clear-row", "sold": false },
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "color-wand", "sold": false }
-                ],
-                "shopVisit": 10,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 27,
-              "id": "00000000-0000-4000-8000-000000000237",
-              "kind": "run-start",
-              "data": { "runId": 11, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 28,
-              "id": "00000000-0000-4000-8000-000000000238",
-              "kind": "victory",
-              "data": {
-                "runId": 11,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "clear-row" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "clear-row", "sold": false }
-                ],
-                "shopVisit": 11,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 29,
-              "id": "00000000-0000-4000-8000-000000000239",
-              "kind": "run-start",
-              "data": { "runId": 12, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 30,
-              "id": "00000000-0000-4000-8000-000000000240",
-              "kind": "victory",
-              "data": {
-                "runId": 12,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "tnt" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "clear-row", "sold": false },
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "tile-breaker", "sold": false }
-                ],
-                "shopVisit": 12,
-                "at": 1780000000000
-              }
             }
           ]
         },
         "records": { "1": { "score": 7500, "stars": 3, "bestTimeMs": 3754000 } },
         "continuousRecords": {},
         "powers": [
-          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 6 },
-          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 2 },
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 5 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 1 },
           { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
           { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 1 },
           { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
         ],
-        "builderHammers": 1,
-        "chestsWithoutBuilderHammer": 2,
+        "builderHammers": 0,
+        "chestsWithoutBuilderHammer": 7,
         "pendingChests": [],
         "shopStock": [
-          { "id": "clear-row", "sold": false },
+          { "id": "tile-breaker", "sold": false },
           { "id": "shuffle", "sold": false },
           { "id": "tnt", "sold": false },
-          { "id": "color-wand", "sold": false },
-          { "id": "tile-breaker", "sold": false }
+          { "id": "clear-row", "sold": false },
+          { "id": "color-wand", "sold": false }
         ],
-        "shopVisit": 12,
+        "shopVisit": 7,
         "vipReceipts": [],
         "seenObstacles": [],
         "seenTips": [],
@@ -22388,7 +21833,7 @@
           },
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 1 },
-          "coins": 9514504,
+          "coins": 9512044,
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -22478,7 +21923,7 @@
           "events": {},
           "presentations": {},
           "projects": {},
-          "completedRuns": 12,
+          "completedRuns": 7,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
@@ -22489,8 +21934,8 @@
           "progressionVersion": 1
         },
         "townProjectFocus": "",
-        "issuedRun": 12,
-        "settledRun": 12,
+        "issuedRun": 7,
+        "settledRun": 7,
         "honours": {
           "version": 4,
           "earned": {
@@ -22520,7 +21965,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000241",
+          "epoch": "00000000-0000-4000-8000-000000000211",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -22852,13 +22297,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000241",
+          "epoch": "00000000-0000-4000-8000-000000000211",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000244",
+              "id": "00000000-0000-4000-8000-000000000214",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22877,19 +22322,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000245",
+              "id": "00000000-0000-4000-8000-000000000215",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000246",
+              "id": "00000000-0000-4000-8000-000000000216",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000247",
+              "id": "00000000-0000-4000-8000-000000000217",
               "kind": "victory",
               "data": {
                 "runId": 1,
@@ -22920,13 +22365,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000248",
+              "id": "00000000-0000-4000-8000-000000000218",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000249",
+              "id": "00000000-0000-4000-8000-000000000219",
               "kind": "victory",
               "data": {
                 "runId": 2,
@@ -22957,13 +22402,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000250",
+              "id": "00000000-0000-4000-8000-000000000220",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000251",
+              "id": "00000000-0000-4000-8000-000000000221",
               "kind": "victory",
               "data": {
                 "runId": 3,
@@ -22994,7 +22439,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000252",
+              "id": "00000000-0000-4000-8000-000000000222",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -23013,13 +22458,13 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000253",
+              "id": "00000000-0000-4000-8000-000000000223",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000254",
+              "id": "00000000-0000-4000-8000-000000000224",
               "kind": "victory",
               "data": {
                 "runId": 4,
@@ -23050,13 +22495,32 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000255",
+              "id": "00000000-0000-4000-8000-000000000225",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "horizon",
+                    "slot": 0,
+                    "value": "orbit-house",
+                    "expectedChoice": "orbit-house",
+                    "expectedLevel": 2,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 13,
+              "id": "00000000-0000-4000-8000-000000000226",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
-              "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000256",
+              "sequence": 14,
+              "id": "00000000-0000-4000-8000-000000000227",
               "kind": "victory",
               "data": {
                 "runId": 5,
@@ -23086,8 +22550,8 @@
               }
             },
             {
-              "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000257",
+              "sequence": 15,
+              "id": "00000000-0000-4000-8000-000000000228",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -23097,7 +22561,7 @@
                     "slot": 0,
                     "value": "orbit-house",
                     "expectedChoice": "orbit-house",
-                    "expectedLevel": 2,
+                    "expectedLevel": 3,
                     "monumentVersion": 2
                   }
                 ],
@@ -23105,14 +22569,14 @@
               }
             },
             {
-              "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000258",
+              "sequence": 16,
+              "id": "00000000-0000-4000-8000-000000000229",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
-              "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000259",
+              "sequence": 17,
+              "id": "00000000-0000-4000-8000-000000000230",
               "kind": "victory",
               "data": {
                 "runId": 6,
@@ -23142,14 +22606,33 @@
               }
             },
             {
-              "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000260",
+              "sequence": 18,
+              "id": "00000000-0000-4000-8000-000000000231",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "horizon",
+                    "slot": 0,
+                    "value": "orbit-house",
+                    "expectedChoice": "orbit-house",
+                    "expectedLevel": 4,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 19,
+              "id": "00000000-0000-4000-8000-000000000232",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
-              "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000261",
+              "sequence": 20,
+              "id": "00000000-0000-4000-8000-000000000233",
               "kind": "victory",
               "data": {
                 "runId": 7,
@@ -23177,252 +22660,29 @@
                 "shopVisit": 7,
                 "at": 1780000000000
               }
-            },
-            {
-              "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000262",
-              "kind": "landmark-buy",
-              "data": {
-                "purchases": [
-                  {
-                    "kind": "area",
-                    "id": "horizon",
-                    "slot": 0,
-                    "value": "orbit-house",
-                    "expectedChoice": "orbit-house",
-                    "expectedLevel": 3,
-                    "monumentVersion": 2
-                  }
-                ],
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000263",
-              "kind": "run-start",
-              "data": { "runId": 8, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 21,
-              "id": "00000000-0000-4000-8000-000000000264",
-              "kind": "victory",
-              "data": {
-                "runId": 8,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "coins" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "tnt", "sold": false },
-                  { "id": "clear-row", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "shuffle", "sold": false }
-                ],
-                "shopVisit": 8,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 22,
-              "id": "00000000-0000-4000-8000-000000000265",
-              "kind": "run-start",
-              "data": { "runId": 9, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 23,
-              "id": "00000000-0000-4000-8000-000000000266",
-              "kind": "victory",
-              "data": {
-                "runId": 9,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "coins" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "clear-row", "sold": false }
-                ],
-                "shopVisit": 9,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 24,
-              "id": "00000000-0000-4000-8000-000000000267",
-              "kind": "landmark-buy",
-              "data": {
-                "purchases": [
-                  {
-                    "kind": "area",
-                    "id": "horizon",
-                    "slot": 0,
-                    "value": "orbit-house",
-                    "expectedChoice": "orbit-house",
-                    "expectedLevel": 4,
-                    "monumentVersion": 2
-                  }
-                ],
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 25,
-              "id": "00000000-0000-4000-8000-000000000268",
-              "kind": "run-start",
-              "data": { "runId": 10, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 26,
-              "id": "00000000-0000-4000-8000-000000000269",
-              "kind": "victory",
-              "data": {
-                "runId": 10,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "builder-hammer" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "clear-row", "sold": false },
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "color-wand", "sold": false }
-                ],
-                "shopVisit": 10,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 27,
-              "id": "00000000-0000-4000-8000-000000000270",
-              "kind": "run-start",
-              "data": { "runId": 11, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 28,
-              "id": "00000000-0000-4000-8000-000000000271",
-              "kind": "victory",
-              "data": {
-                "runId": 11,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "clear-row" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "clear-row", "sold": false }
-                ],
-                "shopVisit": 11,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 29,
-              "id": "00000000-0000-4000-8000-000000000272",
-              "kind": "run-start",
-              "data": { "runId": 12, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 30,
-              "id": "00000000-0000-4000-8000-000000000273",
-              "kind": "victory",
-              "data": {
-                "runId": 12,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "tnt" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "clear-row", "sold": false },
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "tile-breaker", "sold": false }
-                ],
-                "shopVisit": 12,
-                "at": 1780000000000
-              }
             }
           ]
         },
         "records": { "1": { "score": 7500, "stars": 3, "bestTimeMs": 3754000 } },
         "continuousRecords": {},
         "powers": [
-          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 6 },
-          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 2 },
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 5 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 1 },
           { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
           { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 1 },
           { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
         ],
-        "builderHammers": 1,
-        "chestsWithoutBuilderHammer": 2,
+        "builderHammers": 0,
+        "chestsWithoutBuilderHammer": 7,
         "pendingChests": [],
         "shopStock": [
-          { "id": "clear-row", "sold": false },
+          { "id": "tile-breaker", "sold": false },
           { "id": "shuffle", "sold": false },
           { "id": "tnt", "sold": false },
-          { "id": "color-wand", "sold": false },
-          { "id": "tile-breaker", "sold": false }
+          { "id": "clear-row", "sold": false },
+          { "id": "color-wand", "sold": false }
         ],
-        "shopVisit": 12,
+        "shopVisit": 7,
         "vipReceipts": [],
         "seenObstacles": [],
         "seenTips": [],
@@ -23608,7 +22868,7 @@
           },
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 1 },
-          "coins": 9164504,
+          "coins": 9162044,
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -23698,7 +22958,7 @@
           "events": {},
           "presentations": {},
           "projects": {},
-          "completedRuns": 12,
+          "completedRuns": 7,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
@@ -23709,8 +22969,8 @@
           "progressionVersion": 1
         },
         "townProjectFocus": "",
-        "issuedRun": 12,
-        "settledRun": 12,
+        "issuedRun": 7,
+        "settledRun": 7,
         "honours": {
           "version": 4,
           "earned": {
@@ -23740,7 +23000,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000274",
+          "epoch": "00000000-0000-4000-8000-000000000234",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -24072,13 +23332,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000274",
+          "epoch": "00000000-0000-4000-8000-000000000234",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000277",
+              "id": "00000000-0000-4000-8000-000000000237",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -24097,19 +23357,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000278",
+              "id": "00000000-0000-4000-8000-000000000238",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000279",
+              "id": "00000000-0000-4000-8000-000000000239",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000280",
+              "id": "00000000-0000-4000-8000-000000000240",
               "kind": "victory",
               "data": {
                 "runId": 1,
@@ -24140,13 +23400,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000281",
+              "id": "00000000-0000-4000-8000-000000000241",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000282",
+              "id": "00000000-0000-4000-8000-000000000242",
               "kind": "victory",
               "data": {
                 "runId": 2,
@@ -24177,13 +23437,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000283",
+              "id": "00000000-0000-4000-8000-000000000243",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000284",
+              "id": "00000000-0000-4000-8000-000000000244",
               "kind": "victory",
               "data": {
                 "runId": 3,
@@ -24214,7 +23474,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000285",
+              "id": "00000000-0000-4000-8000-000000000245",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -24233,13 +23493,13 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000286",
+              "id": "00000000-0000-4000-8000-000000000246",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000287",
+              "id": "00000000-0000-4000-8000-000000000247",
               "kind": "victory",
               "data": {
                 "runId": 4,
@@ -24270,13 +23530,32 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000288",
+              "id": "00000000-0000-4000-8000-000000000248",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "light-court",
+                    "slot": 0,
+                    "value": "spring-terraces",
+                    "expectedChoice": "spring-terraces",
+                    "expectedLevel": 2,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 13,
+              "id": "00000000-0000-4000-8000-000000000249",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
-              "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000289",
+              "sequence": 14,
+              "id": "00000000-0000-4000-8000-000000000250",
               "kind": "victory",
               "data": {
                 "runId": 5,
@@ -24306,8 +23585,8 @@
               }
             },
             {
-              "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000290",
+              "sequence": 15,
+              "id": "00000000-0000-4000-8000-000000000251",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -24317,7 +23596,7 @@
                     "slot": 0,
                     "value": "spring-terraces",
                     "expectedChoice": "spring-terraces",
-                    "expectedLevel": 2,
+                    "expectedLevel": 3,
                     "monumentVersion": 2
                   }
                 ],
@@ -24325,14 +23604,14 @@
               }
             },
             {
-              "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000291",
+              "sequence": 16,
+              "id": "00000000-0000-4000-8000-000000000252",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
-              "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000292",
+              "sequence": 17,
+              "id": "00000000-0000-4000-8000-000000000253",
               "kind": "victory",
               "data": {
                 "runId": 6,
@@ -24362,14 +23641,33 @@
               }
             },
             {
-              "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000293",
+              "sequence": 18,
+              "id": "00000000-0000-4000-8000-000000000254",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "light-court",
+                    "slot": 0,
+                    "value": "spring-terraces",
+                    "expectedChoice": "spring-terraces",
+                    "expectedLevel": 4,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 19,
+              "id": "00000000-0000-4000-8000-000000000255",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
-              "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000294",
+              "sequence": 20,
+              "id": "00000000-0000-4000-8000-000000000256",
               "kind": "victory",
               "data": {
                 "runId": 7,
@@ -24397,252 +23695,29 @@
                 "shopVisit": 7,
                 "at": 1780000000000
               }
-            },
-            {
-              "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000295",
-              "kind": "landmark-buy",
-              "data": {
-                "purchases": [
-                  {
-                    "kind": "area",
-                    "id": "light-court",
-                    "slot": 0,
-                    "value": "spring-terraces",
-                    "expectedChoice": "spring-terraces",
-                    "expectedLevel": 3,
-                    "monumentVersion": 2
-                  }
-                ],
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000296",
-              "kind": "run-start",
-              "data": { "runId": 8, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 21,
-              "id": "00000000-0000-4000-8000-000000000297",
-              "kind": "victory",
-              "data": {
-                "runId": 8,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "coins" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "tnt", "sold": false },
-                  { "id": "clear-row", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "shuffle", "sold": false }
-                ],
-                "shopVisit": 8,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 22,
-              "id": "00000000-0000-4000-8000-000000000298",
-              "kind": "run-start",
-              "data": { "runId": 9, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 23,
-              "id": "00000000-0000-4000-8000-000000000299",
-              "kind": "victory",
-              "data": {
-                "runId": 9,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "coins" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "clear-row", "sold": false }
-                ],
-                "shopVisit": 9,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 24,
-              "id": "00000000-0000-4000-8000-000000000300",
-              "kind": "landmark-buy",
-              "data": {
-                "purchases": [
-                  {
-                    "kind": "area",
-                    "id": "light-court",
-                    "slot": 0,
-                    "value": "spring-terraces",
-                    "expectedChoice": "spring-terraces",
-                    "expectedLevel": 4,
-                    "monumentVersion": 2
-                  }
-                ],
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 25,
-              "id": "00000000-0000-4000-8000-000000000301",
-              "kind": "run-start",
-              "data": { "runId": 10, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 26,
-              "id": "00000000-0000-4000-8000-000000000302",
-              "kind": "victory",
-              "data": {
-                "runId": 10,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "builder-hammer" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "clear-row", "sold": false },
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "color-wand", "sold": false }
-                ],
-                "shopVisit": 10,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 27,
-              "id": "00000000-0000-4000-8000-000000000303",
-              "kind": "run-start",
-              "data": { "runId": 11, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 28,
-              "id": "00000000-0000-4000-8000-000000000304",
-              "kind": "victory",
-              "data": {
-                "runId": 11,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "clear-row" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "clear-row", "sold": false }
-                ],
-                "shopVisit": 11,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 29,
-              "id": "00000000-0000-4000-8000-000000000305",
-              "kind": "run-start",
-              "data": { "runId": 12, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 30,
-              "id": "00000000-0000-4000-8000-000000000306",
-              "kind": "victory",
-              "data": {
-                "runId": 12,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "tnt" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "clear-row", "sold": false },
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "tile-breaker", "sold": false }
-                ],
-                "shopVisit": 12,
-                "at": 1780000000000
-              }
             }
           ]
         },
         "records": { "1": { "score": 7500, "stars": 3, "bestTimeMs": 3754000 } },
         "continuousRecords": {},
         "powers": [
-          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 6 },
-          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 2 },
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 5 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 1 },
           { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
           { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 1 },
           { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
         ],
-        "builderHammers": 1,
-        "chestsWithoutBuilderHammer": 2,
+        "builderHammers": 0,
+        "chestsWithoutBuilderHammer": 7,
         "pendingChests": [],
         "shopStock": [
-          { "id": "clear-row", "sold": false },
+          { "id": "tile-breaker", "sold": false },
           { "id": "shuffle", "sold": false },
           { "id": "tnt", "sold": false },
-          { "id": "color-wand", "sold": false },
-          { "id": "tile-breaker", "sold": false }
+          { "id": "clear-row", "sold": false },
+          { "id": "color-wand", "sold": false }
         ],
-        "shopVisit": 12,
+        "shopVisit": 7,
         "vipReceipts": [],
         "seenObstacles": [],
         "seenTips": [],
@@ -24828,7 +23903,7 @@
           },
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 1 },
-          "coins": 8674504,
+          "coins": 8672044,
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -24918,7 +23993,7 @@
           "events": {},
           "presentations": {},
           "projects": {},
-          "completedRuns": 12,
+          "completedRuns": 7,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
@@ -24929,8 +24004,8 @@
           "progressionVersion": 1
         },
         "townProjectFocus": "",
-        "issuedRun": 12,
-        "settledRun": 12,
+        "issuedRun": 7,
+        "settledRun": 7,
         "honours": {
           "version": 4,
           "earned": {
@@ -24960,7 +24035,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000307",
+          "epoch": "00000000-0000-4000-8000-000000000257",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -25292,13 +24367,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000307",
+          "epoch": "00000000-0000-4000-8000-000000000257",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000310",
+              "id": "00000000-0000-4000-8000-000000000260",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -25317,19 +24392,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000311",
+              "id": "00000000-0000-4000-8000-000000000261",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000312",
+              "id": "00000000-0000-4000-8000-000000000262",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000313",
+              "id": "00000000-0000-4000-8000-000000000263",
               "kind": "victory",
               "data": {
                 "runId": 1,
@@ -25360,13 +24435,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000314",
+              "id": "00000000-0000-4000-8000-000000000264",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000315",
+              "id": "00000000-0000-4000-8000-000000000265",
               "kind": "victory",
               "data": {
                 "runId": 2,
@@ -25397,13 +24472,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000316",
+              "id": "00000000-0000-4000-8000-000000000266",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000317",
+              "id": "00000000-0000-4000-8000-000000000267",
               "kind": "victory",
               "data": {
                 "runId": 3,
@@ -25434,7 +24509,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000318",
+              "id": "00000000-0000-4000-8000-000000000268",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -25453,13 +24528,13 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000319",
+              "id": "00000000-0000-4000-8000-000000000269",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000320",
+              "id": "00000000-0000-4000-8000-000000000270",
               "kind": "victory",
               "data": {
                 "runId": 4,
@@ -25490,13 +24565,32 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000321",
+              "id": "00000000-0000-4000-8000-000000000271",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "stargazer-lawn",
+                    "slot": 0,
+                    "value": "orbit-garden",
+                    "expectedChoice": "orbit-garden",
+                    "expectedLevel": 2,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 13,
+              "id": "00000000-0000-4000-8000-000000000272",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
-              "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000322",
+              "sequence": 14,
+              "id": "00000000-0000-4000-8000-000000000273",
               "kind": "victory",
               "data": {
                 "runId": 5,
@@ -25526,8 +24620,8 @@
               }
             },
             {
-              "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000323",
+              "sequence": 15,
+              "id": "00000000-0000-4000-8000-000000000274",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -25537,7 +24631,7 @@
                     "slot": 0,
                     "value": "orbit-garden",
                     "expectedChoice": "orbit-garden",
-                    "expectedLevel": 2,
+                    "expectedLevel": 3,
                     "monumentVersion": 2
                   }
                 ],
@@ -25545,14 +24639,14 @@
               }
             },
             {
-              "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000324",
+              "sequence": 16,
+              "id": "00000000-0000-4000-8000-000000000275",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
-              "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000325",
+              "sequence": 17,
+              "id": "00000000-0000-4000-8000-000000000276",
               "kind": "victory",
               "data": {
                 "runId": 6,
@@ -25582,14 +24676,33 @@
               }
             },
             {
-              "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000326",
+              "sequence": 18,
+              "id": "00000000-0000-4000-8000-000000000277",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "stargazer-lawn",
+                    "slot": 0,
+                    "value": "orbit-garden",
+                    "expectedChoice": "orbit-garden",
+                    "expectedLevel": 4,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 19,
+              "id": "00000000-0000-4000-8000-000000000278",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
-              "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000327",
+              "sequence": 20,
+              "id": "00000000-0000-4000-8000-000000000279",
               "kind": "victory",
               "data": {
                 "runId": 7,
@@ -25617,252 +24730,29 @@
                 "shopVisit": 7,
                 "at": 1780000000000
               }
-            },
-            {
-              "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000328",
-              "kind": "landmark-buy",
-              "data": {
-                "purchases": [
-                  {
-                    "kind": "area",
-                    "id": "stargazer-lawn",
-                    "slot": 0,
-                    "value": "orbit-garden",
-                    "expectedChoice": "orbit-garden",
-                    "expectedLevel": 3,
-                    "monumentVersion": 2
-                  }
-                ],
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000329",
-              "kind": "run-start",
-              "data": { "runId": 8, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 21,
-              "id": "00000000-0000-4000-8000-000000000330",
-              "kind": "victory",
-              "data": {
-                "runId": 8,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "coins" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "tnt", "sold": false },
-                  { "id": "clear-row", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "shuffle", "sold": false }
-                ],
-                "shopVisit": 8,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 22,
-              "id": "00000000-0000-4000-8000-000000000331",
-              "kind": "run-start",
-              "data": { "runId": 9, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 23,
-              "id": "00000000-0000-4000-8000-000000000332",
-              "kind": "victory",
-              "data": {
-                "runId": 9,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "coins" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "clear-row", "sold": false }
-                ],
-                "shopVisit": 9,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 24,
-              "id": "00000000-0000-4000-8000-000000000333",
-              "kind": "landmark-buy",
-              "data": {
-                "purchases": [
-                  {
-                    "kind": "area",
-                    "id": "stargazer-lawn",
-                    "slot": 0,
-                    "value": "orbit-garden",
-                    "expectedChoice": "orbit-garden",
-                    "expectedLevel": 4,
-                    "monumentVersion": 2
-                  }
-                ],
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 25,
-              "id": "00000000-0000-4000-8000-000000000334",
-              "kind": "run-start",
-              "data": { "runId": 10, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 26,
-              "id": "00000000-0000-4000-8000-000000000335",
-              "kind": "victory",
-              "data": {
-                "runId": 10,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "builder-hammer" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "clear-row", "sold": false },
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "color-wand", "sold": false }
-                ],
-                "shopVisit": 10,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 27,
-              "id": "00000000-0000-4000-8000-000000000336",
-              "kind": "run-start",
-              "data": { "runId": 11, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 28,
-              "id": "00000000-0000-4000-8000-000000000337",
-              "kind": "victory",
-              "data": {
-                "runId": 11,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "clear-row" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "clear-row", "sold": false }
-                ],
-                "shopVisit": 11,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 29,
-              "id": "00000000-0000-4000-8000-000000000338",
-              "kind": "run-start",
-              "data": { "runId": 12, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 30,
-              "id": "00000000-0000-4000-8000-000000000339",
-              "kind": "victory",
-              "data": {
-                "runId": 12,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "tnt" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "clear-row", "sold": false },
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "tile-breaker", "sold": false }
-                ],
-                "shopVisit": 12,
-                "at": 1780000000000
-              }
             }
           ]
         },
         "records": { "1": { "score": 7500, "stars": 3, "bestTimeMs": 3754000 } },
         "continuousRecords": {},
         "powers": [
-          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 6 },
-          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 2 },
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 5 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 1 },
           { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
           { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 1 },
           { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
         ],
-        "builderHammers": 1,
-        "chestsWithoutBuilderHammer": 2,
+        "builderHammers": 0,
+        "chestsWithoutBuilderHammer": 7,
         "pendingChests": [],
         "shopStock": [
-          { "id": "clear-row", "sold": false },
+          { "id": "tile-breaker", "sold": false },
           { "id": "shuffle", "sold": false },
           { "id": "tnt", "sold": false },
-          { "id": "color-wand", "sold": false },
-          { "id": "tile-breaker", "sold": false }
+          { "id": "clear-row", "sold": false },
+          { "id": "color-wand", "sold": false }
         ],
-        "shopVisit": 12,
+        "shopVisit": 7,
         "vipReceipts": [],
         "seenObstacles": [],
         "seenTips": [],
@@ -26048,7 +24938,7 @@
           },
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 1 },
-          "coins": 8254504,
+          "coins": 8252044,
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -26138,7 +25028,7 @@
           "events": {},
           "presentations": {},
           "projects": {},
-          "completedRuns": 12,
+          "completedRuns": 7,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
@@ -26149,8 +25039,8 @@
           "progressionVersion": 1
         },
         "townProjectFocus": "",
-        "issuedRun": 12,
-        "settledRun": 12,
+        "issuedRun": 7,
+        "settledRun": 7,
         "honours": {
           "version": 4,
           "earned": {
@@ -26180,7 +25070,7 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000340",
+          "epoch": "00000000-0000-4000-8000-000000000280",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -26513,13 +25403,13 @@
         "schemaVersion": 2,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000340",
+          "epoch": "00000000-0000-4000-8000-000000000280",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000343",
+              "id": "00000000-0000-4000-8000-000000000283",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -26538,19 +25428,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000344",
+              "id": "00000000-0000-4000-8000-000000000284",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000345",
+              "id": "00000000-0000-4000-8000-000000000285",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000346",
+              "id": "00000000-0000-4000-8000-000000000286",
               "kind": "victory",
               "data": {
                 "runId": 1,
@@ -26581,13 +25471,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000347",
+              "id": "00000000-0000-4000-8000-000000000287",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000348",
+              "id": "00000000-0000-4000-8000-000000000288",
               "kind": "victory",
               "data": {
                 "runId": 2,
@@ -26618,13 +25508,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000349",
+              "id": "00000000-0000-4000-8000-000000000289",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000350",
+              "id": "00000000-0000-4000-8000-000000000290",
               "kind": "victory",
               "data": {
                 "runId": 3,
@@ -26655,7 +25545,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000351",
+              "id": "00000000-0000-4000-8000-000000000291",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -26674,13 +25564,13 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000352",
+              "id": "00000000-0000-4000-8000-000000000292",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000353",
+              "id": "00000000-0000-4000-8000-000000000293",
               "kind": "victory",
               "data": {
                 "runId": 4,
@@ -26711,13 +25601,32 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000354",
+              "id": "00000000-0000-4000-8000-000000000294",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "homecoming-green",
+                    "slot": 0,
+                    "value": "lantern-walk",
+                    "expectedChoice": "lantern-walk",
+                    "expectedLevel": 2,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 13,
+              "id": "00000000-0000-4000-8000-000000000295",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
-              "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000355",
+              "sequence": 14,
+              "id": "00000000-0000-4000-8000-000000000296",
               "kind": "victory",
               "data": {
                 "runId": 5,
@@ -26747,8 +25656,8 @@
               }
             },
             {
-              "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000356",
+              "sequence": 15,
+              "id": "00000000-0000-4000-8000-000000000297",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -26758,7 +25667,7 @@
                     "slot": 0,
                     "value": "lantern-walk",
                     "expectedChoice": "lantern-walk",
-                    "expectedLevel": 2,
+                    "expectedLevel": 3,
                     "monumentVersion": 2
                   }
                 ],
@@ -26766,14 +25675,14 @@
               }
             },
             {
-              "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000357",
+              "sequence": 16,
+              "id": "00000000-0000-4000-8000-000000000298",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
-              "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000358",
+              "sequence": 17,
+              "id": "00000000-0000-4000-8000-000000000299",
               "kind": "victory",
               "data": {
                 "runId": 6,
@@ -26803,14 +25712,33 @@
               }
             },
             {
-              "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000359",
+              "sequence": 18,
+              "id": "00000000-0000-4000-8000-000000000300",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "homecoming-green",
+                    "slot": 0,
+                    "value": "lantern-walk",
+                    "expectedChoice": "lantern-walk",
+                    "expectedLevel": 4,
+                    "monumentVersion": 2
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 19,
+              "id": "00000000-0000-4000-8000-000000000301",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
-              "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000360",
+              "sequence": 20,
+              "id": "00000000-0000-4000-8000-000000000302",
               "kind": "victory",
               "data": {
                 "runId": 7,
@@ -26838,252 +25766,29 @@
                 "shopVisit": 7,
                 "at": 1780000000000
               }
-            },
-            {
-              "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000361",
-              "kind": "landmark-buy",
-              "data": {
-                "purchases": [
-                  {
-                    "kind": "area",
-                    "id": "homecoming-green",
-                    "slot": 0,
-                    "value": "lantern-walk",
-                    "expectedChoice": "lantern-walk",
-                    "expectedLevel": 3,
-                    "monumentVersion": 2
-                  }
-                ],
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000362",
-              "kind": "run-start",
-              "data": { "runId": 8, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 21,
-              "id": "00000000-0000-4000-8000-000000000363",
-              "kind": "victory",
-              "data": {
-                "runId": 8,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "coins" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "tnt", "sold": false },
-                  { "id": "clear-row", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "shuffle", "sold": false }
-                ],
-                "shopVisit": 8,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 22,
-              "id": "00000000-0000-4000-8000-000000000364",
-              "kind": "run-start",
-              "data": { "runId": 9, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 23,
-              "id": "00000000-0000-4000-8000-000000000365",
-              "kind": "victory",
-              "data": {
-                "runId": 9,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "coins" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "clear-row", "sold": false }
-                ],
-                "shopVisit": 9,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 24,
-              "id": "00000000-0000-4000-8000-000000000366",
-              "kind": "landmark-buy",
-              "data": {
-                "purchases": [
-                  {
-                    "kind": "area",
-                    "id": "homecoming-green",
-                    "slot": 0,
-                    "value": "lantern-walk",
-                    "expectedChoice": "lantern-walk",
-                    "expectedLevel": 4,
-                    "monumentVersion": 2
-                  }
-                ],
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 25,
-              "id": "00000000-0000-4000-8000-000000000367",
-              "kind": "run-start",
-              "data": { "runId": 10, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 26,
-              "id": "00000000-0000-4000-8000-000000000368",
-              "kind": "victory",
-              "data": {
-                "runId": 10,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "builder-hammer" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "clear-row", "sold": false },
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "color-wand", "sold": false }
-                ],
-                "shopVisit": 10,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 27,
-              "id": "00000000-0000-4000-8000-000000000369",
-              "kind": "run-start",
-              "data": { "runId": 11, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 28,
-              "id": "00000000-0000-4000-8000-000000000370",
-              "kind": "victory",
-              "data": {
-                "runId": 11,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "clear-row" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tile-breaker", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "clear-row", "sold": false }
-                ],
-                "shopVisit": 11,
-                "at": 1780000000000
-              }
-            },
-            {
-              "sequence": 29,
-              "id": "00000000-0000-4000-8000-000000000371",
-              "kind": "run-start",
-              "data": { "runId": 12, "mode": "normal", "levelId": 1, "at": 1780000000000 }
-            },
-            {
-              "sequence": 30,
-              "id": "00000000-0000-4000-8000-000000000372",
-              "kind": "victory",
-              "data": {
-                "runId": 12,
-                "levelId": 1,
-                "score": 7500,
-                "target": 7500,
-                "starTarget": 7500,
-                "combo": 4,
-                "elapsedMs": 3754000,
-                "speedTargetMs": 154000,
-                "jewels": 217,
-                "bonusGems": 2,
-                "comboCounts": { "2": 3, "5": 1 },
-                "multiMatchCounts": { "2": 2 },
-                "chooseRewards": false,
-                "chests": [{ "source": "score", "rewardId": "tnt" }],
-                "economyVersion": 3,
-                "shopStock": [
-                  { "id": "clear-row", "sold": false },
-                  { "id": "shuffle", "sold": false },
-                  { "id": "tnt", "sold": false },
-                  { "id": "color-wand", "sold": false },
-                  { "id": "tile-breaker", "sold": false }
-                ],
-                "shopVisit": 12,
-                "at": 1780000000000
-              }
             }
           ]
         },
         "records": { "1": { "score": 7500, "stars": 3, "bestTimeMs": 3754000 } },
         "continuousRecords": {},
         "powers": [
-          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 6 },
-          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 2 },
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 5 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 1 },
           { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
           { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 1 },
           { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
         ],
-        "builderHammers": 1,
-        "chestsWithoutBuilderHammer": 2,
+        "builderHammers": 0,
+        "chestsWithoutBuilderHammer": 7,
         "pendingChests": [],
         "shopStock": [
-          { "id": "clear-row", "sold": false },
+          { "id": "tile-breaker", "sold": false },
           { "id": "shuffle", "sold": false },
           { "id": "tnt", "sold": false },
-          { "id": "color-wand", "sold": false },
-          { "id": "tile-breaker", "sold": false }
+          { "id": "clear-row", "sold": false },
+          { "id": "color-wand", "sold": false }
         ],
-        "shopVisit": 12,
+        "shopVisit": 7,
         "vipReceipts": [],
         "seenObstacles": [],
         "seenTips": [],
@@ -27269,7 +25974,7 @@
           },
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 1 },
-          "coins": 7834504,
+          "coins": 7832044,
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -27359,7 +26064,7 @@
           "events": {},
           "presentations": {},
           "projects": {},
-          "completedRuns": 12,
+          "completedRuns": 7,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
           "lastCollections": { "saloon": null, "blacksmith": null },
@@ -27370,8 +26075,8 @@
           "progressionVersion": 1
         },
         "townProjectFocus": "",
-        "issuedRun": 12,
-        "settledRun": 12,
+        "issuedRun": 7,
+        "settledRun": 7,
         "honours": {
           "version": 4,
           "earned": {

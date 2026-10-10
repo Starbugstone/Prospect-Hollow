@@ -79,7 +79,7 @@ afterEach(() => {
 
 describe('Monument construction rules', () => {
   it('builds each paid level over completed puzzles, one level at a time', () => {
-    expect(LANDMARK_PROGRESSION.levels.map((level) => level.puzzles)).toEqual([3, 2, 2, 2, 3]);
+    expect(LANDMARK_PROGRESSION.levels.map((level) => level.puzzles)).toEqual([3, 1, 1, 1, 1]);
     for (const area of PERSONAL_AREAS) {
       let town = rich(area.era);
       const levels = area.timeless ? 1 : 5;
@@ -136,9 +136,10 @@ describe('Monument construction rules', () => {
       meadow: { level: 2, wins: 1 },
       monument: { level: 1, wins: 3 },
     });
+    // Progress saved under a longer build stays ready to unveil, so its unveiling still plays.
+    expect(saved({ meadow: { level: 2, wins: 2 } })).toEqual({ meadow: { level: 2, wins: 1 } });
     for (const damaged of [
       { meadow: { level: 1, wins: 0 } },
-      { meadow: { level: 2, wins: 3 } },
       { meadow: { level: 2, wins: -1 } },
       { meadow: { level: 2, wins: 1.5 } },
       { meadow: { level: 2, wins: '1' } },
@@ -292,13 +293,14 @@ describe('Monument construction in the town', () => {
     town = unveilLandmark(puzzles(town, 3), 'meadow', 1);
     town = buy(town, meadow);
     const at = (wins) => names(buildPersonalAreas(fixture(town), puzzles(town, wins)).children[0]);
-    // Flanking pavilions belong to level two: they appear only with the finished level.
+    // Flanking pavilions belong to level two: they appear only with the finished level,
+    // which a single completed puzzle builds.
     expect(at(0).has('Monument flanking pavilions')).toBe(false);
     expect(at(0).has('Monument scaffolding')).toBe(true);
     expect(at(0).has('Monument crane')).toBe(false);
-    expect(at(1).has('Monument crane')).toBe(true);
-    expect(at(2).has('Monument flanking pavilions')).toBe(true);
-    expect(at(2).has('Monument opening ribbon')).toBe(true);
+    expect(at(1).has('Monument crane')).toBe(false);
+    expect(at(1).has('Monument flanking pavilions')).toBe(true);
+    expect(at(1).has('Monument opening ribbon')).toBe(true);
   });
   it('keeps every construction step of every design on its reserved site', () => {
     for (const area of PERSONAL_AREAS)
@@ -517,7 +519,7 @@ describe('Monument card during construction', () => {
     const standing = await render(TownMonumentSite, { id: 'meadow', town: town(null) });
     expect(standing).toContain('Watch the unveiling again');
     expect(standing).toContain('Grow to stage 2');
-    expect(standing).toContain('Built over 2 puzzles.');
+    expect(standing).toContain('Built in one puzzle.');
     expect(standing).not.toContain('landmark-scaffold');
     const upgrading = await render(TownMonumentSite, { id: 'meadow', town: town(0, 2) });
     expect(upgrading).toContain('is-building');

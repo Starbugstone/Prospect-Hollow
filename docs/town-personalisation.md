@@ -98,7 +98,10 @@ Monument sites follow the same interaction as every other building:
 
 Like a wonder in Civilization, every paid monument level is built over completed
 puzzles and then unveiled. The puzzle counts live in `LANDMARK_PROGRESSION.levels`
-(`puzzles`: 3, 2, 2, 2, 3); timeless monuments build like a foundation (3).
+(`puzzles`: 3, 1, 1, 1, 1): the foundation takes three puzzles and every upgrade after it
+one. Timeless monuments build like a foundation (3). Progress saved under a longer build
+(for example 2 of 2 before upgrades took one puzzle) is kept as ready to unveil, so the
+player still sees its unveiling.
 
 - Any completed puzzle counts, replays included, and advances every monument under
   construction by one step (`advanceMonumentWorks`, in the same completion transaction

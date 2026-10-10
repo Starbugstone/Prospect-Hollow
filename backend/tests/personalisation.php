@@ -255,10 +255,16 @@ checkPersonalisation(
     json_encode($built) === json_encode(TownPersonalisation::normalize($built)),
     'construction normalization is idempotent',
 );
+$longer = copyPersonalisation($building);
+$longer->construction->meadow = (object) ['level' => 2, 'wins' => 2];
+checkPersonalisation(
+    json_encode(TownPersonalisation::normalize($longer)->construction->meadow) ===
+        '{"level":2,"wins":1}',
+    'progress saved under a longer build stays ready to unveil',
+);
 foreach (
     [
         (object) ['level' => 1, 'wins' => 0],
-        (object) ['level' => 2, 'wins' => 3],
         (object) ['level' => 2, 'wins' => -1],
         (object) ['level' => 2, 'wins' => 1.5],
         (object) ['level' => 2, 'wins' => '1'],
