@@ -556,6 +556,7 @@ it('lets a nearby cat briefly chase a grounded bird as it takes its normal safe 
   expect(bird.root.position.y).toBeGreaterThan(1);
 });
 
+// Simulates 3,200 frames; allow scheduling overhead in Docker and CI.
 it('lands a bounded pool of grain, consumes it on actual pecks and expires uneaten grain', () => {
   const d = fixture();
   addTownAnimals(d, d.town);
@@ -612,7 +613,7 @@ it('lands a bounded pool of grain, consumes it on actual pecks and expires uneat
   renderer.update();
   expect(renderer.buckets.every((bucket) => bucket.mesh.count === 0)).toBe(true);
   renderer.dispose();
-});
+}, 15000);
 
 it('clears tall future roofs and makes wildlife retreat away from an approaching person', () => {
   const d = fixture();

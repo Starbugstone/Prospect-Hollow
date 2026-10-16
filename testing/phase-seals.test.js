@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createGem } from '../src/game/engine/GemFactory';
 import { TileManager } from '../src/game/engine/TileManager';
-import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
+import { levelConfig } from '../src/game/engine/LevelGenerator';
 import { HOLLOW_MINE_CHAPTERS } from '../src/data/hollowMineLevels';
 import { BoardAnimator } from '../src/game/phaser/BoardAnimator';
 
@@ -77,7 +77,7 @@ describe('phase seals', () => {
 
   it('start every generated seal with a next colour that differs from its gem', () => {
     const first = 403 + HOLLOW_MINE_CHAPTERS.findIndex(({ id }) => id === 'phase-vault') * 6;
-    const levels = generateLevelConfigs(first + 5).slice(first - 1);
+    const levels = Array.from({ length: 6 }, (_, offset) => levelConfig(first + offset));
     let seals = 0;
     for (const level of levels)
       for (const [index, tile] of level.tiles.entries()) {
