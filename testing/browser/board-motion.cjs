@@ -88,7 +88,9 @@ async function playMoves({ moves, frame }) {
           ]),
       );
     sample();
-    game.resolveSwap(swap.aIndex, swap.bIndex);
+    // A hint may double-tap a bonus where it stands rather than swap it.
+    if (game.hintMove.activateInPlace) game.activateBonusGem(swap.aIndex);
+    else game.resolveSwap(swap.aIndex, swap.bIndex);
     // Run until the move settles, then a few still frames.
     for (let i = 0, still = 0; i < 60 * 15 && still < 6; i++) {
       window.__motionClock.step(frame);
@@ -193,11 +195,23 @@ function stutters({ frames }) {
       await page.goto(origin, { timeout: 180000 });
       // A cold Vite dev server optimises dependencies on the first visit.
       await page.waitForFunction(() => window.prospectDebug, null, { timeout: 180000 });
-      // mineStage opens a chapter's first level; a later level needs the next chapter.
+      // mineStage opens a chapter's first level; a later level needs the next chapter,
+      // or, in the last chapter, the whole mine marked played (a throwaway profile).
       const chapter = Math.ceil(level / LEVELS_PER_CHAPTER);
       const first = (chapter - 1) * LEVELS_PER_CHAPTER + 1;
       const store = `document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('game')`;
-      await page.evaluate(`prospectDebug.mineStage(${level === first ? chapter : chapter + 1})`);
+      await page.evaluate(
+        level === first
+          ? `prospectDebug.mineStage(${chapter})`
+          : `(() => {
+              try {
+                prospectDebug.mineStage(${chapter + 1});
+              } catch {
+                prospectDebug.mineStage(${chapter});
+                prospectDebug.completeMine();
+              }
+            })()`,
+      );
       await page.waitForFunction(`!!${store}.renderer?.animator`);
       if (level !== first)
         await page.evaluate(`${store}.startLevel(${level}, 'normal', { debugReplay: true })`);
