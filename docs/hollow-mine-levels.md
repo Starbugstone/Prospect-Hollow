@@ -150,6 +150,22 @@ the chained moon gems and pearls on their sidings; the same build without the ch
 reports 15–36 frames there, so this is how chained cargo already looked. Levels 13,
 373, 376, 385, 397, 409, 423, 487, 507 and 541 report nothing on either build.
 
+Gravity keeps a chained gem in its cell and lets the gems above fall past it
+(`applyColumnGravity` and `applyShapedGravity` in `TileManager.js`), so each gem that
+refills the cells below crosses the chained gem's sprite for one or two frames at
+60 fps. These videos replay hint-led moves from checkpoints, first at normal speed and
+then 8× slower (4× for the long cascade). They ring both gems whenever they are drawn
+less than 0.6 cells apart (amber for the chained gem, red for the falling one), pause
+half a second at each new overlap and name the gems and the gap:
+
+- [Level 480](images/hollow-mines/chained-overlaps-480-30fps.mp4): gems and a free moon
+  gem falling past the chained moon gems on row 3, then an emerald falling past a
+  chained emerald into a basket (40 s).
+- [Level 486](images/hollow-mines/chained-overlaps-486-30fps.mp4): free moon gems
+  falling through the chained moon gems on row 2, then a long cascade (41 s).
+- [Level 504](images/hollow-mines/chained-overlaps-504-30fps.mp4): refills falling past
+  the chained pearls on row 2, one drawn almost exactly over its pearl (35 s).
+
 ## Effort and completion (2026-10-08)
 
 The new levels were tuned to sit level with the deep mine or a little above, measured with
