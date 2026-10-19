@@ -195,6 +195,22 @@ the map falls back to an SVG crater with the same buttons. `buildings/moon.js`
 draws the ten buildings (glass domes on ceramic drums, airlocks, gold foil,
 solar fins), and `TownMoonBuilding.vue` draws them for cards and the fallback.
 
+#### Moon input check
+
+OrbitControls and Earth taps listen on the Moon canvas only, so the lot buttons,
+**Back to the valley** and the letters sit outside its pointer capture.
+`testing/browser/moon-input.cjs` clicks and taps them with a mouse and with touch,
+drags the orbit, taps Earth and checks the valley never reacts. CI does not run
+it. Run it after changing Moon input or its overlays, then stop the server:
+
+```bash
+docker run -d --rm --name hollow-moon-web --user "$(id -u):$(id -g)" -e HOME=/tmp -p 127.0.0.1:8192:8192 -v "$PWD":/app -w /app node:24-bookworm-slim npm run dev -- --host 0.0.0.0 --port 8192 --strictPort
+docker run --rm --network host --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD":/app -w /app mcr.microsoft.com/playwright:v1.55.0-noble sh -c 'npm i --no-save --silent --prefix /tmp/pw playwright@1.55.0 && PLAYWRIGHT_MODULE=/tmp/pw/node_modules/playwright node testing/browser/moon-input.cjs'
+docker stop hollow-moon-web
+```
+
+`PH_TEST_ORIGIN` points the check at another server.
+
 Purely cosmetic gifts: one **moonstone keepsake** per finished Moon building level
 and one **letter home** per finished Moon building, both derived from building
 levels (`moonstoneKeepsakes()`, `moonLetters()`), so nothing new is saved. Moon

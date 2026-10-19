@@ -1,7 +1,7 @@
-// Run against the Docker Vite server using the repository's Playwright Docker workflow.
+// Run against the Docker Vite server; see docs/future-eras.md#moon-input-check.
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const assert = require('node:assert/strict');
-const base = process.env.BASE_URL || 'http://127.0.0.1:5173';
+const base = process.env.PH_TEST_ORIGIN || 'http://127.0.0.1:8192';
 const fixture = `<!doctype html><html><head><link rel="stylesheet" href="/src/styles/town.css"><style>body{margin:0}#fixture{position:relative;width:100vw;height:100vh}</style></head><body><div id="fixture"></div><script type="module">
 import {createApp,h} from '/node_modules/.vite/deps/vue.js';
 import Moon from '/src/components/town/TownMoonView.vue';

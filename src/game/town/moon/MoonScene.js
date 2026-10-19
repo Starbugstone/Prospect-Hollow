@@ -319,8 +319,7 @@ export class MoonScene {
     const surface = canvas;
     this.surface = surface;
     this.onPointerDown = (event) => {
-      this.pointer =
-        event.target === canvas || event.target === surface ? [event.clientX, event.clientY] : null;
+      this.pointer = event.target === canvas ? [event.clientX, event.clientY] : null;
     };
     this.onPointerUp = (event) => {
       const start = this.pointer;

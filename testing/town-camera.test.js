@@ -168,13 +168,20 @@ describe('Panel requests to focus a town place', () => {
   });
   it('frames a monument behind an open panel with player controls disabled', () => {
     const d = scene();
-    const area = PERSONAL_AREAS.find(({ id }) => id === 'minePlaque') ?? PERSONAL_AREAS[0];
+    const area = PERSONAL_AREAS[0];
     expect(focusTownPlace(d, area.id)).toBe(true);
     expect(d.controls.target.toArray()).toEqual([area.positions[0][0], 2, area.positions[0][1]]);
     expect(d.controls.enabled).toBe(false);
     expect(d.overview).toBe(false);
     expect(d.render).toHaveBeenCalledOnce();
     expect(d.controls.update).toHaveBeenCalledOnce();
+  });
+  it('frames the mine plot for the Distinctions plaque with player controls disabled', () => {
+    const d = scene();
+    expect(focusTownPlace(d, 'mine')).toBe(true);
+    expect(d.controls.target.toArray()).toEqual([PLOTS.mine[0], 2, PLOTS.mine[1]]);
+    expect(d.camera.position.distanceTo(d.controls.target)).toBeGreaterThan(0);
+    expect(d.render).toHaveBeenCalledOnce();
   });
   it.each(['raid', 'cinematic', 'presentation', 'eventCamera'])(
     'preserves %s camera priority while a panel is open',
