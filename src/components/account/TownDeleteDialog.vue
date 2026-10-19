@@ -69,7 +69,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useNativeDialog } from '../../composables/useNativeDialog';
-import { cloud, deleteAccountTown, request } from '../../services/cloudProfile';
+import { cloud, deleteAccountTown, request, syncNow } from '../../services/cloudProfile';
 import { townStorage, townKey } from '../../services/townStorage';
 import { createSaveFile, downloadSaveFile, saveFileName } from '../../services/saveTransfer';
 import { useCampaignStore } from '../../stores/campaignStore';
@@ -125,6 +125,9 @@ async function remove() {
     await deleteAccountTown(props.town, confirmation.value);
   } catch (e) {
     if (e.status === 409) {
+      // The town being played deletes at its device's base revision: load the newer
+      // cloud save (or raise the usual conflict choice) so a retry can match it.
+      if (playing) await syncNow().catch(() => {});
       confirmation.value = '';
       error.value =
         'This town changed on another device. Check its latest details before deleting.';

@@ -10,7 +10,7 @@ import HonourCardRow from '../src/components/honours/HonourCardRow.vue';
 import AccountPanel from '../src/components/account/AccountPanel.vue';
 import TownSlots from '../src/components/account/TownSlots.vue';
 import { provideAccountContext } from '../src/components/account/accountContext';
-import { cloud, deleteAccountTown, refreshAccount } from '../src/services/cloudProfile';
+import { cloud, deleteAccountTown, refreshAccount, syncNow } from '../src/services/cloudProfile';
 import { confirmEmailChange } from '../src/services/playerData';
 
 const state = vi.hoisted(() => ({ game: null, selected: 'owner:playing', active: null }));
@@ -78,6 +78,9 @@ const node = (type, text = '') => ({
   parent: null,
   addEventListener() {},
   removeEventListener() {},
+  getRootNode() {
+    return this.parent ? this.parent.getRootNode() : this;
+  },
 });
 const renderer = createRenderer({
   createElement: (type) => node(type),
@@ -122,6 +125,9 @@ function mount(component) {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.stubGlobal('document', { activeElement: null });
+  // v-model checks whether a document or shadow root focuses the input.
+  vi.stubGlobal('Document', class {});
+  vi.stubGlobal('ShadowRoot', class {});
   vi.stubGlobal('location', { origin: 'https://example.test' });
   apps = [];
   state.game = reactive({ sessionActive: false });
@@ -135,6 +141,7 @@ beforeEach(() => {
   cloud.towns = [];
   cloud.error = '';
   refreshAccount.mockResolvedValue();
+  syncNow.mockResolvedValue(true);
 });
 afterEach(() => {
   apps.forEach((app) => app.unmount());
@@ -240,6 +247,31 @@ it('keeps deletion of the selected town disabled while its puzzle is active', as
   await settle();
   expect(button(root, 'Delete this town forever').props.disabled).toBe(true);
   expect(deleteAccountTown).not.toHaveBeenCalled();
+});
+
+it('syncs the town being played after a conflict so a retry uses its latest revision', async () => {
+  cloud.towns = [{ townId: 'playing', name: 'Playing Town', revision: 1 }];
+  deleteAccountTown.mockRejectedValueOnce(Object.assign(new Error('conflict'), { status: 409 }));
+  const root = mount({
+    setup() {
+      provideAccountContext({ changed() {}, close() {}, community() {} });
+      return () => h(TownSlots, { writable: true });
+    },
+  });
+  find(root, (entry) => entry.props['aria-label'] === 'More for Playing Town').props.onClick();
+  await settle();
+  button(root, 'Delete from the cloud').props.onClick();
+  await settle();
+  find(root, (entry) => entry.type === 'input').props['onUpdate:modelValue']('Playing Town');
+  await settle();
+  find(
+    root,
+    (entry) => entry.type === 'form' && entry.props.class === 'account-body',
+  ).props.onSubmit({ preventDefault() {} });
+  await settle();
+  expect(deleteAccountTown).toHaveBeenCalledOnce();
+  expect(syncNow).toHaveBeenCalledOnce();
+  expect(text(root)).toContain('Check its latest details before deleting.');
 });
 
 it.each([401, 409, 422])(
