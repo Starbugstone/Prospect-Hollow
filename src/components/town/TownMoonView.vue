@@ -6,10 +6,10 @@
     role="region"
     :aria-label="t('New Hollow on the Moon')"
     @pointerdown.stop
-    @pointerup.stop
     @wheel.stop
     @keydown.stop
   >
+    <!-- Controls capture only the canvas. Releases must reach their document listener. -->
     <canvas v-if="!unavailable" ref="canvas" class="town-moon-canvas" aria-hidden="true" />
     <svg
       v-else

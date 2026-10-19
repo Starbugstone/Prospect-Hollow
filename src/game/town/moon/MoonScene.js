@@ -298,7 +298,8 @@ export class MoonScene {
       id,
       position: new THREE.Vector3(x, 3.4, z),
     }));
-    this.controls = new OrbitControls(this.camera, canvas.parentElement);
+    // Keep native overlay buttons outside the pointer-capture surface.
+    this.controls = new OrbitControls(this.camera, canvas);
     this.controls.target.set(0, 0, 4);
     this.controls.minDistance = 22;
     this.controls.maxDistance = 115;
@@ -314,8 +315,8 @@ export class MoonScene {
     // A tap on Earth (not a drag) returns to the valley.
     this.raycaster = new THREE.Raycaster();
     this.pointer = null;
-    // OrbitControls captures the pointer on the canvas's parent, so listen there.
-    const surface = canvas.parentElement;
+    // Earth taps share the canvas surface with OrbitControls.
+    const surface = canvas;
     this.surface = surface;
     this.onPointerDown = (event) => {
       this.pointer =
@@ -334,9 +335,15 @@ export class MoonScene {
     this.onPointerMove = (event) => {
       if (!this.pointer) canvas.style.cursor = this.hitsEarth(event) ? 'pointer' : '';
     };
+    this.onPointerCancel = () => {
+      this.pointer = null;
+      canvas.style.cursor = '';
+    };
     surface.addEventListener('pointerdown', this.onPointerDown);
     surface.addEventListener('pointerup', this.onPointerUp);
     surface.addEventListener('pointermove', this.onPointerMove);
+    surface.addEventListener('pointercancel', this.onPointerCancel);
+    surface.addEventListener('lostpointercapture', this.onPointerCancel);
     this.elapsed = 0;
     this.signature = '';
     this.pacer = new TownFramePacer();
@@ -524,6 +531,8 @@ export class MoonScene {
     this.surface.removeEventListener('pointerdown', this.onPointerDown);
     this.surface.removeEventListener('pointerup', this.onPointerUp);
     this.surface.removeEventListener('pointermove', this.onPointerMove);
+    this.surface.removeEventListener('pointercancel', this.onPointerCancel);
+    this.surface.removeEventListener('lostpointercapture', this.onPointerCancel);
     this.controls.dispose();
     // Shared primitives are released once below; everything else is owned here.
     const shared = new Set(Object.values(this.d.geometries)),
