@@ -1,6 +1,75 @@
 <?php
 require __DIR__ . '/support.php';
-use App\{ApiError, Auth, Database};
+use App\{ApiController, ApiError, Auth, Database, PublicTown, SaveService};
+use Doctrine\DBAL\Configuration;
+use Doctrine\DBAL\Driver;
+use Doctrine\DBAL\Driver\Middleware\{AbstractConnectionMiddleware, AbstractDriverMiddleware};
+
+// Its own address keeps the shared 127.0.0.1 sign-in limit for the other suites.
+$signInIp = [
+    'REMOTE_ADDR' =>
+        '127.' . random_int(1, 254) . '.' . random_int(1, 254) . '.' . random_int(1, 254),
+];
+
+// Aborts the next statement starting with `$armed` as a deadlock, as both databases
+// report it, so the real entry points must replay their whole transaction.
+final class InjectedDeadlocks implements Driver\Middleware
+{
+    public ?string $armed = null;
+    public int $thrown = 0;
+    public function wrap(Driver $driver): Driver
+    {
+        return new class ($driver, $this) extends AbstractDriverMiddleware {
+            public function __construct(Driver $driver, private InjectedDeadlocks $faults)
+            {
+                parent::__construct($driver);
+            }
+            public function connect(array $params): Driver\Connection
+            {
+                return new class (parent::connect($params), $this->faults) extends
+                    AbstractConnectionMiddleware
+                {
+                    public function __construct(
+                        Driver\Connection $connection,
+                        private InjectedDeadlocks $faults,
+                    ) {
+                        parent::__construct($connection);
+                    }
+                    public function prepare(string $sql): Driver\Statement
+                    {
+                        $this->faults->check($sql);
+                        return parent::prepare($sql);
+                    }
+                    public function query(string $sql): Driver\Result
+                    {
+                        $this->faults->check($sql);
+                        return parent::query($sql);
+                    }
+                    public function exec(string $sql): int|string
+                    {
+                        $this->faults->check($sql);
+                        return parent::exec($sql);
+                    }
+                };
+            }
+        };
+    }
+    public function check(string $sql): void
+    {
+        if ($this->armed === null || !str_starts_with($sql, $this->armed)) {
+            return;
+        }
+        $this->armed = null;
+        $this->thrown++;
+        // PostgreSQL reports SQLSTATE 40P01 and MySQL error 1213.
+        throw new class ('Injected deadlock') extends Driver\AbstractException {
+            public function __construct(string $message)
+            {
+                parent::__construct($message, '40P01', 1213);
+            }
+        };
+    }
+}
 
 // Force the same player -> identity/link -> player cycle as account operations
 // racing a sign-in. Barriers arrange locks, rather than relying on random timing.
@@ -61,7 +130,7 @@ try {
         $db->get()->rollBack();
     }
     foreach (['email change', 'account erasure', 'sign-out'] as $operation) {
-        $owner = account();
+        $owner = account($signInIp);
         $player = $db->get()->fetchAssociative('SELECT * FROM players WHERE id=?', [$owner['id']]);
         $token = bin2hex(random_bytes(32));
         $hash = $auth->hash($token);
@@ -201,6 +270,70 @@ try {
             $sessions <= ($operation === 'email change' ? 2 : 0),
             $operation . ' does not duplicate sessions or undo erasure/sign-out',
         );
+    }
+    // The real sign-in, save, email-change and sign-out routes each replay a
+    // transaction the database aborted, without duplicating its writes.
+    $faults = new InjectedDeadlocks();
+    $flaky = new Database((new Configuration())->setMiddlewares([$faults]));
+    $flakyAuth = new Auth($flaky);
+    $flakyPublic = new PublicTown($flaky, $flakyAuth);
+    $realApi = $api;
+    $api = new ApiController(
+        $flakyAuth,
+        new SaveService($flaky, $flakyAuth, $flakyPublic),
+        $flakyPublic,
+        $flaky,
+    );
+    try {
+        $sessions = fn(string $id): int => (int) $db
+            ->get()
+            ->fetchOne('SELECT COUNT(*) FROM sessions WHERE player_id=?', [$id]);
+        $faults->armed = 'DELETE FROM login_intents';
+        $owner = account($signInIp);
+        check($faults->thrown === 1, 'sign-in met a deadlock');
+        check($sessions($owner['id']) === 1, 'the replayed sign-in issues one session');
+
+        $faults->armed = 'INSERT INTO towns';
+        status(
+            200,
+            callApi('POST', 'towns', townBody('Deadlock Retry'), $owner),
+            'save after a deadlock',
+        );
+        check($faults->thrown === 2, 'the save met a deadlock');
+        check(
+            (int) $db
+                ->get()
+                ->fetchOne('SELECT COUNT(*) FROM towns WHERE player_id=?', [$owner['id']]) === 1,
+            'the replayed save stores one town',
+        );
+
+        $token = bin2hex(random_bytes(32));
+        $changed = 'retried-' . bin2hex(random_bytes(6)) . '@example.test';
+        $db->get()->insert('email_changes', [
+            'token_hash' => $auth->hash($token),
+            'player_id' => $owner['id'],
+            'email' => $changed,
+            'expires_at' => time() + 900,
+        ]);
+        $faults->armed = 'UPDATE players SET email';
+        status(
+            200,
+            callApi('POST', 'account/email/confirm', ['token' => $token], [], $signInIp),
+            'email change after a deadlock',
+        );
+        check($faults->thrown === 3, 'the email change met a deadlock');
+        check(
+            $db->get()->fetchOne('SELECT email FROM players WHERE id=?', [$owner['id']]) ===
+                $changed,
+            'the replayed email change commits',
+        );
+
+        $faults->armed = 'DELETE FROM sessions';
+        $signedOut = callApi('POST', 'auth/logout', new stdClass(), $owner, $signInIp);
+        check($signedOut['status'] === 200 && $faults->thrown === 4, 'sign-out after a deadlock');
+        check($sessions($owner['id']) === 0, 'the replayed sign-out removes its session');
+    } finally {
+        $api = $realApi;
     }
     echo "Deadlock retry checks passed ($count assertions).\n";
 } finally {

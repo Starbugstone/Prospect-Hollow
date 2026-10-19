@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace App;
+use Doctrine\DBAL\Configuration;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Exception\DeadlockException;
@@ -34,6 +35,8 @@ final class Database
         23 => '/schema-sync-approval',
     ];
     private ?Connection $connection = null;
+    /** Tests may wrap the driver, for example to inject a deadlock. */
+    public function __construct(private readonly ?Configuration $configuration = null) {}
     /**
      * Retry once only when the database rolled back this entire transaction.
      * @template T
@@ -82,7 +85,7 @@ final class Database
         if ($params['driver'] === 'pdo_mysql') {
             $params['charset'] = 'utf8mb4';
         }
-        return $this->connection = DriverManager::getConnection($params);
+        return $this->connection = DriverManager::getConnection($params, $this->configuration);
     }
     public function migrate(): void
     {
