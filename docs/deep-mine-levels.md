@@ -228,7 +228,9 @@ every gem and fails if:
 - a falling gem slows below a fifth of its top speed and then speeds up again before
   landing (a gem beamed through a portal lands on the entrance pad and starts a new fall
   out of the exit pad, and a gem turning back on itself is bouncing, so it has landed);
-- two gems that are not fading out come within 0.6 cells of each other.
+- two gems that are not fading out come within 0.6 cells of each other. Gems sinking
+  past a rising floatstone, and a moving gem passing a gem held on a chained cell, are
+  exempt: gravity lets them cross. Two gems resting on the same chained cell still fail.
 
 It is slow and needs a browser, so CI does not run it. Run it after changing board
 animation, gravity or board shapes. Start the dev server, run the check, then stop

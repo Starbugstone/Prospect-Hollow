@@ -75,17 +75,23 @@ async function playMoves({ moves, frame }) {
     if (!swap) break;
     const swapped = [swap.aIndex, swap.bIndex].map((index) => animator.indexToGemId[index]);
     const frames = [];
+    // A gem resting in the middle of a chained cell is held there by its chain.
+    const held = (x, y) => {
+      const [col, row] = [x - 0.5, y - 0.5];
+      if (Math.abs(col - Math.round(col)) > 0.02 || Math.abs(row - Math.round(row)) > 0.02)
+        return false;
+      return (
+        animator.tiles[Math.round(row) * animator.boardCols + Math.round(col)]?.chainHealth > 0
+      );
+    };
     const sample = () =>
       frames.push(
         [...animator.gemSprites]
           .filter(([, sprite]) => sprite.visible)
-          .map(([id, sprite]) => [
-            id,
-            sprite.x / animator.cellSize,
-            sprite.y / animator.cellSize,
-            sprite.alpha,
-            !!sprite.__float,
-          ]),
+          .map(([id, sprite]) => {
+            const [x, y] = [sprite.x / animator.cellSize, sprite.y / animator.cellSize];
+            return [id, x, y, sprite.alpha, !!sprite.__float, held(x, y)];
+          }),
       );
     sample();
     // A hint may double-tap a bonus where it stands rather than swap it.
@@ -104,15 +110,22 @@ async function playMoves({ moves, frame }) {
 }
 
 // Gems drawn on top of each other. The swapped pair crosses on purpose; a fading
-// gem is on its way out; gems sink past a rising floatstone, which is drawn in front.
+// gem is on its way out; gems sink past a rising floatstone, which is drawn in front;
+// gravity lets gems fall past a chained gem, so a moving gem may cross a held one.
 function overlaps({ swapped, frames }) {
   const found = [];
   frames.forEach((gems, frame) => {
+    const before = new Map((frames[frame - 1] ?? []).map((gem) => [gem[0], gem]));
+    const moving = ([id, x, y]) => {
+      const last = before.get(id);
+      return !!last && Math.hypot(x - last[1], y - last[2]) >= REST;
+    };
     const solid = gems.filter(([, , , alpha]) => alpha >= 0.9);
     for (let a = 0; a < solid.length; a++)
       for (let b = a + 1; b < solid.length; b++) {
         if (swapped.includes(solid[a][0]) && swapped.includes(solid[b][0])) continue;
         if (solid[a][4] || solid[b][4]) continue;
+        if ((solid[a][5] && moving(solid[b])) || (solid[b][5] && moving(solid[a]))) continue;
         const gap = Math.hypot(solid[a][1] - solid[b][1], solid[a][2] - solid[b][2]);
         if (gap < MIN_GAP) found.push({ frame, gems: [solid[a][0], solid[b][0]], gap });
       }

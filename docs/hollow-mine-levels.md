@@ -145,15 +145,17 @@ breakthrough, lock and dial levels report no overlaps or stutters.
 After the portal pads change (2026-10-19), a gem beamed through a portal lands on the
 entrance pad and starts a new fall out of the exit pad, and a landing bounce that falls
 between two frames counts as the landing. Portal levels 475, 476, 500 and 506 report no
-overlaps or stutters. Levels 480, 486 and 504 report 14–38 frames of gems falling past
+overlaps or stutters. Levels 480, 486 and 504 reported 14–38 frames of gems falling past
 the chained moon gems and pearls on their sidings; the same build without the change
-reports 15–36 frames there, so this is how chained cargo already looked. Levels 13,
+reported 15–36 frames there, so this is how chained cargo already looked. Levels 13,
 373, 376, 385, 397, 409, 423, 487, 507 and 541 report nothing on either build.
 
 Gravity keeps a chained gem in its cell and lets the gems above fall past it
 (`applyColumnGravity` and `applyShapedGravity` in `TileManager.js`), so each gem that
 refills the cells below crosses the chained gem's sprite for one or two frames at
-60 fps. These videos replay hint-led moves from checkpoints, first at normal speed and
+60 fps. That crossing shows the rule, so the check now exempts a moving gem passing a
+gem held on a chained cell; 480, 486 and 504 then report no overlaps or stutters. These
+videos, recorded before the exemption, replay hint-led moves from checkpoints, first at normal speed and
 then 8× slower (4× for the long cascade). They ring both gems whenever they are drawn
 less than 0.6 cells apart (amber for the chained gem, red for the falling one), pause
 half a second at each new overlap and name the gems and the gap:
