@@ -17,6 +17,8 @@ final class SyncRejections
     public const KEPT = 5;
     /** Days a rejection is kept at most; the daily cleanup removes older ones. */
     public const KEEP_DAYS = 30;
+    /** Keep one immutable full comparison per revision during a retry burst. */
+    public const THROTTLE_MS = 60000;
     /** Admin edits of one reset, at most. */
     private const MAX_CHANGES = 200;
     /** The latest rejection made against the town's current revision (milliseconds in SQL). */
@@ -30,30 +32,54 @@ final class SyncRejections
         ?array $expected,
         ApiError $error,
     ): void {
-        $db->insert('town_sync_rejections', [
-            'id' => bin2hex(random_bytes(16)),
-            'town_id' => $row['id'],
-            'rejected_at' => (int) floor(microtime(true) * 1000),
-            'revision' => (int) $row['revision'],
-            'code' => substr((string) ($error->details['code'] ?? 'save_rejected'), 0, 64),
-            'field' => is_string($error->details['field'] ?? null)
-                ? mb_substr($error->details['field'], 0, 255)
-                : null,
-            'message' => mb_substr($error->getMessage(), 0, 255),
-            'cloud' => $row['profile'],
-            'upload' => $upload,
-            'expected' => $expected === null ? null : json_encode($expected, JSON_THROW_ON_ERROR),
-        ]);
-        $kept = $db->fetchFirstColumn(
-            'SELECT id FROM town_sync_rejections WHERE town_id=? ORDER BY rejected_at DESC,id LIMIT ' .
-                self::KEPT,
-            [$row['id']],
-        );
-        $db->executeStatement(
-            'DELETE FROM town_sync_rejections WHERE town_id=? AND id NOT IN (?)',
-            [$row['id'], $kept],
-            [ParameterType::STRING, ArrayParameterType::STRING],
-        );
+        Database::retryOnDeadlock($db, function () use ($db, $row, $upload, $expected, $error) {
+            // Recording happens after the failed save released its locks. Serialize
+            // captures on the town so concurrent retries cannot each store a copy.
+            if (
+                !$db->fetchOne(
+                    'SELECT id FROM towns WHERE id=? AND deleted_at IS NULL FOR UPDATE',
+                    [$row['id']],
+                )
+            ) {
+                return;
+            }
+            $now = (int) floor(microtime(true) * 1000);
+            if (
+                $db->fetchOne(
+                    'SELECT id FROM town_sync_rejections WHERE town_id=? AND revision=? AND rejected_at>? ORDER BY rejected_at DESC,id LIMIT 1',
+                    [$row['id'], (int) $row['revision'], $now - self::THROTTLE_MS],
+                ) !== false
+            ) {
+                // Keep the original reason with its original upload and expectation:
+                // an admin may inspect or restore that exact comparison later.
+                return;
+            }
+            $db->insert('town_sync_rejections', [
+                'id' => bin2hex(random_bytes(16)),
+                'town_id' => $row['id'],
+                'rejected_at' => $now,
+                'revision' => (int) $row['revision'],
+                'code' => substr((string) ($error->details['code'] ?? 'save_rejected'), 0, 64),
+                'field' => is_string($error->details['field'] ?? null)
+                    ? mb_substr($error->details['field'], 0, 255)
+                    : null,
+                'message' => mb_substr($error->getMessage(), 0, 255),
+                'cloud' => $row['profile'],
+                'upload' => $upload,
+                'expected' =>
+                    $expected === null ? null : json_encode($expected, JSON_THROW_ON_ERROR),
+            ]);
+            $kept = $db->fetchFirstColumn(
+                'SELECT id FROM town_sync_rejections WHERE town_id=? ORDER BY rejected_at DESC,id LIMIT ' .
+                    self::KEPT,
+                [$row['id']],
+            );
+            $db->executeStatement(
+                'DELETE FROM town_sync_rejections WHERE town_id=? AND id NOT IN (?)',
+                [$row['id'], $kept],
+                [ParameterType::STRING, ArrayParameterType::STRING],
+            );
+        });
     }
     public static function expire(Connection $db): void
     {

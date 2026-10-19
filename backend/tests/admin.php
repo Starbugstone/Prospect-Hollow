@@ -953,8 +953,12 @@ try {
         adminCall('GET', 'towns/' . $syncId . '/sync/' . str_repeat('0', 32), null, $s),
         'unknown rejection',
     );
-    // Retries are kept up to a cap, newest first.
+    // A retry burst keeps one immutable comparison. Later windows fill the log.
     for ($i = 0; $i < App\SyncRejections::KEPT; $i++) {
+        $db->get()->executeStatement(
+            'UPDATE town_sync_rejections SET rejected_at=? WHERE town_id=?',
+            [time() * 1000 - App\SyncRejections::THROTTLE_MS - ($i + 1) * 1000, $syncId],
+        );
         status(422, callApi('PUT', 'towns/' . $syncId, $upload(1), $syncPlayer), 'desync retry');
     }
     check(

@@ -91,6 +91,8 @@ jobs:
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/honours.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/player-distinctions.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/concurrency.php
+          TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/sync-rejections.php
+          TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/deadlocks.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/release-health.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/admin.php
       - name: Build and prepare the hosting release
