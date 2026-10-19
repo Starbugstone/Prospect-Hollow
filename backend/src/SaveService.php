@@ -233,7 +233,8 @@ final class SaveService
     {
         if (
             !is_string($body['uploadId'] ?? null) ||
-            !preg_match('/^[a-zA-Z0-9-]{16,64}$/D', $body['uploadId'])
+            !preg_match('/^[a-zA-Z0-9-]{16,64}$/D', $body['uploadId']) ||
+            str_starts_with($body['uploadId'], 'admin-')
         ) {
             throw new ApiError(422, 'A save upload ID is required.');
         }

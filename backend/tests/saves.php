@@ -55,6 +55,27 @@ try {
     $body = townBody();
     $town = status(200, callApi('POST', 'towns', $body, $a), 'attach');
     $id = $town['townId'];
+    foreach (['admin-reset-', 'admin-restore-'] as $prefix) {
+        $reserved = $prefix . str_repeat('a', 20);
+        $badCreate = townBody('Reserved Upload');
+        $badCreate['uploadId'] = $reserved;
+        status(422, callApi('POST', 'towns', $badCreate, $a), 'reserved client create ID');
+        $badSave = ['baseRevision' => 1, 'uploadId' => $reserved, 'profile' => profile()];
+        status(422, callApi('PUT', 'towns/' . $id, $badSave, $a), 'reserved client save ID');
+        status(
+            422,
+            callApi('PUT', 'towns/' . $id . '/resolve', $badSave, $a),
+            'reserved client resolve ID',
+        );
+    }
+    check(
+        !isset(
+            status(200, callApi('GET', 'towns/' . $id, null, $a), 'ordinary upload flags')[
+                'adminReset'
+            ],
+        ),
+        'rejected client IDs cannot mark an ordinary save as an admin reset',
+    );
     $listed = status(200, callApi('GET', 'account', null, $a), 'owner town summaries')['towns'];
     check(
         count($listed) === 1 &&
