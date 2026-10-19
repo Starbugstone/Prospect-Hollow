@@ -175,8 +175,8 @@
       </li>
     </ul>
     <TownDeleteDialog
-      v-if="deleting"
-      :town="deleting"
+      v-if="deletingTown"
+      :town="deletingTown"
       @close="deleting = null"
       @deleted="deleted"
     />
@@ -188,7 +188,7 @@
   </div>
 </template>
 <script setup>
-import { computed, inject, nextTick, ref } from 'vue';
+import { computed, inject, nextTick, ref, watch } from 'vue';
 import {
   cloud,
   refreshAccount,
@@ -259,6 +259,18 @@ const cards = computed(() => {
     }),
   }));
 });
+// A conflict refresh replaces the listing. The dialog must use its latest card,
+// including the summary the player checks before confirming a second attempt.
+// Retain the opening card only while an operation is pending: a successful
+// delete refreshes the listing before the dialog emits its success event.
+const deletingTown = computed(
+  () =>
+    cards.value.find((town) => town.townId === deleting.value?.townId) ??
+    (busy.value ? deleting.value : null),
+);
+watch(deletingTown, (town) => {
+  if (!town && !busy.value) deleting.value = null;
+});
 const stats = (summary) =>
   summary
     ? `${t('{count} buildings', { count: summary.buildings })} · ${t('{coins} coins', { coins: number(summary.coins) })}`
@@ -282,8 +294,8 @@ function remove(town) {
   menu.value = null;
   deleting.value = town;
 }
-function deleted() {
-  message.value = t('“{town}” was deleted from your account.', { town: deleting.value.name });
+function deleted(name) {
+  message.value = t('“{town}” was deleted from your account.', { town: name });
   deleting.value = null;
 }
 async function startCreating(slot) {

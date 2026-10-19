@@ -81,7 +81,7 @@ const emit = defineEmits([
   'community',
   'recovery',
   'signed-in',
-  'email-confirmed',
+  'email-link-used',
 ]);
 const { dialog, closeButton, dismissBackdrop } = useNativeDialog(() => emit('close'));
 const { message, act } = provideAccountContext({
@@ -140,8 +140,16 @@ if (props.section === 'office') view.value = 'account';
 else if (props.section) manage(props.section);
 // An email change link proves the new address, on this device or any other.
 async function confirmEmail(token) {
-  const { email } = await confirmEmailChange(token);
-  emit('email-confirmed');
+  let email;
+  try {
+    ({ email } = await confirmEmailChange(token));
+  } catch (error) {
+    // Permanent link rejections should appear once. Offline, busy and server
+    // failures retain the token so opening the panel later can retry.
+    if ([401, 409, 422].includes(error.status)) emit('email-link-used');
+    throw error;
+  }
+  emit('email-link-used');
   message.value = t('Your account now uses {email}.', { email });
   if (cloud.account && !cloud.sessionExpired) await refreshAccount();
 }

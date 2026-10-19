@@ -148,7 +148,7 @@
     @close="accountOpen = false"
     @changed="reload"
     @signed-in="loginLink = ''"
-    @email-confirmed="emailLink = ''"
+    @email-link-used="emailLink = ''"
     @recovery="
       accountOpen = false;
       recoveryOpen = true;

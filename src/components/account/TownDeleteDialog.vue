@@ -120,13 +120,18 @@ async function backup() {
 }
 async function remove() {
   error.value = '';
+  const name = props.town.name;
   try {
     await deleteAccountTown(props.town, confirmation.value);
   } catch (e) {
-    error.value = e.message;
+    if (e.status === 409) {
+      confirmation.value = '';
+      error.value =
+        'This town changed on another device. Check its latest details before deleting.';
+    } else error.value = e.message;
     return;
   }
-  emit('deleted');
+  emit('deleted', name);
 }
 </script>
 <style>
