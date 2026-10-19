@@ -152,13 +152,13 @@ reported 15–36 frames there, so this is how chained cargo already looked. Leve
 
 Gravity keeps a chained gem in its cell and lets the gems above fall past it
 (`applyColumnGravity` and `applyShapedGravity` in `TileManager.js`), so each gem that
-refills the cells below crosses the chained gem's sprite for one or two frames at
-60 fps. That crossing shows the rule, so the check now exempts a moving gem passing a
-gem held on a chained cell; 480, 486 and 504 then report no overlaps or stutters. These
-videos, recorded before the exemption, replay hint-led moves from checkpoints, first at normal speed and
-then 8× slower (4× for the long cascade). They ring both gems whenever they are drawn
-less than 0.6 cells apart (amber for the chained gem, red for the falling one), pause
-half a second at each new overlap and name the gems and the gap:
+refills the cells below crosses the chained gem's sprite for one or two frames at 60
+fps. That crossing shows the rule, so the check now exempts a moving gem passing a gem
+held on a chained cell; 480, 486 and 504 then report no overlaps or stutters. These
+videos, recorded before the exemption, replay hint-led moves from checkpoints, first at
+normal speed and then 8× slower (4× for the long cascade). They ring both gems whenever
+they are drawn less than 0.6 cells apart (amber for the chained gem, red for the falling
+one), pause half a second at each new overlap and name the gems and the gap:
 
 - [Level 480](images/hollow-mines/chained-overlaps-480-30fps.mp4): gems and a free moon
   gem falling past the chained moon gems on row 3, then an emerald falling past a
