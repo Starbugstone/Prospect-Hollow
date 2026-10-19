@@ -5,6 +5,11 @@ use App\SaveService;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 ini_set('memory_limit', '128M');
+// Its own address keeps the shared 127.0.0.1 sign-in limit for the other suites.
+$signInIp = [
+    'REMOTE_ADDR' =>
+        '127.' . random_int(1, 254) . '.' . random_int(1, 254) . '.' . random_int(1, 254),
+];
 $documents = [];
 $rawBytes = 0;
 function exportDocument(string $marker, int $bytes, bool $upload = false): string
@@ -32,8 +37,8 @@ function exportTemps(): array
     return glob(sys_get_temp_dir() . '/php*') ?: [];
 }
 try {
-    $owner = account();
-    $other = account();
+    $owner = account($signInIp);
+    $other = account($signInIp);
     $foreign = status(
         200,
         callApi('POST', 'towns', townBody('Foreign Export'), $other),
@@ -234,8 +239,16 @@ try {
         'malformed stored JSON fails before streaming',
     );
     check(exportTemps() === $baseline, 'failed export creation deletes its temporary file');
-    $bucket = $auth->hash('export:' . $owner['id'] . ':' . intdiv(time(), 3600));
-    $db->get()->update('limits', ['hits' => 10], ['bucket' => $bucket]);
+    // Fill this hour's export budget and the next, so crossing the hour cannot skip it.
+    foreach ([0, 1] as $ahead) {
+        $bucket = $auth->hash('export:' . $owner['id'] . ':' . (intdiv(time(), 3600) + $ahead));
+        $db->get()->delete('limits', ['bucket' => $bucket]);
+        $db->get()->insert('limits', [
+            'bucket' => $bucket,
+            'hits' => 10,
+            'until_at' => time() + 7200,
+        ]);
+    }
     $limited = callApi('GET', 'account/export', null, $owner);
     status(429, $limited, 'export rate limiting happens before streaming');
     check(
