@@ -1492,7 +1492,7 @@ const PLANS = [
         tip: 'A quiet key: one pearl, one lock.',
       },
       {
-        board: 'q....../.R.R.R./...C.../......./......./......./.D.B.D./......./.E.E.E.',
+        board: '......./.R.R.R./...C.../......./......./q....../.D.B.D./......./.E.E.E.',
         gravity: 'up',
         ice: 0,
         chestTarget: 49500,
