@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { MeshStandardMaterial, Scene, Vector3 } from 'three';
 import { TOWN_EDGE, horizonMaterial, setTownAtmosphere } from '../src/game/town/TownAtmosphere';
 import { landscapeGeometry } from '../src/game/town/TownMillrace';
 import { RAIL_EDGE } from '../src/game/town/TownLayout';
 import { RIVER, riverCenterX, riverPath } from '../src/game/town/TownRiver';
+import { focusTownPlace } from '../src/game/town/TownCamera';
 import { PERSONAL_AREAS } from '../src/data/townPersonalisation';
 import {
   groundHeight,
@@ -156,4 +157,33 @@ it('measures fog by horizontal distance from the town center, giving a round hor
   material.onBeforeCompile(shader);
   expect(shader.vertexShader).toContain('vFogDepth = length(horizonPosition.xz);');
   material.dispose();
+});
+
+describe('Panel requests to focus a town place', () => {
+  const scene = () => ({
+    camera: { position: new Vector3(25, 25, 25) },
+    controls: { enabled: false, target: new Vector3(), update: vi.fn() },
+    overview: true,
+    render: vi.fn(),
+  });
+  it('frames a monument behind an open panel with player controls disabled', () => {
+    const d = scene();
+    const area = PERSONAL_AREAS.find(({ id }) => id === 'minePlaque') ?? PERSONAL_AREAS[0];
+    expect(focusTownPlace(d, area.id)).toBe(true);
+    expect(d.controls.target.toArray()).toEqual([area.positions[0][0], 2, area.positions[0][1]]);
+    expect(d.controls.enabled).toBe(false);
+    expect(d.overview).toBe(false);
+    expect(d.render).toHaveBeenCalledOnce();
+    expect(d.controls.update).toHaveBeenCalledOnce();
+  });
+  it.each(['raid', 'cinematic', 'presentation', 'eventCamera'])(
+    'preserves %s camera priority while a panel is open',
+    (camera) => {
+      const d = scene();
+      d[camera] = {};
+      expect(focusTownPlace(d, PERSONAL_AREAS[0].id)).toBe(false);
+      expect(d.controls.target.toArray()).toEqual([0, 0, 0]);
+      expect(d.render).not.toHaveBeenCalled();
+    },
+  );
 });

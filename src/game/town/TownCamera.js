@@ -141,7 +141,9 @@ export function findVisitor(d, id) {
 }
 
 export function focusTownPlace(d, id) {
-  if (d.raid || d.cinematic || d.presentation || d.eventCamera || !d.controls.enabled) return false;
+  // Panels pause player controls; their own focus requests still move the camera.
+  // Scripted cameras retain priority over these requests.
+  if (d.raid || d.cinematic || d.presentation || d.eventCamera) return false;
   const area = PERSONAL_AREAS.find((a) => a.id === id);
   const position = PLOTS[id] ?? area?.positions[0];
   if (!position) return false;
