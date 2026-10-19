@@ -4,7 +4,13 @@ import { TileManager } from '../src/game/engine/TileManager';
 import { BonusActivator } from '../src/game/engine/BonusActivator';
 import { HintEngine } from '../src/game/engine/HintEngine';
 import { getBonusFusion } from '../src/game/engine/BonusFusion';
-import { bentBeams, blastLog, lensGeometry, lensLog } from '../src/game/engine/LensBeams';
+import {
+  bentBeams,
+  blastLog,
+  lensGeometry,
+  lensLog,
+  recordLensBeams,
+} from '../src/game/engine/LensBeams';
 
 const COLS = 5;
 const ROWS = 5;
@@ -78,24 +84,32 @@ describe('lens beams', () => {
       [at(1, 0)]: lens('s'),
       [at(4, 0)]: lens('n'),
     });
-    const { hits, beams } = bentBeams(tiles, COLS, ROWS, [
-      { axis: 'row', index: 1 },
-      { axis: 'row', index: 1 },
-    ]);
-    expect([...hits]).toEqual([
+    const lenses = lensLog();
+    recordLensBeams(
+      lenses,
+      bentBeams(tiles, COLS, ROWS, [
+        { axis: 'row', index: 1 },
+        { axis: 'row', index: 1 },
+      ]),
+    );
+    expect([...lenses.hits]).toEqual([
       [at(2, 0), 1],
       [at(3, 0), 1],
     ]);
-    expect(beams).toHaveLength(2);
+    expect(lenses.beams).toHaveLength(2);
   });
 
-  it('counts distinct sweeps through the same corner lens as separate beams', () => {
+  it('turns one hit per activation when both of its sweeps reach the same corner lens', () => {
     const { tiles } = makeState({ [at(0, 0)]: lens('se') });
-    const { hits } = bentBeams(tiles, COLS, ROWS, [
-      { axis: 'row', index: 0 },
-      { axis: 'column', index: 0 },
-    ]);
-    expect(hits.get(at(2, 2))).toBe(2);
+    const lenses = lensLog();
+    recordLensBeams(
+      lenses,
+      bentBeams(tiles, COLS, ROWS, [
+        { axis: 'row', index: 0 },
+        { axis: 'column', index: 0 },
+      ]),
+    );
+    expect(lenses.hits.get(at(2, 2))).toBe(1);
   });
 
   it('draws silver mirrors and gold prisms at their real angle', () => {
@@ -160,7 +174,7 @@ describe('starglass', () => {
     expect(result.layersCleared).toBe(2);
   });
 
-  it('counts independent beams from both ends of one sweep', () => {
+  it('turns one hit from a sweep that reaches lenses at both ends', () => {
     const target = at(1, 2);
     const state = makeState({
       [at(1, 0)]: lens('e'),
@@ -169,9 +183,9 @@ describe('starglass', () => {
     });
     state.board[at(1, 1)] = createGem('cross');
     const match = fireChain(state, at(1, 1));
-    expect(match.blasts.lenses.hits.get(target)).toBe(2);
+    expect(match.blasts.lenses.hits.get(target)).toBe(1);
     resolve(state, [match]);
-    expect(state.tiles[target].health).toBe(0);
+    expect(state.tiles[target].health).toBe(1);
   });
 
   it('does not count a returning segment as another turned beam', () => {
