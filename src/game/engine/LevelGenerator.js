@@ -13,7 +13,7 @@ import { layerCount } from './TileRules.js';
 import { CORE_BONUSES, CORE_CHARGES } from './ChapterMechanics.js';
 import { getLevelStarTarget } from '../../data/starRating.js';
 import { applyDeepMineSpec } from './DeepMineMechanics.js';
-import { isPlayableCell } from './BoardTopology.js';
+import { isGravitySwitch, isPlayableCell } from './BoardTopology.js';
 
 const createSeededRng = (seed) => {
   let current = seed % 2147483647;
@@ -256,8 +256,10 @@ const createExpansionLevel = (id) => {
     } else if (symbol === 'E') {
       tile.exit = true;
     } else if (symbol === 'q' || symbol === 'Q') {
-      // A gravity switch: a moon lock flips gravity once, a moon dial on every blast.
+      // A gravity switch fills its cell: a moon lock flips gravity once, a moon dial
+      // on every blast.
       tile.gravitySwitch = symbol === 'q' ? 'lock' : 'dial';
+      layout.blockedCells.push(cell);
     } else if (symbol === 'f') {
       // A frozen gem on ice: a neighbouring clear thaws it.
       tile.state = 'FROZEN';
@@ -332,6 +334,7 @@ const createExpansionLevel = (id) => {
     tile.type === 'standard' &&
     !tile.health &&
     !tile.phaseSeal &&
+    !tile.gravitySwitch &&
     !fossilCells.has(index) &&
     !sporeCells.has(index) &&
     (!spec.openExitRows || index < cols * (rows - spec.openExitRows)) &&
@@ -362,11 +365,12 @@ const createExpansionLevel = (id) => {
       }
     }
   }
-  // Low gravity: the whole cavern falls up, or the rows above the seam do.
+  // Low gravity: the whole cavern falls up, or the rows above the seam do. A moon
+  // lock or dial shares its cell's direction: the dial shows it, an opened lock keeps it.
   if (spec.gravity === 'up' || spec.gravity === 'split')
     for (const [index, tile] of tiles.entries())
       if (
-        isPlayableCell(tile) &&
+        (isPlayableCell(tile) || isGravitySwitch(tile)) &&
         (spec.gravity === 'up' || Math.floor(index / cols) < (spec.seam ?? Math.floor(rows / 2)))
       )
         tile.fall = 'up';

@@ -1,4 +1,6 @@
-import { gravityPath, isPlayableCell } from './BoardTopology.js';
+import { gravityPath, isGravitySwitch, isPlayableCell } from './BoardTopology.js';
+
+export { isGravitySwitch };
 
 // Low-gravity caverns: each playable cell may fall up (`tile.fall === 'up'`).
 // Rows that share a direction form a frame; refill enters at the frame's far end.
@@ -158,12 +160,11 @@ export const strandedCargo = (board, tiles, cols, rows) =>
     isCargo(gem) && !cargoReachesExit(board, tiles, index, cols, rows) ? [index] : [],
   );
 
-// Gravity switches are floor markers on side or corner cells; gems pass freely. Only a
-// bonus blast that covers one flips gravity, at most once per move: every cell that
-// fell down now falls up and the other way round. A moon lock (`'lock'`) works once
-// and leaves the board; a moon dial (`'dial'`) stays and flips again on a later move.
-export const isGravitySwitch = (tile) =>
-  tile?.gravitySwitch === 'lock' || tile?.gravitySwitch === 'dial';
+// Gravity switches fill their side or corner cell, so a column treats them as a wall
+// and refills the cell beyond. Only a bonus blast that covers one flips gravity, at
+// most once per move: every cell that fell down now falls up and the other way round.
+// A moon lock (`'lock'`) works once and opens into an ordinary cell; a moon dial
+// (`'dial'`) stays and flips again on a later move.
 
 export function flipGravity(tiles, switchIndex, step) {
   for (const tile of tiles) {

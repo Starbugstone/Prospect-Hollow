@@ -108,6 +108,22 @@ describe('append-only floating seam chapters', () => {
     }
   });
 
+  it("keeps moon locks and dials gem-free and in their cavern's gravity", () => {
+    const switched = hollow.filter((level) => level.tiles.some((tile) => tile.gravitySwitch));
+    expect(switched.length).toBeGreaterThan(0);
+    for (const { id, board, tiles, boardCols: cols } of switched)
+      for (const [index, tile] of tiles.entries()) {
+        if (!tile.gravitySwitch) continue;
+        expect(board[index], `level ${id} cell ${index}`).toBeNull();
+        // An opened lock or the dial's arrow must match the cells it sits among.
+        const row = Math.floor(index / cols);
+        const neighbour = tiles
+          .slice(row * cols, (row + 1) * cols)
+          .find((cell) => cell.type === 'standard' && !cell.gravitySwitch && !cell.sealed);
+        expect(tile.fall, `level ${id} cell ${index}`).toBe(neighbour.fall);
+      }
+  });
+
   it('gives every cargo piece a route to an exit once every chamber is open', () => {
     for (const level of hollow) {
       const { board, boardCols: cols, boardRows: rows } = level;

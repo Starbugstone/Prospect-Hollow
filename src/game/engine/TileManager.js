@@ -130,6 +130,13 @@ export class TileManager {
       });
 
       const damageTargets = new Set([...impacted, ...protectedIndices]);
+      // A switch holds no gem, so only a bonus blast's own cells can reach it.
+      const switchIndex = flipped
+        ? undefined
+        : pendingMatches
+            .filter((match) => !GEM_TYPES.includes(match.type))
+            .flatMap((match) => match.indices)
+            .find((index) => isGravitySwitch(tiles[index]));
       // Only ordinary matches damage adjacent blocks. Special effects must hit
       // the block itself; clearing a nearby gem does not extend their footprint.
       const matchedIndices = new Set(
@@ -146,7 +153,7 @@ export class TileManager {
         }
       }
 
-      if (!damageTargets.size && !pendingBonus) {
+      if (!damageTargets.size && !pendingBonus && switchIndex === undefined) {
         break;
       }
 
@@ -278,18 +285,9 @@ export class TileManager {
       if (hasRoots) totalLayersCleared += releaseCutRoots(tiles, step);
       if (hasFossils) collectFinishedFossils(tiles, step);
       if (hasSealedChambers(tiles)) openBreakthroughs(tiles, step);
-      if (!flipped) {
-        const switchIndex = [...impacted].find(
-          (index) =>
-            isGravitySwitch(tiles[index]) &&
-            pendingMatches.some(
-              (match) => !GEM_TYPES.includes(match.type) && match.indices.includes(index),
-            ),
-        );
-        if (switchIndex !== undefined) {
-          flipped = true;
-          flipGravity(tiles, switchIndex, step);
-        }
+      if (switchIndex !== undefined) {
+        flipped = true;
+        flipGravity(tiles, switchIndex, step);
       }
       // A fusion can break through an anchor and remove its gem in the same step.
       step.cleared = [...cleared].sort((a, b) => a - b);

@@ -1,7 +1,7 @@
 import { isAnchored } from './TileRules.js';
 import { GEM_TYPES } from './GemFactory.js';
 import { dominantGemType, getBonusFusion } from './BonusFusion.js';
-import { isPlayableCell } from './BoardTopology.js';
+import { isBlastTarget, isPlayableCell } from './BoardTopology.js';
 import { bentBeams, hasLenses, recordLensBeams, sweepLines } from './LensBeams.js';
 
 // Board bonuses plus the toolbar powers that share their reaction rules.
@@ -127,12 +127,7 @@ export class BonusActivator {
       );
     };
     const touch = (index) => {
-      if (
-        index < 0 ||
-        index >= board.length ||
-        affected.has(index) ||
-        !isPlayableCell(tiles[index])
-      )
+      if (index < 0 || index >= board.length || affected.has(index) || !isBlastTarget(tiles[index]))
         return;
       affected.add(index);
       const gem = board[index];

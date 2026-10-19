@@ -53,10 +53,11 @@ can still reach a hatch. Under inverted gravity floatstones sink.
 
 ### Gravity switches
 
-Floor markers on a side or corner cell; gems pass freely. Only a bonus blast that
-covers the cell triggers one; ordinary matches never do. At most one flip per move.
+Fixtures that fill a side or corner cell. No gem enters, rests on or passes through
+it: the column treats it as a wall and refills the cell beyond it. Only a bonus blast
+that covers the cell triggers one; ordinary matches never do. At most one flip per move.
 
-- **Moon lock (one-shot):** flips gravity once and leaves the board. The level
+- **Moon lock (one-shot):** flips gravity once and opens into an ordinary cell. The level
   starts with gravity the wrong way for the goal.
 - **Moon dial (multi):** flips gravity on every triggering move. Its arrow always
   shows the current direction. Later levels may place it nearer the crafting area.

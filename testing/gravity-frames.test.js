@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createGem } from '../src/game/engine/GemFactory';
 import { TileManager } from '../src/game/engine/TileManager';
 import { HintEngine } from '../src/game/engine/HintEngine';
+import { BonusActivator } from '../src/game/engine/BonusActivator';
 import { canSwapCells } from '../src/game/engine/TileRules';
 import {
   cargoPath,
@@ -26,6 +27,10 @@ const makeState = ({ up = () => false, extra = {} } = {}) => {
     ...(up(Math.floor(index / COLS)) ? { fall: 'up' } : {}),
     ...(extra[index] ?? {}),
   }));
+  // Moon locks and dials hold no gem, as the level generator leaves them.
+  tiles.forEach((tile, index) => {
+    if (tile.gravitySwitch) board[index] = null;
+  });
   return { board, tiles, cols: COLS, rows: ROWS };
 };
 const float = () => ({ ...createGem('relic'), float: true });
@@ -175,8 +180,54 @@ describe('gravity switches', () => {
     expect(result.steps[0].gravityFlip).toEqual({ index: 20, up: false });
     expect(state.tiles.every((tile) => tile.fall !== 'up')).toBe(true);
     expect(state.tiles[20].gravitySwitch).toBeNull();
+    // The used lock opens into an ordinary cell, filled like any other.
+    expect(result.board[20]).toBeTruthy();
     // The refill now enters from the top again.
     expect(result.steps[0].spawns.map(({ index }) => index).sort((a, b) => a - b)).toEqual([0, 1]);
+  });
+
+  it('keep gems out of a moon dial cell and refill the cells beyond it', () => {
+    for (const up of [false, true]) {
+      const state = makeState({ up: () => up, extra: { 10: { gravitySwitch: 'dial' } } });
+      // Clear the side wall on both sides of the dial in column 0.
+      const result = manager.getResolution({
+        ...state,
+        gemTypes: COLORS,
+        matches: [{ type: 'ruby', indices: [0, 5, 15, 20] }],
+      });
+      expect(result.board[10]).toBeNull();
+      expect(result.board.every((gem, index) => index === 10 || !!gem)).toBe(true);
+      // Nothing falls into or through the dial: each side refills from its own entry.
+      const crossings = result.steps.flatMap((step) =>
+        step.drops.filter(
+          ({ from, to }) =>
+            from % COLS === 0 && (to === 10 || from === 10 || (from - 10) * (to - 10) < 0),
+        ),
+      );
+      expect(crossings).toEqual([]);
+    }
+  });
+
+  it('turn gravity when a real cross fired along its row covers the dial', () => {
+    const state = makeState({ extra: { 10: { gravitySwitch: 'dial' } } });
+    state.board[12] = createGem('cross');
+    const indices = new BonusActivator().activate(
+      state.board,
+      COLS,
+      ROWS,
+      { aIndex: 12, bIndex: -1 },
+      null,
+      null,
+      state.tiles,
+    );
+    expect(indices).toContain(10);
+    const result = manager.getResolution({
+      ...state,
+      gemTypes: COLORS,
+      matches: [{ type: 'bonus-activation', indices }],
+    });
+    expect(result.steps[0].gravityFlip).toEqual({ index: 10, up: true });
+    expect(result.board[10]).toBeNull();
   });
 
   it('ignore ordinary matches beside or on a switch', () => {

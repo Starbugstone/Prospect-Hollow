@@ -145,8 +145,9 @@ const look = (animator, index) => ({
   overlay: animator.tileOverlays.has(index),
   floor: animator.iceSprites.has(index),
   fossil: animator.fossilSprites.has(index),
-  fill: animator.cellHighlights.get(index).fill,
-  stroke: animator.cellHighlights.get(index).stroke,
+  fixture: animator.fixtureSprites.has(index),
+  fill: animator.cellHighlights.get(index)?.fill,
+  stroke: animator.cellHighlights.get(index)?.stroke,
 });
 
 it('has a completion sample for every board obstacle', () => {
@@ -189,15 +190,17 @@ it('keeps a moon dial and updates its arrow after the last cargo leaves its exit
     boardRows: 1,
     cellSize: 48,
   });
-  expect(animator.tileOverlays.has(1)).toBe(true);
+  // The dial fills its own cell as a fixture: no gem slot and no gem overlay.
+  expect(animator.fixtureSprites.has(1)).toBe(true);
+  expect(animator.cellHighlights.has(1)).toBe(false);
   expect(animator.tileOverlays.has(2)).toBe(true);
-  const before = animator.tileOverlays.get(1);
+  const before = animator.fixtureSprites.get(1);
   animator.syncToBoard([{ id: 2, type: 'ruby' }, null, null]);
-  expect(animator.tileOverlays.get(1)).toBe(before);
+  expect(animator.fixtureSprites.get(1)).toBe(before);
   expect(look(animator, 1)).not.toEqual(look(animator, 0));
   expect(look(animator, 2)).toEqual(look(animator, 0));
   animator.updateTiles([PLAIN, { ...dial, fall: 'up' }, ACTIVE.relic]);
-  expect(animator.tileOverlays.get(1)).not.toBe(before);
+  expect(animator.fixtureSprites.get(1)).not.toBe(before);
   expect(animator.scene.add.image).toHaveBeenCalledWith(
     0,
     expect.any(Number),

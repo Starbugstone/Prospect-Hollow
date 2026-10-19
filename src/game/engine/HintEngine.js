@@ -45,6 +45,7 @@ export class HintEngine {
         evaluation = null,
         swap = null,
         bent = null,
+        hitsSwitch = indices.some((index) => isGravitySwitch(tiles[index])),
       } = {},
     ) => {
       const nearbyBlocks = new Set();
@@ -109,10 +110,7 @@ export class HintEngine {
                 gem?.type === 'relic' && origin < index && origin % cols === index % cols,
             ),
       ).length;
-      const flips =
-        switches && usesBonus && indices.some((index) => isGravitySwitch(tiles[index]))
-          ? flipValue
-          : 0;
+      const flips = switches && usesBonus && hitsSwitch ? flipValue : 0;
       return (
         flips +
         Number(usesBonus) * 50 +
@@ -201,8 +199,10 @@ export class HintEngine {
           }
           indices = [...affected];
         }
+        const hitsSwitch = indices.some((index) => isGravitySwitch(tiles[index]));
         indices = indices.filter((index) => isPlayableCell(tiles[index]));
         const heuristicScore = scoreImpact(indices, {
+          hitsSwitch,
           usesBonus,
           usesFusion,
           createsBonus,
@@ -228,7 +228,7 @@ export class HintEngine {
         if (!SPECIAL.has(board[index]?.type) || !canSwapGem(board[index], tiles[index])) continue;
         // Preview the guaranteed hit without rolling the double-tap's extra crates.
         const lenses = lensLog();
-        const indices = bonusActivator.previewBonus(
+        const reached = bonusActivator.previewBonus(
           board[index].type,
           board,
           cols,
@@ -237,6 +237,7 @@ export class HintEngine {
           tiles,
           lenses,
         );
+        const indices = reached.filter((cell) => isPlayableCell(tiles[cell]));
         if (!indices.length) continue;
         const candidate = {
           swap: { aIndex: index, bIndex: index },
@@ -245,7 +246,11 @@ export class HintEngine {
           usesBonus: true,
           createsBonus: false,
           totalCleared: indices.length,
-          heuristicScore: scoreImpact(indices, { usesBonus: true, bent: lenses.bent }),
+          heuristicScore: scoreImpact(indices, {
+            usesBonus: true,
+            bent: lenses.bent,
+            hitsSwitch: reached.some((cell) => isGravitySwitch(tiles[cell])),
+          }),
         };
         if (first) return candidate;
         if (!best || candidate.heuristicScore > best.heuristicScore) best = candidate;

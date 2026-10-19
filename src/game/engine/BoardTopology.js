@@ -1,7 +1,17 @@
+// Moon locks and dials fill their own side or corner cell: no gem enters or rests
+// there, but a bonus blast that covers one turns gravity over (see GravityFrames.js).
+export const isGravitySwitch = (tile) =>
+  tile?.gravitySwitch === 'lock' || tile?.gravitySwitch === 'dial';
+
 // A missing tile retains the rectangular-board fallback. Permanent voids are
 // authored cells, not temporarily empty sockets or breakable stone. A sealed cell
 // belongs to a chamber that has not been broken into yet (see Breakthroughs.js).
-export const isPlayableCell = (tile) => tile?.type !== 'void' && !tile?.sealed;
+// A used moon lock becomes an ordinary cell, like an opened chamber.
+export const isPlayableCell = (tile) =>
+  tile?.type !== 'void' && !tile?.sealed && !isGravitySwitch(tile);
+
+// Cells a bonus blast reaches: playable cells and the gravity switches it can turn.
+export const isBlastTarget = (tile) => isPlayableCell(tile) || isGravitySwitch(tile);
 
 export function gravityDestination(tiles, index, cols, rows) {
   if (

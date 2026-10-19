@@ -8,7 +8,7 @@ import { CHAPTERS } from '../../data/campaign';
 import { chapterIndexOf } from '../../data/chapters';
 import { mineSignalAppearance, mineRelicAppearance } from '../../data/mineThemes';
 import { BonusEffects } from './BonusEffects';
-import { isPlayableCell, gravityDestination } from '../engine/BoardTopology';
+import { isGravitySwitch, isPlayableCell, gravityDestination } from '../engine/BoardTopology';
 import { isDiagonalLens, isLens, lensGeometry } from '../engine/LensBeams';
 import { boardEdges, fallDelays, fallMotion, fallRoute } from './BoardGeometry';
 import { glyphImage } from './TextGlyphs';
@@ -571,7 +571,9 @@ export class BoardAnimator {
     for (let step = 1; step <= lead && covered === null; step++) {
       const over = row + side * step;
       if (over < 0 || over >= this.boardRows) break;
-      if (isPlayableCell(this.tiles[over * this.boardCols + col])) covered = over;
+      const tile = this.tiles[over * this.boardCols + col];
+      // A moon lock or dial fills its cell, so a refill below one stays hidden there.
+      if (isPlayableCell(tile) || isGravitySwitch(tile)) covered = over;
     }
     if (covered === null) return frame;
     const [start, end] = frame ?? [-Infinity, Infinity];
@@ -697,6 +699,29 @@ export class BoardAnimator {
         });
       }),
     );
+  }
+
+  // A moon lock or dial fills its cell; a dial's arrow shows which way things fall.
+  drawGravitySwitch(index) {
+    const tile = this.tiles[index];
+    const p = this.position(index);
+    const size = this.cellSize - 3;
+    const fixture = this.scene.add.container(p.x, p.y);
+    const ref = spriteRef(`tile-moon-${tile.gravitySwitch}`, this.scene.textures);
+    fixture.add(this.scene.add.image(0, 0, ref.key, ref.frame).setDisplaySize(size, size));
+    if (tile.gravitySwitch === 'dial')
+      fixture.add(
+        glyphImage(this.scene, 0, size * 0.02, tile.fall === 'up' ? '↑' : '↓', {
+          fontFamily: 'Arial, sans-serif',
+          fontStyle: 'bold',
+          fontSize: `${Math.max(18, size * 0.42)}px`,
+          color: '#fff6d8',
+          stroke: '#1e2340',
+          strokeThickness: 4,
+        }).setOrigin(0.5),
+      );
+    this.tileLayer.add(fixture);
+    this.fixtureSprites.set(index, fixture);
   }
 
   // Unbroken chamber rock behind a cracked wall, dimmed so it reads as off the board.
@@ -904,6 +929,7 @@ export class BoardAnimator {
       this.removeCell(index);
       if (isLens(tile)) this.drawLens(index);
       else if (tile?.sealed) this.drawSealed(index);
+      else if (isGravitySwitch(tile)) this.drawGravitySwitch(index);
       return;
     }
     // An opened chamber cell loses its sealed rock.
@@ -979,7 +1005,7 @@ export class BoardAnimator {
   // Board shape and gravity flow are fixed for a level; redraw only when they change.
   drawBoardOutline() {
     const shaped = this.tiles.some((tile) => !isPlayableCell(tile));
-    const key = `${this.cellSize}-${this.boardCols}-${this.boardRows}-${this.tiles.map((tile) => `${tile?.type === 'void' || tile?.sealed ? 'x' : '.'}:${tile?.flowTo ?? ''}`).join(',')}`;
+    const key = `${this.cellSize}-${this.boardCols}-${this.boardRows}-${this.tiles.map((tile) => `${isPlayableCell(tile) ? '.' : 'x'}:${tile?.flowTo ?? ''}`).join(',')}`;
     if (key === this.boardOutlineKey) return;
     this.boardOutlineKey = key;
     this.boardOutline?.destroy();
@@ -1094,16 +1120,13 @@ export class BoardAnimator {
     const signal = tile?.signalHealth === 0 ? null : tile?.signal;
     // A phase seal shows the colour its gem becomes after the next move.
     const phase = tile?.phaseSeal && tile.health > 0 ? tile.phaseNext : null;
-    // A moon lock until used; a permanent moon dial always shows the gravity direction.
-    const gravitySwitch =
-      tile?.gravitySwitch === 'lock' || tile?.gravitySwitch === 'dial' ? tile.gravitySwitch : null;
     // Paired portals share a color; the entrance swirls, the exit shines.
     const portal = Number.isInteger(tile?.portalTo)
       ? { pair: tile.portalPair ?? 0 }
       : Number.isInteger(tile?.portalExit)
         ? { pair: tile.portalExit }
         : null;
-    const key = `${layers}-${frozen}-${sealColor ?? ''}-${chained}-${!!exit}-${!!tile?.hatch}-${tile?.signal ?? ''}-${tile?.signalHealth}-${tile?.surveyOrder}-${tile?.rootGroup ?? ''}-${tile?.bonusOnly}-${tile?.sporeAxis}-${tile?.health}-${tile?.maxHealth}-${phase ?? ''}-${portal ? `${tile.portalTo ?? 'x'}:${portal.pair}` : ''}-${gravitySwitch ?? ''}:${gravitySwitch === 'dial' ? (tile.fall ?? '') : ''}-${this.theme}-${this.cellSize}`;
+    const key = `${layers}-${frozen}-${sealColor ?? ''}-${chained}-${!!exit}-${!!tile?.hatch}-${tile?.signal ?? ''}-${tile?.signalHealth}-${tile?.surveyOrder}-${tile?.rootGroup ?? ''}-${tile?.bonusOnly}-${tile?.sporeAxis}-${tile?.health}-${tile?.maxHealth}-${phase ?? ''}-${portal ? `${tile.portalTo ?? 'x'}:${portal.pair}` : ''}-${this.theme}-${this.cellSize}`;
     let overlay = this.tileOverlays.get(index);
     if (overlay?.__tileKey === key) return;
     overlay?.destroy();
@@ -1117,7 +1140,6 @@ export class BoardAnimator {
       !signal &&
       !phase &&
       !portal &&
-      !gravitySwitch &&
       !(tile?.bonusOnly && tile.health > 0)
     )
       return;
@@ -1162,16 +1184,6 @@ export class BoardAnimator {
           .setAlpha(0.85)
           .setTint(PORTAL_COLORS[portal.pair % PORTAL_COLORS.length]),
       );
-    }
-    if (gravitySwitch) {
-      addImage(`moon-${gravitySwitch}`).setAlpha(0.9);
-      if (gravitySwitch === 'dial')
-        addLabel(0, size * 0.02, tile.fall === 'up' ? '↑' : '↓', {
-          fontSize: `${Math.max(18, size * 0.42)}px`,
-          color: '#fff6d8',
-          stroke: '#1e2340',
-          strokeThickness: 4,
-        }).setOrigin(0.5);
     }
     if (chained) addImage(tile.rootGroup != null ? 'vine' : 'chain');
     if (phase) {
