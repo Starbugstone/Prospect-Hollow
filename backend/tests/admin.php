@@ -970,7 +970,11 @@ try {
         'the sync log keeps the latest rejections only',
     );
 
-    // Accept next sync lets exactly one upload through.
+    // Approval names the exact reviewed rejection, not an arbitrary next upload.
+    $approvalBody = fn() => [
+        'forceSync' => true,
+        'rejectionId' => App\SyncRejections::list($db->get(), $syncId)[0]['id'],
+    ];
     status(
         422,
         adminCall('PATCH', 'towns/' . $syncId . '/sync', ['forceSync' => 1], $s),
@@ -981,13 +985,18 @@ try {
         adminCall('PATCH', 'towns/' . $syncId . '/sync', ['forceSync' => true, 'name' => 'x'], $s),
         'accept next sync takes no other field',
     );
+    status(
+        422,
+        adminCall('PATCH', 'towns/' . $syncId . '/sync', ['forceSync' => true], $s),
+        'approval requires a reviewed rejection',
+    );
     check(
         status(
             200,
-            adminCall('PATCH', 'towns/' . $syncId . '/sync', ['forceSync' => true], $s),
+            adminCall('PATCH', 'towns/' . $syncId . '/sync', $approvalBody(), $s),
             'set accept next sync',
         )['forceSync'] === true && $listed()['forceSync'] === true,
-        'an admin sets accept next sync from the town list',
+        'an admin approves the selected rejected upload',
     );
     status(
         409,
@@ -1029,7 +1038,7 @@ try {
     );
     status(
         200,
-        adminCall('PATCH', 'towns/' . $syncId . '/sync', ['forceSync' => true], $s),
+        adminCall('PATCH', 'towns/' . $syncId . '/sync', $approvalBody(), $s),
         'set accept next sync again',
     );
     check(

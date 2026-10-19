@@ -87,7 +87,7 @@ final class AdminService
             'platform' => $row['platform'],
         ];
     }
-    private static function town(array $row): array
+    private static function town(Connection $db, array $row): array
     {
         return [
             'id' => $row['id'],
@@ -97,13 +97,13 @@ final class AdminService
             'isPublic' => (bool) $row['listed'],
             'publicId' => $row['public_id'],
             'deletedAt' => self::time($row['deleted_at']),
-            'forceSync' => (bool) $row['force_sync'],
             // The latest upload the save protection rejected since the last accepted save.
             'syncBlockedAt' =>
                 $row['sync_blocked_at'] === null
                     ? null
                     : intdiv((int) $row['sync_blocked_at'], 1000),
         ] +
+            SyncApproval::view($db, $row) +
             (isset($row['email'])
                 ? ['owner' => ['id' => $row['player_id'], 'email' => $row['email']]]
                 : []) +
@@ -302,9 +302,9 @@ final class AdminService
                 ),
             ),
             'towns' => array_map(
-                fn($t) => self::town($t),
+                fn($t) => self::town($db, $t),
                 $db->fetchAllAssociative(
-                    'SELECT t.id,t.name,t.revision,t.saved_at,t.listed,t.public_id,t.deleted_at,t.force_sync,' .
+                    'SELECT t.id,t.player_id,t.name,t.revision,t.saved_at,t.listed,t.public_id,t.deleted_at,t.sync_approval,' .
                         SyncRejections::BLOCKED_AT .
                         ' AS sync_blocked_at,t.profile FROM towns t WHERE t.player_id=? ORDER BY (t.deleted_at IS NOT NULL),t.name,t.id',
                     [$id],
@@ -407,7 +407,7 @@ final class AdminService
         $from = 'FROM towns t JOIN players p ON p.id=t.player_id WHERE ' . implode(' AND ', $where);
         $total = (int) $db->fetchOne('SELECT COUNT(*) ' . $from, $params);
         $rows = $db->fetchAllAssociative(
-            'SELECT t.id,t.name,t.player_id,p.email,t.revision,t.saved_at,t.listed,t.public_id,t.deleted_at,t.force_sync,' .
+            'SELECT t.id,t.name,t.player_id,p.email,t.revision,t.saved_at,t.listed,t.public_id,t.deleted_at,t.sync_approval,' .
                 SyncRejections::BLOCKED_AT .
                 ' AS sync_blocked_at,t.profile ' .
                 $from .
@@ -423,7 +423,7 @@ final class AdminService
             'page' => $page,
             'pageSize' => self::PAGE,
             'towns' => array_map(
-                fn($row) => self::town($row) + ['uniqueVisitors' => $visitors[$row['id']]],
+                fn($row) => self::town($db, $row) + ['uniqueVisitors' => $visitors[$row['id']]],
                 $rows,
             ),
         ];
@@ -453,7 +453,7 @@ final class AdminService
         $integrity = new SaveIntegrity();
         $state = $profile instanceof \stdClass ? $integrity->comparable($profile) : null;
         return [
-            'town' => self::town($row) + [
+            'town' => self::town($db, $row) + [
                 'uniqueVisitors' => $social('visitors'),
                 'townsVisited' => $social('travels'),
                 'saloonCollectedAt' => self::time($row['saloon_at']),
@@ -585,29 +585,42 @@ final class AdminService
         });
         return $this->townDetail($id);
     }
-    // Support for a false desync: the town's next upload skips the integrity replay
-    // once and is re-baselined, then the flag clears itself.
+    // Approve only a specific rejected profile, at the cloud revision the admin reviewed.
     public function setForceSync(string $actor, string $id, array $body): array
     {
-        SaveService::keys($body, ['forceSync']);
+        SaveService::keys($body, ['forceSync', 'rejectionId']);
         if (!is_bool($body['forceSync'] ?? null)) {
-            throw new ApiError(422, 'Choose whether to accept the next sync.');
+            throw new ApiError(422, 'Choose whether to approve this rejected upload.');
         }
         return $this->locked($id, function ($db, $row) use ($actor, $body) {
-            if ((bool) $row['force_sync'] !== $body['forceSync']) {
-                $db->update(
-                    'towns',
-                    ['force_sync' => (int) $body['forceSync']],
-                    ['id' => $row['id']],
-                );
-                $this->admins->audit(
-                    $actor,
-                    $body['forceSync'] ? 'town_sync_forced' : 'town_sync_force_cleared',
-                    $row['id'],
-                    $row['name'],
+            $changes = SyncApproval::clear();
+            $detail = $row['name'];
+            if ($body['forceSync']) {
+                if (
+                    !is_string($body['rejectionId'] ?? null) ||
+                    !preg_match('/^[a-f0-9]{32}$/D', $body['rejectionId'])
+                ) {
+                    throw new ApiError(422, 'Compare and select the rejected upload to approve.');
+                }
+                $rejection = SyncRejections::find($db, $row['id'], $body['rejectionId']);
+                $approval = SyncApproval::issue($row, $rejection);
+                $changes['sync_approval'] = json_encode($approval, JSON_THROW_ON_ERROR);
+                $detail = sprintf(
+                    'rejection %s, revision %d, profile SHA-256 %s, expires %d',
+                    $approval['rejectionId'],
+                    $approval['revision'],
+                    $approval['profileHash'],
+                    $approval['expiresAt'],
                 );
             }
-            return ['forceSync' => $body['forceSync']];
+            $db->update('towns', $changes, ['id' => $row['id']]);
+            $this->admins->audit(
+                $actor,
+                $body['forceSync'] ? 'town_sync_forced' : 'town_sync_force_cleared',
+                $row['id'],
+                $detail,
+            );
+            return SyncApproval::view($db, array_merge($row, $changes));
         });
     }
     /**
@@ -784,9 +797,7 @@ final class AdminService
             $latest,
             Honours::social($db, 'id', $row['id']),
         );
-        $this->storeRevision($db, $row, $saved, $now, SaveService::ADMIN_RESET, [
-            'force_sync' => 0,
-        ]);
+        $this->storeRevision($db, $row, $saved, $now, SaveService::ADMIN_RESET);
         $this->admins->audit($actor, $action, $row['id'], $detail);
     }
     /**
@@ -803,6 +814,7 @@ final class AdminService
     ): int {
         $profile = json_encode($saved, JSON_THROW_ON_ERROR);
         SaveService::archive($db, $row);
+        $changes += SyncApproval::clear();
         $changes += [
             'profile' => $profile,
             'revision' => (int) $row['revision'] + 1,

@@ -30,6 +30,8 @@ final class Database
         21 => '/schema-force-sync',
         // The share-link view and a find check a host town's latest helmet find.
         22 => '/schema-helmet-host',
+        // Expiring approvals bound to a reviewed rejected upload; retire boolean overrides.
+        23 => '/schema-sync-approval',
     ];
     private ?Connection $connection = null;
     /**

@@ -117,8 +117,10 @@ progress, Town Honours counters and money budget, and later uploads are replayed
 normally again. Any other server rejects the receipt as a mismatch, so production
 tracked saves still require valid resource accounting.
 
-An admin can let one upload of a town through the same re-baseline after a false
-desync (**Accept next sync**), or save an edited copy that the owner's game loads
+An admin can approve an exact reviewed rejected upload for the same re-baseline
+after a false desync. Approval expires after 24 hours, binds the full canonical
+profile and cloud revision, and is consumed by any accepted save. An admin can
+also save an edited copy that the owner's game loads
 without asking. Rejected uploads are kept for that comparison; see
 [blocked syncs](admin.md#blocked-syncs). Nothing in the client can set either.
 

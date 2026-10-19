@@ -649,7 +649,8 @@ it.each([413, 422])(
       return remote(1);
     });
     await expect(sync.sync()).rejects.toMatchObject({ status });
-    expect(townStorage.active().meta.pending).toBeNull();
+    if (status === 422) expect(townStorage.active().meta.pending.rejected).toBe(true);
+    else expect(townStorage.active().meta.pending).toBeNull();
     expect(townStorage.active().meta.uploadError.status).toBe(status);
     const calls = api.mock.calls.length;
     await sync.sync();

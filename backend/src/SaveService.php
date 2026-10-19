@@ -422,8 +422,8 @@ final class SaveService
                 $previous,
             );
             $previousAt = (int) $row['saved_at'] * 1000;
-            // An admin let the next upload through a false desync; it is used up here.
-            $forced = (bool) $row['force_sync'];
+            // Only the exact reviewed profile may skip replay, at its original revision.
+            $forced = SyncApproval::matches($db, $row, $json);
             try {
                 $accepted = $forced
                     ? $integrity->acceptOverride($incoming, $previous, $now, $id, $previousAt)
@@ -458,9 +458,8 @@ final class SaveService
                 'upload_id' => $body['uploadId'],
                 'upload_hash' => $hash,
             ];
-            if ($forced) {
-                $changes['force_sync'] = 0;
-            }
+            // Any accepted save ends the exception, including normal recovery on another device.
+            $changes += SyncApproval::clear();
             if ($row['listed']) {
                 $changes['appearance'] = $this->public->projection(
                     json_decode($json),

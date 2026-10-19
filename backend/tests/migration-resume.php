@@ -127,6 +127,9 @@ file_put_contents(
     $directory . '/' . $helmetHost,
     $rewrite(file_get_contents(dirname(__DIR__) . '/' . $helmetHost)),
 );
+$syncApproval = $mysql ? 'schema-sync-approval.sql' : 'schema-sync-approval-postgresql.sql';
+$approvalSchema = $rewrite(file_get_contents(dirname(__DIR__) . '/' . $syncApproval));
+file_put_contents($directory . '/' . $syncApproval, $approvalSchema);
 try {
     $statements = explode(';', $schema);
     file_put_contents(
@@ -170,6 +173,48 @@ try {
             'created_at' => 1,
         ]);
     }
+    // A deployed v22 town can still have the old indefinite boolean set. Model a
+    // crash after the new column DDL, before clearing that flag and recording v23.
+    $connection->insert($prefix . 'towns', [
+        'id' => 'legacy-approval',
+        'player_id' => 'kept',
+        'name' => 'Legacy',
+        'normalized_name' => 'legacy',
+        'revision' => 1,
+        'profile' => '{}',
+        'saved_at' => 1,
+        'public_id' => str_repeat('a', 32),
+        'force_sync' => 1,
+    ]);
+    $connection->executeStatement('DELETE FROM ' . $prefix . 'schema_versions WHERE version=23');
+    $connection->executeStatement('ALTER TABLE ' . $prefix . 'towns DROP COLUMN sync_approval');
+    file_put_contents(
+        $directory . '/' . $syncApproval,
+        explode(';', $approvalSchema)[0] . '; INVALID_APPROVAL_MIGRATION;',
+    );
+    try {
+        $migration->migrate();
+        throw new RuntimeException('Injected approval migration failure was ignored.');
+    } catch (Doctrine\DBAL\Exception $expected) {
+    }
+    check(
+        isset(
+            $connection->createSchemaManager()->listTableColumns($prefix . 'towns')[
+                'sync_approval'
+            ],
+        ) === $mysql,
+        'approval DDL resumes after MySQL commit or PostgreSQL rollback',
+    );
+    file_put_contents($directory . '/' . $syncApproval, $approvalSchema);
+    $migration->migrate();
+    $legacy = $connection->fetchAssociative(
+        'SELECT force_sync,sync_approval FROM ' . $prefix . 'towns WHERE id=?',
+        ['legacy-approval'],
+    );
+    check(
+        (int) $legacy['force_sync'] === 0 && $legacy['sync_approval'] === null,
+        'v23 expires deployed boolean approvals on resume',
+    );
     // Also model a crash after every DDL statement but before the final version marker.
     $connection->executeStatement('DELETE FROM ' . $prefix . 'schema_versions');
     $migration->migrate();
@@ -296,6 +341,7 @@ try {
     @unlink($directory . '/' . $helmets);
     @unlink($directory . '/' . $forceSync);
     @unlink($directory . '/' . $helmetHost);
+    @unlink($directory . '/' . $syncApproval);
     unlink($directory . '/src/Database.php');
     rmdir($directory . '/src');
     rmdir($directory);

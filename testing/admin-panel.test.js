@@ -152,7 +152,7 @@ describe('admin formatting', () => {
 
   it('labels audit actions, including ones added later', () => {
     expect(actionLabel('town_restored')).toBe('Restored town revision');
-    expect(actionLabel('town_sync_forced')).toBe('Set town to accept next sync');
+    expect(actionLabel('town_sync_forced')).toBe('Approved rejected upload');
     expect(actionLabel('privacy_contact_changed')).toBe('Changed privacy contact');
     expect(actionLabel('future_thing')).toBe('future thing');
   });

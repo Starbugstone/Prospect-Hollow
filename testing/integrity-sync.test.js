@@ -136,7 +136,8 @@ it('keeps progress and queued actions after a validation error without repeatedl
   const local = storage.active();
   expect(local.profile.town.coins).toBe(11);
   expect(local.profile.integrity.actions).toHaveLength(1);
-  expect(local.meta.pending).toBeNull();
+  expect(local.meta.pending.rejected).toBe(true);
+  expect(uploads.size).toBe(1);
   expect(local.meta.uploadError.code).toBe('save_integrity_mismatch');
   request.mockClear();
   await service.sync();
@@ -172,6 +173,7 @@ it('loads a support reset over a blocked upload without asking, keeping a backup
   expect(local.meta.baseRevision).toBe(2);
   expect(local.meta.uploadError).toBeNull();
   expect(local.meta.desyncNotice).toBe('support');
+  expect(uploads.size).toBe(0);
   expect([...preserved.values()].map((saved) => saved.profile.town.coins)).toEqual([11]);
 });
 
@@ -367,7 +369,7 @@ it('keeps an edited imported backup local and retains restore intent after serve
   expect(remote).toEqual(cloud);
   expect(storage.active().profile).toEqual(backup);
   expect(storage.active().meta.restoreIntent).toBe(intent);
-  expect(storage.active().meta.pending).toBeNull();
+  expect(storage.active().meta.pending.rejected).toBe(true);
   advance();
   expect(storage.active().meta.restoreIntent).toBe(intent);
   await expect(service.sync()).rejects.toThrow('could not be verified');
@@ -436,4 +438,51 @@ it('keeps a showcase cleared on another device when downloading the newer cloud 
   expect(storage.active().profile.honours.showcase).toEqual([]);
   expect(storage.active().meta.dirty).toBe(false);
   expect(request.mock.calls.at(-1)[1]).toBeUndefined();
+});
+
+it('retries the exact rejected profile after support approval, including its original timestamp', async () => {
+  advance();
+  request.mockImplementation(async (_path, body) => {
+    if (!body) return copy(remote);
+    throw Object.assign(new Error('Blocked'), {
+      status: 422,
+      data: { code: 'save_integrity_mismatch' },
+    });
+  });
+  await expect(service.sync()).rejects.toThrow('Blocked');
+  const rejected = copy(request.mock.calls.at(-1)[1]);
+  storage.mutate(storage.active().meta.id, owner.id, (record) => {
+    record.meta.uploadError = null;
+  });
+  request.mockImplementation(async (_path, body) => {
+    expect(body).toEqual(rejected);
+    return accepted(body);
+  });
+  await service.sync();
+  expect(storage.active().meta.pending).toBeNull();
+  expect(storage.active().meta.dirty).toBe(false);
+  expect(uploads.size).toBe(0);
+});
+
+it('stages new progress separately instead of retrying an older rejected profile', async () => {
+  advance();
+  request.mockImplementation(async (_path, body) => {
+    if (!body) return copy(remote);
+    throw Object.assign(new Error('Blocked'), {
+      status: 422,
+      data: { code: 'save_integrity_mismatch' },
+    });
+  });
+  await expect(service.sync()).rejects.toThrow('Blocked');
+  const rejected = copy(request.mock.calls.at(-1)[1]);
+  advance();
+  request.mockImplementation(async (_path, body) => {
+    if (!body) return copy(remote);
+    expect(body.uploadId).not.toBe(rejected.uploadId);
+    expect(body.profile.town.coins).toBe(rejected.profile.town.coins + 1);
+    return accepted(body);
+  });
+  await service.sync();
+  expect(storage.active().meta.dirty).toBe(false);
+  expect(uploads.size).toBe(0);
 });

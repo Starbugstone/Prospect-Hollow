@@ -95,6 +95,7 @@ jobs:
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/deadlocks.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/release-health.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/admin.php
+          TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/sync-approval.php
       - name: Build and prepare the hosting release
         if: matrix.database == 'postgres'
         env:

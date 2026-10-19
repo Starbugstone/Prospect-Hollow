@@ -202,6 +202,8 @@ export function createSyncService({
         };
         replaced = true;
       });
+    if (before?.meta.pending?.snapshot && !entry(id, owner)?.meta.pending)
+      await recoveries.removeUpload(before.meta.pending.body.uploadId, owner, id).catch(() => {});
     if (replaced) applied(id);
   }
   async function stage(id, owner, pending) {
@@ -277,7 +279,10 @@ export function createSyncService({
         if ([413, 422].includes(error.status) && current(owner))
           storage.mutate(id, owner, (r) => {
             if (r.meta.pending?.body.uploadId !== pending.body.uploadId) return false;
-            r.meta.pending = null;
+            // Keep the immutable rejected upload for an exact retry after support
+            // approves it. Restaging would change clientAt and invalidate that approval.
+            if (error.status === 422) r.meta.pending.rejected = true;
+            else r.meta.pending = null;
             r.meta.uploadError = {
               message: error.message,
               status: error.status,
@@ -323,6 +328,18 @@ export function createSyncService({
     // A rejected upload waits, but a newer cloud save (support's reset, another device)
     // still replaces the progress the server would not take.
     if (uploadBlocked(local.meta)) return pull && replaceBlocked(id, owner);
+    // New progress gets its own review; only an unchanged explicit retry reuses the
+    // rejected snapshot. The blocked check above still prevents automatic retry loops.
+    if (local.meta.pending?.rejected && local.meta.pending.sequence !== local.meta.sequence) {
+      const discarded = local.meta.pending;
+      storage.mutate(id, owner, (r) => {
+        if (r.meta.pending?.body.uploadId !== discarded.body.uploadId) return false;
+        r.meta.pending = null;
+      });
+      await recoveries.removeUpload(discarded.body.uploadId, owner, id).catch(() => {});
+      local = entry(id, owner);
+      if (!local || !current(owner) || !eligible(id, owner)) return;
+    }
     if (local.meta.pending)
       return upload(id, owner, local.meta.pending, local.meta.pending.resolve);
     if (local.meta.conflict && !canApply(id)) return;

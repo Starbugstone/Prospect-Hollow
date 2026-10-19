@@ -91,8 +91,8 @@ const ACTIONS = {
   town_unshared: 'Stopped sharing town',
   town_deleted: 'Deleted town',
   town_restored: 'Restored town revision',
-  town_sync_forced: 'Set town to accept next sync',
-  town_sync_force_cleared: 'Cleared accept next sync',
+  town_sync_forced: 'Approved rejected upload',
+  town_sync_force_cleared: 'Cleared sync approval',
   town_sync_reset: 'Reset town after a blocked sync',
   town_corrected: 'Corrected town coins or inventory',
 };

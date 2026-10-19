@@ -34,9 +34,7 @@
           <th scope="col" class="number">Unique visitors</th>
           <th scope="col">Last save</th>
           <th scope="col">State</th>
-          <th scope="col" title="The town's next cloud upload skips the desync check once">
-            Accept next sync
-          </th>
+          <th scope="col">Sync approval</th>
         </tr>
       </thead>
       <tbody>
@@ -62,11 +60,17 @@
           <td :title="dateTime(town.savedAt)">{{ relativeTime(town.savedAt) }}</td>
           <td><TownState :town="town" /></td>
           <td @click.stop>
-            <ForceSyncToggle
-              :town="town"
-              @update:force-sync="town.forceSync = $event"
-              @error="error = $event"
-            />
+            <a :href="`#/towns/${town.id}`">{{
+              town.syncApproval ? 'View approval' : 'Review sync'
+            }}</a>
+            <p v-if="town.syncApproval" class="admin-muted">
+              {{
+                town.forceSync && town.forceSyncUntil * 1000 > Date.now()
+                  ? 'Approved until'
+                  : 'Inactive; expiry'
+              }}
+              {{ dateTime(town.forceSyncUntil) }}
+            </p>
           </td>
         </tr>
         <tr v-if="!result.towns.length">
@@ -80,9 +84,9 @@
     </p>
     <p class="admin-muted">
       Sync blocked marks a town whose last upload the save protection rejected; its page compares
-      the saves. Accept next sync unblocks a player after a false desync: the town's next cloud
-      upload is accepted as it is, without the desync check, and the box clears itself. The player
-      can press Retry cloud saving in the game.
+      the saves. An admin can approve a specific rejected upload for 24 hours. Only an unchanged
+      retry at the same cloud revision can use that approval, once. The player can press Retry cloud
+      saving in the game.
     </p>
     <Pager
       v-if="result"
@@ -101,7 +105,6 @@ import { eraLabel } from '../labels';
 import Pager from '../components/Pager.vue';
 import TownState from '../components/TownState.vue';
 import SyncBlocked from '../components/SyncBlocked.vue';
-import ForceSyncToggle from '../components/ForceSyncToggle.vue';
 const result = ref(null),
   error = ref('');
 let generation = 0,
