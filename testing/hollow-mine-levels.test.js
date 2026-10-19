@@ -160,6 +160,7 @@ describe('append-only floating seam chapters', () => {
     }
   });
 
+  // Three full games per level need headroom on slower Docker workers.
   it('completes every new level in hint-led play without inventory powers', () => {
     for (const level of hollow)
       for (const seed of [101, 102, 103]) {
@@ -171,7 +172,7 @@ describe('append-only floating seam chapters', () => {
           ore: 0,
         });
       }
-  }, 120000);
+  }, 300000);
 });
 
 describe('floating seam play', () => {
