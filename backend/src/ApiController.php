@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace App;
-use Symfony\Component\HttpFoundation\{Request, JsonResponse};
+use Symfony\Component\HttpFoundation\{Request, JsonResponse, Response};
 use Symfony\Component\Routing\Attribute\Route;
 final class ApiController
 {
@@ -22,7 +22,7 @@ final class ApiController
         $this->data = $data ?? new PlayerData($database, $auth, $saves);
     }
     #[Route('/api/v1/{path}', name: 'api', requirements: ['path' => '.*'])]
-    public function __invoke(Request $r, string $path): JsonResponse
+    public function __invoke(Request $r, string $path): Response
     {
         $native = false;
         try {
@@ -120,7 +120,7 @@ final class ApiController
                     'GET villages/favourites' => $this->directory->favourites($r),
                     default => $this->townRoute($r, $path, $body),
                 };
-                $response = $result instanceof JsonResponse ? $result : new JsonResponse($result);
+                $response = $result instanceof Response ? $result : new JsonResponse($result);
             }
         } catch (ApiError $e) {
             $response = new JsonResponse(['error' => $e->getMessage()] + $e->details, $e->status);

@@ -15,6 +15,19 @@ the user icon in My towns).
 | Rectification                | Mayor's Office → Profile: public name, private visits, email | `PATCH account/profile`, `POST account/email` and `POST account/email/confirm`               |
 | Erasure                      | Mayor's Office → Delete                                      | `DELETE /api/v1/account` and the admin panel, both via `SaveService::eraseAccount`           |
 
+## Account export
+
+The account export includes every retained refused-sync comparison, including its full
+upload, cloud save and optional replay expectation, even for a soft-deleted town or a
+revision no longer in history. The player transaction authorizes and builds the complete
+JSON document before response headers are sent. `JsonExport` writes to an automatically
+deleted temporary file; keyset queries read large save rows one at a time and preserve
+stored JSON without decoding it. The player lock is released before the response copies
+the file in 64 KB chunks. Sending or discarding the response closes and removes the file.
+
+`backend/tests/player-data-memory.php` exercises a download larger than the production
+128 MB PHP memory limit, including ownership, response headers and temporary-file cleanup.
+
 ## Erasure
 
 `SaveService::eraseAccount` is the only way an account is deleted, for the player and for

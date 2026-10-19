@@ -3,7 +3,7 @@ declare(strict_types=1);
 namespace App;
 
 use Doctrine\DBAL\Connection;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\{Request, StreamedResponse};
 
 /**
  * The player's own view of what the server keeps about them (GDPR access and portability)
@@ -108,10 +108,73 @@ final class PlayerData
     }
 
     /**
-     * Everything stored about the account, in one JSON document. Other players' data stays
-     * out: the export counts the visitors of the player's towns but never names them.
+     * Pages with a stable unique cursor, including on MySQL whose PDO driver buffers
+     * query results. Large save rows use a page of one; small metadata uses 100.
+     * All columns and directions come from the fixed export queries below.
+     * @return \Generator<int, array<string, mixed>>
      */
-    public function export(Request $r): array
+    private static function exportRows(
+        Connection $db,
+        string $sql,
+        array $params,
+        array $order,
+        int $page = 100,
+    ): \Generator {
+        $cursor = null;
+        do {
+            $where = [];
+            $after = [];
+            if ($cursor !== null) {
+                $equal = [];
+                $values = [];
+                foreach ($order as $column => $direction) {
+                    $where[] =
+                        '(' .
+                        implode(' AND ', [
+                            ...$equal,
+                            $column . ($direction === 'ASC' ? '>?' : '<?'),
+                        ]) .
+                        ')';
+                    $after = [...$after, ...$values, $cursor[$column]];
+                    $equal[] = $column . '=?';
+                    $values[] = $cursor[$column];
+                }
+            }
+            $rows = $db->fetchAllAssociative(
+                $sql .
+                    ($where ? ' AND (' . implode(' OR ', $where) . ')' : '') .
+                    ' ORDER BY ' .
+                    implode(
+                        ',',
+                        array_map(
+                            fn($column, $direction) => $column . ' ' . $direction,
+                            array_keys($order),
+                            array_values($order),
+                        ),
+                    ) .
+                    ' LIMIT ' .
+                    $page,
+                [...$params, ...$after],
+            );
+            foreach ($rows as $row) {
+                $cursor = [];
+                foreach ($order as $column => $direction) {
+                    $field = str_contains($column, '.')
+                        ? substr($column, strrpos($column, '.') + 1)
+                        : $column;
+                    $cursor[$column] = $row[$field];
+                }
+                yield $row;
+            }
+        } while (count($rows) === $page);
+    }
+
+    /**
+     * Everything stored about the account, in one JSON document. Spooling inside the
+     * authorized transaction reports errors before headers, then releases its player
+     * lock before the client downloads. Raw save JSON never needs decoding here.
+     */
+    public function export(Request $r): StreamedResponse
     {
         return $this->saves->transaction($r, false, function (Connection $db, array $a) {
             $id = $a['id'];
@@ -127,48 +190,165 @@ final class PlayerData
                     [$id],
                 ) ?:
                 null;
-            // One query each for the towns, their earlier saves and their visitor counts.
-            $rows = $db->fetchAllAssociative(
-                'SELECT t.*,s.collected_at,(SELECT COUNT(*) FROM town_travels r WHERE r.origin_town_id=t.id) AS travels FROM towns t LEFT JOIN saloon_collections s ON s.town_id=t.id WHERE t.player_id=? ORDER BY t.saved_at DESC,t.id',
-                [$id],
-            );
-            $earlier = [];
-            foreach (
-                $db->iterateAssociative(
-                    'SELECT h.town_id,h.revision,h.saved_at,h.profile FROM town_history h JOIN towns t ON t.id=h.town_id WHERE t.player_id=? ORDER BY h.town_id,h.revision DESC',
-                    [$id],
-                )
-                as $entry
-            ) {
-                $earlier[$entry['town_id']][] = [
-                    'revision' => (int) $entry['revision'],
-                    'savedAt' => $time($entry['saved_at']),
-                    'save' => json_decode($entry['profile']),
-                ];
-            }
-            $visitors = Honours::visitorCounts($db, array_column($rows, 'id'));
-            $towns = array_map(
-                fn($town) => [
-                    'townId' => $town['id'],
-                    'name' => $town['name'],
-                    'shared' => (bool) $town['listed'],
-                    'shareId' => $town['public_id'],
-                    'revision' => (int) $town['revision'],
-                    'savedAt' => $time($town['saved_at']),
-                    'deletedAt' => $time($town['deleted_at']),
-                    'saloonCollectedByVisitorAt' => $time($town['collected_at']),
-                    'differentSignedInVisitors' => $visitors[$town['id']],
-                    'otherPlayersTownsVisited' => (int) $town['travels'],
-                    'save' => json_decode($town['profile']),
-                    'earlierSaves' => $earlier[$town['id']] ?? [],
-                ],
-                $rows,
-            );
             $distinctions = [];
             foreach ((array) PlayerDistinctions::owned($db, $id) as $distinction => $state) {
                 $distinctions[] = ['id' => $distinction] + (array) $state;
             }
-            return [
+            $towns = function () use ($db, $id, $time): \Generator {
+                foreach (
+                    self::exportRows(
+                        $db,
+                        'SELECT t.*,s.collected_at,(SELECT COUNT(*) FROM town_travels r WHERE r.origin_town_id=t.id) AS travels FROM towns t LEFT JOIN saloon_collections s ON s.town_id=t.id WHERE t.player_id=?',
+                        [$id],
+                        ['t.saved_at' => 'DESC', 't.id' => 'ASC'],
+                        1,
+                    )
+                    as $town
+                ) {
+                    $earlier = function () use ($db, $id, $town, $time): \Generator {
+                        foreach (
+                            self::exportRows(
+                                $db,
+                                'SELECT h.revision,h.saved_at,h.profile FROM town_history h JOIN towns t ON t.id=h.town_id WHERE t.player_id=? AND h.town_id=?',
+                                [$id, $town['id']],
+                                ['h.revision' => 'DESC'],
+                                1,
+                            )
+                            as $entry
+                        ) {
+                            yield [
+                                'revision' => (int) $entry['revision'],
+                                'savedAt' => $time($entry['saved_at']),
+                                'save' => JsonExport::stored($entry['profile']),
+                            ];
+                        }
+                    };
+                    yield [
+                        'townId' => $town['id'],
+                        'name' => $town['name'],
+                        'shared' => (bool) $town['listed'],
+                        'shareId' => $town['public_id'],
+                        'revision' => (int) $town['revision'],
+                        'savedAt' => $time($town['saved_at']),
+                        'deletedAt' => $time($town['deleted_at']),
+                        'saloonCollectedByVisitorAt' => $time($town['collected_at']),
+                        'differentSignedInVisitors' => Honours::visitorCounts($db, [$town['id']])[
+                            $town['id']
+                        ],
+                        'otherPlayersTownsVisited' => (int) $town['travels'],
+                        'save' => JsonExport::stored($town['profile']),
+                        'earlierSaves' => $earlier(),
+                    ];
+                }
+            };
+            $activeDays = function () use ($db, $id): \Generator {
+                foreach (
+                    self::exportRows(
+                        $db,
+                        'SELECT day FROM activity_days WHERE player_id=?',
+                        [$id],
+                        ['day' => 'ASC'],
+                    )
+                    as $day
+                ) {
+                    yield gmdate('Y-m-d', (int) $day['day'] * 86400);
+                }
+            };
+            $devices = function () use ($db, $id, $time): \Generator {
+                foreach (
+                    self::exportRows(
+                        $db,
+                        'SELECT token_hash,created_at,expires_at FROM sessions WHERE player_id=? AND expires_at>?',
+                        [$id, time()],
+                        ['created_at' => 'ASC', 'token_hash' => 'ASC'],
+                    )
+                    as $session
+                ) {
+                    yield [
+                        'signedInAt' => $time($session['created_at']),
+                        'expiresAt' => $time($session['expires_at']),
+                    ];
+                }
+            };
+            $visits = function () use ($db, $key, $time): \Generator {
+                foreach (
+                    self::exportRows(
+                        $db,
+                        'SELECT h.name AS host,v.id,v.arrived_at,v.departed_at,v.name,v.town_name FROM visitor_visits v JOIN towns h ON h.id=v.town_id WHERE v.visitor_key=?',
+                        [$key],
+                        ['v.arrived_at' => 'ASC', 'v.id' => 'ASC'],
+                    )
+                    as $visit
+                ) {
+                    yield [
+                        'town' => $visit['host'],
+                        'arrivedAt' => $time($visit['arrived_at']),
+                        'leftAt' => $time($visit['departed_at']),
+                        'shownAs' => $visit['name'] === '' ? null : $visit['name'],
+                        'from' => $visit['town_name'],
+                    ];
+                }
+            };
+            $favourites = function () use ($db, $id, $time): \Generator {
+                foreach (
+                    self::exportRows(
+                        $db,
+                        'SELECT t.name,f.created_at,f.town_id FROM town_favourites f JOIN towns t ON t.id=f.town_id WHERE f.player_id=?',
+                        [$id],
+                        ['f.created_at' => 'ASC', 'f.town_id' => 'ASC'],
+                    )
+                    as $favourite
+                ) {
+                    yield [
+                        'town' => $favourite['name'],
+                        'addedAt' => $time($favourite['created_at']),
+                    ];
+                }
+            };
+            $finds = function () use ($db, $id, $time): \Generator {
+                foreach (
+                    self::exportRows(
+                        $db,
+                        'SELECT h.name AS host,t.name AS home,f.found_at FROM helmet_finds f JOIN towns t ON t.id=f.town_id LEFT JOIN towns h ON h.id=f.host_town_id WHERE f.player_id=?',
+                        [$id],
+                        ['f.found_at' => 'ASC'],
+                    )
+                    as $find
+                ) {
+                    yield [
+                        'foundIn' => $find['host'],
+                        'rewardedTown' => $find['home'],
+                        'foundAt' => $time($find['found_at']),
+                    ];
+                }
+            };
+            $refused = function () use ($db, $id, $time): \Generator {
+                foreach (
+                    self::exportRows(
+                        $db,
+                        'SELECT r.*,t.name FROM town_sync_rejections r JOIN towns t ON t.id=r.town_id WHERE t.player_id=?',
+                        [$id],
+                        ['r.rejected_at' => 'ASC', 'r.id' => 'ASC'],
+                        1,
+                    )
+                    as $rejection
+                ) {
+                    yield [
+                        'townId' => $rejection['town_id'],
+                        'town' => $rejection['name'],
+                        'refusedAt' => $time(intdiv((int) $rejection['rejected_at'], 1000)),
+                        'revision' => (int) $rejection['revision'],
+                        'code' => $rejection['code'],
+                        'field' => $rejection['field'],
+                        'reason' => $rejection['message'],
+                        'upload' => JsonExport::stored($rejection['upload']),
+                        'cloud' => JsonExport::stored($rejection['cloud']),
+                        'expected' => JsonExport::stored($rejection['expected']),
+                    ];
+                }
+            };
+            $export = new JsonExport();
+            $export->write([
                 'exportedAt' => $time(time()),
                 'account' => [
                     'id' => $id,
@@ -188,85 +368,17 @@ final class PlayerData
                     'lastPlatform' => $activity['platform'] ?? null,
                     'lastEmailSignInAt' => $time($activity['signed_in_at'] ?? null),
                     'emailSignIns' => (int) ($activity['sign_ins'] ?? 0),
-                    'activeDays' => array_map(
-                        fn($day) => gmdate('Y-m-d', (int) $day * 86400),
-                        $db->fetchFirstColumn(
-                            'SELECT day FROM activity_days WHERE player_id=? ORDER BY day',
-                            [$id],
-                        ),
-                    ),
+                    'activeDays' => $activeDays(),
                 ],
-                'signedInDevices' => array_map(
-                    fn($session) => [
-                        'signedInAt' => $time($session['created_at']),
-                        'expiresAt' => $time($session['expires_at']),
-                    ],
-                    $db->fetchAllAssociative(
-                        'SELECT created_at,expires_at FROM sessions WHERE player_id=? AND expires_at>? ORDER BY created_at',
-                        [$id, time()],
-                    ),
-                ),
-                'towns' => $towns,
-                'visitsMade' => array_map(
-                    fn($visit) => [
-                        'town' => $visit['host'],
-                        'arrivedAt' => $time($visit['arrived_at']),
-                        'leftAt' => $time($visit['departed_at']),
-                        'shownAs' => $visit['name'] === '' ? null : $visit['name'],
-                        'from' => $visit['town_name'],
-                    ],
-                    $db->fetchAllAssociative(
-                        'SELECT h.name AS host,v.arrived_at,v.departed_at,v.name,v.town_name FROM visitor_visits v JOIN towns h ON h.id=v.town_id WHERE v.visitor_key=? ORDER BY v.arrived_at,v.id',
-                        [$key],
-                    ),
-                ),
-                'favouriteTowns' => array_map(
-                    fn($favourite) => [
-                        'town' => $favourite['name'],
-                        'addedAt' => $time($favourite['created_at']),
-                    ],
-                    $db->fetchAllAssociative(
-                        'SELECT t.name,f.created_at FROM town_favourites f JOIN towns t ON t.id=f.town_id WHERE f.player_id=? ORDER BY f.created_at',
-                        [$id],
-                    ),
-                ),
-                // Space helmets found in other towns, kept until redeemed (30 days at most).
-                'astronautFinds' => array_map(
-                    fn($find) => [
-                        'foundIn' => $find['host'],
-                        'rewardedTown' => $find['home'],
-                        'foundAt' => $time($find['found_at']),
-                    ],
-                    $db->fetchAllAssociative(
-                        'SELECT h.name AS host,t.name AS home,f.found_at FROM helmet_finds f JOIN towns t ON t.id=f.town_id LEFT JOIN towns h ON h.id=f.host_town_id WHERE f.player_id=? ORDER BY f.found_at',
-                        [$id],
-                    ),
-                ),
-                // The complete retained comparison, even after its cloud revision
-                // has left town_history. These are private to this account's towns.
-                'refusedCloudSaves' => array_map(
-                    fn($rejection) => [
-                        'townId' => $rejection['town_id'],
-                        'town' => $rejection['name'],
-                        'refusedAt' => $time(intdiv((int) $rejection['rejected_at'], 1000)),
-                        'revision' => (int) $rejection['revision'],
-                        'code' => $rejection['code'],
-                        'field' => $rejection['field'],
-                        'reason' => $rejection['message'],
-                        'upload' => json_decode($rejection['upload']),
-                        'cloud' => json_decode($rejection['cloud']),
-                        'expected' =>
-                            $rejection['expected'] === null
-                                ? null
-                                : json_decode($rejection['expected']),
-                    ],
-                    $db->fetchAllAssociative(
-                        'SELECT r.*,t.name FROM town_sync_rejections r JOIN towns t ON t.id=r.town_id WHERE t.player_id=? ORDER BY r.rejected_at,r.id',
-                        [$id],
-                    ),
-                ),
+                'signedInDevices' => $devices(),
+                'towns' => $towns(),
+                'visitsMade' => $visits(),
+                'favouriteTowns' => $favourites(),
+                'astronautFinds' => $finds(),
+                'refusedCloudSaves' => $refused(),
                 'distinctions' => $distinctions,
-            ];
+            ]);
+            return $export->response();
         });
     }
 

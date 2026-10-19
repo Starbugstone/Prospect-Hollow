@@ -87,6 +87,7 @@ jobs:
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/money-sync.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/visitors.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/player-data.php
+          TEST_DATABASE_URL="$DATABASE_URL" php -d memory_limit=128M backend/tests/player-data-memory.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/personalisation-public.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/honours.php
           TEST_DATABASE_URL="$DATABASE_URL" php backend/tests/player-distinctions.php
