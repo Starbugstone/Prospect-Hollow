@@ -6,13 +6,16 @@ const queues = new WeakMap();
 const CHANGED_SINCE_REVIEW = 'Your save changed. Review it before confirming another overwrite.';
 const LEAVE_MINE_TO_REVIEW = 'Return to the village to review your preserved save.';
 const WRONG_TOWN = 'The server returned a different town.';
+// Formats the server will never accept: it records no comparison support could approve.
+const UNSUPPORTED = [
+  'save_format_unsupported',
+  'save_rules_unsupported',
+  'save_integrity_unsupported',
+];
 // A rejected upload waits for new progress, except a format the server will never accept.
 export const uploadBlocked = (meta) =>
   !!meta?.uploadError &&
-  (['save_format_unsupported', 'save_rules_unsupported', 'save_integrity_unsupported'].includes(
-    meta.uploadError.code,
-  ) ||
-    meta.uploadError.sequence === meta.sequence);
+  (UNSUPPORTED.includes(meta.uploadError.code) || meta.uploadError.sequence === meta.sequence);
 // Recovery copies used to live inline in the town record; they move to the recovery store.
 export const legacyRecovery = (recovery, owner, townId) => ({
   ...recovery,
@@ -281,7 +284,9 @@ export function createSyncService({
             if (r.meta.pending?.body.uploadId !== pending.body.uploadId) return false;
             // Keep the immutable rejected upload for an exact retry after support
             // approves it. Restaging would change clientAt and invalidate that approval.
-            if (error.status === 422) r.meta.pending.rejected = true;
+            // An unsupported format cannot be approved, so a retry prepares a fresh copy.
+            if (error.status === 422 && !UNSUPPORTED.includes(error.data?.code))
+              r.meta.pending.rejected = true;
             else r.meta.pending = null;
             r.meta.uploadError = {
               message: error.message,

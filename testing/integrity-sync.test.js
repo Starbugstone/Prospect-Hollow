@@ -123,6 +123,23 @@ it('retries the identical staged timestamp and actions after an acknowledgment i
   expect(storage.active().meta.dirty).toBe(true);
 });
 
+it.each(['save_format_unsupported', 'save_rules_unsupported', 'save_integrity_unsupported'])(
+  'prepares a fresh upload on retry after the server refuses %s',
+  async (code) => {
+    advance();
+    request.mockImplementation(async (_path, body) => {
+      if (!body) return copy(remote);
+      throw Object.assign(new Error('Update the game.'), { status: 422, data: { code } });
+    });
+    await expect(service.sync()).rejects.toThrow('Update the game.');
+    const local = storage.active();
+    expect(local.meta.pending).toBeNull();
+    expect(local.meta.uploadError.code).toBe(code);
+    expect(local.profile.integrity.actions).toHaveLength(1);
+    expect(uploads.size).toBe(0);
+  },
+);
+
 it('keeps progress and queued actions after a validation error without repeatedly resending it', async () => {
   advance();
   request.mockImplementation(async (_path, body) => {

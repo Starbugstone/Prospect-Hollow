@@ -2,6 +2,12 @@
 require __DIR__ . '/support.php';
 use App\{AdminAuth, AdminService, ApiError, SyncApproval, SyncRejections};
 
+// Its own address keeps the shared 127.0.0.1 sign-in limit for the other suites.
+$signInIp = [
+    'REMOTE_ADDR' =>
+        '127.' . random_int(1, 254) . '.' . random_int(1, 254) . '.' . random_int(1, 254),
+];
+
 $admin = new AdminService($db, new AdminAuth($db, $auth), $saves, $public);
 function approvalError(int $status, callable $run, string $label): void
 {
@@ -13,8 +19,8 @@ function approvalError(int $status, callable $run, string $label): void
     }
 }
 try {
-    $player = account();
-    $other = account();
+    $player = account($signInIp);
+    $other = account($signInIp);
     $create = function (string $name) use ($player): array {
         $profile = json_decode(file_get_contents(dirname(__DIR__) . '/content/save-rules.json'))
             ->defaultProfile;
