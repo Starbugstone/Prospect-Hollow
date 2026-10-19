@@ -2,7 +2,7 @@ import { isAnchored } from './TileRules.js';
 import { GEM_TYPES } from './GemFactory.js';
 import { dominantGemType, getBonusFusion } from './BonusFusion.js';
 import { isPlayableCell } from './BoardTopology.js';
-import { bentBeams, hasLenses, sweepLines } from './LensBeams.js';
+import { bentBeams, hasLenses, recordLensBeams, sweepLines } from './LensBeams.js';
 
 // Board bonuses plus the toolbar powers that share their reaction rules.
 const ACTIVATABLE = new Set([
@@ -98,7 +98,7 @@ export class BonusActivator {
 
   // `blasts`, when given, is a Map that counts how many separate blasts reach each
   // affected cell: the initial targets count as one, then one per bonus fired.
-  // `lenses` ({ bent: Set, beams: [] }, or `blasts.lenses`) records beams turned by lenses.
+  // `lenses` (a lensLog, or `blasts.lenses`) records separate lens-turned hits.
   resolveChain(
     board,
     cols,
@@ -165,10 +165,10 @@ export class BonusActivator {
     const lines = context.tiles && hasLenses(context.tiles) ? sweepLines(type, index, cols) : [];
     if (!lines.length) return indices;
     // A row or column sweep that reaches a lens turns and continues.
-    const { cells, beams } = bentBeams(context.tiles, cols, rows, lines);
+    const turned = bentBeams(context.tiles, cols, rows, lines);
+    const { cells, beams } = turned;
     if (!cells.length && !beams.length) return indices;
-    for (const cell of cells) context.lenses?.bent.add(cell);
-    context.lenses?.beams.push(...beams);
+    recordLensBeams(context.lenses, turned);
     return [...new Set([...indices, ...cells])];
   }
 

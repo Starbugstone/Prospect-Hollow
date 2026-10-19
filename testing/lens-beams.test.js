@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createGem } from '../src/game/engine/GemFactory';
 import { TileManager } from '../src/game/engine/TileManager';
 import { BonusActivator } from '../src/game/engine/BonusActivator';
 import { HintEngine } from '../src/game/engine/HintEngine';
-import { bentBeams, lensGeometry } from '../src/game/engine/LensBeams';
+import { getBonusFusion } from '../src/game/engine/BonusFusion';
+import { bentBeams, blastLog, lensGeometry, lensLog } from '../src/game/engine/LensBeams';
 
 const COLS = 5;
 const ROWS = 5;
@@ -63,13 +64,38 @@ describe('lens beams', () => {
 
   it('adds turned cells to a cross and records them for starglass', () => {
     const state = makeState({ [at(1, 0)]: lens('s') });
-    const lenses = { bent: new Set(), beams: [] };
+    const lenses = lensLog();
     const indices = new BonusActivator().activateBonus('cross', state.board, COLS, ROWS, at(1, 3), {
       tiles: state.tiles,
       lenses,
     });
     expect(indices).toEqual(expect.arrayContaining([at(2, 0), at(3, 0), at(4, 0)]));
     expect([...lenses.bent]).toEqual([at(2, 0), at(3, 0), at(4, 0)]);
+  });
+
+  it('counts a looping beam once despite repeated input lines and retraced cells', () => {
+    const { tiles } = makeState({
+      [at(1, 0)]: lens('s'),
+      [at(4, 0)]: lens('n'),
+    });
+    const { hits, beams } = bentBeams(tiles, COLS, ROWS, [
+      { axis: 'row', index: 1 },
+      { axis: 'row', index: 1 },
+    ]);
+    expect([...hits]).toEqual([
+      [at(2, 0), 1],
+      [at(3, 0), 1],
+    ]);
+    expect(beams).toHaveLength(2);
+  });
+
+  it('counts distinct sweeps through the same corner lens as separate beams', () => {
+    const { tiles } = makeState({ [at(0, 0)]: lens('se') });
+    const { hits } = bentBeams(tiles, COLS, ROWS, [
+      { axis: 'row', index: 0 },
+      { axis: 'column', index: 0 },
+    ]);
+    expect(hits.get(at(2, 2))).toBe(2);
   });
 
   it('draws silver mirrors and gold prisms at their real angle', () => {
@@ -83,13 +109,138 @@ describe('lens beams', () => {
 describe('starglass', () => {
   const manager = new TileManager();
 
-  it('shrugs off a direct cross but breaks under a lens-turned beam', () => {
-    const state = makeState({ [at(1, 0)]: lens('s'), [at(3, 0)]: starglass() });
+  // Keep damage regressions independent of random refills and later cascades.
+  const resolve = (state, matches) => {
+    const resolver = new TileManager();
+    vi.spyOn(resolver, 'applyGravity').mockImplementation(() => {});
+    return resolver.getResolution({ ...state, gemTypes: COLORS, matches });
+  };
+  const fireChain = (state, index) => {
+    const blasts = blastLog();
+    const indices = new BonusActivator().activate(
+      state.board,
+      COLS,
+      ROWS,
+      { aIndex: index, bIndex: -1 },
+      null,
+      null,
+      state.tiles,
+      blasts,
+    );
+    return { type: 'bonus-activation', indices, blasts };
+  };
+
+  it.each([1, 2])(
+    'removes only one of %i layers for a turned beam plus direct blasts',
+    (health) => {
+      const target = at(1, 3);
+      const state = makeState({ [at(1, 0)]: lens('e'), [target]: starglass(health) });
+      state.board[at(1, 1)] = createGem('cross');
+      state.board[at(2, 1)] = createGem('cross');
+      state.board[at(2, 3)] = createGem('bomb');
+      const match = fireChain(state, at(1, 1));
+      expect(match.blasts.get(target)).toBe(2);
+      expect(match.blasts.lenses.hits.get(target)).toBe(1);
+      const result = resolve(state, [match]);
+      expect(state.tiles[target].health).toBe(health - 1);
+      expect(result.layersCleared).toBe(1);
+      expect(state.tiles[target].type).toBe(health === 1 ? 'standard' : 'blocker');
+    },
+  );
+
+  it('counts two bonuses through the same lens in a single chain separately', () => {
+    const target = at(3, 0);
+    const state = makeState({ [at(1, 0)]: lens('s'), [target]: starglass(2) });
+    state.board[at(1, 1)] = createGem('cross');
+    state.board[at(1, 3)] = createGem('cross');
+    const match = fireChain(state, at(1, 1));
+    expect(match.blasts.lenses.hits.get(target)).toBe(2);
+    const result = resolve(state, [match]);
+    expect(state.tiles[target].health).toBe(0);
+    expect(result.layersCleared).toBe(2);
+  });
+
+  it('counts independent beams from both ends of one sweep', () => {
+    const target = at(1, 2);
+    const state = makeState({
+      [at(1, 0)]: lens('e'),
+      [at(1, 4)]: lens('w'),
+      [target]: starglass(2),
+    });
+    state.board[at(1, 1)] = createGem('cross');
+    const match = fireChain(state, at(1, 1));
+    expect(match.blasts.lenses.hits.get(target)).toBe(2);
+    resolve(state, [match]);
+    expect(state.tiles[target].health).toBe(0);
+  });
+
+  it('does not count a returning segment as another turned beam', () => {
+    const target = at(3, 0);
+    const state = makeState({
+      [at(1, 0)]: lens('s'),
+      [at(4, 0)]: lens('n'),
+      [target]: starglass(2),
+    });
+    state.board[at(1, 2)] = createGem('cross');
+    const match = fireChain(state, at(1, 2));
+    expect(match.blasts.lenses.beams).toHaveLength(2);
+    expect(match.blasts.lenses.hits.get(target)).toBe(1);
+    resolve(state, [match]);
+    expect(state.tiles[target].health).toBe(1);
+  });
+
+  it.each([0, 1, 2])(
+    'a fusion with %i turned beams removes only that many starglass layers',
+    (count) => {
+      const target = at(3, 0);
+      const crate = at(3, 2);
+      const state = makeState({
+        [at(1, 0)]: lens('s'),
+        [target]: starglass(2),
+        [crate]: { type: 'blocker', health: 2, maxHealth: 2, bonusOnly: true },
+      });
+      state.board[at(2, 1)] = createGem('bomb');
+      state.board[at(2, 2)] = createGem('bomb');
+      for (let i = 0; i < count; i++) state.board[at(1, i + 1)] = createGem('cross');
+      const swap = { aIndex: at(2, 1), bIndex: at(2, 2) };
+      const fusion = getBonusFusion(state.board, COLS, ROWS, swap);
+      const blasts = blastLog();
+      const indices = new BonusActivator().activate(
+        state.board,
+        COLS,
+        ROWS,
+        swap,
+        fusion,
+        null,
+        state.tiles,
+        blasts,
+      );
+      expect(fusion.targets).toContain(target);
+      expect(blasts.lenses.hits.get(target) ?? 0).toBe(count);
+      resolve(state, [{ type: 'bonus-activation', indices, fusion, blasts }]);
+      expect(state.tiles[target].health).toBe(2 - count);
+      expect(state.tiles[crate].health).toBe(0);
+    },
+  );
+
+  it('keeps ordinary blast-only crates vulnerable to every separate blast', () => {
+    const target = at(1, 3);
+    const state = makeState({
+      [at(1, 0)]: lens('e'),
+      [target]: { type: 'blocker', health: 2, maxHealth: 2, bonusOnly: true },
+    });
+    state.board[at(1, 2)] = createGem('cross');
+    state.board[at(2, 2)] = createGem('bomb');
+    resolve(state, [fireChain(state, at(1, 2))]);
+    expect(state.tiles[target].health).toBe(0);
+  });
+
+  it.each([1, 2])('direct blasts leave %i-layer starglass intact before a turned hit', (health) => {
+    const state = makeState({ [at(1, 0)]: lens('s'), [at(3, 0)]: starglass(health) });
     state.board[at(3, 0)] = null;
     // A cross in row 3 hits the starglass directly: no damage.
     const straight = new BonusActivator();
-    const blasts = new Map();
-    blasts.lenses = { bent: new Set(), beams: [] };
+    const blasts = blastLog();
     const tiles = state.tiles.map((tile) => ({ ...tile }));
     const hit = straight.activatePower('cross', state.board, COLS, ROWS, at(3, 2), tiles, blasts);
     expect(hit).toContain(at(3, 0));
@@ -99,11 +250,10 @@ describe('starglass', () => {
       gemTypes: COLORS,
       matches: [{ type: 'cross', indices: hit, blasts }],
     });
-    expect(tiles[at(3, 0)].health).toBe(1);
+    expect(tiles[at(3, 0)].health).toBe(health);
     expect(first.layersCleared ?? 0).toBe(0);
     // A cross in row 1 turns at the lens and runs down column 0 through the starglass.
-    const turned = new Map();
-    turned.lenses = { bent: new Set(), beams: [] };
+    const turned = blastLog();
     const tiles2 = state.tiles.map((tile) => ({ ...tile }));
     const beam = straight.activatePower('cross', state.board, COLS, ROWS, at(1, 2), tiles2, turned);
     const second = manager.getResolution({
@@ -112,7 +262,7 @@ describe('starglass', () => {
       gemTypes: COLORS,
       matches: [{ type: 'cross', indices: beam, blasts: turned }],
     });
-    expect(tiles2[at(3, 0)].health).toBe(0);
+    expect(tiles2[at(3, 0)].health).toBe(health - 1);
     expect(second.layersCleared).toBeGreaterThanOrEqual(1);
     expect(second.steps[0].lensBeams).toEqual([
       { lens: at(1, 0), cells: [at(2, 0), at(3, 0), at(4, 0)] },
@@ -143,10 +293,10 @@ describe('starglass', () => {
     expect(tiles[at(2, 2)].health).toBe(1);
   });
 
-  it('turns spore bursts too', () => {
+  it.each([1, 2])('turns a spore burst onto %i-layer starglass', (health) => {
     const state = makeState({
       [at(1, 0)]: lens('s'),
-      [at(4, 0)]: starglass(),
+      [at(4, 0)]: starglass(health),
       [at(1, 3)]: {
         type: 'standard',
         health: 0,
@@ -164,12 +314,26 @@ describe('starglass', () => {
       gemTypes: COLORS,
       matches: [{ type: 'ruby', indices: [at(0, 4), at(1, 4), at(2, 4)] }],
     });
-    expect(tiles[at(4, 0)].health).toBe(0);
+    expect(tiles[at(4, 0)].health).toBe(health - 1);
     expect(result.steps.some((step) => step.lensBeams?.length)).toBe(true);
   });
 
-  it('guides hints towards a lens shot that breaks starglass', () => {
-    const state = makeState({ [at(1, 0)]: lens('s'), [at(3, 0)]: starglass() });
+  it('counts two simultaneous spore relays through the same lens separately', () => {
+    const target = at(4, 0);
+    const spore = { signal: 'spore', signalHealth: 1, sporeAxis: 'row' };
+    const state = makeState({
+      [at(1, 0)]: lens('s'),
+      [target]: starglass(2),
+      [at(1, 2)]: spore,
+      [at(1, 3)]: spore,
+    });
+    const result = resolve(state, [{ type: 'ruby', indices: [at(2, 2), at(2, 3), at(2, 4)] }]);
+    expect(result.steps.find((step) => step.sporeBursts)?.sporeBursts).toHaveLength(2);
+    expect(state.tiles[target].health).toBe(0);
+  });
+
+  it.each([1, 2])('guides hints towards a turned hit on %i-layer starglass', (health) => {
+    const state = makeState({ [at(1, 0)]: lens('s'), [at(3, 0)]: starglass(health) });
     state.board[at(3, 0)] = null;
     state.board[at(1, 2)] = createGem('cross');
     state.board[at(3, 3)] = createGem('cross');

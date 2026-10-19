@@ -24,20 +24,31 @@ const lineEnds = ({ axis, index }, cols, rows) =>
   axis === 'row' ? [index * cols, index * cols + cols - 1] : [index, (rows - 1) * cols + index];
 
 // The cells a set of straight sweeps reaches through lenses, and each turned segment
-// (for presentation): `{ cells, beams: [{ lens, cells }] }`.
+// (for presentation), plus the number of independent turned beams per cell.
+// Each distinct sweep/end pair starts a beam. Further turns keep that identity,
+// so retracing a cell or looping through lenses cannot hit it twice.
 export function bentBeams(tiles, cols, rows, lines) {
   const cells = new Set();
   const beams = [];
-  const used = new Set();
+  const hits = new Map();
+  const presented = new Set();
+  const starts = new Set();
   const queue = [];
-  const enqueue = (index) => {
-    if (used.has(index) || !isLens(tiles[index])) return;
-    used.add(index);
-    queue.push(index);
+  const enqueue = (index, beam) => {
+    if (beam.used.has(index) || !isLens(tiles[index])) return;
+    beam.used.add(index);
+    queue.push({ lens: index, beam });
   };
-  for (const line of lines) for (const end of lineEnds(line, cols, rows)) enqueue(end);
+  for (const line of lines) {
+    for (const end of lineEnds(line, cols, rows)) {
+      const key = `${line.axis}:${line.index}:${end}`;
+      if (starts.has(key)) continue;
+      starts.add(key);
+      enqueue(end, { used: new Set(), cells: new Set() });
+    }
+  }
   for (let cursor = 0; cursor < queue.length; cursor++) {
-    const lens = queue[cursor];
+    const { lens, beam } = queue[cursor];
     const [dr, dc] = STEPS[tiles[lens].lens];
     const segment = [];
     let row = Math.floor(lens / cols) + dr;
@@ -45,20 +56,27 @@ export function bentBeams(tiles, cols, rows, lines) {
     while (row >= 0 && row < rows && col >= 0 && col < cols) {
       const cell = row * cols + col;
       if (isLens(tiles[cell])) {
-        enqueue(cell);
+        enqueue(cell, beam);
         segment.push(cell);
         break;
       }
       if (isPlayableCell(tiles[cell])) {
         cells.add(cell);
+        if (!beam.cells.has(cell)) {
+          beam.cells.add(cell);
+          hits.set(cell, (hits.get(cell) ?? 0) + 1);
+        }
         segment.push(cell);
       }
       row += dr;
       col += dc;
     }
-    beams.push({ lens, cells: segment });
+    if (!presented.has(lens)) {
+      presented.add(lens);
+      beams.push({ lens, cells: segment });
+    }
   }
-  return { cells: [...cells], beams };
+  return { cells: [...cells], beams, hits };
 }
 
 // Line sweeps of the board bonuses and powers that use rows and columns.
@@ -93,6 +111,14 @@ export function lensGeometry(index, direction, cols, rows) {
 }
 
 // The cells lens-turned beams reach and the turned segments, filled by `activateBonus`.
-export const lensLog = () => ({ bent: new Set(), beams: [] });
+export const lensLog = () => ({ bent: new Set(), beams: [], hits: new Map() });
+// Bonuses and spore relays share the same ledger. Separate activations add their
+// hits even when resolveChain combines them into a single pending match.
+export function recordLensBeams(log, turned) {
+  if (!log || !turned) return;
+  for (const cell of turned.cells) log.bent.add(cell);
+  log.beams.push(...turned.beams);
+  for (const [cell, hits] of turned.hits) log.hits.set(cell, (log.hits.get(cell) ?? 0) + hits);
+}
 // A blast ledger (cell → separate blast count) that also records lens-turned beams.
 export const blastLog = () => Object.assign(new Map(), { lenses: lensLog() });

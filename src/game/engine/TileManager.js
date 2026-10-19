@@ -10,7 +10,7 @@ import {
   coreReleaseTarget,
 } from './ChapterMechanics.js';
 import { collectFinishedFossils, releaseCutRoots } from './DeepMineMechanics.js';
-import { bentBeams, blastLog, hasLenses } from './LensBeams.js';
+import { bentBeams, blastLog, hasLenses, recordLensBeams } from './LensBeams.js';
 import { hasPhaseSeals, shiftPhases } from './PhaseSeals.js';
 import { hasSealedChambers, openBreakthroughs } from './Breakthroughs.js';
 import { gravityPath, incomingGravity, isPlayableCell, isRoutedBoard } from './BoardTopology.js';
@@ -83,8 +83,11 @@ export class TileManager {
       const fusion = pendingMatches.find((match) => match.fusion)?.fusion;
       const fusionTargets = new Set(fusion?.targets ?? []);
       // Starglass only breaks under a beam that a lens has turned.
-      const bentHit = (index) =>
-        pendingMatches.some((match) => match.blasts?.lenses?.bent.has(index));
+      const turnedHits = (index) =>
+        pendingMatches.reduce(
+          (sum, match) => sum + (match.blasts?.lenses?.hits.get(index) ?? 0),
+          0,
+        );
       const lensBeams = pendingMatches.flatMap((match) => match.blasts?.lenses?.beams ?? []);
       // Blast-only obstacles take one hit from each separate bonus blast that
       // reaches them, so a cross that fires a bomb hits a crate in range of both.
@@ -95,6 +98,9 @@ export class TileManager {
               pendingMatches.reduce((sum, match) => sum + (match.blasts?.get(index) ?? 0), 0) - 1,
             )
           : 0;
+      // Fusion strength and direct blasts never add starglass damage.
+      const obstacleHits = (index, base) =>
+        tiles[index]?.lensOnly ? turnedHits(index) : base + extraBlastHits(index);
 
       pendingMatches.forEach((match) => {
         match.indices.forEach((index) => {
@@ -214,7 +220,7 @@ export class TileManager {
         step.bonuses.push({ type: gem.type, index: target, gem, core: index });
       }
       damageTargets.forEach((index) => {
-        if (fusionTargets.has(index) && (!tiles[index]?.lensOnly || bentHit(index))) {
+        if (fusionTargets.has(index) && (!tiles[index]?.lensOnly || turnedHits(index) > 0)) {
           totalLayersCleared += this.applyFusionHit(
             workingBoard,
             tiles,
@@ -222,7 +228,7 @@ export class TileManager {
             step,
             cleared,
             protectedIndices,
-            2 + extraBlastHits(index),
+            obstacleHits(index, 2),
           );
           return;
         }
@@ -247,10 +253,10 @@ export class TileManager {
             pendingMatches.some(
               (match) => !GEM_TYPES.includes(match.type) && match.indices.includes(index),
             )) &&
-          (!tile?.lensOnly || bentHit(index));
+          (!tile?.lensOnly || turnedHits(index) > 0);
         if (tile && tile.health > 0 && sealHit && specialHit) {
           const before = tile.health;
-          tile.health = Math.max(0, tile.health - 1 - extraBlastHits(index));
+          tile.health = Math.max(0, tile.health - obstacleHits(index, 1));
           if (tile.maxHealth == null) {
             tile.maxHealth = before;
           }
@@ -340,10 +346,7 @@ export class TileManager {
         const bursts = queuedSpores;
         queuedSpores = [];
         const blasts = blastLog();
-        for (const burst of bursts) {
-          for (const cell of burst.bent?.cells ?? []) blasts.lenses.bent.add(cell);
-          blasts.lenses.beams.push(...(burst.bent?.beams ?? []));
-        }
+        for (const burst of bursts) recordLensBeams(blasts.lenses, burst.bent);
         const indices = bonusActivator.resolveChain(workingBoard, totalCols, totalRows, {
           tiles,
           targets: bursts.flatMap((burst) => burst.targets),
