@@ -290,7 +290,13 @@ final class Auth
             throw new ApiError(401, 'This link has expired or was already used.');
         }
         $id = null;
-        $response = $db->transactional(function () use ($db, $body, $hash, $intent, &$id) {
+        $response = Database::retryOnDeadlock($db, function () use (
+            $db,
+            $body,
+            $hash,
+            $intent,
+            &$id,
+        ) {
             $this->lockIdentity($db, $intent['email']);
             $live = $db->fetchAssociative(
                 'SELECT * FROM login_intents WHERE token_hash=? FOR UPDATE',
@@ -331,7 +337,7 @@ final class Auth
     {
         $s = $this->session($r, true);
         $db = $this->database->get();
-        $db->transactional(function () use ($db, $s, $all) {
+        Database::retryOnDeadlock($db, function () use ($db, $s, $all) {
             $row = $db->fetchAssociative('SELECT * FROM players WHERE id=? FOR UPDATE', [
                 $s['player_id'],
             ]);

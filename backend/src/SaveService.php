@@ -160,7 +160,7 @@ final class SaveService
         if ($write) {
             $this->auth->limit('save:' . $session['player_id'], 120, 60);
         }
-        return $db->transactional(function () use ($db, $session, $operation) {
+        return Database::retryOnDeadlock($db, function () use ($db, $session, $operation) {
             $account = $db->fetchAssociative('SELECT * FROM players WHERE id=? FOR UPDATE', [
                 $session['player_id'],
             ]);

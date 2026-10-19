@@ -350,7 +350,7 @@ final class AdminService
     // Ends every device session and unused sign-in link; the player's saves are untouched.
     public function signOutPlayer(string $actor, string $id): array
     {
-        return $this->database->get()->transactional(function ($db) use ($actor, $id) {
+        return Database::retryOnDeadlock($this->database->get(), function ($db) use ($actor, $id) {
             $player = $db->fetchAssociative('SELECT * FROM players WHERE id=? FOR UPDATE', [$id]);
             if (!$player) {
                 throw new ApiError(404, 'No player has that ID.');
@@ -364,7 +364,11 @@ final class AdminService
     public function deletePlayer(string $actor, string $id, array $body): array
     {
         SaveService::keys($body, ['confirmation']);
-        return $this->database->get()->transactional(function ($db) use ($actor, $id, $body) {
+        return Database::retryOnDeadlock($this->database->get(), function ($db) use (
+            $actor,
+            $id,
+            $body,
+        ) {
             $player = $db->fetchAssociative('SELECT * FROM players WHERE id=? FOR UPDATE', [$id]);
             if (!$player) {
                 throw new ApiError(404, 'No player has that ID.');

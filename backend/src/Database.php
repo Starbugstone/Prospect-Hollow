@@ -3,6 +3,7 @@ declare(strict_types=1);
 namespace App;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
+use Doctrine\DBAL\Exception\DeadlockException;
 use Doctrine\DBAL\Tools\DsnParser;
 final class Database
 {
@@ -31,6 +32,25 @@ final class Database
         22 => '/schema-helmet-host',
     ];
     private ?Connection $connection = null;
+    /**
+     * Retry once only when the database rolled back this entire transaction.
+     * @template T
+     * @param \Closure(Connection): T $work
+     * @return T
+     */
+    public static function retryOnDeadlock(Connection $db, \Closure $work): mixed
+    {
+        $outermost = $db->getTransactionNestingLevel() === 0;
+        try {
+            return $db->transactional($work);
+        } catch (DeadlockException $error) {
+            // A nested caller cannot replay work whose outer transaction was aborted.
+            if (!$outermost) {
+                throw $error;
+            }
+            return $db->transactional($work);
+        }
+    }
     public static function latestVersion(): int
     {
         return array_key_last(self::MIGRATIONS);

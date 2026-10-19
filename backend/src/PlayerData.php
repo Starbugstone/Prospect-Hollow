@@ -301,7 +301,7 @@ final class PlayerData
         }
         $hash = $this->auth->hash($body['token']);
         $db = $this->database->get();
-        [$previous, $email] = $db->transactional(function () use ($db, $hash) {
+        [$previous, $email] = Database::retryOnDeadlock($db, function () use ($db, $hash) {
             $expired = new ApiError(401, 'This link has expired or was already used.');
             // The player row lock comes first, as in every account operation, then the
             // address's identity lock that a sign-in creating an account also takes.
