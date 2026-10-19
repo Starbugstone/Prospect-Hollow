@@ -206,10 +206,11 @@
         <h2>Cloud sync <SyncBlocked :town="town" /></h2>
         <p class="admin-muted">
           Uploads the save protection rejected, newest first (the latest five, kept 30 days).
-          Compare one to see the cloud save, what the server expected and what the game sent.
-          Approve that exact upload for 24 hours for a false desync, or edit the values and reset
-          the player’s game to that save. An approval only accepts an unchanged retry at this
-          revision; if the player has continued playing, compare their new rejected upload instead.
+          Retries at the same cloud revision keep one unchanged comparison per minute. Compare one
+          to see the cloud save, what the server expected and what the game sent. Approve that exact
+          upload for 24 hours for a false desync, or edit the values and reset the player’s game to
+          that save. An approval only accepts an unchanged retry at this revision; if the player has
+          continued playing, compare their new rejected upload instead.
         </p>
         <ForceSyncToggle
           v-if="!town.deletedAt"
