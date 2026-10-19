@@ -60,8 +60,8 @@ const ACTIVE = {
   },
 };
 // Lens mirrors, portals and moon dials are fixtures the player uses, never completes
-// (agreed with the user, like permanent voids). A dial leaves with the exits once the
-// last cargo is delivered.
+// (agreed with the user, like permanent voids). A dial stays for the whole level,
+// like the other fixtures.
 const FIXTURES = new Set(['lens', 'portal', 'moon-dial']);
 // Ore orders are shown in the goal panel, not on a cell. Floatstones are pieces
 // rather than cell markers; their sky hatches follow the relic exit sample.
@@ -124,14 +124,14 @@ function renderer() {
     scene: {
       textures,
       add: {
-        image: node,
+        image: vi.fn(node),
         sprite: node,
         rectangle: node,
         container: node,
         circle: node,
         graphics: node,
       },
-      make: { text: () => ({ width: 20, height: 16, canvas: {}, destroy() {} }) },
+      make: { text: vi.fn(() => ({ width: 20, height: 16, canvas: {}, destroy() {} })) },
     },
     backgroundLayer: node(),
     tileLayer: node(),
@@ -178,4 +178,31 @@ it('keeps a relic exit while a relic is on the board', () => {
   expect(animator.tileOverlays.has(1)).toBe(true);
   animator.syncToBoard([{ id: 2, type: 'ruby' }, null]);
   expect(animator.tileOverlays.has(1)).toBe(false);
+});
+
+it('keeps a moon dial and updates its arrow after the last cargo leaves its exit', () => {
+  const animator = renderer();
+  const dial = { ...ACTIVE['moon-dial'], fall: 'down' };
+  animator.tiles = [PLAIN, dial, ACTIVE.relic];
+  animator.reset([{ id: 1, type: 'relic' }, null, null], {
+    boardCols: 3,
+    boardRows: 1,
+    cellSize: 48,
+  });
+  expect(animator.tileOverlays.has(1)).toBe(true);
+  expect(animator.tileOverlays.has(2)).toBe(true);
+  const before = animator.tileOverlays.get(1);
+  animator.syncToBoard([{ id: 2, type: 'ruby' }, null, null]);
+  expect(animator.tileOverlays.get(1)).toBe(before);
+  expect(look(animator, 1)).not.toEqual(look(animator, 0));
+  expect(look(animator, 2)).toEqual(look(animator, 0));
+  animator.updateTiles([PLAIN, { ...dial, fall: 'up' }, ACTIVE.relic]);
+  expect(animator.tileOverlays.get(1)).not.toBe(before);
+  expect(animator.scene.add.image).toHaveBeenCalledWith(
+    0,
+    expect.any(Number),
+    expect.stringContaining('glyph:↑:'),
+  );
+  expect(animator.scene.add.image).toHaveBeenCalledWith(0, 0, expect.any(String), 'tile-moon-dial');
+  expect(look(animator, 2)).toEqual(look(animator, 0));
 });

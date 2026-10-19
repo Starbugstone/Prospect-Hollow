@@ -20,8 +20,8 @@ based on `preprod`.
   only rearrange the board; none can fail or block completion. Every level is
   completed in regression coverage after more than 100 moves.
 - **Completed obstacles leave no icon.** One-shot switches, starglass and phase seals
-  leave the board when completed. The moon dial, portals and lenses are fixtures;
-  the dial and exits leave together once the last cargo is delivered.
+  leave the board when completed. The moon dial, portals and lenses are fixtures and
+  stay for the whole level; exits leave once the last cargo is delivered.
 - **Boards stay nearly full.** Voids only where they have a job (portal channel,
   hourglass waist, lens cells). Taller boards (7 × 10, 7 × 11) come before wider
   ones; 8 × 10 finales only after a mobile tap-size check at 390 × 844.

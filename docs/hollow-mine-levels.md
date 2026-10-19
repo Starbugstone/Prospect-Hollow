@@ -25,8 +25,8 @@ Willowkin plant the first tree of the floating island in chapter 23.
   cavern falls up above its seam and down below it, refilling from the seam.
 - **Moon locks and dials** are floor markers on side or corner cells. Only a bonus blast
   that covers one turns gravity over, at most once per move. A lock works once and
-  leaves the board; a dial stays (with an arrow showing the direction) until the last
-  cargo is delivered. Pearls follow gravity, floatstones go against it.
+  leaves the board; a dial stays for the whole level, with an arrow showing the current
+  direction. Pearls follow gravity, floatstones go against it.
 - **Lens mirrors** sit on edge voids. A row or column beam (cross, spore burst, the
   clear-row power) that reaches a lens at the end of its line turns: silver mirrors turn
   it square, gold prisms send it diagonally. Each lens turns a beam once.

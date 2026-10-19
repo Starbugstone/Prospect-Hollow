@@ -315,9 +315,7 @@ export class BoardAnimator {
   trackRelics(relicsLeft) {
     if (relicsLeft === this.relicsLeft) return;
     this.relicsLeft = relicsLeft;
-    this.drawCells(
-      this.tiles.flatMap((tile, index) => (tile?.exit || tile?.gravitySwitch ? [index] : [])),
-    );
+    this.drawCells(this.tiles.flatMap((tile, index) => (tile?.exit ? [index] : [])));
   }
 
   async playIntroCascade() {
@@ -1096,11 +1094,9 @@ export class BoardAnimator {
     const signal = tile?.signalHealth === 0 ? null : tile?.signal;
     // A phase seal shows the colour its gem becomes after the next move.
     const phase = tile?.phaseSeal && tile.health > 0 ? tile.phaseNext : null;
-    // A moon lock until used; a moon dial while cargo remains, with its arrow.
+    // A moon lock until used; a permanent moon dial always shows the gravity direction.
     const gravitySwitch =
-      tile?.gravitySwitch === 'lock' || (tile?.gravitySwitch === 'dial' && this.relicsLeft)
-        ? tile.gravitySwitch
-        : null;
+      tile?.gravitySwitch === 'lock' || tile?.gravitySwitch === 'dial' ? tile.gravitySwitch : null;
     // Paired portals share a color; the entrance swirls, the exit shines.
     const portal = Number.isInteger(tile?.portalTo)
       ? { pair: tile.portalPair ?? 0 }
