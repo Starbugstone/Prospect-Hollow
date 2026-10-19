@@ -45,6 +45,37 @@ Willowkin plant the first tree of the floating island in chapter 23.
 Completed obstacles leave no icon. Lenses, portals and moon dials are fixtures the
 player uses rather than completes; `testing/completed-board-markers.test.js` lists them.
 
+## Mechanic videos at 30 fps
+
+- [Moon dial: changing the drop direction](images/hollow-mines/moon-dial-30fps.mp4).
+  Level 542 shows a bonus blast turning gravity upward, a floatstone sinking under
+  inverted gravity, and a later blast turning gravity downward again. The dial's
+  arrow follows the current direction. Unlike the single-use moon lock, the dial
+  remains available and can flip again on a later move, at most once per move.
+- [Floatstones: rising and collection](images/hollow-mines/floatstones-30fps.mp4).
+  Level 409 shows a floatstone rising three cells after a legal match, then reaching
+  its sky hatch after another match. Gems sink past the floatstone; the collected
+  floatstone and completed hatch leave no marker.
+- [Portals: transport and delivery](images/hollow-mines/portals-30fps.mp4).
+  Level 475 shows a moon gem entering the left gold portal and appearing at the
+  matching middle exit, ordinary gems taking the same route, and the moon gem
+  eventually reaching its basket.
+
+Floatstones travel **against** gravity: clear directly above them under normal
+gravity, or below them when gravity points up. They cannot be matched or destroyed.
+Chains and root vines must be released before a held floatstone can move, and stone
+or gates in its path must be opened. Swapping an earned bonus gem with a floatstone
+fires the bonus in the floatstone's former cell, provided the floatstone can still
+reach an exit from its new cell. None of this limits puzzle moves or play time.
+
+These silent H.264 clips show the actual 1280 × 800 game renderer, sampled on an
+exact 30 fps animation clock and played at normal speed. Captions mark legal-play
+checkpoints where setup moves were omitted. All demonstrated actions use the normal
+game store, with earned board bonuses and no inventory powers. Their resulting gem
+types and tiles were checked against the legal simulation checkpoints. The focused
+gravity, portal and completed-marker suites passed all 50 tests in Docker. No
+gameplay code, level layouts, rewards or targets changed for these recordings.
+
 ## Gems
 
 Peridot (lime, teardrop) and starmetal (steel blue, nugget with a gold star) join the
