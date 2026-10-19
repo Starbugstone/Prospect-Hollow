@@ -102,6 +102,12 @@ describe('Privacy notice', () => {
     expect(RETENTION.helmetFinds).toBe('30 days');
     expect(read('backend/src/PublicTown.php')).toContain('HELMET_KEEP = 30 * 86400');
     expect(cleanup).toContain('App\\PublicTown::HELMET_KEEP');
+    expect(RETENTION.rejectedUploads).toBe(
+      'the latest 5 comparisons per town, removed by daily cleanup after 30 days',
+    );
+    expect(read('backend/src/SyncRejections.php')).toContain('KEPT = 5');
+    expect(read('backend/src/SyncRejections.php')).toContain('KEEP_DAYS = 30');
+    expect(cleanup).toContain('App\\SyncRejections::expire');
     expect(saves).toContain("(int) $row['revision'] - 4");
   });
 

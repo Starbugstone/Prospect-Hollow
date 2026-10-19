@@ -4,7 +4,7 @@
 // src/i18n/fr.json (testing/player-data.test.js checks it).
 
 // Shown as "Last updated" on the notice. Raise it whenever the notice changes.
-export const PRIVACY_UPDATED = '2026-10-07';
+export const PRIVACY_UPDATED = '2026-10-19';
 
 // How long each kind of data is kept, matching backend/bin/cleanup.php and the API.
 export const RETENTION = {
@@ -15,6 +15,7 @@ export const RETENTION = {
   deletedTown: '30 days',
   earlierSaves: 'the 5 previous saves of each town',
   helmetFinds: '30 days',
+  rejectedUploads: 'the latest 5 comparisons per town, removed by daily cleanup after 30 days',
   adminLog: '3 months',
   hostRecords: '30 days',
 };
@@ -39,6 +40,12 @@ export const PRIVACY_DATA = [
     why: 'To keep your progress safe and let you play on several devices.',
     basis: 'Providing the account you asked for',
     kept: 'Until you delete the town or your account; {earlierSaves}; a deleted town is removed after {deletedTown}',
+  },
+  {
+    data: 'Cloud saves the game refused',
+    why: 'To investigate a blocked sync and recover your progress, we keep the refused upload, the cloud save it was compared with, the expected state and the reason.',
+    basis: 'Providing the account you asked for',
+    kept: '{rejectedUploads}, including for a deleted town; removed at once when you delete your account',
   },
   {
     data: 'Public name, shared towns and guestbook visits',

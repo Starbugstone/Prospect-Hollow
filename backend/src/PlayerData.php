@@ -242,6 +242,29 @@ final class PlayerData
                         [$id],
                     ),
                 ),
+                // The complete retained comparison, even after its cloud revision
+                // has left town_history. These are private to this account's towns.
+                'refusedCloudSaves' => array_map(
+                    fn($rejection) => [
+                        'townId' => $rejection['town_id'],
+                        'town' => $rejection['name'],
+                        'refusedAt' => $time(intdiv((int) $rejection['rejected_at'], 1000)),
+                        'revision' => (int) $rejection['revision'],
+                        'code' => $rejection['code'],
+                        'field' => $rejection['field'],
+                        'reason' => $rejection['message'],
+                        'upload' => json_decode($rejection['upload']),
+                        'cloud' => json_decode($rejection['cloud']),
+                        'expected' =>
+                            $rejection['expected'] === null
+                                ? null
+                                : json_decode($rejection['expected']),
+                    ],
+                    $db->fetchAllAssociative(
+                        'SELECT r.*,t.name FROM town_sync_rejections r JOIN towns t ON t.id=r.town_id WHERE t.player_id=? ORDER BY r.rejected_at,r.id',
+                        [$id],
+                    ),
+                ),
                 'distinctions' => $distinctions,
             ];
         });

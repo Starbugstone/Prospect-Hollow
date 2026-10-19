@@ -198,7 +198,42 @@ try {
         'town_id' => $namedHome['townId'],
         'host_town_id' => $hostTown['townId'],
     ]);
+    // Retained support comparisons remain exportable even when their cloud
+    // revision has already left the five-save history.
+    $rejectedRow = $db
+        ->get()
+        ->fetchAssociative('SELECT * FROM towns WHERE id=?', [$namedHome['townId']]);
+    App\SyncRejections::record(
+        $db->get(),
+        $rejectedRow,
+        json_encode(profile(999)),
+        ['town' => ['coins' => 25]],
+        new App\ApiError(422, 'The uploaded coins do not match.', [
+            'code' => 'save_integrity_mismatch',
+            'field' => 'town.coins',
+        ]),
+    );
+    $db->get()->update(
+        'towns',
+        ['profile' => json_encode(profile(26)), 'revision' => 7],
+        ['id' => $namedHome['townId']],
+    );
     $export = status(200, dataApi('GET', 'account/export', null, $named), 'export');
+    $refused = $export['refusedCloudSaves'];
+    check(
+        count($refused) === 1 &&
+            $refused[0]['townId'] === $namedHome['townId'] &&
+            $refused[0]['town'] === 'Copper Ridge' &&
+            $refused[0]['revision'] === 1 &&
+            $refused[0]['code'] === 'save_integrity_mismatch' &&
+            $refused[0]['field'] === 'town.coins' &&
+            $refused[0]['reason'] === 'The uploaded coins do not match.' &&
+            $refused[0]['upload']['town']['coins'] === 999 &&
+            $refused[0]['cloud']['town']['coins'] === 25 &&
+            $refused[0]['expected']['town']['coins'] === 25 &&
+            strtotime($refused[0]['refusedAt']) !== false,
+        'export includes the complete private support comparison',
+    );
     check(
         $export['account']['email'] === email($named['id']) &&
             $export['account']['id'] === $named['id'] &&
@@ -207,7 +242,7 @@ try {
             count($export['activity']['activeDays']) === 1 &&
             count($export['signedInDevices']) === 1 &&
             $export['towns'][0]['name'] === 'Copper Ridge' &&
-            $export['towns'][0]['save']['town']['coins'] === 25 &&
+            $export['towns'][0]['save']['town']['coins'] === 26 &&
             $export['towns'][0]['earlierSaves'] === [] &&
             count($export['visitsMade']) === 2 &&
             $export['visitsMade'][0]['town'] === 'Lantern Rest' &&
@@ -219,9 +254,32 @@ try {
             json_encode(array_diff_key($export, ['towns' => 1])),
     );
     $hostExport = status(200, dataApi('GET', 'account/export', null, $host), 'host export');
+    $deletedRow = $db
+        ->get()
+        ->fetchAssociative('SELECT * FROM towns WHERE id=?', [$privateHome['townId']]);
+    App\SyncRejections::record(
+        $db->get(),
+        $deletedRow,
+        json_encode(profile(500)),
+        null,
+        new App\ApiError(422, 'No replay available.'),
+    );
+    App\SaveService::tombstone($db->get(), $privateHome['townId']);
+    $deletedExport = status(
+        200,
+        dataApi('GET', 'account/export', null, $private),
+        'deleted-town comparison export',
+    );
+    check(
+        count($deletedExport['refusedCloudSaves']) === 1 &&
+            $deletedExport['refusedCloudSaves'][0]['expected'] === null &&
+            $deletedExport['towns'][0]['deletedAt'] !== null,
+        'retained comparisons for soft-deleted towns remain exportable',
+    );
     $hostJson = json_encode($hostExport);
     check(
-        $hostExport['towns'][0]['differentSignedInVisitors'] === 3 &&
+        $hostExport['refusedCloudSaves'] === [] &&
+            $hostExport['towns'][0]['differentSignedInVisitors'] === 3 &&
             !str_contains($hostJson, 'Clementine') &&
             !str_contains($hostJson, email($named['id'])),
         'a host’s export counts visitors without naming them',
@@ -396,6 +454,15 @@ try {
             'nothing of the erased accounts is left: ' . $query,
         );
     }
+    check(
+        (int) $db
+            ->get()
+            ->fetchOne('SELECT COUNT(*) FROM town_sync_rejections WHERE town_id IN (?,?)', [
+                $namedHome['townId'],
+                $privateHome['townId'],
+            ]) === 0,
+        'account erasure immediately removes retained support comparisons',
+    );
     check(
         !$db
             ->get()

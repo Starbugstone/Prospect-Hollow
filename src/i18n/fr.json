@@ -1,4 +1,8 @@
 {
+  "the latest 5 comparisons per town, removed by daily cleanup after 30 days": "les 5 dernières comparaisons par ville, supprimées par le nettoyage quotidien après 30 jours",
+  "Cloud saves the game refused": "Sauvegardes en ligne refusées par le jeu",
+  "To investigate a blocked sync and recover your progress, we keep the refused upload, the cloud save it was compared with, the expected state and the reason.": "Pour examiner une synchronisation bloquée et récupérer votre progression, nous conservons la sauvegarde refusée, la sauvegarde en ligne utilisée pour la comparaison, l’état attendu et le motif du refus.",
+  "{rejectedUploads}, including for a deleted town; removed at once when you delete your account": "{rejectedUploads}, y compris pour une ville supprimée ; suppression immédiate lorsque vous supprimez votre compte",
   "1884": "1884",
   "1908": "1908",
   "1920": "1920",
