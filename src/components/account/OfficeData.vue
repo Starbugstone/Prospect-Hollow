@@ -22,7 +22,7 @@
     <p>
       {{
         t(
-          'Get a copy in a readable file (JSON): your account, towns with their earlier saves, public profile, last connection and the towns you visited.',
+          'Get a copy in a readable file (JSON): your account, towns with their earlier saves and the cloud saves the game refused, public profile, last connection and the towns you visited.',
         )
       }}
     </p>
@@ -77,6 +77,11 @@ const facts = computed(() => {
       ]
         .filter(Boolean)
         .join(' · '),
+    },
+    {
+      label: 'Cloud saves the game refused',
+      value: number(s.refusedSaves ?? 0),
+      note: t(RETENTION.rejectedUploads),
     },
     {
       label: 'Honours and distinctions',

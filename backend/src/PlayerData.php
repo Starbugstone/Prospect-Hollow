@@ -92,6 +92,9 @@ final class PlayerData
                     $count(
                         'SELECT COUNT(*) FROM town_history h JOIN towns t ON t.id=h.town_id WHERE t.player_id=?',
                     ),
+                'refusedSaves' => $count(
+                    'SELECT COUNT(*) FROM town_sync_rejections r JOIN towns t ON t.id=r.town_id WHERE t.player_id=?',
+                ),
                 'honours' => count($honours),
                 'distinctions' => count((array) PlayerDistinctions::owned($db, $id)),
                 'visits' => $count('SELECT COUNT(*) FROM visitor_visits WHERE visitor_key=?', [

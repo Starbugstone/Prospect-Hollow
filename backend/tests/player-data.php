@@ -183,6 +183,7 @@ try {
             $summary['publicName'] === 'Clementine' &&
             $summary['towns'] === 1 &&
             $summary['savedVersions'] === 1 &&
+            $summary['refusedSaves'] === 0 &&
             $summary['visits'] === 2 &&
             $summary['townsVisited'] === 1 &&
             $summary['sessions'] === 1 &&
@@ -217,6 +218,10 @@ try {
         'towns',
         ['profile' => json_encode(profile(26)), 'revision' => 7],
         ['id' => $namedHome['townId']],
+    );
+    check(
+        status(200, dataApi('GET', 'account/data', null, $named), 'overview')['refusedSaves'] === 1,
+        'the overview counts refused cloud saves',
     );
     $export = status(200, dataApi('GET', 'account/export', null, $named), 'export');
     $refused = $export['refusedCloudSaves'];

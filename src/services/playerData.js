@@ -47,7 +47,7 @@ export async function downloadAccountData(now = new Date()) {
     JSON.stringify(
       {
         about: about(
-          'Everything Prospect Hollow keeps about your account: your email address, your towns and their earlier saves, your public profile, your last connection, the towns you visited and your distinctions.',
+          'Everything Prospect Hollow keeps about your account: your email address, your towns, their earlier saves and the cloud saves the game refused, your public profile, your last connection, the towns you visited and your distinctions.',
         ),
         ...data,
       },
