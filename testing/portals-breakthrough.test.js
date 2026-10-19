@@ -10,6 +10,7 @@ import {
 } from '../src/game/engine/BoardTopology';
 import { cargoReachesExit } from '../src/game/engine/GravityFrames';
 import { levelConfig } from '../src/game/engine/LevelGenerator';
+import { obstacleSeenKey, obstaclesInLevel, unseenObstacles } from '../src/data/obstacles';
 import { LEVEL_COUNT } from '../src/data/campaign';
 import { layerCount } from '../src/game/engine/TileRules';
 
@@ -118,6 +119,19 @@ describe('portals', () => {
         expect(tiles[entrance - cols].portalTo, `level ${id}`).toBe(exit + cols);
       }
     }
+  });
+
+  it('introduce the reworked portal again to players who met the old one, once', () => {
+    const level = levelConfig(475);
+    const guide = obstaclesInLevel(level.tiles, level.theme);
+    const portal = (seen) => unseenObstacles(guide, seen).find(({ id }) => id === 'portal');
+    expect(portal([])).toMatchObject({ id: 'portal' });
+    expect(portal([]).updated).toBeUndefined();
+    expect(portal(['portal'])).toMatchObject({ id: 'portal', updated: true });
+    const seen = ['portal', ...guide.map(obstacleSeenKey)];
+    expect(unseenObstacles(guide, seen)).toEqual([]);
+    const lantern = obstaclesInLevel([{ signal: 'lantern' }]);
+    expect(unseenObstacles(lantern, ['lantern'])).toEqual([]);
   });
 
   it('never loops forever on a misauthored portal cycle', () => {

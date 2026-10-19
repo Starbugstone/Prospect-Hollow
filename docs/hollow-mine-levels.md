@@ -39,7 +39,8 @@ Willowkin plant the first tree of the floating island in chapter 23.
   on to the entrance pad at the foot of a siding shimmers out, shimmers back in on the
   exit pad on the top row and drops out of it. The column below an exit pad fills only
   through its portal. Moon gems are relics that ride portals from the sidings towards
-  their baskets.
+  their baskets. Portals have `revision: 2` in `src/data/obstacles.js`, so players who
+  met the earlier portal see its "New in this mine" guide again, marked Updated.
 - **Breakthrough chambers** are sealed rows behind a cracked wall that only bonus blasts
   break. When the whole wall is down, the chamber opens and fills from above.
 - **No ice on extraction levels.** A level whose goal is lighting lanterns or delivering

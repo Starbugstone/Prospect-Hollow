@@ -168,6 +168,8 @@ export const OBSTACLES = [
   },
   {
     id: 'portal',
+    // 2: the exit became a pad on the top row and gems beam between the pads.
+    revision: 2,
     name: 'Portals',
     art: '/art/obstacles/portal.svg',
     instruction:
@@ -209,6 +211,17 @@ export const OBSTACLES = [
   // Themes reskin the relic (pearls); the default appearance holds the shared text.
   { ...mineRelicAppearance(), present: (tile) => tile.exit && !tile.floatExit },
 ];
+// The guide remembers which obstacles the player has met. A reworked obstacle raises its
+// revision, so a player who met an older version sees its guide again, marked as updated.
+export const obstacleSeenKey = ({ id, revision = 1 }) => (revision > 1 ? `${id}@${revision}` : id);
+export const unseenObstacles = (obstacles, seen) =>
+  obstacles
+    .filter((obstacle) => !seen.includes(obstacleSeenKey(obstacle)))
+    .map((obstacle) =>
+      seen.some((key) => key.split('@')[0] === obstacle.id)
+        ? { ...obstacle, updated: true }
+        : obstacle,
+    );
 export const obstaclesInLevel = (tiles, theme) =>
   OBSTACLES.filter((obstacle) => tiles.some((tile) => tile && obstacle.present(tile))).map(
     (obstacle) => {

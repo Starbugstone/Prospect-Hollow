@@ -28,7 +28,9 @@
           <img :src="obstacle.art" alt="" /><b v-if="obstacle.id === 'double-ice'">2</b>
         </div>
         <div>
-          <h3>{{ t(obstacle.name) }}</h3>
+          <h3>
+            {{ t(obstacle.name) }}<small v-if="obstacle.updated">{{ t('Updated') }}</small>
+          </h3>
           <div class="obstacle-demo" aria-hidden="true">
             <template v-if="['lens', 'starglass'].includes(obstacle.id)">
               <img src="/art/bonuses/cross.svg" alt="" /><b>→</b
@@ -250,6 +252,16 @@ li {
 h3 {
   margin: 0;
   font-size: 16px;
+}
+h3 small {
+  margin-left: 8px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  color: #263749;
+  background: #bce5a6;
+  font-size: 11px;
+  font-weight: 800;
+  vertical-align: 2px;
 }
 li p {
   margin: 6px 0 0;
