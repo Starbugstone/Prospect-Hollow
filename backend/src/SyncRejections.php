@@ -19,6 +19,12 @@ final class SyncRejections
     public const KEEP_DAYS = 30;
     /** Keep one immutable full comparison per revision during a retry burst. */
     public const THROTTLE_MS = 60000;
+    /**
+     * Full comparisons a town stores per window across revisions. An unchanged accepted
+     * save raises the revision, so this caps alternating saves and refused uploads while
+     * a genuine refusal after a newly accepted save is still captured at once.
+     */
+    public const WINDOW_CAPTURES = 2;
     /** Admin edits of one reset, at most. */
     private const MAX_CHANGES = 200;
     /** The latest rejection made against the town's current revision (milliseconds in SQL). */
@@ -44,11 +50,13 @@ final class SyncRejections
                 return;
             }
             $now = (int) floor(microtime(true) * 1000);
+            $recent = $db->fetchAssociative(
+                'SELECT COUNT(*) AS captures, COALESCE(SUM(CASE WHEN revision=? THEN 1 ELSE 0 END),0) AS same FROM town_sync_rejections WHERE town_id=? AND rejected_at>?',
+                [(int) $row['revision'], $row['id'], $now - self::THROTTLE_MS],
+            );
             if (
-                $db->fetchOne(
-                    'SELECT id FROM town_sync_rejections WHERE town_id=? AND revision=? AND rejected_at>? ORDER BY rejected_at DESC,id LIMIT 1',
-                    [$row['id'], (int) $row['revision'], $now - self::THROTTLE_MS],
-                ) !== false
+                (int) ($recent['same'] ?? 0) > 0 ||
+                (int) ($recent['captures'] ?? 0) >= self::WINDOW_CAPTURES
             ) {
                 // Keep the original reason with its original upload and expectation:
                 // an admin may inspect or restore that exact comparison later.

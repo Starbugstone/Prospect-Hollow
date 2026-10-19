@@ -2,8 +2,14 @@
 require __DIR__ . '/support.php';
 use App\{ApiError, Database, SyncRejections};
 
+// Its own address keeps the shared 127.0.0.1 sign-in limit for the other suites.
+$signInIp = [
+    'REMOTE_ADDR' =>
+        '127.' . random_int(1, 254) . '.' . random_int(1, 254) . '.' . random_int(1, 254),
+];
+
 try {
-    $owner = account();
+    $owner = account($signInIp);
     $town = status(200, callApi('POST', 'towns', townBody('Retry Log'), $owner), 'create log town');
     $row = $db->get()->fetchAssociative('SELECT * FROM towns WHERE id=?', [$town['townId']]);
     $first = json_encode(profile(111));
@@ -47,6 +53,26 @@ try {
     check(
         count(SyncRejections::list($db->get(), $town['townId'])) === 3,
         'a new revision captures immediately',
+    );
+    // An unchanged accepted save raises the revision, so alternating saves and refused
+    // uploads stop at the per-town budget for the window.
+    for ($revision = 3; $revision <= 6; $revision++) {
+        $row['revision'] = $revision;
+        $db->get()->update('towns', ['revision' => $revision], ['id' => $row['id']]);
+        SyncRejections::record($db->get(), $row, $first, null, new ApiError(422, 'alternating'));
+    }
+    check(
+        count(SyncRejections::list($db->get(), $town['townId'])) === 3,
+        'alternating saves and refusals cannot exceed the per-town window budget',
+    );
+    $db->get()->executeStatement('UPDATE town_sync_rejections SET rejected_at=? WHERE town_id=?', [
+        time() * 1000 - SyncRejections::THROTTLE_MS - 1000,
+        $row['id'],
+    ]);
+    SyncRejections::record($db->get(), $row, $first, null, new ApiError(422, 'alternating'));
+    check(
+        count(SyncRejections::list($db->get(), $town['townId'])) === 4,
+        'the next window captures the latest revision again',
     );
     for ($i = 0; $i < SyncRejections::KEPT; $i++) {
         $db->get()->executeStatement(
