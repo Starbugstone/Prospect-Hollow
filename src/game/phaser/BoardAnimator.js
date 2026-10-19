@@ -8,9 +8,23 @@ import { CHAPTERS } from '../../data/campaign';
 import { chapterIndexOf } from '../../data/chapters';
 import { mineSignalAppearance, mineRelicAppearance } from '../../data/mineThemes';
 import { BonusEffects } from './BonusEffects';
-import { isGravitySwitch, isPlayableCell, gravityDestination } from '../engine/BoardTopology';
+import {
+  isCellFixture,
+  isGravitySwitch,
+  isPlayableCell,
+  isPortalPad,
+  gravityDestination,
+  withPortalPads,
+} from '../engine/BoardTopology';
 import { isDiagonalLens, isLens, lensGeometry } from '../engine/LensBeams';
-import { boardEdges, fallDelays, fallMotion, fallRoute } from './BoardGeometry';
+import {
+  boardEdges,
+  fallDelays,
+  fallDuration,
+  fallMotion,
+  fallRoute,
+  PORTAL_SHIMMER,
+} from './BoardGeometry';
 import { glyphImage } from './TextGlyphs';
 import {
   cascadeTier,
@@ -20,7 +34,7 @@ import {
   MULTI_MATCH_COIN_STEP,
 } from '../engine/MatchRewards';
 
-const MOTION = Object.freeze({ swap: 115, reject: 75, clear: 90, fall: 190, intro: 160 });
+const MOTION = Object.freeze({ swap: 115, reject: 75, clear: 90, intro: 160 });
 const CRACKS = [
   [
     [88, 10],
@@ -509,7 +523,7 @@ export class BoardAnimator {
         if (path)
           routed.push({
             sprite,
-            route: fallRoute(path, this.boardCols),
+            route: fallRoute(withPortalPads(this.tiles, path), this.boardCols),
             rise,
             passes: !!gem.float,
           });
@@ -533,7 +547,7 @@ export class BoardAnimator {
           queued.set(path[0], lead);
           routed.push({
             sprite,
-            route: fallRoute(path, this.boardCols, lead, rise),
+            route: fallRoute(withPortalPads(this.tiles, path), this.boardCols, lead, rise),
             rise,
             frame: this.refillFrame(path[0], lead, rise, frame),
           });
@@ -549,7 +563,7 @@ export class BoardAnimator {
   }
 
   fallDuration(distance) {
-    return this.reducedMotion ? 90 : MOTION.fall + Math.min(5, distance) * 12;
+    return this.reducedMotion ? 90 : fallDuration(distance);
   }
 
   fall(sprite, index, distance) {
@@ -572,8 +586,9 @@ export class BoardAnimator {
       const over = row + side * step;
       if (over < 0 || over >= this.boardRows) break;
       const tile = this.tiles[over * this.boardCols + col];
-      // A moon lock or dial fills its cell, so a refill below one stays hidden there.
-      if (isPlayableCell(tile) || isGravitySwitch(tile)) covered = over;
+      // A moon lock, dial or portal pad fills its cell, so a refill below one stays
+      // hidden there.
+      if (isPlayableCell(tile) || isCellFixture(tile)) covered = over;
     }
     if (covered === null) return frame;
     const [start, end] = frame ?? [-Infinity, Infinity];
@@ -587,12 +602,10 @@ export class BoardAnimator {
       this.reducedMotion || falls.length < 2
         ? []
         : fallDelays(
-            falls.map(({ route, rise, frame, passes }) => ({
-              route,
-              duration: this.fallDuration(route.length - 1),
-              motion: fallMotion(route, { rise, frame }),
-              passes,
-            })),
+            falls.map(({ route, rise, frame, passes }) => {
+              const motion = fallMotion(route, { rise, frame });
+              return { route, duration: motion.duration, motion, passes };
+            }),
           );
     return falls.map(({ sprite, route, rise, frame }, index) =>
       this.fallAlong(sprite, route, { rise, frame, delay: delays[index] ?? 0 }),
@@ -603,25 +616,30 @@ export class BoardAnimator {
   // straight fall, so gems flow around bends instead of pausing at each one.
   fallAlong(sprite, route, { rise = false, frame = null, delay = 0 } = {}) {
     const pixels = (cells) => (cells + 0.5) * this.cellSize;
-    sprite.setPosition(pixels(route[0].col), pixels(route[0].row));
+    const motion = fallMotion(route, { rise, frame });
     const end = route.at(-1);
-    if (this.reducedMotion)
+    if (this.reducedMotion) {
+      // Through a portal, it simply drops out of the exit pad.
+      sprite.setPosition(pixels(motion.dropsFrom.col), pixels(motion.dropsFrom.row));
       return this.tween(sprite, {
         x: pixels(end.col),
         y: pixels(end.row),
         duration: this.fallDuration(),
       });
-    const motion = fallMotion(route, { rise, frame });
-    const duration = this.fallDuration(route.length - 1);
+    }
+    const duration = motion.duration;
     // The wait is part of the tween: a Phaser delay only ends on a frame boundary, and
     // gems waiting behind one another must keep to the planned time exactly.
     const total = delay + duration;
+    let beam = null;
     const place = () => {
-      const { col, row, hidden } = motion(
-        Math.max(0, sprite.fallProgress * total - delay) / duration,
-      );
-      sprite.setPosition(pixels(col), pixels(row));
-      if (motion.hides) sprite.setAlpha(hidden ? 0 : 1);
+      const point = motion(Math.max(0, sprite.fallProgress * total - delay) / duration);
+      sprite.setPosition(pixels(point.col), pixels(point.row));
+      if (motion.hides) sprite.setAlpha(point.hidden ? 0 : point.alpha);
+      if (point.beam !== beam) {
+        beam = point.beam;
+        if (beam) this.portalShimmer(sprite, point, beam);
+      }
     };
     // Phaser skips tween properties that start with an underscore.
     sprite.fallProgress = 0;
@@ -632,6 +650,51 @@ export class BoardAnimator {
       ease: 'Linear',
       onUpdate: place,
     });
+  }
+
+  // A gem beamed through a portal dissolves into a column of light and sparkles on the
+  // entrance pad (`out`), then forms out of one on the exit pad (`in`).
+  portalShimmer(sprite, { col, row }, beam) {
+    if (this.reducedMotion || !this.scene?.add) return;
+    const pair = this.tiles[row * this.boardCols + col]?.portalPair ?? 0;
+    const color = PORTAL_COLORS[pair % PORTAL_COLORS.length];
+    const x = (col + 0.5) * this.cellSize,
+      y = (row + 0.5) * this.cellSize;
+    const half = PORTAL_SHIMMER / 2;
+    const light = this.scene.add
+      .image(x, y, 'portal-beam')
+      .setDisplaySize(this.cellSize * 0.9, this.cellSize * 1.5)
+      .setTint(color)
+      .setBlendMode('ADD')
+      .setAlpha(0);
+    const width = light.scaleX;
+    light.scaleX *= 0.3;
+    this.effect(light, {
+      alpha: { value: 0.9, duration: half, yoyo: true, ease: 'Sine.easeInOut' },
+      scaleX: { value: width, duration: half, yoyo: true, ease: 'Sine.easeOut' },
+    });
+    // The gem's own outline glows white as it goes, narrowing into the beam, and widens
+    // out of it as it arrives.
+    const ghost = this.scene.add
+      .image(x, y, sprite.texture.key, sprite.frame.name)
+      .setDisplaySize(sprite.displayWidth, sprite.displayHeight)
+      .setTintFill(0xffffff)
+      .setBlendMode('ADD')
+      .setAlpha(0);
+    const scaleX = ghost.scaleX;
+    if (beam === 'in') ghost.scaleX *= 0.15;
+    this.effect(ghost, {
+      alpha: { value: 0.9, duration: half, yoyo: true, ease: 'Sine.easeInOut' },
+      scaleX: {
+        value: beam === 'out' ? scaleX * 0.15 : scaleX,
+        duration: PORTAL_SHIMMER,
+        ease: beam === 'out' ? 'Quad.easeIn' : 'Quad.easeOut',
+      },
+    });
+    this.particles?.emitShimmer?.(
+      { x, y },
+      { color, width: this.cellSize * 0.62, height: this.cellSize * 1.25 },
+    );
   }
 
   // A lens mirror sits on an edge void: a silver mirror turns a beam square, a gold
@@ -722,6 +785,19 @@ export class BoardAnimator {
       );
     this.tileLayer.add(fixture);
     this.fixtureSprites.set(index, fixture);
+  }
+
+  // Paired portal pads look alike and share a color. A gem beamed between them is drawn
+  // over the pads, so they sit behind the gems.
+  drawPortalPad(index) {
+    const p = this.position(index);
+    const ref = spriteRef('tile-portal', this.scene.textures);
+    const pad = this.scene.add
+      .image(p.x, p.y, ref.key, ref.frame)
+      .setDisplaySize(this.cellSize - 3, this.cellSize - 3)
+      .setTint(PORTAL_COLORS[(this.tiles[index].portalPair ?? 0) % PORTAL_COLORS.length]);
+    this.backgroundLayer.add(pad);
+    this.fixtureSprites.set(index, pad);
   }
 
   // Unbroken chamber rock behind a cracked wall, dimmed so it reads as off the board.
@@ -930,6 +1006,7 @@ export class BoardAnimator {
       if (isLens(tile)) this.drawLens(index);
       else if (tile?.sealed) this.drawSealed(index);
       else if (isGravitySwitch(tile)) this.drawGravitySwitch(index);
+      else if (isPortalPad(tile)) this.drawPortalPad(index);
       return;
     }
     // An opened chamber cell loses its sealed rock.
@@ -1120,13 +1197,7 @@ export class BoardAnimator {
     const signal = tile?.signalHealth === 0 ? null : tile?.signal;
     // A phase seal shows the colour its gem becomes after the next move.
     const phase = tile?.phaseSeal && tile.health > 0 ? tile.phaseNext : null;
-    // Paired portals share a color; the entrance swirls, the exit shines.
-    const portal = Number.isInteger(tile?.portalTo)
-      ? { pair: tile.portalPair ?? 0 }
-      : Number.isInteger(tile?.portalExit)
-        ? { pair: tile.portalExit }
-        : null;
-    const key = `${layers}-${frozen}-${sealColor ?? ''}-${chained}-${!!exit}-${!!tile?.hatch}-${tile?.signal ?? ''}-${tile?.signalHealth}-${tile?.surveyOrder}-${tile?.rootGroup ?? ''}-${tile?.bonusOnly}-${tile?.sporeAxis}-${tile?.health}-${tile?.maxHealth}-${phase ?? ''}-${portal ? `${tile.portalTo ?? 'x'}:${portal.pair}` : ''}-${this.theme}-${this.cellSize}`;
+    const key = `${layers}-${frozen}-${sealColor ?? ''}-${chained}-${!!exit}-${!!tile?.hatch}-${tile?.signal ?? ''}-${tile?.signalHealth}-${tile?.surveyOrder}-${tile?.rootGroup ?? ''}-${tile?.bonusOnly}-${tile?.sporeAxis}-${tile?.health}-${tile?.maxHealth}-${phase ?? ''}-${this.theme}-${this.cellSize}`;
     let overlay = this.tileOverlays.get(index);
     if (overlay?.__tileKey === key) return;
     overlay?.destroy();
@@ -1139,7 +1210,6 @@ export class BoardAnimator {
       !frozen &&
       !signal &&
       !phase &&
-      !portal &&
       !(tile?.bonusOnly && tile.health > 0)
     )
       return;
@@ -1172,19 +1242,6 @@ export class BoardAnimator {
         backgroundColor: tile.rootKnot || tile.fossilGroup != null ? '#5b4129' : '#24384f',
         padding: { x: 3, y: 1 },
       }).setOrigin(0);
-    if (portal) {
-      const ref = spriteRef(
-        Number.isInteger(tile.portalTo) ? 'tile-portal-in' : 'tile-portal-out',
-        this.scene.textures,
-      );
-      overlay.add(
-        this.scene.add
-          .image(0, 0, ref.key, ref.frame)
-          .setDisplaySize(size * 0.9, size * 0.9)
-          .setAlpha(0.85)
-          .setTint(PORTAL_COLORS[portal.pair % PORTAL_COLORS.length]),
-      );
-    }
     if (chained) addImage(tile.rootGroup != null ? 'vine' : 'chain');
     if (phase) {
       overlay.add(

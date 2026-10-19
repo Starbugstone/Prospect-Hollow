@@ -65,10 +65,12 @@ that covers the cell triggers one; ordinary matches never do. At most one flip p
 
 ### Portals
 
-A gem leaving the bottom of portal A appears in portal B. Moon gems (relic cargo,
-art distinct from the moonstone gem) fall down a walled side channel, take the
-portal and reappear in the middle above the exit. Ordinary gems and refills use the
-portal too. Portal routes may not loop (validated at authoring).
+A gem that falls on to entrance pad A is beamed to exit pad B and drops out of it. The
+two pads look alike and fill their own cells. An exit pad sits on the top row, so the
+column below it fills only through its portal. Moon gems (relic cargo, art distinct from
+the moonstone gem) fall down a walled side channel, take the portal and drop from the top
+of the board towards the exit. Ordinary gems and refills use the portal too. Portal
+routes may not loop, and pad placement is validated at authoring.
 
 ### Lens mirrors
 

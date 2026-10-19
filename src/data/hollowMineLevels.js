@@ -11,8 +11,8 @@
 //   * / +  one-/two-hit starglass: only a beam turned by a lens can break it
 //   z / Z  one-/two-hit phase seal: its gem changes color after every move
 //   f  frozen gem on ice
-//   P / p, U / u  portal entrances and their exits: a gem falling out of P comes
-//      out of p (and U into u)
+//   P / p, U / u  portal pads: a gem falling into P drops out of p (U out of u). An
+//      exit pad sits on the top row; both pads fill their cells
 //   C  relic held by a chain
 //   q / Q  moon lock (flips gravity once) / moon dial (flips it on every blast)
 // A chapter or level with `dust: true` buries its 1–4 fossils under dust instead of rock.
@@ -825,57 +825,57 @@ const PLANS = [
     ],
     levels: [
       {
-        board: 'R....../......./......./...p.../......./P....../_....../_....../_..E...',
+        board: 'R..p.../......./......./......./......./......./P....../_....../_..E...',
         ice: 0,
         orders: [['sapphire', 48]],
-        chestTarget: 31500,
-        tip: 'A moon gem waits at the top of the side track. Clear below it until it drops into the portal, then guide it from the middle down to the basket.',
+        chestTarget: 32500,
+        tip: 'A moon gem waits at the top of the side track. Clear below it until it drops into the portal, then guide it from the exit at the top down to the basket.',
       },
       {
-        board: 'R.....R/......./......./..p.u../......./P.....U/_....._/_....._/_.E.E._',
+        board: 'R.p.u.R/......./......./......./......./......./P.....U/_....._/_.E.E._',
         ice: 0,
         orders: [
           ['emerald', 65],
           ['ruby', 65],
         ],
-        chestTarget: 47000,
-        tip: 'Two sidings, two portals, two baskets. Each portal leads to the cell of the same color.',
+        chestTarget: 45500,
+        tip: 'Two sidings, two portals, two baskets. Each portal leads to the exit of the same color at the top.',
       },
       {
-        board: 'R....../......./R....../...p.../......./P..#.../_..X.../_....../_..E...',
+        board: 'R..p.../......./R....../......./......./...#.../P..X.../_....../_..E...',
         ice: 0,
         orders: [
           ['ruby', 58],
           ['sapphire', 58],
         ],
-        chestTarget: 42500,
+        chestTarget: 38500,
         tip: 'Two moon gems queue on the siding, and stone blocks the way below the portal exit. Break it from the sides.',
       },
       {
-        board: 'R.....R/......./R....../..p.u../......./P.....U/_.B.B._/_....._/_.E.E._',
+        board: 'R.p.u.R/......./R....../......./......./......./P.B.B.U/_....._/_.E.E._',
         ice: 0,
         orders: [
           ['sapphire', 75],
           ['emerald', 75],
         ],
-        chestTarget: 55500,
+        chestTarget: 51000,
         tip: 'Rock gates guard both baskets. Send the moon gems through the portals, then blast the gates open for them.',
       },
       {
-        board: 'R....../......./......./...p.../......./P..#.../_....../_....../_..E...',
+        board: 'R..p.../......./......./......./......./...#.../P....../_....../_..E...',
         ice: 0,
         orders: [['emerald', 43]],
-        chestTarget: 29000,
+        chestTarget: 28000,
         tip: 'A quiet siding with a single moon gem and one stone in its way.',
       },
       {
-        board: 'R.....R/......./C.....C/..p.u../......./P.D.D.U/_....._/_.c.c._/_.E.E._',
+        board: 'R.p.u.R/......./C.....C/......./......./..D.D../P.....U/_.c.c._/_.E.E._',
         ice: 0,
         orders: [
           ['ruby', 95],
           ['sapphire', 95],
         ],
-        chestTarget: 69000,
+        chestTarget: 68500,
         tip: 'The grand junction. Two moon gems are chained on the sidings and thick gates sit beside the tracks: blast what blocks the way.',
       },
     ],
@@ -894,50 +894,50 @@ const PLANS = [
     ],
     levels: [
       {
-        board: '......R/......./......./...u.../......./......U/......_/......_/...E.._',
+        board: '...u..R/......./......./......./......./......./......U/......_/...E.._',
         ice: 0,
         orders: [['sapphire', 37]],
-        chestTarget: 25500,
+        chestTarget: 23000,
         tip: 'Freight from the right siding, and a sapphire order to fill while the moon gem travels.',
       },
       {
-        board: 'R....../......./R....../...p.../......./P....../_....../_....../_..E...',
+        board: 'R..p.../......./R....../......./......./......./P....../_....../_..E...',
         ice: 0,
         orders: [['emerald', 58]],
-        chestTarget: 36500,
+        chestTarget: 37500,
         tip: 'Two moon gems queue on the siding while you fill an emerald order.',
       },
       {
-        board: 'R.....R/......./......./..p.u../......./P.....U/_....._/_....._/_.E.E._',
+        board: 'R.p.u.R/......./......./......./......./......./P.....U/_....._/_.E.E._',
         ice: 0,
         orders: [
           ['ruby', 52],
           ['sapphire', 52],
         ],
-        chestTarget: 38000,
+        chestTarget: 36500,
         tip: 'A double shipment and two orders. Bonuses near the middle help with both.',
       },
       {
-        board: 'R.....R/......./C.....R/..p.u../......./P.....U/_.B.B._/_....._/_.E.E._',
+        board: 'R.p.u.R/......./C.....R/......./......./......./P.B.B.U/_....._/_.E.E._',
         ice: 0,
         orders: [
           ['emerald', 62],
           ['ruby', 62],
         ],
-        chestTarget: 48500,
+        chestTarget: 47500,
         tip: 'A full load: four moon gems, one of them chained, gated baskets and two orders.',
       },
       {
-        board: '......./......./......R/...u.../......./......U/......_/......_/...E.._',
+        board: '...u.../......./......R/......./......./......./......U/......_/...E.._',
         ice: 0,
         orders: [['ruby', 29]],
-        chestTarget: 21000,
+        chestTarget: 19500,
         tip: 'Light cargo: one moon gem and a small ruby order.',
       },
       {
-        board: 'R.....R/C.....C/......./..p.u../..#.#../P.....U/_.D.D._/_....._/_.E.E._',
+        board: 'R.p.u.R/C.....C/......./......./..#.#../......./P.D.D.U/_....._/_.E.E._',
         ice: 0,
-        chestTarget: 50500,
+        chestTarget: 60000,
         orders: [
           ['ruby', 30],
           ['sapphire', 30],
@@ -1102,24 +1102,24 @@ const PLANS = [
     ],
     levels: [
       {
-        board: 'R....../......./......./...p.../......./P....._/__...__/___B___/___E___',
+        board: 'R..p.../......./......./......./......./......_/P_...__/___B___/___E___',
         ice: 0,
         orders: [['sapphire', 40]],
-        chestTarget: 25500,
+        chestTarget: 24500,
         tip: 'The pearl rides the portal into the bowl, then rolls down to the basket. Blast the dark gate in the throat.',
       },
       {
-        board: 'R.....R/......./......./..p.u../......./P.....U/__...__/___B___/___E___',
+        board: 'R.p.u.R/......./......./......./......./......./P_..._U/___B___/___E___',
         ice: 0,
         orders: [
           ['emerald', 40],
           ['ruby', 40],
         ],
-        chestTarget: 39000,
+        chestTarget: 31000,
         tip: 'Pearls from both banks meet in the bowl and take turns through the throat.',
       },
       {
-        board: 'R.....R/......./......./..p.u../B.....B/P.....U/__...__/___B___/___E___',
+        board: 'R.p.u.R/......./......./......./B.....B/......./P_..._U/___B___/___E___',
         ice: 0,
         orders: [
           ['ruby', 47],
@@ -1129,22 +1129,22 @@ const PLANS = [
         tip: 'Gates block both portal mouths. Blast them open, then the gate in the throat.',
       },
       {
-        board: 'R.....R/C....../......./..p.u../B.....D/P.....U/__...__/___D___/___E___',
+        board: 'R.p.u.R/C....../......./......./B.....D/......./P_..._U/___D___/___E___',
         ice: 0,
-        chestTarget: 45500,
+        chestTarget: 41000,
         tip: 'A deep current: three pearls, one chained, and thick gates on the way down.',
       },
       {
-        board: '......./......./R....../...p.../......./P....._/__...__/___.___/___E___',
+        board: '...p.../......./R....../......./......./......_/P_...__/___.___/___E___',
         ice: 0,
         orders: [['emerald', 31]],
-        chestTarget: 21000,
+        chestTarget: 23000,
         tip: 'A still pool with one pearl and an open throat.',
       },
       {
-        board: 'R.....R/C.....C/......./..p.u../B.....B/P.....U/__...__/___D___/___E___',
+        board: 'R.p.u.R/C.....C/......./......./B.....B/......./P_..._U/___D___/___E___',
         ice: 0,
-        chestTarget: 63000,
+        chestTarget: 53500,
         tip: 'The pearl junction. Four pearls, two of them chained, gated mouths and a thick throat gate.',
       },
     ],
@@ -1174,15 +1174,15 @@ const PLANS = [
       },
       {
         board:
-          'R....../......./......./......./P....../_....../__WWW__/_....../_..p.../_....../_..E...',
+          'R..p.../......./......./......./......./P....../__WWW__/_....../_....../_....../_..E...',
         chambers: [{ rows: [7, 10] }],
         ice: 0,
         orders: [
           ['emerald', 65],
           ['ruby', 65],
         ],
-        chestTarget: 44500,
-        tip: 'The portal leads into a sealed chamber. Break the floor first; until then the moon gem has nowhere to go.',
+        chestTarget: 46000,
+        tip: 'The moon gem drops out of the portal on to a cracked floor. Break through it to reach the basket in the sealed chamber below.',
       },
       {
         board:
@@ -1675,6 +1675,23 @@ export const HOLLOW_MINE_LEVELS = PLANS.flatMap((plan) =>
     const edge = (index) =>
       index < cols || index >= (rows - 1) * cols || index % cols === 0 || index % cols === cols - 1;
     if (!lensCells.every(edge)) throw new Error('Lens mirrors sit on the board edge');
+    // A gem falls into the entrance pad from the cell above it, then drops out of the exit
+    // pad on the top row into the cell below. The pads never touch, so the animation can
+    // tell a beam from a fall.
+    const cells = map.replaceAll('/', '');
+    const apart = (from, to) =>
+      Math.max(Math.abs((from % cols) - (to % cols)), Math.floor(from / cols)) > 1;
+    if (
+      !portals.every(
+        ({ from, to }) =>
+          from >= cols &&
+          cells[from - cols] !== '_' &&
+          to < cols &&
+          cells[to + cols] !== '_' &&
+          apart(from, to),
+      )
+    )
+      throw new Error('A portal needs a cell above its entrance and its exit on the top row');
     const parsed = parseMineBoard(map, {
       fossilLayers,
       knotHealth,

@@ -169,10 +169,10 @@ export const OBSTACLES = [
   {
     id: 'portal',
     name: 'Portals',
-    art: '/art/obstacles/portal-in.svg',
+    art: '/art/obstacles/portal.svg',
     instruction:
-      'A gem falling into a portal comes out of the portal of the same color, then keeps falling from there. Moon gems ride portals too.',
-    present: (tile) => Number.isInteger(tile.portalTo),
+      'A gem that falls into a portal is beamed to the portal of the same color at the top of the board and drops out of it. Moon gems ride portals too.',
+    present: (tile) => tile.portal === 'in',
   },
   {
     id: 'phase-seal',

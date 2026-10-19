@@ -13,7 +13,7 @@ import { layerCount } from './TileRules.js';
 import { CORE_BONUSES, CORE_CHARGES } from './ChapterMechanics.js';
 import { getLevelStarTarget } from '../../data/starRating.js';
 import { applyDeepMineSpec } from './DeepMineMechanics.js';
-import { isGravitySwitch, isPlayableCell } from './BoardTopology.js';
+import { isCellFixture, isGravitySwitch, isPlayableCell } from './BoardTopology.js';
 
 const createSeededRng = (seed) => {
   let current = seed % 2147483647;
@@ -287,10 +287,13 @@ const createExpansionLevel = (id) => {
       Object.assign(tile, { sealed: true, chamber: id });
       layout.blockedCells.push(cellAt(index));
     }
-  // Portals hand gems falling out of the entrance to the paired exit cell.
+  // Portal pads fill their cells. A gem falling into the entrance pad (`from`) drops
+  // out of the exit pad (`to`) at the top of the board, into the cell below it.
   for (const [pair, { from, to }] of (spec.portals ?? []).entries()) {
-    Object.assign(tiles[from], { portalTo: to, portalPair: pair });
-    tiles[to].portalExit = pair;
+    Object.assign(tiles[from], { portal: 'in', portalPair: pair });
+    Object.assign(tiles[to], { portal: 'out', portalPair: pair });
+    Object.assign(tiles[from - cols], { portalTo: to + cols, portalPair: pair });
+    layout.blockedCells.push(cellAt(from), cellAt(to));
   }
   // Lens mirrors are fixtures on edge voids; `out` is the way a turned beam leaves.
   for (const { index, out } of spec.lenses ?? []) if (tiles[index]) tiles[index].lens = out;
@@ -334,7 +337,7 @@ const createExpansionLevel = (id) => {
     tile.type === 'standard' &&
     !tile.health &&
     !tile.phaseSeal &&
-    !tile.gravitySwitch &&
+    !isCellFixture(tile) &&
     !fossilCells.has(index) &&
     !sporeCells.has(index) &&
     (!spec.openExitRows || index < cols * (rows - spec.openExitRows)) &&

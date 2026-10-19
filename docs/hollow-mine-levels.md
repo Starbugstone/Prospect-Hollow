@@ -35,8 +35,11 @@ Willowkin plant the first tree of the floating island in chapter 23.
 - **Phase seals** change their gem after every move to the color shown in the corner.
   A change that lines up a match clears as a normal cascade, bonuses included. A match
   on the seal wears it down.
-- **Portals** hand a gem falling out of the entrance to the paired exit. Moon gems are
-  relics that ride them from the side sidings into the middle of the board.
+- **Portals** are pairs of identical pads that fill their own cells. A gem that falls
+  on to the entrance pad at the foot of a siding shimmers out, shimmers back in on the
+  exit pad on the top row and drops out of it. The column below an exit pad fills only
+  through its portal. Moon gems are relics that ride portals from the sidings towards
+  their baskets.
 - **Breakthrough chambers** are sealed rows behind a cracked wall that only bonus blasts
   break. When the whole wall is down, the chamber opens and fills from above.
 - **No ice on extraction levels.** A level whose goal is lighting lanterns or delivering
@@ -56,10 +59,12 @@ player uses rather than completes; `testing/completed-board-markers.test.js` lis
   Level 409 shows a floatstone rising three cells after a legal match, then reaching
   its sky hatch after another match. Gems sink past the floatstone; the collected
   floatstone and completed hatch leave no marker.
-- [Portals: transport and delivery](images/hollow-mines/portals-30fps.mp4).
-  Level 475 shows a moon gem entering the left gold portal and appearing at the
-  matching middle exit, ordinary gems taking the same route, and the moon gem
-  eventually reaching its basket.
+- [Portals: beaming and delivery](images/hollow-mines/portals-30fps.mp4).
+  Level 475 shows a moon gem falling on to the gold pad at the foot of the side track,
+  shimmering out and dropping from the matching pad at the top of the board, with
+  ordinary gems on the same route. The move is then replayed 4× slower, and the next
+  move delivers the moon gem to its basket. Level 476 shows two pad pairs, gold and
+  blue, each sending gems to its own exit.
 
 Floatstones travel **against** gravity: clear directly above them under normal
 gravity, or below them when gravity points up. They cannot be matched or destroyed.
@@ -69,12 +74,12 @@ fires the bonus in the floatstone's former cell, provided the floatstone can sti
 reach an exit from its new cell. None of this limits puzzle moves or play time.
 
 These silent H.264 clips show the actual 1280 × 800 game renderer, sampled on an
-exact 30 fps animation clock and played at normal speed. Captions mark legal-play
-checkpoints where setup moves were omitted. All demonstrated actions use the normal
-game store, with earned board bonuses and no inventory powers. Their resulting gem
-types and tiles were checked against the legal simulation checkpoints. The focused
-gravity, portal and completed-marker suites passed all 50 tests in Docker. No
-gameplay code, level layouts, rewards or targets changed for these recordings.
+exact 30 fps animation clock and played at normal speed unless a caption says
+otherwise. Captions mark legal-play checkpoints where setup moves were omitted. All
+demonstrated actions use the normal game store, with earned board bonuses and no
+inventory powers. Their resulting gem types and tiles were checked against the legal
+simulation checkpoints. The portal clip was recorded after the portal pads change of
+2026-10-19, which moved the exit pads to the top row (see the targets note below).
 
 ## Gems
 
@@ -118,15 +123,31 @@ Targets come from 30 hint-led seeds per level: chest targets at 80% of the media
 and star targets from `scripts/calibrate-star-targets.mjs`. Star targets that left fewer
 than about a third of held-out runs (seeds 101–120) with three stars were lowered.
 
+The portal pads change (2026-10-19) moved every exit pad to the top row, so the 19 portal
+levels (475–486, 499–504 and 506) were measured again. Their chest targets were reset to
+80% of the new 30-seed median, which moved them by up to a fifth either way (level 500
+went from 39,000 to 31,000, level 486 from 50,500 to 60,000). Star targets kept their
+values, except level 504 (Pearl junction): its gates sit above the entrance pads and hold
+back the exit columns, and three stars fell to 3 of 20 held-out runs, so its target went
+from 79,200 to 71,000 (7 of 20). The other portal levels earn three stars in 5–16 of 20
+held-out runs (7–15 before the change). Hint-led completion takes longer on some of them:
+the median grew from 32 to 54 moves on level 486 and from 55 to 68 on level 480. Moves
+stay unlimited.
+
 The board motion check (`testing/browser/board-motion.cjs`, see the
 [deep mine guide](deep-mine-levels.md#board-motion-check)) was run on levels 409, 423,
 476, 487, 500, 507, 511, 517, 522, 529 and 541. Floatstones are drawn in front of the
 gems sinking past them, and that crossing is exempt; refills entering at a twin-gravity
-seam stay hidden until they reach their own half; a portal jump is hidden inside one
-continuous fall. Floatstone, low-gravity, breakthrough, lock and dial levels report no
-overlaps or stutters. Portal merges (476, 500) report three to four frames of near
-contact (0.18–0.28 cells) and at most one stutter, the same size as the unchanged level
-373 on `preprod`.
+seam stay hidden until they reach their own half. Floatstone, low-gravity,
+breakthrough, lock and dial levels report no overlaps or stutters.
+
+After the portal pads change (2026-10-19), a gem beamed through a portal lands on the
+entrance pad and starts a new fall out of the exit pad, and a landing bounce that falls
+between two frames counts as the landing. Portal levels 475, 476, 500 and 506 report no
+overlaps or stutters. Levels 480, 486 and 504 report 14–38 frames of gems falling past
+the chained moon gems and pearls on their sidings; the same build without the change
+reports 15–36 frames there, so this is how chained cargo already looked. Levels 13,
+373, 376, 385, 397, 409, 423, 487, 507 and 541 report nothing on either build.
 
 ## Effort and completion (2026-10-08)
 

@@ -40,42 +40,85 @@ const bounceOut = (k) => {
   return 7.5625 * (k - 2.625 / 2.75) ** 2 + 0.984375;
 };
 
-// A portal hands a gem on to a cell that is not next to it.
+// A fall of `cells` cells, bounce included (ms).
+export const fallDuration = (cells) => 190 + Math.min(5, cells) * 12;
+// A gem beamed through a portal shimmers out on the entrance pad for this long (ms),
+// then shimmers back in on the exit pad for as long again before it drops out.
+export const PORTAL_SHIMMER = 130;
+
+// The two pads of a portal never touch (checked where levels are authored).
 const leaps = (a, b) => Math.max(Math.abs(a.col - b.col), Math.abs(a.row - b.row)) > 1;
 
-// Where a shaped-board fall is, `k` (0–1) of the way through its tween, in grid units.
-// The gem accelerates through every cell of its route at the pace of a straight fall of
-// the same length, then settles with the bounce of a one-cell drop, straight back against
-// its fall. Bouncing a share of the whole route instead would carry a gem back around a
-// bend, through a portal or into the gem landing above it. It is hidden while it crosses
-// a portal and outside `frame` (a refill entering at a twin-gravity seam or out of a hole).
+// Where a shaped-board fall is, `k` (0–1) of the way through its `duration` (ms), in grid
+// units. The gem accelerates through every cell of its route at the pace of a straight
+// fall of the same length, then settles with the bounce of a one-cell drop, straight back
+// against its fall. Bouncing a share of the whole route instead would carry a gem back
+// around a bend or into the gem landing above it. Through a portal it falls on to the
+// entrance pad, shimmers out (`beam: 'out'`, fading), shimmers in on the exit pad
+// (`beam: 'in'`) and drops out of it from rest. It is hidden outside `frame` (a refill
+// entering at a twin-gravity seam or out of a hole).
 export function fallMotion(route, { rise = false, frame = null } = {}) {
-  const segments = route.length - 1;
-  const end = route[segments];
-  const jump = route.findIndex((cell, step) => step > 0 && leaps(route[step - 1], cell));
-  const popsOut = jump === segments;
+  // The legs between portal pads: each but the last ends on an entrance pad.
+  const legs = [];
+  let start = 0;
+  for (let step = 1; step <= route.length; step++)
+    if (step === route.length || leaps(route[step - 1], route[step])) {
+      legs.push(route.slice(start, step));
+      start = step;
+    }
+  let duration = 0;
+  const phases = legs.flatMap((leg, index) => {
+    const last = index === legs.length - 1;
+    const fall = last ? fallDuration(leg.length - 1) : IMPACT * fallDuration(leg.length - 1);
+    const phases = [{ leg, last, start: duration, duration: fall }];
+    duration += fall;
+    if (!last)
+      for (const [beam, at] of [
+        ['out', leg.at(-1)],
+        ['in', legs[index + 1][0]],
+      ]) {
+        phases.push({ beam, at, start: duration, duration: PORTAL_SHIMMER });
+        duration += PORTAL_SHIMMER;
+      }
+    return phases;
+  });
   // One object per fall: the tween moves it on every frame.
-  const point = { col: route[0].col, row: route[0].row, hidden: false };
+  const point = { col: route[0].col, row: route[0].row, hidden: false, alpha: 1, beam: null };
   const at = (k) => {
-    point.hidden = false;
-    if (k < IMPACT && segments > 0) {
-      const travelled = segments * bounceOut(Math.max(0, k));
-      const step = Math.min(segments - 1, Math.floor(travelled));
-      const part = travelled - step;
-      const from = route[step],
-        to = route[step + 1];
-      point.col = from.col + (to.col - from.col) * part;
-      point.row = from.row + (to.row - from.row) * part;
-      point.hidden = step === jump - 1 && part > 0.05 && part < 0.95;
+    const time = Math.max(0, k) * duration;
+    const phase = phases.find((phase) => time < phase.start + phase.duration) ?? phases.at(-1);
+    const u = phase.duration ? Math.min(1, (time - phase.start) / phase.duration) : 1;
+    Object.assign(point, { hidden: false, alpha: 1, beam: phase.beam ?? null });
+    if (phase.beam) {
+      point.col = phase.at.col;
+      point.row = phase.at.row;
+      point.alpha = phase.beam === 'out' ? 1 - u : u;
     } else {
-      point.col = end.col;
-      // A gem that has just come out of a portal settles without a bounce.
-      point.row = end.row + (popsOut ? 0 : (rise ? 1 : -1) * (1 - bounceOut(Math.min(1, k))));
+      const { leg, last } = phase;
+      const segments = leg.length - 1;
+      const end = leg[segments];
+      // On to a pad the whole phase is the fall; the last leg lands at IMPACT and bounces.
+      const fall = last ? u : u * IMPACT;
+      if (fall < IMPACT && segments > 0) {
+        const travelled = segments * bounceOut(fall);
+        const step = Math.min(segments - 1, Math.floor(travelled));
+        const part = travelled - step;
+        const from = leg[step],
+          to = leg[step + 1];
+        point.col = from.col + (to.col - from.col) * part;
+        point.row = from.row + (to.row - from.row) * part;
+      } else {
+        point.col = end.col;
+        point.row = end.row + (last ? (rise ? 1 : -1) * (1 - bounceOut(Math.min(1, fall))) : 0);
+      }
     }
     if (frame && (point.row < frame[0] - 0.01 || point.row > frame[1] - 0.99)) point.hidden = true;
     return point;
   };
-  at.hides = jump > 0 || !!frame;
+  at.duration = duration;
+  at.hides = legs.length > 1 || !!frame;
+  // Where its last drop starts: the start of the route, or the last exit pad on it.
+  at.dropsFrom = legs.at(-1)[0];
   return at;
 }
 

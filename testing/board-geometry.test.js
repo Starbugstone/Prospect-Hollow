@@ -1,7 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import { BoardInput } from '../src/game/phaser/BoardInput';
 import { BoardAnimator } from '../src/game/phaser/BoardAnimator';
-import { boardEdges, fallDelays, fallMotion, fallRoute } from '../src/game/phaser/BoardGeometry';
+import {
+  boardEdges,
+  fallDelays,
+  fallDuration,
+  fallMotion,
+  fallRoute,
+  PORTAL_SHIMMER,
+} from '../src/game/phaser/BoardGeometry';
 
 const mask = ['.....', '.....', '_..._', '__.__'];
 const tiles = mask
@@ -120,18 +127,27 @@ describe('visible and interactive shaped boards', () => {
     expect(rising(0.5).row).toBeGreaterThan(2);
   });
 
-  it('hides a gem crossing a portal and lands it out of the exit without a bounce', () => {
-    // Out of the entrance at (0, 1) and into the exit at (3, 0).
-    const route = [
-      { col: 0, row: 0 },
-      { col: 0, row: 1 },
-      { col: 3, row: 0 },
-    ];
+  it('beams a gem from the entrance pad to the exit pad, then drops it out from rest', () => {
+    // From (0, 1) on to the entrance pad at (0, 2), out of the exit pad at (3, 0) to (3, 2).
+    const route = cells([0, 1], [0, 2], [3, 0], [3, 1], [3, 2]);
     const at = fallMotion(route);
+    const onPad = (1 / 2.75) * fallDuration(1);
     expect(at.hides).toBe(true);
-    const crossing = Math.sqrt(1.5 / 2 / 7.5625);
-    expect(at(crossing).hidden).toBe(true);
-    for (let k = 1 / 2.75; k <= 1; k += 0.05) expect(at(k)).toMatchObject({ col: 3, row: 0 });
+    expect(at.duration).toBeCloseTo(onPad + 2 * PORTAL_SHIMMER + fallDuration(2));
+    expect(at.dropsFrom).toEqual({ col: 3, row: 0 });
+    const sample = (ms) => ({ ...at(ms / at.duration) });
+    // It reaches the entrance pad, fades out there, then fades in on the exit pad.
+    expect(sample(onPad)).toMatchObject({ col: 0, row: 2, beam: 'out', alpha: 1 });
+    expect(sample(onPad + PORTAL_SHIMMER / 2)).toMatchObject({ col: 0, row: 2 });
+    expect(sample(onPad + PORTAL_SHIMMER / 2).alpha).toBeCloseTo(0.5);
+    expect(sample(onPad + PORTAL_SHIMMER + 1)).toMatchObject({ col: 3, row: 0, beam: 'in' });
+    expect(sample(onPad + PORTAL_SHIMMER * 1.5).alpha).toBeCloseTo(0.5);
+    // Out of the exit it starts from rest, accelerates and bounces on its cell.
+    const drop = onPad + 2 * PORTAL_SHIMMER;
+    expect(sample(drop + 1)).toMatchObject({ col: 3, beam: null, alpha: 1 });
+    expect(sample(drop + 1).row).toBeLessThan(0.01);
+    expect(sample(drop + (1 / 2.75) * fallDuration(2)).row).toBeCloseTo(2);
+    expect(sample(at.duration)).toMatchObject({ col: 3, row: 2, alpha: 1 });
     expect(fallMotion(fallRoute([1, 6], 5)).hides).toBe(false);
   });
 
@@ -228,12 +244,10 @@ const closest = (falls, delays) => {
   }
   return best;
 };
-const plan = (route, options = {}) => ({
-  route,
-  duration: 190 + Math.min(5, route.length - 1) * 12,
-  motion: fallMotion(route, options),
-  ...options,
-});
+const plan = (route, options = {}) => {
+  const motion = fallMotion(route, options);
+  return { route, duration: motion.duration, motion, ...options };
+};
 const cells = (...pairs) => pairs.map(([col, row]) => ({ col, row }));
 
 describe('falls that share a route', () => {
@@ -256,16 +270,18 @@ describe('falls that share a route', () => {
     expect(closest(falls, delays)).toBeGreaterThanOrEqual(0.6);
   });
 
-  it('keep a gem from above out of a portal exit until the portal gem has left it', () => {
-    // As on level 475: the portal gem drops on to (3, 5); the gem above stops at (3, 4).
+  it('beam gems queued on a siding one at a time, each pad clear of the last gem', () => {
+    // As on level 475: the siding ends above the entrance pad at (0, 6) and the exit pad
+    // sits at the top of column 3.
     const falls = [
-      plan(cells([3, 2], [3, 3], [3, 4])),
-      plan(cells([0, 5], [3, 3], [3, 4], [3, 5])),
-      plan(cells([3, 1], [3, 2], [3, 3])),
+      plan(cells([0, 5], [0, 6], [3, 0], [3, 1], [3, 2], [3, 3])),
+      plan(cells([0, 4], [0, 5], [0, 6], [3, 0], [3, 1], [3, 2])),
+      plan(cells([0, 3], [0, 4], [0, 5], [0, 6], [3, 0], [3, 1])),
     ];
     expect(closest(falls, [0, 0, 0])).toBeLessThan(0.6);
     const delays = fallDelays(falls);
-    expect(delays[1]).toBe(0);
+    expect(delays[0]).toBe(0);
+    expect(delays[1]).toBeGreaterThan(0);
     expect(closest(falls, delays)).toBeGreaterThanOrEqual(0.6);
   });
 

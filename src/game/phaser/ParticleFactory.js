@@ -26,6 +26,27 @@ export function createParticleFactory(scene, fxLayer) {
   art.strokeTriangle(2, 2, 22, 7, 9, 30);
   if (!scene.textures.exists('ice-shard')) art.generateTexture('ice-shard', 24, 32);
   art.destroy();
+  // A soft column of light for portal pads: bright down the middle, fading to the sides
+  // and towards both ends.
+  if (!scene.textures.exists('portal-beam')) {
+    const beam = scene.textures.createCanvas('portal-beam', 32, 128);
+    const context = beam.getContext();
+    const across = context.createLinearGradient(0, 0, 32, 0);
+    across.addColorStop(0, 'rgba(255,255,255,0)');
+    across.addColorStop(0.5, 'rgba(255,255,255,1)');
+    across.addColorStop(1, 'rgba(255,255,255,0)');
+    context.fillStyle = across;
+    context.fillRect(0, 0, 32, 128);
+    const along = context.createLinearGradient(0, 0, 0, 128);
+    along.addColorStop(0, 'rgba(255,255,255,0)');
+    along.addColorStop(0.3, 'rgba(255,255,255,1)');
+    along.addColorStop(0.7, 'rgba(255,255,255,1)');
+    along.addColorStop(1, 'rgba(255,255,255,0)');
+    context.globalCompositeOperation = 'destination-in';
+    context.fillStyle = along;
+    context.fillRect(0, 0, 32, 128);
+    beam.refresh();
+  }
   // Capped emitters recycle particles; bursts create no tweens or game objects.
   const emitter = scene.add.particles(0, 0, 'spark', {
     emitting: false,
@@ -50,7 +71,19 @@ export function createParticleFactory(scene, fxLayer) {
     rotate: { start: 0, end: 200 },
     gravityY: 350,
   });
-  fxLayer.add([emitter, ice]);
+  // Portal sparkles twinkle where they appear and drift gently up or down the beam.
+  const shimmer = scene.add.particles(0, 0, 'spark', {
+    emitting: false,
+    maxParticles: 160,
+    lifespan: { min: 140, max: 300 },
+    speedX: { min: -6, max: 6 },
+    speedY: { min: -45, max: 45 },
+    scale: { start: 0.32, end: 0 },
+    alpha: { start: 1, end: 0 },
+    rotate: { min: 0, max: 180 },
+    blendMode: Phaser.BlendModes.ADD,
+  });
+  fxLayer.add([emitter, ice, shimmer]);
   let reducedMotion = false;
   return {
     setReducedMotion(value) {
@@ -67,16 +100,35 @@ export function createParticleFactory(scene, fxLayer) {
     emitIce(position, count = 8) {
       if (!reducedMotion) ice.explode(Math.min(12, count), position.x, position.y);
     },
+    // Sparkles scattered through a `width` × `height` beam, half white, half `color`.
+    emitShimmer(position, { color = 0xffffff, width, height, count = 14 }) {
+      if (reducedMotion) return;
+      for (let n = 0; n < count; n++) {
+        if (n % 2 === 0) shimmer.setParticleTint(n % 4 ? color : 0xffffff);
+        shimmer.emitParticleAt(
+          position.x + (Math.random() - 0.5) * width,
+          position.y + (Math.random() - 0.5) * height,
+          1,
+        );
+      }
+    },
     alive() {
-      return emitter.getAliveParticleCount() + ice.getAliveParticleCount() > 0;
+      return (
+        emitter.getAliveParticleCount() +
+          ice.getAliveParticleCount() +
+          shimmer.getAliveParticleCount() >
+        0
+      );
     },
     clear() {
       emitter.killAll();
       ice.killAll();
+      shimmer.killAll();
     },
     destroy() {
       emitter.destroy();
       ice.destroy();
+      shimmer.destroy();
     },
   };
 }

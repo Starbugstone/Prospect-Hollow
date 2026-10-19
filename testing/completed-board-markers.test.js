@@ -47,7 +47,7 @@ const ACTIVE = {
   floatstone: { type: 'standard', health: 0, floatStart: true },
   starglass: { type: 'blocker', bonusOnly: true, lensOnly: true, health: 2, maxHealth: 2 },
   lens: { type: 'void', health: 0, lens: 'se' },
-  portal: { type: 'standard', health: 0, portalTo: 0, portalPair: 0 },
+  portal: { type: 'standard', health: 0, portal: 'in', portalPair: 0 },
   'cracked-wall': { type: 'blocker', bonusOnly: true, waist: 'a', health: 2, maxHealth: 2 },
   'moon-lock': { type: 'standard', health: 0, gravitySwitch: 'lock' },
   'moon-dial': { type: 'standard', health: 0, gravitySwitch: 'dial', fall: 'up' },

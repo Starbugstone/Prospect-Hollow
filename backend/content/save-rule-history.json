@@ -3369,9 +3369,19 @@
         "chestTarget": 31500,
         "starScoreTarget": 39600,
         "speedTargetMs": 95000
+      },
+      {
+        "chestTarget": 32500,
+        "starScoreTarget": 39600,
+        "speedTargetMs": 95000
       }
     ],
     "476": [
+      {
+        "chestTarget": 45500,
+        "starScoreTarget": 58800,
+        "speedTargetMs": 115000
+      },
       {
         "chestTarget": 47000,
         "starScoreTarget": 58800,
@@ -3380,12 +3390,22 @@
     ],
     "477": [
       {
+        "chestTarget": 38500,
+        "starScoreTarget": 53400,
+        "speedTargetMs": 118000
+      },
+      {
         "chestTarget": 42500,
         "starScoreTarget": 53400,
         "speedTargetMs": 118000
       }
     ],
     "478": [
+      {
+        "chestTarget": 51000,
+        "starScoreTarget": 69800,
+        "speedTargetMs": 137000
+      },
       {
         "chestTarget": 55500,
         "starScoreTarget": 69800,
@@ -3394,6 +3414,11 @@
     ],
     "479": [
       {
+        "chestTarget": 28000,
+        "starScoreTarget": 36600,
+        "speedTargetMs": 96000
+      },
+      {
         "chestTarget": 29000,
         "starScoreTarget": 36600,
         "speedTargetMs": 96000
@@ -3401,12 +3426,22 @@
     ],
     "480": [
       {
+        "chestTarget": 68500,
+        "starScoreTarget": 86600,
+        "speedTargetMs": 163000
+      },
+      {
         "chestTarget": 69000,
         "starScoreTarget": 86600,
         "speedTargetMs": 163000
       }
     ],
     "481": [
+      {
+        "chestTarget": 23000,
+        "starScoreTarget": 30400,
+        "speedTargetMs": 95000
+      },
       {
         "chestTarget": 25500,
         "starScoreTarget": 30400,
@@ -3418,9 +3453,19 @@
         "chestTarget": 36500,
         "starScoreTarget": 45800,
         "speedTargetMs": 115000
+      },
+      {
+        "chestTarget": 37500,
+        "starScoreTarget": 45800,
+        "speedTargetMs": 115000
       }
     ],
     "483": [
+      {
+        "chestTarget": 36500,
+        "starScoreTarget": 47400,
+        "speedTargetMs": 115000
+      },
       {
         "chestTarget": 38000,
         "starScoreTarget": 47400,
@@ -3429,12 +3474,22 @@
     ],
     "484": [
       {
+        "chestTarget": 47500,
+        "starScoreTarget": 61200,
+        "speedTargetMs": 158000
+      },
+      {
         "chestTarget": 48500,
         "starScoreTarget": 61200,
         "speedTargetMs": 158000
       }
     ],
     "485": [
+      {
+        "chestTarget": 19500,
+        "starScoreTarget": 25400,
+        "speedTargetMs": 95000
+      },
       {
         "chestTarget": 21000,
         "starScoreTarget": 25400,
@@ -3444,6 +3499,11 @@
     "486": [
       {
         "chestTarget": 50500,
+        "starScoreTarget": 63400,
+        "speedTargetMs": 163000
+      },
+      {
+        "chestTarget": 60000,
         "starScoreTarget": 63400,
         "speedTargetMs": 163000
       }
@@ -3534,12 +3594,22 @@
     ],
     "499": [
       {
+        "chestTarget": 24500,
+        "starScoreTarget": 31800,
+        "speedTargetMs": 96000
+      },
+      {
         "chestTarget": 25500,
         "starScoreTarget": 31800,
         "speedTargetMs": 96000
       }
     ],
     "500": [
+      {
+        "chestTarget": 31000,
+        "starScoreTarget": 42200,
+        "speedTargetMs": 116000
+      },
       {
         "chestTarget": 39000,
         "starScoreTarget": 42200,
@@ -3555,6 +3625,11 @@
     ],
     "502": [
       {
+        "chestTarget": 41000,
+        "starScoreTarget": 57400,
+        "speedTargetMs": 141000
+      },
+      {
         "chestTarget": 45500,
         "starScoreTarget": 57400,
         "speedTargetMs": 141000
@@ -3565,9 +3640,19 @@
         "chestTarget": 21000,
         "starScoreTarget": 26000,
         "speedTargetMs": 95000
+      },
+      {
+        "chestTarget": 23000,
+        "starScoreTarget": 26000,
+        "speedTargetMs": 95000
       }
     ],
     "504": [
+      {
+        "chestTarget": 53500,
+        "starScoreTarget": 71000,
+        "speedTargetMs": 161000
+      },
       {
         "chestTarget": 63000,
         "starScoreTarget": 79200,
@@ -3584,6 +3669,11 @@
     "506": [
       {
         "chestTarget": 44500,
+        "starScoreTarget": 56000,
+        "speedTargetMs": 98000
+      },
+      {
+        "chestTarget": 46000,
         "starScoreTarget": 56000,
         "speedTargetMs": 98000
       }

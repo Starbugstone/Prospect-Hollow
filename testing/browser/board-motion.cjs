@@ -126,25 +126,29 @@ function overlaps({ swapped, frames }) {
 function stutters({ frames }) {
   const tracks = new Map();
   const seen = new Map();
+  // Each time a gem comes back into view, its movement starts again (see below).
+  const legs = new Map();
   frames.forEach((gems, frame) => {
     for (const [id, x, y, alpha] of gems) {
       const before = seen.get(id);
       seen.set(id, { frame, x, y });
-      // A hidden gem (crossing a portal or still inside the seam) cannot visibly stutter.
+      // A hidden gem (beamed through a portal or still inside the seam) cannot visibly
+      // stutter.
       if (alpha < 0.9) continue;
-      if (!tracks.has(id)) tracks.set(id, []);
-      const track = tracks.get(id);
+      let leg = legs.get(id) ?? 0;
+      const last = tracks.get(`${id}#${leg}`)?.at(-1);
+      // Back in view on a portal's exit pad: it drops out of it from rest, a new fall.
+      if (last && last.frame !== frame - 1) legs.set(id, ++leg);
+      const key = `${id}#${leg}`;
+      if (!tracks.has(key)) tracks.set(key, []);
+      const track = tracks.get(key);
       const previous = track.at(-1);
-      const speed =
-        previous?.frame === frame - 1
-          ? Math.hypot(x - previous.x, y - previous.y)
-          : previous
-            ? // Back in view out of a portal: the frames it spent hidden are not a stop.
-              previous.speed
-            : before?.frame === frame - 1
-              ? // First seen mid-fall, out of a seam or a hole: it comes into view moving.
-                Math.hypot(x - before.x, y - before.y)
-              : 0;
+      const speed = previous
+        ? Math.hypot(x - previous.x, y - previous.y)
+        : !leg && before?.frame === frame - 1
+          ? // First seen mid-fall, out of a seam or a hole: it comes into view moving.
+            Math.hypot(x - before.x, y - before.y)
+          : 0;
       track.push({ frame, x, y, speed });
     }
   });
@@ -159,9 +163,18 @@ function stutters({ frames }) {
       if (start === null && !resting) start = i;
       if (start === null || !resting) continue;
       const end = track[i - 1];
-      const arrival = track.findIndex(
-        (point, j) => j >= start && Math.hypot(point.x - end.x, point.y - end.y) < 0.02,
+      // It has landed once it reaches its cell, or once it turns back on itself: the
+      // bounce of a landing that fell between two frames.
+      const turns = (j) =>
+        j >= start + 2 &&
+        (track[j - 1].x - track[j - 2].x) * (track[j].x - track[j - 1].x) +
+          (track[j - 1].y - track[j - 2].y) * (track[j].y - track[j - 1].y) <
+          0;
+      let arrival = track.findIndex(
+        (point, j) =>
+          j >= start && (Math.hypot(point.x - end.x, point.y - end.y) < 0.02 || turns(j)),
       );
+      if (turns(arrival)) arrival--;
       const approach = speed.slice(start, arrival + 1);
       const peak = Math.max(...approach);
       const fast = approach.findIndex((value) => value >= peak / 2);

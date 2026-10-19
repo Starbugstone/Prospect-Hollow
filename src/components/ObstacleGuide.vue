@@ -46,8 +46,7 @@
             </template>
             <template v-else-if="obstacle.id === 'portal'">
               <img src="/art/ruby.svg" alt="" /><b>↓</b><img :src="obstacle.art" alt="" /><b>→</b
-              ><img src="/art/obstacles/portal-out.svg" alt="" /><b>↓</b
-              ><img src="/art/ruby.svg" alt="" />
+              ><img :src="obstacle.art" alt="" /><b>↓</b><img src="/art/ruby.svg" alt="" />
             </template>
             <template v-else-if="['relic', 'pearl', 'moon-gem'].includes(obstacle.id)">
               <img :src="obstacle.art" alt="" /><b>↓</b
