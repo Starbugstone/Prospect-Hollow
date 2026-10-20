@@ -8,6 +8,7 @@ import { CHAPTERS } from '../../data/campaign';
 import { chapterIndexOf } from '../../data/chapters';
 import { mineSignalAppearance, mineRelicAppearance } from '../../data/mineThemes';
 import { BonusEffects } from './BonusEffects';
+import { FloatstoneTrail } from './FloatstoneTrail';
 import {
   isCellFixture,
   isGravitySwitch,
@@ -69,6 +70,8 @@ export function tileTexture(tile, { damaged = false, frozen = false } = {}) {
 }
 const hasRelic = (board) => board.some((gem) => gem?.type === 'relic');
 const PORTAL_COLORS = [0xffd36e, 0x8ff0ff, 0xff9ad5];
+// A floatstone lifts off from this far behind its centre (cells), just inside its edge.
+const FLOAT_BASE = 0.36;
 const sameTile = (a, b) => {
   if (a === b) return true;
   if (!a || !b) return false;
@@ -108,6 +111,7 @@ export class BoardAnimator {
       onActivity,
     });
     this.bonuses = new BonusEffects(this);
+    this.floatTrail = new FloatstoneTrail(this);
     this.iceSprites = new Map();
     this.fossilSprites = new Map();
     this.fixtureSprites = new Map();
@@ -182,6 +186,7 @@ export class BoardAnimator {
     this.boardOutlineKey = '';
     this.effects.forEach((effect) => effect.destroy());
     this.effects.clear();
+    this.floatTrail.clear();
     this.particles?.clear?.();
     this.scene?.cameras?.main?.resetFX();
   }
@@ -429,6 +434,13 @@ export class BoardAnimator {
       await this.playSporeBursts(step.sporeBursts ?? []);
       if (step.lensBeams?.length) await this.playLensBeams(step.lensBeams);
       if (generation !== this.generation) return;
+      // A floatstone this step sets moving lights up its route as the match clears.
+      for (const { gem, path } of step.drops ?? [])
+        if (gem?.float && path)
+          this.floatTrail.prepare(
+            this.gemSprites.get(gem.id),
+            fallRoute(withPortalPads(this.tiles, path), this.boardCols),
+          );
       await this.clearGems(step.cleared, step.bonusFusion);
       if (generation !== this.generation) return;
       if (step.collectedRelics?.length) {
@@ -603,22 +615,24 @@ export class BoardAnimator {
         ? []
         : fallDelays(
             falls.map(({ route, rise, frame, passes }) => {
-              const motion = fallMotion(route, { rise, frame });
+              const motion = fallMotion(route, { rise, frame, float: passes });
               return { route, duration: motion.duration, motion, passes };
             }),
           );
-    return falls.map(({ sprite, route, rise, frame }, index) =>
-      this.fallAlong(sprite, route, { rise, frame, delay: delays[index] ?? 0 }),
+    return falls.map(({ sprite, route, rise, frame, passes }, index) =>
+      this.fallAlong(sprite, route, { rise, frame, float: passes, delay: delays[index] ?? 0 }),
     );
   }
 
   // A shaped-board fall is one tween through every cell of its route, eased like a
-  // straight fall, so gems flow around bends instead of pausing at each one.
-  fallAlong(sprite, route, { rise = false, frame = null, delay = 0 } = {}) {
+  // straight fall, so gems flow around bends instead of pausing at each one. A floatstone
+  // (`float`) glides along its own buoyant curve and lights up its route as it goes.
+  fallAlong(sprite, route, { rise = false, frame = null, float = false, delay = 0 } = {}) {
     const pixels = (cells) => (cells + 0.5) * this.cellSize;
-    const motion = fallMotion(route, { rise, frame });
+    const motion = fallMotion(route, { rise, frame, float });
     const end = route.at(-1);
     if (this.reducedMotion) {
+      if (float) this.floatTrail.showPath(sprite, route);
       // Through a portal, it simply drops out of the exit pad.
       sprite.setPosition(pixels(motion.dropsFrom.col), pixels(motion.dropsFrom.row));
       return this.tween(sprite, {
@@ -644,11 +658,52 @@ export class BoardAnimator {
     // Phaser skips tween properties that start with an underscore.
     sprite.fallProgress = 0;
     place();
+    if (float) this.floatTrail.play(sprite, route, motion, delay);
     return this.tween(sprite, {
       fallProgress: 1,
       duration: total,
       ease: 'Linear',
       onUpdate: place,
+    });
+  }
+
+  // A floatstone setting off from `cell` towards `heading` (one step of its route) lifts off
+  // with a soft flash, a flat ring of light spreading from its base and a puff of warm
+  // sparks blown out behind it, so one sinking under upturned gravity blows upwards.
+  liftOff({ col, row }, heading) {
+    if (this.reducedMotion || !this.scene?.add || !this.fxLayer) return;
+    const length = Math.hypot(heading.col, heading.row) || 1;
+    const dirCol = heading.col / length,
+      dirRow = heading.row / length;
+    const x = (col + 0.5 - dirCol * FLOAT_BASE) * this.cellSize;
+    const y = (row + 0.5 - dirRow * FLOAT_BASE) * this.cellSize;
+    this.particles?.emitLiftOff?.({ x, y }, (Math.atan2(-dirRow, -dirCol) * 180) / Math.PI);
+    // Turned this way, an upright texture lies across the heading.
+    const across = Math.atan2(dirCol, -dirRow) + Math.PI / 2;
+    const flash = this.scene.add
+      .image(x, y, 'portal-beam')
+      .setRotation(across)
+      .setDisplaySize(this.cellSize * 0.5, this.cellSize * 0.9)
+      .setTint(0xffc45a)
+      .setBlendMode('ADD');
+    this.effect(flash, {
+      scaleY: flash.scaleY * 1.6,
+      alpha: 0,
+      duration: 260,
+      ease: 'Quad.easeOut',
+    });
+    const ring = this.scene.add
+      .circle(x, y, this.cellSize * 0.36, 0xffd36e, 0)
+      .setStrokeStyle(Math.max(3, this.cellSize * 0.08), 0xffd36e)
+      .setRotation(across - Math.PI / 2)
+      .setBlendMode('ADD')
+      .setScale(0.35, 0.35 * 0.38);
+    this.effect(ring, {
+      scaleX: 1.15,
+      scaleY: 1.15 * 0.38,
+      alpha: 0,
+      duration: 300,
+      ease: 'Cubic.easeOut',
     });
   }
 

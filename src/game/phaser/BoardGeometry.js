@@ -42,6 +42,51 @@ const bounceOut = (k) => {
 
 // A fall of `cells` cells, bounce included (ms).
 export const fallDuration = (cells) => 190 + Math.min(5, cells) * 12;
+
+// A floatstone moves against gravity at its own buoyant pace, a little calmer than the
+// gems falling past it: it glides from rest for FLOAT_GLIDE of its motion, drifts
+// FLOAT_OVERSHOOT cells past its cell and bobs gently back.
+const FLOAT_LINGER = 70;
+const FLOAT_GLIDE = 0.6;
+const FLOAT_OVERSHOOT = 0.2;
+export const floatDuration = (cells) => fallDuration(cells) + FLOAT_LINGER;
+
+// How far along a route of `cells` cells a floatstone is, `u` (0–1) of the way through
+// its motion: a smooth glide up to the drift past its cell, then a damped bob back.
+function floatTravel(u, cells) {
+  if (u < FLOAT_GLIDE)
+    return ((cells + FLOAT_OVERSHOOT) * (1 - Math.cos((Math.PI * u) / FLOAT_GLIDE))) / 2;
+  const w = Math.min(1, (u - FLOAT_GLIDE) / (1 - FLOAT_GLIDE));
+  return cells + FLOAT_OVERSHOOT * Math.exp(-5 * w * w) * Math.cos(2.5 * Math.PI * w);
+}
+
+// Where a floatstone is, `k` (0–1) of the way through its motion, in grid units. It
+// drifts past its cell along the route's last step, whichever way it travels.
+function floatMotion(route) {
+  const cells = route.length - 1;
+  const end = route[cells],
+    before = route[Math.max(0, cells - 1)];
+  const point = { col: route[0].col, row: route[0].row, hidden: false, alpha: 1, beam: null };
+  point.travelled = 0;
+  const at = (k) => {
+    const travelled = cells ? floatTravel(Math.min(1, Math.max(0, k)), cells) : 0;
+    point.travelled = travelled;
+    if (travelled >= cells) {
+      point.col = end.col + (end.col - before.col) * (travelled - cells);
+      point.row = end.row + (end.row - before.row) * (travelled - cells);
+    } else {
+      const step = Math.min(cells - 1, Math.floor(travelled));
+      const part = travelled - step;
+      point.col = route[step].col + (route[step + 1].col - route[step].col) * part;
+      point.row = route[step].row + (route[step + 1].row - route[step].row) * part;
+    }
+    return point;
+  };
+  at.duration = floatDuration(cells);
+  at.hides = false;
+  at.dropsFrom = route[0];
+  return at;
+}
 // A gem beamed through a portal shimmers out on the entrance pad for this long (ms),
 // then shimmers back in on the exit pad for as long again before it drops out.
 export const PORTAL_SHIMMER = 130;
@@ -56,8 +101,9 @@ const leaps = (a, b) => Math.max(Math.abs(a.col - b.col), Math.abs(a.row - b.row
 // around a bend or into the gem landing above it. Through a portal it falls on to the
 // entrance pad, shimmers out (`beam: 'out'`, fading), shimmers in on the exit pad
 // (`beam: 'in'`) and drops out of it from rest. It is hidden outside `frame` (a refill
-// entering at a twin-gravity seam or out of a hole).
-export function fallMotion(route, { rise = false, frame = null } = {}) {
+// entering at a twin-gravity seam or out of a hole). A `float` (floatstone) moves with its
+// own buoyant glide instead (see floatTravel).
+export function fallMotion(route, { rise = false, frame = null, float = false } = {}) {
   // The legs between portal pads: each but the last ends on an entrance pad.
   const legs = [];
   let start = 0;
@@ -66,6 +112,7 @@ export function fallMotion(route, { rise = false, frame = null } = {}) {
       legs.push(route.slice(start, step));
       start = step;
     }
+  if (float && legs.length === 1 && !frame) return floatMotion(route);
   let duration = 0;
   const phases = legs.flatMap((leg, index) => {
     const last = index === legs.length - 1;

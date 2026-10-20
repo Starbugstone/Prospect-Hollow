@@ -83,7 +83,22 @@ export function createParticleFactory(scene, fxLayer) {
     rotate: { min: 0, max: 180 },
     blendMode: Phaser.BlendModes.ADD,
   });
-  const emitters = [emitter, ice, shimmer];
+  // A floatstone lifting off puffs warm sparks out of its base, fanned around `puff.angle`
+  // (degrees, straight behind it), so one sinking under upturned gravity blows upwards.
+  const puff = { angle: 90 };
+  const liftOff = scene.add.particles(0, 0, 'spark', {
+    emitting: false,
+    maxParticles: 40,
+    lifespan: { min: 240, max: 460 },
+    angle: { onEmit: () => puff.angle + (Math.random() * 2 - 1) * 80 },
+    speed: { min: 90, max: 210 },
+    scale: { start: 0.5, end: 0 },
+    alpha: { start: 1, end: 0 },
+    rotate: { min: 0, max: 180 },
+    tint: [0xffeaa8, 0xffc04d, 0xff8f3a],
+    blendMode: Phaser.BlendModes.ADD,
+  });
+  const emitters = [emitter, ice, shimmer, liftOff];
   fxLayer.add(emitters);
   let reducedMotion = false;
   return {
@@ -112,6 +127,11 @@ export function createParticleFactory(scene, fxLayer) {
           1,
         );
       }
+    },
+    emitLiftOff(position, angle, count = 8) {
+      if (reducedMotion) return;
+      puff.angle = angle;
+      liftOff.emitParticleAt(position.x, position.y, Math.min(10, count));
     },
     // Asked on every frame (see BoardAnimator.isAnimating).
     alive() {

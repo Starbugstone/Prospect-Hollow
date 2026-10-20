@@ -20,7 +20,10 @@ Willowkin plant the first tree of the floating island in chapter 23.
 
 - **Floatstones** are relics that rise. Clearing the gems directly above one lets it
   float up into the gap while other gems sink past it. They are collected by sky
-  hatches on the top row. Under inverted gravity they sink instead.
+  hatches on the top row. Under inverted gravity they sink instead. So that a moving
+  floatstone stands out from the falling gems, its route lights up with arrows as the
+  match clears, and it lifts off with a ring and a puff of sparks from its base. It
+  glides instead of bouncing, drifting a little past its cell and bobbing back.
 - **Low gravity.** An inverted cavern falls up and refills from the floor. A twin-gravity
   cavern falls up above its seam and down below it, refilling from the seam.
 - **Moon locks and dials** fill their own side or corner cell. No gem enters or rests
@@ -58,8 +61,13 @@ player uses rather than completes; `testing/completed-board-markers.test.js` lis
   remains available and can flip again on a later move, at most once per move.
 - [Floatstones: rising and collection](images/hollow-mines/floatstones-30fps.mp4).
   Level 409 shows a floatstone rising three cells after a legal match, then reaching
-  its sky hatch after another match. Gems sink past the floatstone; the collected
-  floatstone and completed hatch leave no marker.
+  its sky hatch after another match, each move replayed 4× slower. Its lit route,
+  lift-off ring and buoyant glide set it apart from the gems sinking past it; the
+  collected floatstone and completed hatch leave no marker.
+- [Floatstones: sinking under upturned gravity](images/hollow-mines/floatstone-sinking-30fps.mp4).
+  Level 542, after the moon dial has turned gravity upward: the floatstone's route
+  lights up downwards and it lifts off towards the bottom row, the sparks blowing up
+  behind it, then sinks eight cells into the basket.
 - [Portals: beaming and delivery](images/hollow-mines/portals-30fps.mp4).
   Level 475 shows a moon gem falling on to the gold pad at the foot of the side track,
   shimmering out and dropping from the matching pad at the top of the board, with
@@ -141,6 +149,11 @@ The board motion check (`testing/browser/board-motion.cjs`, see the
 gems sinking past them, and that crossing is exempt; refills entering at a twin-gravity
 seam stay hidden until they reach their own half. Floatstone, low-gravity,
 breakthrough, lock and dial levels report no overlaps or stutters.
+
+After the floatstone effect (2026-10-20: a lit route, a lift-off ring and a buoyant
+glide), levels 13, 373, 376, 385, 397, 409, 423, 541 and 542 report no overlaps or
+stutters over five hinted moves. 423, 541 and 542 also report none over 25, and so does
+409 over the 16 moves it takes to deliver its floatstone and clear the level.
 
 After the portal pads change (2026-10-19), a gem beamed through a portal lands on the
 entrance pad and starts a new fall out of the exit pad, and a landing bounce that falls

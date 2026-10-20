@@ -7,6 +7,7 @@ import {
   fallDuration,
   fallMotion,
   fallRoute,
+  floatDuration,
   PORTAL_SHIMMER,
 } from '../src/game/phaser/BoardGeometry';
 
@@ -291,5 +292,265 @@ describe('falls that share a route', () => {
       plan(cells([2, 1], [2, 2], [2, 3], [2, 4])),
     ];
     expect(fallDelays(falls)).toEqual([0, 0]);
+  });
+});
+
+// Rows a motion passes through, sampled finely from start to end.
+const samples = (motion, steps = 2000) =>
+  Array.from({ length: steps + 1 }, (_, step) => ({ ...motion(step / steps) }));
+
+describe('floatstones', () => {
+  it('glide up from rest, drift a little past their cell and bob back, unlike a fall', () => {
+    const route = cells([2, 4], [2, 3], [2, 2], [2, 1]);
+    const at = fallMotion(route, { float: true });
+    expect(at.duration).toBe(floatDuration(3));
+    // A little calmer than the gems around it, without making the move noticeably longer.
+    expect(at.duration - fallDuration(3)).toBeGreaterThan(0);
+    expect(at.duration - fallDuration(3)).toBeLessThanOrEqual(100);
+    expect(at.hides).toBe(false);
+    const points = samples(at);
+    expect(points.every(({ col }) => col === 2)).toBe(true);
+    expect(points[0]).toMatchObject({ col: 2, row: 4 });
+    expect(points.at(-1).row).toBeCloseTo(1, 9);
+    // It sets off gently instead of dropping away at full speed.
+    expect(4 - at(0.02).row).toBeLessThan(0.05);
+    const rows = points.map(({ row }) => row);
+    const apex = rows.indexOf(Math.min(...rows));
+    // Steadily up to a soft drift a fifth of a cell past its cell, never back below its
+    // start, then a bob back below the cell before it settles.
+    expect(rows.slice(0, apex + 1).every((row, i) => i === 0 || row <= rows[i - 1])).toBe(true);
+    expect(rows[apex]).toBeCloseTo(0.8, 2);
+    expect(Math.max(...rows)).toBe(4);
+    expect(Math.max(...rows.slice(apex))).toBeGreaterThan(1.05);
+    expect(Math.max(...rows.slice(apex))).toBeLessThan(1.15);
+    // When a fall of the same route lands, the floatstone is still gliding up its route.
+    expect(at(((1 / 2.75) * fallDuration(3)) / at.duration).row).toBeGreaterThan(2);
+  });
+
+  it('sink with the same motion, mirrored, when the cavern falls up', () => {
+    const at = fallMotion(cells([2, 1], [2, 2], [2, 3]), { rise: true, float: true });
+    const rows = samples(at).map(({ row }) => row);
+    expect(at.duration).toBe(floatDuration(2));
+    expect(Math.max(...rows)).toBeCloseTo(3.2, 2);
+    expect(Math.min(...rows)).toBe(1);
+    expect(rows.at(-1)).toBeCloseTo(3, 9);
+  });
+
+  it('plan the gems sinking past with the same motion the floatstone plays', () => {
+    const animator = new BoardAnimator({ settings: {} });
+    Object.assign(animator, { boardCols: 5, cellSize: 40 });
+    animator.tween = vi.fn().mockResolvedValue();
+    const sprite = () => ({ setPosition: vi.fn() });
+    const stone = cells([2, 4], [2, 3], [2, 2]);
+    const gem = cells([2, 1], [2, 2], [2, 3], [2, 4]);
+    animator.fallTogether([
+      { sprite: sprite(), route: stone, passes: true },
+      { sprite: sprite(), route: gem },
+    ]);
+    const [[, floatstone], [, sinking]] = animator.tween.mock.calls;
+    expect(floatstone.duration).toBe(floatDuration(2));
+    expect(sinking.duration).toBe(fallDuration(3));
+    expect(fallDelays([{ ...plan(stone, { float: true }), passes: true }, plan(gem)])).toEqual([
+      0, 0,
+    ]);
+  });
+});
+
+// A scene that records the floatstone trail's images and steps its counter tweens.
+function trailBoard({ reducedMotion = false } = {}) {
+  const images = [];
+  const tweens = [];
+  const scene = {
+    textures: { exists: () => true },
+    add: {
+      image: () => {
+        const image = { visible: true, alpha: 1, rotation: 0, scale: 1, destroyed: false };
+        const chain = () => image;
+        Object.assign(image, {
+          setVisible: (visible) => Object.assign(image, { visible }),
+          setAlpha: (alpha) => Object.assign(image, { alpha }),
+          setRotation: (rotation) => Object.assign(image, { rotation }),
+          setPosition: (x, y) => Object.assign(image, { x, y }),
+          setScale: (scale) => Object.assign(image, { scale }),
+          setDisplaySize: chain,
+          setTint: chain,
+          destroy: () => Object.assign(image, { destroyed: true }),
+        });
+        images.push(image);
+        return image;
+      },
+    },
+    tweens: {
+      addCounter: (config) => {
+        const tween = {
+          ...config,
+          value: config.from,
+          getValue: () => tween.value,
+          remove: () => Object.assign(tween, { removed: true }),
+          to(value) {
+            tween.value = value;
+            tween.onUpdate?.(tween);
+          },
+        };
+        tweens.push(tween);
+        return tween;
+      },
+    },
+  };
+  const gemLayer = { add: vi.fn(), bringToTop: vi.fn(), sendToBack: vi.fn() };
+  const animator = new BoardAnimator({ scene, gemLayer, settings: { reducedMotion } });
+  Object.assign(animator, { boardCols: 5, boardRows: 6, cellSize: 40 });
+  return { animator, images, tweens, gemLayer };
+}
+
+describe('the floatstone trail', () => {
+  it('lights the route ahead as the match clears, follows the stone and leaves nothing', () => {
+    const { animator, images, tweens, gemLayer } = trailBoard();
+    const { floatTrail } = animator;
+    const liftOff = vi.spyOn(animator, 'liftOff').mockImplementation(() => {});
+    const stone = { id: 'stone' };
+    const route = cells([2, 4], [2, 3], [2, 2], [2, 1]);
+    floatTrail.prepare(stone, route);
+    // A lane, a streak, a glow and a chevron for each cell ahead.
+    expect(images).toHaveLength(6);
+    const [set] = floatTrail.sets;
+    // The lane lies under the gems; the stone stays in front of its own trail.
+    expect(gemLayer.sendToBack).toHaveBeenCalledWith(set.lane);
+    expect(gemLayer.bringToTop.mock.calls.at(-1)).toEqual([stone]);
+    tweens[0].to(120);
+    expect(set.lane.alpha).toBeGreaterThan(0);
+    for (const chevron of set.chevrons) {
+      expect(chevron.rotation).toBeCloseTo(0);
+      expect(chevron.alpha).toBeGreaterThan(0);
+    }
+    // The stone sets off from where the lit path has got to, lifting off upwards.
+    expect(liftOff).not.toHaveBeenCalled();
+    const motion = fallMotion(route, { float: true });
+    floatTrail.play(stone, route, motion);
+    expect(liftOff).toHaveBeenCalledExactlyOnceWith(route[0], { col: 0, row: -1 });
+    expect(tweens[0].removed).toBe(true);
+    const travel = tweens[1];
+    expect(travel.from).toBe(120);
+    travel.to(120 + motion.duration * 0.45);
+    const { row, travelled } = { ...motion(0.45) };
+    expect(set.glow.y).toBeCloseTo((row + 0.5) * 40);
+    expect(set.streak.alpha).toBeGreaterThan(0);
+    // Chevrons the stone has passed have gone out; the ones ahead still show the way.
+    expect(travelled).toBeGreaterThan(1);
+    expect(set.chevrons[0].alpha).toBe(0);
+    expect(set.chevrons[2].alpha).toBeGreaterThan(0);
+    travel.to(travel.from + travel.duration);
+    expect(liftOff).toHaveBeenCalledOnce();
+    expect(set.objects.every(({ alpha }) => alpha === 0)).toBe(true);
+    travel.onComplete();
+    expect(set.objects.every(({ visible }) => !visible)).toBe(true);
+    // The next floatstone reuses the same pieces.
+    floatTrail.prepare(stone, cells([1, 3], [1, 2]));
+    expect(images).toHaveLength(6);
+    animator.clear();
+    expect(images.every(({ destroyed }) => destroyed)).toBe(true);
+    expect(tweens.at(-1).removed).toBe(true);
+    expect(floatTrail.sets).toEqual([]);
+  });
+
+  it('points the chevrons down the route of a floatstone sinking in an upward cavern', () => {
+    const { animator } = trailBoard();
+    animator.floatTrail.prepare(null, cells([2, 1], [2, 2], [2, 3]));
+    const [set] = animator.floatTrail.sets;
+    for (const chevron of set.chevrons) expect(Math.abs(chevron.rotation)).toBeCloseTo(Math.PI);
+    expect(set.chevrons.map(({ y }) => Math.round(y / 40 - 0.5))).toEqual([2, 3]);
+  });
+
+  it('lifts off once it sets off, after the wait planned for it', () => {
+    const { animator, tweens } = trailBoard();
+    const liftOff = vi.spyOn(animator, 'liftOff').mockImplementation(() => {});
+    const route = cells([1, 1], [1, 2], [1, 3]);
+    animator.floatTrail.play(null, route, fallMotion(route, { rise: true, float: true }), 60);
+    const [travel] = tweens;
+    travel.to(59);
+    expect(liftOff).not.toHaveBeenCalled();
+    travel.to(60);
+    expect(liftOff).toHaveBeenCalledExactlyOnceWith(route[0], { col: 0, row: 1 });
+  });
+
+  it('shows only a brief still path with reduced motion', () => {
+    const { animator, tweens } = trailBoard({ reducedMotion: true });
+    const liftOff = vi.spyOn(animator, 'liftOff');
+    const route = cells([2, 4], [2, 3], [2, 2]);
+    animator.floatTrail.prepare(null, route);
+    expect(animator.floatTrail.sets).toEqual([]);
+    animator.tween = vi.fn().mockResolvedValue();
+    animator.fallAlong({ setPosition: vi.fn() }, route, { float: true });
+    const [set] = animator.floatTrail.sets;
+    expect(set.lane.visible).toBe(true);
+    expect(set.glow.visible).toBe(false);
+    expect(set.streak.visible).toBe(false);
+    // Nothing moves or fades: the highlight simply goes after a moment.
+    expect(tweens).toHaveLength(1);
+    expect(tweens[0].onUpdate).toBeUndefined();
+    tweens[0].onComplete();
+    expect(set.objects.every(({ visible }) => !visible)).toBe(true);
+    expect(liftOff).not.toHaveBeenCalled();
+  });
+});
+
+// An animator whose scene records the shapes it adds, for the lift-off.
+function liftOffBoard({ reducedMotion = false } = {}) {
+  const shape = () => {
+    const node = { scaleX: 1, scaleY: 1, destroy: vi.fn() };
+    for (const method of ['setTint', 'setBlendMode', 'setStrokeStyle', 'setDisplaySize'])
+      node[method] = vi.fn(() => node);
+    node.setRotation = vi.fn((rotation) => Object.assign(node, { rotation }));
+    node.setScale = vi.fn((scaleX, scaleY) => Object.assign(node, { scaleX, scaleY }));
+    return node;
+  };
+  const particles = { emitLiftOff: vi.fn() };
+  const fxLayer = { add: vi.fn() };
+  const scene = { add: { image: vi.fn(shape), circle: vi.fn(shape) } };
+  const animator = new BoardAnimator({ scene, particles, fxLayer, settings: { reducedMotion } });
+  Object.assign(animator, { boardCols: 5, boardRows: 6, cellSize: 40 });
+  animator.tween = vi.fn().mockResolvedValue();
+  return { animator, particles, fxLayer, scene };
+}
+
+describe('a floatstone lifting off', () => {
+  it.each([
+    ['rising', { col: 2, row: 4 }, { col: 0, row: -1 }, { x: 100, y: 194.4 }, 90],
+    ['sinking', { col: 1, row: 1 }, { col: 0, row: 1 }, { x: 60, y: 45.6 }, -90],
+  ])(
+    'puffs sparks out of the base of a %s stone and spreads a ring across it',
+    (_, cell, heading, base, angle) => {
+      const { animator, particles, fxLayer, scene } = liftOffBoard();
+      animator.liftOff(cell, heading);
+      expect(particles.emitLiftOff).toHaveBeenCalledOnce();
+      const [[position, direction]] = particles.emitLiftOff.mock.calls;
+      expect(position.x).toBeCloseTo(base.x);
+      expect(position.y).toBeCloseTo(base.y);
+      expect(direction).toBeCloseTo(angle);
+      const [[x, y]] = scene.add.image.mock.calls;
+      expect({ x, y }).toEqual(position);
+      const [flash] = scene.add.image.mock.results.map(({ value }) => value);
+      const [ring] = scene.add.circle.mock.results.map(({ value }) => value);
+      // The flash and the flattened ring both lie across the stone's heading, over the gems.
+      expect(Math.abs(Math.cos(flash.rotation))).toBeCloseTo(0);
+      expect(Math.abs(Math.sin(ring.rotation))).toBeCloseTo(0);
+      expect(ring.scaleY).toBeLessThan(ring.scaleX);
+      expect(fxLayer.add).toHaveBeenCalledWith(flash);
+      expect(fxLayer.add).toHaveBeenCalledWith(ring);
+      // Both only spread and fade; neither stays on the board.
+      for (const [target, config] of animator.tween.mock.calls) {
+        expect([flash, ring]).toContain(target);
+        expect(config.alpha).toBe(0);
+        expect(config.duration).toBeLessThanOrEqual(300);
+      }
+    },
+  );
+
+  it('does nothing with reduced motion', () => {
+    const { animator, particles, scene } = liftOffBoard({ reducedMotion: true });
+    animator.liftOff({ col: 2, row: 4 }, { col: 0, row: -1 });
+    expect(particles.emitLiftOff).not.toHaveBeenCalled();
+    expect(scene.add.image).not.toHaveBeenCalled();
+    expect(scene.add.circle).not.toHaveBeenCalled();
   });
 });
