@@ -32,13 +32,3 @@ The camera eases from the player's view toward the incident, follows nearby resp
 Browser checks use disposable developer fixtures at `http://127.0.0.1:5174` in Chromium. Six completed eras (industrial through connected city) were inspected at 1440 × 900 and 390 × 844 with no application exceptions, failed requests or document overflow. The 1958, 1986 and 2005 transitions were exercised through the Next era button. The fire response and bandit encounter were run through village navigation; the bandit receipt settled once with its 40-coin bounty and camera control restored. The horse-field construction state and the French SVG fallback (53 plot controls, no document overflow) were checked separately. Fixture-based checks do not claim a manual playthrough of all 240 puzzles. Software WebGL is useful for correctness and screenshots; these checks are not a physical-device frame-rate benchmark.
 
 The production build retains bundle-size warnings for the game's large JavaScript chunks. Detailed commands, fixtures and browser artifacts are under ignored `output/issue41/`.
-
-![Aviation district](../images/issue41-airport.png)
-
-![Music and television district](../images/issue41-broadcast.png)
-
-![Connected city](../images/issue41-connected-city.png)
-
-![Restored automobile-era pier](../images/issue41-pier.png)
-
-![Horse field during construction](../images/issue41-horse-field.png)

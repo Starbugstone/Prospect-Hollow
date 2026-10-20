@@ -1,6 +1,7 @@
 # Five deeper mine groups
 
-Groups 63–67 contain thirty endgame puzzles, levels 373–402. The redesign uses
+Groups 63–67 contain thirty late-campaign puzzles, levels 373–402, followed by
+[the floating seam](hollow-mine-levels.md) through level 546. The redesign uses
 real missing cells, blast-only barriers and directed gravity. The 7 × 9 grid is
 a bounding box: its missing corners, pockets and divided wells are not playable
 sockets. Players still use the familiar swaps and earned bonus gems.
@@ -175,25 +176,11 @@ move or time limits.
 
 ![All five implemented groups](images/deep-mines/final-overview.png)
 
-[Open the current review gallery](images/deep-mines/gallery.html),
-[watch the new brazier-to-fossil lesson](images/deep-mines/mechanics/brazier-fossil-intro.mp4), or
-[watch the earlier 72-second gameplay tour](images/deep-mines/deep-mine-tour.mp4).
-The earlier tour and original screenshots below retain the level numbers from
-before the forge-first reorder; the rules they demonstrate are unchanged.
-The H.264 MP4 records the running game at 1280 × 800. It shows fossil casing
-opened by an earned bonus, directional mushrooms firing, roots being cut,
-pearls moving inward through the funnel and forge bonuses charging and firing.
-Chapter labels are recording captions. Chapter selection uses the existing
-local debug fixture; a script plays the hint engine's legal moves through the
-normal game store and animations. No inventory powers are supplied or spent.
-
-| Theme                 | Actual game views                                                                                                                                                                                                |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Fossil beds           | [Desktop introduction](images/deep-mines/fossil-desktop.png), [casing partially opened by a bonus](images/deep-mines/fossil-uncover-desktop.png), [later alcoves on mobile](images/deep-mines/fossil-mobile.png) |
-| Glowshroom grotto     | [Desktop](images/deep-mines/grotto-desktop.png), [directional spore chamber on mobile](images/deep-mines/grotto-mobile.png)                                                                                      |
-| Root-bound vault      | [Two linked root wells](images/deep-mines/roots-mobile.png), [root released during play](images/deep-mines/roots-cut-mobile.png)                                                                                 |
-| Underground reservoir | [V-shaped funnel and single basket](images/deep-mines/reservoir-mobile.png)                                                                                                                                      |
-| Geothermal forge      | [French, high-contrast chute](images/deep-mines/forge-fr-mobile.png), [French illustrated guide](images/deep-mines/forge-guide-fr-mobile.png)                                                                    |
+[Open the current review gallery](images/deep-mines/gallery.html) and
+[watch the brazier-to-fossil lesson](images/deep-mines/mechanics/brazier-fossil-intro.mp4).
+The gallery shows the current forge-first chapter order. The older combined
+tour and screenshots with superseded level numbers have been retired; the
+[individual mechanic demos](#individual-mechanic-demos) retain focused examples.
 
 The T3 collaborative browser checked 1280 × 800 desktop and 390 × 844 mobile.
 After its desktop connection closed, a Node 24 Docker Playwright browser

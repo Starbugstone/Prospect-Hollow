@@ -91,7 +91,3 @@ These are hint-led simulations, not human completion rates or universal upper bo
 ## Browser verification
 
 Verified at `http://127.0.0.1:5174` in Chromium: all ten chapter themes, a full level using real pointer swipes, the paused obstacle introduction, chapter changes, and the selected jewel previews. Desktop checks used 1440 × 900; phone checks used 390 × 844, 320 × 568 and 844 × 390. The board and power controls fit in the viewport, with no horizontal overflow. Focus mode, French text, the French obstacle guide, reduced motion and high-contrast mode were exercised. No application exceptions, failed requests or HTTP error responses were recorded during the main browser run.
-
-![Frost gallery on desktop](../images/mine-frost-desktop.jpg)
-
-![Four-color opening on mobile](../images/mine-first-light-mobile.png)

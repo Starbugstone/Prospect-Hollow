@@ -49,7 +49,7 @@ up Playwright on WSL.
 | `capture-completion-fireworks.js`                                       | Captures the three-star celebration frames from an era-demo save.           |
 | `capture-vip-review.js`, `package-vip-review.py`                        | Captures and packages the VIP visitor review.                               |
 | `town-actor-review.html`, `town-actor-review.js`                        | Villager outfit and construction review page served by Vite.                |
-| `era-art-review.html`, `era-art-review.js`, `package-era-art-review.py` | Era building gallery and the wiki's packaged images.                        |
+| `era-art-review.html`, `era-art-review.js`, `package-era-art-review.py` | Era review galleries and archives under ignored `output/`.                  |
 
 ## Hosting
 

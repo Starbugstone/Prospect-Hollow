@@ -1,6 +1,6 @@
-# Skysail, Stargazer and Moonward eras
+# Skysail, Stargazer, Moonward and Twin Hollows
 
-Three eras follow Riverlight. Together they tell one story: the town takes to the
+Four playable eras follow Riverlight. Together they tell one story: the town takes to the
 sky, discovers the Moon, then sends its own prospectors to a new frontier, as the
 founders did in 1865. The tone stays warm: neighbors, gardens and homecomings.
 The Willowkin stay part of every chapter. They tend the floating orchards, know
@@ -227,16 +227,5 @@ Honours: Through the Ages gains its diamond rank, **Two Towns, One Sky**
 ![New Hollow on the Moon](images/future-eras/twin-hollows-moon.png)
 ![The Moon in the valley sky](images/future-eras/twin-hollows-sky-moon.png)
 
-### Monument designs in the town
-
-Stargazers’ Lawn (captured beside the former Skysail plot, since removed):
-
-![Orrery garden](images/future-eras/landmarks/a-north.png)
-![Comet arch](images/future-eras/landmarks/b-north.png)
-![Aurora dome](images/future-eras/landmarks/c-north.png)
-
-Homecoming Green (captured at its earlier site by the river walk):
-
-![Twin-lantern walk](images/future-eras/landmarks/a-home.png)
-![Earth and Moon garden](images/future-eras/landmarks/b-home.png)
-![Family welcome arch](images/future-eras/landmarks/c-home.png)
+For current monument sites, designs and construction, see
+[town personalisation](town-personalisation.md). The former-site captures have been retired.

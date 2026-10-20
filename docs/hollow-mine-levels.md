@@ -1,7 +1,7 @@
 # The floating seam: levels 403–546
 
 Twenty-four chapters below the reservoir, grouped in four acts by depth. The plan,
-decisions and checklist live in [the expansion plan](mine-expansion-plan.md); this
+decisions and checklist live in [the expansion plan](history/mine-expansion-plan.md); this
 guide describes what shipped. Moves stay unlimited, there is no puzzle timer, and a
 board with no legal match still reshuffles for free.
 

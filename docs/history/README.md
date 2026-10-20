@@ -3,7 +3,7 @@
 Point-in-time design notes, tuning passes and reviews. They record why earlier
 decisions were made, but their level counts, era lists, prices and file names
 describe the game as it was then. For the current game, start from the
-[readme](../../readme.md), [settlement eras](../settlement-eras.md) and the
+[documentation index](../README.md), [readme](../../readme.md), [settlement eras](../settlement-eras.md) and the
 [era architecture guide](../era-architecture.md).
 
 | Report                                                              | Covers                                                   |
@@ -20,3 +20,12 @@ describe the game as it was then. For the current game, start from the
 | [Backend review, 22 September](backend/review-2026-09-22.md)        | The retired authoritative-server prototype               |
 | [Backend review, 26 September](backend/review-2026-09-26.md)        | Assessment before the account-save replacement           |
 | [PostgreSQL versus MySQL benchmark](backend/database-benchmark.md)  | Load test of the retired prototype, with raw data        |
+
+Completed implementation records:
+
+- [Deeper-mine brainstorm](mine-expansion-brainstorm.md): original proposals before the five-group redesign.
+- [Cozy-era and mine coordination](cozy-era-mine-coordination.md): completed Canopy/Riverlight integration and the 402-level handoff.
+- [Floating-seam expansion plan](mine-expansion-plan.md): completed 403–546 checklist and chronological implementation log.
+
+Superseded interface screenshots have been removed. Git history retains the original
+captures; current guides link selected artwork and mechanic recordings.

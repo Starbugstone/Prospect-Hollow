@@ -370,15 +370,15 @@ graphics the village shows a retry notice and the dialog uses its still mode.
 `testing/building-era-contract.test.js` checks every available building and all
 three later-era stages. `city-era-art.test.js` checks period families, exported
 technology details and future/fallback definitions. `mine-era-construction.test.js`
-covers all seven transitions, worker motion, completion, batch replacement,
+covers era transitions, worker motion, completion, batch replacement,
 skipping, camera restoration and reduced motion.
 
 For reproducible snapshots, run `npm run dev`, open
 `/scripts/era-art-review.html`, and export each era's PNG data to
-`output/era-art-data/<era>.json`. Run `python3 scripts/package-era-art-review.py` to
-write the individual PNGs, comparisons, wiki galleries and downloadable archive.
-The review uses production renderers and real plot positions, including dock
-lengths. See [the visual guide](wiki/Era-Visual-Guide.md).
+`output/era-art-data/<era>.json`. Run the Python packager in Docker as described in
+[the visual guide](wiki/Era-Visual-Guide.md). It writes individual PNGs, comparisons
+and galleries under ignored `output/era-art-review/`, plus a downloadable archive.
+The review uses production renderers and real plot positions, including dock lengths.
 
 ### Villagers and passive VIP visits
 
