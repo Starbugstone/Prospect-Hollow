@@ -83,7 +83,8 @@ export function createParticleFactory(scene, fxLayer) {
     rotate: { min: 0, max: 180 },
     blendMode: Phaser.BlendModes.ADD,
   });
-  fxLayer.add([emitter, ice, shimmer]);
+  const emitters = [emitter, ice, shimmer];
+  fxLayer.add(emitters);
   let reducedMotion = false;
   return {
     setReducedMotion(value) {
@@ -112,23 +113,20 @@ export function createParticleFactory(scene, fxLayer) {
         );
       }
     },
+    // Asked on every frame (see BoardAnimator.isAnimating).
     alive() {
-      return (
-        emitter.getAliveParticleCount() +
-          ice.getAliveParticleCount() +
-          shimmer.getAliveParticleCount() >
-        0
-      );
+      return emitters.some((each) => each.getAliveParticleCount() > 0);
     },
     clear() {
-      emitter.killAll();
-      ice.killAll();
-      shimmer.killAll();
+      // Phaser's killAll keeps each particle where it died, and the next emission adds its
+      // own position on top: return them to the emitter's origin first, as a natural death does.
+      for (const each of emitters) {
+        each.forEachAlive((particle) => particle.setPosition());
+        each.killAll();
+      }
     },
     destroy() {
-      emitter.destroy();
-      ice.destroy();
-      shimmer.destroy();
+      emitters.forEach((each) => each.destroy());
     },
   };
 }
