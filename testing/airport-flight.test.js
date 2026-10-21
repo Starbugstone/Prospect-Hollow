@@ -285,6 +285,24 @@ describe('Sky saucer flight', () => {
     }
   });
 
+  it('passes well wide of the space elevator ribbon, the mine and the tall landmarks', () => {
+    // The ribbon rises without end, so keep the distance at every altitude, out and back.
+    // Pylons, masts and the headframe are checked the same way, to be safe.
+    const tall = ['spaceElevator', 'mine', 'radioTower', 'moonpost', 'greatTelescope', 'skyline'];
+    for (const id of tall) expect(PLOTS[id], id).toBeDefined();
+    const nearest = Object.fromEntries(tall.map((id) => [id, Infinity]));
+    for (const toMoon of [false, true])
+      for (let t = 0; t < AIRPORT_FLIGHT_CYCLE; t += 0.05) {
+        const p = saucerPose(t, { toMoon });
+        if (!p.visible) continue;
+        for (const id of tall)
+          nearest[id] = Math.min(nearest[id], Math.hypot(p.x - PLOTS[id][0], p.z - PLOTS[id][1]));
+      }
+    // The elevator lot is 15 wide; its ribbon stands at the centre.
+    expect(nearest.spaceElevator).toBeGreaterThan(30);
+    for (const id of tall) expect(nearest[id], id).toBeGreaterThan(20);
+  });
+
   it('heads for the Moon and returns from it, and only on the Moon route', () => {
     const away = (toMoon, t) => headingFromPad(saucerPose(t, { toMoon }));
     for (const t of [50, 53, 56]) {
@@ -460,6 +478,9 @@ describe('Plane variation', () => {
         const pose = airplanePose(t);
         expect(pose.phase).toBe('takeoff');
         if (pose.y < 4) expect(pose.x).toBe(AIRPORT.runwayX);
+        // Every track, turned or straight, keeps clear of the railway until it fades.
+        if (pose.y < 4) expect(pose.z).toBeGreaterThan(RAIL_EDGE.from[1] + 4);
+        if (Math.abs(pose.z - RAIL_EDGE.from[1]) < 4) expect(pose.y).toBeGreaterThan(4);
         // A turn heads away from the town.
         expect(pose.x).toBeLessThanOrEqual(AIRPORT.runwayX);
         expect(pose.y - groundHeight(pose.x, pose.z)).toBeGreaterThan(0.1);

@@ -137,8 +137,11 @@ trait of at most two meshes (`SAUCER_TRAITS` in `RoundedTransports.js`).
 | Twin Hollows | Twin palette, gold rim                  | Twin lanterns, teal for the valley, gold for the Moon |
 
 An era without an entry flies the Tomorrow saucer, and an unknown trait draws nothing.
-Twin Hollows does not modernize the airport, so a Twin Hollows town flies the Moonward
-saucer; its entry is ready if a later change modernizes the airport. A new rounded-transport
+Twin Hollows does not modernize the airport (it is not in that era's `modernizes`
+list), so a real Twin Hollows town keeps a Moonward airport and flies the Moonward
+saucer. The Twin Hollows saucer and its twin lanterns therefore never show in a normal
+game today; the entry only applies to an airport in the Twin Hollows era, such as a
+synthetic test town or a later change that modernizes the airport. A new rounded-transport
 era needs an entry: `testing/airport-flight.test.js` fails until it has one.
 
 **To the Moon.** The saucer heads for the Moon when the airport's era supplies the Moon

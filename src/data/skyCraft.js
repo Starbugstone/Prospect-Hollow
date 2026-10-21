@@ -34,7 +34,8 @@ export const SKY_SAUCERS = Object.freeze({
   stargazer: saucer(O.roof, O.timber, O.glass, O.deep, O.light, 'star', O.timber),
   // Moon-white ceramic with gold trim and a gold landing beacon.
   moonward: saucer(H.shell, H.light, H.glass, H.deep, H.light, 'gold-trim', H.light),
-  // Twin lanterns, teal for the valley and gold for the Moon.
+  // Twin lanterns, teal for the valley and gold for the Moon. Twin Hollows does not
+  // modernize the airport, so a real Twin Hollows town flies the Moonward saucer.
   'twin-hollows': saucer(T.shell, T.light, T.glass, T.deep, T.light, 'twin-lanterns', T.flower),
 });
 
