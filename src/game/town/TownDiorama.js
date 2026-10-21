@@ -1,4 +1,5 @@
 import { setTownAtmosphere, horizonMaterial } from './TownAtmosphere';
+import { TOWN_CAMERA_POSITION } from '../../data/townCamera';
 
 import { navigationScene, releaseNavigation } from './NavigationDebug';
 
@@ -93,7 +94,7 @@ export class TownDiorama extends TownPrimitives {
     setTownAtmosphere(this.scene);
     // Reach the full fog on the far side of the town from the widest orbit (360).
     this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 700);
-    this.camera.position.set(12, 12, 25);
+    this.camera.position.set(...TOWN_CAMERA_POSITION);
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
     this.renderQuality = new TownRenderQuality(window.devicePixelRatio || 1);
     this.renderer.setPixelRatio(this.renderQuality.ratio);

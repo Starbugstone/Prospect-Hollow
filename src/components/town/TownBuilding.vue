@@ -32,6 +32,7 @@
       :kind="kind"
       :era="era"
       :level="eraLevel"
+      :service-level="stage"
     />
     <TownCityBuilding
       v-else-if="built && isCityEra(era)"
@@ -132,15 +133,17 @@
         <path v-if="built" d="M-17-12q16 6 32-1" fill="none" stroke="#c6e2d6" stroke-width="3" />
         <path d="M-48 0V-105M49-17V-123" stroke="#775339" stroke-width="9" />
         <path d="M-45-85 48-102" stroke="#a5764e" stroke-width="8" />
-        <path d="M-75-104-16-151 79-126 21-80Z" :fill="built ? '#6c9191' : '#898579'" />
-        <path d="m-16-151 35 66 60-41" :fill="built ? '#496f72' : '#676c63'" />
-        <path d="m-75-104 96 24 58-46" fill="none" stroke="#3c5b60" stroke-width="7" />
-        <path
-          d="m-55-110 87 23m-71-36 86 23m-70-37 81 23"
-          stroke="#d2ddc4"
-          stroke-width="2"
-          opacity=".4"
-        />
+        <g v-if="eraEvolution(era).style !== 'river-rail'">
+          <path d="M-75-104-16-151 79-126 21-80Z" :fill="built ? '#6c9191' : '#898579'" />
+          <path d="m-16-151 35 66 60-41" :fill="built ? '#496f72' : '#676c63'" />
+          <path d="m-75-104 96 24 58-46" fill="none" stroke="#3c5b60" stroke-width="7" />
+          <path
+            d="m-55-110 87 23m-71-36 86 23m-70-37 81 23"
+            stroke="#d2ddc4"
+            stroke-width="2"
+            opacity=".4"
+          />
+        </g>
         <path d="M1-93v64" stroke="#d7c29a" stroke-width="3" />
         <path d="m-9-33 23-3-2 19-16 3Z" fill="#a06e43" stroke="#6b4b33" stroke-width="2" />
         <path
@@ -447,15 +450,43 @@
         /></g>
         <path v-if="stage >= 3" d="M-102-34h56v6h-56Z" fill="#8d7958" />
       </g>
+      <g v-if="built && stage >= 3 && ['school', 'doctor', 'blacksmith'].includes(kind)">
+        <path d="M65-5 101 6 140-10 105-22Z" fill="#a99579" />
+        <path v-if="kind !== 'blacksmith'" d="M70-64 102-55V3L70-6Z" :fill="frontColor" />
+        <path d="M102-55 133-69v57L102 3Z" :fill="sideColor" />
+        <path d="M64-68 88-90 141-74 106-50Z" fill="#937447" stroke="#aa8454" stroke-width="3" />
+        <path d="m76-71 48 15m-35-24 47 14" stroke="#bba17a" stroke-width="2" />
+        <path
+          v-if="kind !== 'blacksmith'"
+          d="M78-48 94-43v24l-16-5Z"
+          fill="#e1bd75"
+          stroke="#e8d3a7"
+          stroke-width="3"
+        />
+        <path v-else d="M72-63v57m29-49V3" stroke="#e8d3a7" stroke-width="4" />
+      </g>
       <g v-if="built && kind === 'blacksmith'">
         <path d="M-66-115v-70h20v75" fill="#956e55" />
         <path d="m75-6 42-6-7 13-12 2 4 11-23 4 3-14-7-2Z" fill="#5b6d68" />
         <path v-if="stage >= 3" d="m62-44 59-12 18 11-60 15Z" fill="#9b815b" />
+        <circle
+          v-if="stage >= 5"
+          cx="-105"
+          cy="4"
+          r="13"
+          fill="none"
+          stroke="#9e845c"
+          stroke-width="5"
+        />
       </g>
       <g v-if="built && kind === 'school'">
         <path d="M-18-140v-33h24v35" fill="#cfbd95" stroke="#8c805e" stroke-width="3" />
         <path d="m-12-164 10-2 2 15-14 2Z" fill="#b89a57" />
         <path v-if="stage >= 3" d="M-25-174 0-190 13-170Z" fill="#7f9787" />
+        <g v-if="stage >= 2" transform="translate(65 10)">
+          <path d="M3-4v-49m24 49v-49" stroke="#856b4a" stroke-width="4" />
+          <path d="M0-53h30v26H0Z" fill="#50655a" stroke="#856b4a" stroke-width="3" />
+        </g>
       </g>
       <g v-if="built && kind === 'doctor'" fill="#537d6d">
         <path d="M-24-130h8v25h-8Z" /><path d="M-33-122h25v8h-25Z" />
@@ -475,6 +506,16 @@
           <path d="M-109-60v24l17 3v-24Z" fill="#a8d5d4" stroke="#e0cfac" stroke-width="3" />
         </g>
         <TownHeritageUpgrade v-if="eraLevel >= 3" :kind="kind" />
+        <g
+          v-if="kind === 'well' && eraLevel >= 2"
+          transform="translate(72 -4)"
+          data-waterworks="distribution-valve"
+        >
+          <path d="M-14 1 4 6 22-5 4-10Z" fill="#aaa58f" />
+          <path d="M4 1v-38h-26" fill="none" stroke="#657d79" stroke-width="5" />
+          <path d="M-4-4v-20l16 4V0Z" fill="#657d79" />
+          <circle cx="5" cy="-29" r="7" fill="#dfcba4" stroke="#657d79" stroke-width="2" />
+        </g>
         <g v-if="kind !== 'well'">
           <path d="m-84-93 122 24v-43l-122-24Z" fill="#a5624f" stroke="#e0cfac" stroke-width="5" />
           <path d="m-92-137 136 26v9l-136-26Z" fill="#e0cfac" />

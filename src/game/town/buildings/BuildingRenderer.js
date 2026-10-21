@@ -85,8 +85,8 @@ const ERA_RENDERERS = {
   },
   'motor-age': {
     modernize: (d, parent, kind, era, level) => addMotorModernization(d, parent, kind, level),
-    landmark: (d, parent, kind, label, level, era) =>
-      renderMotorLandmark(d, parent, kind, label, level, era),
+    landmark: (d, parent, kind, label, level, era, serviceLevel) =>
+      renderMotorLandmark(d, parent, kind, label, level, era, serviceLevel),
   },
   city: {
     modernize: addCityModernization,
@@ -125,6 +125,13 @@ function renderRiverModernization(d, parent, kind, level) {
   const originalKind = kind;
   kind = kinds[kind] ?? kind;
   if (!RIVER_RAIL_VARIANTS[kind]) return;
+  if (kind === 'well') {
+    const obsolete = [];
+    parent.traverse((object) => {
+      if (object.name === 'Well roof') obsolete.push(object);
+    });
+    for (const roof of obsolete) roof.removeFromParent();
+  }
   const modern = d.group(parent);
   modern.name = `River & Rail ${kind}`;
   parent = modern;
@@ -138,7 +145,19 @@ function renderRiverModernization(d, parent, kind, level) {
   if (level >= 2 && ['well', 'square', 'fisherman'].includes(kind)) {
     for (const side of [-1, 1]) {
       d.box(parent, 0.6, 0.55, 1.2, side * 1.75, 0.3, 0.3, '#aaa58f');
-      if (level >= 3) d.mesh(parent, 'cone', [0.45, 1.1, 0.45], [side * 1.75, 1.1, 0.3], '#5d8176');
+    }
+    if (kind === 'well') {
+      const valve = d.group(parent);
+      valve.name = 'River well distribution valve';
+      valve.userData.utilityFeature = 'distribution valve';
+      // The retained right plinth now carries the outlet control. Both utility
+      // sides have a waterworks function while the central approach stays open.
+      d.box(valve, 0.36, 0.45, 0.26, 1.75, 0.8, 0.3, '#657d79');
+      d.rod(valve, [1.75, 0.575, 0.3], [1.75, 1.3, 0.3], 0.07, '#657d79');
+      d.rod(valve, [1.1, 1.3, 0.3], [1.75, 1.3, 0.3], 0.07, '#657d79');
+      d.rod(valve, [1.75, 1.1, 0.3], [1.75, 1.1, 0.43], 0.05, '#657d79');
+      d.mesh(valve, 'cylinder', [0.18, 0.07, 0.18], [1.75, 1.1, 0.43], '#dfcba4').rotation.x =
+        Math.PI / 2;
     }
   }
   const colors = {

@@ -1,5 +1,10 @@
 import { GARDEN_PARCELS } from './townGardenDistrict';
 
+// The early classroom, clinic and smithy share a raised front porch. Arrivals
+// stand at its ground-level step foot, beyond the physical plinth, rather than
+// using a higher fallback point inside the solid porch's body clearance.
+const CIVIC_PORCH_ARRIVAL = Object.freeze({ door: [[0, 2.6]] });
+
 // Open infrastructure is validated against its own deck/landing route, not the
 // residential facade setback. No blanket height threshold invents a doorway.
 export const FOOTPRINT_EXCEPTIONS = Object.freeze({
@@ -9,6 +14,9 @@ export const FOOTPRINT_EXCEPTIONS = Object.freeze({
   square: ['plaza'],
 });
 export const FOOTPRINT_ANCHORS = Object.freeze({
+  ...Object.fromEntries(
+    ['school', 'doctor', 'blacksmith'].map((kind) => [kind, CIVIC_PORCH_ARRIVAL]),
+  ),
   ...Object.fromEntries(
     Object.entries(GARDEN_PARCELS).map(([id, parcel]) => [
       id,

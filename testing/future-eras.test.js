@@ -38,6 +38,8 @@ import { FUTURE_MINE_CROWNS } from '../src/game/town/mine/MineFutureArchitecture
 import { addMineSite } from '../src/game/town/mine/addMineSite';
 import { GARDEN_PARCELS } from '../src/data/townGardenDistrict';
 import { COZY_LANDMARKS } from '../src/data/cozyArchitecture';
+import { heritageUpgrade } from '../src/data/heritageUpgrades';
+import { meshSignature, moduleParts, purposeModules } from './helpers/town-purpose-module';
 import { sailKit } from '../src/game/town/buildings/future/sail';
 import { observatoryKit } from '../src/game/town/buildings/future/observatory';
 import { homesteadKit } from '../src/game/town/buildings/future/homestead';
@@ -282,14 +284,35 @@ describe('Skysail, Stargazer and Moonward eras', () => {
     expect(futureBuildingStages('spaceElevator', 'moonward', 1, 3)).toEqual({
       modernizing: false,
       structureLevel: 1,
+      moduleLevel: 1,
+      finishLevel: 1,
     });
-    expect(futureBuildingStages('spaceElevator', 'twin-hollows', 1, 2).structureLevel).toBe(2);
+    expect(futureBuildingStages('spaceElevator', 'twin-hollows', 1, 2)).toEqual({
+      modernizing: true,
+      structureLevel: 2,
+      moduleLevel: 2,
+      finishLevel: 1,
+    });
     expect(futureBuildingStages('home', 'unknown', 1, 3)).toEqual({
       modernizing: false,
       structureLevel: 1,
+      moduleLevel: 1,
+      finishLevel: 1,
+    });
+    ERA_BY_ID['future-successor'] = { evolution: { style: 'city', architecture: 'observatory' } };
+    expect(futureBuildingStages('cloudOrchard', 'future-successor', 1, 3)).toEqual({
+      modernizing: false,
+      structureLevel: 1,
+      moduleLevel: 1,
+      finishLevel: 1,
     });
     ERA_BY_ID['future-successor'] = { evolution: { ...eraEvolution('stargazer') } };
-    expect(futureBuildingStages('cloudOrchard', 'future-successor', 1, 3).structureLevel).toBe(3);
+    expect(futureBuildingStages('cloudOrchard', 'future-successor', 1, 3)).toEqual({
+      modernizing: true,
+      structureLevel: 3,
+      moduleLevel: 3,
+      finishLevel: 1,
+    });
   });
 
   it.each([
@@ -430,15 +453,84 @@ describe('Skysail, Stargazer and Moonward eras', () => {
       id: 'future-successor',
       evolution: { ...eraEvolution('stargazer') },
     });
+    expect(futureAppearance('future-successor')).toEqual(futureAppearance('stargazer'));
     const d = diorama('stargazer');
-    for (const kind of ['home', 'greatTelescope', 'skyPods', ...Object.keys(COZY_LANDMARKS)]) {
-      const before = new Group(),
-        after = new Group();
-      renderCityBuilding(d, before, kind, kind, 3, 'stargazer');
-      renderCityBuilding(d, after, kind, kind, 3, 'future-successor');
-      expect(snapshot(after).length, kind).toBe(snapshot(before).length);
+    // Capture the actual shared-kit body/roof/door meshes rather than relying on
+    // house/tower wrapper names. The pavilion calls kit.block directly, and a
+    // native purpose module can legitimately contain a retained campus body.
+    const bodyMeshes = new WeakSet();
+    const bodySpies = ['block', 'round', 'roof', 'cap', 'door'].map((method) => {
+      const original = observatoryKit[method];
+      return vi.spyOn(observatoryKit, method).mockImplementation(function (...args) {
+        const parent = args[1],
+          existing = new Set();
+        parent.traverse((part) => {
+          if (part.isMesh) existing.add(part);
+        });
+        const result = original.apply(this, args);
+        parent.traverse((part) => {
+          if (part.isMesh && !existing.has(part)) bodyMeshes.add(part);
+        });
+        return result;
+      });
+    });
+    const campusBodies = (root, kind) => {
+      const meshes = [];
+      root.traverse((part) => {
+        if (bodyMeshes.has(part)) meshes.push(part);
+      });
+      expect(meshes.length, `${kind}: actual inherited shared-kit building bodies`).toBeGreaterThan(
+        0,
+      );
+      return meshSignature(meshes);
+    };
+    try {
+      for (const kind of ['home', 'greatTelescope', 'skyPods', ...Object.keys(COZY_LANDMARKS)]) {
+        const before = new Group();
+        renderCityBuilding(d, before, kind, kind, 3, 'stargazer');
+        before.updateMatrixWorld(true);
+        const roots = [1, 2, 3].map((level) => {
+          expect(futureBuildingStages(kind, 'future-successor', level, 3), kind).toEqual({
+            modernizing: true,
+            structureLevel: 3,
+            moduleLevel: 3,
+            finishLevel: level,
+          });
+          const root = new Group();
+          renderCityBuilding(d, root, kind, kind, level, 'future-successor', 3);
+          root.updateMatrixWorld(true);
+          expect(campusBodies(root, kind), `${kind} inherited campus structure`).toBe(
+            campusBodies(before, kind),
+          );
+          const modules = purposeModules(root);
+          expect(modules, kind).toHaveLength(1);
+          expect(modules[0].userData.purposeModule).toMatchObject({
+            feature: heritageUpgrade(kind),
+            level: 3,
+            finishLevel: level,
+          });
+          expect(moduleParts(modules[0], 'structure').length, kind).toBeGreaterThan(0);
+          const budget = cost(root);
+          expect(budget.materials, kind).toBeLessThanOrEqual(8);
+          expect(budget.triangles, kind).toBeLessThan(FUTURE_LANDMARKS[kind] ? 6000 : 4000);
+          return root;
+        });
+        const modules = roots.map((root) => purposeModules(root)[0]);
+        for (const module of modules.slice(1))
+          expect(meshSignature(moduleParts(module, 'structure')), kind).toBe(
+            meshSignature(moduleParts(modules[0], 'structure')),
+          );
+        expect(meshSignature(moduleParts(modules[1], 'frontage')), kind).not.toBe(
+          meshSignature(moduleParts(modules[0], 'frontage')),
+        );
+        expect(meshSignature(moduleParts(modules[2], 'operation')), kind).not.toBe(
+          meshSignature(moduleParts(modules[1], 'operation')),
+        );
+      }
+    } finally {
+      bodySpies.forEach((spy) => spy.mockRestore());
+      dispose(d);
     }
-    dispose(d);
   });
 
   it('draws accessible illustrations from the same styles and stages', async () => {

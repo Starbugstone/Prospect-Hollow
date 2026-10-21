@@ -407,8 +407,14 @@ export function animatePerson(d, actor, time) {
       root.position.z -= tangent.x * offset;
     }
   }
-  // Locomotion owns an established worker's position, including any accepted
-  // construction exit. Do not repeat the placement search every frame.
+  // Route samples provide pose/height, while locomotion owns an established
+  // walker's accepted ground position. Population/visitor attachment can render
+  // before its next physics step, including after a retained-solid correction.
+  if (Number.isFinite(actor.motion?.x) && Number.isFinite(actor.motion?.z)) {
+    root.position.x = actor.motion.x;
+    root.position.z = actor.motion.z;
+  }
+  // Do not repeat an established worker's placement search every frame.
   if (work && !actor.motion && !actor.workRoutine) placeSafely(d, root);
   if (!actor.motion && actor.lastPosition && time >= actor.lastPoseTime)
     actor.distance += root.position.distanceTo(actor.lastPosition);

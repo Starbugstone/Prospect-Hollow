@@ -47,9 +47,18 @@ const FORMS = Object.freeze({
 });
 
 export const COZY_LANDMARKS = Object.freeze({
-  teaHouse: Object.freeze({ form: 'teahouse', scale: 1.2 }),
-  blossomAtelier: Object.freeze({ form: 'atelier', scale: 1.45 }),
-  orchardCottages: Object.freeze({ form: 'orchard', scale: 1.25 }),
+  teaHouse: Object.freeze({
+    form: 'teahouse',
+    scale: 1.2,
+  }),
+  blossomAtelier: Object.freeze({
+    form: 'atelier',
+    scale: 1.45,
+  }),
+  orchardCottages: Object.freeze({
+    form: 'orchard',
+    scale: 1.25,
+  }),
   glassworks: Object.freeze({ form: 'glassworks', scale: 1.35 }),
   springsRetreat: Object.freeze({ form: 'springs', scale: 1.45 }),
   riverlightPavilion: Object.freeze({ form: 'pavilion', scale: 1.6 }),

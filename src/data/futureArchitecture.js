@@ -1,6 +1,7 @@
-import { CITY_BUILDINGS, CITY_FAMILIES } from './city';
+import { CITY_FAMILIES } from './city';
 import { COZY_LANDMARKS } from './cozyArchitecture';
-import { ERAS, eraEvolution } from './eras';
+import { eraEvolution } from './eras';
+export { buildingStages as futureBuildingStages } from './buildingStages';
 
 // The eras after Riverlight share one set of building archetypes; each
 // architecture supplies its own walls, roofs and finishing flourish. Palettes use
@@ -93,17 +94,75 @@ const FORMS = Object.freeze({
 export const FUTURE_LANDMARKS = Object.freeze({
   // Established garden landmarks retain their identity and parcel scale when
   // modernized. Successor kits supply the new architecture for these forms too.
-  ...COZY_LANDMARKS,
-  skyHarbour: Object.freeze({ form: 'skyHarbour', scale: 1.35 }),
-  cloudOrchard: Object.freeze({ form: 'cloudOrchard', scale: 1.4 }),
-  windsongLofts: Object.freeze({ form: 'windsongLofts', scale: 1.3 }),
-  greatTelescope: Object.freeze({ form: 'greatTelescope', scale: 1.45 }),
-  dewlightGardens: Object.freeze({ form: 'dewlightGardens', scale: 1.4 }),
-  starlightTerraces: Object.freeze({ form: 'starlightTerraces', scale: 1.3 }),
-  spaceElevator: Object.freeze({ form: 'spaceElevator', scale: 1 }),
-  moonpost: Object.freeze({ form: 'moonpost', scale: 1.35 }),
-  missionHomesteads: Object.freeze({ form: 'missionHomesteads', scale: 1.3 }),
-  homecomingHall: Object.freeze({ form: 'homecomingHall', scale: 1.35 }),
+  ...Object.fromEntries(
+    Object.entries(COZY_LANDMARKS).map(([kind, definition]) => [
+      kind,
+      Object.freeze({
+        ...definition,
+        finishBay: Object.freeze({
+          ...{
+            teaHouse: { x: 0, z: -2.2 },
+            blossomAtelier: { x: 0, z: -2.4 },
+            orchardCottages: { x: 0, z: -3.05 },
+            glassworks: { x: -0.8, z: -2.15 },
+            springsRetreat: { x: 2.25, z: -1.75 },
+            riverlightPavilion: { x: 0, z: -2.3 },
+          }[kind],
+          turn: Math.PI,
+        }),
+      }),
+    ]),
+  ),
+  skyHarbour: Object.freeze({
+    form: 'skyHarbour',
+    scale: 1.35,
+    finishBay: Object.freeze({ x: 1.9, z: 0.5, turn: Math.PI / 2 }),
+  }),
+  cloudOrchard: Object.freeze({
+    form: 'cloudOrchard',
+    scale: 1.4,
+    finishBay: Object.freeze({ x: -2.3, z: 0.9, turn: -Math.PI / 2 }),
+  }),
+  windsongLofts: Object.freeze({
+    form: 'windsongLofts',
+    scale: 1.3,
+    finishBay: Object.freeze({ x: 0.6, z: -2.1, turn: Math.PI }),
+  }),
+  greatTelescope: Object.freeze({
+    form: 'greatTelescope',
+    scale: 1.45,
+    finishBay: Object.freeze({ x: -3.2, z: 0.2, turn: -Math.PI / 2 }),
+  }),
+  dewlightGardens: Object.freeze({
+    form: 'dewlightGardens',
+    scale: 1.4,
+    finishBay: Object.freeze({ x: 2.9, z: 1.2, turn: Math.PI / 2 }),
+  }),
+  starlightTerraces: Object.freeze({
+    form: 'starlightTerraces',
+    scale: 1.3,
+    finishBay: Object.freeze({ x: 0, z: -2.4, turn: Math.PI }),
+  }),
+  spaceElevator: Object.freeze({
+    form: 'spaceElevator',
+    scale: 1,
+    finishBay: Object.freeze({ x: 3.6, z: 1.3, turn: Math.PI }),
+  }),
+  moonpost: Object.freeze({
+    form: 'moonpost',
+    scale: 1.35,
+    finishBay: Object.freeze({ x: 0.8, z: -1.55, turn: Math.PI }),
+  }),
+  missionHomesteads: Object.freeze({
+    form: 'missionHomesteads',
+    scale: 1.3,
+    finishBay: Object.freeze({ x: 0.4, z: -2.3, turn: Math.PI }),
+  }),
+  homecomingHall: Object.freeze({
+    form: 'homecomingHall',
+    scale: 1.35,
+    finishBay: Object.freeze({ x: 0, z: -1.7, turn: Math.PI }),
+  }),
 });
 
 // Mine portal crowns of the future eras. Each replaces the cozy petal canopy, so
@@ -116,23 +175,6 @@ export const FUTURE_MINE_PORTALS = Object.freeze([
 ]);
 
 export const isFutureEra = (era) => FUTURE_ARCHITECTURES.includes(eraEvolution(era).architecture);
-
-/** Construction survives a new finish. Synthetic successors inherit the stage
- * rules of their architecture; incomplete/unknown definitions keep native tiers. */
-export function futureBuildingStages(kind, era, level, serviceLevel = 3) {
-  const architecture = eraEvolution(era).architecture;
-  const index = ERAS.findIndex((entry) => entry.id === era);
-  const target =
-    index >= 0 ? index : ERAS.findIndex((entry) => entry.evolution.architecture === architecture);
-  const introduced = CITY_BUILDINGS.find((building) => building.kind === kind)?.introducedEra;
-  const native = ERAS.findIndex((entry) => entry.id === introduced);
-  const firstFuture = ERAS.findIndex((entry) => isFutureEra(entry.id));
-  const modernizing = isFutureEra(era) && target > Math.max(native, firstFuture);
-  return {
-    modernizing,
-    structureLevel: modernizing ? Math.max(level, Math.min(3, serviceLevel)) : level,
-  };
-}
 
 /** An unsupported architecture safely falls back to the Skysail palette. */
 export function futureAppearance(era) {

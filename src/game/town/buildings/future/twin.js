@@ -1,5 +1,6 @@
 import { futureShape } from '../futureShapes';
 import { homesteadKit } from './homestead';
+import { addPurposeGrades, purposeModule, purposeStructure } from './finishes';
 
 // Twin Hollows homecoming: the Moonward homestead lines, softened to silver-blue,
 // with twin lanterns (teal for the valley, gold for the Moon) and an arch that
@@ -65,7 +66,20 @@ export function homecomingHall(d, g, s, house) {
   d.mesh(g, futureShape(d, 'lowDome'), [0.5, 0.35, 0.25], [1.9, 0.56, 0.9], p.glass);
   for (const dx of [-0.3, 0, 0.3]) d.ball(g, 1.9 + dx, 0.62, 0.9, 0.08, p.shell, 'rock');
   if (s.structureLevel >= 2) {
-    s.kit.wing(d, g, s, { x: -2.3, z: -1.2 });
+    if (s.modernizing) s.kit.wing(d, g, s, { x: -2.3, z: -1.2 });
+    else {
+      const module = purposeModule(d, g, s, 'welcomeRoom');
+      s.kit.wing(d, purposeStructure(d, module), s, { x: -2.3, z: -1.2 });
+      addPurposeGrades(d, module, s, {
+        x: -2.3,
+        y: 0.98,
+        z: -1.78,
+        width: 0.85,
+        turn: Math.PI,
+        operationY: 0.65,
+        operationZ: -1.76,
+      });
+    }
     for (const x of [-2.4, 2.4]) twinLanterns(d, g, p, x, 1.6);
   }
   if (s.level >= 3)

@@ -6,6 +6,7 @@ import { GARDEN_PARCELS } from '../../data/townGardenDistrict';
 import { riverCenterX } from './TownRiver';
 import { keepCameraAboveTerrain } from './TownLandscape';
 import { selectVillager } from './TownLabelProjection';
+import { TOWN_CAMERA_FOCUS_HEIGHT as CAMERA_FOCUS_HEIGHT } from '../../data/townCamera';
 
 // Camera placement: framing the whole village (or a newcomer's first few plots on a
 // phone), stepped camera controls and jumping to a live visitor.
@@ -13,7 +14,7 @@ const point = (x, y, z) => new THREE.Vector3(x, y, z);
 
 // The orbit point stays this high above the ground, so the closest zoom brings
 // the street equally near in every era.
-export const CAMERA_FOCUS_HEIGHT = 0.7;
+export { CAMERA_FOCUS_HEIGHT };
 export const CAMERA_MIN_DISTANCE = 7;
 
 export function frameTown(d) {

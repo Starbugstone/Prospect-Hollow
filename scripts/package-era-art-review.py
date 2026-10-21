@@ -24,12 +24,12 @@ WIKI.mkdir(parents=True, exist_ok=True)
 summary = []
 for data in data_sets:
     era = data['era']
-    lines = [f"# {data['year']} · {data['label']}", '', '[Back to the era visual guide](Era-Visual-Guide.md)', '', f"Captured production models for {data['label']}. Stage counts come from the exported building definitions.", '',
+    lines = [f"# {data['year']} · {data['label']}", '', '[Back to the era visual guide](Era-Visual-Guide.md)', '', f"Captured production models for {data['label']}. Native construction and eligible modernizations show their paid stages; plots excluded from partial modernization show their retained finish once.", '',
              'Each comparison reads from left to right, from the first completed stage to the final upgrade. The camera and scale stay fixed within each building row. Click the comparison for full resolution, or open an individual stage below it. The mine has one permanent surface upgrade per era.', '',
-             'These are actual game meshes rendered in a neutral review scene. Name labels sit outside the model so the architecture remains clear. World scenery, traffic, construction scaffolds and unfinished plots are excluded from these building comparisons.', '', '## Building index', '']
+             'These are actual game meshes rendered in a neutral review scene. Physical nameboards use their production mounts; captions identify every row. World scenery, traffic, construction scaffolds and unfinished plots are excluded from these building comparisons.', '', '## Building index', '']
     groups = [
         ('New buildings in this era', [b for b in data['buildings'] if b.get('introducedEra') == era]),
-        ('Existing buildings upgraded for this era', [b for b in data['buildings'] if b['id'] != 'mine' and b.get('introducedEra') != era]),
+        ('Existing buildings and their retained finishes', [b for b in data['buildings'] if b['id'] != 'mine' and b.get('introducedEra') != era]),
         ('Mine progression', [b for b in data['buildings'] if b['id'] == 'mine']),
     ]
     for heading, buildings in groups:

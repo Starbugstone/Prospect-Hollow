@@ -26,6 +26,52 @@
       />
     </template>
 
+    <!-- The working room is attached to a private side/rear wall, behind the main facade. -->
+    <g
+      v-if="purposeFinish"
+      :transform="`translate(${finishDrawingX} -20)`"
+      :data-purpose-finish="purpose"
+      :data-finish-stage="level"
+      :data-purpose-module="purpose"
+      :data-module-level="stages.moduleLevel"
+      :data-finish-anchor="`${purposeFinish.x},${purposeFinish.z}`"
+    >
+      <path
+        d="M-15 0v-33h30V0ZM-13-4-19 8M13-4 19 8"
+        :fill="p.shell"
+        :stroke="p.timber"
+        stroke-width="3"
+        data-module-part="structure"
+      />
+      <Roof :style-id="style" :p="p" :x="0" :w="38" :top="-33" :tone="tone" />
+      <rect
+        :x="level >= 2 ? -11 : -7"
+        :width="level >= 2 ? 22 : 14"
+        :y="level >= 2 ? -26 : -22"
+        :height="level >= 2 ? 16 : 10"
+        :fill="level >= 2 ? p.glass : p.deep"
+        :stroke="p.timber"
+        stroke-width="2"
+        data-module-part="frontage"
+      />
+      <g data-module-part="operation" data-purpose-completion="supported">
+        <rect
+          :x="level >= 3 ? -12 : -7"
+          :width="level >= 3 ? 24 : 14"
+          :y="level >= 3 ? -9 : -5"
+          :height="level >= 3 ? 9 : 5"
+          :fill="p.timber"
+        />
+        <path
+          v-if="level >= 3"
+          d="M-10-9v-8h6v8m2 0v-10h6v10m2 0v-7h6v7"
+          :fill="['garden', 'greenhouse', 'hayloft'].includes(purpose) ? p.green : p.shell"
+          :stroke="p.timber"
+          stroke-width="1"
+        />
+      </g>
+    </g>
+
     <!-- Landmark extras drawn behind the buildings. -->
     <template v-if="form === 'spaceElevator'">
       <path d="M0-60V-330" :stroke="p.glass" stroke-width="4" />
@@ -130,12 +176,94 @@
       />
       <Door v-if="tw.door" :style-id="style" :p="p" :x="tw.x" />
     </g>
+    <g
+      v-if="
+        (!landmark || !stages.modernizing) &&
+        purpose &&
+        (stages.moduleLevel >= 2 ||
+          ['skyHarbour', 'cloudOrchard', 'dewlightGardens', 'spaceElevator'].includes(form)) &&
+        !['square', 'garden', 'bridge', 'airport'].includes(form)
+      "
+      :data-purpose-wing="purpose"
+      :data-purpose-module="purpose"
+      :data-module-level="stages.moduleLevel"
+      :transform="`translate(${purposeWingDrawingX + 104} 0)`"
+    >
+      <rect
+        :x="level >= 2 ? -120 : -114"
+        :width="level >= 2 ? 32 : 20"
+        :y="level >= 2 ? -45 : -40"
+        :height="level >= 2 ? 21 : 12"
+        :fill="level >= 2 ? p.glass : p.deep"
+        :stroke="p.timber"
+        stroke-width="3"
+        data-module-part="frontage"
+      />
+      <path v-if="purpose === 'clinic'" d="M-104-42v16m-8-8h16" :stroke="p.deep" stroke-width="4" />
+      <path v-else d="M-104-44v20" :stroke="p.timber" stroke-width="2" />
+      <g data-module-part="operation">
+        <rect
+          :x="level >= 3 ? -119 : -112"
+          :width="level >= 3 ? 30 : 16"
+          :y="level >= 3 ? -15 : -10"
+          :height="level >= 3 ? 12 : 7"
+          :fill="p.timber"
+        />
+        <path
+          v-if="level >= 3"
+          d="M-116-15v-9h7v9m3 0v-11h7v11m3 0v-8h7v8"
+          :fill="['garden', 'greenhouse', 'hayloft'].includes(purpose) ? p.green : p.shell"
+          :stroke="p.timber"
+          stroke-width="1"
+        />
+      </g>
+    </g>
+    <g v-if="form === 'shop'" data-entry-clearance="central">
+      <rect
+        v-for="x in [-52, 25]"
+        :key="x"
+        :x="x"
+        y="-12"
+        width="27"
+        height="12"
+        :fill="p.timber"
+        :stroke="p.shell"
+        stroke-width="2"
+      />
+    </g>
+    <g v-if="form === 'windsongLofts'" data-walkway="suspended">
+      <path d="M-38-98h14" :stroke="p.timber" stroke-width="6" />
+      <g v-if="stages.structureLevel >= 2">
+        <path d="M-66-76H72" :stroke="p.timber" stroke-width="7" />
+        <path d="M-66-100H72M-66-76v-24M72-76v-24" :stroke="p.deep" stroke-width="2" />
+        <path d="M-72-76v-28h12v28m126 0v-28h12v28" :fill="p.deep" />
+      </g>
+    </g>
+    <g v-if="form === 'spaceElevator' && stages.structureLevel >= 2" data-fin-mounts="connected">
+      <path
+        d="M-52-114H52M-15-110-44-128M15-110 44-128M-44-114v-14M44-114v-14"
+        :stroke="p.deep"
+        stroke-width="3"
+      />
+      <path d="M-68-130h48v4h-48Zm88 0h48v4H20Z" :fill="p.roof" />
+    </g>
+    <g
+      v-if="form === 'dewlightGardens' && stages.structureLevel >= 2"
+      data-dew-manifold="connected"
+    >
+      <path d="M-80-43H80M-80-43-62-5M80-43 62-5" :stroke="p.timber" stroke-width="4" />
+      <path d="M-42-32h84v23h-84Z" :fill="p.shell" :stroke="p.timber" stroke-width="3" />
+    </g>
+    <g v-if="form === 'orchard'" data-orchard-entry="clear">
+      <path d="M45-5v-38" :stroke="p.timber" stroke-width="6" />
+      <circle cx="45" cy="-48" r="23" :fill="p.green" />
+    </g>
     <template v-if="form === 'missionHomesteads' && level >= 3">
       <path d="M-30 4v-120" :stroke="p.deep" stroke-width="3" />
       <path d="M-30-116 6-106-30-96Z" :fill="p.light" />
     </template>
     <Crown v-if="parts.crown" :style-id="style" :p="p" v-bind="parts.crown" :variant="tone" />
-    <g v-if="gardenLandmark && level >= 2">
+    <g v-if="gardenLandmark && level >= 2 && !stages.modernizing">
       <g v-for="x in [-92, 92]" :key="x">
         <rect :x="x - 10" y="-9" width="20" height="12" :fill="p.timber" />
         <circle :cx="x" cy="-14" r="10" :fill="p.green" />
@@ -159,6 +287,7 @@ import {
   FUTURE_LANDMARKS,
   futureBuildingStages,
 } from '../../data/futureArchitecture';
+import { heritageUpgrade } from '../../data/heritageUpgrades';
 import { cityAppearance } from '../../data/cityAppearance';
 import { COZY_LANDMARKS } from '../../data/cozyArchitecture';
 import TownCityBuilding from './TownCityBuilding.vue';
@@ -178,8 +307,39 @@ const appearance = computed(() => futureAppearance(props.era));
 const style = computed(() => appearance.value.style);
 const p = computed(() => appearance.value.palette);
 const form = computed(() => futureForm(props.kind) ?? props.kind);
+const purpose = computed(() => heritageUpgrade(props.kind));
 const landmark = computed(() => !!FUTURE_LANDMARKS[props.kind]);
 const gardenLandmark = computed(() => !!COZY_LANDMARKS[props.kind]);
+const purposeWingDrawingX = computed(() =>
+  !landmark.value
+    ? -104
+    : ({
+        skyHarbour: 50,
+        cloudOrchard: -70,
+        windsongLofts: 72,
+        greatTelescope: -104,
+        dewlightGardens: 96,
+        starlightTerraces: 66,
+        moonpost: -88,
+        missionHomesteads: 82,
+        homecomingHall: -104,
+        spaceElevator: 92,
+      }[props.kind] ?? -104),
+);
+const purposeFinish = computed(() =>
+  stages.value.modernizing && stages.value.moduleLevel >= 2 && purpose.value
+    ? (FUTURE_LANDMARKS[props.kind]?.finishBay ??
+      (form.value === 'garden' ? { x: -1.5, z: -1.9, turn: Math.PI } : null))
+    : null,
+);
+const finishDrawingX = computed(() => {
+  const anchor = purposeFinish.value;
+  if (!anchor) return 0;
+  // Rear rooms remain visible beside the front elevation, preserving its clear doorway.
+  return (
+    Math.sin(anchor.turn) * 25 + anchor.x * 35 + (Math.abs(Math.sin(anchor.turn)) < 0.5 ? -75 : 0)
+  );
+});
 // The same stable choice the 3D sail kit makes for its cloth and crown.
 const tone = computed(() =>
   [...(props.kind ?? '')].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7),
@@ -303,7 +463,7 @@ const parts = computed(() => {
       break;
     case 'windsongLofts':
       result.blocks.push(block(-66, 56, 110), block(4, 56, 140, { accent: true }));
-      if (structureLevel >= 2) result.blocks.push(block(72, 56, 90));
+      if (structureLevel >= 2) result.blocks.push(block(72, 56, 110));
       break;
     case 'greatTelescope':
       result.towers.push(tower(0, 80, 90, { door: true }));
@@ -336,8 +496,13 @@ const parts = computed(() => {
   }
   if (!landmark.value && !['square', 'garden', 'bridge', 'airport'].includes(form.value)) {
     if (structureLevel >= 2)
-      result.blocks.unshift(block(-104, 40, 52, { door: false, accent: true }));
-    if (stages.value.modernizing && level === 2) result.props = [-92];
+      result.blocks.unshift(
+        block(-104, 40, 52, {
+          door: false,
+          accent: true,
+        }),
+      );
+
     if (level >= 3) {
       const main = result.blocks.at(-1) ?? result.towers[0];
       const top = main ? (main.h ?? 0) + (main.w ? main.w * 0.32 : main.r) : 90;
@@ -345,8 +510,6 @@ const parts = computed(() => {
       result.props = [-92, 92];
     }
   } else if (landmark.value && level >= 3) result.props = [-118, 118];
-  if (landmark.value && !gardenLandmark.value && stages.value.modernizing && level === 2)
-    result.props = [-118];
   if (form.value === 'airport') result.props = level >= 3 ? [-118, 118] : level >= 2 ? [-118] : [];
   return result;
 });

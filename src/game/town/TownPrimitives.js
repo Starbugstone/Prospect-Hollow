@@ -4,6 +4,7 @@ import { createTownGeometries } from './TownGeometries';
 import { TownSignAtlas } from './TownSignAtlas';
 import { finishWork } from '../PresentationWork';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { signMount } from './TownSignMounts';
 
 const point = (x, y, z) => new THREE.Vector3(x, y, z);
 
@@ -74,7 +75,69 @@ export class TownPrimitives {
   }
   // A wooden board with painted lettering from the shared sign atlas.
   sign(parent, text, width, x, y, z) {
-    this.box(parent, width + 0.1, 0.43, 0.1, x, y, z, '#8c6947', true);
+    if (this.pendingPlotSigns) {
+      this.pendingPlotSigns.push([parent, text, width, x, y, z]);
+      return;
+    }
+    const mount = signMount(
+      parent,
+      width,
+      x,
+      y,
+      z,
+      (this.signMountCache ??= new Map()),
+      this.plotSignRoot,
+    );
+    ({ width, x, y, z } = mount);
+    const board = this.box(parent, width + 0.1, 0.43, 0.1, x, y, z, '#8c6947', true);
+    board.name = 'Mounted building nameboard';
+    board.userData.signMount = mount.type;
+    for (const bracket of mount.brackets) {
+      const fixing = this.box(
+        parent,
+        0.08,
+        0.12,
+        bracket.front - bracket.back + 0.025,
+        bracket.x,
+        bracket.y,
+        (bracket.front + bracket.back) / 2,
+        '#8c6947',
+      );
+      fixing.name = 'Facade nameboard bracket';
+      fixing.userData.signMount = mount.type;
+    }
+    if (mount.type === 'directory') {
+      const top = y + 0.08;
+      for (const side of [-1, 1]) {
+        const post = this.box(
+          parent,
+          0.09,
+          top - mount.base,
+          0.09,
+          x + side * width * 0.38,
+          (top + mount.base) / 2,
+          z - 0.015,
+          '#8c6947',
+        );
+        post.name = 'Directory nameboard post';
+        post.userData.signMount = mount.type;
+      }
+    }
+    for (const leg of mount.legs ?? []) {
+      const top = y + 0.08;
+      const post = this.box(
+        parent,
+        0.075,
+        top - leg.base,
+        0.075,
+        leg.x,
+        (top + leg.base) / 2,
+        leg.z,
+        '#8c6947',
+      );
+      post.name = 'Roof nameboard support';
+      post.userData.signMount = mount.type;
+    }
     if (typeof document === 'undefined') return;
     this.signAtlas ??= new TownSignAtlas();
     const { geometry, material } = this.signAtlas.slot(text);
@@ -111,25 +174,31 @@ export class TownPrimitives {
         const geometry = object.geometry
           .clone()
           .applyMatrix4(inverse.clone().multiply(object.matrixWorld));
-        const key = `${object.material.uuid}:${object.castShadow}`;
+        const key = `${object.material.uuid}:${object.castShadow}:${object.renderOrder}`;
         if (!buckets.has(key))
-          buckets.set(key, { material: object.material, castShadow: object.castShadow, parts: [] });
+          buckets.set(key, {
+            material: object.material,
+            castShadow: object.castShadow,
+            renderOrder: object.renderOrder,
+            parts: [],
+          });
         buckets.get(key).parts.push(geometry);
         yield;
       }
-      for (const [key, { material, castShadow, parts }] of buckets) {
+      for (const [key, { material, castShadow, renderOrder, parts }] of buckets) {
         const geometry = mergeGeometries(parts);
         parts.forEach((item) => item.dispose());
         buckets.delete(key);
         geometry.userData.owned = true;
-        merged.push([geometry, material, castShadow]);
+        merged.push([geometry, material, castShadow, renderOrder]);
         yield;
       }
       meshes.forEach((mesh) => mesh.removeFromParent());
-      for (const [geometry, material, castShadow] of merged) {
+      for (const [geometry, material, castShadow, renderOrder] of merged) {
         const mesh = new THREE.Mesh(geometry, material);
         mesh.castShadow = castShadow;
         mesh.receiveShadow = true;
+        mesh.renderOrder = renderOrder;
         group.add(mesh);
       }
       committed = true;
@@ -162,6 +231,7 @@ export class TownPrimitives {
     group.removeFromParent();
   }
   disposePrimitives() {
+    this.signMountCache?.clear();
     Object.values(this.geometries).forEach((geometry) => geometry.dispose());
     this.signAtlas?.dispose();
     this.materials.forEach((material) => material.dispose());

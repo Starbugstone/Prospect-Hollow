@@ -5,8 +5,6 @@ import {
   futureForm,
   futureBuildingStages,
 } from '../../../data/futureArchitecture';
-import { COZY_LANDMARKS } from '../../../data/cozyArchitecture';
-import { GARDEN_PARCELS } from '../../../data/townGardenDistrict';
 import { addSquareModernization, buildTownSquare } from '../TownSquare';
 import { addFishingDock } from './river';
 import { leisureModel } from '../LeisureAssets';
@@ -17,6 +15,13 @@ import { sailKit } from './future/sail';
 import { observatoryKit } from './future/observatory';
 import { homesteadKit } from './future/homestead';
 import { homecomingHall, twinKit } from './future/twin';
+import {
+  addPurposeFinish,
+  addPurposeWing,
+  addPurposeGrades,
+  purposeModule,
+  purposeStructure,
+} from './future/finishes';
 import { gardenLandmarkForms } from './future/gardenLandmarks';
 
 // The eras after Riverlight share one set of archetypes. Each architecture's kit
@@ -29,6 +34,14 @@ const KITS = {
   homestead: homesteadKit,
   twin: twinKit,
 };
+
+function nativeCampusModule(d, g, s, component, build, grade) {
+  if (s.modernizing) return build(g);
+  const module = purposeModule(d, g, s, component);
+  const result = build(purposeStructure(d, module));
+  addPurposeGrades(d, module, s, grade);
+  return result;
+}
 const TAU = Math.PI * 2;
 
 // A rectangular building: body, roof and front door. Returns its crown.
@@ -101,8 +114,13 @@ const FORMS = {
     const w = Math.min(3.7, (s.width ?? 3.4) + 0.2);
     const crown = house(d, g, s, { w, dep: 2.2, h: s.kind === 'saloon' ? 2.4 : 2, accent: true });
     // A long market counter under the eaves.
-    d.box(g, w * 0.7, 0.42, 0.34, 0, 0.36, 1.05, s.palette.timber);
-    d.box(g, w * 0.7, 0.06, 0.4, 0, 0.6, 1.05, s.palette.shell);
+    // Two stalls leave a real central route to the existing door.
+    for (const side of [-1, 1]) {
+      const width = Math.max(0.55, (w * 0.7 - 0.9) / 2);
+      const x = side * (0.45 + width / 2);
+      d.box(g, width, 0.42, 0.34, x, 0.36, 1.05, s.palette.timber);
+      d.box(g, width + 0.04, 0.06, 0.4, x, 0.6, 1.05, s.palette.shell);
+    }
     if (s.kind === 'saloon') {
       const medallion = d.mesh(
         g,
@@ -218,7 +236,23 @@ const FORMS = {
     s.kit.cap(d, g, s, { x: -0.9, z: -0.6, r: 0.75, y: top + 0.1, accent: true });
     d.mesh(g, 'cylinder', [0.95, 0.12, 0.95], [-0.9, top + 0.05, -0.6], p.timber);
     airship(d, g, s, 1.2, top - 0.2, -0.6, 1);
-    house(d, g, s, { x: 1.1, z: 0.5, w: 1.6, dep: 1.2, h: 1.5, door: true });
+    nativeCampusModule(
+      d,
+      g,
+      s,
+      'harbourOffice',
+      (structure) =>
+        house(d, structure, s, { x: 1.1, z: 0.5, w: 1.6, dep: 1.2, h: 1.5, door: true }),
+      {
+        x: 1.1,
+        y: 0.98,
+        z: -0.13,
+        width: 0.85,
+        turn: Math.PI,
+        operationY: 0.65,
+        operationZ: -0.11,
+      },
+    );
     if (s.structureLevel >= 2) {
       const second = s.kit.round(d, g, s, { x: 2.2, z: -1.4, r: 0.35, h: 3.2 });
       s.kit.cap(d, g, s, { x: 2.2, z: -1.4, r: 0.5, y: second });
@@ -229,7 +263,14 @@ const FORMS = {
   },
   cloudOrchard(d, g, s) {
     beds(d, g, s, 0, -1.6, 4, 3);
-    house(d, g, s, { x: -1.6, z: 0.9, w: 1.4, dep: 1.1, h: 1.5 });
+    nativeCampusModule(
+      d,
+      g,
+      s,
+      'orchardServiceRoom',
+      (structure) => house(d, structure, s, { x: -1.6, z: 0.9, w: 1.4, dep: 1.1, h: 1.5 }),
+      { x: -1.6, y: 0.98, z: 0.32, width: 0.8, turn: Math.PI, operationY: 0.65, operationZ: 0.34 },
+    );
     const islands = [
       [1.2, 3.1, 0.2, 1.05],
       [-0.6, 4, -1.4, 0.85],
@@ -243,22 +284,37 @@ const FORMS = {
     const lofts = [
       [-1.5, -0.9, 3],
       [0.6, -1.4, 3.8],
-      [1.8, 0.4, 2.4],
+      [1.8, 0.4, 3],
     ].slice(0, s.structureLevel >= 2 ? 3 : 2);
     const crowns = lofts.map(([x, z, h], n) =>
-      house(d, g, s, { x, z, w: 1.5, dep: 1.4, h, accent: n === 1 }),
+      n === 2
+        ? nativeCampusModule(
+            d,
+            g,
+            s,
+            'familyLoft',
+            (structure) => house(d, structure, s, { x, z, w: 1.5, dep: 1.4, h, accent: false }),
+            {
+              x,
+              y: 1.15,
+              z: z - 0.73,
+              width: 0.85,
+              turn: Math.PI,
+              operationY: 0.65,
+              operationZ: z - 0.71,
+            },
+          )
+        : house(d, g, s, { x, z, w: 1.5, dep: 1.4, h, accent: n === 1 }),
     );
-    // Rope bridges join neighbors high above the lane.
-    for (let n = 1; n < lofts.length; n++) {
-      const [ax, az, ah] = lofts[n - 1],
-        [bx, bz, bh] = lofts[n];
-      d.rod(
-        g,
-        [ax, Math.min(ah, bh) - 0.3, az],
-        [bx, Math.min(ah, bh) - 0.3, bz],
-        0.06,
-        s.palette.timber,
-      );
+    // The timber deck and paired guard ropes read as a usable connection.
+    addLoftWalkway(d, g, s, [-0.75, 2.7, -1.08], [-0.15, 2.7, -1.22]);
+    if (s.structureLevel >= 2) {
+      addLoftWalkway(d, g, s, [-1.5, 2.1, -0.15], [1.8, 2.1, 1.15]);
+      for (const [x, z] of [
+        [-1.5, -0.18],
+        [1.8, 1.12],
+      ])
+        d.box(g, 0.42, 0.75, 0.08, x, 2.53, z, s.palette.deep).name = 'Loft walkway entrance';
     }
     if (s.level >= 3)
       s.kit.crown(d, g, s, { x: 0.6, z: -1.4, y: crowns[1].top, baseY: crowns[1].eave, r: 1 });
@@ -273,7 +329,15 @@ const FORMS = {
     d.rod(g, [0, crown.eave + 0.7, -0.6], [0.6, crown.eave + 3.4, 1.0], 0.36, p.timber);
     d.ball(g, 0.6, crown.eave + 3.4, 1.0, [0.38, 0.1, 0.38], p.glass);
     if (s.structureLevel >= 2) {
-      house(d, g, s, { x: -2.4, z: 0.2, w: 1.6, dep: 1.6, h: 1.7, door: false });
+      nativeCampusModule(
+        d,
+        g,
+        s,
+        'observationRoom',
+        (structure) =>
+          house(d, structure, s, { x: -2.4, z: 0.2, w: 1.6, dep: 1.6, h: 1.7, door: false }),
+        { x: -2.4, y: 1, z: -0.63, width: 0.9, turn: Math.PI, operationY: 0.65, operationZ: -0.61 },
+      );
       tower(d, g, s, { x: 2.5, z: 0.2, r: 0.8, h: 1.3, door: false });
     }
     if (s.level >= 3) {
@@ -302,6 +366,14 @@ const FORMS = {
       d.mesh(g, 'cylinder', [0.38, 3, 0.38], [x, 1.5, z], p.glass);
       s.kit.cap(d, g, s, { x, z, r: 0.42, y: 3 });
     }
+    if (s.structureLevel >= 2) {
+      const manifold = d.group(g);
+      manifold.name = 'Dew collection manifold';
+      d.rod(manifold, [-1.9, 1.1, -1.5], [1.9, 1.1, -1.5], 0.09, p.timber);
+      for (const x of [-1.9, 1.9]) d.rod(manifold, [x, 1.1, -1.5], [x, 0.33, -0.2], 0.06, p.timber);
+      d.box(manifold, 2.4, 0.48, 0.65, 0, 0.48, -1.35, p.shell);
+      d.box(manifold, 2.45, 0.1, 0.7, 0, 0.77, -1.35, p.timber);
+    }
     if (s.level >= 2)
       for (const [x, z] of [
         [-1.6, 1.6],
@@ -309,7 +381,14 @@ const FORMS = {
         [0, 1.9],
       ])
         d.ball(g, x, 0.3, z, 0.18, p.light);
-    house(d, g, s, { x: 2.3, z: 1.2, w: 1.2, dep: 1, h: 1.4 });
+    nativeCampusModule(
+      d,
+      g,
+      s,
+      'growingServiceRoom',
+      (structure) => house(d, structure, s, { x: 2.3, z: 1.2, w: 1.2, dep: 1, h: 1.4 }),
+      { x: 2.3, y: 0.98, z: 0.67, width: 0.8, turn: Math.PI, operationY: 0.6, operationZ: 0.69 },
+    );
     return { landmark: true };
   },
   starlightTerraces(d, g, s) {
@@ -319,7 +398,25 @@ const FORMS = {
       [1.7, -1.2, 2.2],
     ];
     for (const [x, z, h] of steps.slice(0, s.structureLevel >= 2 ? 3 : 2)) {
-      const crown = house(d, g, s, { x, z, w: 1.5, dep: 1.6, h });
+      const crown =
+        x === 1.7
+          ? nativeCampusModule(
+              d,
+              g,
+              s,
+              'terraceRoom',
+              (structure) => house(d, structure, s, { x, z, w: 1.5, dep: 1.6, h }),
+              {
+                x,
+                y: 1,
+                z: z - 0.83,
+                width: 0.85,
+                turn: Math.PI,
+                operationY: 0.65,
+                operationZ: z - 0.81,
+              },
+            )
+          : house(d, g, s, { x, z, w: 1.5, dep: 1.6, h });
       if (s.level >= 3 && x === 0)
         s.kit.crown(d, g, s, { ...crown, y: crown.top, baseY: crown.eave, r: 0.8 });
     }
@@ -334,7 +431,23 @@ const FORMS = {
     // A parcel rail points a little capsule toward the Moon.
     d.rod(g, [1.9, 0.2, 0.6], [2.6, 2.6, -1.3], 0.07, p.deep);
     d.box(g, 0.3, 0.3, 0.6, 2.45, 2.1, -0.9, p.light, true).rotation.x = 0.9;
-    if (s.structureLevel >= 2) s.kit.wing(d, g, s, { x: -2.1, z: -1.3 });
+    if (s.structureLevel >= 2)
+      nativeCampusModule(
+        d,
+        g,
+        s,
+        'dispatchRoom',
+        (structure) => s.kit.wing(d, structure, s, { x: -2.1, z: -1.3 }),
+        {
+          x: -2.1,
+          y: 0.95,
+          z: -1.88,
+          width: 0.8,
+          turn: Math.PI,
+          operationY: 0.6,
+          operationZ: -1.86,
+        },
+      );
     if (s.structureLevel >= 3) {
       const top = s.kit.round(d, g, s, { x: -1.3, z: -1.5, r: 0.4, h: 4 });
       s.kit.cap(d, g, s, { x: -1.3, z: -1.5, r: 0.45, y: top });
@@ -348,7 +461,25 @@ const FORMS = {
       [0.4, -1.5, 2.4],
       [2.2, 0.2, 2],
     ].slice(0, s.structureLevel >= 2 ? 3 : 2);
-    for (const [x, z, h] of homes) house(d, g, s, { x, z, w: 1.6, dep: 1.6, h });
+    for (const [x, z, h] of homes)
+      if (x === 2.2)
+        nativeCampusModule(
+          d,
+          g,
+          s,
+          'familyHomestead',
+          (structure) => house(d, structure, s, { x, z, w: 1.6, dep: 1.6, h }),
+          {
+            x,
+            y: 1,
+            z: z - 0.83,
+            width: 0.9,
+            turn: Math.PI,
+            operationY: 0.65,
+            operationZ: z - 0.81,
+          },
+        );
+      else house(d, g, s, { x, z, w: 1.6, dep: 1.6, h });
     if (s.level >= 3) {
       // A shared flagpole with the mission's moon pennant.
       d.rod(g, [-0.6, 0, 1.4], [-0.6, 3.2, 1.4], 0.04, s.palette.deep);
@@ -364,6 +495,34 @@ const FORMS = {
     return renderSpaceElevator(d, g, s);
   },
 };
+
+function addLoftWalkway(d, parent, s, from, to) {
+  const root = d.group(parent);
+  root.name = 'Loft suspended walkway';
+  const dx = to[0] - from[0],
+    dz = to[2] - from[2];
+  const length = Math.hypot(dx, dz),
+    width = 0.56;
+  const nx = -dz / length,
+    nz = dx / length;
+  const deck = d.box(
+    root,
+    length,
+    0.13,
+    width,
+    (from[0] + to[0]) / 2,
+    from[1],
+    (from[2] + to[2]) / 2,
+    s.palette.timber,
+  );
+  deck.rotation.y = -Math.atan2(dz, dx);
+  for (const side of [-1, 1]) {
+    const a = [from[0] + (nx * side * width) / 2, from[1], from[2] + (nz * side * width) / 2];
+    const b = [to[0] + (nx * side * width) / 2, to[1], to[2] + (nz * side * width) / 2];
+    for (const p of [a, b]) d.rod(root, p, [p[0], p[1] + 0.65, p[2]], 0.035, s.palette.deep);
+    d.rod(root, [a[0], a[1] + 0.65, a[2]], [b[0], b[1] + 0.65, b[2]], 0.025, s.palette.deep);
+  }
+}
 
 function island(d, g, s, x, y, z, r, orchard = false) {
   g = d.group(g);
@@ -466,7 +625,17 @@ function renderSpaceElevator(d, g, s) {
       Math.PI / 2;
   // Cargo docks: the mine carts unload into the climbers here.
   for (const side of [-1, 1]) {
-    house(d, g, s, { x: side * 3.6, z: 2.2, w: 2.2, dep: 1.8, h: 1.9, door: side < 0 });
+    if (side > 0)
+      nativeCampusModule(
+        d,
+        g,
+        s,
+        'cargoDock',
+        (structure) =>
+          house(d, structure, s, { x: 3.6, z: 2.2, w: 2.2, dep: 1.8, h: 1.9, door: false }),
+        { x: 3.6, y: 1, z: 1.27, width: 1.1, turn: Math.PI, operationY: 0.65, operationZ: 1.29 },
+      );
+    else house(d, g, s, { x: -3.6, z: 2.2, w: 2.2, dep: 1.8, h: 1.9, door: true });
     d.box(g, 0.9, 0.7, 0.9, side * 1.8, 0.75, 2.6, p.timber);
     d.box(g, 0.92, 0.08, 0.92, side * 1.8, 1.12, 2.6, p.light);
   }
@@ -481,7 +650,12 @@ function renderSpaceElevator(d, g, s) {
       d.rod(g, [side * 3.6, 2.6, 1.6], [side * 1.1, 4.2, 0.2], 0.08, p.deep);
       d.rod(g, [side * 3.6, 2.6, 1.6], [side * 3.6, 0.4, 1.6], 0.08, p.deep);
     }
+    const mounts = d.group(g);
+    mounts.name = 'Elevator solar fin mounts';
+    d.rod(mounts, [-2.4, 5.55, -1.6], [2.4, 5.55, -1.6], 0.075, p.deep);
     for (const side of [-1, 1]) {
+      d.rod(mounts, [side * 0.65, 5.4, -1.1], [side * 2.2, 6.39, -1.6], 0.085, p.deep);
+      d.rod(mounts, [side * 2.2, 5.55, -1.6], [side * 2.2, 6.39, -1.6], 0.065, p.deep);
       const fin = d.box(g, 2.4, 0.06, 1, side * 2.2, 6.4, -1.6, p.roof);
       fin.rotation.z = side * 0.18;
     }
@@ -570,9 +744,10 @@ export function renderFutureBuilding(d, parent, kind, label, level, era, service
   const crown = FORMS[form](d, root, s);
   if (!landmark && crown) {
     // A rear annex alters the outline without using the front sidewalk.
-    if (s.structureLevel >= 2)
-      s.kit.wing(d, root, s, { x: -Math.min(1.75, (s.width ?? 3.4) / 2 - 0.1), z: -1.35 });
-    if (s.modernizing && level === 2) s.kit.prop(d, root, s, -1.45, 1.5);
+    if (s.structureLevel >= 2) {
+      const slot = { x: -Math.min(1.75, (s.width ?? 3.4) / 2 - 0.1), z: -1.35 };
+      if (!addPurposeWing(d, root, s, slot)) s.kit.wing(d, root, s, slot);
+    }
     if (level >= 3) {
       s.kit.crown(d, root, s, {
         x: crown.x ?? 0,
@@ -585,18 +760,14 @@ export function renderFutureBuilding(d, parent, kind, label, level, era, service
       for (const x of sides) s.kit.prop(d, root, s, x, 1.5);
     }
   } else if (form === 'garden') {
-    if (level >= 2) s.kit.prop(d, root, s, 1.4, -1.6);
-    if (level >= 3) for (const x of [-1.5, 1.5]) s.kit.prop(d, root, s, x, 1.55);
+    if (s.modernizing)
+      addPurposeFinish(d, root, s, { x: -1.5, z: -1.9, turn: Math.PI, width: 0.65 });
+    else {
+      if (level >= 2) s.kit.prop(d, root, s, 1.4, -1.6);
+      if (level >= 3) for (const x of [-1.5, 1.5]) s.kit.prop(d, root, s, x, 1.55);
+    }
   }
-  if (landmark && !COZY_LANDMARKS[kind] && s.modernizing && level >= 2) {
-    // New-era lamps mark paid finish tiers without demolishing completed wings,
-    // homes or elevator equipment. Keep them on the rear edge of the parcel.
-    const parcel = GARDEN_PARCELS[kind];
-    const x = parcel.halfWidth / landmark.scale - 0.65;
-    const z = -parcel.halfDepth / landmark.scale + 0.65;
-    s.kit.prop(d, root, s, -x, z);
-    if (level >= 3) s.kit.prop(d, root, s, x, z);
-  }
+  if (landmark) addPurposeFinish(d, root, s, landmark.finishBay);
   if (['stable', 'garage', 'busDepot'].includes(kind)) {
     const vehicle = parkedVehicle(d, d.group(root, 0, 0, 1.4), kind, era);
     vehicle.rotation.y = Math.PI / 2;

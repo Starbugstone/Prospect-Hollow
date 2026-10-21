@@ -21,7 +21,24 @@
       <rect x="-60" y="-50" width="120" height="100" fill="#10162b" />
       <circle cx="-38" cy="-38" r="7" fill="#4f8fc7" />
       <ellipse cy="6" rx="52" ry="40" fill="#b9b6ad" />
-      <ellipse cy="6" rx="22" ry="17" fill="none" stroke="#cfccc3" stroke-width="1.6" />
+      <ellipse
+        cy="6"
+        :rx="MOON_RING_ROAD * 1.3"
+        :ry="MOON_RING_ROAD * 1.05"
+        fill="none"
+        stroke="#cfccc3"
+        stroke-width="1.6"
+      />
+      <polyline
+        v-for="route in mapApproaches"
+        :key="route.id"
+        :points="route.points"
+        fill="none"
+        stroke="#cfccc3"
+        :stroke-width="route.width * 1.2"
+        stroke-linejoin="round"
+        data-moon-approach="true"
+      />
       <g
         v-for="lot in mapLots"
         :key="lot.id"
@@ -70,6 +87,8 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch 
 import { BUILDING_BY_ID } from '../../data/town';
 import {
   MOON_LOTS,
+  MOON_RING_ROAD,
+  moonApproaches,
   moonLetters,
   moonSettlement,
   moonstoneKeepsakes,
@@ -102,6 +121,12 @@ const letters = computed(() => moonLetters(props.town));
 // The SVG map uses the same lot layout, flattened onto a crater ellipse.
 const mapLots = computed(() =>
   Object.entries(MOON_LOTS).map(([id, [x, z]]) => ({ id, x: x * 1.3, y: 6 + z * 1.05 })),
+);
+const mapApproaches = computed(() =>
+  moonApproaches(props.town.buildings ?? {}).map((route) => ({
+    ...route,
+    points: route.points.map(([x, z]) => `${x * 1.3},${6 + z * 1.05}`).join(' '),
+  })),
 );
 const shownLots = computed(() =>
   unavailable.value

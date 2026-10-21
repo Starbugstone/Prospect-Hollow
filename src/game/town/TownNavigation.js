@@ -261,15 +261,19 @@ export class TownNavigation {
       (o) => !sameHeight(o, p) || footprintDistance(o, p[0], p[2]) >= margin - EPS,
     );
   }
-  safePoint(p, margin = NPC_MARGIN) {
-    if (this.clear(p, margin)) return p.slice();
+  safePoint(p, margin = NPC_MARGIN, accept) {
+    // Existing animal callers pass numeric/boolean trailing arguments, which
+    // this two-argument API historically ignored. Only an actual function opts
+    // into the new retained-actor candidate constraint.
+    if (typeof accept !== 'function') accept = undefined;
+    if (this.clear(p, margin) && (!accept || accept(p))) return p.slice();
     const candidates = this.near(p[0], p[2])
       .filter((o) => sameHeight(o, p))
       .flatMap((o) => ring(o, margin, p[1]));
     candidates.sort(
       (a, b) => Math.hypot(a[0] - p[0], a[2] - p[2]) - Math.hypot(b[0] - p[0], b[2] - p[2]),
     );
-    return candidates.find((a) => this.clear(a, margin)) ?? null;
+    return candidates.find((a) => this.clear(a, margin) && (!accept || accept(a))) ?? null;
   }
   detour(a, b, margin) {
     return finishWork(this.detourSteps(a, b, margin));
@@ -628,13 +632,19 @@ export function localWalk(d, parent, points, margin = NPC_MARGIN) {
   return walkPath(path.points.map((p) => parent.worldToLocal(new Vector3(...p)).toArray()));
 }
 const placement = new Vector3();
-export function placeSafely(d, root, margin = NPC_MARGIN) {
-  if (!d.navigation?.obstacles.length) return;
+export function placeSafely(d, root, margin = NPC_MARGIN, accept) {
+  if (!d.navigation?.obstacles.length) return false;
   root.parent.updateWorldMatrix(true, false);
   placement.copy(root.position);
   root.parent.localToWorld(placement);
-  const safe = d.navigation.safePoint(placement.toArray(), margin);
-  if (safe) root.position.copy(root.parent.worldToLocal(placement.fromArray(safe)));
+  const safe = d.navigation.safePoint(placement.toArray(), margin, accept);
+  if (
+    !safe ||
+    Math.hypot(safe[0] - placement.x, safe[1] - placement.y, safe[2] - placement.z) < 1e-6
+  )
+    return false;
+  root.position.copy(root.parent.worldToLocal(placement.fromArray(safe)));
+  return true;
 }
 
 export function plotDoor(d, id, fallback) {

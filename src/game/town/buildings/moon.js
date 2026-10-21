@@ -1,4 +1,7 @@
+import { BufferGeometry, Float32BufferAttribute, RingGeometry } from 'three';
 import { MOON_PALETTE as p } from '../../../data/futureArchitecture';
+import { heritageUpgrade } from '../../../data/heritageUpgrades';
+import { moonPadRadius } from '../../../data/moonSettlement';
 import { futureShape } from './futureShapes';
 
 // New Hollow on the Moon. Every building shares one small lunar kit: moon-white
@@ -6,13 +9,115 @@ import { futureShape } from './futureShapes';
 // solar fins. Geometry comes from the shared primitives and cached future shapes.
 const TAU = Math.PI * 2;
 
+function vaultFrameShape(d, key, sections) {
+  if (d.geometries[key]) return key;
+  const points = sections.flat(),
+    faces = [];
+  for (let n = 0; n < sections.length - 1; n++)
+    for (let side = 0; side < 4; side++) {
+      const a = n * 4 + side,
+        b = n * 4 + ((side + 1) % 4);
+      faces.push(a, a + 4, b, b, a + 4, b + 4);
+    }
+  const end = (sections.length - 1) * 4;
+  faces.push(0, 1, 2, 0, 2, 3, end, end + 2, end + 1, end, end + 3, end + 2);
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new Float32BufferAttribute(points.flat(), 3));
+  geometry.setAttribute(
+    'uv',
+    new Float32BufferAttribute(
+      points.flatMap(([x, y]) => [x, y]),
+      2,
+    ),
+  );
+  geometry.setIndex(faces);
+  geometry.computeVertexNormals();
+  d.geometries[key] = geometry;
+  return key;
+}
+function vaultFrame(d, g, x, z, length) {
+  const frame = d.group(g);
+  frame.name = 'Sealed greenhouse vault frame';
+  const sections = Array.from({ length: 9 }, (_, n) => {
+    const a = (n / 8) * Math.PI;
+    return [
+      [-0.5, 0.97],
+      [0.5, 0.97],
+      [0.5, 1.03],
+      [-0.5, 1.03],
+    ].map(([side, radius]) => [side, Math.sin(a) * radius, Math.cos(a) * radius]);
+  });
+  const arch = vaultFrameShape(d, 'moon-vault-arch', sections),
+    rise = Math.sqrt(0.75);
+  for (const side of [-1, 1])
+    d.mesh(
+      frame,
+      arch,
+      [0.055, 0.95 * rise, 0.9 * rise],
+      [x + (side * length) / 4, 0.55, z],
+      p.roof,
+    ).name = 'Greenhouse bearing arch';
+  const ridge = vaultFrameShape(
+    d,
+    'moon-vault-ridge',
+    [-0.5, 0, 0.5].map((px) => {
+      const y = px ? rise : 1;
+      return [
+        [px, y - 0.025, -0.5],
+        [px, y - 0.025, 0.5],
+        [px, y + 0.025, 0.5],
+        [px, y + 0.025, -0.5],
+      ];
+    }),
+  );
+  d.mesh(frame, ridge, [length / 2, 0.95, 0.045], [x, 0.55, z], p.roof).name =
+    'Greenhouse sealed ridge';
+}
+
+function habitatGlass(d, mesh) {
+  const key = 'moon-habitat-glass';
+  if (!d.materials.has(key)) {
+    const material = d.material(p.glass).clone();
+    material.transparent = true;
+    material.opacity = 0.38;
+    material.roughness = 0.32;
+    material.depthWrite = false;
+    d.materials.set(key, material);
+  }
+  mesh.material = d.materials.get(key);
+  mesh.renderOrder = 10;
+  // Opaque ribs provide the habitat shadow; the clear shell must not hide its garden in shade.
+  mesh.castShadow = false;
+  mesh.name = 'Sealed lunar habitat glazing';
+  return mesh;
+}
+function purposeModule(d, g, kind, x, z, w, dep, h) {
+  // The nursery shares the dome's steel-blue trim, avoiding a ninth material
+  // beside its cached clear shell and the seven opaque habitat colours.
+  const root = module(
+    d,
+    g,
+    x,
+    z,
+    w,
+    dep,
+    h,
+    0,
+    heritageUpgrade(kind) === 'garden' ? p.roof : p.glass,
+  );
+  root.name = `Lunar purpose module ${heritageUpgrade(kind)}`;
+  root.userData.upgradeFeature = heritageUpgrade(kind);
+  return root;
+}
+
 function pad(d, g, r, x = 0, z = 0) {
   d.mesh(g, futureShape(d, 'octagon'), [r, 0.18, r], [x, 0.09, z], p.deep);
   d.mesh(g, futureShape(d, 'octagon'), [r - 0.25, 0.08, r - 0.25], [x, 0.22, z], p.shell);
 }
-function airlock(d, g, x, y, z, turn = 0) {
+function airlock(d, g, x, y, z, turn = 0, scale = 1) {
   const door = d.group(g, x, y, z);
   door.rotation.y = turn;
+  door.scale.setScalar(scale);
   d.mesh(door, futureShape(d, 'octagon'), [0.42, 0.1, 0.42], [0, 0, 0], p.deep).rotation.x =
     Math.PI / 2;
   d.mesh(door, futureShape(d, 'octagon'), [0.5, 0.06, 0.5], [0, 0, -0.03], p.light).rotation.x =
@@ -21,14 +126,19 @@ function airlock(d, g, x, y, z, turn = 0) {
 /** A ceramic drum under a ribbed glass dome; returns the dome's top. */
 function dome(d, g, x, z, r, h = 0.9, glass = true) {
   d.mesh(g, 'cylinder', [r, h, r], [x, 0.25 + h / 2, z], p.shell);
-  d.mesh(g, 'cylinder', [r + 0.04, 0.08, r + 0.04], [x, 0.25 + h, z], p.light);
-  d.mesh(
+  // A rim is a ring, not a gold floor revealed by the clear habitat shell.
+  d.geometries['moon-habitat-rim'] ??= new RingGeometry(0.95, 1, 24);
+  const rim = d.mesh(g, 'moon-habitat-rim', [r + 0.04, r + 0.04, 1], [x, 0.256 + h, z], p.light);
+  rim.rotation.x = -Math.PI / 2;
+  rim.name = 'Lunar habitat gold rim';
+  const shell = d.mesh(
     g,
     futureShape(d, 'dome'),
     [r * 0.97, r * 0.85, r * 0.97],
     [x, 0.25 + h, z],
     glass ? p.glass : p.shell,
   );
+  if (glass) habitatGlass(d, shell);
   for (const turn of [0, Math.PI / 2]) {
     let last = null;
     for (let n = 0; n <= 6; n++) {
@@ -46,12 +156,14 @@ function dome(d, g, x, z, r, h = 0.9, glass = true) {
   return 0.25 + h + r * 0.85;
 }
 /** A white ceramic module with a gold band and a window strip. */
-function module(d, g, x, z, w, dep, h, turn = 0) {
+function module(d, g, x, z, w, dep, h, turn = 0, windowColor = p.glass) {
   const m = d.group(g, x, 0, z);
   m.rotation.y = turn;
   d.box(m, w, h, dep, 0, 0.25 + h / 2, 0, p.shell, true);
   d.box(m, w + 0.04, 0.08, dep + 0.04, 0, 0.45, 0, p.light);
-  d.box(m, w * 0.7, 0.26, 0.05, 0, 0.25 + h * 0.62, dep / 2 + 0.01, p.glass);
+  d.box(m, w * 0.7, 0.26, 0.05, 0, 0.25 + h * 0.8, dep / 2 + 0.01, windowColor);
+  const hatchScale = Math.min(1, h);
+  airlock(d, m, 0, 0.25 + hatchScale / 2, dep / 2 + 0.03, 0, hatchScale);
   return m;
 }
 function solarFin(d, g, x, z, turn = 0) {
@@ -111,7 +223,7 @@ function willowkinTree(d, g, x, y, z, scale = 1) {
 const RIBBON_HEIGHT = 140;
 const FORMS = {
   ribbonLanding(d, g, level) {
-    pad(d, g, 5.2);
+    pad(d, g, moonPadRadius('ribbonLanding'));
     d.mesh(g, futureShape(d, 'octagon'), [1.3, 4.2, 1.3], [0, 2.35, 0], p.shell);
     d.mesh(g, futureShape(d, 'octagon'), [1.45, 0.2, 1.45], [0, 4.5, 0], p.light);
     const ribbon = d.mesh(
@@ -146,17 +258,18 @@ const FORMS = {
     }
   },
   settlerDomes(d, g, level) {
-    pad(d, g, 4.6);
+    pad(d, g, moonPadRadius('settlerDomes'));
     dome(d, g, -1.5, -0.6, 1.25);
     dome(d, g, 1.5, -0.4, 1.05, 0.75);
     if (level >= 2) dome(d, g, 0, -2.6, 1.1, 1.1);
     if (level >= 3) {
+      purposeModule(d, g, 'settlerDomes', 0, 0.2, 1.3, 1.2, 0.8);
       for (const x of [-2.9, 2.9]) lamp(d, g, x, 2.2, 0.25);
       d.box(g, 2.2, 0.16, 0.5, 0, 0.32, 2.4, p.timber);
     }
   },
   craterIceWell(d, g, level) {
-    pad(d, g, 4.4);
+    pad(d, g, moonPadRadius('craterIceWell'));
     // A drilling tripod over the crater ice.
     for (let n = 0; n < 3; n++) {
       const a = (n * TAU) / 3;
@@ -176,10 +289,14 @@ const FORMS = {
     }
   },
   earthlightGreenhouse(d, g, level) {
-    pad(d, g, 4.6);
+    pad(d, g, moonPadRadius('earthlightGreenhouse'));
     const vault = (x, z, len) => {
       d.box(g, len, 0.3, 1.8, x, 0.4, z, p.shell);
-      d.mesh(g, futureShape(d, 'dome'), [len / 2, 0.95, 0.9], [x, 0.55, z], p.glass);
+      habitatGlass(
+        d,
+        d.mesh(g, futureShape(d, 'dome'), [len / 2, 0.95, 0.9], [x, 0.55, z], p.glass),
+      );
+      vaultFrame(d, g, x, z, len);
       for (let n = 0; n < 4; n++)
         d.ball(
           g,
@@ -192,23 +309,29 @@ const FORMS = {
         );
     };
     vault(-0.3, -1.4, 4);
+    module(d, g, -2.3, -1.4, 0.8, 1, 1, -Math.PI / 2).name = 'Greenhouse exposed airlock';
     solarFin(d, g, 2.9, 1.2, 0.3);
     if (level >= 2) vault(-0.3, 0.9, 3.4);
     if (level >= 3) {
+      purposeModule(d, g, 'earthlightGreenhouse', 1.8, 1.8, 1.2, 1, 1);
       solarFin(d, g, -3, 1.6, -0.3);
       lamp(d, g, 2.6, 2.8, 0.25);
     }
   },
   willowkinDome(d, g, level) {
-    pad(d, g, 4.8);
+    pad(d, g, moonPadRadius('willowkinDome'));
     const top = dome(d, g, 0, -0.4, 2.3, 0.5);
     willowkinTree(d, g, 0, 0.3, -0.5, 1.1);
+    d.mesh(g, 'cylinder', [1.15, 0.025, 1.1], [0, 0.77, -0.5], p.green);
     for (const [x, z] of [
       [-0.9, 0.5],
       [0.8, 0.6],
     ])
-      d.ball(g, x, 0.42, z, 0.12, p.flower, 'rock');
-    if (level >= 2) for (const x of [-3.4, 3.4]) lamp(d, g, x, 1.8, 0.25);
+      d.ball(g, x, 0.82, z, 0.12, p.flower, 'rock');
+    if (level >= 2) {
+      purposeModule(d, g, 'willowkinDome', 0, 2.05, 1.25, 0.8, 1.05);
+      for (const x of [-3.4, 3.4]) lamp(d, g, x, 1.8, 0.25);
+    }
     if (level >= 3) {
       dome(d, g, 3, -2.2, 0.9, 0.4);
       willowkinTree(d, g, 3, 0.3, -2.3, 0.45);
@@ -216,7 +339,7 @@ const FORMS = {
     }
   },
   newHollowCommons(d, g, level) {
-    pad(d, g, 4.8);
+    pad(d, g, moonPadRadius('newHollowCommons'));
     module(d, g, 0, -0.6, 4, 2, 1.5);
     dome(d, g, 0, -0.9, 1.1, 1.35, false);
     // The Prospect Hollow pennant flies on the Moon.
@@ -230,18 +353,25 @@ const FORMS = {
     }
   },
   craterHomesteads(d, g, level) {
-    pad(d, g, 4.8);
+    pad(d, g, moonPadRadius('craterHomesteads'));
     gable(d, g, -1.6, -1, 1.8, 1.8, 1.5);
     gable(d, g, 1.7, -0.4, 1.6, 1.7, 1.3, p.flower);
     if (level >= 2) gable(d, g, 0.1, -3, 1.6, 1.4, 1.4);
     if (level >= 3) {
-      for (let n = 0; n < 6; n++) d.box(g, 0.08, 0.5, 0.08, -2.6 + n, 0.5, 2.6, p.timber);
-      d.box(g, 5.2, 0.06, 0.06, -0.1, 0.65, 2.6, p.timber);
+      const fence = d.group(g);
+      fence.name = 'Homestead open frontage gate';
+      for (const x of [-2.6, -1.6, -0.65, 0.65, 1.6, 2.4])
+        d.box(fence, 0.08, 0.5, 0.08, x, 0.5, 2.6, p.timber);
+      for (const [x, w] of [
+        [-1.63, 1.94],
+        [1.53, 1.74],
+      ])
+        d.box(fence, w, 0.06, 0.06, x, 0.65, 2.6, p.timber);
       rover(d, g, 2.4, 2.4, 0.4);
     }
   },
   moonstoneWorkshop(d, g, level) {
-    pad(d, g, 4.4);
+    pad(d, g, moonPadRadius('moonstoneWorkshop'));
     module(d, g, -0.6, -0.8, 3, 1.9, 1.4);
     d.mesh(g, 'cylinder', [0.3, 1.6, 0.3], [-1.6, 2.2, -1.2], p.deep);
     // Polished moonstones glow on the display table.
@@ -257,25 +387,59 @@ const FORMS = {
     }
   },
   roverBarn(d, g, level) {
-    pad(d, g, 4.6);
+    pad(d, g, moonPadRadius('roverBarn'));
     gable(d, g, -0.8, -1.2, 3, 2.2, 1.6, p.flower);
     rover(d, g, 1.9, 1.6, -0.5);
     if (level >= 2) rover(d, g, -1.6, 2, 0.6);
-    if (level >= 3) {
-      for (const x of [2.4, 3.4]) d.rod(g, [x, 0.25, -1.8], [x, 1.85, -1.8], 0.05, p.deep);
-      d.box(g, 1.5, 0.06, 1.2, 2.9, 1.85, -1.8, p.roof);
+    if (level >= 2) {
+      const bay = d.group(g);
+      bay.name = `Lunar purpose module ${heritageUpgrade('roverBarn')}`;
+      bay.userData.upgradeFeature = heritageUpgrade('roverBarn');
+      for (const x of [2.4, 3.4])
+        for (const z of [-2.3, -1.3]) d.rod(bay, [x, 0.25, z], [x, 1.85, z], 0.05, p.deep);
+      d.box(bay, 1.5, 0.1, 1.2, 2.9, 1.85, -1.8, p.roof);
+      // The linking beam meets the barn wall and the bay frame.
+      d.box(bay, 1.7, 0.1, 0.6, 1.55, 1.85, -1.8, p.roof);
+      if (level >= 3) {
+        d.box(bay, 0.9, 0.65, 0.35, 2.9, 0.58, -2.15, p.timber);
+        d.box(bay, 0.95, 0.08, 0.4, 2.9, 0.94, -2.15, p.deep);
+        d.box(bay, 0.25, 0.4, 0.2, 3.2, 1.18, -2.15, p.light);
+      }
     }
   },
   earthriseLookout(d, g, level) {
-    pad(d, g, 4.4);
+    pad(d, g, moonPadRadius('earthriseLookout'));
     // A deck on stilts with a telescope pointed at the valley.
     d.box(g, 3.2, 0.18, 2.4, 0, 1.6, -0.4, p.timber);
     for (const x of [-1.4, 1.4])
       for (const z of [-1.4, 0.6]) d.box(g, 0.14, 1.5, 0.14, x, 0.85, z, p.deep);
     d.rod(g, [0.6, 1.7, -0.4], [1.1, 2.6, -1.3], 0.12, p.light);
+    const stairs = d.group(g);
+    stairs.name = 'Lookout stair access';
+    const x = -0.7;
+    for (let n = 0; n < 6; n++) {
+      const height = (6 - n) * 0.22;
+      d.box(stairs, 0.95, height, 0.32, x, 0.26 + height / 2, 0.94 + n * 0.3, p.timber);
+    }
+    for (const side of [-1, 1]) {
+      const sx = x + side * 0.5;
+      d.rod(stairs, [sx, 2.18, 0.82], [sx, 1.02, 2.62], 0.035, p.deep);
+      for (const [z, top] of [
+        [0.88, 2.18],
+        [2.58, 1.02],
+      ])
+        d.rod(stairs, [sx, 0.3, z], [sx, top, z], 0.035, p.deep);
+    }
+
     if (level >= 2)
       for (const z of [-1.55, 0.75]) {
-        d.box(g, 3.2, 0.06, 0.06, 0, 2.2, z, p.deep);
+        if (z < 0) d.box(g, 3.2, 0.06, 0.06, 0, 2.2, z, p.deep);
+        else {
+          // The front rail leaves the stair's full arrival opening clear.
+          d.box(g, 0.35, 0.06, 0.06, -1.425, 2.2, z, p.deep);
+          d.box(g, 1.75, 0.06, 0.06, 0.725, 2.2, z, p.deep);
+          for (const x of [-1.25, -0.15]) d.rod(g, [x, 1.6, z], [x, 2.2, z], 0.035, p.deep);
+        }
         for (const x of [-1.4, 1.4])
           d.rod(g, [x, 1.6, z], [x, 2.2, z], 0.035, p.deep).name = 'Lookout railing post';
       }

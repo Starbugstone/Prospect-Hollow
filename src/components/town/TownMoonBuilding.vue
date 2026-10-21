@@ -42,12 +42,18 @@
         :stroke="p.deep"
         stroke-width="4"
       />
+      <g v-if="kind === 'roverBarn' && level >= 2" :data-purpose-module="purpose">
+        <path d="M68-14v-48h50v48m-50-44h-28" :stroke="p.deep" stroke-width="3" fill="none" />
+        <path d="M62-65h62v8H62Z" :fill="p.roof" />
+        <rect v-if="level >= 3" x="78" y="-30" width="30" height="16" :fill="p.timber" />
+      </g>
       <g v-for="(part, n) in parts" :key="n">
         <template v-if="part.type === 'dome'">
           <path :d="drum(part.x, part.r, part.h)" :fill="p.shell" />
           <path
             :d="`M${part.x - part.r} ${-part.h}a${part.r} ${part.r * 0.85} 0 0 1 ${part.r * 2} 0Z`"
             :fill="part.solid ? p.shell : p.glass"
+            :fill-opacity="part.solid ? 1 : 0.38"
             :stroke="p.roof"
             stroke-width="3"
           />
@@ -57,6 +63,23 @@
             stroke-width="2"
             fill="none"
           />
+          <g
+            v-if="kind === 'earthlightGreenhouse'"
+            data-vault-frame="sealed"
+            data-vault-arches="2"
+            :stroke="p.roof"
+            stroke-width="2.5"
+            fill="none"
+          >
+            <path
+              v-for="side in [-1, 1]"
+              :key="side"
+              :d="`M${part.x + side * part.r * 0.5 - part.r * 0.12} ${-part.h}q${part.r * 0.12} ${-part.r * 1.5} ${part.r * 0.24} 0`"
+            />
+            <path
+              :d="`M${part.x - part.r * 0.5} ${-part.h - part.r * 0.75}q${part.r * 0.5} ${-part.r * 0.2} ${part.r} 0`"
+            />
+          </g>
           <circle :cx="part.x" cy="-16" r="8" :fill="p.deep" :stroke="p.light" stroke-width="2" />
         </template>
         <template v-else-if="part.type === 'module'">
@@ -74,7 +97,16 @@
             :y="-part.h * 0.7"
             :width="part.w * 0.7"
             height="9"
-            :fill="p.glass"
+            :fill="purpose === 'garden' ? p.roof : p.glass"
+          />
+          <circle
+            :cx="part.x"
+            cy="-16"
+            r="8"
+            :fill="p.deep"
+            :stroke="p.light"
+            stroke-width="2"
+            data-airlock="exposed"
           />
         </template>
         <template v-else-if="part.type === 'gable'">
@@ -133,10 +165,25 @@
           <path :d="`M${part.x}-86l26 8-26 8Z`" :fill="p.flower" />
         </template>
       </g>
+      <g v-if="kind === 'earthriseLookout'" data-stair-access="connected">
+        <path d="M-48 0v-8h6v-8h6v-8h6v-8h6v-16h12v48Z" :fill="p.timber" />
+        <path d="M-54-9-24-58M-54 0v-9M-24-48v-10" :stroke="p.deep" stroke-width="2" />
+      </g>
+      <g v-if="kind === 'craterHomesteads' && level >= 3" data-gate-opening="central">
+        <path
+          d="M-92 0h68m48 0h68M-92 7v-18m68 18v-18m48 18v-18m68 18v-18"
+          :stroke="p.timber"
+          stroke-width="3"
+        />
+      </g>
+      <g v-if="kind === 'earthlightGreenhouse'" data-visible-crops="sealed-glazing">
+        <circle v-for="x in [-65, -40, -15, 10]" :key="x" :cx="x" cy="-25" r="6" :fill="p.green" />
+      </g>
     </template>
   </g>
 </template>
 <script setup>
+import { heritageUpgrade } from '../../data/heritageUpgrades';
 import { computed } from 'vue';
 import { MOON_PALETTE as p } from '../../data/futureArchitecture';
 
@@ -144,6 +191,7 @@ import { MOON_PALETTE as p } from '../../data/futureArchitecture';
 // accessible Moon map. They follow the 3D lunar kit: glass domes, ceramic
 // modules, gables, tanks and rovers, in the shared Moon palette.
 const props = defineProps({ kind: String, level: { type: Number, default: 3 } });
+const purpose = computed(() => heritageUpgrade(props.kind));
 const drum = (x, r, h) =>
   `M${x - r} 0v${-h}a${r} ${r * 0.22} 0 0 1 ${r * 2} 0v${h}a${r} ${r * 0.22} 0 0 1 ${-r * 2} 0Z`;
 const dome = (x, r, h = 40, solid = false) => ({ type: 'dome', x, r, h, solid });
@@ -165,7 +213,7 @@ const parts = computed(() => {
         dome(-46, 44),
         dome(46, 36, 32),
         ...at(2, dome(0, 34, 50)),
-        ...at(3, { type: 'lamp', x: 100 }),
+        ...at(3, module(0, 44, 30), { type: 'lamp', x: 100 }),
       ];
     case 'craterIceWell':
       return [
@@ -174,12 +222,17 @@ const parts = computed(() => {
         ...at(3, { type: 'gem', x: -20, y: -6 }, { type: 'gem', x: 10, y: -4 }),
       ];
     case 'earthlightGreenhouse':
-      return [dome(-20, 70, 16), ...at(2, dome(70, 40, 16)), ...at(3, { type: 'lamp', x: -104 })];
+      return [
+        dome(-20, 70, 16),
+        module(-96, 24, 32),
+        ...at(2, dome(70, 40, 16)),
+        ...at(3, module(80, 42, 36), { type: 'lamp', x: -104 }),
+      ];
     case 'willowkinDome':
       return [
         dome(0, 84, 20),
         { type: 'tree', x: 0, y: -24, r: 28 },
-        ...at(2, { type: 'lamp', x: -108 }, { type: 'lamp', x: 108 }),
+        ...at(2, module(0, 42, 32), { type: 'lamp', x: -108 }, { type: 'lamp', x: 108 }),
         ...at(3, { type: 'tree', x: 92, y: 0, r: 12 }),
       ];
     case 'newHollowCommons':

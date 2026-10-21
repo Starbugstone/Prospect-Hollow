@@ -5,7 +5,13 @@ import { TownFramePacer } from '../TownFramePacer';
 import { TownRenderQuality } from '../TownRenderQuality';
 import { renderMoonBuilding } from '../buildings/moon';
 import { MOON_PALETTE as p } from '../../../data/futureArchitecture';
-import { MOON_LOTS, MOON_RING_ROAD } from '../../../data/moonSettlement';
+import {
+  MOON_LOTS,
+  MOON_RING_ROAD,
+  moonApproaches,
+  moonLotPose,
+  moonPathDistance,
+} from '../../../data/moonSettlement';
 
 // New Hollow on the Moon: a small scene of its own beside the valley's. One
 // renderer, a crater of lots, the ribbon arriving from the valley, settlers,
@@ -143,6 +149,9 @@ const CRATERS = (() => {
     if (Object.values(MOON_LOTS).some(([lx, lz]) => Math.hypot(lx - x, lz - z) < 7 + size))
       continue;
     if (Math.abs(r - MOON_RING_ROAD) < 2.5 + size) continue;
+    // Reserve the same authored access corridors that the road mesh draws.
+    // A crater's complete lip stays outside the public path, not just its bowl.
+    if (moonPathDistance(x, z) < 1.6 * size + 0.6) continue;
     list.push({ x, z, size, depth: inside ? 0.22 : 0.5 + size * 0.08 });
   }
   return list;
@@ -221,6 +230,111 @@ function terrain() {
   return g;
 }
 
+// All entrance strips share one mesh/material. The crater floor is level here;
+// sampling moonHeight also keeps the contract safe if terrain evolves later.
+export function moonAccessGeometry(approaches = moonApproaches()) {
+  const positions = [],
+    indices = [],
+    uvs = [],
+    colors = [];
+  const padColor = new THREE.Color('#aaa99f'),
+    groundColor = new THREE.Color('#cdcac1');
+  for (const { points, width, pose, rampStart, rampEnd } of approaches) {
+    const offset = positions.length / 3;
+    const surface = (x, z) => {
+      const radius = Math.hypot(x - pose.x, z - pose.z);
+      const t = Math.max(0, Math.min(1, (radius - rampStart) / (rampEnd - rampStart)));
+      return 0.27 * (1 - t) + (moonHeight(x, z) + 0.04) * t;
+    };
+    const colorAt = (x, z) => {
+      const radius = Math.hypot(x - pose.x, z - pose.z);
+      const t = Math.max(0, Math.min(1, (radius - rampStart) / (rampEnd - rampStart)));
+      const color = padColor.clone().lerp(groundColor, t);
+      colors.push(color.r, color.g, color.b);
+    };
+    for (let n = 0; n < points.length; n++) {
+      const p = points[n],
+        prev = points[Math.max(0, n - 1)],
+        next = points[Math.min(points.length - 1, n + 1)];
+      const normal = (a, b) => {
+        const dx = b[0] - a[0],
+          dz = b[1] - a[1],
+          len = Math.hypot(dx, dz) || 1;
+        return [-dz / len, dx / len];
+      };
+      const before = normal(n ? prev : p, n ? p : next),
+        after = normal(n < points.length - 1 ? p : prev, n < points.length - 1 ? next : p);
+      const nx = before[0] + after[0],
+        nz = before[1] + after[1],
+        len = Math.hypot(nx, nz) || 1;
+      const mx = nx / len,
+        mz = nz / len;
+      const half = (width / 2) * Math.min(1.25, 1 / Math.max(0.2, mx * after[0] + mz * after[1]));
+      for (const side of [1, -1]) {
+        const x = p[0] + mx * half * side,
+          z = p[1] + mz * half * side;
+        positions.push(x, surface(x, z), z);
+        uvs.push(side > 0 ? 0 : 1, n);
+        colorAt(x, z);
+      }
+      if (n < points.length - 1) {
+        const k = offset + n * 2;
+        indices.push(k, k + 2, k + 1, k + 1, k + 2, k + 3);
+      }
+    }
+    // Fill the small pad-to-regolith ramp sides. The path is a supported solid
+    // arrival at the pad edge, rather than a floating sloped decal.
+    for (let n = 0; n < points.length - 1; n++) {
+      const a = offset + n * 2,
+        b = a + 2;
+      if (Math.abs(positions[a * 3 + 1] - positions[b * 3 + 1]) < 0.03) continue;
+      for (const side of [0, 1]) {
+        const k = positions.length / 3,
+          ia = (a + side) * 3,
+          ib = (b + side) * 3;
+        positions.push(
+          positions[ia],
+          0.04,
+          positions[ia + 2],
+          positions[ib],
+          0.04,
+          positions[ib + 2],
+        );
+        uvs.push(0, 0, 1, 0);
+        colorAt(positions[ia], positions[ia + 2]);
+        colorAt(positions[ib], positions[ib + 2]);
+        if (side) indices.push(a + side, k + 1, k, a + side, b + side, k + 1);
+        else indices.push(a, k, k + 1, a, k + 1, b);
+      }
+    }
+    // A small flush landing ends exactly at the authored hatch/stair anchor.
+    // Contrast on the white pad makes the continuous arrival legible from the
+    // default camera, including entrances on the far side of an outer pad.
+    const entry = points[0],
+      next = points[1];
+    const length = Math.hypot(next[0] - entry[0], next[1] - entry[1]) || 1;
+    const dx = (next[0] - entry[0]) / length,
+      dz = (next[1] - entry[1]) / length;
+    const k = positions.length / 3;
+    for (const side of [-1, 1])
+      for (const distance of [0, 0.6]) {
+        const x = entry[0] + dx * distance - dz * side * 0.525;
+        const z = entry[1] + dz * distance + dx * side * 0.525;
+        positions.push(x, 0.276, z);
+        uvs.push(side < 0 ? 0 : 1, distance);
+        colorAt(x, z);
+      }
+    indices.push(k, k + 2, k + 1, k + 1, k + 2, k + 3);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
 // A settler in a moon-white suit with a gold visor; Willowkin keep to the dome.
 function settler(d, parent, suit) {
   const g = d.group(parent);
@@ -282,6 +396,13 @@ export class MoonScene {
     this.earth = earth();
     this.scene.add(this.earth);
     this.scene.add(terrain());
+    this.access = new THREE.Mesh(
+      moonAccessGeometry([]),
+      new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 1, vertexColors: true }),
+    );
+    this.access.name = 'Moon public entrance paths';
+    this.access.receiveShadow = true;
+    this.scene.add(this.access);
     // The ribbon always arrives from the valley, even before the landing is built.
     const ribbon = this.d.mesh(
       this.scene,
@@ -361,13 +482,13 @@ export class MoonScene {
     this.buildings = this.d.group(this.scene);
     this.buildings.name = 'New Hollow buildings';
     this.lots.forEach(({ id }, n) => {
-      const [x, z] = MOON_LOTS[id];
+      const { x, z, rotation } = moonLotPose(id);
       const lot = this.d.group(this.buildings, x, 0, z);
-      // Every lot faces the landing, so its door greets the ribbon.
-      lot.rotation.y = Math.atan2(-x, -(z - MOON_LOTS.ribbonLanding[1])) + Math.PI;
-      if (id === 'ribbonLanding') lot.rotation.y = 0;
+      lot.rotation.y = rotation;
       renderMoonBuilding(this.d, lot, id, levels[n]);
     });
+    this.access.geometry.dispose();
+    this.access.geometry = moonAccessGeometry(moonApproaches(town?.buildings ?? {}));
     // The whole settlement draws as one merged mesh per palette colour.
     this.d.batch(this.buildings);
     this.populate(town);

@@ -9,7 +9,7 @@ export function gardenLandmarkForms(house, tower) {
     d.ball(g, x, 0.7, z, 0.14, p.flower, 'rock');
   }
   function finish(d, g, s, crown, sides, z) {
-    if (s.level >= 2) for (const x of sides) garden(d, g, s, x, z);
+    if (s.level >= 2 && !s.modernizing) for (const x of sides) garden(d, g, s, x, z);
     if (s.level >= 3)
       s.kit.crown(d, g, s, {
         x: crown.x,
@@ -48,9 +48,9 @@ export function gardenLandmarkForms(house, tower) {
       for (const x of [-2.1, 2.1])
         house(d, g, s, { x, z: -0.3, w: 1.9, dep: 2.6, h: 2.5, accent: true });
       // The shared orchard courtyard and all three homes stay present at tier 1.
-      d.rod(g, [0, 0, 1.1], [0, 1.3, 1.1], 0.12, s.palette.timber);
-      d.ball(g, 0, 1.7, 1.1, [0.8, 0.7, 0.8], s.palette.green, 'rock');
-      return finish(d, g, s, crown, [-0.7, 0.7], 1.7);
+      d.rod(g, [1.3, 0, 1.1], [1.3, 1.3, 1.1], 0.12, s.palette.timber);
+      d.ball(g, 1.3, 1.7, 1.1, [0.8, 0.7, 0.8], s.palette.green, 'rock');
+      return finish(d, g, s, crown, [-1.1, 1.1], 1.7);
     },
     glassworks(d, g, s) {
       const crown = house(d, g, s, { x: -0.8, z: -0.4, w: 3.5, dep: 3.5, h: 2.8 });

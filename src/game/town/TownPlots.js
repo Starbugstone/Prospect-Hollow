@@ -1,6 +1,11 @@
 import { TownItineraries } from './TownItineraries';
 
-import { applyRoadSetbacks } from './BuildingSetbacks';
+import {
+  applyRoadSetbacks,
+  plotSetbacks,
+  roadSetbackEnvelope,
+  roadSetbackTransform,
+} from './BuildingSetbacks';
 import { addTownAnimals, animalKey } from './TownAnimals';
 import { footprintsFor, plotFootprintKey } from './FootprintCatalog';
 import { drawNavigation } from './NavigationDebug';
@@ -10,7 +15,7 @@ import { updateMineGrowth } from './mine/addMineSite';
 import { afterPaint, finishWork, performanceMark, scheduleWork } from '../PresentationWork';
 import { geometryFootprints, registerFootprints, footprintDistance } from './BuildingFootprints';
 import { townTracks, railEdges } from './TownLayout';
-import { NPC_MARGIN, townNavigation, sceneryObstacles } from './TownNavigation';
+import { NPC_MARGIN, townNavigation, sceneryObstacles, placeSafely } from './TownNavigation';
 import { recordTownTiming, timeTown, timedSteps } from './TownProfiler';
 import { updateWorkPaths } from './TownWorkRoutine';
 import { buildingWalk } from './TownPedestrians';
@@ -25,6 +30,7 @@ import { ELEVATOR_CLIMBERS, elevatorMotion } from './buildings/future';
 
 import { BUILDING_BY_ID } from '../../data/town';
 import { modelLevel } from '../../data/buildingProgression';
+import { buildingStages } from '../../data/buildingStages';
 
 import { walkers } from './TownWalkers';
 import { TownConstruction, constructionParts } from './TownConstruction';
@@ -84,7 +90,82 @@ function attachMovingPart(d, group, { rotor, update, solid = true }) {
   );
 }
 
+const SETBACK_ENVELOPE_CACHE_LIMIT = 256;
+
+function matureSetbackEnvelope(d, id, group, town, labels) {
+  if (d.probingPlotSetback || !town.buildings[id] || !plotSetbacks(id, town)) return null;
+  const building = BUILDING_BY_ID[id];
+  if (!building) return null;
+  const ownEra = town.buildingEras[id],
+    serviceLevel = modelLevel(id, town.buildings[id]);
+  if (!buildingStages(building.kind, ownEra, 1, serviceLevel).modernizing) return null;
+  const key = JSON.stringify([id, ownEra, town.era, serviceLevel, labels[id]]);
+  const cache = (d.plotSetbackEnvelopes ??= new Map());
+  if (cache.has(key)) return cache.get(key);
+  const previousTown = d.town,
+    previousSigns = d.pendingPlotSigns,
+    previousSignRoot = d.plotSignRoot,
+    previousProbe = d.probingPlotSetback;
+  const probeTown = {
+    ...town,
+    buildings: { ...town.buildings },
+    buildingEras: { ...town.buildingEras },
+    buildingEraLevels: { ...town.buildingEraLevels },
+    projects: { ...town.projects },
+  };
+  delete probeTown.projects[id];
+  let envelope = null;
+  try {
+    d.probingPlotSetback = true;
+    d.town = probeTown;
+    group.updateWorldMatrix(true, false);
+    for (const finish of [1, 2, 3]) {
+      const probe = new THREE.Group();
+      probe.matrixAutoUpdate = false;
+      probe.matrix.copy(group.matrixWorld);
+      probe.userData.plot = id;
+      try {
+        probeTown.buildingEraLevels[id] = finish;
+        buildPlot(d, id, probe, probeTown, labels);
+        const bounds = roadSetbackEnvelope(probe, id);
+        if (bounds)
+          envelope = envelope
+            ? envelope.map((value, index) =>
+                index % 2 ? Math.max(value, bounds[index]) : Math.min(value, bounds[index]),
+              )
+            : bounds;
+      } finally {
+        d.clearGroup(probe);
+      }
+    }
+  } finally {
+    d.town = previousTown;
+    d.pendingPlotSigns = previousSigns;
+    d.plotSignRoot = previousSignRoot;
+    d.probingPlotSetback = previousProbe;
+  }
+  if (cache.size >= SETBACK_ENVELOPE_CACHE_LIMIT) cache.delete(cache.keys().next().value);
+  cache.set(key, envelope);
+  return envelope;
+}
+
 export function buildPlot(d, id, group, town, labels) {
+  const envelope = matureSetbackEnvelope(d, id, group, town, labels);
+  const transform = roadSetbackTransform(id, town, envelope);
+  if (transform) group.userData.signCameraScale = [transform.x.scale, 1, transform.z.scale];
+  const previous = d.pendingPlotSigns;
+  const previousRoot = d.plotSignRoot;
+  d.pendingPlotSigns = [];
+  d.plotSignRoot = group;
+  try {
+    return drawPlot(d, id, group, town, labels, envelope);
+  } finally {
+    d.pendingPlotSigns = previous;
+    d.plotSignRoot = previousRoot;
+  }
+}
+
+function drawPlot(d, id, group, town, labels, envelope) {
   let movingPart;
   if (id === 'mine') d.mine(group, labels.mine);
   else {
@@ -149,7 +230,16 @@ export function buildPlot(d, id, group, town, labels) {
       if (project) addScaffolding(d, group, kind, stage, constructionVisual(project));
     }
   }
-  applyRoadSetbacks(group, id, town);
+  // Modernization and purpose modules can add an overhang after the original
+  // facade was drawn. Resolve nameboards only against the complete plot, then
+  // let the shared setback include their real posts and supports.
+  const signs = d.pendingPlotSigns;
+  d.pendingPlotSigns = null;
+  // A modernization's era name replaces the predecessor's primary board;
+  // both shells can request one, but a plot has one physical nameboard.
+  for (const args of signs.slice(-1)) d.sign(...args);
+  d.pendingPlotSigns = signs;
+  if (!d.probingPlotSetback) applyRoadSetbacks(group, id, town, envelope);
   return movingPart;
 }
 
@@ -656,6 +746,47 @@ function invalidatePresentationWork(d) {
   d.cancelRouteWork?.();
 }
 
+function sameStreetSide(from, to, road) {
+  const dx = road.to[0] - road.from[0],
+    dz = road.to[1] - road.from[1];
+  const side = (point) => dx * (point[2] - road.from[1]) - dz * (point[0] - road.from[0]);
+  const a = side(from),
+    b = side(to);
+  if (a * b >= -1e-8) return true;
+  const fraction = a / (a - b);
+  const x = from[0] + (to[0] - from[0]) * fraction;
+  const z = from[2] + (to[2] - from[2]) * fraction;
+  const along = ((x - road.from[0]) * dx + (z - road.from[1]) * dz) / (dx * dx + dz * dz || 1);
+  return along < 0 || along > 1;
+}
+
+// Every retained actor owner uses the same one-time placement contract after
+// reattachment to the new world. It never restarts a visit or changes a tour.
+function revalidateRetainedActors(d, actors, roads) {
+  for (const actor of actors) {
+    const margin = actor.motion?.radius ?? actor.radius ?? 0.29;
+    const from = actor.root.getWorldPosition(new THREE.Vector3()).toArray();
+    if (d.navigation.clear(from, margin)) continue;
+    if (
+      !placeSafely(d, actor.root, margin, (to) =>
+        roads.every((road) => sameStreetSide(from, to, road)),
+      )
+    )
+      continue;
+    if (actor.motion) {
+      actor.motion.x = actor.root.position.x;
+      actor.motion.z = actor.root.position.z;
+      actor.motion.sx = actor.motion.x;
+      actor.motion.sz = actor.motion.z;
+      actor.motion.vx = actor.motion.vz = 0;
+      actor.motion.path = null;
+      if (actor.motion.exitTarget && !d.navigation.clear(actor.motion.exitTarget, margin))
+        actor.motion.exitTarget = null;
+    }
+    actor.routeValidation = undefined;
+  }
+}
+
 export function rebuildTown(
   d,
   town,
@@ -729,6 +860,11 @@ export function rebuildTown(
     (d.actors ?? []).filter((a) => a.persistentKey).map((a) => [a.persistentKey, a]),
   );
   for (const actor of d.retainedActors.values()) actor.root.removeFromParent();
+  const retainedActorGroups = [
+    [...d.retainedActors.values()],
+    [...d.retainedVipActors.values()],
+    [...(d.liveVisitors?.actors ?? [])],
+  ];
   d.actorRenderer.clear();
   d.staticScenery ??= new TownScenery();
   d.staticScenery.detach();
@@ -737,7 +873,7 @@ export function rebuildTown(
   d.world = new THREE.Group();
   d.scene.add(d.world);
   d.actors = [];
-  for (const a of d.retainedActors.values()) d.world.add(a.root);
+  for (const actors of retainedActorGroups) for (const actor of actors) d.world.add(actor.root);
   for (const a of d.retainedAnimals.values()) d.world.add(a.root);
   d.trafficActors = [];
   d.motions = [];
@@ -819,6 +955,12 @@ export function rebuildTown(
   }
   d.refreshServiceDrops();
   d.navigation = townNavigation(d.world);
+  // A new renderer/catalog may restore a completed wing around an accepted
+  // runtime position. Revalidate retained residents once against the rebuilt
+  // index before its first frame, including station workers with held routes.
+  // Clear positions, identities, work phases and pending destinations stay put.
+  const placementRoads = townTracks(town).filter((road) => road.width >= 0.85);
+  for (const actors of retainedActorGroups) revalidateRetainedActors(d, actors, placementRoads);
   d.buildingRenderer.sync(d.world.children.filter((child) => child.userData.static));
   d.renderer.shadowMap.needsUpdate = true;
   if (d.overview) d.frameTown();

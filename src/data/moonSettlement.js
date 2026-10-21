@@ -53,6 +53,211 @@ export const MOON_RING_ROAD = 20.5;
 export const MOON_LOT_RADIUS = 5;
 export const MOON_CRATER_RADIUS = 46;
 
+// Public arrivals use the actual hatch, service forecourt or stair foot. The
+// bends avoid authored benches, cargo and rovers on each pad. All geometry and
+// the fallback map consume these same routes; no separate navigation is saved.
+const MOON_ACCESS_WIDTH = 0.8;
+const MOON_PAD_RADII = Object.freeze({
+  ribbonLanding: 5.2,
+  newHollowCommons: 4.8,
+  settlerDomes: 4.6,
+  craterIceWell: 4.4,
+  craterHomesteads: 4.8,
+  earthlightGreenhouse: 4.6,
+  willowkinDome: 4.8,
+  moonstoneWorkshop: 4.4,
+  earthriseLookout: 4.4,
+  roverBarn: 4.6,
+});
+export const moonPadRadius = (kind) => MOON_PAD_RADII[kind] ?? MOON_LOT_RADIUS;
+const MOON_ARRIVALS = Object.freeze({
+  ribbonLanding: [
+    [0, 1.34],
+    [0, 6],
+  ],
+  settlerDomes: [
+    [-1.5, 0.67],
+    [-1.5, 5.81],
+  ],
+  craterIceWell: [
+    [0, 1.8],
+    [0, 6],
+  ],
+  earthlightGreenhouse: [
+    [-2.83, -1.4],
+    [-5.84, -1.4],
+  ],
+  willowkinDome: [
+    [0, 1.92],
+    [0, 6],
+  ],
+  newHollowCommons: [
+    [0, 0.43],
+    [0, 1.2],
+    [-1.1, 1.4],
+    [-1.1, 5.9],
+  ],
+  craterHomesteads: [
+    [-1.6, -0.08],
+    [-1.6, 1.4],
+    [0, 1.4],
+    [0, 6],
+  ],
+  moonstoneWorkshop: [
+    [-0.6, 0.18],
+    [-0.6, 5.97],
+  ],
+  roverBarn: [
+    [-0.8, -0.08],
+    [-0.8, 0.6],
+    [0, 0.9],
+    [0, 6],
+  ],
+  earthriseLookout: [
+    [-0.7, 2.62],
+    [-0.7, 5.96],
+  ],
+});
+
+export function moonLotPose(id, lots = MOON_LOTS) {
+  const [x, z] = lots[id] ?? [0, 0];
+  const landingZ = lots.ribbonLanding?.[1] ?? -8;
+  // Preserve the established scene pose. Local +z is the authored front apron.
+  const rotation = id === 'ribbonLanding' ? 0 : Math.atan2(-x, -(z - landingZ)) + Math.PI;
+  return { x, z, rotation };
+}
+
+const moonWorldPoint = ([x, z], pose) => [
+  pose.x + x * Math.cos(pose.rotation) + z * Math.sin(pose.rotation),
+  pose.z - x * Math.sin(pose.rotation) + z * Math.cos(pose.rotation),
+];
+
+export function moonEntrance(id, level = 3, lots = MOON_LOTS) {
+  const local =
+    id === 'willowkinDome' && level >= 2 ? [0, 2.48] : (MOON_ARRIVALS[id]?.[0] ?? [0, 1]);
+  return moonWorldPoint(local, moonLotPose(id, lots));
+}
+
+export function moonSegmentDistance(x, z, a, b) {
+  const dx = b[0] - a[0],
+    dz = b[1] - a[1];
+  const t = Math.max(
+    0,
+    Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz || 1)),
+  );
+  return Math.hypot(x - a[0] - t * dx, z - a[1] - t * dz);
+}
+
+// A short exterior arc can turn around a pad whose front faces away from the
+// ring. Select the shortest clear arc+ring connection once, rather than drawing
+// a radial spoke through a building or changing its established orientation.
+export function moonApproach(id, level = 3, lots = MOON_LOTS) {
+  const pose = moonLotPose(id, lots);
+  const local = (
+    MOON_ARRIVALS[id] ?? [
+      [0, 1],
+      [0, 6],
+    ]
+  ).map((point) => [...point]);
+  if (id === 'willowkinDome' && level >= 2) local[0] = [0, 2.48];
+  const padRadius = moonPadRadius(id),
+    rampStart = (padRadius - 0.25) * Math.cos(Math.PI / 8) - 0.05,
+    rampEnd = padRadius + 0.35;
+  // Turn close around the actual pad, rather than extending a uniform six-unit
+  // hook beyond smaller pads. The strip's inside edge remains off the pad wall.
+  const gateRadius = padRadius + 0.6;
+  const last = local.at(-1),
+    lastRadius = Math.hypot(...last);
+  local[local.length - 1] = last.map((value) => (value * gateRadius) / lastRadius);
+  const a = local.at(-2),
+    b = local.at(-1);
+  const crossing = (radius) => {
+    let low = 0,
+      high = 1;
+    for (let n = 0; n < 24; n++) {
+      const t = (low + high) / 2;
+      if (Math.hypot(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t) < radius) low = t;
+      else high = t;
+    }
+    return [a[0] + (b[0] - a[0]) * high, a[1] + (b[1] - a[1]) * high];
+  };
+  local.splice(local.length - 1, 0, crossing(rampStart), crossing(rampEnd));
+  const apron = local.map((point) => moonWorldPoint(point, pose));
+  const gate = apron.at(-1);
+  const startAngle = Math.atan2(gate[1] - pose.z, gate[0] - pose.x);
+  const radius = Math.hypot(gate[0] - pose.x, gate[1] - pose.z);
+  const clear = (a, b, own = true) =>
+    Object.entries(lots).every(
+      ([other, [x, z]]) =>
+        (!own && other === id) ||
+        moonSegmentDistance(x, z, a, b) >=
+          (other === id ? padRadius + 0.45 : MOON_LOT_RADIUS + 0.8),
+    );
+  let best = null;
+  for (const direction of [-1, 1]) {
+    const arc = [gate];
+    let length = 0;
+    for (let n = 0; n <= 16; n++) {
+      if (n) {
+        const a = startAngle + (direction * n * Math.PI) / 16;
+        const point = [pose.x + Math.cos(a) * radius, pose.z + Math.sin(a) * radius];
+        if (!clear(arc.at(-1), point, false)) break;
+        length += Math.hypot(point[0] - arc.at(-1)[0], point[1] - arc.at(-1)[1]);
+        arc.push(point);
+      }
+      for (let j = 0; j < 96; j++) {
+        const a = (j * Math.PI) / 48;
+        const end = [Math.cos(a) * MOON_RING_ROAD, Math.sin(a) * MOON_RING_ROAD];
+        const cost = length + Math.hypot(end[0] - arc.at(-1)[0], end[1] - arc.at(-1)[1]);
+        if ((!best || cost < best.cost) && clear(arc.at(-1), end))
+          best = { cost, points: [...arc, end] };
+      }
+    }
+  }
+  // Incomplete future layouts still get finite, visible access data. Shipped
+  // layouts are regression checked to always find a clear exterior connection.
+  const fallback = [Math.cos(startAngle) * MOON_RING_ROAD, Math.sin(startAngle) * MOON_RING_ROAD];
+  return {
+    id,
+    width: MOON_ACCESS_WIDTH,
+    entry: apron[0],
+    gate,
+    pose,
+    padRadius,
+    rampStart,
+    rampEnd,
+    clear: !!best,
+    points: [...apron, ...(best?.points.slice(1) ?? [fallback])],
+    apronSegments: apron.length - 1,
+  };
+}
+
+let cachedMoonApproaches;
+const defaultMoonApproaches = () =>
+  (cachedMoonApproaches ??= Object.freeze(Object.keys(MOON_LOTS).map((id) => moonApproach(id))));
+export function moonApproaches(levels = null, lots = MOON_LOTS) {
+  if (!levels && lots === MOON_LOTS) return defaultMoonApproaches();
+  if (lots === MOON_LOTS)
+    return defaultMoonApproaches()
+      .filter(({ id }) => levels[id] > 0)
+      .map((route) => {
+        if (route.id !== 'willowkinDome' || levels[route.id] >= 2) return route;
+        const entry = moonWorldPoint(MOON_ARRIVALS.willowkinDome[0], route.pose);
+        return { ...route, entry, points: [entry, ...route.points.slice(1)] };
+      });
+  return Object.keys(lots)
+    .filter((id) => !levels || levels[id] > 0)
+    .map((id) => moonApproach(id, levels?.[id] ?? 3, lots));
+}
+
+export function moonPathDistance(x, z, approaches = defaultMoonApproaches()) {
+  let distance = Infinity;
+  for (const { points } of approaches)
+    for (let n = 1; n < points.length; n++)
+      distance = Math.min(distance, moonSegmentDistance(x, z, points[n - 1], points[n]));
+  return distance;
+}
+
 // Letters home from New Hollow, one for each finished Moon building. They are
 // derived from building levels, so nothing new is saved.
 const LETTERS = {

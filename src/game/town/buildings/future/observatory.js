@@ -29,6 +29,11 @@ function arched(d, g, x, y, z, p, w = 0.3, h = 0.8) {
 }
 
 export const observatoryKit = {
+  finishRoof(d, g, s, { w, y, z }) {
+    d.box(g, w + 0.08, 0.1, 0.76, 0, y, z, s.palette.timber);
+    d.mesh(g, futureShape(d, 'lowDome'), [w * 0.52, 0.3, 0.38], [0, y + 0.05, z], s.palette.shell);
+    return y + 0.35;
+  },
   block(d, g, s, { x = 0, z = 0, w, dep, h }) {
     const p = s.palette;
     d.box(g, w + 0.3, 0.26, dep + 0.3, x, 0.13, z, p.shell);

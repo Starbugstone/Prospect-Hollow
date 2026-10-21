@@ -9,6 +9,10 @@ function windowPane(d, g, x, y, z, p, w = 0.4, h = 0.5) {
 }
 
 export const homesteadKit = {
+  finishRoof(d, g, s, { w, y, z }) {
+    d.mesh(g, futureShape(d, 'gable'), [w + 0.12, 0.3, 0.76], [0, y, z], s.palette.roof);
+    return y + 0.3;
+  },
   block(d, g, s, { x = 0, z = 0, w, dep, h, porch = true }) {
     const p = s.palette;
     d.box(g, w + 0.24, 0.22, dep + 0.24, x, 0.11, z, p.deep);

@@ -207,12 +207,49 @@ dimensions and checks parcel frontage, art budgets and synthetic successors.
 Skysail's sail corners have supports reaching the local ground; rooftop crowns
 attach to the saddle centre rather than the height of its raised corners.
 
-Later future modernizations use `futureBuildingStages()` in both the WebGL and
-SVG renderers. The new finish tier controls decorations, while `structureLevel`
+City, rounded, cozy and future modernizations use `buildingStages()` from
+`src/data/buildingStages.js` in both WebGL and SVG renderers. The former
+`futureBuildingStages()` export remains an alias. Call it with the building's
+`finishEra()`, not the town era: partial modernization must preserve each plot's
+actual finish. `finishLevel` controls the current paid grade, while `structureLevel`
 retains completed construction: annexes, homes, islands, dew towers, harbour
 berths, airport wings/lounge and space-elevator equipment. Native construction
 still reveals these in its original tiers. Synthetic successor definitions inherit
 their architecture's stage rules; unknown definitions keep native behavior.
+Moon settlement kinds are native construction and never inherit valley tiers.
+
+A paid finish adds an attached, supported element for the building's purpose;
+it never removes a completed structure. `heritageUpgrade(kind)` in
+`src/data/heritageUpgrades.js` is the shared purpose map. An era supplies the
+module's materials and roof language. `moduleLevel` retains the completed purpose
+module at a successor era's first tier: an upper storey remains an upper storey,
+and a service tower remains a working tower. Each building has one mature module
+per purpose, never a stack of new rooms for each era. The second finish tier
+upgrades its frontage or glazing; the third upgrades supported operational
+equipment within the same reserved envelope. Pots, lamps, rails and nameboards
+do not count as either paid step. Native construction keeps its original tier
+sequence. Regression coverage checks semantic counterparts across handovers,
+structural volume, fixed envelopes, actual frontage/operation grade changes and
+per-building geometry ceilings across all fifteen eras.
+
+One narrow replacement exception is the River & Rail well reservoir: the old
+pitched canopy physically intersects the new tank's frame, and the tank takes
+over its shelter and water function. The replacement removes that conflicting
+roof, not the well or completed surrounding construction. It is not permission
+to reset buildings at later era boundaries.
+
+Physical nameboards use one surface-probed mount in `TownSignMounts.js`:
+frontage or canopy fascia first, grounded side directories for open sites.
+Directories stay behind the entry apron and follow the plot's road setback.
+Keep boards readable from the default camera and keep all posts out of roads,
+sidewalks, private footpaths and authored door approaches. Atlas lettering still
+batches town-wide. Probes run at plot construction, never in the frame loop.
+
+Any retained wing or new ground-level module requires regenerated footprint
+families (`assets:footprints`, then `check:footprints`), navigation/door-anchor,
+pedestrian/animal, station, bridge and mine clearance checks. Check real front,
+reverse and default-camera views as well as bounds: a connected route graph
+alone does not prove that a doorway or rendered driveway is clear.
 Rooftop kits receive both the roof peak and `baseY` (its eave), so offset masts,
 dishes and arches extend into the roof instead of hovering over a slope. Airport
 crowns are built on the lounge itself. Lunar lookout rails and the workshop beacon

@@ -1,10 +1,9 @@
 <template>
   <g :transform="`translate(${x} ${y})`">
     <ellipse
-      v-if="cozyStyle === 'riverlight'"
       :rx="radius"
       :ry="radius * 0.3"
-      :fill="palette.shell"
+      :fill="cozyStyle === 'riverlight' ? palette.shell : palette.timber"
     />
     <g transform="scale(1 .45)">
       <path

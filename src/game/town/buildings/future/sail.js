@@ -26,6 +26,10 @@ function porthole(d, g, x, y, z, p, r = 0.16) {
 }
 
 export const sailKit = {
+  finishRoof(d, g, s, { w, y, z }) {
+    d.mesh(g, futureShape(d, 'peak'), [w * 0.72, 0.34, 0.5], [0, y, z], s.palette.roof);
+    return y + 0.34;
+  },
   // A raised deck on short stilts carries every cabin above the breeze line.
   block(d, g, s, { x = 0, z = 0, w, dep, h }) {
     const p = s.palette,

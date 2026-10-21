@@ -3,10 +3,16 @@ import { parkedVehicle } from '../TownVehicles';
 import { addSquareModernization } from '../TownSquare';
 import { ERAS, eraEvolution } from '../../../data/eras';
 import { resolveCityAsset } from '../../../data/eraDefinitions';
-import { futureBuildingStages, isFutureEra } from '../../../data/futureArchitecture';
+import { buildingStages } from '../../../data/buildingStages';
 import { airportAppearance } from '../../../data/airport';
 import airportLayout from '../../../data/airportLayout.json';
 import { addCityLandmarkDetails } from './CityLandmarkDetails';
+import {
+  addAirportFinish,
+  addCityFinish,
+  addConnectedCityIdentity,
+  supportCityModel,
+} from './CityBuildingDetails';
 import { addFishingDock } from './river';
 import { CITY_FAMILIES, isCityEra } from '../../../data/city';
 import { blenderModel, leisureModel } from '../LeisureAssets';
@@ -44,14 +50,26 @@ const ARCHITECTURES = {
   twin: FUTURE,
 };
 
-export const futureModel = (d, parent, name) => blenderModel(d, parent, null, name, 'future');
+export const futureModel = (d, parent, name) => {
+  const root = blenderModel(d, parent, null, name, 'future');
+  return name === 'concert' ? supportCityModel(d, root) : root;
+};
 export const cityModel = (d, parent, name) => {
   const inherited = resolveCityAsset(name, ERAS);
-  return blenderModel(d, parent, null, inherited, cityFamily(inherited));
+  const root = blenderModel(d, parent, null, inherited, cityFamily(inherited));
+  const marker = inherited.indexOf('-kind-');
+  return marker >= 0 && !inherited.endsWith('-finish')
+    ? supportCityModel(
+        d,
+        root,
+        cityAppearance(inherited.slice(0, marker), inherited.slice(marker + 6)),
+      )
+    : root;
 };
 
 // Meshes are shared architectural pieces exported from Blender, not per-plot copies.
-// `fountainEra` lets a later style reuse a city square shell with its own centerpiece.
+// `lifecycleEra` lets a later style reuse a shell while keeping its own stages
+// and square centerpiece.
 export function renderCityBuilding(
   d,
   parent,
@@ -60,7 +78,7 @@ export function renderCityBuilding(
   level,
   era,
   serviceLevel = 3,
-  fountainEra = era,
+  lifecycleEra = era,
 ) {
   if (!isCityEra(era) || !CITY_FAMILIES[kind] || kind === 'bridge') return false;
   if (
@@ -95,13 +113,18 @@ export function renderCityBuilding(
   root.name = `${era} ${kind} level ${level}`;
   const landmark = ['airport', 'radio', 'concert', 'television', 'skyline'].includes(family);
   const profile = eraEvolution(era);
+  // A delegated shell keeps its original palette, while construction follows
+  // the actual era (Motor Age reuses Postwar architectural assets).
+  const {
+    structureLevel,
+    finishLevel,
+    modernizing,
+    moduleLevel = structureLevel,
+  } = buildingStages(kind, lifecycleEra, level, serviceLevel);
   if (landmark) {
     const asset = family === 'airport' ? airportAppearance(era).asset : family;
-    futureModel(d, root, asset);
+    futureModel(d, root, asset).userData.buildingPart = 'main';
     if (family === 'airport') {
-      const structureLevel = isFutureEra(era)
-        ? futureBuildingStages(kind, era, level, serviceLevel).structureLevel
-        : level;
       const apron = airportLayout.passengerApron;
       d.box(root, apron.width, 0.05, apron.depth, apron.x, 0.115, apron.z, '#9baba2').name =
         'Passenger arrival apron';
@@ -113,17 +136,31 @@ export function renderCityBuilding(
         const lounge = d.group(root);
         lounge.name = 'Airport rooftop observation lounge';
         d.box(lounge, 4.8, 0.18, 3.2, 4.5, floor, -2.8, a.roof);
+        if (!a.clerestory && !a.skylights)
+          d.box(lounge, 4.45, 0.15, 2.8, 4.5, floor - 0.145, -2.8, a.roof).name =
+            'Observation lounge roof plinth';
         const style = ARCHITECTURES[profile.architecture];
-        if (style?.lounge) style.lounge(d, lounge, 4.5, floor, -2.8, era, level);
+        if (style?.lounge) style.lounge(d, lounge, 4.5, floor, -2.8, era, structureLevel);
         else {
           d.box(lounge, 4.4, 1.6, 2.8, 4.5, floor + 0.85, -2.8, '#85b8c8');
-          d.box(lounge, 4.9, 0.18, 3.3, 4.5, floor + 1.75, -2.8, a.roof);
+          d.box(lounge, 4.9, 0.18, 3.3, 4.5, floor + 1.75, -2.8, a.roof).name =
+            'Observation lounge roof';
           for (const x of [2.3, 4.5, 6.7])
             d.box(lounge, 0.1, 1.6, 0.15, x, floor + 0.85, -1.35, a.frame);
         }
       }
       ARCHITECTURES[profile.architecture]?.airport?.(d, root, era, level);
-    } else addCityLandmarkDetails(d, root, family, era, level);
+      if (moduleLevel >= 2)
+        addAirportFinish(
+          d,
+          root,
+          finishLevel,
+          profile.architecture === 'rounded',
+          airportAppearance(era),
+          moduleLevel,
+        );
+    } else
+      addCityLandmarkDetails(d, root, family, era, finishLevel, structureLevel, modernizing, kind);
     if (family === 'airport') d.sign(root, label, 4.2, 4.5, 2.7, 1.22);
     else d.sign(root, label, 3, 0, 3.2, 2);
     return true;
@@ -138,18 +175,19 @@ export function renderCityBuilding(
     if (level >= 2) cityModel(d, root, `${era}-finish`).position.x = -2;
     if (level >= 3) cityModel(d, root, `${era}-finish`).position.x = 2;
   } else if (family === 'square') {
-    buildTownSquare(d, root, serviceLevel, false, fountainEra);
+    buildTownSquare(d, root, serviceLevel, false, lifecycleEra);
     addSquareModernization(d, root, level, appearance.roof);
     return true;
   } else {
-    cityModel(d, root, asset ?? `${era}-${family}`);
+    cityModel(d, root, asset ?? `${era}-${family}`).userData.buildingPart = 'main';
     if (asset !== appearance.asset) root.userData.substitute = true;
-    if (level >= 2) {
+    if (structureLevel >= 2) {
       const wing = cityModel(d, root, `${era}-wing`);
       wing.position.x = -(appearance.width ?? 3.65) / 2 + 1.75;
+      wing.userData.buildingPart = 'sideWing';
     }
-    if (level >= 3)
-      cityModel(d, root, appearance.asset ? `${appearance.asset}-finish` : `${era}-finish`);
+    if (moduleLevel >= 2) addCityFinish(d, root, kind, era, finishLevel, moduleLevel);
+    addConnectedCityIdentity(d, root, kind, era);
     if (['garage', 'stable', 'busDepot'].includes(kind)) {
       // A shell with a drive-in canopy parks its car beneath it, clear of the columns
       // and the forecourt lamp.
@@ -170,9 +208,19 @@ export function addCityModernization(d, parent, kind, era, level) {
   root.name = `${era} bridge approaches ${level}`;
   const profile = eraEvolution(era);
   if (profile.detailAsset) {
-    const cue = futureModel(d, parent, profile.detailAsset);
-    cue.scale.setScalar(0.4);
-    cue.position.set(-6.5, 0, -2.5);
+    // Facade/rooftop detail packs have no host building on a bridge bank.
+    // A grounded directory uses the same reserved verge, clear of the deck.
+    const a = cityAppearance(era),
+      x = -6.35,
+      z = -2.2;
+    const kiosk = d.group(parent);
+    kiosk.name = 'Bridge information kiosk';
+    d.box(kiosk, 0.5, 0.12, 0.4, x, 0.06, z, a.wall).name = 'Bridge kiosk footing';
+    d.box(kiosk, 0.1, 1.2, 0.12, x, 0.7, z, a.roof).name = 'Bridge kiosk support';
+    d.box(kiosk, 1, 0.7, 0.16, x, 1.42, z, a.roof);
+    d.box(kiosk, 0.85, 0.55, 0.025, x, 1.42, z + 0.1, '#85b8c8');
+    for (let n = 0; n < 3; n++)
+      d.box(kiosk, 0.55 - n * 0.1, 0.04, 0.02, x, 1.6 - n * 0.15, z + 0.12, a.wall);
   }
   if (level >= 2) {
     const garden = cityModel(d, parent, `${era}-finish`);
