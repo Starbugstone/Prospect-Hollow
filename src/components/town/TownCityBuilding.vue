@@ -289,6 +289,17 @@
         />
         <path d="M-103-83-27-110 95-77 19-51Z" :fill="city.roof" />
         <path
+          v-if="feature === 'carriage'"
+          :d="
+            level >= 2
+              ? 'M-91-75v17l17 6v-17ZM69-79l15-8v17l-15 8Z'
+              : 'M-91-75v11l17 6v-11ZM69-79l15-8v11l-15 8Z'
+          "
+          :fill="level >= 2 ? '#9cbbb5' : city.roof"
+          data-carriage-upper-glazing="true"
+        />
+        <path
+          v-else
           d="M-91-75v47l17 6v-47m143 37v-47l15-8v47"
           :fill="level >= 2 ? '#9cbbb5' : city.roof"
         />

@@ -41,7 +41,9 @@ const doorway = (d, g, x, z, width = 0.7, height = 1.15) =>
   d.box(g, width, height, 0.14, x, height / 2 + 0.05, z, P.deep, true);
 const lamp = (d, g, x, z, height = 1.5) => {
   d.rod(g, [x, 0.05, z], [x, height, z], 0.045, P.accent);
-  pod(d, g, 0.15, 0.1, 0.15, x, height + 0.05, z, P.light);
+  // Tiny globes keep the same outline and bounds with fewer latitude rings.
+  d.geometries['rounded-lamp-globe'] ??= new SphereGeometry(1, 10, 4);
+  d.mesh(g, 'rounded-lamp-globe', [0.15, 0.1, 0.15], [x, height + 0.05, z], P.light);
 };
 const shrub = (d, g, x, z, size = 0.3) => {
   disc(d, g, size + 0.08, 0.14, x, z, P.shell, 0.2);

@@ -407,10 +407,10 @@ export function animatePerson(d, actor, time) {
       root.position.z -= tangent.x * offset;
     }
   }
-  // Route samples provide pose/height, while locomotion owns an established
-  // walker's accepted ground position. Population/visitor attachment can render
-  // before its next physics step, including after a retained-solid correction.
-  if (Number.isFinite(actor.motion?.x) && Number.isFinite(actor.motion?.z)) {
+  // Prepared route samples provide pose/height; locomotion owns their accepted
+  // ground position, including after a retained-solid correction. Curve-only
+  // walkers still need their new sampled position as the next locomotion target.
+  if (actor.walkPath && Number.isFinite(actor.motion?.x) && Number.isFinite(actor.motion?.z)) {
     root.position.x = actor.motion.x;
     root.position.z = actor.motion.z;
   }

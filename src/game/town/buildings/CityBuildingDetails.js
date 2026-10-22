@@ -437,14 +437,19 @@ export function addCityFinish(d, parent, kind, era, level = 3, moduleLevel = lev
     }
     {
       const frontage = modulePart(d, root, 'frontage');
+      // The stable's retained 2CV occupies the side bay. Hang its glazing from
+      // the shelter underside, preserving an open drive-through below it.
+      const frontageHeight =
+        feature === 'carriage' ? (level >= 2 ? 0.65 : 0.45) : level >= 2 ? y - 0.22 : y * 0.55;
+      const frontageY = feature === 'carriage' ? y - 0.075 - frontageHeight / 2 : y / 2;
       for (const side of [-1, 1])
         d.box(
           frontage,
           0.1,
-          level >= 2 ? y - 0.22 : y * 0.55,
+          frontageHeight,
           0.9,
           side * (span / 2 - 0.15),
-          y / 2,
+          frontageY,
           retail ? 1.95 : 1.8,
           level >= 2 ? '#9cbbb5' : a.roof,
         ).name = 'Glazed working arcade bay';
