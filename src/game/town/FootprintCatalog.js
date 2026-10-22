@@ -4,6 +4,7 @@ import { footprintKey, geometryFootprints } from './BuildingFootprints';
 import { BUILDING_BY_ID } from '../../data/town';
 import { eraEvolution } from '../../data/eras';
 import { available } from './assets/MeshCatalog';
+import { MINE_SIGN_BOARDS, mineSignMountFor } from './mine/MineSignCatalog';
 const ready = new Map(),
   pending = new Map();
 export async function loadFootprints(town) {
@@ -61,7 +62,8 @@ export function matureEnvelopeFor(id, town) {
     return null;
   return envelope;
 }
-export function signMountFor(id, town) {
+export function signMountFor(id, town, context) {
+  if (id === 'mine') return mineSignMountFor(MINE_SIGN_BOARDS.entrance, town.era, context);
   if (!BUILDING_BY_ID[id]) return null;
   // An unbuilt plot still carries createEraState's frontier finish. Its generic
   // marker/framing uses no finish architecture; use the current-era stage-zero

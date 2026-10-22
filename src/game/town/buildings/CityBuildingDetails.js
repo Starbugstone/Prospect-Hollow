@@ -270,7 +270,7 @@ function addTowerClock(d, parent, x, y, z, roof, wall, grade) {
   d.box(root, radius * 0.65, 0.035, 0.025, x + radius * 0.2, y + rise, z + 0.092, roof);
 }
 
-function addOccupiedBalcony(d, structure, parent, x, base, roof, wall, grade) {
+function addOccupiedBalcony(d, structure, parent, x, base, roof, wall, grade, canopy) {
   const deckTop = base + 0.08;
   d.box(structure, 1.35, 0.12, 0.85, x, base + 0.02, 1.35, roof).name = 'Occupied balcony deck';
   for (const side of [-1, 1]) {
@@ -284,6 +284,24 @@ function addOccupiedBalcony(d, structure, parent, x, base, roof, wall, grade) {
     ).name = 'Balcony wall bracket';
   }
   d.box(structure, 1.27, 0.55, 0.08, x, deckTop + 0.275, 1.735, '#9cbbb5').name = 'Balcony parapet';
+  // The mature terrace keeps its bearing frame across every era finish. The
+  // final working shade spans from the existing cowl to this front beam,
+  // entirely inside the completed balcony/cowl envelope and above the street.
+  const beamTop = canopy.underside - 0.1;
+  const postTop = beamTop - 0.1;
+  for (const side of [-1, 1])
+    d.box(
+      structure,
+      0.07,
+      postTop - deckTop,
+      0.07,
+      x + side * 0.58,
+      (deckTop + postTop) / 2,
+      1.72,
+      wall,
+    ).name = 'Terrace canopy bearing post';
+  d.box(structure, 1.27, 0.1, 0.1, x, beamTop - 0.05, 1.72, wall).name =
+    'Terrace canopy front beam';
   const operation = modulePart(d, parent, 'operation');
   operation.name = 'Occupied terrace seating';
   const improved = grade >= 3;
@@ -298,6 +316,19 @@ function addOccupiedBalcony(d, structure, parent, x, base, roof, wall, grade) {
     wall,
   ).name = 'Terrace bench';
   if (improved) {
+    const back = canopy.front - 0.045;
+    const front = 1.77;
+    for (const side of [-1, 0, 1])
+      d.box(
+        operation,
+        0.24,
+        0.1,
+        front - back,
+        x + side * 0.4,
+        canopy.underside - 0.05,
+        (back + front) / 2,
+        roof,
+      ).name = 'Working terrace shade louver';
     d.box(operation, 0.9, 0.4, 0.1, x - 0.12, deckTop + 0.56, 1.04, roof).name =
       'Terrace bench back';
     d.box(operation, 0.1, 0.48, 0.1, x + 0.46, deckTop + 0.24, 1.5, wall);
@@ -586,7 +617,11 @@ export function addCityFinish(d, parent, kind, era, level = 3, moduleLevel = lev
       '#9cbbb5',
     ).name = 'Flush control room glazing';
     addTowerClock(d, root, m.x, m.y + hoodHeight + 0.12, m.z, a.roof, a.wall, level);
-  } else if (occupied) addOccupiedBalcony(d, structure, root, x, base, a.roof, a.wall, level);
+  } else if (occupied)
+    addOccupiedBalcony(d, structure, root, x, base, a.roof, a.wall, level, {
+      underside: m.y + hoodHeight,
+      front: m.z + (m.depth + 0.15) / 2,
+    });
   else {
     // Solar strips retain the complete cowl roof. Its small front cantilever
     // carries the visible machinery clear of those three working panels.

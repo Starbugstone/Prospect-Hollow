@@ -81,17 +81,17 @@ export class TownPrimitives {
     }
     const context = this.plotSignRoot ?? parent;
     const input = signMountInput(parent, width, x, y, z, context);
-    const generated =
-      !parent.userData.authoredSignMount &&
-      generatedSignMount(context.userData.generatedSignMount, input);
+    const authored = parent.userData.authoredSignMount && {
+      brackets: [],
+      ...parent.userData.authoredSignMount,
+    };
+    const generated = !authored && generatedSignMount(context.userData.generatedSignMount, input);
     const mount =
-      generated || signMount(parent, width, x, y, z, (this.signMountCache ??= new Map()), context);
+      authored ||
+      generated ||
+      signMount(parent, width, x, y, z, (this.signMountCache ??= new Map()), context);
     context.userData.resolvedSignMount = { input, mount };
-    context.userData.signMountSource = parent.userData.authoredSignMount
-      ? 'authored'
-      : generated
-        ? 'generated'
-        : 'resolver';
+    context.userData.signMountSource = authored ? 'authored' : generated ? 'generated' : 'resolver';
     ({ width, x, y, z } = mount);
     const board = this.box(parent, width + 0.1, 0.43, 0.1, x, y, z, '#8c6947', true);
     board.name = 'Mounted building nameboard';

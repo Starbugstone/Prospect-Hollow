@@ -10,6 +10,8 @@ import { GARDEN_PARCELS } from '../src/data/townGardenDistrict';
 import { ALL_MESH_FAMILIES, loadFamilies } from '../src/game/town/assets/MeshCatalog';
 import { geometryFootprints, footprintKey } from '../src/game/town/BuildingFootprints';
 import { plotSetbackEnvelopeKey } from '../src/game/town/FootprintCatalog';
+import { addMinePortal } from '../src/game/town/mine/MinePortal';
+import { MINE_SIGN_BOARDS, mineSignKey } from '../src/game/town/mine/MineSignCatalog';
 
 export async function generateFootprints({ eras = null } = {}) {
   const definitions = ERAS.filter((era) => era.enabled);
@@ -22,12 +24,45 @@ export async function generateFootprints({ eras = null } = {}) {
     geometries: createTownGeometries(),
     materials: new Map(),
   });
+  // Generation verifies the physical source, even when an eager special-scene
+  // catalog already exists. Never regenerate a record by copying its old mount.
+  d.sign = function (...args) {
+    (this.plotSignRoot ?? args[0]).userData.generatedSignMount = null;
+    return TownDiorama.prototype.sign.apply(this, args);
+  };
   const keys = {},
     shapes = [],
     setbacks = {},
     signs = {},
+    mineSigns = {},
     known = new Map();
   const labels = Object.fromEntries(BUILDINGS.map((b) => [b.id, b.shortName]));
+  labels.mine = 'Mine';
+  // Small scene records are refreshed for every era even in a scoped plot run.
+  // Both assemblies are the production renderers; no yard/animation pass is
+  // necessary for a board resolved before those parts exist.
+  for (const era of definitions) {
+    d.town = { ...createTown(), era: era.id };
+    const entrance = new Group();
+    entrance.position.set(PLOTS.mine[0], 0.08, PLOTS.mine[1]);
+    try {
+      d.buildPlot('mine', entrance, d.town, labels);
+      if (entrance.userData.resolvedSignMount)
+        mineSigns[mineSignKey(MINE_SIGN_BOARDS.entrance, era.id)] =
+          entrance.userData.resolvedSignMount;
+    } finally {
+      d.clearGroup(entrance);
+    }
+    const root = new Group();
+    root.position.set(PLOTS.mine[0], 0.08, PLOTS.mine[1]);
+    try {
+      const portal = addMinePortal(d, root, era.id);
+      if (portal.userData.resolvedSignMount)
+        mineSigns[mineSignKey(MINE_SIGN_BOARDS.portal, era.id)] = portal.userData.resolvedSignMount;
+    } finally {
+      d.clearGroup(root);
+    }
+  }
   for (const era of definitions.filter((era) => !eras || eras.includes(era.id))) {
     d.town = { ...createTown(), era: era.id };
     for (const b of BUILDINGS)
@@ -111,5 +146,5 @@ export async function generateFootprints({ eras = null } = {}) {
   }
   Object.values(d.geometries).forEach((g) => g.dispose());
   d.materials.forEach((m) => m.dispose());
-  return { keys, shapes, setbacks, signs };
+  return { keys, shapes, setbacks, signs, mineSigns };
 }

@@ -390,6 +390,10 @@
     >
       <path d="M-132-88-114-101-78-91-96-78Z" :fill="city.roof" />
       <path d="M-126-87-120-72m35-15-5 15" :stroke="city.wall" stroke-width="4" />
+      <g data-terrace-canopy-frame="true" :stroke="city.wall" fill="none">
+        <path d="M-128-89v-33m32 9v-33" stroke-width="4" />
+        <path d="M-131-123-93-112" stroke-width="6" />
+      </g>
       <path :d="level >= 3 ? 'M-125-107v-15l26 8v15Z' : 'M-123-104v-9l21 6v9Z'" :fill="city.wall" />
       <path
         v-if="level >= 3"
@@ -404,6 +408,11 @@
         :stroke="city.wall"
         stroke-width="2"
       />
+      <g v-if="level >= 3" data-working-terrace-shade="true" :stroke="city.roof" stroke-width="7">
+        <path data-terrace-shade-louver="true" d="M-126-122-110-134" />
+        <path data-terrace-shade-louver="true" d="M-114-118-98-130" />
+        <path data-terrace-shade-louver="true" d="M-102-115-86-127" />
+      </g>
     </g>
     <g
       v-if="

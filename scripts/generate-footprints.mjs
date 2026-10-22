@@ -62,6 +62,7 @@ try {
     throw new Error('Generate all footprint families before a scoped update');
   const expected = new Set([
     'mineClearances.json',
+    'mineSignMounts.json',
     'buildingFootprints.json',
     'footprintLoaders.js',
     ...familyNames.flatMap((era) =>
@@ -78,6 +79,17 @@ try {
     } else await writeFile(file, text);
     bytes += text.length;
   }
+  const mineSigns = { format: 1, keys: {}, mounts: [] },
+    knownMineSigns = new Map();
+  for (const [key, record] of Object.entries(data.mineSigns)) {
+    const signature = JSON.stringify(record);
+    if (!knownMineSigns.has(signature)) {
+      knownMineSigns.set(signature, mineSigns.mounts.length);
+      mineSigns.mounts.push(record);
+    }
+    mineSigns.keys[key] = knownMineSigns.get(signature);
+  }
+  await publish('mineSignMounts.json', mineSigns);
   for (const [era, { keys, shapes, solids, setbacks, signs }] of Object.entries(families))
     for (const [kind, data] of Object.entries({
       keys,

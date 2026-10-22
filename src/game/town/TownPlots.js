@@ -162,7 +162,7 @@ function matureSetbackEnvelope(d, id, group, town, labels) {
 export function buildPlot(d, id, group, town, labels) {
   delete group.userData.resolvedSignMount;
   delete group.userData.signMountSource;
-  group.userData.generatedSignMount = signMountFor(id, town);
+  group.userData.generatedSignMount = signMountFor(id, town, group);
   const envelope = matureSetbackEnvelope(d, id, group, town, labels);
   if (envelope) group.userData.matureSetbackEnvelope = envelope;
   const transform = roadSetbackTransform(id, town, envelope);

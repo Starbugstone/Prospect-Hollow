@@ -1,7 +1,8 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { Group, Raycaster } from 'three';
-import { ERAS, ERA_BY_ID } from '../src/data/eras';
+import { ERAS, ERA_BY_ID, eraEvolution } from '../src/data/eras';
 import { BUILDINGS, EARTH_BUILDINGS, createTown } from '../src/data/town';
+import { cityAppearance } from '../src/data/cityAppearance';
 import { geometryFootprints } from '../src/game/town/BuildingFootprints';
 import * as catalog from '../src/game/town/FootprintCatalog';
 import { TownDiorama } from '../src/game/town/TownDiorama';
@@ -242,15 +243,119 @@ it('honors an authored fascia ahead of a generated record without invoking the r
     input,
     mount: { type: 'facade', width: 2.4, x: 0, y: 3.2, z: 1.351, brackets: [] },
   };
-  const authored = { type: 'facade', width: 1.8, x: 0, y: 2.35, z: 1.351, brackets: [] };
+  const authored = { type: 'facade', width: 1.8, x: 0, y: 2.35, z: 1.351 };
   root.userData.authoredSignMount = authored;
-  const resolver = vi.spyOn(Raycaster.prototype, 'intersectObjects');
+  // Direct callers retain the old helper contract, including default brackets.
+  const legacy = mounts.signMount(root, 2.4, 0, 3.2, 2.3, undefined, root);
+  expect(legacy).toEqual({ brackets: [], ...authored });
+  const resolver = vi.spyOn(mounts, 'signMount');
+  const rays = vi.spyOn(Raycaster.prototype, 'intersectObjects');
+  const before = JSON.stringify(authored);
   d.sign(root, 'Authored fascia', 2.4, 0, 3.2, 2.3);
   expect(resolver).not.toHaveBeenCalled();
+  expect(rays).not.toHaveBeenCalled();
   expect(root.userData.signMountSource).toBe('authored');
-  expect(root.userData.resolvedSignMount).toEqual({ input, mount: authored });
+  expect(root.userData.resolvedSignMount).toEqual({ input, mount: legacy });
+  expect(JSON.stringify(authored)).toBe(before);
   d.clearGroup(root);
 });
+
+// The only authored fascia producer uses the shared columns identity in cozy
+// renderers. Cover every matching plot, finish tier and later retained era,
+// including the Canopy/Riverlight/open Skysail cases in the 44-fixture audit.
+const authoredStates = ERAS.filter(
+  (era) => era.enabled && eraEvolution(era.id).architecture === 'cozy',
+).flatMap((ownEra) =>
+  EARTH_BUILDINGS.filter(
+    (building) =>
+      eraIndex(building.introducedEra) <= eraIndex(ownEra.id) &&
+      cityAppearance(ownEra.id, building.kind).identity === 'columns',
+  ).flatMap((building) =>
+    ERAS.filter((era) => era.enabled && eraIndex(era.id) >= eraIndex(ownEra.id)).flatMap((era) =>
+      [1, 2, 3].map((tier) => [ownEra.id, era.id, building.id, tier]),
+    ),
+  ),
+);
+
+function signParts(root) {
+  return root.children
+    .filter((part) => part.isMesh && part.userData.signMount)
+    .map((part) => ({
+      name: part.name,
+      type: part.userData.signMount,
+      position: part.position.toArray(),
+      scale: part.scale.toArray(),
+      quaternion: part.quaternion.toArray(),
+      vertices: Array.from(part.geometry.attributes.position.array),
+      indices: Array.from(part.geometry.index?.array ?? []),
+      color: part.material.color.getHexString(),
+    }));
+}
+
+it.each(authoredStates)(
+  'preserves the old authored mount and every physical part for %s retained in %s/%s tier%i',
+  (ownEra, era, id, tier) => {
+    const d = drawing(era);
+    d.town.buildingEras[id] = ownEra;
+    d.town.buildingEraLevels[id] = tier;
+    const originalSign = d.sign;
+    // Capture the old helper's authored result at the actual final sign call,
+    // before setbacks. A direct function reference keeps the runtime spy strict.
+    const legacyResolver = mounts.signMount;
+    const resolver = vi.spyOn(mounts, 'signMount');
+    const rays = vi.spyOn(Raycaster.prototype, 'intersectObjects');
+    let captured;
+    d.sign = function (parent, text, width, x, y, z) {
+      if (!this.pendingPlotSigns && parent.userData.authoredSignMount) {
+        const context = this.plotSignRoot ?? parent;
+        captured = {
+          parent,
+          text,
+          args: [width, x, y, z],
+          input: mounts.signMountInput(parent, width, x, y, z, context),
+          mount: legacyResolver(parent, width, x, y, z, undefined, context),
+          authored: JSON.stringify(parent.userData.authoredSignMount),
+        };
+      }
+      return originalSign.call(this, parent, text, width, x, y, z);
+    };
+    for (const phase of [null, 0, 1, 2]) {
+      if (phase === null) delete d.town.projects[id];
+      else d.town.projects[id] = { stage: 4, wins: (phase / 3) * 2, required: 2 };
+      captured = null;
+      const actual = render(d, id);
+      expect(captured).toBeTruthy();
+      expect(actual.userData.signMountSource).toBe('authored');
+      // Whole-object equality checks width, position, brackets, legs and type;
+      // omitted fields and default empty brackets retain their old semantics.
+      expect(actual.userData.resolvedSignMount).toEqual({
+        input: captured.input,
+        mount: captured.mount,
+      });
+      expect(JSON.stringify(captured.parent.userData.authoredSignMount)).toBe(captured.authored);
+      const legacy = new Group();
+      legacy.userData.generatedSignMount = {
+        input: mounts.signMountInput(legacy, ...captured.args),
+        mount: captured.mount,
+      };
+      const context = d.plotSignRoot;
+      d.plotSignRoot = null;
+      try {
+        // Draw the exact legacy helper result through the unchanged physical
+        // board kit and compare all boards, brackets and support geometry.
+        originalSign.call(d, legacy, captured.text, ...captured.args);
+        expect(legacy.userData.signMountSource).toBe('generated');
+        expect(signParts(captured.parent)).toEqual(signParts(legacy));
+      } finally {
+        d.plotSignRoot = context;
+        d.clearGroup(legacy);
+        d.clearGroup(actual);
+      }
+    }
+    expect(resolver).not.toHaveBeenCalled();
+    expect(rays).not.toHaveBeenCalled();
+  },
+);
 
 it('falls back to the physical resolver when a custom sign request changes its catalog input', () => {
   const d = drawing('canopy');

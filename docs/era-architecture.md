@@ -218,6 +218,14 @@ still reveals these in its original tiers. Synthetic successor definitions inher
 their architecture's stage rules; unknown definitions keep native behavior.
 Moon settlement kinds are native construction and never inherit valley tiers.
 
+Two stylized effects are deliberate user decisions (22 October 2026). Orbit
+rings may hover without brackets, in keeping with the setting's hovering cars;
+keep that motif unchanged. The existing setback fit can compress a building by
+about 9.3% during construction, and the user explicitly likes this graphic
+effect. Keep that construction squeeze unchanged while retaining every completed
+body and module and keeping its entrance accessible. These exceptions do not
+permit floating rooms, ungrounded stilts or posts in roads and paths.
+
 A paid finish adds an attached, supported element for the building's purpose;
 it never removes a completed structure. `heritageUpgrade(kind)` in
 `src/data/heritageUpgrades.js` is the shared purpose map. An era supplies the
