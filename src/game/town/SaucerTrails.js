@@ -45,7 +45,7 @@ const segmentAt = (phase) =>
 const MOTES = 16,
   MOTE_EVERY = 0.06,
   MOTE_LIFE = MOTES * MOTE_EVERY,
-  FLASH_LIFE = 0.9,
+  FLASH_LIFE = 0.75,
   // Two "+" stars per flash: the halo in the core colour and a brighter centre.
   STARS = MOTES + 2,
   VERTICES = STARS * 8;
@@ -215,11 +215,11 @@ export function createSaucerTrail(d, parent, { colors: palette, path }) {
       const k = age / FLASH_LIFE;
       path(segment.start, toMoon, s.p);
       billboard(camera, s.p);
-      star(MOTES, s.p, 1.3 + 4.2 * smooth(k * 1.5), tints[0], 1 - smooth(k));
+      star(MOTES, s.p, 1 + 1.8 * smooth(k * 1.4), tints[0], 0.85 * (1 - smooth(k)));
       star(
         MOTES + 1,
         s.p,
-        0.9 + 1.6 * smooth(k * 2.5),
+        0.8 + 0.9 * smooth(k * 2.5),
         tints[2],
         1 - smooth((age - 0.2) / 0.35),
         Math.PI / 4,
