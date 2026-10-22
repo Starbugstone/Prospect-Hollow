@@ -116,36 +116,29 @@ whose turn begins as it leaves the frame.
 The saucer needs no runway. It lifts a little off the hangar floor and folds its legs,
 hovers out along the same hangar taxiway the planes use, and stops on a pad on the runway
 beside the hangar door. Its rim lights spin up and it wobbles slightly. It lifts straight
-up, pauses in a hover, then accelerates away and fades, leaving a trail. Landing mirrors
+up, pauses in a hover, then accelerates away and fades, leaving a sparkle wake. Landing mirrors
 this: it appears high, slows to a hover above the pad, descends vertically, settles and
 hovers back into the hangar, where its legs come down. Below hover height it is always
 over the hangar taxiway or straight above the pad, clear of every road, path, the
 railway and the station.
 
-#### Departure and arrival trail (prototype)
+#### Sparkle wake
 
-Three trail styles are on trial; `SAUCER_TRAIL` in `src/data/skyCraft.js` picks the one
-every saucer flies, and `addAviationActivity(d, town, { trail })` overrides it to compare
-them (`src/game/town/SaucerTrails.js`).
+As the saucer leaps off the hover, a star-flash bursts open where it was: a halo star in
+the era's trait colour opens wide and fades, around a brief, stronger centre in a deeper,
+more saturated shade of that colour, turned 45° so the burst has eight points. Then a
+stream of small four-point twinkles is shed along its path, drifting apart and sinking as
+they twinkle and fade, while the saucer flies on. Arriving mirrors it: the flash marks
+where it drops in, and the twinkles follow it down to the hover.
 
-- **Warp rings (`rings`).** Four thin glowing rings pop out behind the hull as it leaps
-  away, each widening and fading where it was left. Arriving, the rings close in on the
-  saucer as it slows: the jump played backwards.
-- **Ribbon of light (`ribbon`).** A tapered ribbon along the path the saucer actually flew
-  (the last 1.4 s), bright at the hull and fading to nothing, inside a wider, fainter
-  glow. It follows the Moon route's curve. Arriving, it trails back along the way in and
-  shortens as the saucer slows.
-- **Sparkle wake (`sparkle`).** A star-flash as it leaps away, then a stream of small
-  four-point twinkles shed along the path, drifting apart and down as they fade. Arriving,
-  the flash marks where it drops in and the twinkles follow it down.
-
-Each style is carried by the era's trait colour (or the rim, when the trait colour is the
-light itself), so it reads against the pale sky, with the era's `light` as its highlight.
-On the Moon route a moonlit blue-silver takes the trait colour's place. The trail
-is one mesh with its own geometry and material, written in world space every frame into
-preallocated buffers: at most 200 triangles, one instanced draw while it shows and none
-while hidden, so the saucer stays within its vehicle budget of 15 meshes. With reduced
-motion the trail stays off.
+The wake is carried by the era's trait colour (or the rim, when the trait colour is the
+light itself), so it reads against the pale sky, with the era's `light` for every other
+twinkle. On the Moon route a moonlit blue-silver (`TRAIL_SILVER`) takes the trait
+colour's place. `src/game/town/SaucerTrails.js` draws it as one mesh with its own geometry
+and material: 18 stars (16 twinkles and the two flash stars), 72 triangles, written in
+world space every frame into buffers allocated once. It is one instanced draw while it
+shows and none while the saucer is parked or away, so the saucer stays within its vehicle
+budget of 15 meshes. With reduced motion the wake stays off; the flight is unchanged.
 
 The saucer evolves with the airport's era. `SKY_SAUCERS` in `src/data/skyCraft.js` is
 the one definition: each era takes its colours from its own palette and adds one small

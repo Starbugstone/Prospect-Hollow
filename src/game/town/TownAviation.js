@@ -2,7 +2,6 @@ import { hasRoundedTransport } from '../../data/roundedArchitecture';
 import { roundedAircraft } from './RoundedTransports';
 import { airportAppearance } from '../../data/airport';
 import {
-  SAUCER_TRAIL,
   SKY_MOON_DIRECTION,
   saucerFliesToMoon,
   saucerTrailColors,
@@ -201,10 +200,6 @@ const PARKED_Y = 0.2,
   // Low enough that every era's saucer clears the hangar door lintel.
   HOVER_LOW = 0.5,
   HOVER_HIGH = 10;
-const unit = (x, y, z) => {
-  const length = Math.hypot(x, y, z);
-  return [x / length, y / length, z / length];
-};
 // A route leaves the hover point along a horizontal `heading`. Its height above the hover
 // point at horizontal distance s is `climb * s + rise * (1 - e^(-s / ease))`: the rise
 // makes it climb steeply at first, then it settles onto its `climb` line.
@@ -225,14 +220,6 @@ export const SAUCER_ROUTES = Object.freeze({
   // camera its path runs into the drawn Moon.
   moon: route(SKY_MOON_DIRECTION, 0.09, 20, 15),
 });
-const routePoint = ({ heading, climb, rise, ease }, s) => ({
-  x: SAUCER_PAD.x + heading[0] * s,
-  y: HOVER_HIGH + climb * s + rise * (1 - Math.exp(-s / ease)),
-  z: SAUCER_PAD.z + heading[1] * s,
-});
-/** Direction of travel away from the pad at horizontal distance s. */
-const routeTangent = ({ heading, climb, rise, ease }, s) =>
-  unit(heading[0], climb + (rise / ease) * Math.exp(-s / ease), heading[1]);
 // Distance along the route: accelerating from the hover after the departure starts, and
 // slowing to the hover by the end of the approach (`k` from 0 to 1).
 const departureDistance = (seconds) => 2.3 * seconds * seconds;
@@ -242,7 +229,7 @@ const DEPARTURE_AT = 49,
   APPROACH_FOR = 12;
 /** The saucer's position at cycle `phase` on its departure (from the hover) or its
  * approach (to the hover), written into `out` without allocating. Phases between the two
- * hold the hover point. The trail effects sample the flight with this. */
+ * hold the hover point. The pose and the sparkle wake both follow it. */
 export function saucerFlightPoint(phase, toMoon, out) {
   const way = toMoon ? SAUCER_ROUTES.moon : SAUCER_ROUTES.sky;
   let s = 0;
@@ -257,7 +244,7 @@ export function saucerFlightPoint(phase, toMoon, out) {
     SAUCER_PAD.z + heading[1] * s,
   );
 }
-const DOWN = Object.freeze([0, -1, 0]);
+const flightAt = new Vector3();
 const yawOf = ([x, z]) => Math.atan2(x, z);
 const turnTo = (from, to, t) => from + Math.atan2(Math.sin(to - from), Math.cos(to - from)) * t;
 const ramp = (phase, from, length) => smooth01(Math.max(0, Math.min(1, (phase - from) / length)));
@@ -268,8 +255,7 @@ const ramp = (phase, from, length) => smooth01(Math.max(0, Math.min(1, (phase - 
  * rim-light `spin` (0..1) are pure in time; `legs` is the landing-leg extension. */
 export function saucerPose(time, { toMoon = false } = {}) {
   const phase = cyclePhase(time);
-  const out = toMoon ? SAUCER_ROUTES.moon : SAUCER_ROUTES.sky;
-  const heading = yawOf(out.heading),
+  const heading = yawOf((toMoon ? SAUCER_ROUTES.moon : SAUCER_ROUTES.sky).heading),
     arrivalYaw = toMoon ? heading + Math.PI : Math.PI / 2;
   const pose = (fields, wobble = 0) => ({
     x: standX,
@@ -281,8 +267,6 @@ export function saucerPose(time, { toMoon = false } = {}) {
     propellers: false,
     spin: 0,
     legs: 0,
-    trail: 0,
-    travel: DOWN,
     ...fields,
     pitch: (fields.pitch ?? 0) + wobble * Math.sin(time * 2.7),
     roll: wobble * Math.sin(time * 2.1 + 1.3),
@@ -353,17 +337,16 @@ export function saucerPose(time, { toMoon = false } = {}) {
     );
   if (phase < 57) {
     // Accelerates from the hover, so the departure starts at rest.
-    const s = departureDistance(phase - DEPARTURE_AT);
+    const { x, y, z } = saucerFlightPoint(phase, toMoon, flightAt);
     return pose(
       {
-        ...routePoint(out, s),
-        travel: routeTangent(out, s),
+        x,
+        y,
+        z,
         yaw: heading,
         pitch: 0.1 * ramp(phase, 49, 1.5),
         spin: 1,
         propellers: true,
-        // The trail's strength: on as soon as it leaps away.
-        trail: ramp(phase, 49.2, 1),
         opacity: 1 - ramp(phase, 53, 4),
         phase: 'departure',
       },
@@ -374,15 +357,15 @@ export function saucerPose(time, { toMoon = false } = {}) {
   if (phase < 147) {
     // Decelerates to a hover above the pad, so the descent starts at rest: back down
     // the Moon route, or straight down from overhead.
-    const s = approachDistance(toMoon, (phase - APPROACH_AT) / APPROACH_FOR);
+    const { x, y, z } = saucerFlightPoint(phase, toMoon, flightAt);
     return pose(
       {
-        ...(toMoon ? routePoint(out, s) : { ...pad, y: HOVER_HIGH + s }),
-        travel: toMoon ? routeTangent(out, s).map((v) => -v) : DOWN,
+        x,
+        y,
+        z,
         yaw: arrivalYaw,
         spin: 1,
         propellers: true,
-        trail: 1 - ramp(phase, 141, 5.5),
         opacity: ramp(phase, 135, 4),
         phase: 'approach',
       },
@@ -444,8 +427,7 @@ function applyLivery(materials, appearance) {
   };
 }
 
-/** `options.trail` overrides the saucer's trail style (SAUCER_TRAIL), to compare them. */
-export function addAviationActivity(d, town, { trail: trailStyle = SAUCER_TRAIL } = {}) {
+export function addAviationActivity(d, town) {
   if (!town.buildings.airport) return null;
   const era = town.buildingEras?.airport;
   const appearance = airportAppearance(era);
@@ -483,16 +465,15 @@ export function addAviationActivity(d, town, { trail: trailStyle = SAUCER_TRAIL 
   plane.userData.animated = true;
   const propellers = ['propellerLeft', 'propellerRight'].map((name) => plane.getObjectByName(name));
   const legs = plane.getObjectByName('saucerLegs');
-  // The trail has its own geometry and material: one more instanced draw while it shows,
-  // none while it is hidden. Added after the fade materials, as it keeps its own alpha.
+  // The sparkle wake has its own geometry and material: one more instanced draw while it
+  // shows, none while hidden. Added after the fade materials, as it keeps its own alpha.
   const trail = rounded
     ? createSaucerTrail(d, plane, {
-        style: trailStyle,
         colors: saucerTrailColors(skySaucer(era)),
         path: saucerFlightPoint,
       })
     : null;
-  // Reduced motion keeps the flight but leaves the trail effects off.
+  // Reduced motion keeps the flight but leaves the sparkle wake off.
   const reducedQuery = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
   const livery = rounded ? null : applyLivery(materials, appearance);
   const liveries = appearance.liveries?.length || 1;
@@ -542,7 +523,6 @@ export function addAviationActivity(d, town, { trail: trailStyle = SAUCER_TRAIL 
       trail.update(
         ((time % AIRPORT_FLIGHT_CYCLE) + AIRPORT_FLIGHT_CYCLE) % AIRPORT_FLIGHT_CYCLE,
         toMoon,
-        pose.trail * pose.opacity,
         !!(d.liveVisitorsReducedMotion || reducedQuery?.matches),
       );
     } else

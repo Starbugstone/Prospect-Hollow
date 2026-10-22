@@ -43,17 +43,11 @@ export const SKY_SAUCERS = Object.freeze({
 export const skySaucer = (era) =>
   Object.hasOwn(SKY_SAUCERS, era) ? SKY_SAUCERS[era] : SKY_SAUCERS.tomorrow;
 
-// The saucer's departure and arrival trail (src/game/town/SaucerTrails.js). Three
-// prototypes to choose from; SAUCER_TRAIL picks the one every saucer flies.
-//   rings:   warp rings pop out behind the hull, widen and fade.
-//   ribbon:  a tapered ribbon of light along the flight path, inside a soft glow.
-//   sparkle: a star-flash as it leaps away, then a wake of twinkles.
-export const SAUCER_TRAIL_STYLES = Object.freeze(['rings', 'ribbon', 'sparkle']);
-export const SAUCER_TRAIL = 'rings';
-// On the Moon route the trail turns a moonlit blue-silver.
+// The saucer's sparkle wake (src/game/town/SaucerTrails.js) takes the era's trait colour
+// (or the rim, when the trait colour is the light itself) with its light as highlight.
+// On the Moon route a moonlit blue-silver takes the trait colour's place.
 export const TRAIL_SILVER = '#9fb0c8';
-/** The trail's colours: the era's light, and its trait colour (or the rim when the
- * trait colour is the light itself). */
+/** The sparkle wake's colours: the era's light, and its trait (or rim) colour. */
 export const saucerTrailColors = (c) => ({
   light: c.light,
   secondary: c.traitColor !== c.light ? c.traitColor : c.rim,
