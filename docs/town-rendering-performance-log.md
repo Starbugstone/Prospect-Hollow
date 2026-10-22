@@ -244,10 +244,11 @@ maximum of about 14 ms). These are Node diagnostic timings, not browser frames.
 including rejected candidates and the final closing leg. Cheap searches finish
 without count-based pauses. The clock resets immediately after resuming, so
 time awaiting idle work never consumes the next slice. This bounds the formerly
-indivisible detour; the scheduler retains its 4 ms outer batching budget and may
-overrun it by one inner slice. Search order, collision predicates, search limits
-and synchronous `plan()` / `route()`
-results stay the same. Cancellation still follows the existing generation-owned
+indivisible detour and matches the existing 8 ms deferred-animal job budget
+(`scheduleWork` defaults to 4 ms, but `TownAnimals` already requests 8 ms).
+Neither scheduler budget nor API changes. Search order, collision predicates,
+search limits and synchronous `plan()` / `route()` results stay the same.
+Cancellation still follows the existing generation-owned
 scheduler. Tests in `testing/town-animal-detour-slices.test.js` cover bounded
 collision work, cancellation, interleaved searches, closing routes and real mesh
 clearance. Reverting this change restores the single synchronous detour call.
