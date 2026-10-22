@@ -181,6 +181,7 @@ export function animalNavigation(base = new TownNavigation(), space) {
     return null;
   };
   function* detourSteps(a, b, radius, height) {
+    let sliceStarted = performance.now();
     if (space.segment(a, b, radius, height)) return [a, b];
     const open = [{ p: a, x: 0, z: 0, cost: 0, estimate: Math.hypot(b[0] - a[0], b[2] - a[2]) }];
     const costs = new Map([['0,0', 0]]);
@@ -190,7 +191,6 @@ export function animalNavigation(base = new TownNavigation(), space) {
       Math.min(a[2], b[2]) - 4,
       Math.max(a[2], b[2]) + 4,
     ];
-    let candidates = 0;
     for (let searched = 0; open.length && searched < 2400; searched++) {
       let best = 0;
       for (let n = 1; n < open.length; n++) if (open[n].estimate < open[best].estimate) best = n;
@@ -209,11 +209,11 @@ export function animalNavigation(base = new TownNavigation(), space) {
         [0, 1],
         [0, -1],
       ]) {
-        // Keep the same search order while allowing background preparation to
-        // pause or cancel inside a large detour, including rejected candidates.
-        if (++candidates === 32) {
-          candidates = 0;
+        // Cheap searches finish together; expensive searches pause between
+        // candidates. Reset after resuming so idle wait is not charged as work.
+        if (performance.now() - sliceStarted >= 8) {
           yield;
+          sliceStarted = performance.now();
         }
         const x = current.x + dx,
           z = current.z + dz,

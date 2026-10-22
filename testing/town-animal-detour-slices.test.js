@@ -23,10 +23,31 @@ function fixture({ blockedTarget = false, impassable = false } = {}) {
   // This real mesh has no pedestrian footprint. Animal routing must discover
   // and detour around its triangles through the production mesh-space index.
   const nav = animalNavigation(new TownNavigation(), space);
+  const realClear = space.clear;
   const realSegment = space.segment;
   const clear = vi.spyOn(space, 'clear');
   const segment = vi.spyOn(space, 'segment');
-  return { nav, space, clear, segment, realSegment };
+  return { nav, space, clear, segment, realClear, realSegment };
+}
+
+function controlledClock(cost = 1) {
+  let now = 0;
+  vi.spyOn(performance, 'now').mockImplementation(() => now);
+  return {
+    advance(ms) {
+      now += ms;
+    },
+    attach(f) {
+      f.clear.mockImplementation((...args) => {
+        now += cost;
+        return f.realClear(...args);
+      });
+      f.segment.mockImplementation((...args) => {
+        now += cost;
+        return f.realSegment(...args);
+      });
+    },
+  };
 }
 
 afterEach(() => {
@@ -63,29 +84,60 @@ function expectClearPath(f, path) {
   }
 }
 
-it('splits a large real-mesh detour into bounded slices and returns the identical synchronous path', () => {
+it('keeps cheap candidates in one search instead of yielding after a fixed count', () => {
+  const clock = controlledClock(0);
+  const f = fixture();
+  clock.attach(f);
+  const { path, calls } = drain(f.nav.planSteps([left, right], radius, 1), f);
+  expect(f.clear.mock.calls.length + f.segment.mock.calls.length).toBeGreaterThan(200);
+  expect(calls.filter((step) => step.clear || step.segment)).toHaveLength(1);
+  expect(path).toEqual(fixture().nav.plan([left, right], radius, 1));
+  expectClearPath(f, path);
+});
+
+it('pauses expensive real-mesh searches by elapsed work and returns the identical synchronous path', () => {
+  const clock = controlledClock();
   const sync = fixture();
   const expected = sync.nav.plan([left, right], radius, 1);
   expect(expected.points[0]).toEqual(left);
   expect(expected.points.at(-1)).toEqual(right);
   expect(expected.total).toBeGreaterThan(12);
   const f = fixture();
+  clock.attach(f);
   const { path, calls } = drain(f.nav.planSteps([left, right], radius, 1), f);
   expect(path).toEqual(expected);
-  // The obstacle needs substantially more work than one slice. These bounds
-  // constrain the externally observable collision work, not a copied batch size.
+  // Each collision call advances the fake clock by1ms. Several hundred calls
+  // require multiple slices; the bound allows entry/terminal point queries as
+  // well as a candidate's indivisible clearance work around the8ms check.
   expect(f.clear.mock.calls.length + f.segment.mock.calls.length).toBeGreaterThan(200);
   const working = calls.filter((step) => step.clear || step.segment);
   expect(working.length).toBeGreaterThan(4);
-  for (const step of working) expect(step.clear + step.segment).toBeLessThanOrEqual(96);
+  expect(working[0].clear + working[0].segment).toBeGreaterThanOrEqual(8);
+  for (const step of working) expect(step.clear + step.segment).toBeLessThanOrEqual(12);
+  expectClearPath(f, path);
+});
+
+it('keeps synchronous offset routes identical to the resumable route result', () => {
+  const clock = controlledClock();
+  const points = [
+    [-6, 0],
+    [6, 0],
+  ];
+  const expected = fixture().nav.route(points, 0, radius, 1);
+  const f = fixture();
+  clock.attach(f);
+  const { path } = drain(f.nav.routeSteps(points, 0, radius, 1), f);
+  expect(path).toEqual(expected);
   expectClearPath(f, path);
 });
 
 it('yields early enough to cancel an unfinished detour without doing further collision work', () => {
+  const clock = controlledClock();
   const reference = fixture();
   const expected = reference.nav.plan([left, right], radius, 1);
   const completeCalls = reference.clear.mock.calls.length + reference.segment.mock.calls.length;
   const f = fixture();
+  clock.attach(f);
   const work = f.nav.planSteps([left, right], radius, 1);
   let next;
   do next = work.next();
@@ -104,11 +156,36 @@ it('yields early enough to cancel an unfinished detour without doing further col
   expectClearPath(f, retried);
 });
 
+it('excludes a long idle wait from the resumed search budget', () => {
+  const clock = controlledClock();
+  const expected = fixture().nav.plan([left, right], radius, 1);
+  const f = fixture();
+  clock.attach(f);
+  const work = f.nav.planSteps([left, right], radius, 1);
+  let next;
+  do next = work.next();
+  while (!next.done && f.segment.mock.calls.length < 2);
+  expect(next.done).toBe(false);
+  const before = f.clear.mock.calls.length + f.segment.mock.calls.length;
+  clock.advance(60000);
+  next = work.next();
+  const resumed = f.clear.mock.calls.length + f.segment.mock.calls.length - before;
+  expect(next.done).toBe(false);
+  expect(resumed).toBeGreaterThanOrEqual(8);
+  expect(resumed).toBeLessThanOrEqual(12);
+  const { path } = drain(work, f, () => clock.advance(60000));
+  expect(path).toEqual(expected);
+  expectClearPath(f, path);
+});
+
 it('also slices the closing search when a blocked later stop truncates a closed itinerary', () => {
+  const clock = controlledClock();
   const f = fixture({ blockedTarget: true });
+  clock.attach(f);
   const originalSegment = f.realSegment;
   let closing = false;
   f.segment.mockImplementation((a, b, ...args) => {
+    clock.advance(1);
     if (a[0] === right[0] && b[0] === left[0]) closing = true;
     return originalSegment(a, b, ...args);
   });
@@ -120,7 +197,7 @@ it('also slices the closing search when a blocked later stop truncates a closed 
   expect(closingYields).toBeGreaterThan(1);
   // The failed stop's safe-point probes are separate from the detour. Bound
   // swept collision queries through the closing search itself on every step.
-  for (const step of calls) expect(step.segment).toBeLessThanOrEqual(48);
+  for (const step of calls) expect(step.segment).toBeLessThanOrEqual(12);
   expect(path.points[0]).toEqual(left);
   expect(path.points.at(-1)).toEqual(left);
   expect(path.points).toContainEqual(right);
@@ -130,7 +207,9 @@ it('also slices the closing search when a blocked later stop truncates a closed 
 });
 
 it('keeps independent suspended searches ordered and leaves an impassable route truncated safely', () => {
+  const clock = controlledClock();
   const f = fixture();
+  clock.attach(f);
   const reverse = f.nav.planSteps([right, left], radius, 1);
   const forward = f.nav.planSteps([left, right], radius, 1);
   let a, b;
@@ -144,9 +223,10 @@ it('keeps independent suspended searches ordered and leaves an impassable route 
   expectClearPath(f, b.value);
 
   const blocked = fixture({ impassable: true });
+  clock.attach(blocked);
   const { path, calls } = drain(blocked.nav.planSteps([left, right], radius, 1), blocked);
   expect(calls.filter((step) => step.segment).length).toBeGreaterThan(4);
-  for (const step of calls) expect(step.clear + step.segment).toBeLessThanOrEqual(96);
+  for (const step of calls) expect(step.clear + step.segment).toBeLessThanOrEqual(12);
   expect(path.points).toEqual([left]);
   expect(path.total).toBe(0);
   expectClearPath(blocked, path);

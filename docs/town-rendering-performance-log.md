@@ -240,13 +240,23 @@ preparation work at `823e9713` and `ab7a9f24`, but one late-era mesh detour sear
 991 nodes in a single step (about 41 ms in that diagnostic, versus a baseline
 maximum of about 14 ms). These are Node diagnostic timings, not browser frames.
 
-`animalNavigation()` now yields after at most 32 candidate attempts inside its
-detour search, including rejected candidates and the final closing leg. Search
-order, collision predicates, search limits and synchronous `plan()` / `route()`
+`animalNavigation()` checks an 8 ms work budget inside its detour search,
+including rejected candidates and the final closing leg. Cheap searches finish
+without count-based pauses. The clock resets immediately after resuming, so
+time awaiting idle work never consumes the next slice. This bounds the formerly
+indivisible detour; the scheduler retains its 4 ms outer batching budget and may
+overrun it by one inner slice. Search order, collision predicates, search limits
+and synchronous `plan()` / `route()`
 results stay the same. Cancellation still follows the existing generation-owned
 scheduler. Tests in `testing/town-animal-detour-slices.test.js` cover bounded
 collision work, cancellation, interleaved searches, closing routes and real mesh
 clearance. Reverting this change restores the single synchronous detour call.
+
+An initial 32-candidate checkpoint preserved the exact work and routes but added
+165 detour resumptions. In eight matched browser pairs its paused animal drain
+rose from 4,007 to 4,650 ms (mean +643 ms, paired 95% interval +368 to +937 ms).
+That candidate was not landed. The elapsed-time checkpoint lets cheap searches
+finish together; its own paired drain and step histogram remain required gates.
 
 A separately measured six-second post-resident browser window showed different
 VIP inset activation between snapshots. Its frame intervals must be compared
