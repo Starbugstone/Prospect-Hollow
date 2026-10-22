@@ -43,6 +43,16 @@ export const SKY_SAUCERS = Object.freeze({
 export const skySaucer = (era) =>
   Object.hasOwn(SKY_SAUCERS, era) ? SKY_SAUCERS[era] : SKY_SAUCERS.tomorrow;
 
+// The saucer's sparkle wake (src/game/town/SaucerTrails.js) takes the era's trait colour
+// (or the rim, when the trait colour is the light itself) with its light as highlight.
+// On the Moon route a moonlit blue-silver takes the trait colour's place.
+export const TRAIL_SILVER = '#9fb0c8';
+/** The sparkle wake's colours: the era's light, and its trait (or rim) colour. */
+export const saucerTrailColors = (c) => ({
+  light: c.light,
+  secondary: c.traitColor !== c.light ? c.traitColor : c.rim,
+});
+
 /** Whether this airport's saucer flies to the Moon: its airport era supplies the Moon
  * settlement (the era's `moonSettlement` capability) and the sky shows the Moon. */
 export const saucerFliesToMoon = (era, town) =>

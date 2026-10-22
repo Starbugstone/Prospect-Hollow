@@ -116,11 +116,31 @@ whose turn begins as it leaves the frame.
 The saucer needs no runway. It lifts a little off the hangar floor and folds its legs,
 hovers out along the same hangar taxiway the planes use, and stops on a pad on the runway
 beside the hangar door. Its rim lights spin up and it wobbles slightly. It lifts straight
-up, pauses in a hover, then accelerates away with a fading light streak. Landing mirrors
+up, pauses in a hover, then accelerates away and fades, leaving a sparkle wake. Landing mirrors
 this: it appears high, slows to a hover above the pad, descends vertically, settles and
 hovers back into the hangar, where its legs come down. Below hover height it is always
 over the hangar taxiway or straight above the pad, clear of every road, path, the
 railway and the station.
+
+#### Sparkle wake
+
+As the saucer leaps off the hover, a star-flash bursts open where it was: a halo star in
+the era's trait colour opens wide and fades, around a brief, stronger centre in a deeper,
+more saturated shade of that colour, turned 45° so the burst has eight points. Then a
+stream of small four-point twinkles is shed from the hull's trailing edge along its path,
+drifting apart and sinking as they twinkle and fade, while the saucer flies on. Arriving
+mirrors it: the flash marks where it drops in, and the twinkles follow it down to the
+hover. The wake is depth-tested against the hull, so the saucer hides any star behind it,
+but writes no depth, so the stars never hide each other.
+
+The wake is carried by the era's trait colour (or the rim, when the trait colour is the
+light itself), so it reads against the pale sky, with the era's `light` for every other
+twinkle. On the Moon route a moonlit blue-silver (`TRAIL_SILVER`) takes the trait
+colour's place. `src/game/town/SaucerTrails.js` draws it as one mesh with its own geometry
+and material: 18 stars (16 twinkles and the two flash stars), 72 triangles, written in
+world space every frame into buffers allocated once. It is one instanced draw while it
+shows and none while the saucer is parked or away, so the saucer stays within its vehicle
+budget of 15 meshes. With reduced motion the wake stays off; the flight is unchanged.
 
 The saucer evolves with the airport's era. `SKY_SAUCERS` in `src/data/skyCraft.js` is
 the one definition: each era takes its colours from its own palette and adds one small

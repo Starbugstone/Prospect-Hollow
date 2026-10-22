@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Box3, Group } from 'three';
+import { Box3, Color, Group, Vector3 } from 'three';
 import airportLayout from '../src/data/airportLayout.json';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
@@ -12,9 +12,11 @@ import {
   PLANE_DEPARTURES,
   SAUCER_PAD,
   SAUCER_ROUTES,
+  saucerFlightPoint,
   saucerPose,
 } from '../src/game/town/TownAviation';
-import { roundedAircraft } from '../src/game/town/RoundedTransports';
+import { TRAIL_SILVER, saucerTrailColors } from '../src/data/skyCraft';
+import { roundedAircraft, SAUCER_HULL } from '../src/game/town/RoundedTransports';
 import {
   AIRPORT,
   PLOTS,
@@ -211,12 +213,11 @@ describe('Sky saucer flight', () => {
         'docking',
         'parked',
       ]);
-      // The lift is vertical and ends in a pause before the streak.
+      // The lift is vertical and ends in a pause before it speeds away.
       expect(saucerPose(38, { toMoon }).y).toBeLessThan(1);
       expect(saucerPose(45, { toMoon }).y).toBeGreaterThan(9.9);
       expect(saucerPose(48.9, { toMoon }).y).toBeCloseTo(saucerPose(45, { toMoon }).y, 1);
       expect(saucerPose(56.95, { toMoon }).opacity).toBeLessThan(0.01);
-      expect(saucerPose(56, { toMoon }).trail).toBe(1);
       // Landing mirrors it: high, then slowing down on its way to the pad.
       expect(saucerPose(136, { toMoon }).y).toBeGreaterThan(40);
       const speed = (t) => {
@@ -308,10 +309,10 @@ describe('Sky saucer flight', () => {
     for (const t of [50, 53, 56]) {
       expect(dot(away(true, t), moonHeading)).toBeGreaterThan(0.999);
       expect(dot(away(false, t), moonHeading)).toBeLessThan(0.3);
-      // The streak trails the way it travels: toward the Moon and upward.
-      const { travel } = saucerPose(t, { toMoon: true });
-      expect(dot([travel[0], travel[2]], moonHeading)).toBeGreaterThan(0);
-      expect(travel[1]).toBeGreaterThan(0);
+      // The pose follows the same flight the sparkle wake is shed along.
+      const pose = saucerPose(t, { toMoon: true }),
+        point = saucerFlightPoint(t, true, new Vector3());
+      expect(point.distanceTo(new Vector3(pose.x, pose.y, pose.z))).toBeLessThan(1e-9);
     }
     for (const t of [135.5, 140, 144])
       expect(dot(away(true, t), moonHeading)).toBeGreaterThan(0.999);
@@ -387,7 +388,13 @@ describe('Sky saucer flight', () => {
 });
 
 describe('Sky saucer evolution', () => {
-  const colours = (root) => new Set(meshes(root).map((m) => m.material.color.getHexString()));
+  // The trail's colours live in its vertices; count the saucer's own paint.
+  const colours = (root) =>
+    new Set(
+      meshes(root)
+        .filter((m) => m.name !== 'saucerTrail')
+        .map((m) => m.material.color.getHexString()),
+    );
 
   it('gives every rounded-transport era its own saucer from its palette', () => {
     const looks = new Set();
@@ -438,6 +445,189 @@ describe('Sky saucer evolution', () => {
       // Hovering out of the hangar it stays below the walls' height.
       d.motions[0](25);
       expect(new Box3().setFromObject(saucer).max.y).toBeLessThan(2.85);
+    } finally {
+      disposeDiorama(d);
+    }
+  });
+});
+
+describe('Sky saucer sparkle wake', () => {
+  // A diorama with a saucer from the given era; `setup` adjusts the town first.
+  function wake(era = 'tomorrow', setup = () => {}) {
+    const town = completeTown(era);
+    setup(town);
+    const d = aviationDiorama(town);
+    addAviationActivity(d, town);
+    const saucer = d.world.children[0];
+    const trail = saucer.getObjectByName('saucerTrail');
+    const geometry = trail.geometry;
+    // The strongest alpha among the flash's stars (the last 16 vertices) or the twinkles.
+    const alpha = (from = 0, to = Infinity) => {
+      const color = geometry.getAttribute('color').array;
+      let most = 0;
+      for (let v = from; v < Math.min(to, color.length / 4); v++)
+        most = Math.max(most, color[v * 4 + 3]);
+      return most;
+    };
+    const FLASH = geometry.getAttribute('color').count - 16;
+    // Vertices are in world space: the mesh cancels the saucer's own transform.
+    const worldVertex = (index) => {
+      saucer.updateMatrixWorld(true);
+      return new Vector3()
+        .fromBufferAttribute(geometry.getAttribute('position'), index)
+        .applyMatrix4(trail.matrixWorld);
+    };
+    return { d, saucer, trail, geometry, alpha, FLASH, worldVertex };
+  }
+  const span = (from, to, step = 0.05) => {
+    const times = [];
+    for (let t = from; t < to; t += step) times.push(t);
+    return times;
+  };
+
+  it('shows only while departing or arriving, in one fixed, preallocated mesh', () => {
+    const { d, saucer, trail, geometry, alpha } = wake();
+    try {
+      // Depth-tested against the opaque hull, which hides stars behind it, but writing
+      // no depth, so the stars never hide each other; drawn after the opaque saucer.
+      expect(trail.material.depthTest).toBe(true);
+      expect(trail.material.depthWrite).toBe(false);
+      expect(trail.material.transparent).toBe(true);
+      expect(trail.renderOrder).toBe(0);
+      expect(meshes(saucer).filter((m) => m.name === 'saucerTrail')).toEqual([trail]);
+      // Within the existing vehicle budget, and a handful of triangles.
+      expect(meshes(saucer).length).toBeLessThanOrEqual(15);
+      expect(geometry.index.count / 3).toBeLessThanOrEqual(80);
+      const arrays = [
+        geometry.getAttribute('position').array,
+        geometry.getAttribute('color').array,
+      ];
+      let departing = 0,
+        arriving = 0;
+      for (let t = 0; t < AIRPORT_FLIGHT_CYCLE; t += 0.05) {
+        d.motions[0](t);
+        const phase = saucerPose(t).phase;
+        const shown = trail.visible && saucer.visible;
+        // The flash bursts just before the saucer moves off the hover.
+        if (phase === 'departure' || phase === 'approach' || (t >= 48.5 && t < 49)) {
+          if (phase === 'departure') departing = Math.max(departing, alpha());
+          if (phase === 'approach') arriving = Math.max(arriving, alpha());
+        } else expect(shown, `at ${t.toFixed(2)} (${phase})`).toBe(false);
+      }
+      // Plainly visible on the way out and, mirrored, on the way in.
+      expect(departing).toBeGreaterThan(0.5);
+      expect(arriving).toBeGreaterThan(0.5);
+      // The same buffers are rewritten every frame; nothing is reallocated.
+      expect(geometry.getAttribute('position').array).toBe(arrays[0]);
+      expect(geometry.getAttribute('color').array).toBe(arrays[1]);
+      expect([...arrays[0]].every(Number.isFinite)).toBe(true);
+    } finally {
+      disposeDiorama(d);
+    }
+  });
+
+  it('bursts a flash with a brief bright centre, then sheds twinkles behind it', () => {
+    const { d, saucer, alpha, FLASH, worldVertex } = wake();
+    try {
+      // The flash opens at the hover point just before the leap; its centre is solid.
+      d.motions[0](48.95);
+      expect(alpha(FLASH)).toBeGreaterThan(0.95);
+      const hover = saucerFlightPoint(49, false, new Vector3());
+      expect(worldVertex(FLASH + 8).distanceTo(hover)).toBeLessThan(4);
+      // The centre fades first; the halo lingers a little longer, then both are gone.
+      d.motions[0](49.5);
+      expect(alpha(FLASH + 8)).toBeLessThan(alpha(FLASH, FLASH + 8));
+      d.motions[0](49.9);
+      expect(alpha(FLASH)).toBe(0);
+      // Twinkles stay where they were shed while the saucer flies on.
+      let twinkle = 0;
+      for (const t of span(50, 52)) {
+        d.motions[0](t);
+        twinkle = Math.max(twinkle, alpha(0, FLASH));
+      }
+      expect(twinkle).toBeGreaterThan(0.4);
+      // A fresh twinkle starts behind the hull, at hull height, not under it: shed 0.02 s
+      // ago (twinkle 45, in slot 45 mod 16) it is well back along the line of travel.
+      d.motions[0](52.02);
+      const centre = new Vector3();
+      for (let v = 13 * 8; v < 14 * 8; v++) centre.add(worldVertex(v));
+      centre.multiplyScalar(1 / 8);
+      const hull = saucer.position.clone();
+      hull.y += SAUCER_HULL;
+      const ahead = saucerFlightPoint(52.07, false, new Vector3()).sub(saucer.position).normalize();
+      expect(centre.clone().sub(hull).dot(ahead)).toBeLessThan(-1.5);
+      expect(Math.abs(centre.y - hull.y)).toBeLessThan(2);
+      // Older twinkles stay where they were shed while the saucer flies on.
+      d.motions[0](52.5);
+      expect(worldVertex(13 * 8).distanceTo(centre)).toBeLessThan(3);
+      expect(saucer.position.distanceTo(centre)).toBeGreaterThan(6);
+    } finally {
+      disposeDiorama(d);
+    }
+  });
+
+  it('mirrors the wake on arrival: a flash where it drops in, twinkles following it', () => {
+    const { d, alpha, FLASH, worldVertex } = wake('moonward');
+    try {
+      d.motions[0](135.2);
+      expect(alpha(FLASH)).toBeGreaterThan(0.9);
+      const dropIn = saucerFlightPoint(135, true, new Vector3());
+      expect(worldVertex(FLASH + 8).distanceTo(dropIn)).toBeLessThan(4);
+      let twinkle = 0;
+      for (const t of span(136, 145)) {
+        d.motions[0](t);
+        twinkle = Math.max(twinkle, alpha(0, FLASH));
+      }
+      expect(twinkle).toBeGreaterThan(0.4);
+    } finally {
+      disposeDiorama(d);
+    }
+  });
+
+  it('takes the era colours, and a blue-silver on the Moon route', () => {
+    const has = (geometry, hex) => {
+      const target = new Color(hex),
+        color = geometry.getAttribute('color').array;
+      for (let i = 0; i < color.length; i += 4)
+        if (
+          color[i + 3] > 0.05 &&
+          Math.abs(color[i] - target.r) < 0.02 &&
+          Math.abs(color[i + 1] - target.g) < 0.02 &&
+          Math.abs(color[i + 2] - target.b) < 0.02
+        )
+          return true;
+      return false;
+    };
+    const sky = wake('canopy');
+    const moon = wake('moonward', (town) => (town.buildings.spaceElevator = 1));
+    const plain = wake('moonward', (town) => (town.buildings.spaceElevator = 0));
+    try {
+      const { light, secondary } = saucerTrailColors(skySaucer('canopy'));
+      expect(secondary).toBe(skySaucer('canopy').traitColor);
+      // Moonward's trait colour is its light, so its rim carries the wake instead.
+      expect(saucerTrailColors(skySaucer('moonward')).secondary).toBe(skySaucer('moonward').rim);
+      const seen = new Set();
+      for (const t of span(48.6, 52.5, 0.1)) {
+        for (const view of [sky, moon, plain]) view.d.motions[0](t);
+        for (const hex of [light, secondary]) if (has(sky.geometry, hex)) seen.add(hex);
+        if (has(moon.geometry, TRAIL_SILVER)) seen.add('moon silver');
+        if (has(plain.geometry, TRAIL_SILVER)) seen.add('silver without the Moon');
+      }
+      expect([...seen].sort()).toEqual(['moon silver', light, secondary].sort());
+    } finally {
+      for (const view of [sky, moon, plain]) disposeDiorama(view.d);
+    }
+  });
+
+  it('leaves the wake off with reduced motion', () => {
+    const { d, saucer, trail } = wake();
+    try {
+      d.liveVisitorsReducedMotion = true;
+      for (const t of [48.9, 49.5, 50, 52, 136, 140]) {
+        d.motions[0](t);
+        expect(saucer.visible).toBe(true);
+        expect(trail.visible, `${t}`).toBe(false);
+      }
     } finally {
       disposeDiorama(d);
     }
