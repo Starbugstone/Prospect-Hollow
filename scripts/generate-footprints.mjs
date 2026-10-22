@@ -21,8 +21,10 @@ try {
       shapes: [],
       solids: [],
       setbacks: data.setbacks[era] ?? {},
+      signs: { keys: {}, mounts: [] },
       shapeMap: new Map(),
       solidMap: new Map(),
+      signMap: new Map(),
     };
     const family = families[era];
     if (!family.shapeMap.has(index)) {
@@ -40,6 +42,15 @@ try {
       family.shapes.push(shape);
     }
     family.keys[key] = family.shapeMap.get(index);
+    const mount = data.signs[era]?.[key];
+    if (mount) {
+      const signature = JSON.stringify(mount);
+      if (!family.signMap.has(signature)) {
+        family.signMap.set(signature, family.signs.mounts.length);
+        family.signs.mounts.push(mount);
+      }
+      family.signs.keys[key] = family.signMap.get(signature);
+    }
   }
   let bytes = 0;
   // Scoped authoring updates only existing families. A complete generation owns
@@ -67,8 +78,13 @@ try {
     } else await writeFile(file, text);
     bytes += text.length;
   }
-  for (const [era, { keys, shapes, solids, setbacks }] of Object.entries(families))
-    for (const [kind, data] of Object.entries({ keys, shapes, solids, setbacks }))
+  for (const [era, { keys, shapes, solids, setbacks, signs }] of Object.entries(families))
+    for (const [kind, data] of Object.entries({
+      keys,
+      shapes,
+      solids,
+      setbacks: { envelopes: setbacks, signs },
+    }))
       await publish(`footprints-${era}-${kind}.json`, data);
   if (!selectedEras.length) {
     const powerSolids = Object.entries(data.keys)
@@ -92,7 +108,9 @@ try {
                 (kind) =>
                   `readJsonAsset(new URL('./footprints-${era}-${kind}.json', import.meta.url))`,
               )
-              .join(',')}]).then(([keys,shapes,solids,setbacks])=>({keys,shapes,solids,setbacks}))`,
+              .join(
+                ',',
+              )}]).then(([keys,shapes,solids,placements])=>({keys,shapes,solids,setbacks:placements.envelopes,signs:placements.signs}))`,
         )
         .join(',')}};\n`,
     );

@@ -4,7 +4,7 @@ import { createTownGeometries } from './TownGeometries';
 import { TownSignAtlas } from './TownSignAtlas';
 import { finishWork } from '../PresentationWork';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { signMount } from './TownSignMounts';
+import { generatedSignMount, signMount, signMountInput } from './TownSignMounts';
 
 const point = (x, y, z) => new THREE.Vector3(x, y, z);
 
@@ -79,15 +79,19 @@ export class TownPrimitives {
       this.pendingPlotSigns.push([parent, text, width, x, y, z]);
       return;
     }
-    const mount = signMount(
-      parent,
-      width,
-      x,
-      y,
-      z,
-      (this.signMountCache ??= new Map()),
-      this.plotSignRoot,
-    );
+    const context = this.plotSignRoot ?? parent;
+    const input = signMountInput(parent, width, x, y, z, context);
+    const generated =
+      !parent.userData.authoredSignMount &&
+      generatedSignMount(context.userData.generatedSignMount, input);
+    const mount =
+      generated || signMount(parent, width, x, y, z, (this.signMountCache ??= new Map()), context);
+    context.userData.resolvedSignMount = { input, mount };
+    context.userData.signMountSource = parent.userData.authoredSignMount
+      ? 'authored'
+      : generated
+        ? 'generated'
+        : 'resolver';
     ({ width, x, y, z } = mount);
     const board = this.box(parent, width + 0.1, 0.43, 0.1, x, y, z, '#8c6947', true);
     board.name = 'Mounted building nameboard';

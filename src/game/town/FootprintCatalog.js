@@ -61,6 +61,15 @@ export function matureEnvelopeFor(id, town) {
     return null;
   return envelope;
 }
+export function signMountFor(id, town) {
+  if (!BUILDING_BY_ID[id]) return null;
+  const era = town.buildingEras[id] ?? 'frontier',
+    family = eraEvolution(era).cityAssets,
+    signs = ready.get(era)?.signs,
+    index = signs?.keys?.[plotFootprintKey(id, town)];
+  if ((family && !available(family)) || !Number.isInteger(index) || index < 0) return null;
+  return signs.mounts?.[index] ?? null;
+}
 export function footprintsFor(key, root) {
   const era = key.split('|')[2],
     catalog = ready.get(era),

@@ -1,6 +1,55 @@
 import { Box3, Matrix3, Matrix4, Raycaster, Vector3 } from 'three';
 import { TOWN_CAMERA_POSITION, TOWN_CAMERA_FOCUS_HEIGHT } from '../../data/townCamera';
 
+// Only the authored sign dimensions/parent transform and reserved camera scale
+// vary within one generated plot key. Text is painted inside a fixed board.
+export function signMountInput(parent, width, x, y, z, context = parent) {
+  context.updateWorldMatrix(true, false);
+  parent.updateWorldMatrix(true, false);
+  const relative = context.matrixWorld.clone().invert().multiply(parent.matrixWorld);
+  return [
+    width,
+    x,
+    y,
+    z,
+    ...relative.elements.map((value) => Math.round(value * 1e5)),
+    ...(context.userData.signCameraScale ?? [1, 1, 1]),
+  ];
+}
+
+// Generated placement is used only for the same authored input. Missing data or
+// a custom parent/board retains the exact surface/visibility resolver below.
+export function generatedSignMount(record, input) {
+  const mount = record?.mount;
+  if (
+    !Array.isArray(input) ||
+    input.length !== 23 ||
+    !input.every(Number.isFinite) ||
+    !Array.isArray(record?.input) ||
+    record.input.length !== input.length ||
+    !record.input.every((value, index) => value === input[index]) ||
+    !['facade', 'roof', 'directory'].includes(mount?.type) ||
+    ![mount.width, mount.x, mount.y, mount.z].every(Number.isFinite) ||
+    mount.width <= 0 ||
+    !Array.isArray(mount.brackets) ||
+    !mount.brackets.every(
+      (part) =>
+        [part?.x, part?.y, part?.back, part?.front].every(Number.isFinite) &&
+        part.front >= part.back,
+    ) ||
+    (mount.legs !== undefined &&
+      (!Array.isArray(mount.legs) ||
+        !mount.legs.every(
+          (part) =>
+            [part?.x, part?.z, part?.base].every(Number.isFinite) && part.base < mount.y + 0.08,
+        ))) ||
+    (mount.type === 'roof' && !mount.legs?.length) ||
+    (mount.type === 'directory' && (!Number.isFinite(mount.base) || mount.base >= mount.y + 0.08))
+  )
+    return null;
+  return mount;
+}
+
 // Resolve physical attachment once, when a plot is built. Exact surface probes
 // also work on timber planks and the packed same-colour Blender meshes. Boards
 // default to a facade above the doorway; open sites use a private side directory.

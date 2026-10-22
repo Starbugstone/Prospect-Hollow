@@ -140,7 +140,9 @@ describe('Prepared lightweight animal roaming', () => {
         d.animalSpace = animalSpace(d);
         queries = vi.spyOn(d.animalSpace, 'clear');
       }
-      while (!work.next().done) {}
+      while (!work.next().done) {
+        // Drain preparation without advancing simulation time.
+      }
       const blocked = queries.mock.calls.findIndex(
         ([p], index) =>
           p[0] === origin[0] && p[2] === origin[2] && queries.mock.results[index].value === false,

@@ -25,6 +25,7 @@ export async function generateFootprints({ eras = null } = {}) {
   const keys = {},
     shapes = [],
     setbacks = {},
+    signs = {},
     known = new Map();
   const labels = Object.fromEntries(BUILDINGS.map((b) => [b.id, b.shortName]));
   for (const era of definitions.filter((era) => !eras || eras.includes(era.id))) {
@@ -85,17 +86,23 @@ export async function generateFootprints({ eras = null } = {}) {
               known.set(serialized, shapes.length);
               shapes.push(solids);
             }
-            keys[
-              footprintKey({
-                id,
-                kind: building.kind,
-                era: era.id,
-                serviceLevel,
-                eraLevel,
-                path: building.introducedEra === era.id ? 'native' : 'modernized',
-                construction,
-              })
-            ] = known.get(serialized);
+            const key = footprintKey({
+              id,
+              kind: building.kind,
+              era: era.id,
+              serviceLevel,
+              eraLevel,
+              path: building.introducedEra === era.id ? 'native' : 'modernized',
+              construction,
+            });
+            keys[key] = known.get(serialized);
+            // The live resolver records the completed primary nameboard during
+            // this same build, including its construction context. No extra
+            // model pass or rounded geometry is needed to publish its mount.
+            if (group.userData.resolvedSignMount) {
+              signs[era.id] ??= {};
+              signs[era.id][key] = group.userData.resolvedSignMount;
+            }
             d.clearGroup(group);
           }
         }
@@ -104,5 +111,5 @@ export async function generateFootprints({ eras = null } = {}) {
   }
   Object.values(d.geometries).forEach((g) => g.dispose());
   d.materials.forEach((m) => m.dispose());
-  return { keys, shapes, setbacks };
+  return { keys, shapes, setbacks, signs };
 }

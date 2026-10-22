@@ -7,7 +7,12 @@ import {
   roadSetbackTransform,
 } from './BuildingSetbacks';
 import { addTownAnimals, animalKey } from './TownAnimals';
-import { footprintsFor, plotFootprintKey, matureEnvelopeFor } from './FootprintCatalog';
+import {
+  footprintsFor,
+  plotFootprintKey,
+  matureEnvelopeFor,
+  signMountFor,
+} from './FootprintCatalog';
 import { drawNavigation } from './NavigationDebug';
 import { hasElectricity } from '../../data/industrial';
 import { mineGrowth } from '../../data/mineGrowth';
@@ -155,6 +160,9 @@ function matureSetbackEnvelope(d, id, group, town, labels) {
 }
 
 export function buildPlot(d, id, group, town, labels) {
+  delete group.userData.resolvedSignMount;
+  delete group.userData.signMountSource;
+  group.userData.generatedSignMount = signMountFor(id, town);
   const envelope = matureSetbackEnvelope(d, id, group, town, labels);
   if (envelope) group.userData.matureSetbackEnvelope = envelope;
   const transform = roadSetbackTransform(id, town, envelope);

@@ -645,6 +645,17 @@ the fallback geometry, including independence from a later town era. The data
 travels with the building's finish family, so a town awaiting modernization uses
 its already-loaded older finish catalog.
 
+That same placement payload contains deduplicated physical nameboard mounts.
+The generator records the live support/visibility resolver's exact result for
+each footprint key, including construction states. A record includes the authored
+board width/position, its parent transform relative to the plot, and the reserved
+camera scale; text stays inside the fixed board. Shipped plots validate that input
+and use the recorded mount without repeating surface and camera raycasts. An
+authored fascia still takes priority, and missing/custom inputs keep the original
+resolver. The existing four parallel catalog requests load both envelopes and
+mounts. `check:footprints` reruns the live resolver for every generated key and
+checks the placement data with the collision catalogs.
+
 `changeTown` uses `swapPlot` for one changed plot with unchanged infrastructure.
 An accepted purchase is already persisted before presentation starts. A pooled
 hammer draws before preparation. Occupied new solids wait for a swept-clear

@@ -28,6 +28,10 @@ the memoized safe probe fallback. Animal roaming preparation caches exact point
 answers only while navigation and geometry remain unchanged, and rejects far
 roads by conservative bounds before the existing exact distance check. These
 optimizations preserve collision solids and the reviewed visual geometry.
+Physical sign mounts are generated in that same pass and payload. Runtime input
+validation preserves the exact authored mount and falls back to the existing
+surface/visibility resolver for custom or missing definitions; shipped plots
+avoid that repeated raycasting during cold loads and construction swaps.
 
 Moon entrance spokes use shared authored hatch/stair anchors, join the existing
 ring and reserve their corridors from craters. Moon walkers and rovers continue
