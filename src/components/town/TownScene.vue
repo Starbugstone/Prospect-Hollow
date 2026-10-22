@@ -246,6 +246,7 @@ import TownIcon from './TownIcon.vue';
 import TownMoon from './TownMoon.vue';
 import TownMoonView from './TownMoonView.vue';
 import { moonSettlement } from '../../data/moonSettlement';
+import { SKY_MOON_DIRECTION } from '../../data/skyCraft';
 import GameViewStatus from '../GameViewStatus.vue';
 import { TOWN_ACTIONS } from '../../data/townIndicators';
 import { eraBuildingLevel, plotInEra } from '../../game/town/TownEras';
@@ -337,7 +338,7 @@ const skyMoon = shallowRef(null),
   skyMoonElement = ref(null);
 function placeSkyMoon() {
   if (!scene?.skyPoint || !moon.value.homesteads) return followLabel(skyMoon, skyMoonElement);
-  const { x, y, facing, distance } = scene.skyPoint(-0.55, -1);
+  const { x, y, facing, distance } = scene.skyPoint(...SKY_MOON_DIRECTION);
   // Sky shows at the top of the frame once the view is wide (the land fades into the
   // sky) or tilted until the horizon is in view; close up, the frame is all town.
   const skyInView = distance > 95 || y > 8;

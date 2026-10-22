@@ -394,13 +394,15 @@ describe('Tomorrow City transport', () => {
     const find = (name) => d.world.getObjectByName(name);
     return { d, find };
   }
-  it.each(['tomorrow', 'canopy', 'riverlight'])(
+  it.each(ERAS.filter((era) => hasRoundedTransport(era.id)).map((era) => era.id))(
     'flies, sails and glides rounded vehicles once %s buildings are modernized',
     (era) => {
       const { find } = transports(era);
       // Moving vehicles are drawn per mesh; the train stays near the Blender railcars' 21 parts.
-      for (const [name, budget] of [
-        ['Sky saucer', 16],
+      // The saucer's translucent streak has its own material; its cone is a separate
+      // draw in any case, so that material adds no draw call.
+      for (const [name, budget, materials = 6] of [
+        ['Sky saucer', 16, 7],
         ['Hover river ferry', 16],
         ['Solar express train', 24],
       ]) {
@@ -412,7 +414,7 @@ describe('Tomorrow City transport', () => {
         });
         expect(meshes, name).toBeLessThanOrEqual(budget);
         expect(cost(vehicle).triangles, name).toBeLessThan(2500);
-        expect(cost(vehicle).materials, name).toBeLessThanOrEqual(6);
+        expect(cost(vehicle).materials, name).toBeLessThanOrEqual(materials);
       }
     },
   );
@@ -423,9 +425,9 @@ describe('Tomorrow City transport', () => {
     const bounds = new Box3().setFromObject(saucer);
     expect(bounds.min.y).toBeGreaterThanOrEqual(0);
     expect(bounds.min.y).toBeLessThan(0.05);
-    // Every leg runs from inside the hull down to its foot pad: nothing floats.
+    // Every leg runs from inside the hull down to the ground: nothing floats.
     const hull = new Box3().setFromObject(saucer.children[0]);
-    const legs = saucer.children.filter((o) => o.isMesh && o.scale.x === 0.06);
+    const legs = saucer.getObjectByName('saucerLegs').children.filter((o) => o.isMesh);
     expect(legs).toHaveLength(3);
     for (const leg of legs) {
       const box = new Box3().setFromObject(leg);
