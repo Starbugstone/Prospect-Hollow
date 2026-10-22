@@ -7,7 +7,7 @@ import {
   roadSetbackTransform,
 } from './BuildingSetbacks';
 import { addTownAnimals, animalKey } from './TownAnimals';
-import { footprintsFor, plotFootprintKey } from './FootprintCatalog';
+import { footprintsFor, plotFootprintKey, matureEnvelopeFor } from './FootprintCatalog';
 import { drawNavigation } from './NavigationDebug';
 import { hasElectricity } from '../../data/industrial';
 import { mineGrowth } from '../../data/mineGrowth';
@@ -99,6 +99,11 @@ function matureSetbackEnvelope(d, id, group, town, labels) {
   const ownEra = town.buildingEras[id],
     serviceLevel = modelLevel(id, town.buildings[id]);
   if (!buildingStages(building.kind, ownEra, 1, serviceLevel).modernizing) return null;
+  // Shipped models have their exact three-finish union generated alongside the
+  // footprint catalog. New/incomplete definitions retain the memoized probe
+  // fallback until their assets are generated, rather than weakening setbacks.
+  const generated = matureEnvelopeFor(id, town);
+  if (generated) return generated;
   const key = JSON.stringify([id, ownEra, town.era, serviceLevel, labels[id]]);
   const cache = (d.plotSetbackEnvelopes ??= new Map());
   if (cache.has(key)) return cache.get(key);
@@ -151,6 +156,7 @@ function matureSetbackEnvelope(d, id, group, town, labels) {
 
 export function buildPlot(d, id, group, town, labels) {
   const envelope = matureSetbackEnvelope(d, id, group, town, labels);
+  if (envelope) group.userData.matureSetbackEnvelope = envelope;
   const transform = roadSetbackTransform(id, town, envelope);
   if (transform) group.userData.signCameraScale = [transform.x.scale, 1, transform.z.scale];
   const previous = d.pendingPlotSigns;

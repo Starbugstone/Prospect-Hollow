@@ -39,6 +39,28 @@ export function plotFootprintKey(id, town) {
       : 'none',
   });
 }
+// The same generated family owns both collision solids and the untransformed
+// mature envelope used to reserve every paid finish. Labels do not change the
+// authored board width or the physical model. Geometry follows the building's
+// finish era, including while its town has advanced and it awaits modernization.
+export function plotSetbackEnvelopeKey(id, town) {
+  return [id, town.buildingEras[id] ?? 'frontier', town.buildings[id] ?? 0].join('|');
+}
+export function matureEnvelopeFor(id, town) {
+  const era = town.buildingEras[id] ?? 'frontier',
+    family = eraEvolution(era).cityAssets,
+    envelope = ready.get(era)?.setbacks?.[plotSetbackEnvelopeKey(id, town)];
+  if (
+    (family && !available(family)) ||
+    !Array.isArray(envelope) ||
+    envelope.length !== 4 ||
+    !envelope.every(Number.isFinite) ||
+    envelope[0] > envelope[1] ||
+    envelope[2] > envelope[3]
+  )
+    return null;
+  return envelope;
+}
 export function footprintsFor(key, root) {
   const era = key.split('|')[2],
     catalog = ready.get(era),

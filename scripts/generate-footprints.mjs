@@ -20,6 +20,7 @@ try {
       keys: {},
       shapes: [],
       solids: [],
+      setbacks: data.setbacks[era] ?? {},
       shapeMap: new Map(),
       solidMap: new Map(),
     };
@@ -53,7 +54,7 @@ try {
     'buildingFootprints.json',
     'footprintLoaders.js',
     ...familyNames.flatMap((era) =>
-      ['keys', 'shapes', 'solids'].map((kind) => `footprints-${era}-${kind}.json`),
+      ['keys', 'shapes', 'solids', 'setbacks'].map((kind) => `footprints-${era}-${kind}.json`),
     ),
   ]);
   async function publish(name, value) {
@@ -66,8 +67,8 @@ try {
     } else await writeFile(file, text);
     bytes += text.length;
   }
-  for (const [era, { keys, shapes, solids }] of Object.entries(families))
-    for (const [kind, data] of Object.entries({ keys, shapes, solids }))
+  for (const [era, { keys, shapes, solids, setbacks }] of Object.entries(families))
+    for (const [kind, data] of Object.entries({ keys, shapes, solids, setbacks }))
       await publish(`footprints-${era}-${kind}.json`, data);
   if (!selectedEras.length) {
     const powerSolids = Object.entries(data.keys)
@@ -86,12 +87,12 @@ try {
       )
         .map(
           (era) =>
-            `${JSON.stringify(era)}: () => Promise.all([${['keys', 'shapes', 'solids']
+            `${JSON.stringify(era)}: () => Promise.all([${['keys', 'shapes', 'solids', 'setbacks']
               .map(
                 (kind) =>
                   `readJsonAsset(new URL('./footprints-${era}-${kind}.json', import.meta.url))`,
               )
-              .join(',')}]).then(([keys,shapes,solids])=>({keys,shapes,solids}))`,
+              .join(',')}]).then(([keys,shapes,solids,setbacks])=>({keys,shapes,solids,setbacks}))`,
         )
         .join(',')}};\n`,
     );

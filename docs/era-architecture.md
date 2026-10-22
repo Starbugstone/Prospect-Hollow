@@ -633,6 +633,18 @@ The station uses its full height, including canopies, when fitting between the
 track and front street; `testing/station-clearance.test.js` covers its tiers and
 construction states across eras.
 
+The same generation writes numeric mature setback envelopes for every eligible
+service stage and finish era, including retained finishes in partially
+modernized towns. `FootprintCatalog.matureEnvelopeFor()` supplies the exact union
+of paid finishes before a plot is rendered. Shipped plots therefore do not build
+three temporary finish models on a cold load or construction preparation. A
+missing or incomplete generated definition keeps the existing bounded, memoized
+probe fallback. `check:footprints` checks these envelopes with the collision
+catalogs; `town-setback-catalog.test.js` checks shipped coverage and equality with
+the fallback geometry, including independence from a later town era. The data
+travels with the building's finish family, so a town awaiting modernization uses
+its already-loaded older finish catalog.
+
 `changeTown` uses `swapPlot` for one changed plot with unchanged infrastructure.
 An accepted purchase is already persisted before presentation starts. A pooled
 hammer draws before preparation. Occupied new solids wait for a swept-clear

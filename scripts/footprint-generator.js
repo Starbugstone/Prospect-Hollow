@@ -9,6 +9,7 @@ import { PLOTS } from '../src/game/town/TownLayout';
 import { GARDEN_PARCELS } from '../src/data/townGardenDistrict';
 import { ALL_MESH_FAMILIES, loadFamilies } from '../src/game/town/assets/MeshCatalog';
 import { geometryFootprints, footprintKey } from '../src/game/town/BuildingFootprints';
+import { plotSetbackEnvelopeKey } from '../src/game/town/FootprintCatalog';
 
 export async function generateFootprints({ eras = null } = {}) {
   const definitions = ERAS.filter((era) => era.enabled);
@@ -23,6 +24,7 @@ export async function generateFootprints({ eras = null } = {}) {
   });
   const keys = {},
     shapes = [],
+    setbacks = {},
     known = new Map();
   const labels = Object.fromEntries(BUILDINGS.map((b) => [b.id, b.shortName]));
   for (const era of definitions.filter((era) => !eras || eras.includes(era.id))) {
@@ -54,6 +56,11 @@ export async function generateFootprints({ eras = null } = {}) {
             const group = new Group();
             group.position.set(PLOTS[id][0], 0.08, PLOTS[id][1]);
             d.buildPlot(id, group, d.town, labels, 0);
+            if (group.userData.matureSetbackEnvelope) {
+              setbacks[era.id] ??= {};
+              setbacks[era.id][plotSetbackEnvelopeKey(id, d.town)] =
+                group.userData.matureSetbackEnvelope;
+            }
             const solids = JSON.parse(
               JSON.stringify(geometryFootprints(group), (_, value) =>
                 typeof value === 'number' ? Math.round(value * 1e5) / 1e5 : value,
@@ -97,5 +104,5 @@ export async function generateFootprints({ eras = null } = {}) {
   }
   Object.values(d.geometries).forEach((g) => g.dispose());
   d.materials.forEach((m) => m.dispose());
-  return { keys, shapes };
+  return { keys, shapes, setbacks };
 }

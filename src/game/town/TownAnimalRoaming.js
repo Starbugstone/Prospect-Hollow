@@ -38,14 +38,28 @@ function policy(d, kind, radius, height) {
   const area =
     PERSONAL_AREAS.find((area) => kind === `monument:${area.id}`) ??
     EXTERIOR_HABITATS[kind.replace('exterior:', '')];
-  const roads = townTracks(d.town);
+  const roads = townTracks(d.town).map((road) => {
+    const margin = road.width / 2 + radius + 0.08;
+    // Only reject roads outside their expanded bounds. Near a road, retain the
+    // exact segment distance, including diagonal sides and rounded end caps.
+    const reach = margin + 1e-9;
+    return {
+      from: road.from,
+      to: road.to,
+      margin,
+      minX: Math.min(road.from[0], road.to[0]) - reach,
+      maxX: Math.max(road.from[0], road.to[0]) + reach,
+      minZ: Math.min(road.from[1], road.to[1]) - reach,
+      maxZ: Math.max(road.from[1], road.to[1]) + reach,
+    };
+  });
   const lastRow = Math.max(
     20,
     ...Object.entries(PLOTS)
       .filter(([id, [x]]) => d.town.buildings[id] && x > -28 && x < 20)
       .map(([, [, z]]) => z),
   );
-  const pointClear = (p, local = false) => {
+  const evaluatePoint = (p, local) => {
     const [x, y, z] = p;
     const ground = groundHeight(x, z);
     if (ground < -0.05 || Math.abs(y - ground - 0.07) > 0.18) return false;
@@ -71,11 +85,35 @@ function policy(d, kind, radius, height) {
     if (
       (local || kind !== 'town') &&
       roads.some(
-        (road) => segmentDistance(x, z, road.from, road.to) < road.width / 2 + radius + 0.08,
+        (road) =>
+          x >= road.minX &&
+          x <= road.maxX &&
+          z >= road.minZ &&
+          z <= road.maxZ &&
+          segmentDistance(x, z, road.from, road.to) < road.margin,
       )
     )
       return false;
     return d.navigation.clear(p, radius) && d.animalSpace.clear(p, radius, height);
+  };
+  // Graph endpoints recur in candidate joins and both directions of retained
+  // legs. Keep exact answers only for this preparation's unchanged collision
+  // inputs; a new navigation revision or mesh space must query them again.
+  const clearance = [new Map(), new Map()];
+  let navigation, revision, space;
+  const pointClear = (p, local = false) => {
+    const nextRevision = d.navigation.revision ?? d.navigation.obstacles;
+    if (navigation !== d.navigation || revision !== nextRevision || space !== d.animalSpace) {
+      clearance[0].clear();
+      clearance[1].clear();
+      navigation = d.navigation;
+      revision = nextRevision;
+      space = d.animalSpace;
+    }
+    const cache = clearance[local ? 1 : 0];
+    const key = `${p[0]},${p[1]},${p[2]}`;
+    if (!cache.has(key)) cache.set(key, evaluatePoint(p, local));
+    return cache.get(key);
   };
   const pathClear = (points, local = false) => {
     for (let i = 0; i < points.length; i++) {
