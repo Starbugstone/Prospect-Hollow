@@ -144,14 +144,18 @@ const rings = {
       const k = age / RING_LIFE;
       ctx.path(at, ctx.toMoon, s.p);
       travel(ctx, at, s.dir);
-      // Two axes across the direction of travel span the ring.
+      // The ring faces back along the flight, turned halfway to the viewer so it opens
+      // into a ring rather than a sliver from the side.
+      billboard(ctx, s.p);
+      s.dir.add(s.view).normalize();
+      // Two axes across that facing span the ring.
       s.axis.copy(Math.abs(s.dir.y) > 0.95 ? s.right.set(1, 0, 0) : s.worldUp);
       s.u.crossVectors(s.dir, s.axis).normalize();
       s.w.crossVectors(s.dir, s.u).normalize();
-      const radius = 1.5 + 3 * smooth(k),
-        width = 0.34 * (1 - 0.6 * k),
+      const radius = 1.8 + 4.2 * smooth(k),
+        width = 1.05 * (1 - 0.5 * k),
         // A quick pop in as each ring appears (departing) or reaches the hull (arriving).
-        alpha = 0.9 * (1 - smooth(k)) * smooth(age / 0.08 + (arriving ? 1 : 0)),
+        alpha = (1 - smooth(k)) * smooth(age / 0.08 + (arriving ? 1 : 0)),
         color = colors[r % 2];
       for (let i = 0; i < RING_SEGMENTS; i++) {
         const angle = (i / RING_SEGMENTS) * Math.PI * 2,
@@ -174,11 +178,11 @@ const rings = {
 // at the hull and fading to nothing, inside a wider, fainter glow. Arriving, it trails
 // back along the way it came in and shortens as it slows.
 const RIBBON_POINTS = 18,
-  RIBBON_STEP = 0.05,
+  RIBBON_STEP = 0.08,
   // [first vertex, width scale, alpha] for the glow, then the core drawn over it.
   RIBBON_LAYERS = Object.freeze([
-    Object.freeze([0, 2.6, 0.28]),
-    Object.freeze([RIBBON_POINTS * 2, 1, 0.95]),
+    Object.freeze([0, 2.2, 0.38]),
+    Object.freeze([RIBBON_POINTS * 2, 1, 1]),
   ]);
 function stripIndices(points, offset) {
   const indices = [];
@@ -207,8 +211,8 @@ const ribbon = {
       if (s.u.lengthSq() < 1e-8) s.u.copy(s.right);
       s.u.normalize();
       s.color.copy(colors[0]).lerp(colors[1], k);
-      const width = 0.62 * (1 - k) ** 0.7,
-        alpha = strength * (1 - k) ** 1.4;
+      const width = 0.85 * (1 - k) ** 0.8,
+        alpha = strength * (1 - k) ** 1.1;
       for (let layer = 0; layer < RIBBON_LAYERS.length; layer++) {
         const [base, scale, fade] = RIBBON_LAYERS[layer];
         for (let side = 0; side < 2; side++) {
@@ -284,7 +288,7 @@ const sparkle = {
         out,
         first,
         s.p,
-        (0.18 + 0.2 * h) * (1 - 0.5 * life),
+        (0.38 + 0.34 * h) * (1 - 0.45 * life),
         colors[slot % 2],
         (1 - smooth(life)) * twinkle,
       );
@@ -300,7 +304,7 @@ const sparkle = {
     ctx.path(segment.start, ctx.toMoon, s.p);
     billboard(ctx, s.p);
     s.color.copy(colors[0]).lerp(colors[2], 0.5 * (1 - k));
-    star(out, flashFirst, s.p, 0.6 + 2.6 * smooth(k * 1.6), s.color, 1 - smooth(k));
+    star(out, flashFirst, s.p, 1 + 3.6 * smooth(k * 1.6), s.color, 1 - smooth(k));
   },
 };
 
@@ -332,11 +336,13 @@ export function createSaucerTrail(d, parent, { style, colors: palette, path }) {
   mesh.visible = false;
   parent.add(mesh);
   const writer = new TrailWriter(geometry);
-  // Era colours, or a faint silver on the Moon route; white for the sparkle flash.
+  // [core, highlight, flash]: the era's stronger trait (or rim) colour carries the effect,
+  // so it reads against a pale sky, with its light as the highlight. On the Moon route a
+  // moonlit silver takes the core. White brightens the sparkle flash.
   const colors = {
     sky: Object.freeze([
-      new Color(palette.light),
       new Color(palette.secondary),
+      new Color(palette.light),
       new Color('#ffffff'),
     ]),
     moon: Object.freeze([new Color(TRAIL_SILVER), new Color(palette.light), new Color('#ffffff')]),

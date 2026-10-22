@@ -50,8 +50,8 @@ export const skySaucer = (era) =>
 //   sparkle: a star-flash as it leaps away, then a wake of twinkles.
 export const SAUCER_TRAIL_STYLES = Object.freeze(['rings', 'ribbon', 'sparkle']);
 export const SAUCER_TRAIL = 'rings';
-// On the Moon route the trail turns a faint silver.
-export const TRAIL_SILVER = '#e3e9f1';
+// On the Moon route the trail turns a moonlit blue-silver.
+export const TRAIL_SILVER = '#9fb0c8';
 /** The trail's colours: the era's light, and its trait colour (or the rim when the
  * trait colour is the light itself). */
 export const saucerTrailColors = (c) => ({

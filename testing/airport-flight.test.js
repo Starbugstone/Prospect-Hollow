@@ -544,8 +544,8 @@ describe('Sky saucer trails', () => {
       // The first ring stays where it was left (it only widens); the saucer moved on.
       const left = new Vector3();
       saucerFlightPoint(49.35, false, left);
-      expect(worldVertex(0).distanceTo(left)).toBeLessThan(5);
-      expect(ring.distanceTo(left)).toBeLessThan(5);
+      expect(worldVertex(0).distanceTo(left)).toBeLessThan(7);
+      expect(ring.distanceTo(left)).toBeLessThan(7);
       expect(saucer.position.distanceTo(left)).toBeGreaterThan(1);
     } finally {
       disposeDiorama(d);
@@ -557,14 +557,14 @@ describe('Sky saucer trails', () => {
     try {
       d.motions[0](53);
       const hull = saucer.position.clone();
-      // The core strip's first pair sits at the hull, its last at the path 0.85 s back.
+      // The core strip's first pair sits at the hull, its last at the path 1.36 s back.
       const head = worldVertex(18 * 2)
         .add(worldVertex(18 * 2 + 1))
         .multiplyScalar(0.5);
       const tail = worldVertex(18 * 4 - 2)
         .add(worldVertex(18 * 4 - 1))
         .multiplyScalar(0.5);
-      const back = saucerFlightPoint(53 - 17 * 0.05, false, new Vector3());
+      const back = saucerFlightPoint(53 - 17 * 0.08, false, new Vector3());
       expect(head.distanceTo(hull)).toBeLessThan(0.01);
       expect(tail.distanceTo(back)).toBeLessThan(0.01);
     } finally {
@@ -616,10 +616,10 @@ describe('Sky saucer trails', () => {
         for (const hex of [light, secondary]) if (has(sky.geometry, hex)) seen.add(hex);
         if (has(moon.geometry, TRAIL_SILVER)) seen.add('silver');
       }
-      expect(seen.has(light)).toBe(true);
+      expect(seen.has(secondary)).toBe(true);
       expect(seen.has('silver')).toBe(true);
-      // The ribbon fades out exactly as it reaches the trait colour; the others show both.
-      if (style !== 'ribbon') expect(seen.has(secondary)).toBe(true);
+      // The ribbon fades out as it reaches the light colour; the others show both.
+      if (style !== 'ribbon') expect(seen.has(light)).toBe(true);
     } finally {
       disposeDiorama(sky.d);
       disposeDiorama(moon.d);

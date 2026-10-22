@@ -132,15 +132,16 @@ them (`src/game/town/SaucerTrails.js`).
   away, each widening and fading where it was left. Arriving, the rings close in on the
   saucer as it slows: the jump played backwards.
 - **Ribbon of light (`ribbon`).** A tapered ribbon along the path the saucer actually flew
-  (the last 0.85 s), bright at the hull and fading to nothing, inside a wider, fainter
+  (the last 1.4 s), bright at the hull and fading to nothing, inside a wider, fainter
   glow. It follows the Moon route's curve. Arriving, it trails back along the way in and
   shortens as the saucer slows.
 - **Sparkle wake (`sparkle`).** A star-flash as it leaps away, then a stream of small
   four-point twinkles shed along the path, drifting apart and down as they fade. Arriving,
   the flash marks where it drops in and the twinkles follow it down.
 
-Each style takes the era's `light` colour and its trait colour (or the rim, when the trait
-colour is the light itself); on the Moon route the light turns a faint silver. The trail
+Each style is carried by the era's trait colour (or the rim, when the trait colour is the
+light itself), so it reads against the pale sky, with the era's `light` as its highlight.
+On the Moon route a moonlit blue-silver takes the trait colour's place. The trail
 is one mesh with its own geometry and material, written in world space every frame into
 preallocated buffers: at most 200 triangles, one instanced draw while it shows and none
 while hidden, so the saucer stays within its vehicle budget of 15 meshes. With reduced
