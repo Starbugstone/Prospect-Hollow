@@ -284,9 +284,9 @@ function addOccupiedBalcony(d, structure, parent, x, base, roof, wall, grade, ca
     ).name = 'Balcony wall bracket';
   }
   d.box(structure, 1.27, 0.55, 0.08, x, deckTop + 0.275, 1.735, '#9cbbb5').name = 'Balcony parapet';
-  // The mature terrace keeps its bearing frame across every era finish. The
-  // final working shade spans from the existing cowl to this front beam,
-  // entirely inside the completed balcony/cowl envelope and above the street.
+  // A mature terrace retains its complete shade and seating through each era.
+  // Finishes refit the fascia and open the same three working blades, rather
+  // than removing the previous era's paid fittings or adding another room.
   const beamTop = canopy.underside - 0.1;
   const postTop = beamTop - 0.1;
   for (const side of [-1, 1])
@@ -302,33 +302,55 @@ function addOccupiedBalcony(d, structure, parent, x, base, roof, wall, grade, ca
     ).name = 'Terrace canopy bearing post';
   d.box(structure, 1.27, 0.1, 0.1, x, beamTop - 0.05, 1.72, wall).name =
     'Terrace canopy front beam';
+  const frontage = modulePart(d, parent, 'frontage');
+  const fasciaHeight = grade >= 2 ? 0.24 : 0.08;
+  d.box(frontage, 1.27, fasciaHeight, 0.12, x, postTop + fasciaHeight / 2, 1.715, roof).name =
+    'Working terrace weather fascia';
   const operation = modulePart(d, parent, 'operation');
   operation.name = 'Occupied terrace seating';
-  const improved = grade >= 3;
+  const complete = canopy.complete;
   d.box(
     operation,
-    improved ? 0.9 : 0.65,
-    improved ? 0.36 : 0.3,
+    complete ? 0.9 : 0.65,
+    complete ? 0.36 : 0.3,
     0.34,
     x - 0.12,
-    deckTop + (improved ? 0.18 : 0.15),
+    deckTop + (complete ? 0.18 : 0.15),
     1.19,
     wall,
   ).name = 'Terrace bench';
-  if (improved) {
+  if (complete) {
     const back = canopy.front - 0.045;
     const front = 1.77;
-    for (const side of [-1, 0, 1])
+    for (const side of [-1, 0, 1]) {
+      // A narrow continuous axle bearing meets the beam below and the cowl
+      // above; neither pose depends on a raised blade corner floating nearby.
       d.box(
-        operation,
-        0.24,
+        structure,
+        0.045,
         0.1,
         front - back,
         x + side * 0.4,
         canopy.underside - 0.05,
         (back + front) / 2,
+        wall,
+      ).name = 'Terrace louver axle bearing';
+      const blade = d.box(
+        operation,
+        0.34,
+        0.14,
+        front - back,
+        x + side * 0.4,
+        canopy.underside - 0.05,
+        (back + front) / 2,
         roof,
-      ).name = 'Working terrace shade louver';
+      );
+      blade.name = 'Working terrace shade louver';
+      // The lower front edge intersects the beam and the upper rear edge
+      // intersects the existing cowl in both poses. Opening the blade changes
+      // ventilation and the visible roof profile inside the same reservation.
+      blade.rotation.z = grade >= 3 ? (35 * Math.PI) / 180 : 0;
+    }
     d.box(operation, 0.9, 0.4, 0.1, x - 0.12, deckTop + 0.56, 1.04, roof).name =
       'Terrace bench back';
     d.box(operation, 0.1, 0.48, 0.1, x + 0.46, deckTop + 0.24, 1.5, wall);
@@ -621,6 +643,7 @@ export function addCityFinish(d, parent, kind, era, level = 3, moduleLevel = lev
     addOccupiedBalcony(d, structure, root, x, base, a.roof, a.wall, level, {
       underside: m.y + hoodHeight,
       front: m.z + (m.depth + 0.15) / 2,
+      complete: moduleLevel >= 3,
     });
   else {
     // Solar strips retain the complete cowl roof. Its small front cantilever

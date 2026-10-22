@@ -232,3 +232,23 @@ terrain) and `testing/river-transport.test.js` (welded lengths only on level lin
 - **C2.** An interaction quality mode (lower pixel ratio and cache MSAA during drags and reveals).
 - **C3.** Cheaper character instancing updates (per-root visibility instead of per-mesh ancestor
   walks).
+
+## October 22 visual follow-up: animal detour slices
+
+A matched headless complete Riverlight fixture showed comparable total animal
+preparation work at `823e9713` and `ab7a9f24`, but one late-era mesh detour searched
+991 nodes in a single step (about 41 ms in that diagnostic, versus a baseline
+maximum of about 14 ms). These are Node diagnostic timings, not browser frames.
+
+`animalNavigation()` now yields after at most 32 candidate attempts inside its
+detour search, including rejected candidates and the final closing leg. Search
+order, collision predicates, search limits and synchronous `plan()` / `route()`
+results stay the same. Cancellation still follows the existing generation-owned
+scheduler. Tests in `testing/town-animal-detour-slices.test.js` cover bounded
+collision work, cancellation, interleaved searches, closing routes and real mesh
+clearance. Reverting this change restores the single synchronous detour call.
+
+A separately measured six-second post-resident browser window showed different
+VIP inset activation between snapshots. Its frame intervals must be compared
+with matched inset state; that observation does not establish an animal-work
+regression. No inset rendering or event probability is changed by this patch.

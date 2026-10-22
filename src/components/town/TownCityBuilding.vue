@@ -394,9 +394,12 @@
         <path d="M-128-89v-33m32 9v-33" stroke-width="4" />
         <path d="M-131-123-93-112" stroke-width="6" />
       </g>
-      <path :d="level >= 3 ? 'M-125-107v-15l26 8v15Z' : 'M-123-104v-9l21 6v9Z'" :fill="city.wall" />
       <path
-        v-if="level >= 3"
+        :d="moduleLevel >= 3 ? 'M-125-107v-15l26 8v15Z' : 'M-123-104v-9l21 6v9Z'"
+        :fill="city.wall"
+      />
+      <path
+        v-if="moduleLevel >= 3"
         d="M-125-121v-13l26 8v13M-89-105v13m-7-17 14 4-5 4-14-4Z"
         :fill="city.roof"
         :stroke="city.roof"
@@ -408,11 +411,37 @@
         :stroke="city.wall"
         stroke-width="2"
       />
-      <g v-if="level >= 3" data-working-terrace-shade="true" :stroke="city.roof" stroke-width="7">
-        <path data-terrace-shade-louver="true" d="M-126-122-110-134" />
-        <path data-terrace-shade-louver="true" d="M-114-118-98-130" />
-        <path data-terrace-shade-louver="true" d="M-102-115-86-127" />
+      <g
+        v-if="moduleLevel >= 3"
+        data-working-terrace-shade="true"
+        :data-shade-pose="level >= 3 ? 'ventilating' : 'closed'"
+        :fill="city.roof"
+        :stroke="city.roof"
+        stroke-width="2"
+      >
+        <g data-terrace-shade-bearings="true" :stroke="city.wall" stroke-width="3" fill="none">
+          <path d="M-123-121-107-133M-111-117-95-129M-99-114-83-126" />
+        </g>
+        <path
+          data-terrace-shade-louver="true"
+          :d="
+            level >= 3 ? 'M-128-128-112-140-103-133-119-121Z' : 'M-127-122-111-134-104-132-120-120Z'
+          "
+        />
+        <path
+          data-terrace-shade-louver="true"
+          :d="level >= 3 ? 'M-116-124-100-136-91-129-107-117Z' : 'M-115-118-99-130-92-128-108-116Z'"
+        />
+        <path
+          data-terrace-shade-louver="true"
+          :d="level >= 3 ? 'M-104-121-88-133-79-126-95-114Z' : 'M-103-115-87-127-80-125-96-113Z'"
+        />
       </g>
+      <path
+        data-terrace-weather-fascia="true"
+        :d="level >= 2 ? 'M-131-129-93-118v9l-38-11Z' : 'M-131-123-93-112v3l-38-11Z'"
+        :fill="city.roof"
+      />
     </g>
     <g
       v-if="

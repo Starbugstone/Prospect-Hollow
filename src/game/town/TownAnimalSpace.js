@@ -180,7 +180,7 @@ export function animalNavigation(base = new TownNavigation(), space) {
       }
     return null;
   };
-  const detour = (a, b, radius, height) => {
+  function* detourSteps(a, b, radius, height) {
     if (space.segment(a, b, radius, height)) return [a, b];
     const open = [{ p: a, x: 0, z: 0, cost: 0, estimate: Math.hypot(b[0] - a[0], b[2] - a[2]) }];
     const costs = new Map([['0,0', 0]]);
@@ -190,6 +190,7 @@ export function animalNavigation(base = new TownNavigation(), space) {
       Math.min(a[2], b[2]) - 4,
       Math.max(a[2], b[2]) + 4,
     ];
+    let candidates = 0;
     for (let searched = 0; open.length && searched < 2400; searched++) {
       let best = 0;
       for (let n = 1; n < open.length; n++) if (open[n].estimate < open[best].estimate) best = n;
@@ -208,6 +209,12 @@ export function animalNavigation(base = new TownNavigation(), space) {
         [0, 1],
         [0, -1],
       ]) {
+        // Keep the same search order while allowing background preparation to
+        // pause or cancel inside a large detour, including rejected candidates.
+        if (++candidates === 32) {
+          candidates = 0;
+          yield;
+        }
         const x = current.x + dx,
           z = current.z + dz,
           key = `${x},${z}`;
@@ -228,9 +235,8 @@ export function animalNavigation(base = new TownNavigation(), space) {
       }
     }
     return null;
-  };
-  // Resumable plans: one yield after each detour search, so a town-wide animal route
-  // can be prepared across frames instead of in one long task.
+  }
+  // Detours yield within their searches as well as between route sections.
   function* planSteps(points, radius = 0.45, height = 1) {
     const original = yield* base.planSteps(points, radius);
     const first = original.points[0] && safePoint(original.points[0], radius, height);
@@ -238,13 +244,13 @@ export function animalNavigation(base = new TownNavigation(), space) {
     const route = [first];
     for (const p of original.points.slice(1)) {
       const end = safePoint(p, radius, height);
-      const section = end && detour(route.at(-1), end, radius, height);
+      const section = end && (yield* detourSteps(route.at(-1), end, radius, height));
       yield;
       if (!section) break;
       route.push(...section.slice(1));
     }
     if (points.length > 1 && point(points[0]).distanceTo(point(points.at(-1))) < 1e-5) {
-      const closing = detour(route.at(-1), first, radius, height);
+      const closing = yield* detourSteps(route.at(-1), first, radius, height);
       route.push(...(closing ? closing.slice(1) : route.slice(0, -1).reverse()));
     }
     return walkPath(route);

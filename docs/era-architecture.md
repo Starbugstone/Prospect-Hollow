@@ -859,3 +859,18 @@ Scoped updates preserve the complete manifest, unrelated families and the
 all-era mine clearance union. Run the unfiltered `npm run check:footprints`
 command afterward to verify the complete catalog. A new era first requires a
 complete generation so its lazy loaders and manifest are registered.
+
+### Retained city-home terrace fittings
+
+The shared city home finish keeps one mature upper room and balcony. Once the
+module is complete, its three shade blades, their bearings and seating remain
+present from the next era's first finish. Later finishes refit that same module:
+the second adds a deeper weather fascia, and the third opens the existing
+blades for ventilation. Their count and physical envelope stay bounded across
+eras. `TownCityBuilding.vue` follows the same module/finish distinction.
+
+`testing/town-city-home-finish.test.js` covers both visible geometry steps,
+supported fittings, predecessor/successor counterparts and the SVG equivalent.
+The permanent mine entrance and historic portal boards use the eagerly loaded
+`mineSignMounts.json` catalogue, generated and checked with the footprint family.
+Custom inputs retain the validated physical resolver fallback.
