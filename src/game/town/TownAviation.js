@@ -1,11 +1,18 @@
 import { hasRoundedTransport } from '../../data/roundedArchitecture';
 import { roundedAircraft } from './RoundedTransports';
 import { airportAppearance } from '../../data/airport';
-import { SKY_MOON_DIRECTION, saucerFliesToMoon, skySaucer } from '../../data/skyCraft';
+import {
+  SAUCER_TRAIL,
+  SKY_MOON_DIRECTION,
+  saucerFliesToMoon,
+  saucerTrailColors,
+  skySaucer,
+} from '../../data/skyCraft';
+import { createSaucerTrail } from './SaucerTrails';
 import { futureModel, cityModel } from './buildings/city';
 import { AIRPORT } from './TownLayout';
 import airportLayout from '../../data/airportLayout.json';
-import { Box3, Quaternion, Vector3 } from 'three';
+import { Box3, Vector3 } from 'three';
 import { lerp, smooth01 } from './TownMath';
 
 // One aircraft owns the whole sequence. Arrivals and departures cannot overlap;
@@ -226,6 +233,30 @@ const routePoint = ({ heading, climb, rise, ease }, s) => ({
 /** Direction of travel away from the pad at horizontal distance s. */
 const routeTangent = ({ heading, climb, rise, ease }, s) =>
   unit(heading[0], climb + (rise / ease) * Math.exp(-s / ease), heading[1]);
+// Distance along the route: accelerating from the hover after the departure starts, and
+// slowing to the hover by the end of the approach (`k` from 0 to 1).
+const departureDistance = (seconds) => 2.3 * seconds * seconds;
+const approachDistance = (toMoon, k) => (toMoon ? 170 : 60) * (1 - k) ** 2;
+const DEPARTURE_AT = 49,
+  APPROACH_AT = 135,
+  APPROACH_FOR = 12;
+/** The saucer's position at cycle `phase` on its departure (from the hover) or its
+ * approach (to the hover), written into `out` without allocating. Phases between the two
+ * hold the hover point. The trail effects sample the flight with this. */
+export function saucerFlightPoint(phase, toMoon, out) {
+  const way = toMoon ? SAUCER_ROUTES.moon : SAUCER_ROUTES.sky;
+  let s = 0;
+  if (phase >= APPROACH_AT) {
+    s = approachDistance(toMoon, Math.min(1, (phase - APPROACH_AT) / APPROACH_FOR));
+    if (!toMoon) return out.set(SAUCER_PAD.x, HOVER_HIGH + s, SAUCER_PAD.z);
+  } else if (phase > DEPARTURE_AT) s = departureDistance(phase - DEPARTURE_AT);
+  const { heading, climb, rise, ease } = way;
+  return out.set(
+    SAUCER_PAD.x + heading[0] * s,
+    HOVER_HIGH + climb * s + rise * (1 - Math.exp(-s / ease)),
+    SAUCER_PAD.z + heading[1] * s,
+  );
+}
 const DOWN = Object.freeze([0, -1, 0]);
 const yawOf = ([x, z]) => Math.atan2(x, z);
 const turnTo = (from, to, t) => from + Math.atan2(Math.sin(to - from), Math.cos(to - from)) * t;
@@ -321,9 +352,8 @@ export function saucerPose(time, { toMoon = false } = {}) {
       0.05,
     );
   if (phase < 57) {
-    // Accelerates from the hover, so the streak starts at rest.
-    const t = phase - 49,
-      s = 2.3 * t * t;
+    // Accelerates from the hover, so the departure starts at rest.
+    const s = departureDistance(phase - DEPARTURE_AT);
     return pose(
       {
         ...routePoint(out, s),
@@ -332,8 +362,8 @@ export function saucerPose(time, { toMoon = false } = {}) {
         pitch: 0.1 * ramp(phase, 49, 1.5),
         spin: 1,
         propellers: true,
-        // The streak grows once it is moving fast.
-        trail: ramp(phase, 50.5, 2),
+        // The trail's strength: on as soon as it leaps away.
+        trail: ramp(phase, 49.2, 1),
         opacity: 1 - ramp(phase, 53, 4),
         phase: 'departure',
       },
@@ -344,8 +374,7 @@ export function saucerPose(time, { toMoon = false } = {}) {
   if (phase < 147) {
     // Decelerates to a hover above the pad, so the descent starts at rest: back down
     // the Moon route, or straight down from overhead.
-    const t = (phase - 135) / 12,
-      s = (toMoon ? 170 : 60) * (1 - t) ** 2;
+    const s = approachDistance(toMoon, (phase - APPROACH_AT) / APPROACH_FOR);
     return pose(
       {
         ...(toMoon ? routePoint(out, s) : { ...pad, y: HOVER_HIGH + s }),
@@ -353,7 +382,7 @@ export function saucerPose(time, { toMoon = false } = {}) {
         yaw: arrivalYaw,
         spin: 1,
         propellers: true,
-        trail: 1 - ramp(phase, 138, 6),
+        trail: 1 - ramp(phase, 141, 5.5),
         opacity: ramp(phase, 135, 4),
         phase: 'approach',
       },
@@ -415,13 +444,8 @@ function applyLivery(materials, appearance) {
   };
 }
 
-const scratch = {
-  quaternion: new Quaternion(),
-  direction: new Vector3(),
-  up: new Vector3(0, 1, 0),
-};
-
-export function addAviationActivity(d, town) {
+/** `options.trail` overrides the saucer's trail style (SAUCER_TRAIL), to compare them. */
+export function addAviationActivity(d, town, { trail: trailStyle = SAUCER_TRAIL } = {}) {
   if (!town.buildings.airport) return null;
   const era = town.buildingEras?.airport;
   const appearance = airportAppearance(era);
@@ -459,13 +483,17 @@ export function addAviationActivity(d, town) {
   plane.userData.animated = true;
   const propellers = ['propellerLeft', 'propellerRight'].map((name) => plane.getObjectByName(name));
   const legs = plane.getObjectByName('saucerLegs');
-  const trail = plane.getObjectByName('saucerTrail');
-  // The streak is fainter than the hull. Its cone is drawn on its own in any case, so
-  // its own material adds no draw call.
-  if (trail) {
-    trail.material = trail.material.clone();
-    trail.material.depthWrite = false;
-  }
+  // The trail has its own geometry and material: one more instanced draw while it shows,
+  // none while it is hidden. Added after the fade materials, as it keeps its own alpha.
+  const trail = rounded
+    ? createSaucerTrail(d, plane, {
+        style: trailStyle,
+        colors: saucerTrailColors(skySaucer(era)),
+        path: saucerFlightPoint,
+      })
+    : null;
+  // Reduced motion keeps the flight but leaves the trail effects off.
+  const reducedQuery = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
   const livery = rounded ? null : applyLivery(materials, appearance);
   const liveries = appearance.liveries?.length || 1;
   // The Moon route is fixed per visit: it is decided while the saucer is parked, so a
@@ -497,10 +525,12 @@ export function addAviationActivity(d, town) {
     plane.visible = pose.visible;
     d.visitorTransports?.set('airport', { ...airplaneArrival(time), root: plane });
     for (const material of materials.values()) material.opacity = pose.opacity;
-    if (trail) trail.material.opacity = pose.opacity * 0.35;
     plane.userData.flightPhase = pose.phase;
     plane.userData.flightToMoon = rounded && toMoon;
-    if (!pose.visible) return;
+    if (!pose.visible) {
+      if (trail) trail.mesh.visible = false;
+      return;
+    }
     plane.position.set(pose.x, pose.y, pose.z);
     plane.rotation.set(pose.pitch, pose.yaw, pose.roll);
     if (rounded) {
@@ -509,7 +539,12 @@ export function addAviationActivity(d, town) {
       propellers[0].rotation.z = spin;
       legs.visible = pose.legs > 0.02;
       legs.scale.setScalar(lerp(0.15, 1, pose.legs));
-      updateTrail(plane, trail, pose);
+      trail.update(
+        ((time % AIRPORT_FLIGHT_CYCLE) + AIRPORT_FLIGHT_CYCLE) % AIRPORT_FLIGHT_CYCLE,
+        toMoon,
+        pose.trail * pose.opacity,
+        !!(d.liveVisitorsReducedMotion || reducedQuery?.matches),
+      );
     } else
       for (const propeller of propellers.filter(Boolean))
         propeller.rotation.z = pose.propellers ? time * 18 : 0;
@@ -517,21 +552,4 @@ export function addAviationActivity(d, town) {
   update(0);
   d.motions.push(update);
   return { root: plane, motion: update };
-}
-
-// Points the saucer's streak opposite its travel, in the saucer's own (tilted) frame.
-function updateTrail(plane, trail, pose) {
-  trail.visible = pose.trail > 0.01;
-  if (!trail.visible) return;
-  const { quaternion, direction, up } = scratch;
-  const length = 6 * pose.trail;
-  quaternion.setFromEuler(plane.rotation).invert();
-  direction
-    .set(-pose.travel[0], -pose.travel[1], -pose.travel[2])
-    .applyQuaternion(quaternion)
-    .normalize();
-  trail.quaternion.setFromUnitVectors(up, direction);
-  trail.scale.set(0.4, length, 0.4);
-  trail.position.copy(direction).multiplyScalar(1.1 + length / 2);
-  trail.position.y += 0.95;
 }

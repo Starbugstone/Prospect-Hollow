@@ -116,11 +116,35 @@ whose turn begins as it leaves the frame.
 The saucer needs no runway. It lifts a little off the hangar floor and folds its legs,
 hovers out along the same hangar taxiway the planes use, and stops on a pad on the runway
 beside the hangar door. Its rim lights spin up and it wobbles slightly. It lifts straight
-up, pauses in a hover, then accelerates away with a fading light streak. Landing mirrors
+up, pauses in a hover, then accelerates away and fades, leaving a trail. Landing mirrors
 this: it appears high, slows to a hover above the pad, descends vertically, settles and
 hovers back into the hangar, where its legs come down. Below hover height it is always
 over the hangar taxiway or straight above the pad, clear of every road, path, the
 railway and the station.
+
+#### Departure and arrival trail (prototype)
+
+Three trail styles are on trial; `SAUCER_TRAIL` in `src/data/skyCraft.js` picks the one
+every saucer flies, and `addAviationActivity(d, town, { trail })` overrides it to compare
+them (`src/game/town/SaucerTrails.js`).
+
+- **Warp rings (`rings`).** Four thin glowing rings pop out behind the hull as it leaps
+  away, each widening and fading where it was left. Arriving, the rings close in on the
+  saucer as it slows: the jump played backwards.
+- **Ribbon of light (`ribbon`).** A tapered ribbon along the path the saucer actually flew
+  (the last 0.85 s), bright at the hull and fading to nothing, inside a wider, fainter
+  glow. It follows the Moon route's curve. Arriving, it trails back along the way in and
+  shortens as the saucer slows.
+- **Sparkle wake (`sparkle`).** A star-flash as it leaps away, then a stream of small
+  four-point twinkles shed along the path, drifting apart and down as they fade. Arriving,
+  the flash marks where it drops in and the twinkles follow it down.
+
+Each style takes the era's `light` colour and its trait colour (or the rim, when the trait
+colour is the light itself); on the Moon route the light turns a faint silver. The trail
+is one mesh with its own geometry and material, written in world space every frame into
+preallocated buffers: at most 200 triangles, one instanced draw while it shows and none
+while hidden, so the saucer stays within its vehicle budget of 15 meshes. With reduced
+motion the trail stays off.
 
 The saucer evolves with the airport's era. `SKY_SAUCERS` in `src/data/skyCraft.js` is
 the one definition: each era takes its colours from its own palette and adds one small

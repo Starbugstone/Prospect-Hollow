@@ -43,6 +43,22 @@ export const SKY_SAUCERS = Object.freeze({
 export const skySaucer = (era) =>
   Object.hasOwn(SKY_SAUCERS, era) ? SKY_SAUCERS[era] : SKY_SAUCERS.tomorrow;
 
+// The saucer's departure and arrival trail (src/game/town/SaucerTrails.js). Three
+// prototypes to choose from; SAUCER_TRAIL picks the one every saucer flies.
+//   rings:   warp rings pop out behind the hull, widen and fade.
+//   ribbon:  a tapered ribbon of light along the flight path, inside a soft glow.
+//   sparkle: a star-flash as it leaps away, then a wake of twinkles.
+export const SAUCER_TRAIL_STYLES = Object.freeze(['rings', 'ribbon', 'sparkle']);
+export const SAUCER_TRAIL = 'rings';
+// On the Moon route the trail turns a faint silver.
+export const TRAIL_SILVER = '#e3e9f1';
+/** The trail's colours: the era's light, and its trait colour (or the rim when the
+ * trait colour is the light itself). */
+export const saucerTrailColors = (c) => ({
+  light: c.light,
+  secondary: c.traitColor !== c.light ? c.traitColor : c.rim,
+});
+
 /** Whether this airport's saucer flies to the Moon: its airport era supplies the Moon
  * settlement (the era's `moonSettlement` capability) and the sky shows the Moon. */
 export const saucerFliesToMoon = (era, town) =>

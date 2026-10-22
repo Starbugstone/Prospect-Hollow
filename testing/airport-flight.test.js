@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Box3, Group } from 'three';
+import { Box3, Color, Group, Vector3 } from 'three';
 import airportLayout from '../src/data/airportLayout.json';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
@@ -12,8 +12,16 @@ import {
   PLANE_DEPARTURES,
   SAUCER_PAD,
   SAUCER_ROUTES,
+  saucerFlightPoint,
   saucerPose,
 } from '../src/game/town/TownAviation';
+import { saucerTrailStyle } from '../src/game/town/SaucerTrails';
+import {
+  SAUCER_TRAIL,
+  SAUCER_TRAIL_STYLES,
+  TRAIL_SILVER,
+  saucerTrailColors,
+} from '../src/data/skyCraft';
 import { roundedAircraft } from '../src/game/town/RoundedTransports';
 import {
   AIRPORT,
@@ -387,7 +395,13 @@ describe('Sky saucer flight', () => {
 });
 
 describe('Sky saucer evolution', () => {
-  const colours = (root) => new Set(meshes(root).map((m) => m.material.color.getHexString()));
+  // The trail's colours live in its vertices; count the saucer's own paint.
+  const colours = (root) =>
+    new Set(
+      meshes(root)
+        .filter((m) => m.name !== 'saucerTrail')
+        .map((m) => m.material.color.getHexString()),
+    );
 
   it('gives every rounded-transport era its own saucer from its palette', () => {
     const looks = new Set();
@@ -440,6 +454,191 @@ describe('Sky saucer evolution', () => {
       expect(new Box3().setFromObject(saucer).max.y).toBeLessThan(2.85);
     } finally {
       disposeDiorama(d);
+    }
+  });
+});
+
+describe('Sky saucer trails', () => {
+  // A diorama with the saucer flying the given trail style.
+  function trailed(style, era = 'tomorrow', setup = () => {}) {
+    const town = completeTown(era);
+    setup(town);
+    const d = aviationDiorama(town);
+    addAviationActivity(d, town, { trail: style });
+    const saucer = d.world.children[0];
+    const trail = saucer.getObjectByName('saucerTrail');
+    const geometry = trail.geometry;
+    const alphas = () => {
+      const color = geometry.getAttribute('color').array;
+      let most = 0;
+      for (let i = 3; i < color.length; i += 4) most = Math.max(most, color[i]);
+      return most;
+    };
+    // Vertices are in world space: the mesh cancels the saucer's own transform.
+    const worldVertex = (index) => {
+      saucer.updateMatrixWorld(true);
+      return new Vector3()
+        .fromBufferAttribute(geometry.getAttribute('position'), index)
+        .applyMatrix4(trail.matrixWorld);
+    };
+    return { d, saucer, trail, geometry, alphas, worldVertex };
+  }
+  const brightest = (t, step = 0.05, span = 2) => {
+    const times = [];
+    for (let s = t; s < t + span; s += step) times.push(s);
+    return times;
+  };
+
+  it('offers three styles, picked by SAUCER_TRAIL, and falls back to it', () => {
+    expect(SAUCER_TRAIL_STYLES).toEqual(['rings', 'ribbon', 'sparkle']);
+    expect(SAUCER_TRAIL_STYLES).toContain(SAUCER_TRAIL);
+    expect(saucerTrailStyle('comet')).toBe(SAUCER_TRAIL);
+    const { d, trail } = trailed('comet');
+    expect(trail.userData.trailStyle).toBe(SAUCER_TRAIL);
+    disposeDiorama(d);
+  });
+
+  it.each(SAUCER_TRAIL_STYLES)(
+    'shows the %s trail only while departing or arriving, in one fixed mesh',
+    (style) => {
+      const { d, saucer, trail, geometry, alphas } = trailed(style);
+      try {
+        expect(meshes(saucer).filter((m) => m.name === 'saucerTrail')).toEqual([trail]);
+        // Within the existing vehicle budget, and a handful of triangles.
+        expect(meshes(saucer).length).toBeLessThanOrEqual(15);
+        expect(geometry.index.count / 3).toBeLessThanOrEqual(200);
+        const arrays = [
+          geometry.getAttribute('position').array,
+          geometry.getAttribute('color').array,
+        ];
+        let departing = 0,
+          arriving = 0;
+        for (let t = 0; t < AIRPORT_FLIGHT_CYCLE; t += 0.05) {
+          d.motions[0](t);
+          const phase = saucerPose(t).phase;
+          const shown = trail.visible && saucer.visible;
+          if (['departure', 'approach'].includes(phase) || (t >= 48.5 && t < 49)) {
+            if (phase === 'departure') departing = Math.max(departing, alphas());
+            if (phase === 'approach') arriving = Math.max(arriving, alphas());
+          } else expect(shown, `${style} at ${t.toFixed(2)} (${phase})`).toBe(false);
+        }
+        // It is plainly visible on the way out and, mirrored, on the way in.
+        expect(departing).toBeGreaterThan(0.5);
+        expect(arriving).toBeGreaterThan(0.5);
+        // The same buffers are rewritten every frame; nothing is reallocated.
+        expect(geometry.getAttribute('position').array).toBe(arrays[0]);
+        expect(geometry.getAttribute('color').array).toBe(arrays[1]);
+        expect([...arrays[0]].every(Number.isFinite)).toBe(true);
+      } finally {
+        disposeDiorama(d);
+      }
+    },
+  );
+
+  it('leaves warp rings behind in the sky while the saucer flies on', () => {
+    const { d, saucer, worldVertex } = trailed('rings');
+    try {
+      d.motions[0](49.6);
+      const ring = worldVertex(0);
+      d.motions[0](50.2);
+      // The first ring stays where it was left (it only widens); the saucer moved on.
+      const left = new Vector3();
+      saucerFlightPoint(49.35, false, left);
+      expect(worldVertex(0).distanceTo(left)).toBeLessThan(5);
+      expect(ring.distanceTo(left)).toBeLessThan(5);
+      expect(saucer.position.distanceTo(left)).toBeGreaterThan(1);
+    } finally {
+      disposeDiorama(d);
+    }
+  });
+
+  it('runs the ribbon from the hull back along the path actually flown', () => {
+    const { d, saucer, worldVertex } = trailed('ribbon');
+    try {
+      d.motions[0](53);
+      const hull = saucer.position.clone();
+      // The core strip's first pair sits at the hull, its last at the path 0.85 s back.
+      const head = worldVertex(18 * 2)
+        .add(worldVertex(18 * 2 + 1))
+        .multiplyScalar(0.5);
+      const tail = worldVertex(18 * 4 - 2)
+        .add(worldVertex(18 * 4 - 1))
+        .multiplyScalar(0.5);
+      const back = saucerFlightPoint(53 - 17 * 0.05, false, new Vector3());
+      expect(head.distanceTo(hull)).toBeLessThan(0.01);
+      expect(tail.distanceTo(back)).toBeLessThan(0.01);
+    } finally {
+      disposeDiorama(d);
+    }
+  });
+
+  it('flashes and sheds twinkles as the saucer leaps away', () => {
+    const { d, alphas } = trailed('sparkle');
+    try {
+      d.motions[0](48.95);
+      expect(alphas()).toBeGreaterThan(0.6);
+      let twinkle = 0;
+      for (const t of brightest(50, 0.05, 2)) {
+        d.motions[0](t);
+        twinkle = Math.max(twinkle, alphas());
+      }
+      expect(twinkle).toBeGreaterThan(0.4);
+    } finally {
+      disposeDiorama(d);
+    }
+  });
+
+  it.each(SAUCER_TRAIL_STYLES)('tints the %s trail in era colours, silver to the Moon', (style) => {
+    const colour = (hex) => new Color(hex);
+    const has = (geometry, hex) => {
+      const target = colour(hex),
+        color = geometry.getAttribute('color').array;
+      for (let i = 0; i < color.length; i += 4)
+        if (
+          color[i + 3] > 0.05 &&
+          Math.abs(color[i] - target.r) < 0.02 &&
+          Math.abs(color[i + 1] - target.g) < 0.02 &&
+          Math.abs(color[i + 2] - target.b) < 0.02
+        )
+          return true;
+      return false;
+    };
+    const times = brightest(49.3, 0.1, 3);
+    const sky = trailed(style, 'canopy');
+    const moon = trailed(style, 'moonward', (town) => (town.buildings.spaceElevator = 1));
+    try {
+      const { light, secondary } = saucerTrailColors(skySaucer('canopy'));
+      expect(secondary).toBe(skySaucer('canopy').traitColor);
+      const seen = new Set();
+      for (const t of times) {
+        sky.d.motions[0](t);
+        moon.d.motions[0](t);
+        for (const hex of [light, secondary]) if (has(sky.geometry, hex)) seen.add(hex);
+        if (has(moon.geometry, TRAIL_SILVER)) seen.add('silver');
+      }
+      expect(seen.has(light)).toBe(true);
+      expect(seen.has('silver')).toBe(true);
+      // The ribbon fades out exactly as it reaches the trait colour; the others show both.
+      if (style !== 'ribbon') expect(seen.has(secondary)).toBe(true);
+    } finally {
+      disposeDiorama(sky.d);
+      disposeDiorama(moon.d);
+    }
+  });
+
+  it('leaves the trail off with reduced motion', () => {
+    for (const style of SAUCER_TRAIL_STYLES) {
+      const { d, saucer, trail } = trailed(style);
+      try {
+        d.liveVisitorsReducedMotion = true;
+        for (const t of [49, 50, 52, 136, 140]) {
+          d.motions[0](t);
+          expect(saucer.visible).toBe(true);
+          expect(trail.visible, `${style} ${t}`).toBe(false);
+        }
+      } finally {
+        disposeDiorama(d);
+      }
     }
   });
 });

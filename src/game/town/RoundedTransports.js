@@ -51,9 +51,9 @@ const SAUCER_TRAITS = {
 /** A saucer-style sky shuttle: a flat disc under a glass dome, standing on three landing
  * legs that reach from the hull to the ground (y = 0). Colours and one small trait follow
  * the airport's era (`skySaucer()` in skyCraft.js); an unknown trait draws nothing.
- * The flight animation drives three named parts: `propellerLeft`, the rim lights, which
- * circle the hull's vertical axis; `saucerLegs`, folded up in flight; and `saucerTrail`,
- * a light streak that stays hidden until the saucer speeds away. */
+ * The flight animation drives two named parts: `propellerLeft`, the rim lights, which
+ * circle the hull's vertical axis, and `saucerLegs`, folded up in flight. Its departure
+ * and arrival trail is added by the flight (SaucerTrails.js). */
 export function roundedAircraft(d, parent, c = skySaucer()) {
   const saucer = d.group(parent);
   const hull = 0.95;
@@ -81,11 +81,6 @@ export function roundedAircraft(d, parent, c = skySaucer()) {
     const a = (n / 4) * Math.PI * 2;
     pod(d, ring, [0.2, 0.2, 0.09], [Math.cos(a) * 2.35, Math.sin(a) * 2.35, 0], c.light);
   }
-  // A tapered light streak behind the hull, collapsed to a point while it is hidden.
-  const trail = d.mesh(saucer, 'cone', [0.001, 0.001, 0.001], [0, hull, 0], c.light);
-  trail.name = 'saucerTrail';
-  trail.castShadow = trail.receiveShadow = false;
-  trail.visible = false;
   return saucer;
 }
 
