@@ -17,8 +17,8 @@ export function signMountInput(parent, width, x, y, z, context = parent) {
   ];
 }
 
-// Generated placement is used only for the same authored input. Missing data or
-// a custom parent/board retains the exact surface/visibility resolver below.
+// Raw requests and camera scale stay exact. Rounded relative matrices may vary
+// by one integer unit (1e-5) across engines; custom inputs retain the resolver.
 export function generatedSignMount(record, input) {
   const mount = record?.mount;
   if (
@@ -27,7 +27,13 @@ export function generatedSignMount(record, input) {
     !input.every(Number.isFinite) ||
     !Array.isArray(record?.input) ||
     record.input.length !== input.length ||
-    !record.input.every((value, index) => value === input[index]) ||
+    !record.input.every((value, index) =>
+      index >= 4 && index < 20
+        ? Number.isInteger(value) &&
+          Number.isInteger(input[index]) &&
+          Math.abs(value - input[index]) <= 1
+        : value === input[index],
+    ) ||
     !['facade', 'roof', 'directory'].includes(mount?.type) ||
     ![mount.width, mount.x, mount.y, mount.z].every(Number.isFinite) ||
     mount.width <= 0 ||

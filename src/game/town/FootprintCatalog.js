@@ -63,10 +63,21 @@ export function matureEnvelopeFor(id, town) {
 }
 export function signMountFor(id, town) {
   if (!BUILDING_BY_ID[id]) return null;
-  const era = town.buildingEras[id] ?? 'frontier',
+  // An unbuilt plot still carries createEraState's frontier finish. Its generic
+  // marker/framing uses no finish architecture; use the current-era stage-zero
+  // record already generated for this id, without changing collision keys or saves.
+  const metadataTown =
+    town.buildings[id] === 0
+      ? {
+          ...town,
+          buildingEras: { ...town.buildingEras, [id]: town.era ?? 'frontier' },
+          buildingEraLevels: { ...town.buildingEraLevels, [id]: 1 },
+        }
+      : town;
+  const era = metadataTown.buildingEras[id] ?? 'frontier',
     family = eraEvolution(era).cityAssets,
     signs = ready.get(era)?.signs,
-    index = signs?.keys?.[plotFootprintKey(id, town)];
+    index = signs?.keys?.[plotFootprintKey(id, metadataTown)];
   if ((family && !available(family)) || !Number.isInteger(index) || index < 0) return null;
   return signs.mounts?.[index] ?? null;
 }

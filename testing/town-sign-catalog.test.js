@@ -104,6 +104,61 @@ it('validates records without changing them and rejects changed width, position 
   }
 });
 
+it('accepts only one rounded integer unit of relative-matrix drift without changing the mount', () => {
+  const { context, parent, args } = inputFixture();
+  const input = mounts.signMountInput(parent, ...args, context);
+  const mount = { type: 'facade', width: 2.4, x: 0, y: 2.35, z: 1.351, brackets: [] };
+  const record = { input: [...input], mount };
+  const before = JSON.stringify(record);
+  for (let index = 4; index < 20; index++) {
+    for (const delta of [-1, 1]) {
+      const changed = [...input];
+      changed[index] += delta;
+      expect(mounts.generatedSignMount(record, changed), `live matrix ${index}/${delta}`).toBe(
+        mount,
+      );
+      expect(
+        mounts.generatedSignMount({ input: changed, mount }, input),
+        `record matrix ${index}/${delta}`,
+      ).toBe(mount);
+    }
+    for (const delta of [-2, 2, -0.125, 0.125]) {
+      const changed = [...input];
+      changed[index] += delta;
+      expect(
+        mounts.generatedSignMount(record, changed),
+        `live matrix ${index}/${delta}`,
+      ).toBeNull();
+      expect(
+        mounts.generatedSignMount({ input: changed, mount }, input),
+        `record matrix ${index}/${delta}`,
+      ).toBeNull();
+      if (!Number.isInteger(changed[index]))
+        expect(mounts.generatedSignMount({ input: changed, mount }, changed)).toBeNull();
+    }
+  }
+  expect(JSON.stringify(record)).toBe(before);
+});
+
+it('does not apply matrix tolerance to small raw request or camera-scale changes', () => {
+  const root = new Group();
+  const input = mounts.signMountInput(root, 2.4, 0, 2.35, 1.8, root);
+  const mount = { type: 'facade', width: 2.4, x: 0, y: 2.35, z: 1.351, brackets: [] };
+  for (const index of [0, 1, 2, 3, 20, 21, 22])
+    for (const delta of [-1e-6, 1e-6]) {
+      const changed = [...input];
+      changed[index] += delta;
+      expect(
+        mounts.generatedSignMount({ input, mount }, changed),
+        `live raw component ${index}/${delta}`,
+      ).toBeNull();
+      expect(
+        mounts.generatedSignMount({ input: changed, mount }, input),
+        `record raw component ${index}/${delta}`,
+      ).toBeNull();
+    }
+});
+
 it('rejects malformed or nonfinite generated data rather than trusting an unsafe mount', () => {
   const root = new Group();
   const input = mounts.signMountInput(root, 2.4, 0, 2.35, 1.8, root);

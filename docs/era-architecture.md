@@ -653,8 +653,13 @@ camera scale; text stays inside the fixed board. Shipped plots validate that inp
 and use the recorded mount without repeating surface and camera raycasts. An
 authored fascia still takes priority, and missing/custom inputs keep the original
 resolver. The existing four parallel catalog requests load both envelopes and
-mounts. `check:footprints` reruns the live resolver for every generated key and
-checks the placement data with the collision catalogs.
+mounts. An unbuilt lot uses its current town era's empty-site sign record, since
+future kinds retain a default Frontier finish until their first construction;
+this metadata lookup leaves the collision key and town state unchanged.
+`check:footprints` reruns the live resolver for every generated key and checks
+the placement data with the collision catalogs. Raw board requests and
+camera scale match exactly; rounded relative-matrix entries allow one integer
+unit (1e-5) of cross-engine drift while rejecting other custom transforms.
 
 `changeTown` uses `swapPlot` for one changed plot with unchanged infrastructure.
 An accepted purchase is already persisted before presentation starts. A pooled
