@@ -16,7 +16,7 @@ import {
   saucerPose,
 } from '../src/game/town/TownAviation';
 import { TRAIL_SILVER, saucerTrailColors } from '../src/data/skyCraft';
-import { roundedAircraft } from '../src/game/town/RoundedTransports';
+import { roundedAircraft, SAUCER_HULL } from '../src/game/town/RoundedTransports';
 import {
   AIRPORT,
   PLOTS,
@@ -488,6 +488,12 @@ describe('Sky saucer sparkle wake', () => {
   it('shows only while departing or arriving, in one fixed, preallocated mesh', () => {
     const { d, saucer, trail, geometry, alpha } = wake();
     try {
+      // Depth-tested against the opaque hull, which hides stars behind it, but writing
+      // no depth, so the stars never hide each other; drawn after the opaque saucer.
+      expect(trail.material.depthTest).toBe(true);
+      expect(trail.material.depthWrite).toBe(false);
+      expect(trail.material.transparent).toBe(true);
+      expect(trail.renderOrder).toBe(0);
       expect(meshes(saucer).filter((m) => m.name === 'saucerTrail')).toEqual([trail]);
       // Within the existing vehicle budget, and a handful of triangles.
       expect(meshes(saucer).length).toBeLessThanOrEqual(15);
@@ -540,10 +546,21 @@ describe('Sky saucer sparkle wake', () => {
         twinkle = Math.max(twinkle, alpha(0, FLASH));
       }
       expect(twinkle).toBeGreaterThan(0.4);
-      d.motions[0](51);
-      const shed = saucerFlightPoint(50.3, false, new Vector3());
-      expect(worldVertex(0).distanceTo(shed)).toBeLessThan(6);
-      expect(saucer.position.distanceTo(shed)).toBeGreaterThan(5);
+      // A fresh twinkle starts behind the hull, at hull height, not under it: shed 0.02 s
+      // ago (twinkle 45, in slot 45 mod 16) it is well back along the line of travel.
+      d.motions[0](52.02);
+      const centre = new Vector3();
+      for (let v = 13 * 8; v < 14 * 8; v++) centre.add(worldVertex(v));
+      centre.multiplyScalar(1 / 8);
+      const hull = saucer.position.clone();
+      hull.y += SAUCER_HULL;
+      const ahead = saucerFlightPoint(52.07, false, new Vector3()).sub(saucer.position).normalize();
+      expect(centre.clone().sub(hull).dot(ahead)).toBeLessThan(-1.5);
+      expect(Math.abs(centre.y - hull.y)).toBeLessThan(2);
+      // Older twinkles stay where they were shed while the saucer flies on.
+      d.motions[0](52.5);
+      expect(worldVertex(13 * 8).distanceTo(centre)).toBeLessThan(3);
+      expect(saucer.position.distanceTo(centre)).toBeGreaterThan(6);
     } finally {
       disposeDiorama(d);
     }

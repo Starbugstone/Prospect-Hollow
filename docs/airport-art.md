@@ -127,9 +127,11 @@ railway and the station.
 As the saucer leaps off the hover, a star-flash bursts open where it was: a halo star in
 the era's trait colour opens wide and fades, around a brief, stronger centre in a deeper,
 more saturated shade of that colour, turned 45° so the burst has eight points. Then a
-stream of small four-point twinkles is shed along its path, drifting apart and sinking as
-they twinkle and fade, while the saucer flies on. Arriving mirrors it: the flash marks
-where it drops in, and the twinkles follow it down to the hover.
+stream of small four-point twinkles is shed from the hull's trailing edge along its path,
+drifting apart and sinking as they twinkle and fade, while the saucer flies on. Arriving
+mirrors it: the flash marks where it drops in, and the twinkles follow it down to the
+hover. The wake is depth-tested against the hull, so the saucer hides any star behind it,
+but writes no depth, so the stars never hide each other.
 
 The wake is carried by the era's trait colour (or the rim, when the trait colour is the
 light itself), so it reads against the pale sky, with the era's `light` for every other

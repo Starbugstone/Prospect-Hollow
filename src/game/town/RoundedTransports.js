@@ -1,6 +1,10 @@
 import { ROUNDED_PALETTE as P } from '../../data/roundedArchitecture';
 import { skySaucer } from '../../data/skyCraft';
 
+/** Height of the saucer's hull centre above its origin, and the hull's radius. */
+export const SAUCER_HULL = 0.95,
+  SAUCER_RADIUS = 2.5;
+
 // Transport for rounded eras, from the shared sphere and cylinder primitives. These
 // move every frame, so each vehicle keeps to a handful of meshes and palette colors.
 const pod = (d, g, size, position, color) => d.mesh(g, 'sphere', size, position, color);
@@ -56,8 +60,8 @@ const SAUCER_TRAITS = {
  * and arrival trail is added by the flight (SaucerTrails.js). */
 export function roundedAircraft(d, parent, c = skySaucer()) {
   const saucer = d.group(parent);
-  const hull = 0.95;
-  pod(d, saucer, [2.5, 0.42, 2.5], [0, hull, 0], c.shell);
+  const hull = SAUCER_HULL;
+  pod(d, saucer, [SAUCER_RADIUS, 0.42, SAUCER_RADIUS], [0, hull, 0], c.shell);
   d.mesh(saucer, 'cylinder', [2.56, 0.1, 2.56], [0, hull, 0], c.rim);
   pod(d, saucer, [1.05, 0.72, 1.05], [0, hull + 0.25, 0], c.glass);
   pod(d, saucer, [1.3, 0.16, 1.3], [0, hull - 0.34, 0], c.light);

@@ -225,18 +225,21 @@ export const SAUCER_ROUTES = Object.freeze({
 const departureDistance = (seconds) => 2.3 * seconds * seconds;
 const approachDistance = (toMoon, k) => (toMoon ? 170 : 60) * (1 - k) ** 2;
 const DEPARTURE_AT = 49,
+  DEPARTURE_END = 57,
   APPROACH_AT = 135,
   APPROACH_FOR = 12;
 /** The saucer's position at cycle `phase` on its departure (from the hover) or its
- * approach (to the hover), written into `out` without allocating. Phases between the two
- * hold the hover point. The pose and the sparkle wake both follow it. */
+ * approach (to the hover), written into `out` without allocating: the hover point before
+ * the departure and after the approach, and the departure's last point while it is away.
+ * The pose and the sparkle wake both follow it. */
 export function saucerFlightPoint(phase, toMoon, out) {
   const way = toMoon ? SAUCER_ROUTES.moon : SAUCER_ROUTES.sky;
   let s = 0;
   if (phase >= APPROACH_AT) {
     s = approachDistance(toMoon, Math.min(1, (phase - APPROACH_AT) / APPROACH_FOR));
     if (!toMoon) return out.set(SAUCER_PAD.x, HOVER_HIGH + s, SAUCER_PAD.z);
-  } else if (phase > DEPARTURE_AT) s = departureDistance(phase - DEPARTURE_AT);
+  } else if (phase > DEPARTURE_AT)
+    s = departureDistance(Math.min(phase, DEPARTURE_END) - DEPARTURE_AT);
   const { heading, climb, rise, ease } = way;
   return out.set(
     SAUCER_PAD.x + heading[0] * s,

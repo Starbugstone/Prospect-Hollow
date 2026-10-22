@@ -9,6 +9,7 @@ import {
   Vector3,
 } from 'three';
 import { TRAIL_SILVER } from '../../data/skyCraft';
+import { SAUCER_HULL, SAUCER_RADIUS } from './RoundedTransports';
 
 // The sky saucer's sparkle wake. As it leaps away, a star-flash bursts open, and a
 // stream of small four-point twinkles is shed along its path, drifting apart and down as
@@ -55,6 +56,7 @@ const s = {
   a: new Vector3(),
   p: new Vector3(),
   drift: new Vector3(),
+  heading: new Vector3(),
   view: new Vector3(),
   right: new Vector3(),
   up: new Vector3(),
@@ -99,6 +101,9 @@ export function createSaucerTrail(d, parent, { colors: palette, path }) {
   const material = new MeshBasicMaterial({
     vertexColors: true,
     transparent: true,
+    // Drawn after the opaque saucer and depth-tested against it, so the hull hides
+    // what is behind it; no depth writes, so the stars never hide each other.
+    depthTest: true,
     depthWrite: false,
     side: DoubleSide,
   });
@@ -182,8 +187,16 @@ export function createSaucerTrail(d, parent, { colors: palette, path }) {
           continue;
         }
         const life = age / MOTE_LIFE,
-          h = hash(k + (arriving ? 1000 : 0));
-        path(emitFrom + k * MOTE_EVERY, toMoon, s.p);
+          h = hash(k + (arriving ? 1000 : 0)),
+          shed = emitFrom + k * MOTE_EVERY;
+        // Shed from the hull's trailing edge, at hull height, so they start behind the
+        // saucer rather than under it.
+        path(shed, toMoon, s.p);
+        path(Math.max(segment.start, shed - 0.05), toMoon, s.heading);
+        s.heading.subVectors(s.p, s.heading);
+        if (s.heading.lengthSq() < 1e-10) s.heading.set(0, 1, 0);
+        s.p.addScaledVector(s.heading.normalize(), -0.9 * SAUCER_RADIUS);
+        s.p.y += SAUCER_HULL;
         // Drift apart along a fixed random direction, and sink a little.
         s.drift.set(hash(k * 3 + 1) - 0.5, hash(k * 5 + 2) - 0.5, hash(k * 7 + 3) - 0.5);
         if (s.drift.lengthSq() < 1e-6) s.drift.set(0, 1, 0);
@@ -214,6 +227,7 @@ export function createSaucerTrail(d, parent, { colors: palette, path }) {
       }
       const k = age / FLASH_LIFE;
       path(segment.start, toMoon, s.p);
+      s.p.y += SAUCER_HULL;
       billboard(camera, s.p);
       star(MOTES, s.p, 1 + 1.8 * smooth(k * 1.4), tints[0], 0.85 * (1 - smooth(k)));
       star(
