@@ -1,3 +1,5 @@
+import { MOONSTONE_ECONOMY } from '../src/data/moonstones.js';
+import { MOON_LOTS } from '../src/data/moonSettlement.js';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { CHAPTERS, LEVEL_COUNT, POWERS } from '../src/data/campaign.js';
@@ -350,6 +352,7 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
       vipSpend: VIP_SPEND,
       vipBuildings: vipVisitBuildings(town),
       forgeRuns: FORGE_PRODUCTION_RUNS,
+      moonstones: { ...MOONSTONE_ECONOMY, buildings: Object.keys(MOON_LOTS) },
       hourMs: HOUR_MS,
       collectionCooldownMs: collectionCooldownRemaining(
         { lastCollections: { saloon: 0 } },

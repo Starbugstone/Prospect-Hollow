@@ -288,6 +288,7 @@ export const moonLetters = (town) =>
   Object.entries(LETTERS)
     .filter(([id]) => (town?.buildings?.[id] ?? 0) > 0)
     .map(([id, text]) => ({ id, text }));
-// Moonstone keepsakes, one for each finished Moon building level. Purely cosmetic.
+// Historical keepsake entitlement: one per finished Moon building level.
+// Retained for deterministic migration into the saved moonstone resource.
 export const moonstoneKeepsakes = (town) =>
   Object.keys(MOON_LOTS).reduce((sum, id) => sum + (town?.buildings?.[id] ?? 0), 0);

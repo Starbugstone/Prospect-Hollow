@@ -79,6 +79,22 @@ final class SaveIntegrity
         ) {
             self::incompatible();
         }
+        $moonstones = $this->rules['economy']['moonstones'] ?? null;
+        if (
+            !is_array($moonstones) ||
+            ($moonstones['version'] ?? null) !== 1 ||
+            !self::integer($moonstones['runs'] ?? null, 1) ||
+            !self::integer($moonstones['saleCoins'] ?? null, 1) ||
+            !is_array($moonstones['buildings'] ?? null) ||
+            !self::integer($this->rules['buildings']['moonstoneWorkshop']['maxLevel'] ?? null, 1)
+        ) {
+            self::incompatible();
+        }
+        foreach ($moonstones['buildings'] as $id) {
+            if (!is_string($id) || !isset($this->rules['buildings'][$id])) {
+                self::incompatible();
+            }
+        }
         foreach ($this->rules['eraOrder'] as $id) {
             if (!is_string($id) || !is_array($this->rules['eras'][$id] ?? null)) {
                 self::incompatible();
@@ -189,6 +205,56 @@ final class SaveIntegrity
         }
         if (!self::integer($town['coins'] ?? null)) {
             self::invalid('town.coins');
+        }
+        if (
+            ($p['schemaVersion'] ?? 2) >= 3 ||
+            array_intersect(
+                ['moonstoneVersion', 'moonstones', 'moonstonesEarned', 'moonstoneProduction'],
+                array_keys($town),
+            )
+        ) {
+            $production = $town['moonstoneProduction'] ?? null;
+            if (
+                ($town['moonstoneVersion'] ?? null) !== 1 ||
+                !self::integer($town['moonstones'] ?? null) ||
+                !self::integer($town['moonstonesEarned'] ?? null) ||
+                $town['moonstones'] > $town['moonstonesEarned'] ||
+                !is_array($production) ||
+                !self::integer(
+                    $production['progress'] ?? null,
+                    0,
+                    $this->rules['economy']['moonstones']['runs'] - 1,
+                ) ||
+                !self::integer(
+                    $town['buildings']['moonstoneWorkshop'] ?? 0,
+                    0,
+                    $this->rules['buildings']['moonstoneWorkshop']['maxLevel'],
+                ) ||
+                !self::integer(
+                    $production['charge'] ?? null,
+                    0,
+                    $this->rules['buildings']['moonstoneWorkshop']['maxLevel'],
+                ) ||
+                $production['charge'] > ($town['buildings']['moonstoneWorkshop'] ?? 0) ||
+                ($production['charge'] && $production['progress'])
+            ) {
+                self::invalid('town.moonstones');
+            }
+            $buildingCredit = $this->moonBuildingCredit($town);
+            // Enrollment remains an unverified historical baseline, like coins.
+            // Even there a balance must fit the claimed normal-puzzle history.
+            if (
+                !self::integer($town['completedRuns'] ?? 0) ||
+                $town['moonstonesEarned'] >
+                    $buildingCredit +
+                        min(
+                            9007199254740991,
+                            ($town['completedRuns'] ?? 0) *
+                                $this->rules['buildings']['moonstoneWorkshop']['maxLevel'],
+                        )
+            ) {
+                self::invalid('town.moonstonesEarned');
+            }
         }
         if (
             !isset($this->rules['eras'][$town['era']]) ||
@@ -493,6 +559,14 @@ final class SaveIntegrity
             }
         }
         $p['town']['progressionVersion'] = $defaults['town']['progressionVersion'];
+        if (($profile['town']['moonstoneVersion'] ?? null) !== 1) {
+            $credit = $this->moonBuildingCredit($p['town']);
+            $p['town']['moonstoneVersion'] = 1;
+            $p['town']['moonstones'] = $credit;
+            $p['town']['moonstonesEarned'] = $credit;
+            $p['town']['moonstoneProduction'] = ['progress' => 0, 'charge' => 0];
+        }
+
         $powers = array_fill_keys($this->rules['powers'], 0);
         foreach ($profile['powers'] ?? [] as $power) {
             $powers[$power['id'] === 'hammer' ? 'tnt' : $power['id']] = $power['quantity'];
@@ -556,6 +630,10 @@ final class SaveIntegrity
         foreach (
             [
                 'coins',
+                'moonstoneVersion',
+                'moonstones',
+                'moonstonesEarned',
+                'moonstoneProduction',
                 'era',
                 'buildings',
                 'buildingEras',
@@ -682,6 +760,10 @@ final class SaveIntegrity
             $state['town'],
             array_flip([
                 'coins',
+                'moonstoneVersion',
+                'moonstones',
+                'moonstonesEarned',
+                'moonstoneProduction',
                 'era',
                 'buildings',
                 'buildingEras',
@@ -997,6 +1079,10 @@ final class SaveIntegrity
         $incoming = self::arrayOf($profile);
         $journal = $this->journal($incoming['integrity'] ?? null);
         $old = $previous ? self::arrayOf($previous) : null;
+        if (($old['schemaVersion'] ?? 2) >= 3 && ($incoming['schemaVersion'] ?? 2) < 3) {
+            self::incompatible();
+        }
+
         $anchor = $old ? $this->journal($old['integrity'] ?? null) : null;
         if (!$anchor) {
             if (!$journal) {
@@ -1437,7 +1523,14 @@ final class SaveIntegrity
         if (
             in_array(
                 $kind,
-                ['victory', 'continuous', 'vip-spend', 'helmet-find', 'helmet-visitor'],
+                [
+                    'victory',
+                    'continuous',
+                    'vip-spend',
+                    'helmet-find',
+                    'helmet-visitor',
+                    'moonstone-sell',
+                ],
                 true,
             )
         ) {
@@ -1808,6 +1901,48 @@ final class SaveIntegrity
                 $this->grant($s, $chosen ?? $this->chestReward($chest['items'][0]['id'], $chest));
                 array_splice($s['pendingChests'], $index, 1);
                 break;
+            case 'moonstone-collect':
+                $this->clock($d['at'] ?? null, $context, $now);
+                $town = &$s['town'];
+                $amount = $town['moonstoneProduction']['charge'];
+                $at = $d['at'] ?? null;
+                if (
+                    !$town['buildings']['moonstoneWorkshop'] ||
+                    !$amount ||
+                    !self::integer($at) ||
+                    $this->cooldown($town, 'moonstoneWorkshop', $at) ||
+                    $town['moonstonesEarned'] > 9007199254740991 - $amount
+                ) {
+                    self::mismatch('moonstone-collect');
+                }
+                $this->earnMoonstones($town, $amount);
+                $town['moonstoneProduction'] = ['progress' => 0, 'charge' => 0];
+                $town['lastCollections']['moonstoneWorkshop'] = $at;
+                return;
+            case 'moonstone-spend':
+            case 'moonstone-sell':
+                $amount = $d['amount'] ?? null;
+                if (!self::integer($amount, 1) || $s['town']['moonstones'] < $amount) {
+                    self::mismatch($kind);
+                }
+                if ($kind === 'moonstone-sell') {
+                    $coins = $amount * $this->rules['economy']['moonstones']['saleCoins'];
+                    if (
+                        !$s['town']['buildings']['moonstoneWorkshop'] ||
+                        $coins > 9007199254740991 - $s['town']['coins']
+                    ) {
+                        self::mismatch($kind);
+                    }
+                    $this->addCoins($s, $coins);
+                } elseif (
+                    !is_string($d['reason'] ?? null) ||
+                    !trim($d['reason']) ||
+                    mb_strlen($d['reason']) > 120
+                ) {
+                    self::mismatch($kind);
+                }
+                $s['town']['moonstones'] -= $amount;
+                return;
             case 'forge-collect':
                 $this->clock($d['at'] ?? null, $context, $now);
                 if (
@@ -2043,6 +2178,9 @@ final class SaveIntegrity
         }
         unset($project);
         $this->advanceForge($s['town']);
+        if (($d['moonstoneVersion'] ?? null) === 1) {
+            $this->advanceMoonstones($s['town']);
+        }
         $newChapter = $this->chapter($s['records']);
         if ($newChapter > $oldChapter) {
             $chapter = $this->rules['chapters'][$newChapter - 1];
@@ -2402,6 +2540,7 @@ final class SaveIntegrity
         $this->accrue($s, $context, $d['at'] ?? null, $now);
         $town = &$s['town'];
         $finished = $this->finishedProjects($town);
+        $moonLevel = $town['buildings'][$id] ?? 0;
         if ($kind === 'building-finish') {
             $project = $town['projects'][$id] ?? null;
             if (
@@ -2423,6 +2562,7 @@ final class SaveIntegrity
             unset($town['projects'][$id]);
             $this->reinforce($s);
             $this->settleForge($town);
+            $this->rewardMoonBuilding($town, $id, $moonLevel);
             $this->rewardProjects($s, $finished, $d);
             $this->stock($s, $d['shopStock'] ?? null, $d['shopVisit'] ?? null, false);
             return;
@@ -2472,8 +2612,46 @@ final class SaveIntegrity
                 ];
             }
         }
+        $this->rewardMoonBuilding($town, $id, $moonLevel);
         $this->rewardProjects($s, $finished, $d);
         $this->stock($s, $d['shopStock'] ?? null, $d['shopVisit'] ?? null, false);
+    }
+    private function moonBuildingCredit(array $town): int
+    {
+        $credit = 0;
+        foreach ($this->rules['economy']['moonstones']['buildings'] as $id) {
+            $level = $town['buildings'][$id] ?? 0;
+            if (self::integer($level, 0, $this->rules['buildings'][$id]['maxLevel'])) {
+                $credit += $level;
+            }
+        }
+        return $credit;
+    }
+    private function earnMoonstones(array &$town, int $amount): void
+    {
+        $amount = min($amount, 9007199254740991 - $town['moonstonesEarned']);
+        $town['moonstones'] += $amount;
+        $town['moonstonesEarned'] += $amount;
+    }
+    private function rewardMoonBuilding(array &$town, string $id, int $before): void
+    {
+        if (in_array($id, $this->rules['economy']['moonstones']['buildings'], true)) {
+            $this->earnMoonstones($town, max(0, $town['buildings'][$id] - $before));
+        }
+    }
+    private function advanceMoonstones(array &$town): void
+    {
+        $level = $town['buildings']['moonstoneWorkshop'] ?? 0;
+        if (!$level || $town['moonstoneProduction']['charge']) {
+            return;
+        }
+        $town['moonstoneProduction']['progress']++;
+        if (
+            $town['moonstoneProduction']['progress'] >=
+            $this->rules['economy']['moonstones']['runs']
+        ) {
+            $town['moonstoneProduction'] = ['progress' => 0, 'charge' => $level];
+        }
     }
     private function settleForge(array &$town): void
     {

@@ -234,6 +234,7 @@
       :read-only="readOnly"
       @select="choose($event)"
       @inspect="emit('inspect', $event)"
+      @collect="emit('select', $event)"
       @close="closeMoon"
     />
   </div>

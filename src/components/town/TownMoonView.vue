@@ -74,11 +74,15 @@
           'is-working': !!town.projects?.[lot.id] || status(lot.id) === 'work',
         }"
         :style="{ left: `${lot.x}%`, top: `${lot.y}%` }"
-        @click="choose(lot.id)"
+        @click="
+          !readOnly && canCollectMoonstones && lot.id === 'moonstoneWorkshop'
+            ? emit('collect', lot.id)
+            : choose(lot.id)
+        "
       >
         <strong>{{ t(AREA_BY_ID[lot.id]?.label ?? BUILDING_BY_ID[lot.id].shortName) }}</strong>
         <small>{{
-          AREA_BY_ID[lot.id]
+          AREA_BY_ID[lot.id] || (lot.id === 'moonstoneWorkshop' && canCollectMoonstones)
             ? statusLabel(lot.id)
             : buildingStatusLabel(town, lot.id, indicators[lot.id], availableIds.includes(lot.id))
         }}</small>
@@ -114,9 +118,7 @@
         <TownMoon :lights="moon.lights" />
         <strong>{{ t('New Hollow') }}</strong>
         <span>{{ t('{count} homesteads', { count: moon.homesteads }) }}</span>
-        <span v-if="moonstones">{{
-          t('{count} moonstones sent home', { count: moonstones })
-        }}</span>
+        <TownMoonstoneBalance :town="town" />
       </div>
     </header>
     <details v-if="letters.length" class="town-moon-letters">
@@ -128,7 +130,16 @@
   </section>
 </template>
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
+import {
+  computed,
+  inject,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  shallowRef,
+  watch,
+} from 'vue';
 import { BUILDING_BY_ID } from '../../data/town';
 import {
   MOON_LOTS,
@@ -136,7 +147,6 @@ import {
   moonApproaches,
   moonLetters,
   moonSettlement,
-  moonstoneKeepsakes,
 } from '../../data/moonSettlement';
 import { buildingStatusLabel } from '../../game/town/TownBuildingFeedback';
 import { TOWN_ACTIONS, buildingActionLabel } from '../../data/townIndicators';
@@ -149,8 +159,9 @@ import {
   monumentWork,
 } from '../../data/townLandmarks';
 import TownMoonMonument from './TownMoonMonument.vue';
-import { plotUnlocked } from '../../game/town/TownRules';
+import { plotUnlocked, collectionCooldownRemaining } from '../../game/town/TownRules';
 import TownMoon from './TownMoon.vue';
+import TownMoonstoneBalance from './TownMoonstoneBalance.vue';
 import TownMoonBuilding from './TownMoonBuilding.vue';
 import TownMoonConstruction from './TownMoonConstruction.vue';
 import { t } from '../../i18n';
@@ -172,6 +183,7 @@ const emit = defineEmits([
   'select',
   'inspect',
   'close',
+  'collect',
   'presentation-ready',
   'presentation-unavailable',
 ]);
@@ -182,8 +194,13 @@ const labels = shallowRef([]);
 let scene = null,
   disposed = false;
 
+const townClock = inject('townClock', null);
+const canCollectMoonstones = computed(
+  () =>
+    !!props.town.moonstoneProduction?.charge &&
+    !collectionCooldownRemaining(props.town, 'moonstoneWorkshop', townClock?.value ?? Date.now()),
+);
 const moon = computed(() => moonSettlement(props.town));
-const moonstones = computed(() => moonstoneKeepsakes(props.town));
 const letters = computed(() => moonLetters(props.town));
 // The SVG map uses the same lot layout, flattened onto a crater ellipse.
 const mapLots = computed(() =>
@@ -240,6 +257,8 @@ function status(id) {
   return plotUnlocked(props.town, id) ? 'open' : 'later';
 }
 function statusLabel(id) {
+  if (id === 'moonstoneWorkshop' && canCollectMoonstones.value)
+    return t('Collect {count} moonstones', { count: props.town.moonstoneProduction.charge });
   return {
     work: t('Under construction'),
     ready: t('Ready to unveil'),

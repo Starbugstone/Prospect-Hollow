@@ -1,4 +1,11 @@
 import {
+  MOONSTONE_VERSION,
+  advanceMoonstoneProduction,
+  earnMoonstones,
+  spendMoonstoneBalance,
+  sellMoonstoneBalance,
+} from '../data/moonstones';
+import {
   AREA_BY_ID,
   LANDMARK_PROGRESSION,
   advanceMonumentWorks,
@@ -285,7 +292,7 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
 };
 
 const profileData = (state) => ({
-  schemaVersion: 2,
+  schemaVersion: 3,
   integrity: state.integrity,
   records: state.records,
   continuousRecords: state.continuousRecords,
@@ -611,6 +618,41 @@ export const useCampaignStore = defineStore('campaign', {
         this.save();
       }
       return result.earned;
+    },
+    collectMoonstones(now = Date.now()) {
+      const amount = this.town.moonstoneProduction.charge;
+      if (
+        !amount ||
+        !Number.isSafeInteger(now) ||
+        now < 0 ||
+        !this.town.buildings.moonstoneWorkshop ||
+        collectionCooldownRemaining(this.town, 'moonstoneWorkshop', now) ||
+        this.town.moonstonesEarned > Number.MAX_SAFE_INTEGER - amount
+      )
+        return 0;
+      const town = earnMoonstones(this.town, amount);
+      return this.commit(
+        {
+          town: {
+            ...town,
+            moonstoneProduction: { progress: 0, charge: 0 },
+            lastCollections: { ...town.lastCollections, moonstoneWorkshop: now },
+          },
+        },
+        { kind: 'moonstone-collect', data: { at: now } },
+      )
+        ? amount
+        : 0;
+    },
+    spendMoonstones(amount, reason) {
+      if (typeof reason !== 'string' || !reason.trim() || reason.length > 120) return false;
+      const town = spendMoonstoneBalance(this.town, amount);
+      return !!town && this.commit({ town }, { kind: 'moonstone-spend', data: { amount, reason } });
+    },
+    sellMoonstones(amount) {
+      if (!this.town.buildings.moonstoneWorkshop) return false;
+      const town = sellMoonstoneBalance(this.town, amount);
+      return !!town && this.commit({ town }, { kind: 'moonstone-sell', data: { amount } });
     },
     collectVipSpending(receipt) {
       const at = Date.now();
@@ -1022,7 +1064,7 @@ export const useCampaignStore = defineStore('campaign', {
       );
       this.town = advanceConstruction(this.town);
       this.town = advanceMonumentWorks(this.town);
-      this.town = advanceForge(this.town);
+      this.town = advanceMoonstoneProduction(advanceForge(this.town));
       this.endRun(runId);
       this.ensureShopStock(true, false);
       this.lastConstruction = projects.map((project) => ({
@@ -1094,6 +1136,7 @@ export const useCampaignStore = defineStore('campaign', {
       if (tally) this.honours = creditRun(this.honours, tally);
       this.town = queueCampaignPresentations(this.town, this.records);
       this.recordAction('victory', {
+        moonstoneVersion: MOONSTONE_VERSION,
         runId,
         levelId: id,
         score,

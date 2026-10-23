@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "profileSchemaVersion": 2,
+  "profileSchemaVersion": 3,
   "maxSafeInteger": 9007199254740991,
   "levelCount": 546,
   "levelsPerChapter": 6,
@@ -51363,6 +51363,24 @@
       3,
       2
     ],
+    "moonstones": {
+      "version": 1,
+      "runs": 3,
+      "saleCoins": 250,
+      "buildings": [
+        "ribbonLanding",
+        "newHollowCommons",
+        "settlerDomes",
+        "craterIceWell",
+        "craterHomesteads",
+        "earthlightGreenhouse",
+        "willowkinDome",
+        "moonstoneWorkshop",
+        "earthriseLookout",
+        "roverBarn",
+        "saucerPad"
+      ]
+    },
     "hourMs": 3600000,
     "collectionCooldownMs": 30000,
     "incomeHoursCap": 5,
@@ -51678,6 +51696,13 @@
       "charge": 0
     },
     "coins": 0,
+    "moonstoneVersion": 1,
+    "moonstones": 0,
+    "moonstonesEarned": 0,
+    "moonstoneProduction": {
+      "progress": 0,
+      "charge": 0
+    },
     "tourSeen": false,
     "buildings": {
       "well": 0,
@@ -51777,7 +51802,8 @@
     },
     "lastCollections": {
       "saloon": null,
-      "blacksmith": null
+      "blacksmith": null,
+      "moonstoneWorkshop": null
     },
     "saloonVisitAt": 0,
     "helmetRun": 0,
@@ -51786,7 +51812,7 @@
     "progressionVersion": 2
   },
   "defaultProfile": {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "records": {},
     "continuousRecords": {},
     "powers": [
@@ -52017,6 +52043,13 @@
         "charge": 0
       },
       "coins": 0,
+      "moonstoneVersion": 1,
+      "moonstones": 0,
+      "moonstonesEarned": 0,
+      "moonstoneProduction": {
+        "progress": 0,
+        "charge": 0
+      },
       "tourSeen": false,
       "buildings": {
         "well": 0,
@@ -52116,7 +52149,8 @@
       },
       "lastCollections": {
         "saloon": null,
-        "blacksmith": null
+        "blacksmith": null,
+        "moonstoneWorkshop": null
       },
       "saloonVisitAt": 0,
       "helmetRun": 0,
@@ -52144,5 +52178,5 @@
       "seenGeneration": 4
     }
   },
-  "contentDigest": "973668ecad2d6c202a29a405ed3e231ca39d4bc1cff7e6a0dcfeb28469dbcf6a"
+  "contentDigest": "f28fbc379e61ed57858b21741c752c21a41d239dfc347d690c4887848ad8111d"
 }

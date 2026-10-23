@@ -80,7 +80,7 @@ it.each([
     file.format = 'crystal-cascade-profile-v2';
   },
   (file) => {
-    file.profile.schemaVersion = 3;
+    file.profile.schemaVersion = 4;
   },
   (file) => {
     file.profile.town = {};
@@ -178,7 +178,7 @@ it.each([
 });
 
 it('accepts a UTF-8 BOM and rejects oversized files', () => {
-  expect(parseSaveFile('\uFEFF' + useCampaignStore().exportSave()).schemaVersion).toBe(2);
+  expect(parseSaveFile('\uFEFF' + useCampaignStore().exportSave()).schemaVersion).toBe(3);
   expect(() => parseSaveFile(' '.repeat(MAX_SAVE_FILE_BYTES + 1))).toThrow();
 });
 
