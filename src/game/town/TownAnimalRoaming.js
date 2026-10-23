@@ -1,4 +1,4 @@
-import { PERSONAL_AREAS } from '../../data/townLandmarks';
+import { areasForSettlement } from '../../data/townLandmarks';
 import { EXTERIOR_HABITATS, flyingAnimal } from '../../data/townAnimals';
 import { PLOTS, townTracks, segmentDistance } from './TownLayout';
 import { groundHeight } from './TownLandscape';
@@ -36,7 +36,7 @@ function retainedAnimal(d, a) {
 
 function policy(d, kind, radius, height) {
   const area =
-    PERSONAL_AREAS.find((area) => kind === `monument:${area.id}`) ??
+    areasForSettlement().find((area) => kind === `monument:${area.id}`) ??
     EXTERIOR_HABITATS[kind.replace('exterior:', '')];
   const roads = townTracks(d.town).map((road) => {
     const margin = road.width / 2 + radius + 0.08;

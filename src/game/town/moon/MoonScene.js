@@ -1,3 +1,4 @@
+import { MOON_MONUMENT_AREAS, syncMoonMonuments, moonMonumentPresentation } from './MoonMonuments';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TownPrimitives } from '../TownPrimitives';
@@ -147,6 +148,13 @@ const CRATERS = (() => {
     const inside = r < 44;
     const size = inside ? 1.4 + hash(n + 400) * 1.6 : 3 + hash(n + 400) * (r / 22);
     if (Object.values(MOON_LOTS).some(([lx, lz]) => Math.hypot(lx - x, lz - z) < 7 + size))
+      continue;
+    if (
+      MOON_MONUMENT_AREAS.some(
+        (area) =>
+          Math.hypot(x - area.positions[0][0], z - area.positions[0][1]) < area.radius + 1.6 * size,
+      )
+    )
       continue;
     if (Math.abs(r - MOON_RING_ROAD) < 2.5 + size) continue;
     // Reserve the same authored access corridors that the road mesh draws.
@@ -371,6 +379,7 @@ export class MoonScene {
     this.scene.background = new THREE.Color(SKY);
     this.scene.fog = new THREE.Fog(SKY, 150, 250);
     this.camera = new THREE.PerspectiveCamera(48, 1, 0.1, 600);
+    this.camera.layers.enable(2);
     this.camera.position.set(0, 26, 66);
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
     // The valley's measured drawing-buffer tier, so the Moon costs no more to fill.
@@ -474,14 +483,16 @@ export class MoonScene {
   }
   /** Rebuild the lots when the town's Moon buildings change. */
   update(town) {
-    const levels = this.lots.map(({ id }) => town?.buildings?.[id] ?? 0);
+    this.town = town;
+    syncMoonMonuments(this, town);
+    const levels = Object.keys(MOON_LOTS).map((id) => town?.buildings?.[id] ?? 0);
     const signature = levels.join();
     if (signature === this.signature) return;
     this.signature = signature;
     this.d.clearGroup(this.buildings);
     this.buildings = this.d.group(this.scene);
     this.buildings.name = 'New Hollow buildings';
-    this.lots.forEach(({ id }, n) => {
+    Object.keys(MOON_LOTS).forEach((id, n) => {
       const { x, z, rotation } = moonLotPose(id);
       const lot = this.d.group(this.buildings, x, 0, z);
       lot.rotation.y = rotation;
@@ -530,6 +541,7 @@ export class MoonScene {
     this.move(this.elapsed);
   }
   move(time) {
+    this.monuments?.userData.update(this.reducedMotion ? 0 : time);
     for (const w of this.walkers ?? []) {
       const a = w.phase + w.dir * time * w.speed;
       const offset = w.vehicle ? 0.3 : -0.4 + (w.dir > 0 ? 0 : 0.8);
@@ -563,6 +575,17 @@ export class MoonScene {
     this.streak.position.set(x0 + phase * 300, y0 - phase * 160, -150);
     this.streak.rotation.z = 1.05;
     this.streak.material.opacity = 1 - phase / 0.22;
+  }
+  setPresentation(definition) {
+    if (this.presentation?.definition === definition) return;
+    this.presentation?.dispose();
+    this.presentation = null;
+    if (definition?.settlement === 'moon' && definition.id === 'monument-unveiling')
+      this.presentation = moonMonumentPresentation(this, definition);
+    this.requestFrame();
+  }
+  presentationFrame(time, still = false) {
+    this.presentation?.frame(time, still);
   }
   setMotion(enabled) {
     this.animating = enabled;
@@ -645,6 +668,7 @@ export class MoonScene {
     this.controls.update();
   }
   dispose() {
+    this.presentation?.dispose();
     this.renderer.setAnimationLoop(null);
     if (this.frame) cancelAnimationFrame(this.frame);
     this.observer.disconnect();

@@ -21,6 +21,7 @@ import { ERAS } from '../src/data/eras';
 import { CREST_EMBLEMS, CREST_EMBLEM_IDS } from '../src/data/townCrests';
 import {
   PERSONAL_AREAS,
+  areasForSettlement,
   DEFAULT_EMBLEM_COLOUR,
   areaStage,
   areaUnlocked,
@@ -213,7 +214,7 @@ describe('Personalisation save and progression contract', () => {
     },
   );
   it('opens a monument site every other era, each design with its own silhouette', () => {
-    const eras = PERSONAL_AREAS.map((area) => ERAS.findIndex((era) => era.id === area.era));
+    const eras = areasForSettlement().map((area) => ERAS.findIndex((era) => era.id === area.era));
     expect(eras).not.toContain(-1);
     const sorted = [...eras].sort((a, b) => a - b);
     for (let n = 1; n < sorted.length; n++)
@@ -391,7 +392,7 @@ describe('Personalisation rendering', () => {
     },
   );
   it('reserves real navigation obstacles for each garden choice, clear of existing plots', () => {
-    for (const area of PERSONAL_AREAS)
+    for (const area of areasForSettlement())
       for (const choice of area.choices) {
         const town = createTown();
         town.era = area.era;
@@ -408,7 +409,9 @@ describe('Personalisation rendering', () => {
           for (const [x, z] of Object.values(PLOTS))
             expect(Math.hypot(x - obstacle.x, z - obstacle.z)).toBeGreaterThan(5);
         expect(root.children.map((g) => g.userData.monumentSite)).toEqual(
-          PERSONAL_AREAS.filter((a) => areaUnlocked(town, a)).map((a) => a.id),
+          areasForSettlement()
+            .filter((a) => areaUnlocked(town, a))
+            .map((a) => a.id),
         );
       }
   });
@@ -418,14 +421,14 @@ describe('Personalisation rendering', () => {
       town.era = era.id;
       const d = fixture(town),
         root = buildPersonalAreas(d, town);
-      const open = PERSONAL_AREAS.filter((a) => areaUnlocked(town, a));
+      const open = areasForSettlement().filter((a) => areaUnlocked(town, a));
       if (!open.length) {
         expect(root).toBeNull();
         continue;
       }
       expect(root.children.map((g) => g.userData.monumentSite)).toEqual(open.map((a) => a.id));
       for (const site of root.children) {
-        const area = PERSONAL_AREAS.find((a) => a.id === site.userData.monumentSite);
+        const area = areasForSettlement().find((a) => a.id === site.userData.monumentSite);
         expect(site.name).toBe(`${area.id} 0: open site`);
         // A small plinth: walkers keep using the open court.
         expect(sceneryObstacles(site).every((o) => o.radius < 2)).toBe(true);
@@ -437,16 +440,18 @@ describe('Personalisation rendering', () => {
     const town = createTown();
     town.era = ERAS.at(-1).id;
     const open = buildPersonalAreas(fixture(town), town);
-    for (const area of PERSONAL_AREAS) {
+    for (const area of areasForSettlement()) {
       town.personalisation.areas[area.id] = [area.choices.at(-1)];
       town.personalisation.areaLevels[area.id] = area.timeless ? 1 : 5;
     }
     const built = buildPersonalAreas(fixture(town), town);
     for (const root of [open, built])
-      expect(root.children.map((site) => site.rotation.y)).toEqual(PERSONAL_AREAS.map(siteYaw));
+      expect(root.children.map((site) => site.rotation.y)).toEqual(
+        areasForSettlement().map(siteYaw),
+      );
     built.updateMatrixWorld(true);
     for (const site of built.children) {
-      const area = PERSONAL_AREAS.find((a) => a.id === site.userData.monumentSite);
+      const area = areasForSettlement().find((a) => a.id === site.userData.monumentSite);
       // The fountain court and entrance stand at the front of every design.
       const fountain = site.getObjectByName('Monument fountain court');
       const offset = fountain
@@ -462,10 +467,10 @@ describe('Personalisation rendering', () => {
     }
   });
   it('keeps all new parcels clear of one another, the river and existing buildings', () => {
-    for (const area of PERSONAL_AREAS) {
+    for (const area of areasForSettlement()) {
       const [x, z] = area.positions[0];
       expect(riverDistance(x, z)).toBeGreaterThan(area.radius + RIVER.bankWidth);
-      for (const other of PERSONAL_AREAS)
+      for (const other of areasForSettlement())
         if (area !== other)
           expect(Math.hypot(x - other.positions[0][0], z - other.positions[0][1])).toBeGreaterThan(
             area.radius + other.radius + 2,

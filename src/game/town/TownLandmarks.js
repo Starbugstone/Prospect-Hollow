@@ -1,3 +1,4 @@
+import { buildMoonLandmark, LUNAR_LANDMARK_FORMS } from './moon/MoonLandmarks';
 import { landmarkMotion } from './TownLandmarkMotion';
 import { LANDMARK_BY_ID, LANDMARK_PROGRESSION } from '../../data/townLandmarks';
 import { futureShape } from './buildings/futureShapes';
@@ -94,7 +95,9 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false, st
   else if (['diner', 'screen', 'springs', 'aurora', 'globes'].includes(o.form))
     g.scale.y = [1, 1.1, 1.2, 1.35, 1.5][tier - 1];
   pedestal(d, g, timeless ? 7.5 : 5.8);
-  if (o.form === 'arch') {
+  const lunar = LUNAR_LANDMARK_FORMS.includes(o.form);
+  if (lunar) buildMoonLandmark(d, g, o, tier, move);
+  else if (o.form === 'arch') {
     for (const x of [-4, 4]) {
       d.box(g, 2.1, 7, 2.8, x, 4, 0, STONE);
       d.box(g, 2.8, 0.5, 3.3, x, 7.6, 0, DARK);
@@ -572,7 +575,7 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false, st
     }
     d.mesh(g, 'cone', [2.3, 1.6, 2.3], [0, towerHeight + 1.4, 0], colour);
   }
-  if (!timeless) {
+  if (!timeless && !lunar) {
     // Large architectural changes stay inside the reserved court.
     if (tier >= 2) {
       const court = d.group(g);
@@ -641,7 +644,7 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false, st
   }
   // Public halls and gardens have a fountain performance; engineering monuments
   // additionally run their own machinery. The centerpiece gets it immediately.
-  if (timeless || tier >= 3) {
+  if (!lunar && (timeless || tier >= 3)) {
     const fountain = d.group(g, 0, 0, timeless ? 5.7 : 4.8);
     fountain.name = 'Monument fountain court';
     d.mesh(

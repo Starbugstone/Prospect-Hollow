@@ -874,3 +874,26 @@ supported fittings, predecessor/successor counterparts and the SVG equivalent.
 The permanent mine entrance and historic portal boards use the eagerly loaded
 `mineSignMounts.json` catalogue, generated and checked with the footprint family.
 Custom inputs retain the validated physical resolver fallback.
+
+### Monument settlements and future currencies
+
+Optional sites in `townLandmarks.js` declare `settlement: 'valley' | 'moon'` and
+`currency: 'coins'` (both fields have historical defaults). `areasForSettlement()`
+selects the renderer's sites; an unknown settlement has no implicit renderer.
+Persisted choices, level prices, construction, completed-puzzle progress and
+unveiling commits always use the complete site catalog. New Hollow’s Earthrise
+Plaza opens in Twin Hollows with the existing lunar lots. `MoonMonuments.js`
+contains its small works/render hook and supplies the shared `TownPresentation`
+and `TownMonumentUnveiling` contracts with lunar visitors and surface/camera
+adapters. `surfaceHeight`, `keepCameraAboveSurface` and `fauna` are optional scene
+adapters; missing values preserve valley behavior. Presentation definitions carry
+the site's settlement so the parent routes its frames to the correct scene.
+
+`landmarkPayment()` centralizes resource display, affordability and spending.
+Only coin payments are implemented here. A later `currency: 'moonstones'` site
+must add the resource store/receipt implementation through that helper and
+`TownPersonalisation::purchase`; until then both client and server reject it.
+Regenerate public content after adding sites, IDs, prices or currency metadata.
+`testing/moon-monument.test.js` checks the lunar layout, the shared lifecycle,
+price export, fallback art, resource rejection, geometry budgets and Moon camera
+restoration. Valley layout/wildlife tests deliberately select valley sites.

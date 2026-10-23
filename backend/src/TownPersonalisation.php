@@ -115,7 +115,11 @@ final class TownPersonalisation
                 $area = $candidate;
             }
         }
-        if (!$area || !in_array($choice, $area['choices'], true)) {
+        if (
+            !$area ||
+            ($area['currency'] ?? 'coins') !== 'coins' ||
+            !in_array($choice, $area['choices'], true)
+        ) {
             return null;
         }
         $now = array_search($town['era'], $eraOrder, true);

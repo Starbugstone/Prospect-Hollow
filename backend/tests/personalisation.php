@@ -345,4 +345,50 @@ foreach (
         'only a known monument proves the honour, never an uploaded claim',
     );
 }
+// The lunar site uses the same authoritative catalog, prices and publication.
+$moonArea = array_values(
+    array_filter(
+        $schema['personalisation']['areas'],
+        fn($area) => $area['id'] === 'earthrise-plaza',
+    ),
+)[0];
+checkPersonalisation(
+    $moonArea['settlement'] === 'moon' &&
+        $moonArea['currency'] === 'coins' &&
+        $moonArea['era'] === 'twin-hollows',
+    'lunar site declares its settlement, currency and opening era',
+);
+foreach ($moonArea['choices'] as $choice) {
+    $state = json_decode(json_encode($rules->defaultTown), true);
+    $state['era'] = 'moonward';
+    $state['coins'] = 100000;
+    $command = [
+        'id' => $moonArea['id'],
+        'slot' => 0,
+        'value' => $choice,
+        'expectedChoice' => null,
+        'expectedLevel' => 0,
+        'monumentVersion' => 2,
+    ];
+    checkPersonalisation(
+        TownPersonalisation::purchase($state, $command, $schema['eras']) === null,
+        'Moonward cannot buy the Twin Hollows site early',
+    );
+    $state['era'] = 'twin-hollows';
+    $next = TownPersonalisation::purchase($state, $command, $schema['eras']);
+    $definition = array_values(
+        array_filter($schema['personalisation']['landmarks'], fn($o) => $o['id'] === $choice),
+    )[0];
+    checkPersonalisation(
+        $next !== null && $state['coins'] - $next['coins'] === $definition['price'],
+        'each lunar design charges its exported price',
+    );
+    $next['personalisation']['construction'][$moonArea['id']] = ['level' => 1, 'wins' => 2];
+    $published = TownPersonalisation::publish(json_decode(json_encode($next)), null, $schema);
+    checkPersonalisation(
+        $published->areas->{'earthrise-plaza'} === [$choice] &&
+            $published->construction->{'earthrise-plaza'}->wins === 2,
+        'lunar choice and unfinished construction survive public projection',
+    );
+}
 echo "Personalisation: $count checks passed.\n";

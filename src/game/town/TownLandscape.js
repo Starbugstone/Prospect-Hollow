@@ -1,5 +1,5 @@
 import { EXTERIOR_HABITATS } from '../../data/townAnimals';
-import { PERSONAL_AREAS } from '../../data/townPersonalisation';
+import { areasForSettlement } from '../../data/townPersonalisation';
 import { terrainMaterial } from './TownAtmosphere';
 import { addMineExcavation } from './TownMineShaft';
 import * as THREE from 'three';
@@ -17,7 +17,7 @@ import { hash01, smoothBetween } from './TownMath';
 import { addCactus } from './buildings/frontierParts';
 
 // Level grassy verges support wildlife and visitors around the distant courts.
-const wildlifeClearings = [...PERSONAL_AREAS, ...Object.values(EXTERIOR_HABITATS)];
+const wildlifeClearings = [...areasForSettlement(), ...Object.values(EXTERIOR_HABITATS)];
 
 function noise(x, z) {
   const ix = Math.floor(x),

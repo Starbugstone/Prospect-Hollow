@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PERSONAL_AREAS, SITE_FACINGS, siteYaw } from '../src/data/townLandmarks';
+import { areasForSettlement, SITE_FACINGS, siteYaw } from '../src/data/townLandmarks';
 import { AIRPORT, RAIL_EDGE, segmentDistance, townTracks } from '../src/game/town/TownLayout';
 import { groundHeight } from '../src/game/town/TownLandscape';
 import { RIVER, riverCenterX, riverDistance } from '../src/game/town/TownRiver';
@@ -22,18 +22,18 @@ const circle = (area, step = 2) => {
 
 describe('Monument site layout', () => {
   it('keeps only the timeless Monument Square in front of the town', () => {
-    for (const area of PERSONAL_AREAS) {
+    for (const area of areasForSettlement()) {
       const [, z] = area.positions[0];
       if (area.timeless) expect(z - area.radius).toBeGreaterThan(RAIL_EDGE.from[1]);
       else expect(z + area.radius).toBeLessThan(BEYOND_RAILWAY);
     }
   });
   it('keeps sites beyond the railway out of the airport approach', () => {
-    for (const area of PERSONAL_AREAS.filter((a) => !a.timeless))
+    for (const area of areasForSettlement().filter((a) => !a.timeless))
       expect(Math.abs(area.positions[0][0] - AIRPORT.runwayX)).toBeGreaterThan(area.radius + 6);
   });
   it('builds every site on level ground, off the mine ridge and river banks', () => {
-    for (const area of PERSONAL_AREAS) {
+    for (const area of areasForSettlement()) {
       const [x, z] = area.positions[0];
       const heights = [];
       for (let dx = -area.radius; dx <= area.radius; dx += 1)
@@ -58,7 +58,7 @@ describe('Monument site layout', () => {
       ]),
       ['airport', AIRPORT.center, AIRPORT.halfWidth, AIRPORT.halfDepth],
     ];
-    for (const area of PERSONAL_AREAS) {
+    for (const area of areasForSettlement()) {
       const [x, z] = area.positions[0];
       for (const { from, to, width = 0.85 } of tracks)
         expect(segmentDistance(x, z, from, to) - width / 2, area.id).toBeGreaterThan(
@@ -75,7 +75,8 @@ describe('Monument site layout', () => {
     }
   });
   it('turns each site to a supported facing, south unless it declares another', () => {
-    for (const area of PERSONAL_AREAS) expect(Object.keys(SITE_FACINGS)).toContain(area.facing);
+    for (const area of areasForSettlement())
+      expect(Object.keys(SITE_FACINGS)).toContain(area.facing);
     expect(siteYaw({ id: 'incomplete' })).toBe(SITE_FACINGS.south);
     expect(siteYaw({ id: 'future', facing: 'upriver' })).toBe(SITE_FACINGS.south);
     expect(siteYaw(null)).toBe(SITE_FACINGS.south);
@@ -83,7 +84,7 @@ describe('Monument site layout', () => {
     expect(front({ facing: 'south' })[1]).toBeCloseTo(1);
   });
   it('fronts Founders’ Meadow onto the river beside it', () => {
-    const meadow = PERSONAL_AREAS.find((a) => a.id === 'meadow');
+    const meadow = areasForSettlement().find((a) => a.id === 'meadow');
     const [x, z] = meadow.positions[0];
     const [fx, fz] = front(meadow);
     // The front points straight across to the water, which starts just past the court.

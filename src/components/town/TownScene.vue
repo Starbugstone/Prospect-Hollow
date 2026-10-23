@@ -228,6 +228,9 @@
       :active="active"
       :paused="paused"
       :reduced-motion="reducedMotion"
+      :presentation="presentation?.settlement === 'moon' ? presentation : null"
+      @presentation-ready="emit('presentation-ready')"
+      @presentation-unavailable="emit('presentation-unavailable')"
       @inspect="emit('inspect', $event)"
       @close="closeMoon"
     />
@@ -321,6 +324,7 @@ const moonLabel = computed(() =>
 // The Moon map opens over the valley once the town can build there; before that
 // the chip shows the space elevator. The valley rests while the Moon is open.
 const moonOpen = ref(false);
+const moonView = ref(null);
 function openMoon() {
   if (!moonReachable.value) return emit('inspect', 'spaceElevator');
   moonOpen.value = true;
@@ -471,7 +475,10 @@ let cinematicProgress = 0;
 defineExpose({
   // Moon buildings have no valley lot: focusing one opens the Moon map instead.
   focusPlace: (id) => {
-    if (MOON_BUILDINGS.some((building) => building.id === id)) {
+    if (
+      AREA_BY_ID[id]?.settlement === 'moon' ||
+      MOON_BUILDINGS.some((building) => building.id === id)
+    ) {
       moonOpen.value = true;
       return true;
     }
@@ -489,7 +496,8 @@ defineExpose({
   },
   presentationFrame: (time) => {
     presentationTime = time;
-    scene?.presentationFrame(time, props.reducedMotion);
+    if (props.presentation?.settlement === 'moon') moonView.value?.presentationFrame(time);
+    else scene?.presentationFrame(time, props.reducedMotion);
   },
 });
 let lastVisual = '';
@@ -651,8 +659,8 @@ async function update() {
   // town only changes while they are in the mine.
   scene.animateCostumes = props.readOnly && !props.reducedMotion;
   dressSpaceHelmet(scene, props.town, { animate: scene.animateCostumes });
-  scene.setPresentation(props.presentation);
-  if (props.presentation) {
+  scene.setPresentation(props.presentation?.settlement === 'moon' ? null : props.presentation);
+  if (props.presentation && props.presentation.settlement !== 'moon') {
     scene.presentationFrame(presentationTime, props.reducedMotion);
     emit('presentation-ready');
   }
@@ -856,6 +864,7 @@ watch(
   () => props.presentation?.id,
   () => {
     presentationTime = 0;
+    if (props.presentation?.settlement === 'moon') moonOpen.value = true;
     update();
   },
 );

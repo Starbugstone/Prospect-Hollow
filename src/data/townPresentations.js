@@ -84,11 +84,16 @@ export function monumentPresentation(id, choice, level) {
   return {
     id: 'monument-unveiling',
     area: id,
+    settlement: area.settlement ?? 'valley',
     choice,
     level: area.timeless ? 1 : level,
     grand,
     duration: grand ? 16 : 7,
-    title: grand ? 'A monument for Prospect Hollow' : 'Monument upgraded',
+    title: grand
+      ? area.settlement === 'moon'
+        ? 'A monument for New Hollow'
+        : 'A monument for Prospect Hollow'
+      : 'Monument upgraded',
     chapters: grand
       ? [
           { at: 0, text: 'The whole town gathers at {site}.', params },

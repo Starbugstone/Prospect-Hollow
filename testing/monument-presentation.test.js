@@ -17,7 +17,7 @@ describe('Monument cards', () => {
         const svg = await render(TownLandmarkPreview, { choice, stage });
         stages.add(svg);
         expect(svg.includes('class="landmark-fountain"'), `${choice} ${stage}`).toBe(
-          area.timeless || stage >= 3,
+          area.settlement !== 'moon' && (area.timeless || stage >= 3),
         );
       }
       expect(stages.size).toBe(area.timeless ? 1 : 5);

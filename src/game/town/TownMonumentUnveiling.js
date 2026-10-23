@@ -28,7 +28,7 @@ export class TownMonumentUnveiling {
     const area = (this.area = AREA_BY_ID[definition.area]);
     const [x, z] = area.positions[0];
     this.yaw = siteYaw(area);
-    this.origin = new Vector3(x, groundHeight(x, z), z);
+    this.origin = new Vector3(x, (d.surfaceHeight ?? groundHeight)(x, z), z);
     this.timing = definition.grand
       ? { cut: 2.6, down: 3, fall: 3.4, cheer: 6.2, confetti: 6.4 }
       : { cut: 0.9, down: 1.2, fall: 2, cheer: 3, confetti: 3.2 };
@@ -85,7 +85,7 @@ export class TownMonumentUnveiling {
   // Townsfolk in a crescent before the entrance, with the town's Willowkin among them.
   gather(d, site, count) {
     const era = d.town?.era;
-    const companion = townFauna(eraEvolution(era)).companions?.species;
+    const companion = (d.fauna ?? townFauna(eraEvolution(era))).companions?.species;
     const crowd = [];
     const radius = this.area.radius + 1.4;
     for (let n = 0; n < count; n++) {

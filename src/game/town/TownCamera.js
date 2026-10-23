@@ -1,4 +1,4 @@
-import { PERSONAL_AREAS, areaUnlocked } from '../../data/townPersonalisation';
+import { areasForSettlement, areaUnlocked } from '../../data/townPersonalisation';
 import * as THREE from 'three';
 import { nextGoal } from './TownRules';
 import { PLOTS } from './TownLayout';
@@ -20,7 +20,7 @@ export const CAMERA_MIN_DISTANCE = 7;
 export function frameTown(d) {
   if (d.eventCamera) return;
   if (!d.anchors?.length) return;
-  if (d.town && PERSONAL_AREAS.some((area) => areaUnlocked(d.town, area)))
+  if (d.town && areasForSettlement().some((area) => areaUnlocked(d.town, area)))
     d.controls.maxDistance = Math.max(d.controls.maxDistance, 180);
   const bounds = new THREE.Box3();
   const corners = [];
@@ -55,7 +55,7 @@ export function frameTown(d) {
       for (const y of [0, height])
         for (const dz of [-halfDepth, halfDepth]) corners.push(point(x + dx, y, z + dz));
   }
-  for (const area of PERSONAL_AREAS) {
+  for (const area of areasForSettlement()) {
     if (!d.town || !areaUnlocked(d.town, area)) continue;
     // Open sites are framed too: their markers invite a monument.
     area.positions.forEach(([x, z]) => {
@@ -145,7 +145,7 @@ export function focusTownPlace(d, id) {
   // Panels pause player controls; their own focus requests still move the camera.
   // Scripted cameras retain priority over these requests.
   if (d.raid || d.cinematic || d.presentation || d.eventCamera) return false;
-  const area = PERSONAL_AREAS.find((a) => a.id === id);
+  const area = areasForSettlement().find((a) => a.id === id);
   const position = PLOTS[id] ?? area?.positions[0];
   if (!position) return false;
   const target = point(position[0], 2, position[1]);

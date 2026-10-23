@@ -31,26 +31,53 @@ tapping the plaque names the honour or distinction above it until the next tap.
 
 ## Monument sites
 
-`townLandmarks.js` owns eight spacious monument sites. A site opens every other era
+`townLandmarks.js` owns nine spacious monument sites: eight in the valley and one on the Moon. A site opens every other era
 (Frontier, Industrial, Motor Age, Music & Television, Tomorrow City, Riverlight,
 Stargazer and Twin Hollows),
 so the town gets variety without a monument for every era. Each era site offers
 three designs drawn from what that era brings to the town:
 
-| Era                | Site             | Designs                                                       |
-| ------------------ | ---------------- | ------------------------------------------------------------- |
-| Frontier           | Founders' Meadow | Prospectors' Headframe, Wind Garden, Founders' Longhall       |
-| Motor Age          | Promenade        | Sunburst Filling Station, Chrome Diner, Terminus Clock        |
-| Music & Television | Arts Quarter     | Music Shell, Big Screen, Signal Spire                         |
-| Tomorrow City      | Horizon Park     | Orbit House, Solar Crown, Maglev Loop                         |
-| Riverlight         | Riverlight Court | Warm Spring Terraces, Garden of Light, Lotus Pavilion         |
-| Stargazer          | Stargazers’ Lawn | Orrery Garden, Comet Arch, Aurora Dome                        |
-| Twin Hollows       | Homecoming Green | Twin-lantern Walk, Earth and Moon Garden, Family Welcome Arch |
+| Era                 | Site             | Designs                                                       |
+| ------------------- | ---------------- | ------------------------------------------------------------- |
+| Frontier            | Founders' Meadow | Prospectors' Headframe, Wind Garden, Founders' Longhall       |
+| Motor Age           | Promenade        | Sunburst Filling Station, Chrome Diner, Terminus Clock        |
+| Music & Television  | Arts Quarter     | Music Shell, Big Screen, Signal Spire                         |
+| Tomorrow City       | Horizon Park     | Orbit House, Solar Crown, Maglev Loop                         |
+| Riverlight          | Riverlight Court | Warm Spring Terraces, Garden of Light, Lotus Pavilion         |
+| Stargazer           | Stargazers’ Lawn | Orrery Garden, Comet Arch, Aurora Dome                        |
+| Twin Hollows        | Homecoming Green | Twin-lantern Walk, Earth and Moon Garden, Family Welcome Arch |
+| Twin Hollows (Moon) | Earthrise Plaza  | First Footprints, Earthrise Arch, Orbital Beacon              |
 
 Every design has its own silhouette (`form`) and card artwork; no two designs share
-one. A later era with a site skips at least one era after the previous site, and its
+one. A later era with a valley site skips at least one era after the previous valley site, and its
 designs must come from that era's own story and buildings.
-Only the timeless Monument Square stands in front of the town. Every other site lies
+Earthrise Plaza opens with the buildable New Hollow lots in Twin Hollows. Its
+`settlement: 'moon'` declaration places it at `[0, -33]`, radius 7, beyond the ring
+road and clear of lot approaches and rover routes. The valley scene, terrain,
+labels and wildlife use `areasForSettlement()`; the Moon uses the same helper with
+`'moon'`. Save normalization and purchases retain the complete catalog. The Moon
+button opens the shared `TownMonumentSite` card, including preview, permanent
+choice, coin prices (31,000 / 32,000 / 33,000), five milestones, saved construction,
+and replay. `MoonMonuments.js` draws the same works and adapts the shared unveiling
+to suited visitors, lunar ground and the Moon camera. SVG fallback uses
+`TownMoonMonument.vue` and the shared preview artwork. The Moon designs replace
+open-water fountains and valley colonnades with solar wings, lamps and moonstone
+crowns; each tier stays below 6,000 triangles and eight materials.
+
+Sites declare `currency`, defaulting to `'coins'` for historical definitions.
+`landmarkPayment(town, area, price)` owns the icon, balance, affordability, shortfall
+and spend operation used by the card and purchase path. Only coins are implemented;
+an unsupported currency rejects the purchase on both client and server. To add a
+moonstone-only site, extend this helper alongside the resource store API and the
+server receipt validator, then export both catalogs. Never silently fall back to
+coins for a site explicitly requesting another currency.
+
+Honours decision: the shipped **A Lasting Legacy** requirement specifically
+measures ownership of `monument` (Monument Square), rather than a count of sites.
+Earthrise Plaza adds no rank and does not change that requirement or any shipped
+rank; ownership of the lunar site alone does not earn it.
+
+Only the timeless Monument Square stands in front of the town. Every other valley site lies
 beyond the railway, in two rows behind the mine ridge and a column west of the
 airport's approach. Founders' Meadow sits on the river's west bank beyond the ridge.
 That leaves the space elevator and Skyward parcels room across the track.

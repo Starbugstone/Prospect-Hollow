@@ -99,7 +99,7 @@
         <button
           v-if="upgrade"
           class="town-primary town-purchase"
-          :disabled="town.coins < upgrade.price"
+          :disabled="!payment(upgrade.price).affordable"
           @click="buy(upgrade)"
         >
           <span
@@ -107,14 +107,14 @@
               t('Grow to stage {stage}', { stage: upgrade.level })
             }}</span
           >
-          <span><TownIcon name="coin" />{{ number(upgrade.price) }}</span>
+          <span><TownIcon :name="payment(0).icon" />{{ number(upgrade.price) }}</span>
         </button>
         <p class="town-purchase-hint">
           {{
             !upgrade
               ? t('A completed town wonder. Future eras keep all five levels.')
-              : town.coins < upgrade.price
-                ? t('You need {coins} more coins.', { coins: number(upgrade.price - town.coins) })
+              : !payment(upgrade.price).affordable
+                ? shortfall(upgrade.price)
                 : t(
                     landmarkLevel(upgrade.level).puzzles === 1
                       ? '{detail} Built in one puzzle.'
@@ -159,9 +159,9 @@
           </span>
           <span
             class="monument-price"
-            :class="{ 'is-short': town.coins < LANDMARK_BY_ID[choice].price }"
+            :class="{ 'is-short': !payment(LANDMARK_BY_ID[choice].price).affordable }"
           >
-            <TownIcon name="coin" />{{ number(LANDMARK_BY_ID[choice].price) }}
+            <TownIcon :name="payment(0).icon" />{{ number(LANDMARK_BY_ID[choice].price) }}
           </span>
         </button>
       </div>
@@ -187,7 +187,7 @@
           </p>
           <button ref="confirmButton" class="town-primary town-purchase" @click="buy(offer)">
             <span><TownIcon name="monument" />{{ t('Build it') }}</span>
-            <span><TownIcon name="coin" />{{ number(offer.price) }}</span>
+            <span><TownIcon :name="payment(0).icon" />{{ number(offer.price) }}</span>
           </button>
           <button class="town-secondary" @click="confirming = false">
             {{ t('Keep looking') }}
@@ -196,7 +196,7 @@
         <template v-else>
           <button
             class="town-primary town-purchase"
-            :disabled="!offer || town.coins < offer.price"
+            :disabled="!offer || !payment(offer.price).affordable"
             @click="confirm"
           >
             <span
@@ -206,16 +206,14 @@
                   : t('Choose a design')
               }}</span
             >
-            <span v-if="offer"><TownIcon name="coin" />{{ number(offer.price) }}</span>
+            <span v-if="offer"><TownIcon :name="payment(0).icon" />{{ number(offer.price) }}</span>
           </button>
           <p class="town-purchase-hint">
             {{
               !picked
                 ? t('Tap a design to preview it in your town.')
-                : town.coins < offer.price
-                  ? t('You need {coins} more coins. The site will wait for you.', {
-                      coins: number(offer.price - town.coins),
-                    })
+                : !payment(offer.price).affordable
+                  ? shortfall(offer.price)
                   : t(
                       'Previewing in your town. Nothing is spent until you confirm. Building it takes {count} completed puzzles.',
                       { count: landmarkLevel(1).puzzles },
@@ -242,6 +240,7 @@ import {
   areaUnlocked,
   areaShownStage,
   landmarkOffer,
+  landmarkPayment,
   landmarkLevel,
   monumentWork,
 } from '../../data/townLandmarks';
@@ -270,6 +269,13 @@ const paint = computed(() =>
   area.value.timeless ? {} : (props.town.personalisation?.paint?.all ?? {}),
 );
 const maximum = computed(() => areaMaximum(props.town, area.value));
+const shortfall = (price) =>
+  payment(price).currency === 'coins'
+    ? t('You need {coins} more coins. The site will wait for you.', {
+        coins: number(payment(price).missing),
+      })
+    : t('Payment in this resource is not available yet. The site will wait for you.');
+const payment = (price) => landmarkPayment(props.town, area.value, price);
 const upgrade = computed(() =>
   built.value ? landmarkOffer(props.town, area.value, built.value) : null,
 );

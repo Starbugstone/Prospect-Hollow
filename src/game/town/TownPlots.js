@@ -57,7 +57,7 @@ import { TownScenery, sceneryAffectsNavigation } from './TownScenery';
 import { PLOTS, visiblePlots } from './TownLayout';
 import { updateTownShadowCoverage } from './TownShadows';
 import { GARDEN_PARCELS } from '../../data/townGardenDistrict';
-import { PERSONAL_AREAS, areaUnlocked } from '../../data/townLandmarks';
+import { areasForSettlement, areaUnlocked } from '../../data/townLandmarks';
 import { groundHeight } from './TownLandscape';
 
 // The plot lifecycle: building a plot's model, swapping changed plots one per frame,
@@ -955,7 +955,7 @@ export function rebuildTown(
     d.plotCache.set(id, { signature: signatures.get(id), group, movingPart, parts });
   }
   // Monument sites have no label, only an action icon over the middle of the site.
-  for (const area of PERSONAL_AREAS) {
+  for (const area of areasForSettlement()) {
     if (!areaUnlocked(town, area)) continue;
     const [x, z] = area.positions[0];
     const centre = point(x, groundHeight(x, z) + 2, z);

@@ -4,7 +4,7 @@ import {
   buildMinePlaque,
   plaqueDefinition,
 } from './TownPersonalisation';
-import { PERSONAL_AREAS, areaStage, areaUnlocked } from '../../data/townPersonalisation';
+import { areasForSettlement, areaStage, areaUnlocked } from '../../data/townPersonalisation';
 import { monumentWork } from '../../data/townLandmarks';
 import { buildMineHillside } from './TownMineHillside';
 import { groundHeight, landscapeColor } from './TownLandscape';
@@ -53,7 +53,7 @@ export class TownScenery {
         'personal-areas',
         JSON.stringify([
           town.personalisation?.areas,
-          PERSONAL_AREAS.map((area) => [
+          areasForSettlement().map((area) => [
             areaUnlocked(town, area),
             areaStage(town, area),
             monumentWork(town, area),
