@@ -11,7 +11,7 @@ export function eventSettlement(definition) {
 export function canPresentEvent(definition, settlement, active = true) {
   return !!definition && active && eventSettlement(definition) === settlement;
 }
-export function pendingSettlementPresentation(town, definitions = {}, settlement) {
+function pendingSettlementPresentation(town, definitions = {}, settlement) {
   return Object.values(definitions).find(
     (definition) =>
       definition?.id &&
