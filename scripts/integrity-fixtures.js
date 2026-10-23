@@ -522,6 +522,10 @@ export function createIntegrityFixtures() {
           // Earlier landmarks keep their Riverlight fixture; later ones need their own era.
           develop(profile, eraIndex(area.era) > eraIndex('riverlight') ? area.era : 'riverlight');
           profile.town.coins = 10000000;
+          if (area.currency === 'moonstones') {
+            profile.town.moonstones = profile.town.moonstonesEarned = 10000;
+            profile.town.completedRuns = 10000;
+          }
         },
         (campaign) => {
           const buy = (choice) => {

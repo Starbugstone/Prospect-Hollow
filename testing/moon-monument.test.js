@@ -79,7 +79,7 @@ it('uses one settlement contract, with historical defaults and no speculative re
   });
   expect(areaUnlocked({ era: 'moonward' }, area)).toBe(false);
   expect(areaUnlocked(town(), area)).toBe(true);
-  expect(areasForSettlement('moon')).toEqual([area]);
+  expect(areasForSettlement('moon')).toContain(area);
   expect(areasForSettlement()).not.toContain(area);
   expect(focusTownPlace({ town: town() }, area.id)).toBe(false);
   expect(areasForSettlement('unknown')).toEqual([]);
@@ -88,7 +88,7 @@ it('uses one settlement contract, with historical defaults and no speculative re
   expect(areaSettlement(old)).toBe('valley');
   expect(areasForSettlement('valley', [old, future])).toEqual([old]);
   expect(moonMonumentLabels({ era: 'moonward' })).toEqual([]);
-  expect(moonMonumentLabels(town()).map((a) => a.id)).toEqual([area.id]);
+  expect(moonMonumentLabels(town()).map((a) => a.id)).toContain(area.id);
 });
 
 it('reserves a flat lunar site clear of pads, ring, approaches, rovers and the saucer corridor', () => {
@@ -162,7 +162,7 @@ it('centralizes coin display, affordability and spending and rejects unsupported
     affordable: false,
     missing: 1,
   });
-  expect(landmarkPayment(value, { currency: 'moonstones' }, 1).spend()).toBeNull();
+  expect(landmarkPayment(value, { currency: 'unknown-resource' }, 1).spend()).toBeNull();
   expect(value.coins).toBe(1e8);
 });
 

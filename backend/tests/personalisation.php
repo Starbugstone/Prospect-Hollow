@@ -121,8 +121,11 @@ checkPersonalisation(
 foreach ($schema['personalisation']['areas'] as $area) {
     $state = json_decode(json_encode($rules->defaultTown), true);
     $state['coins'] = 1000000;
+    $state['moonstones'] = 1000000;
+    $currency = $area['currency'];
     $state['era'] = $area['era'];
     $command = [
+        'monumentVersion' => 2,
         'id' => $area['id'],
         'slot' => 0,
         'value' => $area['choices'][0],
@@ -131,7 +134,7 @@ foreach ($schema['personalisation']['areas'] as $area) {
     ];
     $next = TownPersonalisation::purchase($state, $command, $schema['eras']);
     checkPersonalisation(
-        $next !== null && $next['coins'] < $state['coins'],
+        $next !== null && $next[$currency] < $state[$currency],
         'landmark charges its price',
     );
     checkPersonalisation(
@@ -139,7 +142,7 @@ foreach ($schema['personalisation']['areas'] as $area) {
         'duplicate command rejected',
     );
     $poor = $state;
-    $poor['coins'] = 0;
+    $poor[$currency] = 0;
     checkPersonalisation(
         TownPersonalisation::purchase($poor, $command, $schema['eras']) === null,
         'insufficient funds rejected',
@@ -173,26 +176,29 @@ foreach ($schema['personalisation']['areas'] as $area) {
     $state = json_decode(json_encode($rules->defaultTown), true);
     $state['era'] = $area['era'];
     $state['coins'] = 10000000;
+    $state['moonstones'] = 10000000;
+    $currency = $area['currency'];
     $choice = $area['choices'][0];
     $base = array_values(
         array_filter($schema['personalisation']['landmarks'], fn($o) => $o['id'] === $choice),
     )[0]['price'];
     foreach ($schema['personalisation']['monumentProgression']['levels'] as $index => $milestone) {
         $command = [
+            'monumentVersion' => 2,
             'id' => $area['id'],
             'slot' => 0,
             'value' => $choice,
             'expectedChoice' => $index ? $choice : null,
             'expectedLevel' => $index,
-            'monumentVersion' => 2,
         ];
         $next = TownPersonalisation::purchase($state, $command, $schema['eras']);
         checkPersonalisation(
-            $next !== null && $state['coins'] - $next['coins'] === $base * $milestone['multiplier'],
+            $next !== null &&
+                $state[$currency] - $next[$currency] === $base * $milestone['multiplier'],
             'fixed milestone price',
         );
         $poor = $state;
-        $poor['coins'] = $base * $milestone['multiplier'] - 1;
+        $poor[$currency] = $base * $milestone['multiplier'] - 1;
         checkPersonalisation(
             TownPersonalisation::purchase($poor, $command, $schema['eras']) === null,
             'cannot underpay milestone',
@@ -389,6 +395,56 @@ foreach ($moonArea['choices'] as $choice) {
         $published->areas->{'earthrise-plaza'} === [$choice] &&
             $published->construction->{'earthrise-plaza'}->wins === 2,
         'lunar choice and unfinished construction survive public projection',
+    );
+}
+
+foreach ($schema['personalisation']['areas'] as $area) {
+    if ($area['currency'] !== 'moonstones') {
+        continue;
+    }
+    $state = json_decode(json_encode($rules->defaultTown), true);
+    $state['era'] = 'twin-hollows';
+    $state['coins'] = 1000000;
+    $state['moonstones'] = 300;
+    $command = [
+        'id' => $area['id'],
+        'slot' => 0,
+        'value' => $area['choices'][0],
+        'expectedChoice' => null,
+        'expectedLevel' => 0,
+        'monumentVersion' => 2,
+        'currency' => 'moonstones',
+        'price' => 60,
+    ];
+    $next = TownPersonalisation::purchase($state, $command, $schema['eras']);
+    checkPersonalisation(
+        $next !== null && $next['moonstones'] === 240 && $next['coins'] === $state['coins'],
+        'moonstone foundation debits resource only',
+    );
+    foreach (['price' => 1, 'currency' => 'coins', 'monumentVersion' => 1] as $field => $forged) {
+        $fake = array_replace($command, [$field => $forged]);
+        checkPersonalisation(
+            TownPersonalisation::purchase($state, $fake, $schema['eras']) === null,
+            'forged resource purchase rejected',
+        );
+    }
+    $upgrade = array_replace($command, [
+        'expectedChoice' => $command['value'],
+        'expectedLevel' => 1,
+        'price' => 240,
+    ]);
+    $poor = $next;
+    $poor['moonstones'] = 239;
+    checkPersonalisation(
+        TownPersonalisation::purchase($poor, $upgrade, $schema['eras']) === null,
+        'coins cannot cover missing upgrade moonstone',
+    );
+    $upgraded = TownPersonalisation::purchase($next, $upgrade, $schema['eras']);
+    checkPersonalisation(
+        $upgraded !== null &&
+            $upgraded['moonstones'] === 0 &&
+            $upgraded['coins'] === $state['coins'],
+        'upgrade debits moonstones only',
     );
 }
 echo "Personalisation: $count checks passed.\n";

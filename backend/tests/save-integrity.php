@@ -696,6 +696,28 @@ assertIntegrity(
     $validator->eraComplete($kept['town']),
     'buildings an era leaves alone count as finished in their earlier finish',
 );
+// Decorative resource sites never enter the required building completion contract.
+foreach (['moonstone-garden', 'moonrock-court'] as $site) {
+    $monumentTown = $kept['town'];
+    unset($monumentTown['personalisation']['areas'][$site]);
+    assertIntegrity(
+        $validator->eraComplete($monumentTown),
+        'empty resource monument never gates completion',
+    );
+    $area = array_values(
+        array_filter(
+            App\TownPersonalisation::catalog()['areas'],
+            fn($area) => $area['id'] === $site,
+        ),
+    )[0];
+    $monumentTown['personalisation']['areas'][$site] = [$area['choices'][0]];
+    $monumentTown['personalisation']['areaLevels'][$site] = 1;
+    $monumentTown['personalisation']['construction'][$site] = ['level' => 1, 'wins' => 0];
+    assertIntegrity(
+        $validator->eraComplete($monumentTown),
+        'unfinished resource monument never gates completion',
+    );
+}
 // A new optional Moon building must not undo completion in an existing save.
 $legacyPad = $kept;
 unset(
@@ -801,6 +823,33 @@ foreach ($fixtures->fixtures as $fixture) {
         $fixture->name . ' cannot hide an extra coin in a legitimate batch',
     );
     if (str_starts_with($fixture->name, 'optional landmark ')) {
+        if (
+            str_contains($fixture->name, 'moonstone-garden') ||
+            str_contains($fixture->name, 'moonrock-court')
+        ) {
+            $freeStones = integrityData($fixture->after);
+            $freeStones['town']['moonstones']++;
+            integrityDenied(
+                fn() => $validator->accept(integrityObject($freeStones), $starting, $clock),
+                'save_integrity_mismatch',
+                'moonstone monument cannot retain its resource payment',
+            );
+            foreach (['price' => 1, 'currency' => 'coins'] as $field => $forged) {
+                $fake = integrityData($fixture->after);
+                foreach ($fake['integrity']['actions'] as &$action) {
+                    if ($action['kind'] === 'landmark-buy') {
+                        $action['data']['purchases'][0][$field] = $forged;
+                    }
+                }
+                unset($action);
+                integrityDenied(
+                    fn() => $validator->accept(integrityObject($fake), $starting, $clock),
+                    'save_integrity_mismatch',
+                    'moonstone monument rejects forged receipt ' . $field,
+                );
+            }
+        }
+
         $free = integrityData($fixture->after);
         $free['town']['coins'] = $fixture->before->town->coins;
         integrityDenied(

@@ -31,10 +31,11 @@ tapping the plaque names the honour or distinction above it until the next tap.
 
 ## Monument sites
 
-`townLandmarks.js` owns nine spacious monument sites: eight in the valley and one on the Moon. A site opens every other era
+`townLandmarks.js` owns eleven spacious monument sites: nine in the valley and two on the Moon. Coin sites open every other era
 (Frontier, Industrial, Motor Age, Music & Television, Tomorrow City, Riverlight,
 Stargazer and Twin Hollows),
-so the town gets variety without a monument for every era. Each era site offers
+so the town gets variety without a monument for every era. Two additional resource
+sites open in Twin Hollows for moonstone keepsakes. Each era site offers
 three designs drawn from what that era brings to the town:
 
 | Era                 | Site             | Designs                                                       |
@@ -46,6 +47,8 @@ three designs drawn from what that era brings to the town:
 | Riverlight          | Riverlight Court | Warm Spring Terraces, Garden of Light, Lotus Pavilion         |
 | Stargazer           | Stargazers’ Lawn | Orrery Garden, Comet Arch, Aurora Dome                        |
 | Twin Hollows        | Homecoming Green | Twin-lantern Walk, Earth and Moon Garden, Family Welcome Arch |
+| Twin Hollows        | Moonstone Garden | Moonstone Fountain, Homeward Obelisk, Lunar Crystal Pavilion  |
+| Twin Hollows (Moon) | Moonrock Court   | Moonstone Henge, Earthlight Spire, Crater Amphitheatre        |
 | Twin Hollows (Moon) | Earthrise Plaza  | First Footprints, Earthrise Arch, Orbital Beacon              |
 
 Every design has its own silhouette (`form`) and card artwork; no two designs share
@@ -66,11 +69,16 @@ crowns; each tier stays below 6,000 triangles and eight materials.
 
 Sites declare `currency`, defaulting to `'coins'` for historical definitions.
 `landmarkPayment(town, area, price)` owns the icon, balance, affordability, shortfall
-and spend operation used by the card and purchase path. Only coins are implemented;
-an unsupported currency rejects the purchase on both client and server. To add a
-moonstone-only site, extend this helper alongside the resource store API and the
-server receipt validator, then export both catalogs. Never silently fall back to
-coins for a site explicitly requesting another currency.
+and spend operation used by the card, Build list and purchase path. It delegates
+to the shared `townCurrency` contract for coins and moonstones. Unknown currencies
+reject purchases on both client and server. Moonstone Garden (valley, `[48, -102]`)
+and Moonrock Court (Moon, `[-16, -30]`) open in Twin Hollows. Their six designs
+cost 60 moonstones each; every paid upgrade uses moonstones too. Both use the same
+five levels, construction, permanent choice and unveiling as coin monuments.
+See [moonstone calibration](moonstones.md#phase-2-optional-moonstone-monuments).
+No receipt can substitute coins, change the catalog price, or spend moonstones
+separately from granting ownership. Existing coin and legacy receipts keep their
+prices and behavior.
 
 Honours decision: the shipped **A Lasting Legacy** requirement specifically
 measures ownership of `monument` (Monument Square), rather than a count of sites.

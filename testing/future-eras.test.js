@@ -615,6 +615,7 @@ describe('New Hollow on the Moon', () => {
       scene: new Scene(),
       camera,
       renderer: { render: vi.fn(), setAnimationLoop: vi.fn() },
+      canvas: { clientWidth: 1440, clientHeight: 900 },
       lots: [{ id: 'ribbonLanding', position: new Vector3(0, 3.4, -8) }],
       onLabels: vi.fn(),
       walkers: [],

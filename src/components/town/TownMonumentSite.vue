@@ -8,6 +8,9 @@
       <span class="town-level-badge">{{ badge }}</span>
     </div>
 
+    <p v-if="area.currency === 'moonstones'" class="monument-intro">
+      {{ t('Built and upgraded only with moonstones. Coins are never spent here.') }}
+    </p>
     <p v-if="!unlocked" class="monument-note">
       <TownIcon name="lock" />{{
         t('This site opens in {era}. Monuments are optional and never block progress.', {
@@ -274,7 +277,11 @@ const shortfall = (price) =>
     ? t('You need {coins} more coins. The site will wait for you.', {
         coins: number(payment(price).missing),
       })
-    : t('Payment in this resource is not available yet. The site will wait for you.');
+    : payment(price).currency === 'moonstones'
+      ? t('You need {count} more moonstones. The site will wait for you.', {
+          count: number(payment(price).missing),
+        })
+      : t('Payment in this resource is not available yet. The site will wait for you.');
 const payment = (price) => landmarkPayment(props.town, area.value, price);
 const upgrade = computed(() =>
   built.value ? landmarkOffer(props.town, area.value, built.value) : null,
@@ -323,7 +330,11 @@ function buy(purchase) {
     expectedLevel: purchase.expectedLevel,
   });
   if (!accepted) {
-    error.value = t('Your town changed. Check your coins and try again.');
+    error.value = t(
+      payment(0).currency === 'moonstones'
+        ? 'Your town changed. Check your moonstones and try again.'
+        : 'Your town changed. Check your coins and try again.',
+    );
     return;
   }
   error.value = '';

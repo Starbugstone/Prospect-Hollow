@@ -2,8 +2,7 @@
 
 Moonstones are an optional town resource, separate from the `moonstone` puzzle
 gem. They never gate the campaign, era completion, normal puzzle rewards or
-continued play. There are no move or time limits. This change introduces the
-resource and selling; it introduces no monuments.
+continued play. There are no move or time limits. The resource can be sold or used for two optional monuments.
 
 ## Save and migration
 
@@ -124,10 +123,9 @@ Selling provides a useful choice without replacing normal mining income.
   omitted currency means coins. `payPrice` is pure and returns a replacement town
   or `null`. Unsupported currencies fail closed. Zero-price offers are allowed.
 
-For a future monument purchase, apply `payPrice` inside the **same** existing
-personalisation transaction that creates the paid site. Extend its server
-`landmark-buy` replay to consume the site's exported currency and price in that
-same command. Do not make two separately persisted calls (spend, then create
+Monument purchases apply `payPrice` inside the **same** existing
+personalisation transaction that creates the paid site. Server `landmark-buy`
+replay consumes the site's exported currency and price in that same command. Do not make two separately persisted calls (spend, then create
 site): a failed second save could leave a paid but absent monument. The standalone
 spend action is not a shortcut around server validation of a monument purchase.
 Keep currency in the shared site/offer contract and export its terms in save rules.
@@ -153,3 +151,71 @@ The focused browser check can be run against the assigned Docker Vite server wit
 after sourcing the repository media-tooling environment (the shared brief permits
 host Playwright for screenshots). It exercises confirmation/cancel, 10/all sales,
 lifetime preservation and a real Moon workshop tap using the shared store actions.
+
+## Phase 2: optional moonstone monuments
+
+Moonstone Garden in the valley and Moonrock Court on the Moon both open in
+**Twin Hollows**. An era unlock uses the existing site contract and gives players
+an early view of what they can save for, including after selling their last stone.
+No additional balance-dependent unlock flag is saved. Earthrise Plaza remains
+coin-paid. All three choices at each new site cost **60 moonstones**. Choosing a
+design is aesthetic; no design offers an economic or progression advantage.
+
+Every paid level uses the shared fixed monument multipliers. Prices are amounts
+spent on that level, with the cumulative column including previous levels:
+
+| Level           | Price in moonstones | Cumulative | Normal puzzles after Twin Hollows opens |
+| --------------- | ------------------- | ---------- | --------------------------------------- |
+| Foundation      | 60                  | 60         | 37                                      |
+| Grand court     | 240                 | 300        | 277                                     |
+| Living landmark | 600                 | 900        | 877                                     |
+| Great monument  | 1,200               | 2,100      | 2,077                                   |
+| Town wonder     | 2,100               | 4,200      | 4,177                                   |
+
+These are deliberately long-term optional projects. The first stage meets the
+30–40 puzzle target; later levels retain the established five-level monument
+curve. Buying both foundations costs 120 stones, reachable after 97 puzzles in
+this trajectory; completing both wonders costs 8,400, after 8,377 puzzles. Spending
+on one site or selling delays the other. Work duration stays three completed
+puzzles for a foundation and one for each later level, followed by unveiling.
+There is no expiry, move limit, puzzle timer, era gate or reward change.
+
+Evidence: reran `scripts/measure-moonstones.mjs` on 2026-10-23 in Node 24 Docker
+against `/tmp/ph-moonstone-campaign.json` (the same 546 actually played seed-1
+levels described above), on the integrated phase-2 baseline. The script now reads
+the actual moonstone sites and progression multipliers and measures their
+cumulative prices and the total for both sites. Twin Hollows still opens at 646;
+the workshop still completes at 650 / 655 / 660. The 60-stone threshold now falls
+at completed puzzle 683 (37 since opening), with 90 at 713. This replaces the
+phase-1 projection of 686 / 40 for current integrated content. The measured
+last-chapter payout remains 75,621 coins; sale rate remains 250. Output is saved
+at `/tmp/ph-msmonument-calibration.json`. Batches are collected immediately; no
+sales, chest rewards, hammers or passive income are assumed. The estimator tracks
+cumulative spending capacity without actually buying monuments, whose cosmetic
+construction does not affect earnings or era completion.
+
+Payment is applied through `landmarkPayment` / `payPrice` inside `personalise`'s
+existing atomic commit. The `landmark-buy` receipt records currency, canonical
+price and monument version. PHP verifies any supplied terms against its exported
+catalog and returns the ownership and resource debit in one replay command.
+New resource sites reject the legacy coin-only pricing version. Missing funds or
+failed local persistence leave ownership, construction, coins, moonstones,
+lifetime earnings and journal unchanged. Lifetime earnings also survive upgrades.
+
+Honours decision: these are optional decorative sites, with no new puzzle gem,
+mine element, era or fusion. The shipped A Lasting Legacy measure still names
+Monument Square (`monument`); neither new site earns or alters it. No rank or
+shipped requirement changes. Client `isEraComplete` and server `eraComplete` use
+required building definitions, never the monument catalog; empty and unfinished
+sites do not affect completion.
+
+`testing/moonstone-monuments.test.js` covers atomic purchase/upgrade rollback,
+resource receipts, currency display, complete-era independence, settlement and
+route clearances, geometry budgets and screen-space label layout. The shared
+personalisation and construction suites cover every catalog site. Backend
+personalisation checks reject false price/currency/version terms and resource
+underpayment. Frontend-generated integrity fixtures replay all five levels of
+both sites, and backend integrity checks reject a retained moonstone or forged
+receipt terms. SVG previews use six separate silhouettes, and Moon fallback labels
+share the same screen-space layout as the 3D Moon. Lunar labels reserve separation
+for all lots, Earthrise Plaza and Moonrock Court at desktop and phone sizes.

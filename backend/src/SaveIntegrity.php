@@ -1757,6 +1757,8 @@ final class SaveIntegrity
         }
         switch ($kind) {
             case 'landmark-buy':
+                // Purchase returns the entire town, including the authoritative
+                // currency debit. Moonstones are replayed in this same command.
                 if (
                     !is_array($d['purchases'] ?? null) ||
                     !array_is_list($d['purchases']) ||

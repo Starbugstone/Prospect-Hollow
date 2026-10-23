@@ -1,9 +1,10 @@
 import { ERAS } from './eras';
+import { canAffordPrice, currencyBalance, payPrice } from './townCurrency';
 
-// Optional monument sites open every other era, alongside the timeless Monument
+// Era-sponsored monument sites open every other era, alongside the timeless Monument
 // Square. Each era site offers three designs drawn from what that era brings to the
-// town, and every design has its own silhouette. A site's first monument is
-// permanent. Saved IDs and prices are authoritative for both clients and the server
+// town. Resource sites celebrate keepsakes. Each design has its own silhouette,
+// and a site's first monument is permanent. Saved IDs and prices are authoritative for both clients and the server
 // (export-public-content). No monument gates an era.
 const option = (id, label, form, colour, price, detail) => ({
   id,
@@ -14,6 +15,56 @@ const option = (id, label, form, colour, price, detail) => ({
   detail,
 });
 export const LANDMARK_OPTIONS = [
+  // Optional keepsakes: every design and every paid level consumes only moonstones.
+  option(
+    'moonstone-fountain',
+    'Moonstone Fountain',
+    'moonstone-fountain',
+    '#a6cfdf',
+    60,
+    'Moonstones brought home shine above a quiet garden pool.',
+  ),
+  option(
+    'homeward-obelisk',
+    'Homeward Obelisk',
+    'homeward-obelisk',
+    '#b8a4d8',
+    60,
+    'A faceted moonstone needle marks the journey between two homes.',
+  ),
+  option(
+    'lunar-pavilion',
+    'Lunar Crystal Pavilion',
+    'lunar-pavilion',
+    '#a6cfdf',
+    60,
+    'A crystal-roofed pavilion shelters moonstones brought back to the valley.',
+  ),
+  option(
+    'moonstone-henge',
+    'Moonstone Henge',
+    'moonstone-henge',
+    '#a6cfdf',
+    60,
+    'An open circle of lunar rock, crowned with luminous moonstones.',
+  ),
+  option(
+    'earthlight-spire',
+    'Earthlight Spire',
+    'earthlight-spire',
+    '#b8a4d8',
+    60,
+    'A split crystal spire catches Earthlight above a court of moon rock.',
+  ),
+  option(
+    'crater-amphitheatre',
+    'Crater Amphitheatre',
+    'crater-amphitheatre',
+    '#a6cfdf',
+    60,
+    'Curving moon-rock terraces gather around a moonstone stage.',
+  ),
+
   // Frontier: the mine, the first farms and the founders' settlement.
   option(
     'headframe',
@@ -344,6 +395,26 @@ const plots = [
     'south',
     'moon',
   ],
+  [
+    'moonstone-garden',
+    'twin-hollows',
+    'Moonstone Garden',
+    [48, -102],
+    ['moonstone-fountain', 'homeward-obelisk', 'lunar-pavilion'],
+    'south',
+    'valley',
+    'moonstones',
+  ],
+  [
+    'moonrock-court',
+    'twin-hollows',
+    'Moonrock Court',
+    [-16, -30],
+    ['moonstone-henge', 'earthlight-spire', 'crater-amphitheatre'],
+    'south',
+    'moon',
+    'moonstones',
+  ],
 ];
 export const PERSONAL_AREAS = plots.map(
   ([id, era, label, position, choices, facing, settlement, currency]) => ({
@@ -490,20 +561,19 @@ export function landmarkOffer(town, area, choice) {
 }
 // One extension point for price display, affordability and spending. New resource
 // payments must be implemented here and in the server receipt validator together.
-// Until then, a site declaring another currency cannot silently spend coins.
+// Unknown resources fail closed and never silently spend coins.
 export function landmarkPayment(town, area, price) {
   const currency = area?.currency ?? 'coins';
-  const supported = currency === 'coins';
-  const balance = supported ? (town.coins ?? 0) : 0;
-  const affordable = supported && Number.isFinite(price) && price >= 0 && balance >= price;
+  const terms = { currency, price };
+  const balance = currencyBalance(town, currency);
   return {
     currency,
     price,
     balance,
-    affordable,
+    affordable: canAffordPrice(town, terms),
     missing: Math.max(0, price - balance),
-    icon: supported ? 'coin' : 'crystal',
-    spend: () => (affordable ? { ...town, coins: balance - price } : null),
+    icon: currency === 'moonstones' ? 'moonstone' : currency === 'coins' ? 'coin' : 'crystal',
+    spend: () => payPrice(town, terms),
   };
 }
 export function purchaseLandmark(town, command) {

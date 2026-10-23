@@ -117,7 +117,7 @@ final class TownPersonalisation
         }
         if (
             !$area ||
-            ($area['currency'] ?? 'coins') !== 'coins' ||
+            !in_array($area['currency'] ?? 'coins', ['coins', 'moonstones'], true) ||
             !in_array($choice, $area['choices'], true)
         ) {
             return null;
@@ -161,10 +161,18 @@ final class TownPersonalisation
                 ? $level
                 : $progression['levels'][$level - 1]['multiplier'];
         $price = $definition['price'] * $multiplier;
-        if ($town['coins'] < $price) {
+        $currency = $area['currency'] ?? 'coins';
+        // New resource sites never replay the historical coin-only pricing model.
+        // Receipt terms are evidence, never an authority over the exported catalog.
+        if (
+            ($currency !== 'coins' && $version !== $progression['version']) ||
+            (array_key_exists('currency', $command) && $command['currency'] !== $currency) ||
+            (array_key_exists('price', $command) && $command['price'] !== $price) ||
+            ($town[$currency] ?? 0) < $price
+        ) {
             return null;
         }
-        $town['coins'] -= $price;
+        $town[$currency] -= $price;
         $town['personalisation']['areas'][$id] = [$choice];
         $town['personalisation']['areaLevels'][$id] = $level;
         return $town;
