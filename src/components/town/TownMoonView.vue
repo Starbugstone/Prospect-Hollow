@@ -1,6 +1,7 @@
 <template>
   <!-- The valley's own controls sit on the parent scene: keep Moon input to the Moon. -->
   <section
+    ref="viewElement"
     class="town-moon-view"
     :class="{ 'is-fallback': unavailable }"
     role="region"
@@ -73,7 +74,7 @@
           'is-ready': indicators[lot.id] === 'ready' || status(lot.id) === 'ready',
           'is-working': !!town.projects?.[lot.id] || status(lot.id) === 'work',
         }"
-        :style="{ left: `${lot.x}%`, top: `${lot.y}%` }"
+        :style="{ left: `${lot.x}%`, top: `${lot.y}%`, width: `${lot.width ?? 100}px` }"
         @click="
           !readOnly && canCollectMoonstones && lot.id === 'moonstoneWorkshop'
             ? emit('collect', lot.id)
@@ -159,6 +160,7 @@ import {
   monumentWork,
 } from '../../data/townLandmarks';
 import TownMoonMonument from './TownMoonMonument.vue';
+import { layoutMoonLabels } from '../../game/town/moon/MoonLabelLayout';
 import { plotUnlocked, collectionCooldownRemaining } from '../../game/town/TownRules';
 import TownMoon from './TownMoon.vue';
 import TownMoonstoneBalance from './TownMoonstoneBalance.vue';
@@ -188,6 +190,9 @@ const emit = defineEmits([
   'presentation-unavailable',
 ]);
 const canvas = ref(null);
+const viewElement = ref(null);
+const viewport = shallowRef({ width: 0, height: 0 });
+let labelObserver;
 const unavailable = ref(false);
 // Replaced whole on camera frames that move a label, so it needs no deep reactivity.
 const labels = shallowRef([]);
@@ -228,11 +233,16 @@ const mapApproaches = computed(() =>
 );
 const shownLots = computed(() =>
   unavailable.value
-    ? [...mapLots.value, ...mapMonuments.value].map(({ id, x, y }) => ({
-        id,
-        x: 50 + (x / 120) * 100,
-        y: 50 + (y / 100) * 100 + (AREA_BY_ID[id] ? 7 : -6),
-      }))
+    ? layoutMoonLabels(
+        [...mapLots.value, ...mapMonuments.value].map(({ id, x, y }) => ({
+          id,
+          x: 50 + (x / 120) * 100,
+          y: 50 + (y / 100) * 100 + (AREA_BY_ID[id] ? 7 : -6),
+          visible: true,
+        })),
+        viewport.value.width,
+        viewport.value.height,
+      ).filter((lot) => lot.visible)
     : labels.value.filter((lot) => lot.visible),
 );
 const actionLots = computed(() =>
@@ -333,11 +343,16 @@ watch(
   (value) => scene?.setReducedMotion(value),
 );
 onMounted(() => {
+  labelObserver = new ResizeObserver(([entry]) => {
+    viewport.value = { width: entry.contentRect.width, height: entry.contentRect.height };
+  });
+  labelObserver.observe(viewElement.value);
   document.addEventListener('visibilitychange', updateMotion);
   nextTick(start);
 });
 onBeforeUnmount(() => {
   disposed = true;
+  labelObserver?.disconnect();
   document.removeEventListener('visibilitychange', updateMotion);
   scene?.dispose();
   scene = null;

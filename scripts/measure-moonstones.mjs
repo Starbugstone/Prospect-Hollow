@@ -14,6 +14,25 @@ try {
   const moon = await loader.ssrLoadModule('/src/data/moonstones.js');
   const { createTown } = await loader.ssrLoadModule('/src/data/town.js');
   const { eraGate, advanceEra } = await loader.ssrLoadModule('/src/game/town/TownEras.js');
+  const { PERSONAL_AREAS, LANDMARK_BY_ID, LANDMARK_PROGRESSION } = await loader.ssrLoadModule(
+    '/src/data/townLandmarks.js',
+  );
+  const sites = PERSONAL_AREAS.filter((area) => area.currency === 'moonstones');
+  const totals = sites.map((area) => {
+    let total = 0;
+    return LANDMARK_PROGRESSION.levels.map(
+      (level) => (total += LANDMARK_BY_ID[area.choices[0]].price * level.multiplier),
+    );
+  });
+  const targets = [
+    ...new Set([
+      30,
+      60,
+      90,
+      ...totals.flat(),
+      ...LANDMARK_PROGRESSION.levels.map((_, i) => totals.reduce((sum, site) => sum + site[i], 0)),
+    ]),
+  ].sort((a, b) => a - b);
   const outputs = [];
   for (const seed of [...new Set(measured.results.map((r) => r.seed))]) {
     const runs = measured.results.filter((r) => r.seed === seed);
@@ -40,7 +59,7 @@ try {
         town = moon.earnMoonstones(town, town.moonstoneProduction.charge);
         town.moonstoneProduction = { progress: 0, charge: 0 };
       }
-      for (const price of [30, 60, 90])
+      for (const price of targets)
         if (town.moonstones >= price && !milestones.some((m) => m.price === price))
           milestones.push({
             price,
@@ -60,12 +79,12 @@ try {
       }
     }
     visit();
-    for (let n = 0; n < 5000; n++) {
+    for (let n = 0; n < 10000; n++) {
       town.coins += runs[n]?.coins ?? replayPayout;
       town.completedRuns++;
       town = moon.advanceMoonstoneProduction(rules.advanceConstruction(town));
       visit();
-      if (milestones.length === 3 && eraGate(town).townComplete) break;
+      if (milestones.length === targets.length && eraGate(town).townComplete) break;
     }
     outputs.push({
       seed,

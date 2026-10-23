@@ -139,6 +139,7 @@ describe('Personalisation save and progression contract', () => {
     (area) => {
       let town = createTown();
       town.coins = 1e9;
+      town.moonstones = town.moonstonesEarned = 1e9;
       const intro = ERAS.findIndex((e) => e.id === area.era);
       if (intro) {
         town.era = ERAS[intro - 1].id;
@@ -157,10 +158,10 @@ describe('Personalisation save and progression contract', () => {
       for (const era of ERAS.slice(intro)) {
         town.era = era.id;
         while (areaStage(town, area) < areaMaximum(town, area)) {
-          const before = town.coins,
+          const before = town[area.currency],
             offer = landmarkOffer(town, area, area.choices[0]);
           town = buyBuilt(town, area);
-          expect(before - town.coins).toBe(offer.price);
+          expect(before - town[area.currency]).toBe(offer.price);
           expect(normalizeTown(JSON.parse(JSON.stringify(town))).personalisation).toEqual(
             town.personalisation,
           );
@@ -204,6 +205,7 @@ describe('Personalisation save and progression contract', () => {
       let town = createTown();
       town.era = area.era;
       town.coins = 1e9;
+      town.moonstones = town.moonstonesEarned = 1e9;
       town = buy(town, area, area.choices[1]);
       for (const era of ERAS.slice(ERAS.findIndex((e) => e.id === area.era))) {
         town.era = era.id;
@@ -213,8 +215,10 @@ describe('Personalisation save and progression contract', () => {
       expect(areaChoice(town, area)).toBe(area.choices[1]);
     },
   );
-  it('opens a monument site every other era, each design with its own silhouette', () => {
-    const eras = areasForSettlement().map((area) => ERAS.findIndex((era) => era.id === area.era));
+  it('spaces coin sites every other era, each design with its own silhouette', () => {
+    const eras = areasForSettlement()
+      .filter((a) => a.currency === 'coins')
+      .map((area) => ERAS.findIndex((era) => era.id === area.era));
     expect(eras).not.toContain(-1);
     const sorted = [...eras].sort((a, b) => a - b);
     for (let n = 1; n < sorted.length; n++)
@@ -227,13 +231,19 @@ describe('Personalisation save and progression contract', () => {
   it.each(PERSONAL_AREAS.filter((a) => !a.timeless))(
     'offers five fixed milestones for $id immediately after its site opens',
     (area) => {
-      let town = { ...createTown(), era: area.era, coins: 1e9 };
+      let town = {
+        ...createTown(),
+        era: area.era,
+        coins: 1e9,
+        moonstones: 1e9,
+        moonstonesEarned: 1e9,
+      };
       for (const [index, milestone] of LANDMARK_PROGRESSION.levels.entries()) {
         expect(areaMaximum(town, area)).toBe(5);
         const offer = landmarkOffer(town, area, area.choices[0]);
         expect(offer.level).toBe(index + 1);
         expect(offer.price).toBe(LANDMARK_BY_ID[area.choices[0]].price * milestone.multiplier);
-        expect(buy({ ...town, coins: offer.price - 1 }, area)).toBeNull();
+        expect(buy({ ...town, [area.currency]: offer.price - 1 }, area)).toBeNull();
         town = buy(town, area);
         // One level at a time: the next is offered once this one is unveiled.
         expect(landmarkOffer(town, area, area.choices[0])).toBeNull();
@@ -453,7 +463,9 @@ describe('Personalisation rendering', () => {
     for (const site of built.children) {
       const area = areasForSettlement().find((a) => a.id === site.userData.monumentSite);
       // The fountain court and entrance stand at the front of every design.
-      const fountain = site.getObjectByName('Monument fountain court');
+      const fountain =
+        site.getObjectByName('Monument fountain court') ??
+        site.getObjectByName('Monument entrance');
       const offset = fountain
         .getWorldPosition(new Vector3())
         .sub(site.position)

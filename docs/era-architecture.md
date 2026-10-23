@@ -918,3 +918,13 @@ Regenerate public content after adding sites, IDs, prices or currency metadata.
 `testing/moon-monument.test.js` checks the lunar layout, the shared lifecycle,
 price export, fallback art, resource rejection, geometry budgets and Moon camera
 restoration. Valley layout/wildlife tests deliberately select valley sites.
+
+Moonstone-only monuments use the same site and lifecycle contracts. `currency`
+flows through `landmarkPayment` into `townCurrency.payPrice` in the atomic
+personalisation commit; the server's shared `landmark-buy` replay applies that
+same catalog currency together with ownership. `TownMoonstoneLandmarks.js` owns
+six mineral silhouettes without expanding the main renderer's form switch.
+`MoonLabelLayout.js` positions both WebGL and SVG Moon labels in screen space,
+using the canvas/container dimensions and fixed label widths to keep lot and
+monument controls separate. Neither settlement creates its own purchase,
+construction or unveiling state machine for these new sites.

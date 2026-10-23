@@ -3905,5 +3905,21 @@
   "Sold {count} moonstones for {coins} coins.": "{count} pierres de lune vendues pour {coins} pièces.",
   "Your town changed. Check your moonstones and try again.": "Votre village a changé. Vérifiez vos pierres de lune et réessayez.",
   "Lifetime moonstones earned: {count}": "Total de pierres de lune gagnées : {count}",
-  "This save contains invalid moonstones.": "Cette sauvegarde contient des pierres de lune invalides."
+  "This save contains invalid moonstones.": "Cette sauvegarde contient des pierres de lune invalides.",
+  "Moonstone Garden": "Jardin des pierres de lune",
+  "Moonrock Court": "Parvis des roches lunaires",
+  "Moonstone Fountain": "Fontaine de pierres de lune",
+  "Homeward Obelisk": "Obélisque du retour",
+  "Lunar Crystal Pavilion": "Pavillon de cristal lunaire",
+  "Moonstone Henge": "Cercle des pierres de lune",
+  "Earthlight Spire": "Flèche du clair de Terre",
+  "Crater Amphitheatre": "Amphithéâtre du cratère",
+  "Moonstones brought home shine above a quiet garden pool.": "Les pierres de lune rapportées brillent au-dessus d’un paisible bassin.",
+  "A faceted moonstone needle marks the journey between two homes.": "Une aiguille de pierre de lune rappelle le voyage entre deux foyers.",
+  "A crystal-roofed pavilion shelters moonstones brought back to the valley.": "Un pavillon au toit de cristal abrite les pierres de lune rapportées dans la vallée.",
+  "An open circle of lunar rock, crowned with luminous moonstones.": "Un cercle ouvert de roches lunaires couronnées de pierres de lune lumineuses.",
+  "A split crystal spire catches Earthlight above a court of moon rock.": "Une flèche de cristal dédoublée capte le clair de Terre au-dessus d’un parvis de roches lunaires.",
+  "Curving moon-rock terraces gather around a moonstone stage.": "Des terrasses courbes de roches lunaires entourent une scène de pierre de lune.",
+  "You need {count} more moonstones. The site will wait for you.": "Il vous manque {count} pierres de lune. Le site vous attendra.",
+  "Built and upgraded only with moonstones. Coins are never spent here.": "Construction et améliorations uniquement en pierres de lune. Aucune pièce n’est dépensée ici."
 }

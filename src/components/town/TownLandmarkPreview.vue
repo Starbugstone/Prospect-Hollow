@@ -9,12 +9,17 @@
     <rect v-if="!map" width="160" height="130" rx="12" :fill="`url(#${gradient})`" />
     <ellipse v-if="!map" cx="80" cy="114" rx="69" ry="10" fill="#bac7af" />
     <path d="M19 108 80 95 142 108 80 125Z" :fill="walls" stroke="#91785e" />
-    <g v-if="!timeless && !lunar && level >= 4" fill="#ddd1b5" stroke="#91785e" stroke-width="2">
+    <g
+      v-if="!timeless && !lunar && !mineral && level >= 4"
+      fill="#ddd1b5"
+      stroke="#91785e"
+      stroke-width="2"
+    >
       <path d="M12 112V44h8v68M38 112V44h8v68M114 112V44h8v68M140 112V44h8v68M8 38h144v8H8Z" />
       <path d="M8 36h144" stroke="#cc954f" stroke-width="4" />
     </g>
     <g
-      v-if="!timeless && !lunar && level >= 2"
+      v-if="!timeless && !lunar && !mineral && level >= 2"
       :fill="option.colour"
       stroke="#655343"
       stroke-width="2"
@@ -33,7 +38,55 @@
       stroke-width="1.5"
       stroke-linejoin="round"
     >
-      <template v-if="form === 'footprints'">
+      <template v-if="form === 'moonstone-fountain'">
+        <path d="M25 106v-9h110v9ZM43 83v-8h74v8ZM60 61v-7h40v7Z" fill="#aaa79f" />
+        <ellipse cx="80" cy="96" rx="54" ry="8" />
+        <ellipse cx="80" cy="74" rx="36" ry="6" />
+        <path d="m80 22 9 18-9 16-9-16Z" />
+        <path d="M48 87V61m64 26V61" stroke="#a6cfdf" stroke-width="3" />
+      </template>
+      <template v-else-if="form === 'homeward-obelisk'">
+        <path d="M63 108 57 37 80 9l23 28-6 71Z" />
+        <path d="M80 9v99" stroke="#e5e8e7" />
+        <ellipse
+          cx="80"
+          cy="66"
+          rx="43"
+          ry="15"
+          fill="none"
+          stroke="#b8a4d8"
+          stroke-width="5"
+          transform="rotate(-25 80 66)"
+        />
+      </template>
+      <template v-else-if="form === 'lunar-pavilion'">
+        <path d="M38 108V58h8v50Zm76 0V58h8v50ZM54 99V54h7v45Zm45 0V54h7v45Z" />
+        <path d="m22 58 58-43 58 43Z" fill="#b8a4d8" />
+        <path d="m80 15-20 43h40Z" />
+        <path d="m80 70 10 17-10 20-10-20Z" />
+      </template>
+      <template v-else-if="form === 'moonstone-henge'">
+        <g fill="#aaa79f">
+          <path d="M25 103V46h15v57Zm35-12V28h15v63Zm38 0V28h15v63Zm22 12V46h15v57Z" />
+          <path d="M20 40h25v10H20ZM55 22h63v12H55ZM115 40h25v10h-25Z" />
+        </g>
+        <path d="m80 73 10 17-10 19-10-19Z" />
+        <path d="m27 39 6-16 6 16Zm96 0 6-16 6 16Z" />
+      </template>
+      <template v-else-if="form === 'earthlight-spire'">
+        <path d="M59 110 40 40 56 12l19 26 1 72Z" fill="#b8a4d8" />
+        <path d="m84 110 1-72 19-26 16 28-19 70Z" />
+        <path d="m27 108 4-22 6 22Zm94 0 6-22 4 22Z" />
+        <path d="M56 12l12 98M104 12l-12 98" stroke="#e5e8e7" />
+      </template>
+      <template v-else-if="form === 'crater-amphitheatre'">
+        <g fill="none" stroke="#aaa79f" stroke-width="10">
+          <path d="M23 92a57 45 0 1 1 114 0M37 92a43 32 0 1 1 86 0M51 92a29 20 0 1 1 58 0" />
+        </g>
+        <ellipse cx="80" cy="98" rx="25" ry="8" fill="#b8a4d8" />
+        <path d="m80 65 9 16-9 17-9-17Z" />
+      </template>
+      <template v-else-if="form === 'footprints'">
         <ellipse cx="80" cy="105" rx="48" ry="10" fill="#aaa79f" />
         <path d="M51 99v-7h7v7Zm15-9v-7h7v7Zm-15-9v-7h7v7Z" fill="#657481" />
         <path d="M93 99V42m0 0h26v18H93" stroke="#eacb80" stroke-width="3" />
@@ -327,7 +380,7 @@
         <path d="m57 22 23-15 23 15Z" />
       </template>
     </g>
-    <g v-if="lunar && level >= 2" stroke="#e5e8e7" stroke-width="2">
+    <g v-if="lunar && !mineral && level >= 2" stroke="#e5e8e7" stroke-width="2">
       <path d="M12 108V94h24v10Zm112-4V94h24v14Z" :fill="option.colour" />
       <path v-if="level >= 3" d="M20 91V78m120 13V78" stroke="#eacb80" stroke-width="4" />
       <path v-if="level >= 4" d="M18 94V48m124 46V48" />
@@ -349,7 +402,7 @@
       />
     </g>
     <path
-      v-if="!timeless && !lunar && level >= 5"
+      v-if="!timeless && !lunar && !mineral && level >= 5"
       d="M38 117V92q42-24 84 0v25M38 94V84M122 94V84"
       fill="none"
       stroke="#cc954f"
@@ -364,6 +417,7 @@
 </template>
 <script setup>
 import { computed, useId } from 'vue';
+import { MOONSTONE_LANDMARK_FORMS } from '../../game/town/TownMoonstoneLandmarks';
 import { LANDMARK_BY_ID, PERSONAL_AREAS, LANDMARK_PROGRESSION } from '../../data/townLandmarks';
 const props = defineProps({
   choice: { type: String, required: true },
@@ -378,6 +432,7 @@ const option = computed(() => ({
   colour: props.paint?.roof || LANDMARK_BY_ID[props.choice].colour,
 }));
 const form = computed(() => option.value.form);
+const mineral = computed(() => MOONSTONE_LANDMARK_FORMS.includes(form.value));
 const lunar = computed(
   () => PERSONAL_AREAS.find((area) => area.choices.includes(props.choice))?.settlement === 'moon',
 );

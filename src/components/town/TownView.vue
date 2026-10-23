@@ -412,7 +412,7 @@
                 >{{ t(site.name) }}<small>{{ site.status }}</small></span
               >
               <span v-if="site.price" class="town-plot-price">
-                <TownIcon name="coin" />{{
+                <TownIcon :name="site.icon" />{{
                   site.from ? t('from {coins}', { coins: number(site.price) }) : number(site.price)
                 }}
               </span>
@@ -658,6 +658,7 @@ import {
   areaStage,
   areaUnlocked,
   landmarkOffer,
+  landmarkPayment,
   monumentWork,
 } from '../../data/townLandmarks';
 import { personaliseTown } from '../../data/townPersonalisation';
@@ -973,6 +974,7 @@ const monumentSites = computed(() =>
       return {
         id: area.id,
         name: area.label,
+        icon: landmarkPayment(town.value, area, 0).icon,
         colour: '#c9a35a',
         status: t('Open site · {count} designs', { count: area.choices.length }),
         price: Math.min(...prices),
@@ -984,6 +986,7 @@ const monumentSites = computed(() =>
     return {
       id: area.id,
       name: LANDMARK_BY_ID[choice].label,
+      icon: landmarkPayment(town.value, area, 0).icon,
       colour: LANDMARK_BY_ID[choice].colour,
       status: work?.ready
         ? t('{site} · Ready to unveil', { site: t(area.label) })

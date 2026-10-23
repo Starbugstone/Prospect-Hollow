@@ -60,7 +60,13 @@ const puzzles = (town, count) => {
   for (let n = 0; n < count; n++) town = advanceMonumentWorks(town);
   return town;
 };
-const rich = (era) => ({ ...createTown(), era, coins: 1e9 });
+const rich = (era) => ({
+  ...createTown(),
+  era,
+  coins: 1e9,
+  moonstones: 1e9,
+  moonstonesEarned: 1e9,
+});
 const render = (component, props) =>
   renderToString(createSSRApp({ render: () => h(component, props) }));
 

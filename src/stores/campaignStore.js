@@ -8,6 +8,7 @@ import {
 import {
   AREA_BY_ID,
   LANDMARK_PROGRESSION,
+  landmarkOffer,
   advanceMonumentWorks,
   areaChoice,
   monumentWork,
@@ -790,6 +791,8 @@ export const useCampaignStore = defineStore('campaign', {
         .map((command) => ({
           ...command,
           monumentVersion: LANDMARK_PROGRESSION.version,
+          currency: AREA_BY_ID[command.id].currency,
+          price: landmarkOffer(this.town, AREA_BY_ID[command.id], command.value)?.price,
         }));
       return this.commit(
         { town: next },
