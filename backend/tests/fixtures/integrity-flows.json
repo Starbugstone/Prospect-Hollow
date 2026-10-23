@@ -4,7 +4,7 @@
     {
       "name": "victory after 175 moves and an expired speed target",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000001",
@@ -212,6 +212,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 0,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 0,
@@ -304,7 +308,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -332,7 +336,7 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000001",
@@ -350,6 +354,7 @@
               "id": "00000000-0000-4000-8000-000000000005",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 1,
                 "levelId": 1,
                 "score": 15000,
@@ -587,6 +592,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 1200,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 0,
@@ -679,7 +688,7 @@
           "completedRuns": 1,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -711,7 +720,7 @@
     {
       "name": "run start saved while the puzzle is active",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000007",
@@ -919,6 +928,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 0,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 0,
@@ -1011,7 +1024,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -1039,7 +1052,7 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000007",
@@ -1254,6 +1267,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 0,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 0,
@@ -1346,7 +1363,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -1378,7 +1395,7 @@
     {
       "name": "chosen chest reward and victory shop refresh",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000011",
@@ -1586,6 +1603,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 0,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 0,
@@ -1678,7 +1699,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -1706,7 +1727,7 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000011",
@@ -1724,6 +1745,7 @@
               "id": "00000000-0000-4000-8000-000000000015",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -1960,6 +1982,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 792,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 0,
@@ -2052,7 +2078,7 @@
           "completedRuns": 1,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -2084,7 +2110,7 @@
     {
       "name": "reload settles a full-bag forced coin chest without changing its pity counter",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000017",
@@ -2292,6 +2318,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 0,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 0,
@@ -2384,7 +2414,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -2412,7 +2442,7 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000017",
@@ -2430,6 +2460,7 @@
               "id": "00000000-0000-4000-8000-000000000021",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -2666,6 +2697,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 792,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 0,
@@ -2758,7 +2793,7 @@
           "completedRuns": 1,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -2790,7 +2825,7 @@
     {
       "name": "shop purchase uses its real price and inventory quantity",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000024",
@@ -2998,6 +3033,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 1000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 0,
@@ -3090,7 +3129,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -3118,7 +3157,7 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000024",
@@ -3333,6 +3372,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 940,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 0,
@@ -3425,7 +3468,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -3457,7 +3500,7 @@
     {
       "name": "first free building and a paid construction purchase",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000028",
@@ -3665,6 +3708,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 10000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 0,
@@ -3757,7 +3804,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -3785,7 +3832,7 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000028",
@@ -4046,6 +4093,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 9625,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 1,
@@ -4138,7 +4189,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -4170,7 +4221,7 @@
     {
       "name": "finish ready normal construction",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000035",
@@ -4378,6 +4429,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 0,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 0,
@@ -4470,7 +4525,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -4498,7 +4553,7 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000035",
@@ -4720,6 +4775,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 0,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 0,
@@ -4812,7 +4871,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -4844,7 +4903,7 @@
     {
       "name": "builder hammer finishes a new stage",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000039",
@@ -5052,6 +5111,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 0,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 0,
@@ -5144,7 +5207,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -5172,7 +5235,7 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000039",
@@ -5394,6 +5457,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 0,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 0,
@@ -5486,7 +5553,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -5518,7 +5585,7 @@
     {
       "name": "finishing the last starter-project building grants a builder hammer",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000043",
@@ -5726,6 +5793,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 1000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -5818,7 +5889,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -5846,7 +5917,7 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000043",
@@ -6068,6 +6139,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 1000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -6160,7 +6235,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -6192,7 +6267,7 @@
     {
       "name": "a hammer that finishes a starter project is paid back",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000047",
@@ -6400,6 +6475,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 1000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -6492,7 +6571,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -6520,7 +6599,7 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000047",
@@ -6742,6 +6821,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 1000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -6834,7 +6917,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -6866,7 +6949,7 @@
     {
       "name": "a starter project pays its hammer past the hammer limit",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000051",
@@ -7074,6 +7157,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 1000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -7166,7 +7253,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -7194,7 +7281,7 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000051",
@@ -7416,6 +7503,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 1000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -7508,7 +7599,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -7540,7 +7631,7 @@
     {
       "name": "modernization purchase uses its era price",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000055",
@@ -7748,6 +7839,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 100000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -7840,7 +7935,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -7870,7 +7965,7 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000055",
@@ -8110,6 +8205,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 99200,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -8214,7 +8313,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -8248,7 +8347,7 @@
     {
       "name": "finish ready modernization keeps functional services",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000060",
@@ -8456,6 +8555,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 100000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -8560,7 +8663,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -8590,7 +8693,7 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000060",
@@ -8830,6 +8933,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 100000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -8922,7 +9029,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -8956,7 +9063,7 @@
     {
       "name": "forge collection grants one TNT",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000065",
@@ -9164,6 +9271,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 1 },
           "coins": 0,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 0,
@@ -9256,7 +9367,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -9284,7 +9395,7 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000065",
@@ -9499,6 +9610,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 0,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 0,
@@ -9591,7 +9706,11 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": 1780000000000 },
+          "lastCollections": {
+            "saloon": null,
+            "blacksmith": 1780000000000,
+            "moonstoneWorkshop": null
+          },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -9621,12 +9740,1549 @@
       "serverNow": 1780000000000
     },
     {
-      "name": "saloon collection preserves four offline hours",
+      "name": "moonstones production, collection, sale and spend",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000069",
+          "clientAt": 1780000000000,
+          "baseSequence": 0,
+          "actions": []
+        },
+        "records": {},
+        "continuousRecords": {},
+        "powers": [
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 0 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 0 },
+          { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
+          { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 0 },
+          { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
+        ],
+        "builderHammers": 0,
+        "chestsWithoutBuilderHammer": 0,
+        "pendingChests": [],
+        "shopStock": [],
+        "shopVisit": 0,
+        "vipReceipts": [],
+        "seenObstacles": [],
+        "seenTips": [],
+        "town": {
+          "personalisation": {
+            "version": 3,
+            "crest": null,
+            "areas": {},
+            "areaLevels": {},
+            "construction": {},
+            "plaques": {}
+          },
+          "era": "twin-hollows",
+          "buildingEras": {
+            "well": "twin-hollows",
+            "farm": "twin-hollows",
+            "home": "twin-hollows",
+            "saloon": "twin-hollows",
+            "stable": "twin-hollows",
+            "sheriff": "twin-hollows",
+            "museum": "twin-hollows",
+            "armory": "twin-hollows",
+            "bank": "twin-hollows",
+            "shop": "twin-hollows",
+            "square": "twin-hollows",
+            "watermill": "twin-hollows",
+            "fisherman": "twin-hollows",
+            "blacksmith": "twin-hollows",
+            "school": "twin-hollows",
+            "doctor": "twin-hollows",
+            "bridge": "twin-hollows",
+            "riverPort": "twin-hollows",
+            "railDepot": "twin-hollows",
+            "post": "twin-hollows",
+            "warehouse": "twin-hollows",
+            "hotel": "twin-hollows",
+            "home5": "twin-hollows",
+            "market": "twin-hollows",
+            "powerHouse": "twin-hollows",
+            "fireStation": "twin-hollows",
+            "rowHouses": "twin-hollows",
+            "mill": "twin-hollows",
+            "garage": "twin-hollows",
+            "busDepot": "twin-hollows",
+            "gardenCourt": "twin-hollows",
+            "diner": "twin-hollows",
+            "teaHouse": "twin-hollows",
+            "blossomAtelier": "twin-hollows",
+            "orchardCottages": "twin-hollows",
+            "glassworks": "twin-hollows",
+            "springsRetreat": "twin-hollows",
+            "riverlightPavilion": "twin-hollows",
+            "airport": "twin-hollows",
+            "radioTower": "twin-hollows",
+            "concertHall": "twin-hollows",
+            "television": "twin-hollows",
+            "skyline": "twin-hollows",
+            "cityHall": "twin-hollows",
+            "apartments": "twin-hollows",
+            "supermarket": "twin-hollows",
+            "waterPlant": "twin-hollows",
+            "transitHub": "twin-hollows",
+            "library": "twin-hollows",
+            "crystalLab": "twin-hollows",
+            "cityHomes": "twin-hollows",
+            "riverPark": "twin-hollows",
+            "skyPods": "twin-hollows",
+            "biodome": "twin-hollows",
+            "maglevStation": "twin-hollows",
+            "skyHarbour": "twin-hollows",
+            "cloudOrchard": "twin-hollows",
+            "windsongLofts": "twin-hollows",
+            "greatTelescope": "twin-hollows",
+            "dewlightGardens": "twin-hollows",
+            "starlightTerraces": "twin-hollows",
+            "spaceElevator": "twin-hollows",
+            "moonpost": "twin-hollows",
+            "missionHomesteads": "twin-hollows",
+            "homecomingHall": "twin-hollows",
+            "ribbonLanding": "twin-hollows",
+            "settlerDomes": "twin-hollows",
+            "craterIceWell": "twin-hollows",
+            "earthlightGreenhouse": "twin-hollows",
+            "willowkinDome": "twin-hollows",
+            "newHollowCommons": "twin-hollows",
+            "craterHomesteads": "twin-hollows",
+            "moonstoneWorkshop": "twin-hollows",
+            "roverBarn": "twin-hollows",
+            "earthriseLookout": "twin-hollows",
+            "horseField": "twin-hollows",
+            "park": "twin-hollows",
+            "home2": "twin-hollows",
+            "home3": "twin-hollows",
+            "home4": "twin-hollows",
+            "well2": "twin-hollows",
+            "farm2": "twin-hollows",
+            "farm3": "twin-hollows"
+          },
+          "buildingEraLevels": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 3,
+            "stable": 3,
+            "sheriff": 3,
+            "museum": 3,
+            "armory": 3,
+            "bank": 3,
+            "shop": 3,
+            "square": 3,
+            "watermill": 3,
+            "fisherman": 3,
+            "blacksmith": 3,
+            "school": 3,
+            "doctor": 3,
+            "bridge": 3,
+            "riverPort": 3,
+            "railDepot": 3,
+            "post": 3,
+            "warehouse": 3,
+            "hotel": 3,
+            "home5": 3,
+            "market": 3,
+            "powerHouse": 3,
+            "fireStation": 3,
+            "rowHouses": 3,
+            "mill": 3,
+            "garage": 3,
+            "busDepot": 3,
+            "gardenCourt": 3,
+            "diner": 3,
+            "teaHouse": 3,
+            "blossomAtelier": 3,
+            "orchardCottages": 3,
+            "glassworks": 3,
+            "springsRetreat": 3,
+            "riverlightPavilion": 3,
+            "airport": 3,
+            "radioTower": 3,
+            "concertHall": 3,
+            "television": 3,
+            "skyline": 3,
+            "cityHall": 3,
+            "apartments": 3,
+            "supermarket": 3,
+            "waterPlant": 3,
+            "transitHub": 3,
+            "library": 3,
+            "crystalLab": 3,
+            "cityHomes": 3,
+            "riverPark": 3,
+            "skyPods": 3,
+            "biodome": 3,
+            "maglevStation": 3,
+            "skyHarbour": 3,
+            "cloudOrchard": 3,
+            "windsongLofts": 3,
+            "greatTelescope": 3,
+            "dewlightGardens": 3,
+            "starlightTerraces": 3,
+            "spaceElevator": 3,
+            "moonpost": 3,
+            "missionHomesteads": 3,
+            "homecomingHall": 3,
+            "ribbonLanding": 3,
+            "settlerDomes": 3,
+            "craterIceWell": 3,
+            "earthlightGreenhouse": 3,
+            "willowkinDome": 3,
+            "newHollowCommons": 3,
+            "craterHomesteads": 3,
+            "moonstoneWorkshop": 3,
+            "roverBarn": 3,
+            "earthriseLookout": 3,
+            "horseField": 3,
+            "park": 3,
+            "home2": 3,
+            "home3": 3,
+            "home4": 3,
+            "well2": 3,
+            "farm2": 3,
+            "farm3": 3
+          },
+          "firstLightsSeen": false,
+          "forge": { "progress": 0, "charge": 0 },
+          "coins": 100000,
+          "moonstoneVersion": 1,
+          "moonstones": 10,
+          "moonstonesEarned": 10,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
+          "tourSeen": false,
+          "buildings": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 3,
+            "stable": 3,
+            "sheriff": 3,
+            "museum": 3,
+            "armory": 3,
+            "bank": 3,
+            "shop": 3,
+            "square": 3,
+            "watermill": 3,
+            "fisherman": 3,
+            "blacksmith": 3,
+            "school": 3,
+            "doctor": 3,
+            "bridge": 3,
+            "riverPort": 3,
+            "railDepot": 3,
+            "post": 3,
+            "warehouse": 3,
+            "hotel": 3,
+            "home5": 3,
+            "market": 3,
+            "powerHouse": 3,
+            "fireStation": 3,
+            "rowHouses": 3,
+            "mill": 3,
+            "garage": 3,
+            "busDepot": 3,
+            "gardenCourt": 3,
+            "diner": 3,
+            "teaHouse": 3,
+            "blossomAtelier": 3,
+            "orchardCottages": 3,
+            "glassworks": 3,
+            "springsRetreat": 3,
+            "riverlightPavilion": 3,
+            "airport": 3,
+            "radioTower": 3,
+            "concertHall": 3,
+            "television": 3,
+            "skyline": 3,
+            "cityHall": 3,
+            "apartments": 3,
+            "supermarket": 3,
+            "waterPlant": 3,
+            "transitHub": 3,
+            "library": 3,
+            "crystalLab": 3,
+            "cityHomes": 3,
+            "riverPark": 3,
+            "skyPods": 3,
+            "biodome": 3,
+            "maglevStation": 3,
+            "skyHarbour": 3,
+            "cloudOrchard": 3,
+            "windsongLofts": 3,
+            "greatTelescope": 3,
+            "dewlightGardens": 3,
+            "starlightTerraces": 3,
+            "spaceElevator": 3,
+            "moonpost": 3,
+            "missionHomesteads": 3,
+            "homecomingHall": 3,
+            "ribbonLanding": 3,
+            "settlerDomes": 3,
+            "craterIceWell": 3,
+            "earthlightGreenhouse": 3,
+            "willowkinDome": 3,
+            "newHollowCommons": 3,
+            "craterHomesteads": 3,
+            "moonstoneWorkshop": 3,
+            "roverBarn": 3,
+            "earthriseLookout": 3,
+            "horseField": 3,
+            "park": 3,
+            "home2": 3,
+            "home3": 3,
+            "home4": 3,
+            "well2": 3,
+            "farm2": 3,
+            "farm3": 3
+          },
+          "events": {},
+          "presentations": {},
+          "projects": {},
+          "completedRuns": 30,
+          "nextRaidRun": null,
+          "income": { "at": null, "remainder": 0, "stored": 0 },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
+          "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
+          "guestVip": null,
+          "progressionVersion": 2
+        },
+        "townProjectFocus": "",
+        "issuedRun": 0,
+        "settledRun": 0,
+        "honours": {
+          "version": 4,
+          "earned": {
+            "ages-bronze": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
+            "ages-silver": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
+            "ages-gold": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
+            "ages-diamond": { "at": 1780000000000, "version": 1, "seen": false, "announced": false }
+          },
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
+          "showcase": [],
+          "backfilled": 0,
+          "seenGeneration": 4
+        }
+      },
+      "after": {
+        "schemaVersion": 3,
+        "integrity": {
+          "version": 1,
+          "epoch": "00000000-0000-4000-8000-000000000069",
+          "clientAt": 1780000000000,
+          "baseSequence": 0,
+          "actions": [
+            {
+              "sequence": 1,
+              "id": "00000000-0000-4000-8000-000000000072",
+              "kind": "run-start",
+              "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
+            },
+            {
+              "sequence": 2,
+              "id": "00000000-0000-4000-8000-000000000073",
+              "kind": "income-start",
+              "data": { "at": 1780000000000 }
+            },
+            {
+              "sequence": 3,
+              "id": "00000000-0000-4000-8000-000000000074",
+              "kind": "victory",
+              "data": {
+                "moonstoneVersion": 1,
+                "runId": 1,
+                "levelId": 1,
+                "score": 7500,
+                "target": 7500,
+                "starTarget": 7500,
+                "combo": 4,
+                "elapsedMs": 3754000,
+                "speedTargetMs": 154000,
+                "jewels": 217,
+                "bonusGems": 2,
+                "comboCounts": { "2": 3, "5": 1 },
+                "multiMatchCounts": { "2": 2 },
+                "chooseRewards": false,
+                "chests": [{ "source": "score", "rewardId": "clear-row" }],
+                "economyVersion": 3,
+                "shopStock": [
+                  { "id": "clear-row", "sold": false },
+                  { "id": "tile-breaker", "sold": false },
+                  { "id": "shuffle", "sold": false },
+                  { "id": "tnt", "sold": false },
+                  { "id": "color-wand", "sold": false }
+                ],
+                "shopVisit": 1,
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 4,
+              "id": "00000000-0000-4000-8000-000000000075",
+              "kind": "run-start",
+              "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
+            },
+            {
+              "sequence": 5,
+              "id": "00000000-0000-4000-8000-000000000076",
+              "kind": "victory",
+              "data": {
+                "moonstoneVersion": 1,
+                "runId": 2,
+                "levelId": 1,
+                "score": 7500,
+                "target": 7500,
+                "starTarget": 7500,
+                "combo": 4,
+                "elapsedMs": 3754000,
+                "speedTargetMs": 154000,
+                "jewels": 217,
+                "bonusGems": 2,
+                "comboCounts": { "2": 3, "5": 1 },
+                "multiMatchCounts": { "2": 2 },
+                "chooseRewards": false,
+                "chests": [{ "source": "score", "rewardId": "clear-row" }],
+                "economyVersion": 3,
+                "shopStock": [
+                  { "id": "shuffle", "sold": false },
+                  { "id": "color-wand", "sold": false },
+                  { "id": "tile-breaker", "sold": false },
+                  { "id": "tnt", "sold": false },
+                  { "id": "clear-row", "sold": false }
+                ],
+                "shopVisit": 2,
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 6,
+              "id": "00000000-0000-4000-8000-000000000077",
+              "kind": "run-start",
+              "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
+            },
+            {
+              "sequence": 7,
+              "id": "00000000-0000-4000-8000-000000000078",
+              "kind": "victory",
+              "data": {
+                "moonstoneVersion": 1,
+                "runId": 3,
+                "levelId": 1,
+                "score": 7500,
+                "target": 7500,
+                "starTarget": 7500,
+                "combo": 4,
+                "elapsedMs": 3754000,
+                "speedTargetMs": 154000,
+                "jewels": 217,
+                "bonusGems": 2,
+                "comboCounts": { "2": 3, "5": 1 },
+                "multiMatchCounts": { "2": 2 },
+                "chooseRewards": false,
+                "chests": [{ "source": "score", "rewardId": "clear-row" }],
+                "economyVersion": 3,
+                "shopStock": [
+                  { "id": "tnt", "sold": false },
+                  { "id": "tile-breaker", "sold": false },
+                  { "id": "shuffle", "sold": false },
+                  { "id": "clear-row", "sold": false },
+                  { "id": "color-wand", "sold": false }
+                ],
+                "shopVisit": 3,
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 8,
+              "id": "00000000-0000-4000-8000-000000000079",
+              "kind": "moonstone-collect",
+              "data": { "at": 1780000000000 }
+            },
+            {
+              "sequence": 9,
+              "id": "00000000-0000-4000-8000-000000000080",
+              "kind": "moonstone-sell",
+              "data": { "amount": 10 }
+            },
+            {
+              "sequence": 10,
+              "id": "00000000-0000-4000-8000-000000000081",
+              "kind": "moonstone-spend",
+              "data": { "amount": 3, "reason": "future-monument" }
+            }
+          ]
+        },
+        "records": { "1": { "score": 7500, "stars": 3, "bestTimeMs": 3754000 } },
+        "continuousRecords": {},
+        "powers": [
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 3 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 0 },
+          { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
+          { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 0 },
+          { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
+        ],
+        "builderHammers": 0,
+        "chestsWithoutBuilderHammer": 3,
+        "pendingChests": [],
+        "shopStock": [
+          { "id": "tnt", "sold": false },
+          { "id": "tile-breaker", "sold": false },
+          { "id": "shuffle", "sold": false },
+          { "id": "clear-row", "sold": false },
+          { "id": "color-wand", "sold": false }
+        ],
+        "shopVisit": 3,
+        "vipReceipts": [],
+        "seenObstacles": [],
+        "seenTips": [],
+        "town": {
+          "personalisation": {
+            "version": 3,
+            "crest": null,
+            "areas": {},
+            "areaLevels": {},
+            "construction": {},
+            "plaques": {}
+          },
+          "era": "twin-hollows",
+          "buildingEras": {
+            "well": "twin-hollows",
+            "farm": "twin-hollows",
+            "home": "twin-hollows",
+            "saloon": "twin-hollows",
+            "stable": "twin-hollows",
+            "sheriff": "twin-hollows",
+            "museum": "twin-hollows",
+            "armory": "twin-hollows",
+            "bank": "twin-hollows",
+            "shop": "twin-hollows",
+            "square": "twin-hollows",
+            "watermill": "twin-hollows",
+            "fisherman": "twin-hollows",
+            "blacksmith": "twin-hollows",
+            "school": "twin-hollows",
+            "doctor": "twin-hollows",
+            "bridge": "twin-hollows",
+            "riverPort": "twin-hollows",
+            "railDepot": "twin-hollows",
+            "post": "twin-hollows",
+            "warehouse": "twin-hollows",
+            "hotel": "twin-hollows",
+            "home5": "twin-hollows",
+            "market": "twin-hollows",
+            "powerHouse": "twin-hollows",
+            "fireStation": "twin-hollows",
+            "rowHouses": "twin-hollows",
+            "mill": "twin-hollows",
+            "garage": "twin-hollows",
+            "busDepot": "twin-hollows",
+            "gardenCourt": "twin-hollows",
+            "diner": "twin-hollows",
+            "teaHouse": "twin-hollows",
+            "blossomAtelier": "twin-hollows",
+            "orchardCottages": "twin-hollows",
+            "glassworks": "twin-hollows",
+            "springsRetreat": "twin-hollows",
+            "riverlightPavilion": "twin-hollows",
+            "airport": "twin-hollows",
+            "radioTower": "twin-hollows",
+            "concertHall": "twin-hollows",
+            "television": "twin-hollows",
+            "skyline": "twin-hollows",
+            "cityHall": "twin-hollows",
+            "apartments": "twin-hollows",
+            "supermarket": "twin-hollows",
+            "waterPlant": "twin-hollows",
+            "transitHub": "twin-hollows",
+            "library": "twin-hollows",
+            "crystalLab": "twin-hollows",
+            "cityHomes": "twin-hollows",
+            "riverPark": "twin-hollows",
+            "skyPods": "twin-hollows",
+            "biodome": "twin-hollows",
+            "maglevStation": "twin-hollows",
+            "skyHarbour": "twin-hollows",
+            "cloudOrchard": "twin-hollows",
+            "windsongLofts": "twin-hollows",
+            "greatTelescope": "twin-hollows",
+            "dewlightGardens": "twin-hollows",
+            "starlightTerraces": "twin-hollows",
+            "spaceElevator": "twin-hollows",
+            "moonpost": "twin-hollows",
+            "missionHomesteads": "twin-hollows",
+            "homecomingHall": "twin-hollows",
+            "ribbonLanding": "twin-hollows",
+            "settlerDomes": "twin-hollows",
+            "craterIceWell": "twin-hollows",
+            "earthlightGreenhouse": "twin-hollows",
+            "willowkinDome": "twin-hollows",
+            "newHollowCommons": "twin-hollows",
+            "craterHomesteads": "twin-hollows",
+            "moonstoneWorkshop": "twin-hollows",
+            "roverBarn": "twin-hollows",
+            "earthriseLookout": "twin-hollows",
+            "horseField": "twin-hollows",
+            "park": "twin-hollows",
+            "home2": "twin-hollows",
+            "home3": "twin-hollows",
+            "home4": "twin-hollows",
+            "well2": "twin-hollows",
+            "farm2": "twin-hollows",
+            "farm3": "twin-hollows"
+          },
+          "buildingEraLevels": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 3,
+            "stable": 3,
+            "sheriff": 3,
+            "museum": 3,
+            "armory": 3,
+            "bank": 3,
+            "shop": 3,
+            "square": 3,
+            "watermill": 3,
+            "fisherman": 3,
+            "blacksmith": 3,
+            "school": 3,
+            "doctor": 3,
+            "bridge": 3,
+            "riverPort": 3,
+            "railDepot": 3,
+            "post": 3,
+            "warehouse": 3,
+            "hotel": 3,
+            "home5": 3,
+            "market": 3,
+            "powerHouse": 3,
+            "fireStation": 3,
+            "rowHouses": 3,
+            "mill": 3,
+            "garage": 3,
+            "busDepot": 3,
+            "gardenCourt": 3,
+            "diner": 3,
+            "teaHouse": 3,
+            "blossomAtelier": 3,
+            "orchardCottages": 3,
+            "glassworks": 3,
+            "springsRetreat": 3,
+            "riverlightPavilion": 3,
+            "airport": 3,
+            "radioTower": 3,
+            "concertHall": 3,
+            "television": 3,
+            "skyline": 3,
+            "cityHall": 3,
+            "apartments": 3,
+            "supermarket": 3,
+            "waterPlant": 3,
+            "transitHub": 3,
+            "library": 3,
+            "crystalLab": 3,
+            "cityHomes": 3,
+            "riverPark": 3,
+            "skyPods": 3,
+            "biodome": 3,
+            "maglevStation": 3,
+            "skyHarbour": 3,
+            "cloudOrchard": 3,
+            "windsongLofts": 3,
+            "greatTelescope": 3,
+            "dewlightGardens": 3,
+            "starlightTerraces": 3,
+            "spaceElevator": 3,
+            "moonpost": 3,
+            "missionHomesteads": 3,
+            "homecomingHall": 3,
+            "ribbonLanding": 3,
+            "settlerDomes": 3,
+            "craterIceWell": 3,
+            "earthlightGreenhouse": 3,
+            "willowkinDome": 3,
+            "newHollowCommons": 3,
+            "craterHomesteads": 3,
+            "moonstoneWorkshop": 3,
+            "roverBarn": 3,
+            "earthriseLookout": 3,
+            "horseField": 3,
+            "park": 3,
+            "home2": 3,
+            "home3": 3,
+            "home4": 3,
+            "well2": 3,
+            "farm2": 3,
+            "farm3": 3
+          },
+          "firstLightsSeen": false,
+          "forge": { "progress": 0, "charge": 1 },
+          "coins": 103376,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 13,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
+          "tourSeen": false,
+          "buildings": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 3,
+            "stable": 3,
+            "sheriff": 3,
+            "museum": 3,
+            "armory": 3,
+            "bank": 3,
+            "shop": 3,
+            "square": 3,
+            "watermill": 3,
+            "fisherman": 3,
+            "blacksmith": 3,
+            "school": 3,
+            "doctor": 3,
+            "bridge": 3,
+            "riverPort": 3,
+            "railDepot": 3,
+            "post": 3,
+            "warehouse": 3,
+            "hotel": 3,
+            "home5": 3,
+            "market": 3,
+            "powerHouse": 3,
+            "fireStation": 3,
+            "rowHouses": 3,
+            "mill": 3,
+            "garage": 3,
+            "busDepot": 3,
+            "gardenCourt": 3,
+            "diner": 3,
+            "teaHouse": 3,
+            "blossomAtelier": 3,
+            "orchardCottages": 3,
+            "glassworks": 3,
+            "springsRetreat": 3,
+            "riverlightPavilion": 3,
+            "airport": 3,
+            "radioTower": 3,
+            "concertHall": 3,
+            "television": 3,
+            "skyline": 3,
+            "cityHall": 3,
+            "apartments": 3,
+            "supermarket": 3,
+            "waterPlant": 3,
+            "transitHub": 3,
+            "library": 3,
+            "crystalLab": 3,
+            "cityHomes": 3,
+            "riverPark": 3,
+            "skyPods": 3,
+            "biodome": 3,
+            "maglevStation": 3,
+            "skyHarbour": 3,
+            "cloudOrchard": 3,
+            "windsongLofts": 3,
+            "greatTelescope": 3,
+            "dewlightGardens": 3,
+            "starlightTerraces": 3,
+            "spaceElevator": 3,
+            "moonpost": 3,
+            "missionHomesteads": 3,
+            "homecomingHall": 3,
+            "ribbonLanding": 3,
+            "settlerDomes": 3,
+            "craterIceWell": 3,
+            "earthlightGreenhouse": 3,
+            "willowkinDome": 3,
+            "newHollowCommons": 3,
+            "craterHomesteads": 3,
+            "moonstoneWorkshop": 3,
+            "roverBarn": 3,
+            "earthriseLookout": 3,
+            "horseField": 3,
+            "park": 3,
+            "home2": 3,
+            "home3": 3,
+            "home4": 3,
+            "well2": 3,
+            "farm2": 3,
+            "farm3": 3
+          },
+          "events": {},
+          "presentations": {},
+          "projects": {},
+          "completedRuns": 33,
+          "nextRaidRun": null,
+          "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
+          "lastCollections": {
+            "saloon": null,
+            "blacksmith": null,
+            "moonstoneWorkshop": 1780000000000
+          },
+          "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
+          "guestVip": null,
+          "progressionVersion": 2
+        },
+        "townProjectFocus": "",
+        "issuedRun": 3,
+        "settledRun": 3,
+        "honours": {
+          "version": 4,
+          "earned": {
+            "ages-bronze": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
+            "ages-silver": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
+            "ages-gold": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
+            "ages-diamond": { "at": 1780000000000, "version": 1, "seen": false, "announced": false }
+          },
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
+          "showcase": [],
+          "backfilled": 0,
+          "seenGeneration": 4
+        }
+      },
+      "serverNow": 1780000000000
+    },
+    {
+      "name": "Moon construction grants one moonstone once",
+      "before": {
+        "schemaVersion": 3,
+        "integrity": {
+          "version": 1,
+          "epoch": "00000000-0000-4000-8000-000000000082",
+          "clientAt": 1780000000000,
+          "baseSequence": 0,
+          "actions": []
+        },
+        "records": {},
+        "continuousRecords": {},
+        "powers": [
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 0 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 0 },
+          { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
+          { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 0 },
+          { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
+        ],
+        "builderHammers": 0,
+        "chestsWithoutBuilderHammer": 0,
+        "pendingChests": [],
+        "shopStock": [],
+        "shopVisit": 0,
+        "vipReceipts": [],
+        "seenObstacles": [],
+        "seenTips": [],
+        "town": {
+          "personalisation": {
+            "version": 3,
+            "crest": null,
+            "areas": {},
+            "areaLevels": {},
+            "construction": {},
+            "plaques": {}
+          },
+          "era": "twin-hollows",
+          "buildingEras": {
+            "well": "twin-hollows",
+            "farm": "twin-hollows",
+            "home": "twin-hollows",
+            "saloon": "twin-hollows",
+            "stable": "twin-hollows",
+            "sheriff": "twin-hollows",
+            "museum": "twin-hollows",
+            "armory": "twin-hollows",
+            "bank": "twin-hollows",
+            "shop": "twin-hollows",
+            "square": "twin-hollows",
+            "watermill": "twin-hollows",
+            "fisherman": "twin-hollows",
+            "blacksmith": "twin-hollows",
+            "school": "twin-hollows",
+            "doctor": "twin-hollows",
+            "bridge": "twin-hollows",
+            "riverPort": "twin-hollows",
+            "railDepot": "twin-hollows",
+            "post": "twin-hollows",
+            "warehouse": "twin-hollows",
+            "hotel": "twin-hollows",
+            "home5": "twin-hollows",
+            "market": "twin-hollows",
+            "powerHouse": "twin-hollows",
+            "fireStation": "twin-hollows",
+            "rowHouses": "twin-hollows",
+            "mill": "twin-hollows",
+            "garage": "twin-hollows",
+            "busDepot": "twin-hollows",
+            "gardenCourt": "twin-hollows",
+            "diner": "twin-hollows",
+            "teaHouse": "twin-hollows",
+            "blossomAtelier": "twin-hollows",
+            "orchardCottages": "twin-hollows",
+            "glassworks": "twin-hollows",
+            "springsRetreat": "twin-hollows",
+            "riverlightPavilion": "twin-hollows",
+            "airport": "twin-hollows",
+            "radioTower": "twin-hollows",
+            "concertHall": "twin-hollows",
+            "television": "twin-hollows",
+            "skyline": "twin-hollows",
+            "cityHall": "twin-hollows",
+            "apartments": "twin-hollows",
+            "supermarket": "twin-hollows",
+            "waterPlant": "twin-hollows",
+            "transitHub": "twin-hollows",
+            "library": "twin-hollows",
+            "crystalLab": "twin-hollows",
+            "cityHomes": "twin-hollows",
+            "riverPark": "twin-hollows",
+            "skyPods": "twin-hollows",
+            "biodome": "twin-hollows",
+            "maglevStation": "twin-hollows",
+            "skyHarbour": "twin-hollows",
+            "cloudOrchard": "twin-hollows",
+            "windsongLofts": "twin-hollows",
+            "greatTelescope": "twin-hollows",
+            "dewlightGardens": "twin-hollows",
+            "starlightTerraces": "twin-hollows",
+            "spaceElevator": "twin-hollows",
+            "moonpost": "twin-hollows",
+            "missionHomesteads": "twin-hollows",
+            "homecomingHall": "twin-hollows",
+            "ribbonLanding": "twin-hollows",
+            "settlerDomes": "twin-hollows",
+            "craterIceWell": "twin-hollows",
+            "earthlightGreenhouse": "twin-hollows",
+            "willowkinDome": "twin-hollows",
+            "newHollowCommons": "twin-hollows",
+            "craterHomesteads": "twin-hollows",
+            "moonstoneWorkshop": "twin-hollows",
+            "roverBarn": "twin-hollows",
+            "earthriseLookout": "twin-hollows",
+            "horseField": "twin-hollows",
+            "park": "twin-hollows",
+            "home2": "twin-hollows",
+            "home3": "twin-hollows",
+            "home4": "twin-hollows",
+            "well2": "twin-hollows",
+            "farm2": "twin-hollows",
+            "farm3": "twin-hollows"
+          },
+          "buildingEraLevels": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 3,
+            "stable": 3,
+            "sheriff": 3,
+            "museum": 3,
+            "armory": 3,
+            "bank": 3,
+            "shop": 3,
+            "square": 3,
+            "watermill": 3,
+            "fisherman": 3,
+            "blacksmith": 3,
+            "school": 3,
+            "doctor": 3,
+            "bridge": 3,
+            "riverPort": 3,
+            "railDepot": 3,
+            "post": 3,
+            "warehouse": 3,
+            "hotel": 3,
+            "home5": 3,
+            "market": 3,
+            "powerHouse": 3,
+            "fireStation": 3,
+            "rowHouses": 3,
+            "mill": 3,
+            "garage": 3,
+            "busDepot": 3,
+            "gardenCourt": 3,
+            "diner": 3,
+            "teaHouse": 3,
+            "blossomAtelier": 3,
+            "orchardCottages": 3,
+            "glassworks": 3,
+            "springsRetreat": 3,
+            "riverlightPavilion": 3,
+            "airport": 3,
+            "radioTower": 3,
+            "concertHall": 3,
+            "television": 3,
+            "skyline": 3,
+            "cityHall": 3,
+            "apartments": 3,
+            "supermarket": 3,
+            "waterPlant": 3,
+            "transitHub": 3,
+            "library": 3,
+            "crystalLab": 3,
+            "cityHomes": 3,
+            "riverPark": 3,
+            "skyPods": 3,
+            "biodome": 3,
+            "maglevStation": 3,
+            "skyHarbour": 3,
+            "cloudOrchard": 3,
+            "windsongLofts": 3,
+            "greatTelescope": 3,
+            "dewlightGardens": 3,
+            "starlightTerraces": 3,
+            "spaceElevator": 3,
+            "moonpost": 3,
+            "missionHomesteads": 3,
+            "homecomingHall": 3,
+            "ribbonLanding": 3,
+            "settlerDomes": 3,
+            "craterIceWell": 3,
+            "earthlightGreenhouse": 3,
+            "willowkinDome": 3,
+            "newHollowCommons": 3,
+            "craterHomesteads": 3,
+            "moonstoneWorkshop": 3,
+            "roverBarn": 3,
+            "earthriseLookout": 3,
+            "horseField": 3,
+            "park": 3,
+            "home2": 3,
+            "home3": 3,
+            "home4": 3,
+            "well2": 3,
+            "farm2": 3,
+            "farm3": 3
+          },
+          "firstLightsSeen": false,
+          "forge": { "progress": 0, "charge": 0 },
+          "coins": 100000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
+          "tourSeen": false,
+          "buildings": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 3,
+            "stable": 3,
+            "sheriff": 3,
+            "museum": 3,
+            "armory": 3,
+            "bank": 3,
+            "shop": 3,
+            "square": 3,
+            "watermill": 3,
+            "fisherman": 3,
+            "blacksmith": 3,
+            "school": 3,
+            "doctor": 3,
+            "bridge": 3,
+            "riverPort": 3,
+            "railDepot": 3,
+            "post": 3,
+            "warehouse": 3,
+            "hotel": 3,
+            "home5": 3,
+            "market": 3,
+            "powerHouse": 3,
+            "fireStation": 3,
+            "rowHouses": 3,
+            "mill": 3,
+            "garage": 3,
+            "busDepot": 3,
+            "gardenCourt": 3,
+            "diner": 3,
+            "teaHouse": 3,
+            "blossomAtelier": 3,
+            "orchardCottages": 3,
+            "glassworks": 3,
+            "springsRetreat": 3,
+            "riverlightPavilion": 3,
+            "airport": 3,
+            "radioTower": 3,
+            "concertHall": 3,
+            "television": 3,
+            "skyline": 3,
+            "cityHall": 3,
+            "apartments": 3,
+            "supermarket": 3,
+            "waterPlant": 3,
+            "transitHub": 3,
+            "library": 3,
+            "crystalLab": 3,
+            "cityHomes": 3,
+            "riverPark": 3,
+            "skyPods": 3,
+            "biodome": 3,
+            "maglevStation": 3,
+            "skyHarbour": 3,
+            "cloudOrchard": 3,
+            "windsongLofts": 3,
+            "greatTelescope": 3,
+            "dewlightGardens": 3,
+            "starlightTerraces": 3,
+            "spaceElevator": 3,
+            "moonpost": 3,
+            "missionHomesteads": 3,
+            "homecomingHall": 3,
+            "ribbonLanding": 0,
+            "settlerDomes": 3,
+            "craterIceWell": 3,
+            "earthlightGreenhouse": 3,
+            "willowkinDome": 3,
+            "newHollowCommons": 3,
+            "craterHomesteads": 3,
+            "moonstoneWorkshop": 3,
+            "roverBarn": 3,
+            "earthriseLookout": 3,
+            "horseField": 3,
+            "park": 3,
+            "home2": 3,
+            "home3": 3,
+            "home4": 3,
+            "well2": 3,
+            "farm2": 3,
+            "farm3": 3
+          },
+          "events": {},
+          "presentations": {},
+          "projects": {
+            "ribbonLanding": { "id": "ribbonLanding", "stage": 1, "wins": 2, "required": 2 }
+          },
+          "completedRuns": 0,
+          "nextRaidRun": null,
+          "income": { "at": null, "remainder": 0, "stored": 0 },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
+          "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
+          "guestVip": null,
+          "progressionVersion": 2
+        },
+        "townProjectFocus": "",
+        "issuedRun": 0,
+        "settledRun": 0,
+        "honours": {
+          "version": 4,
+          "earned": {
+            "ages-bronze": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
+            "ages-silver": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
+            "ages-gold": { "at": 1780000000000, "version": 1, "seen": false, "announced": false }
+          },
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
+          "showcase": [],
+          "backfilled": 0,
+          "seenGeneration": 4
+        }
+      },
+      "after": {
+        "schemaVersion": 3,
+        "integrity": {
+          "version": 1,
+          "epoch": "00000000-0000-4000-8000-000000000082",
+          "clientAt": 1780000000000,
+          "baseSequence": 0,
+          "actions": [
+            {
+              "sequence": 1,
+              "id": "00000000-0000-4000-8000-000000000085",
+              "kind": "income-start",
+              "data": { "at": 1780000000000 }
+            },
+            {
+              "sequence": 2,
+              "id": "00000000-0000-4000-8000-000000000086",
+              "kind": "building-finish",
+              "data": {
+                "buildingId": "ribbonLanding",
+                "expectedStage": 1,
+                "projectRewards": 1,
+                "at": 1780000000000,
+                "shopStock": [
+                  { "id": "clear-row", "sold": false },
+                  { "id": "tile-breaker", "sold": false },
+                  { "id": "shuffle", "sold": false },
+                  { "id": "tnt", "sold": false },
+                  { "id": "color-wand", "sold": false }
+                ],
+                "shopVisit": 1
+              }
+            }
+          ]
+        },
+        "records": {},
+        "continuousRecords": {},
+        "powers": [
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 0 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 0 },
+          { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
+          { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 0 },
+          { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
+        ],
+        "builderHammers": 0,
+        "chestsWithoutBuilderHammer": 0,
+        "pendingChests": [],
+        "shopStock": [
+          { "id": "clear-row", "sold": false },
+          { "id": "tile-breaker", "sold": false },
+          { "id": "shuffle", "sold": false },
+          { "id": "tnt", "sold": false },
+          { "id": "color-wand", "sold": false }
+        ],
+        "shopVisit": 1,
+        "vipReceipts": [],
+        "seenObstacles": [],
+        "seenTips": [],
+        "town": {
+          "personalisation": {
+            "version": 3,
+            "crest": null,
+            "areas": {},
+            "areaLevels": {},
+            "construction": {},
+            "plaques": {}
+          },
+          "era": "twin-hollows",
+          "buildingEras": {
+            "well": "twin-hollows",
+            "farm": "twin-hollows",
+            "home": "twin-hollows",
+            "saloon": "twin-hollows",
+            "stable": "twin-hollows",
+            "sheriff": "twin-hollows",
+            "museum": "twin-hollows",
+            "armory": "twin-hollows",
+            "bank": "twin-hollows",
+            "shop": "twin-hollows",
+            "square": "twin-hollows",
+            "watermill": "twin-hollows",
+            "fisherman": "twin-hollows",
+            "blacksmith": "twin-hollows",
+            "school": "twin-hollows",
+            "doctor": "twin-hollows",
+            "bridge": "twin-hollows",
+            "riverPort": "twin-hollows",
+            "railDepot": "twin-hollows",
+            "post": "twin-hollows",
+            "warehouse": "twin-hollows",
+            "hotel": "twin-hollows",
+            "home5": "twin-hollows",
+            "market": "twin-hollows",
+            "powerHouse": "twin-hollows",
+            "fireStation": "twin-hollows",
+            "rowHouses": "twin-hollows",
+            "mill": "twin-hollows",
+            "garage": "twin-hollows",
+            "busDepot": "twin-hollows",
+            "gardenCourt": "twin-hollows",
+            "diner": "twin-hollows",
+            "teaHouse": "twin-hollows",
+            "blossomAtelier": "twin-hollows",
+            "orchardCottages": "twin-hollows",
+            "glassworks": "twin-hollows",
+            "springsRetreat": "twin-hollows",
+            "riverlightPavilion": "twin-hollows",
+            "airport": "twin-hollows",
+            "radioTower": "twin-hollows",
+            "concertHall": "twin-hollows",
+            "television": "twin-hollows",
+            "skyline": "twin-hollows",
+            "cityHall": "twin-hollows",
+            "apartments": "twin-hollows",
+            "supermarket": "twin-hollows",
+            "waterPlant": "twin-hollows",
+            "transitHub": "twin-hollows",
+            "library": "twin-hollows",
+            "crystalLab": "twin-hollows",
+            "cityHomes": "twin-hollows",
+            "riverPark": "twin-hollows",
+            "skyPods": "twin-hollows",
+            "biodome": "twin-hollows",
+            "maglevStation": "twin-hollows",
+            "skyHarbour": "twin-hollows",
+            "cloudOrchard": "twin-hollows",
+            "windsongLofts": "twin-hollows",
+            "greatTelescope": "twin-hollows",
+            "dewlightGardens": "twin-hollows",
+            "starlightTerraces": "twin-hollows",
+            "spaceElevator": "twin-hollows",
+            "moonpost": "twin-hollows",
+            "missionHomesteads": "twin-hollows",
+            "homecomingHall": "twin-hollows",
+            "ribbonLanding": "twin-hollows",
+            "settlerDomes": "twin-hollows",
+            "craterIceWell": "twin-hollows",
+            "earthlightGreenhouse": "twin-hollows",
+            "willowkinDome": "twin-hollows",
+            "newHollowCommons": "twin-hollows",
+            "craterHomesteads": "twin-hollows",
+            "moonstoneWorkshop": "twin-hollows",
+            "roverBarn": "twin-hollows",
+            "earthriseLookout": "twin-hollows",
+            "horseField": "twin-hollows",
+            "park": "twin-hollows",
+            "home2": "twin-hollows",
+            "home3": "twin-hollows",
+            "home4": "twin-hollows",
+            "well2": "twin-hollows",
+            "farm2": "twin-hollows",
+            "farm3": "twin-hollows"
+          },
+          "buildingEraLevels": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 3,
+            "stable": 3,
+            "sheriff": 3,
+            "museum": 3,
+            "armory": 3,
+            "bank": 3,
+            "shop": 3,
+            "square": 3,
+            "watermill": 3,
+            "fisherman": 3,
+            "blacksmith": 3,
+            "school": 3,
+            "doctor": 3,
+            "bridge": 3,
+            "riverPort": 3,
+            "railDepot": 3,
+            "post": 3,
+            "warehouse": 3,
+            "hotel": 3,
+            "home5": 3,
+            "market": 3,
+            "powerHouse": 3,
+            "fireStation": 3,
+            "rowHouses": 3,
+            "mill": 3,
+            "garage": 3,
+            "busDepot": 3,
+            "gardenCourt": 3,
+            "diner": 3,
+            "teaHouse": 3,
+            "blossomAtelier": 3,
+            "orchardCottages": 3,
+            "glassworks": 3,
+            "springsRetreat": 3,
+            "riverlightPavilion": 3,
+            "airport": 3,
+            "radioTower": 3,
+            "concertHall": 3,
+            "television": 3,
+            "skyline": 3,
+            "cityHall": 3,
+            "apartments": 3,
+            "supermarket": 3,
+            "waterPlant": 3,
+            "transitHub": 3,
+            "library": 3,
+            "crystalLab": 3,
+            "cityHomes": 3,
+            "riverPark": 3,
+            "skyPods": 3,
+            "biodome": 3,
+            "maglevStation": 3,
+            "skyHarbour": 3,
+            "cloudOrchard": 3,
+            "windsongLofts": 3,
+            "greatTelescope": 3,
+            "dewlightGardens": 3,
+            "starlightTerraces": 3,
+            "spaceElevator": 3,
+            "moonpost": 3,
+            "missionHomesteads": 3,
+            "homecomingHall": 3,
+            "ribbonLanding": 1,
+            "settlerDomes": 3,
+            "craterIceWell": 3,
+            "earthlightGreenhouse": 3,
+            "willowkinDome": 3,
+            "newHollowCommons": 3,
+            "craterHomesteads": 3,
+            "moonstoneWorkshop": 3,
+            "roverBarn": 3,
+            "earthriseLookout": 3,
+            "horseField": 3,
+            "park": 3,
+            "home2": 3,
+            "home3": 3,
+            "home4": 3,
+            "well2": 3,
+            "farm2": 3,
+            "farm3": 3
+          },
+          "firstLightsSeen": false,
+          "forge": { "progress": 0, "charge": 0 },
+          "coins": 100000,
+          "moonstoneVersion": 1,
+          "moonstones": 1,
+          "moonstonesEarned": 1,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
+          "tourSeen": false,
+          "buildings": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 3,
+            "stable": 3,
+            "sheriff": 3,
+            "museum": 3,
+            "armory": 3,
+            "bank": 3,
+            "shop": 3,
+            "square": 3,
+            "watermill": 3,
+            "fisherman": 3,
+            "blacksmith": 3,
+            "school": 3,
+            "doctor": 3,
+            "bridge": 3,
+            "riverPort": 3,
+            "railDepot": 3,
+            "post": 3,
+            "warehouse": 3,
+            "hotel": 3,
+            "home5": 3,
+            "market": 3,
+            "powerHouse": 3,
+            "fireStation": 3,
+            "rowHouses": 3,
+            "mill": 3,
+            "garage": 3,
+            "busDepot": 3,
+            "gardenCourt": 3,
+            "diner": 3,
+            "teaHouse": 3,
+            "blossomAtelier": 3,
+            "orchardCottages": 3,
+            "glassworks": 3,
+            "springsRetreat": 3,
+            "riverlightPavilion": 3,
+            "airport": 3,
+            "radioTower": 3,
+            "concertHall": 3,
+            "television": 3,
+            "skyline": 3,
+            "cityHall": 3,
+            "apartments": 3,
+            "supermarket": 3,
+            "waterPlant": 3,
+            "transitHub": 3,
+            "library": 3,
+            "crystalLab": 3,
+            "cityHomes": 3,
+            "riverPark": 3,
+            "skyPods": 3,
+            "biodome": 3,
+            "maglevStation": 3,
+            "skyHarbour": 3,
+            "cloudOrchard": 3,
+            "windsongLofts": 3,
+            "greatTelescope": 3,
+            "dewlightGardens": 3,
+            "starlightTerraces": 3,
+            "spaceElevator": 3,
+            "moonpost": 3,
+            "missionHomesteads": 3,
+            "homecomingHall": 3,
+            "ribbonLanding": 1,
+            "settlerDomes": 3,
+            "craterIceWell": 3,
+            "earthlightGreenhouse": 3,
+            "willowkinDome": 3,
+            "newHollowCommons": 3,
+            "craterHomesteads": 3,
+            "moonstoneWorkshop": 3,
+            "roverBarn": 3,
+            "earthriseLookout": 3,
+            "horseField": 3,
+            "park": 3,
+            "home2": 3,
+            "home3": 3,
+            "home4": 3,
+            "well2": 3,
+            "farm2": 3,
+            "farm3": 3
+          },
+          "events": {},
+          "presentations": {},
+          "projects": {},
+          "completedRuns": 0,
+          "nextRaidRun": null,
+          "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
+          "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
+          "guestVip": null,
+          "progressionVersion": 2
+        },
+        "townProjectFocus": "",
+        "issuedRun": 0,
+        "settledRun": 0,
+        "honours": {
+          "version": 4,
+          "earned": {
+            "ages-bronze": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
+            "ages-silver": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
+            "ages-gold": { "at": 1780000000000, "version": 1, "seen": false, "announced": false }
+          },
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
+          "showcase": [],
+          "backfilled": 0,
+          "seenGeneration": 4
+        }
+      },
+      "serverNow": 1780000000000
+    },
+    {
+      "name": "saloon collection preserves four offline hours",
+      "before": {
+        "schemaVersion": 3,
+        "integrity": {
+          "version": 1,
+          "epoch": "00000000-0000-4000-8000-000000000087",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -9831,6 +11487,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 0,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -9923,7 +11583,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": 1779985600000, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -9951,16 +11611,16 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000069",
+          "epoch": "00000000-0000-4000-8000-000000000087",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000072",
+              "id": "00000000-0000-4000-8000-000000000090",
               "kind": "saloon-collect",
               "data": { "at": 1780000000000 }
             }
@@ -10166,6 +11826,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 1012,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -10258,7 +11922,11 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
-          "lastCollections": { "saloon": 1780000000000, "blacksmith": null },
+          "lastCollections": {
+            "saloon": 1780000000000,
+            "blacksmith": null,
+            "moonstoneWorkshop": null
+          },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -10290,10 +11958,10 @@
     {
       "name": "visitor reserve collection and a VIP purchase",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000073",
+          "epoch": "00000000-0000-4000-8000-000000000091",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -10498,6 +12166,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 0,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -10590,7 +12262,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": 1779985600000, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -10618,22 +12290,22 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000073",
+          "epoch": "00000000-0000-4000-8000-000000000091",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000076",
+              "id": "00000000-0000-4000-8000-000000000094",
               "kind": "saloon-visitor",
               "data": { "at": 1780000000000, "visitAt": 1779999999000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000077",
+              "id": "00000000-0000-4000-8000-000000000095",
               "kind": "vip-spend",
               "data": { "key": "fixture-tour:0", "buildingId": "saloon", "at": 1780000000000 }
             }
@@ -10839,6 +12511,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 258,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -10931,7 +12607,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 759, "remainder": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 1779999999000,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -10963,10 +12639,10 @@
     {
       "name": "space helmet found once for its completed puzzle",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000078",
+          "epoch": "00000000-0000-4000-8000-000000000096",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -11171,6 +12847,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 100000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -11263,7 +12943,7 @@
           "completedRuns": 12,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 11,
           "helmetVisitAt": 0,
@@ -11294,16 +12974,16 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000078",
+          "epoch": "00000000-0000-4000-8000-000000000096",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000081",
+              "id": "00000000-0000-4000-8000-000000000099",
               "kind": "helmet-find",
               "data": { "at": 1780000000000, "run": 12 }
             }
@@ -11509,6 +13189,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 107058,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -11601,7 +13285,7 @@
           "completedRuns": 12,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 12,
           "helmetVisitAt": 0,
@@ -11636,10 +13320,10 @@
     {
       "name": "raid bell refund and ordinary raid acknowledgment",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000082",
+          "epoch": "00000000-0000-4000-8000-000000000100",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -11844,6 +13528,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 100000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -11948,7 +13636,7 @@
           "completedRuns": 10,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -11976,22 +13664,22 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000082",
+          "epoch": "00000000-0000-4000-8000-000000000100",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000085",
+              "id": "00000000-0000-4000-8000-000000000103",
               "kind": "raid-bell",
               "data": { "raidId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000086",
+              "id": "00000000-0000-4000-8000-000000000104",
               "kind": "raid-seen",
               "data": { "raidId": 1, "at": 1780000000000 }
             }
@@ -12197,6 +13885,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 100010,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -12303,7 +13995,7 @@
           "completedRuns": 10,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -12335,10 +14027,10 @@
     {
       "name": "protected raid bounty and rescheduling retain the seen receipt",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000087",
+          "epoch": "00000000-0000-4000-8000-000000000105",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -12543,6 +14235,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 100000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -12647,7 +14343,7 @@
           "completedRuns": 10,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -12675,28 +14371,28 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000087",
+          "epoch": "00000000-0000-4000-8000-000000000105",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000090",
+              "id": "00000000-0000-4000-8000-000000000108",
               "kind": "raid-seen",
               "data": { "raidId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000091",
+              "id": "00000000-0000-4000-8000-000000000109",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000092",
+              "id": "00000000-0000-4000-8000-000000000110",
               "kind": "raid-encounter",
               "data": { "event": null, "nextRaidRun": 13, "at": 1780000000000 }
             }
@@ -12902,6 +14598,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 100100,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -13007,7 +14707,7 @@
           "completedRuns": 10,
           "nextRaidRun": 13,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -13039,10 +14739,10 @@
     {
       "name": "continuous mode grants its existing economic reward",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000093",
+          "epoch": "00000000-0000-4000-8000-000000000111",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -13247,6 +14947,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 0,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 0,
@@ -13339,7 +15043,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -13367,22 +15071,22 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000093",
+          "epoch": "00000000-0000-4000-8000-000000000111",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000096",
+              "id": "00000000-0000-4000-8000-000000000114",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "continuous", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000097",
+              "id": "00000000-0000-4000-8000-000000000115",
               "kind": "continuous",
               "data": {
                 "runId": 1,
@@ -13594,6 +15298,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 25,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 0,
@@ -13686,7 +15394,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -13718,10 +15426,10 @@
     {
       "name": "the first continuous score before ten jewels grants no coins",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000098",
+          "epoch": "00000000-0000-4000-8000-000000000116",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -13926,6 +15634,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 0,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 0,
@@ -14018,7 +15730,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -14046,16 +15758,16 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000098",
+          "epoch": "00000000-0000-4000-8000-000000000116",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000101",
+              "id": "00000000-0000-4000-8000-000000000119",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "continuous", "levelId": 1, "at": 1780000000000 }
             }
@@ -14261,6 +15973,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 0,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 0,
@@ -14353,7 +16069,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -14385,10 +16101,10 @@
     {
       "name": "era progression uses the shared next-era gate",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000102",
+          "epoch": "00000000-0000-4000-8000-000000000120",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -14593,6 +16309,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 100000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -14685,7 +16405,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -14713,16 +16433,16 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000102",
+          "epoch": "00000000-0000-4000-8000-000000000120",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000105",
+              "id": "00000000-0000-4000-8000-000000000123",
               "kind": "era-advance",
               "data": { "expectedEra": "frontier", "at": 1780000000000 }
             }
@@ -14928,6 +16648,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 100000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -15020,7 +16744,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -15060,10 +16784,10 @@
     {
       "name": "new cozy era plot uses the shared purchase lifecycle",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000106",
+          "epoch": "00000000-0000-4000-8000-000000000124",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -15268,6 +16992,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 100000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -15360,7 +17088,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -15391,22 +17119,22 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000106",
+          "epoch": "00000000-0000-4000-8000-000000000124",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000109",
+              "id": "00000000-0000-4000-8000-000000000127",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000110",
+              "id": "00000000-0000-4000-8000-000000000128",
               "kind": "building-buy",
               "data": {
                 "buildingId": "teaHouse",
@@ -15631,6 +17359,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 82750,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -15723,7 +17455,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -15758,10 +17490,10 @@
     {
       "name": "consuming a stored power records one deduction",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000111",
+          "epoch": "00000000-0000-4000-8000-000000000129",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -15966,6 +17698,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 0,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 0,
@@ -16058,7 +17794,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -16086,16 +17822,16 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000111",
+          "epoch": "00000000-0000-4000-8000-000000000129",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000114",
+              "id": "00000000-0000-4000-8000-000000000132",
               "kind": "power-spend",
               "data": { "itemId": "tnt", "at": 1780000000000 }
             }
@@ -16301,6 +18037,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 0,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 0,
@@ -16393,7 +18133,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -16425,10 +18165,10 @@
     {
       "name": "finishing the sheriff fully defends a waiting raid",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000115",
+          "epoch": "00000000-0000-4000-8000-000000000133",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -16633,6 +18373,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 100000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -16737,7 +18481,7 @@
           "completedRuns": 10,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -16765,16 +18509,16 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000115",
+          "epoch": "00000000-0000-4000-8000-000000000133",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000118",
+              "id": "00000000-0000-4000-8000-000000000136",
               "kind": "building-finish",
               "data": {
                 "buildingId": "sheriff",
@@ -16999,6 +18743,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 100015,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -17103,7 +18851,7 @@
           "completedRuns": 10,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -17135,10 +18883,10 @@
     {
       "name": "a continuous score without coins is followed by another run",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000119",
+          "epoch": "00000000-0000-4000-8000-000000000137",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -17343,6 +19091,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 0,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 0,
@@ -17435,7 +19187,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -17463,22 +19215,22 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000119",
+          "epoch": "00000000-0000-4000-8000-000000000137",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000122",
+              "id": "00000000-0000-4000-8000-000000000140",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "continuous", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000123",
+              "id": "00000000-0000-4000-8000-000000000141",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 2, "at": 1780000000000 }
             }
@@ -17684,6 +19436,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 0,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 0,
@@ -17776,7 +19532,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -17808,10 +19564,10 @@
     {
       "name": "an older saloon starts its income once before collecting",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000124",
+          "epoch": "00000000-0000-4000-8000-000000000142",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -18016,6 +19772,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 0,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -18108,7 +19868,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -18136,22 +19896,22 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000124",
+          "epoch": "00000000-0000-4000-8000-000000000142",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000127",
+              "id": "00000000-0000-4000-8000-000000000145",
               "kind": "income-start",
               "data": { "at": 1779992800000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000128",
+              "id": "00000000-0000-4000-8000-000000000146",
               "kind": "saloon-collect",
               "data": { "at": 1780000000000 }
             }
@@ -18357,6 +20117,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 506,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -18449,7 +20213,11 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
-          "lastCollections": { "saloon": 1780000000000, "blacksmith": null },
+          "lastCollections": {
+            "saloon": 1780000000000,
+            "blacksmith": null,
+            "moonstoneWorkshop": null
+          },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -18481,10 +20249,10 @@
     {
       "name": "an era advance after the cloud saw the last transition pending",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000129",
+          "epoch": "00000000-0000-4000-8000-000000000147",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -18689,6 +20457,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 100000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -18781,7 +20553,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -18817,16 +20589,16 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000129",
+          "epoch": "00000000-0000-4000-8000-000000000147",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000132",
+              "id": "00000000-0000-4000-8000-000000000150",
               "kind": "era-advance",
               "data": { "expectedEra": "river-rail", "at": 1780000000000 }
             }
@@ -19032,6 +20804,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 100000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -19124,7 +20900,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -19164,10 +20940,10 @@
     {
       "name": "offline Town Honours: claimed victories, a forge collection and a protected raid",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000133",
+          "epoch": "00000000-0000-4000-8000-000000000151",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -19427,6 +21203,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 1 },
           "coins": 100000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -19531,7 +21311,7 @@
           "completedRuns": 10,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -19559,42 +21339,43 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000133",
+          "epoch": "00000000-0000-4000-8000-000000000151",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000136",
+              "id": "00000000-0000-4000-8000-000000000154",
               "kind": "raid-seen",
               "data": { "raidId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000137",
+              "id": "00000000-0000-4000-8000-000000000155",
               "kind": "forge-collect",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000138",
+              "id": "00000000-0000-4000-8000-000000000156",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 55, "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000139",
+              "id": "00000000-0000-4000-8000-000000000157",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000140",
+              "id": "00000000-0000-4000-8000-000000000158",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 1,
                 "levelId": 55,
                 "score": 24500,
@@ -19624,15 +21405,16 @@
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000141",
+              "id": "00000000-0000-4000-8000-000000000159",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 56, "at": 1780000000000 }
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000142",
+              "id": "00000000-0000-4000-8000-000000000160",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 2,
                 "levelId": 56,
                 "score": 27500,
@@ -19928,6 +21710,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 1 },
           "coins": 105940,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -20033,7 +21819,11 @@
           "completedRuns": 12,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": 1780000000000 },
+          "lastCollections": {
+            "saloon": null,
+            "blacksmith": 1780000000000,
+            "moonstoneWorkshop": null
+          },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -20072,10 +21862,10 @@
     {
       "name": "optional landmark meadow: construction and upgrades",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000143",
+          "epoch": "00000000-0000-4000-8000-000000000161",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -20280,6 +22070,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 10000000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -20372,7 +22166,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -20404,16 +22198,16 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000143",
+          "epoch": "00000000-0000-4000-8000-000000000161",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000146",
+              "id": "00000000-0000-4000-8000-000000000164",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20432,21 +22226,22 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000147",
+              "id": "00000000-0000-4000-8000-000000000165",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000148",
+              "id": "00000000-0000-4000-8000-000000000166",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000149",
+              "id": "00000000-0000-4000-8000-000000000167",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -20475,15 +22270,16 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000150",
+              "id": "00000000-0000-4000-8000-000000000168",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000151",
+              "id": "00000000-0000-4000-8000-000000000169",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -20512,15 +22308,16 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000152",
+              "id": "00000000-0000-4000-8000-000000000170",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000153",
+              "id": "00000000-0000-4000-8000-000000000171",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -20549,7 +22346,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000154",
+              "id": "00000000-0000-4000-8000-000000000172",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20568,15 +22365,16 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000155",
+              "id": "00000000-0000-4000-8000-000000000173",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000156",
+              "id": "00000000-0000-4000-8000-000000000174",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -20605,7 +22403,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000157",
+              "id": "00000000-0000-4000-8000-000000000175",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20624,15 +22422,16 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000158",
+              "id": "00000000-0000-4000-8000-000000000176",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000159",
+              "id": "00000000-0000-4000-8000-000000000177",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 5,
                 "levelId": 1,
                 "score": 7500,
@@ -20661,7 +22460,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000160",
+              "id": "00000000-0000-4000-8000-000000000178",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20680,15 +22479,16 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000161",
+              "id": "00000000-0000-4000-8000-000000000179",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000162",
+              "id": "00000000-0000-4000-8000-000000000180",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 6,
                 "levelId": 1,
                 "score": 7500,
@@ -20717,7 +22517,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000163",
+              "id": "00000000-0000-4000-8000-000000000181",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -20736,15 +22536,16 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000164",
+              "id": "00000000-0000-4000-8000-000000000182",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000165",
+              "id": "00000000-0000-4000-8000-000000000183",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 7,
                 "levelId": 1,
                 "score": 7500,
@@ -20979,6 +22780,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 1 },
           "coins": 9960044,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -21071,7 +22876,7 @@
           "completedRuns": 7,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -21107,10 +22912,10 @@
     {
       "name": "optional landmark monument: construction and upgrades",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000166",
+          "epoch": "00000000-0000-4000-8000-000000000184",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -21315,6 +23120,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 10000000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -21407,7 +23216,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -21439,16 +23248,16 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000166",
+          "epoch": "00000000-0000-4000-8000-000000000184",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000169",
+              "id": "00000000-0000-4000-8000-000000000187",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -21467,21 +23276,22 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000170",
+              "id": "00000000-0000-4000-8000-000000000188",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000171",
+              "id": "00000000-0000-4000-8000-000000000189",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000172",
+              "id": "00000000-0000-4000-8000-000000000190",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -21510,15 +23320,16 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000173",
+              "id": "00000000-0000-4000-8000-000000000191",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000174",
+              "id": "00000000-0000-4000-8000-000000000192",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -21547,15 +23358,16 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000175",
+              "id": "00000000-0000-4000-8000-000000000193",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000176",
+              "id": "00000000-0000-4000-8000-000000000194",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -21790,6 +23602,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 1 },
           "coins": 9994876,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -21882,7 +23698,7 @@
           "completedRuns": 3,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -21924,10 +23740,10 @@
     {
       "name": "optional landmark motor-court: construction and upgrades",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000177",
+          "epoch": "00000000-0000-4000-8000-000000000195",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -22132,6 +23948,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 10000000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -22224,7 +24044,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -22256,16 +24076,16 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000177",
+          "epoch": "00000000-0000-4000-8000-000000000195",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000180",
+              "id": "00000000-0000-4000-8000-000000000198",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22284,21 +24104,22 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000181",
+              "id": "00000000-0000-4000-8000-000000000199",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000182",
+              "id": "00000000-0000-4000-8000-000000000200",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000183",
+              "id": "00000000-0000-4000-8000-000000000201",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -22327,15 +24148,16 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000184",
+              "id": "00000000-0000-4000-8000-000000000202",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000185",
+              "id": "00000000-0000-4000-8000-000000000203",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -22364,15 +24186,16 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000186",
+              "id": "00000000-0000-4000-8000-000000000204",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000187",
+              "id": "00000000-0000-4000-8000-000000000205",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -22401,7 +24224,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000188",
+              "id": "00000000-0000-4000-8000-000000000206",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22420,15 +24243,16 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000189",
+              "id": "00000000-0000-4000-8000-000000000207",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000190",
+              "id": "00000000-0000-4000-8000-000000000208",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -22457,7 +24281,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000191",
+              "id": "00000000-0000-4000-8000-000000000209",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22476,15 +24300,16 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000192",
+              "id": "00000000-0000-4000-8000-000000000210",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000193",
+              "id": "00000000-0000-4000-8000-000000000211",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 5,
                 "levelId": 1,
                 "score": 7500,
@@ -22513,7 +24338,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000194",
+              "id": "00000000-0000-4000-8000-000000000212",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22532,15 +24357,16 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000195",
+              "id": "00000000-0000-4000-8000-000000000213",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000196",
+              "id": "00000000-0000-4000-8000-000000000214",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 6,
                 "levelId": 1,
                 "score": 7500,
@@ -22569,7 +24395,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000197",
+              "id": "00000000-0000-4000-8000-000000000215",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22588,15 +24414,16 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000198",
+              "id": "00000000-0000-4000-8000-000000000216",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000199",
+              "id": "00000000-0000-4000-8000-000000000217",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 7,
                 "levelId": 1,
                 "score": 7500,
@@ -22831,6 +24658,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 1 },
           "coins": 9722044,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -22923,7 +24754,7 @@
           "completedRuns": 7,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -22959,10 +24790,10 @@
     {
       "name": "optional landmark arts-court: construction and upgrades",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000200",
+          "epoch": "00000000-0000-4000-8000-000000000218",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -23167,6 +24998,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 10000000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -23259,7 +25094,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -23291,16 +25126,16 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000200",
+          "epoch": "00000000-0000-4000-8000-000000000218",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000203",
+              "id": "00000000-0000-4000-8000-000000000221",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -23319,21 +25154,22 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000204",
+              "id": "00000000-0000-4000-8000-000000000222",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000205",
+              "id": "00000000-0000-4000-8000-000000000223",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000206",
+              "id": "00000000-0000-4000-8000-000000000224",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -23362,15 +25198,16 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000207",
+              "id": "00000000-0000-4000-8000-000000000225",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000208",
+              "id": "00000000-0000-4000-8000-000000000226",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -23399,15 +25236,16 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000209",
+              "id": "00000000-0000-4000-8000-000000000227",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000210",
+              "id": "00000000-0000-4000-8000-000000000228",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -23436,7 +25274,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000211",
+              "id": "00000000-0000-4000-8000-000000000229",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -23455,15 +25293,16 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000212",
+              "id": "00000000-0000-4000-8000-000000000230",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000213",
+              "id": "00000000-0000-4000-8000-000000000231",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -23492,7 +25331,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000214",
+              "id": "00000000-0000-4000-8000-000000000232",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -23511,15 +25350,16 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000215",
+              "id": "00000000-0000-4000-8000-000000000233",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000216",
+              "id": "00000000-0000-4000-8000-000000000234",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 5,
                 "levelId": 1,
                 "score": 7500,
@@ -23548,7 +25388,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000217",
+              "id": "00000000-0000-4000-8000-000000000235",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -23567,15 +25407,16 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000218",
+              "id": "00000000-0000-4000-8000-000000000236",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000219",
+              "id": "00000000-0000-4000-8000-000000000237",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 6,
                 "levelId": 1,
                 "score": 7500,
@@ -23604,7 +25445,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000220",
+              "id": "00000000-0000-4000-8000-000000000238",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -23623,15 +25464,16 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000221",
+              "id": "00000000-0000-4000-8000-000000000239",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000222",
+              "id": "00000000-0000-4000-8000-000000000240",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 7,
                 "levelId": 1,
                 "score": 7500,
@@ -23866,6 +25708,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 1 },
           "coins": 9512044,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -23958,7 +25804,7 @@
           "completedRuns": 7,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -23994,10 +25840,10 @@
     {
       "name": "optional landmark horizon: construction and upgrades",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000223",
+          "epoch": "00000000-0000-4000-8000-000000000241",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -24202,6 +26048,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 10000000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -24294,7 +26144,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -24326,16 +26176,16 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000223",
+          "epoch": "00000000-0000-4000-8000-000000000241",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000226",
+              "id": "00000000-0000-4000-8000-000000000244",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -24354,21 +26204,22 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000227",
+              "id": "00000000-0000-4000-8000-000000000245",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000228",
+              "id": "00000000-0000-4000-8000-000000000246",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000229",
+              "id": "00000000-0000-4000-8000-000000000247",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -24397,15 +26248,16 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000230",
+              "id": "00000000-0000-4000-8000-000000000248",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000231",
+              "id": "00000000-0000-4000-8000-000000000249",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -24434,15 +26286,16 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000232",
+              "id": "00000000-0000-4000-8000-000000000250",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000233",
+              "id": "00000000-0000-4000-8000-000000000251",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -24471,7 +26324,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000234",
+              "id": "00000000-0000-4000-8000-000000000252",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -24490,15 +26343,16 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000235",
+              "id": "00000000-0000-4000-8000-000000000253",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000236",
+              "id": "00000000-0000-4000-8000-000000000254",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -24527,7 +26381,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000237",
+              "id": "00000000-0000-4000-8000-000000000255",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -24546,15 +26400,16 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000238",
+              "id": "00000000-0000-4000-8000-000000000256",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000239",
+              "id": "00000000-0000-4000-8000-000000000257",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 5,
                 "levelId": 1,
                 "score": 7500,
@@ -24583,7 +26438,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000240",
+              "id": "00000000-0000-4000-8000-000000000258",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -24602,15 +26457,16 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000241",
+              "id": "00000000-0000-4000-8000-000000000259",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000242",
+              "id": "00000000-0000-4000-8000-000000000260",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 6,
                 "levelId": 1,
                 "score": 7500,
@@ -24639,7 +26495,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000243",
+              "id": "00000000-0000-4000-8000-000000000261",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -24658,15 +26514,16 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000244",
+              "id": "00000000-0000-4000-8000-000000000262",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000245",
+              "id": "00000000-0000-4000-8000-000000000263",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 7,
                 "levelId": 1,
                 "score": 7500,
@@ -24901,6 +26758,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 1 },
           "coins": 9162044,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -24993,7 +26854,7 @@
           "completedRuns": 7,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -25029,10 +26890,10 @@
     {
       "name": "optional landmark light-court: construction and upgrades",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000246",
+          "epoch": "00000000-0000-4000-8000-000000000264",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -25237,6 +27098,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 10000000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -25329,7 +27194,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -25361,16 +27226,16 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000246",
+          "epoch": "00000000-0000-4000-8000-000000000264",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000249",
+              "id": "00000000-0000-4000-8000-000000000267",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -25389,21 +27254,22 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000250",
+              "id": "00000000-0000-4000-8000-000000000268",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000251",
+              "id": "00000000-0000-4000-8000-000000000269",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000252",
+              "id": "00000000-0000-4000-8000-000000000270",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -25432,15 +27298,16 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000253",
+              "id": "00000000-0000-4000-8000-000000000271",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000254",
+              "id": "00000000-0000-4000-8000-000000000272",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -25469,15 +27336,16 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000255",
+              "id": "00000000-0000-4000-8000-000000000273",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000256",
+              "id": "00000000-0000-4000-8000-000000000274",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -25506,7 +27374,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000257",
+              "id": "00000000-0000-4000-8000-000000000275",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -25525,15 +27393,16 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000258",
+              "id": "00000000-0000-4000-8000-000000000276",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000259",
+              "id": "00000000-0000-4000-8000-000000000277",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -25562,7 +27431,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000260",
+              "id": "00000000-0000-4000-8000-000000000278",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -25581,15 +27450,16 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000261",
+              "id": "00000000-0000-4000-8000-000000000279",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000262",
+              "id": "00000000-0000-4000-8000-000000000280",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 5,
                 "levelId": 1,
                 "score": 7500,
@@ -25618,7 +27488,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000263",
+              "id": "00000000-0000-4000-8000-000000000281",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -25637,15 +27507,16 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000264",
+              "id": "00000000-0000-4000-8000-000000000282",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000265",
+              "id": "00000000-0000-4000-8000-000000000283",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 6,
                 "levelId": 1,
                 "score": 7500,
@@ -25674,7 +27545,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000266",
+              "id": "00000000-0000-4000-8000-000000000284",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -25693,15 +27564,16 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000267",
+              "id": "00000000-0000-4000-8000-000000000285",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000268",
+              "id": "00000000-0000-4000-8000-000000000286",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 7,
                 "levelId": 1,
                 "score": 7500,
@@ -25936,6 +27808,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 1 },
           "coins": 8672044,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -26028,7 +27904,7 @@
           "completedRuns": 7,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -26064,10 +27940,10 @@
     {
       "name": "optional landmark stargazer-lawn: construction and upgrades",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000269",
+          "epoch": "00000000-0000-4000-8000-000000000287",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -26272,6 +28148,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 10000000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -26364,7 +28244,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -26396,16 +28276,16 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000269",
+          "epoch": "00000000-0000-4000-8000-000000000287",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000272",
+              "id": "00000000-0000-4000-8000-000000000290",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -26424,21 +28304,22 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000273",
+              "id": "00000000-0000-4000-8000-000000000291",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000274",
+              "id": "00000000-0000-4000-8000-000000000292",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000275",
+              "id": "00000000-0000-4000-8000-000000000293",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -26467,15 +28348,16 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000276",
+              "id": "00000000-0000-4000-8000-000000000294",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000277",
+              "id": "00000000-0000-4000-8000-000000000295",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -26504,15 +28386,16 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000278",
+              "id": "00000000-0000-4000-8000-000000000296",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000279",
+              "id": "00000000-0000-4000-8000-000000000297",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -26541,7 +28424,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000280",
+              "id": "00000000-0000-4000-8000-000000000298",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -26560,15 +28443,16 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000281",
+              "id": "00000000-0000-4000-8000-000000000299",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000282",
+              "id": "00000000-0000-4000-8000-000000000300",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -26597,7 +28481,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000283",
+              "id": "00000000-0000-4000-8000-000000000301",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -26616,15 +28500,16 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000284",
+              "id": "00000000-0000-4000-8000-000000000302",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000285",
+              "id": "00000000-0000-4000-8000-000000000303",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 5,
                 "levelId": 1,
                 "score": 7500,
@@ -26653,7 +28538,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000286",
+              "id": "00000000-0000-4000-8000-000000000304",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -26672,15 +28557,16 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000287",
+              "id": "00000000-0000-4000-8000-000000000305",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000288",
+              "id": "00000000-0000-4000-8000-000000000306",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 6,
                 "levelId": 1,
                 "score": 7500,
@@ -26709,7 +28595,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000289",
+              "id": "00000000-0000-4000-8000-000000000307",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -26728,15 +28614,16 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000290",
+              "id": "00000000-0000-4000-8000-000000000308",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000291",
+              "id": "00000000-0000-4000-8000-000000000309",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 7,
                 "levelId": 1,
                 "score": 7500,
@@ -26971,6 +28858,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 1 },
           "coins": 8252044,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -27063,7 +28954,7 @@
           "completedRuns": 7,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -27099,10 +28990,10 @@
     {
       "name": "optional landmark homecoming-green: construction and upgrades",
       "before": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000292",
+          "epoch": "00000000-0000-4000-8000-000000000310",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -27307,6 +29198,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
           "coins": 10000000,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -27399,7 +29294,7 @@
           "completedRuns": 0,
           "nextRaidRun": null,
           "income": { "at": null, "remainder": 0, "stored": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,
@@ -27432,16 +29327,16 @@
         }
       },
       "after": {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000292",
+          "epoch": "00000000-0000-4000-8000-000000000310",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000295",
+              "id": "00000000-0000-4000-8000-000000000313",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -27460,21 +29355,22 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000296",
+              "id": "00000000-0000-4000-8000-000000000314",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000297",
+              "id": "00000000-0000-4000-8000-000000000315",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000298",
+              "id": "00000000-0000-4000-8000-000000000316",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -27503,15 +29399,16 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000299",
+              "id": "00000000-0000-4000-8000-000000000317",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000300",
+              "id": "00000000-0000-4000-8000-000000000318",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -27540,15 +29437,16 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000301",
+              "id": "00000000-0000-4000-8000-000000000319",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000302",
+              "id": "00000000-0000-4000-8000-000000000320",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -27577,7 +29475,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000303",
+              "id": "00000000-0000-4000-8000-000000000321",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -27596,15 +29494,16 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000304",
+              "id": "00000000-0000-4000-8000-000000000322",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000305",
+              "id": "00000000-0000-4000-8000-000000000323",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -27633,7 +29532,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000306",
+              "id": "00000000-0000-4000-8000-000000000324",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -27652,15 +29551,16 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000307",
+              "id": "00000000-0000-4000-8000-000000000325",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000308",
+              "id": "00000000-0000-4000-8000-000000000326",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 5,
                 "levelId": 1,
                 "score": 7500,
@@ -27689,7 +29589,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000309",
+              "id": "00000000-0000-4000-8000-000000000327",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -27708,15 +29608,16 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000310",
+              "id": "00000000-0000-4000-8000-000000000328",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000311",
+              "id": "00000000-0000-4000-8000-000000000329",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 6,
                 "levelId": 1,
                 "score": 7500,
@@ -27745,7 +29646,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000312",
+              "id": "00000000-0000-4000-8000-000000000330",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -27764,15 +29665,16 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000313",
+              "id": "00000000-0000-4000-8000-000000000331",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000314",
+              "id": "00000000-0000-4000-8000-000000000332",
               "kind": "victory",
               "data": {
+                "moonstoneVersion": 1,
                 "runId": 7,
                 "levelId": 1,
                 "score": 7500,
@@ -28007,6 +29909,10 @@
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 1 },
           "coins": 7832044,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 3 },
           "tourSeen": false,
           "buildings": {
             "well": 3,
@@ -28099,7 +30005,7 @@
           "completedRuns": 7,
           "nextRaidRun": null,
           "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
-          "lastCollections": { "saloon": null, "blacksmith": null },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
           "saloonVisitAt": 0,
           "helmetRun": 0,
           "helmetVisitAt": 0,

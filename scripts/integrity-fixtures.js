@@ -288,6 +288,35 @@ export function createIntegrityFixtures() {
       },
       (campaign) => expectSuccess(campaign.collectForgeTNT(), 'forge'),
     );
+    fixture(
+      'moonstones production, collection, sale and spend',
+      (profile) => {
+        develop(profile, 'twin-hollows');
+        profile.town.completedRuns = 30;
+        profile.town.moonstones = 10;
+        profile.town.moonstonesEarned = 10;
+      },
+      (campaign) => {
+        for (let n = 0; n < 3; n++) victory(campaign);
+        expectSuccess(campaign.collectMoonstones(), 'moonstone collection');
+        expectSuccess(campaign.sellMoonstones(10), 'moonstone sale');
+        expectSuccess(campaign.spendMoonstones(3, 'future-monument'), 'moonstone spend');
+      },
+    );
+    fixture(
+      'Moon construction grants one moonstone once',
+      (profile) => {
+        develop(profile, 'twin-hollows');
+        profile.town.buildings.ribbonLanding = 0;
+        profile.town.projects.ribbonLanding = {
+          id: 'ribbonLanding',
+          stage: 1,
+          wins: 2,
+          required: 2,
+        };
+      },
+      (campaign) => expectSuccess(campaign.finishConstruction('ribbonLanding', 1), 'Moon finish'),
+    );
     fixture('saloon collection preserves four offline hours', saloon, (campaign) => {
       if (campaign.collectSaloonIncome() <= 0) throw new Error('Offline income was not collected.');
     });

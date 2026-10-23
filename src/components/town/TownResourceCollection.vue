@@ -50,6 +50,12 @@ const props = defineProps({
   origin: { type: Object, default: () => ({ x: 50, y: 50 }) },
 });
 const resources = {
+  moonstones: {
+    image: '/art/moonstone.svg',
+    particles: 8,
+    cue: 'coin',
+    message: 'Collected {coins} moonstones!',
+  },
   coins: {
     icon: 'coin',
     particles: 10,

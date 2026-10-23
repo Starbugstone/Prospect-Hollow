@@ -1,3 +1,5 @@
+import { advancePuzzleProduction } from '../../data/puzzleProduction';
+import { normalizeMoonstones, rewardMoonBuilding } from '../../data/moonstones';
 import { normalizePersonalisation } from '../../data/townPersonalisation';
 import { PERSONAL_AREAS, areaUnlocked, monumentWork } from '../../data/townLandmarks';
 import { CREST_EMBLEM_IDS } from '../../data/townCrests';
@@ -121,6 +123,7 @@ export function normalizeTown(saved) {
     if (intIn(stage, 0, highest))
       town.buildings[building.id] = Math.min(stage, building.upgrades.length);
   }
+  Object.assign(town, normalizeMoonstones(saved, town));
   normalizeEraState(town, saved);
   if (intIn(saved?.completedRuns, 0)) town.completedRuns = saved.completedRuns;
   if (intIn(saved?.nextRaidRun, 0)) town.nextRaidRun = saved.nextRaidRun;
@@ -269,12 +272,16 @@ const townWithProjects = (town) =>
   );
 // A modernization keeps the building's level and records its new era appearance.
 function completeStage(town, id, { stage, era, eraLevel }) {
-  return {
-    ...town,
-    buildings: { ...town.buildings, [id]: stage },
-    buildingEraLevels: { ...town.buildingEraLevels, [id]: eraLevel },
-    buildingEras: { ...town.buildingEras, [id]: era },
-  };
+  return rewardMoonBuilding(
+    town,
+    {
+      ...town,
+      buildings: { ...town.buildings, [id]: stage },
+      buildingEraLevels: { ...town.buildingEraLevels, [id]: eraLevel },
+      buildingEras: { ...town.buildingEras, [id]: era },
+    },
+    id,
+  );
 }
 
 // The town as it will be once an offer is finished, for previews and guidance.
@@ -304,7 +311,10 @@ export function advanceForge(town) {
   if (!town.buildings.blacksmith || town.forge.charge) return town;
   return settleForgeProduction({
     ...town,
-    forge: { progress: town.forge.progress + 1, charge: 0 },
+    forge: advancePuzzleProduction(
+      town.forge,
+      forgeProductionRuns(serviceLevel(town, 'blacksmith')),
+    ),
   });
 }
 export const residentPopulation = (town) => townNeeds(town).residents;
@@ -603,19 +613,23 @@ export function purchase(town, id, expectedStage) {
         },
       },
     };
-  return {
-    ...town,
-    coins: town.coins - offer.cost,
-    buildings: offer.runs === 0 ? { ...town.buildings, [id]: expectedStage + 1 } : town.buildings,
-    buildingEras: offer.runs === 0 ? { ...town.buildingEras, [id]: town.era } : town.buildingEras,
-    projects:
-      offer.runs === 0
-        ? town.projects
-        : {
-            ...town.projects,
-            [id]: { id, stage: expectedStage + 1, wins: 0, required: offer.runs },
-          },
-  };
+  return rewardMoonBuilding(
+    town,
+    {
+      ...town,
+      coins: town.coins - offer.cost,
+      buildings: offer.runs === 0 ? { ...town.buildings, [id]: expectedStage + 1 } : town.buildings,
+      buildingEras: offer.runs === 0 ? { ...town.buildingEras, [id]: town.era } : town.buildingEras,
+      projects:
+        offer.runs === 0
+          ? town.projects
+          : {
+              ...town.projects,
+              [id]: { id, stage: expectedStage + 1, wins: 0, required: offer.runs },
+            },
+    },
+    id,
+  );
 }
 
 export const raidIntervalRange = (town) => (town.era === 'frontier' ? [3, 7] : [6, 14]);

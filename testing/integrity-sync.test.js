@@ -1,3 +1,5 @@
+import { normalizeTown } from '../src/game/town/TownRules';
+import { createTown } from '../src/data/town';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { SAVE_KEY, createTownStorage, progressKey } from '../src/services/townStorage';
 import { createSyncService } from '../src/services/syncService';
@@ -502,4 +504,41 @@ it('stages new progress separately instead of retrying an older rejected profile
   await service.sync();
   expect(storage.active().meta.dirty).toBe(false);
   expect(uploads.size).toBe(0);
+});
+
+it('round-trips moonstone state and never adds two devices’ migration credits', async () => {
+  const legacyTown = createTown();
+  delete legacyTown.moonstoneVersion;
+  legacyTown.buildings.ribbonLanding = 2;
+  legacyTown.buildings.moonstoneWorkshop = 3;
+  const deviceA = normalizeTown(legacyTown);
+  const deviceB = normalizeTown(legacyTown);
+  expect(deviceA.moonstones).toBe(5);
+  let profile = storage.active().profile;
+  profile.schemaVersion = 3;
+  profile.town = deviceA;
+  storage.save(profile);
+  await service.sync();
+  expect(remote.profile.town).toMatchObject({ moonstones: 5, moonstonesEarned: 5 });
+  // The second device has independently migrated the same old cloud checkpoint.
+  // A conflict selects the whole remote save; balances are never additive counters.
+  profile = storage.active().profile;
+  profile.town = deviceB;
+  storage.save(profile);
+  remote = {
+    ...remote,
+    revision: remote.revision + 1,
+    profile: { ...remote.profile, town: { ...remote.profile.town, moonstones: 2, coins: 750 } },
+  };
+  request.mockImplementation(async (_path, body) => {
+    if (body)
+      throw Object.assign(new Error('conflict'), { status: 409, data: { cloud: copy(remote) } });
+    return copy(remote);
+  });
+  await service.sync();
+  expect(normalizeTown(storage.active().profile.town)).toMatchObject({
+    moonstones: 2,
+    moonstonesEarned: 5,
+  });
+  expect(storage.active().profile.town.moonstoneProduction).toEqual({ progress: 0, charge: 0 });
 });

@@ -40,11 +40,14 @@ final class SaveService
     }
     public static function profile(mixed $profile): string
     {
-        if (!($profile instanceof \stdClass) || ($profile->schemaVersion ?? null) !== 2) {
+        if (
+            !($profile instanceof \stdClass) ||
+            !in_array($profile->schemaVersion ?? null, [2, 3], true)
+        ) {
             throw new ApiError(
                 422,
                 'This save needs a compatible game version. Your local copy is safe.',
-                ['code' => 'save_format_unsupported', 'supportedSchemaVersions' => [2]],
+                ['code' => 'save_format_unsupported', 'supportedSchemaVersions' => [2, 3]],
             );
         }
         foreach (['town', 'records', 'continuousRecords'] as $key) {

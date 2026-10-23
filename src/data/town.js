@@ -1,3 +1,4 @@
+import { createMoonstones } from './moonstones';
 import { createPersonalisation } from './townPersonalisation';
 import { PROGRESSION_VERSION, hasShortProgression } from './buildingProgression';
 import { purchasePrice, RIVER_RAIL_LEVEL_PRICES } from './economy';
@@ -632,6 +633,7 @@ export const createTown = () => ({
   personalisation: createPersonalisation(),
   ...createEraState(BUILDINGS.map(({ id }) => id)),
   coins: 0,
+  ...createMoonstones(),
   tourSeen: false,
   buildings: Object.fromEntries(BUILDINGS.map(({ id }) => [id, 0])),
   events: {},
@@ -640,7 +642,7 @@ export const createTown = () => ({
   completedRuns: 0,
   nextRaidRun: null,
   income: { at: null, remainder: 0, stored: 0 },
-  lastCollections: { saloon: null, blacksmith: null },
+  lastCollections: { saloon: null, blacksmith: null, moonstoneWorkshop: null },
   // Share-link events: the last visitor saloon collection applied, and the latest guest.
   saloonVisitAt: 0,
   // Space-helmet finds: the completed puzzle count whose wearer the owner found, and the

@@ -70,6 +70,11 @@ export function buildingBenefit(town, id, stage, modernization = false) {
     icon = 'mine';
     label = 'Bonus capacity';
     read = bonusCapacity;
+  } else if (id === 'moonstoneWorkshop') {
+    icon = 'moonstone';
+    label = 'Moonstones per batch';
+    read = (v) => v.buildings.moonstoneWorkshop ?? 0;
+    suffix = '';
   } else if (id === 'blacksmith') {
     icon = 'mine';
     label = 'Puzzles per TNT';

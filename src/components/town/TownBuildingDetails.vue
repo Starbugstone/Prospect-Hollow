@@ -13,6 +13,16 @@
         })
       }}</span>
     </div>
+    <TownMoonstoneWorkshop
+      v-if="id === 'moonstoneWorkshop' && stage && !readOnly && sellMoonstones"
+      :town="town"
+      :sell-moonstones="sellMoonstones"
+      :cooldown-seconds="cooldownSeconds"
+      @collect="$emit('collect-moonstones')"
+    />
+    <p v-if="id === 'homecomingHall'">
+      {{ t('Lifetime moonstones earned: {count}', { count: town.moonstonesEarned ?? 0 }) }}
+    </p>
     <div class="town-detail-hero">
       <div class="town-building-preview" :style="{ '--building-tint': building.color }">
         <svg viewBox="-160 -230 320 275" aria-hidden="true">
@@ -371,6 +381,7 @@ import {
 } from '../../game/town/TownRules';
 import TownBuilding from './TownBuilding.vue';
 import TownShop from './TownShop.vue';
+import TownMoonstoneWorkshop from './TownMoonstoneWorkshop.vue';
 import TownSite from './TownSite.vue';
 import TownIcon from './TownIcon.vue';
 import TownDefenseStatus from './TownDefenseStatus.vue';
@@ -384,12 +395,23 @@ const props = defineProps({
   bonusLimit: Number,
   powers: Array,
   lastIncome: Number,
+  sellMoonstones: Function,
   now: { type: Number, default: Date.now },
   // A shared town's card: what the building is and its level, without the owner's
   // actions or private state such as stored earnings, the forge or the armory.
   readOnly: Boolean,
 });
-defineEmits(['build', 'hammer', 'finish', 'ring-bell', 'advance-era', 'select', 'museum', 'mine']);
+defineEmits([
+  'build',
+  'hammer',
+  'finish',
+  'ring-bell',
+  'advance-era',
+  'select',
+  'museum',
+  'mine',
+  'collect-moonstones',
+]);
 // The village's one-second clock, when shown inside it (see TownView).
 const townClock = inject('townClock', null);
 const cooldownSeconds = computed(() =>

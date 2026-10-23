@@ -11,24 +11,27 @@
           'town-in-cinematic': town.transition?.pending || openingPresentation,
         }"
       >
-        <div v-if="!activeRaid" class="town-map-corner">
-          <SaveStatusPill v-if="cloudAccount" />
-        </div>
-        <div v-if="!activeRaid" class="town-map-status" :aria-label="t('Town savings')">
-          <TownIcon name="coin" /><strong>{{ number(town.coins) }}</strong>
-          <template v-if="campaign.builderHammers > 0">
-            <i aria-hidden="true"></i
-            ><img
-              src="/art/rewards/builder-hammer.svg"
-              :alt="t('Builder hammers')"
-              :title="
-                t('Builder hammers: {count}/{cap}', {
-                  count: campaign.builderHammers,
-                  cap: HAMMER_CAPACITY,
-                })
-              "
-            /><strong>{{ campaign.builderHammers }}</strong>
-          </template>
+        <div v-if="!activeRaid" class="town-resource-bar">
+          <div class="town-map-corner">
+            <SaveStatusPill v-if="cloudAccount" />
+          </div>
+          <div class="town-map-status" :aria-label="t('Town savings')">
+            <TownIcon name="coin" /><strong>{{ number(town.coins) }}</strong>
+            <TownMoonstoneBalance v-if="town.buildings.spaceElevator > 0" :town="town" />
+            <template v-if="campaign.builderHammers > 0">
+              <i aria-hidden="true"></i
+              ><img
+                src="/art/rewards/builder-hammer.svg"
+                :alt="t('Builder hammers')"
+                :title="
+                  t('Builder hammers: {count}/{cap}', {
+                    count: campaign.builderHammers,
+                    cap: HAMMER_CAPACITY,
+                  })
+                "
+              /><strong>{{ campaign.builderHammers }}</strong>
+            </template>
+          </div>
         </div>
         <button
           v-if="projectGoal && !activeRaid"
@@ -533,6 +536,8 @@
         :bonus-limit="campaign.bonusLimit"
         :powers="campaign.powers"
         :last-income="campaign.lastSaloonIncome"
+        :sell-moonstones="campaign.sellMoonstones"
+        @collect-moonstones="collectMoonstones"
         @build="startWork"
         @hammer="useHammer"
         @finish="finishBuilding(selected)"
@@ -715,6 +720,7 @@ import TownBuildingDetails from './TownBuildingDetails.vue';
 import TownIcon from './TownIcon.vue';
 import TownRaidNotice from './TownRaidNotice.vue';
 import TownResourceCollection from './TownResourceCollection.vue';
+import TownMoonstoneBalance from './TownMoonstoneBalance.vue';
 import TownNextStep from './TownNextStep.vue';
 import TownTabBar from './TownTabBar.vue';
 import TownMoreMenu from './TownMoreMenu.vue';
@@ -1367,6 +1373,12 @@ function findHelmet(origin) {
 function zoomForHelmet() {
   if (!campaign.readOnly) enqueueVisitorNotice([{ kind: 'helmet-zoom' }]);
 }
+function collectMoonstones() {
+  const amount = campaign.collectMoonstones();
+  if (!amount) return false;
+  showCollection('moonstones', amount, 'moonstoneWorkshop');
+  return true;
+}
 function collectIncome() {
   collectionNow.value = Date.now();
   const coins = campaign.collectSaloonIncome(collectionNow.value);
@@ -1397,6 +1409,7 @@ async function selectBuilding(id) {
     return;
   }
   if (id === 'saloon' && collectIncome()) return;
+  if (id === 'moonstoneWorkshop' && collectMoonstones()) return;
   if (id === 'square' && gate.value.available && !activeRaid.value) {
     beginEra();
     return;

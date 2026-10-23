@@ -62,6 +62,101 @@ function integrityProfile(array $rules, int $now): object
     ];
     return integrityObject($profile);
 }
+$oldMoonRules = $rules;
+unset($oldMoonRules['economy']['moonstones']);
+integrityDenied(
+    fn() => (new SaveIntegrity($oldMoonRules))->accept(integrityProfile($rules, $now), null, $now),
+    'save_rules_unsupported',
+    'old server catalog safely refuses the new resource contract',
+);
+$moonLegacy = integrityProfile($rules, $now);
+$moonLegacy->schemaVersion = 2;
+foreach (['moonstoneVersion', 'moonstones', 'moonstonesEarned', 'moonstoneProduction'] as $field) {
+    unset($moonLegacy->town->$field);
+}
+$moonLegacy->town->buildings->ribbonLanding = 2;
+$moonLegacy->town->buildings->moonstoneWorkshop = 3;
+$moonLegacy->town->era = 'twin-hollows';
+$badLegacyMoon = clone $moonLegacy;
+$badLegacyMoon->town = clone $moonLegacy->town;
+$badLegacyMoon->town->moonstones = -1;
+integrityDenied(
+    fn() => $validator->accept($badLegacyMoon, null, $now),
+    'save_integrity_invalid',
+    'old-schema uploads cannot bypass resource shape validation',
+);
+$moonBase = $validator->accept($moonLegacy, null, $now);
+$moonMigrated = integrityData($moonBase);
+$moonMigrated['schemaVersion'] = 3;
+$moonMigrated['town']['moonstoneVersion'] = 1;
+$moonMigrated['town']['moonstones'] = 5;
+$moonMigrated['town']['moonstonesEarned'] = 5;
+$moonMigrated['town']['moonstoneProduction'] = ['progress' => 0, 'charge' => 0];
+$moonAccepted = $validator->accept(integrityObject($moonMigrated), $moonBase, $now);
+assertIntegrity($moonAccepted->town->moonstones === 5, 'old Moon levels migrate once');
+assertIntegrity(
+    $validator->accept($moonAccepted, $moonAccepted, $now)->town->moonstones === 5,
+    'migration is idempotent',
+);
+$moonMint = integrityData($moonAccepted);
+$moonMint['town']['moonstones']++;
+$moonMint['town']['moonstonesEarned']++;
+$moonMint['town']['completedRuns'] = 100;
+integrityDenied(
+    fn() => $validator->accept(integrityObject($moonMint), $moonAccepted, $now),
+    'save_integrity_mismatch',
+    'unreceipted moonstone minting',
+);
+$moonSale = integrityData($moonAccepted);
+$moonSale['town']['moonstones'] = 3;
+$moonSale['town']['coins'] += 500;
+$moonSale['integrity']['actions'] = [integrityAction(1, 'moonstone-sell', ['amount' => 2])];
+$moonSold = $validator->accept(integrityObject($moonSale), $moonAccepted, $now);
+assertIntegrity(
+    $moonSold->town->moonstones === 3 && $moonSold->town->moonstonesEarned === 5,
+    'server replays sale at fixed exchange rate',
+);
+assertIntegrity(
+    $moonSold->integrity->context->moneyBudget->lastCheck->newMintedCoins === 500,
+    'moonstone sales enter money plausibility accounting',
+);
+$badSale = $moonSale;
+$badSale['town']['coins']++;
+integrityDenied(
+    fn() => $validator->accept(integrityObject($badSale), $moonAccepted, $now),
+    'save_integrity_mismatch',
+    'inflated moonstone sale payout',
+);
+$badSpend = integrityData($moonSold);
+$badSpend['integrity']['actions'] = [
+    integrityAction(2, 'moonstone-spend', ['amount' => 4, 'reason' => 'monument']),
+];
+integrityDenied(
+    fn() => $validator->accept(integrityObject($badSpend), $moonSold, $now),
+    'save_integrity_mismatch',
+    'moonstone overspend',
+);
+$moonRemigrate = integrityData($moonSold);
+unset($moonRemigrate['town']['moonstoneVersion']);
+integrityDenied(
+    fn() => $validator->accept(integrityObject($moonRemigrate), $moonSold, $now),
+    'save_integrity_invalid',
+    'cannot delete migration marker to recredit spent stones',
+);
+$oldDevice = integrityData($moonBase);
+integrityDenied(
+    fn() => $validator->accept(integrityObject($oldDevice), $moonSold, $now),
+    'save_rules_unsupported',
+    'old client cannot erase a migrated balance',
+);
+$secondDevice = $moonMigrated;
+integrityDenied(
+    fn() => $validator->accept(integrityObject($secondDevice), $moonSold, $now),
+    'save_integrity_mismatch',
+    'stale device cannot recredit sold stones',
+);
+// A legacy client with an unfinished historical journal still normalizes its final
+// building credit; production begins only with versioned new victories.
 $before = integrityProfile($rules, $now);
 $baseline = $validator->accept($before, null, $now);
 assertIntegrity(

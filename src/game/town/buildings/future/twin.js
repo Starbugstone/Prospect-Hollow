@@ -61,10 +61,12 @@ export const twinKit = {
 export function homecomingHall(d, g, s, house) {
   const p = s.palette;
   const crown = house(d, g, s, { z: -0.6, w: 3.4, dep: 2.2, h: 2.4 });
-  // Moonstone keepsakes from New Hollow on a glass-topped display.
+  // The display celebrates lifetime moonstones, including ones since sold or spent.
   d.box(g, 1.3, 0.55, 0.6, 1.9, 0.28, 0.9, p.timber);
   d.mesh(g, futureShape(d, 'lowDome'), [0.5, 0.35, 0.25], [1.9, 0.56, 0.9], p.glass);
-  for (const dx of [-0.3, 0, 0.3]) d.ball(g, 1.9 + dx, 0.62, 0.9, 0.08, p.shell, 'rock');
+  const earned = d.town?.moonstonesEarned ?? 0;
+  for (const dx of [-0.3, 0, 0.3].slice(0, Math.min(3, earned)))
+    d.ball(g, 1.9 + dx, 0.62, 0.9, 0.08, p.shell, 'rock');
   if (s.structureLevel >= 2) {
     if (s.modernizing) s.kit.wing(d, g, s, { x: -2.3, z: -1.2 });
     else {

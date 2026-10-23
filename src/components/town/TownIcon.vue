@@ -8,7 +8,15 @@
     stroke-linejoin="round"
     aria-hidden="true"
   >
-    <template v-if="name === 'coin'">
+    <image
+      v-if="name === 'moonstone'"
+      href="/art/moonstone.svg"
+      x="0"
+      y="0"
+      width="24"
+      height="24"
+    />
+    <template v-else-if="name === 'coin'">
       <circle cx="12" cy="12" r="9" />
       <circle cx="12" cy="12" r="6" opacity=".5" />
       <path d="m12 8 3 4-3 4-3-4Z" />

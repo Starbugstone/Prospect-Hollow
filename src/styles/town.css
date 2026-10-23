@@ -1588,6 +1588,55 @@ html:has(.town-museum[open]) {
   margin-inline: 3px;
   background: #dccb93;
 }
+/* Share the available header width as optional resources join the wallet. */
+.town-resource-bar {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  left: 12px;
+  right: 12px;
+  z-index: 7;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  pointer-events: none;
+}
+.town-resource-bar .town-map-corner,
+.town-resource-bar .town-map-status {
+  position: relative;
+  inset: auto;
+  pointer-events: auto;
+}
+.town-resource-bar .town-map-corner {
+  min-width: 0;
+  max-width: none;
+  flex-shrink: 1;
+}
+.town-resource-bar .save-pill-wrap,
+.town-resource-bar .save-pill {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.town-resource-bar .save-pill-town {
+  min-width: 0;
+}
+.town-resource-bar .town-map-status {
+  flex-shrink: 0;
+}
+@media (max-width: 560px) {
+  .town-map-status:has(.moonstone-balance) {
+    --moonstone-size: 16px;
+    gap: 4px;
+    padding-inline: 8px;
+    font-size: 12px;
+  }
+  .town-map-status:has(.moonstone-balance) > svg,
+  .town-map-status:has(.moonstone-balance) > img {
+    width: 16px;
+    height: 16px;
+  }
+}
 /* The next starter project, below the wallet and the needs readings: a near-term goal
    with a hammer reward. */
 .town-project-goal {

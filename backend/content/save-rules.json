@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "profileSchemaVersion": 2,
+  "profileSchemaVersion": 3,
   "maxSafeInteger": 9007199254740991,
   "levelCount": 546,
   "levelsPerChapter": 6,
@@ -51281,6 +51281,23 @@
       3,
       2
     ],
+    "moonstones": {
+      "version": 1,
+      "runs": 3,
+      "saleCoins": 250,
+      "buildings": [
+        "ribbonLanding",
+        "newHollowCommons",
+        "settlerDomes",
+        "craterIceWell",
+        "craterHomesteads",
+        "earthlightGreenhouse",
+        "willowkinDome",
+        "moonstoneWorkshop",
+        "earthriseLookout",
+        "roverBarn"
+      ]
+    },
     "hourMs": 3600000,
     "collectionCooldownMs": 30000,
     "incomeHoursCap": 5,
@@ -51594,6 +51611,13 @@
       "charge": 0
     },
     "coins": 0,
+    "moonstoneVersion": 1,
+    "moonstones": 0,
+    "moonstonesEarned": 0,
+    "moonstoneProduction": {
+      "progress": 0,
+      "charge": 0
+    },
     "tourSeen": false,
     "buildings": {
       "well": 0,
@@ -51692,7 +51716,8 @@
     },
     "lastCollections": {
       "saloon": null,
-      "blacksmith": null
+      "blacksmith": null,
+      "moonstoneWorkshop": null
     },
     "saloonVisitAt": 0,
     "helmetRun": 0,
@@ -51701,7 +51726,7 @@
     "progressionVersion": 2
   },
   "defaultProfile": {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "records": {},
     "continuousRecords": {},
     "powers": [
@@ -51930,6 +51955,13 @@
         "charge": 0
       },
       "coins": 0,
+      "moonstoneVersion": 1,
+      "moonstones": 0,
+      "moonstonesEarned": 0,
+      "moonstoneProduction": {
+        "progress": 0,
+        "charge": 0
+      },
       "tourSeen": false,
       "buildings": {
         "well": 0,
@@ -52028,7 +52060,8 @@
       },
       "lastCollections": {
         "saloon": null,
-        "blacksmith": null
+        "blacksmith": null,
+        "moonstoneWorkshop": null
       },
       "saloonVisitAt": 0,
       "helmetRun": 0,
@@ -52056,5 +52089,5 @@
       "seenGeneration": 4
     }
   },
-  "contentDigest": "7f9fdd31f6c3154416e29c2415e6000cf75b9029736a15ca91df13ccd1ab5ba2"
+  "contentDigest": "c65b7aa4c680482c04225765ad22373ad0a4bdbba8d23df78df5e2a5e93a4a5a"
 }
