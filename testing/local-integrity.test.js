@@ -388,3 +388,21 @@ it('saves personalisation and a permanent paid monument through the production m
   restored.town.coins = 1e9;
   expect(restored.town.coins).toBe(22000);
 });
+it('applies synced scalar changes without replacing unchanged renderer state or receipt copying', () => {
+  const campaign = open();
+  const before = { town: campaign.town, records: campaign.records, powers: campaign.powers };
+  const profile = JSON.parse(JSON.stringify(campaign.profile()));
+  profile.builderHammers += 1;
+  values.set(SAVE_KEY, JSON.stringify(profile));
+  campaign.reloadLocal({ preserveUnchanged: true });
+  expect(campaign.builderHammers).toBe(1);
+  expect(campaign.town).toBe(before.town);
+  expect(campaign.records).toBe(before.records);
+  expect(campaign.powers).toBe(before.powers);
+  const integrity = { version: 1, epoch: 'replacement', baseSequence: 0, actions: [] };
+  values.set(SAVE_KEY, JSON.stringify({ ...profile, integrity }));
+  campaign.reloadLocal({ integrityOnly: true });
+  expect(campaign.integrity).toEqual(integrity);
+  campaign.integrity = { version: 1, epoch: 'console', baseSequence: 0, actions: [] };
+  expect(campaign.integrity.epoch).toBe('replacement');
+});

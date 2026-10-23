@@ -69,7 +69,7 @@ const preview = computed(() =>
 const previewTown = computed(
   () =>
     (
-      towns.value.find((town) => town.townId === (townId.value || townStorage.active()?.meta.id)) ??
+      towns.value.find((town) => town.townId === (townId.value || townStorage.activeMeta().id)) ??
       towns.value[0]
     )?.name,
 );

@@ -32,6 +32,7 @@ vi.mock('../src/services/townStorage', () => ({
   townKey: (id, owner) => `${owner}:${id}`,
   townStorage: {
     active: () => state.active,
+    activeMeta: () => state.active?.meta,
     selectedKey: () => state.selected,
     get: vi.fn(() => null),
   },

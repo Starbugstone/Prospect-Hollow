@@ -192,6 +192,7 @@ import { localProfile } from '../services/localProfile';
 import { townCoordinator } from '../services/townCoordinator';
 import { createTownHandoff } from '../services/townHandoff';
 import { createSyncScheduler } from '../services/syncScheduler';
+import { deferSync } from '../services/syncIdle';
 import { describeSaveState } from '../services/saveStatus';
 import { uploadBlocked } from '../services/syncService';
 import { syncTownParam } from '../services/appRoute';
@@ -300,7 +301,8 @@ watch(
   },
   { immediate: true },
 );
-let handoff,
+let stopMetadataObserver,
+  handoff,
   loadedKey,
   activation = Promise.resolve(),
   lastResume = 0;
@@ -315,7 +317,7 @@ const scheduler = createSyncScheduler({
       !townStorage.canWrite()
     )
       return false;
-    const meta = townStorage.active()?.meta;
+    const meta = townStorage.activeMeta();
     return (
       meta?.owner === cloud.account.id &&
       !meta.missing &&
@@ -366,7 +368,8 @@ function activate({ takeOver = false } = {}) {
         moved.value = false;
         ready.value = true;
         syncTownParam();
-        // Cloud latency must never delay local play or the duplicate-tab notice.
+        // The renderer gets the first boot/switch frames before cloud work starts.
+        deferSync();
         if (cloud.account) void syncNow();
       } catch (error) {
         notice.value = error.message;
@@ -465,15 +468,18 @@ function dismissRecovery() {
 function configureTownSync() {
   configureSync({
     targets: (owner) => {
-      const active = townStorage.active();
-      return active?.meta.owner === owner ? [active] : [];
+      const meta = townStorage.activeMeta();
+      return meta?.owner === owner ? [{ meta }] : [];
     },
     eligible: (id, owner) =>
       ready.value && !handingOver.value && townStorage.selectedKey() === townKey(id, owner),
     run: (id, owner, operation) => townCoordinator.run(townKey(id, owner), operation),
-    canApply: (id) => townStorage.active()?.meta.id !== id || !game.sessionActive,
+    canApply: (id) => townStorage.activeMeta().id !== id || !game.sessionActive,
+    integrityApplied: (id) => {
+      if (townStorage.activeMeta()?.id === id) campaign.reloadLocal({ integrityOnly: true });
+    },
     applied: (id) => {
-      if (townStorage.active()?.meta.id === id) reload();
+      if (townStorage.activeMeta().id === id) reload();
     },
   });
 }
@@ -504,7 +510,7 @@ function resume() {
   // A clean town may have changed on another device, and a blocked one may have been
   // reset by support. Check only on return, at most once per minute, never on every
   // local checkpoint or storage event.
-  const meta = townStorage.active()?.meta;
+  const meta = townStorage.activeMeta();
   if ((!meta?.dirty || uploadBlocked(meta)) && !meta?.pending && Date.now() - lastResume > 60000) {
     lastResume = Date.now();
     syncNow();
@@ -576,10 +582,12 @@ watch(
 watch(
   () => game.sessionActive,
   (active) => {
+    deferSync();
     if (!active) schedule();
   },
 );
 onMounted(() => {
+  stopMetadataObserver = townStorage.observeMetadata();
   if (typeof BroadcastChannel === 'function')
     handoff = createTownHandoff({ coordinator: townCoordinator, prepare: prepareHandoff });
   window.addEventListener(TOWN_CHANGED, schedule);
@@ -592,6 +600,7 @@ onMounted(() => {
   start();
 });
 onBeforeUnmount(() => {
+  stopMetadataObserver?.();
   handoff?.dispose();
   scheduler.dispose();
   townCoordinator.release();

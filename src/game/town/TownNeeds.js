@@ -37,14 +37,14 @@ export const needProviders = (stat) =>
   );
 
 // The main waterworks or farm capacity of the era tier the building reached.
-const eraTierValue = (town, id, tiers) => {
+const eraTierValue = (town, id, tiers, finish) => {
   if (!town.buildings[id]) return 0;
-  const tier = Math.min(2, Math.max(0, (town.buildingEraLevels[id] || 1) - 1));
-  return eraEvolution(town.buildingEras[id])[tiers]?.[tier] ?? 0;
+  const tier = Math.min(2, Math.max(0, ((finish?.level ?? town.buildingEraLevels[id]) || 1) - 1));
+  return eraEvolution(finish?.era ?? town.buildingEras[id])[tiers]?.[tier] ?? 0;
 };
-const termValue = (town, term, id) => {
+const termValue = (town, term, id, finish) => {
   const built = town.buildings[id] ?? 0;
-  if (term.eraTiers) return eraTierValue(town, id, term.eraTiers);
+  if (term.eraTiers) return eraTierValue(town, id, term.eraTiers, finish);
   if (term.table) return term.table[built] ?? 0;
   const level = term.service ? buildingServiceLevel(id, built) : built;
   return term.per * Math.min(term.max ?? Infinity, Math.max(0, level + (term.offset ?? 0)));
@@ -55,6 +55,15 @@ export function townSupply(town) {
   const supply = { water: 0, food: 0, housing: 0, visitors: 0, comfort: 0 };
   for (const term of needTerms())
     for (const id of term.ids) supply[term.stat] += termValue(town, term, id);
+  return supply;
+}
+
+// A modernization changes only one provider. Calculate that provider's effects
+// rather than traversing every other building twice for every offer in the UI.
+export function buildingSupply(town, id, finish) {
+  const supply = { water: 0, food: 0, housing: 0, visitors: 0, comfort: 0 };
+  for (const term of needTerms())
+    if (term.ids.includes(id)) supply[term.stat] += termValue(town, term, id, finish);
   return supply;
 }
 

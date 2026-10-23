@@ -83,7 +83,7 @@ async function initialize() {
     if (disposed || generation !== current) return;
     profile.value = result.profile;
     towns.value = result.towns ?? [];
-    const preferred = result.profile?.visitingTownId || townStorage.active()?.meta.id;
+    const preferred = result.profile?.visitingTownId || townStorage.activeMeta().id;
     townId.value =
       (towns.value.find((town) => town.townId === preferred) ?? towns.value[0])?.townId ?? null;
   } catch {

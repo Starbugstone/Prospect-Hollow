@@ -48,7 +48,7 @@ import { finishedRewardProjects } from '../game/town/TownProjects';
 
 import { townStorage } from '../services/townStorage';
 import { localProfile, SAVE_KEY } from '../services/localProfile';
-import { createIntegrity, loadIntegrity, appendIntegrityAction } from '../services/saveIntegrity';
+import { createIntegrity, appendIntegrityAction } from '../services/saveIntegrity';
 import { createSaveFile, parseSaveFile } from '../services/saveTransfer';
 import {
   bonusCapacity,
@@ -137,7 +137,9 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
   try {
     const saved = loaded.data;
     if (saved?.integrity !== undefined)
-      state.integrity = plainIntegrity(loadIntegrity(saved.integrity));
+      // localProfile/backup parsing already owns this detached immutable receipt
+      // snapshot. A second JSON copy would walk the entire offline history.
+      state.integrity = plainIntegrity(saved.integrity);
     state.hasVisitedVillage =
       !!saved?.town && typeof saved.town === 'object' && !Array.isArray(saved.town);
     state.seenTips = Array.isArray(saved?.seenTips)
@@ -486,8 +488,24 @@ export const useCampaignStore = defineStore('campaign', {
         throw new Error('This save cannot be exported by this version of the game.');
       return createSaveFile(this.profile());
     },
-    reloadLocal() {
-      this.$patch((state) => Object.assign(state, load()));
+    reloadLocal({ preserveUnchanged = false, integrityOnly = false } = {}) {
+      const next = load();
+      if (integrityOnly) {
+        this.integrity = next.integrity;
+        return;
+      }
+      this.$patch((state) => {
+        for (const [key, value] of Object.entries(next)) {
+          // Journals are immutable transport state; don't stringify historical receipts.
+          if (
+            preserveUnchanged &&
+            key !== 'integrity' &&
+            JSON.stringify(state[key]) === JSON.stringify(value)
+          )
+            continue;
+          state[key] = value;
+        }
+      });
     },
     importSave(text) {
       const parsed = parseSaveFile(text);

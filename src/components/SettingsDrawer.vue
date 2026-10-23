@@ -156,7 +156,7 @@
           {{ t('Shift + arrow to swap. Esc to cancel.') }}
         </p>
       </div>
-      <div v-if="!campaign.readOnly && !townStorage.state()?.active.owner" class="testing-reset">
+      <div v-if="!campaign.readOnly && !townStorage.activeMeta()?.owner" class="testing-reset">
         <button v-if="!confirmReset" class="text-button" @click="confirmReset = true">
           {{ t('Start a new village') }}
         </button>
@@ -217,7 +217,7 @@ function exportProgress() {
   saveError.value = '';
   saveStatus.value = '';
   try {
-    downloadSaveFile(campaign.exportSave(), saveFileName(townStorage.state()?.active.name));
+    downloadSaveFile(campaign.exportSave(), saveFileName(townStorage.activeMeta()?.name));
     saveStatus.value = 'Save file download started.';
   } catch {
     saveError.value = 'Your save could not be exported. Please try again.';

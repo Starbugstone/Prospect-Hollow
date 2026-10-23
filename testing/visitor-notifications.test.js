@@ -20,7 +20,7 @@ vi.mock('vue', async (original) => ({
 vi.mock('../src/services/cloudProfile', async () => ({
   cloud: (await import('vue')).reactive({ account: { id: 'owner' }, storageVersion: 0 }),
 }));
-vi.mock('../src/services/townStorage', () => ({ townStorage: { active: vi.fn() } }));
+vi.mock('../src/services/townStorage', () => ({ townStorage: { activeMeta: vi.fn() } }));
 vi.mock('../src/services/visitorApi', () => ({ townVisitors: vi.fn(), villageVisitors: vi.fn() }));
 
 const alice = { id: 'visit-a', name: 'Alice', townName: 'Silver Creek' };
@@ -31,7 +31,7 @@ beforeEach(() => {
   vi.stubGlobal('document', new EventTarget());
   vi.stubGlobal('window', new EventTarget());
   Object.assign(cloud, { account: { id: 'owner' }, sessionExpired: false, storageVersion: 0 });
-  townStorage.active.mockReturnValue({ meta: { id: 'town-a', owner: 'owner' } });
+  townStorage.activeMeta.mockReturnValue({ id: 'town-a', owner: 'owner' });
   result = { present: [], history: [] };
   townVisitors.mockImplementation(async () => result);
   collectedAt = 0;
@@ -134,7 +134,7 @@ it('clears old-town notices and fences an in-flight response when switching town
       }),
   );
   await poll();
-  townStorage.active.mockReturnValue({ meta: { id: 'town-b', owner: 'owner' } });
+  townStorage.activeMeta.mockReturnValue({ id: 'town-b', owner: 'owner' });
   result = { present: [anonymous] };
   cloud.storageVersion++;
   await nextTick();

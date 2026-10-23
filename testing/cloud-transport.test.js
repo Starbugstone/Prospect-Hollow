@@ -160,7 +160,8 @@ it('shares account refresh while local startup and background sync run together'
   const first = refreshAccount(),
     second = refreshAccount();
   expect(first).toBe(second);
-  expect(fetch).toHaveBeenCalledOnce();
+  // Transport can wait for an idle boundary; concurrent callers still share it.
+  await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
   complete({
     ok: true,
     json: async () => ({ account: { id: 'account-a' }, csrf: 'current', towns: [] }),
@@ -376,4 +377,10 @@ it('deletes any cloud town at the revision the player reviewed and keeps its dev
   expect(deletes()).toEqual([[ownId, { baseRevision: 3, confirmation: 'Cached Town' }]]);
   expect(townStorage.get(ownId, account.id).meta.missing).toBeFalsy();
   expect(fetch.mock.calls.at(-1)[0]).toMatch(/\/account$/);
+});
+it('resolves the API URL on the page before handing it to the background transport', async () => {
+  vi.stubGlobal('location', { href: 'https://game.example/play' });
+  fetch.mockResolvedValue({ ok: true, status: 200, json: async () => ({}) });
+  await request('account/profile', undefined, 'GET', true);
+  expect(fetch.mock.calls[0][0]).toBe('https://game.example/api/v1/account/profile');
 });

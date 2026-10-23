@@ -14,7 +14,7 @@ export function useTownVisitors(
     error = ref('');
   const townId = computed(() => {
     void cloud.storageVersion;
-    const meta = townStorage.active()?.meta;
+    const meta = townStorage.activeMeta();
     return cloud.account &&
       !cloud.sessionExpired &&
       meta?.owner === cloud.account.id &&
