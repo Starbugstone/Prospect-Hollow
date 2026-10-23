@@ -5,7 +5,7 @@ import { RIVER_RAIL_VARIANTS } from '../../data/riverRail';
 import { INDUSTRIAL_VARIANTS } from '../../data/industrial';
 import { MOTOR_AGE_VARIANTS } from '../../data/motorAge';
 import { cityVariant, cityBuildingPrice, isMajorCityBuilding } from '../../data/city';
-import { townSupply } from './TownNeeds';
+import { buildingSupply } from './TownNeeds';
 
 /** @typedef {{name: string, description: string}} ModernizationAppearance */
 /** @typedef {(building: Object, era: string) => ModernizationAppearance|null} AppearanceProvider */
@@ -30,12 +30,8 @@ const SUPPLY_BENEFITS = {
   food: 'Adds food for {count} people when finished. Existing harvests stay available during work.',
 };
 const benefit = (town, building, level) => {
-  const before = townSupply(town);
-  const after = townSupply({
-    ...town,
-    buildingEras: { ...town.buildingEras, [building.id]: town.era },
-    buildingEraLevels: { ...town.buildingEraLevels, [building.id]: level + 1 },
-  });
+  const before = buildingSupply(town, building.id);
+  const after = buildingSupply(town, building.id, { era: town.era, level: level + 1 });
   const stat = Object.keys(SUPPLY_BENEFITS).find((need) => after[need] > before[need]);
   return stat
     ? { benefit: SUPPLY_BENEFITS[stat], benefitValues: { count: after[stat] - before[stat] } }

@@ -263,3 +263,96 @@ A separately measured six-second post-resident browser window showed different
 VIP inset activation between snapshots. Its frame intervals must be compared
 with matched inset state; that observation does not establish an animal-work
 regression. No inset rendering or event probability is changed by this patch.
+
+## October 23: background save transport and town offer work
+
+The initial `profile-return.mjs` / `attribute.mjs` capture at 4× CPU slowdown
+showed a 699 ms return task dominated by `upgradeOffer → modernization → benefit`,
+plus plot swaps and route preparation. This was a guest town with no server sync:
+the report's suspected cause was only part of the problem. A separate mocked
+account with a synthetic 1,500-receipt offline history (2,897,543 JSON bytes)
+exposed repeated save parsing/stringification and synchronous IndexedDB cloning.
+Sync performs no client SHA/compression stage; receipt validation is already constant-time.
+
+`backgroundJson.worker.js` now owns JSON processing, HTTP response delivery and
+recovery/upload IndexedDB transactions. Receipt transfers use eight-action messages
+and rendering yields; immutable journals can reuse two bounded worker references.
+The same durable database, outbox UUIDs, receipt acknowledgements and server API
+remain in use. Worker absence uses the existing synchronous APIs. An in-flight
+worker network failure has an unknown server outcome and is **not** replayed by
+the fallback; the existing outbox/retry handling owns that outcome.
+
+Sync starts and commits wait past boot/mine-transition rendering and an idle
+opportunity. Worker-generated town writes compare the exact durable record and
+account generation after yielding, retrying against intervening gameplay. Status
+consumers read metadata cached by local writes and invalidated by browser storage
+events, rather than copying the full localStorage string repeatedly. Failed writes
+do not publish new cached metadata. Identical remote gameplay only adopts its
+receipt state; changed profiles preserve equal store fields and the existing town
+scene. Income checkpoints remain part of remote-application comparisons.
+
+The contained non-sync fix computes a modernization's supply delta for the one
+changed provider instead of traversing the entire town twice per offer. Its finish
+override also avoids spreading the guarded town and building maps for each offer. Exhaustive
+era/building/tier comparisons and a newly registered provider regression preserve
+the previous supply/benefit results. Gameplay, rewards and unlimited moves are unchanged.
+
+Three captures per scenario used the same 4× CPU slowdown. The large-backlog
+figures below include tasks dominated by sync transport, snapshot storage **and**
+its atomic localStorage commit. Figures are medians in milliseconds; maximum task
+means the largest attributed task in each run, not the largest frame in the game.
+
+| Large-backlog scenario                               | Before: max / TBT | After: max / TBT |
+| ---------------------------------------------------- | ----------------: | ---------------: |
+| Launch                                               |       595 / 2,644 |           44 / 0 |
+| Mine return                                          |       819 / 3,175 |         124 / 74 |
+| Village sync (rendering paused to isolate save work) |       746 / 2,938 |          94 / 77 |
+
+The remaining >50 ms sync tasks are atomic localStorage commits. Launch/return
+figures precede the final removal of a redundant full-record CAS read; the village
+figure is repeated on the final code. The final comparison after all yields still
+protects every commit; a stale no-op is retried too. Worker-owned serialization/network/IndexedDB work no longer
+dominates >50 ms tasks in these captures. Launch/return captures are fixed windows;
+large uploads can still be in progress when those windows end. The idle capture
+also covers upload processing, rather than only delaying it beyond startup.
+
+A normal live motor-age village (8,868-byte fixture, three captures at 4×) showed
+that sync was not the leading cause. Ranked by pre-change blocking time:
+
+| Cause                         | Before: max / TBT | After: max / TBT | Evidence / decision                                                                             |
+| ----------------------------- | ----------------: | ---------------: | ----------------------------------------------------------------------------------------------- |
+| Browser/native/unsampled      |         403 / 513 |          83 / 33 | Native/resource trace events; no invented JS attribution.                                       |
+| Town offer/supply queries     |         503 / 453 |          69 / 19 | `upgradeOffer → modernization → benefit`; reduced provider work and removed guarded-map copies. |
+| Plots/navigation              |         158 / 453 |        119 / 179 | `TownPlots`, routes/spatial queries; no renderer changes in this patch.                         |
+| Rendering                     |         179 / 418 |        281 / 531 | `TownDiorama`/frame-cache/Three render stacks; remains unresolved.                              |
+| Deferred animals/presentation |          129 / 79 |           18 / 0 | Deferred habitat/route preparation; timing varies with initialization, no fix claimed here.     |
+| Sync                          |            15 / 0 |           11 / 0 | Small normal profiles had no attributed >50 ms sync task in either version.                     |
+
+The boot rebuild is also substantial: median largest layout/navigation task was
+5,727 ms before and 9,693 ms after in the large-backlog launch captures. This code
+was unchanged; software WebGL, asset initialization and heavy concurrent checks
+make those totals unsuitable for a causal performance claim. Initial captures
+ran during severe memory contention and Docker interruptions; they are retained
+as diagnostics, not presented as clean benchmark results. The report therefore
+claims removal of identified sync work and repeated offer work, **not** that all
+village freezes are fixed. Raw per-task attribution and repeated-run distributions
+are retained with the profiles.
+
+Captures and JSON attribution are in `/tmp/moon-shots/sync/`. Reproduce with
+`testing/browser/sync-profile.mjs` and `sync-profile-attribution.mjs` after generating
+era fixtures in Docker, following the media-tooling setup. The harness accepts
+`label launch|return|idle repetition receiptCount`; `LIVE=1` keeps the village
+rendering during idle captures, and `SHOTS=0` skips redundant screenshots.
+Attribution records every >50 ms main-thread task inside the CPU-profile window;
+unsampled/native work stays explicit. TBT is `sum(max(0, duration − 50 ms))`.
+
+Local gameplay commits and the initial synchronous local save load remain durable
+synchronous operations. The browser's atomic localStorage write also stays on the
+main thread, so this is **not a claim of fully non-blocking sync for arbitrarily
+large saves**. Moving that authority to IndexedDB needs a separate migration and
+cross-tab design: initialize/read there before mounting, keep gameplay commits
+durable, and preserve outbox/recovery ownership across tab handoffs and crashes. Plot swaps, route/habitat generation and first WebGL rendering
+remain candidates for further slicing/material preparation. These captures use
+software WebGL and do not establish a hardware shader/texture-upload diagnosis;
+label projection and audio decoding were not independently established as leading
+causes. Physical Capacitor devices still need a device-level profiling pass.
