@@ -270,6 +270,7 @@ import {
 import { BUILDING_BY_ID, EARTH_BUILDINGS, MOON_BUILDINGS } from '../../data/town';
 import { AREA_BY_ID, LANDMARK_BY_ID, areaChoice } from '../../data/townLandmarks';
 import { dressSpaceHelmet } from '../../game/town/TownSpaceHelmet';
+import { swallowTrailingClick } from '../../game/town/TownTrailingClick';
 import {
   constructionRuns,
   constructionVisual,
@@ -563,6 +564,7 @@ const pick = (event) => {
   if (tap) {
     if (start[2]) choose(start[2]);
     else scene?.pick(event.clientX, event.clientY);
+    swallowTrailingClick(sceneElement.value);
   }
 };
 const cancelPointer = (event) => {
