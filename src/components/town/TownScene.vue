@@ -156,9 +156,7 @@
               })
             "
           >
-            <GameIcon name="wall" />{{ Math.min(town.projects[anchor.id].wins, 2) }}/{{
-              constructionRuns(town.projects[anchor.id])
-            }}
+            <GameIcon name="wall" />{{ buildingStatusLabel(town, anchor.id) }}
           </small>
           <small v-else-if="indicators[anchor.id] === 'coins'">{{
             t('Collect {coins} coins', { coins: town.income.stored })
@@ -228,6 +226,10 @@
       :active="active"
       :paused="paused"
       :reduced-motion="reducedMotion"
+      :indicators="indicators"
+      :available-ids="availableIds"
+      :read-only="readOnly"
+      @select="choose($event)"
       @inspect="emit('inspect', $event)"
       @close="closeMoon"
     />
@@ -248,7 +250,8 @@ import TownMoonView from './TownMoonView.vue';
 import { moonSettlement } from '../../data/moonSettlement';
 import { SKY_MOON_DIRECTION } from '../../data/skyCraft';
 import GameViewStatus from '../GameViewStatus.vue';
-import { TOWN_ACTIONS } from '../../data/townIndicators';
+import { TOWN_ACTIONS, buildingActionLabel } from '../../data/townIndicators';
+import { buildingStatusLabel } from '../../game/town/TownBuildingFeedback';
 import { eraBuildingLevel, plotInEra } from '../../game/town/TownEras';
 import {
   computed,
@@ -321,6 +324,7 @@ const moonLabel = computed(() =>
 // The Moon map opens over the valley once the town can build there; before that
 // the chip shows the space elevator. The valley rests while the Moon is open.
 const moonOpen = ref(false);
+const moonView = ref(null);
 function openMoon() {
   if (!moonReachable.value) return emit('inspect', 'spaceElevator');
   moonOpen.value = true;
@@ -437,16 +441,13 @@ const ACTION_LABELS = {
       ? t('Unveil the {monument}', {
           monument: t(LANDMARK_BY_ID[areaChoice(props.town, AREA_BY_ID[id])].label),
         })
-      : t('Finish {building}', { building: buildingName(id) }),
-  coins: () => t('Collect {coins} coins', { coins: props.town.income.stored }),
-  tnt: () => t('Collect 1 TNT'),
-  bell: () => t('Ring town bell · halve the loss'),
-  era: () => t('Advance to the next era'),
+      : buildingActionLabel(props.town, id, 'ready'),
 };
 const actionLabel = (id) =>
   props.readOnly
     ? t('Collect the saloon takings for the mayor')
-    : ACTION_LABELS[indicators.value[id]](id);
+    : (ACTION_LABELS[indicators.value[id]]?.(id) ??
+      buildingActionLabel(props.town, id, indicators.value[id]));
 const placeName = (id) => (id === 'mine' ? t('Mine') : buildingName(id));
 const plotLabel = (id) => {
   if (props.readOnly) return t(id === 'mine' ? 'Mine' : BUILDING_BY_ID[id].name);
@@ -459,6 +460,8 @@ const plotLabel = (id) => {
 const box = labelBox();
 const labelTranslate = (point) => box.translate(point);
 function collectionOrigin(id) {
+  if (moonOpen.value && MOON_BUILDINGS.some((building) => building.id === id))
+    return moonView.value?.collectionOrigin(id) ?? { x: 50, y: 50 };
   const anchor = anchors.value.find((anchor) => anchor.id === id);
   const origin = anchor?.collection?.visible ? anchor.collection : anchor;
   return {
