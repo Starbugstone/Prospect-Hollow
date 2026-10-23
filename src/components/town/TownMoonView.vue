@@ -47,7 +47,12 @@
         <TownMoonBuilding :kind="lot.id" :level="town.buildings[lot.id] ?? 0" />
       </g>
     </svg>
-    <div class="town-moon-lots" role="group" :aria-label="t('Moon lots')">
+    <div
+      v-show="!props.presentation"
+      class="town-moon-lots"
+      role="group"
+      :aria-label="t('Moon lots')"
+    >
       <button
         v-for="lot in shownLots"
         :key="lot.id"
@@ -103,15 +108,37 @@ import { t } from '../../i18n';
 // construction and visits work exactly as on Earth.
 const props = defineProps({
   town: { type: Object, required: true },
+  presentation: Object,
   active: { type: Boolean, default: true },
   paused: { type: Boolean, default: false },
   reducedMotion: { type: Boolean, default: false },
 });
-const emit = defineEmits(['inspect', 'close']);
+const emit = defineEmits(['inspect', 'close', 'presentation-ready', 'presentation-unavailable']);
 const canvas = ref(null);
 const unavailable = ref(false);
 // Replaced whole on camera frames that move a label, so it needs no deep reactivity.
 const labels = shallowRef([]);
+let PresentationCamera = null;
+let presentationCamera = null;
+let presentationTime = 0;
+function syncPresentation() {
+  presentationCamera?.dispose();
+  presentationCamera = null;
+  if (!props.presentation) return;
+  if (!scene && !unavailable.value) return;
+  if (scene) {
+    presentationCamera = new PresentationCamera(scene, props.presentation);
+    presentationCamera.frame(presentationTime, props.reducedMotion);
+  } else emit('presentation-unavailable');
+  emit('presentation-ready');
+}
+watch(
+  () => props.presentation,
+  () => {
+    presentationTime = 0;
+    syncPresentation();
+  },
+);
 let scene = null,
   disposed = false;
 
@@ -156,7 +183,11 @@ function updateMotion() {
 }
 async function start() {
   try {
-    const { MoonScene } = await import('../../game/town/moon/MoonScene');
+    const [{ MoonScene }, { MoonPresentation }] = await Promise.all([
+      import('../../game/town/moon/MoonScene'),
+      import('../../game/town/moon/MoonPresentation'),
+    ]);
+    PresentationCamera = MoonPresentation;
     if (disposed || !canvas.value) return;
     scene = new MoonScene(canvas.value, {
       reducedMotion: props.reducedMotion,
@@ -165,10 +196,12 @@ async function start() {
       onEarth: () => emit('close'),
     });
     scene.update(props.town);
+    syncPresentation();
     updateMotion();
   } catch (error) {
     console.error(error);
     unavailable.value = true;
+    syncPresentation();
   }
 }
 // The Moon scene draws only building levels: watching the whole town deeply would
@@ -192,8 +225,15 @@ onMounted(() => {
 onBeforeUnmount(() => {
   disposed = true;
   document.removeEventListener('visibilitychange', updateMotion);
+  presentationCamera?.dispose();
   scene?.dispose();
   scene = null;
 });
-defineExpose({ resetView: () => scene?.resetView() });
+defineExpose({
+  resetView: () => scene?.resetView(),
+  presentationFrame(time) {
+    presentationTime = time;
+    presentationCamera?.frame(time, props.reducedMotion);
+  },
+});
 </script>

@@ -1,3 +1,4 @@
+import { TOWN_PRESENTATIONS } from '../src/data/townPresentations';
 import { LANDMARK_OPTIONS, PERSONAL_AREAS } from '../src/data/townLandmarks';
 import { CREST_EMBLEMS } from '../src/data/townCrests';
 import { CITY_DESCRIPTIONS } from '../src/data/city';
@@ -94,6 +95,16 @@ describe('One browser language across the game and town', () => {
       ...CHEST_DROPS.map((drop) => drop.label),
       ...Object.values(FUSION_STYLES).flatMap((style) => [style.label, style.detail]),
       ...incidentMessages(),
+      ...Object.values(TOWN_PRESENTATIONS).flatMap((definition) => [
+        definition.title,
+        ...definition.chapters.map((chapter) => chapter.text),
+      ]),
+      'Something is happening on the Moon',
+      'Something is happening in the valley',
+      'Moon event waiting',
+      'Valley event waiting',
+      'Watch',
+      'Later',
     ];
     for (const building of BUILDINGS)
       messages.push(

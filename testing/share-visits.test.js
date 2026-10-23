@@ -199,6 +199,21 @@ describe('the guest VIP arrival', () => {
     expect(d.onGuestVip).toHaveBeenCalledOnce();
   });
 
+  it('holds the saved guest while Moon view stops valley motion, then arrives exactly once', () => {
+    const d = guestScene({ name: 'Red Rock', at: 5, seen: false });
+    d.motionEnabled = false;
+    d.vipArrivals.attach(d.town);
+    d.vipArrivals.update();
+    expect(guestActor(d).started).toBeUndefined();
+    expect(d.town.guestVip.seen).toBe(false);
+    expect(d.onGuestVip).not.toHaveBeenCalled();
+    d.motionEnabled = true;
+    d.vipArrivals.update();
+    d.vipArrivals.update();
+    expect(guestActor(d).started).toBe(0);
+    expect(d.onGuestVip).toHaveBeenCalledExactlyOnceWith(5);
+  });
+
   it('keeps walking when the save marks them seen, and does not return on later connections', () => {
     const d = guestScene({ name: 'Red Rock', at: 5, seen: false });
     d.vipArrivals.attach(d.town);

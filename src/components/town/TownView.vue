@@ -5,16 +5,16 @@
         ref="mapFrame"
         class="town-map-frame"
         :class="{
-          'town-has-raid': activeRaid,
+          'town-has-raid': playingRaid,
           'town-fullscreen': fullscreen,
           'town-labels-hidden': !settings.showVillageLabels,
-          'town-in-cinematic': town.transition?.pending || openingPresentation,
+          'town-in-cinematic': eraPlaying || openingPresentation,
         }"
       >
-        <div v-if="!activeRaid" class="town-map-corner">
+        <div v-if="!playingRaid" class="town-map-corner">
           <SaveStatusPill v-if="cloudAccount" />
         </div>
-        <div v-if="!activeRaid" class="town-map-status" :aria-label="t('Town savings')">
+        <div v-if="!playingRaid" class="town-map-status" :aria-label="t('Town savings')">
           <TownIcon name="coin" /><strong>{{ number(town.coins) }}</strong>
           <template v-if="campaign.builderHammers > 0">
             <i aria-hidden="true"></i
@@ -31,7 +31,7 @@
           </template>
         </div>
         <button
-          v-if="projectGoal && !activeRaid"
+          v-if="projectGoal && !playingRaid"
           class="town-project-goal"
           :aria-label="
             t('{project}: {count}/{total}. Finish it for a builder hammer.', {
@@ -50,17 +50,17 @@
           <b>{{ projectGoal.done }}/{{ projectGoal.total }}</b>
         </button>
         <p
-          v-if="(campaign.saveWarning || campaign.inventoryNotice) && !activeRaid"
+          v-if="(campaign.saveWarning || campaign.inventoryNotice) && !playingRaid"
           role="status"
           class="town-map-notice"
         >
           {{ t(campaign.saveWarning || campaign.inventoryNotice) }}
         </p>
-        <div v-if="activeRaid" class="town-raid-banner" role="status" aria-live="polite">
+        <div v-if="playingRaid" class="town-raid-banner" role="status" aria-live="polite">
           <span class="town-kicker"
-            >{{ t(eventHeading(activeRaid))
-            }}<template v-if="eventKind(activeRaid) === 'bandits'">
-              · {{ t('{count} riders', { count: activeRaid.gangSize }) }}</template
+            >{{ t(eventHeading(playingRaid))
+            }}<template v-if="eventKind(playingRaid) === 'bandits'">
+              · {{ t('{count} riders', { count: playingRaid.gangSize }) }}</template
             ></span
           >
           <strong>{{ t(raidPhase) }}</strong>
@@ -70,14 +70,14 @@
               t(
                 raidPhase === 'The raid has passed'
                   ? banditStory.text
-                  : eventKind(activeRaid) === 'bandits'
+                  : eventKind(playingRaid) === 'bandits'
                     ? 'A little trouble on the trail. Your buildings and last 50 coins are safe.'
                     : 'Watch the town respond, or skip to the saved outcome.',
               )
             }}
           </p>
-          <p v-if="activeRaid.bellRung" class="town-bell-feedback">
-            {{ t('Bell rung · remaining loss: {coins} coins', { coins: activeRaid.loss }) }}
+          <p v-if="playingRaid.bellRung" class="town-bell-feedback">
+            {{ t('Bell rung · remaining loss: {coins} coins', { coins: playingRaid.loss }) }}
           </p>
           <div v-if="readyRaidDefenses.length || canRingTownBell(town)" class="town-raid-defenses">
             <button
@@ -101,6 +101,12 @@
             </button>
           </div>
         </div>
+        <TownSettlementNotice
+          v-if="active && waitingEvent"
+          :key="waitingEvent.key"
+          :destination="waitingEvent.settlement"
+          @watch="watchWaitingEvent"
+        />
         <TownVisitorNotice
           :notice="visitorNotice"
           @dismiss="dismissVisitorNotice"
@@ -108,11 +114,12 @@
         />
         <TownScene
           ref="townScene"
+          @settlement-change="settlement = $event"
           :active="active"
           :town="sceneTown"
           :live-visitors="liveVisitors"
           :live-visitor-town-id="visitorTownId"
-          :cinematic="!!town.transition?.pending"
+          :cinematic="eraPlaying"
           @cinematic-ready="eraReady = true"
           @cinematic-unavailable="eraFallback = true"
           :presentation="openingPresentation"
@@ -135,10 +142,10 @@
             tourOpen
           "
           :next-level="campaign.nextLevel"
-          :raid="activeRaid"
+          :raid="playingRaid"
           :raid-defense-ids="readyRaidDefenses"
           :construction="construction"
-          :need-chips="needs.demand && !activeRaid ? needChips : []"
+          :need-chips="needs.demand && !playingRaid ? needChips : []"
           @select="selectBuilding"
           @inspect="inspectBuilding"
           @mine="goMining"
@@ -192,7 +199,7 @@
           @close="raidNotice = null"
         />
         <TownTabBar
-          v-if="!activeRaid && !town.transition?.pending && !openingPresentation"
+          v-if="!playingRaid && !eraPlaying && !openingPresentation"
           :current="currentTab"
           :build-count="directoryPlots.length"
           :build-nudge="buildNudge"
@@ -302,7 +309,7 @@
             <button
               v-if="event"
               class="town-secondary"
-              :disabled="!!activeRaid"
+              :disabled="!!playingRaid"
               @click="replayRaid"
             >
               {{ t('Watch the last event again') }}
@@ -618,7 +625,7 @@
       @complete="completePresentation"
     />
     <TownEraCinematic
-      v-if="active && town.transition?.pending"
+      v-if="eraPlaying"
       :era-id="town.era"
       :ready="eraReady"
       :paused="paused || settings.isSettingsOpen || mineEntryPending"
@@ -632,6 +639,9 @@
   </main>
 </template>
 <script setup>
+import TownSettlementNotice from './TownSettlementNotice.vue';
+import { townEventStage } from '../../game/town/TownEventSettlement';
+import { TOWN_PRESENTATIONS } from '../../data/townPresentations';
 import TownPersonalise from './TownPersonalise.vue';
 import TownMonumentSite from './TownMonumentSite.vue';
 import {
@@ -888,6 +898,7 @@ const buildList = computed(() => {
     : directoryPlots.value;
 });
 const townScene = ref(null);
+const settlement = ref('valley');
 const eraRevealed = ref(false);
 const eraReady = ref(false);
 const eraFallback = ref(false);
@@ -1198,6 +1209,7 @@ function closeMuseum() {
 const firstLightsOpen = computed(
   () =>
     props.active &&
+    settlement.value === 'valley' &&
     town.value.era === 'industrial' &&
     town.value.buildings.powerHouse > 0 &&
     !town.value.firstLightsSeen &&
@@ -1221,11 +1233,36 @@ const activeRaid = ref(null),
   raidPhase = ref('Riders on the ridge');
 const presentationReady = ref(false);
 const presentationFallback = ref(false);
-const openingPresentation = computed(() =>
-  !activeRaid.value && !town.value.transition?.pending
-    ? (monumentShow.value?.definition ?? pendingPresentation(town.value))
-    : null,
+// Selecting a presentation never consumes its saved receipt or applies rewards.
+const eventStage = computed(() =>
+  townEventStage({
+    town: town.value,
+    settlement: settlement.value,
+    active: props.active,
+    raid: activeRaid.value,
+    monument: monumentShow.value?.definition,
+    definitions: TOWN_PRESENTATIONS,
+    attention: [
+      town.value.guestVip && !town.value.guestVip.seen
+        ? { id: `guest-${town.value.guestVip.at}` }
+        : null,
+      town.value.era === 'industrial' &&
+      town.value.buildings.powerHouse > 0 &&
+      !town.value.firstLightsSeen
+        ? { id: 'first-lights' }
+        : null,
+    ],
+  }),
 );
+const eraPlaying = computed(() => eventStage.value.era);
+const playingRaid = computed(() => eventStage.value.raid);
+const openingPresentation = computed(() => eventStage.value.presentation);
+const waitingEvent = computed(() => eventStage.value.waiting);
+function watchWaitingEvent() {
+  if (waitingEvent.value?.settlement === 'moon') townScene.value?.openMoon();
+  else townScene.value?.closeMoon();
+}
+
 watch(
   openingPresentation,
   (definition) => {
@@ -1240,7 +1277,7 @@ watch(
   { immediate: true },
 );
 function completePresentation() {
-  if (monumentShow.value) monumentShow.value = null;
+  if (openingPresentation.value === monumentShow.value?.definition) monumentShow.value = null;
   else if (openingPresentation.value)
     campaign.acknowledgePresentation(openingPresentation.value.id);
 }
@@ -1256,7 +1293,8 @@ const { playRaidCue } = useTownAudio(() => ({
       return work && !work.ready;
     }),
   // A monument's unveiling replaces the village music with its own fanfare.
-  fanfare: monumentShow.value?.serial ?? null,
+  fanfare:
+    openingPresentation.value?.id === 'monument-unveiling' ? monumentShow.value?.serial : null,
   // Builds from the build list swap silently.
   buildCue: construction.value?.instant ? null : construction.value?.serial,
   stable: town.value.buildings.stable > 0 && !motorTraffic(town.value),
@@ -1264,10 +1302,10 @@ const { playRaidCue } = useTownAudio(() => ({
   railDepot: town.value.buildings.railDepot > 0 && !modernTransport(town.value, 'railDepot'),
   riverPort: town.value.buildings.riverPort > 0 && !modernTransport(town.value, 'riverPort'),
   // Every incident kind ducks the music and gets its own recorded cues.
-  raid: activeRaid.value ? `${activeRaid.value.id}-${raidPhase.value}` : null,
-  raidKind: activeRaid.value ? eventKind(activeRaid.value) : null,
+  raid: playingRaid.value ? `${playingRaid.value.id}-${raidPhase.value}` : null,
+  raidKind: playingRaid.value ? eventKind(playingRaid.value) : null,
   // Village panels pause the diorama, but its music and ambience keep playing.
-  paused: !props.active || paused.value || !!town.value.transition?.pending,
+  paused: !props.active || paused.value || eraPlaying.value || settlement.value === 'moon',
 }));
 const event = computed(() => town.value.events[BANDIT_EVENT]);
 const readyRaidDefenses = computed(() =>
@@ -1314,6 +1352,7 @@ const coaching = computed(
   () =>
     props.active &&
     !!tutorial.value &&
+    settlement.value === 'valley' &&
     !activeRaid.value &&
     !town.value.transition?.pending &&
     !openingPresentation.value &&

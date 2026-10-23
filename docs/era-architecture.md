@@ -306,6 +306,27 @@ does not implement that deferred event runtime.
 
 ### Building completion presentations
 
+`TownEventSettlement.js` is the shared visibility contract. Definitions declare
+`settlement: 'moon'` or inherit it from their `building`; everything else belongs
+to the valley. `townEventStage()` selects only events belonging to the visible
+settlement, gives era construction precedence over incidents and presentations,
+and never consumes a receipt. An inactive town (including an active puzzle) has
+no presentation stage. The other settlement gets a small Watch / Later notice:
+Watch changes settlement, Later collapses the reminder. Merely waiting never
+acknowledges, rerolls, pays or changes an event outcome. Existing pending/seen
+receipts remain the persistence boundary; interrupted scenes resume as before.
+
+Moon buildings share generated first-completion definitions from `MOON_BUILDINGS`
+and the existing construction receipt transaction. `MoonPresentation` owns only a
+camera interpolation to the lot and camera restoration; the common cinematic
+supplies captions, skip, reduced motion and acknowledgement. `TownScene` routes
+frames to one settlement camera. The valley stays stopped while the Moon is open;
+there is no second valley scene or inset. Railway openings, era mine construction,
+raids/incidents, monument unveilings and campaign celebrations stay in the valley.
+First Lights also waits there. A saved guest VIP remains unseen until valley
+motion resumes; ambient scheduled transport arrivals retain their existing
+missed-arrival behavior, without a new saved reward or queue.
+
 `data/townPresentations.js` defines completion scenes and their saved receipts.
 The campaign store queues a receipt in the same transaction as first construction
 or a builder hammer completion; upgrades and old completed saves do not queue it.

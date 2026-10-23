@@ -225,6 +225,9 @@
       v-if="moonOpen"
       ref="moonView"
       :town="town"
+      :presentation="moonPresentation"
+      @presentation-ready="emit('presentation-ready')"
+      @presentation-unavailable="emit('presentation-unavailable')"
       :active="active"
       :paused="paused"
       :reduced-motion="reducedMotion"
@@ -234,6 +237,7 @@
   </div>
 </template>
 <script setup>
+import { eventSettlement } from '../../game/town/TownEventSettlement';
 import { ERAS } from '../../data/eras';
 import { loadFootprints } from '../../game/town/FootprintCatalog';
 import { loadFamilies, requiredFamilies } from '../../game/town/assets/MeshCatalog';
@@ -321,14 +325,29 @@ const moonLabel = computed(() =>
 // The Moon map opens over the valley once the town can build there; before that
 // the chip shows the space elevator. The valley rests while the Moon is open.
 const moonOpen = ref(false);
+const moonView = ref(null);
+const moonPresentation = computed(() =>
+  eventSettlement(props.presentation) === 'moon' ? props.presentation : null,
+);
+const valleyPresentation = computed(() =>
+  eventSettlement(props.presentation) === 'valley' ? props.presentation : null,
+);
 function openMoon() {
+  if (props.raid || props.cinematic || valleyPresentation.value) return;
   if (!moonReachable.value) return emit('inspect', 'spaceElevator');
   moonOpen.value = true;
 }
 function closeMoon() {
   moonOpen.value = false;
 }
-watch(moonOpen, () => scene?.setMotion(motionEnabled()));
+watch(
+  moonOpen,
+  (open) => {
+    emit('settlement-change', open ? 'moon' : 'valley');
+    scene?.setMotion(motionEnabled());
+  },
+  { flush: 'sync' },
+);
 watch(moonReachable, (reachable) => {
   if (!reachable) moonOpen.value = false;
 });
@@ -366,6 +385,7 @@ const emit = defineEmits([
   'visit',
   'inspect',
   'mine',
+  'settlement-change',
   'raid-phase',
   'raid-cue',
   'raid-complete',
@@ -489,7 +509,8 @@ defineExpose({
   },
   presentationFrame: (time) => {
     presentationTime = time;
-    scene?.presentationFrame(time, props.reducedMotion);
+    if (moonPresentation.value) moonView.value?.presentationFrame(time);
+    else scene?.presentationFrame(time, props.reducedMotion);
   },
 });
 let lastVisual = '';
@@ -592,8 +613,10 @@ async function update() {
   if (unavailable.value) {
     emit('cinematic-unavailable');
     emit('cinematic-ready');
-    emit('presentation-unavailable');
-    emit('presentation-ready');
+    if (!moonPresentation.value) {
+      emit('presentation-unavailable');
+      emit('presentation-ready');
+    }
     return;
   }
   if (!scene || !props.active) return;
@@ -651,8 +674,8 @@ async function update() {
   // town only changes while they are in the mine.
   scene.animateCostumes = props.readOnly && !props.reducedMotion;
   dressSpaceHelmet(scene, props.town, { animate: scene.animateCostumes });
-  scene.setPresentation(props.presentation);
-  if (props.presentation) {
+  scene.setPresentation(valleyPresentation.value);
+  if (valleyPresentation.value) {
     scene.presentationFrame(presentationTime, props.reducedMotion);
     emit('presentation-ready');
   }
@@ -706,8 +729,10 @@ function showUnavailable(error) {
   unavailable.value = true;
   emit('cinematic-unavailable');
   emit('cinematic-ready');
-  emit('presentation-unavailable');
-  emit('presentation-ready');
+  if (!moonPresentation.value) {
+    emit('presentation-unavailable');
+    emit('presentation-ready');
+  }
   // Let an in-progress render finish unwinding before releasing its resources.
   nextTick(() => {
     scene?.dispose();
