@@ -45,6 +45,7 @@
         :transform="`translate(${lot.x} ${lot.y}) scale(.07)`"
       >
         <TownMoonBuilding :kind="lot.id" :level="town.buildings[lot.id] ?? 0" />
+        <TownMoonConstruction v-if="town.projects?.[lot.id]" :project="town.projects[lot.id]" />
       </g>
     </svg>
     <div
@@ -58,12 +59,41 @@
         :key="lot.id"
         type="button"
         class="town-moon-lot"
-        :class="{ built: !!town.buildings[lot.id], open: status(lot.id) === 'open' }"
+        :class="{
+          built: !!town.buildings[lot.id],
+          open: availableIds.includes(lot.id),
+          'is-ready': indicators[lot.id] === 'ready',
+          'is-working': !!town.projects?.[lot.id],
+        }"
         :style="{ left: `${lot.x}%`, top: `${lot.y}%` }"
-        @click="emit('inspect', lot.id)"
+        @click="choose(lot.id)"
       >
         <strong>{{ t(BUILDING_BY_ID[lot.id].shortName) }}</strong>
-        <small>{{ statusLabel(lot.id) }}</small>
+        <small>{{
+          buildingStatusLabel(town, lot.id, indicators[lot.id], availableIds.includes(lot.id))
+        }}</small>
+        <span v-if="indicators[lot.id] === 'upgrade'" class="moon-upgrade-hint" aria-hidden="true"
+          >↑</span
+        >
+      </button>
+    </div>
+    <div class="town-moon-actions" role="group" :aria-label="t('Village buildings')">
+      <button
+        v-for="lot in actionLots"
+        :key="lot.id"
+        type="button"
+        class="town-action-icon town-moon-action"
+        :class="TOWN_ACTIONS[indicators[lot.id]].class"
+        :data-moon-action="lot.id"
+        :style="{
+          left: `${lot.x}%`,
+          top: `${lot.y}%`,
+          '--action-scale': TOWN_ACTIONS[indicators[lot.id]].scale,
+        }"
+        :aria-label="buildingActionLabel(town, lot.id, indicators[lot.id])"
+        @click="choose(lot.id)"
+      >
+        <img :src="TOWN_ACTIONS[indicators[lot.id]].icon" alt="" />
       </button>
     </div>
     <header class="town-moon-header">
@@ -98,9 +128,11 @@ import {
   moonSettlement,
   moonstoneKeepsakes,
 } from '../../data/moonSettlement';
-import { plotUnlocked } from '../../game/town/TownRules';
+import { buildingStatusLabel } from '../../game/town/TownBuildingFeedback';
+import { TOWN_ACTIONS, buildingActionLabel } from '../../data/townIndicators';
 import TownMoon from './TownMoon.vue';
 import TownMoonBuilding from './TownMoonBuilding.vue';
+import TownMoonConstruction from './TownMoonConstruction.vue';
 import { t } from '../../i18n';
 
 // New Hollow, the town's settlement on the Moon. Its own small 3D scene sits over
@@ -112,8 +144,17 @@ const props = defineProps({
   active: { type: Boolean, default: true },
   paused: { type: Boolean, default: false },
   reducedMotion: { type: Boolean, default: false },
+  indicators: { type: Object, default: () => ({}) },
+  availableIds: { type: Array, default: () => [] },
+  readOnly: Boolean,
 });
-const emit = defineEmits(['inspect', 'close', 'presentation-ready', 'presentation-unavailable']);
+const emit = defineEmits([
+  'select',
+  'inspect',
+  'close',
+  'presentation-ready',
+  'presentation-unavailable',
+]);
 const canvas = ref(null);
 const unavailable = ref(false);
 // Replaced whole on camera frames that move a label, so it needs no deep reactivity.
@@ -164,19 +205,14 @@ const shownLots = computed(() =>
       }))
     : labels.value.filter((lot) => lot.visible),
 );
-function status(id) {
-  if (props.town.projects?.[id]) return 'work';
-  if (props.town.buildings?.[id]) return 'built';
-  return plotUnlocked(props.town, id) ? 'open' : 'later';
-}
-function statusLabel(id) {
-  return {
-    work: t('Under construction'),
-    built: t('Lv. {level}', { level: props.town.buildings[id] }),
-    open: t('Build'),
-    later: t('Coming soon'),
-  }[status(id)];
-}
+const actionLots = computed(() =>
+  shownLots.value.filter((lot) => TOWN_ACTIONS[props.indicators[lot.id]]),
+);
+const choose = (id) => emit(props.readOnly ? 'inspect' : 'select', id);
+const updateAvailable = () =>
+  scene?.setAvailable(
+    Object.keys(props.indicators).filter((id) => props.indicators[id] === 'upgrade'),
+  );
 
 function updateMotion() {
   scene?.setMotion(props.active && !props.paused && !document.hidden);
@@ -196,6 +232,7 @@ async function start() {
       onEarth: () => emit('close'),
     });
     scene.update(props.town);
+    updateAvailable();
     syncPresentation();
     updateMotion();
   } catch (error) {
@@ -204,19 +241,22 @@ async function start() {
     syncPresentation();
   }
 }
-// The Moon scene draws only building levels: watching the whole town deeply would
-// walk its honours and every other field on each change.
+// Watch only visual lifecycle fields; honours and the rest of the town stay out.
 watch(
-  () => props.town.buildings,
+  () => [
+    props.town.buildings,
+    props.town.projects,
+    props.town.buildingEras,
+    props.town.buildingEraLevels,
+  ],
   () => scene?.update(props.town),
   { deep: true },
 );
+watch(() => props.indicators, updateAvailable);
 watch(() => [props.active, props.paused], updateMotion);
 watch(
   () => props.reducedMotion,
-  (value) => {
-    if (scene) scene.reducedMotion = value;
-  },
+  (value) => scene?.setReducedMotion(value),
 );
 onMounted(() => {
   document.addEventListener('visibilitychange', updateMotion);
@@ -235,5 +275,46 @@ defineExpose({
     presentationTime = time;
     presentationCamera?.frame(time, props.reducedMotion);
   },
+  collectionOrigin: (id) => {
+    const lot = shownLots.value.find((lot) => lot.id === id);
+    return { x: lot?.x ?? 50, y: lot?.y ?? 50 };
+  },
 });
 </script>
+<style scoped>
+.town-moon-actions {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.town-moon-action {
+  margin-top: -76px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #142f48db 35%, #61d6ec55 60%, transparent 72%);
+}
+.town-moon-action img {
+  filter: drop-shadow(0 0 5px #bcecff);
+}
+.town-moon-lot.is-working {
+  border-color: #83c5dc;
+  background: #172d43ed;
+  color: #edf9ff;
+}
+.town-moon-lot.is-working small {
+  color: #b5e4ef;
+}
+.town-moon-lot.is-ready {
+  border-color: #f5d885;
+}
+.moon-upgrade-hint {
+  position: absolute;
+  right: -10px;
+  top: -12px;
+  border-radius: 50%;
+  background: #c0ffbc;
+  color: #204e42;
+  font-size: 20px;
+  font-weight: 900;
+  width: 24px;
+}
+</style>

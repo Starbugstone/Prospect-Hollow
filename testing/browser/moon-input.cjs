@@ -6,8 +6,11 @@ const fixture = `<!doctype html><html><head><link rel="stylesheet" href="/src/st
 import {createApp,h} from '/node_modules/.vite/deps/vue.js';
 import Moon from '/src/components/town/TownMoonView.vue';
 import {MOON_LOTS} from '/src/data/moonSettlement.js';
+import {createTown} from '/src/data/town.js';
+const town=createTown();town.era='twin-hollows';
+Object.assign(town.buildings,{spaceElevator:1,...Object.fromEntries(Object.keys(MOON_LOTS).map(id=>[id,1]))});
 window.events={inspect:[],close:0,valley:0};
-window.app=createApp({render(){return h('div',{style:'position:relative;width:100%;height:100%',onPointerdown(){window.events.valley++}},[h(Moon,{reducedMotion:true,town:{era:'moonward',buildings:{spaceElevator:1,...Object.fromEntries(Object.keys(MOON_LOTS).map(id=>[id,1]))},projects:{}},onInspect(id){window.events.inspect.push(id)},onClose(){window.events.close++}})])}});
+window.app=createApp({render(){return h('div',{style:'position:relative;width:100%;height:100%',onPointerdown(){window.events.valley++}},[h(Moon,{reducedMotion:true,town,onSelect(id){window.events.inspect.push(id)},onClose(){window.events.close++}})])}});
 app.mount('#fixture');
 window.getScene=()=>app._instance.subTree.children[0].component.setupState.scene;
 </script></body></html>`;
@@ -55,8 +58,15 @@ window.getScene=()=>app._instance.subTree.children[0].component.setupState.scene
       assert.equal(await page.evaluate(() => window.events.close), 1);
       const letters = page.locator('summary');
       await activate(letters);
+      // Opening the bottom-anchored panel moves its summary. Let layout settle
+      // before the second pointer activation, particularly under software WebGL.
+      await page.waitForFunction(() => document.querySelector('details').open);
+      await letters.evaluate(
+        () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+      );
       assert.equal(await page.locator('details').evaluate((element) => element.open), true);
       await activate(letters);
+      await page.waitForFunction(() => !document.querySelector('details').open);
       assert.equal(await page.locator('details').evaluate((element) => element.open), false);
       await lot.focus();
       await page.keyboard.press('Enter');

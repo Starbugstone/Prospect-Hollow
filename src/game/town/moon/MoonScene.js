@@ -3,6 +3,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TownPrimitives } from '../TownPrimitives';
 import { TownFramePacer } from '../TownFramePacer';
 import { TownRenderQuality } from '../TownRenderQuality';
+import { TownUpgradeGlow } from '../TownUpgradeGlow';
+import { MoonConstruction } from './MoonConstruction';
 import { renderMoonBuilding } from '../buildings/moon';
 import { MOON_PALETTE as p } from '../../../data/futureArchitecture';
 import {
@@ -465,6 +467,16 @@ export class MoonScene {
     surface.addEventListener('pointercancel', this.onPointerCancel);
     surface.addEventListener('lostpointercapture', this.onPointerCancel);
     this.elapsed = 0;
+    this.construction = new MoonConstruction(this);
+    this.upgradeGlow = new TownUpgradeGlow(this.scene);
+    for (const [id, [x, z]] of Object.entries(MOON_LOTS))
+      this.upgradeGlow.add(
+        id,
+        new THREE.Box3(
+          new THREE.Vector3(x - 3.5, 0, z - 3.5),
+          new THREE.Vector3(x + 3.5, 4, z + 3.5),
+        ),
+      );
     this.signature = '';
     this.pacer = new TownFramePacer();
     this.tick = this.tick.bind(this);
@@ -474,6 +486,10 @@ export class MoonScene {
   }
   /** Rebuild the lots when the town's Moon buildings change. */
   update(town) {
+    // Projects can advance without a building level changing. Their sites own
+    // their geometry and update independently of the merged settlement mesh.
+    this.construction.sync(town);
+    this.requestFrame();
     const levels = this.lots.map(({ id }) => town?.buildings?.[id] ?? 0);
     const signature = levels.join();
     if (signature === this.signature) return;
@@ -530,6 +546,7 @@ export class MoonScene {
     this.move(this.elapsed);
   }
   move(time) {
+    this.construction.update(time, this.reducedMotion);
     for (const w of this.walkers ?? []) {
       const a = w.phase + w.dir * time * w.speed;
       const offset = w.vehicle ? 0.3 : -0.4 + (w.dir > 0 ? 0 : 0.8);
@@ -569,6 +586,14 @@ export class MoonScene {
     this.pacer.reset();
     this.renderer.setAnimationLoop(enabled ? this.tick : null);
     if (!enabled) this.requestFrame();
+  }
+  setAvailable(ids) {
+    if (this.upgradeGlow.setAvailable(ids)) this.requestFrame();
+  }
+  setReducedMotion(value) {
+    this.reducedMotion = value;
+    this.construction.update(this.elapsed, value);
+    this.requestFrame();
   }
   // Paced like the valley: a fast display does not draw more than 60 frames a second.
   tick(now) {
@@ -654,6 +679,8 @@ export class MoonScene {
     this.surface.removeEventListener('pointercancel', this.onPointerCancel);
     this.surface.removeEventListener('lostpointercapture', this.onPointerCancel);
     this.controls.dispose();
+    this.construction.dispose();
+    this.upgradeGlow.dispose();
     // Shared primitives are released once below; everything else is owned here.
     const shared = new Set(Object.values(this.d.geometries)),
       geometries = new Set(),

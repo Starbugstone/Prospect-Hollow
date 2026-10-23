@@ -47,6 +47,7 @@ import { twinKit } from '../src/game/town/buildings/future/twin';
 import { townTracks, plotStreet } from '../src/game/town/TownLayout';
 import TownBuilding from '../src/components/town/TownBuilding.vue';
 import { MoonScene } from '../src/game/town/moon/MoonScene';
+import { MoonConstruction } from '../src/game/town/moon/MoonConstruction';
 import { TownFramePacer } from '../src/game/town/TownFramePacer';
 import { TownPrimitives } from '../src/game/town/TownPrimitives';
 import { TownStatics } from '../src/game/town/TownStatics';
@@ -620,6 +621,7 @@ describe('New Hollow on the Moon', () => {
       elapsed: 0,
       pacer: new TownFramePacer(),
     });
+    moon.construction = new MoonConstruction(moon);
     moon.tick = moon.tick.bind(moon);
     const run = (from, seconds, hz = 120) => {
       for (let n = 0; n < seconds * hz; n++) moon.tick(from + (n * 1000) / hz);
@@ -646,6 +648,7 @@ describe('New Hollow on the Moon', () => {
     frames.splice(0).forEach((draw) => draw());
     expect(moon.renderer.render).toHaveBeenCalledOnce();
     moon.streak?.material.dispose();
+    moon.construction.dispose();
     moon.d.disposePrimitives();
     vi.unstubAllGlobals();
   });
