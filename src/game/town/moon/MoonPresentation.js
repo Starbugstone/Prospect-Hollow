@@ -6,6 +6,7 @@ import { MOON_LOTS } from '../../../data/moonSettlement';
 export class MoonPresentation {
   constructor(scene, definition) {
     this.scene = scene;
+    this.definition = definition;
     this.eye = scene.camera.position.clone();
     this.target = scene.controls.target.clone();
     this.enabled = scene.controls.enabled;

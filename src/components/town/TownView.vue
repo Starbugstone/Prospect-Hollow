@@ -398,7 +398,7 @@
           <p class="town-directory-hint">
             {{
               t(
-                'Each era opens one monument site. Choose its monument whenever you like: the choice is permanent, and monuments never affect era progress.',
+                'Monument sites open as the town grows. Choose each monument whenever you like: the choice is permanent, and monuments never affect era progress.',
               )
             }}
           </p>

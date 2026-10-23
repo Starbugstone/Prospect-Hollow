@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { Box3, Group, MeshBasicMaterial, Scene, Vector3 } from 'three';
 import { createTown } from '../src/data/town';
 import { ERAS, eraEvolution } from '../src/data/eras';
-import { PERSONAL_AREAS, areaUnlocked } from '../src/data/townLandmarks';
+import { areasForSettlement, areaUnlocked } from '../src/data/townLandmarks';
 import {
   EXTERIOR_HABITATS,
   MONUMENT_WILDLIFE,
@@ -57,7 +57,9 @@ describe('Wildlife across the growing town', () => {
       const wild = cast.filter((a) => a.wild),
         neighbors = cast.filter((a) => !a.wild);
       expect(wild.map((a) => a.area.id)).toEqual(
-        PERSONAL_AREAS.filter((a) => areaUnlocked(town, a)).map((a) => a.id),
+        areasForSettlement()
+          .filter((a) => areaUnlocked(town, a))
+          .map((a) => a.id),
       );
       expect(neighbors).toHaveLength(fauna.companions?.mode === 'street' ? 2 : 0);
       expect(neighbors.every((a) => TOWN_ANIMALS[a.species].resident)).toBe(true);
@@ -79,7 +81,7 @@ describe('Wildlife across the growing town', () => {
     (built) => {
       const d = fixture();
       if (built) {
-        for (const area of PERSONAL_AREAS) {
+        for (const area of areasForSettlement()) {
           d.town.personalisation.areas[area.id] = [area.choices[0]];
           d.town.personalisation.areaLevels[area.id] = 5;
         }

@@ -5,7 +5,7 @@ import {
   purchaseLandmark,
 } from './townLandmarks';
 import { CREST_PATTERNS, CREST_SHAPES } from './townCrests';
-export { PERSONAL_AREAS, areaStage, areaUnlocked } from './townLandmarks';
+export { PERSONAL_AREAS, areasForSettlement, areaStage, areaUnlocked } from './townLandmarks';
 export { CREST_PATTERNS, CREST_SHAPES } from './townCrests';
 
 export const DEFAULT_EMBLEM_COLOUR = '#393c43';

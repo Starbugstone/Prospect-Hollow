@@ -47,6 +47,14 @@
         <TownMoonBuilding :kind="lot.id" :level="town.buildings[lot.id] ?? 0" />
         <TownMoonConstruction v-if="town.projects?.[lot.id]" :project="town.projects[lot.id]" />
       </g>
+      <g
+        v-for="site in mapMonuments"
+        :key="site.id"
+        :data-moon-monument="site.id"
+        :transform="`translate(${site.x} ${site.y})`"
+      >
+        <TownMoonMonument :site="site" />
+      </g>
     </svg>
     <div
       v-show="!props.presentation"
@@ -60,17 +68,19 @@
         type="button"
         class="town-moon-lot"
         :class="{
-          built: !!town.buildings[lot.id],
-          open: availableIds.includes(lot.id),
-          'is-ready': indicators[lot.id] === 'ready',
-          'is-working': !!town.projects?.[lot.id],
+          built: !!(town.buildings[lot.id] || monumentChoice(lot.id)),
+          open: AREA_BY_ID[lot.id] ? status(lot.id) === 'open' : availableIds.includes(lot.id),
+          'is-ready': indicators[lot.id] === 'ready' || status(lot.id) === 'ready',
+          'is-working': !!town.projects?.[lot.id] || status(lot.id) === 'work',
         }"
         :style="{ left: `${lot.x}%`, top: `${lot.y}%` }"
         @click="choose(lot.id)"
       >
-        <strong>{{ t(BUILDING_BY_ID[lot.id].shortName) }}</strong>
+        <strong>{{ t(AREA_BY_ID[lot.id]?.label ?? BUILDING_BY_ID[lot.id].shortName) }}</strong>
         <small>{{
-          buildingStatusLabel(town, lot.id, indicators[lot.id], availableIds.includes(lot.id))
+          AREA_BY_ID[lot.id]
+            ? statusLabel(lot.id)
+            : buildingStatusLabel(town, lot.id, indicators[lot.id], availableIds.includes(lot.id))
         }}</small>
         <span v-if="indicators[lot.id] === 'upgrade'" class="moon-upgrade-hint" aria-hidden="true"
           >↑</span
@@ -130,6 +140,16 @@ import {
 } from '../../data/moonSettlement';
 import { buildingStatusLabel } from '../../game/town/TownBuildingFeedback';
 import { TOWN_ACTIONS, buildingActionLabel } from '../../data/townIndicators';
+import {
+  AREA_BY_ID,
+  areaChoice,
+  areaShownStage,
+  areaUnlocked,
+  areasForSettlement,
+  monumentWork,
+} from '../../data/townLandmarks';
+import TownMoonMonument from './TownMoonMonument.vue';
+import { plotUnlocked } from '../../game/town/TownRules';
 import TownMoon from './TownMoon.vue';
 import TownMoonBuilding from './TownMoonBuilding.vue';
 import TownMoonConstruction from './TownMoonConstruction.vue';
@@ -159,27 +179,6 @@ const canvas = ref(null);
 const unavailable = ref(false);
 // Replaced whole on camera frames that move a label, so it needs no deep reactivity.
 const labels = shallowRef([]);
-let PresentationCamera = null;
-let presentationCamera = null;
-let presentationTime = 0;
-function syncPresentation() {
-  presentationCamera?.dispose();
-  presentationCamera = null;
-  if (!props.presentation) return;
-  if (!scene && !unavailable.value) return;
-  if (scene) {
-    presentationCamera = new PresentationCamera(scene, props.presentation);
-    presentationCamera.frame(presentationTime, props.reducedMotion);
-  } else emit('presentation-unavailable');
-  emit('presentation-ready');
-}
-watch(
-  () => props.presentation,
-  () => {
-    presentationTime = 0;
-    syncPresentation();
-  },
-);
 let scene = null,
   disposed = false;
 
@@ -190,6 +189,20 @@ const letters = computed(() => moonLetters(props.town));
 const mapLots = computed(() =>
   Object.entries(MOON_LOTS).map(([id, [x, z]]) => ({ id, x: x * 1.3, y: 6 + z * 1.05 })),
 );
+const monumentSites = computed(() =>
+  areasForSettlement('moon').filter((area) => areaUnlocked(props.town, area)),
+);
+const monumentChoice = (id) => AREA_BY_ID[id] && areaChoice(props.town, AREA_BY_ID[id]);
+const mapMonuments = computed(() =>
+  monumentSites.value.map((area) => ({
+    id: area.id,
+    x: area.positions[0][0] * 1.3,
+    y: 6 + area.positions[0][1] * 1.05,
+    choice: areaChoice(props.town, area),
+    stage: areaShownStage(props.town, area) || monumentWork(props.town, area)?.level || 1,
+    work: monumentWork(props.town, area),
+  })),
+);
 const mapApproaches = computed(() =>
   moonApproaches(props.town.buildings ?? {}).map((route) => ({
     ...route,
@@ -198,10 +211,10 @@ const mapApproaches = computed(() =>
 );
 const shownLots = computed(() =>
   unavailable.value
-    ? mapLots.value.map(({ id, x, y }) => ({
+    ? [...mapLots.value, ...mapMonuments.value].map(({ id, x, y }) => ({
         id,
         x: 50 + (x / 120) * 100,
-        y: 50 + (y / 100) * 100 - 6,
+        y: 50 + (y / 100) * 100 + (AREA_BY_ID[id] ? 7 : -6),
       }))
     : labels.value.filter((lot) => lot.visible),
 );
@@ -213,17 +226,52 @@ const updateAvailable = () =>
   scene?.setAvailable(
     Object.keys(props.indicators).filter((id) => props.indicators[id] === 'upgrade'),
   );
+function status(id) {
+  if (AREA_BY_ID[id])
+    return monumentWork(props.town, AREA_BY_ID[id])?.ready
+      ? 'ready'
+      : monumentWork(props.town, AREA_BY_ID[id])
+        ? 'work'
+        : monumentChoice(id)
+          ? 'monument'
+          : 'open';
+  if (props.town.projects?.[id]) return 'work';
+  if (props.town.buildings?.[id]) return 'built';
+  return plotUnlocked(props.town, id) ? 'open' : 'later';
+}
+function statusLabel(id) {
+  return {
+    work: t('Under construction'),
+    ready: t('Ready to unveil'),
+    monument: t('Monument'),
+    built: t('Lv. {level}', { level: props.town.buildings[id] }),
+    open: t(AREA_BY_ID[id] ? 'Choose a design' : 'Build'),
+    later: t('Coming soon'),
+  }[status(id)];
+}
 
+let presentationTime = 0;
+function updatePresentation() {
+  scene?.setPresentation(props.presentation);
+  if (props.presentation) {
+    scene?.presentationFrame(presentationTime, props.reducedMotion);
+    if (unavailable.value) emit('presentation-unavailable');
+    if (scene || unavailable.value) emit('presentation-ready');
+  }
+}
+watch(
+  () => props.presentation,
+  () => {
+    presentationTime = 0;
+    updatePresentation();
+  },
+);
 function updateMotion() {
   scene?.setMotion(props.active && !props.paused && !document.hidden);
 }
 async function start() {
   try {
-    const [{ MoonScene }, { MoonPresentation }] = await Promise.all([
-      import('../../game/town/moon/MoonScene'),
-      import('../../game/town/moon/MoonPresentation'),
-    ]);
-    PresentationCamera = MoonPresentation;
+    const { MoonScene } = await import('../../game/town/moon/MoonScene');
     if (disposed || !canvas.value) return;
     scene = new MoonScene(canvas.value, {
       reducedMotion: props.reducedMotion,
@@ -233,12 +281,15 @@ async function start() {
     });
     scene.update(props.town);
     updateAvailable();
-    syncPresentation();
+    updatePresentation();
     updateMotion();
   } catch (error) {
     console.error(error);
     unavailable.value = true;
-    syncPresentation();
+    if (props.presentation) {
+      emit('presentation-unavailable');
+      emit('presentation-ready');
+    }
   }
 }
 // Watch only visual lifecycle fields; honours and the rest of the town stay out.
@@ -250,6 +301,8 @@ watch(
     props.town.buildingEraLevels,
     // The visiting saucer follows the valley airport's finish.
     props.town.buildingEras?.airport,
+    props.town.era,
+    props.town.personalisation,
   ],
   () => scene?.update(props.town),
   { deep: true },
@@ -267,15 +320,14 @@ onMounted(() => {
 onBeforeUnmount(() => {
   disposed = true;
   document.removeEventListener('visibilitychange', updateMotion);
-  presentationCamera?.dispose();
   scene?.dispose();
   scene = null;
 });
 defineExpose({
   resetView: () => scene?.resetView(),
-  presentationFrame(time) {
+  presentationFrame: (time) => {
     presentationTime = time;
-    presentationCamera?.frame(time, props.reducedMotion);
+    scene?.presentationFrame(time, props.reducedMotion);
   },
   collectionOrigin: (id) => {
     const lot = shownLots.value.find((lot) => lot.id === id);

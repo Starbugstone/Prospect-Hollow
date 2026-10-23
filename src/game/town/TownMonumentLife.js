@@ -1,4 +1,4 @@
-import { PERSONAL_AREAS, areaUnlocked } from '../../data/townLandmarks';
+import { areasForSettlement, areaUnlocked } from '../../data/townLandmarks';
 import { MONUMENT_WILDLIFE, TOWN_ANIMALS } from '../../data/townAnimals';
 import { groundHeight } from './TownLandscape';
 import { walkPath } from './TownNavigation';
@@ -7,7 +7,7 @@ import { wetBank } from './TownRiver';
 // One wild visitor per open site and two civic visitors keep this distant part
 // of town alive without growing a crowd as more monument sites are introduced.
 export function monumentCast(town, fauna) {
-  const areas = PERSONAL_AREAS.filter((area) => areaUnlocked(town, area));
+  const areas = areasForSettlement().filter((area) => areaUnlocked(town, area));
   const wildlife = [
     ...MONUMENT_WILDLIFE,
     'fox',
@@ -15,7 +15,7 @@ export function monumentCast(town, fauna) {
     ...fauna.garden.filter((species) => species !== 'otter'),
   ];
   const cast = areas.map((area) => {
-    const index = PERSONAL_AREAS.indexOf(area);
+    const index = areasForSettlement().indexOf(area);
     return {
       area,
       species: wildlife[index % wildlife.length],

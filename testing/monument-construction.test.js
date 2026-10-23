@@ -25,6 +25,7 @@ import { isEraComplete } from '../src/game/town/TownEras';
 import { buildingIndicators, normalizeTown } from '../src/game/town/TownRules';
 import { projectLabelPositions } from '../src/game/town/TownLabelProjection';
 import { TOWN_ACTIONS } from '../src/data/townIndicators';
+import { buildMonumentWorks } from '../src/game/town/TownMonumentWorks';
 import { TownPrimitives } from '../src/game/town/TownPrimitives';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { TownScenery } from '../src/game/town/TownScenery';
@@ -316,9 +317,20 @@ describe('Monument construction in the town', () => {
               areaLevels: { [area.id]: level },
               construction: { [area.id]: { level, wins } },
             });
-            const site = buildPersonalAreas(fixture(town), town).children.find(
-              (g) => g.userData.monumentSite === area.id,
-            );
+            const d = fixture(town);
+            const site =
+              area.settlement === 'moon'
+                ? buildMonumentWorks(
+                    d,
+                    new Group(),
+                    choice,
+                    monumentWork(town, area),
+                    area,
+                    town.era,
+                  )
+                : buildPersonalAreas(d, town).children.find(
+                    (g) => g.userData.monumentSite === area.id,
+                  );
             site.rotation.y = 0;
             site.position.set(0, 0, 0);
             const box = new Box3().setFromObject(site);

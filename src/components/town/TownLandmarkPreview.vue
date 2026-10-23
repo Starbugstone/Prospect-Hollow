@@ -2,18 +2,23 @@
   <svg viewBox="0 0 160 130" aria-hidden="true" class="personal-design-art">
     <defs>
       <linearGradient :id="gradient" x2="0" y2="1">
-        <stop stop-color="#f7f0dc" />
-        <stop offset="1" stop-color="#dbe6d1" />
+        <stop :stop-color="lunar ? '#17253f' : '#f7f0dc'" />
+        <stop offset="1" :stop-color="lunar ? '#536579' : '#dbe6d1'" />
       </linearGradient>
     </defs>
-    <rect width="160" height="130" rx="12" :fill="`url(#${gradient})`" />
-    <ellipse cx="80" cy="114" rx="69" ry="10" fill="#bac7af" />
+    <rect v-if="!map" width="160" height="130" rx="12" :fill="`url(#${gradient})`" />
+    <ellipse v-if="!map" cx="80" cy="114" rx="69" ry="10" fill="#bac7af" />
     <path d="M19 108 80 95 142 108 80 125Z" :fill="walls" stroke="#91785e" />
-    <g v-if="!timeless && level >= 4" fill="#ddd1b5" stroke="#91785e" stroke-width="2">
+    <g v-if="!timeless && !lunar && level >= 4" fill="#ddd1b5" stroke="#91785e" stroke-width="2">
       <path d="M12 112V44h8v68M38 112V44h8v68M114 112V44h8v68M140 112V44h8v68M8 38h144v8H8Z" />
       <path d="M8 36h144" stroke="#cc954f" stroke-width="4" />
     </g>
-    <g v-if="!timeless && level >= 2" :fill="option.colour" stroke="#655343" stroke-width="2">
+    <g
+      v-if="!timeless && !lunar && level >= 2"
+      :fill="option.colour"
+      stroke="#655343"
+      stroke-width="2"
+    >
       <path d="M9 110V82h26v28M125 110V82h26v28M6 78h32v5H6ZM122 78h32v5h-32Z" />
     </g>
     <g
@@ -28,7 +33,43 @@
       stroke-width="1.5"
       stroke-linejoin="round"
     >
-      <template v-if="form === 'arch'">
+      <template v-if="form === 'footprints'">
+        <ellipse cx="80" cy="105" rx="48" ry="10" fill="#aaa79f" />
+        <path d="M51 99v-7h7v7Zm15-9v-7h7v7Zm-15-9v-7h7v7Z" fill="#657481" />
+        <path d="M93 99V42m0 0h26v18H93" stroke="#eacb80" stroke-width="3" />
+        <path
+          d="M32 105V80a48 52 0 0 1 96 0v25Z"
+          fill="#a4dbea"
+          fill-opacity=".28"
+          stroke="#e5e8e7"
+          stroke-width="3"
+        />
+        <path d="M80 28Q50 45 51 108M80 28q30 17 29 80" fill="none" stroke="#e5e8e7" />
+        <circle class="landmark-glint" cx="80" cy="23" r="4" fill="#eacb80" />
+      </template>
+      <template v-else-if="form === 'earthrise'">
+        <path
+          d="M35 110V59a45 36 0 0 1 90 0v51h-13V59a32 23 0 0 0-64 0v51Z"
+          fill="#aaa79f"
+          stroke="#e5e8e7"
+          stroke-width="3"
+        />
+        <path d="m29 53 8-24 9 24-8 16Zm86 0 8-24 9 24-8 16Z" />
+        <circle cx="80" cy="65" r="14" fill="#4f8fc7" />
+        <path d="m73 57 9-2 4 6-7 3-4 7-6-6Z" fill="#89b799" stroke="none" />
+        <path d="M64 110v-7h32v7" fill="#eacb80" />
+      </template>
+      <template v-else-if="form === 'orbital-beacon'">
+        <path d="M77 110V60h6v50Z" fill="#657481" />
+        <g class="landmark-orbits" fill="none" stroke-width="5">
+          <ellipse cx="80" cy="54" rx="44" ry="20" transform="rotate(-34 80 54)" />
+          <ellipse cx="80" cy="54" rx="44" ry="20" transform="rotate(34 80 54)" stroke="#eacb80" />
+        </g>
+        <circle cx="80" cy="54" r="10" fill="#e5e8e7" />
+        <circle cx="118" cy="34" r="5" />
+        <path d="m75 19 5-17 5 17Z" fill="#eacb80" />
+      </template>
+      <template v-else-if="form === 'arch'">
         <path d="M35 109V48h20v61ZM105 109V48h20v61Z" />
         <path d="M47 50a33 33 0 0 1 66 0H99a19 19 0 0 0-38 0Z" />
         <circle class="landmark-glint" cx="80" cy="17" r="8" :fill="accent" />
@@ -286,7 +327,17 @@
         <path d="m57 22 23-15 23 15Z" />
       </template>
     </g>
-    <g v-if="active" class="landmark-fountain">
+    <g v-if="lunar && level >= 2" stroke="#e5e8e7" stroke-width="2">
+      <path d="M12 108V94h24v10Zm112-4V94h24v14Z" :fill="option.colour" />
+      <path v-if="level >= 3" d="M20 91V78m120 13V78" stroke="#eacb80" stroke-width="4" />
+      <path v-if="level >= 4" d="M18 94V48m124 46V48" />
+      <path
+        v-if="level >= 5"
+        d="M18 48h124M65 48l4-15 5 15m2 0 4-22 5 22m2 0 4-15 5 15"
+        :fill="option.colour"
+      />
+    </g>
+    <g v-if="active && !lunar" class="landmark-fountain">
       <ellipse cx="80" cy="119" :rx="timeless ? 20 : 13" ry="5" fill="#ddd1b5" stroke="#91785e" />
       <ellipse cx="80" cy="117" :rx="timeless ? 17 : 10" ry="3" fill="#a0ccc4" />
       <path
@@ -298,7 +349,7 @@
       />
     </g>
     <path
-      v-if="!timeless && level >= 5"
+      v-if="!timeless && !lunar && level >= 5"
       d="M38 117V92q42-24 84 0v25M38 94V84M122 94V84"
       fill="none"
       stroke="#cc954f"
@@ -320,14 +371,18 @@ const props = defineProps({
   paint: { type: Object, default: () => ({}) },
   // A level still under construction stands inside scaffolding.
   scaffold: Boolean,
+  map: Boolean,
 });
 const option = computed(() => ({
   ...LANDMARK_BY_ID[props.choice],
   colour: props.paint?.roof || LANDMARK_BY_ID[props.choice].colour,
 }));
 const form = computed(() => option.value.form);
+const lunar = computed(
+  () => PERSONAL_AREAS.find((area) => area.choices.includes(props.choice))?.settlement === 'moon',
+);
 // The town's paint, or the stone, trim and brass every unpainted monument shares.
-const walls = computed(() => props.paint?.walls || '#ddd1b5');
+const walls = computed(() => props.paint?.walls || (lunar.value ? '#e5e8e7' : '#ddd1b5'));
 const trim = computed(() => props.paint?.trim || '#655343');
 const accent = computed(() => props.paint?.accent || '#cc954f');
 const timeless = computed(

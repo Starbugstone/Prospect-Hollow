@@ -493,7 +493,10 @@ let cinematicProgress = 0;
 defineExpose({
   // Moon buildings have no valley lot: focusing one opens the Moon map instead.
   focusPlace: (id) => {
-    if (MOON_BUILDINGS.some((building) => building.id === id)) {
+    if (
+      AREA_BY_ID[id]?.settlement === 'moon' ||
+      MOON_BUILDINGS.some((building) => building.id === id)
+    ) {
       moonOpen.value = true;
       return true;
     }
@@ -883,6 +886,7 @@ watch(
   () => props.presentation?.id,
   () => {
     presentationTime = 0;
+    if (props.presentation?.settlement === 'moon') moonOpen.value = true;
     update();
   },
 );

@@ -205,6 +205,31 @@ export const LANDMARK_OPTIONS = [
     27000,
     'A glass dome under ribbons of aurora light.',
   ),
+  // Twin Hollows: Earthrise Plaza, in New Hollow on the Moon.
+  option(
+    'first-footprints',
+    'First Footprints',
+    'footprints',
+    '#8fd0df',
+    31000,
+    'The first boot prints and a settlers’ flag preserved beneath a crystal-glass dome.',
+  ),
+  option(
+    'earthrise-arch',
+    'Earthrise Arch',
+    'earthrise',
+    '#9b91c4',
+    32000,
+    'A regolith arch tipped with moonstone crystals, framing the Earth above the crater.',
+  ),
+  option(
+    'orbital-beacon',
+    'Orbital Beacon',
+    'orbital-beacon',
+    '#72bfbc',
+    33000,
+    'Slowly turning orbital rings carry a bright beacon for the two Hollows.',
+  ),
   // Twin Hollows: Homecoming Green.
   option(
     'lantern-walk',
@@ -250,7 +275,7 @@ export const siteYaw = (area) =>
 // approach, clear of the space elevator. Founders' Meadow sits on the west bank
 // beyond the ridge and faces the river. Stargazers' Lawn and Homecoming Green sit
 // beyond the Skyward quarter.
-// [id, era, label, position, choices, facing = 'south']
+// [id, era, label, position, choices, facing = 'south', settlement = 'valley', currency = 'coins']
 const plots = [
   [
     'meadow',
@@ -309,17 +334,36 @@ const plots = [
     [48, -80],
     ['lantern-walk', 'globe-garden', 'welcome-arch'],
   ],
+  // On the far side of the lunar ring, clear of every lot, approach and rover route.
+  [
+    'earthrise-plaza',
+    'twin-hollows',
+    'Earthrise Plaza',
+    [0, -33],
+    ['first-footprints', 'earthrise-arch', 'orbital-beacon'],
+    'south',
+    'moon',
+  ],
 ];
-export const PERSONAL_AREAS = plots.map(([id, era, label, position, choices, facing]) => ({
-  id,
-  label,
-  era,
-  positions: [position],
-  facing: facing ?? 'south',
-  choices,
-  radius: id === 'monument' ? 9 : 7,
-  timeless: id === 'monument',
-}));
+export const PERSONAL_AREAS = plots.map(
+  ([id, era, label, position, choices, facing, settlement, currency]) => ({
+    id,
+    label,
+    era,
+    positions: [position],
+    facing: facing ?? 'south',
+    settlement: settlement ?? 'valley',
+    currency: currency ?? 'coins',
+    choices,
+    radius: id === 'monument' ? 9 : 7,
+    timeless: id === 'monument',
+  }),
+);
+// Incomplete historical definitions belong to the valley; unknown settlements do
+// not acquire a renderer implicitly. Save normalization always uses the full catalog.
+export const areaSettlement = (area) => area?.settlement ?? 'valley';
+export const areasForSettlement = (settlement = 'valley', areas = PERSONAL_AREAS) =>
+  areas.filter((area) => areaSettlement(area) === settlement);
 export const areaUnlocked = (town, area) =>
   ERAS.findIndex((e) => e.id === town.era) >= ERAS.findIndex((e) => e.id === area.era);
 // Five permanent milestones; era growth never adds another bill. Each paid level is
@@ -343,7 +387,7 @@ export const LANDMARK_PROGRESSION = Object.freeze({
       multiplier: 4,
       puzzles: 1,
       unveiling: 'reveal',
-      detail: 'Raise the main structure and build its flanking pavilions.',
+      detail: 'Raise the main structure and complete its surrounding court.',
     },
     {
       label: 'Living landmark',
@@ -357,14 +401,14 @@ export const LANDMARK_PROGRESSION = Object.freeze({
       multiplier: 20,
       puzzles: 1,
       unveiling: 'reveal',
-      detail: 'Add a monumental colonnade and a taller silhouette.',
+      detail: 'Add signature architecture and a taller silhouette.',
     },
     {
       label: 'Town wonder',
       multiplier: 35,
       puzzles: 1,
       unveiling: 'grand',
-      detail: 'Complete the grand entrance, golden finials and fountain court.',
+      detail: 'Complete the grand entrance and the monument’s signature crown.',
     },
   ],
 });
@@ -444,6 +488,24 @@ export function landmarkOffer(town, area, choice) {
     LANDMARK_BY_ID[choice].price * (area.timeless ? 1 : landmarkLevel(level).multiplier);
   return { choice, level, price, expectedChoice: current || null, expectedLevel: stage };
 }
+// One extension point for price display, affordability and spending. New resource
+// payments must be implemented here and in the server receipt validator together.
+// Until then, a site declaring another currency cannot silently spend coins.
+export function landmarkPayment(town, area, price) {
+  const currency = area?.currency ?? 'coins';
+  const supported = currency === 'coins';
+  const balance = supported ? (town.coins ?? 0) : 0;
+  const affordable = supported && Number.isFinite(price) && price >= 0 && balance >= price;
+  return {
+    currency,
+    price,
+    balance,
+    affordable,
+    missing: Math.max(0, price - balance),
+    icon: supported ? 'coin' : 'crystal',
+    spend: () => (affordable ? { ...town, coins: balance - price } : null),
+  };
+}
 export function purchaseLandmark(town, command) {
   const area = PERSONAL_AREAS.find((a) => a.id === command.id);
   const offer = landmarkOffer(town, area, command.value);
@@ -452,12 +514,11 @@ export function purchaseLandmark(town, command) {
     command.slot !== 0 ||
     command.expectedChoice !== offer.expectedChoice ||
     command.expectedLevel !== offer.expectedLevel ||
-    town.coins < offer.price
+    !landmarkPayment(town, area, offer.price).affordable
   )
     return null;
   return {
-    ...town,
-    coins: town.coins - offer.price,
+    ...landmarkPayment(town, area, offer.price).spend(),
     personalisation: {
       ...town.personalisation,
       areas: { ...town.personalisation?.areas, [area.id]: [offer.choice] },

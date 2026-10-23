@@ -63,7 +63,7 @@ import { TownRaid } from './TownActivity';
 import { TownEraIncident } from './TownEraIncident';
 import { eventKind } from '../../data/townEvents';
 import { plotUnlocked } from './TownRules';
-import { PERSONAL_AREAS, areaUnlocked } from '../../data/townLandmarks';
+import { areasForSettlement, areaUnlocked } from '../../data/townLandmarks';
 import { spaceHelmetTap } from './TownSpaceHelmet';
 import { buildLandscape, keepCameraAboveTerrain } from './TownLandscape';
 
@@ -498,7 +498,7 @@ export class TownDiorama extends TownPrimitives {
         return true;
       }
     }
-    const site = PERSONAL_AREAS.find(
+    const site = areasForSettlement().find(
       (area) =>
         areaUnlocked(this.town, area) &&
         Math.hypot(ground.x - area.positions[0][0], ground.z - area.positions[0][1]) <

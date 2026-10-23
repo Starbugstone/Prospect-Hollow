@@ -29,7 +29,7 @@ export class TownPresentation {
       const t = Math.min(1, time / 1.4);
       d.camera.position.lerpVectors(d.eventCamera.position, eye, t * t * (3 - 2 * t));
       d.controls.target.lerpVectors(d.eventCamera.target, focus, t * t * (3 - 2 * t));
-      keepCameraAboveTerrain(d.camera.position, d.controls.target);
+      (d.keepCameraAboveSurface ?? keepCameraAboveTerrain)(d.camera.position, d.controls.target);
       d.camera.lookAt(d.controls.target);
     }
     for (const motion of d.motions) motion(d.elapsed);

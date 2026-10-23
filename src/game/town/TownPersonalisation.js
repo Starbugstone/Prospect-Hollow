@@ -9,7 +9,7 @@ import {
 } from 'three';
 import { CREST_BY_ID, crestOutline, crestPattern } from '../../data/townCrests';
 import {
-  PERSONAL_AREAS,
+  areasForSettlement,
   areaStage,
   areaUnlocked,
   DEFAULT_EMBLEM_COLOUR,
@@ -156,7 +156,7 @@ function addMonumentSite(d, g, radius) {
 // `monumentSite`, so a tap on it opens that site's card, and turns the whole site
 // (marker or monument) to face its declared direction.
 export function buildPersonalAreas(d, town) {
-  if (!PERSONAL_AREAS.some((area) => areaUnlocked(town, area))) return null;
+  if (!areasForSettlement().some((area) => areaUnlocked(town, area))) return null;
   const root = d.group(d.world);
   root.name = 'Monument sites';
   root.userData.movingParts = [];
@@ -166,7 +166,7 @@ export function buildPersonalAreas(d, town) {
     for (const update of motions) update(reducedMotion?.matches ? 0 : time);
   };
   root.userData.static = true;
-  for (const area of PERSONAL_AREAS) {
+  for (const area of areasForSettlement()) {
     if (!areaUnlocked(town, area)) continue;
     const stage = areaStage(town, area);
     area.positions.forEach(([x, z], slot) => {
