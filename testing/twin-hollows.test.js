@@ -18,7 +18,7 @@ import {
 import {
   MOON_CRATER_RADIUS,
   MOON_LOTS,
-  MOON_LOT_RADIUS,
+  moonPadRadius,
   MOON_RING_ROAD,
   moonLetters,
   moonSettlement,
@@ -33,7 +33,7 @@ import {
   modernizesInEra,
   plotInEra,
 } from '../src/game/town/TownEras';
-import { upgradeOffer } from '../src/game/town/TownRules';
+import { normalizeTown, purchase, upgradeOffer } from '../src/game/town/TownRules';
 import { PLOTS, visiblePlots } from '../src/game/town/TownLayout';
 import TownBuilding from '../src/components/town/TownBuilding.vue';
 import TownMoonBuilding from '../src/components/town/TownMoonBuilding.vue';
@@ -142,12 +142,35 @@ describe('Twin Hollows: the Moon is the new frontier', () => {
   it('needs New Hollow finished as well as the valley before the era is complete', () => {
     const town = twinTown();
     expect(isEraComplete(town)).toBe(true);
-    for (const b of MOON_BUILDINGS) {
+    for (const b of MOON_BUILDINGS.filter((building) => building.requiredForEraCompletion)) {
       const copy = structuredClone(town);
       copy.buildings[b.id] = 2;
       expect(isEraComplete(copy), b.id).toBe(false);
     }
   });
+});
+
+it('preserves completed Twin Hollows saves while the optional Saucer Pad is absent or being built', () => {
+  const saved = twinTown();
+  delete saved.buildings.saucerPad;
+  delete saved.buildingEras.saucerPad;
+  delete saved.buildingEraLevels.saucerPad;
+  const restored = normalizeTown(saved);
+  expect(restored.buildings.saucerPad).toBe(0);
+  expect(isEraComplete(restored)).toBe(true);
+  expect(BUILDING_BY_ID.saucerPad.requiredForEraCompletion).toBe(false);
+  const offer = upgradeOffer(restored, 'saucerPad');
+  expect(offer).toMatchObject({ available: true, cost: 31500, runs: 1 });
+  const building = purchase(restored, 'saucerPad', 0);
+  expect(building.projects.saucerPad).toMatchObject({ stage: 1, wins: 0, required: 1 });
+  expect(isEraComplete(building)).toBe(true);
+  restored.buildings.roverBarn = 0;
+  expect(upgradeOffer(restored, 'saucerPad').available).toBe(false);
+  restored.buildings.roverBarn = 1;
+  restored.buildings.ribbonLanding = 0;
+  expect(upgradeOffer(restored, 'saucerPad').available).toBe(false);
+  const earlier = { ...restored, era: 'moonward' };
+  expect(upgradeOffer(earlier, 'saucerPad').available).toBe(false);
 });
 
 describe('New Hollow buildings', () => {
@@ -160,7 +183,14 @@ describe('New Hollow buildings', () => {
       expect(PLOTS[b.id], b.id).toBeUndefined();
       expect(MOON_LOTS[b.id], b.id).toBeTruthy();
       expect(b.introducedEra).toBe('twin-hollows');
-      expect(b.unlock).toEqual([{ id: 'spaceElevator', level: 1 }]);
+      expect(b.unlock).toEqual(
+        b.id === 'saucerPad'
+          ? [
+              { id: 'ribbonLanding', level: 1 },
+              { id: 'roverBarn', level: 1 },
+            ]
+          : [{ id: 'spaceElevator', level: 1 }],
+      );
     }
     expect(visiblePlots(town).some(({ id }) => BUILDING_BY_ID[id]?.settlement === 'moon')).toBe(
       false,
@@ -173,11 +203,13 @@ describe('New Hollow buildings', () => {
     const lots = Object.entries(MOON_LOTS);
     for (const [id, [x, z]] of lots) {
       const r = Math.hypot(x, z);
-      expect(r + MOON_LOT_RADIUS, id).toBeLessThan(MOON_CRATER_RADIUS);
-      expect(Math.abs(r - MOON_RING_ROAD), id).toBeGreaterThan(MOON_LOT_RADIUS - 0.4);
+      expect(r + moonPadRadius(id), id).toBeLessThan(MOON_CRATER_RADIUS);
+      expect(Math.abs(r - MOON_RING_ROAD), id).toBeGreaterThan(moonPadRadius(id) - 0.4);
       for (const [other, [ox, oz]] of lots)
         if (other !== id)
-          expect(Math.hypot(x - ox, z - oz), `${id} ${other}`).toBeGreaterThan(MOON_LOT_RADIUS * 2);
+          expect(Math.hypot(x - ox, z - oz), `${id} ${other}`).toBeGreaterThan(
+            moonPadRadius(id) + moonPadRadius(other),
+          );
     }
   });
 
@@ -204,7 +236,7 @@ describe('New Hollow buildings', () => {
         });
         if (!bounds.isEmpty())
           for (const v of [bounds.min.x, bounds.max.x, bounds.min.z, bounds.max.z])
-            expect(Math.abs(v), `${kind} ${level}`).toBeLessThanOrEqual(MOON_LOT_RADIUS + 0.6);
+            expect(Math.abs(v), `${kind} ${level}`).toBeLessThanOrEqual(moonPadRadius(kind) + 0.6);
       }
       expect(stages.size, kind).toBe(4);
     }

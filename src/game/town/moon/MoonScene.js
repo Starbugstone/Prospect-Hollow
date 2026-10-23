@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TownPrimitives } from '../TownPrimitives';
+import { MoonSaucer } from './MoonSaucer';
 import { TownFramePacer } from '../TownFramePacer';
 import { TownRenderQuality } from '../TownRenderQuality';
 import { renderMoonBuilding } from '../buildings/moon';
@@ -413,6 +414,7 @@ export class MoonScene {
     );
     ribbon.castShadow = false;
     ribbon.name = 'Ribbon from the valley';
+    this.saucer = new MoonSaucer(this.d, this.scene, this.camera);
     this.buildings = this.d.group(this.scene);
     this.life = this.d.group(this.scene);
     this.lots = Object.entries(MOON_LOTS).map(([id, [x, z]]) => ({
@@ -474,6 +476,8 @@ export class MoonScene {
   }
   /** Rebuild the lots when the town's Moon buildings change. */
   update(town) {
+    this.saucer.update(town, this.elapsed, this.reducedMotion);
+    this.requestFrame();
     const levels = this.lots.map(({ id }) => town?.buildings?.[id] ?? 0);
     const signature = levels.join();
     if (signature === this.signature) return;
@@ -530,6 +534,7 @@ export class MoonScene {
     this.move(this.elapsed);
   }
   move(time) {
+    this.saucer.step(time, this.reducedMotion);
     for (const w of this.walkers ?? []) {
       const a = w.phase + w.dir * time * w.speed;
       const offset = w.vehicle ? 0.3 : -0.4 + (w.dir > 0 ? 0 : 0.8);
@@ -645,6 +650,7 @@ export class MoonScene {
     this.controls.update();
   }
   dispose() {
+    this.saucer.dispose();
     this.renderer.setAnimationLoop(null);
     if (this.frame) cancelAnimationFrame(this.frame);
     this.observer.disconnect();

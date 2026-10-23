@@ -601,6 +601,58 @@ assertIntegrity(
     $validator->eraComplete($kept['town']),
     'buildings an era leaves alone count as finished in their earlier finish',
 );
+// A new optional Moon building must not undo completion in an existing save.
+$legacyPad = $kept;
+unset(
+    $legacyPad['town']['buildings']['saucerPad'],
+    $legacyPad['town']['buildingEras']['saucerPad'],
+    $legacyPad['town']['buildingEraLevels']['saucerPad'],
+);
+$legacyPad['town']['coins'] = 100000;
+$legacyPad['shopStock'] = array_map(
+    fn(string $id): array => ['id' => $id, 'sold' => false],
+    array_slice(
+        $rules['powers'],
+        0,
+        $rules['shop']['slotsByStage'][$legacyPad['town']['buildings']['shop']],
+    ),
+);
+assertIntegrity(
+    $rules['buildings']['saucerPad']['requiredForEraCompletion'] === false &&
+        $validator->eraComplete($legacyPad['town']),
+    'the optional Saucer Pad preserves completed Twin Hollows saves',
+);
+$padAnchor = $validator->accept(integrityObject($legacyPad), null, $now);
+assertIntegrity(
+    ($padAnchor->town->buildings->saucerPad ?? 0) === 0,
+    'older saves keep the new optional Saucer Pad unbuilt',
+);
+$padPurchase = integrityData($padAnchor);
+$padPurchase['town']['buildings']['saucerPad'] = 0;
+$padPurchase['town']['buildingEras']['saucerPad'] = 'frontier';
+$padPurchase['town']['buildingEraLevels']['saucerPad'] = 0;
+$padPurchase['town']['coins'] -= $rules['buildings']['saucerPad']['upgrades'][0]['cost'];
+$padPurchase['town']['projects']['saucerPad'] = [
+    'id' => 'saucerPad',
+    'stage' => 1,
+    'wins' => 0,
+    'required' => 1,
+];
+$padPurchase['town']['income']['at'] = $now;
+$padPurchase['integrity']['actions'] = [
+    integrityAction(1, 'building-buy', [
+        'buildingId' => 'saucerPad',
+        'expectedStage' => 0,
+        'at' => $now,
+    ]),
+];
+$padStarted = $validator->accept(integrityObject($padPurchase), $padAnchor, $now);
+assertIntegrity(
+    $padStarted->town->projects->saucerPad->required === 1 &&
+        SaveIntegrity::receipt($padStarted)['ackSequence'] === 1 &&
+        $validator->eraComplete(integrityData($padStarted)['town']),
+    'the shared server purchase lifecycle accepts the Saucer Pad without gating completion',
+);
 $unfinished = $kept;
 $unfinished['town']['buildingEras']['square'] = $previousEra;
 assertIntegrity(

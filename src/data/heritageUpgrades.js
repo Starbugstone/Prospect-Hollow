@@ -72,6 +72,7 @@ export const HERITAGE_UPGRADES = {
   craterHomesteads: 'veranda',
   moonstoneWorkshop: 'workshop',
   roverBarn: 'engineBay',
+  saucerPad: 'freight',
   earthriseLookout: 'observatory',
 };
 

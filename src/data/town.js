@@ -601,7 +601,7 @@ export const BUILDINGS = [
   return {
     ...building,
     introducedEra: building.introducedEra ?? FRONTIER_ERA,
-    requiredForEraCompletion: true,
+    requiredForEraCompletion: building.requiredForEraCompletion ?? true,
     legacyUpgradeCosts: short ? upgrades.map((upgrade) => upgrade.cost) : undefined,
     stages: short ? [...building.stages.slice(0, 3), building.stages.at(-1)] : building.stages,
     upgrades: (short

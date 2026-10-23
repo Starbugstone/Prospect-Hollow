@@ -171,10 +171,9 @@ async function start() {
     unavailable.value = true;
   }
 }
-// The Moon scene draws only building levels: watching the whole town deeply would
-// walk its honours and every other field on each change.
+// Watch the lots and the visiting craft's airport finish without walking the whole town.
 watch(
-  () => props.town.buildings,
+  () => [props.town.buildings, props.town.buildingEras?.airport],
   () => scene?.update(props.town),
   { deep: true },
 );
@@ -182,7 +181,11 @@ watch(() => [props.active, props.paused], updateMotion);
 watch(
   () => props.reducedMotion,
   (value) => {
-    if (scene) scene.reducedMotion = value;
+    if (scene) {
+      scene.reducedMotion = value;
+      scene.move(scene.elapsed);
+      scene.requestFrame();
+    }
   },
 );
 onMounted(() => {

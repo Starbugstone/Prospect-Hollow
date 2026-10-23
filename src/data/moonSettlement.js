@@ -34,8 +34,8 @@ const MOON_LIGHTS = Array.from({ length: MOON_SETTLEMENT_LIMIT }, (_, n) => {
 
 // Lots on the Moon map, in the Moon scene's own coordinates. The ribbon lands in
 // the middle of the crater; the camera looks across it toward the risen Earth.
-// Four lots ring the landing inside the ring road (radius MOON_RING_ROAD); six
-// more stand beyond it.
+// Inner lots surround the landing inside the ring road (radius MOON_RING_ROAD);
+// outer homesteads and service pads stand beyond it.
 export const MOON_LOTS = Object.freeze({
   ribbonLanding: Object.freeze([0, -8]),
   newHollowCommons: Object.freeze([0, 11]),
@@ -47,6 +47,7 @@ export const MOON_LOTS = Object.freeze({
   moonstoneWorkshop: Object.freeze([15, 27]),
   earthriseLookout: Object.freeze([-30, 12]),
   roverBarn: Object.freeze([30, 12]),
+  saucerPad: Object.freeze([15, -30]),
 });
 export const MOON_RING_ROAD = 20.5;
 // Lots sit inside a crater bowl; footprints stay within this radius of a lot.
@@ -68,9 +69,14 @@ const MOON_PAD_RADII = Object.freeze({
   moonstoneWorkshop: 4.4,
   earthriseLookout: 4.4,
   roverBarn: 4.6,
+  saucerPad: 6.4,
 });
 export const moonPadRadius = (kind) => MOON_PAD_RADII[kind] ?? MOON_LOT_RADIUS;
 const MOON_ARRIVALS = Object.freeze({
+  saucerPad: [
+    [0, 5.32],
+    [0, 7.2],
+  ],
   ribbonLanding: [
     [0, 1.34],
     [0, 6],
@@ -122,8 +128,12 @@ const MOON_ARRIVALS = Object.freeze({
 export function moonLotPose(id, lots = MOON_LOTS) {
   const [x, z] = lots[id] ?? [0, 0];
   const landingZ = lots.ribbonLanding?.[1] ?? -8;
-  // Preserve the established scene pose. Local +z is the authored front apron.
-  const rotation = id === 'ribbonLanding' ? 0 : Math.atan2(-x, -(z - landingZ)) + Math.PI;
+  // Preserve established lot poses. Local +z is the authored front apron; the
+  // outer Saucer Pad faces inward so pedestrians stay opposite its sky corridor.
+  const rotation =
+    id === 'ribbonLanding'
+      ? 0
+      : Math.atan2(-x, -(z - landingZ)) + (id === 'saucerPad' ? 0 : Math.PI);
   return { x, z, rotation };
 }
 
@@ -191,7 +201,7 @@ export function moonApproach(id, level = 3, lots = MOON_LOTS) {
       ([other, [x, z]]) =>
         (!own && other === id) ||
         moonSegmentDistance(x, z, a, b) >=
-          (other === id ? padRadius + 0.45 : MOON_LOT_RADIUS + 0.8),
+          (other === id ? padRadius + 0.45 : Math.max(MOON_LOT_RADIUS, moonPadRadius(other)) + 0.8),
     );
   let best = null;
   for (const direction of [-1, 1]) {
@@ -270,6 +280,7 @@ const LETTERS = {
   newHollowCommons: 'We held our first town meeting. Everyone voted for more pie.',
   craterHomesteads: 'New porches on the crater rim, just like the frontier stories.',
   moonstoneWorkshop: 'We are polishing moonstones for every family back home.',
+  saucerPad: 'The saucer settled in a puff of moon dust. We saved the pilots a slice of pie.',
   roverBarn: 'The rovers are ready for picnics. Bring a blanket when you visit.',
   earthriseLookout: 'From the lookout we can see the valley lights. Goodnight, Prospect Hollow.',
 };

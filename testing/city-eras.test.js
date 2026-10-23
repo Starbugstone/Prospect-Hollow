@@ -279,7 +279,7 @@ it('only finishes the entire city once every final-era plot and modernization is
   expect(isEraComplete(town)).toBe(true);
   expect(eraGate(town).next).toBeUndefined();
   expect(nextGoal(town)).toBeNull();
-  for (const b of BUILDINGS) {
+  for (const b of BUILDINGS.filter((building) => building.requiredForEraCompletion)) {
     const copy = structuredClone(town);
     if (b.introducedEra === town.era) copy.buildings[b.id] = 2;
     else if (modernizesInEra(town.era, b.id)) copy.buildingEraLevels[b.id] = 2;
