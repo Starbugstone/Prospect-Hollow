@@ -36,11 +36,11 @@ const hash = (k) => {
 // window opens a moment early for the flash, which bursts just before it moves.
 const DEPARTURE = Object.freeze({ start: 49, end: 57 });
 const APPROACH = Object.freeze({ start: 135, end: 147 });
-const segmentAt = (phase) =>
-  phase >= DEPARTURE.start - 0.5 && phase < DEPARTURE.end
-    ? DEPARTURE
-    : phase >= APPROACH.start && phase < APPROACH.end
-      ? APPROACH
+const segmentAt = (phase, departure, approach) =>
+  phase >= departure.start - 0.5 && phase < departure.end
+    ? departure
+    : phase >= approach.start && phase < approach.end
+      ? approach
       : null;
 
 const MOTES = 16,
@@ -86,8 +86,13 @@ function flashColor(hex) {
 
 /** Build the sparkle wake under `parent`, the saucer root (whose own parent sits at the
  * world origin). `path(phase, toMoon, out)` writes the saucer's flight position at a
- * cycle phase; `colors` holds the era's `light` and `secondary` (trait or rim) colours. */
-export function createSaucerTrail(d, parent, { colors: palette, path }) {
+ * cycle phase; `colors` holds the era's `light` and `secondary` (trait or rim) colours.
+ * Optional windows and scale let other scenes reuse the same wake and launch flash. */
+export function createSaucerTrail(
+  d,
+  parent,
+  { colors: palette, path, departure = DEPARTURE, approach = APPROACH, scale = 1 },
+) {
   const geometry = new BufferGeometry();
   const position = new BufferAttribute(new Float32Array(VERTICES * 3), 3);
   const color = new BufferAttribute(new Float32Array(VERTICES * 4), 4);
@@ -111,6 +116,7 @@ export function createSaucerTrail(d, parent, { colors: palette, path }) {
   const mesh = new Mesh(geometry, material);
   mesh.name = 'saucerTrail';
   mesh.matrixAutoUpdate = false;
+  mesh.frustumCulled = false;
   mesh.castShadow = mesh.receiveShadow = false;
   mesh.visible = false;
   parent.add(mesh);
@@ -144,6 +150,7 @@ export function createSaucerTrail(d, parent, { colors: palette, path }) {
   // A "+" star facing the camera: a tall thin diamond and a wide thin one. `turn` rotates
   // it in the view plane (0.785 gives an "x").
   const star = (index, point, size, tint, alpha, turn = 0) => {
+    size *= scale;
     const cos = Math.cos(turn),
       sin = Math.sin(turn);
     s.along.copy(s.up).multiplyScalar(cos).addScaledVector(s.right, sin);
@@ -163,7 +170,7 @@ export function createSaucerTrail(d, parent, { colors: palette, path }) {
     mesh,
     /** Draw the wake at cycle `phase`; `reduced` (reduced motion) leaves it off. */
     update(phase, toMoon, reduced) {
-      const segment = reduced ? null : segmentAt(phase);
+      const segment = reduced ? null : segmentAt(phase, departure, approach);
       mesh.visible = !!segment;
       if (!segment) return;
       // Cancel the saucer's own transform, so vertices are in world space.
@@ -171,7 +178,7 @@ export function createSaucerTrail(d, parent, { colors: palette, path }) {
       mesh.matrix.copy(s.inverse.copy(parent.matrix).invert());
       const camera = d.camera ?? null,
         tints = toMoon ? colors.moon : colors.sky,
-        arriving = segment === APPROACH;
+        arriving = segment === approach;
 
       // Twinkles are shed while it moves fast: just after the leap, or while coming in.
       // Slot n holds the most recent twinkle k with k = n (mod MOTES).
@@ -195,13 +202,13 @@ export function createSaucerTrail(d, parent, { colors: palette, path }) {
         path(Math.max(segment.start, shed - 0.05), toMoon, s.heading);
         s.heading.subVectors(s.p, s.heading);
         if (s.heading.lengthSq() < 1e-10) s.heading.set(0, 1, 0);
-        s.p.addScaledVector(s.heading.normalize(), -0.9 * SAUCER_RADIUS);
-        s.p.y += SAUCER_HULL;
+        s.p.addScaledVector(s.heading.normalize(), -0.9 * SAUCER_RADIUS * scale);
+        s.p.y += SAUCER_HULL * scale;
         // Drift apart along a fixed random direction, and sink a little.
         s.drift.set(hash(k * 3 + 1) - 0.5, hash(k * 5 + 2) - 0.5, hash(k * 7 + 3) - 0.5);
         if (s.drift.lengthSq() < 1e-6) s.drift.set(0, 1, 0);
-        s.p.addScaledVector(s.drift.normalize(), 0.6 + 2.2 * life);
-        s.p.y -= 0.9 * life * life;
+        s.p.addScaledVector(s.drift.normalize(), (0.6 + 2.2 * life) * scale);
+        s.p.y -= 0.9 * life * life * scale;
         billboard(camera, s.p);
         const twinkle = 0.55 + 0.45 * Math.sin(age * 19 + h * 6.28);
         star(
@@ -227,7 +234,7 @@ export function createSaucerTrail(d, parent, { colors: palette, path }) {
       }
       const k = age / FLASH_LIFE;
       path(segment.start, toMoon, s.p);
-      s.p.y += SAUCER_HULL;
+      s.p.y += SAUCER_HULL * scale;
       billboard(camera, s.p);
       star(MOTES, s.p, 1 + 1.8 * smooth(k * 1.4), tints[0], 0.85 * (1 - smooth(k)));
       star(

@@ -1,13 +1,7 @@
 import { hasRoundedTransport } from '../../data/roundedArchitecture';
-import { roundedAircraft } from './RoundedTransports';
+import { createSkySaucer } from './SkySaucer';
 import { airportAppearance } from '../../data/airport';
-import {
-  SKY_MOON_DIRECTION,
-  saucerFliesToMoon,
-  saucerTrailColors,
-  skySaucer,
-} from '../../data/skyCraft';
-import { createSaucerTrail } from './SaucerTrails';
+import { SKY_MOON_DIRECTION, saucerFliesToMoon } from '../../data/skyCraft';
 import { futureModel, cityModel } from './buildings/city';
 import { AIRPORT } from './TownLayout';
 import airportLayout from '../../data/airportLayout.json';
@@ -436,8 +430,9 @@ export function addAviationActivity(d, town) {
   const appearance = airportAppearance(era);
   const aircraft = appearance.aircraft ?? 'airplane';
   const rounded = hasRoundedTransport(era);
+  const saucer = rounded ? createSkySaucer(d, d.world, { era, path: saucerFlightPoint }) : null;
   const plane = rounded
-    ? roundedAircraft(d, d.world, skySaucer(era))
+    ? saucer.root
     : aircraft === 'airplane'
       ? futureModel(d, d.world, aircraft)
       : cityModel(d, d.world, aircraft);
@@ -455,27 +450,19 @@ export function addAviationActivity(d, town) {
     Math.min(1, (bay.backX - bay.frontX - 0.5) / size.z, (bay.roofRadius * 2 - 0.5) / size.x),
   );
   const materials = new Map();
-  plane.traverse((o) => {
-    if (!o.isMesh) return;
-    if (!materials.has(o.material)) {
-      const material = o.material.clone();
-      material.transparent = true;
-      material.userData.transient = true;
-      materials.set(o.material, material);
-    }
-    o.material = materials.get(o.material);
-  });
+  if (!rounded)
+    plane.traverse((o) => {
+      if (!o.isMesh) return;
+      if (!materials.has(o.material)) {
+        const material = o.material.clone();
+        material.transparent = true;
+        material.userData.transient = true;
+        materials.set(o.material, material);
+      }
+      o.material = materials.get(o.material);
+    });
   plane.userData.animated = true;
   const propellers = ['propellerLeft', 'propellerRight'].map((name) => plane.getObjectByName(name));
-  const legs = plane.getObjectByName('saucerLegs');
-  // The sparkle wake has its own geometry and material: one more instanced draw while it
-  // shows, none while hidden. Added after the fade materials, as it keeps its own alpha.
-  const trail = rounded
-    ? createSaucerTrail(d, plane, {
-        colors: saucerTrailColors(skySaucer(era)),
-        path: saucerFlightPoint,
-      })
-    : null;
   // Reduced motion keeps the flight but leaves the sparkle wake off.
   const reducedQuery = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
   const livery = rounded ? null : applyLivery(materials, appearance);
@@ -506,31 +493,27 @@ export function addAviationActivity(d, town) {
         livery(current.livery);
       }
     }
-    plane.visible = pose.visible;
     d.visitorTransports?.set('airport', { ...airplaneArrival(time), root: plane });
-    for (const material of materials.values()) material.opacity = pose.opacity;
-    plane.userData.flightPhase = pose.phase;
-    plane.userData.flightToMoon = rounded && toMoon;
-    if (!pose.visible) {
-      if (trail) trail.mesh.visible = false;
-      return;
-    }
-    plane.position.set(pose.x, pose.y, pose.z);
-    plane.rotation.set(pose.pitch, pose.yaw, pose.roll);
     if (rounded) {
       // Rim lights speed up and slow down instead of jumping between rates.
       spin += elapsed * pose.spin * 9;
-      propellers[0].rotation.z = spin;
-      legs.visible = pose.legs > 0.02;
-      legs.scale.setScalar(lerp(0.15, 1, pose.legs));
-      trail.update(
-        ((time % AIRPORT_FLIGHT_CYCLE) + AIRPORT_FLIGHT_CYCLE) % AIRPORT_FLIGHT_CYCLE,
+      saucer.apply(pose, {
+        spin,
+        phase: cyclePhase(time),
         toMoon,
-        !!(d.liveVisitorsReducedMotion || reducedQuery?.matches),
-      );
-    } else
+        reduced: !!(d.liveVisitorsReducedMotion || reducedQuery?.matches),
+      });
+    } else {
+      plane.visible = pose.visible;
+      for (const material of materials.values()) material.opacity = pose.opacity;
+      plane.userData.flightPhase = pose.phase;
+      plane.userData.flightToMoon = false;
+      if (!pose.visible) return;
+      plane.position.set(pose.x, pose.y, pose.z);
+      plane.rotation.set(pose.pitch, pose.yaw, pose.roll);
       for (const propeller of propellers.filter(Boolean))
         propeller.rotation.z = pose.propellers ? time * 18 : 0;
+    }
   };
   update(0);
   d.motions.push(update);

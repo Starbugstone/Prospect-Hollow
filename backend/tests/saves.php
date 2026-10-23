@@ -629,7 +629,13 @@ try {
             'stargazer' => ['greatTelescope', 'dewlightGardens', 'starlightTerraces'],
             'moonward' => ['spaceElevator', 'moonpost', 'missionHomesteads'],
             // Visitors see New Hollow too: Moon buildings travel in the shared projection.
-            'twin-hollows' => ['homecomingHall', 'ribbonLanding', 'settlerDomes', 'willowkinDome'],
+            'twin-hollows' => [
+                'homecomingHall',
+                'ribbonLanding',
+                'settlerDomes',
+                'willowkinDome',
+                'saucerPad',
+            ],
         ]
         as $era => $buildings
     ) {

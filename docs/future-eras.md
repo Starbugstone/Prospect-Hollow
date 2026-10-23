@@ -192,8 +192,46 @@ globe), half risen over the far hills; tapping it returns to the valley. The
 valley pauses while the Moon is open, and the Moon view keeps its input from the
 valley's camera. Lot buttons open the shared building details. Without WebGL
 the map falls back to an SVG crater with the same buttons. `buildings/moon.js`
-draws the ten buildings (glass domes on ceramic drums, airlocks, gold foil,
+draws the Moon buildings (glass domes on ceramic drums, airlocks, gold foil,
 solar fins), and `TownMoonBuilding.vue` draws them for cards and the fallback.
+
+The optional **Saucer Pad** is an eleventh Moon building, unlocked after Ribbon
+Landing level 1 and Rover Barn level 1. Its three levels use the shared Twin
+Hollows prices (31,500 / 35,250 / 39,000 coins), construction, needs and save
+contracts. The first level has a lit landing ring, beacon masts and service
+hatch; level 2 adds fuel and cargo, and level 3 a freight canopy and dispatch
+beacon. It adds comfort without increasing the settlement’s food or water demand.
+It occupies `[15, -30]` with radius 6.4, away from the ring road and
+other lots. Its public approach faces inward; the flight corridor climbs outward
+to the north-east. There is a matching SVG illustration, letter home and keepsake.
+
+Once the pad reaches level 1, `MoonSaucer.js` brings a shuttle onto its landing
+circle. The 150-second visit approaches from high sky, hovers, settles on
+extended legs, stays for 36 seconds, then lifts vertically and departs.
+`SkySaucer.js` shares the valley's model, airport-era paint, folding legs and
+sparkle wake/flash; Twin Hollows therefore keeps its Moonward craft. Reduced
+motion parks it with the wake and dust off. The Moon's existing clock and frame
+pacer drive everything; no flight state is saved and construction does not
+enable visits until the first level is completed.
+
+The pad explicitly sets `requiredForEraCompletion: false`, preserved by the
+shared building factory and exported to the server. It never makes a completed
+Twin Hollows save incomplete or gates future progression. Existing Moon buildings
+keep their completion requirements and the era's modernization list stays fixed.
+The footprint generator covers `EARTH_BUILDINGS` only; the Moon's shared lot radii
+and approach geometry cover this pad. No honours rank is added: buildings are not
+mine elements, gems, eras or fusions, and the existing construction counter counts
+these paid upgrades without changing any shipped honour requirements.
+
+`testing/moon-saucer.test.js` checks built visibility, palette fallback, grounded
+feet within the octagonal pad, flight clearance against finished buildings,
+road/path clearance, reduced motion and resource disposal.
+`testing/browser/moon-saucer.cjs` captures the unbuilt pad, approach, touchdown,
+take-off and close-ups with the render loop stopped. Use the media-tooling
+Playwright environment, set `PH_TEST_ORIGIN` to your Docker Vite server and
+`PH_SCREENSHOT_DIR` to an output directory. `PH_CAPTURE_VIDEO=1` additionally
+writes numbered PNG frames under `frames/`; encode them at 10 fps with ffmpeg
+for an accelerated visit with the long parked interval shortened.
 
 #### Moon input check
 

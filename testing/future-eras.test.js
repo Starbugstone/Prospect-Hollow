@@ -618,6 +618,7 @@ describe('New Hollow on the Moon', () => {
       lots: [{ id: 'ribbonLanding', position: new Vector3(0, 3.4, -8) }],
       onLabels: vi.fn(),
       walkers: [],
+      saucer: { step: vi.fn() },
       elapsed: 0,
       pacer: new TownFramePacer(),
     });

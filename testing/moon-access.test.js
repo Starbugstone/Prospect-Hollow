@@ -2,20 +2,22 @@ import { expect, it } from 'vitest';
 import { DoubleSide, Group, Raycaster, Vector3 } from 'three';
 import {
   MOON_LOTS,
+  MOON_LOT_RADIUS,
   MOON_RING_ROAD,
   moonApproach,
   moonApproaches,
   moonEntrance,
   moonLotPose,
+  moonPadRadius,
   moonSegmentDistance,
 } from '../src/data/moonSettlement';
 import { moonAccessGeometry, moonHeight } from '../src/game/town/moon/MoonScene';
 import { TownPrimitives } from '../src/game/town/TownPrimitives';
 import { renderMoonBuilding } from '../src/game/town/buildings/moon';
 
-it('connects all ten authored arrivals to the ring without crossing another parcel or a crater', () => {
+it('connects all authored arrivals to the ring without crossing another parcel or a crater', () => {
   const routes = moonApproaches();
-  expect(routes).toHaveLength(10);
+  expect(routes).toHaveLength(Object.keys(MOON_LOTS).length);
   for (const route of routes) {
     expect(route.clear, route.id).toBe(true);
     expect(route.points[0]).toEqual(route.entry);
@@ -25,7 +27,7 @@ it('connects all ten authored arrivals to the ring without crossing another parc
         b = route.points[n + 1];
       for (const [id, [x, z]] of Object.entries(MOON_LOTS))
         expect(moonSegmentDistance(x, z, a, b), `${route.id} crosses ${id}`).toBeGreaterThanOrEqual(
-          (id === route.id ? route.padRadius + 0.45 : 5.8) - 1e-8,
+          (id === route.id ? route.padRadius + 0.45 : Math.max(5, moonPadRadius(id)) + 0.8) - 1e-8,
         );
       const length = Math.hypot(b[0] - a[0], b[1] - a[1]);
       for (let step = 0; step <= Math.ceil(length / 0.25); step++) {
@@ -123,7 +125,8 @@ it('uses one bounded static entrance mesh with supported pad ramps and compatibl
 
 it('preserves existing lot poses, filters unbuilt lots and extends safely to a new lot', () => {
   for (const [id, [x, z]] of Object.entries(MOON_LOTS)) {
-    const expected = id === 'ribbonLanding' ? 0 : Math.atan2(-x, -(z + 8)) + Math.PI;
+    const expected =
+      id === 'ribbonLanding' ? 0 : Math.atan2(-x, -(z + 8)) + (id === 'saucerPad' ? 0 : Math.PI);
     expect(moonLotPose(id).rotation).toBe(expected);
   }
   expect(moonApproaches({})).toEqual([]);
@@ -131,6 +134,7 @@ it('preserves existing lot poses, filters unbuilt lots and extends safely to a n
     moonApproaches({ willowkinDome: 2 })[0].entry,
   );
   const lots = { ...MOON_LOTS, lunarBakery: [0, -34] };
+  expect(moonPadRadius('lunarBakery')).toBe(MOON_LOT_RADIUS);
   const route = moonApproach('lunarBakery', 1, lots);
   expect(route.clear).toBe(true);
   expect(route.points.flat().every(Number.isFinite)).toBe(true);

@@ -248,6 +248,8 @@ watch(
     props.town.projects,
     props.town.buildingEras,
     props.town.buildingEraLevels,
+    // The visiting saucer follows the valley airport's finish.
+    props.town.buildingEras?.airport,
   ],
   () => scene?.update(props.town),
   { deep: true },

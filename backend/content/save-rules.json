@@ -37183,6 +37183,36 @@
             null
           ]
         },
+        "saucerPad": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 31500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 1,
+              "cost": 35250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            },
+            {
+              "stage": 2,
+              "cost": 39000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "twin-hollows"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
         "earthriseLookout": {
           "normal": [
             {
@@ -40465,6 +40495,51 @@
         }
       ]
     },
+    "saucerPad": {
+      "kind": "saucerPad",
+      "introducedEra": "twin-hollows",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "shortSince": 0,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": false,
+      "unlock": [
+        {
+          "id": "ribbonLanding",
+          "level": 1
+        },
+        {
+          "id": "roverBarn",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "upgrades": [
+        {
+          "cost": 31500,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 35250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 39000,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
     "earthriseLookout": {
       "kind": "earthriseLookout",
       "introducedEra": "twin-hollows",
@@ -41617,6 +41692,13 @@
         "per": 2,
         "ids": [
           "roverBarn"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 2,
+        "ids": [
+          "saucerPad"
         ]
       },
       {
@@ -51493,6 +51575,7 @@
       "craterHomesteads": "frontier",
       "moonstoneWorkshop": "frontier",
       "roverBarn": "frontier",
+      "saucerPad": "frontier",
       "earthriseLookout": "frontier",
       "horseField": "frontier",
       "park": "frontier",
@@ -51578,6 +51661,7 @@
       "craterHomesteads": 0,
       "moonstoneWorkshop": 0,
       "roverBarn": 0,
+      "saucerPad": 0,
       "earthriseLookout": 0,
       "horseField": 0,
       "park": 0,
@@ -51670,6 +51754,7 @@
       "craterHomesteads": 0,
       "moonstoneWorkshop": 0,
       "roverBarn": 0,
+      "saucerPad": 0,
       "earthriseLookout": 0,
       "horseField": 0,
       "park": 0,
@@ -51829,6 +51914,7 @@
         "craterHomesteads": "frontier",
         "moonstoneWorkshop": "frontier",
         "roverBarn": "frontier",
+        "saucerPad": "frontier",
         "earthriseLookout": "frontier",
         "horseField": "frontier",
         "park": "frontier",
@@ -51914,6 +52000,7 @@
         "craterHomesteads": 0,
         "moonstoneWorkshop": 0,
         "roverBarn": 0,
+        "saucerPad": 0,
         "earthriseLookout": 0,
         "horseField": 0,
         "park": 0,
@@ -52006,6 +52093,7 @@
         "craterHomesteads": 0,
         "moonstoneWorkshop": 0,
         "roverBarn": 0,
+        "saucerPad": 0,
         "earthriseLookout": 0,
         "horseField": 0,
         "park": 0,
@@ -52056,5 +52144,5 @@
       "seenGeneration": 4
     }
   },
-  "contentDigest": "7f9fdd31f6c3154416e29c2415e6000cf75b9029736a15ca91df13ccd1ab5ba2"
+  "contentDigest": "973668ecad2d6c202a29a405ed3e231ca39d4bc1cff7e6a0dcfeb28469dbcf6a"
 }

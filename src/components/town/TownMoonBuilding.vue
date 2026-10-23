@@ -7,6 +7,15 @@
       <circle v-for="x in [-80, 80]" :key="`l${x}`" :cx="x" cy="-28" r="4" :fill="p.light" />
     </template>
     <template v-else>
+      <g v-if="kind === 'saucerPad'" data-landing-ring="lit">
+        <ellipse cy="-7" rx="65" ry="18" fill="none" :stroke="p.glass" stroke-width="5" />
+        <path d="M-16-7h32M-10-13v12M10-13v12" :stroke="p.light" stroke-width="3" />
+        <g v-if="level >= 3" :data-purpose-module="purpose">
+          <path d="M65-4v-43h42v39" :stroke="p.deep" stroke-width="3" fill="none" />
+          <path d="M60-50h52v7H60Z" :fill="p.roof" />
+          <rect x="74" y="-25" width="25" height="17" :fill="p.timber" />
+        </g>
+      </g>
       <!-- Ribbon, tripod or deck stand behind the buildings. -->
       <path v-if="kind === 'ribbonLanding'" d="M0-110V-330" :stroke="p.glass" stroke-width="4" />
       <ellipse
@@ -201,6 +210,14 @@ const parts = computed(() => {
   const level = props.level;
   const at = (min, ...items) => (level >= min ? items : []);
   switch (props.kind) {
+    case 'saucerPad':
+      return [
+        module(-88, 36, 30),
+        { type: 'lamp', x: -112 },
+        { type: 'lamp', x: 112 },
+        ...at(2, { type: 'tank', x: 88, r: 14, h: 34 }),
+        ...at(3, { type: 'lamp', x: -72 }),
+      ];
     case 'ribbonLanding':
       return [
         { type: 'tank', x: 0, r: 26, h: 110 },

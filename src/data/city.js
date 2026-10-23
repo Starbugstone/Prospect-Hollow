@@ -396,6 +396,19 @@ const twinBuildings = [
     effects: { comfort: 2 },
   },
   {
+    id: 'saucerPad',
+    name: 'Saucer Pad',
+    shortName: 'Saucer Pad',
+    purpose: 'A welcoming landing place for shuttles from the valley',
+    family: 'station',
+    effects: { comfort: 2 },
+    requiredForEraCompletion: false,
+    unlock: [
+      { id: 'ribbonLanding', level: 1 },
+      { id: 'roverBarn', level: 1 },
+    ],
+  },
+  {
     id: 'earthriseLookout',
     name: 'Earthrise lookout',
     shortName: 'Earthrise lookout',
@@ -411,7 +424,7 @@ const twinBuildings = [
   ...building,
   ...(id === 'homecomingHall'
     ? { unlock: [{ id: 'bridge', level: 1 }] }
-    : { settlement: 'moon', unlock: [{ id: 'spaceElevator', level: 1 }] }),
+    : { settlement: 'moon', unlock: building.unlock ?? [{ id: 'spaceElevator', level: 1 }] }),
 }));
 for (const building of twinBuildings) CITY_FAMILIES[building.kind] = building.family;
 

@@ -1,4 +1,4 @@
-import { BufferGeometry, Float32BufferAttribute, RingGeometry } from 'three';
+import { BufferGeometry, Float32BufferAttribute, MeshBasicMaterial, RingGeometry } from 'three';
 import { MOON_PALETTE as p } from '../../../data/futureArchitecture';
 import { heritageUpgrade } from '../../../data/heritageUpgrades';
 import { moonPadRadius } from '../../../data/moonSettlement';
@@ -222,6 +222,36 @@ function willowkinTree(d, g, x, y, z, scale = 1) {
 // The Moon end of the ribbon: the anchor tower, a docked climber and cargo bays.
 const RIBBON_HEIGHT = 140;
 const FORMS = {
+  saucerPad(d, g, level) {
+    pad(d, g, moonPadRadius('saucerPad'));
+    // Keep the whole vertical flight column empty. The service hatch and cargo
+    // stand outside the landing circle, with a straight public path at the front.
+    d.geometries['moon-saucer-ring'] ??= new RingGeometry(3.05, 3.2, 48);
+    const ring = d.mesh(g, 'moon-saucer-ring', [1, 1, 1], [0, 0.268, 0], p.glass);
+    ring.material = new MeshBasicMaterial({ color: p.glass });
+    ring.material.userData.transient = true;
+    ring.rotation.x = -Math.PI / 2;
+    ring.castShadow = false;
+    ring.name = 'Saucer pad landing lights';
+    module(d, g, 0, 4.5, 1.8, 1.4, 1.4);
+    for (const x of [-4, 4]) for (const z of [-4, 4]) lamp(d, g, x, z, 0.25);
+    if (level >= 2) {
+      d.mesh(g, 'cylinder', [0.5, 1.2, 0.5], [-4.7, 0.86, -1.2], p.shell);
+      d.mesh(g, 'cylinder', [0.52, 0.1, 0.52], [-4.7, 1.5, -1.2], p.light);
+      d.rod(g, [-4.7, 0.4, -1.2], [-4.7, 0.4, 1.2], 0.07, p.roof);
+      d.box(g, 0.9, 0.6, 0.9, 4.7, 0.56, -1.5, p.timber);
+    }
+    if (level >= 3) {
+      const cargo = d.group(g);
+      cargo.name = `Lunar purpose module ${heritageUpgrade('saucerPad')}`;
+      cargo.userData.upgradeFeature = heritageUpgrade('saucerPad');
+      for (const z of [-2.4, -0.6]) d.rod(cargo, [4.7, 0.26, z], [4.7, 2, z], 0.05, p.deep);
+      d.box(cargo, 1.5, 0.1, 2.2, 4.7, 2, -1.5, p.roof);
+      d.box(cargo, 0.9, 0.5, 0.7, 4.7, 1.1, -1.5, p.timber);
+      d.rod(g, [0.6, 1.65, 4.5], [0.6, 2.8, 4.5], 0.04, p.deep);
+      d.ball(g, 0.6, 2.9, 4.5, 0.16, p.light);
+    }
+  },
   ribbonLanding(d, g, level) {
     pad(d, g, moonPadRadius('ribbonLanding'));
     d.mesh(g, futureShape(d, 'octagon'), [1.3, 4.2, 1.3], [0, 2.35, 0], p.shell);
