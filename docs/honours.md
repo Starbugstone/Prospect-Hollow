@@ -542,7 +542,9 @@ payouts only (no chests, hammers, passive income, incident losses/bounties or pu
 This is a conservative progression model; it is not a prediction of real towns’ completion
 dates. After one campaign, normal replays cycle through the same 546 measured levels. The
 four-campaign horizon (2,184 normal runs) is diagnostic only. Continuous visits add their
-existing per-level coin allowance once; they do not advance construction, production or eras.
+existing per-level coin allowance once and feed workshop stock through its shared bounded
+300-gem production credit. They never advance construction or eras. Collection visits assume
+at least 30 seconds apart, satisfying the workshop’s existing collection cooldown.
 
 Reproduce in Node 24 Docker (mount `/tmp` as `/measure` for input/output files):
 
@@ -579,7 +581,7 @@ three seeds reach the rank; no success is silently imputed to a missing seed.
 | mine-gates        | 10 / 50 / 130 / 300            | 376 / 388 / 437 / 954 | 375 / 382 / 398 / 504       | 374 / 378 / 386 / 408        |
 | new-hollow        | 1 / 15 / 30                    | 939 / 952 / 966       | 938 / 952 / 966             | 938 / 952 / 966              |
 | saucer-welcome    | 1                              | 965                   | 965                         | 965                          |
-| moonstone-reserve | 10 / 60 / 180                  | 948 / 981 / 1101      | 947 / 980 / 1100            | 947 / 980 / 1100             |
+| moonstone-reserve | 10 / 60 / 180                  | 948 / 981 / 1101      | 947 / 979 / 1087            | 946 / 965 / 1011             |
 | landmark-patron   | 1 / 5 / 9                      | 26 / 331 / 957        | 25 / 331 / 958              | 25 / 331 / 958               |
 | endless-seam      | 2,500 / 25,000 / 100,000       | — / — / —             | 11 / 118 / 474              | 5 / 40 / 154                 |
 | seam-explorer     | 12 / 90 / 300                  | — / — / —             | 14 / 92 / 302               | 14 / 92 / 302                |
@@ -622,9 +624,11 @@ Raw calibration JSON is retained for review at `/tmp/ph-honours-campaign.json`,
 
 In those 300-move visits, the median first crossing was 25,000 points at move 15, 100,000 points at move 55, 500,000 points at move 248.
 
-Integration note: these town timings use moonstone economy version 1, the base of this
-implementation branch. Honours only read `moonstonesEarned`. The parallel workshop branch
-stores stock and adds a bounded continuous feed. The calibration helper accepts either
-stock shape and calls that branch’s shared `advanceContinuousMoonstones` when available;
-rerun it after integration to refresh resource timings without duplicating production rules.
-The mastery/continuous gem, fusion, element and score measurements are independent of stock.
+Integrated calibration uses local preprod merge `ab835eff` (including stored workshop stock,
+300 gems per production credit, and profile schema 4) plus the guided-project changes. The
+same script calls shared `advanceContinuousMoonstones`; it does not reproduce production
+rules. The honours claim and workshop feed share unchanged receipt `jewels`, keep separate
+cumulative run checkpoints, and commit together. Continuous honours keep counting after
+both the per-level workshop credit and coin allowances are exhausted. With the integrated
+workshop, currency silver is reached at normal runs 981 / 979 / 965 and gold at
+1101 / 1087 / 1011 (normal / one visit / three visits). Goals remain 10 / 60 / 180.

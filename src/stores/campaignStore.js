@@ -1,6 +1,8 @@
 import {
   MOONSTONE_VERSION,
   advanceMoonstoneProduction,
+  advanceContinuousMoonstones,
+  MOONSTONE_ECONOMY,
   earnMoonstones,
   spendMoonstoneBalance,
   sellMoonstoneBalance,
@@ -204,6 +206,15 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
         state.continuousRecords[id] = {
           coins: Math.min(CONTINUOUS_COIN_CAP, continuous.coins),
           score: continuous.score,
+          ...(Number.isSafeInteger(continuous.moonstoneGems) && continuous.moonstoneGems > 0
+            ? {
+                moonstoneGems: Math.min(
+                  MOONSTONE_ECONOMY.continuousGemsPerPuzzle *
+                    MOONSTONE_ECONOMY.continuousPuzzlesPerLevel,
+                  continuous.moonstoneGems,
+                ),
+              }
+            : {}),
         };
       const record = saved?.records?.[id];
       if (
@@ -296,7 +307,7 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
 };
 
 const profileData = (state) => ({
-  schemaVersion: 3,
+  schemaVersion: 4,
   integrity: state.integrity,
   records: state.records,
   continuousRecords: state.continuousRecords,
@@ -601,36 +612,63 @@ export const useCampaignStore = defineStore('campaign', {
         CONTINUOUS_COIN_CAP - previous.coins,
         Math.max(0, earned - run.credited),
       );
+      const observed = Math.max(run.moonstoneJewels ?? 0, jewels);
+      const stock = advanceContinuousMoonstones(
+        this.town,
+        previous.moonstoneGems ?? 0,
+        observed - (run.moonstoneJewels ?? 0),
+      );
       const best = Math.max(previous.score, score);
       const claim = tally ? { version: 1, ...runClaim(tally), mine: { ...tally.mine } } : null;
       const changed = claim && JSON.stringify(claim) !== JSON.stringify(run.honours);
-      if (!delta && previous.score === best && this.continuousRecords[id] && !changed) return true;
-      // Collection continues beyond the coin allowance. Old callers without a
-      // breakdown retain their legacy receipt behavior.
-      const receipt =
-        delta || changed || (claim && best > previous.score)
-          ? {
-              kind: 'continuous',
-              data: { runId, levelId: id, jewels, score, at, ...(claim ? { honours: claim } : {}) },
-            }
-          : null;
+      // Both lifecycles observe the unchanged cumulative jewels. A full workshop
+      // still journals observations so later collection cannot bank discarded gems.
+      const workshopObservation =
+        !!this.town.buildings.moonstoneWorkshop &&
+        (previous.moonstoneGems ?? 0) <
+          MOONSTONE_ECONOMY.continuousGemsPerPuzzle * MOONSTONE_ECONOMY.continuousPuzzlesPerLevel &&
+        observed > (run.moonstoneJewels ?? 0);
+      const receipt = delta || workshopObservation || changed || (claim && best > previous.score);
+      if (!receipt && previous.score === best && this.continuousRecords[id]) return true;
       return this.commit(
         {
-          continuousRecords: {
-            ...this.continuousRecords,
-            [id]: { coins: previous.coins + delta, score: best },
-          },
           continuousRun: {
             ...run,
             credited: Math.max(run.credited, earned),
+            moonstoneJewels: observed,
             ...(claim ? { honours: claim } : {}),
           },
-          town: { ...this.town, coins: Math.min(Number.MAX_SAFE_INTEGER, this.town.coins + delta) },
+          continuousRecords: {
+            ...this.continuousRecords,
+            [id]: {
+              ...previous,
+              coins: previous.coins + delta,
+              score: best,
+              ...(stock.gems ? { moonstoneGems: stock.gems } : {}),
+            },
+          },
+          town: {
+            ...stock.town,
+            coins: Math.min(Number.MAX_SAFE_INTEGER, this.town.coins + delta),
+          },
           ...(claim
             ? { honours: creditContinuous(this.honours, run.honours, claim, id, score) }
             : {}),
         },
-        receipt,
+        receipt
+          ? {
+              kind: 'continuous',
+              data: {
+                runId,
+                levelId: id,
+                jewels,
+                score,
+                at,
+                moonstoneVersion: MOONSTONE_VERSION,
+                ...(claim ? { honours: claim } : {}),
+              },
+            }
+          : null,
       );
     },
     resetProgress() {
@@ -661,7 +699,7 @@ export const useCampaignStore = defineStore('campaign', {
       return result.earned;
     },
     collectMoonstones(now = Date.now()) {
-      const amount = this.town.moonstoneProduction.charge;
+      const amount = this.town.moonstoneProduction.stored;
       if (
         !amount ||
         !Number.isSafeInteger(now) ||
@@ -676,11 +714,11 @@ export const useCampaignStore = defineStore('campaign', {
         {
           town: {
             ...town,
-            moonstoneProduction: { progress: 0, charge: 0 },
+            moonstoneProduction: { ...town.moonstoneProduction, stored: 0 },
             lastCollections: { ...town.lastCollections, moonstoneWorkshop: now },
           },
         },
-        { kind: 'moonstone-collect', data: { at: now } },
+        { kind: 'moonstone-collect', data: { at: now, moonstoneVersion: MOONSTONE_VERSION } },
       )
         ? amount
         : 0;

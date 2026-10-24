@@ -353,6 +353,7 @@ describe('Crediting a victory', () => {
     const profile = freshProfile();
     profile.records[1] = { score: 10, stars: 1 };
     profile.town.buildings.museum = 1;
+    profile.town.buildings.moonstoneWorkshop = 3;
     const campaign = open(profile, { guarded: true });
     const runId = campaign.beginRun('continuous', 1);
     const visit = (ruby, score = 25000) =>
@@ -366,6 +367,9 @@ describe('Crediting a victory', () => {
     expect(visit(600)).toBe(true);
     expect(visit(600)).toBe(true);
     expect(visit(2600, 100000)).toBe(true);
+    expect(campaign.continuousRun.moonstoneJewels).toBe(2600);
+    expect(campaign.continuousRecords[1].moonstoneGems).toBe(900);
+    expect(campaign.town.moonstoneProduction.stored).toBe(3);
     expect(counts().gems).toEqual({ ruby: 2600 });
     expect(counts().continuousGems).toBe(2600);
     expect(counts().fusions).toEqual({ 'bomb+cross': 1 });
@@ -392,14 +396,15 @@ describe('Crediting a victory', () => {
     const profile = freshProfile();
     profile.records[1] = { score: 1, stars: 1 };
     profile.town.buildings.museum = 1;
+    profile.town.buildings.moonstoneWorkshop = 3;
     const campaign = open(profile);
     const runId = campaign.beginRun('continuous', 1);
     const request = {
       id: 1,
       runId,
-      jewels: 600,
+      jewels: 900,
       score: 25000,
-      tally: { gems: { ruby: 600 }, fusions: {}, mine: {} },
+      tally: { gems: { ruby: 900 }, fusions: {}, mine: {} },
     };
     const original = JSON.parse(JSON.stringify(campaign.honours));
     const save = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
@@ -408,10 +413,14 @@ describe('Crediting a victory', () => {
     expect(campaign.recordContinuous(request)).toBe(false);
     expect(campaign.honours).toEqual(original);
     expect(campaign.continuousRun.honours).toBeUndefined();
+    expect(campaign.continuousRun.moonstoneJewels).toBeUndefined();
+    expect(campaign.town.moonstoneProduction.stored).toBe(0);
     save.mockRestore();
     expect(campaign.recordContinuous(request)).toBe(true);
-    expect(campaign.honours.counts.continuousGems).toBe(600);
-    expect(campaign.honours.counts.gems.ruby).toBe(600);
+    expect(campaign.honours.counts.continuousGems).toBe(900);
+    expect(campaign.honours.counts.gems.ruby).toBe(900);
+    expect(campaign.town.moonstoneProduction.stored).toBe(3);
+    expect(campaign.continuousRecords[1].moonstoneGems).toBe(900);
   });
 
   it('credits mine elements from the completed level configuration, replays included', () => {
@@ -471,7 +480,7 @@ describe('Evaluation at save', () => {
     expect(campaign.honours.earned['fusion-bronze'].at).toBeGreaterThan(0);
     expect(stored().earned['fusion-bronze']).toBeTruthy();
 
-    const profile = { ...freshProfile(), schemaVersion: 4 };
+    const profile = { ...freshProfile(), schemaVersion: 5 };
     profile.records[1] = { score: 1, stars: 3 };
     profile.honours = { ...createHonours(), backfilled: 1 };
     const readOnly = open(profile);

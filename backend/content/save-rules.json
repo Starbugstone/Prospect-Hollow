@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "profileSchemaVersion": 3,
+  "profileSchemaVersion": 4,
   "maxSafeInteger": 9007199254740991,
   "levelCount": 546,
   "levelsPerChapter": 6,
@@ -51364,8 +51364,11 @@
       2
     ],
     "moonstones": {
-      "version": 1,
+      "version": 2,
       "runs": 3,
+      "storageBatches": 10,
+      "continuousGemsPerPuzzle": 300,
+      "continuousPuzzlesPerLevel": 3,
       "saleCoins": 250,
       "buildings": [
         "ribbonLanding",
@@ -51696,12 +51699,12 @@
       "charge": 0
     },
     "coins": 0,
-    "moonstoneVersion": 1,
+    "moonstoneVersion": 2,
     "moonstones": 0,
     "moonstonesEarned": 0,
     "moonstoneProduction": {
       "progress": 0,
-      "charge": 0
+      "stored": 0
     },
     "tourSeen": false,
     "buildings": {
@@ -51812,7 +51815,7 @@
     "progressionVersion": 2
   },
   "defaultProfile": {
-    "schemaVersion": 3,
+    "schemaVersion": 4,
     "records": {},
     "continuousRecords": {},
     "powers": [
@@ -52043,12 +52046,12 @@
         "charge": 0
       },
       "coins": 0,
-      "moonstoneVersion": 1,
+      "moonstoneVersion": 2,
       "moonstones": 0,
       "moonstonesEarned": 0,
       "moonstoneProduction": {
         "progress": 0,
-        "charge": 0
+        "stored": 0
       },
       "tourSeen": false,
       "buildings": {
@@ -52181,5 +52184,5 @@
       "seenGeneration": 5
     }
   },
-  "contentDigest": "9b6a78abaf2d28f831e6fa16b16163827a22208234f3455bcefb8435006e057a"
+  "contentDigest": "995bb79d541f829bcf8f157d7e5827d0f1dfe25aef0800d823188012074e2108"
 }

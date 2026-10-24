@@ -1,10 +1,13 @@
-import { advancePuzzleProduction } from './puzzleProduction';
+import { advanceStoredPuzzleProduction } from './puzzleProduction';
 import { MOON_LOTS, moonstoneKeepsakes } from './moonSettlement';
 
-export const MOONSTONE_VERSION = 1;
+export const MOONSTONE_VERSION = 2;
 export const MOONSTONE_ECONOMY = Object.freeze({
   version: MOONSTONE_VERSION,
   runs: 3,
+  storageBatches: 10,
+  continuousGemsPerPuzzle: 300,
+  continuousPuzzlesPerLevel: 3,
   saleCoins: 250,
 });
 const validMoonstoneAmount = (amount) => Number.isSafeInteger(amount) && amount > 0;
@@ -13,12 +16,14 @@ export const createMoonstones = () => ({
   moonstoneVersion: MOONSTONE_VERSION,
   moonstones: 0,
   moonstonesEarned: 0,
-  moonstoneProduction: { progress: 0, charge: 0 },
+  moonstoneProduction: { progress: 0, stored: 0 },
 });
 // A deterministic state migration, never an additive reward command. Both devices
 // derive the same starting balance; sync chooses a complete checkpoint, never sums it.
+export const moonstoneCapacity = (town) =>
+  (town.buildings.moonstoneWorkshop ?? 0) * MOONSTONE_ECONOMY.storageBatches;
 export function normalizeMoonstones(saved, town) {
-  const migrated = saved?.moonstoneVersion === MOONSTONE_VERSION;
+  const migrated = [1, MOONSTONE_VERSION].includes(saved?.moonstoneVersion);
   const earned = migrated ? count(saved.moonstonesEarned) : moonstoneKeepsakes(town);
   const production = saved?.moonstoneProduction;
   return {
@@ -26,14 +31,15 @@ export function normalizeMoonstones(saved, town) {
     moonstones: migrated ? Math.min(earned, count(saved.moonstones)) : earned,
     moonstonesEarned: earned,
     moonstoneProduction: {
-      progress:
-        migrated && production?.charge === 0 && Number.isInteger(production?.progress)
-          ? Math.max(0, Math.min(MOONSTONE_ECONOMY.runs - 1, production.progress))
-          : 0,
-      charge:
-        migrated && Number.isInteger(production?.charge)
-          ? Math.max(0, Math.min(town.buildings.moonstoneWorkshop ?? 0, production.charge))
-          : 0,
+      progress: migrated ? Math.min(MOONSTONE_ECONOMY.runs - 1, count(production?.progress)) : 0,
+      stored: migrated
+        ? Math.min(
+            saved.moonstoneVersion === 1
+              ? (town.buildings.moonstoneWorkshop ?? 0)
+              : moonstoneCapacity(town),
+            count(saved.moonstoneVersion === 1 ? production?.charge : production?.stored),
+          )
+        : 0,
     },
   };
 }
@@ -51,17 +57,18 @@ export function rewardMoonBuilding(before, after, id) {
     : 0;
   return amount ? earnMoonstones(after, amount) : after;
 }
-// Same one-batch, completed-puzzle lifecycle as the blacksmith. Upgrading keeps
-// progress and a ready batch; neither elapsed time nor continuous play produces it.
+// One completed normal puzzle (or equivalent continuous gem credit) advances stock.
+// Upgrading keeps stock and progress.
 export function advanceMoonstoneProduction(town) {
   const level = town.buildings.moonstoneWorkshop ?? 0;
   return level
     ? {
         ...town,
-        moonstoneProduction: advancePuzzleProduction(
+        moonstoneProduction: advanceStoredPuzzleProduction(
           town.moonstoneProduction,
           MOONSTONE_ECONOMY.runs,
           level,
+          moonstoneCapacity(town),
         ),
       }
     : town;
@@ -78,4 +85,24 @@ export function sellMoonstoneBalance(town, amount) {
   return Number.isSafeInteger(coins) && town.coins <= Number.MAX_SAFE_INTEGER - coins
     ? { ...next, coins: town.coins + coins }
     : null;
+}
+
+// Only eligible gems consume the level's lifetime allowance. Once full, discard
+// the rest of this settlement, preserving already earned partial credit.
+export function advanceContinuousMoonstones(town, previousGems, jewels) {
+  const perPuzzle = MOONSTONE_ECONOMY.continuousGemsPerPuzzle;
+  const limit = perPuzzle * MOONSTONE_ECONOMY.continuousPuzzlesPerLevel;
+  let gems = previousGems;
+  let remaining = Math.min(jewels, limit - gems);
+  while (
+    remaining > 0 &&
+    town.buildings.moonstoneWorkshop &&
+    town.moonstoneProduction.stored < moonstoneCapacity(town)
+  ) {
+    const used = Math.min(remaining, perPuzzle - (gems % perPuzzle));
+    gems += used;
+    remaining -= used;
+    if (gems % perPuzzle === 0) town = advanceMoonstoneProduction(town);
+  }
+  return { town, gems };
 }

@@ -858,6 +858,23 @@ foreach ($fixtures->fixtures as $fixture) {
             'mid-visit enrollment does not recredit a cumulative continuous claim',
         );
     }
+    if (
+        str_starts_with($fixture->name, 'legacy moonstone') ||
+        str_starts_with($fixture->name, 'pending legacy moonstone')
+    ) {
+        $recovery = integrityData($fixture->after);
+        $recovery['integrity']['checkpoint'] = $starting->integrity->checkpoint;
+        $restored = $validator->accept(integrityObject($recovery), $starting, $clock, true);
+        assertIntegrity(
+            $restored->town->moonstoneProduction == $result->town->moonstoneProduction,
+            'signed v1 checkpoint replays legacy receipts before migrating stock',
+        );
+        integrityDenied(
+            fn() => $validator->accept($fixture->before, $result, $clock),
+            'save_rules_unsupported',
+            'schema-3 client cannot overwrite stored production',
+        );
+    }
     $forged = integrityData($fixture->after);
     $forged['town']['coins']++;
     integrityDenied(
@@ -865,6 +882,71 @@ foreach ($fixtures->fixtures as $fixture) {
         'save_integrity_mismatch',
         $fixture->name . ' cannot hide an extra coin in a legitimate batch',
     );
+    if (str_contains($fixture->name, 'moonstone') || str_contains($fixture->name, 'workshop')) {
+        $fakeStock = integrityData($fixture->after);
+        $fakeStock['town']['moonstoneProduction']['stored'] =
+            $fakeStock['town']['buildings']['moonstoneWorkshop'] * 10 + 1;
+        integrityDenied(
+            fn() => $validator->accept(integrityObject($fakeStock), $starting, $clock),
+            'save_integrity_invalid',
+            'workshop cannot hold above capacity',
+        );
+        if ($fakeStock['town']['buildings']['moonstoneWorkshop'] > 0) {
+            $fakeStock['town']['moonstoneProduction']['stored'] =
+                ($fixture->after->town->moonstoneProduction->stored + 1) %
+                ($fakeStock['town']['buildings']['moonstoneWorkshop'] * 10 + 1);
+            integrityDenied(
+                fn() => $validator->accept(integrityObject($fakeStock), $starting, $clock),
+                'save_integrity_mismatch',
+                'stock within capacity still requires production receipts',
+            );
+        }
+        $overCollect = integrityData($fixture->after);
+        foreach ($overCollect['integrity']['actions'] as &$action) {
+            if ($action['kind'] === 'moonstone-collect') {
+                $action['data']['amount'] = 999;
+            }
+        }
+        unset($action);
+        if ($overCollect !== integrityData($fixture->after)) {
+            integrityDenied(
+                fn() => $validator->accept(integrityObject($overCollect), $starting, $clock),
+                'save_integrity_mismatch',
+                'collection cannot exceed stored stock',
+            );
+        }
+        $extra = integrityData($fixture->after);
+        $extra['town']['moonstoneProduction']['progress'] =
+            ($extra['town']['moonstoneProduction']['progress'] + 1) % 3;
+        integrityDenied(
+            fn() => $validator->accept(integrityObject($extra), $starting, $clock),
+            'save_integrity_mismatch',
+            'unreceipted workshop progress',
+        );
+        $retry = $validator->accept($fixture->after, $result, $clock);
+        assertIntegrity(
+            $retry->town->moonstones === $result->town->moonstones,
+            'workshop retry cannot credit twice',
+        );
+    }
+    if (
+        str_starts_with($fixture->name, 'continuous moonstone') ||
+        str_starts_with($fixture->name, 'continuous full workshop')
+    ) {
+        $fake = integrityData($fixture->after);
+        $fake['continuousRecords'][1]['moonstoneGems'] = 901;
+        integrityDenied(
+            fn() => $validator->accept(integrityObject($fake), $starting, $clock),
+            'save_integrity_invalid',
+            'continuous allowance cannot exceed 900 gems',
+        );
+        $fake['continuousRecords'][1]['moonstoneGems'] = 0;
+        integrityDenied(
+            fn() => $validator->accept(integrityObject($fake), $starting, $clock),
+            'save_integrity_mismatch',
+            'continuous allowance cannot be refreshed',
+        );
+    }
     if (str_starts_with($fixture->name, 'optional landmark ')) {
         if (str_contains($fixture->name, 'version-2 foundation')) {
             $purchases = [];

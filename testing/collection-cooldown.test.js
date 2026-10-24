@@ -44,7 +44,7 @@ it('has independent building timers, saves them, and keeps forge production runn
   expect(c.collectSaloonIncome(1000)).toBe(10);
   expect(c.collectForgeTNT(1000)).toBe(true);
   c.town.buildings.moonstoneWorkshop = 3;
-  c.town.moonstoneProduction = { progress: 0, charge: 3 };
+  c.town.moonstoneProduction = { progress: 0, stored: 3 };
   expect(c.collectMoonstones(1000)).toBe(3);
   for (let i = 0; i < 3; i++) c.town = advanceMoonstoneProduction(c.town);
   expect(c.collectMoonstones(30999)).toBe(0);

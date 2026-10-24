@@ -1,3 +1,4 @@
+import { moonstoneCapacity } from '../../data/moonstones';
 import { bonusCapacity } from '../../data/rewards';
 import { forgeProductionRuns } from '../../data/eras';
 import { serviceLevel } from '../../data/buildingProgression';
@@ -36,6 +37,24 @@ export function buildingBenefit(town, id, stage, modernization = false) {
     buildingEras: { ...town.buildingEras, [id]: offer?.targetEra ?? town.era },
     buildingEraLevels: { ...town.buildingEraLevels, [id]: offer?.eraLevel ?? stage },
   };
+  // Its primary service takes precedence over the workshop's secondary visitors.
+  if (id === 'moonstoneWorkshop')
+    return {
+      icon: 'moonstone',
+      label: 'Moonstones per batch',
+      before: town.buildings.moonstoneWorkshop ?? 0,
+      after: after.buildings.moonstoneWorkshop,
+      suffix: '',
+      additional: [
+        {
+          icon: 'moonstone',
+          label: 'Moonstone storage capacity',
+          before: moonstoneCapacity(town),
+          after: moonstoneCapacity(after),
+          suffix: '',
+        },
+      ],
+    };
   // Water, food, homes, visitors and comfort follow the shared needs model, so
   // modernizing the waterworks or a farm previews its real capacity.
   // The saloon and diner preview their income; others the first need they change.
@@ -70,11 +89,6 @@ export function buildingBenefit(town, id, stage, modernization = false) {
     icon = 'mine';
     label = 'Bonus capacity';
     read = bonusCapacity;
-  } else if (id === 'moonstoneWorkshop') {
-    icon = 'moonstone';
-    label = 'Moonstones per batch';
-    read = (v) => v.buildings.moonstoneWorkshop ?? 0;
-    suffix = '';
   } else if (id === 'blacksmith') {
     icon = 'mine';
     label = 'Puzzles per TNT';

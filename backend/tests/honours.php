@@ -354,6 +354,12 @@ try {
         'cumulative continuous claims credit only growth, including beyond the coin allowance',
     );
     check(
+        $continuousSaved->town->moonstoneProduction->stored === 3 &&
+            $continuousSaved->continuousRecords->{'249'}->moonstoneGems === 900 &&
+            $continuousSaved->integrity->context->run->moonstoneJewels === 2600,
+        'the same unchanged jewels produce bounded workshop stock alongside uncapped honours collection',
+    );
+    check(
         !array_diff(
             ['gem-ruby-bronze', 'fusion-bronze', 'endless-seam-bronze', 'continuous-score-silver'],
             $continuousSaved->honours->verified,
