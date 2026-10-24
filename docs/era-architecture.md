@@ -458,9 +458,15 @@ coordinated period outfits per visit, including coat length, hat, skirt and acce
 The outfit draw is independent of the name/gender draw and stable during the visit. Their names appear on tap/hover in the main view.
 
 Only identities explicitly marked `vip: true` by the random VIP draw may make
-occasional 5-coin purchases. `canVipSpend` excludes live visitors and legacy
+occasional purchases worth 5 coins times the mining chapter multiplier of their
+host’s highest completed normal level (5 before the first completion). `canVipSpend` excludes live visitors and legacy
 share-link guests, even when named. The same check gates shopping stops, spending
 notifications and wallet receipts, so ordinary visitors produce no coin animation.
+`vipSpend(records)` reuses `miningDepthBonus`; the store returns the credited
+amount to the popup. The exported VIP contract names its base, version and
+highest-completed-normal-level rule. PHP replay derives depth from validated
+records and the existing level mining multipliers. Missing receipt versions retain
+the legacy five coins. VIP MoneyBudget charges use the entire credited amount.
 
 `TownVipArrivals` owns transient visits, never campaign events or rewards.
 Train, boat and airplane motion publish their actual arrival cycle and stopped

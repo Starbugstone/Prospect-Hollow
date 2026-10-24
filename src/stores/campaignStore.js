@@ -19,7 +19,8 @@ import {
 import { personaliseTown } from '../data/townPersonalisation';
 import { CREST_EMBLEM_IDS } from '../data/townCrests';
 import {
-  VIP_SPEND,
+  vipSpend,
+  VIP_SPEND_VERSION,
   VIP_RECEIPT_LIMIT,
   vipVisitBuildings,
   normalizeVipReceipts,
@@ -736,21 +737,25 @@ export const useCampaignStore = defineStore('campaign', {
     collectVipSpending(receipt) {
       const at = Date.now();
       const key = vipReceipt(receipt);
+      const amount = vipSpend(this.records);
       if (
         !key ||
         this.vipReceipts.includes(key) ||
         !vipVisitBuildings(this.town).includes(receipt.building) ||
-        this.town.coins > Number.MAX_SAFE_INTEGER - VIP_SPEND
+        this.town.coins > Number.MAX_SAFE_INTEGER - amount
       )
         return 0;
       const saved = this.commit(
         {
-          town: { ...this.town, coins: this.town.coins + VIP_SPEND },
+          town: { ...this.town, coins: this.town.coins + amount },
           vipReceipts: [...this.vipReceipts, key].slice(-VIP_RECEIPT_LIMIT),
         },
-        { kind: 'vip-spend', data: { key, buildingId: receipt.building, at } },
+        {
+          kind: 'vip-spend',
+          data: { key, buildingId: receipt.building, economyVersion: VIP_SPEND_VERSION, at },
+        },
       );
-      return saved ? VIP_SPEND : 0;
+      return saved ? amount : 0;
     },
     collectSaloonIncome(now = Date.now()) {
       if (!Number.isSafeInteger(now) || now < 0 || !this.town.buildings.saloon) return 0;

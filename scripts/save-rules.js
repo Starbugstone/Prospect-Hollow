@@ -33,7 +33,7 @@ import {
   bonusCapacity,
 } from '../src/data/rewards.js';
 import { SHOP_ITEMS, shopSlots } from '../src/data/shop.js';
-import { VIP_SPEND, vipVisitBuildings } from '../src/data/vipVisits.js';
+import { VIP_SPEND_BASE, VIP_SPEND_VERSION, vipVisitBuildings } from '../src/data/vipVisits.js';
 import { INCIDENT_TARGETS, fireProtection } from '../src/data/townEvents.js';
 import { generateLevelConfigs } from '../src/game/engine/LevelGenerator.js';
 import { SPACE_HELMET } from '../src/data/townAnimals.js';
@@ -349,7 +349,11 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
       multiMatchCoinStep: MULTI_MATCH_COIN_STEP,
       starCascadeTarget: STAR_CASCADE_TARGET,
       starScoreMultiplier: STAR_SCORE_MULTIPLIER,
-      vipSpend: VIP_SPEND,
+      vipSpend: {
+        base: VIP_SPEND_BASE,
+        version: VIP_SPEND_VERSION,
+        depthRule: 'highest-completed-normal-level',
+      },
       vipBuildings: vipVisitBuildings(town),
       forgeRuns: FORGE_PRODUCTION_RUNS,
       moonstones: { ...MOONSTONE_ECONOMY, buildings: Object.keys(MOON_LOTS) },

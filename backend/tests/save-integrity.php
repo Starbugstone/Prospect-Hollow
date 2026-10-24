@@ -1896,10 +1896,58 @@ foreach ($fixtures->fixtures as $fixture) {
         $vipResult = $validator->accept($fixture->after, $vipStart, $fixture->serverNow);
         assertIntegrity(
             SaveIntegrity::receipt($vipResult)['moneyBudget']['newGrossCharge'] ===
-                $rules['economy']['vipSpend'],
+                $rules['economy']['vipSpend']['base'],
             'VIP new money is counted while saloon reserve transfer is exempt',
         );
     }
+}
+
+foreach ($fixtures->fixtures as $fixture) {
+    if ($fixture->name !== 'VIP purchase at chapter 91') {
+        continue;
+    }
+    $vipStart = $validator->accept($fixture->before, null, $fixture->serverNow);
+    $vipResult = $validator->accept($fixture->after, $vipStart, $fixture->serverNow);
+    assertIntegrity($vipResult->town->coins === $vipStart->town->coins + 455, 'deep VIP pays 455');
+    $budget = SaveIntegrity::receipt($vipResult)['moneyBudget'];
+    assertIntegrity(
+        $budget['newGrossCharge'] === 455 && $budget['newMintedCoins'] === 455,
+        'MoneyBudget charges the full scaled VIP payout, without mining normalization',
+    );
+    assertIntegrity(
+        $validator->accept($vipResult, $vipResult, $fixture->serverNow)->town->coins ===
+            $vipResult->town->coins,
+        'accepted versioned VIP replay never pays twice',
+    );
+    $forged = integrityData($fixture->after);
+    $forged['town']['coins']++;
+    $forged['integrity']['actions'][0]['data']['amount'] = 456;
+    integrityDenied(
+        fn() => $validator->accept(integrityObject($forged), $vipStart, $fixture->serverNow),
+        'save_integrity_mismatch',
+        'forged VIP amount',
+    );
+    foreach ([2, '1', null] as $version) {
+        $unknown = integrityData($fixture->after);
+        $unknown['integrity']['actions'][0]['data']['economyVersion'] = $version;
+        integrityDenied(
+            fn() => $validator->accept(integrityObject($unknown), $vipStart, $fixture->serverNow),
+            'save_integrity_mismatch',
+            'unknown VIP receipt version',
+        );
+    }
+    $legacy = integrityData($fixture->after);
+    unset($legacy['integrity']['actions'][0]['data']['economyVersion']);
+    $legacy['town']['coins'] = $vipStart->town->coins + 5;
+    $legacyResult = $validator->accept(integrityObject($legacy), $vipStart, $fixture->serverNow);
+    assertIntegrity(
+        $legacyResult->town->coins === $vipStart->town->coins + 5,
+        'unversioned pending VIP receipt still pays exactly five at chapter 91',
+    );
+    assertIntegrity(
+        SaveIntegrity::receipt($legacyResult)['moneyBudget']['newGrossCharge'] === 5,
+        'legacy VIP MoneyBudget retains five coins',
+    );
 }
 
 // A newly generated protected encounter earns a bounty at creation, before the

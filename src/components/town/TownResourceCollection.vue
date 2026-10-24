@@ -75,7 +75,7 @@ const resources = {
     icon: 'coin',
     particles: 5,
     cue: 'coin',
-    message: 'A VIP spent {coins} coins in your village!',
+    message: 'A VIP spent {coins} coins at your mine depth!',
     suffix: '',
   },
   'project-hammer': {
