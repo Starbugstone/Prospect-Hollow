@@ -109,6 +109,19 @@ describe('The village view opens a tapped building in place', () => {
     expect(map).toContain(`return emit('locate', 'spaceElevator')`);
   });
 
+  it('starts and finishes work, monuments included, without moving the camera', () => {
+    for (const name of [
+      'startWork',
+      'useHammer',
+      'buildFree',
+      'buildMonument',
+      'finishBuilding',
+      'showConstruction',
+      'unveilMonument',
+    ])
+      expect(body(name), name).not.toContain('focusPlace');
+  });
+
   it('passes KEEP_CAMERA through every card a tap can open', () => {
     const select = body('selectBuilding');
     expect(select).toMatch(/^function selectBuilding\(id, locate = true\)/);

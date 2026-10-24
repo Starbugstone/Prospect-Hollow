@@ -978,7 +978,7 @@ function buildMonument(command) {
       : 'Work on the {monument} has begun: {count} puzzles to go.',
     { monument: name, count: work?.required ?? 0 },
   );
-  nextTick(() => townScene.value?.focusPlace(command.id));
+  // Starting work leaves the camera where it is, as for any building.
   return true;
 }
 // A finished monument level is unveiled by the player: the scaffolding comes down
