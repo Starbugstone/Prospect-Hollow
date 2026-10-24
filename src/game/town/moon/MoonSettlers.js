@@ -34,6 +34,8 @@ const heightOn = (route, x, z) => {
   return PAD_TOP * (1 - t) + ROAD * t;
 };
 const approachPoints = (route) => route.points.map(([x, z]) => [x, heightOn(route, x, z), z]);
+/** A lot's hatch, on its pad: where walkers step in and out. */
+export const moonHatch = (route) => approachPoints(route)[0];
 
 // Ring points from one angle to another the short way round, or a full lap when
 // both ends meet (a settler with a single building to visit takes a stroll).
@@ -187,18 +189,24 @@ export function moonSuitFigure(d, { parent, suit = p.shell, pack = p.roof }) {
   return { root, body, torso, head, arms, legs };
 }
 
+/** The valley's walk cycle on a suited figure `distance` along its walk, with a hop at
+ * each footfall. Settlers and the Moon's VIP visitors share it. */
+export function strideMoonFigure({ body, arms, legs }, distance, walking = true) {
+  const step = (distance / STRIDE) * TAU;
+  body.position.y = 0.54 + (walking ? Math.abs(Math.sin(step)) * HOP : 0);
+  swingLimbs(arms, legs, step, walking);
+}
+
 const pose = {};
 /** Place and animate one settler: the valley's walk cycle with a hop at each footfall. */
 export function animateMoonSettler(settler, time) {
   moonSettlerPose(settler.plan, time, pose);
-  const { root, body, legs, arms } = settler;
+  const { root } = settler;
   root.visible = pose.visible;
   if (!pose.visible) return pose;
   root.position.set(pose.x, pose.y, pose.z);
   root.rotation.y = pose.heading;
   root.scale.setScalar(pose.scale);
-  const step = (pose.distance / STRIDE) * TAU;
-  body.position.y = 0.54 + Math.abs(Math.sin(step)) * HOP;
-  swingLimbs(arms, legs, step, true);
+  strideMoonFigure(settler, pose.distance);
   return pose;
 }

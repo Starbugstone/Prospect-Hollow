@@ -66,6 +66,16 @@ crowd uses the same `moonSuitFigure`. Taps on the Moon go through the valley's
 `createTapGesture`, and every parcel's tap target is sized to its roof (the ribbon
 and its halo are sky, not the landing).
 
+VIP visitors come to New Hollow too, under the valley's VIP rules and code
+([VIP economy](vip-economy.md#settlements)). A climber rides the ribbon down to the
+Ribbon landing (`MoonScene.moveTransports`) and the saucer settles on its pad; each
+arrival may bring one VIP, who steps out of that lot's hatch in a suit with the valley's
+gold badge and an outfit-coloured sash, tours the Commons, the Moonstone workshop and the
+Earthrise lookout along the settlers' paths, shops inside them and leaves by the same
+hatch. Tapping or hovering a VIP shows the valley's "VIP visitor" name label; the
+camera stays put. `testing/moon-vips.test.js` covers both transports, the one-VIP rule,
+the shops, receipts, hatches, the label and the shared-town case.
+
 `testing/moon-settlers.test.js` checks that routes run hatch to hatch, keep off
 other pads and walk without jumps, and that settlers appear or vanish only at a
 hatch. `testing/town-upgrade-glow.test.js` checks that each lot's glow lines up

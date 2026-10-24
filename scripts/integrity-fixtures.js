@@ -719,6 +719,22 @@ export function createIntegrityFixtures() {
           }
         },
       );
+    // Appended last so the generated identifiers of earlier flows stay put.
+    fixture(
+      'VIP purchase at a New Hollow shop',
+      (profile) => develop(profile, 'twin-hollows'),
+      (campaign) => {
+        if (
+          campaign.collectVipSpending({
+            tour: 'moon-fixture-tour',
+            stop: 0,
+            building: 'newHollowCommons',
+            visitor: { vip: true },
+          }) !== 10
+        )
+          throw new Error('A Moon VIP did not spend the valley amount.');
+      },
+    );
     return { version: 1, fixtures };
   } finally {
     Date.now = original.now;

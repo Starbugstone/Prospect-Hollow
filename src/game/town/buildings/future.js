@@ -11,6 +11,7 @@ import { leisureModel } from '../LeisureAssets';
 import { BRIDGE, bridgeDeckHeight } from '../TownRiver';
 import { parkedVehicle } from '../TownVehicles';
 import { futureShape } from './futureShapes';
+import { CLIMB, climberArrival, climberRise } from '../TownClimbers';
 import { sailKit } from './future/sail';
 import { observatoryKit } from './future/observatory';
 import { homesteadKit } from './future/homestead';
@@ -694,16 +695,8 @@ function climber(d, parent, s, y) {
   g.traverse((part) => (part.castShadow = false));
 }
 export const ELEVATOR_CLIMBERS = 'Space elevator climbers';
-const CLIMB = { bottom: 6.6, top: 64, period: 46, dwell: 3.5 };
 /** The first climber reaches the docks once per trip; Moon guests step off then. */
-export function elevatorArrival(time) {
-  const since = ((time % CLIMB.period) + CLIMB.period) % CLIMB.period;
-  return {
-    arrived: since < CLIMB.dwell,
-    sinceArrival: since,
-    visit: Math.floor(time / CLIMB.period),
-  };
-}
+export const elevatorArrival = (time) => climberArrival(time);
 /** The elevator's per-frame motion: climbers ride the ribbon and, each time one
  * reaches the docks, Moon guests may step off (the climber group frames them). */
 export const elevatorMotion = (d, climbers) => (time) => {
@@ -715,8 +708,7 @@ export function moveClimbers(group, time) {
   const climbers = group.children;
   climbers.forEach((climber, n) => {
     const phase = (time / CLIMB.period + n / climbers.length) % 1;
-    const rise = phase < 0.5 ? phase * 2 : 2 - phase * 2;
-    climber.position.y = CLIMB.bottom + rise * rise * (3 - 2 * rise) * (CLIMB.top - CLIMB.bottom);
+    climber.position.y = CLIMB.bottom + climberRise(phase) * (CLIMB.top - CLIMB.bottom);
   });
 }
 

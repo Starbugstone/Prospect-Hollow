@@ -271,6 +271,9 @@ export function residentOutfit(profile, seed = 0) {
   ];
   return { shirt, trousers, hat, boots, accent, hair, variant, apron: variant === 0 };
 }
+// Every VIP wears the gold badge and gold trim, in the valley's clothes or a Moon suit;
+// the outfit's accent colours their sash, scarf or satchel.
+export const VIP_MARKER = Object.freeze({ badge: '#ffd15b', trim: '#e9c878' });
 export function vipOutfit(profile, seed = 0) {
   const wardrobe = townWardrobe(profile);
   const variant = Math.floor(villagerRandom(seed + 15427) * wardrobe.palettes.length);

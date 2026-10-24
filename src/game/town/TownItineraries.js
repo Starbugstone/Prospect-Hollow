@@ -60,7 +60,7 @@ export class TownItineraries {
         !d.town.projects?.[id] &&
         this.graph.nodes.has(plotStreet(id).join(',')),
     );
-    this.shops = new Set(vipVisitBuildings(d.town));
+    this.shops = new Set(vipVisitBuildings(d.town, 'valley'));
     this.legs = new Map();
     this.detours = new Map();
     this.bridgeLane =
@@ -329,14 +329,12 @@ export class TownItineraries {
     const seen = new Set();
     const options = this.destinations.filter((id) => id !== actor.source && id !== actor.home);
     // Spread destinations across districts, including the far bank when connected.
-    const seed = actor.itinerarySeed ?? actor.seed;
-    const ordered = [...options].sort(
-      (a, b) =>
-        villagerRandom(seed + options.indexOf(a) * 719) -
-        villagerRandom(seed + options.indexOf(b) * 719),
+    const ordered = visitOrder(
+      options,
+      actor.itinerarySeed ?? actor.seed,
+      this.shops,
+      actor.visitor,
     );
-    if (actor.visitor)
-      ordered.sort((a, b) => Number(this.shops.has(b)) - Number(this.shops.has(a)));
     const farBank = ordered
       .filter(
         (id) =>
@@ -368,10 +366,8 @@ export class TownItineraries {
       }
       yield;
     }
-    for (let n = 0; n < Math.min(12, ordered.length) && plans.length < 5; n++) {
-      const ids = [ordered[n], ordered[(n + 1) % ordered.length]].filter(
-        (id, i, all) => all.indexOf(id) === i,
-      );
+    for (const ids of tourPairs(ordered)) {
+      if (plans.length >= TOUR_CHOICES) break;
       const points = [anchor],
         stops = [],
         visited = [];
@@ -397,6 +393,29 @@ export class TownItineraries {
     }
     return plans;
   }
+}
+
+// A walker chooses between this many prepared tours, in every settlement.
+export const TOUR_CHOICES = 5;
+/** A tour's places: each destination with the next, in visit order (twelve at most). */
+export function* tourPairs(ordered) {
+  for (let n = 0; n < Math.min(12, ordered.length); n++)
+    yield [ordered[n], ordered[(n + 1) % ordered.length]].filter(
+      (id, i, all) => all.indexOf(id) === i,
+    );
+}
+/**
+ * The order a walker tries its destinations in, stable for its seed. Visitors try the
+ * places they may spend in first, in every settlement.
+ */
+export function visitOrder(options, seed, shops, visitor) {
+  const ordered = [...options].sort(
+    (a, b) =>
+      villagerRandom(seed + options.indexOf(a) * 719) -
+      villagerRandom(seed + options.indexOf(b) * 719),
+  );
+  if (visitor) ordered.sort((a, b) => Number(shops.has(b)) - Number(shops.has(a)));
+  return ordered;
 }
 
 // A resident indoors when its plans change keeps resting there. Unseen, it moves
