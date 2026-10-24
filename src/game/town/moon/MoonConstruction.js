@@ -3,7 +3,8 @@ import { MOON_LOTS, moonLotPose } from '../../../data/moonSettlement';
 import { constructionReady, constructionVisual } from '../TownRules';
 import { TownConstruction } from '../TownConstruction';
 
-const finishKey = (town, id) =>
+// A lot's saved finish: its level and the era it was last finished in.
+export const finishKey = (town, id) =>
   `${town.buildings?.[id] ?? 0}:${town.buildingEras?.[id]}:${town.buildingEraLevels?.[id]}`;
 
 // The saved project and readiness rules are the valley's. Only the work-site kit
@@ -14,16 +15,14 @@ export class MoonConstruction {
   constructor(view) {
     this.view = view;
     this.sites = new Map();
-    this.effects = [];
     this.reveals = new Map();
-    this.finishes = null;
+    this.synced = false;
   }
   sync(town) {
     const { d, scene, elapsed } = this.view;
     for (const id of Object.keys(MOON_LOTS)) {
       const project = town.projects?.[id];
       const level = town.buildings?.[id] ?? 0;
-      const finish = finishKey(town, id);
       const key =
         project &&
         `${level}:${project.stage}:${constructionVisual(project)}:${constructionReady(project)}`;
@@ -35,11 +34,8 @@ export class MoonConstruction {
         d.clearGroup(previous.root);
         this.sites.delete(id);
       }
-      if (!project) {
-        if (this.finishes && level > 0 && finish !== this.finishes[id] && !this.view.reducedMotion)
-          this.celebrate(id, elapsed);
-        continue;
-      }
+      // A finished lot is revealed by MoonScene with the valley's construction reveal.
+      if (!project) continue;
       const { x, z, rotation } = moonLotPose(id);
       const root = d.group(scene, x, 0, z);
       root.name = `Lunar construction site ${id}`;
@@ -81,7 +77,7 @@ export class MoonConstruction {
       this.sites.set(id, { key, root });
       // A project the player just started (not one restored on load) is built in view;
       // its pieces merge into one batch once the reveal settles.
-      if (!previous && this.finishes && !this.view.reducedMotion) {
+      if (!previous && this.synced && !this.view.reducedMotion) {
         const reveal = new TownConstruction(
           Object.assign(Object.create(d), { activeElapsed: elapsed, town }),
           root,
@@ -92,20 +88,7 @@ export class MoonConstruction {
         this.reveals.set(id, reveal);
       } else d.batch(root);
     }
-    this.finishes = Object.fromEntries(
-      Object.keys(MOON_LOTS).map((id) => [id, finishKey(town, id)]),
-    );
-  }
-  celebrate(id, time) {
-    const { d, scene } = this.view;
-    const { x, z } = moonLotPose(id);
-    const root = d.group(scene, x, 0, z);
-    root.name = `Lunar assembly completed ${id}`;
-    const sparks = Array.from({ length: 12 }, (_, n) =>
-      d.ball(root, 0, 0, 0, 0.2, n % 2 ? p.glass : p.light, 'rock'),
-    );
-    this.effects.push({ root, sparks, start: time });
-    this.update(time);
+    this.synced = true;
   }
   update(time, still = false) {
     for (const [id, reveal] of this.reveals)
@@ -114,29 +97,10 @@ export class MoonConstruction {
         this.view.d.batch(this.sites.get(id).root);
         this.reveals.delete(id);
       }
-    this.effects = this.effects.filter((effect) => {
-      const t = Math.min(1, Math.max(0, (time - effect.start) / 1.8));
-      if (t >= 1 || still) {
-        this.view.d.clearGroup(effect.root);
-        return false;
-      }
-      effect.sparks.forEach((spark, n) => {
-        const a = (n / effect.sparks.length) * Math.PI * 2;
-        const radius = 2 + t * 4;
-        spark.position.set(
-          Math.cos(a) * radius,
-          0.2 + Math.sin(t * Math.PI) * 3,
-          Math.sin(a) * radius,
-        );
-        spark.scale.setScalar(0.18 * (1 - t));
-      });
-      return true;
-    });
   }
   dispose() {
     this.reveals.clear();
-    for (const { root } of [...this.sites.values(), ...this.effects]) this.view.d.clearGroup(root);
+    for (const { root } of this.sites.values()) this.view.d.clearGroup(root);
     this.sites.clear();
-    this.effects = [];
   }
 }

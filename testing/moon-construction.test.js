@@ -75,12 +75,9 @@ it.each(MOON_BUILDINGS.map(({ id }) => id))(
     expect(v.construction.sites.has(id)).toBe(false);
     expect(ready.parent).toBeNull();
     expect(buildingIndicators(store.town)[id]).not.toBe('ready');
-    expect(v.construction.effects).toHaveLength(1);
+    // The finished building's reveal is MoonScene's (see moon-parcels.test.js).
+    expect(v.construction.reveals.size).toBe(0);
     expect(store.finishConstruction(id, 1)).toBe(false);
-    const effect = v.construction.effects[0].root;
-    v.construction.update(2);
-    expect(effect.parent).toBeNull();
-    expect(v.construction.effects).toHaveLength(0);
     v.construction.dispose();
     v.d.disposePrimitives();
   },
@@ -93,7 +90,7 @@ it('restores a ready site on reload without a celebration and disposes on map cl
   const root = v.construction.sites.get('settlerDomes').root;
   v.construction.sync(town);
   expect(v.construction.sites.get('settlerDomes').root).toBe(root);
-  expect(v.construction.effects).toHaveLength(0);
+  expect(v.construction.reveals.size).toBe(0);
   v.construction.dispose();
   expect(root.parent).toBeNull();
   expect(v.scene.children).toHaveLength(0);
@@ -112,7 +109,7 @@ it('shares affordable-upgrade and collect labels without retaining the ready ham
   expect(buildingActionLabel(town, 'blacksmith', 'tnt')).toBe('Collect 1 TNT');
 });
 
-it('keeps an upgrade scaffold until completion and also celebrates a future era modernization', () => {
+it('keeps an upgrade scaffold until completion', () => {
   const v = view();
   const store = useCampaignStore();
   store.town = townFor('settlerDomes', 2);
@@ -123,14 +120,6 @@ it('keeps an upgrade scaffold until completion and also celebrates a future era 
   expect(store.finishConstruction('settlerDomes', 2)).toBe(true);
   v.construction.sync(store.town);
   expect(v.construction.sites.has('settlerDomes')).toBe(false);
-  expect(v.construction.effects).toHaveLength(1);
-  v.construction.update(2);
-  // Modernizations keep the base level; their saved finish is the completion signal.
-  store.town.buildingEraLevels.settlerDomes = 3;
-  v.construction.sync(store.town);
-  expect(v.construction.effects).toHaveLength(1);
-  v.construction.update(2, true);
-  expect(v.construction.effects).toHaveLength(0);
   v.construction.dispose();
   v.d.disposePrimitives();
 });

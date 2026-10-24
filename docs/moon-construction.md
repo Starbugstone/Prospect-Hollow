@@ -30,10 +30,13 @@ The valley affordances that were missing on the Moon were:
 - Floating per-building action markers. The Moon consumes the entire shared
   indicator map and action registry, including collection actions; current Moon
   definitions do not independently produce saloon coins or forge TNT.
-- A local completion effect. A short lunar spark burst follows a changed saved
-  building finish, including builder-hammer upgrades. It follows the Moon's
-  existing paced animation clock and pause/visibility state. Reduced motion
-  skips it and clears any burst already in flight.
+- The valley's construction reveal (`TownConstruction`), both when work starts and
+  when a building is finished, including builder-hammer upgrades and later era
+  finishes: new pieces settle top-down under a swinging hammer with a puff of
+  dust. A starting worksite merges into one batch once it settles; a finished lot
+  is drawn on its own during the reveal, then merged back into the settlement.
+  It follows the Moon's paced animation clock; reduced motion and a fresh load
+  show the result at once.
 - A projected collection origin, so shared reward feedback can originate at a
   Moon building rather than falling back to the centre of the valley view.
 

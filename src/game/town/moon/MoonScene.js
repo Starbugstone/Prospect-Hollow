@@ -10,7 +10,8 @@ import { MoonSaucer } from './MoonSaucer';
 import { TownFramePacer } from '../TownFramePacer';
 import { TownRenderQuality } from '../TownRenderQuality';
 import { TownUpgradeGlow } from '../TownUpgradeGlow';
-import { MoonConstruction } from './MoonConstruction';
+import { MoonConstruction, finishKey } from './MoonConstruction';
+import { TownConstruction, constructionParts } from '../TownConstruction';
 import { renderMoonBuilding } from '../buildings/moon';
 import { MOON_PALETTE as p } from '../../../data/futureArchitecture';
 import {
@@ -518,27 +519,77 @@ export class MoonScene {
     this.requestFrame();
     // Building lots only: monument sites add labels to this.lots but draw separately.
     const levels = Object.keys(MOON_LOTS).map((id) => town?.buildings?.[id] ?? 0);
-    const signature = levels.join();
+    const finishes = Object.keys(MOON_LOTS).map((id) => finishKey(town ?? {}, id));
+    const signature = finishes.join('|');
     if (signature === this.signature) return;
+    // A lot finished while the Moon is open settles into place with the valley's
+    // construction reveal: drawn on its own until then, outside the merged settlement.
+    const previous = this.finishes;
+    const finished = new Set(
+      previous && !this.reducedMotion
+        ? Object.keys(MOON_LOTS).filter((id, n) => levels[n] > 0 && finishes[n] !== previous[n])
+        : [],
+    );
+    this.endLotReveals();
     this.signature = signature;
+    this.finishes = finishes;
     this.d.clearGroup(this.buildings);
     this.buildings = this.d.group(this.scene);
     this.buildings.name = 'New Hollow buildings';
     Object.keys(MOON_LOTS).forEach((id, n) => {
       const { x, z, rotation } = moonLotPose(id);
-      const lot = this.d.group(this.buildings, x, 0, z);
+      const lot = this.d.group(finished.has(id) ? this.scene : this.buildings, x, 0, z);
       lot.rotation.y = rotation;
       renderMoonBuilding(this.d, lot, id, levels[n]);
       // A tap over a low building reaches the lot behind it, as on screen.
       (this.roofs ??= {})[id] = moonRoofHeight(lot);
+      if (finished.has(id)) this.revealLot(id, lot, this.previousLevels?.[n] ?? 0);
     });
     this.access.geometry.dispose();
     this.access.geometry = moonAccessGeometry(moonApproaches(town?.buildings ?? {}));
+    this.previousLevels = levels;
     this.refitLots();
     // The whole settlement draws as one merged mesh per palette colour.
     this.d.batch(this.buildings);
     this.populate(town);
     this.requestFrame();
+  }
+  // The finished lot's new pieces (those its previous model lacked) settle top-down under
+  // the swinging hammer, exactly as a finished valley building does.
+  revealLot(id, lot, previousLevel) {
+    const before = new THREE.Group();
+    before.position.copy(lot.position);
+    before.rotation.copy(lot.rotation);
+    renderMoonBuilding(this.d, before, id, previousLevel);
+    const parts = constructionParts(before);
+    this.d.clearGroup(before);
+    lot.userData.plot = id;
+    const reveal = new TownConstruction(
+      Object.assign(Object.create(this.d), { activeElapsed: this.elapsed ?? 0, town: this.town }),
+      lot,
+      null,
+      parts,
+    );
+    reveal.presentFirstStrike();
+    (this.lotReveals ??= new Map()).set(id, { reveal, lot });
+  }
+  // Ends every lot reveal at once; the next update merges those lots with the rest.
+  endLotReveals() {
+    for (const { reveal, lot } of this.lotReveals?.values() ?? []) {
+      reveal.finish();
+      this.d.clearGroup(lot);
+    }
+    this.lotReveals?.clear();
+  }
+  updateLotReveals(time, still = false) {
+    if (!this.lotReveals?.size) return;
+    let settled = true;
+    for (const { reveal } of this.lotReveals.values()) if (!reveal.update(time)) settled = false;
+    if (!still && !settled) return;
+    // Merge the settled lots back into the settlement batch.
+    this.endLotReveals();
+    this.signature = '';
+    this.update(this.town);
   }
   /** Settlers walk the ring road and rovers circle it; more homes, more neighbors. */
   populate(town) {
@@ -573,6 +624,7 @@ export class MoonScene {
   }
   move(time) {
     this.construction.update(time, this.reducedMotion);
+    this.updateLotReveals(time, this.reducedMotion);
     this.saucer.step(time, this.reducedMotion);
     this.monuments?.userData.update(this.reducedMotion ? 0 : time);
     for (const settler of this.settlers ?? []) animateMoonSettler(settler, time);
@@ -730,6 +782,7 @@ export class MoonScene {
   setReducedMotion(value) {
     this.reducedMotion = value;
     this.construction.update(this.elapsed, value);
+    this.updateLotReveals(this.elapsed, value);
     this.saucer.step(this.elapsed, value);
     this.requestFrame();
   }
@@ -845,6 +898,7 @@ export class MoonScene {
     this.surface.removeEventListener('lostpointercapture', this.onPointerCancel);
     this.controls.dispose();
     this.construction.dispose();
+    this.endLotReveals();
     this.upgradeGlow.dispose();
     this.selectionRoot?.removeFromParent();
     this.selection?.geometry.dispose();

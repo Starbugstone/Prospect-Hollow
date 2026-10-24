@@ -13,7 +13,7 @@ import { AIRPORT, PLOTS } from './TownLayout';
 export const VALLEY_LOT = Object.freeze({ halfWidth: 1.525, halfDepth: 1.35 });
 export const VALLEY_WELL_LOT = Object.freeze({ halfWidth: 1.05, halfDepth: 1.05 });
 // The paved middle of a monument site that answers a tap on the ground.
-export const SITE_TAP_SHARE = 0.75;
+const SITE_TAP_SHARE = 0.75;
 
 function lotExtent(id) {
   if (id === 'airport') return AIRPORT;
@@ -58,7 +58,7 @@ export function valleyParcel(id, group) {
 }
 
 /** A monument site's ground circle. */
-export function valleySite(area) {
+function valleySite(area) {
   const [x, z] = area.positions[0];
   return {
     id: area.id,

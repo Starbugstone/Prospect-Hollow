@@ -36,7 +36,7 @@ function harness(component, path, template, prepare) {
     render: Vue.compile(template, { prefixIdentifiers: true, bindingMetadata: bindingsFor(path) }),
   };
 }
-export const normalise = (html) =>
+const normalise = (html) =>
   html
     .replace(/<!--[\s\S]*?-->/g, '')
     .replace(/ data-v-\w+(="")?/g, '')

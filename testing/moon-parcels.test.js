@@ -306,3 +306,73 @@ it('answers a tap on a worksite’s scaffolding and crane, not only on its pad',
   scene.construction.dispose();
   scene.upgradeGlow.dispose();
 });
+
+// MoonScene.update with real buildings and a real MoonConstruction.
+function liveScene(town, reducedMotion = false) {
+  const scene = parcelScene(town);
+  Object.assign(scene, {
+    signature: '',
+    elapsed: 0,
+    reducedMotion,
+    access: { geometry: { dispose() {} } },
+    populate() {},
+    saucer: { update() {}, step() {} },
+  });
+  scene.construction = new MoonConstruction(scene);
+  scene.update(town);
+  return scene;
+}
+const withLevel = (town, id, level) => ({
+  ...town,
+  buildings: { ...town.buildings, [id]: level },
+  projects: {},
+});
+
+it('finishes a Moon building with the valley’s construction reveal, then merges it', () => {
+  const town = { ...moonTown(), buildings: { ...moonTown().buildings, ribbonLanding: 1 } };
+  const scene = liveScene(town);
+  expect(scene.lotReveals?.size ?? 0).toBe(0);
+  const finished = withLevel(town, 'roverBarn', 1);
+  scene.update(finished);
+  const { reveal, lot } = scene.lotReveals.get('roverBarn');
+  // Drawn on its own, outside the merged settlement, until it settles.
+  expect(lot.parent).toBe(scene.scene);
+  expect(reveal.hammer.parent).toBeTruthy();
+  // The pad was already there: only the building's new pieces settle into place.
+  expect(reveal.pieces.some(({ object }) => object.userData.parcelPad)).toBe(false);
+  expect(reveal.pieces.length).toBeGreaterThan(5);
+  for (let time = 0; time <= 0.5; time += 1 / 60) scene.move(time);
+  expect(reveal.pieces.some(({ object, y }) => object.position.y > y)).toBe(true);
+  for (let time = 0.5; time <= 3; time += 1 / 60) scene.move(time);
+  expect(scene.lotReveals.size).toBe(0);
+  expect(lot.parent).toBeNull();
+  expect(scene.buildings.getObjectByName('Moon roverBarn level 1')).toBeDefined();
+  scene.construction.dispose();
+  scene.upgradeGlow.dispose();
+});
+
+it('reveals a finished upgrade and a later era finish, but not on load or in reduced motion', () => {
+  const base = { ...moonTown(), buildings: { ...moonTown().buildings, settlerDomes: 1 } };
+  const scene = liveScene(base);
+  scene.update(withLevel(base, 'settlerDomes', 2));
+  expect([...scene.lotReveals.keys()]).toEqual(['settlerDomes']);
+  scene.move(0);
+  scene.setReducedMotion(true);
+  expect(scene.lotReveals.size).toBe(0);
+  scene.reducedMotion = false;
+  // A modernization keeps the level; its saved finish is the completion signal.
+  const modern = withLevel(base, 'settlerDomes', 2);
+  modern.buildingEraLevels = { ...modern.buildingEraLevels, settlerDomes: 3 };
+  scene.update(modern);
+  expect([...scene.lotReveals.keys()]).toEqual(['settlerDomes']);
+  scene.endLotReveals();
+  // Reduced motion and a first load show the finished building at once.
+  const still = liveScene(withLevel(base, 'settlerDomes', 2), true);
+  expect(still.lotReveals?.size ?? 0).toBe(0);
+  still.update(withLevel(base, 'settlerDomes', 3));
+  expect(still.lotReveals?.size ?? 0).toBe(0);
+  for (const view of [scene, still]) {
+    view.construction.dispose();
+    view.upgradeGlow.dispose();
+  }
+});
