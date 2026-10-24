@@ -39,6 +39,27 @@ configuration, database backups and generated runtime mesh chunks. Do not remove
 database volumes as part of a cache cleanup. Inspect project-specific Docker
 containers before removing obsolete previews; other projects share Docker.
 
+## Dependency audits
+
+CI audits both lockfiles: `npm audit --audit-level=moderate` in the frontend job and
+`composer audit` in the backend job. The npm audit covers development tools too
+(Vite, Vitest, knip and their dependencies), since they run on contributor machines
+and in CI. Moderate is the threshold because development-server advisories are often
+rated moderate; low findings are reported without failing the run. Run it locally in
+Docker with the frontend prefix from `AGENTS.md`, adding `--omit=dev` to check only
+what ships to players:
+
+```sh
+npm audit --audit-level=moderate
+npm audit --omit=dev
+```
+
+Fix a finding with the smallest in-range update, such as `npm update vite vitest` or
+`npm update <transitive package>`, staying on the current major line. Raise a
+`package.json` range or bump the package that pulls in a transitive dependency only
+when the lockfile cannot reach the patched version otherwise, and use `overrides` only
+when no fixed upstream release exists. Then run `npm run verify`.
+
 ## Worktrees
 
 ```sh

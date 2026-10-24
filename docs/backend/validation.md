@@ -16,7 +16,7 @@ The September 2026 replacement removes the PHP puzzle engine and tests the accou
 - `testing/cloud-profile.test.js`: local persistence and the revision/dirty matrix, interrupted uploads, conflict resolution, account changes, live-game replacement guards, independent town revisions, deletion, local-only slots and storage failures.
 - Desync recovery regressions cover automatic server preference with a complete local recovery copy, local continuation from the current server revision, full village/bonus/balance replacement, renewed confirmation after a concurrent server change, deferred application during a mine, offline reconnect, lost overwrite acknowledgments, storage failures and recovery after reload.
 
-CI runs the frontend, both database variants independently, dependency audit, Docker build and packaged HTTP checks. Obsolete engine-parity jobs have been removed with the engine they tested.
+CI runs the frontend, both database variants independently, npm and Composer dependency audits, Docker build and packaged HTTP checks. Obsolete engine-parity jobs have been removed with the engine they tested.
 
 Browser verification uses the isolated local packaged application and local Mailpit; no production account or database is involved. Native protocol tests do not substitute for an iOS/Android device run.
 
