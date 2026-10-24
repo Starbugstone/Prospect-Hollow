@@ -16,6 +16,7 @@
       <span
         v-if="showEraProgress"
         class="village-era-progress"
+        role="img"
         :aria-label="
           t('Era improvements: {count}/{total}', {
             count: eraProgress.done,

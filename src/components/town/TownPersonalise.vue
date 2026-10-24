@@ -72,7 +72,7 @@
           :placeholder="t('Find an emblem')"
         />
       </div>
-      <div class="personal-emblems" :aria-label="t('Emblems')">
+      <div class="personal-emblems" role="group" :aria-label="t('Emblems')">
         <button
           v-for="emblem in emblems"
           :key="emblem.id"
