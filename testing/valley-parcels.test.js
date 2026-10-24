@@ -18,10 +18,12 @@ import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { AIRPORT, PLOTS } from '../src/game/town/TownLayout';
 import {
+  PARCEL_BASE_HEIGHT,
   VALLEY_LOT,
   VALLEY_WELL_LOT,
   parcelBounds,
   valleyLot,
+  valleyParcel,
   valleySites,
 } from '../src/game/town/TownParcels';
 import { TownPrimitives } from '../src/game/town/TownPrimitives';
@@ -290,4 +292,29 @@ describe('a town grown by a tap keeps the camera', () => {
     );
     expect(frame).toHaveBeenCalled();
   });
+});
+
+it('takes a parcel from the ground a building stands on, not from parts overhead', () => {
+  const d = new TownPrimitives();
+  const [x, z] = PLOTS.spaceElevator;
+  const plot = d.group(new Group(), x, 0.08, z);
+  // A slender tower on the lot and a wide orbital ring high above it.
+  d.box(plot, 1.2, 30, 1.2, 0, 15, 0, '#ffffff');
+  d.box(plot, 18, 0.4, 18, 0, 12, 0, '#ffffff');
+  const parcel = valleyParcel('spaceElevator', plot);
+  const lot = valleyLot('spaceElevator');
+  expect([parcel.minX, parcel.maxX, parcel.minZ, parcel.maxZ]).toEqual(
+    [lot.minX, lot.maxX, lot.minZ, lot.maxZ].map((value) => expect.closeTo(value, 6)),
+  );
+  expect(parcel.top).toBeCloseTo(30.08);
+  // The glow hugs the tower's base, not the whole garden parcel or the ring above it.
+  const glow = parcelBounds(parcel);
+  expect([glow.min.x, glow.max.x]).toEqual([
+    expect.closeTo(x - 0.6, 6),
+    expect.closeTo(x + 0.6, 6),
+  ]);
+  // A base on the ground wider than the lot does widen the parcel.
+  d.box(plot, 20, 0.5, 20, 0, PARCEL_BASE_HEIGHT / 4, 0, '#ffffff');
+  expect(valleyParcel('spaceElevator', plot).maxX).toBeCloseTo(x + 10);
+  d.disposePrimitives();
 });

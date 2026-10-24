@@ -10,6 +10,11 @@ import {
 
 // Two simple surfaces per plot, cached with the town. Normal depth testing lets
 // walls and neighboring buildings hide the glow; no overlay particles or bloom.
+// The fading wall is a faint band around the base: a tall building or a tower
+// never raises it into a pillar.
+export const GLOW_WALL = Object.freeze({ share: 0.45, min: 0.6, max: 1.2 });
+const wallHeight = (height) =>
+  Math.min(GLOW_WALL.max, Math.max(GLOW_WALL.min, height * GLOW_WALL.share));
 export class TownUpgradeGlow {
   constructor(scene) {
     this.root = new Group();
@@ -43,7 +48,7 @@ export class TownUpgradeGlow {
       vertexShader,
       fragmentShader: `varying vec2 vUv;
         void main() {
-          float alpha = pow(1.0 - vUv.y, 2.0) * .82;
+          float alpha = pow(1.0 - vUv.y, 2.0) * .6;
           gl_FragColor = vec4(.15, 1.0, .25, alpha);
           #include <tonemapping_fragment>
           #include <colorspace_fragment>
@@ -87,7 +92,7 @@ export class TownUpgradeGlow {
     const group = new Group();
     const width = bounds.max.x - bounds.min.x;
     const depth = bounds.max.z - bounds.min.z;
-    const height = Math.max(0.6, (bounds.max.y - bounds.min.y) * 0.45);
+    const height = wallHeight(bounds.max.y - bounds.min.y);
     group.position.set(
       (bounds.min.x + bounds.max.x) / 2,
       bounds.min.y + 0.15,
@@ -122,8 +127,9 @@ export class TownUpgradeGlow {
     halo.rotation.set(-Math.PI / 2, 0, -Math.PI / 2);
     halo.scale.set(radius + 1.1, radius + 1.1, 1);
     const aura = new Mesh(shape.wall, this.aura);
-    aura.scale.set(radius + 0.12, height * 0.45, radius + 0.12);
-    aura.position.y = (height * 0.45) / 2;
+    const wall = wallHeight(height);
+    aura.scale.set(radius + 0.12, wall, radius + 0.12);
+    aura.position.y = wall / 2;
     group.add(halo, aura);
     this.place(id, group);
   }

@@ -2,7 +2,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { Box3, CylinderGeometry, Group, Quaternion, Scene, Vector3 } from 'three';
 import { MOON_LOTS, moonLotPose, moonPadRadius } from '../src/data/moonSettlement';
 import { TownPrimitives } from '../src/game/town/TownPrimitives';
-import { TownUpgradeGlow } from '../src/game/town/TownUpgradeGlow';
+import { GLOW_WALL, TownUpgradeGlow } from '../src/game/town/TownUpgradeGlow';
 import { renderMoonBuilding } from '../src/game/town/buildings/moon';
 
 const glows = [];
@@ -83,7 +83,7 @@ it.each(Object.keys(MOON_LOTS))(
     // The aura wall rises from the halo with no lid or floor.
     const box = new Box3().setFromObject(aura);
     expect(box.min.y).toBeCloseTo(0.08, 5);
-    expect(box.max.y).toBeCloseTo(0.08 + 3.6 * 0.45, 5);
+    expect(box.max.y).toBeCloseTo(0.08 + GLOW_WALL.max, 5);
     expect(aura.geometry.parameters.openEnded).toBe(true);
     expect(group.visible).toBe(false);
   },
@@ -172,9 +172,10 @@ it('square plots keep their box glow', () => {
   expect(aura.geometry).toBe(glow.box);
   expect(aura.material).toBe(glow.aura);
   expect(aura.scale.x).toBeCloseTo(3.25, 12);
-  expect(aura.scale.y).toBeCloseTo(1.35, 12);
+  // A 3-unit building: 45% of its height, capped to the faint band around the base.
+  expect(aura.scale.y).toBeCloseTo(GLOW_WALL.max, 12);
   expect(aura.scale.z).toBeCloseTo(3.25, 12);
-  expect(aura.position.y).toBeCloseTo(0.675, 12);
+  expect(aura.position.y).toBeCloseTo(GLOW_WALL.max / 2, 12);
   // Only the four vertical faces of the box are drawn.
   expect(glow.box.index.count).toBe(24);
   expect(glow.box.groups).toHaveLength(0);
@@ -182,4 +183,15 @@ it('square plots keep their box glow', () => {
   glow.add('well', { min: { x: 0, y: 0, z: 0 }, max: { x: 1, y: 0.2, z: 1 } });
   expect(glow.plots.get('well').children[1].scale.y).toBe(0.6);
   expect(new CylinderGeometry(1, 1, 1, 8).parameters.radialSegments).toBe(8);
+});
+
+it('keeps the glow a low band around the base, however tall the building', () => {
+  const glow = new TownUpgradeGlow(new Scene());
+  // A space elevator tower forty units tall.
+  glow.add('spaceElevator', new Box3(new Vector3(-2, 0, -2), new Vector3(2, 40, 2)));
+  const aura = glow.plots.get('spaceElevator').children[1];
+  expect(aura.scale.y).toBe(GLOW_WALL.max);
+  glow.addPolygon('tallPad', { x: 0, z: 0, radius: 4, sides: 8, height: 40 });
+  expect(glow.plots.get('tallPad').children[1].scale.y).toBe(GLOW_WALL.max);
+  glow.dispose();
 });

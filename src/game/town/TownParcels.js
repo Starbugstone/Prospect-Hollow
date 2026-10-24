@@ -1,4 +1,4 @@
-import { Box3 } from 'three';
+import { Box3, Vector3 } from 'three';
 import { GARDEN_PARCELS } from '../../data/townGardenDistrict';
 import { areasForSettlement } from '../../data/townLandmarks';
 import { AIRPORT, PLOTS } from './TownLayout';
@@ -11,6 +11,7 @@ import { AIRPORT, PLOTS } from './TownLayout';
 // Once drawn, the plot joins its lot with the model's ground bounds, since buildings
 // of later eras can outgrow the frontier lot.
 export const VALLEY_LOT = Object.freeze({ halfWidth: 1.525, halfDepth: 1.35 });
+const groundPoint = new Vector3();
 export const VALLEY_WELL_LOT = Object.freeze({ halfWidth: 1.05, halfDepth: 1.05 });
 // The paved middle of a monument site that answers a tap on the ground.
 const SITE_TAP_SHARE = 0.75;
@@ -39,21 +40,39 @@ export function valleyLot(id) {
   };
 }
 
-const drawn = new Box3();
-/** A drawn plot: its lot joined with the model's ground bounds and height. */
+// Parts that start higher than this above the plot overhang its ground (an elevator's
+// orbital ring, a tower's crown): they do not widen the parcel.
+export const PARCEL_BASE_HEIGHT = 2;
+const part = new Box3(),
+  base = new Box3();
+/** A drawn plot: its lot joined with the ground the model stands on, and its height. */
 export function valleyParcel(id, group) {
   const lot = valleyLot(id);
   if (!group) return lot;
-  drawn.setFromObject(group);
-  if (drawn.isEmpty()) return lot;
+  group.updateWorldMatrix(true, true);
+  const ground = group.getWorldPosition(groundPoint).y + PARCEL_BASE_HEIGHT;
+  base.makeEmpty();
+  let bottom = Infinity,
+    top = -Infinity;
+  group.traverse((mesh) => {
+    if (!mesh.isMesh) return;
+    part.setFromObject(mesh);
+    if (part.isEmpty()) return;
+    bottom = Math.min(bottom, part.min.y);
+    top = Math.max(top, part.max.y);
+    if (part.min.y <= ground) base.union(part);
+  });
+  if (base.isEmpty()) return lot;
   return {
     ...lot,
-    minX: Math.min(lot.minX, drawn.min.x),
-    maxX: Math.max(lot.maxX, drawn.max.x),
-    minZ: Math.min(lot.minZ, drawn.min.z),
-    maxZ: Math.max(lot.maxZ, drawn.max.z),
-    bottom: drawn.min.y,
-    top: drawn.max.y,
+    minX: Math.min(lot.minX, base.min.x),
+    maxX: Math.max(lot.maxX, base.max.x),
+    minZ: Math.min(lot.minZ, base.min.z),
+    maxZ: Math.max(lot.maxZ, base.max.z),
+    // What stands on the ground: the glow hugs it, not a large garden parcel or field.
+    base: { minX: base.min.x, maxX: base.max.x, minZ: base.min.z, maxZ: base.max.z },
+    bottom,
+    top,
   };
 }
 
@@ -71,10 +90,11 @@ function valleySite(area) {
 }
 export const valleySites = () => areasForSettlement().map(valleySite);
 
-/** The parcel's glow volume: its ground rectangle up to its roof. */
+/** The glow's volume: around the base of what is built (the lot when empty), to its roof. */
 export const parcelBounds = (parcel, box = new Box3()) => {
-  box.min.set(parcel.minX, parcel.bottom ?? 0, parcel.minZ);
-  box.max.set(parcel.maxX, Math.max(parcel.top, (parcel.bottom ?? 0) + 0.6), parcel.maxZ);
+  const { minX, maxX, minZ, maxZ } = parcel.base ?? parcel;
+  box.min.set(minX, parcel.bottom ?? 0, minZ);
+  box.max.set(maxX, Math.max(parcel.top, (parcel.bottom ?? 0) + 0.6), maxZ);
   return box;
 };
 
