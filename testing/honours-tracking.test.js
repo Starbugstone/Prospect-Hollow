@@ -21,10 +21,11 @@ import { levelConfig } from '../src/game/engine/LevelGenerator';
 import { createLocalIntegrityPlugin } from '../src/services/localIntegrity';
 import { localProfile } from '../src/services/localProfile';
 import { createSyncService } from '../src/services/syncService';
-import { createTestingTools } from '../src/services/testingTools';
 import { townStorage } from '../src/services/townStorage';
 import { SAVE_KEY, freshProfile, useCampaignStore } from '../src/stores/campaignStore';
 import { useGameStore } from '../src/stores/gameStore';
+import { eraGate } from '../src/game/town/TownEras';
+import { completedEraTown } from './helpers/eraTown';
 
 const { backups, outbox } = vi.hoisted(() => ({ backups: new Map(), outbox: new Map() }));
 vi.mock('../src/services/recoveryStore', () => ({
@@ -618,12 +619,17 @@ describe('Town Guardian', () => {
 
 describe('Through the Ages', () => {
   it('reaches its gold rank when the town completes the Riverlight Age', () => {
-    const campaign = open(freshProfile(), { guarded: true });
-    const tools = createTestingTools(pinia);
-    tools.prepareEra('broadcast');
+    const profile = freshProfile();
+    profile.town = completedEraTown(profile.town, 'broadcast');
+    let campaign = open(profile, { guarded: true });
+    expect(campaign.save()).toBe(true);
     expect(Object.keys(campaign.honours.earned)).toEqual(['ages-bronze', 'ages-silver']);
+    const later = JSON.parse(JSON.stringify(campaign.profile()));
+    later.town = completedEraTown(later.town, 'riverlight');
+    campaign = open(later, { guarded: true });
     // Skysail follows Riverlight, so a finished Riverlight town is ready to move on.
-    expect(tools.prepareEra('riverlight').readyToChange).toBe(true);
+    expect(eraGate(campaign.town).available).toBe(true);
+    expect(campaign.save()).toBe(true);
     expect(campaign.honours.earned['ages-gold']).toBeTruthy();
   }, 20000);
 });
@@ -802,7 +808,7 @@ describe('Replacing a town copy', () => {
 });
 
 describe('The local mutation guard', () => {
-  it('blocks console honour edits while normal actions and debug tools still earn them', () => {
+  it('blocks console honour edits while normal actions still earn them', () => {
     const profile = freshProfile();
     profile.town.buildings.blacksmith = 1;
     profile.town.forge = { progress: 0, charge: 1 };
@@ -826,11 +832,5 @@ describe('The local mutation guard', () => {
       announced: true,
     });
     expect(campaign.honours.showcase).toEqual(['forge']);
-
-    const tools = createTestingTools(pinia);
-    tools.mineStage(1);
-    games.push(useGameStore(pinia));
-    tools.completeMine();
-    expect(campaign.honours.earned['stars-gold'].at).toBeGreaterThan(0);
-  }, 20000);
+  });
 });

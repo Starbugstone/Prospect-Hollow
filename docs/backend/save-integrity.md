@@ -107,21 +107,20 @@ checks, puzzle limits, requests or persisted-save hashing. Reloading, importing 
 valid backup and receiving cloud updates use the existing recovery paths. Local
 save formats and historical migration remain compatible.
 
-Registered `prospectDebug` commands retain their explicit local exception in
-development, preprod and builds with `VITE_DEBUG_TOOLS=true`. Enabling those tools
-does not exempt arbitrary direct mutations. Each command also records a `testing`
-receipt. A server whose `APP_ORIGIN` host starts with `preprod.`, or which sets
-`SAVE_TESTING_TOOLS=true`, accepts an upload carrying that receipt as a new
-unverified baseline, like enrollment: it keeps the latest clock offset, run in
-progress, Town Honours counters and money budget, and later uploads are replayed
-normally again. Any other server rejects the receipt as a mismatch, so production
-tracked saves still require valid resource accounting.
+No console command can change a save. Development, preprod and builds with
+`VITE_DEBUG_TOOLS=true` expose only read-only profiling helpers as `prospectDebug`.
+The earlier console cheats and their `testing` receipts were removed, along with the
+server's `SAVE_TESTING_TOOLS` exception. An unacknowledged `testing` receipt left in an
+old development or preprod save is treated like any other receipt the game rules do
+not know: every server refuses that upload as `save_rules_unsupported`, and the local
+copy and the last cloud save stay as they were.
 
-An admin can approve an exact reviewed rejected upload for the same re-baseline
-after a false desync. Approval expires after 24 hours, binds the full canonical
-profile and cloud revision, and is consumed by any accepted save. An admin can
-also save an edited copy that the owner's game loads
-without asking. Rejected uploads are kept for that comparison; see
+An admin can approve an exact reviewed rejected upload after a false desync, or for
+such an old save. It is accepted as a new unverified baseline, like enrollment: it keeps
+the latest clock offset, run in progress, Town Honours counters and money budget, and
+later uploads are replayed normally again. Approval expires after 24 hours, binds the
+full canonical profile and cloud revision, and is consumed by any accepted save. An
+admin can also save an edited copy that the owner's game loads without asking. Rejected uploads are kept for that comparison; see
 [blocked syncs](admin.md#blocked-syncs). Nothing in the client can set either.
 
 These JavaScript checks deter straightforward console changes, not a player who

@@ -209,7 +209,8 @@ looks. [Before and after recordings](images/board-falls/side-by-side.mp4) show t
 another.
 
 `testing/browser/board-motion.cjs` plays five seeded hint moves on levels 13
-(rectangular control), 373, 376, 385 and 397 on an exact 60 fps clock. It follows
+(rectangular control), 373, 376, 385 and 397 on an exact 60 fps clock. Each level opens
+in a throwaway browser profile seeded with every earlier level played. It follows
 every gem and fails if:
 
 - a falling gem slows below a fifth of its top speed and then speeds up again before
@@ -230,7 +231,7 @@ docker stop hollow-motion-web
 ```
 
 `PH_TEST_ORIGIN` points the check at another server, for example a
-`VITE_DEBUG_TOOLS=true` build served by `vite preview`. `PH_MOTION_LEVELS` (a
+production build served by `vite preview`. `PH_MOTION_LEVELS` (a
 comma-separated list) and `PH_MOTION_MOVES` change the scenarios. On 1.1.0-beta the
 check reports thousands of problems on all four shaped levels; level 13 passes on
 both versions.

@@ -86,18 +86,11 @@ The mine recap adds settled chest coin prizes and overflow conversions to the di
 
 Additional houses, farms and wells cost progressively more at each level: the second plot costs 1.5× the original, the third 2×, and the fourth house 2.5× (rounded up to whole coins). Previously paid construction and legacy upgrade refunds keep their original prices.
 
-**Console testing resources.** In the browser developer console, run
-`prospectDebug.grant({ coins: 100000, hammers: 5 })` (or simply `prospectDebug.grant()`).
-The command adds coins, tops up builder hammers up to their normal cap of five, saves
-immediately, and returns the resulting balances. It is available in development and
-built previews. Invalid amounts are rejected; failed saves restore the previous balances.
-
-Use `prospectDebug.prepareEra()` to fully upgrade the current era and leave its
-transition waiting for the player's click, or pass an era ID to prepare that era.
-`prospectDebug.mineStage(12)` unlocks and opens playable chapter 12 (level 67),
-without payouts for skipped levels. See the
-[README console cheats](../readme.md#testing-resources-from-the-console) for IDs,
-stage bounds and save behavior.
+**Test saves.** No console command changes a save. To try a later era, a finished
+town or a saved encounter, load a disposable fixture from `npm run demo:eras` in a
+disposable browser profile; see [try an era immediately](settlement-eras.md#try-an-era-immediately).
+Development and preprod builds also expose read-only diagnostics such as
+`prospectDebug.townTimings()`; see the [README](../readme.md#test-saves-and-diagnostics).
 
 ### Mine cliff and watermill
 

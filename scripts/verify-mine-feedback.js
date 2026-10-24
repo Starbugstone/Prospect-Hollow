@@ -1,4 +1,3 @@
-/* global prospectDebug */
 // Playwright callback for a fresh, isolated browser page against local Vite.
 // Checks rendered geometry: tips, celebrations and targeting must never move the
 // board, cover gems, or change the document's scroll position.
@@ -14,18 +13,18 @@ async (page) => {
   page.on('response', (response) => {
     if (response.status() >= 400) errors.push(`${response.status()} ${response.url()}`);
   });
+  // Each level opens on a disposable profile in which every earlier level is played,
+  // written before the game loads so finale layouts are reachable without a museum.
+  await page.addInitScript(() => {
+    const level = Number(sessionStorage.getItem('mine-feedback-level') || 1);
+    const records = {};
+    for (let id = 1; id < level; id++) records[id] = { score: 0, stars: 1 };
+    localStorage.setItem(
+      'crystal-cascade-profile-v3',
+      JSON.stringify({ schemaVersion: 2, records, seenTips: ['town'], town: {} }),
+    );
+  });
   await page.goto('http://127.0.0.1:5173');
-  await page.evaluate(() => {
-    prospectDebug.mineStage(1);
-    // Finale layouts must also be selectable in a fresh, disposable profile.
-    prospectDebug.completeMine();
-  });
-  await page.waitForFunction(() => {
-    const game = document
-      .querySelector('#app')
-      ?.__vue_app__?.config.globalProperties.$pinia._s.get('game');
-    return game?.renderer && !game.animationInProgress;
-  });
   const settle = () =>
     page.evaluate(async () => {
       await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
@@ -66,13 +65,23 @@ async (page) => {
   // Include the eight-objective finales, not only chapter-opening layouts.
   for (const level of [1, 289, 294, 312, 319, 324]) {
     const chapter = Math.ceil(level / 6);
-    await page.evaluate((level) => {
-      prospectDebug.mineStage(Math.ceil(level / 6));
-      const game = document
-        .querySelector('#app')
-        .__vue_app__.config.globalProperties.$pinia._s.get('game');
-      if (game.currentLevelId !== level) game.startLevel(level, 'normal', { debugReplay: true });
-    }, level);
+    await page.evaluate((level) => sessionStorage.setItem('mine-feedback-level', level), level);
+    await page.reload();
+    await page.waitForFunction(
+      () =>
+        !!document
+          .querySelector('#app')
+          ?.__vue_app__?.config.globalProperties.$pinia?._s.get('game'),
+    );
+    const opened = await page.evaluate(
+      (level) =>
+        document
+          .querySelector('#app')
+          .__vue_app__.config.globalProperties.$pinia._s.get('game')
+          .startLevel(level, 'normal'),
+      level,
+    );
+    assert(opened, `Level ${level} could not be opened`);
     await page.waitForFunction((level) => {
       const game = document
         .querySelector('#app')

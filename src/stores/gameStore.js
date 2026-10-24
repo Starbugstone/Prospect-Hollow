@@ -114,8 +114,8 @@ export const useGameStore = defineStore('game', {
     bootstrap() {
       level.bootstrap(this);
     },
-    startLevel(levelId, mode, options) {
-      return level.startLevel(this, levelId, mode, options);
+    startLevel(levelId, mode) {
+      return level.startLevel(this, levelId, mode);
     },
     exitLevel() {
       level.exitLevel(this);

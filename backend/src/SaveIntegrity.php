@@ -1040,15 +1040,6 @@ final class SaveIntegrity
             $townId,
         );
     }
-    /** Console testing tools exist on preprod and explicitly flagged servers only. */
-    public static function testingToolsAllowed(): bool
-    {
-        if (Env::get('SAVE_TESTING_TOOLS') === 'true') {
-            return true;
-        }
-        $host = parse_url((string) Env::get('APP_ORIGIN'), PHP_URL_HOST);
-        return is_string($host) && str_starts_with($host, 'preprod.');
-    }
     /**
      * Seals the uploaded town as an unverified baseline without replaying its rewards.
      * Run identity and continuous credit survive pruning so the next normal receipt can
@@ -1171,16 +1162,6 @@ final class SaveIntegrity
                 $now,
                 $townId,
             );
-        }
-        // Registered console testing tools change the town outside the game rules. On a
-        // server that allows them, their upload re-baselines the town like enrollment,
-        // keeping the latest clock, run, honours and money context; elsewhere it never
-        // reconciles. Nothing in the client can grant itself this exception.
-        if ($journal && in_array('testing', array_column($journal['actions'], 'kind'), true)) {
-            if (!self::testingToolsAllowed()) {
-                self::mismatch('integrity.testing');
-            }
-            return $this->rebaseline($incoming, $journal, $anchor, $now, $previousServerAt);
         }
         if (!$journal) {
             if ($resolve) {
@@ -1398,8 +1379,8 @@ final class SaveIntegrity
     }
     /**
      * Accepts one upload an admin let through after a false desync: the town is
-     * re-baselined like a testing-tools upload instead of replayed, keeping the latest
-     * clock, run, honours and money context. Money is observed, never held. A save that
+     * re-baselined like enrollment instead of replayed, keeping the latest clock, run,
+     * honours and money context. Money is observed, never held. A save that
      * is not tracked on both sides takes the normal path.
      */
     public function acceptOverride(
@@ -1432,7 +1413,7 @@ final class SaveIntegrity
         array $anchor,
         int $now,
         ?int $previousServerAt,
-        ?MoneyBudget $budget = null,
+        MoneyBudget $budget,
     ): object {
         $context = $anchor['context'] ?? [];
         $context['honours'] = $incoming['honours']['counts'] ?? null;
