@@ -81,8 +81,10 @@
         type="button"
         class="town-moon-lot"
         :data-moon-lot="lot.id"
+        :aria-pressed="selected === lot.id"
         :class="{
           'is-pin': lot.collapsed,
+          selected: selected === lot.id,
           built: !!(town.buildings[lot.id] || monumentChoice(lot.id)),
           open: AREA_BY_ID[lot.id] ? status(lot.id) === 'open' : availableIds.includes(lot.id),
           'is-ready': indicators[lot.id] === 'ready' || status(lot.id) === 'ready',
@@ -220,6 +222,7 @@ import { t } from '../../i18n';
 // construction and visits work exactly as on Earth.
 const props = defineProps({
   town: { type: Object, required: true },
+  selected: String,
   presentation: Object,
   active: { type: Boolean, default: true },
   paused: { type: Boolean, default: false },
@@ -244,7 +247,11 @@ const unavailable = ref(false);
 // Replaced whole on camera frames that move a label, so it needs no deep reactivity.
 const labels = shallowRef([]);
 const cameraDistance = ref(Infinity);
-const selectedLot = ref(null);
+const selectedLot = ref(props.selected ?? null);
+watch(
+  () => props.selected,
+  (id) => (selectedLot.value = id ?? null),
+);
 const compact = computed(() => compactMoonViewport(viewport.value.width, viewport.value.height));
 let scene = null,
   disposed = false;
@@ -493,6 +500,10 @@ defineExpose({
 }
 .town-moon-action img {
   filter: drop-shadow(0 0 5px #bcecff);
+}
+.town-moon-lot.selected {
+  outline: 3px solid #f5df91;
+  outline-offset: 2px;
 }
 .town-moon-lot.is-working {
   border-color: #83c5dc;

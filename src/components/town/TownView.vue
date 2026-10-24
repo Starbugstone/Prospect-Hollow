@@ -1496,6 +1496,7 @@ async function inspectBuilding(id) {
   selected.value = id;
   dialogMode.value = 'building';
   await nextTick();
+  townScene.value?.focusPlace(id);
   const dialog = document.querySelector('.town-dialog');
   if (dialog) {
     dialog.scrollTop = 0;

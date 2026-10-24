@@ -223,6 +223,7 @@
       v-if="moonOpen"
       ref="moonView"
       :town="town"
+      :selected="selected"
       :presentation="moonPresentation"
       @presentation-ready="emit('presentation-ready')"
       @presentation-unavailable="emit('presentation-unavailable')"
@@ -502,6 +503,7 @@ defineExpose({
       moonOpen.value = true;
       return true;
     }
+    closeMoon();
     return scene?.focusPlace(id);
   },
   openMoon,
