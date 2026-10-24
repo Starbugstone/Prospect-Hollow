@@ -17,7 +17,9 @@ The valley affordances that were missing on the Moon were:
   construction state with a matching gantry drawing.
 - A completed-puzzle count, a persistent ready state, and the builder hammer with
   “Tap to finish”. Both maps use `constructionRuns`, `constructionReady`,
-  `constructionVisual`, `buildingStatusLabel` and `TOWN_ACTIONS`.
+  `constructionVisual`, `TOWN_ACTIONS` and the shared status text of
+  `buildingStatus` (`src/game/town/TownBuildingFeedback.js`), which the Build tab's
+  lists also read.
 - The direct finish/collect interaction. Moon buttons now emit `select` through
   `TownScene.choose` to `TownView.selectBuilding`, the same route as valley taps.
   Read-only inspection keeps its existing separate route.

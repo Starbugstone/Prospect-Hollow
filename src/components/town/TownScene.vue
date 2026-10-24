@@ -136,45 +136,18 @@
       >
         <span v-if="quietPlot(anchor.id)" class="quiet-plot-plus" aria-hidden="true">+</span>
         <span class="plot-name">{{ placeName(anchor.id) }}</span>
-        <template v-if="readOnly">
-          <small v-if="town.buildings[anchor.id]">{{
-            t('Lv. {level}', { level: eraBuildingLevel(town, anchor.id) })
-          }}</small>
-        </template>
-        <template v-else>
-          <small v-if="anchor.id === 'mine'">{{ t('Level {level}', { level: nextLevel }) }}</small>
-          <small v-else-if="constructionReady(town.projects[anchor.id])">{{
-            t('Tap to finish')
-          }}</small>
-          <small
-            v-else-if="town.projects[anchor.id]"
-            class="construction-count"
-            :title="
-              t('Construction: {wins} of {required} mining runs completed', {
-                wins: Math.min(town.projects[anchor.id].wins, 2),
-                required: constructionRuns(town.projects[anchor.id]),
-              })
-            "
-          >
-            <GameIcon name="wall" />{{ buildingStatusLabel(town, anchor.id) }}
-          </small>
-          <small v-else-if="indicators[anchor.id] === 'coins'">{{
-            t('Collect {coins} coins', { coins: town.income.stored })
-          }}</small>
-          <small v-else-if="anchor.id === 'blacksmith' && forgeCollectible">{{
-            t('Collect 1 TNT')
-          }}</small>
-          <small v-else-if="needHints[anchor.id]" class="need-hint">{{
-            t(NEED_HINTS[needHints[anchor.id]])
-          }}</small>
-          <small v-else-if="availableIds.includes(anchor.id)">{{
-            t(town.buildings[anchor.id] ? 'Upgrade' : 'Build')
-          }}</small>
-          <small v-else-if="town.buildings[anchor.id]">{{
-            t('Lv. {level}', { level: eraBuildingLevel(town, anchor.id) })
-          }}</small>
-          <span v-else aria-hidden="true">+</span>
-        </template>
+        <small
+          v-if="labelStatus[anchor.id]?.kind === 'work'"
+          class="construction-count"
+          :title="labelStatus[anchor.id].title"
+        >
+          <GameIcon name="wall" />{{ labelStatus[anchor.id].text }}
+        </small>
+        <small v-else-if="labelStatus[anchor.id]?.kind === 'need'" class="need-hint">{{
+          labelStatus[anchor.id].text
+        }}</small>
+        <span v-else-if="labelStatus[anchor.id]?.kind === 'empty'" aria-hidden="true">+</span>
+        <small v-else-if="labelStatus[anchor.id]">{{ labelStatus[anchor.id].text }}</small>
       </button>
     </div>
     <div
@@ -257,8 +230,8 @@ import { moonSettlement } from '../../data/moonSettlement';
 import { SKY_MOON_DIRECTION } from '../../data/skyCraft';
 import GameViewStatus from '../GameViewStatus.vue';
 import { TOWN_ACTIONS, buildingActionLabel } from '../../data/townIndicators';
-import { buildingStatusLabel } from '../../game/town/TownBuildingFeedback';
-import { eraBuildingLevel, plotInEra } from '../../game/town/TownEras';
+import { buildingStatus } from '../../game/town/TownBuildingFeedback';
+import { plotInEra } from '../../game/town/TownEras';
 import {
   computed,
   inject,
@@ -281,7 +254,6 @@ import { AREA_BY_ID, LANDMARK_BY_ID, areaChoice } from '../../data/townLandmarks
 import { dressSpaceHelmet } from '../../game/town/TownSpaceHelmet';
 import { createTapGesture } from '../../game/town/TownTapGesture';
 import {
-  constructionRuns,
   constructionVisual,
   constructionReady,
   availablePurchases,
@@ -378,7 +350,6 @@ function placeSkyMoon() {
 watch(() => moon.value.homesteads, placeSkyMoon);
 const motionEnabled = () => props.active && !document.hidden && !props.paused && !moonOpen.value;
 // The building that would fix a shortage says so on its label.
-const NEED_HINTS = { water: 'Water needed', food: 'Food needed', comfort: 'Comfort needed' };
 const needHints = computed(() =>
   Object.fromEntries(
     props.needChips
@@ -448,6 +419,21 @@ const availableIds = computed(() =>
   props.readOnly
     ? []
     : availablePurchases(props.town, props.builderHammers, offers.value).map(({ id }) => id),
+);
+// The status line under each label's name, from the shared building status contract.
+const labelStatus = computed(() =>
+  Object.fromEntries(
+    ['mine', ...EARTH_BUILDINGS.map(({ id }) => id)].map((id) => [
+      id,
+      buildingStatus(props.town, id, {
+        readOnly: props.readOnly,
+        nextLevel: props.nextLevel,
+        indicator: indicators.value[id],
+        available: availableIds.value.includes(id),
+        need: needHints.value[id],
+      }),
+    ]),
+  ),
 );
 const upgradeIds = computed(() =>
   Object.keys(indicators.value).filter((id) => indicators.value[id] === 'upgrade'),
