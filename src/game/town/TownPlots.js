@@ -694,7 +694,8 @@ export function* repairRoute(d, actor) {
   const intersects = path.points.some(
     (p, i) => i && !d.navigation.segment(path.points[i - 1], p, margin),
   );
-  if (!intersects) {
+  // Someone resting indoors takes a fresh outing next; only its plans are renewed.
+  if (!intersects || actor.itinerary?.inside) {
     if (actor.itinerary) yield* d.itineraries.prepare(actor);
     return;
   }

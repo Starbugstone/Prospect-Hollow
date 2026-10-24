@@ -613,7 +613,8 @@ export function prepareActorWalk(d, actor, offset = 0.9) {
     return [x, crossing ? streetHeight(x, z) : p.y, z];
   });
   points[points.length - 1] = points[0].slice();
-  actor.walkPath = d.navigation.plan(points);
+  // An itinerary later replaces walkPath; a patrol's beats keep its authored round.
+  actor.walkPath = actor.routePath = d.navigation.plan(points);
   if (actor.motion)
     actor.motion.routeDistance = routeDistanceAt(actor.walkPath, actor.motion.x, actor.motion.z);
   actor.navigation = d.navigation;

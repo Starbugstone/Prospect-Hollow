@@ -16,10 +16,12 @@ function outsideCarriageway(point, roads, radius = 0.29) {
 // Short activity walks belong to a building, not a road-center waypoint. Search
 // its frontage/grounds once and keep a straight, verified leg parallel to the
 // nearest road. Never project a blocked endpoint back into the carriageway.
+// With `door`, the walk instead runs from the building's doorway to the work spot,
+// for a break taken indoors; without a usable doorway it stays outdoors.
 export function buildingWalk(
   d,
   building,
-  { station, radius = 0.29, length = 3, clearance, axis } = {},
+  { station, radius = 0.29, length = 3, clearance, axis, door = false } = {},
 ) {
   const [x, z] = PLOTS[building];
   const y = station?.[1] ?? 0.07;
@@ -61,6 +63,26 @@ export function buildingWalk(
       Math.hypot(a[0] - station[0], a[2] - station[2]) -
       Math.hypot(b[0] - station[0], b[2] - station[2]),
   );
+  const frontage = { station, radius, length, clearance, axis, door };
+  const prepared = (path) => {
+    path.building = building;
+    path.frontage = frontage;
+    return d.navigation?.track ? d.navigation.track(path, radius) : path;
+  };
+  const doorway = door && buildingDoorway(anchors?.door ?? [], [x, z], clear);
+  if (doorway)
+    for (const at of candidates) {
+      if (!clear(at, at)) continue;
+      const path = d.navigation?.plan ? d.navigation.plan([doorway, at], radius) : walkPath([]);
+      if (
+        path.total >= 1.5 &&
+        Math.hypot(path.points.at(-1)[0] - at[0], path.points.at(-1)[2] - at[2]) < 1e-6 &&
+        path.points.every((p, i) => !i || clear(path.points[i - 1], p))
+      ) {
+        path.door = true;
+        return prepared(path);
+      }
+    }
   for (const at of candidates) {
     if (!clear(at, at)) continue;
     const nearest = roads.reduce(
@@ -92,11 +114,25 @@ export function buildingWalk(
           end = next;
         }
         if (Math.hypot(end[0] - at[0], end[2] - at[2]) < 1.5) continue;
-        const path = walkPath([end, at]);
-        path.building = building;
-        path.frontage = { station, radius, length, clearance, axis };
-        return d.navigation?.track ? d.navigation.track(path, radius) : path;
+        return prepared(walkPath([end, at]));
       }
   }
   return walkPath([]);
+}
+
+// The first door anchor a worker can stand at, stepped in toward the building
+// where its threshold would reach the carriageway.
+function buildingDoorway(anchors, [x, z], clear) {
+  for (const door of anchors) {
+    const inward = Math.hypot(x - door[0], z - door[2]) || 1;
+    for (let step = 0; step <= 0.5; step += 0.1) {
+      const point = [
+        door[0] + ((x - door[0]) / inward) * step,
+        door[1],
+        door[2] + ((z - door[2]) / inward) * step,
+      ];
+      if (clear(point, point)) return point;
+    }
+  }
+  return null;
 }

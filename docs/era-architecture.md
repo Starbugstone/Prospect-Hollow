@@ -537,7 +537,11 @@ or scenery changes invalidate that result. Open routes turn back at endpoints.
 Spatial buckets and narrow vehicle envelopes provide bounded crowd yielding.
 Route distance and visitor lifecycle clocks advance only by accepted movement;
 indoor rests advance normally. Visitors fade at the source after completing the
-trip, and new transport arrivals reset their movement clock. Unreachable paths
+trip, and new transport arrivals reset their movement clock. Residents with a built
+home (`actor.home`) start and end every tour at its door from
+`TownItineraries.endpoint`, fade in there and rest indoors, hidden, between tours;
+the patrol's beat leaves the sheriff office door, walks its prepared round and
+returns. A walker without a usable door keeps its street anchor. Unreachable paths
 hold their last position. Horse/car speeds are distance-based, independent of
 any route shortening during preparation.
 An era change recreates villagers, animals and visitor-arrival state against the
@@ -548,7 +552,9 @@ building upgrades and rebuilds within an era retain actor identity and position.
 Outdoor task actors share `TownWorkRoutine`: approach a prepared work site,
 perform the task, walk back and take a short break. Farmers, hosts, fishers,
 chatting neighbors and bird feeders keep their task animations, but no longer
-stand in one place indefinitely. Only accepted locomotion advances travel;
+stand in one place indefinitely. The farmer and the saloon host take the break
+indoors: `buildingWalk(..., { door: true })` starts their walk at the building's
+door, where they fade out and back in. Only accepted locomotion advances travel;
 arrival starts the task timer. Task animation never overwrites the accepted
 position. Routes are prepared on layout changes, not searched each frame.
 The leashed park walk also uses distance-based speed and turns back on open paths.
