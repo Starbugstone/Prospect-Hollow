@@ -2,6 +2,7 @@ import { Vector3 } from 'three';
 import { constructionReady } from './TownRules';
 import { overlapsEventInset } from './TownInset';
 import { forEachWalker } from './TownWalkers';
+import { labelsOverlap } from './TownLabels';
 
 // Screen placement of building labels, collection icons and the named-villager tag.
 // Runs on every camera frame, so it reuses scratch vectors instead of cloning.
@@ -81,11 +82,23 @@ export function projectLabelPositions(d) {
   for (const anchor of [...projected].sort((a, b) => a.rank - b.rank || a.depth - b.depth)) {
     if (!anchor.visible) continue;
     if (
-      shown.some(
-        (other) =>
-          (Math.abs(anchor.x - other.x) * width) / 100 < (anchor.width + other.width) / 2 + 4 &&
-          (Math.abs(anchor.y - other.y) * height) / 100 <
-            (anchor.id === 'mine' || other.id === 'mine' ? 72 : 42),
+      shown.some((other) =>
+        labelsOverlap(
+          {
+            x: (anchor.x * width) / 100,
+            y: (anchor.y * height) / 100,
+            width: anchor.width,
+            height: anchor.id === 'mine' ? 102 : 42,
+          },
+          {
+            x: (other.x * width) / 100,
+            y: (other.y * height) / 100,
+            width: other.width,
+            height: other.id === 'mine' ? 102 : 42,
+          },
+          4,
+          0,
+        ),
       )
     )
       anchor.visible = false;

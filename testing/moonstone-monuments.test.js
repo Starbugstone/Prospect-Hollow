@@ -175,6 +175,7 @@ it.each(sites)(
 );
 it.each([
   [1440, 900],
+  [900, 360],
   [375, 740],
 ])('declutters all lunar labels at %sx%s', (width, height) => {
   const labels = layoutMoonLabels(
@@ -187,7 +188,7 @@ it.each([
     for (const b of labels.slice(i + 1))
       expect(
         (Math.abs(a.x - b.x) * width) / 100 >= a.width + 5 ||
-          (Math.abs(a.y - b.y) * height) / 100 >= 63,
+          (Math.abs(a.y - b.y) * height) / 100 >= a.height + 5,
       ).toBe(true);
 });
 
