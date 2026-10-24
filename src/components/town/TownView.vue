@@ -734,7 +734,8 @@ import {
   incidentPhase,
 } from '../../data/townEvents';
 import { ERA_BY_ID } from '../../data/eras';
-import { eraGate, plotInEra, eraBuildingLevel } from '../../game/town/TownEras';
+import { eraGate, plotInEra } from '../../game/town/TownEras';
+import { buildingStatus } from '../../game/town/TownBuildingFeedback';
 import {
   needsReport,
   nextGoal,
@@ -1610,15 +1611,8 @@ function goMining() {
   else if (campaign.canReplay) museumOpen.value = true;
   else selectBuilding('museum');
 }
-function plotStatus(place) {
-  if (place.ready) return t('Construction complete');
-  return town.value.buildings[place.id]
-    ? t('Level {level} / {max}', {
-        level: eraBuildingLevel(town.value, place.id),
-        max: town.value.era !== 'frontier' ? 3 : place.upgrades.length,
-      })
-    : t('Empty plot');
-}
+// The Build tab's wording of the shared building status.
+const plotStatus = (place) => buildingStatus(town.value, place.id, { context: 'list' }).text;
 function startWork(stage, keepDirectory = false) {
   if (!campaign.upgradeBuilding(selected.value, stage)) return;
   showConstruction(keepDirectory);
