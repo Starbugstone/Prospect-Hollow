@@ -5,6 +5,7 @@ import { normalizeTown, buildWithHammer, finishConstruction } from '../src/game/
 import { useCampaignStore } from '../src/stores/campaignStore';
 import { advanceMoonstoneProduction, MOONSTONE_ECONOMY } from '../src/data/moonstones';
 import { priceCurrency, currencyBalance, canAffordPrice, payPrice } from '../src/data/townCurrency';
+import { AREA_BY_ID, landmarkOffer } from '../src/data/townLandmarks';
 import { createSaveFile, parseSaveFile } from '../src/services/saveTransfer';
 
 let values;
@@ -150,6 +151,22 @@ it('offers a currency hook for future sites, with a safe default and unknown-cur
   expect(payPrice(town, { price: 50 })).toEqual({ coins: 0, moonstones: 5 });
   expect(canAffordPrice(town, { price: 6, currency: 'moonstones' })).toBe(false);
   expect(payPrice(town, { price: 0, currency: 'unknown' })).toBeNull();
+});
+it('pays the scheduled moonstone offer exactly without changing coins or lifetime earnings', () => {
+  const area = AREA_BY_ID['moonstone-garden'];
+  const town = {
+    ...createTown(),
+    era: area.era,
+    coins: 5000,
+    moonstones: 20,
+    moonstonesEarned: 60,
+  };
+  const terms = { ...landmarkOffer(town, area, area.choices[0]), currency: area.currency };
+  expect(terms.price).toBe(20);
+  expect(canAffordPrice({ ...town, moonstones: 19 }, terms)).toBe(false);
+  expect(payPrice({ ...town, moonstones: 19 }, terms)).toBeNull();
+  expect(payPrice(town, terms)).toEqual({ ...town, moonstones: 0 });
+  expect(town.moonstones).toBe(20);
 });
 
 it('rejects damaged version-3 transfers without changing the live town', () => {

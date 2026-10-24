@@ -515,9 +515,12 @@ export function createIntegrityFixtures() {
         );
       },
     );
-    for (const area of PERSONAL_AREAS)
+    for (const { area, oldFoundation } of PERSONAL_AREAS.flatMap((area) => [
+      { area, oldFoundation: false },
+      ...(area.currency === 'moonstones' ? [{ area, oldFoundation: true }] : []),
+    ]))
       fixture(
-        `optional landmark ${area.id}: construction and upgrades`,
+        `optional landmark ${area.id}: ${oldFoundation ? 'version-2 foundation then current upgrades' : 'construction and upgrades'}`,
         (profile) => {
           // Earlier landmarks keep their Riverlight fixture; later ones need their own era.
           develop(profile, eraIndex(area.era) > eraIndex('riverlight') ? area.era : 'riverlight');
@@ -539,6 +542,9 @@ export function createIntegrityFixtures() {
                   value: choice,
                   expectedChoice: offer.expectedChoice,
                   expectedLevel: offer.expectedLevel,
+                  ...(oldFoundation && !offer.expectedLevel
+                    ? { monumentVersion: 2, currency: 'moonstones', price: 60 }
+                    : {}),
                 },
               ]),
               'landmark purchase',

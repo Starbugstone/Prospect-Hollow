@@ -799,19 +799,24 @@ export const useCampaignStore = defineStore('campaign', {
     },
     personalise(commands, received = {}) {
       let next = this.town;
+      const purchases = [];
       const earned = [...Object.keys(this.honours.earned), ...Object.keys(received)];
       for (const command of commands) {
+        if (command.kind === 'area') {
+          const monumentVersion = command.monumentVersion ?? LANDMARK_PROGRESSION.version;
+          const area = AREA_BY_ID[command.id];
+          const offer = landmarkOffer(next, area, command.value, monumentVersion);
+          if (!offer) return false;
+          purchases.push({
+            ...command,
+            monumentVersion,
+            currency: area.currency,
+            price: offer.price,
+          });
+        }
         next = personaliseTown(next, command, CREST_EMBLEM_IDS, earned);
         if (!next) return false;
       }
-      const purchases = commands
-        .filter((c) => c.kind === 'area')
-        .map((command) => ({
-          ...command,
-          monumentVersion: LANDMARK_PROGRESSION.version,
-          currency: AREA_BY_ID[command.id].currency,
-          price: landmarkOffer(this.town, AREA_BY_ID[command.id], command.value)?.price,
-        }));
       return this.commit(
         { town: next },
         purchases.length ? { kind: 'landmark-buy', data: { purchases, at: Date.now() } } : null,

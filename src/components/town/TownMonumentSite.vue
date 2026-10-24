@@ -162,9 +162,9 @@
           </span>
           <span
             class="monument-price"
-            :class="{ 'is-short': !payment(LANDMARK_BY_ID[choice].price).affordable }"
+            :class="{ 'is-short': !payment(landmarkPrice(area, choice, 1)).affordable }"
           >
-            <TownIcon :name="payment(0).icon" />{{ number(LANDMARK_BY_ID[choice].price) }}
+            <TownIcon :name="payment(0).icon" />{{ number(landmarkPrice(area, choice, 1)) }}
           </span>
         </button>
       </div>
@@ -243,6 +243,7 @@ import {
   areaUnlocked,
   areaShownStage,
   landmarkOffer,
+  landmarkPrice,
   landmarkPayment,
   landmarkLevel,
   monumentWork,
