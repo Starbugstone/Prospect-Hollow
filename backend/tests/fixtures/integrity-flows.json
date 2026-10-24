@@ -19631,7 +19631,7 @@
               "data": {
                 "key": "fixture-tour:0",
                 "buildingId": "saloon",
-                "economyVersion": 1,
+                "economyVersion": 2,
                 "at": 1780000000000
               }
             }
@@ -19838,7 +19838,7 @@
           },
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
-          "coins": 258,
+          "coins": 263,
           "moonstoneVersion": 2,
           "moonstones": 0,
           "moonstonesEarned": 0,
@@ -20323,7 +20323,7 @@
               "data": {
                 "key": "deep-fixture-tour:0",
                 "buildingId": "saloon",
-                "economyVersion": 1,
+                "economyVersion": 2,
                 "at": 1780000000000
               }
             }
@@ -20530,7 +20530,7 @@
           },
           "firstLightsSeen": false,
           "forge": { "progress": 0, "charge": 0 },
-          "coins": 455,
+          "coins": 910,
           "moonstoneVersion": 2,
           "moonstones": 0,
           "moonstonesEarned": 0,

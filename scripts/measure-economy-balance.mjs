@@ -21,7 +21,7 @@ try {
   const { eraGate, advanceEra } = await load('game/town/TownEras');
   const { miningDepthBonus } = await load('data/economy');
   const { CONTINUOUS_COIN_CAP } = await load('data/rewards');
-  const { vipSpend } = await load('data/vipVisits');
+  const { vipSpend, VIP_SPEND_VERSION } = await load('data/vipVisits');
   const { vipVisitor } = await load('data/villagers');
   const { TownVipArrivals } = await load('game/town/TownVipArrivals');
   const { TownItineraries, updateItinerary } = await load('game/town/TownItineraries');
@@ -357,7 +357,8 @@ try {
   console.log(
     JSON.stringify(
       {
-        base: '9d00d560',
+        boardSampleBase: '9d00d560',
+        vipEconomyVersion: VIP_SPEND_VERSION,
         model:
           '546 levels; seeds 1–3; final chapter replays to 2184; zero hammers/chests/raid losses; coin foundations after progression; first-choice landmarks; paired moon upgrades; 20-move continuous samples repeated per visit; one fresh uninterrupted town hour/10 normals',
         results,
