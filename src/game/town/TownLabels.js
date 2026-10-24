@@ -1,3 +1,14 @@
+// Both settlements keep selected lots and work visible before routine level labels.
+export const townLabelRank = ({ essential, selected, ready, guided, available }) =>
+  essential ? 0 : selected ? 1 : ready ? 2 : guided ? 3 : available ? 4 : 5;
+export const townLabelDetail = ({ distant, essential, selected, attention }) =>
+  !distant || essential || selected || attention;
+
+// Screen-space label rectangles use their centre and CSS pixel dimensions on both maps.
+export const labelsOverlap = (a, b, gap = 4, verticalGap = gap) =>
+  Math.abs(a.x - b.x) < (a.width + b.width) / 2 + gap &&
+  Math.abs(a.y - b.y) < (a.height + b.height) / 2 + verticalGap;
+
 // Label positions change on every camera frame; which labels exist and show does
 // not. Vue renders only layout changes; positions go straight to the elements.
 export const labelLayout = (anchors) =>

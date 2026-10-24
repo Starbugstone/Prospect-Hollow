@@ -1,4 +1,4 @@
-import { horizonMaterial } from './TownAtmosphere';
+import { TOWN_EDGE, horizonMaterial } from './TownAtmosphere';
 import * as THREE from 'three';
 import { MILLRACE, millraceWaterEdge } from './TownMillrace';
 
@@ -43,7 +43,7 @@ export function crossesRiver(a, b) {
   }
   return false;
 }
-export const riverPath = (from = -130, to = 130, step = 1) =>
+export const riverPath = (from = -TOWN_EDGE, to = TOWN_EDGE, step = 1) =>
   Array.from({ length: Math.ceil((to - from) / step) + 1 }, (_, i) => {
     const z = Math.min(to, from + i * step);
     return [riverCenterX(z), z];
@@ -97,9 +97,18 @@ export function buildRiver(town, parent) {
         float ripple = smoothstep(.94, 1., sin(riverUv.y * 3. + sin(across * 20.) - time * .45));
         vec3 color = mix(vec3(.17, .38, .39), vec3(.30, .53, .50), sin(across * 3.14159));
         gl_FragColor = vec4(color + ripple * .035, 1.);
+        // Fog in linear light before tone mapping, as the cached prairie is, so the
+        // river fades into the same horizon. On screen (tone mapped) three supplies
+        // fogColor in sRGB; offscreen it is already linear.
+        #ifdef USE_FOG
+          vec3 horizon = fogColor;
+          #ifdef TONE_MAPPING
+            horizon = sRGBTransferEOTF(vec4(fogColor, 1.)).rgb;
+          #endif
+          gl_FragColor.rgb = mix(gl_FragColor.rgb, horizon, smoothstep(fogNear, fogFar, vFogDepth));
+        #endif
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
-        #include <fog_fragment>
       }`,
   });
   horizonMaterial(material);

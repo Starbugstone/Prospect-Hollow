@@ -185,6 +185,76 @@ const WARDROBES = {
       ['#ab98bd', '#596c69', '#baa9c9', '#eee7d9', '#e0bd77'],
     ],
   },
+  // Sailcloth jackets and aviator scarves: a nod to the 1958 airport crowd.
+  skysail: {
+    skirtLength: 0.34,
+    crown: 'cap',
+    hat: 'cap',
+    trousers: '#3f6b7a',
+    boots: '#d4b98e',
+    coat: 0.38,
+    patrol: true,
+    resident: 'garden',
+    guest: ['#c4553b', '#47566b', '#f1c7a8', '#f7f1e4', '#4fa3a5'],
+    palettes: [
+      ['#f3ecdc', '#3f6b7a', '#e8a64a', '#d4b98e', '#4fa3a5'],
+      ['#4fa3a5', '#5b5a4f', '#f3ecdc', '#e9dcc0', '#e8a64a'],
+      ['#e8a64a', '#46607a', '#b8dce6', '#f1e8d6', '#e57f62'],
+    ],
+  },
+  // Midnight coats with copper buttons and starry violet trims.
+  stargazer: {
+    skirtLength: 0.4,
+    crown: 'none',
+    hat: 'none',
+    trousers: '#283458',
+    boots: '#c07a4e',
+    coat: 0.44,
+    patrol: true,
+    resident: 'garden',
+    guest: ['#d8a43c', '#2c2a44', '#f4e2a8', '#eae6f4', '#8fd0cb'],
+    palettes: [
+      ['#3f4f84', '#283458', '#9c86d0', '#d9dfef', '#f5d77e'],
+      ['#9c86d0', '#33405e', '#d9dfef', '#c07a4e', '#8fd0cb'],
+      ['#8fd0cb', '#2f3a5c', '#f5d77e', '#d6dae6', '#9c86d0'],
+    ],
+  },
+  // Homecoming: soft knit jackets in valley teal and moon silver, gold pins.
+  twin: {
+    skirtLength: 0.38,
+    crown: 'none',
+    hat: 'none',
+    trousers: '#55607a',
+    boots: '#f1eee6',
+    coat: 0.4,
+    patrol: true,
+    resident: 'garden',
+    guest: ['#a2486a', '#3a3550', '#f2c6d4', '#faf4ec', '#7fc4c0'],
+    palettes: [
+      ['#3f8f8a', '#55607a', '#f0c45a', '#f1eee6', '#bcdde4'],
+      ['#d9dbe4', '#4d6283', '#3f8f8a', '#e9e2d2', '#f0c45a'],
+      ['#f0c45a', '#5b6f73', '#d9dbe4', '#f1eee6', '#8db383'],
+    ],
+  },
+  // Homestead flight suits: patched work jackets, gold visors and barn-red scarves.
+  moonward: {
+    skirtLength: 0.32,
+    crown: 'none',
+    hat: 'visor',
+    visor: '#e8b84a',
+    trim: '#b85a44',
+    trousers: '#5d6577',
+    boots: '#efebe2',
+    coat: 0.36,
+    patrol: true,
+    resident: 'garden',
+    guest: ['#3d7f8f', '#5a3f37', '#cfe3e6', '#f4efe4', '#e8b84a'],
+    palettes: [
+      ['#efebe2', '#5d6577', '#b85a44', '#e8e2d4', '#e8b84a'],
+      ['#b85a44', '#4a5262', '#efebe2', '#d9cdb5', '#bfd6df'],
+      ['#33405e', '#7a6a58', '#e8b84a', '#efebe2', '#b85a44'],
+    ],
+  },
 };
 // Existing/future city profiles that omit a period wardrobe use the casual set.
 WARDROBES.casual = WARDROBES.broadcast;

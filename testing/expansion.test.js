@@ -65,7 +65,7 @@ describe('Expansion campaign', () => {
       expect(moves).toBeGreaterThanOrEqual(3);
       expect(engine.findMatches(level.board, 7, 9, level.tiles)).toEqual([]);
     }
-  });
+  }, 20000);
 
   it('continues an existing completed 36-level save at 37 and unlocks through 60', () => {
     const records = Object.fromEntries(

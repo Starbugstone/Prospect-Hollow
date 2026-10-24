@@ -61,30 +61,40 @@ export function plotSetbacks(id, town) {
   }
   return bounds;
 }
-export function applyRoadSetbacks(root, id, town) {
-  const limits = plotSetbacks(id, town);
-  if (!limits) return;
+/** Numeric plot-local bounds; probes never retain temporary scene resources. */
+export function roadSetbackEnvelope(root, id) {
   // Station canopies must clear the train too, above pedestrian head height.
   const solids = geometryFootprints(root).filter(
     (s) => id === 'railDepot' || GARDEN_PARCELS[id] || (s.yMin < 1.7 && s.yMax > 0.08),
   );
-  if (!solids.length) return;
+  if (!solids.length) return null;
+  return [
+    Math.min(...solids.map((s) => s.cx - s.halfW)),
+    Math.max(...solids.map((s) => s.cx + s.halfW)),
+    Math.min(...solids.map((s) => s.cz - s.halfD)),
+    Math.max(...solids.map((s) => s.cz + s.halfD)),
+  ];
+}
+
+export function applyRoadSetbacks(root, id, town, matureEnvelope = null) {
+  const limits = plotSetbacks(id, town);
+  if (!limits) return;
+  const actual = roadSetbackEnvelope(root, id);
+  if (!actual && !matureEnvelope) return;
+  // Reserve all completed finishes, while still clearing temporary scaffolding
+  // or construction pieces that extend beyond the finished building envelope.
+  const envelope = Array.from({ length: 4 }, (_, index) =>
+    index % 2
+      ? Math.max(actual?.[index] ?? -Infinity, matureEnvelope?.[index] ?? -Infinity)
+      : Math.min(actual?.[index] ?? Infinity, matureEnvelope?.[index] ?? Infinity),
+  );
+  const transform = roadSetbackTransform(id, town, envelope);
   let contents;
-  for (const [axis, center, half] of [
-    ['x', 'cx', 'halfW'],
-    ['z', 'cz', 'halfD'],
-  ]) {
-    const suffix = axis.toUpperCase(),
-      min = Math.min(...solids.map((s) => s[center] - s[half])),
-      max = Math.max(...solids.map((s) => s[center] + s[half]));
-    const low = limits[`min${suffix}`],
-      high = limits[`max${suffix}`];
-    const scale = Math.min(1, (high - low) / (max - min || 1));
-    const shift = Math.min(0, high - max * scale) + Math.max(0, low - min * scale);
+  for (const axis of ['x', 'z']) {
+    const { scale, shift } = transform[axis];
     if (scale === 1 && !shift) continue;
     if (!contents) {
       // Apply the transform in plot space, above rotated meshes and animated parts.
-      // Scaling each child's local axes can expand its rotated facade into the road.
       contents = new Group();
       contents.name = 'Road setback';
       contents.add(...root.children.slice());
@@ -93,4 +103,25 @@ export function applyRoadSetbacks(root, id, town) {
     contents.position[axis] = shift;
     contents.scale[axis] = scale;
   }
+}
+
+// Sign visibility uses the same reserved scale before the plot is transformed.
+export function roadSetbackTransform(id, town, envelope) {
+  const limits = plotSetbacks(id, town);
+  if (!limits || !envelope) return null;
+  const transform = {};
+  for (const [axis, offset] of [
+    ['x', 0],
+    ['z', 2],
+  ]) {
+    const suffix = axis.toUpperCase(),
+      min = envelope[offset],
+      max = envelope[offset + 1];
+    const low = limits[`min${suffix}`],
+      high = limits[`max${suffix}`];
+    const scale = Math.min(1, (high - low) / (max - min || 1));
+    const shift = Math.min(0, high - max * scale) + Math.max(0, low - min * scale);
+    transform[axis] = { scale, shift };
+  }
+  return transform;
 }

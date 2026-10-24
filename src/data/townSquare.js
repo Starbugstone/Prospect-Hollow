@@ -1,4 +1,5 @@
 import { eraEvolution } from './eras';
+import { modelLevel } from './buildingProgression';
 
 export const SQUARE_POSITION = Object.freeze([0, -5]);
 // Top of the square's raised paving, relative to its plot.
@@ -19,7 +20,7 @@ export const modernSquareLampCorners = (level) =>
 // A frontier square lights all four corners once finished.
 export function squareLampCorners(town) {
   const era = town.buildingEras?.square;
-  const stage = town.buildings?.square ?? 0;
+  const stage = modelLevel('square', town.buildings?.square ?? 0);
   if (eraEvolution(era).style !== 'frontier')
     return modernSquareLampCorners(town.buildingEraLevels?.square || 1);
   return era === 'frontier' && stage >= 5 ? SQUARE_CORNERS.map((_, i) => i) : [];

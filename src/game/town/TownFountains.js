@@ -3,6 +3,8 @@ import { horizonMaterial } from './TownAtmosphere';
 import { walkObstacle } from './TownNavigation';
 import { fountainDesign } from '../../data/fountains';
 import { COZY_PALETTES } from '../../data/cozyArchitecture';
+import { FUTURE_PALETTES } from '../../data/futureArchitecture';
+import { futureShape } from './buildings/futureShapes';
 
 // The square's centerpiece follows the era its square was completed in. Every design
 // fits the same 1.1-unit walk radius, is built from shared primitives and joins the
@@ -510,6 +512,110 @@ function gardenBloom(d, g, grand, style) {
   radialArcs(d, g, grand ? 5 : 3, [0.26, y], [0.8, 0.35], 0.12);
 }
 
+// Skysail: water spirals up a mast under a little sailcloth kite mobile.
+function windSpiral(d, g, grand) {
+  const p = FUTURE_PALETTES.sail;
+  curb(d, g, 12, 1, 0.3, 0.2, 0.14, p.timber);
+  d.mesh(g, 'cylinder', [1.02, 0.04, 1.02], [0, 0.41, 0], p.shell);
+  pool(d, g, 0.9, 0.4);
+  d.rod(g, [0, 0.4, 0], [0, grand ? 2.1 : 1.7, 0], 0.05, p.deep);
+  const top = grand ? 2.1 : 1.7;
+  for (let n = 0; n < 9; n++) {
+    const a = (n / 9) * TAU * 1.5,
+      y = 0.5 + (n / 9) * (top - 0.7);
+    spray(d, d.ball(g, Math.sin(a) * 0.32, y, Math.cos(a) * 0.32, 0.07, WATER));
+  }
+  for (let n = 0; n < 3; n++) {
+    const a = (n / 3) * TAU;
+    const kite = d.box(
+      g,
+      0.28,
+      0.28,
+      0.03,
+      Math.sin(a) * 0.42,
+      top - 0.15,
+      Math.cos(a) * 0.42,
+      n ? p.flower : p.roof,
+    );
+    kite.rotation.set(0.2, a, Math.PI / 4);
+    d.rod(g, [0, top, 0], [Math.sin(a) * 0.42, top - 0.05, Math.cos(a) * 0.42], 0.012, p.deep);
+  }
+  radialArcs(d, g, grand ? 6 : 4, [0.18, 0.95], [0.82, 0.4], 0.14);
+}
+// Stargazer: brass planets orbit a gold sun above a night-blue basin.
+function orrery(d, g, grand) {
+  const p = FUTURE_PALETTES.observatory;
+  curb(d, g, 8, 0.94, 0.3, 0.22, 0.14, p.roof);
+  d.mesh(g, 'cylinder', [0.98, 0.04, 0.98], [0, 0.42, 0], p.timber);
+  pool(d, g, 0.86, 0.41);
+  d.mesh(g, 'cylinder', [0.1, 0.7, 0.1], [0, 0.75, 0], p.deep);
+  d.ball(g, 0, 1.2, 0, 0.22, p.light);
+  const orbits = grand ? [0.38, 0.56, 0.74] : [0.42, 0.66];
+  orbits.forEach((r, n) => {
+    const ring = d.mesh(g, futureShape(d, 'hoop'), [r, r, r], [0, 1.2, 0], p.timber);
+    ring.rotation.set(Math.PI / 2 - 0.12 * n, 0, 0.1 * n);
+    const a = n * 2.2 + 0.6;
+    d.ball(
+      g,
+      Math.sin(a) * r,
+      1.2 + 0.05 * n,
+      Math.cos(a) * r,
+      0.07 + n * 0.02,
+      n % 2 ? p.flower : p.glass,
+    );
+  });
+  radialArcs(d, g, grand ? 8 : 4, [0.2, 1.05], [0.84, 0.42], 0.1, Math.PI / 8);
+}
+// Moonward: the very first well, restored under a moon-glass cap.
+function firstWell(d, g, grand) {
+  const p = FUTURE_PALETTES.homestead;
+  for (let n = 0; n < 14; n++) {
+    const a = (n / 14) * TAU;
+    d.ball(
+      g,
+      Math.sin(a) * 0.82,
+      0.32,
+      Math.cos(a) * 0.82,
+      [0.22, 0.2, 0.2],
+      n % 3 ? '#a59684' : '#8f826f',
+      'rock',
+    );
+  }
+  d.mesh(g, 'cylinder', [0.76, 0.5, 0.76], [0, 0.25, 0], '#b6a891');
+  pool(d, g, 0.66, 0.5);
+  for (const x of [-0.62, 0.62]) d.rod(g, [x, 0.4, 0], [x, 1.55, 0], 0.06, p.timber);
+  d.rod(g, [-0.7, 1.4, 0], [0.7, 1.4, 0], 0.05, p.timber);
+  d.ball(g, 0, 1.25, 0, [0.12, 0.18, 0.12], p.timber);
+  d.ball(g, 0, 1.7, 0, [0.5, 0.36, 0.5], p.glass);
+  d.mesh(g, futureShape(d, 'hoop'), [0.5, 0.5, 0.5], [0, 1.62, 0], p.light).rotation.x =
+    Math.PI / 2;
+  d.ball(g, 0, 2.1, 0, 0.09, p.light);
+  radialArcs(d, g, grand ? 6 : 3, [0.12, 1.2], [0.6, 0.52], 0.1);
+  if (grand)
+    for (let n = 0; n < 4; n++) {
+      const a = (n / 4) * TAU + TAU / 8;
+      jet(d, g, Math.sin(a) * 0.45, Math.cos(a) * 0.45, 0.5, 0.25, 0.024);
+    }
+}
+
+// Twin Hollows: a little Earth and a little Moon share one basin and one arc of water.
+function twinGlobes(d, g, grand) {
+  const p = FUTURE_PALETTES.twin;
+  curb(d, g, 12, 0.98, 0.3, 0.22, 0.14, p.shell);
+  d.mesh(g, 'cylinder', [1, 0.04, 1], [0, 0.42, 0], p.light);
+  pool(d, g, 0.88, 0.41);
+  for (const [x, size, color] of [
+    [-0.36, 0.3, p.flower],
+    [0.4, 0.22, p.shell],
+  ]) {
+    d.mesh(g, 'cylinder', [0.07, 0.6, 0.07], [x, 0.7, 0], p.deep);
+    d.ball(g, x, 1.0 + size, 0, size, color);
+  }
+  d.ball(g, -0.3, 1.36, 0.12, [0.12, 0.05, 0.1], p.green, 'rock');
+  arc(d, g, [-0.36, 1.2, 0], [0.4, 1.12, 0], 0.32);
+  radialArcs(d, g, grand ? 6 : 4, [0.2, 0.95], [0.8, 0.45], 0.12);
+}
+
 /** One renderer for each id in FOUNTAIN_DESIGNS (src/data/fountains.js). */
 export const FOUNTAINS = Object.freeze({
   'frontier-spring': frontierSpring,
@@ -523,6 +629,10 @@ export const FOUNTAINS = Object.freeze({
   'orbital-rings': orbitalRings,
   'canopy-bloom': (d, g, grand) => gardenBloom(d, g, grand, 'canopy'),
   'riverlight-crystal': (d, g, grand) => gardenBloom(d, g, grand, 'riverlight'),
+  'wind-spiral': windSpiral,
+  orrery,
+  'first-well': firstWell,
+  'twin-globes': twinGlobes,
 });
 /** Build the central fountain for a square completed in `era`; stage 3 adds its tier. */
 export function addTownFountain(d, parent, stage, era = 'frontier') {

@@ -1,4 +1,5 @@
-import { drainsToExit, isPlayableCell } from './BoardTopology.js';
+import { isPlayableCell } from './BoardTopology.js';
+import { cargoReachesExit } from './GravityFrames.js';
 
 // Bonus gems a player can swap or double-tap on the board.
 export const BOARD_BONUSES = Object.freeze(['bomb', 'cross', 'rainbow']);
@@ -12,7 +13,7 @@ export const isAnchored = (tile) =>
 export const canSwapGem = (gem, tile) => !!gem && gem.type !== 'relic' && !isAnchored(tile);
 
 // Relics never match, but a board bonus may trade places with one and fire,
-// provided the relic can still fall to an exit from the bonus's cell.
+// provided the relic (or floatstone) can still reach an exit from the bonus's cell.
 export function canSwapCells(board, tiles, aIndex, bIndex, cols, rows) {
   const free = (index) => canSwapGem(board[index], tiles[index]);
   if (free(aIndex) && free(bIndex)) return true;
@@ -22,12 +23,13 @@ export function canSwapCells(board, tiles, aIndex, bIndex, cols, rows) {
     !isAnchored(tiles[relic]) &&
     BOARD_BONUSES.includes(board[bonus]?.type) &&
     free(bonus) &&
-    drainsToExit(tiles, bonus, cols, rows)
+    cargoReachesExit(board, tiles, bonus, cols, rows, board[relic])
   );
 }
 
+// Sealed chambers count from the start: their layers wait behind the wall.
 export const layerCount = (tile) =>
-  isPlayableCell(tile)
+  tile?.type !== 'void'
     ? (tile?.health ?? 0) + (tile?.chainHealth ?? 0) + (tile?.signalHealth ?? 0)
     : 0;
 

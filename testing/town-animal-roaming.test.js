@@ -1,10 +1,14 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BoxGeometry, Group, Mesh, MeshBasicMaterial, PlaneGeometry, Vector3 } from 'three';
 import { createTown } from '../src/data/town';
 import { animalSpace } from '../src/game/town/TownAnimalSpace';
 import { TownNavigation, walkPath, walkPose } from '../src/game/town/TownNavigation';
 import { updateTownLocomotion } from '../src/game/town/TownLocomotion';
 import { prepareAnimalRoaming, updateAnimalRoaming } from '../src/game/town/TownAnimalRoaming';
+import * as layout from '../src/game/town/TownLayout';
+import { groundHeight } from '../src/game/town/TownLandscape';
+
+afterEach(() => vi.restoreAllMocks());
 
 const square = [
   [-10, 0.07, -7],
@@ -67,7 +71,148 @@ function prepare(d) {
   return yields;
 }
 
+function graphShape(animal) {
+  return {
+    nodes: animal.roaming.nodes.map(({ point, legs }) => ({ point, legs })),
+    legs: animal.roaming.legs.map(({ from, to, path, local, reverse }) => ({
+      from,
+      to,
+      points: path.points,
+      total: path.total,
+      local,
+      reverse,
+    })),
+  };
+}
+
 describe('Prepared lightweight animal roaming', () => {
+  it('keeps the same certified graph while avoiding repeated navigation and mesh point queries', () => {
+    const run = (invalidate) => {
+      const dog = animal(),
+        d = fixture([dog, animal('cat')], true),
+        clear = d.navigation.clear.bind(d.navigation);
+      const navigation = vi.spyOn(d.navigation, 'clear').mockImplementation((...args) => {
+        // Changing only the revision provides an uncached reference with the
+        // same real road, footprint and triangle collision answers.
+        if (invalidate) d.navigation.revision++;
+        return clear(...args);
+      });
+      const geometry = vi.spyOn(d.animalSpace, 'clear');
+      prepare(d);
+      return {
+        graph: graphShape(dog),
+        navigationCalls: navigation.mock.calls.length,
+        geometryCalls: geometry.mock.calls.length,
+      };
+    };
+    const cached = run(false),
+      uncached = run(true);
+    expect(cached.graph.legs.length).toBeGreaterThan(2);
+    expect(cached.graph).toEqual(uncached.graph);
+    expect(cached.navigationCalls).toBeLessThan(uncached.navigationCalls);
+    expect(cached.geometryCalls).toBeLessThan(uncached.geometryCalls);
+  });
+
+  it.each(['navigation revision', 'navigation identity', 'animal space'])(
+    'rechecks a repeated point after its %s changes during preparation',
+    (change) => {
+      const origin = [-10, 0.07, -7];
+      const dog = animal('dog', [origin, [-7.5, 0.07, -7], origin]),
+        d = fixture([dog]);
+      const original = vi.spyOn(d.navigation, 'clear');
+      const work = prepareAnimalRoaming(d);
+      expect(work.next().done).toBe(false);
+      expect(original).toHaveBeenCalledWith(origin, dog.radius);
+      let queries;
+      const obstacle = { x: origin[0], z: origin[2], radius: 0.5, y: 0, height: 3 };
+      if (change === 'navigation revision') {
+        d.navigation.replaceOwner('new-wall', [obstacle]);
+        queries = original.mockClear();
+      } else if (change === 'navigation identity') {
+        const revision = d.navigation.revision;
+        d.navigation = new TownNavigation([obstacle]);
+        expect(d.navigation.revision).toBe(revision);
+        queries = vi.spyOn(d.navigation, 'clear');
+      } else {
+        const wall = new Mesh(new BoxGeometry(1, 3, 1), new MeshBasicMaterial());
+        wall.position.set(origin[0], 1.5, origin[2]);
+        d.world.add(wall);
+        d.animalSpace = animalSpace(d);
+        queries = vi.spyOn(d.animalSpace, 'clear');
+      }
+      while (!work.next().done) {
+        // Drain preparation without advancing simulation time.
+      }
+      const blocked = queries.mock.calls.findIndex(
+        ([p], index) =>
+          p[0] === origin[0] && p[2] === origin[2] && queries.mock.results[index].value === false,
+      );
+      expect(blocked).toBeGreaterThanOrEqual(0);
+    },
+  );
+
+  it('keeps street itinerary clearance separate from the stricter local branch clearance', () => {
+    const road = { from: [-11, -7], to: [-5, -7], width: 0.8 };
+    vi.spyOn(layout, 'townTracks').mockReturnValue([road]);
+    const dog = animal(),
+      d = fixture([dog]);
+    prepare(d);
+    const margin = road.width / 2 + dog.radius + 0.08;
+    const insideRoad = (p) => layout.segmentDistance(p[0], p[2], road.from, road.to) < margin;
+    expect(dog.roaming.legs.some((leg) => !leg.local && leg.path.points.some(insideRoad))).toBe(
+      true,
+    );
+    expect(dog.roaming.legs.some((leg) => leg.local)).toBe(true);
+    for (const leg of dog.roaming.legs.filter((leg) => leg.local))
+      expect(leg.path.points.some(insideRoad)).toBe(false);
+  });
+
+  it.each([
+    [
+      'diagonal side inside',
+      [-12, 28],
+      [-8, 32],
+      [-10 + 0.979 / Math.SQRT2, 30 - 0.979 / Math.SQRT2],
+      false,
+      true,
+    ],
+    [
+      'diagonal side outside',
+      [-12, 28],
+      [-8, 32],
+      [-10 + 0.981 / Math.SQRT2, 30 - 0.981 / Math.SQRT2],
+      true,
+      true,
+    ],
+    ['end cap inside', [-12, 30], [-8, 30], [-8 + 0.979, 30], false, true],
+    ['end cap outside', [-12, 30], [-8, 30], [-8 + 0.981, 30], true, false],
+    [
+      'diagonal end cap outside',
+      [-12, 28],
+      [-8, 32],
+      [-8 + 0.981 / Math.SQRT2, 32 + 0.981 / Math.SQRT2],
+      true,
+      true,
+    ],
+    ['distant road', [-12, 30], [-8, 30], [0, 30], true, false],
+  ])('preserves exact road clearance at the %s', (_label, from, to, [x, z], allowed, near) => {
+    const road = { from, to, width: 0.8 };
+    vi.spyOn(layout, 'townTracks').mockReturnValue([road]);
+    const distance = vi.spyOn(layout, 'segmentDistance');
+    const point = [x, groundHeight(x, z) + 0.07, z];
+    const fox = animal('fox', [point, [x + 0.1, point[1], z], point], {
+        wild: true,
+        radius: 0.5,
+      }),
+      d = fixture([fox]);
+    const navigation = vi.spyOn(d.navigation, 'clear');
+    const work = prepareAnimalRoaming(d);
+    expect(work.next().done).toBe(false);
+    expect(navigation).toHaveBeenCalledTimes(allowed ? 1 : 0);
+    expect(distance).toHaveBeenCalledTimes(near ? 1 : 0);
+    work.return();
+  });
+
   it('prepares bounded finite legs with swept body certificates and leaves other cast members alone', () => {
     const dog = animal(),
       cat = animal('cat'),

@@ -13,7 +13,11 @@ import {
   buildingIndicators,
   banditEncounter,
   reinforceRaid,
+  raidProtection,
+  saloonIncomeRate,
 } from '../src/game/town/TownRules';
+import { serviceLevel } from '../src/data/buildingProgression';
+import { forgeProductionRuns } from '../src/data/eras';
 import { useCampaignStore } from '../src/stores/campaignStore';
 
 beforeEach(() => {
@@ -67,8 +71,8 @@ it('keeps all old level-five service benefits at the new shorter caps', () => {
   const town = normalizeTown(legacy);
   expect(town.buildings.home).toBe(3);
   expect(town.buildings.doctor).toBe(3);
-  expect(town.buildings.blacksmith).toBe(5);
-  expect(town.buildings.square).toBe(5);
+  expect(town.buildings.blacksmith).toBe(3);
+  expect(town.buildings.square).toBe(3);
   expect(housingCapacity(town)).toBe(40);
   expect(visitorCapacity(town)).toBe(18);
   expect(foodCapacity(town)).toBe(65);
@@ -101,6 +105,59 @@ it('refunds a redundant paid tier once and preserves an in-progress modernizatio
   expect(town.projects.doctor).toBeUndefined();
   expect(town.projects.home).toMatchObject({ stage: 3, wins: 1, required: 2, cost: 300 });
   expect(normalizeTown(town).coins).toBe(town.coins);
+});
+it('moves version-1 towns to three-level Frontier services without losing a benefit', () => {
+  const legacy = createTown();
+  legacy.progressionVersion = 1;
+  for (const b of BUILDINGS.filter((b) => b.introducedEra === 'frontier'))
+    legacy.buildings[b.id] = b.upgrades.length;
+  for (const id of ['saloon', 'sheriff', 'bank', 'square', 'blacksmith']) legacy.buildings[id] = 5;
+  const town = normalizeTown(legacy);
+  for (const id of ['saloon', 'sheriff', 'bank', 'square', 'blacksmith']) {
+    expect(town.buildings[id], id).toBe(3);
+    expect(BUILDING_BY_ID[id].upgrades, id).toHaveLength(3);
+  }
+  // Stage three serves at the old level five: income, full raid cover, the bell and the forge.
+  expect(serviceLevel(town, 'saloon')).toBe(5);
+  expect(saloonIncomeRate(town)).toBeGreaterThan(0);
+  expect(raidProtection(town, 10)).toBe(1);
+  expect(forgeProductionRuns(serviceLevel(town, 'blacksmith'))).toBe(2);
+  expect(isEraComplete(town)).toBe(true);
+  expect(town.progressionVersion).toBe(2);
+  expect(normalizeTown(town)).toEqual(town);
+  // A level-four building also finishes at stage three.
+  expect(
+    normalizeTown({ ...legacy, buildings: { ...legacy.buildings, bank: 4 } }).buildings.bank,
+  ).toBe(3);
+});
+it('refunds a paid fourth or fifth service tier and moves a modernization down with it', () => {
+  const legacy = createTown();
+  legacy.progressionVersion = 1;
+  legacy.coins = 100;
+  legacy.buildings.saloon = 4;
+  legacy.projects.saloon = { id: 'saloon', stage: 5, required: 1, wins: 0 };
+  legacy.era = 'river-rail';
+  legacy.buildings.sheriff = 5;
+  legacy.buildingEras.sheriff = 'river-rail';
+  legacy.buildingEraLevels.sheriff = 1;
+  legacy.projects.sheriff = {
+    id: 'sheriff',
+    type: 'modernization',
+    stage: 6,
+    required: 1,
+    wins: 1,
+    cost: 300,
+    fromEra: 'river-rail',
+    targetEra: 'river-rail',
+  };
+  const town = normalizeTown(legacy);
+  expect(town.coins).toBe(100 + BUILDING_BY_ID.saloon.legacyUpgradeCosts[4]);
+  expect(town.projects.saloon).toBeUndefined();
+  expect(town.buildings.saloon).toBe(3);
+  expect(town.projects.sheriff).toMatchObject({ stage: 4, wins: 1, required: 1, cost: 300 });
+  expect(normalizeTown(town).coins).toBe(town.coins);
+  // A current save is never migrated twice.
+  expect(normalizeTown({ ...town, coins: 5 }).coins).toBe(5);
 });
 it('retains the pending cinematic if its completion cannot save', () => {
   const c = useCampaignStore();

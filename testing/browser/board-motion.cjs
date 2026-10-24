@@ -9,7 +9,6 @@ const origin = process.env.PH_TEST_ORIGIN || 'http://127.0.0.1:8192';
 const MOVES = Number(process.env.PH_MOTION_MOVES || 5);
 // The reported level 376, every shaped-board family, and a rectangular control.
 const LEVELS = (process.env.PH_MOTION_LEVELS || '13,373,376,385,397').split(',').map(Number);
-const LEVELS_PER_CHAPTER = 6;
 const FRAME = 1000 / 60;
 // Gems closer than this, in cells, are drawn on top of each other. Neighbouring lanes
 // of a diagonal funnel pass corner to corner at about 0.71; stacked refills are at 0.
@@ -75,19 +74,28 @@ async function playMoves({ moves, frame }) {
     if (!swap) break;
     const swapped = [swap.aIndex, swap.bIndex].map((index) => animator.indexToGemId[index]);
     const frames = [];
+    // A gem resting in the middle of a chained cell is held there by its chain.
+    const held = (x, y) => {
+      const [col, row] = [x - 0.5, y - 0.5];
+      if (Math.abs(col - Math.round(col)) > 0.02 || Math.abs(row - Math.round(row)) > 0.02)
+        return false;
+      return (
+        animator.tiles[Math.round(row) * animator.boardCols + Math.round(col)]?.chainHealth > 0
+      );
+    };
     const sample = () =>
       frames.push(
         [...animator.gemSprites]
           .filter(([, sprite]) => sprite.visible)
-          .map(([id, sprite]) => [
-            id,
-            sprite.x / animator.cellSize,
-            sprite.y / animator.cellSize,
-            sprite.alpha,
-          ]),
+          .map(([id, sprite]) => {
+            const [x, y] = [sprite.x / animator.cellSize, sprite.y / animator.cellSize];
+            return [id, x, y, sprite.alpha, !!sprite.__float, held(x, y)];
+          }),
       );
     sample();
-    game.resolveSwap(swap.aIndex, swap.bIndex);
+    // A hint may double-tap a bonus where it stands rather than swap it.
+    if (game.hintMove.activateInPlace) game.activateBonusGem(swap.aIndex);
+    else game.resolveSwap(swap.aIndex, swap.bIndex);
     // Run until the move settles, then a few still frames.
     for (let i = 0, still = 0; i < 60 * 15 && still < 6; i++) {
       window.__motionClock.step(frame);
@@ -101,14 +109,22 @@ async function playMoves({ moves, frame }) {
 }
 
 // Gems drawn on top of each other. The swapped pair crosses on purpose; a fading
-// gem is on its way out.
+// gem is on its way out; gems sink past a rising floatstone, which is drawn in front;
+// gravity lets gems fall past a chained gem, so a moving gem may cross a held one.
 function overlaps({ swapped, frames }) {
   const found = [];
   frames.forEach((gems, frame) => {
+    const before = new Map((frames[frame - 1] ?? []).map((gem) => [gem[0], gem]));
+    const moving = ([id, x, y]) => {
+      const last = before.get(id);
+      return !!last && Math.hypot(x - last[1], y - last[2]) >= REST;
+    };
     const solid = gems.filter(([, , , alpha]) => alpha >= 0.9);
     for (let a = 0; a < solid.length; a++)
       for (let b = a + 1; b < solid.length; b++) {
         if (swapped.includes(solid[a][0]) && swapped.includes(solid[b][0])) continue;
+        if (solid[a][4] || solid[b][4]) continue;
+        if ((solid[a][5] && moving(solid[b])) || (solid[b][5] && moving(solid[a]))) continue;
         const gap = Math.hypot(solid[a][1] - solid[b][1], solid[a][2] - solid[b][2]);
         if (gap < MIN_GAP) found.push({ frame, gems: [solid[a][0], solid[b][0]], gap });
       }
@@ -121,30 +137,56 @@ function overlaps({ swapped, frames }) {
 // landing and rests between cascade steps are fine.
 function stutters({ frames }) {
   const tracks = new Map();
+  const seen = new Map();
+  // Each time a gem comes back into view, its movement starts again (see below).
+  const legs = new Map();
   frames.forEach((gems, frame) => {
-    for (const [id, x, y] of gems) {
-      if (!tracks.has(id)) tracks.set(id, []);
-      tracks.get(id).push({ frame, x, y });
+    for (const [id, x, y, alpha] of gems) {
+      const before = seen.get(id);
+      seen.set(id, { frame, x, y });
+      // A hidden gem (beamed through a portal or still inside the seam) cannot visibly
+      // stutter.
+      if (alpha < 0.9) continue;
+      let leg = legs.get(id) ?? 0;
+      const last = tracks.get(`${id}#${leg}`)?.at(-1);
+      // Back in view on a portal's exit pad: it drops out of it from rest, a new fall.
+      if (last && last.frame !== frame - 1) legs.set(id, ++leg);
+      const key = `${id}#${leg}`;
+      if (!tracks.has(key)) tracks.set(key, []);
+      const track = tracks.get(key);
+      const previous = track.at(-1);
+      const speed = previous
+        ? Math.hypot(x - previous.x, y - previous.y)
+        : !leg && before?.frame === frame - 1
+          ? // First seen mid-fall, out of a seam or a hole: it comes into view moving.
+            Math.hypot(x - before.x, y - before.y)
+          : 0;
+      track.push({ frame, x, y, speed });
     }
   });
   const found = [];
   for (const [id, track] of tracks) {
-    const speed = track.map((point, i) =>
-      i && point.frame === track[i - 1].frame + 1
-        ? Math.hypot(point.x - track[i - 1].x, point.y - track[i - 1].y)
-        : 0,
-    );
+    const speed = track.map((point) => point.speed);
     // Split the track into movements separated by rests.
     let start = null;
-    for (let i = 1; i <= track.length; i++) {
+    for (let i = 0; i <= track.length; i++) {
       const resting =
         i === track.length || speed.slice(i, i + REST_FRAMES).every((value) => value < REST);
       if (start === null && !resting) start = i;
       if (start === null || !resting) continue;
       const end = track[i - 1];
-      const arrival = track.findIndex(
-        (point, j) => j >= start && Math.hypot(point.x - end.x, point.y - end.y) < 0.02,
+      // It has landed once it reaches its cell, or once it turns back on itself: the
+      // bounce of a landing that fell between two frames.
+      const turns = (j) =>
+        j >= start + 2 &&
+        (track[j - 1].x - track[j - 2].x) * (track[j].x - track[j - 1].x) +
+          (track[j - 1].y - track[j - 2].y) * (track[j].y - track[j - 1].y) <
+          0;
+      let arrival = track.findIndex(
+        (point, j) =>
+          j >= start && (Math.hypot(point.x - end.x, point.y - end.y) < 0.02 || turns(j)),
       );
+      if (turns(arrival)) arrival--;
       const approach = speed.slice(start, arrival + 1);
       const peak = Math.max(...approach);
       const fast = approach.findIndex((value) => value >= peak / 2);
@@ -172,20 +214,29 @@ function stutters({ frames }) {
       });
       context.setDefaultTimeout(60000);
       await context.addInitScript(installClock, level);
+      // A disposable profile with every earlier level played, so this level is the next
+      // one the mine opens. It lives only in this throwaway browser context.
+      await context.addInitScript(
+        ({ key, level }) => {
+          const records = {};
+          for (let id = 1; id < level; id++) records[id] = { score: 0, stars: 1 };
+          localStorage.setItem(
+            key,
+            JSON.stringify({ schemaVersion: 2, records, seenTips: ['town'], town: {} }),
+          );
+        },
+        { key: 'crystal-cascade-profile-v3', level },
+      );
       const page = await context.newPage();
       const errors = [];
       page.on('pageerror', (error) => errors.push(error.message));
       await page.goto(origin, { timeout: 180000 });
+      const store = `document.querySelector('#app')?.__vue_app__?.config.globalProperties.$pinia._s.get('game')`;
       // A cold Vite dev server optimises dependencies on the first visit.
-      await page.waitForFunction(() => window.prospectDebug, null, { timeout: 180000 });
-      // mineStage opens a chapter's first level; a later level needs the next chapter.
-      const chapter = Math.ceil(level / LEVELS_PER_CHAPTER);
-      const first = (chapter - 1) * LEVELS_PER_CHAPTER + 1;
-      const store = `document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('game')`;
-      await page.evaluate(`prospectDebug.mineStage(${level === first ? chapter : chapter + 1})`);
+      await page.waitForFunction(`!!${store}`, null, { timeout: 180000 });
+      if (!(await page.evaluate(`${store}.startLevel(${level}, 'normal')`)))
+        throw new Error(`${level}: the seeded profile cannot open this level`);
       await page.waitForFunction(`!!${store}.renderer?.animator`);
-      if (level !== first)
-        await page.evaluate(`${store}.startLevel(${level}, 'normal', { debugReplay: true })`);
       await page.waitForFunction(
         `(() => { const g = ${store}; return g.renderer?.animator && !g.animationInProgress && g.currentLevelId === ${level}; })()`,
       );

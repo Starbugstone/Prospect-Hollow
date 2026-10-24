@@ -3,11 +3,13 @@ import { keepCameraAboveTerrain } from './TownLandscape';
 import { TownRailwayOpening } from './TownRailwayOpening';
 import { TownMineEraConstruction } from './TownMineEraConstruction';
 import { TownCompletionFireworks } from './TownCompletionFireworks';
+import { TownMonumentUnveiling } from './TownMonumentUnveiling';
 
 const renderers = {
   'railway-opening': TownRailwayOpening,
   'era-mine': TownMineEraConstruction,
   'three-star-celebration': TownCompletionFireworks,
+  'monument-unveiling': TownMonumentUnveiling,
 };
 // Shared camera ownership and cleanup. Content adapters own only temporary visuals.
 export class TownPresentation {
@@ -27,7 +29,7 @@ export class TownPresentation {
       const t = Math.min(1, time / 1.4);
       d.camera.position.lerpVectors(d.eventCamera.position, eye, t * t * (3 - 2 * t));
       d.controls.target.lerpVectors(d.eventCamera.target, focus, t * t * (3 - 2 * t));
-      keepCameraAboveTerrain(d.camera.position, d.controls.target);
+      (d.keepCameraAboveSurface ?? keepCameraAboveTerrain)(d.camera.position, d.controls.target);
       d.camera.lookAt(d.controls.target);
     }
     for (const motion of d.motions) motion(d.elapsed);

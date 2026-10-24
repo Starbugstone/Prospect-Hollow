@@ -1,13 +1,12 @@
 import { continueSupplyTiers, defineEra } from './eraDefinitions';
-// The two garden eras share city services and lifecycles. New cozy palettes can
-// reuse this profile while keeping their prices, content and appearance explicit.
-// Their buildings are cozy, but the airport, station, port and traffic keep
-// Tomorrow's sky saucer, solar express, hover ferry and hover pods.
-const COZY_CITY_EVOLUTION = {
+// Every era after Tomorrow shares these city services and lifecycles; each one
+// supplies its own architecture, prices, content and appearance. Their airport,
+// station, port and traffic keep Tomorrow's sky saucer, solar express, hover ferry
+// and hover pods, and their Willowkin neighbors walk the streets (`garden-town`).
+const FUTURE_CITY_EVOLUTION = {
   style: 'city',
-  architecture: 'cozy',
   transportStyle: 'rounded',
-  wildlife: 'garden',
+  wildlife: 'garden-town',
   cityAssets: 'contemporary',
   detailAsset: 'digital-detail',
   airportStyle: 'connected',
@@ -233,8 +232,11 @@ export const ERAS = continueSupplyTiers(
       evolution: {
         waterworks: [179, 181, 183],
         farmCapacity: [134, 136, 138],
-        ...COZY_CITY_EVOLUTION,
+        ...FUTURE_CITY_EVOLUTION,
+        architecture: 'cozy',
         cozyStyle: 'canopy',
+        // The first Willowkin saplings stay in the gardens.
+        wildlife: 'garden',
         prices: [10400, 12200, 14000],
         wardrobe: 'canopy',
         newBuildingPrices: [11500, 14000, 16500],
@@ -261,9 +263,9 @@ export const ERAS = continueSupplyTiers(
       evolution: {
         waterworks: [185, 187, 189],
         farmCapacity: [144, 150, 156],
-        ...COZY_CITY_EVOLUTION,
+        ...FUTURE_CITY_EVOLUTION,
+        architecture: 'cozy',
         cozyStyle: 'riverlight',
-        wildlife: 'garden-town',
         prices: [12000, 14000, 16000],
         wardrobe: 'riverlight',
         newBuildingPrices: [13500, 16000, 18500],
@@ -284,6 +286,123 @@ export const ERAS = continueSupplyTiers(
         'Our craftspeople turn familiar crystals into glass that gathers daylight. Warm springs, quiet workshops and a luminous pavilion welcome every neighbor.',
       horizon: 'The valley is finding its gentle evening glow.',
       finale: 'The crystals beneath our home now light the places we share.',
+    },
+    {
+      id: 'skysail',
+      evolution: {
+        ...FUTURE_CITY_EVOLUTION,
+        architecture: 'sail',
+        waterworks: [195, 201, 207],
+        farmCapacity: [162, 168, 174],
+        prices: [13600, 15800, 18000],
+        wardrobe: 'skysail',
+        newBuildingPrices: [15500, 18000, 20500],
+        fountain: 'wind-spiral',
+        roadStyle: 'sail-boardwalk',
+        upgradeTitle: 'Skysail level {level}: {name}',
+        upgradeDescriptions: [
+          'Raise a sailcloth canopy on slender masts above a breezy timber deck.',
+          'Complete the billowing sails, pennant lines and a little garden island floating overhead.',
+        ],
+        cityDescription:
+          'Sailcloth roofs, slender masts and floating garden islands lift the town into the breeze.',
+      },
+      label: 'Skysail Age',
+      yearLabel: '2185',
+      enabled: true,
+      story:
+        'Riverlight glass grew so light that the valley wind could carry it. Sails bloom over every rooftop, and our Willowkin neighbors tend little orchards drifting gently above the fields.',
+      horizon: 'The wind is calling over Prospect Hollow.',
+      finale: 'Sails up, gardens high, and everyone still waves from the porch.',
+    },
+    {
+      id: 'stargazer',
+      evolution: {
+        ...FUTURE_CITY_EVOLUTION,
+        architecture: 'observatory',
+        waterworks: [213, 219, 225],
+        farmCapacity: [180, 186, 192],
+        prices: [15200, 17600, 20000],
+        wardrobe: 'stargazer',
+        newBuildingPrices: [17500, 20000, 22500],
+        fountain: 'orrery',
+        roadStyle: 'star-path',
+        upgradeTitle: 'Stargazer level {level}: {name}',
+        upgradeDescriptions: [
+          'Add a night-blue ceramic wing with a copper-trimmed viewing dome.',
+          'Complete the opening dome, its little telescope and a ring of starlight.',
+        ],
+        cityDescription:
+          'Night-blue tiles, copper domes and starry windows turn every street toward the sky.',
+      },
+      label: 'Stargazer Age',
+      yearLabel: '2230',
+      enabled: true,
+      story:
+        'From our domes and rooftops we watch the night together, and the Willowkin elders know every star by name. One clear evening the great telescope finds crystal glints on the Moon: our crystals have cousins up there.',
+      horizon: 'The night sky is getting closer to Prospect Hollow.',
+      finale: 'Every window looks up. Every neighbor has a favorite star.',
+    },
+    {
+      id: 'moonward',
+      evolution: {
+        ...FUTURE_CITY_EVOLUTION,
+        architecture: 'homestead',
+        waterworks: [233, 241, 249],
+        farmCapacity: [198, 204, 210],
+        prices: [16800, 19400, 22000],
+        wardrobe: 'moonward',
+        newBuildingPrices: [19500, 22000, 24500],
+        fountain: 'first-well',
+        roadStyle: 'homestead-brick',
+        moonSettlement: true,
+        upgradeTitle: 'Moonward level {level}: {name}',
+        upgradeDescriptions: [
+          'Add a lunar-ceramic porch wing with gold trim and solar shingles.',
+          'Complete the homestead gables, the round airlock door and a little landing light.',
+        ],
+        cityDescription:
+          'Frontier gables return in moon-white ceramic and gold, ready to wave our neighbors up to the Moon.',
+      },
+      label: 'Moonward Age',
+      yearLabel: '2270',
+      enabled: true,
+      story:
+        'In 1865 a handful of prospectors found crystals in this valley. Now a silver ribbon rises beside the old mine, carrying our supplies and Willowkin seedlings to new homesteads on the Moon.',
+      horizon: 'A new frontier is waiting above Prospect Hollow.',
+      finale: 'Look up tonight: every little light on the Moon is a neighbor from home.',
+    },
+    {
+      id: 'twin-hollows',
+      evolution: {
+        ...FUTURE_CITY_EVOLUTION,
+        architecture: 'twin',
+        waterworks: [265, 281, 297],
+        farmCapacity: [226, 242, 258],
+        prices: [18400, 21000, 23600],
+        wardrobe: 'twin',
+        newBuildingPrices: [21000, 23500, 26000],
+        fountain: 'twin-globes',
+        roadStyle: 'twin-lane',
+        moonSettlement: true,
+        // The Moon is the new frontier: on Earth only a few homecoming landmarks
+        // are modernized; every other building keeps its Moonward finish.
+        modernizes: ['square', 'well', 'farm', 'railDepot', 'spaceElevator', 'moonpost'],
+        upgradeTitle: 'Homecoming level {level}: {name}',
+        upgradeDescriptions: [
+          'Add a welcome porch with twin lanterns, one for the valley and one for the Moon.',
+          'Complete the homecoming arch with its Earth and Moon globes and a family bench.',
+        ],
+        cityDescription:
+          'Twin lanterns and homecoming arches welcome families travelling between the valley and the Moon.',
+      },
+      label: 'Twin Hollows',
+      yearLabel: '2300',
+      enabled: true,
+      story:
+        'The ribbon carries us all the way now. On the Moon, New Hollow is our new frontier: settler domes, crater ice and a Willowkin garden under glass. Down in the valley, every family keeps a lantern lit for the ones who went up.',
+      horizon: 'Two towns are about to share one sky.',
+      finale: 'Two towns, one sky. Wherever we go, Prospect Hollow is home.',
     },
   ].map(defineEra),
 );

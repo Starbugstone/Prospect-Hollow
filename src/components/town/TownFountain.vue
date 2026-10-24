@@ -26,6 +26,73 @@
         v-bind="jet"
       />
     </template>
+    <template v-else-if="design === 'wind-spiral'">
+      <ellipse cy="-20" rx="42" ry="15" :fill="future.sail.timber" />
+      <ellipse cy="-24" rx="36" ry="11" :fill="water" />
+      <path :d="`M0-24V${grand ? -110 : -92}`" :stroke="future.sail.deep" stroke-width="4" />
+      <path
+        :d="`M-10-30q20-8 0-16q-20-8 0-16q20-8 0-16${grand ? 'q-20-8 0-16' : ''}`"
+        v-bind="jet"
+      />
+      <rect
+        v-for="(x, n) in [-18, 0, 18]"
+        :key="x"
+        :x="x - 6"
+        :y="(grand ? -112 : -94) + Math.abs(x) / 3"
+        width="12"
+        height="12"
+        :fill="n === 1 ? future.sail.roof : future.sail.flower"
+        :transform="`rotate(45 ${x} ${(grand ? -106 : -88) + Math.abs(x) / 3})`"
+      />
+    </template>
+    <template v-else-if="design === 'orrery'">
+      <polygon :points="ring(42, 16, -22, 8)" :fill="future.observatory.roof" />
+      <ellipse cy="-26" rx="36" ry="11" :fill="water" />
+      <path d="M0-26v-38" :stroke="future.observatory.deep" stroke-width="5" />
+      <circle cy="-70" r="10" :fill="future.observatory.light" />
+      <ellipse
+        v-for="r in grand ? [20, 30, 40] : [22, 34]"
+        :key="r"
+        cy="-70"
+        :rx="r"
+        :ry="r * 0.28"
+        fill="none"
+        :stroke="future.observatory.timber"
+        stroke-width="2"
+      />
+      <circle
+        v-for="(r, n) in grand ? [20, 30, 40] : [22, 34]"
+        :key="`p${r}`"
+        :cx="r * (n % 2 ? -0.8 : 0.9)"
+        :cy="-70 + r * 0.17"
+        r="4"
+        :fill="n % 2 ? future.observatory.flower : future.observatory.glass"
+      />
+    </template>
+    <template v-else-if="design === 'first-well'">
+      <ellipse cy="-14" rx="40" ry="15" fill="#a59684" />
+      <path d="M-32-14v-18h64v18Z" fill="#b6a891" />
+      <ellipse cy="-32" rx="32" ry="10" :fill="water" />
+      <path
+        d="M-28-32v-46M28-32v-46M-32-74h64"
+        :stroke="future.homestead.timber"
+        stroke-width="5"
+      />
+      <ellipse cy="-88" rx="22" ry="17" :fill="future.homestead.glass" opacity="0.9" />
+      <path d="M-22-84h44" :stroke="future.homestead.light" stroke-width="3" />
+      <circle cy="-108" r="4" :fill="future.homestead.light" />
+      <path v-if="grand" d="M-18-34q-8-14-2-22M18-34q8-14 2-22" v-bind="jet" />
+    </template>
+    <template v-else-if="design === 'twin-globes'">
+      <ellipse cy="-20" rx="40" ry="15" :fill="future.twin.shell" />
+      <ellipse cy="-24" rx="34" ry="10" :fill="water" />
+      <path d="M-14-24v-34M16-24v-30" :stroke="future.twin.deep" stroke-width="4" />
+      <circle cx="-14" cy="-68" r="12" :fill="future.twin.flower" />
+      <path d="M-20-72q6-4 10 2" :stroke="future.twin.green" stroke-width="4" fill="none" />
+      <circle cx="16" cy="-60" r="9" :fill="future.twin.shell" stroke="#c9c4b6" stroke-width="2" />
+      <path d="M-4-74q10-14 22-4" v-bind="jet" />
+      <path v-if="grand" d="M-30-28q-8-14-2-22M30-28q8-14 2-22" v-bind="jet" />
+    </template>
     <template v-else-if="design === 'victorian-iron'">
       <polygon :points="ring(38, 16, -24, 8)" fill="#8f8c82" />
       <polygon :points="ring(38, 16, -32, 8)" fill="#c4c0b3" />
@@ -292,6 +359,7 @@
 import { computed } from 'vue';
 import { fountainDesign } from '../../data/fountains';
 import { cozyAppearance } from '../../data/cozyArchitecture';
+import { FUTURE_PALETTES as future } from '../../data/futureArchitecture';
 
 // Flat counterparts of TownFountains.js for the SVG fallback, drawn around the
 // same center point used by the square.

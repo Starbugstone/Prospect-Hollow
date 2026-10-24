@@ -13,6 +13,7 @@ import { streetHeight, updateItinerary } from './TownItineraries';
 import { prepareActorWalk, walkPose, placeSafely } from './TownNavigation';
 import { SIDEWALK_OFFSET } from './TownTraffic';
 import { updateWorkRoutine } from './TownWorkRoutine';
+import { swingLimbs } from './TownGait';
 
 // Villagers, visitors and the stable's horses: articulated models built from the
 // diorama's primitives, their era wardrobe and identity, and their walking pose.
@@ -407,8 +408,14 @@ export function animatePerson(d, actor, time) {
       root.position.z -= tangent.x * offset;
     }
   }
-  // Locomotion owns an established worker's position, including any accepted
-  // construction exit. Do not repeat the placement search every frame.
+  // Prepared route samples provide pose/height; locomotion owns their accepted
+  // ground position, including after a retained-solid correction. Curve-only
+  // walkers still need their new sampled position as the next locomotion target.
+  if (actor.walkPath && Number.isFinite(actor.motion?.x) && Number.isFinite(actor.motion?.z)) {
+    root.position.x = actor.motion.x;
+    root.position.z = actor.motion.z;
+  }
+  // Do not repeat an established worker's placement search every frame.
   if (work && !actor.motion && !actor.workRoutine) placeSafely(d, root);
   if (!actor.motion && actor.lastPosition && time >= actor.lastPoseTime)
     actor.distance += root.position.distanceTo(actor.lastPosition);
@@ -423,13 +430,7 @@ export function animatePerson(d, actor, time) {
   head.rotation.y = walking
     ? Math.sin(time * 0.7 + seed) * 0.1
     : Math.sin(time * 0.8 + seed) * 0.25;
-  for (let n = 0; n < 2; n++) {
-    const swing = Math.sin(step + n * Math.PI);
-    legs[n].upper.rotation.x = walking ? swing * 0.36 : 0;
-    legs[n].lower.rotation.x = walking ? Math.max(0, -swing) * 0.6 : 0;
-    arms[n].upper.rotation.x = walking ? -swing * 0.28 : -0.12;
-    arms[n].lower.rotation.x = -0.16;
-  }
+  swingLimbs(arms, legs, step, walking);
   if (!walking) {
     const activity = actor.workRoutine && !actor.workActive ? null : work;
     if (activity === 'farm') {

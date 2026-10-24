@@ -1,7 +1,13 @@
 import { scheduleWork } from '../PresentationWork';
 import { AnimalSpaceBuilder } from './TownAnimalSpace';
 import { Group, Vector3 } from 'three';
-import { ANIMAL_HABITATS, TOWN_ANIMALS, townFauna, flyingAnimal } from '../../data/townAnimals';
+import {
+  ANIMAL_HABITATS,
+  EXTERIOR_HABITATS,
+  TOWN_ANIMALS,
+  townFauna,
+  flyingAnimal,
+} from '../../data/townAnimals';
 import { COMPANION_NEIGHBORHOODS, COMPANION_STREET_FALLBACK } from '../../data/townCompanions';
 import { riverCenterX, RIVER } from './TownRiver';
 import { eraEvolution } from '../../data/eras';
@@ -19,6 +25,8 @@ import { clamp01, hash01, smooth01 } from './TownMath';
 import { finishWork } from '../PresentationWork';
 import { createAnimalBehavior, updateAnimalBehavior } from './TownAnimalBehavior';
 import { prepareAnimalRoaming, updateAnimalRoaming } from './TownAnimalRoaming';
+import { birdPopulation, spreadHabitats } from './TownBirdHabitats';
+import { monumentCast, monumentRoute } from './TownMonumentLife';
 import { updateAnimalChase } from './TownAnimalChase';
 
 const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
@@ -53,6 +61,15 @@ function* prepareHabitats(d, town) {
     if (safe) habitats.push({ ...definition, kind: 'ground', point: safe });
     yield;
   }
+  const extra = [];
+  for (const id of Object.keys(PLOTS)) {
+    if (!town.buildings[id] || ANIMAL_HABITATS.some((h) => h.building === id)) continue;
+    const [x, z] = plotStreet(id);
+    const point = landingPoint(d, nav, [x + 1.4, groundHeight(x, z) + 0.07, z + 1.4]);
+    if (point) extra.push({ building: id, kind: 'ground', point });
+    yield;
+  }
+  habitats.push(...spreadHabitats(extra, 18, 10, habitats).slice(habitats.length));
   const habitatWorld = d.habitatWorld ?? d.world;
   habitatWorld.updateMatrixWorld(true);
   const roots = [];
@@ -549,7 +566,19 @@ function updateBird(d, animal, time, dt, habitats, profile) {
       const local = candidates.filter(
         (h) => Math.hypot(h.point[0] - root.position.x, h.point[2] - root.position.z) < 30,
       );
-      if (local.length) candidates = local;
+      // Occasionally cross districts instead of staying around the same square.
+      if (local.length && hash01(animal.seed + animal.visit * 37) < 0.7) candidates = local;
+      const quiet = candidates.filter(
+        (h) =>
+          !(d.animals ?? []).some(
+            (other) =>
+              other !== animal &&
+              flyingAnimal(other.species) &&
+              Math.hypot(other.root.position.x - h.point[0], other.root.position.z - h.point[2]) <
+                3,
+          ),
+      );
+      if (quiet.length) candidates = quiet;
       const ground = candidates.filter((h) => h.kind === 'ground');
       if (!threat && ground.length && hash01(animal.seed + animal.visit * 13) < 0.65)
         candidates = ground;
@@ -560,7 +589,11 @@ function updateBird(d, animal, time, dt, habitats, profile) {
             Math.hypot(h.point[0] - root.position.x, h.point[2] - root.position.z) > 4,
         );
       let target =
-        food?.active && !threat && !feeding && hash01(animal.seed + animal.visit * 23) < 0.6
+        food?.active &&
+        !threat &&
+        !feeding &&
+        distance(root.position, food.root.position) < 20 &&
+        hash01(animal.seed + animal.visit * 23) < 0.6
           ? habitats.find((h) => h.building === food.habitat.building)
           : candidates[Math.floor(hash01(animal.seed + ++animal.visit) * candidates.length)];
       target ??= {
@@ -749,32 +782,42 @@ function* populateAnimals(d, town, preparedSpace) {
       yield;
     }
   const ground = habitats.filter((h) => h.kind === 'ground');
+  const starts = spreadHabitats(ground, 18, 0);
+  const preparedBirdSites = new Map();
   let birdIndex = 0;
-  for (const { species, count, seed } of fauna.birds) {
+  for (const definition of fauna.birds) {
+    const { species, seed } = definition;
+    const count = birdPopulation(definition, ground);
     for (let n = 0; n < Math.min(count, ground.length + 1); n++, birdIndex++) {
       if (!ground.length) break;
-      const sites = habitats.flatMap((h) => {
-        if (h.kind === 'perch') return [h];
-        return [-0.8, 0.3, 1.2].flatMap((offset) => {
-          const point = landingPoint(d, nav, [
-            h.point[0] + (birdIndex - 1) * 0.9,
-            h.point[1],
-            h.point[2] + offset,
-          ]);
-          return point ? [{ ...h, point }] : [];
+      const siteKey = `${birdIndex % 3}:${TOWN_ANIMALS[species].radius}`;
+      let sites = preparedBirdSites.get(siteKey);
+      if (!sites) {
+        sites = habitats.flatMap((h) => {
+          if (h.kind === 'perch') return [h];
+          return [-0.8, 0.3, 1.2].flatMap((offset) => {
+            const point = landingPoint(d, nav, [
+              h.point[0] + ((birdIndex % 3) - 1) * 0.9,
+              h.point[1],
+              h.point[2] + offset,
+            ]);
+            return point ? [{ ...h, point }] : [];
+          });
         });
-      });
-      for (const site of sites) {
-        if (!site.approaches)
-          site.approaches = prepareBirdApproaches(
-            d.animalSpace,
-            site.point,
-            TOWN_ANIMALS[species].radius,
-          );
-        yield;
+        for (const site of sites) {
+          if (!site.approaches)
+            site.approaches = prepareBirdApproaches(
+              d.animalSpace,
+              site.point,
+              TOWN_ANIMALS[species].radius,
+            );
+          yield;
+        }
+        preparedBirdSites.set(siteKey, sites);
       }
       const groundSites = sites.filter((h) => h.kind === 'ground');
-      const habitat = groundSites[birdIndex % groundSites.length];
+      const initial = starts[birdIndex % starts.length];
+      const habitat = groundSites.find((h) => h.building === initial?.building) ?? groundSites[0];
       if (!habitat) continue;
       const model = animalModel(d, species, n);
       model.root.position.fromArray(habitat.point);
@@ -815,25 +858,31 @@ function* populateAnimals(d, town, preparedSpace) {
         .map(([, [, z]]) => z),
     ) + 6;
   for (const [n, species] of ['fox', 'raccoon'].entries()) {
-    const z = edge + n * 2;
-    const points = [
-      [-20, z],
-      [-17, z + 0.7],
-      [-12, z + 0.1],
-      [-9, z + 1.5],
-      [-13, z + 2.5],
-      [-20, z],
-    ];
-    const path = yield* route(`wild:${species}:${z}`, TOWN_ANIMALS[species].radius, function* () {
-      return groundRoute(nav, points, TOWN_ANIMALS[species].radius);
-    });
-    addGroundAnimal(d, species, path, 91 + n * 43, { wild: true });
+    const area = EXTERIOR_HABITATS[species];
+    const { radius } = TOWN_ANIMALS[species];
+    const seed = 91 + n * 43;
+    const path = yield* route(`exterior:${area.id}:${species}`, radius, () =>
+      monumentRoute(nav, area, radius, 1, seed),
+    );
+    addGroundAnimal(d, species, path, seed, { wild: true, exteriorHabitat: species });
     yield;
   }
   // A fixed, small garden cast. Routes are planned with body height and real
   // scenery once, then retained across unchanged building updates.
   for (const species of fauna.garden) {
     const { radius, height, seed } = TOWN_ANIMALS[species];
+    const exterior = EXTERIOR_HABITATS[species];
+    if (exterior) {
+      const path = yield* route(
+        `exterior:${exterior.id}:${species}`,
+        radius,
+        () => monumentRoute(nav, exterior, radius, height, seed),
+        height,
+      );
+      addGroundAnimal(d, species, path, seed, { wild: true, exteriorHabitat: species });
+      yield;
+      continue;
+    }
     let points;
     if (species === 'otter') {
       points = [0, 2, 5, 7, 5, 2, 0].map((offset, i) => {
@@ -901,6 +950,17 @@ function* populateAnimals(d, town, preparedSpace) {
       addGroundAnimal(d, species, path, neighborhood.seed, { neighborhood: neighborhood.id });
       yield;
     }
+  }
+  for (const { area, species, seed, wild = false } of monumentCast(town, fauna)) {
+    const { radius, height } = TOWN_ANIMALS[species];
+    const path = yield* route(
+      `monument:${area.id}:${species}:${seed}`,
+      radius,
+      () => monumentRoute(nav, area, radius, height, seed),
+      height,
+    );
+    addGroundAnimal(d, species, path, seed, { wild, monumentSite: area.id });
+    yield;
   }
   yield* prepareAnimalRoaming(d);
   for (const animal of d.animals) animal.root.visible = true;

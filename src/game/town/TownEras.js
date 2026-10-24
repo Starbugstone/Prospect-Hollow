@@ -1,5 +1,5 @@
 import { createModernizationOffer } from './TownModernization';
-import { ERAS, ERA_BY_ID, FRONTIER_ERA } from '../../data/eras';
+import { ERAS, ERA_BY_ID, FRONTIER_ERA, eraEvolution } from '../../data/eras';
 import { BUILDINGS, BUILDING_BY_ID, BANDIT_EVENT } from '../../data/town';
 
 export const eraIndex = (era) => ERAS.findIndex(({ id }) => id === era);
@@ -8,9 +8,24 @@ export const plotInEra = (town, id) => {
   return !!plot && eraIndex(plot.introducedEra) <= eraIndex(town.era ?? FRONTIER_ERA);
 };
 export const ERA_BUILDING_LEVELS = 3;
+/** Whether an era modernizes this building. An era's `modernizes` list limits its
+ * modernization to those ids; every other building keeps its earlier finish. */
+export const modernizesInEra = (era, id) => {
+  const list = eraEvolution(era).modernizes;
+  return !list || list.includes(id);
+};
+/** The latest era up to `era` whose finish this building wears once fully modernized. */
+export function finishEra(id, era) {
+  const introduced = eraIndex(BUILDING_BY_ID[id]?.introducedEra ?? FRONTIER_ERA);
+  for (let index = eraIndex(era); index > introduced; index--)
+    if (modernizesInEra(ERAS[index].id, id)) return ERAS[index].id;
+  return ERAS[Math.max(0, introduced)].id;
+}
 export const eraBuildingLevel = (town, id) => {
   if (town.era === 'frontier' || BUILDING_BY_ID[id]?.introducedEra === town.era)
     return town.buildings[id] ?? 0;
+  // A building this era leaves alone is already finished for it.
+  if (!modernizesInEra(town.era, id)) return ERA_BUILDING_LEVELS;
   return town.buildingEras[id] === town.era ? town.buildingEraLevels?.[id] || 1 : 0;
 };
 export function modernization(town, id) {

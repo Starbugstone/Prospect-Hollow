@@ -16,11 +16,12 @@ import { OBSTACLES } from './obstacles';
 import { isPlayerDistinction } from './playerDistinctions';
 import { getLevelStarTarget } from './starRating';
 import { BANDIT_EVENT } from './town';
+import { PERSONAL_AREAS } from './townLandmarks';
 
 // The saved block's shape and the catch-up generation: saves from an older generation
 // are re-evaluated once on load. It is not a requirement version (see `version` on a
 // rank) and a new rank or family raises it so existing saves earn what they prove.
-export const HONOURS_VERSION = 1;
+export const HONOURS_VERSION = 5;
 // Ranks in ladder order. A family may stop early; new ranks only ever append.
 export const RANK_METALS = Object.freeze(['bronze', 'silver', 'gold', 'diamond']);
 const METAL_DIFFICULTY = Object.freeze({
@@ -35,7 +36,7 @@ export const SHOWCASE_SLOTS = 3;
 // calibrated at the 35th percentile (docs/honours.md).
 export const SCORE_FROM_LEVEL = 37;
 
-// Lifetime counters, credited by completed puzzles and town actions. Maps count by key
+// Lifetime counters, credited by completed puzzles, continuous collections and town actions. Maps count by key
 // (gem type, mine element, fusion key); the server keeps its own copy of the same
 // counters from the journal it replays (docs/honours.md, "Trust and offline play").
 export const COUNTERS = Object.freeze({
@@ -44,6 +45,9 @@ export const COUNTERS = Object.freeze({
   fusions: 'map',
   forge: 'number',
   guardian: 'number',
+  continuousGems: 'number',
+  continuousBest: 'number',
+  continuousLevels: 'map',
   // Social counts come from the server: different signed-in players who visited this
   // town, and different players' villages visited from it.
   visitors: 'number',
@@ -51,7 +55,7 @@ export const COUNTERS = Object.freeze({
 });
 
 // ---------- Fixed goals (calibrated in docs/honours.md) ----------
-// Lifetime gems collected in completed puzzles: bronze, silver, gold.
+// Lifetime gems collected in normal and continuous play: bronze, silver, gold.
 export const GEM_GOALS = Object.freeze({
   ruby: [500, 10000, 25000],
   sapphire: [500, 10000, 25000],
@@ -59,29 +63,61 @@ export const GEM_GOALS = Object.freeze({
   topaz: [500, 6000, 16000],
   amethyst: [500, 6000, 16000],
   moonstone: [500, 6000, 16000],
+  // Later gems join the color sets of levels 403 onwards (see docs/honours.md).
+  peridot: [500, 4500, 9000],
+  starmetal: [500, 4000, 7800],
+});
+// Gem families added after the first honours release, by the version that added them.
+const GEM_SINCE = Object.freeze({ peridot: 4, starmetal: 4 });
+// Diamond ranks added when levels 403–546 took these gems past ~1.3 campaigns of gold.
+export const GEM_DIAMONDS = Object.freeze({
+  ruby: 40000,
+  sapphire: 40000,
+  emerald: 40000,
+  topaz: 22000,
+  amethyst: 20000,
+  moonstone: 21000,
 });
 const GEM_TEXT = Object.freeze({
-  ruby: ['Ruby Laureate', 'Collect {goal} rubies in completed puzzles.', '{goal} rubies collected'],
+  ruby: [
+    'Ruby Laureate',
+    'Collect {goal} rubies in normal or continuous play.',
+    '{goal} rubies collected',
+  ],
   sapphire: [
     'Sapphire Laureate',
-    'Collect {goal} sapphires in completed puzzles.',
+    'Collect {goal} sapphires in normal or continuous play.',
     '{goal} sapphires collected',
   ],
   emerald: [
     'Emerald Laureate',
-    'Collect {goal} emeralds in completed puzzles.',
+    'Collect {goal} emeralds in normal or continuous play.',
     '{goal} emeralds collected',
   ],
-  topaz: ['Topaz Laureate', 'Collect {goal} topaz in completed puzzles.', '{goal} topaz collected'],
+  topaz: [
+    'Topaz Laureate',
+    'Collect {goal} topaz in normal or continuous play.',
+    '{goal} topaz collected',
+  ],
   amethyst: [
     'Amethyst Laureate',
-    'Collect {goal} amethysts in completed puzzles.',
+    'Collect {goal} amethysts in normal or continuous play.',
     '{goal} amethysts collected',
   ],
   moonstone: [
     'Moonstone Laureate',
-    'Collect {goal} moonstones in completed puzzles.',
+    'Collect {goal} moonstones in normal or continuous play.',
     '{goal} moonstones collected',
+  ],
+  peridot: [
+    'Peridot Laureate',
+    'Collect {goal} peridots in normal or continuous play.',
+    '{goal} peridots collected',
+  ],
+  starmetal: [
+    'Starmetal Laureate',
+    'Collect {goal} starmetal in normal or continuous play.',
+    '{goal} starmetal collected',
   ],
 });
 // The bonus fusions Fusion Master asks for, fixed when it shipped. A later fusion joins a
@@ -105,10 +141,11 @@ export const MINE_ELEMENTS = Object.freeze([
     id: 'relics',
     name: 'Relic Keeper',
     goals: [10, 125, 360],
+    diamond: { goal: 650, since: 4 },
     obstacle: 'relic',
     art: '/art/relic.svg',
     label: 'Relics',
-    requirement: 'Deliver {goal} relics in completed puzzles.',
+    requirement: 'Deliver {goal} relics in normal or continuous play.',
     popup: '{goal} relics delivered',
     count: (config) => (config.board ?? []).filter((gem) => gem?.type === 'relic').length,
   },
@@ -116,9 +153,10 @@ export const MINE_ELEMENTS = Object.freeze([
     id: 'lanterns',
     name: 'Lamplighter',
     goals: [10, 50, 125],
+    diamond: { goal: 275, since: 4 },
     obstacle: 'lantern',
     label: 'Lanterns',
-    requirement: 'Light {goal} lanterns in completed puzzles.',
+    requirement: 'Light {goal} lanterns in normal or continuous play.',
     popup: '{goal} lanterns lit',
   },
   {
@@ -136,6 +174,7 @@ export const MINE_ELEMENTS = Object.freeze([
     id: 'oreOrders',
     name: 'Ore Merchant',
     goals: [10, 40, 110],
+    diamond: { goal: 340, since: 4 },
     obstacle: 'ore-orders',
     label: 'Ore orders',
     requirement: 'Fill {goal} ore orders.',
@@ -146,6 +185,7 @@ export const MINE_ELEMENTS = Object.freeze([
     id: 'cores',
     name: 'Core Engineer',
     goals: [10, 50, 125],
+    diamond: { goal: 190, since: 4 },
     obstacle: 'charge-core',
     label: 'Charge cores',
     requirement: 'Release {goal} charge cores.',
@@ -155,6 +195,7 @@ export const MINE_ELEMENTS = Object.freeze([
     id: 'gates',
     name: 'Gate Breaker',
     goals: [10, 50, 130],
+    diamond: { goal: 300, since: 4 },
     obstacle: 'blast-gate',
     label: 'Blast gates',
     requirement: 'Break {goal} blast gates.',
@@ -177,6 +218,20 @@ export const NON_MASTERY_ELEMENTS = Object.freeze([
   'seal-ruby',
   'seal-sapphire',
   'seal-emerald',
+  // Floatstones are relics: delivering one counts towards Relic Keeper.
+  'floatstone',
+  // Starglass appears in a handful of lens chapters; lenses are fixtures, never consumed.
+  'starglass',
+  'lens',
+  // Phase seals wear down like ice and appear in a few chapters.
+  'phase-seal',
+  // Portals are fixtures, never consumed.
+  'portal',
+  // Breakthrough walls open one chamber in a handful of levels.
+  'cracked-wall',
+  // Gravity switches turn the cavern over; they are tools, not a tally.
+  'moon-lock',
+  'moon-dial',
 ]);
 // Through the Ages names its eras. Every other enabled era is listed here, so a new era
 // is a deliberate decision: a new rank (diamond and beyond) or an entry in this list.
@@ -189,7 +244,46 @@ export const NON_MILESTONE_ERAS = Object.freeze([
   'contemporary',
   'tomorrow',
   'canopy',
+  'skysail',
+  'stargazer',
+  'moonward',
 ]);
+// Fixed membership is part of a shipped measure. Future content extends the
+// collection through another rank/family, never by silently changing these lists.
+const MOON_HONOUR_BUILDINGS = Object.freeze([
+  'ribbonLanding',
+  'settlerDomes',
+  'craterIceWell',
+  'earthlightGreenhouse',
+  'willowkinDome',
+  'newHollowCommons',
+  'craterHomesteads',
+  'moonstoneWorkshop',
+  'roverBarn',
+  'saucerPad',
+  'earthriseLookout',
+]);
+const HONOUR_MONUMENT_SITES = Object.freeze([
+  'meadow',
+  'monument',
+  'motor-court',
+  'arts-court',
+  'horizon',
+  'light-court',
+  'stargazer-lawn',
+  'homecoming-green',
+  'earthrise-plaza',
+  'moonstone-garden',
+  'moonrock-court',
+]);
+// Explicit coverage decisions, with reasons for features without a separate tally.
+export const NON_SETTLEMENT_HONOURS = Object.freeze({
+  valley: 'Through the Ages covers valley construction and modernization.',
+});
+export const NON_RESOURCE_HONOURS = Object.freeze({
+  coins: 'Coins fund progression; no lifetime coin collection counter is saved.',
+});
+export const NON_MONUMENT_HONOURS = Object.freeze({});
 function obstacle(id) {
   return OBSTACLES.find((entry) => entry.id === id) ?? { present: () => false };
 }
@@ -243,6 +337,22 @@ const MEASURES = Object.freeze({
     },
   },
   era: { value: (state, measure, content) => townEraStep(state.town, content.eras) },
+  landmark: {
+    value: (state, measure) => {
+      const area = PERSONAL_AREAS.find((area) => area.id === measure.area);
+      const slots = state.town?.personalisation?.areas?.[measure.area];
+      return Number(!!area && Array.isArray(slots) && area.choices.includes(slots[0]));
+    },
+  },
+  buildingLevels: {
+    value: (state, measure) =>
+      measure.buildings.reduce((total, id) => total + safeCount(state.town?.buildings?.[id]), 0),
+  },
+  resource: { value: (state, measure) => safeCount(state.town?.[measure.earned]) },
+  landmarks: {
+    value: (state, measure) =>
+      measure.areas.reduce((total, area) => total + MEASURES.landmark.value(state, { area }), 0),
+  },
   // One counter, or the total of a counter map when no key is named.
   count: {
     value: (state, measure) => {
@@ -334,14 +444,14 @@ export function honourFamilies({
       art: { image: '/art/bonuses/rainbow.svg' },
       measure: fusionCount,
       progress: '{value} / {goal} fusions',
-      requirement: 'Perform {goal} bonus fusions in puzzles you complete.',
+      requirement: 'Perform {goal} bonus fusions in normal or continuous play.',
       popup: '{goal} bonus fusions',
       ranks: [
         {
           metal: 'bronze',
           goal: 1,
           name: 'First Fusion',
-          requirement: 'Fuse two bonus gems in a puzzle you complete.',
+          requirement: 'Fuse two bonus gems in normal or continuous play.',
           popup: 'Two bonuses became one blast',
         },
         {
@@ -349,7 +459,7 @@ export function honourFamilies({
           goal: FUSION_MASTER_KEYS.length,
           name: 'Fusion Master',
           measure: { kind: 'distinct', counter: 'fusions', keys: FUSION_MASTER_KEYS },
-          requirement: 'Perform {goal} different bonus fusions in puzzles you complete.',
+          requirement: 'Perform {goal} different bonus fusions in normal or continuous play.',
           popup: '{goal} different fusions performed',
           progress: '{value} / {goal} different fusions',
         },
@@ -359,7 +469,7 @@ export function honourFamilies({
     ...gemTypes.map((gem) => {
       const [name, requirement, popup] = GEM_TEXT[gem] ?? [
         `${gem[0].toUpperCase()}${gem.slice(1)} Laureate`,
-        'Collect {goal} of this gem in completed puzzles.',
+        'Collect {goal} of this gem in normal or continuous play.',
         '{goal} collected',
       ];
       return {
@@ -372,7 +482,14 @@ export function honourFamilies({
         requirement,
         popup,
         // A gem without calibrated goals is listed with no ranks, so it cannot be earned.
-        ranks: (GEM_GOALS[gem] ?? []).map((goal, index) => ({ metal: RANK_METALS[index], goal })),
+        ranks: [
+          ...(GEM_GOALS[gem] ?? []).map((goal, index) => ({
+            metal: RANK_METALS[index],
+            goal,
+            ...(GEM_SINCE[gem] ? { since: GEM_SINCE[gem] } : {}),
+          })),
+          ...(GEM_DIAMONDS[gem] ? [{ metal: 'diamond', goal: GEM_DIAMONDS[gem], since: 4 }] : []),
+        ],
       };
     }),
     ...mineElements.map((element) => ({
@@ -386,7 +503,14 @@ export function honourFamilies({
       measure: { kind: 'count', counter: 'mine', key: element.id },
       requirement: element.requirement,
       popup: element.popup,
-      ranks: element.goals.map((goal, index) => ({ metal: RANK_METALS[index], goal })),
+      // Diamond ranks arrived with the floating seam (levels 403–546), when the longer
+      // campaign passed the shipped gold goals. Shipped goals never change.
+      ranks: [
+        ...element.goals.map((goal, index) => ({ metal: RANK_METALS[index], goal })),
+        ...(element.diamond
+          ? [{ metal: 'diamond', goal: element.diamond.goal, since: element.diamond.since }]
+          : []),
+      ],
     })),
     {
       id: 'ages',
@@ -411,6 +535,17 @@ export function honourFamilies({
           'Finish every required building and modernization in {era}.',
           '{era} complete',
         ),
+        {
+          ...era(
+            'diamond',
+            'twin-hollows',
+            true,
+            'Two Towns, One Sky',
+            'Finish {era} in the valley and on the Moon.',
+            'Two towns, one sky',
+          ),
+          since: 3,
+        },
       ],
     },
     {
@@ -493,6 +628,106 @@ export function honourFamilies({
         { metal: 'gold', goal: 30 },
       ],
     },
+    {
+      id: 'monument',
+      tab: 'town',
+      name: 'A Lasting Legacy',
+      art: { image: '/art/rewards/monument.svg' },
+      measure: { kind: 'landmark', area: 'monument' },
+      progress: '{value} / {goal} monument built',
+      requirement: 'Build your first monument.',
+      popup: 'Your first monument stands in the Hollow',
+      ranks: [{ metal: 'gold', goal: 1, since: 2 }],
+    },
+    {
+      id: 'new-hollow',
+      tab: 'town',
+      name: 'New Hollow Pioneer',
+      art: { image: '/art/rewards/moon-homestead.svg' },
+      measure: { kind: 'buildingLevels', settlement: 'moon', buildings: MOON_HONOUR_BUILDINGS },
+      requirement: 'Complete {goal} building levels in New Hollow.',
+      popup: '{goal} New Hollow building levels completed',
+      progress: '{value} / {goal} New Hollow building levels',
+      ranks: [1, 15, 30].map((goal, index) => ({ metal: RANK_METALS[index], goal, since: 5 })),
+    },
+    {
+      id: 'saucer-welcome',
+      tab: 'town',
+      name: 'Shuttle Host',
+      art: { image: '/art/rewards/moon-homestead.svg' },
+      measure: { kind: 'buildingLevels', settlement: 'moon', buildings: ['saucerPad'] },
+      requirement: 'Complete the first Saucer Pad building level in New Hollow.',
+      popup: 'New Hollow is ready to welcome shuttles',
+      ranks: [{ metal: 'bronze', goal: 1, since: 5 }],
+    },
+    {
+      id: 'moonstone-reserve',
+      tab: 'town',
+      name: 'Lunar Keepsake Collector',
+      art: { image: '/art/rewards/moonstone-reserve.svg' },
+      measure: { kind: 'resource', resource: 'moonstones', earned: 'moonstonesEarned' },
+      requirement:
+        'Earn {goal} moonstone currency from Moon buildings and the workshop. Spent or sold moonstones still count.',
+      popup: '{goal} moonstone currency earned over this town’s lifetime',
+      progress: '{value} / {goal} lifetime moonstone currency',
+      ranks: [10, 60, 180].map((goal, index) => ({ metal: RANK_METALS[index], goal, since: 5 })),
+    },
+    {
+      id: 'landmark-patron',
+      tab: 'town',
+      name: 'Landmark Patron',
+      art: { image: '/art/rewards/monument.svg' },
+      measure: { kind: 'landmarks', areas: HONOUR_MONUMENT_SITES },
+      requirement: 'Sponsor monuments at {goal} different sites in the valley or on the Moon.',
+      popup: '{goal} monument sites sponsored',
+      progress: '{value} / {goal} monument sites sponsored',
+      ranks: [1, 5, 9].map((goal, index) => ({ metal: RANK_METALS[index], goal, since: 5 })),
+    },
+    {
+      id: 'endless-seam',
+      tab: 'mine',
+      name: 'Endless Seam',
+      art: { image: '/art/rewards/endless-seam.svg' },
+      measure: { kind: 'count', counter: 'continuousGems' },
+      requirement: 'Collect {goal} gems in continuous play.',
+      popup: '{goal} gems collected in continuous play',
+      progress: '{value} / {goal} continuous gems',
+      ranks: [2500, 25000, 100000].map((goal, index) => ({
+        metal: RANK_METALS[index],
+        goal,
+        since: 5,
+      })),
+    },
+    {
+      id: 'seam-explorer',
+      tab: 'mine',
+      name: 'Seam Explorer',
+      art: { image: '/art/rewards/endless-seam.svg' },
+      measure: {
+        kind: 'distinct',
+        counter: 'continuousLevels',
+        keys: Array.from({ length: 546 }, (_, i) => `level-${i + 1}`),
+      },
+      requirement: 'Collect at least one gem in continuous play on {goal} different levels.',
+      popup: '{goal} different continuous seams explored',
+      progress: '{value} / {goal} continuous seams explored',
+      ranks: [12, 90, 300].map((goal, index) => ({ metal: RANK_METALS[index], goal, since: 5 })),
+    },
+    {
+      id: 'continuous-score',
+      tab: 'mine',
+      name: 'Unbroken Brilliance',
+      art: { image: '/art/rewards/endless-seam.svg' },
+      measure: { kind: 'count', counter: 'continuousBest' },
+      requirement: 'Reach {goal} points in a single continuous visit.',
+      popup: '{goal} points in one continuous visit',
+      progress: '{value} / {goal} best continuous score',
+      ranks: [25000, 100000, 500000].map((goal, index) => ({
+        metal: RANK_METALS[index],
+        goal,
+        since: 5,
+      })),
+    },
   ];
 }
 
@@ -503,7 +738,11 @@ function defineRank(family, rank, index, content) {
   const previous = family.ranks[index - 1];
   if (metalIndex < 0 || (previous && RANK_METALS.indexOf(previous.metal) >= metalIndex))
     throw new Error(`${family.id} lists its ranks out of metal order.`);
-  const measure = rank.measure ?? family.measure;
+  const baseMeasure = rank.measure ?? family.measure;
+  const mastery = ['gems', 'fusions', 'mine'].includes(baseMeasure?.counter);
+  // Explicitly approved on 2026-10-24: normal and continuous collection share
+  // mastery counters. Existing earned entries keep their original version.
+  const measure = mastery ? { ...baseMeasure, modes: ['normal', 'continuous'] } : baseMeasure;
   if (!MEASURES[measure?.kind]) throw new Error(`${family.id} has no known measure.`);
   if (!(rank.goal >= 0) || !Number.isFinite(rank.goal))
     throw new Error(`${family.id}-${rank.metal} needs a finite goal.`);
@@ -517,7 +756,7 @@ function defineRank(family, rank, index, content) {
     metal: rank.metal,
     difficulty: METAL_DIFFICULTY[rank.metal],
     // The requirement version: raise it when a shipped goal must change (it should not).
-    version: rank.version ?? 1,
+    version: rank.version ?? (mastery ? 2 : 1),
     // The catch-up generation (HONOURS_VERSION) that added this rank, for the "New
     // rank" marker. A rank added later sets it to the raised HONOURS_VERSION.
     since: rank.since ?? 1,
@@ -722,6 +961,8 @@ export const normalizeRunTally = (saved) => ({
   fusions: Object.fromEntries(
     Object.entries(countMap(saved?.fusions)).filter(([key]) => Object.hasOwn(FUSION_STYLES, key)),
   ),
+  ...(saved?.mine ? { mine: countMap(saved.mine) } : {}),
+  ...(saved?.excludedMine ? { excludedMine: countMap(saved.excludedMine) } : {}),
 });
 const add = (map, key, count = 1) => {
   map[key] = Math.min(MAX_COUNT, (map[key] ?? 0) + count);
@@ -758,6 +999,62 @@ export function levelElements(config, elements = MINE_ELEMENTS) {
       ])
       .filter(([, count]) => count > 0),
   );
+}
+// Partial continuous visits credit only consumed pieces, never the whole authored
+// board. Survey trails count once their last marker is lit. Recovery is excluded.
+export function consumedElements(config, { board, tiles, oreOrders }) {
+  const authored = levelElements(config);
+  const remaining = levelElements({
+    board,
+    tiles: (tiles ?? [])
+      .filter((tile) => (tile?.health ?? 0) + (tile?.signalHealth ?? 0) > 0)
+      .map((tile) => (tile.signal && !tile.signalHealth ? { ...tile, signal: null } : tile)),
+    oreOrders: (oreOrders ?? []).filter((order) => order.progress < order.target),
+  });
+  return Object.fromEntries(
+    Object.entries(authored)
+      .map(([key, total]) => [key, Math.max(0, total - (remaining[key] ?? 0))])
+      .filter(([, count]) => count > 0),
+  );
+}
+export function tallyContinuousMine(
+  tally,
+  config,
+  board,
+  tiles,
+  oreOrders,
+  { recovery = false } = {},
+) {
+  const consumedPieces = consumedElements(config, { board, tiles, oreOrders });
+  tally.mine ??= {};
+  for (const [key, consumed] of Object.entries(consumedPieces)) {
+    if (recovery) {
+      tally.excludedMine ??= {};
+      tally.excludedMine[key] = Math.max(
+        tally.excludedMine[key] ?? 0,
+        consumed - (tally.mine[key] ?? 0),
+      );
+    }
+    const count = Math.max(0, consumed - (tally.excludedMine?.[key] ?? 0));
+    if (count) tally.mine[key] = count;
+  }
+  return tally;
+}
+// Cumulative per-visit claims make retries, score-only updates and handoffs
+// idempotent. Only their growth is credited; normal victories use a separate path.
+export function creditContinuous(honours, previous, claim, levelId, score) {
+  const next = normalizeHonours(honours);
+  for (const counter of ['gems', 'fusions', 'mine']) {
+    for (const [key, count] of Object.entries(claim[counter] ?? {})) {
+      const delta = Math.max(0, count - (previous?.[counter]?.[key] ?? 0));
+      add(next.counts[counter], key, delta);
+      if (counter === 'gems')
+        next.counts.continuousGems = Math.min(MAX_COUNT, next.counts.continuousGems + delta);
+    }
+  }
+  if (sum(claim.gems) > 0) next.counts.continuousLevels[`level-${levelId}`] = 1;
+  next.counts.continuousBest = Math.max(next.counts.continuousBest, safeCount(score));
+  return next;
 }
 // Credit one completed normal puzzle (or replay). Called once per settled run.
 export function creditRun(honours, { gems = {}, fusions = {}, mine = {} } = {}) {

@@ -19,6 +19,14 @@ import {
   isCozyEra,
 } from '../src/data/cozyArchitecture';
 import { GARDEN_PARCELS } from '../src/data/townGardenDistrict';
+import { buildingStages } from '../src/data/buildingStages';
+import { heritageUpgrade } from '../src/data/heritageUpgrades';
+import {
+  meshSignature,
+  moduleParts,
+  purposeModules,
+  structureMeshes,
+} from './helpers/town-purpose-module';
 import TownBuilding from '../src/components/town/TownBuilding.vue';
 
 function diorama(era) {
@@ -166,13 +174,57 @@ describe('Shared cozy architecture', () => {
       id: 'cozy-successor',
       evolution: { ...eraEvolution('canopy') },
     });
+    expect(cozyAppearance('cozy-successor')).toEqual(cozyAppearance('canopy'));
+    expect(buildingStages('blossomAtelier', 'canopy', 1, 3)).toEqual({
+      modernizing: false,
+      structureLevel: 1,
+      moduleLevel: 1,
+      finishLevel: 1,
+    });
     const d = diorama('canopy');
     for (const kind of ['home', 'blossomAtelier', 'skyPods']) {
-      const before = new Group(),
-        after = new Group();
+      const before = new Group();
       renderCityBuilding(d, before, kind, kind, 3, 'canopy');
-      renderCityBuilding(d, after, kind, kind, 3, 'cozy-successor');
-      expect(snapshot(after), kind).toBe(snapshot(before));
+      before.updateMatrixWorld(true);
+      const roots = [1, 2, 3].map((level) => {
+        expect(buildingStages(kind, 'cozy-successor', level, 3), kind).toEqual({
+          modernizing: true,
+          structureLevel: 3,
+          moduleLevel: 3,
+          finishLevel: level,
+        });
+        const root = new Group();
+        renderCityBuilding(d, root, kind, kind, level, 'cozy-successor', 3);
+        root.updateMatrixWorld(true);
+        const modules = purposeModules(root);
+        expect(modules, kind).toHaveLength(1);
+        expect(modules[0].userData.purposeModule).toMatchObject({
+          feature: heritageUpgrade(kind),
+          level: 3,
+          finishLevel: level,
+        });
+        expect(moduleParts(modules[0], 'structure').length, kind).toBeGreaterThan(0);
+        const budget = cost(root);
+        expect(budget.materials, kind).toBeLessThanOrEqual(8);
+        expect(budget.triangles, kind).toBeLessThan(COZY_LANDMARKS[kind] ? 6000 : 4000);
+        return root;
+      });
+      // A complete successor inherits the existing construction and its mature
+      // annex. Its paid grades refit that room rather than rebuilding it.
+      expect(meshSignature(structureMeshes(roots[2])), kind).toBe(
+        meshSignature(structureMeshes(before)),
+      );
+      const modules = roots.map((root) => purposeModules(root)[0]);
+      for (const module of modules.slice(1))
+        expect(meshSignature(moduleParts(module, 'structure')), kind).toBe(
+          meshSignature(moduleParts(modules[0], 'structure')),
+        );
+      expect(meshSignature(moduleParts(modules[1], 'frontage')), kind).not.toBe(
+        meshSignature(moduleParts(modules[0], 'frontage')),
+      );
+      expect(meshSignature(moduleParts(modules[2], 'operation')), kind).not.toBe(
+        meshSignature(moduleParts(modules[1], 'operation')),
+      );
     }
     dispose(d);
   });

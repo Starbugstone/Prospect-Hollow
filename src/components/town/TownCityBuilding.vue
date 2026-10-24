@@ -38,9 +38,31 @@
       <path d="M-24 78V33L29 63V109Z" fill="#435764" stroke="#e1cfab" stroke-width="4" />
       <path d="M-24 33v45m5-42v45M24 62v43m5-42v46" stroke="#648d89" stroke-width="4" />
       <path d="M-24 78 29 109 39 104-14 74Z" fill="#9baba2" />
-      <g v-if="level >= 2">
+      <g v-if="structureLevel >= 2">
         <path d="M-62-20-62 5 16 27 16 1Z" fill="#85b8c8" stroke="#e1cfab" stroke-width="3" />
         <path d="M-67-24-45-37 29-15 17 4Z" :fill="airport.roof" />
+      </g>
+      <g
+        v-if="moduleLevel >= 2"
+        stroke="#e1cfab"
+        stroke-width="3"
+        data-airport-observation-finish="true"
+      >
+        <path d="M-44-119-23-131 43-112 24-99Z" :fill="airport.roof" />
+        <path d="M-35-126v-25l62 18v25Z" :fill="level >= 2 ? '#85b8c8' : airport.wall" />
+        <path d="M-41-154-22-165 35-148 27-132Z" :fill="airport.roof" />
+        <g :transform="level >= 3 ? 'translate(0 -24)' : undefined">
+          <path
+            :d="level >= 3 ? 'M-13-153v-18l23 7v18Z' : 'M-10-153v-9l17 5v9Z'"
+            :fill="airport.roof"
+          />
+          <path
+            v-if="level >= 3"
+            d="M0-168v-24m-11 7h22"
+            :stroke="airport.frame"
+            stroke-width="3"
+          />
+        </g>
       </g>
       <g v-if="level >= 3" stroke="#e1cfab" stroke-width="3">
         <path d="M92 68V9" />
@@ -59,6 +81,11 @@
       <path d="M-104-15v-108l125 31V18Z" fill="#c97868" />
       <path d="M21 18V-92l76-30v110Z" fill="#648d89" />
       <path d="M-113-125-64-157-28-143 9-162 54-144 109-123 20-86Z" fill="#435764" />
+      <path
+        v-if="family === 'concert'"
+        d="M-99-124-64-145-29-131 8-150 53-132 96-120v11L20-76-99-111Z"
+        fill="#85b8c8"
+      />
       <path d="M-87-111 9-88v58l-96-23Z" fill="#435764" />
       <path d="M-71-84-4-65m-58-1 49 14" stroke="#e5bc77" stroke-width="6" />
       <g v-if="family === 'television'" stroke="#e1cfab" stroke-width="4">
@@ -92,6 +119,7 @@
       <path d="M-155 8H155" stroke="#d9cbae" stroke-width="30" />
       <path d="M-155-12H155M-155 27H155" />
       <path v-for="x in [-140, 140]" :key="x" :d="`M${x}-12v-72m-14 0h28`" />
+      <path d="M-122 24V-8m-17 0h34v-25h-34Z" fill="#85b8c8" stroke-width="3" />
     </g>
     <g v-else-if="family === 'park'">
       <path d="M-116-28 0-64 117-25 0 24Z" fill="#8fa773" />
@@ -193,18 +221,47 @@
         stroke-width="3"
       />
       <path v-if="kind === 'doctor'" d="M-53-115v29m-14-15h28" stroke="#b47766" stroke-width="8" />
+      <g v-if="city.detail === 'billboard' && modern" :stroke="city.roof" stroke-width="4">
+        <path :d="`M-27 ${-height - 29}v-16m45 28v-16`" />
+        <path :d="`M-39 ${-height - 48}v-28l77 19v28Z`" :fill="city.brick" />
+        <path
+          :d="`M-29 ${-height - 65} 24 ${-height - 52}m-53-2 38 10`"
+          stroke="#ddd1ae"
+          stroke-width="3"
+        />
+      </g>
+      <g v-if="modern && ['computers', 'research'].includes(feature)" data-connected-purpose="true">
+        <path
+          v-for="x in [-66, -15]"
+          :key="x"
+          :d="`M${x}-68v-32l33 8v32Z`"
+          fill="#435764"
+          stroke="#9cbbb5"
+          stroke-width="3"
+        />
+        <path
+          d="M-59-91-39-86m-20 9 20 5M-8-77 12-72m-20 9 20 5"
+          stroke="#85b8c8"
+          stroke-width="3"
+        />
+      </g>
     </g>
     <g v-if="eraEvolution(era).digitalCity && !garden && family !== 'airport'">
       <path d="M-60-75H15v38H-60Z" fill="#435764" />
       <path d="M-53-68H8v24H-53Z" fill="#85b8c8" />
       <path d="M-46-60h36m-36 8h24" stroke="#e1cfab" stroke-width="3" />
     </g>
-    <g v-if="garden || ['civic', 'retail', 'station', 'river'].includes(family)">
+    <g
+      v-if="
+        (garden || ['civic', 'retail', 'station', 'river'].includes(family)) &&
+        !(moduleLevel >= 2 && feature === 'awning')
+      "
+    >
       <path d="M-108-47v-66m78 86v-65" stroke="#ddd1ae" stroke-width="4" />
       <path d="M-116-115-48-144 7-121-57-93Z" fill="#638b88" />
       <path v-if="modern" d="m-96-116 59 19m-47-25 59 20" stroke="#9cbbb5" stroke-width="4" />
     </g>
-    <g v-if="level >= 2 && family !== 'airport'">
+    <g v-if="structureLevel >= 2 && family !== 'airport'">
       <path
         v-if="!garden && kind !== 'bridge'"
         d="M-122-2v-89l33 9v90Z"
@@ -215,7 +272,195 @@
       <path d="M-107 8v-11h24v17Z" fill="#ddd1ae" />
       <circle cx="-95" cy="-8" r="11" fill="#8fa773" />
     </g>
-    <g v-if="level >= 3 && family !== 'airport'" stroke="#638b88" stroke-width="4">
+    <g
+      v-if="
+        moduleLevel >= 2 &&
+        feature &&
+        !garden &&
+        !['airport', 'radio', 'concert', 'television', 'skyline'].includes(family)
+      "
+      :data-upgrade-feature="feature"
+    >
+      <g v-if="['awning', 'freight', 'carriage', 'portico'].includes(feature)">
+        <path
+          :d="feature === 'carriage' ? 'M-94-60-73-85m157 40-21-29' : 'M-94 0v-80m178 94v-80'"
+          :stroke="city.wall"
+          stroke-width="5"
+        />
+        <path d="M-103-83-27-110 95-77 19-51Z" :fill="city.roof" />
+        <path
+          v-if="feature === 'carriage'"
+          :d="
+            level >= 2
+              ? 'M-91-75v17l17 6v-17ZM69-79l15-8v17l-15 8Z'
+              : 'M-91-75v11l17 6v-11ZM69-79l15-8v11l-15 8Z'
+          "
+          :fill="level >= 2 ? '#9cbbb5' : city.roof"
+          data-carriage-upper-glazing="true"
+        />
+        <path
+          v-else
+          d="M-91-75v47l17 6v-47m143 37v-47l15-8v47"
+          :fill="level >= 2 ? '#9cbbb5' : city.roof"
+        />
+      </g>
+      <g v-else-if="['engineBay', 'platform'].includes(feature)">
+        <path d="M-126 7v-92l37 10v92Z" :fill="city.wall" />
+        <path d="M-130-87-112-99-84-89-91-77Z" :fill="city.roof" />
+        <path d="M-120-66v45l23 6v-45Z" :fill="level >= 2 ? '#9cbbb5' : city.roof" />
+      </g>
+      <g v-else>
+        <path d="M-122-87v-36l33 9v36Z" :fill="city.wall" :stroke="city.roof" stroke-width="3" />
+        <path d="M-126-125-110-134-84-126-90-114Z" :fill="city.roof" />
+        <path
+          :d="level >= 2 ? 'M-115-114v16l17 4v-16Z' : 'M-112-110v10l11 3v-10Z'"
+          :fill="level >= 2 ? '#9cbbb5' : city.roof"
+        />
+      </g>
+      <g
+        v-if="!['veranda', 'terrace'].includes(feature)"
+        :transform="
+          ['awning', 'freight', 'carriage', 'portico'].includes(feature)
+            ? 'translate(17 -84)'
+            : ['engineBay', 'platform'].includes(feature)
+              ? 'translate(-105 -96)'
+              : 'translate(-105 -133)'
+        "
+      >
+        <path d="M-17 0v-17m34 17v-17M-22-19h44" :stroke="city.wall" stroke-width="4" />
+        <g v-if="['engineBay', 'platform'].includes(feature)">
+          <path d="M-15-16v14h30v-14Z" fill="#9cbbb5" :stroke="city.wall" stroke-width="2" />
+          <path d="M-16 0h32M-9-16v14m18-14v14" :stroke="city.roof" stroke-width="2" />
+          <path d="M0-19v-16" :stroke="city.wall" stroke-width="4" />
+          <circle
+            cy="-39"
+            :r="level >= 3 ? 11 : 7"
+            fill="#e5bc77"
+            :stroke="city.roof"
+            stroke-width="3"
+          />
+          <path d="M0-46v7l6 3" :stroke="city.roof" stroke-width="2" fill="none" />
+        </g>
+        <g v-else :transform="level >= 3 ? 'translate(0 -30)' : undefined">
+          <path :d="level >= 3 ? 'M-16 0v-18h32V0Z' : 'M-10-2v-8h20v8Z'" :fill="city.roof" />
+          <path d="M-10-10H10" stroke="#85b8c8" stroke-width="4" />
+          <path
+            v-if="
+              level >= 3 &&
+              ['dispatch', 'studio', 'auditorium', 'computers', 'research'].includes(feature)
+            "
+            d="M0-18v-22m-12 7h24"
+            :stroke="city.wall"
+            stroke-width="3"
+          />
+        </g>
+      </g>
+    </g>
+    <g
+      v-if="moduleLevel >= 2 && ['radio', 'concert', 'television', 'skyline'].includes(family)"
+      :data-landmark-completion="feature"
+    >
+      <path
+        d="M-122-90v-40l33 9v40Z"
+        :fill="level >= 2 ? '#85b8c8' : city.wall"
+        :stroke="city.wall"
+        stroke-width="3"
+      />
+      <path d="M-126-132-110-141-84-133-90-121Z" :fill="city.roof" />
+      <path d="M-117-140v-16m24 23v-16m-28-8 32 9" :stroke="city.wall" stroke-width="4" />
+      <g
+        v-if="!['veranda', 'terrace'].includes(feature)"
+        :transform="level >= 3 ? 'translate(0 -30)' : undefined"
+      >
+        <path
+          :d="level >= 3 ? 'M-114-140v-18l18 5v18Z' : 'M-111-140v-7l12 3v7Z'"
+          :fill="city.roof"
+        />
+        <path v-if="level >= 3" d="M-104-155v-23m-10 7h20" :stroke="city.wall" stroke-width="3" />
+      </g>
+    </g>
+    <g
+      v-if="
+        moduleLevel >= 2 &&
+        ['veranda', 'terrace'].includes(feature) &&
+        !garden &&
+        family !== 'airport'
+      "
+      data-occupied-balcony="true"
+    >
+      <path d="M-132-88-114-101-78-91-96-78Z" :fill="city.roof" />
+      <path d="M-126-87-120-72m35-15-5 15" :stroke="city.wall" stroke-width="4" />
+      <g data-terrace-canopy-frame="true" :stroke="city.wall" fill="none">
+        <path d="M-128-89v-33m32 9v-33" stroke-width="4" />
+        <path d="M-131-123-93-112" stroke-width="6" />
+      </g>
+      <path
+        :d="moduleLevel >= 3 ? 'M-125-107v-15l26 8v15Z' : 'M-123-104v-9l21 6v9Z'"
+        :fill="city.wall"
+      />
+      <path
+        v-if="moduleLevel >= 3"
+        d="M-125-121v-13l26 8v13M-89-105v13m-7-17 14 4-5 4-14-4Z"
+        :fill="city.roof"
+        :stroke="city.roof"
+        stroke-width="2"
+      />
+      <path
+        d="M-132-88v-20l36 10v20Zm36-10 18-13v20l-18 13Z"
+        fill="#9cbbb5"
+        :stroke="city.wall"
+        stroke-width="2"
+      />
+      <g
+        v-if="moduleLevel >= 3"
+        data-working-terrace-shade="true"
+        :data-shade-pose="level >= 3 ? 'ventilating' : 'closed'"
+        :fill="city.roof"
+        :stroke="city.roof"
+        stroke-width="2"
+      >
+        <g data-terrace-shade-bearings="true" :stroke="city.wall" stroke-width="3" fill="none">
+          <path d="M-123-121-107-133M-111-117-95-129M-99-114-83-126" />
+        </g>
+        <path
+          data-terrace-shade-louver="true"
+          :d="
+            level >= 3 ? 'M-128-128-112-140-103-133-119-121Z' : 'M-127-122-111-134-104-132-120-120Z'
+          "
+        />
+        <path
+          data-terrace-shade-louver="true"
+          :d="level >= 3 ? 'M-116-124-100-136-91-129-107-117Z' : 'M-115-118-99-130-92-128-108-116Z'"
+        />
+        <path
+          data-terrace-shade-louver="true"
+          :d="level >= 3 ? 'M-104-121-88-133-79-126-95-114Z' : 'M-103-115-87-127-80-125-96-113Z'"
+        />
+      </g>
+      <path
+        data-terrace-weather-fascia="true"
+        :d="level >= 2 ? 'M-131-129-93-118v9l-38-11Z' : 'M-131-123-93-112v3l-38-11Z'"
+        :fill="city.roof"
+      />
+    </g>
+    <g
+      v-if="
+        city.solar &&
+        structureLevel >= 2 &&
+        ['radio', 'concert', 'television', 'skyline'].includes(family)
+      "
+      data-wing-solar="true"
+      :transform="moduleLevel >= 2 ? 'translate(0 -65)' : undefined"
+    >
+      <path d="M-121-88-104-94-89-90-105-84Z" fill="#526f79" />
+    </g>
+    <g
+      v-if="
+        level >= 3 && (garden || ['radio', 'concert', 'television', 'skyline'].includes(family))
+      "
+      stroke="#638b88"
+      stroke-width="4"
+    >
       <path d="M-108 9v-52m216 49v-52" />
       <path v-if="modern" d="M-118-43h20m196-3h20" stroke="#d5c194" stroke-width="7" />
       <g v-else fill="#eddda9"
@@ -230,17 +475,31 @@ import { eraEvolution } from '../../data/eras';
 import { CITY_FAMILIES } from '../../data/city';
 import { airportAppearance } from '../../data/airport';
 import { cityAppearance } from '../../data/cityAppearance';
+import { buildingStages } from '../../data/buildingStages';
+import { heritageUpgrade } from '../../data/heritageUpgrades';
 import TownLeisureBuilding from './TownLeisureBuilding.vue';
 import TownSquare from './TownSquare.vue';
 const props = defineProps({
   kind: String,
   era: String,
+  lifecycleEra: String,
   level: Number,
   serviceLevel: { type: Number, default: 3 },
 });
 const family = computed(() => CITY_FAMILIES[props.kind]);
 const airport = computed(() => airportAppearance(props.era));
-const city = computed(() => cityAppearance(props.era));
+const city = computed(() => cityAppearance(props.era, props.kind));
+const feature = computed(() => heritageUpgrade(props.kind));
+const structureLevel = computed(
+  () =>
+    buildingStages(props.kind, props.lifecycleEra ?? props.era, props.level, props.serviceLevel)
+      .structureLevel,
+);
+const moduleLevel = computed(
+  () =>
+    buildingStages(props.kind, props.lifecycleEra ?? props.era, props.level, props.serviceLevel)
+      .moduleLevel ?? structureLevel.value,
+);
 const modern = computed(() => city.value.modern);
 const garden = computed(() => ['park', 'field', 'square'].includes(family.value));
 const height = computed(() => (family.value === 'residence' ? 135 : 110));

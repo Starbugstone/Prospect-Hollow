@@ -68,6 +68,33 @@ visitors see the same wearer as the owner without any stored choice. When a poll
 new count, the old wearer shrinks away and the new one grows back in its suit; reduced
 motion swaps them at once.
 
+## Finding the astronaut
+
+From Tomorrow City onwards the shared town shows the owner's space-helmet wearer. A signed-in
+visitor who taps it close enough to see it (just short of that zoom, any animal says to zoom
+in, as in the owner's town) earns a reward for their own town: the town chosen in “Visiting as”
+receives half an hour of its own saloon takings, at most once per 12 hours per player, whichever
+town they find it in. Each town's helmet can also be found by only one visitor per 12 hours,
+however many visit: the next visitor is told when it can be found again, and the visit page
+reads that time from `helmetReadyAt` on the shared town. The finder sees the coins burst from
+the animal, counted from the copy of their own town in that browser when there is one. Rewards follow the visitor's town, not the host's, so richer towns pay
+no more. Signed-out visitors, visitors without a town and owners viewing their own shared
+town are told how to earn it instead; owners find their own wearer from their game, once per
+completed puzzle. A find never changes the host's save.
+
+`POST /api/v1/villages/{publicId}/helmet` with `{townId}` stores the find in `helmet_finds`
+(player, time, rewarded town, host town) under the player and host town row locks, so two tabs
+cannot both claim one rest and two visitors cannot both find one town's helmet. It returns
+`readyAt`, or 409 `helmet_taken` (another visitor found this town's helmet) or `helmet_resting`
+(this player found one), each with `readyAt`. The rewarded
+town's owner poll (`GET /towns/{townId}/visitors`) lists finds of the last 30 days as
+`helmetFinds: [{at, receipt}]`. The receipt is an HMAC of the town and the find time under the
+application secret, so the game can redeem a find only for the town it was made for. The game
+redeems each find newer than its `helmetVisitAt` once (the `helmet-visitor` journal action,
+checked by the save replay) and shows a notice with the coins. The cleanup job removes finds
+older than 30 days. Migration 20 adds the table and migration 22 indexes it by host town, for
+the share-link view and find checks. The account data export lists these finds.
+
 ## Presence lifecycle
 
 The visit page sends a heartbeat immediately and every 12 seconds. Both visible town views check visitors every 3 seconds. Normal arrivals/departures therefore
@@ -89,7 +116,9 @@ own guest. Refreshes and brief reconnects during an active lease reuse the visit
 
 Names, town names and clothing eras are snapshotted when a visit starts. A later
 rename or era advancement does not rewrite history. A return link is evaluated
-when read and disappears if its source town becomes private or is deleted.
+when read and disappears if its source town becomes private or is deleted. A deleted
+home town keeps its name while the visitor's account exists; entries carry
+`townGone: true` and show "Former mayor of {town}". Erasing the account clears the name.
 
 ## API and data
 
@@ -97,7 +126,10 @@ The API contract is in [openapi.yaml](openapi.yaml):
 
 - `GET /api/v1/account/profile`: public profile and owned town choices; signed
   out returns a null profile and no towns.
-- `PATCH /api/v1/account/profile`: save `displayName` and `visitingTownId`.
+- `PATCH /api/v1/account/profile`: save `displayName`, `visitingTownId` and optional
+  `anonymousVisits`. A private visit records neither the public name nor the home town's
+  name, so the guestbook shows a plain visitor without a return link; the home town is
+  still stored so the visit counts for the visitor's `townsVisited`.
 - `POST /api/v1/villages/{publicId}/presence`: join or renew using `token`,
   `sequence`, optional `browserToken` and optional owned `townId`. Active replies
   include `visitId` so the visitor can identify their own character.
@@ -108,10 +140,13 @@ The API contract is in [openapi.yaml](openapi.yaml):
   receipts. All timestamps use Unix milliseconds.
   The owner reply also includes the server's Town Honours social counts:
   `uniqueVisitors`, different signed-in players who have visited (each account once;
-  signed-out visits never count), and `townsVisited`, different other players' villages
+  signed-out visits never count). A visit is marked `signed_in` when it is recorded, so it
+  keeps counting after the visitor hides their name, deletes their home town or erases
+  their account ([privacy](privacy.md)), and `townsVisited`, different other players' villages
   visited from this town as its home town (each village once; the owner's own towns never
-  count, and a village unshared or deleted later still counts while its visit records
-  remain). The public guestbook includes neither.
+  count). Travels are recorded in `town_travels` when a visit starts and belong to the
+  visiting town, so a village later unshared, deleted, purged or erased with its owner's
+  account still counts. The public guestbook includes neither.
 - `GET /api/v1/villages?seed=…&page=1`: signed-in browsing. A draw of up to seven
   shared town cards (`villageId`, `name`, `era`, `buildings`, `mineLevel`,
   `saloonReady`, `visitors`, `visited`, `favourite`, `honours`) in the order of a

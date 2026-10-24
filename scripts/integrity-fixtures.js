@@ -1,11 +1,20 @@
+import {
+  PERSONAL_AREAS,
+  landmarkOffer,
+  areaMaximum,
+  areaStage,
+  monumentWork,
+} from '../src/data/townLandmarks.js';
 import { createPinia, setActivePinia } from 'pinia';
 import { freshProfile, useCampaignStore } from '../src/stores/campaignStore.js';
 import { useGameStore } from '../src/stores/gameStore.js';
 import { useInventoryStore } from '../src/stores/inventoryStore.js';
 import { generateLevelConfigs } from '../src/game/engine/LevelGenerator.js';
 import { BUILDINGS, BANDIT_EVENT } from '../src/data/town.js';
+import { SPACE_HELMET } from '../src/data/townAnimals.js';
 import { ERAS } from '../src/data/eras.js';
 import { eraIndex } from '../src/game/town/TownEras.js';
+import { advancePuzzleProduction } from '../src/data/puzzleProduction.js';
 import { HOUR_MS, projectRuns } from '../src/game/town/TownRules.js';
 import { bonusCapacity, HAMMER_CAPACITY } from '../src/data/rewards.js';
 
@@ -81,7 +90,7 @@ export function createIntegrityFixtures() {
     if (result === false || result === null || result === undefined)
       throw new Error(`Fixture action failed: ${name}`);
   };
-  const fixture = (name, setup, action) => {
+  const fixture = (name, setup, action, transform = () => {}) => {
     seed = 12345;
     Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: storage() });
     Object.defineProperty(globalThis, 'sessionStorage', { configurable: true, value: storage() });
@@ -95,10 +104,11 @@ export function createIntegrityFixtures() {
     action(campaign);
     const after = clone(campaign.profile());
     if (!after.integrity.actions.length) throw new Error(`Fixture has no journal: ${name}`);
+    transform(before, after);
     fixtures.push({ name, before, after, serverNow });
     campaign.endRun(campaign.activeRun);
   };
-  const victory = (campaign, options = {}, level = generateLevelConfigs()[0]) => {
+  const victory = (campaign, options = {}, level = generateLevelConfigs(1)[0]) => {
     const runId = campaign.beginRun('normal', level.id);
     const rewards = campaign.recordVictory({
       id: level.id,
@@ -207,6 +217,42 @@ export function createIntegrityFixtures() {
       },
       (campaign) => expectSuccess(campaign.useBuilderHammer('home', 1), 'hammer house'),
     );
+    const starterHomes = (profile, hammers) => {
+      Object.assign(profile.town.buildings, { well: 3, farm: 3, home: 2 });
+      profile.town.coins = 1000;
+      profile.builderHammers = hammers;
+    };
+    fixture(
+      'finishing the last starter-project building grants a builder hammer',
+      (profile) => {
+        starterHomes(profile, 0);
+        profile.town.projects.home = { id: 'home', stage: 3, wins: 1, required: 1 };
+      },
+      (campaign) => {
+        expectSuccess(campaign.finishConstruction('home', 3), 'finish the starter homes');
+        if (campaign.builderHammers !== 1) throw new Error('The starter project paid no hammer.');
+      },
+    );
+    fixture(
+      'a hammer that finishes a starter project is paid back',
+      (profile) => starterHomes(profile, 1),
+      (campaign) => {
+        expectSuccess(campaign.useBuilderHammer('home', 2), 'hammer the starter homes');
+        if (campaign.builderHammers !== 1) throw new Error('The starter project paid no hammer.');
+      },
+    );
+    fixture(
+      'a starter project pays its hammer past the hammer limit',
+      (profile) => {
+        starterHomes(profile, HAMMER_CAPACITY);
+        profile.town.projects.home = { id: 'home', stage: 3, wins: 1, required: 1 };
+      },
+      (campaign) => {
+        expectSuccess(campaign.finishConstruction('home', 3), 'finish at the hammer limit');
+        if (campaign.builderHammers !== HAMMER_CAPACITY + 1)
+          throw new Error('The starter project hammer stopped at the limit.');
+      },
+    );
     fixture(
       'modernization purchase uses its era price',
       (profile) => {
@@ -244,6 +290,148 @@ export function createIntegrityFixtures() {
       },
       (campaign) => expectSuccess(campaign.collectForgeTNT(), 'forge'),
     );
+    fixture(
+      'moonstones production, collection, sale and spend',
+      (profile) => {
+        develop(profile, 'twin-hollows');
+        profile.town.completedRuns = 30;
+        profile.town.moonstones = 10;
+        profile.town.moonstonesEarned = 10;
+      },
+      (campaign) => {
+        for (let n = 0; n < 35; n++) victory(campaign);
+        expectSuccess(campaign.collectMoonstones(), 'moonstone collection');
+        expectSuccess(campaign.sellMoonstones(10), 'moonstone sale');
+        expectSuccess(campaign.spendMoonstones(3, 'future-monument'), 'moonstone spend');
+      },
+    );
+    const legacyMoon = (profile) => {
+      profile.schemaVersion = 3;
+      profile.town.moonstoneVersion = 1;
+      profile.town.moonstoneProduction = {
+        progress: profile.town.moonstoneProduction.progress,
+        charge: profile.town.moonstoneProduction.stored,
+      };
+    };
+    fixture(
+      'legacy moonstone victories stop after one batch before migration',
+      (profile) => {
+        develop(profile, 'twin-hollows');
+      },
+      (campaign) => {
+        for (let n = 0; n < 12; n++) victory(campaign);
+      },
+      (before, after) => {
+        legacyMoon(before);
+        after.town.moonstoneProduction = { progress: 0, stored: 3 };
+        for (const action of after.integrity.actions)
+          if (action.kind === 'victory') action.data.moonstoneVersion = 1;
+      },
+    );
+    fixture(
+      'legacy moonstone ready batch survives a larger workshop level',
+      (profile) => {
+        develop(profile, 'twin-hollows');
+        profile.town.moonstoneProduction.stored = 1;
+      },
+      (campaign) => {
+        for (let n = 0; n < 4; n++) victory(campaign);
+      },
+      (before, after) => {
+        legacyMoon(before);
+        after.town.moonstoneProduction = { progress: 0, stored: 1 };
+        for (const action of after.integrity.actions)
+          if (action.kind === 'victory') action.data.moonstoneVersion = 1;
+      },
+    );
+    fixture(
+      'legacy moonstone collection then migration',
+      (profile) => {
+        develop(profile, 'twin-hollows');
+        profile.town.moonstoneProduction.stored = 3;
+      },
+      (campaign) => expectSuccess(campaign.collectMoonstones(), 'legacy collection'),
+      (before, after) => {
+        legacyMoon(before);
+        delete after.integrity.actions.find((a) => a.kind === 'moonstone-collect').data
+          .moonstoneVersion;
+      },
+    );
+    fixture(
+      'pending legacy moonstone victories then new stock production and collection',
+      (profile) => {
+        develop(profile, 'twin-hollows');
+      },
+      (campaign) => {
+        let production = { progress: 0, charge: 0 };
+        for (let n = 0; n < 12; n++) {
+          victory(campaign);
+          production = advancePuzzleProduction(production, 3, 3);
+          campaign.town.moonstoneProduction = {
+            progress: production.progress,
+            stored: production.charge,
+          };
+          campaign.integrity.actions.findLast((a) => a.kind === 'victory').data.moonstoneVersion =
+            1;
+        }
+        victory(campaign);
+        expectSuccess(campaign.collectMoonstones(), 'mixed receipt collection');
+      },
+      (before) => legacyMoon(before),
+    );
+    fixture(
+      'continuous moonstone lifetime allowance, duplicate settlement and retry',
+      (profile) => {
+        develop(profile, 'twin-hollows');
+      },
+      (campaign) => {
+        const run = campaign.beginRun('continuous', 1);
+        for (const jewels of [299, 299, 600, 750])
+          expectSuccess(
+            campaign.recordContinuous({ id: 1, runId: run, jewels, score: jewels }),
+            'continuous stock',
+          );
+        const retry = campaign.beginRun('continuous', 1);
+        expectSuccess(
+          campaign.recordContinuous({ id: 1, runId: retry, jewels: 1500, score: 1500 }),
+          'continuous retry',
+        );
+      },
+    );
+    fixture(
+      'continuous full workshop discards gems then resumes in the same run',
+      (profile) => {
+        develop(profile, 'twin-hollows');
+        profile.town.moonstoneProduction = { progress: 2, stored: 29 };
+      },
+      (campaign) => {
+        const run = campaign.beginRun('continuous', 1);
+        for (const jewels of [750, 1000])
+          expectSuccess(
+            campaign.recordContinuous({ id: 1, runId: run, jewels, score: jewels }),
+            'full stock',
+          );
+        expectSuccess(campaign.collectMoonstones(), 'full collection');
+        expectSuccess(
+          campaign.recordContinuous({ id: 1, runId: run, jewels: 1300, score: 1300 }),
+          'resumed stock',
+        );
+      },
+    );
+    fixture(
+      'Moon construction grants one moonstone once',
+      (profile) => {
+        develop(profile, 'twin-hollows');
+        profile.town.buildings.ribbonLanding = 0;
+        profile.town.projects.ribbonLanding = {
+          id: 'ribbonLanding',
+          stage: 1,
+          wins: 2,
+          required: 2,
+        };
+      },
+      (campaign) => expectSuccess(campaign.finishConstruction('ribbonLanding', 1), 'Moon finish'),
+    );
     fixture('saloon collection preserves four offline hours', saloon, (campaign) => {
       if (campaign.collectSaloonIncome() <= 0) throw new Error('Offline income was not collected.');
     });
@@ -255,10 +443,41 @@ export function createIntegrityFixtures() {
           stop: 0,
           building: 'saloon',
           visitor: { vip: true },
-        }) !== 5
+        }) !== 10
       )
         throw new Error('VIP did not spend the ordinary reward.');
     });
+    fixture(
+      'VIP purchase at chapter 91',
+      (profile) => {
+        saloon(profile);
+        // A validated normal record, independent of town era and continuous scores.
+        profile.records[541] = { score: 1000, stars: 1 };
+      },
+      (campaign) => {
+        if (
+          campaign.collectVipSpending({
+            tour: 'deep-fixture-tour',
+            stop: 0,
+            building: 'saloon',
+            visitor: { vip: true },
+          }) !== 910
+        )
+          throw new Error('VIP did not spend at mine depth.');
+      },
+    );
+    fixture(
+      'space helmet found once for its completed puzzle',
+      (profile) => {
+        develop(profile, SPACE_HELMET.debut);
+        profile.town.completedRuns = 12;
+        profile.town.helmetRun = 11;
+      },
+      (campaign) => {
+        if (!(campaign.findSpaceHelmet() > 0)) throw new Error('The helmet paid nothing.');
+        if (campaign.findSpaceHelmet() !== null) throw new Error('The helmet paid twice.');
+      },
+    );
     fixture(
       'raid bell refund and ordinary raid acknowledgment',
       (profile) => {
@@ -313,6 +532,27 @@ export function createIntegrityFixtures() {
       },
     );
     fixture(
+      'continuous honours grow beyond the coin allowance without a victory',
+      (profile) => {
+        develop(profile, 'twin-hollows');
+        for (let id = 1; id <= 249; id++) profile.records[id] = { score: 1, stars: 1 };
+      },
+      (campaign) => {
+        const runId = campaign.beginRun('continuous', 249);
+        const visit = (ruby, score, relics) =>
+          campaign.recordContinuous({
+            id: 249,
+            runId,
+            jewels: ruby,
+            score,
+            tally: { gems: { ruby }, fusions: { 'bomb+cross': 1 }, mine: { relics } },
+          });
+        expectSuccess(visit(600, 25000, 1), 'continuous first collection');
+        expectSuccess(visit(600, 25000, 1), 'continuous retry');
+        expectSuccess(visit(2600, 100000, 2), 'continuous collection beyond coins');
+      },
+    );
+    fixture(
       'era progression uses the shared next-era gate',
       (profile) => develop(profile),
       (campaign) => {
@@ -349,14 +589,15 @@ export function createIntegrityFixtures() {
       (profile) => {
         incident(profile, false);
         const event = profile.town.events[BANDIT_EVENT];
-        Object.assign(event, { sheriffLevel: 4, bankLevel: 5, outcome: 'stolen', loss: 5 });
-        profile.town.buildings.sheriff = 4;
+        // Receipts keep service levels: a level-2 sheriff covers 4 riders, a finished one 10.
+        Object.assign(event, { sheriffLevel: 2, bankLevel: 5, outcome: 'stolen', loss: 15 });
+        profile.town.buildings.sheriff = 2;
         profile.town.income.at = serverNow;
-        const required = projectRuns('sheriff', 5);
-        profile.town.projects.sheriff = { id: 'sheriff', stage: 5, wins: required, required };
+        const required = projectRuns('sheriff', 3);
+        profile.town.projects.sheriff = { id: 'sheriff', stage: 3, wins: required, required };
       },
       (campaign) => {
-        expectSuccess(campaign.finishConstruction('sheriff', 5), 'sheriff');
+        expectSuccess(campaign.finishConstruction('sheriff', 3), 'sheriff');
         if (campaign.town.events[BANDIT_EVENT].outcome !== 'protected')
           throw new Error('Full cover did not protect the waiting raid.');
       },
@@ -429,6 +670,55 @@ export function createIntegrityFixtures() {
         );
       },
     );
+    for (const { area, oldFoundation } of PERSONAL_AREAS.flatMap((area) => [
+      { area, oldFoundation: false },
+      ...(area.currency === 'moonstones' ? [{ area, oldFoundation: true }] : []),
+    ]))
+      fixture(
+        `optional landmark ${area.id}: ${oldFoundation ? 'version-2 foundation then current upgrades' : 'construction and upgrades'}`,
+        (profile) => {
+          // Earlier landmarks keep their Riverlight fixture; later ones need their own era.
+          develop(profile, eraIndex(area.era) > eraIndex('riverlight') ? area.era : 'riverlight');
+          profile.town.coins = 10000000;
+          if (area.currency === 'moonstones') {
+            profile.town.moonstones = profile.town.moonstonesEarned = 10000;
+            profile.town.completedRuns = 10000;
+          }
+        },
+        (campaign) => {
+          const buy = (choice) => {
+            const offer = landmarkOffer(campaign.town, area, choice);
+            expectSuccess(
+              campaign.personalise([
+                {
+                  kind: 'area',
+                  id: area.id,
+                  slot: 0,
+                  value: choice,
+                  expectedChoice: offer.expectedChoice,
+                  expectedLevel: offer.expectedLevel,
+                  ...(oldFoundation && !offer.expectedLevel
+                    ? { monumentVersion: 2, currency: 'moonstones', price: 60 }
+                    : {}),
+                },
+              ]),
+              'landmark purchase',
+            );
+          };
+          // Completed puzzles build each level; the player unveils it before the next.
+          const build = () => {
+            const work = monumentWork(campaign.town, area);
+            for (let n = work.wins; n < work.required; n++) victory(campaign);
+            expectSuccess(campaign.unveilMonument(area.id, work.level), 'monument unveiling');
+          };
+          buy(area.choices[0]);
+          build();
+          while (areaStage(campaign.town, area) < areaMaximum(campaign.town, area)) {
+            buy(area.choices[0]);
+            build();
+          }
+        },
+      );
     return { version: 1, fixtures };
   } finally {
     Date.now = original.now;

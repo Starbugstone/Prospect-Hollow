@@ -1,7 +1,9 @@
 // These are guides to existing construction, never additional era gates or purchases.
+// Frontier's two starter projects give a near-term goal: finishing every one of their
+// buildings grants a builder hammer (the fifth entry), even past the hammer limit.
 export const TOWN_PROJECTS = [
-  ['frontier', 'first-neighbors', 'Make room for the first neighbors', ['well', 'farm', 'home']],
-  ['frontier', 'trail-welcome', 'Welcome life along the trail', ['stable', 'shop', 'school']],
+  ['frontier', 'first-neighbors', 'Make room for the first neighbors', ['well', 'farm', 'home'], 1],
+  ['frontier', 'trail-welcome', 'Welcome life along the trail', ['stable', 'shop', 'school'], 1],
   ['river-rail', 'river-trade', 'Welcome the river trade', ['bridge', 'riverPort', 'warehouse']],
   ['river-rail', 'rail-arrival', 'Bring the railway home', ['railDepot', 'post', 'hotel']],
   ['river-rail', 'market-street', 'Open the market street', ['market', 'shop', 'square']],
@@ -76,6 +78,100 @@ export const TOWN_PROJECTS = [
     'Round out the quiet grid',
     ['powerHouse', 'waterPlant', 'crystalLab'],
   ],
-].map(([era, id, title, buildings]) => ({ era, id, title, buildings }));
+  [
+    'canopy',
+    'garden-doorways',
+    'Welcome the garden neighborhood',
+    ['teaHouse', 'blossomAtelier', 'orchardCottages'],
+  ],
+  ['canopy', 'growing-canopy', 'Let the gardens grow together', ['biodome', 'farm', 'park']],
+  [
+    'canopy',
+    'canopy-connections',
+    'Keep the garden paths connected',
+    ['maglevStation', 'school', 'square'],
+  ],
+  [
+    'riverlight',
+    'crystal-glow',
+    'Share the riverlight glow',
+    ['glassworks', 'springsRetreat', 'riverlightPavilion'],
+  ],
+  [
+    'riverlight',
+    'lantern-homes',
+    'Light the familiar doorways',
+    ['orchardCottages', 'cityHomes', 'waterPlant'],
+  ],
+  [
+    'riverlight',
+    'riverside-evenings',
+    'Gather along the evening river',
+    ['riverPark', 'market', 'concertHall'],
+  ],
+  [
+    'skysail',
+    'sails-up',
+    'Welcome the skyward neighbors',
+    ['skyHarbour', 'cloudOrchard', 'windsongLofts'],
+  ],
+  ['skysail', 'breezy-gardens', 'Grow gardens in the breeze', ['farm', 'biodome', 'park']],
+  ['skysail', 'skyward-links', 'Bring the sky routes home', ['airport', 'maglevStation', 'post']],
+  [
+    'stargazer',
+    'shared-starlight',
+    'Watch the stars together',
+    ['greatTelescope', 'dewlightGardens', 'starlightTerraces'],
+  ],
+  [
+    'stargazer',
+    'curious-neighbors',
+    'Make room for curious neighbors',
+    ['school', 'library', 'crystalLab'],
+  ],
+  [
+    'stargazer',
+    'starry-streets',
+    'Keep a light along the star paths',
+    ['square', 'waterPlant', 'cityHomes'],
+  ],
+  [
+    'moonward',
+    'moonbound-supplies',
+    'Ready the next frontier',
+    ['spaceElevator', 'moonpost', 'missionHomesteads'],
+  ],
+  [
+    'moonward',
+    'seeds-from-home',
+    'Pack a little garden from home',
+    ['farm', 'biodome', 'cloudOrchard'],
+  ],
+  ['moonward', 'homeward-routes', 'Keep the homeward routes open', ['railDepot', 'post', 'square']],
+  [
+    'twin-hollows',
+    'moon-doorways',
+    'Welcome the first Moon families',
+    ['ribbonLanding', 'craterIceWell', 'settlerDomes', 'craterHomesteads'],
+  ],
+  [
+    'twin-hollows',
+    'moon-gardens',
+    'Grow a neighborhood in New Hollow',
+    ['earthlightGreenhouse', 'willowkinDome', 'newHollowCommons'],
+  ],
+  [
+    'twin-hollows',
+    'moon-keepsakes',
+    'Send a little Moonlight home',
+    ['moonstoneWorkshop', 'roverBarn', 'earthriseLookout'],
+  ],
+  [
+    'twin-hollows',
+    'valley-homecoming',
+    'Keep a welcome in the valley',
+    ['homecomingHall', 'spaceElevator', 'moonpost'],
+  ],
+].map(([era, id, title, buildings, hammers = 0]) => ({ era, id, title, buildings, hammers }));
 
 export const PROJECT_MILESTONES = ['Open the doors', 'Make room to grow', 'Complete the project'];

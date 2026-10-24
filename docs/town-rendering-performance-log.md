@@ -202,6 +202,24 @@ None of these change gameplay, rewards or the unlimited-moves rule.
 | Label projection           | `TownLabelProjection.js`                                                                                                                     | Scratch vectors instead of clones, label ranks computed once per frame, the villager tag checks its parent instead of scanning the world, and mouse hover is evaluated once per frame.                                                                             |
 | Diorama split              | `TownPrimitives`, `TownPeople`, `buildings/frontierParts`, `TownPlots`, `TownCamera`, `TownLabelProjection`, `TownPopulation`, `TownWalkers` | TownDiorama went from about 2,600 to about 700 lines; it keeps thin delegating methods. The full rebuild and the in-place swap share one rotor attachment (the swap had skipped the rotor's animal bounds), and waiting plot changes live in one `plotWork` queue. |
 
+## Round, distant horizon (October 2026)
+
+The fog is measured by horizontal distance from the town center (`TownAtmosphere.js`), so the
+horizon is round instead of square. It starts at 170 units, leaving open prairie beyond the
+farthest monument site (about 121), and reaches full fog at 320. The terrain, river and railway run
+to `TOWN_EDGE` (±330 instead of ±130), and the main camera's far plane is 700 so the widest orbit
+still reaches full fog.
+
+| Change           | Where                                      | Cost                                                                                                                                                                                                                                                                                                                                                                  |
+| ---------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Far terrain ring | `landscapeGeometry()` in `TownMillrace.js` | The core lattice stops at ±130. Beyond it a separate 20-unit lattice stays fine only across the river valley, the trail, the flight corridor and the railway cutting, and fans around the core's border vertices like the millrace patch. The ground mesh is 47,968 triangles (42,990 at ±130); running the core's rows and columns out to ±330 would cost about 55k. |
+| Welded railway   | `addRailroad()` in `TownEraActivity.js`    | One-unit rails and ballast only within `RAIL_JOINTED` (±60: the bridge grade and the opening's build wave); one welded length per side beyond it, with a sleeper per unit throughout. The railway is 22,428 triangles (34,932 at ±140, 80,748 if jointed out to ±330).                                                                                                |
+| River fog        | `buildRiver()` in `TownRiver.js`           | The live river blends its fog in linear light before tone mapping, like the cached prairie, so its far end fades into the same horizon color instead of showing a pale tip.                                                                                                                                                                                           |
+
+Tests: `testing/town-render-hotspots.test.js` (terrain and railway triangle budgets, crack-free
+terrain), `testing/town-camera.test.js` (round fog, clearance, open river and cutting on the far
+terrain) and `testing/river-transport.test.js` (welded lengths only on level line).
+
 ## Proposed next steps (not implemented)
 
 - **B1 (rest).** Stop the ground casting shadows. Kept for now because the mine hillside inside the
@@ -214,3 +232,127 @@ None of these change gameplay, rewards or the unlimited-moves rule.
 - **C2.** An interaction quality mode (lower pixel ratio and cache MSAA during drags and reveals).
 - **C3.** Cheaper character instancing updates (per-root visibility instead of per-mesh ancestor
   walks).
+
+## October 22 visual follow-up: animal detour slices
+
+A matched headless complete Riverlight fixture showed comparable total animal
+preparation work at `823e9713` and `ab7a9f24`, but one late-era mesh detour searched
+991 nodes in a single step (about 41 ms in that diagnostic, versus a baseline
+maximum of about 14 ms). These are Node diagnostic timings, not browser frames.
+
+`animalNavigation()` checks an 8 ms work budget inside its detour search,
+including rejected candidates and the final closing leg. Cheap searches finish
+without count-based pauses. The clock resets immediately after resuming, so
+time awaiting idle work never consumes the next slice. This bounds the formerly
+indivisible detour and matches the existing 8 ms deferred-animal job budget
+(`scheduleWork` defaults to 4 ms, but `TownAnimals` already requests 8 ms).
+Neither scheduler budget nor API changes. Search order, collision predicates,
+search limits and synchronous `plan()` / `route()` results stay the same.
+Cancellation still follows the existing generation-owned
+scheduler. Tests in `testing/town-animal-detour-slices.test.js` cover bounded
+collision work, cancellation, interleaved searches, closing routes and real mesh
+clearance. Reverting this change restores the single synchronous detour call.
+
+An initial 32-candidate checkpoint preserved the exact work and routes but added
+165 detour resumptions. In eight matched browser pairs its paused animal drain
+rose from 4,007 to 4,650 ms (mean +643 ms, paired 95% interval +368 to +937 ms).
+That candidate was not landed. The elapsed-time checkpoint lets cheap searches
+finish together; its own paired drain and step histogram remain required gates.
+
+A separately measured six-second post-resident browser window showed different
+VIP inset activation between snapshots. Its frame intervals must be compared
+with matched inset state; that observation does not establish an animal-work
+regression. No inset rendering or event probability is changed by this patch.
+
+## October 23: background save transport and town offer work
+
+The initial `profile-return.mjs` / `attribute.mjs` capture at 4× CPU slowdown
+showed a 699 ms return task dominated by `upgradeOffer → modernization → benefit`,
+plus plot swaps and route preparation. This was a guest town with no server sync:
+the report's suspected cause was only part of the problem. A separate mocked
+account with a synthetic 1,500-receipt offline history (2,897,543 JSON bytes)
+exposed repeated save parsing/stringification and synchronous IndexedDB cloning.
+Sync performs no client SHA/compression stage; receipt validation is already constant-time.
+
+`backgroundJson.worker.js` now owns JSON processing, HTTP response delivery and
+recovery/upload IndexedDB transactions. Receipt transfers use eight-action messages
+and rendering yields; immutable journals can reuse two bounded worker references.
+The same durable database, outbox UUIDs, receipt acknowledgements and server API
+remain in use. Worker absence uses the existing synchronous APIs. An in-flight
+worker network failure has an unknown server outcome and is **not** replayed by
+the fallback; the existing outbox/retry handling owns that outcome.
+
+Sync starts and commits wait past boot/mine-transition rendering and an idle
+opportunity. Worker-generated town writes compare the exact durable record and
+account generation after yielding, retrying against intervening gameplay. Status
+consumers read metadata cached by local writes and invalidated by browser storage
+events, rather than copying the full localStorage string repeatedly. Failed writes
+do not publish new cached metadata. Identical remote gameplay only adopts its
+receipt state; changed profiles preserve equal store fields and the existing town
+scene. Income checkpoints remain part of remote-application comparisons.
+
+The contained non-sync fix computes a modernization's supply delta for the one
+changed provider instead of traversing the entire town twice per offer. Its finish
+override also avoids spreading the guarded town and building maps for each offer. Exhaustive
+era/building/tier comparisons and a newly registered provider regression preserve
+the previous supply/benefit results. Gameplay, rewards and unlimited moves are unchanged.
+
+Three captures per scenario used the same 4× CPU slowdown. The large-backlog
+figures below include tasks dominated by sync transport, snapshot storage **and**
+its atomic localStorage commit. Figures are medians in milliseconds; maximum task
+means the largest attributed task in each run, not the largest frame in the game.
+
+| Large-backlog scenario                               | Before: max / TBT | After: max / TBT |
+| ---------------------------------------------------- | ----------------: | ---------------: |
+| Launch                                               |       595 / 2,644 |           44 / 0 |
+| Mine return                                          |       819 / 3,175 |         124 / 74 |
+| Village sync (rendering paused to isolate save work) |       746 / 2,938 |          94 / 77 |
+
+The remaining >50 ms sync tasks are atomic localStorage commits. Launch/return
+figures precede the final removal of a redundant full-record CAS read; the village
+figure is repeated on the final code. The final comparison after all yields still
+protects every commit; a stale no-op is retried too. Worker-owned serialization/network/IndexedDB work no longer
+dominates >50 ms tasks in these captures. Launch/return captures are fixed windows;
+large uploads can still be in progress when those windows end. The idle capture
+also covers upload processing, rather than only delaying it beyond startup.
+
+A normal live motor-age village (8,868-byte fixture, three captures at 4×) showed
+that sync was not the leading cause. Ranked by pre-change blocking time:
+
+| Cause                         | Before: max / TBT | After: max / TBT | Evidence / decision                                                                             |
+| ----------------------------- | ----------------: | ---------------: | ----------------------------------------------------------------------------------------------- |
+| Browser/native/unsampled      |         403 / 513 |          83 / 33 | Native/resource trace events; no invented JS attribution.                                       |
+| Town offer/supply queries     |         503 / 453 |          69 / 19 | `upgradeOffer → modernization → benefit`; reduced provider work and removed guarded-map copies. |
+| Plots/navigation              |         158 / 453 |        119 / 179 | `TownPlots`, routes/spatial queries; no renderer changes in this patch.                         |
+| Rendering                     |         179 / 418 |        281 / 531 | `TownDiorama`/frame-cache/Three render stacks; remains unresolved.                              |
+| Deferred animals/presentation |          129 / 79 |           18 / 0 | Deferred habitat/route preparation; timing varies with initialization, no fix claimed here.     |
+| Sync                          |            15 / 0 |           11 / 0 | Small normal profiles had no attributed >50 ms sync task in either version.                     |
+
+The boot rebuild is also substantial: median largest layout/navigation task was
+5,727 ms before and 9,693 ms after in the large-backlog launch captures. This code
+was unchanged; software WebGL, asset initialization and heavy concurrent checks
+make those totals unsuitable for a causal performance claim. Initial captures
+ran during severe memory contention and Docker interruptions; they are retained
+as diagnostics, not presented as clean benchmark results. The report therefore
+claims removal of identified sync work and repeated offer work, **not** that all
+village freezes are fixed. Raw per-task attribution and repeated-run distributions
+are retained with the profiles.
+
+Captures and JSON attribution are in `/tmp/moon-shots/sync/`. Reproduce with
+`testing/browser/sync-profile.mjs` and `sync-profile-attribution.mjs` after generating
+era fixtures in Docker, following the media-tooling setup. The harness accepts
+`label launch|return|idle repetition receiptCount`; `LIVE=1` keeps the village
+rendering during idle captures, and `SHOTS=0` skips redundant screenshots.
+Attribution records every >50 ms main-thread task inside the CPU-profile window;
+unsampled/native work stays explicit. TBT is `sum(max(0, duration − 50 ms))`.
+
+Local gameplay commits and the initial synchronous local save load remain durable
+synchronous operations. The browser's atomic localStorage write also stays on the
+main thread, so this is **not a claim of fully non-blocking sync for arbitrarily
+large saves**. Moving that authority to IndexedDB needs a separate migration and
+cross-tab design: initialize/read there before mounting, keep gameplay commits
+durable, and preserve outbox/recovery ownership across tab handoffs and crashes. Plot swaps, route/habitat generation and first WebGL rendering
+remain candidates for further slicing/material preparation. These captures use
+software WebGL and do not establish a hardware shader/texture-upload diagnosis;
+label projection and audio decoding were not independently established as leading
+causes. Physical Capacitor devices still need a device-level profiling pass.

@@ -263,7 +263,7 @@ describe('Profile and reward integrity', () => {
     const reloaded = useCampaignStore();
     expect(reloaded.nextLevel).toBe(2);
     expect(reloaded.town.coins).toBe(27);
-    expect(JSON.parse(saved.get(SAVE_KEY)).schemaVersion).toBe(2);
+    expect(JSON.parse(saved.get(SAVE_KEY)).schemaVersion).toBe(4);
   });
   it('saves coins, chests, progress and settlement together; duplicate calls and reloads never pay twice', () => {
     const campaign = useCampaignStore();

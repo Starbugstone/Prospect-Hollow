@@ -49,7 +49,7 @@
             : '{building}: {count} of {total} riders covered',
           {
             building: t(BUILDING_BY_ID[id].shortName),
-            count: fire ? town.buildings[id] : Math.min(forecast.riders, town.buildings[id] * 2),
+            count: fire ? level(id) : Math.min(forecast.riders, level(id) * 2),
             total: fire ? 3 : forecast.riders,
           },
         )
@@ -62,8 +62,8 @@
           ><i
             v-for="slot in fire ? 3 : forecast.riders / 2"
             :key="slot"
-            :class="{ covered: town.buildings[id] >= slot }"
-            >{{ town.buildings[id] >= slot ? '✓' : '·' }}</i
+            :class="{ covered: level(id) >= slot }"
+            >{{ level(id) >= slot ? '✓' : '·' }}</i
           ></span
         >
       </span>
@@ -79,11 +79,14 @@ import { computed } from 'vue';
 import { t } from '../../i18n';
 import { BUILDING_BY_ID } from '../../data/town';
 import { raidForecast } from '../../game/town/TownRules';
+import { serviceLevel } from '../../data/buildingProgression';
 import TownIcon from './TownIcon.vue';
 const props = defineProps({ town: Object });
 defineEmits(['select']);
 const forecast = computed(() => raidForecast(props.town));
 const fire = computed(() => civicIncident(forecast.value.kind));
+// Each sheriff or bank service level covers two riders, whatever stage it took to reach.
+const level = (id) => serviceLevel(props.town, id);
 </script>
 <style scoped>
 .village-defense {

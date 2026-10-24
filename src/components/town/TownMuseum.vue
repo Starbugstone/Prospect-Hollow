@@ -37,6 +37,20 @@
         )
       }}
     </p>
+    <p
+      v-if="mode === 'continuous' && campaign.town.buildings.moonstoneWorkshop"
+      class="museum-mode-note"
+    >
+      {{
+        t(
+          'Your workshop gains one puzzle of production per {gems} gems, up to {puzzles} puzzles per level for the lifetime of your town. Collect its stock before it fills.',
+          {
+            gems: MOONSTONE_ECONOMY.continuousGemsPerPuzzle,
+            puzzles: MOONSTONE_ECONOMY.continuousPuzzlesPerLevel,
+          },
+        )
+      }}
+    </p>
     <div v-if="mode === 'normal'" class="museum-completion">
       <p class="museum-progress" role="status">
         <strong>✦ {{ t('{perfect}/{total} levels at three stars', campaign.completion) }}</strong>
@@ -148,12 +162,21 @@
               cap: CONTINUOUS_COIN_CAP,
             })
           }}</small>
+          <small v-if="campaign.town.buildings.moonstoneWorkshop">{{
+            t('{earned}/{cap} workshop gems credited', {
+              earned: campaign.continuousRecords[id]?.moonstoneGems ?? 0,
+              cap:
+                MOONSTONE_ECONOMY.continuousGemsPerPuzzle *
+                MOONSTONE_ECONOMY.continuousPuzzlesPerLevel,
+            })
+          }}</small>
         </template>
       </template>
     </MuseumLevelGrid>
   </dialog>
 </template>
 <script setup>
+import { MOONSTONE_ECONOMY } from '../../data/moonstones';
 import { computed, ref, watch } from 'vue';
 import MuseumLevelGrid from './MuseumLevelGrid.vue';
 import HonourBadge from '../honours/HonourBadge.vue';

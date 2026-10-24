@@ -5,11 +5,43 @@ import { renderCityBuilding } from './city';
 import { MOTOR_AGE_VARIANTS } from '../../../data/motorAge';
 import { t } from '../../../i18n';
 import { renderLeisureBuilding } from '../LeisureAssets';
+import { futureBuildingStages } from '../../../data/futureArchitecture';
+import { heritageUpgrade } from '../../../data/heritageUpgrades';
 
 const cream = '#e1cfab',
   teal = '#648d89',
   glass = '#9cbbb5';
 import { motorVehicle } from '../TownVehicles';
+
+function addMotorServiceExtension(d, parent, kind) {
+  const wing = d.group(parent, -2.2, 0, 1.55);
+  wing.name = `Motor Age ${kind} working extension`;
+  const feature = heritageUpgrade(kind);
+  wing.userData.upgradeFeature = feature;
+  // Connect to the retained L2 wing at z=.95, inside its existing side width.
+  d.box(wing, 1.1, 2.3, 1.2, 0, 1.22, 0, cream).userData.modulePart = 'structure';
+  d.box(wing, 1.3, 0.16, 1.4, 0, 2.45, 0, teal).userData.modulePart = 'structure';
+  const frontage = d.group(wing);
+  frontage.userData.modulePart = 'frontage';
+  if (feature === 'engineBay') {
+    d.box(frontage, 0.82, 1.7, 0.12, 0, 1, 0.65, '#526b65');
+    for (let n = 0; n < 5; n++)
+      d.box(frontage, 0.76, 0.04, 0.04, 0, 0.4 + n * 0.28, 0.73, '#a3b8a8');
+  } else {
+    d.box(frontage, 0.86, 1.25, 0.1, 0, 1.4, 0.65, glass);
+    d.box(frontage, 0.05, 1.3, 0.12, 0, 1.4, 0.72, teal);
+    d.box(frontage, 0.85, 0.12, 0.35, 0, 0.78, 0.68, cream);
+    if (feature === 'platform') {
+      d.box(frontage, 0.65, 0.7, 0.08, 0, 1.45, 0.75, '#d8b976');
+      for (const y of [1.25, 1.45, 1.65]) d.box(frontage, 0.47, 0.025, 0.03, 0, y, 0.8, teal);
+    } else {
+      d.box(frontage, 0.68, 0.32, 0.5, 0, 0.35, 0.25, '#b88073');
+      d.box(frontage, 0.75, 0.12, 0.5, 0, 0.78, 0.55, cream);
+      d.rod(frontage, [0, 0.1, 0.55], [0, 0.75, 0.55], 0.045, teal);
+    }
+  }
+}
+
 export function renderMotorBuilding(d, parent, kind, label, level = 1) {
   if (!['garage', 'busDepot', 'gardenCourt', 'diner'].includes(kind)) return false;
   const root = d.group(parent);
@@ -51,9 +83,21 @@ export function renderMotorBuilding(d, parent, kind, label, level = 1) {
       addWindow(d, root, -2.2, 1.6, 1.02);
     }
     if (level >= 3) {
+      const module = d.group(root);
+      module.name = `Motor Age ${kind} purpose module`;
+      module.userData.purposeModule = {
+        feature: heritageUpgrade(kind),
+        role: 'purposeModule',
+        component: 'serviceTower',
+        level,
+        finishLevel: level,
+      };
+      addMotorServiceExtension(d, module, kind);
+      const operation = d.group(module);
+      operation.userData.modulePart = 'operation';
       for (let n = 0; n < 3; n++)
-        d.box(root, 1.3 - n * 0.22, 0.34, 0.6, 0.8, 2.75 + n * 0.34, 0.9, cream);
-      d.ball(root, 0.8, 3.13, 1.24, [0.23, 0.23, 0.035], '#e9be68');
+        d.box(operation, 1.3 - n * 0.22, 0.34, 0.6, 0.8, 2.75 + n * 0.34, 0.9, cream);
+      d.ball(operation, 0.8, 3.13, 1.24, [0.23, 0.23, 0.035], '#e9be68');
     }
   }
   for (let n = 0; n < level + 1; n++) {
@@ -113,11 +157,20 @@ export function addMotorModernization(d, parent, kind, level = 1) {
       d.box(root, 1.45 - n * 0.3, 0.35, 0.5, 0.8, 3.46 + n * 0.35, 1.48, cream);
   d.sign(root, t(variant[0]), 3.1, 0, 3.04, 1.8);
 }
-export function renderMotorLandmark(d, parent, kind, label, level = 1, era = 'motor-age') {
+export function renderMotorLandmark(
+  d,
+  parent,
+  kind,
+  label,
+  level = 1,
+  era = 'motor-age',
+  serviceLevel = level,
+) {
   const baseEra = eraEvolution(era).baseCityEra ?? 'post-war';
   if (renderMotorBuilding(d, parent, kind, label, level)) return true;
   if (kind === 'horseField' || kind === 'park') {
-    renderLeisureBuilding(d, parent, kind, label, 3, false);
+    const { structureLevel } = futureBuildingStages(kind, era, level, serviceLevel);
+    renderLeisureBuilding(d, parent, kind, label, structureLevel, false);
     const frontage = d.group(parent);
     frontage.name = `Motor Age ${kind} planters ${level}`;
     for (let n = 0; n < level + 1; n++) {
@@ -150,10 +203,23 @@ export function renderMotorLandmark(d, parent, kind, label, level = 1, era = 'mo
   }
   if (['square', 'fisherman', 'riverPort', 'farm', 'well'].includes(kind)) {
     const reach = kind === 'square' ? 3.1 : (appearance.width ?? 3.2) / 2 + 0.35;
-    for (const x of [-reach, reach]) {
-      d.box(parent, 0.55, 0.45, 0.6, x, 0.28, 3, cream);
-      d.rod(parent, [x, 0.5, 3], [x, 1.5 + level * 0.25, 3], 0.05, teal);
-      d.ball(parent, x, 1.6 + level * 0.25, 3, 0.2, '#f6db98');
+    let inheritedLighting = false;
+    parent.traverse((object) => {
+      if (
+        object.userData.forecourtLighting ||
+        object.name === `Blender ${baseEra}-kind-${kind}-finish`
+      )
+        inheritedLighting = true;
+    });
+    if (!inheritedLighting || kind === 'square') {
+      const lighting = d.group(parent);
+      lighting.name = `Motor Age ${kind} forecourt lighting`;
+      lighting.userData.forecourtLighting = true;
+      for (const x of [-reach, reach]) {
+        d.box(lighting, 0.55, 0.45, 0.6, x, 0.28, 3, cream);
+        d.rod(lighting, [x, 0.5, 3], [x, 1.5 + level * 0.25, 3], 0.05, teal);
+        d.ball(lighting, x, 1.6 + level * 0.25, 3, 0.2, '#f6db98');
+      }
     }
   }
   if (kind !== 'square') d.sign(parent, label, 2.8, 0, 2.25, 1.6);

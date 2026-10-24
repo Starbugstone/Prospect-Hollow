@@ -7,12 +7,22 @@
       </div>
       <span class="town-level-badge">{{
         t(town.era !== 'frontier' ? '{era} · Level {level} of {max}' : 'Level {level} / {max}', {
-          era: t(ERA_BY_ID[town.era].label),
-          level: eraBuildingLevel(town, id),
+          era: t(ERA_BY_ID[keptFinish ? town.buildingEras[id] : town.era].label),
+          level: keptFinish ? town.buildingEraLevels[id] || 3 : eraBuildingLevel(town, id),
           max: town.era !== 'frontier' ? 3 : building.upgrades.length,
         })
       }}</span>
     </div>
+    <TownMoonstoneWorkshop
+      v-if="id === 'moonstoneWorkshop' && stage && !readOnly && sellMoonstones"
+      :town="town"
+      :sell-moonstones="sellMoonstones"
+      :cooldown-seconds="cooldownSeconds"
+      @collect="$emit('collect-moonstones')"
+    />
+    <p v-if="id === 'homecomingHall'">
+      {{ t('Lifetime moonstones earned: {count}', { count: town.moonstonesEarned ?? 0 }) }}
+    </p>
     <div class="town-detail-hero">
       <div class="town-building-preview" :style="{ '--building-tint': building.color }">
         <svg viewBox="-160 -230 320 275" aria-hidden="true">
@@ -40,13 +50,19 @@
         }}</small>
       </div>
       <div v-if="offer || project" class="town-benefit-preview">
-        <TownIcon :name="benefit.icon" /><span
-          ><small>{{ t(benefit.label) }}</small
-          ><strong
-            >{{ benefit.before }}{{ benefit.suffix }} <TownIcon name="arrow" />
-            <b>{{ benefit.after }}{{ benefit.suffix }}</b></strong
-          ></span
+        <div
+          v-for="preview in [benefit, ...(benefit.additional ?? [])]"
+          :key="preview.label"
+          class="town-benefit-row"
         >
+          <TownIcon :name="preview.icon" /><span
+            ><small>{{ t(preview.label) }}</small
+            ><strong
+              >{{ preview.before }}{{ preview.suffix }} <TownIcon name="arrow" />
+              <b>{{ preview.after }}{{ preview.suffix }}</b></strong
+            ></span
+          >
+        </div>
       </div>
     </div>
     <div v-if="project" class="town-project-progress">
@@ -199,7 +215,7 @@
         {{
           t('Normal puzzles: {count}/{required}', {
             count: town.forge.progress,
-            required: forgeProductionRuns(stage),
+            required: forgeProductionRuns(buildingServiceLevel('blacksmith', stage)),
           })
         }}
       </p>
@@ -291,7 +307,7 @@
       <p>
         {{
           t(
-            'At level 4, the town square gains a warning bell. During a raid, tap the square, its bell icon, or the raid bell button to halve the remaining coin loss. The bell works once per raid and is only needed when coins are at risk.',
+            'At level 3, the town square gains a warning bell. During a raid, tap the square, its bell icon, or the raid bell button to halve the remaining coin loss. The bell works once per raid and is only needed when coins are at risk.',
           )
         }}
       </p>
@@ -323,7 +339,7 @@
       </p>
       <small>{{
         t(
-          'The bank and sheriff each protect up to half the coins at risk. At level 5, both together stop all raid losses. Finish their construction during a raid to apply the new protection immediately. Your last 50 coins are always safe.',
+          'The bank and sheriff each protect up to half the coins at risk. At level 3, both together stop all raid losses. Finish their construction during a raid to apply the new protection immediately. Your last 50 coins are always safe.',
         )
       }}</small>
     </section>
@@ -349,8 +365,9 @@ import { ERA_BY_ID } from '../../data/eras';
 import { computed, inject } from 'vue';
 import { t } from '../../i18n';
 import { BUILDING_BY_ID } from '../../data/town';
-import { eraGate, eraBuildingLevel } from '../../game/town/TownEras';
+import { eraGate, eraBuildingLevel, modernizesInEra } from '../../game/town/TownEras';
 import { forgeProductionRuns } from '../../data/eras';
+import { buildingServiceLevel } from '../../data/buildingProgression';
 import {
   upgradeOffer,
   constructionRuns,
@@ -370,6 +387,7 @@ import {
 } from '../../game/town/TownRules';
 import TownBuilding from './TownBuilding.vue';
 import TownShop from './TownShop.vue';
+import TownMoonstoneWorkshop from './TownMoonstoneWorkshop.vue';
 import TownSite from './TownSite.vue';
 import TownIcon from './TownIcon.vue';
 import TownDefenseStatus from './TownDefenseStatus.vue';
@@ -383,12 +401,23 @@ const props = defineProps({
   bonusLimit: Number,
   powers: Array,
   lastIncome: Number,
+  sellMoonstones: Function,
   now: { type: Number, default: Date.now },
   // A shared town's card: what the building is and its level, without the owner's
   // actions or private state such as stored earnings, the forge or the armory.
   readOnly: Boolean,
 });
-defineEmits(['build', 'hammer', 'finish', 'ring-bell', 'advance-era', 'select', 'museum', 'mine']);
+defineEmits([
+  'build',
+  'hammer',
+  'finish',
+  'ring-bell',
+  'advance-era',
+  'select',
+  'museum',
+  'mine',
+  'collect-moonstones',
+]);
 // The village's one-second clock, when shown inside it (see TownView).
 const townClock = inject('townClock', null);
 const cooldownSeconds = computed(() =>
@@ -397,6 +426,14 @@ const cooldownSeconds = computed(() =>
   ),
 );
 const building = computed(() => BUILDING_BY_ID[props.id]);
+// A building this era leaves alone keeps showing the era of its finish.
+const keptFinish = computed(
+  () =>
+    props.town.era !== 'frontier' &&
+    building.value.introducedEra !== props.town.era &&
+    !modernizesInEra(props.town.era, props.id) &&
+    !!props.town.buildingEras[props.id],
+);
 const requirement = computed(() => plotRequirement(props.town, props.id));
 const needs = computed(() => townNeeds(props.town));
 const stage = computed(() => props.town.buildings[props.id]);
@@ -416,6 +453,7 @@ const benefit = computed(() =>
 <style scoped>
 .town-benefit-preview {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 12px;
@@ -426,7 +464,12 @@ const benefit = computed(() =>
   border-radius: 12px;
   color: #445b43;
 }
-.town-benefit-preview > svg {
+.town-benefit-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.town-benefit-row > svg {
   width: 34px;
   height: 34px;
   flex-shrink: 0;

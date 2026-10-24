@@ -63,14 +63,14 @@
         <button
           v-if="canContinue"
           class="result-next"
-          :class="{ 'result-village': villageHasNextStep }"
+          :class="{ 'result-village': villageFirst, 'coach-pulse': coachTarget === 'mine' }"
           @click="$emit('next')"
         >
           <GameIcon name="pickaxe" /> <span>{{ t('Continue mining') }}</span>
         </button>
         <button
           class="result-next"
-          :class="{ 'result-village': !villageHasNextStep }"
+          :class="{ 'result-village': !villageFirst, 'coach-pulse': coachTarget === 'town' }"
           @click="$emit('town')"
         >
           <GameIcon name="home" />
@@ -102,22 +102,29 @@
         <strong>{{ t('Ready to finish') }} →</strong>
       </button>
       <div
-        v-for="project in construction.filter((project) => !project.ready)"
-        :key="project.id"
+        v-for="project in construction.filter((project) => !project.ready || project.monument)"
+        :key="project.monument ? `monument:${project.id}` : project.id"
         class="town-construction-reward"
         role="status"
       >
         <strong>{{
           t(
-            project.ready
-              ? 'Ready · Tap the building in your village to finish'
+            project.monument
+              ? project.ready
+                ? 'Ready · Unveil it at its monument site'
+                : 'Your monument is taking shape'
               : 'Your building is taking shape',
           )
         }}</strong>
         <span
-          >{{ t(BUILDING_BY_ID[project.id].shortName) }} · {{ project.wins }}/{{
-            project.required
-          }}</span
+          >{{
+            t(
+              project.monument
+                ? LANDMARK_BY_ID[project.monument].label
+                : BUILDING_BY_ID[project.id].shortName,
+            )
+          }}
+          · {{ project.wins }}/{{ project.required }}</span
         >
       </div>
       <div v-if="campaign.lastChapterReward" class="chapter-gift" role="status">
@@ -190,12 +197,14 @@
 <script setup>
 import { t, number } from '../i18n';
 import { BUILDING_BY_ID } from '../data/town';
+import { LANDMARK_BY_ID } from '../data/townLandmarks';
 import { computed, nextTick, onMounted, ref } from 'vue';
 import GameIcon from './GameIcon.vue';
 import TownBuilding from './town/TownBuilding.vue';
 import TownIcon from './town/TownIcon.vue';
 import JourneyProgress from './JourneyProgress.vue';
 import { constructionReady, nextGoal } from '../game/town/TownRules';
+import { villageTutorial } from '../data/guidance';
 import RewardChest from './RewardChest.vue';
 import CoinReward from './CoinReward.vue';
 import { chestCoinsEarned, rewardArt } from '../data/rewards';
@@ -231,6 +240,14 @@ const canDevelop = computed(() => {
   return goal?.available && (campaign.town.coins >= goal.cost || campaign.builderHammers > 0);
 });
 const villageHasNextStep = computed(() => readyBuildings.value.length > 0 || canDevelop.value);
+// During the village tutorial the button for its next step leads and pulses.
+const coachTarget = computed(() => {
+  const step = villageTutorial(campaign);
+  return step && (step.target.tab === 'mine' ? 'mine' : 'town');
+});
+const villageFirst = computed(() =>
+  coachTarget.value ? coachTarget.value === 'town' : villageHasNextStep.value,
+);
 const claimReward = (index, reward) => emit('claimed', { index, reward });
 const dialog = ref(null),
   chestIndex = ref(0),
@@ -601,6 +618,24 @@ const goalText = (source) => {
 .result-next:focus-visible {
   outline: 3px solid #fff2bc;
   outline-offset: 4px;
+}
+.result-next.coach-pulse {
+  animation: result-coach 1.4s ease-in-out infinite;
+}
+@keyframes result-coach {
+  50% {
+    box-shadow:
+      0 4px #926239,
+      0 0 0 6px #ffe89c80;
+  }
+}
+.reduced-motion .result-next.coach-pulse {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .result-next.coach-pulse {
+    animation: none;
+  }
 }
 .victory-actions {
   display: flex;

@@ -1,4 +1,5 @@
-import { flyingAnimal } from '../../data/townAnimals';
+import { areasForSettlement } from '../../data/townLandmarks';
+import { EXTERIOR_HABITATS, flyingAnimal } from '../../data/townAnimals';
 import { PLOTS, townTracks, segmentDistance } from './TownLayout';
 import { groundHeight } from './TownLandscape';
 import { RIVER, riverCenterX, riverDistance } from './TownRiver';
@@ -13,7 +14,16 @@ const JOIN_GAP = 0.06;
 const gap2 = (a, b) => (a[0] - b[0]) ** 2 + (a[2] - b[2]) ** 2;
 const eligible = (a) =>
   !a.companion && !flyingAnimal(a.species) && (a.wild || ['dog', 'cat'].includes(a.species));
-const region = (a) => (a.species === 'otter' ? 'riverbank' : a.wild ? 'outskirts' : 'town');
+const region = (a) =>
+  a.exteriorHabitat
+    ? `exterior:${a.exteriorHabitat}`
+    : a.monumentSite
+      ? `monument:${a.monumentSite}`
+      : a.species === 'otter'
+        ? 'riverbank'
+        : a.wild
+          ? 'outskirts'
+          : 'town';
 
 function retainedAnimal(d, a) {
   const parent = Object.getPrototypeOf(d);
@@ -25,18 +35,40 @@ function retainedAnimal(d, a) {
 }
 
 function policy(d, kind, radius, height) {
-  const roads = townTracks(d.town);
+  const area =
+    areasForSettlement().find((area) => kind === `monument:${area.id}`) ??
+    EXTERIOR_HABITATS[kind.replace('exterior:', '')];
+  const roads = townTracks(d.town).map((road) => {
+    const margin = road.width / 2 + radius + 0.08;
+    // Only reject roads outside their expanded bounds. Near a road, retain the
+    // exact segment distance, including diagonal sides and rounded end caps.
+    const reach = margin + 1e-9;
+    return {
+      from: road.from,
+      to: road.to,
+      margin,
+      minX: Math.min(road.from[0], road.to[0]) - reach,
+      maxX: Math.max(road.from[0], road.to[0]) + reach,
+      minZ: Math.min(road.from[1], road.to[1]) - reach,
+      maxZ: Math.max(road.from[1], road.to[1]) + reach,
+    };
+  });
   const lastRow = Math.max(
     20,
     ...Object.entries(PLOTS)
       .filter(([id, [x]]) => d.town.buildings[id] && x > -28 && x < 20)
       .map(([, [, z]]) => z),
   );
-  const pointClear = (p, local = false) => {
+  const evaluatePoint = (p, local) => {
     const [x, y, z] = p;
     const ground = groundHeight(x, z);
     if (ground < -0.05 || Math.abs(y - ground - 0.07) > 0.18) return false;
-    if (kind === 'town') {
+    if (area) {
+      if (riverDistance(x, z) < RIVER.bankWidth + radius) return false;
+      const [cx, cz] = area.positions[0];
+      const distance = Math.hypot(x - cx, z - cz);
+      if (distance < area.radius + radius || distance > area.radius + 4) return false;
+    } else if (kind === 'town') {
       if (x < -28 || x > 19 || z < -20 || z > lastRow + 5.5) return false;
       if (riverDistance(x, z) < RIVER.bankWidth + radius) return false;
     } else {
@@ -53,11 +85,35 @@ function policy(d, kind, radius, height) {
     if (
       (local || kind !== 'town') &&
       roads.some(
-        (road) => segmentDistance(x, z, road.from, road.to) < road.width / 2 + radius + 0.08,
+        (road) =>
+          x >= road.minX &&
+          x <= road.maxX &&
+          z >= road.minZ &&
+          z <= road.maxZ &&
+          segmentDistance(x, z, road.from, road.to) < road.margin,
       )
     )
       return false;
     return d.navigation.clear(p, radius) && d.animalSpace.clear(p, radius, height);
+  };
+  // Graph endpoints recur in candidate joins and both directions of retained
+  // legs. Keep exact answers only for this preparation's unchanged collision
+  // inputs; a new navigation revision or mesh space must query them again.
+  const clearance = [new Map(), new Map()];
+  let navigation, revision, space;
+  const pointClear = (p, local = false) => {
+    const nextRevision = d.navigation.revision ?? d.navigation.obstacles;
+    if (navigation !== d.navigation || revision !== nextRevision || space !== d.animalSpace) {
+      clearance[0].clear();
+      clearance[1].clear();
+      navigation = d.navigation;
+      revision = nextRevision;
+      space = d.animalSpace;
+    }
+    const cache = clearance[local ? 1 : 0];
+    const key = `${p[0]},${p[1]},${p[2]}`;
+    if (!cache.has(key)) cache.set(key, evaluatePoint(p, local));
+    return cache.get(key);
   };
   const pathClear = (points, local = false) => {
     for (let i = 0; i < points.length; i++) {

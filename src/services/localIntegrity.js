@@ -1,5 +1,4 @@
 import { toRaw } from 'vue';
-import { isRegisteredTestingPermit } from './testingTools';
 
 // These entry points implement the game's existing rules. Generic helpers cannot
 // open a mutation scope by themselves, including on development/preprod builds.
@@ -23,10 +22,14 @@ const NORMAL_ACTIONS = new Set([
   'collectVipSpending',
   'collectSaloonIncome',
   'collectSaloonForVisitor',
+  'findSpaceHelmet',
+  'redeemHelmetVisit',
   'welcomeGuest',
   'markGuestSeen',
   'upgradeBuilding',
+  'personalise',
   'finishConstruction',
+  'unveilMonument',
   'useBuilderHammer',
   'resolveBandits',
   'ringTownBell',
@@ -49,6 +52,7 @@ const INTERNAL_ACTIONS = new Set([
   'commit',
   'recordAction',
   'completeProject',
+  'rewardProjects',
   'awardReward',
   'updateEarnedHonours',
 ]);
@@ -70,23 +74,13 @@ const PROTECTED_FIELDS = [
   // Honours change only through the actions above, never through console edits.
   'honours',
 ];
-const guards = new WeakMap();
-
-// This capability is held only by the registered testing commands. A caller
-// cannot invent a permit or enable mutations merely by calling commit().
-export function runRegisteredTestingMutation(store, permit, operation) {
-  if (!isRegisteredTestingPermit(permit))
-    throw new Error('Registered testing tools are unavailable in this build.');
-  const guard = guards.get(toRaw(store));
-  if (!guard) return operation();
-  return guard.run(operation);
-}
+const guarded = new WeakSet();
 
 // Installed before stores are created in the browser. Headless fixtures may seed
 // ordinary unguarded stores; regression tests install this same production plugin.
 export function createLocalIntegrityPlugin() {
   return ({ store, options }) => {
-    if (store.$id !== 'campaign' || guards.has(toRaw(store))) return;
+    if (store.$id !== 'campaign' || guarded.has(toRaw(store))) return;
     let depth = 0;
     const wrapped = new WeakMap();
     const run = (operation) => {
@@ -132,7 +126,7 @@ export function createLocalIntegrityPlugin() {
       for (const key of Object.keys(raw)) raw[key] = protect(raw[key]);
       return proxy;
     };
-    guards.set(toRaw(store), { run });
+    guarded.add(toRaw(store));
     const state = toRaw(store.$state);
     const rawStore = toRaw(store);
     for (const key of PROTECTED_FIELDS) {

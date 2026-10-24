@@ -7,6 +7,7 @@ import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { renderCityBuilding } from '../src/game/town/buildings/city';
 import future from '../src/assets/future-meshes.json';
+import { buildingStages } from '../src/data/buildingStages';
 
 afterEach(() => {
   delete ERA_BY_ID['airport-test-era'];
@@ -27,7 +28,8 @@ it.each(['aviation', 'broadcast', 'contemporary'])(
       root.traverse((part) => {
         if (part.name.startsWith('Blender ')) names.push(part.name.slice(8));
       });
-      expect(names).toEqual([asset, `${asset}-wing`, `${asset}-finish`].slice(0, level));
+      const { structureLevel } = buildingStages('airport', era, level, 3);
+      expect(names).toEqual([asset, `${asset}-wing`, `${asset}-finish`].slice(0, structureLevel));
       const bounds = new Box3().setFromObject(root);
       expect(bounds.min.x).toBeGreaterThanOrEqual(-10);
       expect(bounds.max.x).toBeLessThanOrEqual(10);

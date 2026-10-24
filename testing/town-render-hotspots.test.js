@@ -12,6 +12,8 @@ import {
   Scene,
 } from 'three';
 import { MILLRACE, landscapeGeometry } from '../src/game/town/TownMillrace';
+import { TOWN_EDGE } from '../src/game/town/TownAtmosphere';
+import { addRailroad } from '../src/game/town/TownEraActivity';
 import { MINE_SHAFT } from '../src/data/mineSite';
 import { TownNavigation } from '../src/game/town/TownNavigation';
 import { TownStatics } from '../src/game/town/TownStatics';
@@ -147,6 +149,8 @@ it('re-merges a replaced drop container without preparing retained drops again',
   const drop = (x) => {
     const group = new Group();
     const mesh = new Mesh(geometry, material);
+    // Like the real service drops (built with d.rod), each wire casts a shadow.
+    mesh.castShadow = true;
     mesh.position.x = x;
     group.add(mesh);
     return group;
@@ -427,6 +431,29 @@ it('updates world matrices once per drawn frame and still places detached actors
   material.dispose();
 });
 
+it('lays the railway out to the horizon within its triangle budget', () => {
+  const d = Object.create(TownDiorama.prototype);
+  Object.assign(d, {
+    world: new Group(),
+    materials: new Map(),
+    geometries: createTownGeometries(),
+    contactShadowMaterial: new MeshBasicMaterial(),
+    sign() {},
+  });
+  const town = createTown();
+  Object.assign(town, { era: 'river-rail', buildings: { ...town.buildings, railDepot: 1 } });
+  let triangles = 0;
+  addRailroad(d, town, { batch: false }).traverse((part) => {
+    if (part.isMesh)
+      triangles += (part.geometry.index?.count ?? part.geometry.attributes.position.count) / 3;
+  });
+  // Sleepers are laid one per unit; rails beyond the station are welded lengths.
+  expect(triangles).toBeLessThan(25000);
+  Object.values(d.geometries).forEach((geometry) => geometry.dispose());
+  d.materials.forEach((material) => material.dispose());
+  d.contactShadowMaterial.dispose();
+});
+
 it('keeps the terrain crack-free and complete with local millrace refinement', () => {
   const geometry = landscapeGeometry();
   const p = geometry.attributes.position,
@@ -451,14 +478,14 @@ it('keeps the terrain crack-free and complete with local millrace refinement', (
     }
   }
   const hole = 2 * MINE_SHAFT.bankWidth * (MINE_SHAFT.rampStartZ - MINE_SHAFT.portalZ);
-  expect(area).toBeCloseTo(260 * 260 - hole, 3);
+  expect(area).toBeCloseTo((2 * TOWN_EDGE) ** 2 - hole, 3);
   // Open edges exist only on the map border and around the shaft opening.
   for (const [key, uses] of edges) {
     expect(uses).toBeLessThanOrEqual(2);
     if (uses === 2) continue;
     const [u, w] = key.split(',').map(Number);
     const onBorder = [u, w].every(
-      (i) => Math.max(Math.abs(p.getX(i)), Math.abs(p.getZ(i))) === 130,
+      (i) => Math.max(Math.abs(p.getX(i)), Math.abs(p.getZ(i))) === TOWN_EDGE,
     );
     // Positions are float32, so compare the shaft limits with a small tolerance.
     const onShaft = [u, w].every(

@@ -24,7 +24,7 @@ import { simulateCampaignLevel } from './helpers/campaignSimulation';
 
 const FIRST = 373;
 const levels = generateLevelConfigs();
-const deep = levels.slice(FIRST - 1);
+const deep = levels.slice(FIRST - 1, 402);
 const themed = (theme) => deep.filter((level) => level.theme === theme);
 const firstOfTheme = (theme) => themed(theme)[0];
 const introductions = ['fossil-beds', 'root-bound-vault'].map(firstOfTheme);
@@ -40,7 +40,8 @@ afterEach(() => {
 
 describe('append-only deep mine campaign', () => {
   it('preserves all original 372 configurations, seeds, names, rewards and stars', () => {
-    // Docker capture immediately before this append. Normalize random gem ids only.
+    // Docker capture immediately before this append. Normalize random gem ids only. Updated
+    // once since, for the lantern tip: lanterns light only from a match or blast on their cell.
     const original = generateLevelConfigs(372).map(({ board, ...level }) => ({
       ...level,
       board: board.map((gem) => (gem ? gem.type : null)),
@@ -52,13 +53,13 @@ describe('append-only deep mine campaign', () => {
       chapters: CHAPTERS.slice(0, 62),
     });
     expect(createHash('sha256').update(payload).digest('hex')).toBe(
-      '76ddbc0d83aa3f68a58242986a01de2406b98cbb7feb9aad8d8aac70a5e610cf',
+      '45b396fc2b773d721972da9c027ef7c6e6f08538da073c925880e24d9b8e6891',
     );
   });
 
-  it('adds exactly five named six-puzzle groups, ending at level 402', () => {
-    expect(LEVEL_COUNT).toBe(402);
-    expect(CHAPTERS.slice(62)).toEqual(DEEP_MINE_CHAPTERS);
+  it('adds exactly five named six-puzzle groups, levels 373–402', () => {
+    expect(LEVEL_COUNT).toBeGreaterThanOrEqual(402);
+    expect(CHAPTERS.slice(62, 67)).toEqual(DEEP_MINE_CHAPTERS);
     expect(DEEP_MINE_CHAPTERS.map(({ id }) => id)).toEqual([
       'geothermal-forge',
       'fossil-beds',

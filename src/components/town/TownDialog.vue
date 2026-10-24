@@ -12,6 +12,7 @@
       <span>{{ title }}</span>
       <button
         ref="closeButton"
+        type="button"
         class="town-dialog-close"
         :aria-label="t(closeLabel)"
         @click="$emit('close')"

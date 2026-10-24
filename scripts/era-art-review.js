@@ -3,26 +3,20 @@ await loadFamilies(ALL_MESH_FAMILIES);
 // Developer-only review surface, served by Vite; never imported by the game.
 import * as THREE from 'three';
 import { TownDiorama } from '../src/game/town/TownDiorama';
-import { createTownGeometries } from '../src/game/town/TownGeometries';
-import { BUILDINGS, createTown } from '../src/data/town';
+import { TownPrimitives } from '../src/game/town/TownPrimitives';
+import { BUILDINGS } from '../src/data/town';
 import { ERAS } from '../src/data/eras';
 import { PLOTS } from '../src/game/town/TownLayout';
-import {
-  renderBuilding,
-  renderEraLandmark,
-  renderModernization,
-} from '../src/game/town/buildings/BuildingRenderer';
-import { addImprovements } from '../src/game/town/TownImprovements';
-import { buildTownSquare } from '../src/game/town/TownSquare';
+import { buildPlot } from '../src/game/town/TownPlots';
+import { renderMoonBuilding } from '../src/game/town/buildings/moon';
+import { MOON_LOTS, moonLotPose } from '../src/data/moonSettlement';
+import { reviewTownFor, reviewStageCount } from './era-art-fixtures';
 import { addMineSite } from '../src/game/town/mine/addMineSite';
 
 const width = 440,
   height = 330;
-const d = Object.create(TownDiorama.prototype);
-d.geometries = createTownGeometries();
-d.materials = new Map();
-d.contactShadowMaterial = new THREE.MeshBasicMaterial();
-d.sign = () => {}; // Building names are printed below the model instead.
+const d = Object.assign(Object.create(TownDiorama.prototype), new TownPrimitives());
+const labels = Object.fromEntries(BUILDINGS.map((building) => [building.id, building.name]));
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
 renderer.setSize(width, height - 48);
 renderer.setPixelRatio(1);
@@ -37,24 +31,13 @@ const camera = new THREE.PerspectiveCamera(34, width / (height - 48), 0.1, 400);
 function buildingRoot(b, era, level) {
   const root = new THREE.Group();
   // Docks and bridge approaches depend on their real world plot coordinates.
-  root.position.set(PLOTS[b.id][0], 0.08, PLOTS[b.id][1]);
-  const native = b.introducedEra === era.id;
-  const stage = native ? level : b.upgrades.length;
-  d.town.buildings[b.id] = native ? level : b.upgrades.length;
-  d.town.buildingEras[b.id] = era.id;
-  d.town.buildingEraLevels[b.id] = era.id === 'frontier' ? 0 : level;
-  const kind = b.kind;
-  if (kind === 'bridge') {
-    renderBuilding({ town: d, parent: root, kind, level: stage, label: b.name });
-    renderModernization(d, root, kind, era.id, level);
-  } else if (!renderEraLandmark(d, root, kind, b.name, level, era.id, stage)) {
-    if (kind === 'square') buildTownSquare(d, root, stage, era.id === 'frontier', era.id);
-    else if (kind === 'well') d.well(root);
-    else renderBuilding({ town: d, parent: root, kind, level: stage, label: b.name });
-    if (!['fisherman', 'blacksmith', 'school', 'doctor'].includes(kind))
-      addImprovements(d, root, kind, stage, era.id);
-    renderModernization(d, root, kind, era.id, level);
-  }
+  d.town = reviewTownFor(era, level);
+  const [x, z] = PLOTS[b.id] ?? MOON_LOTS[b.id] ?? [0, 0];
+  root.position.set(x, 0.08, z);
+  if (b.settlement === 'moon') {
+    root.rotation.y = moonLotPose(b.id).rotation;
+    renderMoonBuilding(d, root, b.kind, Math.min(level, b.upgrades.length));
+  } else buildPlot(d, b.id, root, d.town, labels);
   return root;
 }
 function canvas(w, h) {
@@ -106,22 +89,21 @@ function capture(roots, name, era, side = -1) {
 window.renderEraReview = async (id) => {
   const era = ERAS.find((e) => e.id === id),
     index = ERAS.indexOf(era);
-  d.town = createTown();
-  d.town.era = era.id;
+  d.town = reviewTownFor(era);
   const available = BUILDINGS.filter(
     (b) => ERAS.findIndex((e) => e.id === b.introducedEra) <= index,
   );
-  for (const b of available) d.town.buildings[b.id] = b.upgrades.length;
   const result = { era: era.id, label: era.label, year: era.yearLabel, buildings: [] };
   const gallery = document.querySelector('#gallery');
   gallery.replaceChildren();
   for (const b of available) {
-    const count = era.id === b.introducedEra ? b.upgrades.length : 3;
+    const count = reviewStageCount(b, era);
     const roots = Array.from({ length: count }, (_, i) => buildingRoot(b, era, i + 1));
     result.buildings.push({
       id: b.id,
       name: b.name,
       introducedEra: b.introducedEra,
+      settlement: b.settlement,
       ...capture(
         roots,
         b.name,

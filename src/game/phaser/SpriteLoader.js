@@ -1,4 +1,4 @@
-import { GEM_TYPES } from '../engine/GemFactory';
+import { BASE_GEM_TYPES, GEM_TYPES } from '../engine/GemFactory';
 import frames from '../../assets/board/frames.json';
 import coreUrl from '../../assets/board/board-core.png';
 import bonusUrl from '../../assets/board/board-bonus.png';
@@ -45,7 +45,7 @@ function preloadSvgAssets(scene) {
     scene.load.svg(`gem-${type}`, `/art/${type}.svg`, { width: 160, height: 160 }),
   );
   for (const finish of GEM_FINISHES.filter((f) => f !== 'classic'))
-    for (const type of GEM_TYPES)
+    for (const type of BASE_GEM_TYPES)
       scene.load.svg(`gem-${finish}-${type}`, `/art/gems/${finish}/${type}.svg`, {
         width: 160,
         height: 160,
@@ -117,6 +117,8 @@ export const GEM_COLORS = {
   topaz: 0xffcc58,
   amethyst: 0xc883ff,
   moonstone: 0x79f1f6,
+  peridot: 0xa8ec4c,
+  starmetal: 0xcdd6e2,
   bomb: 0xffa14f,
   cross: 0x7debff,
   rainbow: 0xdcc0ff,

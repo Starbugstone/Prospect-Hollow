@@ -139,17 +139,10 @@ export function resetRunPresentation(store) {
   store.reshuffleNotice = null;
 }
 
-export function startLevel(store, levelId, mode = 'normal', { debugReplay = false } = {}) {
+export function startLevel(store, levelId, mode = 'normal') {
   performanceMark('mine-intent');
   const campaign = useCampaignStore();
-  if (
-    !['normal', 'continuous'].includes(mode) ||
-    !(
-      campaign.canPlay(levelId, mode) ||
-      (debugReplay && mode === 'normal' && campaign.isUnlocked(levelId))
-    )
-  )
-    return false;
+  if (!['normal', 'continuous'].includes(mode) || !campaign.canPlay(levelId, mode)) return false;
   const config = levelConfig(levelId);
   if (!config) return false;
   store.playMode = mode;
@@ -202,7 +195,9 @@ export function exitLevel(store) {
   const campaign = useCampaignStore();
   campaign.endRun(store.runId);
   campaign.settlePendingChests();
-  store.syncContinuous();
+  // A move still animating has not committed its collection or score. Completed
+  // moves already synced in commitResolution; leaving cannot bank a preview.
+  if (!store.animationInProgress) store.syncContinuous();
   store.playMode = 'normal';
   store.syncRunClock(false);
   store.sessionVersion += 1;
@@ -243,6 +238,7 @@ export function syncContinuous(store) {
     runId: store.runId,
     jewels: store.collectedJewels,
     score: store.score,
+    tally: store.honourTally,
   });
 }
 

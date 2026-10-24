@@ -4,13 +4,15 @@ import { ERA_SUPPLY_STEP } from './townNeeds';
 
 /**
  * @typedef {'frontier'|'river-rail'|'industrial'|'motor-age'|'city'} BuildingStyle
- * @typedef {'standard'|'rounded'|'cozy'} CityArchitecture
+ * @typedef {'standard'|'rounded'|'cozy'|'sail'|'observatory'|'homestead'|'twin'} CityArchitecture
  * @typedef {'standard'|'rounded'} TransportStyle
  * @typedef {Object} EraEvolution
  * @property {BuildingStyle} style Shared building/modernization renderer family.
  * @property {CityArchitecture} architecture City building forms: Blender period shells
  *   (`standard`), procedural domes/pods (`rounded`) or planted timber/glass
- *   architecture selected by the shared `cozyStyle` profile (`cozy`).
+ *   architecture selected by the shared `cozyStyle` profile (`cozy`), or one of the
+ *   shared future archetype styles: sailcloth decks (`sail`), night-blue observatory
+ *   domes (`observatory`) or moon-white gabled homesteads (`homestead`).
  * @property {'canopy'|'riverlight'|null} cozyStyle Shared cozy architecture palette and forms.
  * @property {TransportStyle} transportStyle Airport, station, port and street vehicles:
  *   period and city models (`standard`) or the sky saucer, solar express, hover ferry
@@ -44,10 +46,22 @@ import { ERA_SUPPLY_STEP } from './townNeeds';
  * @property {string} upgradeTitle
  * @property {readonly string[]} upgradeDescriptions Second and third modernization descriptions.
  * @property {boolean} requiresPower
+ * @property {readonly string[]|null} modernizes Building ids this era modernizes; null
+ *   modernizes every building. Others keep their earlier finish and count as complete.
+ * @property {boolean} moonSettlement Settlement lights on the Moon and the space elevator's
+ *   climbers follow this era's completed supply projects.
  */
 
 /** Registered city building forms; renderers and SVG drawings exist for each. */
-export const CITY_ARCHITECTURES = Object.freeze(['standard', 'rounded', 'cozy']);
+export const CITY_ARCHITECTURES = Object.freeze([
+  'standard',
+  'rounded',
+  'cozy',
+  'sail',
+  'observatory',
+  'homestead',
+  'twin',
+]);
 /** Registered vehicle families; each has airport, rail, ferry and traffic models. */
 export const TRANSPORT_STYLES = Object.freeze(['standard', 'rounded']);
 
@@ -159,6 +173,8 @@ export function defineEra(definition) {
     upgradeTitle: '',
     upgradeDescriptions: [],
     requiresPower: false,
+    moonSettlement: false,
+    modernizes: null,
     ...STYLES[style],
     ...definition.evolution,
   };
@@ -182,6 +198,12 @@ export function defineEra(definition) {
     throw new Error(`Missing modernization copy for era ${definition.id}`);
   if (style !== 'frontier' && !evolution.prices)
     throw new Error(`Missing modernization prices for era ${definition.id}`);
+  if (
+    evolution.modernizes != null &&
+    (!Array.isArray(evolution.modernizes) ||
+      !evolution.modernizes.every((id) => typeof id === 'string' && id))
+  )
+    throw new Error(`Invalid modernizes list for era ${definition.id}`);
   if (!CITY_ARCHITECTURES.includes(evolution.architecture))
     throw new Error(`Unsupported architecture for era ${definition.id}`);
   if (!Object.hasOwn(TOWN_FAUNA, evolution.wildlife))

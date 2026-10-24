@@ -539,7 +539,9 @@ it('never caches a route that was paused while footprints changed', () => {
   ]);
   const steps = navigation.routeSteps(path);
   steps.next();
+  const revision = navigation.revision;
   navigation.replaceOwner('late-building', [pole(1.5, 0, 0.5)]);
+  expect(navigation.revision).toBeGreaterThan(revision);
   let step = steps.next();
   while (!step.done) step = steps.next();
   const fresh = navigation.route(path);

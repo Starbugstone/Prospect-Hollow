@@ -1,5 +1,6 @@
 import { eraEvolution } from './eras';
 import { cozyAppearance } from './cozyArchitecture';
+import { futureAppearance, isFutureEra } from './futureArchitecture';
 
 export const WATERMILL_SITE = Object.freeze({
   position: Object.freeze([21.5, -12]),
@@ -46,13 +47,11 @@ export function watermillAppearance(era) {
   const profile = eraEvolution(era);
   const [wall, roof, name, description] = STYLES[profile.style] ?? STYLES.frontier;
   const cozy = profile.architecture === 'cozy' ? cozyAppearance(era) : null;
+  const palette = cozy?.palette ?? (isFutureEra(era) ? futureAppearance(era).palette : null);
   return {
-    wall:
-      cozy?.palette.shell ??
-      (profile.digitalCity ? '#d2dbcb' : profile.tallCity ? '#a8bbc0' : wall),
+    wall: palette?.shell ?? (profile.digitalCity ? '#d2dbcb' : profile.tallCity ? '#a8bbc0' : wall),
     roof:
-      cozy?.palette.roof ??
-      (profile.digitalCity ? '#547f75' : profile.detailAsset ? '#668c9a' : roof),
+      palette?.roof ?? (profile.digitalCity ? '#547f75' : profile.detailAsset ? '#668c9a' : roof),
     name,
     description,
     masonry: profile.style !== 'frontier',

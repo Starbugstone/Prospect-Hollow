@@ -2,10 +2,12 @@
   <g stroke-linejoin="round" stroke-linecap="round">
     <template v-if="!newPlot">
       <TownCityBuilding
-        v-if="['cityHall', 'apartments', 'supermarket', 'waterPlant'].includes(kind)"
+        v-if="CITY_FAMILIES[kind] && kind !== 'bridge'"
         :kind="kind"
-        era="post-war"
-        :level="1"
+        :era="eraEvolution(era).baseCityEra ?? 'post-war'"
+        :lifecycle-era="era"
+        :level="level"
+        :service-level="serviceLevel"
       />
       <TownIndustrialBuilding v-else :kind="kind" :era="era" :level="level" />
       <g v-if="['square', 'bridge', 'well', 'farm', 'fisherman', 'riverPort'].includes(kind)">
@@ -14,44 +16,12 @@
           <path :d="`M0-22v${-45 - level * 9}`" stroke="#648d89" stroke-width="5" />
           <circle :cy="-70 - level * 9" r="9" fill="#f6db98" stroke="#648d89" stroke-width="3" />
         </g>
-        <g v-if="kind === 'well' && level >= 2" transform="translate(0 -144)">
-          <path
-            d="M-46 0v137M46 0v137M-46 12 46 102M46 12-46 102M-53 2H53"
-            fill="none"
-            stroke="#648d89"
-            stroke-width="6"
-          />
-          <path
-            d="M-46 0v-33Q0-53 46-33V0Q0 20-46 0"
-            fill="#8caaa3"
-            stroke="#e1cfab"
-            stroke-width="4"
-          />
-          <path d="M-51-33 0-58 51-33Q0-16-51-33" fill="#648d89" />
-        </g>
-        <g v-if="kind === 'farm' && level >= 2">
-          <path d="M-120 0v-48l32-24 32 24V0Z" fill="#9cbbb5" stroke="#e1cfab" stroke-width="4" />
-          <path d="M-88-70V0m-30-47h60" stroke="#e1cfab" stroke-width="3" />
-        </g>
       </g>
-      <g v-else>
-        <path d="M-92-8v-119h15V-8M73-8v-119h15V-8M-94-128H90v20H-94Z" fill="#e1cfab" />
-        <path d="M-97-108H96l15 19H-110Z" fill="#648d89" stroke="#e1cfab" stroke-width="3" />
-        <path
-          v-if="level >= 2"
-          d="M-129 0v-114h40V0Z"
-          fill="#e1cfab"
-          stroke="#648d89"
-          stroke-width="4"
-        />
-        <path
-          v-if="level >= 3"
-          d="M17-128v-17h9v-16h10v-15h20v15h10v16h9v17Z"
-          fill="#e1cfab"
-          stroke="#648d89"
-          stroke-width="3"
-        />
-      </g>
+      <path
+        v-else
+        :d="`M-98 ${-height - 29} 29 ${-height + 1}v8L-98 ${-height - 21}Z`"
+        fill="#e1cfab"
+      />
     </template>
     <template v-else-if="kind === 'gardenCourt'">
       <g
@@ -136,7 +106,26 @@
         <path d="M-125 0v-124h34V0Z" fill="#e1cfab" stroke="#648d89" stroke-width="4" />
         <path d="M-118-102h19v26h-19Z" fill="#9cbbb5" />
       </g>
-      <g v-if="level >= 3">
+      <g v-if="level >= 3" :data-upgrade-feature="feature">
+        <path d="M-125-46-91-38V12L-125 4Z" fill="#e1cfab" stroke="#648d89" stroke-width="3" />
+        <path d="M-130-50-100-62-76-50-106-38Z" fill="#648d89" />
+        <path
+          v-if="feature === 'engineBay'"
+          d="M-119-34-97-29V7L-119 2Zm0 9 22 5m-22 5 22 5m-22 5 22 5"
+          fill="#526b65"
+          stroke="#a3b8a8"
+          stroke-width="2"
+        />
+        <g v-else>
+          <path d="M-119-34-97-29v24l-22-5Z" fill="#9cbbb5" stroke="#648d89" stroke-width="2" />
+          <path
+            v-if="feature === 'platform'"
+            d="m-116-28 15 4m-15 4 15 4m-15 4 15 4"
+            stroke="#e1cfab"
+            stroke-width="2"
+          />
+          <path v-else d="m-121-7 28 6m-16-4V8" stroke="#e1cfab" stroke-width="4" />
+        </g>
         <path
           d="M31-123v-16h8v-16h9v-15h20v15h9v16h8v16Z"
           fill="#e1cfab"
@@ -155,11 +144,17 @@
 <script setup>
 import TownCityBuilding from './TownCityBuilding.vue';
 import { computed } from 'vue';
+import { CITY_FAMILIES } from '../../data/city';
+import { eraEvolution } from '../../data/eras';
+import { heritageUpgrade } from '../../data/heritageUpgrades';
 import TownIndustrialBuilding from './TownIndustrialBuilding.vue';
 const props = defineProps({
   kind: String,
   era: { type: String, default: 'motor-age' },
   level: { type: Number, default: 1 },
+  serviceLevel: { type: Number, default: 3 },
 });
+const feature = computed(() => heritageUpgrade(props.kind));
+const height = computed(() => (CITY_FAMILIES[props.kind] === 'residence' ? 135 : 110));
 const newPlot = computed(() => ['garage', 'busDepot', 'gardenCourt', 'diner'].includes(props.kind));
 </script>

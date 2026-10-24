@@ -28,11 +28,11 @@ function sharedTown(buildings) {
 }
 
 describe('shared-town building cards', () => {
-  const town = sharedTown({ well: 1, farm: 1, home: 3, saloon: 5, blacksmith: 2, armory: 1 });
+  const town = sharedTown({ well: 1, farm: 1, home: 3, saloon: 3, blacksmith: 2, armory: 1 });
 
   it('shows the description and true level without any owner action', async () => {
     const html = await card({ id: 'saloon', town, readOnly: true });
-    expect(html).toContain('Level 5 / 5');
+    expect(html).toContain('Level 3 / 3');
     expect(html).toContain('coins/hour');
     expect(html).not.toMatch(ACTIONS);
     expect(html).not.toContain('Stored earnings');

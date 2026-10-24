@@ -52,7 +52,7 @@ it('balances both defenses for a growing gang and never recommends a project alr
 });
 it('points a crowded town to its limiting resource before more homes or decoration', () => {
   const town = settled();
-  Object.assign(town.buildings, { home: 3, farm: 3, sheriff: 5, bank: 5 });
+  Object.assign(town.buildings, { home: 3, farm: 3, sheriff: 3, bank: 3 });
   expect(nextGoal(town).id).toBe('well');
   town.buildings.well = 3;
   town.buildings.farm = 1;
@@ -98,11 +98,11 @@ it('keeps bandit tension bounded even in an undefended endgame', () => {
 it('honors a previously paid modernization after the price rebalance', () => {
   const town = settled();
   town.era = 'river-rail';
-  town.buildings.saloon = 5;
+  town.buildings.saloon = 3;
   town.projects.saloon = {
     id: 'saloon',
     type: 'modernization',
-    stage: 5,
+    stage: 3,
     fromEra: 'frontier',
     targetEra: 'river-rail',
     wins: 1,
@@ -112,7 +112,7 @@ it('honors a previously paid modernization after the price rebalance', () => {
   expect(modernization(town, 'saloon').cost).toBe(800);
   const loaded = normalizeTown(town);
   expect(loaded.projects.saloon.cost).toBe(300);
-  const done = finishConstruction(advanceConstruction(loaded), 'saloon', 5);
+  const done = finishConstruction(advanceConstruction(loaded), 'saloon', 3);
   expect(done.coins).toBe(town.coins);
   expect(done.buildingEras.saloon).toBe('river-rail');
 });

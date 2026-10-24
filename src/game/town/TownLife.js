@@ -22,6 +22,7 @@ export function addTownLife(d, town) {
         linear: true,
       });
       neighbor.root.name = 'Neighbor fetching water';
+      neighbor.home = 'home';
       neighbor.duration *= 0.8;
       if (!neighbor.root.getObjectByName('Water bucket')) {
         const bucket = d.group(neighbor.arms[0].lower, 0, -0.3, 0);

@@ -1,8 +1,12 @@
 import { Color, Fog, MeshStandardMaterial } from 'three';
 
-// Keep every current plot clear, then dissolve the prairie before its 130-unit
-// boundary. World-space fog stays consistent when the mobile overview zooms out.
-const TOWN_HORIZON = Object.freeze({ color: '#e9e8da', near: 108, far: 124 });
+// A round, distant horizon centred on the town. The farthest monument site ends
+// about 121 units out; open prairie runs on beyond it before the fog thickens
+// gently over a wide ring. World-space fog stays consistent when the mobile
+// overview zooms out.
+const TOWN_HORIZON = Object.freeze({ color: '#e9e8da', near: 170, far: 320 });
+// The prairie, river and railway run on past full fog, so none of them ends in view.
+export const TOWN_EDGE = TOWN_HORIZON.far + 10;
 export function setTownAtmosphere(scene) {
   scene.background = new Color(TOWN_HORIZON.color);
   scene.fog = new Fog(TOWN_HORIZON.color, TOWN_HORIZON.near, TOWN_HORIZON.far);
@@ -27,11 +31,11 @@ export function horizonMaterial(material) {
           horizonPosition = instanceMatrix * horizonPosition;
         #endif
         horizonPosition = modelMatrix * horizonPosition;
-        vFogDepth = max(abs(horizonPosition.x), abs(horizonPosition.z));
+        vFogDepth = length(horizonPosition.xz);
       #endif`,
     );
   };
-  material.customProgramCacheKey = () => `${key}|town-horizon-v1`;
+  material.customProgramCacheKey = () => `${key}|town-horizon-v2`;
   material.needsUpdate = true;
   return material;
 }

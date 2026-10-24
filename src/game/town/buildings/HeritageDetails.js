@@ -1,7 +1,86 @@
 import { heritageUpgrade } from '../../../data/heritageUpgrades';
 import { addWindow } from './frontierParts';
 
+const UTILITY_STYLES = {
+  river: { x: -1.75, floor: 0.58, wall: '#ad725c', roof: '#526e79', trim: '#dfcba4' },
+  industrial: { x: -2.1, floor: 1.42, wall: '#b0af98', roof: '#53726d', trim: '#dfcba4' },
+};
+const UTILITY_FEATURES = {
+  pumping: 'pump room',
+  hayloft: 'packing room',
+  landing: 'catch packing shelter',
+  freight: 'freight loading shelter',
+};
+
+// Utility services share their staged annex lifecycle, with purpose-specific
+// working rooms instead of a universal ornament. Earlier plinths and annexes stay.
+export function addUtilityUpgrade(d, parent, kind, industrial = false) {
+  if (!['well', 'farm', 'fisherman', 'riverPort'].includes(kind)) return false;
+  const purpose = heritageUpgrade(kind);
+  const feature = UTILITY_FEATURES[purpose];
+  if (!feature) return false;
+  const p = UTILITY_STYLES[industrial ? 'industrial' : 'river'];
+  const root = d.group(parent, p.x, 0, industrial ? 0 : 0.3);
+  root.name = `Heritage ${purpose}`;
+  root.userData.upgradeFeature = purpose;
+  root.userData.utilityFeature = feature;
+  if (purpose === 'pumping' || purpose === 'hayloft') {
+    const bottom = p.floor;
+    d.box(root, 1.08, 1.05, 1.4, 0, bottom + 0.525, 0, p.wall);
+    d.box(root, 1.3, 0.15, 1.65, 0, bottom + 1.1, 0, p.roof);
+    addWindow(d, root, 0, bottom + 0.58, 0.74);
+    d.box(root, 0.55, 0.7, 0.1, 0, 0.5, 0.79, p.roof);
+    if (!industrial) d.box(root, 1.15, 0.18, 1.5, 0, 0.13, 0, p.trim);
+    if (purpose === 'pumping') {
+      // The pump's outlet visibly joins the retained reservoir frame/house.
+      d.rod(root, [0.3, bottom + 0.8, -0.35], [0.9, bottom + 0.8, -0.35], 0.07, p.roof);
+      for (const x of [-0.3, 0.3]) {
+        d.rod(root, [x, bottom + 1.15, -0.3], [x, bottom + 1.6, -0.3], 0.055, p.roof);
+        d.rod(root, [x, bottom + 1.6, -0.3], [x + 0.2, bottom + 1.6, -0.3], 0.055, p.roof);
+      }
+    } else {
+      d.box(root, 0.65, 0.85, 0.08, 0, bottom + 0.48, 0.84, '#856b4a');
+      d.rod(root, [0, bottom + 1.22, 0.1], [0, bottom + 1.22, 1], 0.055, p.roof);
+      d.rod(root, [0, bottom + 1.22, 0.95], [0, 0.75, 0.95], 0.018, p.roof);
+    }
+    return root;
+  }
+  const roofY = industrial ? (purpose === 'freight' ? 2.72 : 2.1) : 2.05;
+  d.box(root, 1.5, 0.16, 1.65, 0, roofY, 0, p.roof);
+  d.box(root, 1.5, 0.18, 1.65, 0, 0.13, 0, p.trim);
+  for (const x of [-0.63, 0.63])
+    for (const z of [-0.68, 0.68]) {
+      d.box(root, 0.22, 0.15, 0.22, x, 0.1, z, p.trim);
+      d.rod(root, [x, 0.15, z], [x, roofY, z], 0.055, p.roof);
+    }
+  if (purpose === 'landing') {
+    const counterY = industrial ? 1.4 : 0.85;
+    d.box(root, 1.2, 0.15, 0.65, 0, counterY, 0.3, '#856b4a');
+    if (!industrial)
+      for (const x of [-0.45, 0.45])
+        for (const z of [0.1, 0.5])
+          d.rod(root, [x, 0.22, z], [x, counterY - 0.075, z], 0.045, p.roof);
+    for (const x of [-0.45, 0.45])
+      d.box(root, 0.38, 0.3, 0.45, x, counterY + 0.225, 0.3, '#b79869');
+    d.rod(root, [-0.63, 1.6, -0.68], [0.63, 1.6, -0.68], 0.035, p.roof);
+    for (const x of [-0.4, 0, 0.4]) d.rod(root, [x, 1.6, -0.68], [x, 1.25, -0.68], 0.018, p.trim);
+  } else {
+    for (const [x, y, z] of [
+      [-0.3, 0.5, 0.2],
+      [0.3, 0.5, 0.2],
+      [0, 1.05, 0.1],
+    ]) {
+      const cargoY = y + (industrial ? 1.195 : 0);
+      d.box(root, 0.55, 0.55, 0.55, x, cargoY, z, '#856b4a');
+      d.box(root, 0.055, 0.59, 0.59, x, cargoY, z, p.trim);
+    }
+  }
+  return root;
+}
+
 export function addHeritageUpgrade(d, parent, kind, industrial = false) {
+  if (['well', 'fisherman', 'riverPort'].includes(kind))
+    return addUtilityUpgrade(d, parent, kind, industrial);
   const feature = heritageUpgrade(kind);
   if (!feature) return;
   const root = d.group(parent);

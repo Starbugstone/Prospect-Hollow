@@ -57,12 +57,12 @@ const steps = [
   {
     id: 'square',
     title: 'A happier village',
-    text: 'The town square adds comfort and gains a raid warning bell at level 4. Happiness grows with comfort for the size of the town and falls when water or food run short; a happy town welcomes more visitors and earns more at the saloon. All five building levels are available without a completed-puzzle requirement.',
+    text: 'The town square adds comfort and gains a raid warning bell at level 3. Happiness grows with comfort for the size of the town and falls when water or food run short; a happy town welcomes more visitors and earns more at the saloon.',
   },
   {
     id: 'saloon',
     title: 'Keep the village growing',
-    text: 'The saloon stores up to five hours of earnings. Tap it to collect your coins. Open More to visit the museum and replay old puzzles. Rare builder hammers come only from mine bonus chests and build or improve an unlocked building instantly for free.',
+    text: 'The saloon stores up to five hours of earnings. Tap it to collect your coins. Open More to visit the museum and replay old puzzles. Rare builder hammers come from mine bonus chests and Frontier’s two starter projects, and build or improve an unlocked building instantly for free.',
   },
   {
     id: 'bank',

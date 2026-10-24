@@ -192,6 +192,55 @@ describe('A visible, articulated frontier encounter', () => {
     d.materials.forEach((m) => m.dispose());
     d.contactShadowMaterial.dispose();
   });
+  it.each([
+    ['resident', false],
+    ['visitor', true],
+  ])('keeps a corrected %s without a prepared route proposing new curve targets', (_, visitor) => {
+    const d = diorama();
+    d.town = createTown();
+    const actor = d.person({
+      color: '#809267',
+      skin: '#af7b56',
+      hat: '#d7b671',
+      seed: 0,
+      visitor,
+      linear: true,
+      loop: true,
+      route: [
+        [0, 0],
+        [0, 8],
+        [8, 8],
+        [8, 0],
+      ],
+    });
+    d.animatePerson(actor, 0);
+    updateTownLocomotion(d);
+    expect(actor.walkPath).toBeUndefined();
+    // Retained-position correction synchronizes the visible root and accepted
+    // motion coordinates. This curve-only walker must still propose its next
+    // target; only the following locomotion step may change accepted distance.
+    actor.motion.x += 0.25;
+    actor.motion.z += 0.5;
+    actor.root.position.set(actor.motion.x, actor.root.position.y, actor.motion.z);
+    const corrected = actor.root.position.clone();
+    const accepted = actor.acceptedDistance;
+    d.animatePerson(actor, 2);
+    expect(actor.motion.x).toBe(corrected.x);
+    expect(actor.motion.z).toBe(corrected.z);
+    expect(actor.acceptedDistance).toBe(accepted);
+    expect(
+      Math.hypot(actor.root.position.x - corrected.x, actor.root.position.z - corrected.z),
+    ).toBeGreaterThan(0.1);
+    updateTownLocomotion(d);
+    expect(actor.acceptedDistance).toBeGreaterThan(accepted);
+    expect(
+      Math.hypot(actor.root.position.x - corrected.x, actor.root.position.z - corrected.z),
+    ).toBeLessThanOrEqual(actor.motion.maxSpeed / 60 + 1e-6);
+    d.clearGroup(d.world);
+    Object.values(d.geometries).forEach((g) => g.dispose());
+    d.materials.forEach((m) => m.dispose());
+    d.contactShadowMaterial.dispose();
+  });
   it('keeps visitors visible until their actual trip returns to the door', () => {
     const d = diorama();
     d.town = createTown();

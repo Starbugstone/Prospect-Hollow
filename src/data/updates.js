@@ -2,6 +2,41 @@
 // text are English keys for t(); add the French text to src/i18n/fr.json.
 const UPDATES = [
   {
+    date: '2026-10-24',
+    title: 'Moonstones to save, spend and show off',
+    text: 'Moonstones are now saved: earn one per finished Moon building level. At levels 1/2/3, the Moonstone workshop makes 1/2/3 every three completed puzzles and stores up to 10/20/30; tap it to collect. Continuous play adds one puzzle of workshop progress per 300 gems, up to three per level over your town’s lifetime. Sell stones for 250 coins each, or build Moonrock Court on the Moon and Moonstone Garden in the valley for 20/30/40/50/60 moonstones per stage. Earthrise Plaza on the Moon uses coins. These monuments are optional and never needed to finish an era.',
+  },
+  {
+    date: '2026-10-24',
+    title: 'More life in New Hollow and beyond',
+    text: 'New Hollow now shows scaffolding while you build and a hammer when each building is ready, just like the valley. Moon events play on the Moon. Build the optional Saucer Pad to watch a flying saucer land and take off. New Town Honours celebrate New Hollow, the Saucer Pad, moonstones earned, monuments and continuous play; continuous gems, fusions and cleared mine elements count toward their honours too. VIP visitors spend more the deeper you’ve mined, and town projects guide you through every era, including the Moon. Starting the game, returning from the mine and exploring the village feel smoother while your town syncs.',
+  },
+  {
+    date: '2026-10-21',
+    title: 'A friendlier start in the village',
+    text: 'Every new town now has a short guided start: Ada points at the next thing to tap, from the first well to your first finished saloon. Frontier buildings all finish at level 3 with their full benefits, so the first era is quicker, and each of its two starter projects gives you a builder hammer. Monument upgrades take a single puzzle, and you can enter the mine by tapping anywhere on its buildings or hill.',
+  },
+  {
+    date: '2026-10-21',
+    title: 'The floating seam: 144 new mine puzzles',
+    text: 'The campaign now reaches level 546. Lift floatstones to sky hatches, bend beams with lens mirrors, ride portals, break into sealed chambers and turn whole caverns upside down with moon locks and dials. Peridot and starmetal join the gems, and moves stay unlimited.',
+  },
+  {
+    date: '2026-10-21',
+    title: 'Twin Hollows: a new frontier on the Moon',
+    text: 'Ride the ribbon to New Hollow and build a Moon settlement: settler domes, crater ice, a greenhouse lit by Earth and a Willowkin garden under glass. Back in the valley, a few homecoming landmarks light twin lanterns, Moon guests ride down the elevator, and visitors to your shared town can see your Moon too.',
+  },
+  {
+    date: '2026-10-21',
+    title: 'Three new eras: Skysail, Stargazer and Moonward',
+    text: 'Raise sailcloth roofs and floating orchards, turn every street toward the stars, then build a space elevator beside the old mine. Cross the railway to the new Skyward quarter, and watch homestead lights appear on the Moon as you send up supplies.',
+  },
+  {
+    date: '2026-10-21',
+    title: 'Your data, your choice',
+    text: 'Open the Mayor’s Office from Settings to see what we keep about you, download it, change your email or delete your account for good. Turn on private visits to sign guestbooks without your name, and read the new privacy notice from the home page.',
+  },
+  {
     date: '2026-10-06',
     title: 'Earn Town Honours',
     text: 'Earn bronze, silver and gold honours for mine puzzles, town milestones and visits between towns, then pick three for your showcase beside your town name. Player distinctions such as Alpha Player mark your time in Prospect Hollow.',

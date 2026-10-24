@@ -1,6 +1,6 @@
 <?php
 require __DIR__ . '/support.php';
-use App\{TownDirectory, VisitorService};
+use App\{PublicTown, SaveIntegrity, TownDirectory, VisitorService};
 $visitorTestIp = '127.' . random_int(1, 254) . '.' . random_int(1, 254) . '.' . random_int(1, 254);
 function visitorApi(
     string $method,
@@ -100,7 +100,11 @@ try {
         'save public profile',
     );
     check(
-        $saved['profile'] === ['displayName' => 'Camille Rose', 'visitingTownId' => $originId],
+        $saved['profile'] === [
+            'displayName' => 'Camille Rose',
+            'visitingTownId' => $originId,
+            'anonymousVisits' => false,
+        ],
         'profile is normalized and persisted',
     );
     $token = bin2hex(random_bytes(32));
@@ -186,6 +190,7 @@ try {
             'townName',
             'era',
             'publicId',
+            'townGone',
             'arrivedAt',
             'lastSeenAt',
             'departedAt',
@@ -482,6 +487,125 @@ try {
         !$deck($other, $first['seed'])[$publicId]['saloonReady'],
         'a collected saloon is no longer ready on its card',
     );
+    // Space helmet: a signed-in visitor's own town earns the reward, once per 12 hours.
+    $helmet = 'villages/' . $publicId . '/helmet';
+    $findHelmet = fn(array $session, string $townId) => visitorApi(
+        'POST',
+        $helmet,
+        ['townId' => $townId],
+        $session,
+    );
+    check(
+        status(409, $findHelmet($guest, $originId), 'helmet before its era')['code'] ===
+            'no_helmet',
+        'a town before Tomorrow City has no helmet to find',
+    );
+    $appearance = $db->get()->fetchOne('SELECT appearance FROM towns WHERE id=?', [$hostId]);
+    $tomorrow = json_decode($appearance);
+    $tomorrow->appearance->era = 'tomorrow';
+    $db->get()->update('towns', ['appearance' => json_encode($tomorrow)], ['id' => $hostId]);
+    status(401, visitorApi('POST', $helmet, ['townId' => $originId]), 'helmet needs sign in');
+    status(
+        403,
+        visitorApi('POST', $helmet, ['townId' => $originId], $guest, [
+            'HTTP_X_CSRF_TOKEN' => 'bad',
+        ]),
+        'helmet csrf',
+    );
+    status(
+        422,
+        visitorApi('POST', $helmet, ['townId' => $originId, 'x' => 1], $guest),
+        'helmet keys',
+    );
+    check(
+        status(422, $findHelmet($owner, $hostId), 'helmet in own town')['code'] === 'own_town',
+        'owners find their own helmet in their game',
+    );
+    check(
+        status(422, $findHelmet($guest, $hostId), 'helmet for another town')['code'] ===
+            'no_home_town',
+        'only the visitor\'s own town can receive the reward',
+    );
+    $found = status(200, $findHelmet($guest, $originId), 'visitor finds helmet');
+    $foundAt = ($found['readyAt'] - PublicTown::HELMET_REST) * 1000;
+    check(
+        $found['readyAt'] - time() > PublicTown::HELMET_REST - 60,
+        'the next helmet reward rests 12 hours',
+    );
+    $taken = status(409, $findHelmet($guest, $originId), 'helmet taken');
+    check(
+        $taken['code'] === 'helmet_taken' && $taken['readyAt'] === $found['readyAt'],
+        'a second find in the same town within 12 hours is refused with when it is ready',
+    );
+    $otherHome = status(
+        200,
+        visitorApi('POST', 'towns', townBody('Copper Bend'), $other),
+        'second visitor home',
+    )['townId'];
+    $taken = status(409, $findHelmet($other, $otherHome), 'helmet taken by another visitor');
+    check(
+        $taken['code'] === 'helmet_taken' && $taken['readyAt'] === $found['readyAt'],
+        'each town\'s helmet is found by one visitor per 12 hours',
+    );
+    check(
+        status(200, visitorApi('GET', 'villages/' . $publicId . '/latest'), 'helmet rest')[
+            'helmetReadyAt'
+        ] === $found['readyAt'],
+        'the shared town tells visitors when its helmet can be found again',
+    );
+    // Another town's helmet is free, but this player's own 12-hour rest still applies.
+    $db->get()->update(
+        'helmet_finds',
+        ['host_town_id' => $otherHome],
+        ['player_id' => $guest['id']],
+    );
+    check(
+        status(200, visitorApi('GET', 'villages/' . $publicId . '/latest'), 'helmet free')[
+            'helmetReadyAt'
+        ] === 0,
+        'a town nobody found the helmet in is ready',
+    );
+    $resting = status(409, $findHelmet($guest, $originId), 'helmet resting');
+    check(
+        $resting['code'] === 'helmet_resting' && $resting['readyAt'] === $found['readyAt'],
+        'a second find within 12 hours is refused with when the next is ready',
+    );
+    $homeBook = status(
+        200,
+        visitorApi('GET', 'towns/' . $originId . '/visitors', null, $guest),
+        'visitor home poll',
+    );
+    check(
+        $homeBook['helmetFinds'] === [
+            ['at' => $foundAt, 'receipt' => SaveIntegrity::helmetReceipt($originId, $foundAt)],
+        ],
+        'the visitor\'s own town receives the find with its signed receipt',
+    );
+    check(
+        $book()['helmetFinds'] === [] && !array_key_exists('helmetFinds', $publicBook()),
+        'the host and the public guestbook receive no find',
+    );
+    $db->get()->update(
+        'helmet_finds',
+        ['found_at' => time() - PublicTown::HELMET_REST, 'host_town_id' => $hostId],
+        ['player_id' => $guest['id']],
+    );
+    status(200, $findHelmet($guest, $originId), 'a find after the rest');
+    $db->get()->executeStatement(
+        'UPDATE helmet_finds SET found_at=? WHERE player_id=? AND found_at<?',
+        [time() - PublicTown::HELMET_KEEP - 1, $guest['id'], time() - 3600],
+    );
+    check(
+        count(
+            status(
+                200,
+                visitorApi('GET', 'towns/' . $originId . '/visitors', null, $guest),
+                'visitor home poll after 30 days',
+            )['helmetFinds'],
+        ) === 1,
+        'finds older than 30 days are no longer offered',
+    );
+    $db->get()->update('towns', ['appearance' => $appearance], ['id' => $hostId]);
     $retryExpiry = time() + 10;
     $db->get()->update(
         'visitor_leases',

@@ -1,3 +1,5 @@
+import { normalizeTown } from '../src/game/town/TownRules';
+import { createTown } from '../src/data/town';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { SAVE_KEY, createTownStorage, progressKey } from '../src/services/townStorage';
 import { createSyncService } from '../src/services/syncService';
@@ -123,6 +125,23 @@ it('retries the identical staged timestamp and actions after an acknowledgment i
   expect(storage.active().meta.dirty).toBe(true);
 });
 
+it.each(['save_format_unsupported', 'save_rules_unsupported', 'save_integrity_unsupported'])(
+  'prepares a fresh upload on retry after the server refuses %s',
+  async (code) => {
+    advance();
+    request.mockImplementation(async (_path, body) => {
+      if (!body) return copy(remote);
+      throw Object.assign(new Error('Update the game.'), { status: 422, data: { code } });
+    });
+    await expect(service.sync()).rejects.toThrow('Update the game.');
+    const local = storage.active();
+    expect(local.meta.pending).toBeNull();
+    expect(local.meta.uploadError.code).toBe(code);
+    expect(local.profile.integrity.actions).toHaveLength(1);
+    expect(uploads.size).toBe(0);
+  },
+);
+
 it('keeps progress and queued actions after a validation error without repeatedly resending it', async () => {
   advance();
   request.mockImplementation(async (_path, body) => {
@@ -136,11 +155,65 @@ it('keeps progress and queued actions after a validation error without repeatedl
   const local = storage.active();
   expect(local.profile.town.coins).toBe(11);
   expect(local.profile.integrity.actions).toHaveLength(1);
-  expect(local.meta.pending).toBeNull();
+  expect(local.meta.pending.rejected).toBe(true);
+  expect(uploads.size).toBe(1);
   expect(local.meta.uploadError.code).toBe('save_integrity_mismatch');
   request.mockClear();
   await service.sync();
-  expect(request).not.toHaveBeenCalled();
+  expect(request.mock.calls.every(([, body]) => !body)).toBe(true);
+  expect(storage.active().meta.uploadError.code).toBe('save_integrity_mismatch');
+});
+
+it('loads a support reset over a blocked upload without asking, keeping a backup', async () => {
+  advance();
+  request.mockImplementation(async (_path, body) => {
+    if (!body) return copy(remote);
+    throw Object.assign(new Error('Your local save is kept.'), {
+      status: 422,
+      data: { code: 'save_integrity_mismatch' },
+    });
+  });
+  await expect(service.sync()).rejects.toThrow('Your local save is kept.');
+  remote = {
+    ...remote,
+    revision: 2,
+    adminReset: true,
+    profile: { ...copy(remote.profile), town: { ...remote.profile.town, coins: 500 } },
+  };
+  request.mockImplementation(async (_path, body) => {
+    if (body) throw new Error('A blocked town must not upload.');
+    return copy(remote);
+  });
+  await service.sync({ pull: false });
+  expect(storage.active().profile.town.coins).toBe(11);
+  await service.sync();
+  const local = storage.active();
+  expect(local.profile.town.coins).toBe(500);
+  expect(local.meta.baseRevision).toBe(2);
+  expect(local.meta.uploadError).toBeNull();
+  expect(local.meta.desyncNotice).toBe('support');
+  expect(uploads.size).toBe(0);
+  expect([...preserved.values()].map((saved) => saved.profile.town.coins)).toEqual([11]);
+});
+
+it('marks a blocked town missing once the cloud no longer has it, without failing the sync', async () => {
+  advance();
+  request.mockImplementation(async (_path, body) => {
+    if (!body) return copy(remote);
+    throw Object.assign(new Error('Your local save is kept.'), {
+      status: 422,
+      data: { code: 'save_integrity_mismatch' },
+    });
+  });
+  await expect(service.sync()).rejects.toThrow('Your local save is kept.');
+  request.mockImplementation(async (_path, body) => {
+    if (body) throw new Error('A blocked town must not upload.');
+    throw Object.assign(new Error('Not found'), { status: 404 });
+  });
+  await service.sync();
+  const local = storage.active();
+  expect(local.meta.missing).toBe(true);
+  expect(local.profile.town.coins).toBe(11);
 });
 
 it.each(['sequence', 'epoch'])(
@@ -180,7 +253,7 @@ it.each(['save_rules_unsupported', 'save_integrity_unsupported'])(
     advance();
     request.mockClear();
     await service.sync();
-    expect(request).not.toHaveBeenCalled();
+    expect(request.mock.calls.every(([, body]) => !body)).toBe(true);
     expect(storage.active().profile.town.coins).toBe(12);
     expect(storage.active().profile.integrity.actions).toHaveLength(2);
     storage.mutate(storage.active().meta.id, owner.id, (record) => {
@@ -315,7 +388,7 @@ it('keeps an edited imported backup local and retains restore intent after serve
   expect(remote).toEqual(cloud);
   expect(storage.active().profile).toEqual(backup);
   expect(storage.active().meta.restoreIntent).toBe(intent);
-  expect(storage.active().meta.pending).toBeNull();
+  expect(storage.active().meta.pending.rejected).toBe(true);
   advance();
   expect(storage.active().meta.restoreIntent).toBe(intent);
   await expect(service.sync()).rejects.toThrow('could not be verified');
@@ -384,4 +457,133 @@ it('keeps a showcase cleared on another device when downloading the newer cloud 
   expect(storage.active().profile.honours.showcase).toEqual([]);
   expect(storage.active().meta.dirty).toBe(false);
   expect(request.mock.calls.at(-1)[1]).toBeUndefined();
+});
+
+it('retries the exact rejected profile after support approval, including its original timestamp', async () => {
+  advance();
+  request.mockImplementation(async (_path, body) => {
+    if (!body) return copy(remote);
+    throw Object.assign(new Error('Blocked'), {
+      status: 422,
+      data: { code: 'save_integrity_mismatch' },
+    });
+  });
+  await expect(service.sync()).rejects.toThrow('Blocked');
+  const rejected = copy(request.mock.calls.at(-1)[1]);
+  storage.mutate(storage.active().meta.id, owner.id, (record) => {
+    record.meta.uploadError = null;
+  });
+  request.mockImplementation(async (_path, body) => {
+    expect(body).toEqual(rejected);
+    return accepted(body);
+  });
+  await service.sync();
+  expect(storage.active().meta.pending).toBeNull();
+  expect(storage.active().meta.dirty).toBe(false);
+  expect(uploads.size).toBe(0);
+});
+
+it('stages new progress separately instead of retrying an older rejected profile', async () => {
+  advance();
+  request.mockImplementation(async (_path, body) => {
+    if (!body) return copy(remote);
+    throw Object.assign(new Error('Blocked'), {
+      status: 422,
+      data: { code: 'save_integrity_mismatch' },
+    });
+  });
+  await expect(service.sync()).rejects.toThrow('Blocked');
+  const rejected = copy(request.mock.calls.at(-1)[1]);
+  advance();
+  request.mockImplementation(async (_path, body) => {
+    if (!body) return copy(remote);
+    expect(body.uploadId).not.toBe(rejected.uploadId);
+    expect(body.profile.town.coins).toBe(rejected.profile.town.coins + 1);
+    return accepted(body);
+  });
+  await service.sync();
+  expect(storage.active().meta.dirty).toBe(false);
+  expect(uploads.size).toBe(0);
+});
+
+it('round-trips moonstone state and never adds two devices’ migration credits', async () => {
+  const legacyTown = createTown();
+  delete legacyTown.moonstoneVersion;
+  legacyTown.buildings.ribbonLanding = 2;
+  legacyTown.buildings.moonstoneWorkshop = 3;
+  const deviceA = normalizeTown(legacyTown);
+  const deviceB = normalizeTown(legacyTown);
+  expect(deviceA.moonstones).toBe(5);
+  let profile = storage.active().profile;
+  profile.schemaVersion = 4;
+  profile.town = deviceA;
+  storage.save(profile);
+  await service.sync();
+  expect(remote.profile.town).toMatchObject({ moonstones: 5, moonstonesEarned: 5 });
+  // The second device has independently migrated the same old cloud checkpoint.
+  // A conflict selects the whole remote save; balances are never additive counters.
+  profile = storage.active().profile;
+  profile.town = deviceB;
+  storage.save(profile);
+  remote = {
+    ...remote,
+    revision: remote.revision + 1,
+    profile: { ...remote.profile, town: { ...remote.profile.town, moonstones: 2, coins: 750 } },
+  };
+  request.mockImplementation(async (_path, body) => {
+    if (body)
+      throw Object.assign(new Error('conflict'), { status: 409, data: { cloud: copy(remote) } });
+    return copy(remote);
+  });
+  await service.sync();
+  expect(normalizeTown(storage.active().profile.town)).toMatchObject({
+    moonstones: 2,
+    moonstonesEarned: 5,
+  });
+  expect(storage.active().profile.town.moonstoneProduction).toEqual({ progress: 0, stored: 0 });
+});
+
+it('chooses one complete v1 batch migration across two devices instead of adding stock', async () => {
+  const old = {
+    ...createTown(),
+    moonstoneVersion: 1,
+    moonstones: 2,
+    moonstonesEarned: 9,
+    moonstoneProduction: { progress: 0, charge: 3 },
+  };
+  old.buildings.moonstoneWorkshop = 3;
+  const a = normalizeTown(old),
+    b = normalizeTown(old);
+  let profile = storage.active().profile;
+  profile.schemaVersion = 4;
+  profile.town = a;
+  storage.save(profile);
+  await service.sync();
+  profile = storage.active().profile;
+  profile.town = b;
+  storage.save(profile);
+  remote = {
+    ...remote,
+    revision: remote.revision + 1,
+    profile: {
+      ...remote.profile,
+      town: {
+        ...remote.profile.town,
+        moonstones: 5,
+        moonstonesEarned: 12,
+        moonstoneProduction: { progress: 1, stored: 0 },
+      },
+    },
+  };
+  request.mockImplementation(async (_path, body) => {
+    if (body)
+      throw Object.assign(new Error('conflict'), { status: 409, data: { cloud: copy(remote) } });
+    return copy(remote);
+  });
+  await service.sync();
+  expect(normalizeTown(storage.active().profile.town)).toMatchObject({
+    moonstones: 5,
+    moonstonesEarned: 12,
+    moonstoneProduction: { progress: 1, stored: 0 },
+  });
 });

@@ -1,8 +1,10 @@
 <?php
 declare(strict_types=1);
 namespace App;
+use Doctrine\DBAL\Configuration;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
+use Doctrine\DBAL\Exception\DeadlockException;
 use Doctrine\DBAL\Tools\DsnParser;
 final class Database
 {
@@ -20,8 +22,40 @@ final class Database
         17 => '/schema-distinction-revocations',
         // Admin settings, starting with how long the activity log is kept.
         18 => '/schema-admin-settings',
+        // Signed-in visits recorded as such, private visits and confirmed email changes.
+        19 => '/schema-player-data',
+        // Space helmets found while visiting, redeemed by the finder's own town.
+        20 => '/schema-helmet-finds',
+        // Uploads the save protection rejected, for the admin sync log, and the admin's
+        // one-shot acceptance of a town's next upload.
+        21 => '/schema-force-sync',
+        // The share-link view and a find check a host town's latest helmet find.
+        22 => '/schema-helmet-host',
+        // Expiring approvals bound to a reviewed rejected upload; retire boolean overrides.
+        23 => '/schema-sync-approval',
     ];
     private ?Connection $connection = null;
+    /** Tests may wrap the driver, for example to inject a deadlock. */
+    public function __construct(private readonly ?Configuration $configuration = null) {}
+    /**
+     * Retry once only when the database rolled back this entire transaction.
+     * @template T
+     * @param \Closure(Connection): T $work
+     * @return T
+     */
+    public static function retryOnDeadlock(Connection $db, \Closure $work): mixed
+    {
+        $outermost = $db->getTransactionNestingLevel() === 0;
+        try {
+            return $db->transactional($work);
+        } catch (DeadlockException $error) {
+            // A nested caller cannot replay work whose outer transaction was aborted.
+            if (!$outermost) {
+                throw $error;
+            }
+            return $db->transactional($work);
+        }
+    }
     public static function latestVersion(): int
     {
         return array_key_last(self::MIGRATIONS);
@@ -51,7 +85,7 @@ final class Database
         if ($params['driver'] === 'pdo_mysql') {
             $params['charset'] = 'utf8mb4';
         }
-        return $this->connection = DriverManager::getConnection($params);
+        return $this->connection = DriverManager::getConnection($params, $this->configuration);
     }
     public function migrate(): void
     {
@@ -79,10 +113,17 @@ final class Database
                         continue;
                     }
                     // MySQL can commit DDL before an interrupted install records its version.
-                    // Tables are idempotent; indexes need a portable existence check.
+                    // Tables are idempotent; indexes and added columns need a portable
+                    // existence check.
                     if (preg_match('/^CREATE INDEX (\w+) ON (\w+)\(/i', $statement, $index)) {
                         $indexes = $db->createSchemaManager()->listTableIndexes($index[2]);
                         if (isset($indexes[strtolower($index[1])])) {
+                            continue;
+                        }
+                    }
+                    if (preg_match('/^ALTER TABLE (\w+) ADD COLUMN (\w+) /i', $statement, $add)) {
+                        $columns = $db->createSchemaManager()->listTableColumns($add[1]);
+                        if (isset(array_change_key_case($columns)[strtolower($add[2])])) {
                             continue;
                         }
                     }

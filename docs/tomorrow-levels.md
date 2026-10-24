@@ -1,8 +1,8 @@
 # Tomorrow City mine chapters (levels 325–372)
 
-The Tomorrow City era (c. 2065) needs more puzzles so players can earn its
-building coins. This pass appends eight six-level chapters after the 54
-existing chapters. It is append-only: level IDs 1–324, their seeds, layouts,
+The Tomorrow City mines (c. 2065) contain eight six-level chapters after the first
+54 chapters, providing more puzzles to earn building coins. Their addition was
+append-only: level IDs 1–324, their seeds, layouts,
 rewards, names, chapters and star targets are unchanged. A regression test
 hashes all of them. Moves stay unlimited, and a board with no legal match
 still reshuffles for free.

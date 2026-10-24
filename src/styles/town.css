@@ -1164,6 +1164,7 @@
   font-size: 12px;
 }
 .town-dialog-close {
+  flex: 0 0 44px;
   width: 44px;
   height: 44px;
   display: grid;
@@ -1173,6 +1174,14 @@
   border: 0;
   border-radius: 50%;
   font-size: 25px;
+  cursor: pointer;
+}
+.town-dialog-close:hover {
+  background: #dbdfcb;
+}
+.town-dialog-close:focus-visible {
+  outline: 3px solid #426654;
+  outline-offset: 2px;
 }
 .town-dialog-content {
   padding: 20px 24px 24px;
@@ -1506,6 +1515,36 @@ html:has(.town-museum[open]) {
     min-height: 44px;
   }
 }
+/* New Hollow: a small Moon whose homestead lights twinkle out of step. */
+.town-map-needs button.moon {
+  border-color: #c9b98a;
+  color: #5d5236;
+}
+.town-map-needs .town-moon {
+  width: 24px;
+  height: 24px;
+}
+.town-moon-light {
+  fill: #e8b84a;
+  animation: town-moon-twinkle 2.4s ease-in-out infinite;
+}
+@keyframes town-moon-twinkle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .town-moon-light {
+    animation: none;
+  }
+}
+.reduced-motion .town-moon-light {
+  animation: none;
+}
 .town-in-cinematic .town-map-needs,
 .town-scene.is-raiding .town-map-needs {
   visibility: hidden;
@@ -1558,6 +1597,102 @@ html:has(.town-museum[open]) {
   margin-inline: 3px;
   background: #dccb93;
 }
+/* Share the available header width as optional resources join the wallet. */
+.town-resource-bar {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  left: 12px;
+  right: 12px;
+  z-index: 7;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  pointer-events: none;
+}
+.town-resource-bar .town-map-corner,
+.town-resource-bar .town-map-status {
+  position: relative;
+  inset: auto;
+  pointer-events: auto;
+}
+.town-resource-bar .town-map-corner {
+  min-width: 0;
+  max-width: none;
+  flex-shrink: 1;
+}
+.town-resource-bar .save-pill-wrap,
+.town-resource-bar .save-pill {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.town-resource-bar .save-pill-town {
+  min-width: 0;
+}
+.town-resource-bar .town-map-status {
+  flex-shrink: 0;
+}
+@media (max-width: 560px) {
+  .town-map-status:has(.moonstone-balance) {
+    --moonstone-size: 16px;
+    gap: 4px;
+    padding-inline: 8px;
+    font-size: 12px;
+  }
+  .town-map-status:has(.moonstone-balance) > svg,
+  .town-map-status:has(.moonstone-balance) > img {
+    width: 16px;
+    height: 16px;
+  }
+}
+/* The next starter project, below the wallet and the needs readings: a near-term goal
+   with a hammer reward. */
+.town-project-goal {
+  position: absolute;
+  top: calc(max(12px, env(safe-area-inset-top)) + 102px);
+  right: 12px;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(230px, calc(100% - 24px));
+  min-height: 44px;
+  padding: 5px 10px;
+  border: 1px solid #cfb772;
+  border-radius: 10px;
+  background: #fffbeaee;
+  box-shadow: 0 3px 14px #54452d1c;
+  color: #4e5a3d;
+  text-align: left;
+}
+.town-project-goal img {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.town-project-goal span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.town-project-goal small {
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.town-project-goal progress {
+  width: 100%;
+  height: 6px;
+  accent-color: #577856;
+}
+.town-project-goal b {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
 .town-map-notice {
   position: absolute;
   top: 116px;
@@ -1581,7 +1716,7 @@ html:has(.town-museum[open]) {
   z-index: 5;
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--town-tabs, 6), minmax(0, 1fr));
   gap: 4px;
   padding: 6px 6px max(6px, env(safe-area-inset-bottom));
   border-top: 1px solid #c6c3a6;
@@ -1625,16 +1760,13 @@ html:has(.town-museum[open]) {
 }
 .town-tab-badge {
   position: absolute;
-  top: 3px;
-  left: calc(50% + 6px);
-  min-width: 17px;
-  height: 17px;
-  padding: 0 4px;
-  border-radius: 9px;
+  top: 5px;
+  left: calc(50% + 8px);
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
   background: #c9772e;
-  color: #fff;
-  font: 700 10px/17px system-ui;
-  font-style: normal;
+  box-shadow: 0 0 0 2px #f4efdf;
 }
 .town-tab-bar .nudge svg {
   animation: town-tab-nudge 1.6s ease-in-out infinite;
@@ -1647,14 +1779,14 @@ html:has(.town-museum[open]) {
 .reduced-motion .town-tab-bar .nudge svg {
   animation: none;
 }
-@media (max-width: 360px) {
+@media (max-width: 420px) {
   .town-tab-bar button {
     font-size: 10px;
   }
 }
 @media (min-width: 900px) {
   .town-tab-bar {
-    grid-template-columns: repeat(5, minmax(0, 150px));
+    grid-template-columns: repeat(var(--town-tabs, 6), minmax(0, 150px));
     justify-content: center;
   }
   .town-tab-bar button {
@@ -1723,6 +1855,22 @@ html:has(.town-museum[open]) {
   border-bottom: 1px solid #e6dfcb;
   background: none;
 }
+.town-show-all {
+  width: 100%;
+  margin: 2px 0 14px;
+}
+.town-build-rules summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+.town-build-rules[open] summary {
+  margin-bottom: 10px;
+}
+.town-build-rules > .town-service {
+  padding-block: 0;
+  border-top: 0;
+}
 .town-raid-actions .town-map-wallet {
   position: static;
   max-width: 100%;
@@ -1790,7 +1938,40 @@ html:has(.town-museum[open]) {
   margin-top: 8px;
   accent-color: #8ca866;
 }
+/* New Hollow's letters home, one per Moon building, in the Story tab. */
+.town-story-letters {
+  margin-top: 24px;
+}
+.town-story-letters h2 {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+.town-story-letters ul {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.town-story-letters li {
+  padding: 12px;
+  border: 1px solid #d5d9be;
+  border-radius: 12px;
+  background: #f7f8ec;
+}
+.town-story-letters small {
+  display: block;
+  color: #627559;
+  font-size: 12px;
+}
+.town-story-letters p {
+  margin: 5px 0 0;
+  color: #4e6048;
+  font-size: 14px;
+  line-height: 1.45;
+}
 .town-labels-hidden .town-scene-labels,
+.town-labels-hidden .town-moon-lots,
 .town-labels-hidden .mine-label {
   display: none;
 }
@@ -1798,6 +1979,10 @@ html:has(.town-museum[open]) {
 .town-in-cinematic > .town-map-corner,
 .town-in-cinematic .town-scene-labels,
 .town-in-cinematic .town-action-icons,
+.town-in-cinematic .town-resource-bar,
+.town-in-cinematic .town-settlement-notice,
+.town-in-cinematic .town-moon-header,
+.town-in-cinematic .town-moon-actions,
 .town-in-cinematic .mine-label {
   visibility: hidden;
 }
@@ -1929,4 +2114,151 @@ html:has(.town-museum[open]) {
 }
 .town-cinematic::backdrop {
   background: transparent;
+}
+
+/* Optional monuments in the Build tab, below the era's buildings, and New Hollow's
+   lots while the Moon is open. */
+.town-monument-list,
+.town-moon-lot-list {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #e1e2d2;
+}
+.town-monument-list h3,
+.town-moon-lot-list h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 4px;
+  font:
+    700 17px Georgia,
+    serif;
+  color: #3d5446;
+}
+.town-monument-list h3 svg,
+.town-moon-lot-list h3 svg {
+  width: 20px;
+  height: 20px;
+  color: #8a6427;
+}
+.town-monument-list h3 small,
+.town-moon-lot-list h3 small {
+  font: 600 10px var(--font-body);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #8a856a;
+}
+.town-monument-list .town-building-list,
+.town-moon-lot-list .town-building-list {
+  margin-top: 14px;
+}
+
+/* New Hollow: the Moon map opens over the valley view. */
+.town-moon-view {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  overflow: hidden;
+  background: #10162b;
+}
+.town-moon-canvas,
+.town-moon-map {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+.town-moon-lots {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.town-moon-lot {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  display: grid;
+  gap: 1px;
+  min-height: 38px;
+  padding: 4px 10px;
+  border: 1px solid #b9c2a4;
+  border-radius: 10px;
+  background: #fbf8eaee;
+  box-shadow: 0 3px 14px #0000003a;
+  color: #3f5547;
+  font-size: 12px;
+  line-height: 1.15;
+  text-align: center;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.town-moon-lot small {
+  color: #6c6a5d;
+  font-weight: 600;
+}
+.town-moon-lot.open {
+  border-color: #d39a45;
+  background: #fbe6bf;
+}
+.town-moon-header {
+  position: absolute;
+  /* Below the town's save status and savings, which stay visible on the Moon. */
+  top: 64px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  pointer-events: none;
+}
+.town-moon-back,
+.town-moon-title {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 40px;
+  padding: 4px 12px;
+  border: 1px solid #b9c2a4;
+  border-radius: 10px;
+  background: #fbf8eaee;
+  color: #3f5547;
+  font-size: 13px;
+  pointer-events: auto;
+}
+.town-moon-back {
+  font-weight: 700;
+  cursor: pointer;
+}
+.town-moon-title .town-moon {
+  width: 26px;
+  height: 26px;
+}
+@media (max-width: 600px) {
+  .town-moon-lot {
+    min-height: 44px;
+    padding: 3px 7px;
+    font-size: 11px;
+  }
+}
+
+/* The Moon in the valley sky is painted in the scene (TownSkyMoon); this is only its
+   round tap target, sized and moved to cover it on every camera frame. */
+.town-sky-moon {
+  position: absolute;
+  z-index: 2;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+}
+.town-sky-moon:focus-visible {
+  outline: 3px solid #d39a45;
+  outline-offset: 3px;
+}
+.town-in-cinematic .town-sky-moon,
+.town-scene.is-raiding .town-sky-moon {
+  visibility: hidden;
 }

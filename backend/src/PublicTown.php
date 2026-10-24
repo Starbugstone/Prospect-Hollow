@@ -5,6 +5,21 @@ use Symfony\Component\HttpFoundation\Request;
 final class PublicTown
 {
     private ?SaveIntegrity $rules = null;
+    /** @var array<string, mixed>|null */
+    private static ?array $schema = null;
+    /**
+     * The exported public content (eras, buildings, honours, personalisation), decoded
+     * once per request. Empty when the content has not been exported.
+     *
+     * @return array<string, mixed>
+     */
+    public static function schema(): array
+    {
+        $path = dirname(__DIR__) . '/content/public-schema.json';
+        return self::$schema ??= is_file($path)
+            ? json_decode(file_get_contents($path), true, 64, JSON_THROW_ON_ERROR)
+            : [];
+    }
     public function __construct(
         private Database $database,
         private Auth $auth,
@@ -33,12 +48,7 @@ final class PublicTown
     }
     public function projection(object $profile, string $name, string $publicId): string
     {
-        $schema = json_decode(
-            file_get_contents(dirname(__DIR__) . '/content/public-schema.json'),
-            true,
-            32,
-            JSON_THROW_ON_ERROR,
-        );
+        $schema = self::schema();
         $town = $profile->town;
         $era = in_array($town->era, $schema['eras'], true) ? $town->era : $schema['eras'][0];
         $appearance = [
@@ -49,7 +59,7 @@ final class PublicTown
             'projects' => new \stdClass(),
         ];
         foreach ($schema['buildings'] as $id) {
-            // Frontier landmarks such as the saloon reach level 5; levels within a later era stop at 3.
+            // Each plot stops at its own level count; levels within a later era stop at 3.
             foreach (
                 ['buildings' => $schema['buildingLevels'][$id] ?? 3, 'buildingEraLevels' => 3]
                 as $key => $max
@@ -92,6 +102,11 @@ final class PublicTown
         if (is_array($schema['honours'] ?? null)) {
             $appearance['honours'] = $this->honoursProjection($profile, $schema, $publicId);
         }
+        $appearance['personalisation'] = TownPersonalisation::publish(
+            $town,
+            isset($appearance['honours']) ? (object) $appearance['honours'] : null,
+            $schema,
+        );
         return json_encode(
             ['villageId' => $publicId, 'name' => $name, 'era' => $era, 'appearance' => $appearance],
             JSON_THROW_ON_ERROR,
@@ -127,7 +142,7 @@ final class PublicTown
         $row = $this->database
             ->get()
             ->fetchAssociative(
-                'SELECT t.id,t.player_id,t.appearance,s.collected_at FROM towns t LEFT JOIN saloon_collections s ON s.town_id=t.id WHERE t.public_id=? AND t.listed=1 AND t.deleted_at IS NULL',
+                'SELECT t.id,t.player_id,t.appearance,s.collected_at,(SELECT MAX(h.found_at) FROM helmet_finds h WHERE h.host_town_id=t.id) AS helmet_at FROM towns t LEFT JOIN saloon_collections s ON s.town_id=t.id WHERE t.public_id=? AND t.listed=1 AND t.deleted_at IS NULL',
                 [$id],
             );
         if (!$row) {
@@ -159,6 +174,7 @@ final class PublicTown
             );
         }
         $village->saloonReadyAt = $this->saloonReadyAt($row['collected_at']);
+        $village->helmetReadyAt = self::restedAt($row['helmet_at'], self::HELMET_REST);
         return $this->distinguish(self::published($village), $row['player_id']);
     }
     // A showcased player distinction belongs to the owner, not the saved town: it is checked
@@ -166,13 +182,25 @@ final class PublicTown
     private function distinguish(object $village, string $owner): object
     {
         $honours = $village->appearance->honours ?? null;
-        if (PlayerDistinctions::showcases($honours)) {
+        $plaques = $village->appearance->personalisation->plaques ?? new \stdClass();
+        $playerPlaques = array_filter((array) $plaques, fn($id) => str_starts_with($id, 'player-'));
+        if ($playerPlaques || PlayerDistinctions::showcases($honours)) {
             $received = PlayerDistinctions::load()->received(
                 $this->database->get(),
                 [$owner],
                 (int) (microtime(true) * 1000),
             );
-            PlayerDistinctions::attach($honours, $received[$owner] ?? []);
+            if ($honours) {
+                PlayerDistinctions::attach($honours, $received[$owner] ?? []);
+            }
+            $village->appearance->plaqueDistinctions = new \stdClass();
+            foreach ($playerPlaques as $building => $id) {
+                if (isset($received[$owner][$id])) {
+                    $village->appearance->plaqueDistinctions->$id = $received[$owner][$id];
+                } else {
+                    unset($plaques->$building);
+                }
+            }
         }
         return $village;
     }
@@ -211,9 +239,93 @@ final class PublicTown
             return ['readyAt' => $now + self::SALOON_REST];
         });
     }
+    // A player finds a space helmet in another town at most once per 12 hours, and each town's
+    // helmet is found by one visitor per 12 hours however many visit. The find is redeemed in
+    // the town the finder visits as, for half an hour of that town's own saloon takings, so
+    // visiting richer towns pays no more. Unredeemed finds are kept for 30 days.
+    public const HELMET_REST = 43200;
+    public const HELMET_KEEP = 30 * 86400;
+    public function findHelmet(Request $r, string $id, array $b): array
+    {
+        $session = $this->auth->session($r, true);
+        $this->auth->limit('helmet:' . $session['player_id'], 30, 3600);
+        $home = SaveService::uuid($b['townId'] ?? null);
+        return $this->database->get()->transactional(function ($db) use ($session, $id, $home) {
+            // The player row lock keeps two tabs from both finding within one rest, and the host
+            // row lock keeps two visitors from both finding one town's helmet.
+            $db->fetchOne('SELECT id FROM players WHERE id=? FOR UPDATE', [$session['player_id']]);
+            $this->auth->recheck($session);
+            $host = $db->fetchAssociative(
+                'SELECT id,player_id,appearance FROM towns WHERE public_id=? AND listed=1 AND deleted_at IS NULL FOR UPDATE',
+                [$id],
+            );
+            if (!$host) {
+                throw new ApiError(404, 'Town unavailable.');
+            }
+            if ($host['player_id'] === $session['player_id']) {
+                throw new ApiError(422, 'Find the astronaut in your own town from your game.', [
+                    'code' => 'own_town',
+                ]);
+            }
+            $era = json_decode($host['appearance'])->appearance->era ?? null;
+            if (!($this->rules ??= new SaveIntegrity())->spaceHelmetOut($era)) {
+                throw new ApiError(409, 'This town has no astronaut yet.', [
+                    'code' => 'no_helmet',
+                ]);
+            }
+            if (
+                !$db->fetchOne(
+                    'SELECT id FROM towns WHERE id=? AND player_id=? AND deleted_at IS NULL',
+                    [$home, $session['player_id']],
+                )
+            ) {
+                throw new ApiError(422, 'Choose one of your towns to receive the reward.', [
+                    'code' => 'no_home_town',
+                ]);
+            }
+            $now = time();
+            $taken = self::restedAt(
+                $db->fetchOne('SELECT MAX(found_at) FROM helmet_finds WHERE host_town_id=?', [
+                    $host['id'],
+                ]),
+                self::HELMET_REST,
+            );
+            if ($taken > $now) {
+                throw new ApiError(
+                    409,
+                    'A visitor found this town\'s astronaut recently. Come back later.',
+                    ['code' => 'helmet_taken', 'readyAt' => $taken],
+                );
+            }
+            $resting = self::restedAt(
+                $db->fetchOne('SELECT MAX(found_at) FROM helmet_finds WHERE player_id=?', [
+                    $session['player_id'],
+                ]),
+                self::HELMET_REST,
+            );
+            if ($resting > $now) {
+                throw new ApiError(409, 'You found an astronaut recently. Come back later.', [
+                    'code' => 'helmet_resting',
+                    'readyAt' => $resting,
+                ]);
+            }
+            $db->insert('helmet_finds', [
+                'player_id' => $session['player_id'],
+                'found_at' => $now,
+                'town_id' => $home,
+                'host_town_id' => $host['id'],
+            ]);
+            return ['readyAt' => $now + self::HELMET_REST];
+        });
+    }
     public static function saloonReadyAt(mixed $at): int
     {
-        return $at === null || $at === false ? 0 : (int) $at + self::SALOON_REST;
+        return self::restedAt($at, self::SALOON_REST);
+    }
+    // When a rest that began at `at` (seconds, or none) ends; 0 when it never began.
+    private static function restedAt(mixed $at, int $rest): int
+    {
+        return $at === null || $at === false ? 0 : (int) $at + $rest;
     }
 
     // Guest names appear in another player's village: never a link or an email, only

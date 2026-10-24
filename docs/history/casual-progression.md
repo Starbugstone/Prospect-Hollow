@@ -44,12 +44,6 @@ These routines use the existing diorama clock and shared geometry. Actor counts 
 - Live actor positions changed across animation frames. Reduced motion stopped the diorama clock. A forced SVG fallback rendered three hens and one dog, with CSS animation switching from running to paused.
 - The normal browser flows finished with zero unhandled page errors and zero failed HTTP responses. The deliberate WebGL-disabled fallback was checked separately.
 
-![French results with an earned bonus and village action](../images/casual-results-french-small.png)
-
-![French village guidance and chapter stamps on a small phone](../images/casual-village-french-small.png)
-
-![Inhabited village with daily routines](../images/casual-village-life.png)
-
 ## Remaining content limit
 
 The two available village eras are finite and can finish before level 72, especially with chest coins and hammers. Chapter gifts continue through the final mine chapter; the museum, shop, saloon and forge remain usable. Extending meaningful construction for longer-term returning players still requires additional village content. The earlier economy measurements deliberately excluded chest rewards and are not a forecast of the faster reward-rich path.

@@ -44,7 +44,12 @@ afterEach(() => {
 });
 
 it('continues Tomorrow through Canopy and Riverlight with saved idempotent transitions', () => {
-  expect(ERAS.slice(-3).map(({ id }) => id)).toEqual(['tomorrow', 'canopy', 'riverlight']);
+  const ids = ERAS.map(({ id }) => id);
+  expect(ids.slice(ids.indexOf('tomorrow'), ids.indexOf('riverlight') + 1)).toEqual([
+    'tomorrow',
+    'canopy',
+    'riverlight',
+  ]);
   for (const [from, to] of [
     ['tomorrow', 'canopy'],
     ['canopy', 'riverlight'],
@@ -64,7 +69,7 @@ it('continues Tomorrow through Canopy and Riverlight with saved idempotent trans
     }
   }
   expect(isEraComplete(complete('riverlight'))).toBe(true);
-  expect(eraGate(complete('riverlight')).next).toBeUndefined();
+  expect(eraGate(complete('riverlight')).next?.id).toBe('skysail');
 });
 
 it('restores an existing Tomorrow save without buying new plots or changing established services', () => {

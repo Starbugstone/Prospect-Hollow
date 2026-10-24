@@ -40,10 +40,17 @@ it.each([...Object.keys(MOTOR_AGE_VARIANTS), ...MOTOR_AGE_BUILDINGS.map((b) => b
         addMotorModernization(d, root, kind, level);
       let meshes = 0,
         triangles = 0;
+      const visible = [];
+      root.updateMatrixWorld(true);
       root.traverse((part) => {
         if (part.isMesh) {
           meshes++;
           triangles += (part.geometry.index?.count ?? part.geometry.attributes.position.count) / 3;
+          visible.push([
+            Array.from(part.geometry.attributes.position.array),
+            part.matrixWorld.elements,
+            part.material.color.getHexString(),
+          ]);
         }
       });
       const size = new Box3().setFromObject(root).getSize(new Vector3());
@@ -54,14 +61,13 @@ it.each([...Object.keys(MOTOR_AGE_VARIANTS), ...MOTOR_AGE_BUILDINGS.map((b) => b
       expect(size.z).toBeLessThan(7.5);
       expect(size.y).toBeLessThan(8);
       expect(size.toArray().every(Number.isFinite)).toBe(true);
-      stages.push({ meshes, triangles, size: size.length() });
+      stages.push({ meshes, triangles, size: size.length(), visible: JSON.stringify(visible) });
     }
+    // A bounded modernization improves a working module inside its mature
+    // envelope. Visibility can change through glazing or operating geometry;
+    // it must not require indefinite parcel growth or extra mesh accumulation.
     for (let i = 1; i < stages.length; i++)
-      expect(
-        stages[i].meshes > stages[i - 1].meshes ||
-          stages[i].triangles > stages[i - 1].triangles ||
-          stages[i].size > stages[i - 1].size,
-      ).toBe(true);
+      expect(stages[i].visible).not.toBe(stages[i - 1].visible);
   },
 );
 it('runs one bus on connected roads with bounded geometry and a pausable shared clock', () => {

@@ -38,8 +38,6 @@ The game consumes `src/assets/leisure-meshes.json`, an indexed export of the eva
 
 These are mesh counts, not a claim about physical-device frame rates. All activity uses the existing scene clock, including pause, hidden-view and reduced-motion behavior.
 
-![Blender models in the running village](../images/leisure-blender-village.png)
-
 ## Prices and chest payouts
 
 Frontier and River & Rail prices, mining earnings, construction durations, hammer behavior and chest odds remain unchanged. Later prices increase moderately:
@@ -77,7 +75,3 @@ node scripts/compare-town-economy.mjs output/balance/mining.json /path/to/baseli
 ## Verification
 
 Regression coverage checks era/plot eligibility, connected paths, all stages, happiness previews and completion timing, duplicate actions, old saves and paid work, all chest settlement routes, legacy reward terms, bounded model geometry, actor movement and paused-clock stability. The complete verification runs formatting, 901 tests across 54 files and the production build. Browser checks at 1440×900, 390×844 and 320×740 cover the imported 3D assets, English/French cards, a real UI purchase and completion with happiness applied once, reload persistence, frozen reduced-motion animation, and keyboard selection in the deliberately forced SVG fallback. Puzzle completion in that flow is injected through the campaign action; the 720 engine runs separately exercise puzzle outcomes. Chromium uses software WebGL, so these checks do not establish physical-phone frame rates. The forced fallback emits the expected WebGL-creation diagnostic. The production preview also loads the complete 39-plot Motor village with no application errors or failed network requests; software-renderer ReadPixels warnings remain.
-
-![French village on mobile](../images/leisure-french-mobile.png)
-
-![French building card at 320 pixels](../images/leisure-french-card.png)

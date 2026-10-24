@@ -2,6 +2,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useCampaignStore } from '../src/stores/campaignStore';
 import { createTown } from '../src/data/town';
+import { advanceMoonstoneProduction } from '../src/data/moonstones';
 import {
   advanceForge,
   buildingIndicators,
@@ -21,7 +22,7 @@ afterEach(() => vi.restoreAllMocks());
 function readyTown() {
   const c = useCampaignStore();
   c.town = createTown();
-  Object.assign(c.town.buildings, { saloon: 5, blacksmith: 5, home: 5, farm: 5, well: 5 });
+  Object.assign(c.town.buildings, { saloon: 3, blacksmith: 3, home: 3, farm: 3, well: 3 });
   c.town.income = { at: 1000, stored: 10, remainder: 0 };
   c.town.forge = { charge: 1, progress: 0 };
   return c;
@@ -42,6 +43,11 @@ it('has independent building timers, saves them, and keeps forge production runn
   let c = readyTown();
   expect(c.collectSaloonIncome(1000)).toBe(10);
   expect(c.collectForgeTNT(1000)).toBe(true);
+  c.town.buildings.moonstoneWorkshop = 3;
+  c.town.moonstoneProduction = { progress: 0, stored: 3 };
+  expect(c.collectMoonstones(1000)).toBe(3);
+  for (let i = 0; i < 3; i++) c.town = advanceMoonstoneProduction(c.town);
+  expect(c.collectMoonstones(30999)).toBe(0);
   for (let i = 0; i < 5; i++) c.town = advanceForge(c.town);
   expect(c.town.forge.charge).toBe(1);
   expect(c.collectForgeTNT(30999)).toBe(false);
@@ -52,6 +58,8 @@ it('has independent building timers, saves them, and keeps forge production runn
   expect(c.canCollectForge(30999)).toBe(false);
   expect(c.canCollectForge(31000)).toBe(true);
   expect(c.collectForgeTNT(31000)).toBe(true);
+  expect(c.collectMoonstones(31000)).toBe(3);
+  expect(c.town.moonstones).toBe(6);
   expect(c.town.lastCollections.saloon).toBe(1000);
   expect(c.town.forge).toEqual({ charge: 0, progress: 0 });
 });
@@ -66,17 +74,29 @@ it('does not start a cooldown for empty collections or failed saves', () => {
   vi.spyOn(c, 'save').mockReturnValue(false);
   expect(c.collectSaloonIncome(1000)).toBe(0);
   expect(c.collectForgeTNT(1000)).toBe(false);
-  expect(c.town.lastCollections).toEqual({ saloon: null, blacksmith: null });
+  expect(c.town.lastCollections).toEqual({
+    saloon: null,
+    blacksmith: null,
+    moonstoneWorkshop: null,
+  });
   expect(c.town.coins).toBe(coins);
   expect(c.town.income.stored).toBe(10);
   expect(c.town.forge.charge).toBe(1);
   expect(c.powers.find((p) => p.id === 'tnt').quantity).toBe(quantity);
 });
 it('normalizes old saves and rejects invalid collection timestamps while accepting zero', () => {
-  expect(normalizeTown(createTown()).lastCollections).toEqual({ saloon: null, blacksmith: null });
+  expect(normalizeTown(createTown()).lastCollections).toEqual({
+    saloon: null,
+    blacksmith: null,
+    moonstoneWorkshop: null,
+  });
   const town = createTown();
   town.lastCollections = { saloon: 0, blacksmith: -1 };
-  expect(normalizeTown(town).lastCollections).toEqual({ saloon: 0, blacksmith: null });
+  expect(normalizeTown(town).lastCollections).toEqual({
+    saloon: 0,
+    blacksmith: null,
+    moonstoneWorkshop: null,
+  });
   expect(collectionCooldownRemaining(town, 'saloon', 29999)).toBe(1);
   expect(collectionCooldownRemaining(town, 'saloon', 30000)).toBe(0);
   expect(collectionCooldownRemaining(town, 'saloon', -1000)).toBe(30000);
