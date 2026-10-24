@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createApp } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
-import { createLocalIntegrityPlugin } from '../src/services/localIntegrity';
+import { createLocalIntegrityPlugin, guardedActionNames } from '../src/services/localIntegrity';
 import { freshProfile, useCampaignStore, SAVE_KEY } from '../src/stores/campaignStore';
 import { useInventoryStore } from '../src/stores/inventoryStore';
 import { useGameStore } from '../src/stores/gameStore';
@@ -384,4 +384,36 @@ it('applies synced scalar changes without replacing unchanged renderer state or 
   expect(campaign.integrity).toEqual(integrity);
   campaign.integrity = { version: 1, epoch: 'console', baseSequence: 0, actions: [] };
   expect(campaign.integrity.epoch).toBe('replacement');
+});
+
+// Actions the guard leaves unwrapped. They only read the campaign; any action that
+// changes state must be a guarded entry point or an internal helper, or it cannot save.
+const READ_ONLY_ACTIONS = ['canPlay', 'isUnlocked', 'profile', 'exportSave'];
+it('classifies every campaign action as a guarded entry point, an internal helper or read-only', () => {
+  let actions = [];
+  values.set(SAVE_KEY, JSON.stringify(freshProfile()));
+  pinia = createPinia();
+  pinia.use(createLocalIntegrityPlugin());
+  pinia.use(({ store, options }) => {
+    if (store.$id === 'campaign') actions = Object.keys(options.actions ?? {});
+  });
+  createApp({}).use(pinia);
+  setActivePinia(pinia);
+  const campaign = useCampaignStore(pinia);
+  const { normal, internal } = guardedActionNames();
+  const listed = [...normal, ...internal, ...READ_ONLY_ACTIONS];
+  expect(actions.length).toBeGreaterThan(40);
+  expect(actions.filter((name) => !listed.includes(name))).toEqual([]);
+  // No stale or doubly classified names survive a rename.
+  expect(listed.filter((name) => !actions.includes(name))).toEqual([]);
+  expect(new Set(listed).size).toBe(listed.length);
+  // The read-only actions really change nothing.
+  const saved = values.get(SAVE_KEY);
+  const integrity = JSON.stringify(campaign.integrity);
+  campaign.canPlay(1);
+  campaign.isUnlocked(1);
+  campaign.profile();
+  campaign.exportSave();
+  expect(values.get(SAVE_KEY)).toBe(saved);
+  expect(JSON.stringify(campaign.integrity)).toBe(integrity);
 });
