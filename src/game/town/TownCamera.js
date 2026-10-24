@@ -2,6 +2,7 @@ import { areasForSettlement, areaUnlocked } from '../../data/townPersonalisation
 import * as THREE from 'three';
 import { nextGoal } from './TownRules';
 import { PLOTS } from './TownLayout';
+import { valleyLot } from './TownParcels';
 import { GARDEN_PARCELS } from '../../data/townGardenDistrict';
 import { riverCenterX } from './TownRiver';
 import { keepCameraAboveTerrain } from './TownLandscape';
@@ -38,9 +39,10 @@ export function frameTown(d) {
     if (!PLOTS[id]) continue;
     const [x, z] = PLOTS[id];
     if (id === 'airport') {
-      for (const dx of [-10, 10])
-        for (const dz of [-20, 20]) {
-          const corner = point(x + dx, 8, z + dz);
+      const field = valleyLot(id);
+      for (const cx of [field.minX, field.maxX])
+        for (const cz of [field.minZ, field.maxZ]) {
+          const corner = point(cx, 8, cz);
           bounds.expandByPoint(corner);
           corners.push(corner);
         }

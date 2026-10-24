@@ -82,7 +82,8 @@ New settlements reuse these contracts; they never get a reduced copy.
 - **Taps never move the camera.** Tapping a building, parcel, monument site or villager
   (or its label) opens its popup or performs its tap action, and the camera stays put.
   Only explicit navigation (a Build or Projects row, a notice, a link to another
-  building, cinematics) may move it. `testing/town-tap-camera.test.js` covers the
+  building, cinematics) may move it. A tapped finish that grows the town skips the
+  overview reframe too. `testing/town-tap-camera.test.js` covers the
   valley and `testing/moon-parcels.test.js` the Moon.
 - **Every parcel is tappable in 3D**, with labels on or off, and shows a selection
   outline of its own shape. Every map settles taps through `createTapGesture`
@@ -103,6 +104,13 @@ New settlements reuse these contracts; they never get a reduced copy.
   `moonParcels()` in `src/data/moonSettlement.js`. Never draw a square glow or a
   differently shaped pad on a Moon parcel. `testing/moon-parcels.test.js` fails for a
   form, site state or future parcel that leaves the contract.
+- **Valley parcels share one definition.** Each valley plot is one rectangle from
+  `valleyLot`/`valleyParcel` (`src/game/town/TownParcels.js`): its lot (the fenced lot,
+  the airport field or a garden parcel) joined with the drawn model, refreshed when a
+  plot is redrawn in place. Each monument site is one circle (`valleySites`). The
+  upgrade glow, the tap fallback, the selection outline (`parcelOutlineGeometry`, shared
+  with the Moon) and the empty-lot fence all read it. `testing/valley-parcels.test.js`
+  covers every plot, site and swap.
 - **Villagers are alive and share one feel.** Every settlement's villagers use the
   valley villager skeleton (body at hip height, `{ upper, lower }` arms and legs) and
   the shared walk cycle `swingLimbs` (`src/game/town/TownGait.js`). They leave and enter

@@ -4,6 +4,7 @@ import { areaUnlocked } from '../../../data/townLandmarks';
 import * as THREE from 'three';
 import { createTownControls } from '../TownControls';
 import { createTapGesture } from '../TownTapGesture';
+import { PARCEL_OUTLINE_COLOR, parcelOutlineGeometry } from '../TownParcelOutline';
 import { TownPrimitives } from '../TownPrimitives';
 import { MoonSaucer } from './MoonSaucer';
 import { MoonPresentation } from './MoonPresentation';
@@ -676,7 +677,7 @@ export class MoonScene {
     }
     return null;
   }
-  /** Outline the chosen lot's pad, as the valley rings its selected plot. */
+  /** Outline the chosen lot's pad with the valley's shared parcel outline. */
   setSelected(id) {
     if (id === this.selected) return;
     this.selected = id;
@@ -684,10 +685,14 @@ export class MoonScene {
     const target = id && this.pickTargets.children.find((mesh) => mesh.userData.lot === id);
     if (target) {
       if (!this.selection) {
+        // The shared parcel outline for a unit pad, scaled to each pad below.
         this.selection = new THREE.Mesh(
-          new THREE.RingGeometry(1.06, 1.12, MOON_PARCEL_SIDES, 1, Math.PI / 2),
+          parcelOutlineGeometry(
+            { radius: 1, sides: MOON_PARCEL_SIDES },
+            { gap: 0.06, width: 0.06 },
+          ),
           new THREE.MeshBasicMaterial({
-            color: '#f2dda1',
+            color: PARCEL_OUTLINE_COLOR,
             side: THREE.DoubleSide,
             transparent: true,
             opacity: 0.9,
@@ -695,12 +700,11 @@ export class MoonScene {
           }),
         );
         this.selection.name = 'Selected Moon lot outline';
-        this.selection.rotation.x = -Math.PI / 2;
         this.selectionRoot = new THREE.Group();
         this.selectionRoot.add(this.selection);
       }
       const radius = target.scale.x;
-      this.selection.scale.set(radius, radius, 1);
+      this.selection.scale.set(radius, 1, radius);
       this.selectionRoot.position.set(target.position.x, 0.07, target.position.z);
       this.selectionRoot.rotation.y = target.rotation.y;
       this.scene.add(this.selectionRoot);

@@ -55,6 +55,7 @@ import { addServiceDrops } from './TownEvolution';
 import { TownScenery, sceneryAffectsNavigation } from './TownScenery';
 
 import { PLOTS, visiblePlots } from './TownLayout';
+import { parcelBounds, valleyParcel } from './TownParcels';
 import { updateTownShadowCoverage } from './TownShadows';
 import { GARDEN_PARCELS } from '../../data/townGardenDistrict';
 import { areasForSettlement, areaUnlocked } from '../../data/townLandmarks';
@@ -322,9 +323,11 @@ export function changeTown(
   labels,
   mineProgress,
   constructionId,
-  { reducedMotion = false, instant = false } = {},
+  { reducedMotion = false, instant = false, keepCamera = false } = {},
 ) {
   const started = performance.now();
+  // A change started by a tap on the map never reframes the camera (AGENTS.md).
+  d.keepCamera = keepCamera;
   const reveal = !reducedMotion && !instant;
   d.mineProgress = mineProgress;
   const works = d.staticScenery?.entries.get('mine-works')?.group;
@@ -355,7 +358,8 @@ export function changeTown(
       d.buildingRenderer.sync(d.world.children.filter((child) => child.userData.static));
       if (sceneryChanges.some(sceneryAffectsNavigation)) d.repairAnimalLife();
     }
-    if (expanded && d.overview) d.frameTown();
+    if (expanded && d.overview && !d.keepCamera) d.frameTown();
+    d.keepCamera = false;
     // No plot will activate to retire a construction cue shown for this change.
     if (d.cue) d.cue.visible = false;
     d.render();
@@ -371,6 +375,7 @@ export function changeTown(
     d.buildingRenderer.sync(d.world.children.filter((child) => child.userData.static));
     d.repairAnimalLife();
     d.render();
+    d.keepCamera = false;
     record('mine');
     return;
   }
@@ -393,6 +398,8 @@ export function changeTown(
       if (instant) for (const { id } of queue) swapPlot(d, id, town, labels, { immediate: true });
       else if (queue.length > 1) work.queue = queue;
       else swapPlot(d, queue[0].id, town, labels, { construction: queue[0].construction });
+      // Swaps never reframe; only a rebuild consumes the flag.
+      d.keepCamera = false;
       record('swap');
       return;
     } catch (error) {
@@ -639,6 +646,11 @@ export function tryActivatePlot(d) {
   if (d.cue) d.cue.visible = false;
   d.targets = d.targets.map((target) => (target === previous.group ? group : target));
   d.plotCache.set(id, { signature, group, movingPart, parts });
+  // The new model can be larger or smaller than the old one: its parcel and glow follow.
+  const parcel = valleyParcel(id, group);
+  d.parcels?.set(id, parcel);
+  if (id !== 'mine') d.upgradeGlow?.add(id, parcelBounds(parcel));
+  d.refreshSelection?.(id);
   d.navigation.replaceOwner(`plot:${id}`, entries, construction ? 'temporary-reveal' : 'completed');
   // A first opening can extend frontage paving or overhead service wires. Refresh
   // only those scenery roots here instead of leaving them stale until a full rebuild.
@@ -883,6 +895,7 @@ export function rebuildTown(
   d.staticScenery ??= new TownScenery();
   d.staticScenery.detach();
   d.upgradeGlow.clear();
+  d.parcels = new Map();
   d.clearGroup(d.world);
   d.world = new THREE.Group();
   d.scene.add(d.world);
@@ -931,7 +944,9 @@ export function rebuildTown(
     });
     let movingPart = cached?.movingPart ?? ready?.movingPart;
     if (!cached && !ready) movingPart = d.buildPlot(id, group, town, labels);
-    const bounds = new THREE.Box3().setFromObject(group);
+    // The parcel contract: glow, tap fallback and selection outline all read it.
+    const parcel = valleyParcel(id, group);
+    d.parcels.set(id, parcel);
     if (!cached) {
       const footprint = ready?.footprint ?? d.plotFootprints(id, town, group, false);
       registerFootprints(group, footprint.solids, {
@@ -943,7 +958,7 @@ export function rebuildTown(
             : 'unbuilt',
       });
     }
-    if (id !== 'mine') d.upgradeGlow.add(id, bounds);
+    if (id !== 'mine') d.upgradeGlow.add(id, parcelBounds(parcel));
     // Keep action icons at the front porch, below the roofline.
     d.anchors.at(-1).collection = point(x, 1, z + 2.2);
     // Keep the windmill rotor articulated while batching the rest of its building.
@@ -977,7 +992,9 @@ export function rebuildTown(
   for (const actors of retainedActorGroups) revalidateRetainedActors(d, actors, placementRoads);
   d.buildingRenderer.sync(d.world.children.filter((child) => child.userData.static));
   d.renderer.shadowMap.needsUpdate = true;
-  if (d.overview) d.frameTown();
+  // A town grown by a tap keeps the camera where the player left it.
+  if (d.overview && !d.keepCamera) d.frameTown();
+  d.keepCamera = false;
   drawNavigation(d);
   performanceMark('geometry-ready');
   performanceMark('navigation-ready');

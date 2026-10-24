@@ -95,6 +95,12 @@ describe('The village view opens a tapped building in place', () => {
     expect(script).toMatch(/const KEEP_CAMERA = false;/);
   });
 
+  it('outlines a monument site while its card is open', () => {
+    const scene = find(descriptor.template.ast, 'TownScene');
+    const selected = scene.props.find((prop) => prop.arg?.content === 'selected');
+    expect(selected.exp.content).toBe("dialogMode === 'monument' ? monumentSite : selected");
+  });
+
   it('still takes the camera to the place a need chip or the Moon chip names', () => {
     const scene = find(descriptor.template.ast, 'TownScene');
     expect(handler(scene, 'locate')).toBe('inspectBuilding');
@@ -108,6 +114,13 @@ describe('The village view opens a tapped building in place', () => {
     expect(select).toMatch(/^function selectBuilding\(id, locate = true\)/);
     expect(select).toContain('openMonument(id, locate)');
     expect(select).toContain('inspectBuilding(id, locate)');
+    // Finishing a ready building from a tap keeps the camera even if the town grows.
+    expect(select).toContain('finishBuilding(id, false, locate)');
+    expect(body('finishBuilding')).toContain('showConstruction(keepDirectory, locate)');
+    expect(body('showConstruction')).toContain('keepCamera: locate === KEEP_CAMERA');
+    expect(readFileSync('src/components/town/TownScene.vue', 'utf8')).toContain(
+      'keepCamera: newConstruction && !!props.construction?.keepCamera',
+    );
     expect(select).not.toContain('focusPlace');
     for (const name of ['inspectBuilding', 'openMonument']) {
       const opened = body(name);

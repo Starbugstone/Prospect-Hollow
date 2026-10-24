@@ -130,7 +130,7 @@
           @presentation-unavailable="presentationFallback = true"
           :forge-collectible="forgeCollectible"
           :builder-hammers="campaign.builderHammers"
-          :selected="selected"
+          :selected="dialogMode === 'monument' ? monumentSite : selected"
           :coach-plot="coaching ? tutorial.target.plot : null"
           :reduced-motion="settings.reducedMotion"
           :paused="
@@ -1538,7 +1538,7 @@ async function selectBuilding(id, locate = true) {
   if (!Object.hasOwn(BUILDING_BY_ID, id)) return;
   selected.value = id;
   if (constructionReady(town.value.projects[id])) {
-    finishBuilding(id);
+    finishBuilding(id, false, locate);
     return;
   }
   if (id === 'saloon' && collectIncome()) return;
@@ -1650,7 +1650,7 @@ function startWork(stage, keepDirectory = false) {
           ),
   };
 }
-function showConstruction(keepDirectory = false) {
+function showConstruction(keepDirectory = false, locate = true) {
   if (pendingPresentation(town.value)) keepDirectory = false;
   if (!keepDirectory) closeDialog();
   // The build list stays open: its builds swap in place without a reveal.
@@ -1658,19 +1658,21 @@ function showConstruction(keepDirectory = false) {
     id: selected.value,
     serial: (construction.value?.serial ?? 0) + 1,
     instant: keepDirectory,
+    // A finish tapped on the map leaves the camera where it is, even if the town grows.
+    keepCamera: locate === KEEP_CAMERA,
   };
   if (!keepDirectory) mapFrame.value?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
   // Moon work happens on the Moon map.
   if (!keepDirectory && BUILDING_BY_ID[selected.value]?.settlement === 'moon')
     nextTick(() => townScene.value?.openMoon());
 }
-function finishBuilding(id, keepDirectory = false) {
+function finishBuilding(id, keepDirectory = false, locate = true) {
   performanceMark('build-tap');
   const stage = town.value.projects[id]?.stage;
   if (!campaign.finishConstruction(id, stage)) return;
   performanceMark('build-accepted');
   selected.value = id;
-  showConstruction(keepDirectory);
+  showConstruction(keepDirectory, locate);
   celebrateBuilding();
   celebrateProject();
 }

@@ -101,7 +101,13 @@ export class TownUpgradeGlow {
     aura.scale.set(width + 0.25, height, depth + 0.25);
     aura.position.y = height / 2;
     group.add(halo, aura);
-    group.visible = false;
+    this.place(id, group);
+  }
+  // A plot redrawn in place replaces its glow and keeps whether it was showing.
+  place(id, group) {
+    const previous = this.plots.get(id);
+    group.visible = previous?.visible ?? false;
+    previous?.removeFromParent();
     this.root.add(group);
     this.plots.set(id, group);
   }
@@ -119,9 +125,7 @@ export class TownUpgradeGlow {
     aura.scale.set(radius + 0.12, height * 0.45, radius + 0.12);
     aura.position.y = (height * 0.45) / 2;
     group.add(halo, aura);
-    group.visible = false;
-    this.root.add(group);
-    this.plots.set(id, group);
+    this.place(id, group);
   }
   setAvailable(ids) {
     const active = new Set(ids);

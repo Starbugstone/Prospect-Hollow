@@ -63,17 +63,17 @@ import { TownRaid } from './TownActivity';
 import { TownEraIncident } from './TownEraIncident';
 import { eventKind } from '../../data/townEvents';
 import { plotUnlocked } from './TownRules';
-import { areasForSettlement, areaUnlocked } from '../../data/townLandmarks';
+import { AREA_BY_ID, areaUnlocked } from '../../data/townLandmarks';
 import { spaceHelmetTap } from './TownSpaceHelmet';
-import { buildLandscape, keepCameraAboveTerrain } from './TownLandscape';
+import { buildLandscape, groundHeight, keepCameraAboveTerrain } from './TownLandscape';
 
 import { PLOTS } from './TownLayout';
+import { parcelContains, valleyLot, valleySites } from './TownParcels';
+import { TownSkyMoon } from './TownSkyMoon';
+import { PARCEL_OUTLINE_COLOR, parcelOutlineGeometry } from './TownParcelOutline';
 
 export { PLOTS } from './TownLayout';
 const point = (x, y, z) => new THREE.Vector3(x, y, z);
-const skyDirection = new THREE.Vector3(),
-  skyForward = new THREE.Vector3(),
-  skyTarget = new THREE.Vector3();
 
 // Original geometry shares static scenery batches and animated actor instances.
 export class TownDiorama extends TownPrimitives {
@@ -138,6 +138,7 @@ export class TownDiorama extends TownPrimitives {
       };
     });
     this.upgradeGlow = new TownUpgradeGlow(this.scene);
+    this.skyMoon = new TownSkyMoon(this.scene);
     this.raycaster = new THREE.Raycaster();
     this.raycaster.layers.enable(1);
     this.elapsed = 0;
@@ -357,15 +358,12 @@ export class TownDiorama extends TownPrimitives {
   }
   /** Where a far sky direction sits on screen, in percent, and how much the camera faces it.
    * Runs on every camera frame, so it reuses scratch vectors. */
-  skyPoint(dx, dz) {
-    const direction = skyDirection.set(dx, 0, dz).normalize();
-    const forward = this.camera.getWorldDirection(skyForward);
-    const facing =
-      (forward.x * direction.x + forward.z * direction.z) / (Math.hypot(forward.x, forward.z) || 1);
-    const point = skyTarget.copy(this.camera.position).addScaledVector(direction, 400);
-    point.project(this.camera);
-    const distance = this.camera.position.distanceTo(this.controls.target);
-    return { x: (point.x + 1) * 50, y: (1 - point.y) * 50, facing, distance };
+  // The valley's Moon, fixed in the world; the scene above it keeps only its tap target.
+  showSkyMoon(lights) {
+    if (this.skyMoon?.show(lights)) this.render();
+  }
+  skyMoonPoint() {
+    return this.skyMoon?.screenPoint(this.camera) ?? { visible: false };
   }
   select(id) {
     if (this.selected === id && this.selection?.parent === this.world) return;
@@ -375,27 +373,40 @@ export class TownDiorama extends TownPrimitives {
       this.selection.geometry.dispose();
       this.selection.material.dispose();
     }
-    // Moon buildings have no valley lot to ring.
-    if (!PLOTS[id]) {
+    // The outline follows the parcel's own shape: a plot's rectangle or a site's
+    // circle. Moon buildings have no valley parcel to outline.
+    const parcel = this.parcelOf(id);
+    if (!parcel) {
       this.selection = null;
       this.render();
       return;
     }
-    const [x, z] = PLOTS[id];
     this.selection = new THREE.Mesh(
-      new THREE.RingGeometry(1.65, 1.71, 64),
+      parcelOutlineGeometry(parcel),
       new THREE.MeshBasicMaterial({
-        color: '#f2dda1',
+        color: PARCEL_OUTLINE_COLOR,
         side: THREE.DoubleSide,
         transparent: true,
         opacity: 0.85,
       }),
     );
     horizonMaterial(this.selection.material);
-    this.selection.rotation.x = -Math.PI / 2;
-    this.selection.position.set(x, 0.095, z);
+    // Plots sit on the level town floor; a site follows its own ground.
+    const ground = parcel.kind === 'site' ? groundHeight(parcel.x, parcel.z) : 0;
+    this.selection.position.set(parcel.x, ground + 0.095, parcel.z);
     this.world.add(this.selection);
     this.render();
+  }
+  // A redrawn plot's parcel can change size: its outline is redrawn with it.
+  refreshSelection(id) {
+    if (this.selected !== id) return;
+    this.selected = undefined;
+    this.select(id);
+  }
+  // A plot's drawn parcel (its lot before the town is drawn) or a monument site's circle.
+  parcelOf(id) {
+    if (PLOTS[id]) return this.parcels?.get(id) ?? valleyLot(id);
+    return valleySites().find((site) => site.id === id) ?? null;
   }
   selectInsetVisitor() {
     const actor = this.vipArrivals?.active?.actor;
@@ -479,22 +490,24 @@ export class TownDiorama extends TownPrimitives {
       new THREE.Vector3(),
     );
     if (!ground) return false;
-    for (const [id, [x, z]] of Object.entries(PLOTS)) {
-      if (
-        id !== 'mine' &&
-        plotUnlocked(this.town, id) &&
-        Math.abs(ground.x - x) < 1.55 &&
-        Math.abs(ground.z - z) < 1.4
-      ) {
-        this.onSelect(id);
-        return true;
-      }
+    // The ground under a tap answers for the plot whose parcel covers it (the nearest
+    // centre where drawn parcels meet), then for an open monument site.
+    let plot = null,
+      nearest = Infinity;
+    for (const id of Object.keys(PLOTS)) {
+      if (id === 'mine' || !plotUnlocked(this.town, id)) continue;
+      const parcel = this.parcelOf(id);
+      if (!parcelContains(parcel, ground.x, ground.z)) continue;
+      const distance = Math.hypot(ground.x - parcel.x, ground.z - parcel.z);
+      if (distance < nearest) [plot, nearest] = [id, distance];
     }
-    const site = areasForSettlement().find(
-      (area) =>
-        areaUnlocked(this.town, area) &&
-        Math.hypot(ground.x - area.positions[0][0], ground.z - area.positions[0][1]) <
-          area.radius * 0.75,
+    if (plot) {
+      this.onSelect(plot);
+      return true;
+    }
+    const site = valleySites().find(
+      (site) =>
+        areaUnlocked(this.town, AREA_BY_ID[site.id]) && parcelContains(site, ground.x, ground.z),
     );
     if (site) this.onSelect(site.id);
     return !!site;
@@ -750,6 +763,7 @@ export class TownDiorama extends TownPrimitives {
     this.frameCache.dispose();
     disposeInsetCache(this);
     this.upgradeGlow.dispose();
+    this.skyMoon?.dispose();
     this.actorRenderer.dispose();
     this.buildingRenderer.dispose();
     this.sceneryRenderer.dispose();

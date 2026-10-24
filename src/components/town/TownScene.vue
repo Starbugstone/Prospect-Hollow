@@ -210,15 +210,13 @@
       ref="skyMoonElement"
       type="button"
       class="town-sky-moon"
-      :style="{ left: `${skyMoon.x}%`, top: `${skyMoon.y}%` }"
+      :style="{ left: `${skyMoon.x}%`, top: `${skyMoon.y}%`, height: `${skyMoon.size}%` }"
       :aria-label="moonLabel"
       :title="moonLabel"
       @pointerdown.stop
       @pointerup.stop
       @click="openMoon"
-    >
-      <TownMoon :lights="moon.lights" :light-size="0.5" />
-    </button>
+    ></button>
     <TownMoonView
       v-if="moonOpen"
       ref="moonView"
@@ -254,7 +252,6 @@ import TownIcon from './TownIcon.vue';
 import TownMoon from './TownMoon.vue';
 import TownMoonView from './TownMoonView.vue';
 import { moonSettlement } from '../../data/moonSettlement';
-import { SKY_MOON_DIRECTION } from '../../data/skyCraft';
 import GameViewStatus from '../GameViewStatus.vue';
 import { TOWN_ACTIONS, buildingActionLabel } from '../../data/townIndicators';
 import { buildingStatusLabel } from '../../game/town/TownBuildingFeedback';
@@ -362,20 +359,23 @@ watch(moonReachable, (reachable) => {
 const skyMoon = shallowRef(null),
   skyMoonElement = ref(null);
 function placeSkyMoon() {
-  if (!scene?.skyPoint || !moon.value.homesteads) return followLabel(skyMoon, skyMoonElement);
-  const { x, y, facing, distance } = scene.skyPoint(...SKY_MOON_DIRECTION);
-  // Sky shows at the top of the frame once the view is wide (the land fades into the
-  // sky) or tilted until the horizon is in view; close up, the frame is all town.
-  const skyInView = distance > 95 || y > 8;
+  // The Moon is drawn in the scene, fixed in the world; this button is its tap target
+  // and follows it on screen, leaving with it when the camera turns or tilts away.
+  const point = moon.value.homesteads ? scene?.skyMoonPoint?.() : null;
   followLabel(
     skyMoon,
     skyMoonElement,
-    skyInView && facing > 0.3 && x > 6 && x < 94
-      ? { x, y: Math.min(Math.max(y - 9, 13), 34) }
-      : null,
+    point?.visible ? { x: point.x, y: point.y, size: point.radius * 2 } : null,
   );
 }
-watch(() => moon.value.homesteads, placeSkyMoon);
+// New Hollow's homesteads light up the painted Moon; its button follows on screen.
+watch(
+  () => moon.value.homesteads,
+  () => {
+    scene?.showSkyMoon(moon.value.lights);
+    placeSkyMoon();
+  },
+);
 const motionEnabled = () => props.active && !document.hidden && !props.paused && !moonOpen.value;
 // The building that would fix a shortage says so on its label.
 const NEED_HINTS = { water: 'Water needed', food: 'Food needed', comfort: 'Comfort needed' };
@@ -542,6 +542,7 @@ function followLabel(state, element, label = null, sameText = () => true) {
   if (element.value) {
     element.value.style.left = `${label.x}%`;
     element.value.style.top = `${label.y}%`;
+    if (label.size !== undefined) element.value.style.height = `${label.size}%`;
   }
 }
 const villagerLabel = shallowRef(null),
@@ -658,7 +659,11 @@ async function update() {
       { ...labels, mine: t('Mine') },
       Math.max(0, (props.nextLevel ?? 1) - 1),
       constructionId,
-      { reducedMotion: props.reducedMotion, instant },
+      {
+        reducedMotion: props.reducedMotion,
+        instant,
+        keepCamera: newConstruction && !!props.construction?.keepCamera,
+      },
     );
     lastVisual = visual;
     lastConstruction = props.construction?.serial;
@@ -794,6 +799,7 @@ async function initialize() {
       vipsHidden: props.readOnly,
     });
     scene.setLiveVisitors(props.liveVisitors, props.reducedMotion, props.liveVisitorTownId);
+    scene.showSkyMoon(moon.value.lights);
     await update();
     scene.vipArrivals?.reset(true);
     if (recoveryPose) {

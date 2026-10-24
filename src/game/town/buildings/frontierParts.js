@@ -1,4 +1,5 @@
 import { renderBuilding } from './BuildingRenderer';
+import { VALLEY_LOT, VALLEY_WELL_LOT } from '../TownParcels';
 
 // Frontier-era building parts shared by several buildings and the construction lots.
 export const TRIM = '#e8d3a7';
@@ -13,8 +14,10 @@ export function addCactus(d, parent, x, z) {
 // The fenced lot of an unbuilt or rising building: `wins` counts finished puzzles
 // toward it (-1 shows only its marker sign).
 export function addConstructionPlot(d, parent, id, wins, label) {
-  const w = id === 'well' ? 2.1 : 3.05,
-    depth = id === 'well' ? 2.1 : 2.7;
+  // The lot's size is the valley parcel contract's, so its fence, glow and tap agree.
+  const lot = id === 'well' ? VALLEY_WELL_LOT : VALLEY_LOT;
+  const w = lot.halfWidth * 2,
+    depth = lot.halfDepth * 2;
   for (const x of [-w / 2, w / 2])
     for (const z of [-depth / 2, depth / 2]) d.box(parent, 0.12, 0.6, 0.12, x, 0.3, z, '#a58a57');
   for (const z of [-depth / 2, depth / 2])
