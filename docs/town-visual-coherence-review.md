@@ -54,8 +54,8 @@ improved. The Aviation home's final balcony furniture remains subtle at
 overview scale; this is an accepted low-severity residual. A real-phone check
 is still recommended for the existing mobile town stutter issue #54.
 
-Other low, nonblocking residuals are explicit in the report: deliberate orbit
-rings can read unsupported (later helper-level roof brackets are proposed), the
+Other low, nonblocking residuals are explicit in the report. Deliberately hovering
+orbit rings are accepted unchanged. The
 short Windsong side link lacks an upper hatch, inherited homestead porches use
 stylized dimensions rather than a strict 1.8-metre door metric, and generic
 scaffolding does not yet isolate the new purpose module. Ground approaches remain
@@ -105,3 +105,62 @@ renderer captures cover every tier from the front and reverse, including a
 Riverlight control, plus complete settlements at desktop and narrow widths.
 Disposable snapshots, paired render-cost measurements and the integration
 handoff live under `output/watermill-review/` in the follow-up checkout.
+
+## Upper-gallery follow-up, 24 October 2026
+
+The business tower, apartments, hotel and city homes gain an attached upper
+gallery through the shared cozy and future architecture kits. Gallery floors and
+wall brackets stay through modernization. The second finish broadens the same
+gallery's glazing and unfolds its shades; the third opens those shades further.
+Existing window rows within the gallery band are replaced rather than drawn
+through the new glazing. The storey spacing has one definition shared with the
+actual wall renderers. Unsupported styles, incomplete structures and small annexes
+skip the gallery safely; a synthetic successor inherits its architecture.
+
+`towerRefinements.js` owns the four building definitions, storey alignment, palette
+roles and finish recipe. The WebGL helper and `TownTowerGallery.vue` read that
+contract. SVG apartment/hotel drawings now have their actual single tower; the
+business tower has its three setback sections, with its crown on the upper roof.
+Pod stacks and the radio mast retain their distinct structures and remain separate
+follow-ups. This completes four kinds within FUT-06, not the whole tall-building
+or façade backlog. The existing future renderer itself is unchanged.
+
+Each gallery uses 120 triangles and 14 meshes from cached geometry, with existing
+palette materials and no additional lights or animation. Separate face vertices
+have explicit indices, preserving normals on both sides and compatibility with
+the older primitive batching path. Regression coverage checks exact vertex bounds
+and triangle counts after batching. All existing architecture budgets remain in
+place. The complete-town static building comparison adds 216 / 216 / 72 / 456 /
+408 triangles in Canopy / Riverlight / Skysail / Stargazer / Moonward respectively,
+under 0.26% in every measured town; static building batch counts are unchanged.
+
+The six affected footprint families are regenerated. Decoded non-target shapes,
+physical sign mounts and setbacks match the preceding watermill batch. Twenty
+production itineraries across five eras reach identical door anchors along the
+same routes. The all-era animal-clearance suite checks both tested tiers against
+real scenery, including the earlier batching path. Dedicated gallery coverage also
+checks structural retention, roof-seat and ground clearance, bounded cached parts,
+successor/fallback behavior and SVG stage/count parity.
+
+Actual renderer captures cover all three finishes, both views and five eras, with
+complete-settlement desktop and narrow captures. The final checks, raw render-cost
+probes and integration artifacts are recorded separately under
+`output/tower-review/`. A probe that begins before deferred town life settles is
+not valid performance evidence; accepted samples require a fixed camera/population,
+stable draw counts and the independently measured geometry delta. Software-GPU
+measurements do not establish physical-phone frame rates.
+
+The clean Docker `npm run verify` passed 232 files / 4,312 tests, formatting,
+ESLint/knip, all-era footprint drift checks, the production build and bundle
+budgets. The dedicated gallery suite has 18 tests; all 34 animal-clearance cases
+pass. The first full attempt caught a batching index incompatibility, which is
+fixed and covered by the exact-bounds/triangle regression. Its failed/stopped
+log remains separate from the clean passing run.
+
+The final settled Stargazer town probe used four balanced before/after pairs and
+24 measured draws per sample (192 draws total), at 600×450 / DPR1 on SwiftShader.
+It kept all 17 people, 35 animals and the camera fixed, refreshed the static cache
+per draw and waited for GPU completion. Both versions used 170 draw calls; the
+controlled triangle delta was exactly 456. Median cost was 4.8 → 4.9 ms and p95
+was 6.5 ms in both. These are render-cost samples with simulation paused, not
+physical-device FPS or construction/settling measurements.

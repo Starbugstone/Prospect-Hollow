@@ -9,6 +9,8 @@ import { leisureModel } from '../LeisureAssets';
 import { BRIDGE, bridgeDeckHeight } from '../TownRiver';
 import { parkedVehicle } from '../TownVehicles';
 import { BufferGeometry, Float32BufferAttribute } from 'three';
+import { addTowerGallery } from './future/towerRefinements';
+import { galleryOverlaps, towerGallery, towerStoreys } from '../../../data/towerRefinements';
 
 // Every part uses the diorama's cached primitives. Geometry is built once per
 // plot purchase and merged by material; no animations, particles or light pools.
@@ -266,8 +268,11 @@ const FORMS = {
           ]
         : [[0, 1.25, s.height]];
     for (const [x, r, h] of towers) {
+      const gallery = towerGallery(s, { r, h }),
+        storeys = towerStoreys(s.style, { first: 1, storey: 1.2 });
       drum(d, g, r, h, x, 0.15, -0.35, p.shell);
-      for (let y = 1; y < h; y += 1.2) {
+      for (let y = storeys.first; y < h; y += storeys.storey) {
+        if (galleryOverlaps(gallery, y - 0.1, y + 1)) continue;
         disc(d, g, r + 0.12, y, x, -0.35, p.deep, r + 0.12, 0.1);
         disc(d, g, r + 0.14, y + 0.13, x, -0.35, p.green, r + 0.14, 0.12);
         for (const side of [-1, 1])
@@ -275,6 +280,7 @@ const FORMS = {
       }
       addCozyRoof(d, g, x, h + 0.15, -0.35, r + 0.28, s.era);
       doorway(d, g, x, r - 0.3, p);
+      addTowerGallery(d, g, s, { x, z: -0.35, r, h });
     }
     return { top: s.height + 0.5, radius: towers[0][1], x: towers[0][0], z: -0.35 };
   },
@@ -425,10 +431,13 @@ const FORMS = {
       [1.15, 3.1],
       [0.8, 2.6],
     ]) {
+      const gallery = towerGallery(s, { r, h });
       drum(d, g, r, h, 0, y, -0.4, p.glass);
       for (let f = 1; f < h; f += 1.15)
-        disc(d, g, r + 0.12, y + f, 0, -0.4, p.shell, r + 0.12, 0.1);
+        if (!galleryOverlaps(gallery, f - 0.05, f + 0.05))
+          disc(d, g, r + 0.12, y + f, 0, -0.4, p.shell, r + 0.12, 0.1);
       disc(d, g, r + 0.23, y + h, 0, -0.4, p.green, r + 0.23, 0.2);
+      addTowerGallery(d, d.group(g, 0, y, 0), s, { z: -0.4, r, h });
       y += h;
     }
     addCozyRoof(d, g, 0, y + 0.15, -0.4, 1, s.era);

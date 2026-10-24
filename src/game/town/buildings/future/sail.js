@@ -1,4 +1,6 @@
 import { futureShape } from '../futureShapes';
+import { addTowerGallery } from './towerRefinements';
+import { galleryOverlaps, towerGallery, towerStoreys } from '../../../../data/towerRefinements';
 
 // Skysail: stilted timber decks, sailcloth saddles stretched between masts,
 // saffron pennants and little garden islands floating on tethers.
@@ -76,17 +78,21 @@ export const sailKit = {
     return y + 0.32 + lift / 2;
   },
   round(d, g, s, { x = 0, z = 0, r, h }) {
-    const p = s.palette;
+    const p = s.palette,
+      gallery = towerGallery(s, { r, h }),
+      storeys = towerStoreys(s.style, { first: 1.3, storey: 1.1 });
     d.mesh(g, 'cylinder', [r + 0.3, 0.16, r + 0.3], [x, 0.4, z], p.timber);
     for (let n = 0; n < 4; n++) {
       const a = (n * TAU) / 4 + TAU / 8;
       d.box(g, 0.1, 0.4, 0.1, x + Math.sin(a) * r * 0.9, 0.2, z + Math.cos(a) * r * 0.9, p.deep);
     }
     d.mesh(g, 'cylinder', [r, h - 0.45, r], [x, 0.45 + (h - 0.45) / 2, z], p.shell);
-    for (let y = 1.3; y < h - 0.4; y += 1.1) {
+    for (let y = storeys.first; y < h - 0.4; y += storeys.storey) {
+      if (galleryOverlaps(gallery, y - 0.1, y + 0.6)) continue;
       d.mesh(g, 'cylinder', [r + 0.12, 0.08, r + 0.12], [x, y, z], p.timber);
       d.mesh(g, 'cylinder', [r + 0.02, 0.3, r + 0.02], [x, y + 0.45, z], p.glass);
     }
+    addTowerGallery(d, g, s, { x, z, r, h });
     return h;
   },
   // A peaked sailcloth tent with guy lines and a pennant mast.

@@ -1,4 +1,6 @@
 import { futureShape } from '../futureShapes';
+import { addTowerGallery } from './towerRefinements';
+import { galleryOverlaps, towerGallery, towerStoreys } from '../../../../data/towerRefinements';
 
 // Stargazer: night-blue ceramic walls, copper cornices, starlit windows and
 // white observatory domes split by a viewing slit.
@@ -54,15 +56,19 @@ export const observatoryKit = {
     return y + 0.44 + r;
   },
   round(d, g, s, { x = 0, z = 0, r, h }) {
-    const p = s.palette;
+    const p = s.palette,
+      gallery = towerGallery(s, { r, h }),
+      storeys = towerStoreys(s.style, { first: 1.2, storey: 1.15 });
     d.mesh(g, futureShape(d, 'octagon'), [r + 0.18, 0.26, r + 0.18], [x, 0.13, z], p.shell);
     d.mesh(g, futureShape(d, 'octagon'), [r, h - 0.26, r], [x, 0.26 + (h - 0.26) / 2, z], p.roof);
-    for (let y = 1.2; y < h - 0.3; y += 1.15) {
+    for (let y = storeys.first; y < h - 0.3; y += storeys.storey) {
       d.mesh(g, futureShape(d, 'octagon'), [r + 0.08, 0.08, r + 0.08], [x, y, z], p.timber);
-      for (const side of [-1, 1])
-        arched(d, g, x + side * r * 0.4, y + 0.5, z + r * 0.9, p, 0.24, 0.6);
+      if (!galleryOverlaps(gallery, y + 0.15, y + 0.85))
+        for (const side of [-1, 1])
+          arched(d, g, x + side * r * 0.4, y + 0.5, z + r * 0.9, p, 0.24, 0.6);
     }
     stars(d, g, x, 0.5, z + r * 0.93, r * 1.4, h - 0.8, p, 4);
+    addTowerGallery(d, g, s, { x, z, r, h });
     return h;
   },
   cap(d, g, s, { x = 0, z = 0, r, y }) {
