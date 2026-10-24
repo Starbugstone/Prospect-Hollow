@@ -27,6 +27,7 @@ jobs:
       - run: node scripts/export-save-rules.mjs --check
       - run: node scripts/create-integrity-fixtures.mjs --check
       - run: npm run verify
+      - run: npm audit --audit-level=moderate
   backend:
     runs-on: ubuntu-latest
     timeout-minutes: 20
