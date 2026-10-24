@@ -51,7 +51,7 @@ import { miningDepthBonus, CHEST_ECONOMY_VERSION } from '../data/economy';
 import { defineStore } from 'pinia';
 import { markRaw, toRaw } from 'vue';
 import { SHOP_ITEMS, rollShopStock, shopSlots, shopSpace } from '../data/shop';
-import { CHAPTERS, LEVEL_COUNT, POWERS, runChests, getStars } from '../data/campaign';
+import { CHAPTERS, LEVEL_COUNT, POWERS, powerRecord, runChests, getStars } from '../data/campaign';
 import { chapterLevelIds } from '../data/chapters';
 import { TIP_IDS } from '../data/guidance';
 import { grantChapterGift } from '../data/journey';
@@ -134,7 +134,7 @@ const defaults = () => ({
   inventoryNotice: '',
   lastSaloonIncome: 0,
   vipReceipts: [],
-  powers: POWERS.map((power) => ({ ...power, quantity: 0 })),
+  powers: POWERS.map((power) => ({ ...powerRecord(power), quantity: 0 })),
   honours: createHonours(),
 });
 // What honours are evaluated against. Spreading the store itself would run every getter.

@@ -1,9 +1,12 @@
 import { defineStore } from 'pinia';
 import { useGameStore } from './gameStore';
 import { useCampaignStore } from './campaignStore';
+import { POWERS } from '../data/campaign';
 
 // Powers that wait for a board tap; they are consumed on that tap.
-export const TARGETED_POWERS = new Set(['tnt', 'color-wand', 'tile-breaker']);
+export const TARGETED_POWERS = new Set(
+  POWERS.filter((power) => power.targeted).map(({ id }) => id),
+);
 
 export const useInventoryStore = defineStore('inventory', {
   getters: {

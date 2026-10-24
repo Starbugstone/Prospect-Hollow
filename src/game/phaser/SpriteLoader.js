@@ -9,8 +9,9 @@ import { spriteRef } from './spriteRefs';
 import { performanceMark } from '../PresentationWork';
 import { gemFinish, GEM_FINISHES } from '../../data/gemAppearance';
 import { DEEP_MINE_SPRITES } from '../../data/mineThemes';
+import { BONUS_ATLAS_ROWS, OBSTACLE_SPRITES, POWER_SPRITES } from '../../data/boardSprites';
 
-export const BONUS_TYPES = ['bomb', 'rainbow', 'cross'];
+export const BONUS_TYPES = BONUS_ATLAS_ROWS;
 const BONUS_FRAME_SIZE = 192;
 const BONUS_FRAME_COUNT = 8;
 
@@ -50,29 +51,14 @@ function preloadSvgAssets(scene) {
         width: 160,
         height: 160,
       });
-  scene.load.svg('gem-relic', '/art/relic.svg', { width: 160, height: 160 });
-  for (const type of [
-    'chain',
-    'seal',
-    'exit',
-    'seal-ruby',
-    'seal-sapphire',
-    'seal-emerald',
-    'lantern',
-    'survey',
-    'core',
-  ])
-    scene.load.svg(`tile-${type}`, `/art/obstacles/${type}.svg`, { width: 160, height: 160 });
+  for (const [id, file] of OBSTACLE_SPRITES)
+    scene.load.svg(id, `/art/${file}`, { width: 160, height: 160 });
   scene.load.svg('bonus-atlas', '/art/bonuses/atlas.svg', {
     width: BONUS_FRAME_SIZE * BONUS_FRAME_COUNT,
     height: BONUS_FRAME_SIZE * BONUS_TYPES.length,
   });
-  for (const type of ['tnt', 'color-wand', 'clear-row', 'shuffle', 'tile-breaker'])
-    scene.load.svg(`power-${type}`, `/art/powers/${type}.svg`, { width: 192, height: 192 });
-  for (const type of ['stone', 'reinforced', 'cracked'])
-    scene.load.svg(`block-${type}`, `/art/blocks/${type}.svg`, { width: 160, height: 160 });
-  for (const type of ['frost', 'cracked'])
-    scene.load.svg(`ice-${type}`, `/art/ice/${type}.svg`, { width: 160, height: 160 });
+  for (const [id, file] of POWER_SPRITES)
+    scene.load.svg(id, `/art/${file}`, { width: 192, height: 192 });
 }
 
 export function loadSpriteAtlas(scene) {
