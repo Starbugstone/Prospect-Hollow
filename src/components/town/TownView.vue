@@ -1195,7 +1195,7 @@ const villageStats = computed(() => {
       id: 'buildings',
       icon: 'home',
       label: t('Buildings'),
-      value: `${built.value}/${BUILDINGS.length}`,
+      value: `${built.value}/${currentEraPlots.value.length}`,
       detail: t('Active construction: {count}', { count: activeProjects.value.length }),
     },
     {
