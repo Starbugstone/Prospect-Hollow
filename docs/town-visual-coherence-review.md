@@ -47,9 +47,9 @@ The aircraft work is coordinated on Claude's separate branch. This change keeps
 its imported model exports, palette keys and airport hangar opening unchanged.
 It does not change puzzle rules, rewards or unlimited moves.
 
-Deferred art direction remains explicit in the inventory: sparse side/rear
-facades, larger open-site finish steps, broader city shell variety and optional
-future mill roof styling. Tall-building stage readability is only partly
+Deferred art direction remains explicit in the original inventory: sparse side/rear
+facades, larger open-site finish steps and broader city shell variety. The future
+watermill roof follow-up is recorded below. Tall-building stage readability is only partly
 improved. The Aviation home's final balcony furniture remains subtle at
 overview scale; this is an accepted low-severity residual. A real-phone check
 is still recommended for the existing mobile town stutter issue #54.
@@ -61,3 +61,47 @@ stylized dimensions rather than a strict 1.8-metre door metric, and generic
 scaffolding does not yet isolate the new purpose module. Ground approaches remain
 required. The scaffolding note is source-only; this audit has no construction
 screenshot and does not claim one.
+
+## Watermill roof follow-up, 24 October 2026
+
+The future watermill now shares the town's roof kits: Skysail's supported
+sailcloth, Stargazer's slit dome, and Moonward's solar gable with gold seams.
+The Twin palette uses the same homestead roof; actual retained finishes still
+come from the building's saved finish era. The working mill body, animated
+wheel, native loading expansion and entrance remain in place. Earlier eras keep
+their existing geometry.
+
+`watermillAppearance()` supplies the future style and palette to both renderers.
+`TownFutureRoof.vue` is extracted from the existing future-building drawing and
+reused by the watermill. Explicit component props preserve its template bindings
+in the browser and server rendering; matched Skysail, Stargazer and Moonward
+home SVG controls remain byte-for-byte identical after extraction.
+
+The additional roofs use cached geometry, static batching and no new animation
+or lights. Both roofs together stay below 900 triangles and 20 meshes. The
+mature plot adds 776 / 852 / 376 triangles in Skysail / Stargazer / Moonward,
+less than 0.5% of each measured town's static building triangles, with the same
+number of static building batches. This is geometry accounting, not a phone-FPS
+claim.
+
+A paired SwiftShader probe rendered 4,320 measured frames with production static
+batching and wheel instancing. Baseline and candidate each used four draw calls;
+both measured 0.10 ms median and 0.20 / 0.20 / 0.30 ms p95 in the three eras.
+This isolates the mill's render cost and does not establish full-town or physical
+mobile frame rates; the raw timings, including tail samples, are retained.
+
+`testing/watermill-future-roofs.test.js` covers successor/fallback behavior,
+retained wheel geometry, grounded sail supports, the loading stage, standing
+clearance at the entrance, wheel rotation clearance, cache/budget limits and SVG
+roof styles. All footprint families were regenerated and checked. Decoded
+before/after catalogs keep every non-watermill shape, sign mount and setback
+entry unchanged; real settlement public and final door routes also match the
+baseline in all three eras.
+
+Docker validation on the isolated follow-up passed `npm run verify`: 231 files /
+4,294 tests, formatting, ESLint/knip, footprint drift checking, production build
+and bundle budgets. Save rules and all 52 integrity fixtures match. Actual
+renderer captures cover every tier from the front and reverse, including a
+Riverlight control, plus complete settlements at desktop and narrow widths.
+Disposable snapshots, paired render-cost measurements and the integration
+handoff live under `output/watermill-review/` in the follow-up checkout.

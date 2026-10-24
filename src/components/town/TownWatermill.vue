@@ -1,5 +1,10 @@
 <template>
-  <g stroke="#78664d" stroke-width="3" stroke-linejoin="round">
+  <g
+    stroke="#78664d"
+    stroke-width="3"
+    stroke-linejoin="round"
+    :data-watermill-roof="style.future?.style"
+  >
     <path
       d="M110-21C80-18 48-10 46 9S77 34 120 36"
       fill="none"
@@ -12,14 +17,33 @@
       stroke="#598f8c"
       stroke-width="16"
     />
-    <path d="M-65 0V-90L-6-117 37-78V12Z" :fill="style.wall" />
-    <path d="m-75-87 69-44 57 50-17 7-42-33-56 35Z" :fill="style.roof" />
+    <path
+      :d="style.future ? 'M-65 0V-90H37V12Z' : 'M-65 0V-90L-6-117 37-78V12Z'"
+      :fill="style.wall"
+    />
+    <TownFutureRoof
+      v-if="style.future"
+      :style-id="style.future.style"
+      :p="style.future.palette"
+      :x="-8"
+      :w="108"
+      :top="-90"
+    />
+    <path v-else d="m-75-87 69-44 57 50-17 7-42-33-56 35Z" :fill="style.roof" />
     <path d="M-48-6v-46h22v52" fill="#685139" />
     <path d="M-57-72h23v19h-23Zm46 10h22v21h-22Z" fill="#8baead" />
     <path v-if="level >= 2" d="m-69-42 108 17 6 12-118-18Zm4 13v33m100-13v33" :fill="style.roof" />
     <g v-if="level >= 3">
       <path d="M-94-2v-67l29 5V5Z" :fill="style.wall" />
       <path d="m-98-69 35 5 15-11-34-5Z" :fill="style.roof" />
+      <TownFutureRoof
+        v-if="style.future"
+        :style-id="style.future.style"
+        :p="style.future.palette"
+        :x="-79"
+        :w="35"
+        :top="-68"
+      />
       <path d="m-98-8 122 21 8-12-122-20Z" fill="#a79b80" />
       <path d="m-99-62 123 21 8-12-122-20Z" :fill="style.roof" />
       <path d="M-96-61v52M22-40v54M-72-63l24 3v38" fill="none" />
@@ -67,6 +91,7 @@
 import { computed } from 'vue';
 import { watermillAppearance } from '../../data/watermill';
 import TownCozyRoof from './TownCozyRoof.vue';
+import TownFutureRoof from './TownFutureRoof.vue';
 const props = defineProps({ era: String, level: Number });
 const style = computed(() => watermillAppearance(props.era));
 </script>
