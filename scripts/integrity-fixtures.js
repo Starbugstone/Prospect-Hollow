@@ -108,7 +108,7 @@ export function createIntegrityFixtures() {
     fixtures.push({ name, before, after, serverNow });
     campaign.endRun(campaign.activeRun);
   };
-  const victory = (campaign, options = {}, level = generateLevelConfigs()[0]) => {
+  const victory = (campaign, options = {}, level = generateLevelConfigs(1)[0]) => {
     const runId = campaign.beginRun('normal', level.id);
     const rewards = campaign.recordVictory({
       id: level.id,
@@ -510,6 +510,27 @@ export function createIntegrityFixtures() {
           campaign.recordContinuous({ id: 1, runId, jewels: 3, score: 300 }),
           'continuous score',
         );
+      },
+    );
+    fixture(
+      'continuous honours grow beyond the coin allowance without a victory',
+      (profile) => {
+        develop(profile, 'twin-hollows');
+        for (let id = 1; id <= 249; id++) profile.records[id] = { score: 1, stars: 1 };
+      },
+      (campaign) => {
+        const runId = campaign.beginRun('continuous', 249);
+        const visit = (ruby, score, relics) =>
+          campaign.recordContinuous({
+            id: 249,
+            runId,
+            jewels: ruby,
+            score,
+            tally: { gems: { ruby }, fusions: { 'bomb+cross': 1 }, mine: { relics } },
+          });
+        expectSuccess(visit(600, 25000, 1), 'continuous first collection');
+        expectSuccess(visit(600, 25000, 1), 'continuous retry');
+        expectSuccess(visit(2600, 100000, 2), 'continuous collection beyond coins');
       },
     );
     fixture(

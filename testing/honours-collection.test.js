@@ -400,7 +400,7 @@ describe('The honour detail', () => {
     expect(rungs(html)).toHaveLength(4);
     expect(bronze).toContain('is-earned');
     expect(bronze).toContain('Bronze · Easy');
-    expect(bronze).toContain('Light 10 lanterns in completed puzzles.');
+    expect(bronze).toContain('Light 10 lanterns in normal or continuous play.');
     expect(bronze).toContain('Earned ');
     expect(silver).toContain('is-next');
     expect(silver).toContain('Silver · Medium');
@@ -408,10 +408,10 @@ describe('The honour detail', () => {
     expect(silver).toContain('42 / 50 lanterns lit');
     expect(silver).toContain('role="progressbar"');
     expect(gold).toContain('Gold · Hard');
-    expect(gold).toContain('Light 125 lanterns in completed puzzles.');
+    expect(gold).toContain('Light 125 lanterns in normal or continuous play.');
     expect(gold).toContain('Not yet earned');
     expect(gold).not.toContain('progressbar');
-    expect(diamond).toContain('Light 275 lanterns in completed puzzles.');
+    expect(diamond).toContain('Light 275 lanterns in normal or continuous play.');
     expect(html).toContain('Bronze · 1 of 4');
     expect(html).toContain('Where to make progress');
     expect(html).toMatch(/<button[^>]*>\s*Add to showcase/);

@@ -815,6 +815,49 @@ foreach ($fixtures->fixtures as $fixture) {
         SaveIntegrity::receipt($result)['status'] === 'tracked',
         $fixture->name . ' follows actual frontend rules',
     );
+    if ($fixture->name === 'continuous honours grow beyond the coin allowance without a victory') {
+        foreach (
+            [
+                'unknown version' => ['version' => 99],
+                'unknown gem' => ['gems' => ['diamond' => 1]],
+                'unknown fusion' => ['fusions' => ['bomb+invented' => 1]],
+                'more gems than jewels' => ['gems' => ['ruby' => 2601]],
+                'negative count' => ['gems' => ['ruby' => -1]],
+                'fractional count' => ['gems' => ['ruby' => 1.5]],
+                'nested count' => ['gems' => ['ruby' => ['bad']]],
+                'invented mine element' => ['mine' => ['invented' => 1]],
+                'too many authored pieces' => ['mine' => ['relics' => 3]],
+                'regressing claim' => ['gems' => ['ruby' => 599]],
+            ]
+            as $label => $patch
+        ) {
+            $badClaim = integrityData($fixture->after);
+            $last = array_key_last($badClaim['integrity']['actions']);
+            $badClaim['integrity']['actions'][$last]['data']['honours'] = array_replace(
+                $badClaim['integrity']['actions'][$last]['data']['honours'],
+                $patch,
+            );
+            integrityDenied(
+                fn() => $validator->accept(integrityObject($badClaim), $starting, $clock),
+                'save_integrity_mismatch',
+                'continuous claim rejects ' . $label,
+            );
+        }
+        $enrolled = $validator->accept($fixture->after, null, $clock);
+        $continued = integrityData($enrolled);
+        // Enrollment captures the cumulative claim. Repeating it at a fresh
+        // sequence must not turn the uploaded baseline into a second collection.
+        $claim = integrityData($fixture->after)['integrity']['actions'];
+        $last = end($claim);
+        $last['sequence'] = SaveIntegrity::receipt($enrolled)['ackSequence'] + 1;
+        $last['id'] = integrityUuid(9000);
+        $continued['integrity']['actions'] = [$last];
+        $same = $validator->accept(integrityObject($continued), $enrolled, $clock);
+        assertIntegrity(
+            $same->integrity->context->honours == $enrolled->integrity->context->honours,
+            'mid-visit enrollment does not recredit a cumulative continuous claim',
+        );
+    }
     if (
         str_starts_with($fixture->name, 'legacy moonstone') ||
         str_starts_with($fixture->name, 'pending legacy moonstone')

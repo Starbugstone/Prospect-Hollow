@@ -17,7 +17,7 @@ import {
   isAnchored,
   isAdjacent,
 } from '../../game/engine/TileRules';
-import { tallySteps } from '../../data/honours';
+import { tallyContinuousMine, tallySteps } from '../../data/honours';
 import { useInventoryStore } from '../inventoryStore';
 import { plain, workingTiles } from './boardData';
 import { storeTimers } from './storeTimers';
@@ -391,10 +391,20 @@ export function queueSwap(store, aIndex, bIndex) {
 }
 
 export function commitResolution(store, resolution) {
-  // Only moves that finished animating count; victory credits the tally to honours.
-  if (store.playMode === 'normal')
-    tallySteps(toRaw(store.honourTally), resolution.steps, { recovery: resolution.recovery });
+  // Only moves that finished animating count in either mode.
+  tallySteps(toRaw(store.honourTally), resolution.steps, { recovery: resolution.recovery });
   store.board = plain(resolution.board);
+  if (store.playMode === 'continuous') {
+    tallyContinuousMine(
+      toRaw(store.honourTally),
+      store.currentLevel?.config,
+      store.board,
+      store.tiles,
+      store.oreOrders,
+      { recovery: resolution.recovery },
+    );
+    store.syncContinuous();
+  }
   store.pendingBoardState = null;
   store.boardVersion += 1;
   store.remainingLayers = Math.max(0, store.remainingLayers - (resolution.layersCleared ?? 0));
@@ -486,7 +496,6 @@ export function applyScoring(store, steps) {
     store.score += total;
     store.updateObjectives({ scoreDelta: total });
   }
-  store.syncContinuous();
   return total;
 }
 

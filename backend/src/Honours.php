@@ -32,6 +32,9 @@ final class Honours
         'fusions' => 'map',
         'forge' => 'number',
         'guardian' => 'number',
+        'continuousGems' => 'number',
+        'continuousBest' => 'number',
+        'continuousLevels' => 'map',
     ];
     /** The town's incident, BANDIT_EVENT in src/data/town.js. */
     private const INCIDENT = 'dusty-trail-visitors';
@@ -323,7 +326,7 @@ final class Honours
                 if (
                     $count > 0 &&
                     preg_match(self::COUNT_KEY, (string) $key) &&
-                    count($counts[$name]) < self::COUNT_KEYS
+                    count($counts[$name]) < ($name === 'continuousLevels' ? 1024 : self::COUNT_KEYS)
                 ) {
                     $counts[$name][(string) $key] = $count;
                 }
@@ -349,7 +352,12 @@ final class Honours
             foreach ($value as $key => $count) {
                 $a[$name][$key] = max($a[$name][$key] ?? 0, $count);
             }
-            $a[$name] = array_slice($a[$name], 0, self::COUNT_KEYS, true);
+            $a[$name] = array_slice(
+                $a[$name],
+                0,
+                $name === 'continuousLevels' ? 1024 : self::COUNT_KEYS,
+                true,
+            );
         }
         return $a;
     }
@@ -485,6 +493,21 @@ final class Honours
             'score' => $this->bestScore($state, $measure)['ratio'] ?? 0,
             'era' => $this->rules()->eraStep($state['town']),
             'landmark' => $this->landmark($state['town'], $measure['area'] ?? null),
+            'buildingLevels' => array_sum(
+                array_map(
+                    fn($id) => is_string($id)
+                        ? self::count($state['town']['buildings'][$id] ?? null)
+                        : 0,
+                    is_array($measure['buildings'] ?? null) ? $measure['buildings'] : [],
+                ),
+            ),
+            'resource' => self::count($state['town'][$measure['earned'] ?? ''] ?? null),
+            'landmarks' => array_sum(
+                array_map(
+                    fn($id) => $this->landmark($state['town'], $id),
+                    is_array($measure['areas'] ?? null) ? $measure['areas'] : [],
+                ),
+            ),
             // One counter, or the total of a counter map when no key is named.
             'count' => is_array($counts)
                 ? (is_string($key)

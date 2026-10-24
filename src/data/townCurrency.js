@@ -1,6 +1,7 @@
 // Prices default to coins. Unknown currencies fail closed, including incomplete
 // future definitions. Monument definitions may declare currency: 'moonstones'.
-const currencies = new Set(['coins', 'moonstones']);
+export const TOWN_CURRENCIES = Object.freeze(['coins', 'moonstones']);
+const currencies = new Set(TOWN_CURRENCIES);
 export const priceCurrency = (price) => price?.currency ?? 'coins';
 export const currencyBalance = (town, currency = 'coins') =>
   currencies.has(currency) ? (town?.[currency] ?? 0) : 0;

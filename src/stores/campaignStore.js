@@ -37,6 +37,7 @@ import {
   createHonours,
   creditCounter,
   creditRun,
+  creditContinuous,
   evaluateHonours,
   mergeHonours,
   normalizeHonours,
@@ -589,7 +590,7 @@ export const useCampaignStore = defineStore('campaign', {
     endRun(runId) {
       if (this.activeRun === runId) this.activeRun = null;
     },
-    recordContinuous({ id, runId, jewels, score }) {
+    recordContinuous({ id, runId, jewels, score, tally = null }) {
       const at = Date.now();
       const run = this.continuousRun;
       if (
@@ -618,14 +619,16 @@ export const useCampaignStore = defineStore('campaign', {
         observed - (run.moonstoneJewels ?? 0),
       );
       const best = Math.max(previous.score, score);
-      // Full-workshop observations are journaled too: a later collection in this
-      // run must not retroactively bank the discarded gems.
+      const claim = tally ? { version: 1, ...runClaim(tally), mine: { ...tally.mine } } : null;
+      const changed = claim && JSON.stringify(claim) !== JSON.stringify(run.honours);
+      // Both lifecycles observe the unchanged cumulative jewels. A full workshop
+      // still journals observations so later collection cannot bank discarded gems.
       const workshopObservation =
         !!this.town.buildings.moonstoneWorkshop &&
         (previous.moonstoneGems ?? 0) <
           MOONSTONE_ECONOMY.continuousGemsPerPuzzle * MOONSTONE_ECONOMY.continuousPuzzlesPerLevel &&
         observed > (run.moonstoneJewels ?? 0);
-      const receipt = delta || workshopObservation;
+      const receipt = delta || workshopObservation || changed || (claim && best > previous.score);
       if (!receipt && previous.score === best && this.continuousRecords[id]) return true;
       return this.commit(
         {
@@ -633,6 +636,7 @@ export const useCampaignStore = defineStore('campaign', {
             ...run,
             credited: Math.max(run.credited, earned),
             moonstoneJewels: observed,
+            ...(claim ? { honours: claim } : {}),
           },
           continuousRecords: {
             ...this.continuousRecords,
@@ -647,11 +651,22 @@ export const useCampaignStore = defineStore('campaign', {
             ...stock.town,
             coins: Math.min(Number.MAX_SAFE_INTEGER, this.town.coins + delta),
           },
+          ...(claim
+            ? { honours: creditContinuous(this.honours, run.honours, claim, id, score) }
+            : {}),
         },
         receipt
           ? {
               kind: 'continuous',
-              data: { runId, levelId: id, jewels, score, at, moonstoneVersion: MOONSTONE_VERSION },
+              data: {
+                runId,
+                levelId: id,
+                jewels,
+                score,
+                at,
+                moonstoneVersion: MOONSTONE_VERSION,
+                ...(claim ? { honours: claim } : {}),
+              },
             }
           : null,
       );
