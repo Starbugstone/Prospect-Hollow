@@ -386,14 +386,14 @@ export function createIntegrityFixtures() {
       },
       (campaign) => {
         const run = campaign.beginRun('continuous', 1);
-        for (const jewels of [99, 99, 200, 250])
+        for (const jewels of [299, 299, 600, 750])
           expectSuccess(
             campaign.recordContinuous({ id: 1, runId: run, jewels, score: jewels }),
             'continuous stock',
           );
         const retry = campaign.beginRun('continuous', 1);
         expectSuccess(
-          campaign.recordContinuous({ id: 1, runId: retry, jewels: 500, score: 500 }),
+          campaign.recordContinuous({ id: 1, runId: retry, jewels: 1500, score: 1500 }),
           'continuous retry',
         );
       },
@@ -406,14 +406,14 @@ export function createIntegrityFixtures() {
       },
       (campaign) => {
         const run = campaign.beginRun('continuous', 1);
-        for (const jewels of [250, 1000])
+        for (const jewels of [750, 1000])
           expectSuccess(
             campaign.recordContinuous({ id: 1, runId: run, jewels, score: jewels }),
             'full stock',
           );
         expectSuccess(campaign.collectMoonstones(), 'full collection');
         expectSuccess(
-          campaign.recordContinuous({ id: 1, runId: run, jewels: 1100, score: 1100 }),
+          campaign.recordContinuous({ id: 1, runId: run, jewels: 1300, score: 1300 }),
           'resumed stock',
         );
       },

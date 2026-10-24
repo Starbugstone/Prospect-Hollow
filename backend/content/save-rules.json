@@ -51367,7 +51367,7 @@
       "version": 2,
       "runs": 3,
       "storageBatches": 10,
-      "continuousGemsPerPuzzle": 100,
+      "continuousGemsPerPuzzle": 300,
       "continuousPuzzlesPerLevel": 3,
       "saleCoins": 250,
       "buildings": [
@@ -52181,5 +52181,5 @@
       "seenGeneration": 4
     }
   },
-  "contentDigest": "114adfd70662bea5fece609c04f2c2b4dc227a86f620d721bc4f84edb7d5a985"
+  "contentDigest": "3fb2bf0ad1e1a582ad939efb8ada9e130648ccca3a07c15fd987b48a13097adb"
 }

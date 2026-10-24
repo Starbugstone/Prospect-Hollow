@@ -6,7 +6,7 @@ export const MOONSTONE_ECONOMY = Object.freeze({
   version: MOONSTONE_VERSION,
   runs: 3,
   storageBatches: 10,
-  continuousGemsPerPuzzle: 100,
+  continuousGemsPerPuzzle: 300,
   continuousPuzzlesPerLevel: 3,
   saleCoins: 250,
 });

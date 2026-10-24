@@ -27,7 +27,7 @@ upgrading the same save therefore cannot add credit twice. Sync retains its
 whole-profile conflict/recovery policy; it never sums balances or stock.
 
 `continuousRecords[levelId].moonstoneGems` stores accepted workshop gems for that
-level, including its partial hundred, from 0 through 300. Missing means zero;
+level, including its partial credit, from 0 through 900. Missing means zero;
 loading bounds it like the continuous coin allowance. It survives visits,
 reloads, imports and cloud sync. `continuousRun.moonstoneJewels` is a transient
 high-water mark for the active run's total jewels; the server retains its matching
@@ -74,18 +74,18 @@ size, the last batch fills only the remaining space. The upgrade preview shows b
 secondary visitor benefit. The forge keeps its original single-ready-batch behavior; the workshop uses `advanceStoredPuzzleProduction`,
 which shares the batch step with `advancePuzzleProduction`.
 
-Once the workshop is built, **100 gems in continuous mode count as one puzzle of
-workshop progress**. Each level can supply **3 puzzle credits / 300 gems over the
+Once the workshop is built, **300 gems in continuous mode count as one puzzle of
+workshop progress**. Each level can supply **3 puzzle credits / 900 gems over the
 lifetime of the town**, independently of its 25-coin allowance. Eligible partial
-hundreds persist between visits. The counter measures accepted gems, so partial
+credits persist between visits. The counter measures accepted gems, so partial
 credit is preserved without granting a whole puzzle early. Repeated or lower
 total-jewel settlements cannot credit twice.
 
 Gems collected while the workshop is unbuilt or full are discarded and do not
 consume the remaining allowance. When a settlement fills the workshop, only the
 gems needed to reach full stock count; the rest are discarded. For example, with
-one puzzle needed to fill storage, a 250-gem settlement uses 100 and discards 150.
-After collection, new gems can use the remaining 200-gem allowance. Full-workshop
+one puzzle needed to fill storage, a 750-gem settlement uses 300 and discards 450.
+After collection, new gems can use the remaining 600-gem allowance. Full-workshop
 observations are journaled so even a collection during the same active run cannot
 retroactively recover discarded gems. This uses only the continuous receipt's
 total `jewels`, with stock, allowance, coins and receipt persisted atomically.
@@ -196,35 +196,40 @@ these standalone costs do not include earlier monument payments.
 The maximum lifetime continuous contribution is **3 puzzle credits × number of
 unlocked levels**, provided every allowance is unused and storage is collected.
 At workshop level 3 this equals that many stones. All 546 current levels provide
-**1,638 credits / 1,638 stones for 163,800 accepted gems**, compared with zero
+**1,638 credits / 1,638 stones for 491,400 accepted gems**, compared with zero
 before this change. At workshop level 1 the same allowances yield 546 stones,
 so using them earlier spends the same lifetime allowance at a lower yield.
 Starting from zero balance at workshop level 3:
 
-| Cumulative monument spending | Continuous levels at 300 gems each | Accepted gems | Stones produced |
+| Cumulative monument spending | Continuous levels at 900 gems each | Accepted gems | Stones produced |
 | ---------------------------- | ---------------------------------- | ------------- | --------------- |
-| 20                           | 7                                  | 2,100         | 21              |
-| 50                           | 17                                 | 5,100         | 51              |
-| 90                           | 30                                 | 9,000         | 90              |
-| 140                          | 47                                 | 14,100        | 141             |
-| 200                          | 67                                 | 20,100        | 201             |
-| Both monuments: 400          | 134                                | 40,200        | 402             |
+| 20                           | 7                                  | 6,300         | 21              |
+| 50                           | 17                                 | 15,300        | 51              |
+| 90                           | 30                                 | 27,000        | 90              |
+| 140                          | 47                                 | 42,300        | 141             |
+| 200                          | 67                                 | 60,300        | 201             |
+| Both monuments: 400          | 134                                | 120,600       | 402             |
 
 One measured late-game normal puzzle pays **75,621 coins**. Selling all 1,638
 continuous stones yields **409,500 coins**, or **5.42** such payouts. Selling
 400 stones yields 100,000 coins, or 1.32 payouts. A full level-3 workshop sells
 for 7,500 coins, 9.92% of one payout. The sale rate remains 250 coins per stone.
 
-**Balance risk:** continuous play can pay for both monuments without the 376
-normal-puzzle earning trajectory: 134 levels / 40,200 gems at level 3, or 400
-levels / 120,000 gems at level 1. Construction still requires normal completions.
-This is a large optional acceleration and grows with the level catalog; it is
-not an estimate of elapsed play time, since continuous sessions were not timed.
-If a slower pace is desired, a suggested future tuning is 300 gems per puzzle
-credit (three times the gem effort), with an explicit migration/receipt version.
-The decided 100-gem rate, three-credit allowance, prices and sale rate are retained
-in this change. The normal production rate and prompt-collector milestones are
-unchanged; delayed collectors now retain much more of that production.
+**Parity rationale:** the same seed-1 campaign's `results[].jewels` has a median
+of **284.5 (about 285) gems per normal puzzle in levels 403–546**, versus **215
+across all 546 levels**, with **10.21 gems per move** overall. The initial unshipped 100-gem credit
+would have advanced workshop production about three times faster per move than
+late-game normal play. **300 gems per credit** brings the effort close to the
+late-game normal-puzzle median while retaining three lifetime credits per level.
+Both monuments now require 134 fully used continuous levels / **120,600 gems**
+at workshop level 3 (about 12,000 moves at that measured gem yield), instead of
+40,200 gems. Construction still requires normal completions. This is an effort
+comparison, not a measured continuous-session duration. The lifetime maximum
+still grows with unlocked levels, but consumes 900 accepted gems per level.
+This rate is revised before shipping, so Moonstone version 2 and profile schema 4
+remain unchanged; the regenerated server catalog supplies the same rate to replay.
+Normal production, prompt-collector milestones, prices and the sale rate are
+unchanged; delayed collectors retain production until storage fills.
 
 ## API for phase 2 monuments
 

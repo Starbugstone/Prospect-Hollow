@@ -40,6 +40,11 @@ try {
   const outputs = [];
   for (const seed of [...new Set(measured.results.map((r) => r.seed))]) {
     const runs = measured.results.filter((r) => r.seed === seed);
+    const median = (values) => {
+      const sorted = [...values].sort((a, b) => a - b);
+      const middle = Math.floor(sorted.length / 2);
+      return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+    };
     const tail = runs
       .slice(-6)
       .map((r) => r.coins)
@@ -167,6 +172,16 @@ try {
       seed,
       measuredLevels: runs.length,
       replayPayout,
+      gemCalibration: {
+        allLevelsMedian: median(runs.map((r) => r.jewels)),
+        levels403To546Median: median(
+          runs.filter((r) => r.id >= 403 && r.id <= 546).map((r) => r.jewels),
+        ),
+        gemsPerMove:
+          runs.reduce((sum, r) => sum + r.jewels, 0) / runs.reduce((sum, r) => sum + r.turns, 0),
+        continuousGemsPerPuzzle: moon.MOONSTONE_ECONOMY.continuousGemsPerPuzzle,
+        continuousGemsPerLevel: gemsPerLevel,
+      },
       saleCoins: moon.MOONSTONE_ECONOMY.saleCoins,
       prices: prices[0],
       cumulativePrices: totals[0],

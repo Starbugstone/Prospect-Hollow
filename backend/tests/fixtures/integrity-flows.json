@@ -16133,8 +16133,8 @@
               "data": {
                 "runId": 1,
                 "levelId": 1,
-                "jewels": 99,
-                "score": 99,
+                "jewels": 299,
+                "score": 299,
                 "at": 1780000000000,
                 "moonstoneVersion": 2
               }
@@ -16146,8 +16146,8 @@
               "data": {
                 "runId": 1,
                 "levelId": 1,
-                "jewels": 200,
-                "score": 200,
+                "jewels": 600,
+                "score": 600,
                 "at": 1780000000000,
                 "moonstoneVersion": 2
               }
@@ -16159,8 +16159,8 @@
               "data": {
                 "runId": 1,
                 "levelId": 1,
-                "jewels": 250,
-                "score": 250,
+                "jewels": 750,
+                "score": 750,
                 "at": 1780000000000,
                 "moonstoneVersion": 2
               }
@@ -16178,8 +16178,8 @@
               "data": {
                 "runId": 2,
                 "levelId": 1,
-                "jewels": 500,
-                "score": 500,
+                "jewels": 1500,
+                "score": 1500,
                 "at": 1780000000000,
                 "moonstoneVersion": 2
               }
@@ -16187,7 +16187,7 @@
           ]
         },
         "records": {},
-        "continuousRecords": { "1": { "coins": 25, "score": 500, "moonstoneGems": 300 } },
+        "continuousRecords": { "1": { "coins": 25, "score": 1500, "moonstoneGems": 900 } },
         "powers": [
           { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 0 },
           { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 0 },
@@ -16882,8 +16882,8 @@
               "data": {
                 "runId": 1,
                 "levelId": 1,
-                "jewels": 250,
-                "score": 250,
+                "jewels": 750,
+                "score": 750,
                 "at": 1780000000000,
                 "moonstoneVersion": 2
               }
@@ -16914,8 +16914,8 @@
               "data": {
                 "runId": 1,
                 "levelId": 1,
-                "jewels": 1100,
-                "score": 1100,
+                "jewels": 1300,
+                "score": 1300,
                 "at": 1780000000000,
                 "moonstoneVersion": 2
               }
@@ -16923,7 +16923,7 @@
           ]
         },
         "records": {},
-        "continuousRecords": { "1": { "coins": 25, "score": 1100, "moonstoneGems": 200 } },
+        "continuousRecords": { "1": { "coins": 25, "score": 1300, "moonstoneGems": 600 } },
         "powers": [
           { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 0 },
           { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 0 },

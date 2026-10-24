@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { createSSRApp, h } from 'vue';
+import { renderToString } from 'vue/server-renderer';
+import { loadFrench, setLocale } from '../src/i18n';
+import TownMoonstoneWorkshop from '../src/components/town/TownMoonstoneWorkshop.vue';
 import { buildingBenefit } from '../src/game/town/TownBenefits';
 import { createTown } from '../src/data/town';
 import { normalizeTown, buildWithHammer, finishConstruction } from '../src/game/town/TownRules';
@@ -20,6 +24,7 @@ beforeEach(() => {
   setActivePinia(createPinia());
 });
 afterEach(() => {
+  setLocale('en');
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
@@ -100,7 +105,7 @@ it('normal victories and continuous gems advance production; opening a run does 
   expect(campaign.town.moonstoneProduction.stored).toBe(3);
   campaign.collectMoonstones();
   const runId = campaign.beginRun('continuous', 1);
-  campaign.recordContinuous({ id: 1, runId, jewels: 100, score: 1000 });
+  campaign.recordContinuous({ id: 1, runId, jewels: 300, score: 1000 });
   expect(campaign.town.moonstoneProduction).toEqual({ stored: 0, progress: 1 });
 });
 it('sells exact amounts at the shared rate, retains lifetime credit and rejects overflow', () => {
@@ -242,20 +247,22 @@ it('credits continuous gems incrementally, with a separate lifetime allowance pe
   c.town.buildings.museum = 1;
   c.town.buildings.moonstoneWorkshop = 3;
   c.records[1] = { score: 100, stars: 1 };
-  const run = continuous(c, 1, 99);
+  const run = continuous(c, 1, 299);
   expect(c.town.moonstoneProduction.progress).toBe(0);
-  continuous(c, 1, 99, run);
-  continuous(c, 1, 200, run);
+  continuous(c, 1, 299, run);
+  continuous(c, 1, 300, run);
+  expect(c.town.moonstoneProduction).toEqual({ progress: 1, stored: 0 });
+  continuous(c, 1, 600, run);
   expect(c.town.moonstoneProduction).toEqual({ progress: 2, stored: 0 });
   c.reloadLocal();
-  continuous(c, 1, 99);
-  expect(c.continuousRecords[1].moonstoneGems).toBe(299);
+  continuous(c, 1, 299);
+  expect(c.continuousRecords[1].moonstoneGems).toBe(899);
   continuous(c, 1, 9999);
-  expect(c.continuousRecords[1].moonstoneGems).toBe(300);
+  expect(c.continuousRecords[1].moonstoneGems).toBe(900);
   expect(c.town.moonstoneProduction).toEqual({ progress: 0, stored: 3 });
   continuous(c, 1, 9999);
   expect(c.town.moonstoneProduction.stored).toBe(3);
-  continuous(c, 2, 300);
+  continuous(c, 2, 900);
   expect(c.town.moonstoneProduction.stored).toBe(6);
   expect(c.records[2]).toBeUndefined();
   expect(c.town.completedRuns).toBe(0);
@@ -268,14 +275,14 @@ it('discards gems while unbuilt/full and resumes without consuming unused allowa
   expect(c.continuousRecords[1].moonstoneGems ?? 0).toBe(0);
   c.town.buildings.moonstoneWorkshop = 1;
   c.town.moonstoneProduction = { progress: 2, stored: 9 };
-  const run = continuous(c, 1, 250);
+  const run = continuous(c, 1, 750);
   expect(c.town.moonstoneProduction.stored).toBe(10);
-  expect(c.continuousRecords[1].moonstoneGems).toBe(100);
+  expect(c.continuousRecords[1].moonstoneGems).toBe(300);
   continuous(c, 1, 1000, run);
-  expect(c.continuousRecords[1].moonstoneGems).toBe(100);
+  expect(c.continuousRecords[1].moonstoneGems).toBe(300);
   expect(c.collectMoonstones(1000)).toBe(10);
-  continuous(c, 1, 1100, run);
-  expect(c.continuousRecords[1].moonstoneGems).toBe(200);
+  continuous(c, 1, 1300, run);
+  expect(c.continuousRecords[1].moonstoneGems).toBe(600);
   expect(c.town.moonstoneProduction.progress).toBe(1);
 });
 it('rolls back continuous allowance, progress, coins and receipt when storage fails', () => {
@@ -289,7 +296,7 @@ it('rolls back continuous allowance, progress, coins and receipt when storage fa
   vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
     throw new Error('full');
   });
-  expect(c.recordContinuous({ id: 1, runId: run, jewels: 300, score: 100 })).toBe(false);
+  expect(c.recordContinuous({ id: 1, runId: run, jewels: 900, score: 100 })).toBe(false);
   expect(c.town).toEqual(before.town);
   expect(c.continuousRecords).toEqual(before.records);
   expect(c.integrity).toEqual(before.integrity);
@@ -308,7 +315,7 @@ it('keeps v1 partial progress and bounds malformed continuous allowance on reloa
   c.continuousRecords[1] = { coins: 0, score: 0, moonstoneGems: 999 };
   c.save();
   c.reloadLocal();
-  expect(c.continuousRecords[1].moonstoneGems).toBe(300);
+  expect(c.continuousRecords[1].moonstoneGems).toBe(900);
   expect(advanceMoonstoneProduction(c.town).moonstoneProduction).toEqual({
     progress: 0,
     stored: 2,
@@ -350,4 +357,18 @@ it('rolls back collect-all stock, partial progress, balances and cooldown on a f
   expect(c.collectMoonstones(1000)).toBe(0);
   expect(c.town).toEqual(before);
   expect(c.integrity.actions).toEqual([]);
+});
+
+it.each([
+  ['en', 'every 300 gems advances production by one puzzle'],
+  ['fr', 'chaque groupe de 300 gemmes fait avancer la production d’un puzzle'],
+])('shows the shared continuous rate in the %s workshop panel', async (language, phrase) => {
+  await loadFrench();
+  setLocale(language);
+  const town = createTown();
+  town.buildings.moonstoneWorkshop = 3;
+  const html = await renderToString(
+    createSSRApp({ render: () => h(TownMoonstoneWorkshop, { town, sellMoonstones: () => false }) }),
+  );
+  expect(html).toContain(phrase);
 });

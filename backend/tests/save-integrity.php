@@ -891,11 +891,11 @@ foreach ($fixtures->fixtures as $fixture) {
         str_starts_with($fixture->name, 'continuous full workshop')
     ) {
         $fake = integrityData($fixture->after);
-        $fake['continuousRecords'][1]['moonstoneGems'] = 301;
+        $fake['continuousRecords'][1]['moonstoneGems'] = 901;
         integrityDenied(
             fn() => $validator->accept(integrityObject($fake), $starting, $clock),
             'save_integrity_invalid',
-            'continuous allowance cannot exceed 300 gems',
+            'continuous allowance cannot exceed 900 gems',
         );
         $fake['continuousRecords'][1]['moonstoneGems'] = 0;
         integrityDenied(
