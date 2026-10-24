@@ -138,7 +138,7 @@ final class TownPersonalisation
         // Unversioned offline receipts retain the original prices and era ceilings.
         $version = $command['monumentVersion'] ?? 1;
         $progression = $catalog['monumentProgression'];
-        if (!in_array($version, [1, $progression['version']], true)) {
+        if (!in_array($version, [1, 2, $progression['version']], true)) {
             return null;
         }
         $maximum = $version === 1 ? 1 + $now - $intro : count($progression['levels']);
@@ -161,11 +161,29 @@ final class TownPersonalisation
                 ? $level
                 : $progression['levels'][$level - 1]['multiplier'];
         $price = $definition['price'] * $multiplier;
+        // The exported explicit schedule applies only to current terms. Version 2
+        // outbox entries keep their historical base prices and multiplier curve.
+        if ($version === $progression['version'] && array_key_exists('levelPrices', $area)) {
+            $prices = $area['levelPrices'];
+            if (
+                !is_array($prices) ||
+                !array_is_list($prices) ||
+                count($prices) !== ($area['timeless'] ? 1 : count($progression['levels']))
+            ) {
+                return null;
+            }
+            foreach ($prices as $amount) {
+                if (!is_int($amount) || $amount < 0 || $amount > 9007199254740991) {
+                    return null;
+                }
+            }
+            $price = $prices[$level - 1];
+        }
         $currency = $area['currency'] ?? 'coins';
         // New resource sites never replay the historical coin-only pricing model.
         // Receipt terms are evidence, never an authority over the exported catalog.
         if (
-            ($currency !== 'coins' && $version !== $progression['version']) ||
+            ($currency !== 'coins' && $version === 1) ||
             (array_key_exists('currency', $command) && $command['currency'] !== $currency) ||
             (array_key_exists('price', $command) && $command['price'] !== $price) ||
             ($town[$currency] ?? 0) < $price

@@ -16,6 +16,8 @@ const option = (id, label, form, colour, price, detail) => ({
 });
 export const LANDMARK_OPTIONS = [
   // Optional keepsakes: every design and every paid level consumes only moonstones.
+  // Keep these historical base prices for version-2 receipts; current offers use
+  // the sites' explicit schedule through landmarkPrice, including foundations.
   option(
     'moonstone-fountain',
     'Moonstone Fountain',
@@ -318,6 +320,8 @@ export const SITE_FACINGS = Object.freeze({
   north: Math.PI,
   west: -Math.PI / 2,
 });
+// Resource rarity has its own fixed curve, shared by both keepsake sites and all designs.
+const moonstoneLevelPrices = Object.freeze([20, 30, 40, 50, 60]);
 // Sites without a facing, or with one this build does not know, face south.
 export const siteYaw = (area) =>
   Object.hasOwn(SITE_FACINGS, area?.facing ?? '') ? SITE_FACINGS[area.facing] : SITE_FACINGS.south;
@@ -326,7 +330,7 @@ export const siteYaw = (area) =>
 // approach, clear of the space elevator. Founders' Meadow sits on the west bank
 // beyond the ridge and faces the river. Stargazers' Lawn and Homecoming Green sit
 // beyond the Skyward quarter.
-// [id, era, label, position, choices, facing = 'south', settlement = 'valley', currency = 'coins']
+// [id, era, label, position, choices, facing = 'south', settlement = 'valley', currency = 'coins', levelPrices?]
 const plots = [
   [
     'meadow',
@@ -404,6 +408,7 @@ const plots = [
     'south',
     'valley',
     'moonstones',
+    moonstoneLevelPrices,
   ],
   [
     'moonrock-court',
@@ -414,10 +419,11 @@ const plots = [
     'south',
     'moon',
     'moonstones',
+    moonstoneLevelPrices,
   ],
 ];
 export const PERSONAL_AREAS = plots.map(
-  ([id, era, label, position, choices, facing, settlement, currency]) => ({
+  ([id, era, label, position, choices, facing, settlement, currency, levelPrices]) => ({
     id,
     label,
     era,
@@ -425,6 +431,7 @@ export const PERSONAL_AREAS = plots.map(
     facing: facing ?? 'south',
     settlement: settlement ?? 'valley',
     currency: currency ?? 'coins',
+    ...(levelPrices === undefined ? {} : { levelPrices }),
     choices,
     radius: id === 'monument' ? 9 : 7,
     timeless: id === 'monument',
@@ -441,7 +448,7 @@ export const areaUnlocked = (town, area) =>
 // built over `puzzles` completed puzzles (any puzzle, replays too), then unveiled with
 // a `grand` cinematic or a short `reveal`. Timeless monuments build like a foundation.
 export const LANDMARK_PROGRESSION = Object.freeze({
-  version: 2,
+  version: 3,
   animationLevel: 3,
   // Preserve historical paid levels in saves/receipts, while displaying at most five.
   legacyLimit: 45,
@@ -487,6 +494,32 @@ export const landmarkLevel = (stage) =>
   LANDMARK_PROGRESSION.levels[
     Math.max(0, Math.min(LANDMARK_PROGRESSION.levels.length - 1, stage - 1))
   ];
+// Version 2 receipts keep the original base-price multiplier curve. Never infer
+// historical terms from a supplied price. Absent schedules use that curve; damaged
+// or incomplete explicit schedules and unsupported versions fail closed.
+export function landmarkPrice(area, choice, level, version = LANDMARK_PROGRESSION.version) {
+  if (
+    ![2, LANDMARK_PROGRESSION.version].includes(version) ||
+    !area?.choices?.includes(choice) ||
+    !Number.isInteger(level) ||
+    level < 1 ||
+    level > (area.timeless ? 1 : LANDMARK_PROGRESSION.levels.length)
+  )
+    return null;
+  if (version === LANDMARK_PROGRESSION.version && area.levelPrices !== undefined) {
+    const prices = area.levelPrices;
+    if (
+      !Array.isArray(prices) ||
+      prices.length !== (area.timeless ? 1 : LANDMARK_PROGRESSION.levels.length) ||
+      Array.from(prices).some((price) => !Number.isSafeInteger(price) || price < 0)
+    )
+      return null;
+    return prices[level - 1];
+  }
+  const price =
+    LANDMARK_BY_ID[choice]?.price * (area.timeless ? 1 : landmarkLevel(level).multiplier);
+  return Number.isSafeInteger(price) && price >= 0 ? price : null;
+}
 // A monument is built once and retains its selected design.
 export const areaMaximum = (town, area) => (areaUnlocked(town, area) ? areaCapacity(area) : 0);
 const areaCapacity = (area) => (area.timeless ? 1 : LANDMARK_PROGRESSION.levels.length);
@@ -542,7 +575,7 @@ export function unveilLandmark(town, id, level) {
   return { ...town, personalisation: { ...town.personalisation, construction } };
 }
 // Each site keeps its first choice and builds one level at a time.
-export function landmarkOffer(town, area, choice) {
+export function landmarkOffer(town, area, choice, version = LANDMARK_PROGRESSION.version) {
   if (!area || !areaUnlocked(town, area) || !area.choices.includes(choice)) return null;
   const current = town.personalisation?.areas?.[area.id]?.[0];
   const stage = areaStage(town, area);
@@ -555,8 +588,8 @@ export function landmarkOffer(town, area, choice) {
   )
     return null;
   const level = area.timeless ? 1 : stage + 1;
-  const price =
-    LANDMARK_BY_ID[choice].price * (area.timeless ? 1 : landmarkLevel(level).multiplier);
+  const price = landmarkPrice(area, choice, level, version);
+  if (price === null) return null;
   return { choice, level, price, expectedChoice: current || null, expectedLevel: stage };
 }
 // One extension point for price display, affordability and spending. New resource
@@ -578,12 +611,14 @@ export function landmarkPayment(town, area, price) {
 }
 export function purchaseLandmark(town, command) {
   const area = PERSONAL_AREAS.find((a) => a.id === command.id);
-  const offer = landmarkOffer(town, area, command.value);
+  const offer = landmarkOffer(town, area, command.value, command.monumentVersion);
   if (
     !offer ||
     command.slot !== 0 ||
     command.expectedChoice !== offer.expectedChoice ||
     command.expectedLevel !== offer.expectedLevel ||
+    (command.currency !== undefined && command.currency !== area.currency) ||
+    (command.price !== undefined && command.price !== offer.price) ||
     !landmarkPayment(town, area, offer.price).affordable
   )
     return null;

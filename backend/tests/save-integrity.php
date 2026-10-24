@@ -823,6 +823,32 @@ foreach ($fixtures->fixtures as $fixture) {
         $fixture->name . ' cannot hide an extra coin in a legitimate batch',
     );
     if (str_starts_with($fixture->name, 'optional landmark ')) {
+        if (str_contains($fixture->name, 'version-2 foundation')) {
+            $purchases = [];
+            foreach ($fixture->after->integrity->actions as $action) {
+                if ($action->kind === 'landmark-buy') {
+                    $purchases[] = $action->data->purchases[0];
+                }
+            }
+            assertIntegrity(
+                array_column($purchases, 'price') === [60, 30, 40, 50, 60] &&
+                    array_column($purchases, 'monumentVersion') === [2, 3, 3, 3, 3],
+                'old outbox terms and current purchases replay together without a refund',
+            );
+            $wrongVersion = integrityData($fixture->after);
+            foreach ($wrongVersion['integrity']['actions'] as &$action) {
+                if ($action['kind'] === 'landmark-buy') {
+                    $action['data']['purchases'][0]['monumentVersion'] = 3;
+                    break;
+                }
+            }
+            unset($action);
+            integrityDenied(
+                fn() => $validator->accept(integrityObject($wrongVersion), $starting, $clock),
+                'save_integrity_mismatch',
+                'old prices require their historical version',
+            );
+        }
         if (
             str_contains($fixture->name, 'moonstone-garden') ||
             str_contains($fixture->name, 'moonrock-court')

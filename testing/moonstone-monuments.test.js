@@ -10,6 +10,9 @@ import {
   LANDMARK_BY_ID,
   areasForSettlement,
   landmarkOffer,
+  landmarkPrice,
+  purchaseLandmark,
+  LANDMARK_PROGRESSION,
   landmarkPayment,
   advanceMonumentWorks,
   unveilLandmark,
@@ -59,7 +62,7 @@ it.each(sites)(
       ...createTown(),
       era: 'twin-hollows',
       coins: 1e8,
-      moonstones: 59,
+      moonstones: 19,
       moonstonesEarned: 1000,
     };
     const gate = isEraComplete(campaign.town);
@@ -73,18 +76,18 @@ it.each(sites)(
     expect(JSON.stringify(campaign.profile())).toBe(failed);
     vi.restoreAllMocks();
     expect(campaign.personalise([command(campaign.town, area)])).toBe(true);
-    expect(campaign.town).toMatchObject({ coins: 1e8, moonstones: 240, moonstonesEarned: 1000 });
+    expect(campaign.town).toMatchObject({ coins: 1e8, moonstones: 280, moonstonesEarned: 1000 });
     expect(campaign.integrity.actions.at(-1)).toMatchObject({
       kind: 'landmark-buy',
-      data: { purchases: [{ currency: 'moonstones', price: 60 }] },
+      data: { purchases: [{ currency: 'moonstones', price: 20, monumentVersion: 3 }] },
     });
     for (let n = 0; n < 3; n++) campaign.town = advanceMonumentWorks(campaign.town);
     campaign.town = unveilLandmark(campaign.town, area.id, 1);
-    campaign.town.moonstones = 239;
+    campaign.town.moonstones = 29;
     const insufficient = JSON.stringify(campaign.profile());
     expect(campaign.personalise([command(campaign.town, area)])).toBe(false);
     expect(JSON.stringify(campaign.profile())).toBe(insufficient);
-    campaign.town.moonstones = 240;
+    campaign.town.moonstones = 30;
     expect(campaign.personalise([command(campaign.town, area)])).toBe(true);
     expect(campaign.town).toMatchObject({ coins: 1e8, moonstones: 0, moonstonesEarned: 1000 });
     expect(isEraComplete(campaign.town)).toBe(gate);
@@ -95,6 +98,69 @@ it.each(sites)(
     });
   },
 );
+it.each(sites)('$id prices all designs and levels through one schedule', (area) => {
+  for (const choice of area.choices) {
+    expect([1, 2, 3, 4, 5].map((level) => landmarkPrice(area, choice, level))).toEqual([
+      20, 30, 40, 50, 60,
+    ]);
+    expect([1, 2, 3, 4, 5].map((level) => landmarkPrice(area, choice, level, 2))).toEqual([
+      60, 240, 600, 1200, 2100,
+    ]);
+  }
+});
+it('keeps coin curves and fails closed on incomplete or unsupported schedules', () => {
+  const area = AREA_BY_ID['earthrise-plaza'];
+  for (const choice of area.choices)
+    expect([1, 2, 3, 4, 5].map((level) => landmarkPrice(area, choice, level))).toEqual(
+      [1, 4, 10, 20, 35].map((multiplier) => LANDMARK_BY_ID[choice].price * multiplier),
+    );
+  const town = { ...createTown(), era: 'twin-hollows', coins: 1e9 };
+  for (const levelPrices of [
+    null,
+    [],
+    [20],
+    [20, 30, 40, 50, -1],
+    [20, 30, 40, 50, 1.5],
+    [20, 30, 40, 50, Number.MAX_SAFE_INTEGER + 1],
+    Array(5),
+    'unknown',
+  ]) {
+    const incomplete = { ...area, levelPrices };
+    expect(landmarkPrice(incomplete, area.choices[0], 1)).toBeNull();
+    expect(landmarkOffer(town, incomplete, area.choices[0])).toBeNull();
+  }
+  expect(landmarkPrice(area, area.choices[0], 1, 999)).toBeNull();
+  expect(landmarkPrice(area, area.choices[0], 6)).toBeNull();
+  expect(landmarkPrice({ ...area, levelPrices: [0, 30, 40, 50, 60] }, area.choices[0], 1)).toBe(0);
+});
+it.each(sites)('$id retains an old-price outbox receipt and purchases at the new terms', (area) => {
+  const campaign = useCampaignStore();
+  campaign.town = { ...createTown(), era: 'twin-hollows', moonstones: 300, moonstonesEarned: 300 };
+  const old = {
+    ...command(campaign.town, area),
+    monumentVersion: 2,
+    currency: 'moonstones',
+    price: 60,
+  };
+  expect(campaign.personalise([old])).toBe(true);
+  const receipt = JSON.parse(JSON.stringify(campaign.integrity.actions.at(-1)));
+  expect(receipt.data.purchases[0]).toMatchObject({ monumentVersion: 2, price: 60 });
+  campaign.$reset();
+  expect(campaign.integrity.actions.at(-1)).toEqual(receipt);
+  expect(campaign.town.moonstones).toBe(240);
+  for (let n = 0; n < 3; n++) campaign.town = advanceMonumentWorks(campaign.town);
+  campaign.town = unveilLandmark(campaign.town, area.id, 1);
+  const current = command(campaign.town, area);
+  expect(purchaseLandmark(campaign.town, { ...current, price: 240 })).toBeNull();
+  expect(campaign.personalise([current])).toBe(true);
+  expect(campaign.town.moonstones).toBe(210);
+  expect(campaign.town.personalisation.areaLevels[area.id]).toBe(2);
+  expect(campaign.integrity.actions[0]).toEqual(receipt);
+  expect(campaign.integrity.actions.at(-1).data.purchases[0]).toMatchObject({
+    monumentVersion: LANDMARK_PROGRESSION.version,
+    price: 30,
+  });
+});
 it('separates settlements and reserves the lunar court outside all routes and reservations', () => {
   const [valley, moon] = sites;
   expect(areasForSettlement()).toContain(valley);

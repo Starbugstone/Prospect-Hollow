@@ -658,6 +658,7 @@ import {
   areaStage,
   areaUnlocked,
   landmarkOffer,
+  landmarkPrice,
   landmarkPayment,
   monumentWork,
 } from '../../data/townLandmarks';
@@ -970,7 +971,7 @@ const monumentSites = computed(() =>
   PERSONAL_AREAS.filter((area) => areaUnlocked(town.value, area)).map((area) => {
     const choice = areaChoice(town.value, area);
     if (!choice) {
-      const prices = area.choices.map((id) => LANDMARK_BY_ID[id].price);
+      const prices = area.choices.map((id) => landmarkPrice(area, id, 1));
       return {
         id: area.id,
         name: area.label,

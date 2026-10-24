@@ -242,7 +242,9 @@ describe('Personalisation save and progression contract', () => {
         expect(areaMaximum(town, area)).toBe(5);
         const offer = landmarkOffer(town, area, area.choices[0]);
         expect(offer.level).toBe(index + 1);
-        expect(offer.price).toBe(LANDMARK_BY_ID[area.choices[0]].price * milestone.multiplier);
+        expect(offer.price).toBe(
+          area.levelPrices?.[index] ?? LANDMARK_BY_ID[area.choices[0]].price * milestone.multiplier,
+        );
         expect(buy({ ...town, [area.currency]: offer.price - 1 }, area)).toBeNull();
         town = buy(town, area);
         // One level at a time: the next is offered once this one is unveiled.

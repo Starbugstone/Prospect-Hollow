@@ -14,14 +14,14 @@ try {
   const moon = await loader.ssrLoadModule('/src/data/moonstones.js');
   const { createTown } = await loader.ssrLoadModule('/src/data/town.js');
   const { eraGate, advanceEra } = await loader.ssrLoadModule('/src/game/town/TownEras.js');
-  const { PERSONAL_AREAS, LANDMARK_BY_ID, LANDMARK_PROGRESSION } = await loader.ssrLoadModule(
+  const { PERSONAL_AREAS, landmarkPrice, LANDMARK_PROGRESSION } = await loader.ssrLoadModule(
     '/src/data/townLandmarks.js',
   );
   const sites = PERSONAL_AREAS.filter((area) => area.currency === 'moonstones');
   const totals = sites.map((area) => {
     let total = 0;
     return LANDMARK_PROGRESSION.levels.map(
-      (level) => (total += LANDMARK_BY_ID[area.choices[0]].price * level.multiplier),
+      (_, index) => (total += landmarkPrice(area, area.choices[0], index + 1)),
     );
   });
   const targets = [
