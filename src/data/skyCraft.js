@@ -4,17 +4,17 @@ import { FUTURE_PALETTES } from './futureArchitecture';
 import { eraEvolution } from './eras';
 import { moonSettlement } from './moonSettlement';
 
-// The Moon hangs in the valley sky in this horizontal direction (x, z) from the saucer pad:
+// The Moon hangs in the valley sky in this horizontal direction (x, z) from the town:
 // north-west, above the mine and the space elevator. The sky Moon and the saucers that
 // fly to it share this one direction.
 export const SKY_MOON_DIRECTION = Object.freeze([-0.55, -1]);
-// The Moon hangs this far from the saucer pad along that direction, on the saucer's
-// route: fixed in the world, so it moves with the land when the camera turns or tilts.
-// The valley camera looks down on the town, so a Moon at infinity would sit above every
-// overview; this distance shows it near the top of the default view on phones and
-// desktops alike. SKY_MOON_SIZE is its diameter in world units.
-export const SKY_MOON_REACH = 120;
-export const SKY_MOON_SIZE = 26;
+// Like Earth over the Moon's crater rim, it hangs in the sky at an infinite distance:
+// SKY_MOON_ELEVATION above the horizon (rise per unit of horizontal distance, about
+// 10°), clear of the north-west hills. Orbiting or zooming never moves it across the
+// sky, and it shows when the camera looks toward the horizon, not down at the town.
+// SKY_MOON_ANGLE is its diameter as an angle of view (radians).
+export const SKY_MOON_ELEVATION = 0.18;
+export const SKY_MOON_ANGLE = 0.1;
 
 /** The valley sky shows the Moon once New Hollow has homesteads. */
 export const skyMoonShown = (town) => moonSettlement(town).homesteads > 0;

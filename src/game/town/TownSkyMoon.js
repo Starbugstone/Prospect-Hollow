@@ -1,17 +1,23 @@
 import { CanvasTexture, SRGBColorSpace, Sprite, SpriteMaterial, Vector3 } from 'three';
-import { SKY_MOON_SIZE } from '../../data/skyCraft';
-import { skyMoonPosition } from './TownAviation';
+import { SKY_MOON_ANGLE, SKY_MOON_DIRECTION, SKY_MOON_ELEVATION } from '../../data/skyCraft';
 
 // The Moon in the valley sky: the round Moon of the map chip (TownMoon.vue) painted on
-// a sprite, never a 3D globe. It hangs at one fixed point in the world, so turning or
-// tilting the camera moves it with the land, hills pass in front of it and birds and
-// saucers, drawn in the animated foreground, fly in front of it. Each gold light is a
-// homestead of New Hollow.
+// a sprite, never a 3D globe, like Earth over the Moon's crater rim. It keeps one
+// direction in the sky (SKY_MOON_DIRECTION, SKY_MOON_ELEVATION), drawn beyond the town
+// so nearer hills pass in front of it, and birds and saucers, drawn in the animated
+// foreground, fly in front of it. Each gold light is a homestead of New Hollow.
 const TEXTURE = 256;
 // The chip's art spans ±12 units around a disc of radius 11; the glow reaches ±15.
 const ART = 15,
   DISC = 11;
 const SHADED = 'M3 -10.6A11 11 0 0 1 3 10.6A14 14 0 0 0 3 -10.6Z';
+// Drawn this far from the camera: past the town and its nearer hills, inside the far plane.
+export const SKY_MOON_DISTANCE = 450;
+const DIAMETER = 2 * SKY_MOON_DISTANCE * Math.tan(SKY_MOON_ANGLE / 2);
+export const SKY_MOON_HEADING = new Vector3(SKY_MOON_DIRECTION[0], 0, SKY_MOON_DIRECTION[1])
+  .normalize()
+  .setY(SKY_MOON_ELEVATION)
+  .normalize();
 const CRATERS = [
   [-4, -3.5, 2.6, '#ddd7c5'],
   [4.5, 3, 1.9, '#d3cdbb'],
@@ -68,8 +74,7 @@ export class TownSkyMoon {
     );
     this.sprite.name = 'Moon over the valley';
     // The painted art is wider than the disc by its glow.
-    this.sprite.scale.setScalar((SKY_MOON_SIZE * ART) / DISC);
-    skyMoonPosition(this.sprite.position);
+    this.sprite.scale.setScalar((DIAMETER * ART) / DISC);
     this.sprite.visible = false;
     this.lightKey = null;
     scene.add(this.sprite);
@@ -86,12 +91,17 @@ export class TownSkyMoon {
     }
     return true;
   }
+  /** Places the Moon in its sky direction from this camera, before each drawn frame. */
+  follow(camera, out = this.sprite.position) {
+    return out.copy(camera.position).addScaledVector(SKY_MOON_HEADING, SKY_MOON_DISTANCE);
+  }
   /** The disc on screen, in percent of the canvas, for its tap target. */
   screenPoint(camera, out = {}) {
-    const centre = screenCentre.copy(this.sprite.position).project(camera);
+    const position = this.follow(camera, skyPoint);
+    const centre = screenCentre.copy(position).project(camera);
     const edge = screenEdge
-      .copy(this.sprite.position)
-      .addScaledVector(cameraUp.setFromMatrixColumn(camera.matrixWorld, 1), SKY_MOON_SIZE / 2)
+      .copy(position)
+      .addScaledVector(cameraUp.setFromMatrixColumn(camera.matrixWorld, 1), DIAMETER / 2)
       .project(camera);
     out.x = (centre.x + 1) * 50;
     out.y = (1 - centre.y) * 50;
@@ -113,6 +123,7 @@ export class TownSkyMoon {
     this.sprite.material.dispose();
   }
 }
-const screenCentre = new Vector3(),
+const skyPoint = new Vector3(),
+  screenCentre = new Vector3(),
   screenEdge = new Vector3(),
   cameraUp = new Vector3();

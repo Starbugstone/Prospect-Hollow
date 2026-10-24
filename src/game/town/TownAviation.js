@@ -1,7 +1,7 @@
 import { hasRoundedTransport } from '../../data/roundedArchitecture';
 import { createSkySaucer } from './SkySaucer';
 import { airportAppearance } from '../../data/airport';
-import { SKY_MOON_DIRECTION, SKY_MOON_REACH, saucerFliesToMoon } from '../../data/skyCraft';
+import { SKY_MOON_DIRECTION, saucerFliesToMoon } from '../../data/skyCraft';
 import { futureModel, cityModel } from './buildings/city';
 import { AIRPORT } from './TownLayout';
 import airportLayout from '../../data/airportLayout.json';
@@ -209,8 +209,8 @@ export const SAUCER_ROUTES = Object.freeze({
   // about 25°. Seen from the town it shrinks into the distance instead of rushing at the
   // camera.
   sky: route([-1, 0.25], 0.45),
-  // The saucer climbs steeply off the hover toward SKY_MOON_DIRECTION. The valley's
-  // Moon hangs on this route (skyMoonPosition), so from any camera it flies into it.
+  // The saucer climbs steeply off the hover, then flies off toward the sky Moon in
+  // SKY_MOON_DIRECTION, shrinking into the distance.
   moon: route(SKY_MOON_DIRECTION, 0.09, 20, 15),
 });
 // Distance along the route: accelerating from the hover after the departure starts, and
@@ -243,9 +243,6 @@ function routePoint({ heading, climb, rise, ease }, s, out) {
     SAUCER_PAD.z + heading[1] * s,
   );
 }
-/** Where the valley's Moon hangs: fixed in the world on the saucer's moon route. */
-export const skyMoonPosition = (out = new Vector3()) =>
-  routePoint(SAUCER_ROUTES.moon, SKY_MOON_REACH, out);
 const flightAt = new Vector3();
 const yawOf = ([x, z]) => Math.atan2(x, z);
 const turnTo = (from, to, t) => from + Math.atan2(Math.sin(to - from), Math.cos(to - from)) * t;

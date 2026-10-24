@@ -214,6 +214,7 @@ export class TownDiorama extends TownPrimitives {
       if (cull) this.camera.updateMatrixWorld();
       this.actorRenderer?.update(this.scene, cull ? [this.camera] : null);
       this.staticScenery?.movingParts?.update(this.scene);
+      this.skyMoon?.follow(this.camera);
       this.frameCache.render(this.scene, this.camera, refresh);
       renderEventInset(this);
       return true;
