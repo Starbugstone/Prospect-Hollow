@@ -322,9 +322,10 @@ camera interpolation to the lot and camera restoration; the common cinematic
 supplies captions, skip, reduced motion and acknowledgement. `TownScene` routes
 frames to one settlement camera. The valley stays stopped while the Moon is open;
 there is no second valley scene or inset. Railway openings, era mine construction,
-raids/incidents, monument unveilings and campaign celebrations stay in the valley.
-First Lights also waits there. A saved guest VIP remains unseen until valley
-motion resumes; ambient scheduled transport arrivals retain their existing
+raids/incidents and campaign celebrations stay in the valley. Monument unveilings
+use their site’s settlement: Earthrise Plaza and Moonrock Court unveil on the Moon;
+valley sites unveil in the valley. First Lights also waits in the valley. A saved
+guest VIP remains unseen until valley motion resumes; ambient scheduled transport arrivals retain their existing
 missed-arrival behavior, without a new saved reward or queue.
 
 `data/townPresentations.js` defines completion scenes and their saved receipts.
@@ -902,10 +903,10 @@ The permanent mine entrance and historic portal boards use the eagerly loaded
 `mineSignMounts.json` catalogue, generated and checked with the footprint family.
 Custom inputs retain the validated physical resolver fallback.
 
-### Monument settlements and future currencies
+### Monument settlements and currencies
 
 Optional sites in `townLandmarks.js` declare `settlement: 'valley' | 'moon'` and
-`currency: 'coins'` (both fields have historical defaults). `areasForSettlement()`
+`currency: 'coins' | 'moonstones'` (defaults are valley and coins). `areasForSettlement()`
 selects the renderer's sites; an unknown settlement has no implicit renderer.
 Persisted choices, level prices, construction, completed-puzzle progress and
 unveiling commits always use the complete site catalog. New Hollow’s Earthrise
@@ -917,13 +918,15 @@ adapters; missing values preserve valley behavior. Presentation definitions carr
 the site's settlement so the parent routes its frames to the correct scene.
 
 `landmarkPayment()` centralizes resource display, affordability and spending.
-Only coin payments are implemented here. A later `currency: 'moonstones'` site
-must add the resource store/receipt implementation through that helper and
-`TownPersonalisation::purchase`; until then both client and server reject it.
+Coin and moonstone payments are implemented through the shared currency contract
+and `TownPersonalisation::purchase`. Moonstone Garden and Moonrock Court use
+moonstones; Earthrise Plaza uses coins. Unsupported currencies fail closed.
 Regenerate public content after adding sites, IDs, prices or currency metadata.
 `testing/moon-monument.test.js` checks the lunar layout, the shared lifecycle,
-price export, fallback art, resource rejection, geometry budgets and Moon camera
-restoration. Valley layout/wildlife tests deliberately select valley sites.
+price export, fallback art, unsupported-currency rejection, geometry budgets and
+Moon camera restoration. `testing/moonstone-monuments.test.js` covers the
+moonstone sites, resource payments and their independence from era completion.
+Valley layout/wildlife tests deliberately select valley sites.
 
 Moonstone-only monuments use the same site and lifecycle contracts. `currency`
 flows through `landmarkPayment` into `townCurrency.payPrice` in the atomic

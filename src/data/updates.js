@@ -2,6 +2,16 @@
 // text are English keys for t(); add the French text to src/i18n/fr.json.
 const UPDATES = [
   {
+    date: '2026-10-24',
+    title: 'Moonstones to save, spend and show off',
+    text: 'Moonstones are now saved: earn one per finished Moon building level. At levels 1/2/3, the Moonstone workshop makes 1/2/3 every three completed puzzles and stores up to 10/20/30; tap it to collect. Continuous play adds one puzzle of workshop progress per 300 gems, up to three per level over your town’s lifetime. Sell stones for 250 coins each, or build Moonrock Court on the Moon and Moonstone Garden in the valley for 20/30/40/50/60 moonstones per stage. Earthrise Plaza on the Moon uses coins. These monuments are optional and never needed to finish an era.',
+  },
+  {
+    date: '2026-10-24',
+    title: 'More life in New Hollow and beyond',
+    text: 'New Hollow now shows scaffolding while you build and a hammer when each building is ready, just like the valley. Moon events play on the Moon. Build the optional Saucer Pad to watch a flying saucer land and take off. New Town Honours celebrate New Hollow, the Saucer Pad, moonstones earned, monuments and continuous play; continuous gems, fusions and cleared mine elements count toward their honours too. VIP visitors spend more the deeper you’ve mined, and town projects guide you through every era, including the Moon. Starting the game, returning from the mine and exploring the village feel smoother while your town syncs.',
+  },
+  {
     date: '2026-10-21',
     title: 'A friendlier start in the village',
     text: 'Every new town now has a short guided start: Ada points at the next thing to tap, from the first well to your first finished saloon. Frontier buildings all finish at level 3 with their full benefits, so the first era is quicker, and each of its two starter projects gives you a builder hammer. Monument upgrades take a single puzzle, and you can enter the mine by tapping anywhere on its buildings or hill.',
