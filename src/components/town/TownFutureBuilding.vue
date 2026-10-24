@@ -293,6 +293,7 @@ import { COZY_LANDMARKS } from '../../data/cozyArchitecture';
 import TownCityBuilding from './TownCityBuilding.vue';
 import TownLeisureBuilding from './TownLeisureBuilding.vue';
 import TownSquare from './TownSquare.vue';
+import Roof from './TownFutureRoof.vue';
 
 const props = defineProps({
   kind: String,
@@ -594,54 +595,6 @@ const Block = (b) => {
           fill: p.flower,
         })
       : null,
-  ]);
-};
-const Roof = ({ styleId: s, p, x, w, top, accent, tone }) => {
-  if (s === 'sail')
-    return h('g', [
-      h('path', {
-        d: `M${x - w / 2 - 12} ${top - 44}Q${x} ${top - 12} ${x + w / 2 + 12} ${top - 26}L${x + w / 2 + 8} ${top - 4}Q${x} ${top - 20} ${x - w / 2 - 8} ${top - 6}Z`,
-        fill: cloth(p, accent, tone),
-        stroke: p.timber,
-        'stroke-width': 1.5,
-      }),
-      h('path', {
-        d: `M${x - w / 2 - 12} 0V${top - 62}M${x + w / 2 + 12} 0V${top - 44}`,
-        stroke: p.timber,
-        'stroke-width': 3,
-      }),
-      h('path', { d: `M${x - w / 2 - 12} ${top - 62}l16 5-16 5Z`, fill: p.flower }),
-    ]);
-  if (s === 'observatory') {
-    const r = Math.min(w * 0.3, 34);
-    return h('g', [
-      h('rect', { x: x - w / 2 - 4, y: top - 6, width: w + 8, height: 7, fill: p.shell }),
-      h('path', {
-        d: `M${x - r} ${top - 6}a${r} ${r} 0 0 1 ${r * 2} 0Z`,
-        fill: p.shell,
-        stroke: p.timber,
-        'stroke-width': 3,
-      }),
-      h('path', {
-        d: `M${x} ${top - 6}v${-r}`,
-        stroke: p.deep,
-        'stroke-width': Math.max(4, r * 0.22),
-      }),
-    ]);
-  }
-  const rise = Math.min(34, w * 0.32);
-  return h('g', [
-    h('path', {
-      d: `M${x - w / 2 - 8} ${top}L${x} ${top - rise}L${x + w / 2 + 8} ${top}Z`,
-      fill: p.roof,
-    }),
-    h('path', {
-      d: `M${x - w / 2 - 8} ${top}L${x} ${top - rise}L${x + w / 2 + 8} ${top}`,
-      stroke: p.light,
-      'stroke-width': 3,
-      fill: 'none',
-    }),
-    h('circle', { cx: x, cy: top - rise * 0.4, r: 4, fill: p.light }),
   ]);
 };
 const Tower = ({ styleId: s, p, x, r, h: height }) => {

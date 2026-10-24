@@ -2,6 +2,23 @@ import { ROUNDED_PALETTE } from '../../../data/roundedArchitecture';
 import { addWindow } from './frontierParts';
 import { WATERMILL_SITE, watermillAppearance } from '../../../data/watermill';
 import { addCozyRoof } from './cozy';
+import { sailKit } from './future/sail';
+import { observatoryKit } from './future/observatory';
+import { homesteadKit } from './future/homestead';
+
+// Infrastructure keeps its historic body while sharing the surrounding town's
+// actual roof geometry. Twin's roof is the homestead roof with its own palette.
+const FUTURE_ROOFS = {
+  sail: sailKit.roof,
+  observatory: observatoryKit.roof,
+  homestead: homesteadKit.roof,
+  twin: homesteadKit.roof,
+};
+function addFutureRoof(d, parent, appearance, dimensions) {
+  const roof = d.group(parent);
+  roof.name = `Watermill ${appearance.style} roof`;
+  FUTURE_ROOFS[appearance.style](d, roof, { ...appearance, kind: 'watermill' }, dimensions);
+}
 
 // The plot builder finds the wheel by this name to turn it every frame.
 export const WATERMILL_WHEEL = 'Watermill wheel';
@@ -19,7 +36,9 @@ export function renderWatermill(d, parent, era, level, label) {
   }
   for (let y = 0.55; y < height; y += 0.32)
     d.box(root, 2.6, 0.025, 0.035, -0.35, y, 1.27, style.masonry ? '#d1bfa1' : '#906c45');
-  if (style.cozy) {
+  if (style.future) {
+    addFutureRoof(d, root, style.future, { x: -0.35, w: 2.65, dep: 2.5, y: height + 0.25 });
+  } else if (style.cozy) {
     addCozyRoof(d, root, -0.35, height + 0.25, 0, 1.8, era, 1.45);
   } else if (style.rounded) {
     // Rounded eras replace the gabled roof with a glazed dome and garden ring.
@@ -55,6 +74,8 @@ export function renderWatermill(d, parent, era, level, label) {
     d.rod(loading, [-1.9, 2.6, 1.5], [-1.9, 2.6, 2.9], 0.07, timber);
     d.rod(loading, [-1.9, 2.6, 2.85], [-1.9, 1.25, 2.85], 0.025, timber);
     if (style.cozy) addCozyRoof(d, loading, -2.05, 2.55, 0.5, 0.85, era, 1.15);
+    if (style.future)
+      addFutureRoof(d, loading, style.future, { x: -2.05, z: 0.5, w: 1.2, dep: 2.3, y: 2.55 });
   }
   // The millrace is excavated in the shared landscape at river level. Only
   // the axle footing and scattered bank stones belong to the building.
