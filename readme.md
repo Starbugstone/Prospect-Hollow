@@ -13,10 +13,10 @@ Use Docker with Node 24, matching the frontend build image. From the repository 
 
 ```sh
 docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD":/app -w /app node:24-bookworm-slim npm ci
-docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -p 5173:5173 -v "$PWD":/app -w /app node:24-bookworm-slim npm run dev -- --host 0.0.0.0
+docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -p 127.0.0.1:5173:5173 -v "$PWD":/app -w /app node:24-bookworm-slim npm run dev -- --host 0.0.0.0
 ```
 
-Open http://localhost:5173. Signed-out play works locally and offline. For account saves, use the [Docker Compose setup](docs/backend/hosting.md#local-installation).
+Open http://localhost:5173. The `127.0.0.1` port binding keeps the dev server off your local network; `--host 0.0.0.0` only lets Docker reach Vite inside the container. Signed-out play works locally and offline. For account saves, use the [Docker Compose setup](docs/backend/hosting.md#local-installation).
 
 ## Playing
 
