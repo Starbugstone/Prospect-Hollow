@@ -868,7 +868,7 @@ export class MoonScene {
     if (this.reducedMotion) return;
     this.elapsed += delta;
     this.move(this.elapsed);
-    this.vipArrivals.update();
+    this.vipArrivals?.update();
     this.meteor(this.elapsed);
     this.render();
   }
@@ -966,7 +966,7 @@ export class MoonScene {
     cancelAnimationFrame(this.hoverFrame);
     this.presentation?.dispose();
     this.saucer.dispose();
-    this.vipArrivals.dispose();
+    this.vipArrivals?.dispose();
     this.renderer.setAnimationLoop(null);
     if (this.frame) cancelAnimationFrame(this.frame);
     this.observer.disconnect();

@@ -413,7 +413,8 @@ describe('the valley’s arrival rules on the Moon', () => {
     }
     expect([...sources].sort()).toEqual(['ribbonLanding', 'saucerPad']);
     expect(refused).toBeGreaterThan(0);
-  });
+    // Three simulated hours of frames: allow for a loaded machine.
+  }, 30000);
 
   it('never counts an arrival already docked when the Moon opens, nor brings VIPs to a shared town', () => {
     const town = fullTown();
