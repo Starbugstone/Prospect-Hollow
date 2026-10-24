@@ -11,7 +11,8 @@ try {
   const load = (path) => server.ssrLoadModule(`/src/${path}.js`);
   const { createTown, BUILDINGS } = await load('data/town');
   const { vipVisitor } = await load('data/villagers');
-  const { vipVisitCount, vipVisitBuildings, vipSpend } = await load('data/vipVisits');
+  const { vipVisitCount, vipVisitBuildings, vipSpend, VIP_SPEND_VERSION } =
+    await load('data/vipVisits');
   const { TownVipArrivals } = await load('game/town/TownVipArrivals');
   const { TownItineraries, updateItinerary } = await load('game/town/TownItineraries');
   const { TownNavigation, walkPath } = await load('game/town/TownNavigation');
@@ -108,6 +109,7 @@ try {
       {
         model:
           '96 active town hours; real schedules, VIP admission and authored tours at 0.55 units/s; excludes crowd/geometry collisions and interruptions',
+        vipEconomyVersion: VIP_SPEND_VERSION,
         eligibleBuildings: vipVisitBuildings(town).length,
         arrivalsPerHour: Object.fromEntries(
           Object.entries(schedules).map(([id, n]) => [id, n / (hours * seeds)]),
@@ -118,12 +120,16 @@ try {
         planStopDistribution: planStops,
         purchasesPerHour: perHour,
         saloonCoinsPerHour: saloonIncomeRate(town),
-        payouts: [1, 30, 60, 91].map((chapter) => ({
-          chapter,
-          coinsPerPurchase: vipSpend({ [(chapter - 1) * 6 + 1]: { stars: 1 } }),
-          beforePerHour: perHour * 5,
-          afterPerHour: perHour * 5 * chapter,
-        })),
+        payouts: [1, 30, 60, 91].map((chapter) => {
+          const records = { [(chapter - 1) * 6 + 1]: { stars: 1 } };
+          return {
+            chapter,
+            coinsPerPurchase: vipSpend(records),
+            legacyPerHour: perHour * vipSpend(records, 0),
+            beforePerHour: perHour * vipSpend(records, 1),
+            afterPerHour: perHour * vipSpend(records),
+          };
+        }),
       },
       null,
       2,

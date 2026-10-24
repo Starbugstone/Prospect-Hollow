@@ -443,7 +443,7 @@ export function createIntegrityFixtures() {
           stop: 0,
           building: 'saloon',
           visitor: { vip: true },
-        }) !== 5
+        }) !== 10
       )
         throw new Error('VIP did not spend the ordinary reward.');
     });
@@ -461,7 +461,7 @@ export function createIntegrityFixtures() {
             stop: 0,
             building: 'saloon',
             visitor: { vip: true },
-          }) !== 455
+          }) !== 910
         )
           throw new Error('VIP did not spend at mine depth.');
       },

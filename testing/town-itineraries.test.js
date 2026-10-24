@@ -287,18 +287,18 @@ it('persists automatic coins and receipts, rejects replay/invalid stops, rolls b
     building: 'saloon',
     visitor: { name: 'VIP', vip: true },
   };
-  expect(c.collectVipSpending(receipt)).toBe(5);
-  expect(c.town.coins).toBe(coins + 5);
+  expect(c.collectVipSpending(receipt)).toBe(10);
+  expect(c.town.coins).toBe(coins + 10);
   expect(c.collectVipSpending(receipt)).toBe(0);
   expect(c.collectVipSpending({ ...receipt, stop: 2 })).toBe(0);
   expect(c.collectVipSpending({ ...receipt, stop: 1, building: 'hotel' })).toBe(0);
   setActivePinia(createPinia());
   c = useCampaignStore();
-  expect(c.town.coins).toBe(coins + 5);
+  expect(c.town.coins).toBe(coins + 10);
   expect(c.collectVipSpending(receipt)).toBe(0);
   vi.spyOn(c, 'save').mockReturnValue(false);
   expect(c.collectVipSpending({ ...receipt, stop: 1 })).toBe(0);
-  expect(c.town.coins).toBe(coins + 5);
+  expect(c.town.coins).toBe(coins + 10);
   expect(c.vipReceipts).toEqual(['unique-arrival:0']);
 });
 it.each([...ERAS.map((era) => era.id), 'unknown-era'])(
