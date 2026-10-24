@@ -107,6 +107,12 @@ New settlements reuse these contracts; they never get a reduced copy.
   `moonParcels()` in `src/data/moonSettlement.js`. Never draw a square glow or a
   differently shaped pad on a Moon parcel. `testing/moon-parcels.test.js` fails for a
   form, site state or future parcel that leaves the contract.
+- **One build flow.** Every settlement uses the same Build tab list (the settlement on
+  screen first), the same row tap (finish, buy with coins or build with a hammer) and the
+  same construction reveal (`TownConstruction`) when a site starts. A tap on a worksite's
+  scaffolding answers like its pad. Ordinary buildings finish without a cinematic; only
+  milestones (the railway, monument unveilings) get one. `testing/build-list.test.js`,
+  `testing/moon-construction.test.js` and `testing/town-event-settlement.test.js` cover it.
 - **Valley parcels share one definition.** Each valley plot is one rectangle from
   `valleyLot`/`valleyParcel` (`src/game/town/TownParcels.js`): its lot (the fenced lot,
   the airport field or a garden parcel) joined with the drawn model, refreshed when a

@@ -7,7 +7,6 @@ import { createTapGesture } from '../TownTapGesture';
 import { PARCEL_OUTLINE_COLOR, parcelOutlineGeometry } from '../TownParcelOutline';
 import { TownPrimitives } from '../TownPrimitives';
 import { MoonSaucer } from './MoonSaucer';
-import { MoonPresentation } from './MoonPresentation';
 import { TownFramePacer } from '../TownFramePacer';
 import { TownRenderQuality } from '../TownRenderQuality';
 import { TownUpgradeGlow } from '../TownUpgradeGlow';
@@ -513,6 +512,8 @@ export class MoonScene {
     // Projects can advance without a building level changing. Their sites own
     // their geometry and update independently of the merged settlement mesh.
     this.construction.sync(town);
+    // A worksite's gantries and crane rise above an empty pad: they answer taps too.
+    this.refitLots();
     this.saucer.update(town, this.elapsed, this.reducedMotion);
     this.requestFrame();
     // Building lots only: monument sites add labels to this.lots but draw separately.
@@ -529,10 +530,11 @@ export class MoonScene {
       lot.rotation.y = rotation;
       renderMoonBuilding(this.d, lot, id, levels[n]);
       // A tap over a low building reaches the lot behind it, as on screen.
-      this.fitPickTarget(id, moonRoofHeight(lot));
+      (this.roofs ??= {})[id] = moonRoofHeight(lot);
     });
     this.access.geometry.dispose();
     this.access.geometry = moonAccessGeometry(moonApproaches(town?.buildings ?? {}));
+    this.refitLots();
     // The whole settlement draws as one merged mesh per palette colour.
     this.d.batch(this.buildings);
     this.populate(town);
@@ -611,11 +613,10 @@ export class MoonScene {
     if (this.presentation?.definition === definition) return;
     this.presentation?.dispose();
     this.presentation = null;
-    // Monument unveilings stage the shared timeline on the plaza; every other Moon
-    // event (building openings) only moves the camera to its lot.
+    // The Moon's only event is a monument unveiling on the shared timeline. Buildings
+    // finish with their construction reveal, as in the valley, without a cinematic.
     if (definition?.id === 'monument-unveiling')
       this.presentation = moonMonumentPresentation(this, definition);
-    else if (definition) this.presentation = new MoonPresentation(this, definition);
     this.requestFrame();
   }
   presentationFrame(time, still = false) {
@@ -651,6 +652,13 @@ export class MoonScene {
     target.userData.lot = id;
     target.name = `Tap target ${id}`;
     this.pickTargets.add(target);
+  }
+  // Each lot's tap target reaches the taller of its building and its worksite.
+  refitLots() {
+    for (const id of Object.keys(MOON_LOTS)) {
+      const site = this.construction?.sites?.get(id)?.root;
+      this.fitPickTarget(id, Math.max(this.roofs?.[id] ?? 0, site ? moonRoofHeight(site) : 0));
+    }
   }
   fitPickTarget(id, height) {
     const target = this.pickTargets?.children.find((mesh) => mesh.userData.lot === id);

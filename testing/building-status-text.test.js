@@ -1,9 +1,4 @@
-import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import * as Vue from 'vue';
-import { createSSRApp, h } from 'vue';
-import { renderToString } from 'vue/server-renderer';
-import { compileScript, parse } from 'vue/compiler-sfc';
 import { createPinia, setActivePinia } from 'pinia';
 import TownScene from '../src/components/town/TownScene.vue';
 import TownView from '../src/components/town/TownView.vue';
@@ -17,6 +12,7 @@ import { plotInEra } from '../src/game/town/TownEras';
 import { moonLotDetail } from '../src/game/town/moon/MoonLotStatus';
 import { useCampaignStore } from '../src/stores/campaignStore';
 import { setLocale } from '../src/i18n';
+import { bound, childrenSource, find, renderFragment, sfc } from './helpers/componentFragments';
 
 // Pins the exact status text the player reads for a building on the valley map's labels,
 // on the Moon's lot labels and in the Build tab's lists, so moving that text into one
@@ -26,20 +22,6 @@ import { setLocale } from '../src/i18n';
 const SCENE = 'src/components/town/TownScene.vue';
 const VIEW = 'src/components/town/TownView.vue';
 const NOW = 1_000_000_000_000;
-
-const sfc = (path) => parse(readFileSync(path, 'utf8')).descriptor;
-const bindingsFor = (path) => compileScript(sfc(path), { id: path }).bindings;
-function find(node, match) {
-  if (match(node)) return node;
-  for (const child of node.children ?? []) {
-    const found = typeof child === 'object' && find(child, match);
-    if (found) return found;
-  }
-  return null;
-}
-const bound = (node, name) =>
-  node.props?.find((prop) => prop.name === 'bind' && prop.arg?.content === name)?.exp?.content;
-const childrenSource = (node) => node.children.map((child) => child.loc.source).join('');
 
 // The valley label's contents: the plot's name and its status chain.
 const sceneAst = sfc(SCENE).template.ast;
@@ -62,34 +44,8 @@ const listStatus = (label) => {
 const buildListStatus = listStatus('Available buildings');
 const currentEraStatus = listStatus('All current-era plots');
 
-// Runs a component's own setup with one fragment of its template as the render function.
-// Icons render as their name so the snapshot stays readable.
-const IconName = { props: ['name'], render: (props) => h('i', { 'data-icon': props.name }) };
-function harness(component, path, template) {
-  return {
-    ...component,
-    ssrRender: undefined,
-    setup(props, context) {
-      const state = component.setup(props, context);
-      for (const icon of ['GameIcon', 'TownIcon']) if (icon in state) state[icon] = IconName;
-      return state;
-    },
-    render: Vue.compile(template, { prefixIdentifiers: true, bindingMetadata: bindingsFor(path) }),
-  };
-}
-const normalise = (html) =>
-  html
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/ data-v-\w+(="")?/g, '')
-    .replace(/\s+/g, ' ')
-    .replace(/> </g, '><')
-    .trim();
-async function render(component, path, template, props, globals) {
-  const app = createSSRApp({ render: () => h(harness(component, path, template), props) });
-  app.use(pinia);
-  Object.assign(app.config.globalProperties, globals);
-  return normalise(await renderToString(app));
-}
+const render = (component, path, template, props, globals) =>
+  renderFragment({ component, path, template, props, globals, pinia });
 
 let pinia;
 beforeEach(() => {
@@ -410,7 +366,7 @@ async function statusText(id, town, props) {
     ).then((html) => html.replace(/^<div>|<\/div>$/g, '')),
   };
   if (props.readOnly || !BUILDING_BY_ID[id]) return shown;
-  // The Moon lot labels and the Build tab's Moon list, fed as TownView feeds them.
+  // The Moon lot labels, fed as TownMoonView feeds them.
   shown.moon = moonLotDetail(town, id, {
     indicators: buildingIndicators(town, scene.forgeCollectible, NOW, availablePurchases(town, 0)),
     availableIds: availablePurchases(town, 0).map((place) => place.id),

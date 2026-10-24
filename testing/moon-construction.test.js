@@ -134,3 +134,50 @@ it('keeps an upgrade scaffold until completion and also celebrates a future era 
   v.construction.dispose();
   v.d.disposePrimitives();
 });
+
+it('raises a newly started worksite with the valley’s construction reveal, then merges it', () => {
+  const v = view();
+  const store = useCampaignStore();
+  store.town = townFor('roverBarn');
+  delete store.town.projects.roverBarn;
+  v.construction.sync(store.town);
+  // The player starts the project while the Moon is open.
+  store.town = townFor('roverBarn');
+  v.construction.sync(store.town);
+  const root = v.construction.sites.get('roverBarn').root;
+  const reveal = v.construction.reveals.get('roverBarn');
+  expect(reveal).toBeDefined();
+  const pieces = root.children.filter((part) => part.isMesh).length;
+  expect(pieces).toBeGreaterThan(20);
+  expect(reveal.hammer.parent).toBeTruthy();
+  // The shared reveal advances frame by frame, as the Moon's animation clock drives it.
+  const frames = (from, to) => {
+    for (let time = from; time <= to; time += 1 / 60) v.construction.update(time);
+  };
+  frames(0, 0.5);
+  expect(reveal.pieces.some(({ object, y }) => object.position.y > y)).toBe(true);
+  frames(0.5, 3);
+  expect(v.construction.reveals.size).toBe(0);
+  expect(root.children.filter((part) => part.isMesh).length).toBeLessThan(pieces);
+  expect(root.getObjectsByProperty('isMesh', true).every((m) => m.position.y === 0)).toBe(true);
+  v.construction.dispose();
+  v.d.disposePrimitives();
+});
+
+it('restores sites on load and in reduced motion without a reveal', () => {
+  for (const reducedMotion of [false, true]) {
+    const v = view();
+    v.reducedMotion = reducedMotion;
+    const store = useCampaignStore();
+    store.town = townFor('roverBarn');
+    v.construction.sync(store.town);
+    expect(v.construction.reveals.size).toBe(0);
+    if (reducedMotion) {
+      store.town = townFor('settlerDomes');
+      v.construction.sync(store.town);
+      expect(v.construction.reveals.size).toBe(0);
+    }
+    v.construction.dispose();
+    v.d.disposePrimitives();
+  }
+});

@@ -1,17 +1,21 @@
 import { MOON_PALETTE as p } from '../../../data/futureArchitecture';
 import { MOON_LOTS, moonLotPose } from '../../../data/moonSettlement';
 import { constructionReady, constructionVisual } from '../TownRules';
+import { TownConstruction } from '../TownConstruction';
 
 const finishKey = (town, id) =>
   `${town.buildings?.[id] ?? 0}:${town.buildingEras?.[id]}:${town.buildingEraLevels?.[id]}`;
 
 // The saved project and readiness rules are the valley's. Only the work-site kit
 // differs: steel gantries, a service arm, prefabricated panels and warning lights.
+// A newly started site rises with the valley's own construction reveal
+// (TownConstruction: pieces settle top-down under a swinging hammer and dust).
 export class MoonConstruction {
   constructor(view) {
     this.view = view;
     this.sites = new Map();
     this.effects = [];
+    this.reveals = new Map();
     this.finishes = null;
   }
   sync(town) {
@@ -26,6 +30,8 @@ export class MoonConstruction {
       const previous = this.sites.get(id);
       if (previous && previous.key === key) continue;
       if (previous) {
+        this.reveals.get(id)?.finish();
+        this.reveals.delete(id);
         d.clearGroup(previous.root);
         this.sites.delete(id);
       }
@@ -71,8 +77,20 @@ export class MoonConstruction {
       d.box(root, 0.5, 0.3, 0.5, 0.5, 3.5, -2.2, p.glass);
       for (let n = 0; n < 3 - constructionVisual(project); n++)
         d.box(root, 1.3, 0.16, 1.8, -2, 0.2 + n * 0.2, 2, p.shell);
-      d.batch(root);
+      root.userData.plot = id;
       this.sites.set(id, { key, root });
+      // A project the player just started (not one restored on load) is built in view;
+      // its pieces merge into one batch once the reveal settles.
+      if (!previous && this.finishes && !this.view.reducedMotion) {
+        const reveal = new TownConstruction(
+          Object.assign(Object.create(d), { activeElapsed: elapsed, town }),
+          root,
+          null,
+          new Map(),
+        );
+        reveal.presentFirstStrike();
+        this.reveals.set(id, reveal);
+      } else d.batch(root);
     }
     this.finishes = Object.fromEntries(
       Object.keys(MOON_LOTS).map((id) => [id, finishKey(town, id)]),
@@ -90,6 +108,12 @@ export class MoonConstruction {
     this.update(time);
   }
   update(time, still = false) {
+    for (const [id, reveal] of this.reveals)
+      if (still || reveal.update(time)) {
+        reveal.finish();
+        this.view.d.batch(this.sites.get(id).root);
+        this.reveals.delete(id);
+      }
     this.effects = this.effects.filter((effect) => {
       const t = Math.min(1, Math.max(0, (time - effect.start) / 1.8));
       if (t >= 1 || still) {
@@ -110,6 +134,7 @@ export class MoonConstruction {
     });
   }
   dispose() {
+    this.reveals.clear();
     for (const { root } of [...this.sites.values(), ...this.effects]) this.view.d.clearGroup(root);
     this.sites.clear();
     this.effects = [];

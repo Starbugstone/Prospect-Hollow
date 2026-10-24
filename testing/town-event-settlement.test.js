@@ -1,18 +1,12 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { PerspectiveCamera, Vector3 } from 'three';
 import { BUILDINGS, BUILDING_BY_ID, MOON_BUILDINGS, createTown } from '../src/data/town';
-import {
-  TOWN_PRESENTATIONS,
-  normalizePresentations,
-  queueBuildingPresentations,
-} from '../src/data/townPresentations';
+import { TOWN_PRESENTATIONS, queueBuildingPresentations } from '../src/data/townPresentations';
 import {
   canPresentEvent,
   eventSettlement,
   townEventStage,
 } from '../src/game/town/TownEventSettlement';
-import { MoonPresentation } from '../src/game/town/moon/MoonPresentation';
 import { raidBounty } from '../src/game/town/TownRules';
 import { useCampaignStore } from '../src/stores/campaignStore';
 
@@ -102,30 +96,27 @@ it('holds era construction, railway, celebrations, monument unveiling and a save
   expect(stage(town, 'moon', { attention: [{ id: 'guest-5' }] }).waiting.settlement).toBe('valley');
 });
 it.each(MOON_BUILDINGS.map((b) => b.id))(
-  'queues %s through the saved completion contract and plays only on the Moon',
+  'finishes %s on the Moon without a cinematic, like a valley building',
   (id) => {
-    const store = useCampaignStore();
     const before = createTown();
     const next = { ...before, buildings: { ...before.buildings, [id]: 1 } };
-    store.town = queueBuildingPresentations(before, next);
-    const coins = store.town.coins;
-    const definition = TOWN_PRESENTATIONS[`moon-opening-${id}`];
-    expect(stage(store.town, 'valley').presentation).toBeUndefined();
-    expect(stage(store.town, 'valley').waiting.settlement).toBe('moon');
-    expect(stage(store.town, 'moon').presentation).toBe(definition);
-    expect(normalizePresentations(store.town.presentations, store.town)).toEqual({
-      [definition.id]: 'pending',
-    });
-    expect(store.acknowledgePresentation(definition.id)).toBe(true);
-    expect(store.acknowledgePresentation(definition.id)).toBe(false);
-    expect(store.town.coins).toBe(coins);
-    expect(stage(store.town, 'moon').presentation).toBeUndefined();
+    const town = queueBuildingPresentations(before, next);
+    expect(town.presentations).toEqual({});
+    expect(stage(town, 'moon').presentation).toBeUndefined();
+    expect(stage(town, 'valley').waiting).toBeNull();
+    expect(Object.values(TOWN_PRESENTATIONS).some((d) => d.building === id)).toBe(false);
   },
 );
 it('selects a local presentation even when an older receipt waits in the other settlement; defaults unknown content to the valley', () => {
-  const town = createTown();
-  town.presentations = { 'railway-opening': 'pending', 'moon-opening-roverBarn': 'pending' };
-  expect(stage(town, 'moon').presentation.building).toBe('roverBarn');
+  const definitions = {
+    ...TOWN_PRESENTATIONS,
+    lunar: { id: 'lunar-test', building: 'roverBarn', duration: 1 },
+  };
+  const town = {
+    ...createTown(),
+    presentations: { 'railway-opening': 'pending', 'lunar-test': 'pending' },
+  };
+  expect(stage(town, 'moon', { definitions }).presentation.building).toBe('roverBarn');
   expect(eventSettlement({ building: 'roverBarn' })).toBe(BUILDING_BY_ID.roverBarn.settlement);
   expect(eventSettlement({ building: 'future-unknown', settlement: 'unimplemented' })).toBe(
     'valley',
@@ -133,28 +124,8 @@ it('selects a local presentation even when an older receipt waits in the other s
   expect(canPresentEvent(null, 'valley')).toBe(false);
   expect(canPresentEvent({ id: 'future', settlement: 'moon' }, 'moon', false)).toBe(false);
 });
-it('focuses the Moon lot on the shared clock and restores its camera/controls without a valley scene', () => {
-  const scene = {
-    camera: new PerspectiveCamera(),
-    controls: { target: new Vector3(0, 0, 4), enabled: true, update: vi.fn() },
-    render: vi.fn(),
-    requestFrame: vi.fn(),
-  };
-  scene.camera.position.set(0, 26, 66);
-  const camera = scene.camera.position.clone();
-  const presentation = new MoonPresentation(scene, { building: 'roverBarn' });
-  expect(scene.controls.enabled).toBe(false);
-  presentation.frame(0);
-  expect(scene.camera.position).toEqual(camera);
-  presentation.frame(2);
-  expect(scene.controls.target).toEqual(new Vector3(30, 2, 12));
-  expect(scene.render).toHaveBeenCalledTimes(2);
-  presentation.dispose();
-  expect(scene.camera.position).toEqual(camera);
-  expect(scene.controls.enabled).toBe(true);
-});
 
-it('persists a real Moon construction completion, then acknowledges it without spending or awarding again', () => {
+it('persists a real Moon construction completion without queueing a cinematic or paying twice', () => {
   const store = useCampaignStore();
   store.town = createTown();
   store.town.era = 'twin-hollows';
@@ -164,12 +135,12 @@ it('persists a real Moon construction completion, then acknowledges it without s
   const coins = store.town.coins;
   expect(store.finishConstruction('roverBarn', 1)).toBe(true);
   expect(store.finishConstruction('roverBarn', 1)).toBe(false);
-  expect(stage(store.town, 'valley').waiting.settlement).toBe('moon');
+  expect(store.town.buildings.roverBarn).toBe(1);
+  expect(stage(store.town, 'valley').waiting).toBeNull();
+  expect(stage(store.town, 'moon').presentation).toBeUndefined();
   setActivePinia(createPinia());
   const reloaded = useCampaignStore();
-  expect(stage(reloaded.town, 'moon').presentation.building).toBe('roverBarn');
-  expect(reloaded.acknowledgePresentation('moon-opening-roverBarn')).toBe(true);
-  expect(reloaded.acknowledgePresentation('moon-opening-roverBarn')).toBe(false);
+  expect(reloaded.town.buildings.roverBarn).toBe(1);
   expect(reloaded.town.coins).toBe(coins);
 });
 it('extends to a future settlement definition and safely ignores incomplete definitions', () => {

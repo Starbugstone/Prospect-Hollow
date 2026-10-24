@@ -1,29 +1,11 @@
-import { MOON_BUILDINGS } from './town';
 import { campaignCompletion } from './campaignCompletion';
 import { AREA_BY_ID, LANDMARK_BY_ID, landmarkLevel } from './townLandmarks';
 
 // Completion receipts are saved with the completion transaction. Presentation never
 // owns construction, rewards or progression; interrupted scenes can be resumed.
+// Ordinary buildings, in the valley and on the Moon, finish with the construction
+// reveal alone: only milestones such as the railway get a cinematic.
 export const TOWN_PRESENTATIONS = Object.freeze({
-  ...Object.fromEntries(
-    MOON_BUILDINGS.map((building) => {
-      const id = `moon-opening-${building.id}`;
-      return [
-        id,
-        {
-          id,
-          building: building.id,
-          settlement: 'moon',
-          duration: 7,
-          title: 'New Hollow · Building complete',
-          chapters: [
-            { at: 0, text: '{building} is ready!', params: { building: building.shortName } },
-            { at: 3, text: building.upgrades[0].story },
-          ],
-        },
-      ];
-    }),
-  ),
   'three-star-celebration': {
     id: 'three-star-celebration',
     qualifies: (records) => campaignCompletion(records).complete,

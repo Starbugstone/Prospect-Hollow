@@ -316,10 +316,8 @@ Watch changes settlement, Later collapses the reminder. Merely waiting never
 acknowledges, rerolls, pays or changes an event outcome. Existing pending/seen
 receipts remain the persistence boundary; interrupted scenes resume as before.
 
-Moon buildings share generated first-completion definitions from `MOON_BUILDINGS`
-and the existing construction receipt transaction. `MoonPresentation` owns only a
-camera interpolation to the lot and camera restoration; the common cinematic
-supplies captions, skip, reduced motion and acknowledgement. `TownScene` routes
+Moon buildings, like valley buildings, finish with their construction reveal and no
+cinematic: an opening scene for every lot broke the flow of play. `TownScene` routes
 frames to one settlement camera. The valley stays stopped while the Moon is open;
 there is no second valley scene or inset. Railway openings, era mine construction,
 raids/incidents and campaign celebrations stay in the valley. Monument unveilings

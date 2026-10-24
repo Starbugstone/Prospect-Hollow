@@ -20,6 +20,7 @@ import {
 import { MOON_FORMS, renderMoonBuilding } from '../src/game/town/buildings/moon';
 import { buildMoonMonuments } from '../src/game/town/moon/MoonMonuments';
 import { MoonScene, moonRoofHeight } from '../src/game/town/moon/MoonScene';
+import { MoonConstruction } from '../src/game/town/moon/MoonConstruction';
 import { TownPrimitives } from '../src/game/town/TownPrimitives';
 import { TownUpgradeGlow } from '../src/game/town/TownUpgradeGlow';
 
@@ -274,5 +275,34 @@ it('fits a built monument site’s tap target to the monument, measured before b
   expect(site.userData.height).toBeGreaterThan(0.5);
   const target = scene.pickTargets.children.find((mesh) => mesh.userData.lot === area.id);
   expect(target.scale.y).toBeCloseTo(Math.max(1.2, site.userData.height + 0.2));
+  scene.upgradeGlow.dispose();
+});
+
+it('answers a tap on a worksite’s scaffolding and crane, not only on its pad', () => {
+  const town = moonTown();
+  town.buildings = { ...town.buildings, ribbonLanding: 1 };
+  town.projects = { settlerDomes: { id: 'settlerDomes', stage: 1, wins: 2, required: 2 } };
+  const scene = parcelScene(town);
+  Object.assign(scene, {
+    signature: '',
+    elapsed: 0,
+    reducedMotion: false,
+    access: { geometry: { dispose() {} } },
+    populate() {},
+    saucer: { update() {} },
+  });
+  scene.construction = new MoonConstruction(scene);
+  scene.update(town);
+  const site = scene.construction.sites.get('settlerDomes').root;
+  const crane = moonRoofHeight(site);
+  expect(crane).toBeGreaterThan(4);
+  const target = scene.pickTargets.children.find((mesh) => mesh.userData.lot === 'settlerDomes');
+  expect(target.scale.y).toBeGreaterThanOrEqual(crane);
+  // A tap high on the gantry, where the empty pad alone would have missed.
+  const lot = moonParcels().find(({ id }) => id === 'settlerDomes');
+  expect(tapAt(scene, [lot.x + 6, 4, lot.z + 30], [lot.x, crane - 0.5, lot.z])).toBe(
+    'settlerDomes',
+  );
+  scene.construction.dispose();
   scene.upgradeGlow.dispose();
 });
