@@ -10,7 +10,7 @@ import Moon from '/src/components/town/TownMoonView.vue';
 import {useCampaignStore} from '/src/stores/campaignStore.js';
 import {MOON_LOTS} from '/src/data/moonSettlement.js';
 const campaign=useCampaignStore(createPinia());
-Object.assign(campaign.town,{era:'twin-hollows',coins:1000,moonstones:42,moonstonesEarned:57,completedRuns:100,moonstoneProduction:{progress:0,charge:3}});
+Object.assign(campaign.town,{era:'twin-hollows',coins:1000,moonstones:42,moonstonesEarned:57,completedRuns:100,moonstoneProduction:{progress:2,stored:12}});
 Object.assign(campaign.town.buildings,{spaceElevator:3,...Object.fromEntries(Object.keys(MOON_LOTS).map(id=>[id,3]))});
 campaign.save();
 window.campaign=campaign;
@@ -24,10 +24,13 @@ window.getScene=()=>app._instance.subTree.component.setupState.scene;
     args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
   });
   try {
-    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, locale: 'en-US' });
     page.setDefaultTimeout(60000);
     const errors = [];
-    page.on('pageerror', (e) => errors.push(e.message));
+    page.on('pageerror', (e) => {
+      errors.push(e.message);
+      console.error(e.message);
+    });
     await page.route('**/moonstone-resource-test', (route) =>
       route.fulfill({ contentType: 'text/html', body: fixture }),
     );
@@ -39,9 +42,10 @@ window.getScene=()=>app._instance.subTree.component.setupState.scene;
         earned: window.campaign.town.moonstonesEarned,
       }));
     assert.equal(
-      await page.getByRole('button', { name: 'Collect moonstones', exact: true }).isDisabled(),
+      await page.getByRole('button', { name: 'Collect 12 moonstones', exact: true }).isDisabled(),
       true,
     );
+    await page.getByText('Stored 12 / 30', { exact: true }).waitFor();
     await page.getByRole('button', { name: 'Sell all', exact: true }).click();
     await page.getByText('Sell all 42 moonstones for 10,500 coins?', { exact: true }).waitFor();
     assert.deepEqual(await balance(), { coins: 1000, stones: 42, earned: 57 });
@@ -58,8 +62,12 @@ window.getScene=()=>app._instance.subTree.component.setupState.scene;
       window.getScene().setMotion(false);
       window.getScene().render();
     });
-    await page.getByRole('button', { name: /Moonstone workshop.*Collect 3 moonstones/ }).click();
-    assert.deepEqual(await balance(), { coins: 11500, stones: 3, earned: 60 });
+    await page.getByRole('button', { name: /Moonstone workshop.*Collect 12 moonstones/ }).click();
+    assert.deepEqual(await balance(), { coins: 11500, stones: 12, earned: 69 });
+    assert.deepEqual(await page.evaluate(() => window.campaign.town.moonstoneProduction), {
+      progress: 2,
+      stored: 0,
+    });
     assert.deepEqual(errors, []);
     console.log(
       'Moonstone browser checks passed: confirmation, cancel, quantity sale, all sale, lifetime balance and Moon collection.',

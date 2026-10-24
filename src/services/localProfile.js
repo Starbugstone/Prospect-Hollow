@@ -18,7 +18,7 @@ export const localProfile = {
       if (current != null) {
         const data = current;
         loadedId = data?._cloud?.active.id ?? null;
-        if (data?.schemaVersion > 3)
+        if (data?.schemaVersion > 4)
           return {
             data,
             readOnly: true,

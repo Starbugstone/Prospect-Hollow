@@ -3940,5 +3940,12 @@
   "Welcome the first Moon families": "Accueillir les premières familles sur la Lune",
   "Grow a neighborhood in New Hollow": "Faire grandir un quartier à New Hollow",
   "Send a little Moonlight home": "Envoyer un peu de clair de Lune au village",
-  "Keep a welcome in the valley": "Préserver un accueil dans la vallée"
+  "Keep a welcome in the valley": "Préserver un accueil dans la vallée",
+  "Produces {count} moonstones every {runs} completed normal puzzles. Tap the workshop to collect stored moonstones.": "Produit {count} pierres de lune tous les {runs} puzzles normaux terminés. Touchez l’atelier pour récupérer les pierres stockées.",
+  "Stored {count} / {capacity}": "Stock : {count} / {capacity}",
+  "Storage full. Collect moonstones to resume production.": "Stock plein. Récupérez les pierres de lune pour reprendre la production.",
+  "Continuous play: every {gems} gems advances production by one puzzle, up to {puzzles} puzzles per level for the lifetime of your town. Gems collected while storage is full do not count.": "Mode continu : chaque groupe de {gems} gemmes fait avancer la production d’un puzzle, dans la limite de {puzzles} puzzles par niveau pour toute la vie de votre village. Les gemmes collectées quand le stock est plein ne comptent pas.",
+  "Your workshop gains one puzzle of production per {gems} gems, up to {puzzles} puzzles per level for the lifetime of your town. Collect its stock before it fills.": "Votre atelier gagne un puzzle de production par groupe de {gems} gemmes, dans la limite de {puzzles} puzzles par niveau pour toute la vie de votre village. Récupérez son stock avant qu’il ne soit plein.",
+  "{earned}/{cap} workshop gems credited": "{earned}/{cap} gemmes créditées à l’atelier",
+  "Moonstone storage capacity": "Capacité du stock de pierres de lune"
 }
