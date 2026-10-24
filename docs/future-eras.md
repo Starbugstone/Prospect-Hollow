@@ -139,8 +139,10 @@ The space elevator beside the mine, and each finished town:
 ## Twin Hollows (2300)
 
 The Moon is the new frontier. The town now looks after two places: Prospect
-Hollow in the valley and **New Hollow** on the Moon. There is one wallet, no Moon
-currency, and nothing on the Moon can fail, decay or run on a timer.
+Hollow in the valley and **New Hollow** on the Moon. Both share one coin wallet
+and a saved moonstone balance for optional monuments or sales. Moon buildings
+never fail or decay, and their construction and resource production advance
+through puzzle play, not a real-time deadline.
 
 ### Light homecoming on Earth
 
@@ -156,7 +158,7 @@ the twin-globes fountain and the mine portal a homecoming gable.
 
 ### New Hollow
 
-Ten Moon buildings are ordinary `BUILDINGS` entries flagged `settlement: 'moon'`,
+Ten required Moon buildings are ordinary `BUILDINGS` entries flagged `settlement: 'moon'`,
 so offers, construction (completed puzzles), needs, saves, server validation and
 shared projections all use the existing lifecycle. They have no valley lot:
 `EARTH_BUILDINGS`/`MOON_BUILDINGS` in `data/town.js` separate the two, and the
@@ -174,6 +176,10 @@ valley renderer, footprints and labels skip Moon buildings.
 | Moonstone workshop    | 2 visitors, 1 comfort |
 | Rover barn            | 2 comfort             |
 | Earthrise lookout     | 2 visitors, 2 comfort |
+
+The workshop also produces saved moonstones for collection: 1 / 2 / 3 every
+three completed puzzles, storing up to 10 / 20 / 30 at levels 1 / 2 / 3.
+[Moonstones](moonstones.md) documents continuous production credits and sales.
 
 Needs are shared: the valley's spare water and food go up the ribbon, so a
 well-run valley lets the Moon grow. The era is complete when both are finished.
@@ -203,7 +209,8 @@ hatch; level 2 adds fuel and cargo, and level 3 a freight canopy and dispatch
 beacon. It adds comfort without increasing the settlement’s food or water demand.
 It occupies `[15, -30]` with radius 6.4, away from the ring road and
 other lots. Its public approach faces inward; the flight corridor climbs outward
-to the north-east. There is a matching SVG illustration, letter home and keepsake.
+to the north-east. There is a matching SVG illustration and letter home; each completed level
+grants a saved moonstone.
 
 Once the pad reaches level 1, `MoonSaucer.js` brings a shuttle onto its landing
 circle. The 150-second visit approaches from high sky, hovers, settles on
@@ -219,9 +226,11 @@ shared building factory and exported to the server. It never makes a completed
 Twin Hollows save incomplete or gates future progression. Existing Moon buildings
 keep their completion requirements and the era's modernization list stays fixed.
 The footprint generator covers `EARTH_BUILDINGS` only; the Moon's shared lot radii
-and approach geometry cover this pad. No honours rank is added: buildings are not
-mine elements, gems, eras or fusions, and the existing construction counter counts
-these paid upgrades without changing any shipped honour requirements.
+and approach geometry cover this pad. Honours version 5 adds the bronze Shuttle
+Host rank for its first completed level. Its levels also count toward New Hollow
+Pioneer; its building gifts count toward Lunar Keepsake Collector. These use the
+shared building-level and lifetime-resource measures without changing earlier
+shipped requirements.
 
 `testing/moon-saucer.test.js` checks built visibility, palette fallback, grounded
 feet within the octagonal pad, flight clearance against finished buildings,
@@ -278,17 +287,25 @@ preserves orbit and relative zoom while keeping the outer lunar lots in view.
 
 `PH_TEST_ORIGIN` points the check at another server.
 
-Purely cosmetic gifts: one **moonstone keepsake** per finished Moon building level
-and one **letter home** per finished Moon building, both derived from building
-levels (`moonstoneKeepsakes()`, `moonLetters()`), so nothing new is saved. Moon
-guests ride down the elevator: it is a visitor transport like the train, boat and
-plane, publishing an arrival each time a climber reaches the docks.
+Each finished Moon building level grants **one saved moonstone**. The workshop
+produces more for collection; stones can be sold or spent on the optional
+Moonstone Garden in the valley and Moonrock Court on the Moon. Earthrise Plaza
+uses coins. See [Moonstones](moonstones.md) for production, storage, continuous
+play, prices and migration from the original cosmetic keepsakes. **Letters home**
+remain cosmetic, one per finished Moon building, derived by `moonLetters()`
+without a separate saved reward. Moon guests ride down the elevator: it is a
+visitor transport like the train, boat and plane, publishing an arrival each
+time a climber reaches the docks.
 
 The Willowkin stay in the story: the garden dome raises the first Willowkin born
 on the Moon, and the valley's Willowkin neighbors keep their walks.
 
 Honours: Through the Ages gains its diamond rank, **Two Towns, One Sky**
-(complete Twin Hollows, goal 29, `HONOURS_VERSION` 3).
+(complete Twin Hollows, goal 29, introduced in honours version 3). Honours
+version 5 adds New Hollow Pioneer, Shuttle Host, Lunar Keepsake Collector and
+Landmark Patron, plus continuous-play families and shared gem, fusion and mine
+mastery credit. Resource earnings and puzzle gems remain separate measures; see
+[Town Honours](honours.md) for the fixed ranks and calibration.
 
 ![Twin Hollows in the valley](images/future-eras/twin-hollows-town.png)
 ![New Hollow on the Moon](images/future-eras/twin-hollows-moon.png)

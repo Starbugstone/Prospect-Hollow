@@ -104,9 +104,11 @@ insufficient balances, unsafe integers, overflow or persistence failure leave
 both currencies and the journal unchanged. The Homecoming hall celebrates
 lifetime earnings, even after stones have been sold or spent.
 
-## Calibration evidence
+## Historical phase-1 calibration (2026-10-23)
 
-Measured on 2026-10-23 in the required Node 24 Docker image:
+This predates the integrated monuments and stored workshop. Current prices and
+pacing appear in the sections below; these original measurements are retained
+as history. Measured in the required Node 24 Docker image:
 
 ```sh
 node scripts/measure-campaign.mjs . 1 > /output/ph-moonstone-campaign.json
@@ -130,12 +132,13 @@ Twin Hollows opens at completed puzzle **646**. Workshop levels finish at **650,
 | 60 moonstones        | 686              | 40                                |
 | 90 moonstones        | 716              | 70                                |
 
-A proposed middle monument price of **60 moonstones** is therefore reachable in
+The then-proposed middle monument price of **60 moonstones** was reachable in
 about 40 normal puzzles after entering Twin Hollows, or 26 after this trajectory's
 level-3 workshop completes. An already migrated town with 30 building keepsakes
-needs **30 more puzzles** at level 3 to reach 60. Exact monument prices belong to
-phase 2. This historical projection used the old single-batch workshop. The stored model
-keeps the same production rate and avoids lost production while stock has room;
+needed **30 more puzzles** at level 3 to reach 60 under those assumptions. The
+current integrated monument schedule is **20 / 30 / 40 / 50 / 60** per level,
+documented below. This historical projection used the old single-batch workshop.
+The stored model keeps the same production rate and avoids lost production while stock has room;
 existing balance, stock and partial progress never expire.
 
 The sale rate is intentionally modest: a full level-3 batch sells for **750
@@ -231,7 +234,7 @@ remain unchanged; the regenerated server catalog supplies the same rate to repla
 Normal production, prompt-collector milestones, prices and the sale rate are
 unchanged; delayed collectors retain production until storage fills.
 
-## API for phase 2 monuments
+## Resource and monument API
 
 - `campaign.collectMoonstones(now?) -> amount` collects the entire stored stock and
   persists it before returning its positive amount; zero means nothing changed.
@@ -256,11 +259,13 @@ Keep currency in the shared site/offer contract and export its terms in save rul
 
 ## Honours decision and regression coverage
 
-No new mastery family is added: this is an economy currency, not a new gem, mine
-element, era or fusion. The shipped `moonstone` honour continues to count puzzle
-gems only; earning resource moonstones never increments it. Existing ranks,
-requirements and the shipped fixture remain unchanged. The public content and
-save-rule catalogs are regenerated.
+The economy resource is separate from the `moonstone` puzzle gem. Moonstone
+Laureate counts puzzle gems in normal and continuous play; earning resource
+moonstones never increments it. The separate Lunar Keepsake Collector family
+(`moonstone-reserve`) counts lifetime resource earnings, including stones later
+spent or sold. These ranks were added in honours version 5 after the original
+resource implementation. See [Town Honours](honours.md) for fixed requirements,
+calibration and the corresponding shipped fixture and server catalog.
 
 `testing/moonstones.test.js` covers migration, reload/import, fallback, building
 rewards, stock caps, normal and bounded continuous production, sales, invalid amounts,
@@ -336,10 +341,11 @@ or failed local persistence leave ownership, construction, coins, moonstones,
 lifetime earnings and journal unchanged. Lifetime earnings also survive upgrades.
 
 Honours decision: these are optional decorative sites, with no new puzzle gem,
-mine element, era or fusion. The shipped A Lasting Legacy measure still names
-Monument Square (`monument`); neither new site earns or alters it. No rank or
-shipped requirement changes. Client `isEraComplete` and server `eraComplete` use
-required building definitions, never the monument catalog; empty and unfinished
+mine element, era or fusion. A Lasting Legacy still names Monument Square
+(`monument`); neither new site earns or alters it. The later Landmark Patron
+family (`landmark-patron`, honours version 5) counts paid foundations at its
+fixed named sites, including Earthrise Plaza, Moonstone Garden and Moonrock Court.
+Client `isEraComplete` and server `eraComplete` use required building definitions, never the monument catalog; empty and unfinished
 sites do not affect completion.
 
 `testing/moonstone-monuments.test.js` covers atomic purchase/upgrade rollback,

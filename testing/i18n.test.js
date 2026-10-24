@@ -13,6 +13,7 @@ import { FUSION_STYLES } from '../src/game/engine/BonusFusion';
 import { BUILDINGS, INITIAL_STORY } from '../src/data/town';
 import { OBSTACLES } from '../src/data/obstacles';
 import { ERAS } from '../src/data/eras';
+import { latestUpdates } from '../src/data/updates';
 import { MOTOR_AGE_VARIANTS } from '../src/data/motorAge';
 import { INDUSTRIAL_VARIANTS } from '../src/data/industrial';
 import { RIVER_RAIL_VARIANTS } from '../src/data/riverRail';
@@ -77,6 +78,7 @@ describe('One browser language across the game and town', () => {
   });
   it('keeps a translated catalog for all levels, chapters, rewards, and town content', () => {
     const messages = [
+      ...latestUpdates(Infinity).flatMap((update) => [update.title, update.text]),
       ...LANDMARK_OPTIONS.flatMap((o) => [o.label, o.detail]),
       ...PERSONAL_AREAS.map((a) => a.label),
       ...CREST_EMBLEMS.map((e) => e.label),

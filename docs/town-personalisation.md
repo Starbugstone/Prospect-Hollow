@@ -35,7 +35,7 @@ tapping the plaque names the honour or distinction above it until the next tap.
 (Frontier, Industrial, Motor Age, Music & Television, Tomorrow City, Riverlight,
 Stargazer and Twin Hollows),
 so the town gets variety without a monument for every era. Two additional resource
-sites open in Twin Hollows for moonstone keepsakes. Each era site offers
+sites open in Twin Hollows for saved moonstones. Each era site offers
 three designs drawn from what that era brings to the town:
 
 | Era                 | Site             | Designs                                                       |
@@ -73,8 +73,9 @@ and spend operation used by the card, Build list and purchase path. It delegates
 to the shared `townCurrency` contract for coins and moonstones. Unknown currencies
 reject purchases on both client and server. Moonstone Garden (valley, `[48, -102]`)
 and Moonrock Court (Moon, `[-16, -30]`) open in Twin Hollows. Their six designs
-cost 60 moonstones each; every paid upgrade uses moonstones too. Both use the same
-five levels, construction, permanent choice and unveiling as coin monuments.
+cost 20 moonstones each for the foundation; upgrades cost 30 / 40 / 50 / 60
+moonstones, for 200 per finished wonder. Both sites use the same five levels,
+construction, permanent choice and unveiling as coin monuments.
 See [moonstone calibration](moonstones.md#phase-2-optional-moonstone-monuments).
 No receipt can substitute coins, change the catalog price, or spend moonstones
 separately from granting ownership. Existing coin and legacy receipts keep their
@@ -82,8 +83,10 @@ prices and behavior.
 
 Honours decision: the shipped **A Lasting Legacy** requirement specifically
 measures ownership of `monument` (Monument Square), rather than a count of sites.
-Earthrise Plaza adds no rank and does not change that requirement or any shipped
-rank; ownership of the lunar site alone does not earn it.
+Ownership of Earthrise Plaza alone does not earn it or change its requirement.
+The later **Landmark Patron** family (honours version 5) counts paid foundations
+at its fixed named sites, including Earthrise Plaza, Moonstone Garden and
+Moonrock Court. See [Town Honours](honours.md) for its ranks and calibration.
 
 Only the timeless Monument Square stands in front of the town. Every other valley site lies
 beyond the railway, in two rows behind the mine ridge and a column west of the
