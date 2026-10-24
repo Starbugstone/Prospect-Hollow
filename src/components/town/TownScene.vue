@@ -191,7 +191,7 @@
         :class="{ short: chip.short }"
         :aria-label="chip.label"
         :title="chip.label"
-        @click="emit('inspect', chip.id)"
+        @click="emit('locate', chip.id)"
       >
         <TownIcon :name="chip.icon" /><span>{{ chip.value }}</span>
       </button>
@@ -340,7 +340,7 @@ const valleyPresentation = computed(() =>
 );
 function openMoon() {
   if (props.raid || props.cinematic || valleyPresentation.value) return;
-  if (!moonReachable.value) return emit('inspect', 'spaceElevator');
+  if (!moonReachable.value) return emit('locate', 'spaceElevator');
   moonOpen.value = true;
 }
 function closeMoon() {
@@ -390,6 +390,9 @@ const emit = defineEmits([
   'select',
   'visit',
   'inspect',
+  // A chip naming a place (a need's fix, the unbuilt space elevator): unlike a tap on
+  // the map, it opens the card and takes the camera there.
+  'locate',
   'mine',
   'settlement-change',
   'raid-phase',

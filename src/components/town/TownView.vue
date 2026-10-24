@@ -149,8 +149,9 @@
           :raid-defense-ids="readyRaidDefenses"
           :construction="construction"
           :need-chips="needs.demand && !playingRaid ? needChips : []"
-          @select="selectBuilding"
-          @inspect="inspectBuilding"
+          @select="selectBuilding($event, KEEP_CAMERA)"
+          @inspect="inspectBuilding($event, KEEP_CAMERA)"
+          @locate="inspectBuilding"
           @mine="goMining"
           @raid-phase="raidPhase = $event"
           @raid-cue="playRaidCue"
@@ -918,17 +919,21 @@ function focusPersonalBuilding(id) {
 function savePersonalisation(commands) {
   return campaign.personalise(commands, personalDistinctions.value);
 }
+// A tap on the valley or one of its labels opens the card of a place the player can
+// already see, so the camera stays where they left it. Lists, notices and links that
+// name a place still take the camera there.
+const KEEP_CAMERA = false;
 // Monument sites open from the map or the Build list.
 const monumentSite = ref(PERSONAL_AREAS[0].id),
   monumentPreview = ref(null);
-function openMonument(id) {
+function openMonument(id, locate = true) {
   if (!AREA_BY_ID[id]) return;
   museumOpen.value = false;
   monumentSite.value = id;
   dialogMode.value = 'monument';
   nextTick(() => {
     document.querySelector('.town-dialog')?.scrollTo({ top: 0 });
-    townScene.value?.focusPlace(id);
+    if (locate !== KEEP_CAMERA) townScene.value?.focusPlace(id);
   });
 }
 function buildMonument(command) {
@@ -1438,11 +1443,11 @@ function showCollection(resource, amount, buildingId) {
     origin: townScene.value?.collectionOrigin(buildingId),
   };
 }
-async function selectBuilding(id) {
+async function selectBuilding(id, locate = true) {
   if (AREA_BY_ID[id]) {
     // A finished level is unveiled by its hammer, like a finished building.
     if (monumentWork(town.value, AREA_BY_ID[id])?.ready) unveilMonument(id);
-    else openMonument(id);
+    else openMonument(id, locate);
     return;
   }
   if (!Object.hasOwn(BUILDING_BY_ID, id)) return;
@@ -1467,7 +1472,7 @@ async function selectBuilding(id) {
     showCollection('tnt', 1, 'blacksmith');
     return;
   }
-  await inspectBuilding(id);
+  await inspectBuilding(id, locate);
 }
 function ringBell() {
   if (!campaign.ringTownBell(event.value?.id)) return false;
@@ -1491,12 +1496,12 @@ function selectParcel(id) {
     else useHammer(offer.stage, true);
   }
 }
-async function inspectBuilding(id) {
+async function inspectBuilding(id, locate = true) {
   if (!Object.hasOwn(BUILDING_BY_ID, id)) return;
   selected.value = id;
   dialogMode.value = 'building';
   await nextTick();
-  townScene.value?.focusPlace(id);
+  if (locate !== KEEP_CAMERA) townScene.value?.focusPlace(id);
   const dialog = document.querySelector('.town-dialog');
   if (dialog) {
     dialog.scrollTop = 0;
