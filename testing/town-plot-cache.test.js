@@ -182,8 +182,14 @@ it.each(ERAS.filter((era) => era.enabled).map((era) => era.id))(
       previous: actor.root.position.clone(),
       travel: 0,
       roadGap: Infinity,
+      doorGap: 0,
       phases: new Set(),
     }));
+    // Residents, the patrol and workers on an indoor break fade only at their door.
+    const doorOf = (actor) =>
+      actor.itinerary?.door
+        ? actor.itinerary.anchor
+        : actor.workRoutine?.door && actor.workRoutine.paths[0].points[0];
     for (let frame = 1; frame <= 1200; frame++) {
       view.elapsed = frame / 10;
       view.actors.forEach((actor) => view.animatePerson(actor, view.elapsed));
@@ -197,12 +203,18 @@ it.each(ERAS.filter((era) => era.enabled).map((era) => era.id))(
         }
         track.travel += track.actor.root.position.distanceTo(track.previous);
         track.previous.copy(track.actor.root.position);
+        const door = doorOf(track.actor);
+        if (door && track.actor.root.scale.x < 1) {
+          const { x, z } = track.actor.root.position;
+          track.doorGap = Math.max(track.doorGap, Math.hypot(x - door[0], z - door[2]));
+        }
         if (track.actor.workRoutine) track.phases.add(track.actor.workRoutine.phase);
       }
     }
-    for (const { actor, travel, phases, roadGap } of tracks) {
+    for (const { actor, travel, phases, roadGap, doorGap } of tracks) {
       const label = `${actor.root.name || actor.work || 'walker'} ${actor.seed}`;
       expect.soft(travel, label).toBeGreaterThan(1);
+      expect(doorGap, `${label} faded away from its door`).toBeLessThan(0.6);
       if (actor.work) {
         expect(roadGap, `${label} in carriageway`).toBeGreaterThanOrEqual(
           0.65 + (actor.radius ?? 0.29) + 0.049,

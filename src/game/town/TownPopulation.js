@@ -10,6 +10,72 @@ import { addTownVisitors } from './TownActivity';
 import { addMotorActivity } from './TownMotorActivity';
 import { motorTraffic } from './TownEvolution';
 import { LANE_X, atPlot, SHERIFF_PATROL } from './TownLayout';
+import { BUILDINGS } from '../../data/town';
+
+// Household walkers, each joining once the population reaches `from`. Each lives in
+// its own house once built, else in the first built one, and leaves and comes home
+// through its door (TownItineraries). Without a home, it keeps its street route.
+const HOMES = BUILDINGS.filter((building) => building.kind === 'home').map(({ id }) => id);
+const RESIDENTS = [
+  {
+    from: 0,
+    home: 'home',
+    color: '#738a83',
+    skin: '#d5ad88',
+    hat: '#b38d59',
+    route: [
+      [-LANE_X, -8.5],
+      [-LANE_X, -0.5],
+      [-LANE_X, 7.5],
+      [-LANE_X, 15.5],
+    ],
+    seed: 1,
+  },
+  {
+    from: 1,
+    home: 'home2',
+    color: '#aa6959',
+    skin: '#d7b291',
+    hat: '#846642',
+    route: [
+      [-7, -0.5],
+      [-LANE_X, -0.5],
+      [LANE_X, -0.5],
+      [7, -0.5],
+    ],
+    seed: 4,
+  },
+  {
+    from: 1,
+    home: 'home4',
+    color: '#d2a56a',
+    skin: '#8d6045',
+    hat: '#d7bf8b',
+    route: [
+      [LANE_X, 15.5],
+      [LANE_X, 7.5],
+      [LANE_X, -0.5],
+      [LANE_X, -8.5],
+    ],
+    seed: 9,
+    dress: true,
+  },
+  {
+    from: 3,
+    home: 'home3',
+    color: '#879460',
+    skin: '#b07c59',
+    hat: '#ae814d',
+    route: [
+      [-15, 7.5],
+      [-11, 7.5],
+      [-11, -0.5],
+      [-7, -0.5],
+    ],
+    seed: 13,
+  },
+];
+const residentHome = (town, home) => [home, ...HOMES].find((id) => town.buildings[id] > 0) ?? null;
 
 // The village's everyday life, prepared in resumable steps after the town is drawn:
 // era and motor activity, visitors, leisure, aviation, then the resident walkers.
@@ -29,58 +95,8 @@ export function* populateLife(d, town) {
   yield;
   trackTransport(d, 'airport', town, addAviationActivity(d, town));
   yield;
-  d.person({
-    color: '#738a83',
-    skin: '#d5ad88',
-    hat: '#b38d59',
-    route: [
-      [-LANE_X, -8.5],
-      [-LANE_X, -0.5],
-      [-LANE_X, 7.5],
-      [-LANE_X, 15.5],
-    ],
-    seed: 1,
-  });
-  if (household) {
-    d.person({
-      color: '#aa6959',
-      skin: '#d7b291',
-      hat: '#846642',
-      route: [
-        [-7, -0.5],
-        [-LANE_X, -0.5],
-        [LANE_X, -0.5],
-        [7, -0.5],
-      ],
-      seed: 4,
-    });
-    d.person({
-      color: '#d2a56a',
-      skin: '#8d6045',
-      hat: '#d7bf8b',
-      route: [
-        [LANE_X, 15.5],
-        [LANE_X, 7.5],
-        [LANE_X, -0.5],
-        [LANE_X, -8.5],
-      ],
-      seed: 9,
-      dress: true,
-    });
-  }
-  if (household > 2)
-    d.person({
-      color: '#879460',
-      skin: '#b07c59',
-      hat: '#ae814d',
-      route: [
-        [-15, 7.5],
-        [-11, 7.5],
-        [-11, -0.5],
-        [-7, -0.5],
-      ],
-      seed: 13,
-    });
+  for (const { from, home, ...resident } of RESIDENTS)
+    if (household >= from) d.person(resident).home = residentHome(town, home);
   if (town.buildings.farm) {
     const farmer = d.person({
       color: '#809267',
@@ -91,7 +107,7 @@ export function* populateLife(d, town) {
       work: 'farm',
     });
     farmer.root.name = 'Farmer tending crops';
-    addWorkBreak(d, farmer, 'farm', { work: 18, rest: 4 });
+    addWorkBreak(d, farmer, 'farm', { work: 18, rest: 4, door: true });
   }
   if (town.buildings.saloon) {
     const host = d.person({
@@ -104,10 +120,10 @@ export function* populateLife(d, town) {
       dress: true,
     });
     host.root.name = 'Saloon host';
-    addWorkBreak(d, host, 'saloon', { work: 14, rest: 4 });
+    addWorkBreak(d, host, 'saloon', { work: 14, rest: 4, door: true });
   }
-  if (town.buildings.sheriff)
-    d.person({
+  if (town.buildings.sheriff) {
+    const sheriff = d.person({
       color: '#315d83',
       skin: '#c99d74',
       hat: '#f0d390',
@@ -116,6 +132,9 @@ export function* populateLife(d, town) {
       sheriff: true,
       loop: true,
     });
+    // Each beat leaves the office door, walks the patrol and returns for a short rest.
+    Object.assign(sheriff, { home: 'sheriff', patrol: true });
+  }
   if (town.buildings.stable && !motorTraffic(town)) {
     d.horse(...atPlot('stable', 2.25, 0.9), 0.5);
     d.horse(...atPlot('stable', 2.65, -0.9), -0.9, 0.85);

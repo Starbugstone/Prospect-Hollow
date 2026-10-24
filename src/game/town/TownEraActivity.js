@@ -99,6 +99,7 @@ export function addEraActivity(d, town) {
   if (town.era === 'frontier') return;
   if (town.buildings.bridge && town.buildings.home5) {
     const route = routeBetween(town, plotStreet('home5'), plotStreet('saloon'));
+    // A riverside resident: its outings start and end at the riverside home's door.
     if (route.length > 1)
       d.person({
         color: '#8b849a',
@@ -107,7 +108,7 @@ export function addEraActivity(d, town) {
         seed: 25,
         route,
         linear: true,
-      });
+      }).home = 'home5';
   }
   trackTransport(d, 'riverPort', town, addRiverBoat(d, town));
   trackTransport(d, 'railDepot', town, addStationTrain(d, town));
