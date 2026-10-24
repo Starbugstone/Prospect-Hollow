@@ -1,7 +1,13 @@
-import { BufferGeometry, Float32BufferAttribute, MeshBasicMaterial, RingGeometry } from 'three';
+import {
+  BufferGeometry,
+  CylinderGeometry,
+  Float32BufferAttribute,
+  MeshBasicMaterial,
+  RingGeometry,
+} from 'three';
 import { MOON_PALETTE as p } from '../../../data/futureArchitecture';
 import { heritageUpgrade } from '../../../data/heritageUpgrades';
-import { moonPadRadius } from '../../../data/moonSettlement';
+import { MOON_PARCEL_SIDES, moonPadRadius } from '../../../data/moonSettlement';
 import { futureShape } from './futureShapes';
 
 // New Hollow on the Moon. Every building shares one small lunar kit: moon-white
@@ -110,9 +116,19 @@ function purposeModule(d, g, kind, x, z, w, dep, h) {
   return root;
 }
 
-function pad(d, g, r, x = 0, z = 0) {
-  d.mesh(g, futureShape(d, 'octagon'), [r, 0.18, r], [x, 0.09, z], p.deep);
-  d.mesh(g, futureShape(d, 'octagon'), [r - 0.25, 0.08, r - 0.25], [x, 0.22, z], p.shell);
+/**
+ * The pad every Moon parcel stands on: building lots, empty lots and monument sites.
+ * renderMoonBuilding and the monument sites draw it, so no building form can change it.
+ */
+export function moonParcelPad(d, g, r, { flush = false } = {}) {
+  d.geometries['moon-parcel'] ??= new CylinderGeometry(1, 1, 1, MOON_PARCEL_SIDES);
+  // Monuments build from the ground, so their parcel is a flush plate of the same shape.
+  const [rim, top] = flush ? [0.03, 0.02] : [0.18, 0.08];
+  const base = d.mesh(g, 'moon-parcel', [r, rim, r], [0, rim / 2, 0], p.deep);
+  base.name = 'Moon parcel pad';
+  base.userData.parcelPad = { radius: r, sides: MOON_PARCEL_SIDES };
+  d.mesh(g, 'moon-parcel', [r - 0.25, top, r - 0.25], [0, rim + top / 2, 0], p.shell);
+  return base;
 }
 function airlock(d, g, x, y, z, turn = 0, scale = 1) {
   const door = d.group(g, x, y, z);
@@ -223,7 +239,6 @@ function willowkinTree(d, g, x, y, z, scale = 1) {
 const RIBBON_HEIGHT = 140;
 const FORMS = {
   saucerPad(d, g, level) {
-    pad(d, g, moonPadRadius('saucerPad'));
     // Keep the whole vertical flight column empty. The service hatch and cargo
     // stand outside the landing circle, with a straight public path at the front.
     d.geometries['moon-saucer-ring'] ??= new RingGeometry(3.05, 3.2, 48);
@@ -253,7 +268,6 @@ const FORMS = {
     }
   },
   ribbonLanding(d, g, level) {
-    pad(d, g, moonPadRadius('ribbonLanding'));
     d.mesh(g, futureShape(d, 'octagon'), [1.3, 4.2, 1.3], [0, 2.35, 0], p.shell);
     d.mesh(g, futureShape(d, 'octagon'), [1.45, 0.2, 1.45], [0, 4.5, 0], p.light);
     const ribbon = d.mesh(
@@ -265,6 +279,8 @@ const FORMS = {
     );
     ribbon.castShadow = false;
     ribbon.name = 'Moon ribbon';
+    // Sky parts are not the building: taps on the sky around them pass by.
+    ribbon.userData.sky = true;
     const climber = d.box(g, 0.85, 1.1, 0.85, 0, 5.4, 0, p.shell, true);
     climber.castShadow = false;
     d.box(g, 0.9, 0.16, 0.9, 0, 5.0, 0, p.flower).castShadow = false;
@@ -276,6 +292,7 @@ const FORMS = {
     }
     if (level >= 3) {
       const halo = d.mesh(g, futureShape(d, 'hoop'), [2.6, 2.6, 2.6], [0, 13, 0], p.shell);
+      halo.userData.sky = true;
       halo.rotation.x = Math.PI / 2;
       halo.castShadow = false;
       for (const [x, z] of [
@@ -288,7 +305,6 @@ const FORMS = {
     }
   },
   settlerDomes(d, g, level) {
-    pad(d, g, moonPadRadius('settlerDomes'));
     dome(d, g, -1.5, -0.6, 1.25);
     dome(d, g, 1.5, -0.4, 1.05, 0.75);
     if (level >= 2) dome(d, g, 0, -2.6, 1.1, 1.1);
@@ -299,7 +315,6 @@ const FORMS = {
     }
   },
   craterIceWell(d, g, level) {
-    pad(d, g, moonPadRadius('craterIceWell'));
     // A drilling tripod over the crater ice.
     for (let n = 0; n < 3; n++) {
       const a = (n * TAU) / 3;
@@ -319,7 +334,6 @@ const FORMS = {
     }
   },
   earthlightGreenhouse(d, g, level) {
-    pad(d, g, moonPadRadius('earthlightGreenhouse'));
     const vault = (x, z, len) => {
       d.box(g, len, 0.3, 1.8, x, 0.4, z, p.shell);
       habitatGlass(
@@ -349,7 +363,6 @@ const FORMS = {
     }
   },
   willowkinDome(d, g, level) {
-    pad(d, g, moonPadRadius('willowkinDome'));
     const top = dome(d, g, 0, -0.4, 2.3, 0.5);
     willowkinTree(d, g, 0, 0.3, -0.5, 1.1);
     d.mesh(g, 'cylinder', [1.15, 0.025, 1.1], [0, 0.77, -0.5], p.green);
@@ -369,7 +382,6 @@ const FORMS = {
     }
   },
   newHollowCommons(d, g, level) {
-    pad(d, g, moonPadRadius('newHollowCommons'));
     module(d, g, 0, -0.6, 4, 2, 1.5);
     dome(d, g, 0, -0.9, 1.1, 1.35, false);
     // The Prospect Hollow pennant flies on the Moon.
@@ -383,7 +395,6 @@ const FORMS = {
     }
   },
   craterHomesteads(d, g, level) {
-    pad(d, g, moonPadRadius('craterHomesteads'));
     gable(d, g, -1.6, -1, 1.8, 1.8, 1.5);
     gable(d, g, 1.7, -0.4, 1.6, 1.7, 1.3, p.flower);
     if (level >= 2) gable(d, g, 0.1, -3, 1.6, 1.4, 1.4);
@@ -401,7 +412,6 @@ const FORMS = {
     }
   },
   moonstoneWorkshop(d, g, level) {
-    pad(d, g, moonPadRadius('moonstoneWorkshop'));
     module(d, g, -0.6, -0.8, 3, 1.9, 1.4);
     d.mesh(g, 'cylinder', [0.3, 1.6, 0.3], [-1.6, 2.2, -1.2], p.deep);
     // Polished moonstones glow on the display table.
@@ -417,7 +427,6 @@ const FORMS = {
     }
   },
   roverBarn(d, g, level) {
-    pad(d, g, moonPadRadius('roverBarn'));
     gable(d, g, -0.8, -1.2, 3, 2.2, 1.6, p.flower);
     rover(d, g, 1.9, 1.6, -0.5);
     if (level >= 2) rover(d, g, -1.6, 2, 0.6);
@@ -438,7 +447,6 @@ const FORMS = {
     }
   },
   earthriseLookout(d, g, level) {
-    pad(d, g, moonPadRadius('earthriseLookout'));
     // A deck on stilts with a telescope pointed at the valley.
     d.box(g, 3.2, 0.18, 2.4, 0, 1.6, -0.4, p.timber);
     for (const x of [-1.4, 1.4])
@@ -487,20 +495,18 @@ export function renderMoonBuilding(d, parent, kind, level) {
   const root = d.group(parent);
   root.name = `Moon ${kind} level ${level}`;
   root.userData.eraLevel = level;
+  // Every parcel, built or empty, stands on the shared pad; forms build on top of it.
+  const r = moonPadRadius(kind);
+  moonParcelPad(d, root, r);
   if (level > 0 && FORMS[kind]) FORMS[kind](d, root, level);
   else {
-    // An empty lot: a marked pad with four survey beacons.
-    d.mesh(root, futureShape(d, 'octagon'), [3.6, 0.06, 3.6], [0, 0.03, 0], p.deep);
+    // An empty lot: four survey beacons on the rim of its pad.
     for (let n = 0; n < 4; n++) {
-      const a = (n * TAU) / 4 + TAU / 8;
-      d.rod(
-        root,
-        [Math.sin(a) * 3, 0, Math.cos(a) * 3],
-        [Math.sin(a) * 3, 0.7, Math.cos(a) * 3],
-        0.04,
-        p.deep,
-      );
-      d.ball(root, Math.sin(a) * 3, 0.75, Math.cos(a) * 3, 0.08, p.light, 'rock');
+      const a = (n * TAU) / 4 + TAU / 8,
+        x = Math.sin(a) * (r - 0.7),
+        z = Math.cos(a) * (r - 0.7);
+      d.rod(root, [x, 0.26, z], [x, 0.96, z], 0.04, p.deep);
+      d.ball(root, x, 1.01, z, 0.08, p.light, 'rock');
     }
   }
   return root;

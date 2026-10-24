@@ -34,6 +34,38 @@ export default [
       'vue/no-undef-properties': 'error',
       // The admin panel names its single-word views after their routes.
       'vue/multi-word-component-names': 'off',
+      // Every settlement map shares one camera gesture set (AGENTS.md, settlement maps).
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['three/addons/controls/*', 'three/examples/jsm/controls/*'],
+              message:
+                'Settlement maps share one gesture set: use createTownControls from src/game/town/TownControls.js.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/game/town/TownControls.js'],
+    rules: { 'no-restricted-imports': 'off' },
+  },
+  {
+    // The 3D maps stay uncluttered (AGENTS.md, settlement maps): lists, dropdowns and
+    // letters belong in the Build, Story or More tabs, never floating over a map.
+    files: ['src/components/town/TownScene.vue', 'src/components/town/TownMoonView.vue'],
+    rules: {
+      'vue/no-restricted-html-elements': [
+        'error',
+        ...['details', 'summary', 'ul', 'ol', 'select', 'dialog'].map((element) => ({
+          element,
+          message:
+            'Map overlays hold only labels and action buttons. Put lists, dropdowns and letters in the Build, Story or More tabs.',
+        })),
+      ],
     },
   },
 ];

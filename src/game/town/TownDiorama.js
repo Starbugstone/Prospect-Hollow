@@ -51,7 +51,7 @@ import {
   showVillager,
 } from './TownLabelProjection';
 import { addHorse, addPerson, animatePerson, setVillagerIdentity } from './TownPeople';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { createTownControls } from './TownControls';
 
 import { TownFrameCache } from './TownFrameCache';
 import { TownStatics } from './TownStatics';
@@ -148,20 +148,12 @@ export class TownDiorama extends TownPrimitives {
     this.sceneryRenderer = new TownStatics(this.scene);
     this.sceneryRenderer.rebuild([this.landscape]);
     this.buildingRenderer = new TownStatics(this.scene);
-    this.controls = new OrbitControls(this.camera, canvas.parentElement);
-    this.controls.cursorStyle = 'grab';
+    this.controls = createTownControls(this.camera, canvas.parentElement);
     this.controls.target.set(0, CAMERA_FOCUS_HEIGHT, 0);
-    this.controls.enablePan = true;
-    this.controls.screenSpacePanning = false;
-    this.controls.mouseButtons.MIDDLE = THREE.MOUSE.PAN;
-    this.controls.enableDamping = false;
     this.controls.minDistance = CAMERA_MIN_DISTANCE;
     this.controls.maxDistance = 110;
     this.controls.minPolarAngle = 0.25;
     this.controls.maxPolarAngle = Math.PI / 2 - 0.02;
-    this.controls.rotateSpeed = 0.7;
-    this.controls.zoomSpeed = 0.85;
-    this.controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
     this.controls.update();
     this.overview = true;
     this.beginCameraGesture = () => {

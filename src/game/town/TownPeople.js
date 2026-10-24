@@ -13,6 +13,7 @@ import { streetHeight, updateItinerary } from './TownItineraries';
 import { prepareActorWalk, walkPose, placeSafely } from './TownNavigation';
 import { SIDEWALK_OFFSET } from './TownTraffic';
 import { updateWorkRoutine } from './TownWorkRoutine';
+import { swingLimbs } from './TownGait';
 
 // Villagers, visitors and the stable's horses: articulated models built from the
 // diorama's primitives, their era wardrobe and identity, and their walking pose.
@@ -429,13 +430,7 @@ export function animatePerson(d, actor, time) {
   head.rotation.y = walking
     ? Math.sin(time * 0.7 + seed) * 0.1
     : Math.sin(time * 0.8 + seed) * 0.25;
-  for (let n = 0; n < 2; n++) {
-    const swing = Math.sin(step + n * Math.PI);
-    legs[n].upper.rotation.x = walking ? swing * 0.36 : 0;
-    legs[n].lower.rotation.x = walking ? Math.max(0, -swing) * 0.6 : 0;
-    arms[n].upper.rotation.x = walking ? -swing * 0.28 : -0.12;
-    arms[n].lower.rotation.x = -0.16;
-  }
+  swingLimbs(arms, legs, step, walking);
   if (!walking) {
     const activity = actor.workRoutine && !actor.workActive ? null : work;
     if (activity === 'farm') {

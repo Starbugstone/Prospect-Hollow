@@ -1,4 +1,5 @@
 import { eraEvolution } from './eras';
+import { areasForSettlement, siteYaw } from './townLandmarks';
 
 // New Hollow, the homesteads on the Moon, grows with the supplies the town sends up
 // the space elevator. It is presentation only: no coins, timers or failure.
@@ -72,6 +73,35 @@ const MOON_PAD_RADII = Object.freeze({
   saucerPad: 6.4,
 });
 export const moonPadRadius = (kind) => MOON_PAD_RADII[kind] ?? MOON_LOT_RADIUS;
+// Every Moon parcel stands on one octagonal pad: building lots (built or empty) and
+// monument sites, including any added later. The drawn pad, the upgrade glow, tap
+// targets, the selection outline and the path ramps all read this one shape.
+export const MOON_PARCEL_SIDES = 8;
+// An open monument site's pad, the size of the larger building lots.
+export const MOON_SITE_PAD = 5.2;
+// From a pad's centre to the middle of a side.
+export const moonPadApothem = (radius) => radius * Math.cos(Math.PI / MOON_PARCEL_SIDES);
+/** Every parcel on the Moon with its pad: position, turn (a corner on local +z) and radius. */
+export function moonParcels(lots = MOON_LOTS, sites = areasForSettlement('moon')) {
+  return [
+    ...Object.keys(lots).map((id) => ({
+      id,
+      kind: 'lot',
+      ...moonLotPose(id, lots),
+      radius: moonPadRadius(id),
+      sides: MOON_PARCEL_SIDES,
+    })),
+    ...sites.map((area) => ({
+      id: area.id,
+      kind: 'site',
+      x: area.positions[0][0],
+      z: area.positions[0][1],
+      rotation: siteYaw(area),
+      radius: MOON_SITE_PAD,
+      sides: MOON_PARCEL_SIDES,
+    })),
+  ];
+}
 const MOON_ARRIVALS = Object.freeze({
   saucerPad: [
     [0, 5.32],
@@ -171,7 +201,7 @@ export function moonApproach(id, level = 3, lots = MOON_LOTS) {
   ).map((point) => [...point]);
   if (id === 'willowkinDome' && level >= 2) local[0] = [0, 2.48];
   const padRadius = moonPadRadius(id),
-    rampStart = (padRadius - 0.25) * Math.cos(Math.PI / 8) - 0.05,
+    rampStart = moonPadApothem(padRadius - 0.25) - 0.05,
     rampEnd = padRadius + 0.35;
   // Turn close around the actual pad, rather than extending a uniform six-unit
   // hook beyond smaller pads. The strip's inside edge remains off the pad wall.

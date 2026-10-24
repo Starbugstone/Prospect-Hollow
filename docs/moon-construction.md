@@ -23,6 +23,8 @@ The valley affordances that were missing on the Moon were:
   Read-only inspection keeps its existing separate route.
 - Affordable-upgrade feedback. Both scenes use `TownUpgradeGlow`, and both maps
   receive the same computed indicators and available purchases from `TownScene`.
+  Valley plots keep the square `add()` glow. Moon lots use `addPolygon()`, whose
+  halo and fading wall share the octagonal pad's corners, radius and lot rotation.
 - Floating per-building action markers. The Moon consumes the entire shared
   indicator map and action registry, including collection actions; current Moon
   definitions do not independently produce saloon coins or forge TNT.
@@ -45,6 +47,24 @@ or removing a site disposes its owned merged geometry; primitive geometry and
 palette materials remain shared until scene disposal. Acting on a ready hammer
 removes the saved project, its worksite and its ready marker. Any subsequent
 upgrade hint represents a new available purchase.
+
+Settlers live in the finished buildings. `MoonSettlers` gives each one a
+deterministic day: leave a home's hatch, follow its public path from
+`moonApproaches` to the ring road, cross to another built lot and shrink through
+its hatch, rest indoors, then walk home. Every pose is a function of time, so
+nothing is saved. The Saucer Pad is an open apron and is never entered. A lone
+building sends its settlers on a lap of the ring; with nothing built they just
+circle the ring. Settlers reuse the valley's villager skeleton, its walk cycle
+(`swingLimbs`) and its path sampling (`walkPath`/`walkPose`), adding only a small
+hop at each footfall, so they move like valley villagers. The monument unveiling's
+crowd uses the same `moonSuitFigure`. Taps on the Moon go through the valley's
+`createTapGesture`, and every parcel's tap target is sized to its roof (the ribbon
+and its halo are sky, not the landing).
+
+`testing/moon-settlers.test.js` checks that routes run hatch to hatch, keep off
+other pads and walk without jumps, and that settlers appear or vanish only at a
+hatch. `testing/town-upgrade-glow.test.js` checks that each lot's glow lines up
+with its rotated pad and that the square valley glow is unchanged.
 
 `testing/moon-construction.test.js` covers every Moon building from funded site
 through progress, readiness and the real campaign completion action, plus

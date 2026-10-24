@@ -1,5 +1,5 @@
-import { Vector3 } from 'three';
-import { MOON_LOTS } from '../../../data/moonSettlement';
+import { Box3, Vector3 } from 'three';
+import { MOON_LOTS, MOON_SITE_PAD } from '../../../data/moonSettlement';
 import {
   areasForSettlement,
   areaChoice,
@@ -9,6 +9,8 @@ import {
   siteYaw,
 } from '../../../data/townLandmarks';
 import { buildLandmark } from '../TownLandmarks';
+import { moonParcelPad } from '../buildings/moon';
+import { moonSuitFigure } from './MoonSettlers';
 import { buildMonumentWorks } from '../TownMonumentWorks';
 import { TownPresentation } from '../TownPresentation';
 
@@ -28,26 +30,8 @@ export const moonMonumentLabels = (town) =>
     position: area.positions[0],
   }));
 
-// A small presentation adapter supplies suited visitors to the shared unveiling.
+// The shared unveiling stages suited settlers from the Moon's one figure builder.
 // Purchases, saved work, scaffolds, ribbon, shots and cleanup remain shared.
-function lunarVisitor(d, { parent, color }) {
-  const root = d.group(parent),
-    body = d.group(root, 0, 0.54, 0);
-  d.box(body, 0.48, 0.58, 0.3, 0, 0.18, 0, '#e5e8e7');
-  d.box(body, 0.3, 0.4, 0.16, 0, 0.2, -0.23, color);
-  d.ball(body, 0, 0.75, 0, 0.27, '#e5e8e7');
-  d.ball(body, 0, 0.76, 0.2, [0.22, 0.14, 0.12], '#eacb80');
-  for (const x of [-0.14, 0.14]) d.box(root, 0.17, 0.45, 0.22, x, 0.25, 0, '#657481');
-  const arms = [-1, 1].map((side) => {
-    const upper = d.group(body, side * 0.32, 0.4, 0);
-    d.box(upper, 0.16, 0.36, 0.18, 0, -0.18, 0, '#e5e8e7');
-    const lower = d.group(upper, 0, -0.36, 0);
-    d.box(lower, 0.15, 0.3, 0.17, 0, -0.15, 0, '#e5e8e7');
-    return { upper, lower };
-  });
-  return { root, body, arms };
-}
-
 // Isolated works hook, ready to share the Moon construction marker layer.
 export function buildMoonMonuments(d, parent, town) {
   const root = d.group(parent);
@@ -61,21 +45,29 @@ export function buildMoonMonuments(d, parent, town) {
     site.userData.monumentSite = area.id;
     const choice = areaChoice(town, area),
       work = monumentWork(town, area);
+    if (work || choice) moonParcelPad(d, site, MOON_SITE_PAD, { flush: true });
     if (work) buildMonumentWorks(d, site, choice, work, area, town.era);
     else if (choice) {
       const model = buildLandmark(d, site, choice, areaShownStage(town, area), area.timeless);
       motions.push(model.userData.sceneryUpdate);
     } else {
       site.name = `${area.id}: open site`;
-      d.mesh(site, 'cylinder', [4.9, 0.08, 4.9], [0, 0.04, 0], '#c1c4c5');
-      d.mesh(site, 'cylinder', [1.4, 0.35, 1.4], [0, 0.22, 0], '#e5e8e7');
-      for (const x of [-3, 3])
-        for (const z of [-3, 3]) {
-          d.rod(site, [x, 0.1, z], [x, 1.2, z], 0.07, '#657481');
-          d.ball(site, x, 1.25, z, 0.18, '#eacb80', 'rock');
-        }
+      // The same pad as the building lots, so every parcel shares one shape.
+      moonParcelPad(d, site, MOON_SITE_PAD);
+      d.mesh(site, 'cylinder', [1.4, 0.35, 1.4], [0, 0.4, 0], '#e5e8e7');
+      for (let n = 0; n < 4; n++) {
+        const a = (n * Math.PI) / 2 + Math.PI / 4,
+          x = Math.sin(a) * (MOON_SITE_PAD - 0.8),
+          z = Math.cos(a) * (MOON_SITE_PAD - 0.8);
+        d.rod(site, [x, 0.26, z], [x, 1.36, z], 0.07, '#657481');
+        d.ball(site, x, 1.41, z, 0.18, '#eacb80', 'rock');
+      }
     }
   }
+  // Tap targets reach each site's roof; batching moves the meshes out of the sites.
+  const bounds = new Box3();
+  for (const site of root.children)
+    if (site.userData.monumentSite) site.userData.height = bounds.setFromObject(site).max.y;
   d.batch(root);
   root.userData.update = (time) => motions.forEach((motion) => motion(time));
   return root;
@@ -119,7 +111,7 @@ export function moonMonumentPresentation(scene, definition) {
       scene.viewChanged = true;
       scene.render();
     },
-    person: (options) => lunarVisitor(scene.d, options),
+    person: ({ parent, color }) => moonSuitFigure(scene.d, { parent, pack: color }),
   });
   return new TownPresentation(d, definition);
 }

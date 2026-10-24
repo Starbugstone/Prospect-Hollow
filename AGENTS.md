@@ -74,6 +74,43 @@ leaves the board. This is a hard rule for every current and future mechanic.
   `testing/completed-board-markers.test.js`; the test fails until a new obstacle
   has one, then checks that its completed cell matches a plain one.
 
+## Permanent settlement map rules: the valley, the Moon and every future map
+
+The user requires every settlement map to match the valley's polish and interaction.
+New settlements reuse these contracts; they never get a reduced copy.
+
+- **Taps never move the camera.** Tapping a building, parcel, monument site or villager
+  (or its label) opens its popup or performs its tap action, and the camera stays put.
+  Only explicit navigation (a Build or Projects row, a notice, a link to another
+  building, cinematics) may move it. `testing/town-tap-camera.test.js` covers the
+  valley and `testing/moon-parcels.test.js` the Moon.
+- **Every parcel is tappable in 3D**, with labels on or off, and shows a selection
+  outline of its own shape. Every map settles taps through `createTapGesture`
+  (`src/game/town/TownTapGesture.js`): one still pointer with the primary button, and
+  the trailing click swallowed (`testing/town-tap-gesture.test.js`).
+- **One gesture set.** Drag orbits, middle or right drag pans, wheel and pinch zoom.
+  Maps create their camera only through `createTownControls`
+  (`src/game/town/TownControls.js`); ESLint rejects direct OrbitControls imports, and
+  `testing/town-controls.test.js` checks the gestures.
+- **Map overlays hold only labels, action buttons and the header.** Lists, dropdowns,
+  directories and letters belong in the Build, Story or More tabs. ESLint rejects
+  `details`, `ul`, `ol`, `select` and `dialog` in `TownScene.vue` and `TownMoonView.vue`.
+- **Moon parcels share one pad shape.** Every Moon parcel stands on the same pad:
+  building lots built, empty or under construction, monument sites open, in work or
+  built, and any lot or site added later. The pad is currently an octagon. The drawn pad
+  (`moonParcelPad`, drawn by `renderMoonBuilding` for every form), the upgrade glow, the
+  tap target, the selection outline and the path ramps all read `MOON_PARCEL_SIDES` and
+  `moonParcels()` in `src/data/moonSettlement.js`. Never draw a square glow or a
+  differently shaped pad on a Moon parcel. `testing/moon-parcels.test.js` fails for a
+  form, site state or future parcel that leaves the contract.
+- **Villagers are alive and share one feel.** Every settlement's villagers use the
+  valley villager skeleton (body at hip height, `{ upper, lower }` arms and legs) and
+  the shared walk cycle `swingLimbs` (`src/game/town/TownGait.js`). They leave and enter
+  buildings through their doors along the public paths, sampled with the valley's
+  `walkPath`/`walkPose`. `testing/town-gait.test.js` checks that valley villagers and
+  Moon settlers produce the same limb poses; `testing/moon-settlers.test.js` covers the
+  Moon's routes and doors.
+
 ## Town Honours: fixed ranks that grow with the game
 
 Town Honours are families of metal ranks (bronze → silver → gold, then diamond and later

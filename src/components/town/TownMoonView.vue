@@ -86,7 +86,7 @@
           'is-pin': lot.collapsed,
           selected: selected === lot.id,
           'is-collectable': lot.id === 'moonstoneWorkshop' && canCollectMoonstones,
-          built: !!(town.buildings[lot.id] || monumentChoice(lot.id)),
+          built: !!(town.buildings[lot.id] || moonMonumentChoice(town, lot.id)),
           open: AREA_BY_ID[lot.id] ? status(lot.id) === 'open' : availableIds.includes(lot.id),
           'is-ready': indicators[lot.id] === 'ready' || status(lot.id) === 'ready',
           'is-working': !!town.projects?.[lot.id] || status(lot.id) === 'work',
@@ -113,14 +113,8 @@
           :src="TOWN_ACTIONS[indicators[lot.id]].icon"
           alt=""
         />
-        <strong v-if="!lot.collapsed">{{
-          t(AREA_BY_ID[lot.id]?.label ?? BUILDING_BY_ID[lot.id].shortName)
-        }}</strong>
-        <small v-if="!lot.collapsed">{{
-          AREA_BY_ID[lot.id] || (lot.id === 'moonstoneWorkshop' && canCollectMoonstones)
-            ? statusLabel(lot.id)
-            : buildingStatusLabel(town, lot.id, indicators[lot.id], availableIds.includes(lot.id))
-        }}</small>
+        <strong v-if="!lot.collapsed">{{ moonLotName(lot.id) }}</strong>
+        <small v-if="!lot.collapsed">{{ lotDetail(lot.id) }}</small>
         <span
           v-if="!lot.collapsed && indicators[lot.id] === 'upgrade'"
           class="moon-upgrade-hint"
@@ -148,14 +142,6 @@
         <img :src="TOWN_ACTIONS[indicators[lot.id]].icon" alt="" />
       </button>
     </div>
-    <details v-show="!props.presentation" class="moon-lot-directory">
-      <summary>{{ t('Moon lots') }}</summary>
-      <ul>
-        <li v-for="lot in allLots" :key="lot.id">
-          <button type="button" @click="choose(lot.id)">{{ lotLabel(lot.id) }}</button>
-        </li>
-      </ul>
-    </details>
     <header class="town-moon-header">
       <button type="button" class="town-moon-back" @click="emit('close')">
         <span aria-hidden="true">←</span> {{ t('Back to the valley') }}
@@ -167,12 +153,6 @@
         <TownMoonstoneBalance :town="town" />
       </div>
     </header>
-    <details v-if="letters.length" class="town-moon-letters">
-      <summary>{{ t('Letters from New Hollow') }} ({{ letters.length }})</summary>
-      <ul>
-        <li v-for="letter in letters" :key="letter.id">{{ t(letter.text) }}</li>
-      </ul>
-    </details>
   </section>
 </template>
 <script setup>
@@ -186,15 +166,12 @@ import {
   shallowRef,
   watch,
 } from 'vue';
-import { BUILDING_BY_ID } from '../../data/town';
 import {
   MOON_LOTS,
   MOON_RING_ROAD,
   moonApproaches,
-  moonLetters,
   moonSettlement,
 } from '../../data/moonSettlement';
-import { buildingStatusLabel } from '../../game/town/TownBuildingFeedback';
 import { TOWN_ACTIONS, buildingActionLabel } from '../../data/townIndicators';
 import {
   AREA_BY_ID,
@@ -211,7 +188,13 @@ import {
   moonLabelDensity,
   moonLabelNeedsAttention,
 } from '../../game/town/moon/MoonLabelDensity';
-import { plotUnlocked, collectionCooldownRemaining } from '../../game/town/TownRules';
+import {
+  canCollectMoonstones as collectable,
+  moonLotDetail,
+  moonLotName,
+  moonLotStatus,
+  moonMonumentChoice,
+} from '../../game/town/moon/MoonLotStatus';
 import TownMoon from './TownMoon.vue';
 import TownMoonstoneBalance from './TownMoonstoneBalance.vue';
 import TownMoonBuilding from './TownMoonBuilding.vue';
@@ -258,13 +241,10 @@ let scene = null,
   disposed = false;
 
 const townClock = inject('townClock', null);
-const canCollectMoonstones = computed(
-  () =>
-    !!props.town.moonstoneProduction?.stored &&
-    !collectionCooldownRemaining(props.town, 'moonstoneWorkshop', townClock?.value ?? Date.now()),
+const canCollectMoonstones = computed(() =>
+  collectable(props.town, townClock?.value ?? Date.now()),
 );
 const moon = computed(() => moonSettlement(props.town));
-const letters = computed(() => moonLetters(props.town));
 // The SVG map uses the same lot layout, flattened onto a crater ellipse.
 const mapLots = computed(() =>
   Object.entries(MOON_LOTS).map(([id, [x, z]]) => ({ id, x: x * 1.3, y: 6 + z * 1.05 })),
@@ -272,7 +252,6 @@ const mapLots = computed(() =>
 const monumentSites = computed(() =>
   areasForSettlement('moon').filter((area) => areaUnlocked(props.town, area)),
 );
-const monumentChoice = (id) => AREA_BY_ID[id] && areaChoice(props.town, AREA_BY_ID[id]);
 const mapMonuments = computed(() =>
   monumentSites.value.map((area) => ({
     id: area.id,
@@ -330,47 +309,24 @@ const choose = (id) => {
 function revealOnFocus(event, id) {
   if (event.target.matches(':focus-visible')) selectedLot.value = id;
 }
-function lotLabel(id) {
-  const name = t(AREA_BY_ID[id]?.label ?? BUILDING_BY_ID[id].shortName);
-  const detail =
-    AREA_BY_ID[id] || (id === 'moonstoneWorkshop' && canCollectMoonstones.value)
-      ? statusLabel(id)
-      : buildingStatusLabel(props.town, id, props.indicators[id], props.availableIds.includes(id));
-  return `${name} · ${detail}`;
-}
+const status = (id) => moonLotStatus(props.town, id);
+const lotDetail = (id) =>
+  moonLotDetail(props.town, id, {
+    indicators: props.indicators,
+    availableIds: props.availableIds,
+    collectable: canCollectMoonstones.value,
+  });
+const lotLabel = (id) => `${moonLotName(id)} · ${lotDetail(id)}`;
+// The upgrade glow matches the valley's: every affordable offer, plus collectable stock.
 const updateAvailable = () => {
-  scene?.setAvailable(
-    Object.keys(props.indicators).filter((id) => props.indicators[id] === 'upgrade'),
-  );
+  scene?.setAvailable([
+    ...props.availableIds,
+    ...(canCollectMoonstones.value ? ['moonstoneWorkshop'] : []),
+  ]);
   scene?.setLabelActions(
     Object.keys(props.indicators).filter((id) => TOWN_ACTIONS[props.indicators[id]]),
   );
 };
-function status(id) {
-  if (AREA_BY_ID[id])
-    return monumentWork(props.town, AREA_BY_ID[id])?.ready
-      ? 'ready'
-      : monumentWork(props.town, AREA_BY_ID[id])
-        ? 'work'
-        : monumentChoice(id)
-          ? 'monument'
-          : 'open';
-  if (props.town.projects?.[id]) return 'work';
-  if (props.town.buildings?.[id]) return 'built';
-  return plotUnlocked(props.town, id) ? 'open' : 'later';
-}
-function statusLabel(id) {
-  if (id === 'moonstoneWorkshop' && canCollectMoonstones.value)
-    return t('Collect {count} moonstones', { count: props.town.moonstoneProduction.stored });
-  return {
-    work: t('Under construction'),
-    ready: t('Ready to unveil'),
-    monument: t('Monument'),
-    built: t('Lv. {level}', { level: props.town.buildings[id] }),
-    open: t(AREA_BY_ID[id] ? 'Choose a design' : 'Build'),
-    later: t('Coming soon'),
-  }[status(id)];
-}
 
 let presentationTime = 0;
 function updatePresentation() {
@@ -403,8 +359,11 @@ async function start() {
       },
       // Tapping Earth over the rim returns to the valley.
       onEarth: () => emit('close'),
+      // A tapped lot or monument site opens like its label.
+      onSelect: (id) => choose(id),
     });
     scene.update(props.town);
+    scene.setSelected(selectedLot.value);
     updateAvailable();
     updatePresentation();
     updateMotion();
@@ -432,7 +391,8 @@ watch(
   () => scene?.update(props.town),
   { deep: true },
 );
-watch(() => props.indicators, updateAvailable);
+watch(() => [props.indicators, props.availableIds, canCollectMoonstones.value], updateAvailable);
+watch(selectedLot, (id) => scene?.setSelected(id ?? null));
 watch(() => [props.active, props.paused], updateMotion);
 watch(
   () => props.reducedMotion,
@@ -576,49 +536,5 @@ defineExpose({
   width: 24px;
   height: 24px;
   pointer-events: none;
-}
-.moon-lot-directory {
-  display: none;
-  position: absolute;
-  right: 12px;
-  bottom: 124px;
-  max-width: calc(100% - 24px);
-  padding: 8px 12px;
-  border: 1px solid #b9c2a4;
-  border-radius: 10px;
-  background: #fbf8eaf2;
-  color: #3f5547;
-  font-size: 13px;
-}
-.is-compact .moon-lot-directory,
-:global(.town-labels-hidden .moon-lot-directory) {
-  display: block;
-}
-:global(.town-in-cinematic .moon-lot-directory) {
-  visibility: hidden;
-}
-.moon-lot-directory summary {
-  cursor: pointer;
-  font-weight: 700;
-}
-.moon-lot-directory ul {
-  margin: 8px 0 0;
-  padding: 0;
-  list-style: none;
-  max-height: 35vh;
-  overflow: auto;
-}
-.moon-lot-directory button {
-  width: 100%;
-  padding: 8px;
-  text-align: left;
-  cursor: pointer;
-}
-@media (min-width: 600px) and (max-height: 450px) {
-  .moon-lot-directory {
-    bottom: 8px;
-    left: 12px;
-    right: auto;
-  }
 }
 </style>

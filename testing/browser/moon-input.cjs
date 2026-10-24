@@ -62,25 +62,8 @@ window.getScene=()=>app._instance.subTree.children[0].component.setupState.scene
         ]);
         await activate(page.getByRole('button', { name: 'Back to the valley' }));
         assert.equal(await page.evaluate(() => window.events.close), 1);
-        const letters = page.locator('.town-moon-letters summary');
-        await activate(letters);
-        // Opening the bottom-anchored panel moves its summary. Let layout settle
-        // before the second pointer activation, particularly under software WebGL.
-        await page.waitForFunction(() => document.querySelector('.town-moon-letters').open);
-        await letters.evaluate(
-          () =>
-            new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
-        );
-        assert.equal(
-          await page.locator('.town-moon-letters').evaluate((element) => element.open),
-          true,
-        );
-        await activate(letters);
-        await page.waitForFunction(() => !document.querySelector('.town-moon-letters').open);
-        assert.equal(
-          await page.locator('.town-moon-letters').evaluate((element) => element.open),
-          false,
-        );
+        // Letters from New Hollow live in the Story tab, never over the Moon map.
+        assert.equal(await page.locator('.town-moon-letters').count(), 0);
         await lot.focus();
         await page.keyboard.press('Enter');
         assert.equal(await page.evaluate(() => window.events.inspect.length), 3);
@@ -162,7 +145,7 @@ window.getScene=()=>app._instance.subTree.children[0].component.setupState.scene
         );
         assert.deepEqual(errors, []);
         console.log(
-          `${width}x${height} ${touch ? 'Touch' : 'Mouse'}: first/repeated lot, Back, letters, keyboard, orbit/release, Earth and valley isolation passed.`,
+          `${width}x${height} ${touch ? 'Touch' : 'Mouse'}: first/repeated lot, Back, no letters overlay, keyboard, orbit/release, Earth and valley isolation passed.`,
         );
         await context.close();
       }

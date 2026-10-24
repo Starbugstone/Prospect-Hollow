@@ -1,4 +1,12 @@
-import { BoxGeometry, Group, Mesh, PlaneGeometry, ShaderMaterial } from 'three';
+import {
+  BoxGeometry,
+  CircleGeometry,
+  CylinderGeometry,
+  Group,
+  Mesh,
+  PlaneGeometry,
+  ShaderMaterial,
+} from 'three';
 
 // Two simple surfaces per plot, cached with the town. Normal depth testing lets
 // walls and neighboring buildings hide the glow; no overlay particles or bloom.
@@ -44,6 +52,32 @@ export class TownUpgradeGlow {
       depthWrite: false,
     });
     this.plots = new Map();
+    // Round pads (the Moon's octagons) get a glow of their own shape, keyed by side count.
+    this.polygons = new Map();
+  }
+  polygon(sides) {
+    if (!this.polygons.has(sides)) {
+      const sector = (Math.PI * 2) / sides;
+      const halo = this.halo.clone();
+      // Distance to the polygon's edge, 1 on its outline: the square glow's rule for any pad.
+      halo.fragmentShader = `varying vec2 vUv;
+        void main() {
+          vec2 p = (vUv - .5) * 2.0;
+          float a = mod(atan(p.y, p.x), ${sector.toFixed(6)});
+          float edge = length(p) * cos(a - ${(sector / 2).toFixed(6)}) / ${Math.cos(sector / 2).toFixed(6)};
+          float alpha = (1.0 - smoothstep(.55, 1.0, edge)) * .95;
+          gl_FragColor = vec4(.10, 1.0, .18, alpha);
+          #include <tonemapping_fragment>
+          #include <colorspace_fragment>
+        }`;
+      this.polygons.set(sides, {
+        halo,
+        plane: new CircleGeometry(1, sides),
+        // Open-ended, so only the fading sides surround the building like the box.
+        wall: new CylinderGeometry(1, 1, 1, sides, 1, true),
+      });
+    }
+    return this.polygons.get(sides);
   }
   clear() {
     this.root.clear();
@@ -71,6 +105,24 @@ export class TownUpgradeGlow {
     this.root.add(group);
     this.plots.set(id, group);
   }
+  /** A glow that follows a regular polygonal pad, aligned like CylinderGeometry(sides). */
+  addPolygon(id, { x, z, y = 0, radius, sides, rotation = 0, height = 3.6 }) {
+    const shape = this.polygon(sides);
+    const group = new Group();
+    group.position.set(x, y + 0.08, z);
+    group.rotation.y = rotation;
+    const halo = new Mesh(shape.plane, shape.halo);
+    // CircleGeometry puts a corner on +x, CylinderGeometry on +z: a quarter turn apart.
+    halo.rotation.set(-Math.PI / 2, 0, -Math.PI / 2);
+    halo.scale.set(radius + 1.1, radius + 1.1, 1);
+    const aura = new Mesh(shape.wall, this.aura);
+    aura.scale.set(radius + 0.12, height * 0.45, radius + 0.12);
+    aura.position.y = (height * 0.45) / 2;
+    group.add(halo, aura);
+    group.visible = false;
+    this.root.add(group);
+    this.plots.set(id, group);
+  }
   setAvailable(ids) {
     const active = new Set(ids);
     let changed = false;
@@ -88,5 +140,11 @@ export class TownUpgradeGlow {
     this.plane.dispose();
     this.halo.dispose();
     this.aura.dispose();
+    for (const { halo, plane, wall } of this.polygons.values()) {
+      halo.dispose();
+      plane.dispose();
+      wall.dispose();
+    }
+    this.polygons.clear();
   }
 }

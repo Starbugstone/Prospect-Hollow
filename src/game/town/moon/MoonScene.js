@@ -1,6 +1,9 @@
 import { MOON_MONUMENT_AREAS, syncMoonMonuments, moonMonumentPresentation } from './MoonMonuments';
+import { animateMoonSettler, moonSettlerPlan, moonSuitFigure } from './MoonSettlers';
+import { areaUnlocked } from '../../../data/townLandmarks';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { createTownControls } from '../TownControls';
+import { createTapGesture } from '../TownTapGesture';
 import { TownPrimitives } from '../TownPrimitives';
 import { MoonSaucer } from './MoonSaucer';
 import { MoonPresentation } from './MoonPresentation';
@@ -14,7 +17,9 @@ import {
   MOON_LOTS,
   MOON_RING_ROAD,
   moonApproaches,
+  MOON_PARCEL_SIDES,
   moonLotPose,
+  moonParcels,
   moonPathDistance,
 } from '../../../data/moonSettlement';
 
@@ -347,16 +352,6 @@ export function moonAccessGeometry(approaches = moonApproaches()) {
   return geometry;
 }
 
-// A settler in a moon-white suit with a gold visor; Willowkin keep to the dome.
-function settler(d, parent, suit) {
-  const g = d.group(parent);
-  d.box(g, 0.34, 0.5, 0.24, 0, 0.62, 0, suit, true);
-  d.ball(g, 0, 1.05, 0, 0.2, p.shell);
-  d.box(g, 0.22, 0.1, 0.06, 0, 1.06, 0.17, p.light);
-  d.box(g, 0.24, 0.32, 0.12, 0, 0.68, -0.17, p.roof);
-  for (const x of [-0.09, 0.09]) d.box(g, 0.1, 0.38, 0.12, x, 0.19, 0, p.deep);
-  return g;
-}
 function rover(d, parent) {
   const g = d.group(parent);
   d.box(g, 1.2, 0.36, 0.7, 0, 0.5, 0, p.shell, true);
@@ -371,12 +366,29 @@ function rover(d, parent) {
 }
 
 const labelPoint = new THREE.Vector3();
+// Tap targets cover a lot's whole pad, up to its building's roof (this until drawn).
+const PICK_HEIGHT = 3;
+const PICK_LAYER = 3;
+const lotBounds = new THREE.Box3();
+/** A lot's roof for its tap target. Sky parts (the ribbon and its halo) are left out. */
+export function moonRoofHeight(lot) {
+  let top = 0;
+  lot.updateWorldMatrix(true, true);
+  lot.traverse((mesh) => {
+    if (mesh.isMesh && !mesh.userData.sky) top = Math.max(top, lotBounds.setFromObject(mesh).max.y);
+  });
+  return top;
+}
 
 export class MoonScene {
-  constructor(canvas, { onLabels = () => {}, onEarth = () => {}, reducedMotion = false } = {}) {
+  constructor(
+    canvas,
+    { onLabels = () => {}, onEarth = () => {}, onSelect = () => {}, reducedMotion = false } = {},
+  ) {
     this.canvas = canvas;
     this.onLabels = onLabels;
     this.onEarth = onEarth;
+    this.onSelect = onSelect;
     this.reducedMotion = reducedMotion;
     this.d = new TownPrimitives();
     this.scene = new THREE.Scene();
@@ -434,44 +446,43 @@ export class MoonScene {
       position: new THREE.Vector3(x, 3.4, z),
     }));
     // Keep native overlay buttons outside the pointer-capture surface.
-    this.controls = new OrbitControls(this.camera, canvas);
+    // The valley's gestures: drag to orbit, middle or right drag to pan, wheel to zoom.
+    this.controls = createTownControls(this.camera, canvas);
     this.controls.target.set(0, 0, 4);
     this.controls.minDistance = 22;
     this.controls.maxDistance = 115;
     this.controls.minPolarAngle = 0.55;
     this.controls.maxPolarAngle = 1.38;
-    this.controls.enablePan = true;
-    this.controls.screenSpacePanning = false;
-    this.controls.rotateSpeed = 0.7;
-    this.controls.zoomSpeed = 0.85;
-    this.controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
     this.controls.addEventListener('change', () => this.requestFrame());
     this.controls.update();
-    // A tap on Earth (not a drag) returns to the valley.
+    // A tap (not a drag) on a lot opens it, like a valley plot; on Earth it returns
+    // to the valley. Taps never move the camera.
     this.raycaster = new THREE.Raycaster();
-    this.pointer = null;
-    // Earth taps share the canvas surface with OrbitControls.
+    this.raycaster.layers.set(PICK_LAYER);
+    this.pickTargets = this.d.group(this.scene);
+    this.pickTargets.name = 'Moon lot tap targets';
+    // Taps share the canvas surface with OrbitControls.
     const surface = canvas;
     this.surface = surface;
+    // The valley's tap gesture: one still pointer with the primary button, and the
+    // trailing click swallowed outside the Moon view.
+    this.tapGesture = createTapGesture({
+      map: () => canvas.parentElement,
+      onTap: (event) => this.tap(event),
+    });
     this.onPointerDown = (event) => {
-      this.pointer = event.target === canvas ? [event.clientX, event.clientY] : null;
+      if (event.target === canvas) this.tapGesture.down(event);
     };
-    this.onPointerUp = (event) => {
-      const start = this.pointer;
-      this.pointer = null;
-      if (
-        start &&
-        Math.hypot(event.clientX - start[0], event.clientY - start[1]) < 6 &&
-        this.hitsEarth(event)
-      )
-        this.onEarth();
-    };
+    this.onPointerUp = (event) => this.tapGesture.up(event);
     this.onPointerMove = (event) => {
-      if (!this.pointer) canvas.style.cursor = this.hitsEarth(event) ? 'pointer' : '';
+      this.tapGesture.move(event);
+      // Hover feedback only while no button is held, so drags and pans never raycast.
+      if (!this.tapGesture.pressed)
+        canvas.style.cursor = this.hitsEarth(event) || this.pick(event) ? 'pointer' : 'grab';
     };
-    this.onPointerCancel = () => {
-      this.pointer = null;
-      canvas.style.cursor = '';
+    this.onPointerCancel = (event) => {
+      this.tapGesture.cancel(event);
+      canvas.style.cursor = 'grab';
     };
     surface.addEventListener('pointerdown', this.onPointerDown);
     surface.addEventListener('pointerup', this.onPointerUp);
@@ -481,14 +492,7 @@ export class MoonScene {
     this.elapsed = 0;
     this.construction = new MoonConstruction(this);
     this.upgradeGlow = new TownUpgradeGlow(this.scene);
-    for (const [id, [x, z]] of Object.entries(MOON_LOTS))
-      this.upgradeGlow.add(
-        id,
-        new THREE.Box3(
-          new THREE.Vector3(x - 3.5, 0, z - 3.5),
-          new THREE.Vector3(x + 3.5, 4, z + 3.5),
-        ),
-      );
+    this.addParcels();
     this.signature = '';
     this.pacer = new TownFramePacer();
     this.tick = this.tick.bind(this);
@@ -500,6 +504,11 @@ export class MoonScene {
   update(town) {
     this.town = town;
     syncMoonMonuments(this, town);
+    // Sites record their height before their meshes merge into the monument batch.
+    this.monuments?.traverse((site) => {
+      if (site.userData.monumentSite)
+        this.fitPickTarget(site.userData.monumentSite, site.userData.height);
+    });
     // Projects can advance without a building level changing. Their sites own
     // their geometry and update independently of the merged settlement mesh.
     this.construction.sync(town);
@@ -518,6 +527,8 @@ export class MoonScene {
       const lot = this.d.group(this.buildings, x, 0, z);
       lot.rotation.y = rotation;
       renderMoonBuilding(this.d, lot, id, levels[n]);
+      // A tap over a low building reaches the lot behind it, as on screen.
+      this.fitPickTarget(id, moonRoofHeight(lot));
     });
     this.access.geometry.dispose();
     this.access.geometry = moonAccessGeometry(moonApproaches(town?.buildings ?? {}));
@@ -536,16 +547,12 @@ export class MoonScene {
       0,
     );
     const suits = [p.shell, '#d9dde6', '#e8e1cf'];
-    for (let n = 0; n < Math.min(10, 2 + homes * 2); n++) {
-      const figure = settler(this.d, this.life, suits[n % 3]);
-      this.walkers.push({
-        root: figure,
-        radius: MOON_RING_ROAD,
-        speed: 0.06 + hash(n) * 0.04,
-        phase: hash(n + 70) * TAU,
-        dir: n % 2 ? 1 : -1,
+    this.settlers = [];
+    for (let n = 0; n < Math.min(10, 2 + homes * 2); n++)
+      this.settlers.push({
+        ...moonSuitFigure(this.d, { parent: this.life, suit: suits[n % 3] }),
+        plan: moonSettlerPlan(town?.buildings ?? {}, n),
       });
-    }
     if (town?.buildings?.roverBarn) {
       for (let n = 0; n < town.buildings.roverBarn; n++) {
         const r = rover(this.d, this.life);
@@ -565,12 +572,12 @@ export class MoonScene {
     this.construction.update(time, this.reducedMotion);
     this.saucer.step(time, this.reducedMotion);
     this.monuments?.userData.update(this.reducedMotion ? 0 : time);
+    for (const settler of this.settlers ?? []) animateMoonSettler(settler, time);
+    // Rovers circle the ring road.
     for (const w of this.walkers ?? []) {
       const a = w.phase + w.dir * time * w.speed;
-      const offset = w.vehicle ? 0.3 : -0.4 + (w.dir > 0 ? 0 : 0.8);
-      w.root.position.set(Math.cos(a) * (w.radius + offset), 0, Math.sin(a) * (w.radius + offset));
+      w.root.position.set(Math.cos(a) * (w.radius + 0.3), 0, Math.sin(a) * (w.radius + 0.3));
       w.root.rotation.y = -a - (w.dir > 0 ? 0 : Math.PI);
-      if (!w.vehicle) w.root.position.y = Math.abs(Math.sin(time * 3 + w.phase)) * 0.12;
     }
   }
   // Now and then a meteor streaks across the sky: a celebration, never a hazard.
@@ -621,6 +628,84 @@ export class MoonScene {
   }
   setAvailable(ids) {
     if (this.upgradeGlow.setAvailable(ids)) this.requestFrame();
+  }
+  /** Every parcel's glow and tap target follow its pad, from the one parcel contract. */
+  addParcels() {
+    for (const parcel of moonParcels()) {
+      this.upgradeGlow.addPolygon(parcel.id, { ...parcel, height: 4 });
+      this.addPickTarget(parcel);
+    }
+  }
+  // An invisible prism over a parcel's pad: taps on the pad or its building select it.
+  addPickTarget({ id, x, z, radius, rotation, sides }) {
+    this.pickGeometries ??= new Map();
+    if (!this.pickGeometries.has(sides))
+      this.pickGeometries.set(sides, new THREE.CylinderGeometry(1, 1, 1, sides));
+    this.pickMaterial ??= new THREE.MeshBasicMaterial({ visible: false });
+    const target = new THREE.Mesh(this.pickGeometries.get(sides), this.pickMaterial);
+    target.scale.set(radius, PICK_HEIGHT, radius);
+    target.position.set(x, PICK_HEIGHT / 2, z);
+    target.rotation.y = rotation;
+    target.layers.set(PICK_LAYER);
+    target.userData.lot = id;
+    target.name = `Tap target ${id}`;
+    this.pickTargets.add(target);
+  }
+  fitPickTarget(id, height) {
+    const target = this.pickTargets?.children.find((mesh) => mesh.userData.lot === id);
+    if (!target || !Number.isFinite(height)) return;
+    const top = Math.max(1.2, height + 0.2);
+    target.scale.y = top;
+    target.position.y = top / 2;
+    target.updateMatrixWorld();
+  }
+  /** A tap opens the parcel under it, or the valley from Earth. It never moves the camera. */
+  tap(event) {
+    if (this.hitsEarth(event)) return this.onEarth();
+    const id = this.pick(event);
+    if (id) this.onSelect(id);
+    return id;
+  }
+  /** The lot or open monument site under a pointer event, nearest first. */
+  pick(event) {
+    if (!this.aim(event)) return null;
+    for (const hit of this.raycaster.intersectObject(this.pickTargets, true)) {
+      const id = hit.object.userData.lot;
+      const area = MOON_MONUMENT_AREAS.find((site) => site.id === id);
+      if (!area || areaUnlocked(this.town, area)) return id;
+    }
+    return null;
+  }
+  /** Outline the chosen lot's pad, as the valley rings its selected plot. */
+  setSelected(id) {
+    if (id === this.selected) return;
+    this.selected = id;
+    this.selectionRoot?.removeFromParent();
+    const target = id && this.pickTargets.children.find((mesh) => mesh.userData.lot === id);
+    if (target) {
+      if (!this.selection) {
+        this.selection = new THREE.Mesh(
+          new THREE.RingGeometry(1.06, 1.12, MOON_PARCEL_SIDES, 1, Math.PI / 2),
+          new THREE.MeshBasicMaterial({
+            color: '#f2dda1',
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.9,
+            depthWrite: false,
+          }),
+        );
+        this.selection.name = 'Selected Moon lot outline';
+        this.selection.rotation.x = -Math.PI / 2;
+        this.selectionRoot = new THREE.Group();
+        this.selectionRoot.add(this.selection);
+      }
+      const radius = target.scale.x;
+      this.selection.scale.set(radius, radius, 1);
+      this.selectionRoot.position.set(target.position.x, 0.07, target.position.z);
+      this.selectionRoot.rotation.y = target.rotation.y;
+      this.scene.add(this.selectionRoot);
+    }
+    this.requestFrame();
   }
   setLabelActions(ids) {
     const key = ids.join(',');
@@ -688,7 +773,8 @@ export class MoonScene {
     this.labelKey = key;
     this.onLabels(labels, distance);
   }
-  hitsEarth(event) {
+  // Points the raycaster through a pointer event; false when the canvas has no size.
+  aim(event) {
     const box = this.canvas.getBoundingClientRect();
     if (!box.width || !box.height) return false;
     this.raycaster.setFromCamera(
@@ -698,7 +784,15 @@ export class MoonScene {
       ),
       this.camera,
     );
-    return this.raycaster.intersectObject(this.earth).length > 0;
+    return true;
+  }
+  hitsEarth(event) {
+    if (!this.aim(event)) return false;
+    // Earth is on the default layer; lot targets are on their own.
+    this.raycaster.layers.enable(0);
+    const hit = this.raycaster.intersectObject(this.earth).length > 0;
+    this.raycaster.layers.set(PICK_LAYER);
+    return hit;
   }
   resize() {
     const width = this.canvas.clientWidth,
@@ -740,6 +834,9 @@ export class MoonScene {
     this.controls.dispose();
     this.construction.dispose();
     this.upgradeGlow.dispose();
+    this.selectionRoot?.removeFromParent();
+    this.selection?.geometry.dispose();
+    this.selection?.material.dispose();
     // Shared primitives are released once below; everything else is owned here.
     const shared = new Set(Object.values(this.d.geometries)),
       geometries = new Set(),

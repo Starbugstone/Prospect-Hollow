@@ -56,6 +56,14 @@ window.getMoon=()=>app._instance.subTree.component.setupState;
         window.getMoon().scene.setMotion(false);
         window.getMoon().scene.renderer.setAnimationLoop(null);
         if (fallback) window.getMoon().unavailable = true;
+        // The 3D selection outline follows whichever lot the player selects.
+        const scene = window.getMoon().scene,
+          setSelected = scene.setSelected.bind(scene);
+        window.outlined = [];
+        scene.setSelected = (id) => {
+          window.outlined.push(id);
+          setSelected(id);
+        };
       }, fallback);
       for (const [width, height] of [
         [1440, 900],
@@ -137,6 +145,7 @@ window.getMoon=()=>app._instance.subTree.component.setupState;
           'settlerDomes',
           'Ready work retains its own touch target',
         );
+        await page.waitForFunction(() => window.outlined.at(-1) === 'settlerDomes');
         if (compact) {
           const pin = page.locator('.town-moon-lot.is-pin').first();
           const pinId = await pin.getAttribute('data-moon-lot');
@@ -156,15 +165,9 @@ window.getMoon=()=>app._instance.subTree.component.setupState;
               animations: 'disabled',
               path: `${process.env.PH_SCREENSHOT_DIR}/moon-${fallback ? 'svg' : 'webgl'}-375-revealed.png`,
             });
-          await page.locator('.moon-lot-directory summary').click();
-          assert.equal(
-            await page.locator('.moon-lot-directory button').count(),
-            layout.length,
-            'Accessible directory includes all lots',
-          );
-          await page.locator('.moon-lot-directory button').last().click();
-          await page.locator('.moon-lot-directory summary').click();
         }
+        // The Moon lot list lives in the Build tab; the Moon map has no directory overlay.
+        assert.equal(await page.locator('.moon-lot-directory').count(), 0);
         const leaders = await page.evaluate(() =>
           window
             .getMoon()
@@ -179,10 +182,11 @@ window.getMoon=()=>app._instance.subTree.component.setupState;
         await page
           .locator('#fixture')
           .evaluate((element) => element.classList.add('town-labels-hidden'));
-        await page.locator('.moon-lot-directory summary').click();
-        assert.equal(await page.locator('.moon-lot-directory button').count(), layout.length);
-        await page.locator('.moon-lot-directory button').last().click();
-        await page.locator('.moon-lot-directory summary').click();
+        assert.equal(
+          await page.locator('.town-moon-lots').isVisible(),
+          false,
+          'Hidden village labels hide the Moon labels too',
+        );
         await page
           .locator('#fixture')
           .evaluate((element) => element.classList.remove('town-labels-hidden'));

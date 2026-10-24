@@ -279,7 +279,7 @@ import {
 import { BUILDING_BY_ID, EARTH_BUILDINGS, MOON_BUILDINGS } from '../../data/town';
 import { AREA_BY_ID, LANDMARK_BY_ID, areaChoice } from '../../data/townLandmarks';
 import { dressSpaceHelmet } from '../../game/town/TownSpaceHelmet';
-import { swallowTrailingClick } from '../../game/town/TownTrailingClick';
+import { createTapGesture } from '../../game/town/TownTapGesture';
 import {
   constructionRuns,
   constructionVisual,
@@ -528,9 +528,7 @@ defineExpose({
 let lastVisual = '';
 let lastConstruction;
 let scene,
-  disposed = false,
-  dragged = false;
-const pointers = new Map();
+  disposed = false;
 // The named villager, a tapped plaque's name and the sky Moon move on every camera
 // frame. Vue re-renders only when one appears, disappears or changes its text; in
 // between, the frame moves its element directly.
@@ -568,42 +566,24 @@ const chooseLabel = (id, event) => {
   // Pointer taps are settled on pointerup; keep native keyboard/AT activation.
   if (event.detail === 0) choose(id);
 };
-const rememberPointer = (event) => {
-  pointers.delete(event.pointerId);
-  if (!pointers.size) dragged = false;
-  pointers.set(event.pointerId, [
-    event.clientX,
-    event.clientY,
-    event.target.closest('[data-town-plot]')?.dataset.townPlot,
-  ]);
-  if (pointers.size > 1 || event.button !== 0 || event.shiftKey || event.ctrlKey || event.metaKey)
-    dragged = true;
-};
+// Taps on the map or its labels settle on pointerup through the shared tap gesture.
+const tapGesture = createTapGesture({
+  map: () => sceneElement.value,
+  onTap: (event, plot) => (plot ? choose(plot) : scene?.pick(event.clientX, event.clientY)),
+});
+const rememberPointer = (event) =>
+  tapGesture.down(event, event.target.closest('[data-town-plot]')?.dataset.townPlot);
 const movePointer = (event) => {
-  if (!pointers.size && event.pointerType === 'mouse')
+  if (!tapGesture.pressed && event.pointerType === 'mouse')
     scene?.hoverVillager(event.clientX, event.clientY);
-  const start = pointers.get(event.pointerId);
-  if (start && Math.hypot(event.clientX - start[0], event.clientY - start[1]) > 6) dragged = true;
+  tapGesture.move(event);
 };
 const leavePointer = (event) => {
-  if (!pointers.size && event.pointerType === 'mouse') scene?.hoverVillager(-Infinity, -Infinity);
+  if (!tapGesture.pressed && event.pointerType === 'mouse')
+    scene?.hoverVillager(-Infinity, -Infinity);
 };
-const pick = (event) => {
-  movePointer(event);
-  const start = pointers.get(event.pointerId);
-  const tap = start && !dragged;
-  pointers.delete(event.pointerId);
-  if (tap) {
-    if (start[2]) choose(start[2]);
-    else scene?.pick(event.clientX, event.clientY);
-    swallowTrailingClick(sceneElement.value);
-  }
-};
-const cancelPointer = (event) => {
-  if (!pointers.has(event.pointerId)) return;
-  dragged = true;
-  pointers.delete(event.pointerId);
-};
+const pick = (event) => tapGesture.up(event);
+const cancelPointer = (event) => tapGesture.cancel(event);
 const cameraKey = (event) => {
   const action = {
     ArrowLeft: 'left',

@@ -272,8 +272,10 @@ and unfinished monument sites keep full names and statuses. Compact action icons
 sit inside those cards rather than consuming a second large overlay. At a relative
 camera distance of 48 or less, nearby names return within the same budget; keyboard
 focus reveals one name, and activating any pin opens the usual building details.
-A **Moon lots** directory also reaches off-screen lots and remains available when
-the village-label setting is off. Cinematics hide these controls.
+Tapping a lot's pad or building in the scene opens it like its label, with labels
+on or off. The **Build** tab lists every Moon lot while the player is on the Moon,
+and the **Story** tab keeps the letters from New Hollow; neither sits on the map.
+Cinematics hide these controls.
 
 `MoonLabelDensity.js` caps routine name expansion at 25% of canvas area, counting
 full button rectangles (including transparent pin hit areas). Attention cards

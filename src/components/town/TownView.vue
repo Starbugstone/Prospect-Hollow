@@ -334,6 +334,19 @@
             </button>
           </section>
         </div>
+        <section
+          v-if="newHollowLetters.length"
+          class="town-story-letters"
+          aria-labelledby="town-letters-heading"
+        >
+          <h2 id="town-letters-heading">{{ t('Letters from New Hollow') }}</h2>
+          <ul>
+            <li v-for="letter in newHollowLetters" :key="letter.id" :data-moon-letter="letter.id">
+              <small>{{ t(BUILDING_BY_ID[letter.id].shortName) }}</small>
+              <p>{{ t(letter.text) }}</p>
+            </li>
+          </ul>
+        </section>
       </template>
       <template v-else-if="dialogMode === 'build'">
         <p class="town-kicker">
@@ -349,6 +362,29 @@
           @mine="goMining"
           @advance-era="beginEra"
         />
+        <section
+          v-if="moonLots.length"
+          class="town-moon-lot-list"
+          aria-labelledby="town-moon-lots-heading"
+        >
+          <h3 id="town-moon-lots-heading">
+            <TownMoon />{{ t('Moon lots') }}<small>{{ t('New Hollow') }}</small>
+          </h3>
+          <div class="town-building-list">
+            <button
+              v-for="lot in moonLots"
+              :key="lot.id"
+              type="button"
+              :data-moon-lot-row="lot.id"
+              @click="selectBuilding(lot.id)"
+            >
+              <span class="building-list-dot" :style="{ background: lot.colour }"></span>
+              <span
+                >{{ lot.name }}<small>{{ lot.detail }}</small></span
+              >
+            </button>
+          </div>
+        </section>
         <p v-if="!directoryPlots.length" role="status">
           {{
             t('No purchases available. Earn coins in the mine or finish your current construction.')
@@ -704,6 +740,9 @@ import {
   nextGoal,
   upgradeOffer,
   availableParcels,
+  availablePurchases,
+  buildingIndicators,
+  openOffers,
   constructionReady,
   saloonIncomeRate,
   saloonHappinessBonus,
@@ -734,6 +773,15 @@ import TownIcon from './TownIcon.vue';
 import TownRaidNotice from './TownRaidNotice.vue';
 import TownResourceCollection from './TownResourceCollection.vue';
 import TownMoonstoneBalance from './TownMoonstoneBalance.vue';
+import TownMoon from './TownMoon.vue';
+import { moonLetters } from '../../data/moonSettlement';
+import {
+  canCollectMoonstones,
+  moonLotDetail,
+  moonLotIds,
+  moonLotName,
+  moonMonumentChoice,
+} from '../../game/town/moon/MoonLotStatus';
 import TownNextStep from './TownNextStep.vue';
 import TownTabBar from './TownTabBar.vue';
 import TownMoreMenu from './TownMoreMenu.vue';
@@ -1015,6 +1063,43 @@ const monumentSites = computed(() =>
     };
   }),
 );
+// On the Moon, Build lists every lot of New Hollow with the status its map label shows,
+// and opens it the way a tap on the map does.
+const moonOffers = computed(() => (settlement.value === 'moon' ? openOffers(town.value) : []));
+// The village clock ticks every second; the rows (and TownView) only update when one
+// actually changes, as TownScene does for its indicators.
+const moonLots = computed((previous) => {
+  const next = moonLotRows();
+  return previous && JSON.stringify(previous) === JSON.stringify(next) ? previous : next;
+});
+function moonLotRows() {
+  if (settlement.value !== 'moon') return [];
+  const options = {
+    indicators: buildingIndicators(
+      town.value,
+      forgeCollectible.value,
+      collectionNow.value,
+      availablePurchases(town.value, 0, moonOffers.value),
+    ),
+    availableIds: availablePurchases(town.value, campaign.builderHammers, moonOffers.value).map(
+      ({ id }) => id,
+    ),
+    collectable: canCollectMoonstones(town.value, collectionNow.value),
+  };
+  return moonLotIds(town.value).map((id) => {
+    const choice = moonMonumentChoice(town.value, id);
+    return {
+      id,
+      name: moonLotName(id),
+      detail: moonLotDetail(town.value, id, options),
+      colour: AREA_BY_ID[id]
+        ? (LANDMARK_BY_ID[choice]?.colour ?? '#c9a35a')
+        : BUILDING_BY_ID[id].color,
+    };
+  });
+}
+// Each Moon building sends one letter home; the Story tab keeps them.
+const newHollowLetters = computed(() => moonLetters(town.value));
 const nextMonumentSite = computed(() =>
   PERSONAL_AREAS.find((area) => !areaUnlocked(town.value, area)),
 );
