@@ -6,47 +6,58 @@ continued play. There are no move or time limits. The resource can be sold or us
 
 ## Save and migration
 
-Profile schema **3** adds these fields to `town`:
+Profile schema **4** writes these fields to `town`:
 
-- `moonstoneVersion: 1`: deterministic migration marker.
+- `moonstoneVersion: 2`: deterministic migration marker.
 - `moonstones`: spendable nonnegative safe integer balance.
 - `moonstonesEarned`: lifetime nonnegative safe integer, unchanged by spending.
-- `moonstoneProduction: { progress, charge }`: workshop batch, saved like the forge.
-- `lastCollections.moonstoneWorkshop`: the usual collection cooldown checkpoint.
+- `moonstoneProduction: { progress, stored }`: partial puzzle progress and uncollected stock.
+- `lastCollections.moonstoneWorkshop`: the existing 30-second collection cooldown.
 
-`normalizeMoonstones(saved, normalizedTown)` upgrades old saves once to the sum
-of the completed levels in `MOON_LOTS`, exactly the former
-`moonstoneKeepsakes(town)` count. The new balance and lifetime counter both start
-at that count; production starts empty. It derives a checkpoint, rather than
-adding an event to a merged balance. Loading again, importing, or migrating two
-devices therefore cannot add a second credit. Sync retains its existing whole
-profile conflict and recovery policy; it does not sum currency balances.
+Schema 3 / Moonstone version 1 used `{ progress, charge }`. Migration replaces
+`charge` with `stored` exactly once, preserving progress, spendable balance,
+lifetime earnings and collection time. It never adds the batch to the balance:
+only collection does that. Saves older than Moonstones still derive their initial
+balance and lifetime credit from completed `MOON_LOTS` building levels, exactly
+the former `moonstoneKeepsakes(town)` count, with empty production.
 
-Local town storage, cloud upload/download, account/device exports and transfer
-files already serialize the whole town. No new top-level transport whitelist or
-worker message shape is needed; `syncService.js`, `cloudProfile.js`,
-`saveIntegrity.js` and `playerData.js` intentionally retain their shared generic
-transport. Save-transfer validation accepts schemas 2 and 3; the store always
-writes schema 3. Old saves without Moon buildings receive zero.
+`normalizeMoonstones(saved, normalizedTown)` derives a replacement checkpoint,
+never an additive migration event. Reloads, imports and two devices independently
+upgrading the same save therefore cannot add credit twice. Sync retains its
+whole-profile conflict/recovery policy; it never sums balances or stock.
 
-The backend accepts schemas 2 and 3, normalizes legacy checkpoints with the same
-credit, and protects all four fields in both replay comparisons and signed
-recovery checkpoints. A schema-2 client cannot upload over a schema-3 town.
-Existing old clients already treat schema >2 as read-only. An old server rejects
-schema 3 through the existing unsupported-format response; the local outbox and
-progress remain recoverable. Deploy the new backend before the new client.
+`continuousRecords[levelId].moonstoneGems` stores accepted workshop gems for that
+level, including its partial hundred, from 0 through 300. Missing means zero;
+loading bounds it like the continuous coin allowance. It survives visits,
+reloads, imports and cloud sync. `continuousRun.moonstoneJewels` is a transient
+high-water mark for the active run's total jewels; the server retains its matching
+mark in the journal context across sync acknowledgements and enrollment.
 
-Normal victories carry `moonstoneVersion: 1`; old pending victory receipts do not
-retroactively advance production that the old client never ran. Old pending
-building completion receipts still reproduce the migrated keepsake total.
+Local storage, cloud profiles and exports already serialize the entire town and
+continuous records. Transfers and the backend accept schemas **2, 3 and 4**; the
+client writes schema 4. A schema-2/3 client cannot upload over schema 4. Old clients
+already treat schema >3 as read-only, preventing their old normalization from
+resetting version-2 currency. **Deploy the updated backend and catalogs before
+the client.** Old servers reject schema 4; the local outbox remains recoverable.
+The storage key and transport envelope version do not change.
 
-Tracked server updates replay the actual building, victory, collection, sale and
-spend commands: changing either counter, inventing a ready batch, changing the
-exchange rate, collecting twice or overspending fails reconciliation. Enrollment
-is an unverified historical baseline, as for coins, additionally bounded by the
-claimed completed normal puzzle history and building levels. Sale income also
-enters the existing `MoneyBudget` accounting at its unmultiplied coin value.
-That money estimate retains the server's existing observe/hold policy.
+Normal victories, continuous settlements and collections now carry
+`moonstoneVersion: 2`. Server replay retains version-1 single-batch behavior for
+old victories and collections (an absent collection version means 1), including
+a smaller ready batch preserved across an upgrade. Legacy continuous receipts
+advance coins only; old victories without a Moonstone version do not produce
+stones. Replay migrates at the first version-2 production/collection receipt, or
+after all legacy receipts when comparing a migrated upload. Signed recovery
+checkpoints follow the same path. The client preserves queued legacy receipts
+unchanged through load/import and sync; it does not re-execute their rewards.
+
+Tracked updates replay building rewards, production, collect-all, sales and
+spending exactly. Forged stock, above-capacity stock, refreshed continuous
+allowances, extra collection amounts and overspending fail validation. Enrollment
+remains an unverified historical baseline, as for coins, additionally bounded by
+claimed normal-puzzle history, accepted continuous gem history and building
+levels. Sale income enters `MoneyBudget` at its unmultiplied coin value under its
+existing observe/hold policy. Honours remain separate.
 
 ## Earning and sale terms
 
@@ -54,14 +65,38 @@ That money estimate retains the server's existing observe/hold policy.
 contract. Each completed Moon building level grants **1** moonstone once, including
 hammer completion. Modernization of a valley building grants none. The workshop
 prepares **its level (1 / 2 / 3)** moonstones per **3 completed normal puzzles**.
-Continuous play and elapsed real time do not advance it. A single ready batch
-waits until collected; upgrading preserves progress and the already prepared
-batch. The forge and workshop use the shared `advancePuzzleProduction` helper.
+Elapsed real time does not advance it. Completed batches accumulate up to **10
+batches**: 10 / 20 / 30 stones at levels 1 / 2 / 3. Full storage pauses production
+and preserves partial progress. Collection takes **all** stock in one atomic
+transaction and preserves progress. Upgrading preserves both stock and progress,
+with a larger capacity. If a preserved stock is not divisible by the new batch
+size, the last batch fills only the remaining space. The upgrade preview shows both stones per batch and storage capacity before its
+secondary visitor benefit. The forge keeps its original single-ready-batch behavior; the workshop uses `advanceStoredPuzzleProduction`,
+which shares the batch step with `advancePuzzleProduction`.
+
+Once the workshop is built, **100 gems in continuous mode count as one puzzle of
+workshop progress**. Each level can supply **3 puzzle credits / 300 gems over the
+lifetime of the town**, independently of its 25-coin allowance. Eligible partial
+hundreds persist between visits. The counter measures accepted gems, so partial
+credit is preserved without granting a whole puzzle early. Repeated or lower
+total-jewel settlements cannot credit twice.
+
+Gems collected while the workshop is unbuilt or full are discarded and do not
+consume the remaining allowance. When a settlement fills the workshop, only the
+gems needed to reach full stock count; the rest are discarded. For example, with
+one puzzle needed to fill storage, a 250-gem settlement uses 100 and discards 150.
+After collection, new gems can use the remaining 200-gem allowance. Full-workshop
+observations are journaled so even a collection during the same active run cannot
+retroactively recover discarded gems. This uses only the continuous receipt's
+total `jewels`, with stock, allowance, coins and receipt persisted atomically.
+Continuous play still grants no stars, chests, hammers, construction steps, normal
+victories or era progress. There are no move or time limits.
 
 The Moon workshop label changes to “Collect N moonstones”. Tapping it uses the
 same store transaction and `TownResourceCollection` presentation as valley
 resources. Opening the details panel does not collect. That panel also provides
-an explicit collection action and sells 1, 10, or all stones, with confirmation
+an explicit “Collect N moonstones” action, “Stored N / capacity”, production/full
+status, and sells 1, 10, or all stones, with confirmation
 for all. A stale all-quantity must be reviewed again.
 
 One moonstone sells for **250 coins**. Sales are exact atomic transactions:
@@ -99,17 +134,101 @@ A proposed middle monument price of **60 moonstones** is therefore reachable in
 about 40 normal puzzles after entering Twin Hollows, or 26 after this trajectory's
 level-3 workshop completes. An already migrated town with 30 building keepsakes
 needs **30 more puzzles** at level 3 to reach 60. Exact monument prices belong to
-phase 2. Players who leave batches uncollected earn more slowly; existing balance
-and production never expire.
+phase 2. This historical projection used the old single-batch workshop. The stored model
+keeps the same production rate and avoids lost production while stock has room;
+existing balance, stock and partial progress never expire.
 
 The sale rate is intentionally modest: a full level-3 batch sells for **750
 coins**, about **1%** of that measured late-game puzzle payout, and 60 stones sell
 for **15,000 coins**, below Twin Hollows' 21,000-coin first new-building price.
 Selling provides a useful choice without replacing normal mining income.
 
+## Stored-workshop balance comparison (2026-10-24)
+
+Reused the same **546 actually played seed-1 levels** from
+`/tmp/ph-msprice-campaign.json`. In Node 24 Docker, ran:
+
+```sh
+node scripts/measure-moonstones.mjs /output/ph-msprice-campaign.json
+```
+
+Output: `/tmp/ph-wstore-balance.json`. The script simulates both the shipped
+one-batch helper and the new stored helper against identical construction and
+measured coin inputs. Twin Hollows opens at puzzle 646; workshop levels complete
+at 650 / 655 / 660. It visits construction every puzzle and collects workshop
+stock promptly or every 10 / 30 puzzles measured from Twin Hollows opening.
+No sales, continuous play, chests, hammers or passive income enter these normal-play
+trajectories. Monument thresholds are cumulative spending capacity; cosmetic
+construction remains additional (3 puzzles for a foundation, then 1 per upgrade).
+
+First 100 normal puzzles after Twin Hollows, including one-off Moon building
+rewards. “Stored” is available to collect but has not entered the balance yet:
+
+| Collection frequency | Before: collected + stored | After: collected + stored | Before → after sale value of all produced stones | Share of 100 late-game puzzle payouts, before → after |
+| -------------------- | -------------------------- | ------------------------- | ------------------------------------------------ | ----------------------------------------------------- |
+| Prompt               | 125 + 0                    | 125 + 0                   | 31,250 → 31,250 coins                            | 0.413% → 0.413%                                       |
+| Every 10 puzzles     | 60 + 0                     | 125 + 0                   | 15,000 → 31,250 coins                            | 0.198% → 0.413%                                       |
+| Every 30 puzzles     | 40 + 3                     | 113 + 9                   | 10,750 → 30,500 coins                            | 0.142% → 0.403%                                       |
+
+The 30-puzzle collector has 122 total produced stones versus 125 for prompt
+collection: the initial upgrade/progress alignment reaches the cap before a visit.
+Storage protects delayed collection until full; it does not accrue beyond the cap.
+Sale comparisons assume collecting the remaining stock at the measurement boundary.
+The 31,250-coin prompt total equals 0.413 of one late-game puzzle payout, or
+0.413% of 100 such payouts.
+
+Normal puzzles since Twin Hollows to afford each successive monument level,
+allowing for all earlier levels' spending. Entries are **before → after**:
+
+| Level price         | Cumulative price | Prompt collector | Every 10 puzzles | Every 30 puzzles |
+| ------------------- | ---------------- | ---------------- | ---------------- | ---------------- |
+| Foundation: 20      | 20               | 10 → 10          | 11 → 10          | 11 → 11          |
+| Grand court: 30     | 50               | 25 → 25          | 70 → 30          | 210 → 30         |
+| Living landmark: 40 | 90               | 67 → 67          | 200 → 70         | 600 → 90         |
+| Great monument: 50  | 140              | 115 → 115        | 370 → 120        | 1,110 → 120      |
+| Town wonder: 60     | 200              | 175 → 175        | 570 → 180        | 1,710 → 180      |
+| Both full monuments | 400              | 376 → 376        | 1,240 → 380      | 3,690 → 390      |
+
+The JSON also reports each standalone 20 / 30 / 40 / 50 / 60-stone threshold.
+For prompt collection they remain 10 / 14 / 19 / 25 / 37 puzzles respectively;
+these standalone costs do not include earlier monument payments.
+
+The maximum lifetime continuous contribution is **3 puzzle credits × number of
+unlocked levels**, provided every allowance is unused and storage is collected.
+At workshop level 3 this equals that many stones. All 546 current levels provide
+**1,638 credits / 1,638 stones for 163,800 accepted gems**, compared with zero
+before this change. At workshop level 1 the same allowances yield 546 stones,
+so using them earlier spends the same lifetime allowance at a lower yield.
+Starting from zero balance at workshop level 3:
+
+| Cumulative monument spending | Continuous levels at 300 gems each | Accepted gems | Stones produced |
+| ---------------------------- | ---------------------------------- | ------------- | --------------- |
+| 20                           | 7                                  | 2,100         | 21              |
+| 50                           | 17                                 | 5,100         | 51              |
+| 90                           | 30                                 | 9,000         | 90              |
+| 140                          | 47                                 | 14,100        | 141             |
+| 200                          | 67                                 | 20,100        | 201             |
+| Both monuments: 400          | 134                                | 40,200        | 402             |
+
+One measured late-game normal puzzle pays **75,621 coins**. Selling all 1,638
+continuous stones yields **409,500 coins**, or **5.42** such payouts. Selling
+400 stones yields 100,000 coins, or 1.32 payouts. A full level-3 workshop sells
+for 7,500 coins, 9.92% of one payout. The sale rate remains 250 coins per stone.
+
+**Balance risk:** continuous play can pay for both monuments without the 376
+normal-puzzle earning trajectory: 134 levels / 40,200 gems at level 3, or 400
+levels / 120,000 gems at level 1. Construction still requires normal completions.
+This is a large optional acceleration and grows with the level catalog; it is
+not an estimate of elapsed play time, since continuous sessions were not timed.
+If a slower pace is desired, a suggested future tuning is 300 gems per puzzle
+credit (three times the gem effort), with an explicit migration/receipt version.
+The decided 100-gem rate, three-credit allowance, prices and sale rate are retained
+in this change. The normal production rate and prompt-collector milestones are
+unchanged; delayed collectors now retain much more of that production.
+
 ## API for phase 2 monuments
 
-- `campaign.collectMoonstones(now?) -> amount` collects a prepared batch and
+- `campaign.collectMoonstones(now?) -> amount` collects the entire stored stock and
   persists it before returning its positive amount; zero means nothing changed.
 - `campaign.spendMoonstones(amount, reason) -> boolean` deducts a positive safe
   integer only when affordable and durably saved. `reason` is a nonblank string
@@ -139,7 +258,7 @@ requirements and the shipped fixture remain unchanged. The public content and
 save-rule catalogs are regenerated.
 
 `testing/moonstones.test.js` covers migration, reload/import, fallback, building
-rewards, batch caps, normal versus continuous production, sales, invalid amounts,
+rewards, stock caps, normal and bounded continuous production, sales, invalid amounts,
 rollback and the currency hook. `testing/integrity-sync.test.js` covers independent
 device migration and whole-profile sync. Frontend-generated backend fixtures and
 `backend/tests/save-integrity.php` cover exact replay, legacy migration, stale

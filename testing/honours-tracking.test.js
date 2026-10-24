@@ -370,7 +370,7 @@ describe('Evaluation at save', () => {
     expect(campaign.honours.earned['fusion-bronze'].at).toBeGreaterThan(0);
     expect(stored().earned['fusion-bronze']).toBeTruthy();
 
-    const profile = { ...freshProfile(), schemaVersion: 4 };
+    const profile = { ...freshProfile(), schemaVersion: 5 };
     profile.records[1] = { score: 1, stars: 3 };
     profile.honours = { ...createHonours(), backfilled: 1 };
     const readOnly = open(profile);

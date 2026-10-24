@@ -83,6 +83,7 @@
         :data-moon-lot="lot.id"
         :class="{
           'is-pin': lot.collapsed,
+          'is-collectable': lot.id === 'moonstoneWorkshop' && canCollectMoonstones,
           built: !!(town.buildings[lot.id] || monumentChoice(lot.id)),
           open: AREA_BY_ID[lot.id] ? status(lot.id) === 'open' : availableIds.includes(lot.id),
           'is-ready': indicators[lot.id] === 'ready' || status(lot.id) === 'ready',
@@ -252,7 +253,7 @@ let scene = null,
 const townClock = inject('townClock', null);
 const canCollectMoonstones = computed(
   () =>
-    !!props.town.moonstoneProduction?.charge &&
+    !!props.town.moonstoneProduction?.stored &&
     !collectionCooldownRemaining(props.town, 'moonstoneWorkshop', townClock?.value ?? Date.now()),
 );
 const moon = computed(() => moonSettlement(props.town));
@@ -303,6 +304,10 @@ const shownLots = computed(() => {
       width,
       height,
       { near: !unavailable.value && cameraDistance.value <= 48, selected: selectedLot.value },
+    ).map((lot) =>
+      lot.id === 'moonstoneWorkshop' && canCollectMoonstones.value
+        ? { ...lot, width: 128, height: 64 }
+        : lot,
     ),
     width,
     height,
@@ -349,7 +354,7 @@ function status(id) {
 }
 function statusLabel(id) {
   if (id === 'moonstoneWorkshop' && canCollectMoonstones.value)
-    return t('Collect {count} moonstones', { count: props.town.moonstoneProduction.charge });
+    return t('Collect {count} moonstones', { count: props.town.moonstoneProduction.stored });
   return {
     work: t('Under construction'),
     ready: t('Ready to unveil'),
@@ -498,6 +503,11 @@ defineExpose({
   border-color: #83c5dc;
   background: #172d43ed;
   color: #edf9ff;
+}
+.town-moon-lot.is-collectable small {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
 }
 .town-moon-lot.is-working small {
   color: #b5e4ef;

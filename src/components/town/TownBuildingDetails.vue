@@ -50,13 +50,19 @@
         }}</small>
       </div>
       <div v-if="offer || project" class="town-benefit-preview">
-        <TownIcon :name="benefit.icon" /><span
-          ><small>{{ t(benefit.label) }}</small
-          ><strong
-            >{{ benefit.before }}{{ benefit.suffix }} <TownIcon name="arrow" />
-            <b>{{ benefit.after }}{{ benefit.suffix }}</b></strong
-          ></span
+        <div
+          v-for="preview in [benefit, ...(benefit.additional ?? [])]"
+          :key="preview.label"
+          class="town-benefit-row"
         >
+          <TownIcon :name="preview.icon" /><span
+            ><small>{{ t(preview.label) }}</small
+            ><strong
+              >{{ preview.before }}{{ preview.suffix }} <TownIcon name="arrow" />
+              <b>{{ preview.after }}{{ preview.suffix }}</b></strong
+            ></span
+          >
+        </div>
       </div>
     </div>
     <div v-if="project" class="town-project-progress">
@@ -447,6 +453,7 @@ const benefit = computed(() =>
 <style scoped>
 .town-benefit-preview {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 12px;
@@ -457,7 +464,12 @@ const benefit = computed(() =>
   border-radius: 12px;
   color: #445b43;
 }
-.town-benefit-preview > svg {
+.town-benefit-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.town-benefit-row > svg {
   width: 34px;
   height: 34px;
   flex-shrink: 0;

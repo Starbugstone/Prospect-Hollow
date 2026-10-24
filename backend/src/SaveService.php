@@ -42,7 +42,7 @@ final class SaveService
     {
         if (
             !($profile instanceof \stdClass) ||
-            !in_array($profile->schemaVersion ?? null, [2, 3], true)
+            !in_array($profile->schemaVersion ?? null, [2, 3, 4], true)
         ) {
             throw new ApiError(
                 422,

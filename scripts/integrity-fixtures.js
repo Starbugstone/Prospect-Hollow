@@ -14,6 +14,7 @@ import { BUILDINGS, BANDIT_EVENT } from '../src/data/town.js';
 import { SPACE_HELMET } from '../src/data/townAnimals.js';
 import { ERAS } from '../src/data/eras.js';
 import { eraIndex } from '../src/game/town/TownEras.js';
+import { advancePuzzleProduction } from '../src/data/puzzleProduction.js';
 import { HOUR_MS, projectRuns } from '../src/game/town/TownRules.js';
 import { bonusCapacity, HAMMER_CAPACITY } from '../src/data/rewards.js';
 
@@ -89,7 +90,7 @@ export function createIntegrityFixtures() {
     if (result === false || result === null || result === undefined)
       throw new Error(`Fixture action failed: ${name}`);
   };
-  const fixture = (name, setup, action) => {
+  const fixture = (name, setup, action, transform = () => {}) => {
     seed = 12345;
     Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: storage() });
     Object.defineProperty(globalThis, 'sessionStorage', { configurable: true, value: storage() });
@@ -103,6 +104,7 @@ export function createIntegrityFixtures() {
     action(campaign);
     const after = clone(campaign.profile());
     if (!after.integrity.actions.length) throw new Error(`Fixture has no journal: ${name}`);
+    transform(before, after);
     fixtures.push({ name, before, after, serverNow });
     campaign.endRun(campaign.activeRun);
   };
@@ -297,10 +299,123 @@ export function createIntegrityFixtures() {
         profile.town.moonstonesEarned = 10;
       },
       (campaign) => {
-        for (let n = 0; n < 3; n++) victory(campaign);
+        for (let n = 0; n < 35; n++) victory(campaign);
         expectSuccess(campaign.collectMoonstones(), 'moonstone collection');
         expectSuccess(campaign.sellMoonstones(10), 'moonstone sale');
         expectSuccess(campaign.spendMoonstones(3, 'future-monument'), 'moonstone spend');
+      },
+    );
+    const legacyMoon = (profile) => {
+      profile.schemaVersion = 3;
+      profile.town.moonstoneVersion = 1;
+      profile.town.moonstoneProduction = {
+        progress: profile.town.moonstoneProduction.progress,
+        charge: profile.town.moonstoneProduction.stored,
+      };
+    };
+    fixture(
+      'legacy moonstone victories stop after one batch before migration',
+      (profile) => {
+        develop(profile, 'twin-hollows');
+      },
+      (campaign) => {
+        for (let n = 0; n < 12; n++) victory(campaign);
+      },
+      (before, after) => {
+        legacyMoon(before);
+        after.town.moonstoneProduction = { progress: 0, stored: 3 };
+        for (const action of after.integrity.actions)
+          if (action.kind === 'victory') action.data.moonstoneVersion = 1;
+      },
+    );
+    fixture(
+      'legacy moonstone ready batch survives a larger workshop level',
+      (profile) => {
+        develop(profile, 'twin-hollows');
+        profile.town.moonstoneProduction.stored = 1;
+      },
+      (campaign) => {
+        for (let n = 0; n < 4; n++) victory(campaign);
+      },
+      (before, after) => {
+        legacyMoon(before);
+        after.town.moonstoneProduction = { progress: 0, stored: 1 };
+        for (const action of after.integrity.actions)
+          if (action.kind === 'victory') action.data.moonstoneVersion = 1;
+      },
+    );
+    fixture(
+      'legacy moonstone collection then migration',
+      (profile) => {
+        develop(profile, 'twin-hollows');
+        profile.town.moonstoneProduction.stored = 3;
+      },
+      (campaign) => expectSuccess(campaign.collectMoonstones(), 'legacy collection'),
+      (before, after) => {
+        legacyMoon(before);
+        delete after.integrity.actions.find((a) => a.kind === 'moonstone-collect').data
+          .moonstoneVersion;
+      },
+    );
+    fixture(
+      'pending legacy moonstone victories then new stock production and collection',
+      (profile) => {
+        develop(profile, 'twin-hollows');
+      },
+      (campaign) => {
+        let production = { progress: 0, charge: 0 };
+        for (let n = 0; n < 12; n++) {
+          victory(campaign);
+          production = advancePuzzleProduction(production, 3, 3);
+          campaign.town.moonstoneProduction = {
+            progress: production.progress,
+            stored: production.charge,
+          };
+          campaign.integrity.actions.findLast((a) => a.kind === 'victory').data.moonstoneVersion =
+            1;
+        }
+        victory(campaign);
+        expectSuccess(campaign.collectMoonstones(), 'mixed receipt collection');
+      },
+      (before) => legacyMoon(before),
+    );
+    fixture(
+      'continuous moonstone lifetime allowance, duplicate settlement and retry',
+      (profile) => {
+        develop(profile, 'twin-hollows');
+      },
+      (campaign) => {
+        const run = campaign.beginRun('continuous', 1);
+        for (const jewels of [99, 99, 200, 250])
+          expectSuccess(
+            campaign.recordContinuous({ id: 1, runId: run, jewels, score: jewels }),
+            'continuous stock',
+          );
+        const retry = campaign.beginRun('continuous', 1);
+        expectSuccess(
+          campaign.recordContinuous({ id: 1, runId: retry, jewels: 500, score: 500 }),
+          'continuous retry',
+        );
+      },
+    );
+    fixture(
+      'continuous full workshop discards gems then resumes in the same run',
+      (profile) => {
+        develop(profile, 'twin-hollows');
+        profile.town.moonstoneProduction = { progress: 2, stored: 29 };
+      },
+      (campaign) => {
+        const run = campaign.beginRun('continuous', 1);
+        for (const jewels of [250, 1000])
+          expectSuccess(
+            campaign.recordContinuous({ id: 1, runId: run, jewels, score: jewels }),
+            'full stock',
+          );
+        expectSuccess(campaign.collectMoonstones(), 'full collection');
+        expectSuccess(
+          campaign.recordContinuous({ id: 1, runId: run, jewels: 1100, score: 1100 }),
+          'resumed stock',
+        );
       },
     );
     fixture(
