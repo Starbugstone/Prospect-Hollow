@@ -1,3 +1,8 @@
+// Screen-space label rectangles use their centre and CSS pixel dimensions on both maps.
+export const labelsOverlap = (a, b, gap = 4, verticalGap = gap) =>
+  Math.abs(a.x - b.x) < (a.width + b.width) / 2 + gap &&
+  Math.abs(a.y - b.y) < (a.height + b.height) / 2 + verticalGap;
+
 // Label positions change on every camera frame; which labels exist and show does
 // not. Vue renders only layout changes; positions go straight to the elements.
 export const labelLayout = (anchors) =>

@@ -1164,6 +1164,7 @@
   font-size: 12px;
 }
 .town-dialog-close {
+  flex: 0 0 44px;
   width: 44px;
   height: 44px;
   display: grid;
@@ -1173,6 +1174,14 @@
   border: 0;
   border-radius: 50%;
   font-size: 25px;
+  cursor: pointer;
+}
+.town-dialog-close:hover {
+  background: #dbdfcb;
+}
+.town-dialog-close:focus-visible {
+  outline: 3px solid #426654;
+  outline-offset: 2px;
 }
 .town-dialog-content {
   padding: 20px 24px 24px;
@@ -1930,6 +1939,7 @@ html:has(.town-museum[open]) {
   accent-color: #8ca866;
 }
 .town-labels-hidden .town-scene-labels,
+.town-labels-hidden .town-moon-lots,
 .town-labels-hidden .mine-label {
   display: none;
 }
@@ -1937,6 +1947,11 @@ html:has(.town-museum[open]) {
 .town-in-cinematic > .town-map-corner,
 .town-in-cinematic .town-scene-labels,
 .town-in-cinematic .town-action-icons,
+.town-in-cinematic .town-resource-bar,
+.town-in-cinematic .town-settlement-notice,
+.town-in-cinematic .town-moon-header,
+.town-in-cinematic .town-moon-letters,
+.town-in-cinematic .town-moon-actions,
 .town-in-cinematic .mine-label {
   visibility: hidden;
 }
@@ -2206,6 +2221,13 @@ html:has(.town-museum[open]) {
 .town-moon-letters li + li {
   margin-top: 4px;
 }
+@media (min-width: 600px) and (max-height: 450px) {
+  .town-moon-letters {
+    bottom: 8px;
+    left: auto;
+    right: 12px;
+  }
+}
 @media (max-width: 600px) {
   .town-moon-lot {
     min-height: 44px;
@@ -2214,6 +2236,9 @@ html:has(.town-museum[open]) {
   }
   .town-moon-letters {
     bottom: 76px;
+  }
+  .town-map-frame:has(.town-settlement-notice) .town-moon-letters {
+    bottom: 128px;
   }
 }
 

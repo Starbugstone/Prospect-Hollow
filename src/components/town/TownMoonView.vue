@@ -63,18 +63,36 @@
       role="group"
       :aria-label="t('Moon lots')"
     >
+      <svg
+        class="town-moon-leaders"
+        :viewBox="`0 0 ${viewport.width} ${viewport.height}`"
+        aria-hidden="true"
+      >
+        <template v-for="lot in shownLots" :key="lot.id">
+          <g v-if="lot.leader">
+            <line v-bind="lot.leader" />
+            <circle :cx="lot.leader.x2" :cy="lot.leader.y2" r="2" />
+          </g>
+        </template>
+      </svg>
       <button
         v-for="lot in shownLots"
         :key="lot.id"
         type="button"
         class="town-moon-lot"
+        :data-moon-lot="lot.id"
         :class="{
           built: !!(town.buildings[lot.id] || monumentChoice(lot.id)),
           open: AREA_BY_ID[lot.id] ? status(lot.id) === 'open' : availableIds.includes(lot.id),
           'is-ready': indicators[lot.id] === 'ready' || status(lot.id) === 'ready',
           'is-working': !!town.projects?.[lot.id] || status(lot.id) === 'work',
         }"
-        :style="{ left: `${lot.x}%`, top: `${lot.y}%`, width: `${lot.width ?? 100}px` }"
+        :style="{
+          left: `${lot.x}%`,
+          top: `${lot.y}%`,
+          width: `${lot.width ?? 104}px`,
+          height: `${lot.height ?? 52}px`,
+        }"
         @click="
           !readOnly && canCollectMoonstones && lot.id === 'moonstoneWorkshop'
             ? emit('collect', lot.id)
@@ -101,8 +119,8 @@
         :class="TOWN_ACTIONS[indicators[lot.id]].class"
         :data-moon-action="lot.id"
         :style="{
-          left: `${lot.x}%`,
-          top: `${lot.y}%`,
+          left: `${lot.actionPoint?.x ?? lot.anchor?.x ?? lot.x}%`,
+          top: `${lot.actionPoint?.y ?? lot.anchor?.y ?? lot.y}%`,
           '--action-scale': TOWN_ACTIONS[indicators[lot.id]].scale,
         }"
         :aria-label="buildingActionLabel(town, lot.id, indicators[lot.id])"
@@ -160,7 +178,7 @@ import {
   monumentWork,
 } from '../../data/townLandmarks';
 import TownMoonMonument from './TownMoonMonument.vue';
-import { layoutMoonLabels } from '../../game/town/moon/MoonLabelLayout';
+import { layoutMoonLabels, moonMapLabel } from '../../game/town/moon/MoonLabelLayout';
 import { plotUnlocked, collectionCooldownRemaining } from '../../game/town/TownRules';
 import TownMoon from './TownMoon.vue';
 import TownMoonstoneBalance from './TownMoonstoneBalance.vue';
@@ -234,11 +252,9 @@ const mapApproaches = computed(() =>
 const shownLots = computed(() =>
   unavailable.value
     ? layoutMoonLabels(
-        [...mapLots.value, ...mapMonuments.value].map(({ id, x, y }) => ({
-          id,
-          x: 50 + (x / 120) * 100,
-          y: 50 + (y / 100) * 100 + (AREA_BY_ID[id] ? 7 : -6),
-          visible: true,
+        [...mapLots.value, ...mapMonuments.value].map((lot) => ({
+          ...moonMapLabel(lot, viewport.value),
+          action: !!TOWN_ACTIONS[props.indicators[lot.id]],
         })),
         viewport.value.width,
         viewport.value.height,
@@ -249,10 +265,14 @@ const actionLots = computed(() =>
   shownLots.value.filter((lot) => TOWN_ACTIONS[props.indicators[lot.id]]),
 );
 const choose = (id) => emit(props.readOnly ? 'inspect' : 'select', id);
-const updateAvailable = () =>
+const updateAvailable = () => {
   scene?.setAvailable(
     Object.keys(props.indicators).filter((id) => props.indicators[id] === 'upgrade'),
   );
+  scene?.setLabelActions(
+    Object.keys(props.indicators).filter((id) => TOWN_ACTIONS[props.indicators[id]]),
+  );
+};
 function status(id) {
   if (AREA_BY_ID[id])
     return monumentWork(props.town, AREA_BY_ID[id])?.ready
@@ -370,13 +390,40 @@ defineExpose({
 });
 </script>
 <style scoped>
+.town-moon-leaders {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.town-moon-leaders line {
+  stroke: #bba77c;
+  stroke-width: 1.5;
+  filter: drop-shadow(0 1px 1px #10162b88);
+}
+.town-moon-leaders circle {
+  fill: #fbf8ea;
+  stroke: #bba77c;
+}
+.town-moon-lot strong {
+  align-self: end;
+}
+.town-moon-lot small {
+  align-self: start;
+  font-size: 10px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .town-moon-actions {
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
 .town-moon-action {
-  margin-top: -76px;
   border-radius: 50%;
   background: radial-gradient(circle, #142f48db 35%, #61d6ec55 60%, transparent 72%);
 }

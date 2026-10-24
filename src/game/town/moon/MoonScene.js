@@ -623,6 +623,14 @@ export class MoonScene {
   setAvailable(ids) {
     if (this.upgradeGlow.setAvailable(ids)) this.requestFrame();
   }
+  setLabelActions(ids) {
+    const key = ids.join(',');
+    if (key === this.labelActionKey) return;
+    this.labelActionKey = key;
+    this.labelActions = new Set(ids);
+    this.labelKey = null;
+    this.requestFrame();
+  }
   setReducedMotion(value) {
     this.reducedMotion = value;
     this.construction.update(this.elapsed, value);
@@ -663,6 +671,7 @@ export class MoonScene {
       point.copy(position).project(this.camera);
       return {
         id,
+        action: this.labelActions?.has(id) ?? false,
         x: (point.x + 1) * 50,
         y: (1 - point.y) * 50,
         visible:
@@ -696,12 +705,23 @@ export class MoonScene {
     if (!width || !height) return;
     this.camera.aspect = width / height;
     this.camera.fov = width < height ? 62 : 48;
+    // Keep the outer lots on screen in portrait while retaining the player's
+    // orbit angle and relative zoom when the viewport changes.
+    const overviewScale = width < height ? Math.max(1, 1.05 / this.camera.aspect) : 1;
+    this.camera.position
+      .sub(this.controls.target)
+      .multiplyScalar(overviewScale / (this.overviewScale ?? 1))
+      .add(this.controls.target);
+    this.overviewScale = overviewScale;
+    this.controls.maxDistance = Math.max(115, overviewScale * 90);
+    this.controls.update();
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height, false);
     this.requestFrame();
   }
   resetView() {
-    this.camera.position.set(0, 26, 66);
+    const scale = this.overviewScale ?? 1;
+    this.camera.position.set(0, 26 * scale, 4 + 62 * scale);
     this.controls.target.set(0, 0, 4);
     this.controls.update();
   }

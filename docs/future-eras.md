@@ -247,6 +247,19 @@ docker run --rm --network host --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD"
 docker stop hollow-moon-web
 ```
 
+`testing/browser/moon-labels.cjs` uses the same Docker browser setup. Substitute
+that filename in the second command to check WebGL and SVG at 1440×900, 900×360
+and 375×740. It checks every lot/site label for overlap, screen bounds, leader
+anchors and touch selection. Run it after changing lunar labels or camera framing.
+
+Moon labels retain their projected building anchors and move only to clear other
+labels or screen controls. Displaced labels connect their nearest edge to their
+own anchor. Collection/finish targets stay by their own building, clamped below
+the header, and labels reserve their touch areas. Both maps share
+the valley's rectangle collision helper in `TownLabels.js`. SVG projection accounts
+for the centred, letterboxed viewBox. Portrait framing preserves orbit and relative
+zoom while keeping the outer lunar lots in view.
+
 `PH_TEST_ORIGIN` points the check at another server.
 
 Purely cosmetic gifts: one **moonstone keepsake** per finished Moon building level

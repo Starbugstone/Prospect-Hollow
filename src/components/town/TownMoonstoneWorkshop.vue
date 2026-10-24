@@ -21,7 +21,7 @@
     </p>
     <button
       v-if="town.moonstoneProduction.charge"
-      class="town-secondary"
+      class="town-primary"
       :disabled="cooldownSeconds > 0"
       @click="$emit('collect')"
     >
@@ -47,7 +47,7 @@
       <button
         v-for="amount in [1, 10]"
         :key="amount"
-        class="town-secondary"
+        class="town-primary"
         :disabled="!sellMoonstoneBalance(town, amount)"
         @click="sell(amount)"
       >
@@ -55,7 +55,7 @@
         {{ number(amount * MOONSTONE_ECONOMY.saleCoins) }} <TownIcon name="coin" />
       </button>
       <button
-        class="town-secondary"
+        class="town-primary"
         :disabled="!sellMoonstoneBalance(town, town.moonstones)"
         @click="confirmAmount = town.moonstones"
       >
