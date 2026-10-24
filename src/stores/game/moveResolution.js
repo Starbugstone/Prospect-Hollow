@@ -499,7 +499,10 @@ export function applyScoring(store, steps) {
   return total;
 }
 
-export function shuffleBoard(store, { recoveryBoard = null } = {}) {
+// `consume` names the stored power paying for this shuffle (the Shuffle item). Like
+// every other power it is spent once the shuffle has played and before its resolution
+// commits, so a shuffle that finishes the puzzle is spent before the victory is recorded.
+export function shuffleBoard(store, { recoveryBoard = null, consume = null } = {}) {
   if (!store.sessionActive || store.animationInProgress || store.levelCleared) return false;
   store.cancelHint(true);
   const session = store.sessionVersion;
@@ -546,6 +549,7 @@ export function shuffleBoard(store, { recoveryBoard = null } = {}) {
             cols: store.boardCols,
             rows: store.boardRows,
             animator,
+            consume,
           })
         : false;
     } finally {
@@ -555,7 +559,7 @@ export function shuffleBoard(store, { recoveryBoard = null } = {}) {
   })();
 }
 
-export async function resolveBoardAfterShuffle(store, nextBoard, { cols, rows }) {
+export async function resolveBoardAfterShuffle(store, nextBoard, { cols, rows, consume = null }) {
   const session = store.sessionVersion;
   try {
     const matches = matchEngine.findMatches(nextBoard, cols, rows, tilesOf(store));
@@ -568,6 +572,8 @@ export async function resolveBoardAfterShuffle(store, nextBoard, { cols, rows })
     });
     store._applyScoring(resolution.steps);
     if (!(await showResolution(store, resolution, session))) return false;
+    // Consume before committing so victory rewards see the updated inventory.
+    if (consume && !useInventoryStore().consumeItem(consume)) return false;
     store.tiles = plain(nextTiles);
     store.commitResolution(resolution);
     return true;

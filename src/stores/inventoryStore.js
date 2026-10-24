@@ -21,9 +21,10 @@ export const useInventoryStore = defineStore('inventory', {
       if (TARGETED_POWERS.has(id)) return gameStore.setBonusMode(id);
       gameStore.setBonusMode(null);
       if (id === 'clear-row') return gameStore.activateOneTimeBonus('clear-row', { consume: true });
-      if (id !== 'shuffle' || (await gameStore.shuffleBoard()) === false) return false;
+      // The shuffle spends the item before its resolution can finish the puzzle.
+      if (id !== 'shuffle' || !(await gameStore.shuffleBoard({ consume: id }))) return false;
       await gameStore.ensurePlayableBoard();
-      return this.consumeItem(id);
+      return true;
     },
     consumeItem(id) {
       return useCampaignStore().consumePowerItem(id);

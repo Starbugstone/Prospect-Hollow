@@ -417,3 +417,31 @@ it('classifies every campaign action as a guarded entry point, an internal helpe
   expect(values.get(SAVE_KEY)).toBe(saved);
   expect(JSON.stringify(campaign.integrity)).toBe(integrity);
 });
+
+it('spends a Shuffle that finishes the puzzle before the victory is recorded', async () => {
+  const profile = freshProfile();
+  profile.powers.find((power) => power.id === 'shuffle').quantity = 2;
+  const campaign = open(profile);
+  const game = useGameStore(pinia);
+  const inventory = useInventoryStore(pinia);
+  game.bootstrap();
+  expect(game.startLevel(1)).toBe(true);
+  // An ordinary shuffle is spent once and the puzzle carries on.
+  expect(await inventory.usePowerUp('shuffle')).toBe(true);
+  expect(game.levelCleared).toBe(false);
+  expect(inventory.availableQuantity('shuffle')).toBe(1);
+  expect(campaign.integrity.actions.map(({ kind }) => kind)).toEqual(['run-start', 'power-spend']);
+  // This shuffle's resolution completes the last objective: the item is spent first, as
+  // every other power is, so the victory and its rewards see the updated inventory.
+  game.remainingLayers = 0;
+  expect(await inventory.usePowerUp('shuffle')).toBe(true);
+  expect(game.levelCleared).toBe(true);
+  expect(campaign.powers.find((power) => power.id === 'shuffle').quantity).toBe(0);
+  expect(campaign.integrity.actions.map(({ kind }) => kind)).toEqual([
+    'run-start',
+    'power-spend',
+    'power-spend',
+    'victory',
+  ]);
+  expect(campaign.nextLevel).toBe(2);
+}, 20000);
