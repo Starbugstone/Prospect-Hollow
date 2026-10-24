@@ -58,6 +58,6 @@ The old Azure workflow was disabled in GitHub when inspected; this branch remove
 
 ## Maintenance and regression checks
 
-Use the shared controller's `disable`, `status`, `retry` and `rollback RELEASE_ID` commands with the **production** config path. Rollback disables polling for that target. Its releases, locks, state and logs are independent of preprod. Database migrations are not reversed by code rollback; maintain independent database backups.
+Use the shared controller's `disable`, `status`, `retry` and `rollback RELEASE_ID` commands with the **production** config path. Rollback disables polling for that target. Its releases, locks, state and logs are independent of preprod. Database migrations are not reversed by code rollback; because they are [additive](hosting.md), the earlier release passes its health check on the migrated database. Maintain independent database backups.
 
 CI runs the existing controller/readiness tests, both target installers and `tests/o2switch/branch-routing-test.php`. The routing test checks both directions with identical SHAs, rejects unrelated branches and invalid CI, and verifies successful activation stays inside the selected target's releases. Installer tests cover isolated paths/checkouts, disabled initial polling, secret/configuration preservation and rejection before any control replacement when an installer is pointed at the other target.
