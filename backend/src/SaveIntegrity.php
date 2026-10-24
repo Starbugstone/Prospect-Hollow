@@ -79,6 +79,15 @@ final class SaveIntegrity
         ) {
             self::incompatible();
         }
+        $vipSpend = $this->rules['economy']['vipSpend'] ?? null;
+        if (
+            !is_array($vipSpend) ||
+            !self::integer($vipSpend['base'] ?? null, 1) ||
+            ($vipSpend['version'] ?? null) !== 1 ||
+            ($vipSpend['depthRule'] ?? null) !== 'highest-completed-normal-level'
+        ) {
+            self::incompatible();
+        }
         $moonstones = $this->rules['economy']['moonstones'] ?? null;
         if (
             !is_array($moonstones) ||
@@ -2038,7 +2047,21 @@ final class SaveIntegrity
                 ) {
                     self::mismatch('vip-spend');
                 }
-                $this->addCoins($s, $this->rules['economy']['vipSpend']);
+                $terms = $this->rules['economy']['vipSpend'];
+                $version = array_key_exists('economyVersion', $d) ? $d['economyVersion'] : 0;
+                if (
+                    !is_int($version) ||
+                    !in_array($version, [0, $terms['version']], true) ||
+                    $terms['depthRule'] !== 'highest-completed-normal-level'
+                ) {
+                    self::mismatch('vip-spend.economyVersion');
+                }
+                $multiplier = 1;
+                if ($version > 0) {
+                    $level = max([1, ...array_keys($s['records'])]);
+                    $multiplier = $this->rules['levels'][$level]['miningMultiplier'] ?? 1;
+                }
+                $this->addCoins($s, $terms['base'] * $multiplier);
                 $s['vipReceipts'] = array_slice([...$s['vipReceipts'], $key], -64);
                 break;
             case 'building-buy':

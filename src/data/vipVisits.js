@@ -1,6 +1,22 @@
 import { villagerRandom } from './villagers';
+import { LEVEL_COUNT } from './campaign';
+import { miningDepthBonus } from './economy';
 
-export const VIP_SPEND = 5;
+export const VIP_SPEND_BASE = 5;
+export const VIP_SPEND_VERSION = 1;
+// Normal records are validated on load and replay. Unknown catalog levels cannot
+// invent deeper chapters; new chapters inherit the mining multiplier automatically.
+export function vipSpend(records = {}, version = VIP_SPEND_VERSION) {
+  if (version === 0) return VIP_SPEND_BASE; // Unversioned, already queued purchases.
+  if (version !== VIP_SPEND_VERSION) return 0;
+  const level = Object.keys(records).reduce((deepest, key) => {
+    const id = Number(key);
+    return Number.isInteger(id) && id >= 1 && id <= LEVEL_COUNT && records[key]
+      ? Math.max(deepest, id)
+      : deepest;
+  }, 1);
+  return VIP_SPEND_BASE + miningDepthBonus(VIP_SPEND_BASE, level);
+}
 export const VIP_RECEIPT_LIMIT = 64;
 // A name alone also identifies visiting players and legacy share-link guests.
 export const canVipSpend = (identity) =>

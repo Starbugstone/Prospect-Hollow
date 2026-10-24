@@ -51340,7 +51340,11 @@
     "multiMatchCoinStep": 10,
     "starCascadeTarget": 4,
     "starScoreMultiplier": 1.5,
-    "vipSpend": 5,
+    "vipSpend": {
+      "base": 5,
+      "version": 1,
+      "depthRule": "highest-completed-normal-level"
+    },
     "vipBuildings": [
       "saloon",
       "shop",
@@ -52178,5 +52182,5 @@
       "seenGeneration": 4
     }
   },
-  "contentDigest": "f28fbc379e61ed57858b21741c752c21a41d239dfc347d690c4887848ad8111d"
+  "contentDigest": "9ba9b05e5bb1a3d499f36fab27d8528468a549bec321865d60327cb113087870"
 }

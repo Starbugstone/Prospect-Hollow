@@ -12412,7 +12412,12 @@
               "sequence": 2,
               "id": "00000000-0000-4000-8000-000000000095",
               "kind": "vip-spend",
-              "data": { "key": "fixture-tour:0", "buildingId": "saloon", "at": 1780000000000 }
+              "data": {
+                "key": "fixture-tour:0",
+                "buildingId": "saloon",
+                "economyVersion": 1,
+                "at": 1780000000000
+              }
             }
           ]
         },
@@ -12745,12 +12750,698 @@
       "serverNow": 1780000000000
     },
     {
-      "name": "space helmet found once for its completed puzzle",
+      "name": "VIP purchase at chapter 91",
       "before": {
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000096",
+          "clientAt": 1780000000000,
+          "baseSequence": 0,
+          "actions": []
+        },
+        "records": { "541": { "score": 1000, "stars": 1 } },
+        "continuousRecords": {},
+        "powers": [
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 0 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 0 },
+          { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
+          { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 0 },
+          { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
+        ],
+        "builderHammers": 0,
+        "chestsWithoutBuilderHammer": 0,
+        "pendingChests": [],
+        "shopStock": [],
+        "shopVisit": 0,
+        "vipReceipts": [],
+        "seenObstacles": [],
+        "seenTips": [],
+        "town": {
+          "personalisation": {
+            "version": 3,
+            "crest": null,
+            "areas": {},
+            "areaLevels": {},
+            "construction": {},
+            "plaques": {}
+          },
+          "era": "frontier",
+          "buildingEras": {
+            "well": "frontier",
+            "farm": "frontier",
+            "home": "frontier",
+            "saloon": "frontier",
+            "stable": "frontier",
+            "sheriff": "frontier",
+            "museum": "frontier",
+            "armory": "frontier",
+            "bank": "frontier",
+            "shop": "frontier",
+            "square": "frontier",
+            "watermill": "frontier",
+            "fisherman": "frontier",
+            "blacksmith": "frontier",
+            "school": "frontier",
+            "doctor": "frontier",
+            "bridge": "frontier",
+            "riverPort": "frontier",
+            "railDepot": "frontier",
+            "post": "frontier",
+            "warehouse": "frontier",
+            "hotel": "frontier",
+            "home5": "frontier",
+            "market": "frontier",
+            "powerHouse": "frontier",
+            "fireStation": "frontier",
+            "rowHouses": "frontier",
+            "mill": "frontier",
+            "garage": "frontier",
+            "busDepot": "frontier",
+            "gardenCourt": "frontier",
+            "diner": "frontier",
+            "teaHouse": "frontier",
+            "blossomAtelier": "frontier",
+            "orchardCottages": "frontier",
+            "glassworks": "frontier",
+            "springsRetreat": "frontier",
+            "riverlightPavilion": "frontier",
+            "airport": "frontier",
+            "radioTower": "frontier",
+            "concertHall": "frontier",
+            "television": "frontier",
+            "skyline": "frontier",
+            "cityHall": "frontier",
+            "apartments": "frontier",
+            "supermarket": "frontier",
+            "waterPlant": "frontier",
+            "transitHub": "frontier",
+            "library": "frontier",
+            "crystalLab": "frontier",
+            "cityHomes": "frontier",
+            "riverPark": "frontier",
+            "skyPods": "frontier",
+            "biodome": "frontier",
+            "maglevStation": "frontier",
+            "skyHarbour": "frontier",
+            "cloudOrchard": "frontier",
+            "windsongLofts": "frontier",
+            "greatTelescope": "frontier",
+            "dewlightGardens": "frontier",
+            "starlightTerraces": "frontier",
+            "spaceElevator": "frontier",
+            "moonpost": "frontier",
+            "missionHomesteads": "frontier",
+            "homecomingHall": "frontier",
+            "ribbonLanding": "frontier",
+            "settlerDomes": "frontier",
+            "craterIceWell": "frontier",
+            "earthlightGreenhouse": "frontier",
+            "willowkinDome": "frontier",
+            "newHollowCommons": "frontier",
+            "craterHomesteads": "frontier",
+            "moonstoneWorkshop": "frontier",
+            "roverBarn": "frontier",
+            "saucerPad": "frontier",
+            "earthriseLookout": "frontier",
+            "horseField": "frontier",
+            "park": "frontier",
+            "home2": "frontier",
+            "home3": "frontier",
+            "home4": "frontier",
+            "well2": "frontier",
+            "farm2": "frontier",
+            "farm3": "frontier"
+          },
+          "buildingEraLevels": {
+            "well": 0,
+            "farm": 0,
+            "home": 0,
+            "saloon": 0,
+            "stable": 0,
+            "sheriff": 0,
+            "museum": 0,
+            "armory": 0,
+            "bank": 0,
+            "shop": 0,
+            "square": 0,
+            "watermill": 0,
+            "fisherman": 0,
+            "blacksmith": 0,
+            "school": 0,
+            "doctor": 0,
+            "bridge": 0,
+            "riverPort": 0,
+            "railDepot": 0,
+            "post": 0,
+            "warehouse": 0,
+            "hotel": 0,
+            "home5": 0,
+            "market": 0,
+            "powerHouse": 0,
+            "fireStation": 0,
+            "rowHouses": 0,
+            "mill": 0,
+            "garage": 0,
+            "busDepot": 0,
+            "gardenCourt": 0,
+            "diner": 0,
+            "teaHouse": 0,
+            "blossomAtelier": 0,
+            "orchardCottages": 0,
+            "glassworks": 0,
+            "springsRetreat": 0,
+            "riverlightPavilion": 0,
+            "airport": 0,
+            "radioTower": 0,
+            "concertHall": 0,
+            "television": 0,
+            "skyline": 0,
+            "cityHall": 0,
+            "apartments": 0,
+            "supermarket": 0,
+            "waterPlant": 0,
+            "transitHub": 0,
+            "library": 0,
+            "crystalLab": 0,
+            "cityHomes": 0,
+            "riverPark": 0,
+            "skyPods": 0,
+            "biodome": 0,
+            "maglevStation": 0,
+            "skyHarbour": 0,
+            "cloudOrchard": 0,
+            "windsongLofts": 0,
+            "greatTelescope": 0,
+            "dewlightGardens": 0,
+            "starlightTerraces": 0,
+            "spaceElevator": 0,
+            "moonpost": 0,
+            "missionHomesteads": 0,
+            "homecomingHall": 0,
+            "ribbonLanding": 0,
+            "settlerDomes": 0,
+            "craterIceWell": 0,
+            "earthlightGreenhouse": 0,
+            "willowkinDome": 0,
+            "newHollowCommons": 0,
+            "craterHomesteads": 0,
+            "moonstoneWorkshop": 0,
+            "roverBarn": 0,
+            "saucerPad": 0,
+            "earthriseLookout": 0,
+            "horseField": 0,
+            "park": 0,
+            "home2": 0,
+            "home3": 0,
+            "home4": 0,
+            "well2": 0,
+            "farm2": 0,
+            "farm3": 0
+          },
+          "firstLightsSeen": false,
+          "forge": { "progress": 0, "charge": 0 },
+          "coins": 0,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
+          "tourSeen": false,
+          "buildings": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 3,
+            "stable": 0,
+            "sheriff": 0,
+            "museum": 0,
+            "armory": 0,
+            "bank": 0,
+            "shop": 0,
+            "square": 0,
+            "watermill": 0,
+            "fisherman": 0,
+            "blacksmith": 0,
+            "school": 0,
+            "doctor": 0,
+            "bridge": 0,
+            "riverPort": 0,
+            "railDepot": 0,
+            "post": 0,
+            "warehouse": 0,
+            "hotel": 0,
+            "home5": 0,
+            "market": 0,
+            "powerHouse": 0,
+            "fireStation": 0,
+            "rowHouses": 0,
+            "mill": 0,
+            "garage": 0,
+            "busDepot": 0,
+            "gardenCourt": 0,
+            "diner": 0,
+            "teaHouse": 0,
+            "blossomAtelier": 0,
+            "orchardCottages": 0,
+            "glassworks": 0,
+            "springsRetreat": 0,
+            "riverlightPavilion": 0,
+            "airport": 0,
+            "radioTower": 0,
+            "concertHall": 0,
+            "television": 0,
+            "skyline": 0,
+            "cityHall": 0,
+            "apartments": 0,
+            "supermarket": 0,
+            "waterPlant": 0,
+            "transitHub": 0,
+            "library": 0,
+            "crystalLab": 0,
+            "cityHomes": 0,
+            "riverPark": 0,
+            "skyPods": 0,
+            "biodome": 0,
+            "maglevStation": 0,
+            "skyHarbour": 0,
+            "cloudOrchard": 0,
+            "windsongLofts": 0,
+            "greatTelescope": 0,
+            "dewlightGardens": 0,
+            "starlightTerraces": 0,
+            "spaceElevator": 0,
+            "moonpost": 0,
+            "missionHomesteads": 0,
+            "homecomingHall": 0,
+            "ribbonLanding": 0,
+            "settlerDomes": 0,
+            "craterIceWell": 0,
+            "earthlightGreenhouse": 0,
+            "willowkinDome": 0,
+            "newHollowCommons": 0,
+            "craterHomesteads": 0,
+            "moonstoneWorkshop": 0,
+            "roverBarn": 0,
+            "saucerPad": 0,
+            "earthriseLookout": 0,
+            "horseField": 0,
+            "park": 0,
+            "home2": 0,
+            "home3": 0,
+            "home4": 0,
+            "well2": 0,
+            "farm2": 0,
+            "farm3": 0
+          },
+          "events": {},
+          "presentations": {},
+          "projects": {},
+          "completedRuns": 0,
+          "nextRaidRun": null,
+          "income": { "at": 1779985600000, "remainder": 0, "stored": 0 },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
+          "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
+          "guestVip": null,
+          "progressionVersion": 2
+        },
+        "townProjectFocus": "",
+        "issuedRun": 0,
+        "settledRun": 0,
+        "honours": {
+          "version": 4,
+          "earned": {},
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
+          "showcase": [],
+          "backfilled": 0,
+          "seenGeneration": 4
+        }
+      },
+      "after": {
+        "schemaVersion": 3,
+        "integrity": {
+          "version": 1,
+          "epoch": "00000000-0000-4000-8000-000000000096",
+          "clientAt": 1780000000000,
+          "baseSequence": 0,
+          "actions": [
+            {
+              "sequence": 1,
+              "id": "00000000-0000-4000-8000-000000000099",
+              "kind": "vip-spend",
+              "data": {
+                "key": "deep-fixture-tour:0",
+                "buildingId": "saloon",
+                "economyVersion": 1,
+                "at": 1780000000000
+              }
+            }
+          ]
+        },
+        "records": { "541": { "score": 1000, "stars": 1 } },
+        "continuousRecords": {},
+        "powers": [
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 0 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 0 },
+          { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
+          { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 0 },
+          { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
+        ],
+        "builderHammers": 0,
+        "chestsWithoutBuilderHammer": 0,
+        "pendingChests": [],
+        "shopStock": [],
+        "shopVisit": 0,
+        "vipReceipts": ["deep-fixture-tour:0"],
+        "seenObstacles": [],
+        "seenTips": [],
+        "town": {
+          "personalisation": {
+            "version": 3,
+            "crest": null,
+            "areas": {},
+            "areaLevels": {},
+            "construction": {},
+            "plaques": {}
+          },
+          "era": "frontier",
+          "buildingEras": {
+            "well": "frontier",
+            "farm": "frontier",
+            "home": "frontier",
+            "saloon": "frontier",
+            "stable": "frontier",
+            "sheriff": "frontier",
+            "museum": "frontier",
+            "armory": "frontier",
+            "bank": "frontier",
+            "shop": "frontier",
+            "square": "frontier",
+            "watermill": "frontier",
+            "fisherman": "frontier",
+            "blacksmith": "frontier",
+            "school": "frontier",
+            "doctor": "frontier",
+            "bridge": "frontier",
+            "riverPort": "frontier",
+            "railDepot": "frontier",
+            "post": "frontier",
+            "warehouse": "frontier",
+            "hotel": "frontier",
+            "home5": "frontier",
+            "market": "frontier",
+            "powerHouse": "frontier",
+            "fireStation": "frontier",
+            "rowHouses": "frontier",
+            "mill": "frontier",
+            "garage": "frontier",
+            "busDepot": "frontier",
+            "gardenCourt": "frontier",
+            "diner": "frontier",
+            "teaHouse": "frontier",
+            "blossomAtelier": "frontier",
+            "orchardCottages": "frontier",
+            "glassworks": "frontier",
+            "springsRetreat": "frontier",
+            "riverlightPavilion": "frontier",
+            "airport": "frontier",
+            "radioTower": "frontier",
+            "concertHall": "frontier",
+            "television": "frontier",
+            "skyline": "frontier",
+            "cityHall": "frontier",
+            "apartments": "frontier",
+            "supermarket": "frontier",
+            "waterPlant": "frontier",
+            "transitHub": "frontier",
+            "library": "frontier",
+            "crystalLab": "frontier",
+            "cityHomes": "frontier",
+            "riverPark": "frontier",
+            "skyPods": "frontier",
+            "biodome": "frontier",
+            "maglevStation": "frontier",
+            "skyHarbour": "frontier",
+            "cloudOrchard": "frontier",
+            "windsongLofts": "frontier",
+            "greatTelescope": "frontier",
+            "dewlightGardens": "frontier",
+            "starlightTerraces": "frontier",
+            "spaceElevator": "frontier",
+            "moonpost": "frontier",
+            "missionHomesteads": "frontier",
+            "homecomingHall": "frontier",
+            "ribbonLanding": "frontier",
+            "settlerDomes": "frontier",
+            "craterIceWell": "frontier",
+            "earthlightGreenhouse": "frontier",
+            "willowkinDome": "frontier",
+            "newHollowCommons": "frontier",
+            "craterHomesteads": "frontier",
+            "moonstoneWorkshop": "frontier",
+            "roverBarn": "frontier",
+            "saucerPad": "frontier",
+            "earthriseLookout": "frontier",
+            "horseField": "frontier",
+            "park": "frontier",
+            "home2": "frontier",
+            "home3": "frontier",
+            "home4": "frontier",
+            "well2": "frontier",
+            "farm2": "frontier",
+            "farm3": "frontier"
+          },
+          "buildingEraLevels": {
+            "well": 0,
+            "farm": 0,
+            "home": 0,
+            "saloon": 0,
+            "stable": 0,
+            "sheriff": 0,
+            "museum": 0,
+            "armory": 0,
+            "bank": 0,
+            "shop": 0,
+            "square": 0,
+            "watermill": 0,
+            "fisherman": 0,
+            "blacksmith": 0,
+            "school": 0,
+            "doctor": 0,
+            "bridge": 0,
+            "riverPort": 0,
+            "railDepot": 0,
+            "post": 0,
+            "warehouse": 0,
+            "hotel": 0,
+            "home5": 0,
+            "market": 0,
+            "powerHouse": 0,
+            "fireStation": 0,
+            "rowHouses": 0,
+            "mill": 0,
+            "garage": 0,
+            "busDepot": 0,
+            "gardenCourt": 0,
+            "diner": 0,
+            "teaHouse": 0,
+            "blossomAtelier": 0,
+            "orchardCottages": 0,
+            "glassworks": 0,
+            "springsRetreat": 0,
+            "riverlightPavilion": 0,
+            "airport": 0,
+            "radioTower": 0,
+            "concertHall": 0,
+            "television": 0,
+            "skyline": 0,
+            "cityHall": 0,
+            "apartments": 0,
+            "supermarket": 0,
+            "waterPlant": 0,
+            "transitHub": 0,
+            "library": 0,
+            "crystalLab": 0,
+            "cityHomes": 0,
+            "riverPark": 0,
+            "skyPods": 0,
+            "biodome": 0,
+            "maglevStation": 0,
+            "skyHarbour": 0,
+            "cloudOrchard": 0,
+            "windsongLofts": 0,
+            "greatTelescope": 0,
+            "dewlightGardens": 0,
+            "starlightTerraces": 0,
+            "spaceElevator": 0,
+            "moonpost": 0,
+            "missionHomesteads": 0,
+            "homecomingHall": 0,
+            "ribbonLanding": 0,
+            "settlerDomes": 0,
+            "craterIceWell": 0,
+            "earthlightGreenhouse": 0,
+            "willowkinDome": 0,
+            "newHollowCommons": 0,
+            "craterHomesteads": 0,
+            "moonstoneWorkshop": 0,
+            "roverBarn": 0,
+            "saucerPad": 0,
+            "earthriseLookout": 0,
+            "horseField": 0,
+            "park": 0,
+            "home2": 0,
+            "home3": 0,
+            "home4": 0,
+            "well2": 0,
+            "farm2": 0,
+            "farm3": 0
+          },
+          "firstLightsSeen": false,
+          "forge": { "progress": 0, "charge": 0 },
+          "coins": 455,
+          "moonstoneVersion": 1,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "charge": 0 },
+          "tourSeen": false,
+          "buildings": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 3,
+            "stable": 0,
+            "sheriff": 0,
+            "museum": 0,
+            "armory": 0,
+            "bank": 0,
+            "shop": 0,
+            "square": 0,
+            "watermill": 0,
+            "fisherman": 0,
+            "blacksmith": 0,
+            "school": 0,
+            "doctor": 0,
+            "bridge": 0,
+            "riverPort": 0,
+            "railDepot": 0,
+            "post": 0,
+            "warehouse": 0,
+            "hotel": 0,
+            "home5": 0,
+            "market": 0,
+            "powerHouse": 0,
+            "fireStation": 0,
+            "rowHouses": 0,
+            "mill": 0,
+            "garage": 0,
+            "busDepot": 0,
+            "gardenCourt": 0,
+            "diner": 0,
+            "teaHouse": 0,
+            "blossomAtelier": 0,
+            "orchardCottages": 0,
+            "glassworks": 0,
+            "springsRetreat": 0,
+            "riverlightPavilion": 0,
+            "airport": 0,
+            "radioTower": 0,
+            "concertHall": 0,
+            "television": 0,
+            "skyline": 0,
+            "cityHall": 0,
+            "apartments": 0,
+            "supermarket": 0,
+            "waterPlant": 0,
+            "transitHub": 0,
+            "library": 0,
+            "crystalLab": 0,
+            "cityHomes": 0,
+            "riverPark": 0,
+            "skyPods": 0,
+            "biodome": 0,
+            "maglevStation": 0,
+            "skyHarbour": 0,
+            "cloudOrchard": 0,
+            "windsongLofts": 0,
+            "greatTelescope": 0,
+            "dewlightGardens": 0,
+            "starlightTerraces": 0,
+            "spaceElevator": 0,
+            "moonpost": 0,
+            "missionHomesteads": 0,
+            "homecomingHall": 0,
+            "ribbonLanding": 0,
+            "settlerDomes": 0,
+            "craterIceWell": 0,
+            "earthlightGreenhouse": 0,
+            "willowkinDome": 0,
+            "newHollowCommons": 0,
+            "craterHomesteads": 0,
+            "moonstoneWorkshop": 0,
+            "roverBarn": 0,
+            "saucerPad": 0,
+            "earthriseLookout": 0,
+            "horseField": 0,
+            "park": 0,
+            "home2": 0,
+            "home3": 0,
+            "home4": 0,
+            "well2": 0,
+            "farm2": 0,
+            "farm3": 0
+          },
+          "events": {},
+          "presentations": {},
+          "projects": {},
+          "completedRuns": 0,
+          "nextRaidRun": null,
+          "income": { "at": 1779985600000, "remainder": 0, "stored": 0 },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
+          "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
+          "guestVip": null,
+          "progressionVersion": 2
+        },
+        "townProjectFocus": "",
+        "issuedRun": 0,
+        "settledRun": 0,
+        "honours": {
+          "version": 4,
+          "earned": {},
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "visitors": 0,
+            "travels": 0
+          },
+          "showcase": [],
+          "backfilled": 0,
+          "seenGeneration": 4
+        }
+      },
+      "serverNow": 1780000000000
+    },
+    {
+      "name": "space helmet found once for its completed puzzle",
+      "before": {
+        "schemaVersion": 3,
+        "integrity": {
+          "version": 1,
+          "epoch": "00000000-0000-4000-8000-000000000100",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -13088,13 +13779,13 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000096",
+          "epoch": "00000000-0000-4000-8000-000000000100",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000099",
+              "id": "00000000-0000-4000-8000-000000000103",
               "kind": "helmet-find",
               "data": { "at": 1780000000000, "run": 12 }
             }
@@ -13437,7 +14128,7 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000100",
+          "epoch": "00000000-0000-4000-8000-000000000104",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -13784,19 +14475,19 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000100",
+          "epoch": "00000000-0000-4000-8000-000000000104",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000103",
+              "id": "00000000-0000-4000-8000-000000000107",
               "kind": "raid-bell",
               "data": { "raidId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000104",
+              "id": "00000000-0000-4000-8000-000000000108",
               "kind": "raid-seen",
               "data": { "raidId": 1, "at": 1780000000000 }
             }
@@ -14150,7 +14841,7 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000105",
+          "epoch": "00000000-0000-4000-8000-000000000109",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -14497,25 +15188,25 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000105",
+          "epoch": "00000000-0000-4000-8000-000000000109",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000108",
+              "id": "00000000-0000-4000-8000-000000000112",
               "kind": "raid-seen",
               "data": { "raidId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000109",
+              "id": "00000000-0000-4000-8000-000000000113",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000110",
+              "id": "00000000-0000-4000-8000-000000000114",
               "kind": "raid-encounter",
               "data": { "event": null, "nextRaidRun": 13, "at": 1780000000000 }
             }
@@ -14868,7 +15559,7 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000111",
+          "epoch": "00000000-0000-4000-8000-000000000115",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -15203,19 +15894,19 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000111",
+          "epoch": "00000000-0000-4000-8000-000000000115",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000114",
+              "id": "00000000-0000-4000-8000-000000000118",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "continuous", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000115",
+              "id": "00000000-0000-4000-8000-000000000119",
               "kind": "continuous",
               "data": {
                 "runId": 1,
@@ -15561,7 +16252,7 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000116",
+          "epoch": "00000000-0000-4000-8000-000000000120",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -15896,13 +16587,13 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000116",
+          "epoch": "00000000-0000-4000-8000-000000000120",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000119",
+              "id": "00000000-0000-4000-8000-000000000123",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "continuous", "levelId": 1, "at": 1780000000000 }
             }
@@ -16242,7 +16933,7 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000120",
+          "epoch": "00000000-0000-4000-8000-000000000124",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -16577,13 +17268,13 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000120",
+          "epoch": "00000000-0000-4000-8000-000000000124",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000123",
+              "id": "00000000-0000-4000-8000-000000000127",
               "kind": "era-advance",
               "data": { "expectedEra": "frontier", "at": 1780000000000 }
             }
@@ -16931,7 +17622,7 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000124",
+          "epoch": "00000000-0000-4000-8000-000000000128",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -17269,19 +17960,19 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000124",
+          "epoch": "00000000-0000-4000-8000-000000000128",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000127",
+              "id": "00000000-0000-4000-8000-000000000131",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000128",
+              "id": "00000000-0000-4000-8000-000000000132",
               "kind": "building-buy",
               "data": {
                 "buildingId": "teaHouse",
@@ -17643,7 +18334,7 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000129",
+          "epoch": "00000000-0000-4000-8000-000000000133",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -17978,13 +18669,13 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000129",
+          "epoch": "00000000-0000-4000-8000-000000000133",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000132",
+              "id": "00000000-0000-4000-8000-000000000136",
               "kind": "power-spend",
               "data": { "itemId": "tnt", "at": 1780000000000 }
             }
@@ -18324,7 +19015,7 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000133",
+          "epoch": "00000000-0000-4000-8000-000000000137",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -18671,13 +19362,13 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000133",
+          "epoch": "00000000-0000-4000-8000-000000000137",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000136",
+              "id": "00000000-0000-4000-8000-000000000140",
               "kind": "building-finish",
               "data": {
                 "buildingId": "sheriff",
@@ -19048,7 +19739,7 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000137",
+          "epoch": "00000000-0000-4000-8000-000000000141",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -19383,19 +20074,19 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000137",
+          "epoch": "00000000-0000-4000-8000-000000000141",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000140",
+              "id": "00000000-0000-4000-8000-000000000144",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "continuous", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000141",
+              "id": "00000000-0000-4000-8000-000000000145",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 2, "at": 1780000000000 }
             }
@@ -19735,7 +20426,7 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000142",
+          "epoch": "00000000-0000-4000-8000-000000000146",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -20070,19 +20761,19 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000142",
+          "epoch": "00000000-0000-4000-8000-000000000146",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000145",
+              "id": "00000000-0000-4000-8000-000000000149",
               "kind": "income-start",
               "data": { "at": 1779992800000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000146",
+              "id": "00000000-0000-4000-8000-000000000150",
               "kind": "saloon-collect",
               "data": { "at": 1780000000000 }
             }
@@ -20426,7 +21117,7 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000147",
+          "epoch": "00000000-0000-4000-8000-000000000151",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -20769,13 +21460,13 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000147",
+          "epoch": "00000000-0000-4000-8000-000000000151",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000150",
+              "id": "00000000-0000-4000-8000-000000000154",
               "kind": "era-advance",
               "data": { "expectedEra": "river-rail", "at": 1780000000000 }
             }
@@ -21123,7 +21814,7 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000151",
+          "epoch": "00000000-0000-4000-8000-000000000155",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -21525,37 +22216,37 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000151",
+          "epoch": "00000000-0000-4000-8000-000000000155",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000154",
+              "id": "00000000-0000-4000-8000-000000000158",
               "kind": "raid-seen",
               "data": { "raidId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000155",
+              "id": "00000000-0000-4000-8000-000000000159",
               "kind": "forge-collect",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000156",
+              "id": "00000000-0000-4000-8000-000000000160",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 55, "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000157",
+              "id": "00000000-0000-4000-8000-000000000161",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000158",
+              "id": "00000000-0000-4000-8000-000000000162",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -21588,13 +22279,13 @@
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000159",
+              "id": "00000000-0000-4000-8000-000000000163",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 56, "at": 1780000000000 }
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000160",
+              "id": "00000000-0000-4000-8000-000000000164",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -22051,7 +22742,7 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000161",
+          "epoch": "00000000-0000-4000-8000-000000000165",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -22390,13 +23081,13 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000161",
+          "epoch": "00000000-0000-4000-8000-000000000165",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000164",
+              "id": "00000000-0000-4000-8000-000000000168",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22417,19 +23108,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000165",
+              "id": "00000000-0000-4000-8000-000000000169",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000166",
+              "id": "00000000-0000-4000-8000-000000000170",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000167",
+              "id": "00000000-0000-4000-8000-000000000171",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -22461,13 +23152,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000168",
+              "id": "00000000-0000-4000-8000-000000000172",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000169",
+              "id": "00000000-0000-4000-8000-000000000173",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -22499,13 +23190,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000170",
+              "id": "00000000-0000-4000-8000-000000000174",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000171",
+              "id": "00000000-0000-4000-8000-000000000175",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -22537,7 +23228,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000172",
+              "id": "00000000-0000-4000-8000-000000000176",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22558,13 +23249,13 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000173",
+              "id": "00000000-0000-4000-8000-000000000177",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000174",
+              "id": "00000000-0000-4000-8000-000000000178",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -22596,7 +23287,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000175",
+              "id": "00000000-0000-4000-8000-000000000179",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22617,13 +23308,13 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000176",
+              "id": "00000000-0000-4000-8000-000000000180",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000177",
+              "id": "00000000-0000-4000-8000-000000000181",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -22655,7 +23346,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000178",
+              "id": "00000000-0000-4000-8000-000000000182",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22676,13 +23367,13 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000179",
+              "id": "00000000-0000-4000-8000-000000000183",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000180",
+              "id": "00000000-0000-4000-8000-000000000184",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -22714,7 +23405,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000181",
+              "id": "00000000-0000-4000-8000-000000000185",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -22735,13 +23426,13 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000182",
+              "id": "00000000-0000-4000-8000-000000000186",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000183",
+              "id": "00000000-0000-4000-8000-000000000187",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -23117,7 +23808,7 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000184",
+          "epoch": "00000000-0000-4000-8000-000000000188",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -23456,13 +24147,13 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000184",
+          "epoch": "00000000-0000-4000-8000-000000000188",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000187",
+              "id": "00000000-0000-4000-8000-000000000191",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -23483,19 +24174,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000188",
+              "id": "00000000-0000-4000-8000-000000000192",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000189",
+              "id": "00000000-0000-4000-8000-000000000193",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000190",
+              "id": "00000000-0000-4000-8000-000000000194",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -23527,13 +24218,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000191",
+              "id": "00000000-0000-4000-8000-000000000195",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000192",
+              "id": "00000000-0000-4000-8000-000000000196",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -23565,13 +24256,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000193",
+              "id": "00000000-0000-4000-8000-000000000197",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000194",
+              "id": "00000000-0000-4000-8000-000000000198",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -23953,7 +24644,7 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000195",
+          "epoch": "00000000-0000-4000-8000-000000000199",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -24292,13 +24983,13 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000195",
+          "epoch": "00000000-0000-4000-8000-000000000199",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000198",
+              "id": "00000000-0000-4000-8000-000000000202",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -24319,19 +25010,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000199",
+              "id": "00000000-0000-4000-8000-000000000203",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000200",
+              "id": "00000000-0000-4000-8000-000000000204",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000201",
+              "id": "00000000-0000-4000-8000-000000000205",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -24363,13 +25054,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000202",
+              "id": "00000000-0000-4000-8000-000000000206",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000203",
+              "id": "00000000-0000-4000-8000-000000000207",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -24401,13 +25092,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000204",
+              "id": "00000000-0000-4000-8000-000000000208",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000205",
+              "id": "00000000-0000-4000-8000-000000000209",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -24439,7 +25130,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000206",
+              "id": "00000000-0000-4000-8000-000000000210",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -24460,13 +25151,13 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000207",
+              "id": "00000000-0000-4000-8000-000000000211",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000208",
+              "id": "00000000-0000-4000-8000-000000000212",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -24498,7 +25189,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000209",
+              "id": "00000000-0000-4000-8000-000000000213",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -24519,13 +25210,13 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000210",
+              "id": "00000000-0000-4000-8000-000000000214",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000211",
+              "id": "00000000-0000-4000-8000-000000000215",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -24557,7 +25248,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000212",
+              "id": "00000000-0000-4000-8000-000000000216",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -24578,13 +25269,13 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000213",
+              "id": "00000000-0000-4000-8000-000000000217",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000214",
+              "id": "00000000-0000-4000-8000-000000000218",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -24616,7 +25307,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000215",
+              "id": "00000000-0000-4000-8000-000000000219",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -24637,13 +25328,13 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000216",
+              "id": "00000000-0000-4000-8000-000000000220",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000217",
+              "id": "00000000-0000-4000-8000-000000000221",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -25019,7 +25710,7 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000218",
+          "epoch": "00000000-0000-4000-8000-000000000222",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -25358,13 +26049,13 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000218",
+          "epoch": "00000000-0000-4000-8000-000000000222",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000221",
+              "id": "00000000-0000-4000-8000-000000000225",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -25385,19 +26076,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000222",
+              "id": "00000000-0000-4000-8000-000000000226",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000223",
+              "id": "00000000-0000-4000-8000-000000000227",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000224",
+              "id": "00000000-0000-4000-8000-000000000228",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -25429,13 +26120,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000225",
+              "id": "00000000-0000-4000-8000-000000000229",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000226",
+              "id": "00000000-0000-4000-8000-000000000230",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -25467,13 +26158,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000227",
+              "id": "00000000-0000-4000-8000-000000000231",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000228",
+              "id": "00000000-0000-4000-8000-000000000232",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -25505,7 +26196,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000229",
+              "id": "00000000-0000-4000-8000-000000000233",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -25526,13 +26217,13 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000230",
+              "id": "00000000-0000-4000-8000-000000000234",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000231",
+              "id": "00000000-0000-4000-8000-000000000235",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -25564,7 +26255,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000232",
+              "id": "00000000-0000-4000-8000-000000000236",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -25585,13 +26276,13 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000233",
+              "id": "00000000-0000-4000-8000-000000000237",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000234",
+              "id": "00000000-0000-4000-8000-000000000238",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -25623,7 +26314,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000235",
+              "id": "00000000-0000-4000-8000-000000000239",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -25644,13 +26335,13 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000236",
+              "id": "00000000-0000-4000-8000-000000000240",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000237",
+              "id": "00000000-0000-4000-8000-000000000241",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -25682,7 +26373,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000238",
+              "id": "00000000-0000-4000-8000-000000000242",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -25703,13 +26394,13 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000239",
+              "id": "00000000-0000-4000-8000-000000000243",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000240",
+              "id": "00000000-0000-4000-8000-000000000244",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -26085,7 +26776,7 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000241",
+          "epoch": "00000000-0000-4000-8000-000000000245",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -26424,13 +27115,13 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000241",
+          "epoch": "00000000-0000-4000-8000-000000000245",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000244",
+              "id": "00000000-0000-4000-8000-000000000248",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -26451,19 +27142,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000245",
+              "id": "00000000-0000-4000-8000-000000000249",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000246",
+              "id": "00000000-0000-4000-8000-000000000250",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000247",
+              "id": "00000000-0000-4000-8000-000000000251",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -26495,13 +27186,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000248",
+              "id": "00000000-0000-4000-8000-000000000252",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000249",
+              "id": "00000000-0000-4000-8000-000000000253",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -26533,13 +27224,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000250",
+              "id": "00000000-0000-4000-8000-000000000254",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000251",
+              "id": "00000000-0000-4000-8000-000000000255",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -26571,7 +27262,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000252",
+              "id": "00000000-0000-4000-8000-000000000256",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -26592,13 +27283,13 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000253",
+              "id": "00000000-0000-4000-8000-000000000257",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000254",
+              "id": "00000000-0000-4000-8000-000000000258",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -26630,7 +27321,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000255",
+              "id": "00000000-0000-4000-8000-000000000259",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -26651,13 +27342,13 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000256",
+              "id": "00000000-0000-4000-8000-000000000260",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000257",
+              "id": "00000000-0000-4000-8000-000000000261",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -26689,7 +27380,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000258",
+              "id": "00000000-0000-4000-8000-000000000262",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -26710,13 +27401,13 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000259",
+              "id": "00000000-0000-4000-8000-000000000263",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000260",
+              "id": "00000000-0000-4000-8000-000000000264",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -26748,7 +27439,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000261",
+              "id": "00000000-0000-4000-8000-000000000265",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -26769,13 +27460,13 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000262",
+              "id": "00000000-0000-4000-8000-000000000266",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000263",
+              "id": "00000000-0000-4000-8000-000000000267",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -27151,7 +27842,7 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000264",
+          "epoch": "00000000-0000-4000-8000-000000000268",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -27490,13 +28181,13 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000264",
+          "epoch": "00000000-0000-4000-8000-000000000268",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000267",
+              "id": "00000000-0000-4000-8000-000000000271",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -27517,19 +28208,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000268",
+              "id": "00000000-0000-4000-8000-000000000272",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000269",
+              "id": "00000000-0000-4000-8000-000000000273",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000270",
+              "id": "00000000-0000-4000-8000-000000000274",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -27561,13 +28252,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000271",
+              "id": "00000000-0000-4000-8000-000000000275",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000272",
+              "id": "00000000-0000-4000-8000-000000000276",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -27599,13 +28290,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000273",
+              "id": "00000000-0000-4000-8000-000000000277",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000274",
+              "id": "00000000-0000-4000-8000-000000000278",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -27637,7 +28328,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000275",
+              "id": "00000000-0000-4000-8000-000000000279",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -27658,13 +28349,13 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000276",
+              "id": "00000000-0000-4000-8000-000000000280",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000277",
+              "id": "00000000-0000-4000-8000-000000000281",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -27696,7 +28387,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000278",
+              "id": "00000000-0000-4000-8000-000000000282",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -27717,13 +28408,13 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000279",
+              "id": "00000000-0000-4000-8000-000000000283",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000280",
+              "id": "00000000-0000-4000-8000-000000000284",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -27755,7 +28446,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000281",
+              "id": "00000000-0000-4000-8000-000000000285",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -27776,13 +28467,13 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000282",
+              "id": "00000000-0000-4000-8000-000000000286",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000283",
+              "id": "00000000-0000-4000-8000-000000000287",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -27814,7 +28505,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000284",
+              "id": "00000000-0000-4000-8000-000000000288",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -27835,13 +28526,13 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000285",
+              "id": "00000000-0000-4000-8000-000000000289",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000286",
+              "id": "00000000-0000-4000-8000-000000000290",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -28217,7 +28908,7 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000287",
+          "epoch": "00000000-0000-4000-8000-000000000291",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -28556,13 +29247,13 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000287",
+          "epoch": "00000000-0000-4000-8000-000000000291",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000290",
+              "id": "00000000-0000-4000-8000-000000000294",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -28583,19 +29274,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000291",
+              "id": "00000000-0000-4000-8000-000000000295",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000292",
+              "id": "00000000-0000-4000-8000-000000000296",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000293",
+              "id": "00000000-0000-4000-8000-000000000297",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -28627,13 +29318,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000294",
+              "id": "00000000-0000-4000-8000-000000000298",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000295",
+              "id": "00000000-0000-4000-8000-000000000299",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -28665,13 +29356,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000296",
+              "id": "00000000-0000-4000-8000-000000000300",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000297",
+              "id": "00000000-0000-4000-8000-000000000301",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -28703,7 +29394,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000298",
+              "id": "00000000-0000-4000-8000-000000000302",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -28724,13 +29415,13 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000299",
+              "id": "00000000-0000-4000-8000-000000000303",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000300",
+              "id": "00000000-0000-4000-8000-000000000304",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -28762,7 +29453,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000301",
+              "id": "00000000-0000-4000-8000-000000000305",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -28783,13 +29474,13 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000302",
+              "id": "00000000-0000-4000-8000-000000000306",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000303",
+              "id": "00000000-0000-4000-8000-000000000307",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -28821,7 +29512,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000304",
+              "id": "00000000-0000-4000-8000-000000000308",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -28842,13 +29533,13 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000305",
+              "id": "00000000-0000-4000-8000-000000000309",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000306",
+              "id": "00000000-0000-4000-8000-000000000310",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -28880,7 +29571,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000307",
+              "id": "00000000-0000-4000-8000-000000000311",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -28901,13 +29592,13 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000308",
+              "id": "00000000-0000-4000-8000-000000000312",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000309",
+              "id": "00000000-0000-4000-8000-000000000313",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -29283,7 +29974,7 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000310",
+          "epoch": "00000000-0000-4000-8000-000000000314",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -29623,13 +30314,13 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000310",
+          "epoch": "00000000-0000-4000-8000-000000000314",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000313",
+              "id": "00000000-0000-4000-8000-000000000317",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -29650,19 +30341,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000314",
+              "id": "00000000-0000-4000-8000-000000000318",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000315",
+              "id": "00000000-0000-4000-8000-000000000319",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000316",
+              "id": "00000000-0000-4000-8000-000000000320",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -29694,13 +30385,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000317",
+              "id": "00000000-0000-4000-8000-000000000321",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000318",
+              "id": "00000000-0000-4000-8000-000000000322",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -29732,13 +30423,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000319",
+              "id": "00000000-0000-4000-8000-000000000323",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000320",
+              "id": "00000000-0000-4000-8000-000000000324",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -29770,7 +30461,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000321",
+              "id": "00000000-0000-4000-8000-000000000325",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -29791,13 +30482,13 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000322",
+              "id": "00000000-0000-4000-8000-000000000326",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000323",
+              "id": "00000000-0000-4000-8000-000000000327",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -29829,7 +30520,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000324",
+              "id": "00000000-0000-4000-8000-000000000328",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -29850,13 +30541,13 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000325",
+              "id": "00000000-0000-4000-8000-000000000329",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000326",
+              "id": "00000000-0000-4000-8000-000000000330",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -29888,7 +30579,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000327",
+              "id": "00000000-0000-4000-8000-000000000331",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -29909,13 +30600,13 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000328",
+              "id": "00000000-0000-4000-8000-000000000332",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000329",
+              "id": "00000000-0000-4000-8000-000000000333",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -29947,7 +30638,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000330",
+              "id": "00000000-0000-4000-8000-000000000334",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -29968,13 +30659,13 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000331",
+              "id": "00000000-0000-4000-8000-000000000335",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000332",
+              "id": "00000000-0000-4000-8000-000000000336",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -30351,7 +31042,7 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000333",
+          "epoch": "00000000-0000-4000-8000-000000000337",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -30691,13 +31382,13 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000333",
+          "epoch": "00000000-0000-4000-8000-000000000337",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000336",
+              "id": "00000000-0000-4000-8000-000000000340",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -30718,19 +31409,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000337",
+              "id": "00000000-0000-4000-8000-000000000341",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000338",
+              "id": "00000000-0000-4000-8000-000000000342",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000339",
+              "id": "00000000-0000-4000-8000-000000000343",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -30762,13 +31453,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000340",
+              "id": "00000000-0000-4000-8000-000000000344",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000341",
+              "id": "00000000-0000-4000-8000-000000000345",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -30800,13 +31491,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000342",
+              "id": "00000000-0000-4000-8000-000000000346",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000343",
+              "id": "00000000-0000-4000-8000-000000000347",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -30838,7 +31529,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000344",
+              "id": "00000000-0000-4000-8000-000000000348",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -30859,13 +31550,13 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000345",
+              "id": "00000000-0000-4000-8000-000000000349",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000346",
+              "id": "00000000-0000-4000-8000-000000000350",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -30897,7 +31588,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000347",
+              "id": "00000000-0000-4000-8000-000000000351",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -30918,13 +31609,13 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000348",
+              "id": "00000000-0000-4000-8000-000000000352",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000349",
+              "id": "00000000-0000-4000-8000-000000000353",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -30956,7 +31647,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000350",
+              "id": "00000000-0000-4000-8000-000000000354",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -30977,13 +31668,13 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000351",
+              "id": "00000000-0000-4000-8000-000000000355",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000352",
+              "id": "00000000-0000-4000-8000-000000000356",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -31015,7 +31706,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000353",
+              "id": "00000000-0000-4000-8000-000000000357",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -31036,13 +31727,13 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000354",
+              "id": "00000000-0000-4000-8000-000000000358",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000355",
+              "id": "00000000-0000-4000-8000-000000000359",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -31419,7 +32110,7 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000356",
+          "epoch": "00000000-0000-4000-8000-000000000360",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -31759,13 +32450,13 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000356",
+          "epoch": "00000000-0000-4000-8000-000000000360",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000359",
+              "id": "00000000-0000-4000-8000-000000000363",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -31786,19 +32477,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000360",
+              "id": "00000000-0000-4000-8000-000000000364",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000361",
+              "id": "00000000-0000-4000-8000-000000000365",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000362",
+              "id": "00000000-0000-4000-8000-000000000366",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -31830,13 +32521,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000363",
+              "id": "00000000-0000-4000-8000-000000000367",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000364",
+              "id": "00000000-0000-4000-8000-000000000368",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -31868,13 +32559,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000365",
+              "id": "00000000-0000-4000-8000-000000000369",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000366",
+              "id": "00000000-0000-4000-8000-000000000370",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -31906,7 +32597,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000367",
+              "id": "00000000-0000-4000-8000-000000000371",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -31927,13 +32618,13 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000368",
+              "id": "00000000-0000-4000-8000-000000000372",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000369",
+              "id": "00000000-0000-4000-8000-000000000373",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -31965,7 +32656,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000370",
+              "id": "00000000-0000-4000-8000-000000000374",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -31986,13 +32677,13 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000371",
+              "id": "00000000-0000-4000-8000-000000000375",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000372",
+              "id": "00000000-0000-4000-8000-000000000376",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -32024,7 +32715,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000373",
+              "id": "00000000-0000-4000-8000-000000000377",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -32045,13 +32736,13 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000374",
+              "id": "00000000-0000-4000-8000-000000000378",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000375",
+              "id": "00000000-0000-4000-8000-000000000379",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -32083,7 +32774,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000376",
+              "id": "00000000-0000-4000-8000-000000000380",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -32104,13 +32795,13 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000377",
+              "id": "00000000-0000-4000-8000-000000000381",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000378",
+              "id": "00000000-0000-4000-8000-000000000382",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -32487,7 +33178,7 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000379",
+          "epoch": "00000000-0000-4000-8000-000000000383",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -32827,13 +33518,13 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000379",
+          "epoch": "00000000-0000-4000-8000-000000000383",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000382",
+              "id": "00000000-0000-4000-8000-000000000386",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -32854,19 +33545,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000383",
+              "id": "00000000-0000-4000-8000-000000000387",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000384",
+              "id": "00000000-0000-4000-8000-000000000388",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000385",
+              "id": "00000000-0000-4000-8000-000000000389",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -32898,13 +33589,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000386",
+              "id": "00000000-0000-4000-8000-000000000390",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000387",
+              "id": "00000000-0000-4000-8000-000000000391",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -32936,13 +33627,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000388",
+              "id": "00000000-0000-4000-8000-000000000392",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000389",
+              "id": "00000000-0000-4000-8000-000000000393",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -32974,7 +33665,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000390",
+              "id": "00000000-0000-4000-8000-000000000394",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -32995,13 +33686,13 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000391",
+              "id": "00000000-0000-4000-8000-000000000395",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000392",
+              "id": "00000000-0000-4000-8000-000000000396",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -33033,7 +33724,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000393",
+              "id": "00000000-0000-4000-8000-000000000397",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -33054,13 +33745,13 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000394",
+              "id": "00000000-0000-4000-8000-000000000398",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000395",
+              "id": "00000000-0000-4000-8000-000000000399",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -33092,7 +33783,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000396",
+              "id": "00000000-0000-4000-8000-000000000400",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -33113,13 +33804,13 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000397",
+              "id": "00000000-0000-4000-8000-000000000401",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000398",
+              "id": "00000000-0000-4000-8000-000000000402",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -33151,7 +33842,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000399",
+              "id": "00000000-0000-4000-8000-000000000403",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -33172,13 +33863,13 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000400",
+              "id": "00000000-0000-4000-8000-000000000404",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000401",
+              "id": "00000000-0000-4000-8000-000000000405",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -33555,7 +34246,7 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000402",
+          "epoch": "00000000-0000-4000-8000-000000000406",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -33895,13 +34586,13 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000402",
+          "epoch": "00000000-0000-4000-8000-000000000406",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000405",
+              "id": "00000000-0000-4000-8000-000000000409",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -33922,19 +34613,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000406",
+              "id": "00000000-0000-4000-8000-000000000410",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000407",
+              "id": "00000000-0000-4000-8000-000000000411",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000408",
+              "id": "00000000-0000-4000-8000-000000000412",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -33966,13 +34657,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000409",
+              "id": "00000000-0000-4000-8000-000000000413",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000410",
+              "id": "00000000-0000-4000-8000-000000000414",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -34004,13 +34695,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000411",
+              "id": "00000000-0000-4000-8000-000000000415",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000412",
+              "id": "00000000-0000-4000-8000-000000000416",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -34042,7 +34733,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000413",
+              "id": "00000000-0000-4000-8000-000000000417",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -34063,13 +34754,13 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000414",
+              "id": "00000000-0000-4000-8000-000000000418",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000415",
+              "id": "00000000-0000-4000-8000-000000000419",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -34101,7 +34792,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000416",
+              "id": "00000000-0000-4000-8000-000000000420",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -34122,13 +34813,13 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000417",
+              "id": "00000000-0000-4000-8000-000000000421",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000418",
+              "id": "00000000-0000-4000-8000-000000000422",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -34160,7 +34851,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000419",
+              "id": "00000000-0000-4000-8000-000000000423",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -34181,13 +34872,13 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000420",
+              "id": "00000000-0000-4000-8000-000000000424",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000421",
+              "id": "00000000-0000-4000-8000-000000000425",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -34219,7 +34910,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000422",
+              "id": "00000000-0000-4000-8000-000000000426",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -34240,13 +34931,13 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000423",
+              "id": "00000000-0000-4000-8000-000000000427",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000424",
+              "id": "00000000-0000-4000-8000-000000000428",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -34623,7 +35314,7 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000425",
+          "epoch": "00000000-0000-4000-8000-000000000429",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -34963,13 +35654,13 @@
         "schemaVersion": 3,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000425",
+          "epoch": "00000000-0000-4000-8000-000000000429",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000428",
+              "id": "00000000-0000-4000-8000-000000000432",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -34990,19 +35681,19 @@
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000429",
+              "id": "00000000-0000-4000-8000-000000000433",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000430",
+              "id": "00000000-0000-4000-8000-000000000434",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000431",
+              "id": "00000000-0000-4000-8000-000000000435",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -35034,13 +35725,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000432",
+              "id": "00000000-0000-4000-8000-000000000436",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000433",
+              "id": "00000000-0000-4000-8000-000000000437",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -35072,13 +35763,13 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000434",
+              "id": "00000000-0000-4000-8000-000000000438",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000435",
+              "id": "00000000-0000-4000-8000-000000000439",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -35110,7 +35801,7 @@
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000436",
+              "id": "00000000-0000-4000-8000-000000000440",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -35131,13 +35822,13 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000437",
+              "id": "00000000-0000-4000-8000-000000000441",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000438",
+              "id": "00000000-0000-4000-8000-000000000442",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -35169,7 +35860,7 @@
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000439",
+              "id": "00000000-0000-4000-8000-000000000443",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -35190,13 +35881,13 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000440",
+              "id": "00000000-0000-4000-8000-000000000444",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000441",
+              "id": "00000000-0000-4000-8000-000000000445",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -35228,7 +35919,7 @@
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000442",
+              "id": "00000000-0000-4000-8000-000000000446",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -35249,13 +35940,13 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000443",
+              "id": "00000000-0000-4000-8000-000000000447",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000444",
+              "id": "00000000-0000-4000-8000-000000000448",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
@@ -35287,7 +35978,7 @@
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000445",
+              "id": "00000000-0000-4000-8000-000000000449",
               "kind": "landmark-buy",
               "data": {
                 "purchases": [
@@ -35308,13 +35999,13 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000446",
+              "id": "00000000-0000-4000-8000-000000000450",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000447",
+              "id": "00000000-0000-4000-8000-000000000451",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,

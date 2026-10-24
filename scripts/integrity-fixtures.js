@@ -333,6 +333,25 @@ export function createIntegrityFixtures() {
         throw new Error('VIP did not spend the ordinary reward.');
     });
     fixture(
+      'VIP purchase at chapter 91',
+      (profile) => {
+        saloon(profile);
+        // A validated normal record, independent of town era and continuous scores.
+        profile.records[541] = { score: 1000, stars: 1 };
+      },
+      (campaign) => {
+        if (
+          campaign.collectVipSpending({
+            tour: 'deep-fixture-tour',
+            stop: 0,
+            building: 'saloon',
+            visitor: { vip: true },
+          }) !== 455
+        )
+          throw new Error('VIP did not spend at mine depth.');
+      },
+    );
+    fixture(
       'space helmet found once for its completed puzzle',
       (profile) => {
         develop(profile, SPACE_HELMET.debut);
