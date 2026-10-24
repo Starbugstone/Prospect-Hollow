@@ -3,7 +3,7 @@ import { townStorage } from './townStorage';
 import { LEVEL_COUNT } from '../data/campaign';
 import { chestReward } from '../data/rewards';
 import { knownChestTerms } from '../data/economy';
-import { MOONSTONE_ECONOMY, MOONSTONE_VERSION } from '../data/moonstones';
+import { MOONSTONE_ECONOMY, MOONSTONE_VERSION, moonstoneCapacity } from '../data/moonstones';
 
 export const MAX_SAVE_FILE_BYTES = 5 * 1024 * 1024;
 const invalidSave = () => new Error('Choose a valid Prospect Hollow save JSON file.');
@@ -79,7 +79,7 @@ export function parseSaveFile(text) {
     throw invalidSave();
   }
   if (!isObject(file) || file.format !== SAVE_KEY) throw invalidSave();
-  if (file.version !== 1 || ![2, 3].includes(file.profile?.schemaVersion))
+  if (file.version !== 1 || ![2, 3, 4].includes(file.profile?.schemaVersion))
     throw new Error('This save format is not supported by this version of the game.');
   const profile = file.profile;
   if (
@@ -137,17 +137,23 @@ export function parseSaveFile(text) {
     throw invalidSave();
   if (
     profile.schemaVersion >= 3 &&
-    (profile.town.moonstoneVersion !== MOONSTONE_VERSION ||
+    (![1, MOONSTONE_VERSION].includes(profile.town.moonstoneVersion) ||
+      (profile.schemaVersion >= 4 && profile.town.moonstoneVersion !== MOONSTONE_VERSION) ||
+      (profile.schemaVersion < 4 && profile.town.moonstoneVersion === MOONSTONE_VERSION) ||
       !nonnegativeInteger(profile.town.moonstones) ||
       !nonnegativeInteger(profile.town.moonstonesEarned) ||
       profile.town.moonstones > profile.town.moonstonesEarned ||
       !isObject(profile.town.moonstoneProduction) ||
       !nonnegativeInteger(profile.town.moonstoneProduction.progress) ||
       profile.town.moonstoneProduction.progress >= MOONSTONE_ECONOMY.runs ||
-      !nonnegativeInteger(profile.town.moonstoneProduction.charge) ||
-      profile.town.moonstoneProduction.charge > (profile.town.buildings.moonstoneWorkshop ?? 0) ||
-      (profile.town.moonstoneProduction.charge > 0 &&
-        profile.town.moonstoneProduction.progress > 0))
+      (profile.town.moonstoneVersion === 1
+        ? !nonnegativeInteger(profile.town.moonstoneProduction.charge) ||
+          profile.town.moonstoneProduction.charge >
+            (profile.town.buildings.moonstoneWorkshop ?? 0) ||
+          (profile.town.moonstoneProduction.charge > 0 &&
+            profile.town.moonstoneProduction.progress > 0)
+        : !nonnegativeInteger(profile.town.moonstoneProduction.stored) ||
+          profile.town.moonstoneProduction.stored > moonstoneCapacity(profile.town)))
   )
     throw new Error('This save contains invalid moonstones.');
   if (file.town !== undefined) {

@@ -165,7 +165,7 @@ export function createTownStorage({
     // leaves it recoverable. Retrying never overwrites an already migrated town.
     initialize() {
       const root = read(SAVE_KEY);
-      if (root?.schemaVersion > 3) throw new Error('This save needs a newer version of the game.');
+      if (root?.schemaVersion > 4) throw new Error('This save needs a newer version of the game.');
       if (!root || root._cloud?.version === 2) return;
       const legacy = root._cloud;
       if (!legacy) return;

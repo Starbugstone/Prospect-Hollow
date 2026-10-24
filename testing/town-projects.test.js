@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { TOWN_PROJECTS } from '../src/data/townProjects';
 import { BUILDING_BY_ID, BUILDINGS, createTown } from '../src/data/town';
-import { townProjects } from '../src/game/town/TownProjects';
+import { finishedRewardProjects, townProjects } from '../src/game/town/TownProjects';
 import { eraGate, eraIndex } from '../src/game/town/TownEras';
 import {
   advanceConstruction,
@@ -13,6 +13,7 @@ import {
 import { useCampaignStore, SAVE_KEY } from '../src/stores/campaignStore';
 import fr from '../src/i18n/fr.json';
 import { HAMMER_CAPACITY } from '../src/data/rewards';
+import { ERAS } from '../src/data/eras';
 let saved;
 beforeEach(() => {
   saved = new Map();
@@ -153,4 +154,100 @@ it('pays back the hammer that finishes a starter project', () => {
   expect(campaign.builderHammers).toBe(1);
   expect(campaign.lastProjectReward).toEqual({ projects: ['trail-welcome'], hammers: 1 });
   expect(fr['Project complete: {project}. The town gives you a builder hammer.']).toBeTruthy();
+});
+
+// An era may deliberately omit guides only with an explicit, documented decision here.
+const ERAS_WITHOUT_GUIDED_PROJECTS = [];
+const guidedEras = ERAS.filter(
+  (era) => era.enabled && !ERAS_WITHOUT_GUIDED_PROJECTS.includes(era.id),
+);
+it('covers every enabled era with guides, including future eras unless explicitly opted out', () => {
+  for (const era of guidedEras) {
+    const projects = TOWN_PROJECTS.filter((project) => project.era === era.id);
+    expect(projects.length, era.id).toBeGreaterThanOrEqual(2);
+    if (eraIndex(era.id) > eraIndex('tomorrow')) {
+      // Every new required plot appears in the main guide path.
+      const guided = projects.flatMap((project) => project.buildings);
+      for (const building of BUILDINGS.filter(
+        (building) => building.introducedEra === era.id && building.requiredForEraCompletion,
+      ))
+        expect(guided, building.id).toContain(building.id);
+    }
+  }
+});
+it('uses only required buildings and keeps all later guides free of hammer rewards', () => {
+  for (const project of TOWN_PROJECTS) {
+    if (project.era !== 'frontier') expect(project.hammers, project.id).toBe(0);
+    for (const id of project.buildings)
+      expect(BUILDING_BY_ID[id].requiredForEraCompletion, id).toBe(true);
+  }
+});
+function completeEraTown(era) {
+  const town = createTown();
+  town.era = era;
+  for (const b of BUILDINGS.filter((b) => eraIndex(b.introducedEra) <= eraIndex(era))) {
+    if (!b.requiredForEraCompletion) continue;
+    town.buildings[b.id] = b.upgrades.length;
+    town.buildingEras[b.id] = era;
+    town.buildingEraLevels[b.id] = 3;
+  }
+  return town;
+}
+it.each(guidedEras.map((era) => era.id))(
+  'recognizes completed %s saves without retroactive rewards on load, focus or import',
+  (era) => {
+    const campaign = useCampaignStore();
+    campaign.town = completeEraTown(era);
+    campaign.builderHammers = 2;
+    campaign.save();
+    setActivePinia(createPinia());
+    const restored = useCampaignStore();
+    const projects = townProjects(restored.town);
+    expect(projects.length).toBeGreaterThan(0);
+    expect(projects.every((project) => project.complete)).toBe(true);
+    expect(finishedRewardProjects(restored.town, restored.town)).toEqual([]);
+    expect(restored.builderHammers).toBe(2);
+    expect(restored.focusTownProject(projects[0].id)).toBe(true);
+    const backup = restored.exportSave();
+    restored.importSave(backup);
+    expect(restored.builderHammers).toBe(2);
+    expect(restored.lastProjectReward).toBeNull();
+    expect(eraGate(restored.town).townComplete).toBe(true);
+    expect(restored.town.buildings.saucerPad).toBe(0);
+  },
+);
+it.each(guidedEras.filter((era) => era.id !== 'frontier').map((era) => era.id))(
+  'finishes a %s guided project without paying a hammer',
+  (era) => {
+    const town = completeEraTown(era);
+    const project = TOWN_PROJECTS.find((project) => project.era === era);
+    const id = project.buildings[0];
+    const before = structuredClone(town);
+    if (BUILDING_BY_ID[id].introducedEra === era) before.buildings[id] = 2;
+    else before.buildingEraLevels[id] = 2;
+    expect(townProjects(before).find((p) => p.id === project.id).complete).toBe(false);
+    expect(townProjects(town).find((p) => p.id === project.id).complete).toBe(true);
+    expect(finishedRewardProjects(before, town)).toEqual([]);
+  },
+);
+it('tracks Moon construction and uses the shared building names and offers', () => {
+  const town = completeEraTown('twin-hollows');
+  town.buildings.willowkinDome = 2;
+  town.projects.willowkinDome = { id: 'willowkinDome', stage: 3, wins: 1, required: 2 };
+  const project = () => townProjects(town).find((project) => project.id === 'moon-gardens');
+  expect(project().buildings.map((building) => building.name)).toEqual([
+    'Greenhouse',
+    'Willowkin dome',
+    'Commons',
+  ]);
+  expect(project()).toMatchObject({ done: 8, total: 9, complete: false });
+  expect(project().buildings[1]).toMatchObject({ level: 2, ready: false, runs: 2 });
+  town.projects.willowkinDome.wins = 2;
+  expect(project().buildings[1].ready).toBe(true);
+  expect(project().done).toBe(8);
+  expect(
+    townProjects(finishConstruction(town, 'willowkinDome', 3)).find(
+      (project) => project.id === 'moon-gardens',
+    ).complete,
+  ).toBe(true);
 });

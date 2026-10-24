@@ -515,7 +515,7 @@ it('round-trips moonstone state and never adds two devices’ migration credits'
   const deviceB = normalizeTown(legacyTown);
   expect(deviceA.moonstones).toBe(5);
   let profile = storage.active().profile;
-  profile.schemaVersion = 3;
+  profile.schemaVersion = 4;
   profile.town = deviceA;
   storage.save(profile);
   await service.sync();
@@ -540,5 +540,50 @@ it('round-trips moonstone state and never adds two devices’ migration credits'
     moonstones: 2,
     moonstonesEarned: 5,
   });
-  expect(storage.active().profile.town.moonstoneProduction).toEqual({ progress: 0, charge: 0 });
+  expect(storage.active().profile.town.moonstoneProduction).toEqual({ progress: 0, stored: 0 });
+});
+
+it('chooses one complete v1 batch migration across two devices instead of adding stock', async () => {
+  const old = {
+    ...createTown(),
+    moonstoneVersion: 1,
+    moonstones: 2,
+    moonstonesEarned: 9,
+    moonstoneProduction: { progress: 0, charge: 3 },
+  };
+  old.buildings.moonstoneWorkshop = 3;
+  const a = normalizeTown(old),
+    b = normalizeTown(old);
+  let profile = storage.active().profile;
+  profile.schemaVersion = 4;
+  profile.town = a;
+  storage.save(profile);
+  await service.sync();
+  profile = storage.active().profile;
+  profile.town = b;
+  storage.save(profile);
+  remote = {
+    ...remote,
+    revision: remote.revision + 1,
+    profile: {
+      ...remote.profile,
+      town: {
+        ...remote.profile.town,
+        moonstones: 5,
+        moonstonesEarned: 12,
+        moonstoneProduction: { progress: 1, stored: 0 },
+      },
+    },
+  };
+  request.mockImplementation(async (_path, body) => {
+    if (body)
+      throw Object.assign(new Error('conflict'), { status: 409, data: { cloud: copy(remote) } });
+    return copy(remote);
+  });
+  await service.sync();
+  expect(normalizeTown(storage.active().profile.town)).toMatchObject({
+    moonstones: 5,
+    moonstonesEarned: 12,
+    moonstoneProduction: { progress: 1, stored: 0 },
+  });
 });

@@ -1,6 +1,8 @@
 import {
   MOONSTONE_VERSION,
   advanceMoonstoneProduction,
+  advanceContinuousMoonstones,
+  MOONSTONE_ECONOMY,
   earnMoonstones,
   spendMoonstoneBalance,
   sellMoonstoneBalance,
@@ -204,6 +206,15 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
         state.continuousRecords[id] = {
           coins: Math.min(CONTINUOUS_COIN_CAP, continuous.coins),
           score: continuous.score,
+          ...(Number.isSafeInteger(continuous.moonstoneGems) && continuous.moonstoneGems > 0
+            ? {
+                moonstoneGems: Math.min(
+                  MOONSTONE_ECONOMY.continuousGemsPerPuzzle *
+                    MOONSTONE_ECONOMY.continuousPuzzlesPerLevel,
+                  continuous.moonstoneGems,
+                ),
+              }
+            : {}),
         };
       const record = saved?.records?.[id];
       if (
@@ -296,7 +307,7 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
 };
 
 const profileData = (state) => ({
-  schemaVersion: 3,
+  schemaVersion: 4,
   integrity: state.integrity,
   records: state.records,
   continuousRecords: state.continuousRecords,
@@ -601,16 +612,50 @@ export const useCampaignStore = defineStore('campaign', {
         CONTINUOUS_COIN_CAP - previous.coins,
         Math.max(0, earned - run.credited),
       );
-      run.credited = Math.max(run.credited, earned);
+      const observed = Math.max(run.moonstoneJewels ?? 0, jewels);
+      const stock = advanceContinuousMoonstones(
+        this.town,
+        previous.moonstoneGems ?? 0,
+        observed - (run.moonstoneJewels ?? 0),
+      );
       const best = Math.max(previous.score, score);
-      if (!delta && previous.score === best && this.continuousRecords[id]) return true;
-      this.continuousRecords[id] = { coins: previous.coins + delta, score: best };
-      this.town.coins = Math.min(Number.MAX_SAFE_INTEGER, this.town.coins + delta);
-      // After the existing continuous coin allowance is earned, score remains a
-      // statistic. Unlimited play must not create a command for every later match.
-      if (delta) this.recordAction('continuous', { runId, levelId: id, jewels, score, at });
-      this.save();
-      return true;
+      // Full-workshop observations are journaled too: a later collection in this
+      // run must not retroactively bank the discarded gems.
+      const workshopObservation =
+        !!this.town.buildings.moonstoneWorkshop &&
+        (previous.moonstoneGems ?? 0) <
+          MOONSTONE_ECONOMY.continuousGemsPerPuzzle * MOONSTONE_ECONOMY.continuousPuzzlesPerLevel &&
+        observed > (run.moonstoneJewels ?? 0);
+      const receipt = delta || workshopObservation;
+      if (!receipt && previous.score === best && this.continuousRecords[id]) return true;
+      return this.commit(
+        {
+          continuousRun: {
+            ...run,
+            credited: Math.max(run.credited, earned),
+            moonstoneJewels: observed,
+          },
+          continuousRecords: {
+            ...this.continuousRecords,
+            [id]: {
+              ...previous,
+              coins: previous.coins + delta,
+              score: best,
+              ...(stock.gems ? { moonstoneGems: stock.gems } : {}),
+            },
+          },
+          town: {
+            ...stock.town,
+            coins: Math.min(Number.MAX_SAFE_INTEGER, this.town.coins + delta),
+          },
+        },
+        receipt
+          ? {
+              kind: 'continuous',
+              data: { runId, levelId: id, jewels, score, at, moonstoneVersion: MOONSTONE_VERSION },
+            }
+          : null,
+      );
     },
     resetProgress() {
       const next = defaults();
@@ -640,7 +685,7 @@ export const useCampaignStore = defineStore('campaign', {
       return result.earned;
     },
     collectMoonstones(now = Date.now()) {
-      const amount = this.town.moonstoneProduction.charge;
+      const amount = this.town.moonstoneProduction.stored;
       if (
         !amount ||
         !Number.isSafeInteger(now) ||
@@ -655,11 +700,11 @@ export const useCampaignStore = defineStore('campaign', {
         {
           town: {
             ...town,
-            moonstoneProduction: { progress: 0, charge: 0 },
+            moonstoneProduction: { ...town.moonstoneProduction, stored: 0 },
             lastCollections: { ...town.lastCollections, moonstoneWorkshop: now },
           },
         },
-        { kind: 'moonstone-collect', data: { at: now } },
+        { kind: 'moonstone-collect', data: { at: now, moonstoneVersion: MOONSTONE_VERSION } },
       )
         ? amount
         : 0;

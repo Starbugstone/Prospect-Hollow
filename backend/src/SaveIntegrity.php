@@ -91,7 +91,10 @@ final class SaveIntegrity
         $moonstones = $this->rules['economy']['moonstones'] ?? null;
         if (
             !is_array($moonstones) ||
-            ($moonstones['version'] ?? null) !== 1 ||
+            ($moonstones['version'] ?? null) !== 2 ||
+            !self::integer($moonstones['storageBatches'] ?? null, 1) ||
+            !self::integer($moonstones['continuousGemsPerPuzzle'] ?? null, 1) ||
+            !self::integer($moonstones['continuousPuzzlesPerLevel'] ?? null, 1) ||
             !self::integer($moonstones['runs'] ?? null, 1) ||
             !self::integer($moonstones['saleCoins'] ?? null, 1) ||
             !is_array($moonstones['buildings'] ?? null) ||
@@ -224,7 +227,9 @@ final class SaveIntegrity
         ) {
             $production = $town['moonstoneProduction'] ?? null;
             if (
-                ($town['moonstoneVersion'] ?? null) !== 1 ||
+                !in_array($town['moonstoneVersion'] ?? null, [1, 2], true) ||
+                (($p['schemaVersion'] ?? 2) >= 4 && $town['moonstoneVersion'] !== 2) ||
+                ($town['moonstoneVersion'] === 2 && ($p['schemaVersion'] ?? 2) < 4) ||
                 !self::integer($town['moonstones'] ?? null) ||
                 !self::integer($town['moonstonesEarned'] ?? null) ||
                 $town['moonstones'] > $town['moonstonesEarned'] ||
@@ -239,26 +244,41 @@ final class SaveIntegrity
                     0,
                     $this->rules['buildings']['moonstoneWorkshop']['maxLevel'],
                 ) ||
-                !self::integer(
-                    $production['charge'] ?? null,
-                    0,
-                    $this->rules['buildings']['moonstoneWorkshop']['maxLevel'],
-                ) ||
-                $production['charge'] > ($town['buildings']['moonstoneWorkshop'] ?? 0) ||
-                ($production['charge'] && $production['progress'])
+                ($town['moonstoneVersion'] === 1
+                    ? !self::integer(
+                            $production['charge'] ?? null,
+                            0,
+                            $town['buildings']['moonstoneWorkshop'] ?? 0,
+                        ) ||
+                        ($production['charge'] && $production['progress'])
+                    : !self::integer(
+                        $production['stored'] ?? null,
+                        0,
+                        ($town['buildings']['moonstoneWorkshop'] ?? 0) *
+                            $this->rules['economy']['moonstones']['storageBatches'],
+                    ))
             ) {
                 self::invalid('town.moonstones');
             }
             $buildingCredit = $this->moonBuildingCredit($town);
+            $continuousCredit = 0;
+            foreach ($p['continuousRecords'] as $record) {
+                $gems = $record['moonstoneGems'] ?? 0;
+                if (self::integer($gems)) {
+                    $continuousCredit += (int) floor(
+                        $gems / $this->rules['economy']['moonstones']['continuousGemsPerPuzzle'],
+                    );
+                }
+            }
             // Enrollment remains an unverified historical baseline, like coins.
-            // Even there a balance must fit the claimed normal-puzzle history.
+            // Even there a balance must fit claimed normal and continuous production history.
             if (
                 !self::integer($town['completedRuns'] ?? 0) ||
                 $town['moonstonesEarned'] >
                     $buildingCredit +
                         min(
                             9007199254740991,
-                            ($town['completedRuns'] ?? 0) *
+                            (($town['completedRuns'] ?? 0) + $continuousCredit) *
                                 $this->rules['buildings']['moonstoneWorkshop']['maxLevel'],
                         )
             ) {
@@ -370,6 +390,18 @@ final class SaveIntegrity
                     )
                 ) {
                     self::invalid('continuousRecords.' . $id . '.coins');
+                }
+                if (
+                    $key === 'continuousRecords' &&
+                    isset($record['moonstoneGems']) &&
+                    !self::integer(
+                        $record['moonstoneGems'],
+                        0,
+                        $this->rules['economy']['moonstones']['continuousGemsPerPuzzle'] *
+                            $this->rules['economy']['moonstones']['continuousPuzzlesPerLevel'],
+                    )
+                ) {
+                    self::invalid('continuousRecords.' . $id . '.moonstoneGems');
                 }
             }
         }
@@ -568,7 +600,7 @@ final class SaveIntegrity
             }
         }
         $p['town']['progressionVersion'] = $defaults['town']['progressionVersion'];
-        if (($profile['town']['moonstoneVersion'] ?? null) !== 1) {
+        if (!in_array($profile['town']['moonstoneVersion'] ?? null, [1, 2], true)) {
             $credit = $this->moonBuildingCredit($p['town']);
             $p['town']['moonstoneVersion'] = 1;
             $p['town']['moonstones'] = $credit;
@@ -618,8 +650,13 @@ final class SaveIntegrity
             $record = array_intersect_key($record, array_flip(['score', 'stars', 'bestTimeMs']));
         }
         foreach ($result['continuousRecords'] as &$record) {
-            $record = array_intersect_key($record, array_flip(['score', 'coins']));
+            $record = array_intersect_key($record, array_flip(['score', 'coins', 'moonstoneGems']));
         }
+        unset($record);
+        foreach ($result['continuousRecords'] as &$record) {
+            $record['moonstoneGems'] ??= 0;
+        }
+        unset($record);
         $result['shopStock'] = array_map(
             fn($offer) => ['id' => $offer['id'], 'sold' => $offer['sold'] === true],
             $p['shopStock'],
@@ -1039,6 +1076,12 @@ final class SaveIntegrity
                 isset($this->rules['levels'][$data['levelId']]) &&
                 self::integer($data['jewels'] ?? null)
             ) {
+                if (($data['moonstoneVersion'] ?? null) === 2) {
+                    $context['run']['moonstoneJewels'] = max(
+                        $context['run']['moonstoneJewels'] ?? 0,
+                        $data['jewels'],
+                    );
+                }
                 $context['run']['credited'] = max(
                     $context['run']['credited'],
                     min(
@@ -1088,7 +1131,10 @@ final class SaveIntegrity
         $incoming = self::arrayOf($profile);
         $journal = $this->journal($incoming['integrity'] ?? null);
         $old = $previous ? self::arrayOf($previous) : null;
-        if (($old['schemaVersion'] ?? 2) >= 3 && ($incoming['schemaVersion'] ?? 2) < 3) {
+        if (
+            (($old['schemaVersion'] ?? 2) >= 3 && ($incoming['schemaVersion'] ?? 2) < 3) ||
+            (($old['schemaVersion'] ?? 2) >= 4 && ($incoming['schemaVersion'] ?? 2) < 4)
+        ) {
             self::incompatible();
         }
 
@@ -1278,6 +1324,9 @@ final class SaveIntegrity
             self::mismatch('integrity.sequence');
         }
         $target = $this->normalized($incoming);
+        if ($target['town']['moonstoneVersion'] === 2) {
+            $this->migrateMoonstoneStock($state['town']);
+        }
         // Continuous best scores are statistics. Once credited coins stop changing,
         // the frontend saves improvements without generating redundant coin actions.
         // A first score that earned no coins has no command either, and a later run
@@ -1295,7 +1344,9 @@ final class SaveIntegrity
                 $state['town']['buildings']['museum'] &&
                 $this->unlocked($state, (int) $level)
             ) {
-                $state['continuousRecords'][$level] = $record;
+                $state['continuousRecords'][$level] = array_diff_key($record, [
+                    'moonstoneGems' => true,
+                ]);
             }
         }
         // UI accrual is deliberately not journaled on every frame. Recalculate the
@@ -1849,10 +1900,43 @@ final class SaveIntegrity
                 );
                 $delta = min($cap - $previous['coins'], max(0, $earned - $run['credited']));
                 $context['run']['credited'] = max($run['credited'], $earned);
+                $gems = $previous['moonstoneGems'] ?? 0;
+                if (isset($d['moonstoneVersion'])) {
+                    if ($d['moonstoneVersion'] !== 2) {
+                        self::mismatch('continuous.moonstoneVersion');
+                    }
+                    $this->migrateMoonstoneStock($s['town']);
+                    $observed = max($run['moonstoneJewels'] ?? 0, $d['jewels']);
+                    $remaining = min(
+                        $observed - ($run['moonstoneJewels'] ?? 0),
+                        $this->rules['economy']['moonstones']['continuousGemsPerPuzzle'] *
+                            $this->rules['economy']['moonstones']['continuousPuzzlesPerLevel'] -
+                            $gems,
+                    );
+                    $perPuzzle = $this->rules['economy']['moonstones']['continuousGemsPerPuzzle'];
+                    while (
+                        $remaining > 0 &&
+                        ($s['town']['buildings']['moonstoneWorkshop'] ?? 0) &&
+                        $s['town']['moonstoneProduction']['stored'] <
+                            $s['town']['buildings']['moonstoneWorkshop'] *
+                                $this->rules['economy']['moonstones']['storageBatches']
+                    ) {
+                        $used = min($remaining, $perPuzzle - ($gems % $perPuzzle));
+                        $gems += $used;
+                        $remaining -= $used;
+                        if ($gems % $perPuzzle === 0) {
+                            $this->advanceMoonstones($s['town'], 2);
+                        }
+                    }
+                    $context['run']['moonstoneJewels'] = $observed;
+                }
                 $s['continuousRecords'][$level] = [
                     'coins' => (int) ($previous['coins'] + $delta),
                     'score' => max($previous['score'], $this->metric($d['score'] ?? null, 'score')),
                 ];
+                if ($gems) {
+                    $s['continuousRecords'][$level]['moonstoneGems'] = $gems;
+                }
                 $this->addCoins($s, $delta);
                 break;
             case 'power-spend':
@@ -1915,7 +1999,16 @@ final class SaveIntegrity
             case 'moonstone-collect':
                 $this->clock($d['at'] ?? null, $context, $now);
                 $town = &$s['town'];
-                $amount = $town['moonstoneProduction']['charge'];
+                $version = $d['moonstoneVersion'] ?? 1;
+                if ($version === 2) {
+                    $this->migrateMoonstoneStock($town);
+                } elseif ($version !== 1 || $town['moonstoneVersion'] !== 1) {
+                    self::mismatch('moonstone-collect.version');
+                }
+                $amount = $town['moonstoneProduction'][$version === 2 ? 'stored' : 'charge'];
+                if (isset($d['amount']) && $d['amount'] !== $amount) {
+                    self::mismatch('moonstone-collect.amount');
+                }
                 $at = $d['at'] ?? null;
                 if (
                     !$town['buildings']['moonstoneWorkshop'] ||
@@ -1927,7 +2020,11 @@ final class SaveIntegrity
                     self::mismatch('moonstone-collect');
                 }
                 $this->earnMoonstones($town, $amount);
-                $town['moonstoneProduction'] = ['progress' => 0, 'charge' => 0];
+                if ($version === 2) {
+                    $town['moonstoneProduction']['stored'] = 0;
+                } else {
+                    $town['moonstoneProduction'] = ['progress' => 0, 'charge' => 0];
+                }
                 $town['lastCollections']['moonstoneWorkshop'] = $at;
                 return;
             case 'moonstone-spend':
@@ -2203,8 +2300,11 @@ final class SaveIntegrity
         }
         unset($project);
         $this->advanceForge($s['town']);
-        if (($d['moonstoneVersion'] ?? null) === 1) {
-            $this->advanceMoonstones($s['town']);
+        if (isset($d['moonstoneVersion'])) {
+            if (!in_array($d['moonstoneVersion'], [1, 2], true)) {
+                self::mismatch('victory.moonstoneVersion');
+            }
+            $this->advanceMoonstones($s['town'], $d['moonstoneVersion']);
         }
         $newChapter = $this->chapter($s['records']);
         if ($newChapter > $oldChapter) {
@@ -2664,10 +2764,32 @@ final class SaveIntegrity
             $this->earnMoonstones($town, max(0, $town['buildings'][$id] - $before));
         }
     }
-    private function advanceMoonstones(array &$town): void
+    private function migrateMoonstoneStock(array &$town): void
     {
+        if ($town['moonstoneVersion'] === 1) {
+            $town['moonstoneVersion'] = 2;
+            $town['moonstoneProduction'] = [
+                'progress' => $town['moonstoneProduction']['progress'],
+                'stored' => $town['moonstoneProduction']['charge'],
+            ];
+        }
+    }
+    private function advanceMoonstones(array &$town, int $version): void
+    {
+        if ($version === 2) {
+            $this->migrateMoonstoneStock($town);
+        } elseif ($town['moonstoneVersion'] !== 1) {
+            self::mismatch('victory.moonstoneVersion');
+        }
         $level = $town['buildings']['moonstoneWorkshop'] ?? 0;
-        if (!$level || $town['moonstoneProduction']['charge']) {
+        $key = $version === 2 ? 'stored' : 'charge';
+        $capacity =
+            $level * ($version === 2 ? $this->rules['economy']['moonstones']['storageBatches'] : 1);
+        if (
+            !$level ||
+            ($version === 1 && $town['moonstoneProduction']['charge']) ||
+            $town['moonstoneProduction'][$key] >= $capacity
+        ) {
             return;
         }
         $town['moonstoneProduction']['progress']++;
@@ -2675,7 +2797,11 @@ final class SaveIntegrity
             $town['moonstoneProduction']['progress'] >=
             $this->rules['economy']['moonstones']['runs']
         ) {
-            $town['moonstoneProduction'] = ['progress' => 0, 'charge' => $level];
+            $town['moonstoneProduction']['progress'] = 0;
+            $town['moonstoneProduction'][$key] = min(
+                $capacity,
+                $town['moonstoneProduction'][$key] + $level,
+            );
         }
     }
     private function settleForge(array &$town): void
