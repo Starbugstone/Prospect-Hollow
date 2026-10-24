@@ -1,17 +1,15 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createApp } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
-import {
-  createLocalIntegrityPlugin,
-  runRegisteredTestingMutation,
-} from '../src/services/localIntegrity';
+import { createLocalIntegrityPlugin } from '../src/services/localIntegrity';
 import { freshProfile, useCampaignStore, SAVE_KEY } from '../src/stores/campaignStore';
 import { useInventoryStore } from '../src/stores/inventoryStore';
 import { useGameStore } from '../src/stores/gameStore';
-import { createTestingTools } from '../src/services/testingTools';
 import { townStorage } from '../src/services/townStorage';
 import { acknowledgeIntegrity } from '../src/services/saveIntegrity';
 import { upgradeOffer } from '../src/game/town/TownRules';
+import { eraGate } from '../src/game/town/TownEras';
+import { completedEraTown } from './helpers/eraTown';
 import { SHOP_ITEMS } from '../src/data/shop';
 import { CONTINUOUS_COIN_CAP } from '../src/data/rewards';
 import { HintEngine } from '../src/game/engine/HintEngine';
@@ -146,22 +144,7 @@ it('consumes items through the bounded campaign action and blocks injected inven
   expect(campaign.integrity.actions.at(-1).kind).toBe('power-spend');
 });
 
-it('keeps registered testing grants and chapter codes explicit without opening generic commits', () => {
-  const campaign = open();
-  const tools = createTestingTools(pinia);
-  expect(tools.grant({ coins: 500, hammers: 2 })).toEqual({ coins: 500, builderHammers: 2 });
-  expect(campaign.commit({ builderHammers: 5 })).toBe(false);
-  const chapter = tools.mineStage(2);
-  expect(chapter.level).toBe(7);
-  expect(campaign.isUnlocked(7)).toBe(true);
-  campaign.town.coins = 999999;
-  expect(campaign.town.coins).toBe(500);
-  expect(() =>
-    runRegisteredTestingMutation(campaign, {}, () => campaign.commit({ builderHammers: 5 })),
-  ).toThrow('unavailable');
-}, 20000);
-
-it('rolls normal and registered transactions back when persistence fails', () => {
+it('rolls normal transactions back when persistence fails', () => {
   const profile = freshProfile();
   profile.town.buildings.blacksmith = 1;
   profile.town.forge.charge = 1;
@@ -173,8 +156,6 @@ it('rolls normal and registered transactions back when persistence fails', () =>
   expect(campaign.town.forge.charge).toBe(1);
   expect(campaign.powers.find((power) => power.id === 'tnt').quantity).toBe(0);
   expect(campaign.integrity.actions).toEqual([]);
-  expect(() => createTestingTools(pinia).grant()).toThrow('Balances were restored');
-  expect(campaign.town.coins).toBe(0);
   write.mockRestore();
   expect(campaign.collectForgeTNT()).toBe(true);
   expect(campaign.save()).toBe(true);
@@ -241,19 +222,17 @@ it('keeps continuous earnings capped by their existing rule and allows score-onl
   expect(campaign.continuousRecords[1].coins).toBe(CONTINUOUS_COIN_CAP);
 });
 
-it('preserves registered era preparation and mine completion, then normal era advancement', () => {
-  const campaign = open();
-  const tools = createTestingTools(pinia);
-  const prepared = tools.prepareEra('frontier');
-  expect(prepared.readyToChange).toBe(true);
+it('advances a completed era through the normal action while records stay protected', () => {
+  const profile = freshProfile();
+  profile.town = completedEraTown(profile.town, 'frontier');
+  profile.records[1] = { score: 0, stars: 3 };
+  const campaign = open(profile);
+  const next = eraGate(campaign.town).next.id;
   expect(campaign.advanceEra('frontier')).toBe(true);
-  expect(campaign.town.era).toBe(prepared.nextEra);
-  tools.mineStage(1);
-  expect(tools.completeMine().stars).toBeGreaterThan(100);
-  expect(campaign.records[1].stars).toBe(3);
+  expect(campaign.town.era).toBe(next);
   campaign.records[1].stars = 1;
   expect(campaign.records[1].stars).toBe(3);
-}, 20000);
+});
 
 it('imports and reloads a confirmed backup without adding journal flags or losing resources', () => {
   const profile = freshProfile();

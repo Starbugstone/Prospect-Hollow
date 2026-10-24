@@ -65,10 +65,6 @@ running a fixture's `.console.js` replaces that origin's progress and reloads it
   pending transition, ready to build and completed town.
 - `cargo-theft`, `workshop-fire` and `storm-cleanup`: saved encounter states.
 
-Alternatively, development and preprod expose `prospectDebug.prepareEra(id)`;
-see [console testing](../readme.md#testing-resources-from-the-console). It prepares
-the chosen era without starting its next transition.
-
 ## Validation
 
 Run `npm run verify` in Docker for formatting, lint, contracts, regression tests

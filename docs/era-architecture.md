@@ -504,8 +504,10 @@ production arrival inset always includes the name; unnamed inset captures are
 review comparisons only. Airport guests use the expanded lounge’s side exit
 after stage two, keeping both outward and return paths clear of its footprint.
 
-To reproduce the complete VIP image set, run Vite and use a fresh Playwright CLI
-browser session with `scripts/capture-vip-review.js` as its `run-code` callback.
+To reproduce the complete VIP image set, generate the era fixtures with
+`npm run demo:eras`, run Vite and use a fresh Playwright CLI browser session with
+`scripts/capture-vip-review.js` as its `run-code` callback; it loads each era's
+completed fixture.
 Then run `python3 scripts/package-vip-review.py`. Packaging checks all 468 required
 images (96 character comparisons, 288 village scenes and 84 inset close-ups),
 writes an offline gallery and image manifest, and creates `output/vip-review.zip`.

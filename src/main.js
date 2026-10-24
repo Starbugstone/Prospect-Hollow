@@ -2,7 +2,7 @@ import { createApp, defineAsyncComponent, watch } from 'vue';
 import { locale, browserLocale, t } from './i18n';
 import { createPinia } from 'pinia';
 import { createLocalIntegrityPlugin } from './services/localIntegrity';
-import { createTestingTools, debugToolsAllowed } from './services/testingTools';
+import { createDebugTools, debugToolsAllowed } from './services/debugTools';
 import { townStorage } from './services/townStorage';
 import CloudRoot from './components/CloudRoot.vue';
 import { useCampaignStore } from './stores/campaignStore';
@@ -30,7 +30,7 @@ pinia.use(createLocalIntegrityPlugin());
 
 app.use(pinia);
 
-if (debugToolsAllowed()) window.prospectDebug = createTestingTools(pinia);
+if (debugToolsAllowed()) window.prospectDebug = createDebugTools();
 const languageChanged = () => {
   locale.value = browserLocale();
 };

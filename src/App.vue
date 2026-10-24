@@ -311,7 +311,6 @@ import { LEVEL_NAMES } from './data/levelNames';
 import { obstacleSeenKey, obstaclesInLevel, unseenObstacles } from './data/obstacles';
 import { mineThemeAppearance } from './data/mineThemes';
 import ObstacleGuide from './components/ObstacleGuide.vue';
-import { TESTING_TOWN_CHANGED } from './services/testingTools';
 import { isPlayRoute, navigate, syncTownParam } from './services/appRoute';
 
 const game = useGameStore();
@@ -481,7 +480,6 @@ onMounted(() => {
   clockInterval = setInterval(() => game.syncRunClock(), 100);
   game.setAudioManager(audio);
   document.addEventListener('visibilitychange', visibilityChanged);
-  window.addEventListener(TESTING_TOWN_CHANGED, resumeImportedVillage);
   window.addEventListener('popstate', followRoute);
 });
 watch(
@@ -500,7 +498,6 @@ onBeforeUnmount(() => {
   clearInterval(incomeInterval);
   campaign.accrueSaloonIncome();
   document.removeEventListener('visibilitychange', visibilityChanged);
-  window.removeEventListener(TESTING_TOWN_CHANGED, resumeImportedVillage);
   window.removeEventListener('popstate', followRoute);
   game.exitLevel();
   game.setAudioManager(null);
